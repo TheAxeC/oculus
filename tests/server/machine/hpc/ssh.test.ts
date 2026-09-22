@@ -19,13 +19,14 @@
 //
 // Those measured terms are also what the bound cannot see past: an escalation later than the grace
 // by less than their sum passes. How much that is belongs to the machine, not to this file. Against
-// a grace of 2000 ms they sum to 43 to 61 ms at a load average of 17, reach 190 ms at a load average
-// of 26, and reach 555 to 768 ms at load averages of 37 to 98, where the escalation itself runs 173
-// to 214 ms late. So a bound further from the grace than CEILING_MS is never passed: past it a run
-// cannot tell a kill on time from one a tenth of the grace late, which is the regression these
-// cases are here for. Such a run is spoiled by the machine rather than evidence about the runner,
-// so the measurement is taken again, and a case where every attempt came out that dear is red about
-// the machine, which is worth more than a green that could not have caught the regression.
+// a grace of 2000 ms they sum to 43 to 61 ms at a load average of 17, reach 190 ms at a load
+// average of 26, and reach 555 to 768 ms at load averages of 37 to 98, where the escalation itself
+// runs 173 to 214 ms late. So a bound further from the grace than CEILING_MS is never passed: past
+// it a run cannot tell a kill on time from one a tenth of the grace late, which is the regression
+// these cases are here for. Such a run is spoiled by the machine rather than evidence about the
+// runner, so the measurement is taken again, and a case where every attempt came out that dear is
+// red about the machine, which is worth more than a green that could not have caught the
+// regression.
 //
 // The file can also go red for a machine of its own: the probe spends up to WATCH_MS waiting for a
 // pid and up to WATCH_MS again on the reap, and the budget that follows starts at twice what the
@@ -135,7 +136,9 @@ function slackMeter(stepMs: number): Meter {
     };
 }
 
-/** What a look for the kill answers: whether it came, when it was seen, and the lateness measured. */
+/**
+ * What a look for the kill answers: whether it came, when it was seen, and the lateness measured.
+ */
 type Kill = { seen: boolean; afterMs: number; slackMs: number };
 
 /** The same, with the number of budgets it took to get a child worth looking at. */
@@ -296,7 +299,7 @@ describe('the ssh runner under a stub cluster', () => {
     it('rejects a command that never returns at the budget and leaves no child behind', async () => {
         const dir = caseDir();
         const cost = await machineCost(dir);
-        // revert: src/lib/server/machine/hpc/ssh.ts:38-41 => force = null;
+        // revert: src/lib/server/machine/hpc/ssh.ts:39-42 => force = null;
         const kill = await killAfterBudget(dir, (pidFile) => recordsPid(pidFile, false), cost);
         expect(kill.seen).toBe(true);
         expect(kill.afterMs).toBeLessThanOrEqual(killBound(cost, kill));
@@ -306,7 +309,7 @@ describe('the ssh runner under a stub cluster', () => {
     // the escalation ends it, and the bound it is held to is the one a green is worth something at.
     it('rejects a command that ignores SIGTERM at the budget and ends it within the grace', async () => {
         const dir = caseDir();
-        // revert: src/lib/server/machine/hpc/ssh.ts:41 => }, KILL_GRACE_MS * 1.1);
+        // revert: src/lib/server/machine/hpc/ssh.ts:42 => }, KILL_GRACE_MS * 1.1);
         const proven = await provenKill(dir, (pidFile) => recordsPid(pidFile, true));
         expect(proven.kill.seen).toBe(true);
         expect(proven.kill.afterMs).toBeLessThanOrEqual(proven.bound);
@@ -346,7 +349,7 @@ describe('the measurement the kill cases bound themselves by', () => {
         const meter = slackMeter(STEP_MS);
         const until = performance.now() + STEP_MS * 3;
         let spins = 0;
-        // revert: tests/server/machine/hpc/ssh.test.ts:124 => worst = 0;
+        // revert: tests/server/machine/hpc/ssh.test.ts:125 => worst = 0;
         while (performance.now() < until) spins += 1;
         await new Promise<void>((go) => {
             setTimeout(go, STEP_MS);
@@ -359,7 +362,7 @@ describe('the measurement the kill cases bound themselves by', () => {
     it('gives up looking for a kill that never comes at the ceiling it was given', async () => {
         const dir = caseDir();
         const from = performance.now();
-        // revert: tests/server/machine/hpc/ssh.test.ts:166 => let seen = true;
+        // revert: tests/server/machine/hpc/ssh.test.ts:169 => let seen = true;
         const kill = await killSeen(join(dir, 'pid'), from, STEP_MS * 3);
         expect(kill.seen).toBe(false);
         expect(kill.afterMs).toBeGreaterThanOrEqual(STEP_MS * 3);
@@ -368,7 +371,7 @@ describe('the measurement the kill cases bound themselves by', () => {
     it('waits for a stub to record its pid, and says so where none did', async () => {
         const dir = caseDir();
         const pidFile = join(dir, 'up-pid');
-        // revert: tests/server/machine/hpc/ssh.test.ts:155 => return true;
+        // revert: tests/server/machine/hpc/ssh.test.ts:158 => return true;
         expect(await pidUp(join(dir, 'nothing'), STEP_MS * 3)).toBe(false);
         const child = spawn(stubFile(dir, 'up', recordsPid(pidFile, false)));
         expect(await pidUp(pidFile)).toBe(true);
@@ -379,7 +382,7 @@ describe('the measurement the kill cases bound themselves by', () => {
         const dir = caseDir();
         const pidFile = join(dir, 'probe-pid');
         writeFileSync(pidFile, '999999999');
-        // revert: tests/server/machine/hpc/ssh.test.ts:188 => delete
+        // revert: tests/server/machine/hpc/ssh.test.ts:191 => delete
         const cost = await machineCost(dir);
         expect(cost.execMs).toBeGreaterThan(0);
         expect(cost.reapMs).toBeLessThan(WATCH_MS);
@@ -391,7 +394,7 @@ describe('the measurement the kill cases bound themselves by', () => {
         const dir = caseDir();
         const mark = join(dir, 'mark');
         const cost = await machineCost(dir);
-        // revert: tests/server/machine/hpc/ssh.test.ts:223 => break;
+        // revert: tests/server/machine/hpc/ssh.test.ts:226 => break;
         const kill = await killAfterBudget(
             dir,
             (pidFile) => [
@@ -407,7 +410,7 @@ describe('the measurement the kill cases bound themselves by', () => {
 
     it('gives up where every bound the machine allowed cost more than a green is worth', async () => {
         const dir = caseDir();
-        // revert: tests/server/machine/hpc/ssh.test.ts:262 => return { kill, cost, bound };
+        // revert: tests/server/machine/hpc/ssh.test.ts:265 => return { kill, cost, bound };
         await expect(
             provenKill(dir, (pidFile) => recordsPid(pidFile, false), -1, 1)
         ).rejects.toThrow('too loaded');
@@ -416,7 +419,7 @@ describe('the measurement the kill cases bound themselves by', () => {
     it('writes a stub the machine runs, with the body it was given', async () => {
         const dir = caseDir();
         const mark = join(dir, 'ran');
-        // revert: tests/server/machine/hpc/ssh.test.ts:77 => writeFileSync(file, ['#!/bin/sh', ...body, ''].join('\n'), { mode: 0o644 });
+        // revert: tests/server/machine/hpc/ssh.test.ts:78 => writeFileSync(file, ['#!/bin/sh', ...body, ''].join('\n'), { mode: 0o644 });
         const file = stubFile(dir, 'runs', [`echo ran > ${JSON.stringify(mark)}`]);
         const child = spawn(file);
         await new Promise<void>((go) => {
@@ -430,7 +433,7 @@ describe('the measurement the kill cases bound themselves by', () => {
         const dir = caseDir();
         const trapped = join(dir, 'trapped-pid');
         const plain = join(dir, 'plain-pid');
-        // revert: tests/server/machine/hpc/ssh.test.ts:90 => return lines;
+        // revert: tests/server/machine/hpc/ssh.test.ts:91 => return lines;
         const one = spawn(stubFile(dir, 'trapped', recordsPid(trapped, true)));
         const two = spawn(stubFile(dir, 'plain', recordsPid(plain, false)));
         expect(await pidUp(trapped)).toBe(true);

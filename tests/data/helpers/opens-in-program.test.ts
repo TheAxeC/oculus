@@ -1,7 +1,7 @@
 // The one rule both layers tell which program a file opens in by: `open.program_ext` of
-// config/behavior.yml maps each extension that may open to the bundle id of one application. The open
-// endpoint hands a file only to that application, and the cards, the file view and the source tab
-// offer the control only for a name with an entry. The settings reader that requires the map at
+// config/behavior.yml maps each extension that may open to the bundle id of one application. The
+// open endpoint hands a file only to that application, and the cards, the file view and the source
+// tab offer the control only for a name with an entry. The settings reader that requires the map at
 // server start lives here too.
 
 import { describe, expect, it } from 'vitest';

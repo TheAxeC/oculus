@@ -10,8 +10,8 @@
 //
 // The last case is the one that turns the setting on. It writes the served copy's behavior.yml, the
 // engine directory this run made, and puts the file back in a `finally`; the checkout's own file is
-// never touched. The layer runs one worker with `fullyParallel: false` (playwright.config.ts), so no
-// other spec is reading that copy while the case holds it.
+// never touched. The layer runs one worker with `fullyParallel: false` (playwright.config.ts), so
+// no other spec is reading that copy while the case holds it.
 
 import { expect, test, type Page, type Locator } from '@playwright/test';
 import { readEngineFile, writeEngineFile } from '../helpers/hub.ts';

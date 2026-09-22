@@ -1,9 +1,9 @@
 // One scratch note as its own tab, rendered to HTML on the server: the two controls, the title the
 // pane draws, and what the toolbar says about the last save.
 //
-// The catalog and the glyphs are the real config; the note's own text comes from the fs store, whose
-// `fetch` is a stub. The typing itself is a DOM event no server render fires, so what one keystroke
-// does is read off the view's own source at the foot of this file; the wait it starts is
+// The catalog and the glyphs are the real config; the note's own text comes from the fs store,
+// whose `fetch` is a stub. The typing itself is a DOM event no server render fires, so what one
+// keystroke does is read off the view's own source at the foot of this file; the wait it starts is
 // tests/state/life/notes.test.ts and the typing end to end is tests/browser/sources/files.spec.ts.
 
 import { readFileSync } from 'node:fs';
@@ -183,7 +183,7 @@ describe('what one keystroke does', () => {
         return from.slice(0, from.indexOf('\n    }'));
     }
 
-    it('writes the note at once on the first one and waits on the ones after it', () => {
+    it('audits that writes the note at once on the first one and waits on the ones after it', () => {
         const typed = fn('typed');
 
         expect(typed).toContain('const first = writesNow(fresh, touched);');
@@ -192,7 +192,7 @@ describe('what one keystroke does', () => {
         expect(typed.indexOf('void save(true);')).toBeLessThan(typed.indexOf('autosave.poke();'));
     });
 
-    it('takes the fresh flag off once the file is written, so a reload reads the file', () => {
+    it('audits that takes the fresh flag off once the file is written, so a reload reads the file', () => {
         const save = fn('save');
 
         expect(fn('typed')).toContain('void save(true);');

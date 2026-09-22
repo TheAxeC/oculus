@@ -17,11 +17,16 @@
         label: string;
         /** A hue name from state/words/tones.ts. A chip with none is muted. */
         tone?: string;
-        /** A name in `glyphs:`, drawn before the label. Empty draws none, as an unlisted chip's is. */
+        /**
+         * A name in `glyphs:`, drawn before the label. Empty draws none, as an unlisted chip's is.
+         */
         glyph?: string;
         /** Fill the chip with its hue instead of tinting the text. */
         filled?: boolean;
-        /** Makes the chip a toggle the reader presses. A chip given none is a mark and not a control. */
+        /**
+         * Makes the chip a toggle the reader presses. A chip given none is a mark and not a
+         * control.
+         */
         onclick?: (event: MouseEvent) => void;
         /** A toggle chip's own state, which is what a reader is told it is pressing. */
         pressed?: boolean;

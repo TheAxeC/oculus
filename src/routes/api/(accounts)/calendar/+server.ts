@@ -3,9 +3,9 @@
 // page reads the agenda from the `calendar` channel, and this is the refresh, the Connect press and
 // the control that opens one event at its provider.
 //
-// The page never sends an address. `connect` names a configured account and `open` names an event of
-// the state the poller published, so the only addresses this process hands the operating system are
-// the providers' own.
+// The page never sends an address. `connect` names a configured account and `open` names an event
+// of the state the poller published, so the only addresses this process hands the operating system
+// are the providers' own.
 
 import { handleCalendar } from '$lib/server/accounts/calendar/routes';
 import { callbackUrl } from '$lib/server/accounts/connect/oauth';

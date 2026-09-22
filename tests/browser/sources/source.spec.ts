@@ -1,7 +1,7 @@
-// The source tab: the control closing Lit Watch's toolbar opens the feed file as an editable tab, an
-// unsaved edit survives leaving the tab and coming back, since the shell mounts only the active view
-// and the draft belongs to the instance rather than to the component, and a file this machine's mode
-// locks opens as the code window under the line that says so.
+// The source tab: the control closing Lit Watch's toolbar opens the feed file as an editable tab,
+// an unsaved edit survives leaving the tab and coming back, since the shell mounts only the active
+// view and the draft belongs to the instance rather than to the component, and a file this
+// machine's mode locks opens as the code window under the line that says so.
 //
 // Closing a tab is here too, because the question a tab holding an unsaved edit asks is the pane's
 // answer to what the instance holds, which only a rendered page has.
@@ -11,12 +11,17 @@ import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
 import { expect, test } from '@playwright/test';
 import { boot, openView } from '../helpers/rail.ts';
+import { keepServedFiles } from '../helpers/files.ts';
 import { t, tabNamed } from '../helpers/words.ts';
 import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
 
+keepServedFiles();
+
 test.afterAll(sweepScratch);
 
-/** A folder of the spec's own, under the system temporary directory and asserted to be inside it. */
+/**
+ * A folder of the spec's own, under the system temporary directory and asserted to be inside it.
+ */
 function scratch(): string {
     const dir = scratchDir('oculus-source-spec-');
     expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
@@ -67,7 +72,8 @@ test('a Markdown file opens for editing and the preview follows what is typed', 
     const preview = page.locator('[data-source-preview="README.md"]');
     await expect(preview).toBeVisible();
 
-    // What is typed is rendered without a save and without a request: the working copy is the source.
+    // What is typed is rendered without a save and without a request: the working copy is the
+    // source.
     const area = editor.getByRole('textbox');
     await area.fill('## Typed in the spec\n\nA line of it.\n');
     await expect(preview.locator('h2')).toHaveText('Typed in the spec');

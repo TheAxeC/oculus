@@ -2,10 +2,10 @@
 // suffixes, the separator and the leading ellipsis checked here are the words the file holds; the
 // numbers and the paths are the test's own.
 //
-// Every function that reads a clock is handed the moment to read it against, so nothing here depends
-// on when it runs. The dates are built with the local constructor rather than parsed out of a `Z`
-// stamp, since what these produce is local time and a test that pinned an offset would only pass in
-// one timezone.
+// Every function that reads a clock is handed the moment to read it against, so nothing here
+// depends on when it runs. The dates are built with the local constructor rather than parsed out of
+// a `Z` stamp, since what these produce is local time and a test that pinned an offset would only
+// pass in one timezone.
 
 import { describe, expect, it } from 'vitest';
 import {

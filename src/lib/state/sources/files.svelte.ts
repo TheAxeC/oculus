@@ -51,15 +51,17 @@ export function createFiles(entities: EntitiesStore): FilesStore {
     /** The ids with a request in flight, so a second render does not send a second request. */
     const inflight = new Set<string>();
 
-    /** The version of the `files` channel, or 0 before a write has been seen under any watched root. */
+    /**
+     * The version of the `files` channel, or 0 before a write has been seen under any watched root.
+     */
     function version(): number {
         return entities.message('files')?.version ?? 0;
     }
 
     /**
-     * The files of one project. The first call for an id asks the server; a call made after the `files`
-     * version moved asks again, and what is held keeps showing until the answer lands. A project whose
-     * folder is under no watched root keeps what is held until the id is forgotten.
+     * The files of one project. The first call for an id asks the server; a call made after the
+     * `files` version moved asks again, and what is held keeps showing until the answer lands. A
+     * project whose folder is under no watched root keeps what is held until the id is forgotten.
      */
     function files(id: string): FilesState {
         if (id === '') return NOTHING;
@@ -122,7 +124,9 @@ export function createFiles(entities: EntitiesStore): FilesStore {
         }
     }
 
-    /** The rows of an answer, keeping only what carries a path: the page never draws a nameless row. */
+    /**
+     * The rows of an answer, keeping only what carries a path: the page never draws a nameless row.
+     */
     function readRows(value: unknown): FileRow[] {
         if (!Array.isArray(value)) return [];
         const rows: FileRow[] = [];

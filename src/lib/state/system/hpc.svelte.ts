@@ -41,7 +41,9 @@ export function createHpc(entities: EntitiesStore, writes: WritesStore): HpcStor
         return value?.status === 'ok' && value.total > 0 ? `${value.running} ${value.pending}` : '';
     }
 
-    /** Post one command to the HPC endpoint and read its answer, whose fields the caller narrows. */
+    /**
+     * Post one command to the HPC endpoint and read its answer, whose fields the caller narrows.
+     */
     async function command(body: Record<string, string>): Promise<Record<string, unknown>> {
         const response = await fetch('/api/hpc', {
             method: 'POST',

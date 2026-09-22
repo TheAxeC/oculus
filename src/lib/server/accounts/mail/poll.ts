@@ -10,17 +10,17 @@
 // what a press asks for is the state now.
 //
 // The triage notes are the one thing published that no provider gave. They are read from the file
-// at every publish and the file is watched, so a note the skill writes from outside reaches the page
-// without a round of provider calls; a note whose thread has left the plate is dropped from the
-// payload and kept in the file for thirty days.
+// at every publish and the file is watched, so a note the skill writes from outside reaches the
+// page without a round of provider calls; a note whose thread has left the plate is dropped from
+// the payload and kept in the file for thirty days.
 //
 // A machine that names no account publishes `unconfigured` once and polls nothing, so an install
 // with no mailbox costs no timer and no request.
 //
 // The access token an account is polled with lives in a local variable for the length of that
 // account's read and is never held, logged or published. The refresh token is read from the
-// account's file at each poll and goes no further than the token call. No message body is read: what
-// a thread carries is the provider's own snippet.
+// account's file at each poll and goes no further than the token call. No message body is read:
+// what a thread carries is the provider's own snippet.
 
 import { mkdirSync, watch, type FSWatcher } from 'node:fs';
 import { mailKey } from '../../../data/accounts/mail.ts';
@@ -47,7 +47,9 @@ export type MailOptions = {
     dir: string;
     pollMin: number;
     perSignal: number;
-    /** How the providers are called; injected so a test reaches every branch without the network. */
+    /**
+     * How the providers are called; injected so a test reaches every branch without the network.
+     */
     fetcher?: Fetcher;
     /** The moment the payload is stamped with, so a test can pin it. */
     now?: () => Date;
@@ -69,13 +71,20 @@ export type MailWatcher = {
  */
 export const RETRY_MIN = 2;
 
-/** The mode the mail folder is made at, the credential store's own: it holds that account's keys. */
+/**
+ * The mode the mail folder is made at, the credential store's own: it holds that account's keys.
+ */
 const DIR_MODE = 0o700;
 
-/** What one account's last good poll left behind, kept so a failed poll shows it rather than nothing. */
+/**
+ * What one account's last good poll left behind, kept so a failed poll shows it rather than
+ * nothing.
+ */
 type Kept = { threads: PlateThread[]; lastOk: string };
 
-/** The notes a thread carries on the wire: the fields the file holds, and `triaged` always answered. */
+/**
+ * The notes a thread carries on the wire: the fields the file holds, and `triaged` always answered.
+ */
 function triageOf(held: TriageFile, id: string): InboxTriage {
     if (!Object.hasOwn(held.notes, id)) return { triaged: false };
     const note: TriageNote = held.notes[id];
@@ -103,7 +112,9 @@ export function watchMail(hub: Hub, options: MailOptions): MailWatcher {
             status: 'not-connected'
         };
 
-    /** One complete state out of what every account currently says and what the notes file holds. */
+    /**
+     * One complete state out of what every account currently says and what the notes file holds.
+     */
     const publish = (): void => {
         const accounts = options.accounts.map(rowOf);
         const rows: { key: string; thread: PlateThread; account: MailAccountConfig }[] = [];
@@ -158,8 +169,8 @@ export function watchMail(hub: Hub, options: MailOptions): MailWatcher {
 
     /**
      * One account, read to the end or given the state word its failure earned. A file that is not
-     * there yet, or that holds no refresh token, is `not-connected` with the path the reader creates;
-     * that is not a failure and does not shorten the cadence.
+     * there yet, or that holds no refresh token, is `not-connected` with the path the reader
+     * creates; that is not a failure and does not shorten the cadence.
      */
     const pollAccount = async (account: MailAccountConfig): Promise<boolean> => {
         const key = mailKey(account);

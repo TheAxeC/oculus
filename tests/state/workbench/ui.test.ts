@@ -1,7 +1,7 @@
-// The appearance store: the theme, the CRT overlay, the wallpaper, the glyph mode, the terminal size and what each
-// view instance remembers, read and written through a fake storage. Nothing here touches
-// localStorage, and the theme names it accepts are the ones config/appearance.yml lists, so a theme
-// that was dropped from that file cannot come back out of a browser that still holds it.
+// The appearance store: the theme, the CRT overlay, the wallpaper, the glyph mode, the terminal
+// size and what each view instance remembers, read and written through a fake storage. Nothing here
+// touches localStorage, and the theme names it accepts are the ones config/appearance.yml lists, so
+// a theme that was dropped from that file cannot come back out of a browser that still holds it.
 //
 // What a browser that saved nothing starts on is config/appearance.yml's too, so the defaults are
 // asserted against that file rather than against a literal: the first theme of its list, its

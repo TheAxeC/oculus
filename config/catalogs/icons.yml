@@ -134,9 +134,7 @@ icons:
     email: mail
     tasks: list-checks
     snooze: moon
-    sent: send
     writing: signature
-    x_mark: x
     # the three things a terminal pane runs
     terminal_claude: sparkle
     terminal_codex: diamond

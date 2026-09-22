@@ -254,26 +254,26 @@ export function looseChips(root: string): string[] {
 }
 
 describe('the chip audit over every view', () => {
-    it('finds a chip toned by a status, a project type, or nothing else', () => {
+    it('audits that finds a chip toned by a status, a project type, or nothing else', () => {
         expect(looseChips(LIB)).toEqual([]);
     });
 
-    it('lets one file tone its chips through the helper, and no other', () => {
+    it('audits that lets one file tone its chips through the helper, and no other', () => {
         expect(helperFiles(LIB)).toEqual(['views/system/gallery/Gallery.svelte']);
     });
 
-    it('counts the chips there are, so the check above is not vacuous', () => {
+    it('audits that counts the chips there are, so the check above is not vacuous', () => {
         const counted = svelteFiles(LIB).flatMap((file) =>
             chipTags(readFileSync(join(LIB, file), 'utf8'))
         );
         expect(counted.length).toBeGreaterThanOrEqual(9);
     });
 
-    it('finds every tag toned by a hue the palette declares, or by none', () => {
+    it('audits that finds every tag toned by a hue the palette declares, or by none', () => {
         expect(looseTags(LIB, paletteHues())).toEqual([]);
     });
 
-    it('counts the toned and the plain tags, so neither side of the ruling is vacuous', () => {
+    it('audits that counts the toned and the plain tags, so neither side of the ruling is vacuous', () => {
         const tags = svelteFiles(LIB).flatMap((file) =>
             tagTags(readFileSync(join(LIB, file), 'utf8'))
         );
@@ -282,7 +282,7 @@ describe('the chip audit over every view', () => {
         expect(tags.length - toned.length).toBeGreaterThanOrEqual(56);
     });
 
-    it('catches a tag toned by a token no theme paints, and passes the four chip forms', () => {
+    it('audits that catches a tag toned by a token no theme paints, and passes the four chip forms', () => {
         const hues = paletteHues();
         expect(looseTagsIn('<Tag label={one} tone="nonesuch" />', hues)).toEqual([
             '<Tag label={one} tone="nonesuch" />'
@@ -303,7 +303,7 @@ describe('the chip audit over every view', () => {
         }
     });
 
-    it('catches a chip given a tone of its own, and a tag it would have to be', () => {
+    it('audits that catches a chip given a tone of its own, and a tag it would have to be', () => {
         expect(looseChipsIn('<Chip label={one} tone="teal" />')).toEqual([
             '<Chip label={one} tone="teal" />'
         ]);

@@ -1,8 +1,8 @@
 <script lang="ts">
-    // Layer 3, shell. What a drag looks like: the label of the tab being dragged beside the pointer,
-    // and a rectangle over the space the drop would take. It is rendered once, over the whole
-    // window, and it takes no pointer events, so the pane under it still reports where the pointer
-    // is; it is drawn from the drag store and holds nothing of its own.
+    // Layer 3, shell. What a drag looks like: the label of the tab being dragged beside the
+    // pointer, and a rectangle over the space the drop would take. It is rendered once, over the
+    // whole window, and it takes no pointer events, so the pane under it still reports where the
+    // pointer is; it is drawn from the drag store and holds nothing of its own.
     //
     // A drop on a strip is not drawn here. The strip draws its own insertion mark, which is at the
     // place between two tabs that this layer would have to cover them to show.

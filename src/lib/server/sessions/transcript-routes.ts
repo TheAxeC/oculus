@@ -2,9 +2,9 @@
 // everything the request does is here and src/routes/api/(sessions)/transcript/+server.ts is the
 // one line that joins them, the pattern lib/server/content/docs.ts already holds.
 //
-// The path read is never the request's. The id names a session the last published `sessions` payload
-// holds, and the path and the tool come off that record, so the page can ask for a session it can
-// already see and for nothing else. A read, so it is same-origin and carries no write token.
+// The path read is never the request's. The id names a session the last published `sessions`
+// payload holds, and the path and the tool come off that record, so the page can ask for a session
+// it can already see and for nothing else. A read, so it is same-origin and carries no write token.
 
 import { sameOrigin } from '../core/auth.ts';
 import { readTurns } from './stores/turns.ts';

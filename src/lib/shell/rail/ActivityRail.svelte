@@ -11,6 +11,7 @@
         type NavGroup,
         type Section,
         arrange,
+        groupGlyph,
         TEXT_ROW,
         docState,
         documentState,
@@ -38,7 +39,9 @@
     } = client;
 
     type Props = {
-        /** The `nav_groups`-shaped list from the merged config; the page reads it and passes it on. */
+        /**
+         * The `nav_groups`-shaped list from the merged config; the page reads it and passes it on.
+         */
         groups?: NavGroup[];
         /** The `bookmarks` list of the merged config; the page reads it and passes it on. */
         bookmarks?: Bookmark[];
@@ -72,8 +75,8 @@
 
     /**
      * Every bookmark the Docs section draws: the configured ones first, then the reader's own. A
-     * saved one naming a file a configured one already names is left out, since the two would be one
-     * button pressed twice; the configured one wins, as it does everywhere else.
+     * saved one naming a file a configured one already names is left out, since the two would be
+     * one button pressed twice; the configured one wins, as it does everywhere else.
      */
     const marks = $derived([
         ...bookmarks,
@@ -95,8 +98,8 @@
         openView('document', documentState(mark));
     }
 
-    /* A view registered as not listed (the editor, a project, a document) is opened from a card or a
-       bookmark and has nothing to show when opened bare, so the rail draws no button for it. */
+    /* A view registered as not listed (the editor, a project, a document) is opened from a card or
+       a bookmark and has nothing to show when opened bare, so the rail draws no button for it. */
     const sections = $derived(
         arrange(
             views().filter((view) => view.listed !== false),
@@ -120,7 +123,9 @@
         else openView(DOC_VIEW, docState(entry));
     }
 
-    /** What picking one choice of a group's list means: a document by its path, or a view by its id. */
+    /**
+     * What picking one choice of a group's list means: a document by its path, or a view by its id.
+     */
     function pick(section: Section, id: string, event: MouseEvent): void {
         if (!id.startsWith(DOC_PICK)) {
             open(id, event);
@@ -132,8 +137,8 @@
     }
 
     /**
-     * The entries of one group as the choices of its list: its views with their own glyph and words,
-     * then its documents, which carry the document glyph and no badge.
+     * The entries of one group as the choices of its list: its views with their own glyph and
+     * words, then its documents, which carry the document glyph and no badge.
      */
     function groupItems(section: Section): MenuItem[] {
         const items: MenuItem[] = section.items.map((view) => {
@@ -159,26 +164,22 @@
     }
 
     /**
-     * The glyph a group's button carries: the group's own, or its first view's when it has none. A
-     * group holding documents alone carries the document glyph.
+     * The status pair for a registration's badge; absent leaves the accent pair in the stylesheet.
      */
-    function groupGlyph(section: Section): string {
-        if (section.glyph !== undefined) return section.glyph;
-        if (section.items.length === 0) return t('views.doc_glyph');
-        return registrationGlyph(section.items[0]);
-    }
-
-    /** The status pair for a registration's badge; absent leaves the accent pair in the stylesheet. */
     function badgeStyle(tone: string | undefined): string | undefined {
         return tone === undefined
             ? undefined
             : `--badge-bg: var(--c-${tone}); --badge-fg: var(--on-c-${tone})`;
     }
 
-    /** The wallpaper toggle is drawn only where there is one to switch: it is config and a theme. */
+    /**
+     * The wallpaper toggle is drawn only where there is one to switch: it is config and a theme.
+     */
     const offersWallpaper = $derived(wallpaperOnTheme(theme()));
 
-    /** The two text steps say what they cannot do, and a control that cannot be pressed is no stop. */
+    /**
+     * The two text steps say what they cannot do, and a control that cannot be pressed is no stop.
+     */
     const canShrink = $derived((textScale() ?? 1) > 0.7);
     const canGrow = $derived((textScale() ?? 1) < 1.6);
     const canReset = $derived(textScale() !== null);
@@ -216,10 +217,16 @@
 
     let box: HTMLElement | undefined = $state();
 
-    /** Whether the rail holds the keyboard, which decides who gets the focus back when a control goes. */
+    /**
+     * Whether the rail holds the keyboard, which decides who gets the focus back when a control
+     * goes.
+     */
     let holding = false;
 
-    /** The ring as it stood at the last change, so a control leaving it can be told from one arriving. */
+    /**
+     * The ring as it stood at the last change, so a control leaving it can be told from one
+     * arriving.
+     */
     let ring: string[] = [];
 
     // A control the reader's own press makes unavailable (the reset once the text size is back, a
@@ -237,7 +244,10 @@
         if (holding) recoverStop(moved);
     });
 
-    /** One control's place in the browser's focus order: the stop is reached by Tab, the rest by the arrows. */
+    /**
+     * One control's place in the browser's focus order: the stop is reached by Tab, the rest by the
+     * arrows.
+     */
     function stopIndex(id: string): number {
         return id === current ? 0 : -1;
     }
@@ -256,7 +266,9 @@
         });
     }
 
-    /** Put the keyboard on one control of the rail, once the update that moved the stop is drawn. */
+    /**
+     * Put the keyboard on one control of the rail, once the update that moved the stop is drawn.
+     */
     function focusStop(id: string): void {
         queueMicrotask(() => {
             for (const node of box?.querySelectorAll<HTMLElement>('[data-stop]') ?? []) {
@@ -285,7 +297,10 @@
         };
     }
 
-    /** A control reached by the pointer becomes the stop, so the arrows carry on from where the reader is. */
+    /**
+     * A control reached by the pointer becomes the stop, so the arrows carry on from where the
+     * reader is.
+     */
     function entered(event: FocusEvent): void {
         holding = true;
         const target = event.target;
@@ -311,7 +326,8 @@
     <!-- The controls are one stop of the browser's focus order with a ring inside it, which is what
          a toolbar is: the role tells a reader the arrow keys move along it, and it sits inside the
          landmark rather than on it so the rail is still a navigation region. The arrows are
-         answered by each control, so this element needs no tabindex and takes no focus of its own. -->
+         answered by each control, so this element needs no tabindex and takes no focus of its
+         own. -->
     <div
         class="ring"
         role="toolbar"
@@ -327,8 +343,9 @@
             {#each sections as section, index (index)}
                 {@const label = section.label}
                 <!-- A large group is one button with a list beside it, so the rail does not grow an
-                 icon per view; a small one stays a heading over its buttons. The list opens where
-                 the theme menu at the foot does, since `compact` is what fixes it beside the rail. -->
+                     icon per view; a small one stays a heading over its buttons. The list opens
+                     where the theme menu at the foot does, since `compact` is what fixes it beside
+                     the rail. -->
                 {#if label !== null && isFlyout(section)}
                     <div class="flyout" data-group={label} data-chord={section.chord}>
                         <p class="group">{label}</p>
@@ -406,13 +423,13 @@
                 {/if}
             {/each}
 
-            <!-- The reader's own bookmarks. They are not registrations, so they sit under a heading of
-             their own rather than in a section arrange() built. -->
+            <!-- The reader's own bookmarks. They are not registrations, so they sit under a heading
+                 of their own rather than in a section arrange() built. -->
             {#if marks.length > 0}
                 <p class="group">{t('ui.docs')}</p>
-                <!-- Keyed by position, as the sections above are: two of the reader's own bookmarks may
-                 name one file under two labels, and a duplicate key would be an error rather than a
-                 second button. -->
+                <!-- Keyed by position, as the sections above are: two of the reader's own bookmarks
+                     may name one file under two labels, and a duplicate key would be an error
+                     rather than a second button. -->
                 {#each marks as mark, at (at)}
                     <div class="control">
                         <ToolButton
@@ -505,10 +522,10 @@
     }
 
     /* Over a wallpaper the rail goes translucent with the panes, and takes the pane's colour while
-       it does: the two are one surface to the eye once the picture shows through them.
-       The filter makes the rail the stacking context of every fixed thing it holds, its flyout lists
-       and its tooltips, so the rail carries the order that context paints in: above the panes beside
-       it, and below the drag layer at 10 and the overlays above that. */
+       it does: the two are one surface to the eye once the picture shows through them. The filter
+       makes the rail the stacking context of every fixed thing it holds, its flyout lists and its
+       tooltips, so the rail carries the order that context paints in: above the panes beside it,
+       and below the drag layer at 10 and the overlays above that. */
     :global(body.wall) .rail {
         position: relative;
         z-index: 5;

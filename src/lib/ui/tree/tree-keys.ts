@@ -14,8 +14,8 @@ export type KeyRow = {
     /** Whether the row is open; omitted for a row that does not open. */
     open?: boolean;
     /**
-     * Drawn as it is for a reason the keyboard does not own, such as a filter holding a folder open:
-     * Right and Left then step through it and never open or close it.
+     * Drawn as it is for a reason the keyboard does not own, such as a filter holding a folder
+     * open: Right and Left then step through it and never open or close it.
      */
     fixed?: boolean;
 };
@@ -23,7 +23,9 @@ export type KeyRow = {
 /** What one key asks of the tree: the focus moved to a row, or a row opened or closed. */
 export type RowMove = { kind: 'focus' | 'toggle'; id: string };
 
-/** What a row reads off the tree it is drawn in: its place in the focus order and its key handler. */
+/**
+ * What a row reads off the tree it is drawn in: its place in the focus order and its key handler.
+ */
 export type TreeNav = {
     tabindex: (id: string) => number;
     onkeydown: (id: string) => (event: KeyboardEvent) => void;

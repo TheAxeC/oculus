@@ -1,4 +1,5 @@
-// Pure Live HPC parser coverage: each remote format, the batched section split, and empty optional sections.
+// Pure Live HPC parser coverage: each remote format, the batched section split, and empty optional
+// sections.
 import { describe, expect, it } from 'vitest';
 import {
     parseQuota,

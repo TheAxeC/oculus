@@ -202,8 +202,8 @@ describe('the groups of the real config', () => {
             config.direct_chord as string,
             realDocs()
         );
-        // The direct list is what a digit after the direct chord counts into, so it is pinned whole:
-        // a group that grows past the group maximum leaves it, which is a keyboard change.
+        // The direct list is what a digit after the direct chord counts into, so it is pinned
+        // whole: a group that grows past the group maximum leaves it, which is a keyboard change.
         expect(order.direct).toEqual([
             'focus',
             'projects',

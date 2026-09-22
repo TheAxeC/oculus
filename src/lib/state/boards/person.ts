@@ -1,6 +1,6 @@
 // Layer 2, client state. One person, joined to everything the hub knows about them: the registry
-// entry, the organisations they are affiliated to, the joint work that names them, the projects whose
-// `collaborators:` name them, and a student's supervision folder.
+// entry, the organisations they are affiliated to, the joint work that names them, the projects
+// whose `collaborators:` name them, and a student's supervision folder.
 //
 // Pure, so the Person view is tested without a browser: every join reads the snapshot it is given
 // and nothing else. The joins go through the relation tables rather than by scanning, since the
@@ -11,12 +11,16 @@ import type { Entry, Id, Organisation, Person, Project, Snapshot } from '../../d
 import { byKey } from '../../data/helpers/guards.ts';
 import { JOINT_WORK } from './collection.ts';
 
-/** One person and what they are joined to; every join is empty for a key the registry does not hold. */
+/**
+ * One person and what they are joined to; every join is empty for a key the registry does not hold.
+ */
 export type PersonJoin = {
     person: Person | null;
     /** The organisations the entry names, in its own order, so the primary one is first. */
     organisations: Organisation[];
-    /** The entries of the joint-work collection whose `person:` is this key, in the file's order. */
+    /**
+     * The entries of the joint-work collection whose `person:` is this key, in the file's order.
+     */
     jointWork: Entry[];
     /** The projects whose `collaborators:` name this key, by project id. */
     projects: Project[];
@@ -25,8 +29,8 @@ export type PersonJoin = {
 };
 
 /**
- * Every person's name by their key. It is what a collaborator tag, the waiting line, a lane card and
- * the Map's node all draw, so the four of them read this one rule and a person renamed in the
+ * Every person's name by their key. It is what a collaborator tag, the waiting line, a lane card
+ * and the Map's node all draw, so the four of them read this one rule and a person renamed in the
  * registry is renamed on every surface at once.
  */
 export function personNames(snapshot: Snapshot | null): Record<Id, string> {

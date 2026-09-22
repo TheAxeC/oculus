@@ -1,10 +1,10 @@
-// Four behaviours of the views that only a rendered page holds: a tooltip closing when an overlay
-// takes focus, the two places a long value meets the edge of its card, and which of an intro's two
-// paths filters the markup it is given.
+// The behaviours of the views that only a rendered page holds: a tooltip closing when an overlay
+// takes focus, the two places a long value meets the edge of its card, which of an intro's two
+// paths filters the markup it is given, and where a tree row's controls sit in a wide pane.
 //
-// The unit suite reads all four off the source, because a cut is a layout effect no server render
-// measures and DOMPurify has no document in node. What is measured here is the box the reader ends
-// up with and the elements Chrome kept.
+// The unit suite reads them off the source, because a cut and a box are layout effects no server
+// render measures and DOMPurify has no document in node. What is measured here is the box the
+// reader ends up with and the elements Chrome kept.
 
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { boot, openView } from '../helpers/rail.ts';
@@ -124,4 +124,61 @@ test('an intro filters a hub value and draws a catalog line as it is written', a
     const catalogIntro = page.locator('.intro').first();
     await expect(catalogIntro.locator('b').first()).toHaveText('application domain');
     expect(alerts).toEqual([]);
+});
+
+// revert: src/lib/ui/tree/TreeItem.svelte:271 => flex: 1 1 auto;
+test("a tree row's controls follow its name rather than the pane's edge", async ({ page }) => {
+    await boot(page);
+    await openView(page, 'files', t('views.files'));
+    const row = page.locator('[data-fs-row="hub:"] [role="treeitem"]').first();
+    await row.hover();
+    const name = row.locator('.name').first();
+    const actions = row.locator('.actions').first();
+    await expect(actions).toBeVisible();
+    const [rowBox, nameBox, actionBox] = await Promise.all([
+        row.boundingBox(),
+        name.boundingBox(),
+        actions.boundingBox()
+    ]);
+    expect(rowBox).not.toBeNull();
+    expect(nameBox).not.toBeNull();
+    expect(actionBox).not.toBeNull();
+    if (rowBox === null || nameBox === null || actionBox === null) return;
+    // the controls start beside the name
+    expect(actionBox.x - (nameBox.x + nameBox.width)).toBeLessThan(80);
+    // and the row still reaches far past them, which is the pane's own width
+    expect(rowBox.x + rowBox.width - (actionBox.x + actionBox.width)).toBeGreaterThan(200);
+});
+
+// revert: src/lib/ui/tree/TreeItem.svelte:214 => over={undefined}
+test("a tree row's words open while the pointer is anywhere over the row", async ({ page }) => {
+    await boot(page);
+    await openView(page, 'files', t('views.files'));
+    const row = page.locator('[data-fs-row="hub:"] [role="treeitem"]').first();
+    await expect(row).toBeVisible();
+    const box = await row.boundingBox();
+    expect(box).not.toBeNull();
+    if (box === null) return;
+
+    // the space past the row's parts, which the name's own button no longer covers
+    await page.mouse.move(box.x + box.width - 20, box.y + box.height / 2);
+    await expect(page.locator('span.bubble:not([hidden])')).toHaveCount(1);
+});
+
+// revert: src/lib/ui/tree/TreeItem.svelte:185 => delete
+test("a press on a tree row's own space opens it, as a press on its name does", async ({
+    page
+}) => {
+    await boot(page);
+    await openView(page, 'files', t('views.files'));
+    await page.locator('[data-fs-row="hub:"]').getByRole('button').first().click();
+    const row = page.locator('[data-fs-row="hub:README.md"] [role="treeitem"]');
+    await expect(row).toBeVisible();
+    const box = await row.boundingBox();
+    expect(box).not.toBeNull();
+    if (box === null) return;
+
+    // the space past the row's parts, which the name's own button no longer covers
+    await page.mouse.click(box.x + box.width - 20, box.y + box.height / 2);
+    await expect(page.getByRole('tab', { name: 'README.md' })).toHaveCount(1);
 });

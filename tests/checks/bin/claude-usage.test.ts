@@ -1,4 +1,5 @@
-// Layer 4, test. The Claude status-line command preserves its input atomically and prints only present status fields.
+// Layer 4, test. The Claude status-line command preserves its input atomically and prints only
+// present status fields.
 
 import { readFileSync, readdirSync, rmSync } from 'node:fs';
 import { join } from 'node:path';

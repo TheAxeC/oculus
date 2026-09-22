@@ -27,10 +27,10 @@ export type FieldKind =
     'sub' | 'status' | 'chips' | 'meta' | 'body' | 'link' | 'person' | 'pairs' | 'text';
 
 /**
- * One field of one entry, ready to draw: the kind decides the markup, `values` carries the words.
- * A `text`, `sub`, `status`, `body`, `link` or `person` field has exactly one value; `chips` has one per tag,
- * `meta` one per label-value pair and `pairs` one per key of a map, each already joined, since a
- * Chip takes a label and nothing else.
+ * One field of one entry, ready to draw: the kind decides the markup, `values` carries the words. A
+ * `text`, `sub`, `status`, `body`, `link` or `person` field has exactly one value; `chips` has one
+ * per tag, `meta` one per label-value pair and `pairs` one per key of a map, each already joined,
+ * since a Chip takes a label and nothing else.
  */
 export type Drawn = {
     field: string;
@@ -164,7 +164,9 @@ function wordsOf(value: unknown): string[] {
     return items.map(textOf).filter((word): word is string => word !== undefined);
 }
 
-/** One chip per `{ label, value }` pair of a metalist, the two joined; a pair with neither is none. */
+/**
+ * One chip per `{ label, value }` pair of a metalist, the two joined; a pair with neither is none.
+ */
 function pairsOf(value: unknown): string[] {
     if (!Array.isArray(value)) return wordsOf(value);
     const chips: string[] = [];
@@ -277,7 +279,9 @@ export function hrefOf(value: string): string {
     return `/api/file/${HUB_ROOT}/${parts.join('/')}`;
 }
 
-/** Whether a `link` or `url` value is a path inside the hub, which hrefOf serves through api/file. */
+/**
+ * Whether a `link` or `url` value is a path inside the hub, which hrefOf serves through api/file.
+ */
 export function isHubPath(value: string): boolean {
     return value !== '' && !ADDRESSED.test(value) && !HOSTED.test(value);
 }
@@ -511,9 +515,9 @@ function typeOf(project: Project): string {
  * The projects that name one entry, grouped by type with a count each.
  *
  * Which projects those are is the collection's own question and has three answers: funding is the
- * manifests' `funding:` tags, a joint work is the `collaborators:` tags naming its person, and every
- * other collection has no project-side inverse, so it is the entry's own `related:` list of ids.
- * A related id no project of the snapshot holds is left out rather than drawn as a dead link.
+ * manifests' `funding:` tags, a joint work is the `collaborators:` tags naming its person, and
+ * every other collection has no project-side inverse, so it is the entry's own `related:` list of
+ * ids. A related id no project of the snapshot holds is left out rather than drawn as a dead link.
  */
 export function crossLinks(
     entry: Entry,

@@ -1,4 +1,5 @@
-// Live HPC action tests cover the job id gate, cached-path shape, candidate ladder, and refusal before a runner is called.
+// Live HPC action tests cover the job id gate, cached-path shape, candidate ladder, and refusal
+// before a runner is called.
 import { describe, expect, it, vi } from 'vitest';
 import { cancel, log, safePath, validId } from '../../../../src/lib/server/machine/hpc/actions.ts';
 describe('HPC actions', () => {

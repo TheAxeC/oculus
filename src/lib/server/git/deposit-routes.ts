@@ -48,7 +48,9 @@ export const ACTIONS = [
 /** The actions that write outside this machine or over `code/`, and therefore need the confirm. */
 export const CONFIRMED = ['commit', 'push', 'snapshot', 'createBranch', 'switchBranch'];
 
-/** What one action answers: the outcome, plus the plan or the branches on the two that read them. */
+/**
+ * What one action answers: the outcome, plus the plan or the branches on the two that read them.
+ */
 export type DepositAnswer = Outcome & { plan?: Plan | null; branches?: Branch[] };
 
 /** One action, the project it is for, and whatever fields it takes. */
@@ -65,7 +67,9 @@ export type DepositOptions = {
     idsFor?: () => string[];
     /** What a GET answers; the real mirror state when absent. */
     stateFor?: (id: string) => Promise<MirrorState | null>;
-    /** What the real operations run with: the context's plan memory, the mirrors folder, the hub. */
+    /**
+     * What the real operations run with: the context's plan memory, the mirrors folder, the hub.
+     */
     deposit?: ServerDepositOptions;
 };
 
@@ -114,17 +118,17 @@ function operate(with_: ServerDepositOptions): DepositRun {
 }
 
 /**
- * The hub's own project ids, and the ones the last published portfolio payload named. The hub is the
- * one the engine directory says, so a project the payload does not carry, and every project before
- * the first publish, is still a project this endpoint answers for.
+ * The hub's own project ids, and the ones the last published portfolio payload named. The hub is
+ * the one the engine directory says, so a project the payload does not carry, and every project
+ * before the first publish, is still a project this endpoint answers for.
  */
 export function knownIds(published: string[] = [], engine?: string): string[] {
     const ids = new Set<string>(published);
     try {
         for (const id of projectIds({ engine })) ids.add(id);
     } catch {
-        // A caller that names no engine, or one whose configuration does not read, still answers for
-        // the ids it supplied.
+        // A caller that names no engine, or one whose configuration does not read, still answers
+        // for the ids it supplied.
     }
     return [...ids];
 }

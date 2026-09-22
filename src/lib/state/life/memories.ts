@@ -1,10 +1,10 @@
 // Layer 2, client state, pure. What a refused upload and a failed read of the wall read as, and the
 // size the page checks a file against before it encodes one.
 //
-// The endpoint answers one word (`name`, `data`, `taken`, `unwritable`) or a sentence of its own for a
-// request it would not read at all, and the page never draws either: DESIGN.md's rule for the deck
-// write is that the view shows a sentence of its own per refusal, and this is that map for the wall.
-// A word this does not know gets the general sentence.
+// The endpoint answers one word (`name`, `data`, `taken`, `unwritable`) or a sentence of its own
+// for a request it would not read at all, and the page never draws either: DESIGN.md's rule for the
+// deck write is that the view shows a sentence of its own per refusal, and this is that map for the
+// wall. A word this does not know gets the general sentence.
 //
 // The limit is the server's, imported through no server module: `state/` may not reach `server/`,
 // so the number is declared here and `server/content/memories.ts` is what enforces it, with the

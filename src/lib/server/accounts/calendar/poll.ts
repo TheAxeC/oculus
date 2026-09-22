@@ -1,7 +1,7 @@
 // Layer 2, server. The calendar watcher publishes one complete state on the `calendar` channel, in
-// the shape of the Live HPC watcher: every account read at the configured cadence, the short cadence
-// while a provider is not answering, the last good events kept under the state word, one poll at a
-// time, and a refresh a control can press.
+// the shape of the Live HPC watcher: every account read at the configured cadence, the short
+// cadence while a provider is not answering, the last good events kept under the state word, one
+// poll at a time, and a refresh a control can press.
 //
 // The cadence is each account's own. An account that failed is due again after RETRY_MIN and one
 // that answered after poll_min, the one timer fires at the earliest of those times, and a round
@@ -38,7 +38,9 @@ export type CalendarOptions = {
     pollMin: number;
     daysBack: number;
     daysAhead: number;
-    /** How the providers are called; injected so a test reaches every branch without the network. */
+    /**
+     * How the providers are called; injected so a test reaches every branch without the network.
+     */
     fetcher?: Fetcher;
     /** The moment the window is measured from, so a test can pin it. */
     now?: () => Date;
@@ -53,7 +55,10 @@ export type CalendarWatcher = { refresh(): Promise<void>; close(): void };
  */
 export const RETRY_MIN = 2;
 
-/** What one account's last good poll left behind, kept so a failed poll shows it rather than nothing. */
+/**
+ * What one account's last good poll left behind, kept so a failed poll shows it rather than
+ * nothing.
+ */
 type Kept = { calendars: CalendarListEntry[]; events: CalendarEvent[]; lastOk: string };
 
 /** The window the agenda covers, from `days_back` before the moment to `days_ahead` after it. */
@@ -139,8 +144,8 @@ export function watchCalendar(hub: Hub, options: CalendarOptions): CalendarWatch
 
     /**
      * One account, read to the end or given the state word its failure earned. A file that is not
-     * there yet, or that holds no refresh token, is `not-connected` with the path the reader creates;
-     * that is not a failure and does not shorten the cadence.
+     * there yet, or that holds no refresh token, is `not-connected` with the path the reader
+     * creates; that is not a failure and does not shorten the cadence.
      */
     const pollAccount = async (account: CalendarAccountConfig): Promise<boolean> => {
         const key = calendarKey(account);

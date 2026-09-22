@@ -13,17 +13,18 @@
 </script>
 
 <script lang="ts">
-    // Layer 3, view. A local HTML file under a configured root opens as a tab. The file is the manuals of cathedra
-    // and game-engine today, and the bookmarks in config/layout.yml are what the rail offers.
+    // Layer 3, view. A local HTML file under a configured root opens as a tab. The file is the
+    // manuals of cathedra and game-engine today, and the bookmarks in config/layout.yml are what
+    // the rail offers.
     //
     // The document is an iframe rather than markup pulled into the page: the manuals are whole
     // documents with their own stylesheets, scripts and relative assets, and an iframe is the one
-    // thing that gives them their own document to be. `allow-same-origin allow-scripts` is what they
-    // need to work at all: same-origin so the browser lets their own stylesheets, images and storage
-    // load from api/file, scripts so their own navigation and search run. Same-origin means the frame
-    // is not walled off from this page's origin, so it could reach the page through window.parent;
-    // the file it holds is the owner's own document from the owner's own disk, which is the same
-    // ground api/docs renders a README on.
+    // thing that gives them their own document to be. `allow-same-origin allow-scripts` is what
+    // they need to work at all: same-origin so the browser lets their own stylesheets, images and
+    // storage load from api/file, scripts so their own navigation and search run. Same-origin means
+    // the frame is not walled off from this page's origin, so it could reach the page through
+    // window.parent; the file it holds is the owner's own document from the owner's own disk, which
+    // is the same ground api/docs renders a README on.
 
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
@@ -80,7 +81,8 @@
         min-height: 0;
     }
 
-    /* The frame is the body: the document inside it scrolls, so the pane does not scroll around it. */
+    /* The frame is the body: the document inside it scrolls, so the pane does not scroll around
+       it. */
     .frame {
         display: block;
         width: 100%;

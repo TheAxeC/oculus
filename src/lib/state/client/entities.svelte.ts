@@ -76,11 +76,15 @@ export function createEntities(): EntitiesStore {
         hpc: () => (payload('hpc') as HpcPayload | undefined) ?? null,
         /** The latest calendar agenda, or null before the server's first message. */
         calendar: () => (payload('calendar') as CalendarPayload | undefined) ?? null,
-        /** The latest inbox plate and its triage notes, or null before the server's first message. */
+        /**
+         * The latest inbox plate and its triage notes, or null before the server's first message.
+         */
         inbox: () => (payload('inbox') as InboxPayload | undefined) ?? null,
         /** The Claude and Codex subscription windows and seven-day token totals. */
         usage: () => (payload('usage') as UsagePayload | undefined) ?? null,
-        /** What the audit scan found and what the reader has parked, or null before the first scan. */
+        /**
+         * What the audit scan found and what the reader has parked, or null before the first scan.
+         */
         audit: () => (payload('audit') as AuditPayload | undefined) ?? null
     };
 }

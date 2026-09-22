@@ -48,7 +48,9 @@ entries:
 const TOKEN = mintToken();
 const HOST = '127.0.0.1:8791';
 
-/** A synthetic hub with a log beside it, every path asserted to be under the temporary directory. */
+/**
+ * A synthetic hub with a log beside it, every path asserted to be under the temporary directory.
+ */
 function target(keep = 500): WriteTarget {
     const dir = scratchDir('oculus-changes-');
     expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
@@ -294,7 +296,8 @@ describe('what each writer records', () => {
         expect(session[0]).toMatchObject({
             kind: 'session',
             // The fixture keeps the overrides file inside the hub, so the record names it the way
-            // it names every hub file; on a real machine it sits under ~/.oculus and stays absolute.
+            // it names every hub file; on a real machine it sits under ~/.oculus and stays
+            // absolute.
             file: 'sessions.json',
             key: 'sess-1',
             field: 'hidden',
@@ -445,8 +448,8 @@ describe('the log file', () => {
                 }
             ]);
         }
-        // Eighteen lines is under twice the cap, so the file still holds every one of them; the page
-        // is the page size and not the cap, so no row is out of the view's reach.
+        // Eighteen lines is under twice the cap, so the file still holds every one of them; the
+        // page is the page size and not the cap, so no row is out of the view's reach.
         expect(lines(into)).toHaveLength(18);
         const page = readChanges(log);
         expect(page).toHaveLength(18);

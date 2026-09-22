@@ -1,4 +1,5 @@
-// Layer 2, client state. Pure formatting and tone choices for the Live HPC view keep display policy out of its components.
+// Layer 2, client state. Pure formatting and tone choices for the Live HPC view keep display policy
+// out of its components.
 import type { HpcJob, HpcPartition } from '../../data/model.ts';
 export type {
     HpcJob,

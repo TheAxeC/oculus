@@ -70,8 +70,8 @@ function mergeText(
  * Root config files, the catalogs folder's files and every text fragment, all named relative to
  * config and sorted.
  *
- * local.yml is left out by name: it is the machine's own and loadLocal reads it, so a key it carries
- * is never merged into the map and never reported as defined in two files.
+ * local.yml is left out by name: it is the machine's own and loadLocal reads it, so a key it
+ * carries is never merged into the map and never reported as defined in two files.
  */
 function configNames(dir: string): string[] {
     const names = readdirSync(dir)
@@ -110,9 +110,9 @@ export function configDir(engine: string): string {
 
 /**
  * Merge root config files and catalog fragments into one map. Files are read in name order and
- * local.yml is not one of them. A duplicate top-level key or catalog leaf is a finding and the later
- * file wins. Invalid files are findings and contribute nothing; a missing config directory is a
- * finding and an empty map.
+ * local.yml is not one of them. A duplicate top-level key or catalog leaf is a finding and the
+ * later file wins. Invalid files are findings and contribute nothing; a missing config directory is
+ * a finding and an empty map.
  *
  * Every finding is worded after the merge, from the catalog the merge produced. A finding key that
  * catalog lacks (config/text/findings.yml itself does not parse, or there is no config directory to
@@ -203,7 +203,9 @@ class TextNotAMap extends Error {
     }
 }
 
-/** Flatten a nested map of strings to dotted keys. Values are strings; anything else is an error. */
+/**
+ * Flatten a nested map of strings to dotted keys. Values are strings; anything else is an error.
+ */
 export function flattenText(node: unknown, prefix = ''): Record<string, string> {
     const flat: Record<string, string> = {};
     if (typeof node !== 'object' || node === null || Array.isArray(node)) {

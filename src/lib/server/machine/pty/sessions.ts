@@ -28,7 +28,9 @@ export const SCROLLBACK_LINES = 2000;
 /** The widest geometry accepted from the page; a terminal larger than this is not a terminal. */
 export const MAX_GEOMETRY = 2000;
 
-/** The name a terminal gets when the starter named nothing is its id, so the field is never empty. */
+/**
+ * The name a terminal gets when the starter named nothing is its id, so the field is never empty.
+ */
 const NAME_OPTION = '@oculus_name';
 
 /**

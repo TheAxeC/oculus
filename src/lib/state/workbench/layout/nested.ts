@@ -36,8 +36,8 @@ export function showsPage(held: readonly Page[], id: string, wanted: string): bo
 }
 
 /**
- * Whether drawing `nestedId` draws `hostId`. It is what says a page may not be shown inside another:
- * a page reached from itself would draw for ever.
+ * Whether drawing `nestedId` draws `hostId`. It is what says a page may not be shown inside
+ * another: a page reached from itself would draw for ever.
  */
 export function containsPage(held: readonly Page[], hostId: string, nestedId: string): boolean {
     return showsPage(held, nestedId, hostId);
@@ -46,8 +46,8 @@ export function containsPage(held: readonly Page[], hostId: string, nestedId: st
 /**
  * Whether `nestedId` may be shown inside `hostId`: both pages exist, the two are not one page, the
  * nested page does not draw the host, and the host does not draw the nested page already. The last
- * of these is what keeps one page to one place in a host: a page drawn twice would be one page whose
- * two drawings each mount its views.
+ * of these is what keeps one page to one place in a host: a page drawn twice would be one page
+ * whose two drawings each mount its views.
  */
 export function embeddable(held: readonly Page[], hostId: string, nestedId: string): boolean {
     if (nestedId === hostId) return false;
@@ -93,8 +93,8 @@ export type Refusal = 'unknown' | 'loop' | 'twice';
 /**
  * The leaves of a tree its page may not draw, in the order they are drawn: a leaf naming no page of
  * the list, a leaf that closes a loop, and the second leaf drawing a page that page already draws.
- * The first drawing of a page is the one kept, so a tree is judged by what it draws twice and not by
- * the leaf that drew it first.
+ * The first drawing of a page is the one kept, so a tree is judged by what it draws twice and not
+ * by the leaf that drew it first.
  */
 export function refusedLeaves(
     held: readonly Page[],
@@ -164,7 +164,9 @@ function withWorkbench(held: Pages, id: string, workbench: Page['workbench']): P
     };
 }
 
-/** One tree with the leaves at these paths turned into empty panes, and the rest of it as it was. */
+/**
+ * One tree with the leaves at these paths turned into empty panes, and the rest of it as it was.
+ */
 function withoutLeaves(node: Layout, path: number[], paths: number[][]): Layout {
     if (node.kind === 'page') {
         return paths.some((one) => samePath(one, path)) ? emptyPane() : node;
@@ -179,8 +181,8 @@ function withoutLeaves(node: Layout, path: number[], paths: number[][]): Layout 
 }
 
 /**
- * Every page with the leaves naming `id` taken out, for a page that is going: the space goes back to
- * the neighbour, as taking a shown page out by its own control gives it back.
+ * Every page with the leaves naming `id` taken out, for a page that is going: the space goes back
+ * to the neighbour, as taking a shown page out by its own control gives it back.
  */
 export function clearPage(held: Pages, id: string): Pages {
     const pages = held.pages.map((page) => {

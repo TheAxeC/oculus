@@ -6,14 +6,14 @@
 // keeps documents out of the snapshot ("documents on demand"), so this is the one way a README
 // reaches the page.
 //
-// A request names one of three things. `project` with `name` is one of that project's own documents;
-// `hub` is a path relative to the research hub, which is what the `docs:` list of config/layout.yml
-// offers in the rail; `manual` is the engine's own HELP.md and takes no path. Everything else is a
-// 404 naming what was wrong.
+// A request names one of three things. `project` with `name` is one of that project's own
+// documents; `hub` is a path relative to the research hub, which is what the `docs:` list of
+// config/layout.yml offers in the rail; `manual` is the engine's own HELP.md and takes no path.
+// Everything else is a 404 naming what was wrong.
 //
 // The path read is the reader's, never the request's: the id names a project the server already
-// holds in its portfolio, the name is one of the Markdown literals below, and the join of the two is
-// checked against the hub again before the file is opened. A request naming anything else is
+// holds in its portfolio, the name is one of the Markdown literals below, and the join of the two
+// is checked against the hub again before the file is opened. A request naming anything else is
 // answered 404 and nothing is opened.
 //
 // The folder comes from the snapshot the request carries, so one document costs one file read. A
@@ -160,7 +160,10 @@ function folderOf(into: DocTarget, id: string): string | null {
     return null;
 }
 
-/** Whether an address is one the browser resolves itself: a scheme, a page anchor, or an absolute path. */
+/**
+ * Whether an address is one the browser resolves itself: a scheme, a page anchor, or an absolute
+ * path.
+ */
 const ABSOLUTE = /^(?:[a-z][a-z0-9+.-]*:|\/\/|\/|#)/i;
 
 /** The file route's address for one path under one root, each segment escaped on its own. */
@@ -180,7 +183,9 @@ function climbs(path: string): boolean {
     return path.split(/[\\/]/).includes('..');
 }
 
-/** An attribute value as markup, so a title or an alt carrying a quote stays inside its attribute. */
+/**
+ * An attribute value as markup, so a title or an alt carrying a quote stays inside its attribute.
+ */
 function attribute(value: string): string {
     return value
         .replace(/&/g, '&amp;')
@@ -192,12 +197,13 @@ function attribute(value: string): string {
 /**
  * One document's Markdown as HTML, with a figure beside it drawn through the file route: a relative
  * image source is resolved against the document's own folder and addressed under `base.root`, which
- * is the one way a `<img src="figures/one.png">` in a hub document reaches the reader. An address the
- * browser resolves on its own (a scheme, an absolute path) is left as it was written, and a document
- * with no folder to resolve against (the engine's own manual) keeps every source it carries.
+ * is the one way a `<img src="figures/one.png">` in a hub document reaches the reader. An address
+ * the browser resolves on its own (a scheme, an absolute path) is left as it was written, and a
+ * document with no folder to resolve against (the engine's own manual) keeps every source it
+ * carries.
  *
- * The renderer is this call's own `Marked`, never `marked.use`, so nothing here changes how any other
- * reader of the package renders.
+ * The renderer is this call's own `Marked`, never `marked.use`, so nothing here changes how any
+ * other reader of the package renders.
  */
 export function renderMarkdown(
     text: string,
@@ -229,7 +235,9 @@ export function renderMarkdown(
     return reader.parse(text, { async: false });
 }
 
-/** One read file as the endpoint's answer, or the 404 the read failed with, in the catalog's words. */
+/**
+ * One read file as the endpoint's answer, or the 404 the read failed with, in the catalog's words.
+ */
 function answer(
     path: string,
     base: { root: string; folder: string } | null,
@@ -263,11 +271,11 @@ export function renderDoc(into: DocTarget, id: string, name: string): Response {
 }
 
 /**
- * One Markdown document of the hub, named by a path relative to it: the documents the `docs:` list of
- * config/layout.yml offers in the rail. Only a Markdown file is served, since nothing else renders,
- * and the joined path is checked against the hub again before the file is opened, so a path climbing
- * out of it is a 404 and nothing is opened. The hub's own files are already served to this page by
- * api/file under the `hub` root; this is the same ground, rendered as prose.
+ * One Markdown document of the hub, named by a path relative to it: the documents the `docs:` list
+ * of config/layout.yml offers in the rail. Only a Markdown file is served, since nothing else
+ * renders, and the joined path is checked against the hub again before the file is opened, so a
+ * path climbing out of it is a 404 and nothing is opened. The hub's own files are already served to
+ * this page by api/file under the `hub` root; this is the same ground, rendered as prose.
  */
 export function renderHubDoc(into: DocTarget, path: string): Response {
     if (path === '' || !path.endsWith('.md')) {
@@ -279,8 +287,8 @@ export function renderHubDoc(into: DocTarget, path: string): Response {
 }
 
 /**
- * The file config/layout.yml sits in, which is what a document's finding names. The config directory
- * rather than the engine's own folder, so a run pointed at a copy names the file it read.
+ * The file config/layout.yml sits in, which is what a document's finding names. The config
+ * directory rather than the engine's own folder, so a run pointed at a copy names the file it read.
  */
 export function layoutFile(engine: string): string {
     return join(configDir(engine), 'layout.yml');
@@ -289,11 +297,11 @@ export function layoutFile(engine: string): string {
 /**
  * The ways the `docs:` list of config/layout.yml fails to draw, as findings: an entry that is not a
  * map of three strings, a group `nav_groups` does not name, a path that leaves the hub, a path with
- * no file at it, a directory, and a file that is not Markdown, which is all this route renders. It is the
- * same rule readRoots applies to a root whose directory is not on this machine: what the config
- * names and what is on the disk are checked where the disk is, and a finding is reported and never
- * repaired, so a document whose file has moved shows up in the Findings view rather than as a rail
- * button that opens an empty tab.
+ * no file at it, a directory, and a file that is not Markdown, which is all this route renders. It
+ * is the same rule readRoots applies to a root whose directory is not on this machine: what the
+ * config names and what is on the disk are checked where the disk is, and a finding is reported and
+ * never repaired, so a document whose file has moved shows up in the Findings view rather than as a
+ * rail button that opens an empty tab.
  */
 export function docFindings(config: Record<string, unknown>, hub: string, file: string): Finding[] {
     const findings: Finding[] = [];
@@ -372,7 +380,9 @@ export function docFindings(config: Record<string, unknown>, hub: string, file: 
     return findings;
 }
 
-/** The one file of the engine directory this route serves: oculus's own manual, beside DESIGN.md. */
+/**
+ * The one file of the engine directory this route serves: oculus's own manual, beside DESIGN.md.
+ */
 export const MANUAL = 'HELP.md';
 
 /**

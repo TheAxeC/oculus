@@ -375,8 +375,8 @@ describe("the reader's own bookmarks", () => {
         const { file } = bookmarksFile();
         const read = readBookmarks(file);
 
-        // The form that adds the first bookmark draws its controls from this, and the file the first
-        // write makes carries the same three fields.
+        // The form that adds the first bookmark draws its controls from this, and the file the
+        // first write makes carries the same three fields.
         expect(read.entries).toEqual([]);
         expect(read.schema).toEqual([
             { field: 'label', type: 'text', label: 'Label', required: true },

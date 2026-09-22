@@ -6,9 +6,10 @@
     // muted row.
     //
     // A row is the file's name with its folder and its line counts after it, its status letter in
-    // the column at the right edge, and pressing it opens that path's diff, staged or as the worktree
-    // has it; the controls shown on the row are the diff again, the stage or unstage, and the discard
-    // of a changed path. Every press is reported to the view, which owns the writes and the confirm.
+    // the column at the right edge, and pressing it opens that path's diff, staged or as the
+    // worktree has it; the controls shown on the row are the diff again, the stage or unstage, and
+    // the discard of a changed path. Every press is reported to the view, which owns the writes and
+    // the confirm.
     //
     // The colour of a letter is state/sources/repositories.ts's statusStyle() and the line counts
     // are shared/changes/ChangeCounts.svelte, which is what the session views' Changes panel draws

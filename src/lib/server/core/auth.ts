@@ -30,9 +30,9 @@ export function allowedOrigin(origin: string | undefined): boolean {
  * Whether a request came from this application's own page.
  *
  * `Sec-Fetch-Site: same-origin` is the browser saying so, and `none` is a request the user made
- * themselves (a typed address, a bookmark). Otherwise the Origin must name this machine, or the very
- * host the request was sent to. A request with neither header is refused: every browser sends one,
- * so their absence is a client this endpoint has no reason to answer.
+ * themselves (a typed address, a bookmark). Otherwise the Origin must name this machine, or the
+ * very host the request was sent to. A request with neither header is refused: every browser sends
+ * one, so their absence is a client this endpoint has no reason to answer.
  */
 export function sameOrigin(request: Request, host: string): boolean {
     const site = request.headers.get('sec-fetch-site');

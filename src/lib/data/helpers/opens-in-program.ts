@@ -5,10 +5,10 @@
 // One rule, imported by both layers: the open endpoint hands a file only to the application its
 // extension names, and the cards, the file view and the source tab offer "Open in its program" only
 // for a name with such an entry. The name is all the page can see, so what the name cannot tell (an
-// execute bit, a Finder alias, a file that cannot be read) is refused by the server when the control
-// is pressed rather than hidden beforehand. Naming the program per extension, rather than leaving it
-// to the machine's default for the type, is what keeps a per-file Open With choice or a changed
-// default from handing a document to a program that runs it.
+// execute bit, a Finder alias, a file that cannot be read) is refused by the server when the
+// control is pressed rather than hidden beforehand. Naming the program per extension, rather than
+// leaving it to the machine's default for the type, is what keeps a per-file Open With choice or a
+// changed default from handing a document to a program that runs it.
 //
 // The page reads the map out of the configuration it was sent, which is empty until the config
 // channel's first message lands, so no control is drawn before then; the server reads the map from
@@ -19,13 +19,19 @@ import { fields } from './guards.ts';
 /** An extension with its dot, lowercased, to the bundle id of the application that opens it. */
 export type ProgramApps = Record<string, string>;
 
-/** What an extension key of the map looks like: a dot and one segment with no dot, slash or space. */
+/**
+ * What an extension key of the map looks like: a dot and one segment with no dot, slash or space.
+ */
 const EXTENSION = /^\.[^./\s]+$/;
 
-/** What a bundle id looks like: two or more dot-separated segments of letters, digits and dashes. */
+/**
+ * What a bundle id looks like: two or more dot-separated segments of letters, digits and dashes.
+ */
 const BUNDLE_ID = /^[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+$/;
 
-/** The extension of the last segment of a path, lowercased and with its dot, or the empty string. */
+/**
+ * The extension of the last segment of a path, lowercased and with its dot, or the empty string.
+ */
 function extension(name: string): string {
     const base =
         name
@@ -42,9 +48,9 @@ export function isBundleId(value: string): boolean {
 }
 
 /**
- * The map `open.program_ext` holds, its extensions lowercased, and null for a configuration carrying
- * no usable map: a missing block, a value that is not a map, a key that is not an extension with its
- * dot, or a value that is not a bundle id.
+ * The map `open.program_ext` holds, its extensions lowercased, and null for a configuration
+ * carrying no usable map: a missing block, a value that is not a map, a key that is not an
+ * extension with its dot, or a value that is not a bundle id.
  */
 export function programApps(config: Record<string, unknown>): ProgramApps | null {
     const held = fields(config.open).program_ext;

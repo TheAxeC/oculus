@@ -53,7 +53,9 @@
     const held = $derived(parsePillarsState(instanceState(instance.id)));
     const cursor = $derived(cardCursor(instance.state));
     const collection = $derived(collectionOf('pillars'));
-    /** The registry file this view is drawn from, which the control at the end of the toolbar opens. */
+    /**
+     * The registry file this view is drawn from, which the control at the end of the toolbar opens.
+     */
     const source = $derived(viewSourceFile('pillars', configMap()));
     const lines = $derived.by(() => {
         const entities = Object.values(portfolio()?.entities.pillars ?? {});

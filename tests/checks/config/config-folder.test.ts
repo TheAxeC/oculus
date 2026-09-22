@@ -1,8 +1,8 @@
 // The config folder oculus ships, read the way the server reads it: which keys sit in which file,
-// that no key is defined in two, that every file carries the one line the Config view and the manual
-// show, and that the glyphs, the icons and the rail groups the files name resolve. The machine's own
-// local.yml is left out of every list here, since a checkout has one or it has none and neither may
-// change a result.
+// that no key is defined in two, that every file carries the one line the Config view and the
+// manual show, and that the glyphs, the icons and the rail groups the files name resolve. The
+// machine's own local.yml is left out of every list here, since a checkout has one or it has none
+// and neither may change a result.
 
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
@@ -40,6 +40,54 @@ beforeEach(() => {
     client = createClientState();
     ({ views } = client.registry);
 });
+
+/** The shapes the source names a glyph in: a prop or field, a `<Glyph>`, a `glyph()` call. */
+const NAMED = [
+    /\b[\w$]*(?:glyph|icon)[\w$]*\s*[:=]\s*\{?\s*['"`]([\w-]+)['"`]/gi,
+    /\bglyph\s*\(\s*['"`]([\w-]+)['"`]/g,
+    /<Glyph\b[^>]*\bname=["']([\w-]+)["']/g
+];
+
+/**
+ * Every word a glyph name is read as. A glyph is named by a prop or a field whose own name carries
+ * `glyph` or `icon` (`glyph="edit"`, `const OVERDUE_GLYPH = 'bang'`), by the `name` of a `<Glyph>`,
+ * by a `glyph('edit')` call, by a string value of any config file but the two that define the
+ * glyphs, at any depth, or inside a label as a `{G.name}` placeholder (`appearance.yml`'s
+ * `{G.theme_rice} mocha`). A name found in none of those is read by nothing. A config value is not
+ * always a glyph name, so the check can pass a name some other value happens to spell; it cannot
+ * fail a name that is read.
+ */
+function glyphReaders(engine: string): Set<string> {
+    const found = new Set<string>();
+    const walk = (dir: string, take: (file: string) => void): void => {
+        for (const entry of readdirSync(dir, { withFileTypes: true })) {
+            const path = join(dir, entry.name);
+            if (entry.isDirectory()) walk(path, take);
+            else take(path);
+        }
+    };
+    const placeholders = (text: string): void => {
+        for (const match of text.matchAll(/\bG\.(\w+)/g)) found.add(match[1]);
+    };
+    walk(join(engine, 'src'), (file) => {
+        const text = readFileSync(file, 'utf8');
+        for (const shape of NAMED) for (const match of text.matchAll(shape)) found.add(match[1]);
+        placeholders(text);
+    });
+    const values = (value: unknown): void => {
+        if (typeof value === 'string') {
+            found.add(value);
+            placeholders(value);
+        } else if (Array.isArray(value)) value.forEach(values);
+        else if (typeof value === 'object' && value !== null) Object.values(value).forEach(values);
+    };
+    walk(join(engine, 'config'), (file) => {
+        if (!file.endsWith('.yml') || file.endsWith(LOCAL_NAME)) return;
+        if (file.endsWith('glyphs.yml') || file.endsWith('icons.yml')) return;
+        values(parse(readFileSync(file, 'utf8')));
+    });
+    return found;
+}
 
 /** Every description key opens with this, which is what makes an orphan one findable. */
 const DESC_PREFIX = 'config.desc_';
@@ -87,6 +135,7 @@ describe("oculus's own config directory", () => {
             'chat',
             'tasks',
             'editor',
+            'writes',
             'notify',
             'notes',
             'changes',
@@ -392,8 +441,8 @@ describe("oculus's own config directory", () => {
         const { config } = loadConfig(engineDir());
         const catalog = textCatalog(config);
         const dir = join(engineDir(), 'config');
-        // The machine's own file is described too, and this checkout holds one or it does not, so it
-        // is named here rather than read off the disk.
+        // The machine's own file is described too, and this checkout holds one or it does not, so
+        // it is named here rather than read off the disk.
         const files = tracked(dir);
         const missing = files.filter((name) => !(descriptionKey(name) in catalog));
         expect(missing).toEqual([]);
@@ -458,6 +507,20 @@ describe("oculus's own config directory", () => {
         expect(iconFindings(engineDir(), config)).toEqual([]);
     });
 
+    // revert: config/catalogs/glyphs.yml:11 => orphan_probe: "(o)"
+    it('names a glyph only where the source or another config file reads it', () => {
+        const { config } = loadConfig(engineDir());
+        const read = glyphReaders(engineDir());
+        expect(Object.keys(glyphCatalog(config)).filter((name) => !read.has(name))).toEqual([]);
+    });
+
+    // revert: config/catalogs/glyphs.yml:157 => "~~": "[-]"
+    it('carries an ASCII stand-in only for a character a glyph name holds', () => {
+        const { config } = loadConfig(engineDir());
+        const held = new Set(Object.values(glyphCatalog(config)));
+        expect(Object.keys(asciiCatalog(config)).filter((mark) => !held.has(mark))).toEqual([]);
+    });
+
     it('ships a drawing for every one of them', () => {
         const { config } = loadConfig(engineDir());
         const icons = iconSet(config);
@@ -505,10 +568,10 @@ describe("oculus's own config directory", () => {
             groups,
             config.docs as DocEntry[]
         );
-        // A group of more entries than the group maximum, its documents counted, is one button with a list
-        // beside it, so it needs a mark of its own and a letter to reach it by: a group drawn as
-        // buttons is reached through the direct chord, and one drawn as a list is reached only
-        // through its own. This holds for whichever groups those are.
+        // A group of more entries than the group maximum, its documents counted, is one button with
+        // a list beside it, so it needs a mark of its own and a letter to reach it by: a group
+        // drawn as buttons is reached through the direct chord, and one drawn as a list is reached
+        // only through its own. This holds for whichever groups those are.
         const flyouts = sections.filter(isFlyout);
         expect(flyouts.map((section) => section.label)).toEqual([
             'Sessions',

@@ -1,4 +1,5 @@
-// Layer 2, server. Stream the last seven days of Claude transcripts and Codex rollouts into day-and-model token rows.
+// Layer 2, server. Stream the last seven days of Claude transcripts and Codex rollouts into
+// day-and-model token rows.
 
 import { createReadStream, realpathSync } from 'node:fs';
 import { createInterface } from 'node:readline';

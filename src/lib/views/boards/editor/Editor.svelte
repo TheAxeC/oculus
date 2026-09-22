@@ -91,8 +91,8 @@
 
     /**
      * Whether a field has an edit that says something other than what the project says, by the rule
-     * the tab's close asks by: a row that says it is waiting to be saved when nothing will be written
-     * says the wrong thing.
+     * the tab's close asks by: a row that says it is waiting to be saved when nothing will be
+     * written says the wrong thing.
      */
     function changed(field: string): boolean {
         return field in edits && editDiffers(edits[field], values[field]);
@@ -123,8 +123,8 @@
     }
 
     /**
-     * Post the changed fields. The instance is taken before the request goes, so an answer that lands
-     * after the tab was switched settles the draft it was sent from.
+     * Post the changed fields. The instance is taken before the request goes, so an answer that
+     * lands after the tab was switched settles the draft it was sent from.
      */
     async function save(): Promise<void> {
         const body = payload();

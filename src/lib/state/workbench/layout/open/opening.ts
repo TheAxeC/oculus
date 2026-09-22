@@ -45,15 +45,16 @@ export function createOpening(
      * last. A pane hidden inside a folded child is expanded first, since opening a view into
      * something invisible would look like nothing happening.
      *
-     * `state` is what the opener has to say to the view: the project a card wants opened or the session
-     * a pane pins. A state carrying an `id` or `session` names which instance is wanted, so opening one
-     * record twice activates its existing tab and opening a second record creates another. A state
-     * carrying neither retargets the unpinned instance, while pinned instances stay fixed. The returned
-     * id names the instance activated or created, so its separate UI state can be updated by the caller.
+     * `state` is what the opener has to say to the view: the project a card wants opened or the
+     * session a pane pins. A state carrying an `id` or `session` names which instance is wanted, so
+     * opening one record twice activates its existing tab and opening a second record creates
+     * another. A state carrying neither retargets the unpinned instance, while pinned instances
+     * stay fixed. The returned id names the instance activated or created, so its separate UI state
+     * can be updated by the caller.
      *
-     * `options.preview` opens the view as the pane's preview tab, which is the one a single click in
-     * the file browser opens: the pane's existing preview tab is pointed at this view and state in
-     * place, so walking a tree with single clicks reads one file after another in one tab.
+     * `options.preview` opens the view as the pane's preview tab, which is the one a single click
+     * in the file browser opens: the pane's existing preview tab is pointed at this view and state
+     * in place, so walking a tree with single clicks reads one file after another in one tab.
      */
     function openView(view: ViewId, state?: unknown, page?: string, options?: OpenOptions): string {
         return openInto(view, state, false, page, options?.preview === true);
@@ -61,10 +62,11 @@ export function createOpening(
 
     /**
      * Show a view in a new pane to the right of the pane holding the instance activated last, which
-     * is what a view asked for beside the one being read means. The pane the last one made takes the
-     * next one as a tab while it is still open, so opening the editor from five cards is one pane of
-     * five tabs. A view already open is activated where it is, exactly as openView activates it, and
-     * a maximised pane takes the view itself, since a new pane beside it would be one nobody can see.
+     * is what a view asked for beside the one being read means. The pane the last one made takes
+     * the next one as a tab while it is still open, so opening the editor from five cards is one
+     * pane of five tabs. A view already open is activated where it is, exactly as openView
+     * activates it, and a maximised pane takes the view itself, since a new pane beside it would be
+     * one nobody can see.
      */
     function openBeside(view: ViewId, state?: unknown, page?: string): string {
         return openInto(view, state, true, page);
@@ -113,9 +115,9 @@ export function createOpening(
         if (replaced !== null) {
             attention.remembered(replaced.id, host);
             // The instance keeps its id, so what the view it was is holding under that id would be
-            // read by the view it becomes: a draft of the file before this one, a cursor into a list
-            // that is gone. A preview tab never holds an unsaved edit, since typing into one keeps
-            // it, so there is nothing here to lose.
+            // read by the view it becomes: a draft of the file before this one, a cursor into a
+            // list that is gone. A preview tab never holds an unsaved edit, since typing into one
+            // keeps it, so there is nothing here to lose.
             access.ui.clearInstanceState(replaced.id);
             access.change(
                 (current) =>
@@ -155,10 +157,10 @@ export function createOpening(
     }
 
     /**
-     * The instance of a view in one pane, or null when it holds none. While a pane is maximised it is
-     * the only pane a view can be opened into, so it is the only one an already-open instance may be
-     * found in: activating a tab of a pane nobody can see would look like nothing happening. A state
-     * identity narrows it the same way findView does.
+     * The instance of a view in one pane, or null when it holds none. While a pane is maximised it
+     * is the only pane a view can be opened into, so it is the only one an already-open instance
+     * may be found in: activating a tab of a pane nobody can see would look like nothing happening.
+     * A state identity narrows it the same way findView does.
      */
     function findIn(pane: Pane, view: ViewId, id: string | null): Instance | null {
         return pane.tabs.find((tab) => isInstanceOf(tab, view, id)) ?? null;

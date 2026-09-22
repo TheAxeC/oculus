@@ -1,12 +1,12 @@
-// Unsaved form input in Chrome: what a reader typed into a collection's add form, a card's edit form
-// or the manifest editor is still there, in a form still open, after the tab was switched away from
-// and back (a pane mounts only its active tab, so the component that drew the form is gone in
+// Unsaved form input in Chrome: what a reader typed into a collection's add form, a card's edit
+// form or the manifest editor is still there, in a form still open, after the tab was switched away
+// from and back (a pane mounts only its active tab, so the component that drew the form is gone in
 // between) and after a reload; the tab holding it asks before it closes, measured against the entry
 // as the file holds it now; Cancel, the view's Add and Edit toggles and a save take the question
-// away, and they and a delete leave no draft in the browser's storage. A value typed while a save is
-// on its way stays in the open form, an edit's and an add's alike, and so does the text of an add
-// form closed and opened again while its save was out; an add form nothing touched while its save
-// was out closes once its entry is added, and one left open goes on writing the entry it added
+// away, and they and a delete leave no draft in the browser's storage. A value typed while a save
+// is on its way stays in the open form, an edit's and an add's alike, and so does the text of an
+// add form closed and opened again while its save was out; an add form nothing touched while its
+// save was out closes once its entry is added, and one left open goes on writing the entry it added
 // rather than adding a second. The Save control is not pressable while its own save is out. A pane
 // closed from its menu takes the drafts and the records of every tab in it out of the browser's
 // storage. A file browser's root line typed and not added is asked about the same way.
@@ -17,10 +17,19 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { pressCardAction } from '../helpers/cards.ts';
 import { draftKeys, switchAndBack, uiInstances } from '../helpers/forms.ts';
-import { readHubFile, readHubYaml, writeHubFile } from '../helpers/hub.ts';
+import {
+    readEngineFile,
+    readHubFile,
+    readHubYaml,
+    writeEngineFile,
+    writeHubFile
+} from '../helpers/hub.ts';
 import { boot, openView } from '../helpers/rail.ts';
+import { keepServedFiles } from '../helpers/files.ts';
 import { t, tabNamed } from '../helpers/words.ts';
 import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
+
+keepServedFiles();
 
 const TASKS = 'tasks/tasks.yml';
 const TYPED = 'A task typed and left unsaved';
@@ -154,7 +163,9 @@ async function instanceKeys(page: Page): Promise<string[]> {
     return Object.keys(await uiInstances(page));
 }
 
-/** Show one tab of a pane and read the instance id its view draws, once that view is the one drawn. */
+/**
+ * Show one tab of a pane and read the instance id its view draws, once that view is the one drawn.
+ */
 async function instanceOf(pane: Locator, label: string, body: string): Promise<string> {
     await pane.getByRole('tab', { name: tabNamed(label) }).click();
     const view = pane.locator(body);
@@ -174,7 +185,8 @@ test("a pane closed from its menu over a typed add form leaves none of its tabs'
         has: page.getByRole('tab', { name: tabNamed(t('views.tasks')) })
     });
     // A collection's search box writes the instance's own record, beside the form draft's. The pane
-    // holds three tabs: Tasks with both records, Venues with its own, and Status, which writes none.
+    // holds three tabs: Tasks with both records, Venues with its own, and Status, which writes
+    // none.
     await pane.getByRole('searchbox').fill('a');
     await expect(titleBox(page)).toHaveValue(TYPED);
     await openView(page, 'venues', t('views.venues'));
@@ -325,6 +337,41 @@ test('a manifest editor with an edit asks before it closes, and a save clears th
 });
 
 /** Hold every write to the hub for a while, so a case can type while a save is on its way. */
+// Revert: in state/client/writes.svelte.ts, read no timeout, so the request waits as long as the
+// page does; or in views/shared/forms/EntryForm.svelte, say a given-up write as any other failure.
+test('a save no answer reaches is given up after the configured time, said on its form, and Save is pressable again', async ({
+    page
+}) => {
+    // revert: src/lib/state/client/writes.svelte.ts:412 => const wait = null;
+    const behavior = 'config/behavior.yml';
+    const held = readEngineFile(behavior);
+    const short = held.replace('timeout_seconds: 30', 'timeout_seconds: 1');
+    expect(short).not.toBe(held);
+    const before = readHubFile(TASKS);
+    try {
+        writeEngineFile(behavior, short);
+        // The write is never answered: the route holds it until the page is gone.
+        await page.route('**/api/write', () => new Promise<void>(() => undefined));
+        await boot(page);
+        await typeTask(page);
+        const save = page
+            .locator('[data-form="add"]')
+            .getByRole('button', { name: t('collection.form_save') });
+        await save.click();
+        await expect(save).toBeDisabled();
+        await expect(
+            page.getByText(t('editor.failed', t('app.write_timed_out')), { exact: true })
+        ).toBeVisible({
+            timeout: 10000
+        });
+        await expect(save).toBeEnabled();
+        expect(readHubFile(TASKS)).toBe(before);
+    } finally {
+        writeEngineFile(behavior, held);
+        writeHubFile(TASKS, before);
+    }
+});
+
 async function slowWrites(page: Page): Promise<void> {
     await page.route('**/api/write', async (route) => {
         await new Promise((done) => setTimeout(done, 2000));
@@ -359,7 +406,7 @@ test('an edit form keeps a value typed while its save was on its way, open over 
 test('an add form nothing touched while its save was out closes once its entry is added', async ({
     page
 }) => {
-    // revert: src/lib/views/shared/forms/EntryForm.svelte:269 => const took = (into.taken(which, sent), false);
+    // revert: src/lib/views/shared/forms/EntryForm.svelte:267 => const took = (into.taken(which, sent), false);
     // Revert: EntryForm leaving the add form open on every answer, or not clearing its draft.
     const before = readHubFile(TASKS);
     try {
@@ -378,7 +425,7 @@ test('an add form nothing touched while its save was out closes once its entry i
 test('an add form keeps a value typed while its save was on its way, open over it', async ({
     page
 }) => {
-    // revert: src/lib/views/shared/forms/EntryForm.svelte:269 => const took = (into.clear(which), true);
+    // revert: src/lib/views/shared/forms/EntryForm.svelte:267 => const took = (into.clear(which), true);
     // Revert: EntryForm clearing the add form's draft and closing it on every answer, through
     // into.clear(which) in place of into.taken(which, sent).
     const before = readHubFile(TASKS);
@@ -401,7 +448,7 @@ test('an add form keeps a value typed while its save was on its way, open over i
 test('an add form closed and opened again while its save was out keeps its new text', async ({
     page
 }) => {
-    // revert: src/lib/views/shared/forms/EntryForm.svelte:269 => const took = (into.clear(which), true);
+    // revert: src/lib/views/shared/forms/EntryForm.svelte:267 => const took = (into.clear(which), true);
     // Revert: EntryForm clearing the add form's draft and closing it on every answer, through
     // into.clear(which) in place of into.taken(which, sent).
     const before = readHubFile(TASKS);
@@ -438,7 +485,7 @@ function entriesTitled(title: string): Record<string, unknown>[] {
 test('an add form left open by its answer writes the entry it added, not a second one', async ({
     page
 }) => {
-    // revert: src/lib/views/shared/forms/EntryForm.svelte:259 => const addressed = entry === null ? '' : entry.id;
+    // revert: src/lib/views/shared/forms/EntryForm.svelte:257 => const addressed = entry === null ? '' : entry.id;
     // Revert: in save() of views/shared/forms/EntryForm.svelte, add through addFromForm whatever
     // the form has already made, by dropping the entry it made from what the write is addressed to.
     const before = readHubFile(TASKS);
@@ -463,7 +510,7 @@ test('an add form left open by its answer writes the entry it added, not a secon
 test('a second save from the add form that added an entry adds no second entry', async ({
     page
 }) => {
-    // revert: src/lib/views/shared/forms/EntryForm.svelte:259 => const addressed = entry === null ? '' : entry.id;
+    // revert: src/lib/views/shared/forms/EntryForm.svelte:257 => const addressed = entry === null ? '' : entry.id;
     // Revert: in save() of views/shared/forms/EntryForm.svelte, add through addFromForm whatever
     // the form has already made, which makes the second save a second add and the file refuse it.
     const before = readHubFile(TASKS);
@@ -490,7 +537,7 @@ test('a second save from the add form that added an entry adds no second entry',
 test('the Save control is not pressable while its own save is out, and adds nothing twice', async ({
     page
 }) => {
-    // revert: src/lib/views/shared/forms/EntryForm.svelte:224 => if (false) return;
+    // revert: src/lib/views/shared/forms/EntryForm.svelte:222 => if (false) return;
     // Revert: in views/shared/forms/EntryForm.svelte, drop `disabled={busy}` from the Save control
     // and the `if (busy) return;` at the top of save().
     const before = readHubFile(TASKS);
@@ -523,7 +570,7 @@ test('the Save control is not pressable while its own save is out, and adds noth
 test('an add form whose tab was switched away before its answer still writes the entry it added', async ({
     page
 }) => {
-    // revert: src/lib/state/forms/form-drafts.svelte.ts:279 => return null;
+    // revert: src/lib/state/forms/form-drafts.svelte.ts:273 => return null;
     // Revert: in formAdded of state/forms/form-drafts.svelte.ts, answer that no form has made an
     // entry, which is what a form keeping it in the component comes to across a tab switch.
     const before = readHubFile(TASKS);
@@ -552,7 +599,7 @@ test('an add form whose tab was switched away before its answer still writes the
 test('an add form typed away from the entry it added adds another, it does not rename it', async ({
     page
 }) => {
-    // revert: src/lib/views/shared/forms/EntryForm.svelte:259 => const addressed = entry === null ? (made?.id ?? '') : entry.id;
+    // revert: src/lib/views/shared/forms/EntryForm.svelte:257 => const addressed = entry === null ? (made?.id ?? '') : entry.id;
     // Revert: in save() of views/shared/forms/EntryForm.svelte, write the entry the form made
     // whatever its identity field now says, which renames that entry instead of adding the one
     // meant.

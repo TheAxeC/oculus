@@ -2,9 +2,9 @@
 // function over the address the page was served on, with no rune and no other module behind it.
 //
 // The block is a settings fragment, so it is built here as data: the shape is what Claude Code
-// reads, and its one variable is the origin the hook posts to. `-m 1` caps the transfer at a second and `timeout: 1` caps the hook the runner waits
-// for, so a session whose oculus is down costs a second at most; `|| true` keeps a refused post
-// from failing the session.
+// reads, and its one variable is the origin the hook posts to. `-m 1` caps the transfer at a second
+// and `timeout: 1` caps the hook the runner waits for, so a session whose oculus is down costs a
+// second at most; `|| true` keeps a refused post from failing the session.
 
 /** One command hook as Claude Code's settings file holds it. */
 type CommandHook = { type: string; timeout: number; command: string };

@@ -2,8 +2,8 @@
 // view asks for the conversation itself.
 //
 // Every file here is synthetic and written under mkdtemp; no test reads ~/.claude or ~/.codex, and
-// nothing is written anywhere else. Real transcripts hold private research content and never enter a
-// test.
+// nothing is written anywhere else. Real transcripts hold private research content and never enter
+// a test.
 
 import { appendFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -73,7 +73,10 @@ function item(timestamp: string, body: Json): Json {
     return line(timestamp, 'event_msg', { type: 'item_completed', item: body });
 }
 
-/** One temporary directory, checked to be under the system temporary root before anything is written. */
+/**
+ * One temporary directory, checked to be under the system temporary root before anything is
+ * written.
+ */
 function store(): string {
     const root = scratchDir('oculus-turns-');
     expect(resolve(root).startsWith(resolve(tmpdir()) + sep)).toBe(true);

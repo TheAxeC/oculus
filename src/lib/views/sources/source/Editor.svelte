@@ -36,8 +36,8 @@
         path: string;
         text: string;
         /**
-         * The line the tab was opened at, and zero for one opened at the file itself. It is acted on
-         * once per line the tab is pointed at: every scroll after that is the reader's own.
+         * The line the tab was opened at, and zero for one opened at the file itself. It is acted
+         * on once per line the tab is pointed at: every scroll after that is the reader's own.
          */
         line?: number;
         message?: string;
@@ -75,8 +75,8 @@
 
     /**
      * Whether the mirror is coloured: the file is under `editor.paint_limit_kb` of
-     * config/behavior.yml. The mirror is painted again on every keystroke and the grammars cost more
-     * than a frame past that size, so a larger file is written over escaped text. A cap the
+     * config/behavior.yml. The mirror is painted again on every keystroke and the grammars cost
+     * more than a frame past that size, so a larger file is written over escaped text. A cap the
      * configuration has not delivered yet is no cap to paint under, so those frames are plain too.
      */
     const coloured = $derived.by(() => {
@@ -92,8 +92,8 @@
 
     /**
      * Put the cursor on the line the tab was opened at and bring it into view. The mirror is moved
-     * with the textarea, as a scroll of the reader's own moves it: the two hold the same text at the
-     * same height, so one scroll position serves both.
+     * with the textarea, as a scroll of the reader's own moves it: the two hold the same text at
+     * the same height, so one scroll position serves both.
      */
     $effect(() => {
         const wanted = line;
@@ -122,7 +122,9 @@
         return Number.isFinite(size) && size > 0 ? size * 1.45 : 18;
     }
 
-    /** Which line an offset sits on, counting from one, so a line past the end lands on the last. */
+    /**
+     * Which line an offset sits on, counting from one, so a line past the end lands on the last.
+     */
     function rowOf(held: string, at: number): number {
         return held.slice(0, at).split('\n').length;
     }
@@ -138,7 +140,9 @@
         fraction = room > 0 ? area.scrollTop / room : 0;
     }
 
-    /** A drag is pixels; what the two halves are laid out by is a share, so the row's width sets it. */
+    /**
+     * A drag is pixels; what the two halves are laid out by is a share, so the row's width sets it.
+     */
     function moved(delta: number): void {
         const room = (box?.clientWidth ?? 0) - SASH_PX;
         if (room <= 0) return;
@@ -176,7 +180,8 @@
     </Toolbar>
     <div class="row" bind:this={box}>
         <div class="editor-wrap" bind:this={wrap} style="flex: {split ? share : 1} 1 0">
-            <!-- Keep pre and code on one line: a line break inside pre would enter the mirror's text. -->
+            <!-- Keep pre and code on one line: a line break inside pre would enter the mirror's
+                 text. -->
             <!-- eslint-disable-next-line svelte/no-at-html-tags -- highlight.js escapes the file text before it emits its own span classes -->
             <pre class="mirror" bind:this={mirror} aria-hidden="true"><code>{@html painted}</code
                 ></pre>

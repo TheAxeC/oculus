@@ -3,9 +3,9 @@
 //
 // The rule lives here rather than beside the view because readers on both sides need the same
 // answer: the Position Leads view, its rail badge and the ticker the Focus board draws its dated
-// lines from, on the client, and the summary the snapshot carries, on the server. A copy of the list
-// beside each would let them disagree, and a disagreement means a lead the reader dismissed still
-// counts on the board.
+// lines from, on the client, and the summary the snapshot carries, on the server. A copy of the
+// list beside each would let them disagree, and a disagreement means a lead the reader dismissed
+// still counts on the board.
 //
 // Nothing here knows what a lead looks like. It answers over a status value; the ordering, the fit
 // tone and the drawing are state/feeds/leads.ts's and the view's.

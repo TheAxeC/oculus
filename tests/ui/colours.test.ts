@@ -1,24 +1,27 @@
 // Every colour a component paints is inside the set tests/checks/look/contrast.test.ts measured.
 //
-// That test walks every `--<x>-txt` on `--bg`, `--panel`, `--card` and `--chip`, every `--c-<hue>-txt` on its
-// own tint, every `--c-<hue>-lane-txt` on its lane surface `--c-<hue>-lane`, and every `--on-c-<hue>` on `--c-<hue>`, under all seventeen themes. A component that only
-// ever paints text with a `-txt` token or an `--on-` token, and only ever fills with a surface or a
-// hue, can produce only pairs out of that set and the seven `--on-<surface>` on `--<surface>` pairs
-// measured at the foot of this file. It reads the style of every component under ui/, shell/, views/
-// and routes/ and fails on a declaration outside the rule, naming the file, the selector and the
-// declaration.
+// That test walks every `--<x>-txt` on `--bg`, `--panel`, `--card` and `--chip`, every
+// `--c-<hue>-txt` on its own tint, every `--c-<hue>-lane-txt` on its lane surface `--c-<hue>-lane`,
+// and every `--on-c-<hue>` on `--c-<hue>`, under all seventeen themes. A component that only ever
+// paints text with a `-txt` token or an `--on-` token, and only ever fills with a surface or a hue,
+// can produce only pairs out of that set and the seven `--on-<surface>` on `--<surface>` pairs
+// measured at the foot of this file. It reads the style of every component under ui/, shell/,
+// views/ and routes/ and fails on a declaration outside the rule, naming the file, the selector and
+// the declaration.
 //
 // The rule, in three parts:
-//   color        var(--<x>-txt, ...), var(--on-<x>, ...), inherit or currentColor. A fallback may be
-//                another such token or the bare chrome colour it is derived from, since the fallback
-//                is what paints in the moment before applyTheme has set the derived tokens.
-//   background   a surface (--bg, --panel, --chip, --line, --accent, --accent-bg), a hue (--c-<hue>), its tint
-//                (--c-<hue>-bg) or its lane surface (--c-<hue>-lane), none, or transparent.
+//   color        var(--<x>-txt, ...), var(--on-<x>, ...), inherit or currentColor. A fallback may
+//                be another such token or the bare chrome colour it is derived from, since the
+//                fallback is what paints in the moment before applyTheme has set the derived
+//                tokens.
+//   background   a surface (--bg, --panel, --chip, --line, --accent, --accent-bg), a hue
+//                (--c-<hue>), its tint (--c-<hue>-bg) or its lane surface (--c-<hue>-lane), none,
+//                or transparent.
 //   anywhere     no raw colour: no hex, no rgb()/hsl()/lab()/oklch(), no named colour.
 //
 // One form is allowed past both rules, for `background` and nothing else: a surface token with some
-// of its alpha taken out, `color-mix(in srgb, var(--panel) var(--wall-panel), transparent)`, and the
-// same with `--wall-popover` or with any other of the surfaces. That is how a surface goes
+// of its alpha taken out, `color-mix(in srgb, var(--panel) var(--wall-panel), transparent)`, and
+// the same with `--wall-popover` or with any other of the surfaces. That is how a surface goes
 // translucent over the wallpaper. The colour is still the surface's own, so the pair the contrast
 // test measured is the pair that paints; what changes is how much of the picture shows through. The
 // token is written as a percentage by ui/theme.ts's applyWallpaper and by nothing else, and a hue
@@ -244,8 +247,8 @@ function styles(source: string): string[] {
 
 /**
  * Every literal `style="..."` in the markup. It is CSS the style block does not hold and the rule
- * holds in it too. A `style={...}` built in the script is seen only through the custom properties it
- * sets, which is what the tone path uses and all it uses.
+ * holds in it too. A `style={...}` built in the script is seen only through the custom properties
+ * it sets, which is what the tone path uses and all it uses.
  */
 function inlineStyles(source: string): string[] {
     const markup = source.replace(/<style[^>]*>[\s\S]*?<\/style>/g, ' ');
@@ -254,7 +257,8 @@ function inlineStyles(source: string): string[] {
 
 /**
  * The declarations of one stylesheet, each with the selector it sits under. Nested blocks (a media
- * query around a rule) carry both preludes, innermost last, which is what a reader needs to find it.
+ * query around a rule) carry both preludes, innermost last, which is what a reader needs to find
+ * it.
  */
 export function declarations(css: string): Declaration[] {
     const found: Declaration[] = [];
@@ -322,8 +326,8 @@ export function rawColour(value: string): boolean {
 }
 
 /**
- * The one `color-mix` a component may fill with: a surface at the wallpaper's opacity. Whitespace is
- * whatever prettier leaves; the tokens and their order are the whole of the form.
+ * The one `color-mix` a component may fill with: a surface at the wallpaper's opacity. Whitespace
+ * is whatever prettier leaves; the tokens and their order are the whole of the form.
  */
 const WALL_MIX =
     /^color-mix\(\s*in\s+srgb\s*,\s*var\(\s*(--[a-z-]+)\s*\)\s+var\(\s*--wall-(?:panel|popover)\s*\)\s*,\s*transparent\s*\)$/i;

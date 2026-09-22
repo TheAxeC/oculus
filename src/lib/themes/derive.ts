@@ -1,6 +1,6 @@
-// The derived colour tokens. tokens.css and themes.css hold the colours an author picked; the ones a
-// component actually paints text with are computed from them, because a single foreground cannot be
-// readable on a dark green and a light gold at once. Two families:
+// The derived colour tokens. tokens.css and themes.css hold the colours an author picked; the ones
+// a component actually paints text with are computed from them, because a single foreground cannot
+// be readable on a dark green and a light gold at once. Two families:
 //
 //   --on-<token>    black or white, whichever scores higher ON that colour: text on a filled chip.
 //   --<token>-txt   the token's own hue, nudged in lightness until it clears 4.5:1 on every surface
@@ -10,17 +10,17 @@
 // from the theme's own chrome so a dark theme never draws the browser's light bar: the track is the
 // panel a scrolling view sits on, and the thumb starts halfway between the muted text and the
 // hairline and is nudged in lightness until it clears 3:1 on the track, so it reads as a control
-// without competing with the text beside it. And `--accent-bg`, the
-// surface a pressed toggle fills with: a fifth of the accent in the page's colour, so the pressed
-// state reads as a filled box in the accent's hue under every theme without the solid accent block.
-// And for every hue `--c-<hue>-lane`, half the hue in the panel, the surface the header of a
-// Focus lane fills with, beside `--c-<hue>-lane-txt`, the hue's text colour made readable on that
-// surface, which the header's name and count are drawn in, so every other hue text is left as it is.
+// without competing with the text beside it. And `--accent-bg`, the surface a pressed toggle fills
+// with: a fifth of the accent in the page's colour, so the pressed state reads as a filled box in
+// the accent's hue under every theme without the solid accent block. And for every hue
+// `--c-<hue>-lane`, half the hue in the panel, the surface the header of a Focus lane fills with,
+// beside `--c-<hue>-lane-txt`, the hue's text colour made readable on that surface, which the
+// header's name and count are drawn in, so every other hue text is left as it is.
 //
 // The rule is WCAG relative luminance, a 0.02 lightness step, a bound of 50 steps, and the grounds
-// tried in a fixed order.
-// Nothing here touches the document; ui/theme.ts sets the theme class and applies these tokens.
-// Pure functions, no imports, so the contrast test can run them over every theme in a plain node run.
+// tried in a fixed order. Nothing here touches the document; ui/theme.ts sets the theme class and
+// applies these tokens. Pure functions, no imports, so the contrast test can run them over every
+// theme in a plain node run.
 
 /** True black. A near-black scores lower and loses ties it should win. */
 const DARK_INK = '#000000';
@@ -29,13 +29,17 @@ const LIGHT_INK = '#ffffff';
 /** A colour these functions can work with: three or six hex digits. */
 const HEX = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
 
-/** The hex form a stylesheet declaration may carry, which is what a derived token is computed from. */
+/**
+ * The hex form a stylesheet declaration may carry, which is what a derived token is computed from.
+ */
 const HEX_VALUE = /^#[0-9a-fA-F]{3,6}$/;
 
 /** The tokens a derived token is computed from: the palette hues and the chrome colours. */
 const COLOUR_TOKEN = /^--(?:c-[a-z0-9-]+|accent|muted|ink|line|chip|card|panel|bg)$/;
 
-/** The contrast a scrollbar's thumb keeps against its track: what a control's edge needs to be seen. */
+/**
+ * The contrast a scrollbar's thumb keeps against its track: what a control's edge needs to be seen.
+ */
 export const SCROLL_THUMB_RATIO = 3;
 
 /** How much of the accent the pressed-toggle surface carries, the rest being the page. */
@@ -149,9 +153,9 @@ function hex(r: number, g: number, b: number): string {
 
 /**
  * `fg` nudged in lightness, hue and saturation kept, until it clears `minimum` against `bg`. The
- * original comes back when it already passes, otherwise the best value reached. Lightness moves away
- * from the background first, in 0.02 steps, up to 50 of them per direction. Keeping the hue is the
- * point: swapping in black or white would throw the palette away.
+ * original comes back when it already passes, otherwise the best value reached. Lightness moves
+ * away from the background first, in 0.02 steps, up to 50 of them per direction. Keeping the hue is
+ * the point: swapping in black or white would throw the palette away.
  */
 export function readable(fg: string, bg: string, minimum = 4.5): string {
     if (!(HEX.test(fg) && HEX.test(bg))) return fg;
@@ -185,18 +189,19 @@ export function readable(fg: string, bg: string, minimum = 4.5): string {
  *
  * Returns `--on-<token>` for every colour token the theme defines, and the `-txt` family for the
  * three chrome colours that carry text (`--muted`, `--accent`, `--ink`) and for every palette hue.
- * A hue's `-txt` is made readable on its own `--c-<hue>-bg` first when it has one, then on `--chip`,
- * `--card`, `--panel` and `--bg` in turn, so it clears on every surface it can land on rather than only on the
- * tinted pill it was measured against. Hues that are themselves a tint (`-bg`), a derived value
- * (`-txt`, `-on`), a lane surface (`-lane`) or the on-chip ink (`--c-on`) are skipped, since nothing places text on them.
- * The two scrollbar colours, `--scroll-thumb` and `--scroll-track`, come with them, and so does
- * `--accent-bg`, the accent mixed into the page, with its `--on-accent-bg` and `--accent-bg-txt`,
- * the accent made readable on that surface before the others. Every hue also gets its lane header
- * surface, `--c-<hue>-lane`, the hue mixed into the panel, and `--c-<hue>-lane-txt`, the hue's own
- * `-txt` nudged until it clears on that surface; a theme with no panel and no page gets neither.
+ * A hue's `-txt` is made readable on its own `--c-<hue>-bg` first when it has one, then on
+ * `--chip`, `--card`, `--panel` and `--bg` in turn, so it clears on every surface it can land on
+ * rather than only on the tinted pill it was measured against. Hues that are themselves a tint
+ * (`-bg`), a derived value (`-txt`, `-on`), a lane surface (`-lane`) or the on-chip ink (`--c-on`)
+ * are skipped, since nothing places text on them. The two scrollbar colours, `--scroll-thumb` and
+ * `--scroll-track`, come with them, and so does `--accent-bg`, the accent mixed into the page, with
+ * its `--on-accent-bg` and `--accent-bg-txt`, the accent made readable on that surface before the
+ * others. Every hue also gets its lane header surface, `--c-<hue>-lane`, the hue mixed into the
+ * panel, and `--c-<hue>-lane-txt`, the hue's own `-txt` nudged until it clears on that surface; a
+ * theme with no panel and no page gets neither.
  *
- * The input is the whole token map; anything that is not a colour token with a hex value is ignored,
- * so the caller can hand over the theme exactly as parse.ts read it.
+ * The input is the whole token map; anything that is not a colour token with a hex value is
+ * ignored, so the caller can hand over the theme exactly as parse.ts read it.
  */
 export function deriveTokens(theme: Record<string, string>): Record<string, string> {
     const effective: Record<string, string> = {};

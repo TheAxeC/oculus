@@ -1,11 +1,11 @@
 // The System group in Chrome: the manual, the configuration and a document of the hub.
 //
-// These are the three surfaces whose content only a server answers, and no server rendering runs the
-// fetch: the manual is read from the engine directory, each configuration card reads its file
+// These are the three surfaces whose content only a server answers, and no server rendering runs
+// the fetch: the manual is read from the engine directory, each configuration card reads its file
 // through the file route under the `engine` root, the machine's own local.yml of that folder
-// included, and a hub document is rendered from the hub the run serves. The document is written into
-// that hub, which is the run's own copy of demo/ under the system temporary directory, and removed
-// again at the end.
+// included, and a hub document is rendered from the hub the run serves. The document is written
+// into that hub, which is the run's own copy of demo/ under the system temporary directory, and
+// removed again at the end.
 //
 // What this does NOT cover: saving a configuration edit, which is the source tab's own write and is
 // covered by tests/browser/sources/source.spec.ts.
@@ -106,7 +106,7 @@ test('the machine own file is the last card and opens in a source tab', async ({
 test('every configuration card is as tall as what it holds, and the list scrolls', async ({
     page
 }) => {
-    // revert: src/lib/views/system/config/Config.svelte:142 => delete
+    // revert: src/lib/views/system/config/Config.svelte:144 => delete
     await boot(page);
     await openView(page, 'config', t('views.config'));
     await expect(card(page, 'local.yml').locator('button[aria-expanded]')).toBeVisible();

@@ -1,8 +1,8 @@
 // Software as a project type, end to end: the Code view's list of the software tier, the paper a
 // row names opening as its own tab, and the link back on that paper's card.
 //
-// Nothing here writes. The library, its title and the paper it names are read out of the served hub,
-// so a demo whose software project is renamed costs this spec nothing.
+// Nothing here writes. The library, its title and the paper it names are read out of the served
+// hub, so a demo whose software project is renamed costs this spec nothing.
 
 import { expect, test } from '@playwright/test';
 import { readHubYaml, shortOf } from '../helpers/hub.ts';

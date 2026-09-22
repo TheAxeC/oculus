@@ -1,7 +1,7 @@
 <script module lang="ts">
-    // Layer 3, view registration. A person opens from a collaborator tag, a joint-work entry and the
-    // Map's node, and is not listed in the rail: opened bare it can only report that it was opened
-    // for nobody.
+    // Layer 3, view registration. A person opens from a collaborator tag, a joint-work entry and
+    // the Map's node, and is not listed in the rail: opened bare it can only report that it was
+    // opened for nobody.
     import type { ViewRegistration } from '../../registry';
     export const registration: ViewRegistration = {
         id: 'person',
@@ -56,7 +56,10 @@
     const key = $derived(readKey(instance.state));
     const join = $derived(personJoin(portfolio(), key));
     const folder = $derived(join.folder);
-    /** The folder as a path of the hub, which Show in Files can select, or nothing for one outside it. */
+    /**
+     * The folder as a path of the hub, which Show in Files can select, or nothing for one outside
+     * it.
+     */
     const folderPath = $derived(hubPathsOf({ folder }).at(0));
     // The listing is asked for the hub path and never for the raw value, so a folder that is an
     // address or climbs above the hub asks the file route for nothing.

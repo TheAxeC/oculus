@@ -22,7 +22,10 @@ import type { Node, Pair } from 'yaml';
 /** The indentation a file with no nesting to read it from would be written at. */
 const STEP = 4;
 
-/** A key written as it is, rather than quoted: a word that no YAML reader would take for anything else. */
+/**
+ * A key written as it is, rather than quoted: a word that no YAML reader would take for anything
+ * else.
+ */
 const PLAIN = /^[A-Za-z0-9][A-Za-z0-9_\-./:]*$/;
 
 /** Where the line an offset sits on begins. */
@@ -82,10 +85,10 @@ function trimmed(source: string, at: number, floor: number): number {
 }
 
 /**
- * The source with one list set to `keys`, replaced where the file holds that key and appended to the
- * end of its map where it does not. `owner` is the map the list lives under, and null puts it at the
- * top level of the document. A source whose root is not a map, or which holds no such map, is given
- * back unchanged: there is nothing there to write into.
+ * The source with one list set to `keys`, replaced where the file holds that key and appended to
+ * the end of its map where it does not. `owner` is the map the list lives under, and null puts it
+ * at the top level of the document. A source whose root is not a map, or which holds no such map,
+ * is given back unchanged: there is nothing there to write into.
  */
 export function setList(
     source: string,
@@ -130,9 +133,10 @@ export function setList(
     if (key === null) return source;
     const value = rangeOf(held.value);
     // The edit starts at the beginning of the key's line, since the block carries its own
-    // indentation. A key written with no value at all has no value node to end at, so it ends at its
-    // colon; a block list ends after the newline of its last item, and a comment on the line below
-    // belongs to the next key rather than to this list, so the whitespace between is walked back off.
+    // indentation. A key written with no value at all has no value node to end at, so it ends at
+    // its colon; a block list ends after the newline of its last item, and a comment on the line
+    // below belongs to the next key rather than to this list, so the whitespace between is walked
+    // back off.
     const from = lineStart(source, key[0]);
     const stop = trimmed(source, value === null ? source.indexOf(':', key[1]) + 1 : value[1], from);
     if (stop <= from) return source;

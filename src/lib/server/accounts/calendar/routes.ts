@@ -31,7 +31,9 @@ export type CalendarTarget = {
     refresh: () => Promise<void>;
     /** Hands one address to the operating system; injected so no test opens anything. */
     open: Opener;
-    /** The provider's page for one event of the state last published, or null when there is none. */
+    /**
+     * The provider's page for one event of the state last published, or null when there is none.
+     */
     linkFor: (id: string) => string | null;
 };
 

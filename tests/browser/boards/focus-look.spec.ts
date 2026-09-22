@@ -1,13 +1,14 @@
 // The Focus board's look in Chrome: a project of the archive tier whose `focus:` names a lane is
-// drawn on that lane and cannot be sent to the Ideas lane, a card's status mark shows its whole word,
-// a lane header is painted in its lane's surface and text tokens at full opacity, and every word of
-// every lane and column header sits on its own lane surface at 4.5:1 or better, with and without the
-// wallpaper. The node suite renders the markup to a string and can say which class and which custom
-// property a header carries; only a browser resolves those into the colours a reader sees, and only
-// the served board shows a manifest outside the live tiers arriving on a lane.
+// drawn on that lane and cannot be sent to the Ideas lane, a card's status mark shows its whole
+// word, a lane header is painted in its lane's surface and text tokens at full opacity, and every
+// word of every lane and column header sits on its own lane surface at 4.5:1 or better, with and
+// without the wallpaper. The node suite renders the markup to a string and can say which class and
+// which custom property a header carries; only a browser resolves those into the colours a reader
+// sees, and only the served board shows a manifest outside the live tiers arriving on a lane.
 //
 // The demo hub's archive projects carry no `focus:`, so this file gives one of them a lane in the
-// run's own copy of demo/ and puts the file back at the end. Nothing here writes the checkout's hub.
+// run's own copy of demo/ and puts the file back at the end. Nothing here writes the checkout's
+// hub.
 
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { readHubFile, shortOf, writeHubFile } from '../helpers/hub.ts';
@@ -287,8 +288,8 @@ test('every word of every lane and column header sits on its own lane surface, r
     await boot(page);
     await openView(page, 'focus', t('views.focus'));
     const known = headerHues();
-    // A theme is picked by its label, the picker's glyph and then the name alone, since other labels
-    // end in the same word ("gruvbox light"); the light theme puts no class on the body.
+    // A theme is picked by its label, the picker's glyph and then the name alone, since other
+    // labels end in the same word ("gruvbox light"); the light theme puts no class on the body.
     const theme = async (name: string): Promise<void> => {
         await page.getByRole('button', { name: t('ui.theme') }).click();
         await page.getByRole('menuitem', { name: new RegExp(`^\\S+\\s+${name}$`) }).click();

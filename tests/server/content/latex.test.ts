@@ -1,7 +1,7 @@
 // mains, parseLog and buildState over synthetic folders under the system temporary directory: which
 // `.tex` files are main files, what a `latexmk -file-line-error` log is read back as, and what one
-// main's state says with and without a PDF. Nothing outside that directory is read or written, every
-// path written is asserted to be inside it first, and no case runs latexmk.
+// main's state says with and without a PDF. Nothing outside that directory is read or written,
+// every path written is asserted to be inside it first, and no case runs latexmk.
 //
 // The log fixtures are the row shapes a real log holds: the `file:line:` error of the file-line
 // form, the `!` error with its `l.<n>` context under it, a package warning continued on its own

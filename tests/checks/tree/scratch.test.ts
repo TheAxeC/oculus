@@ -1,6 +1,6 @@
-// Layer 4, test. The scratch helper hands back a directory inside the system temporary directory and
-// the sweep takes it away, no test file makes one any other way, and every suite that reaches the
-// helper registers the sweep with its own runner.
+// Layer 4, test. The scratch helper hands back a directory inside the system temporary directory
+// and the sweep takes it away, no test file makes one any other way, and every suite that reaches
+// the helper registers the sweep with its own runner.
 //
 // The last two are what keep a run from leaving directories behind: a file that calls mkdtempSync
 // itself, or one that takes a directory from the helper and registers no sweep, has nothing to
@@ -8,8 +8,8 @@
 // have run, which is minutes. These say so in a second.
 //
 // Both read code and not prose: comments and string literals are blanked before a registration or a
-// call is looked for, and the helper, which declares the sweep without registering one, never counts
-// as a file's registration.
+// call is looked for, and the helper, which declares the sweep without registering one, never
+// counts as a file's registration.
 
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -17,6 +17,7 @@ import { dirname, join, normalize, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterAll, describe, expect, it } from 'vitest';
 import { scratchDir, scratchMade, sweepScratch } from '../../fixtures/scratch.ts';
+import { code } from '../source/code.ts';
 
 afterAll(sweepScratch);
 
@@ -78,12 +79,11 @@ export function withoutComments(text: string): string {
         );
 }
 
-/** The same with every string literal blanked, for a rule a name inside a string must not satisfy. */
+/**
+ * The same with every string literal blanked, for a rule a name inside a string must not satisfy.
+ */
 export function codeOnly(text: string): string {
-    return withoutComments(text).replace(
-        /'(?:[^'\\\n]|\\.)*'|"(?:[^"\\\n]|\\.)*"|`(?:[^`\\]|\\.)*`/g,
-        (one) => one[0] + one.slice(1, -1).replace(/[^\n]/g, ' ') + one[one.length - 1]
-    );
+    return code(text);
 }
 
 /** Every import of one file: static or dynamic, single-quoted or double, comments left out. */
@@ -92,8 +92,8 @@ function importsIn(rel: string, text: string, known: Set<string>): string[] {
     return [...withoutComments(text).matchAll(/(?:from|import)\s*\(?\s*['"](\.[^'"]+)['"]/g)]
         .flatMap((found) => {
             const held = normalize(join(folder, found[1]));
-            // A specifier written without its extension names the same file, so the guard follows it
-            // rather than losing the chain at a file that imports `../scratch`.
+            // A specifier written without its extension names the same file, so the guard follows
+            // it rather than losing the chain at a file that imports `../scratch`.
             return [held, `${held}.ts`, normalize(join(held, 'index.ts'))];
         })
         .filter((one) => known.has(one));
@@ -226,7 +226,7 @@ export function findOwnScratch(allow: string[] = OWN, root = TESTS): string[] {
 
 describe('a scratch directory', () => {
     it('is made inside the temporary directory and swept away again', () => {
-        // revert: tests/fixtures/scratch.ts:30 => return;
+        // revert: tests/fixtures/scratch.ts:31 => return;
         const dir = scratchDir('oculus-scratch-case-');
         expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
         expect(scratchMade()).toContain(dir);
@@ -254,7 +254,8 @@ describe('a scratch directory', () => {
             mkdirSync(dirname(full), { recursive: true });
             writeFileSync(full, body, 'utf8');
         };
-        // The helper's own head comment names the registration the suites make, as this tree's does.
+        // The helper's own head comment names the registration the suites make, as this tree's
+        // does.
         write(
             HELPER,
             [

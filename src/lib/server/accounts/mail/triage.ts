@@ -93,8 +93,8 @@ export type TriageFields = {
 
 /**
  * Put one thread's fields into the file and answer the note that is now there. A field given as the
- * empty string, or `triaged` given as false, takes that field off the note, so a reader who clears a
- * draft or restores a thread leaves nothing behind.
+ * empty string, or `triaged` given as false, takes that field off the note, so a reader who clears
+ * a draft or restores a thread leaves nothing behind.
  */
 export function writeNote(
     dir: string,
@@ -106,8 +106,9 @@ export function writeNote(
     const before = held.notes[thread] ?? { written: '' };
     const next: TriageNote = { ...before, written: now().toISOString() };
     if (fields.kind !== undefined) next.kind = fields.kind;
-    // A field given as the empty string, and `triaged` given as false, take that field off the note;
-    // the note is rebuilt without it rather than deleted out of, so the shape stays a literal one.
+    // A field given as the empty string, and `triaged` given as false, take that field off the
+    // note; the note is rebuilt without it rather than deleted out of, so the shape stays a literal
+    // one.
     const what = fields.what ?? next.what;
     const draft = fields.draft ?? next.draft;
     const triaged = fields.triaged ?? next.triaged === true;

@@ -77,7 +77,8 @@ describe('the log-path prewarm', () => {
         // ladder's newest-wins tiebreak cannot be reproduced and the job is left to the press.
         expect(pickFromListing('532076', rungs)).toBe('');
         expect(pickFromListing('532076_2', rungs)).toBe('/w/hpc/logs/532076_2.out');
-        // The literal rung takes the job's own file and not another job's whose name carries the id.
+        // The literal rung takes the job's own file and not another job's whose name carries the
+        // id.
         expect(pickFromListing('7', [[], [], ['/w/slurm-7.out', '/w/slurm-17.out'], [], []])).toBe(
             '/w/slurm-7.out'
         );
@@ -146,7 +147,8 @@ describe('the log-path prewarm', () => {
         ]);
         expect(runner).toHaveBeenCalledTimes(2);
         expect(runner.mock.calls[0][1]).toContain('-o JobID,WorkDir%600 -Pn');
-        // A working directory a quoted shell word could break out of is dropped, so 13 is never listed.
+        // A working directory a quoted shell word could break out of is dropped, so 13 is never
+        // listed.
         expect(runner.mock.calls[1][1]).not.toContain('three');
     });
     it('omits a job whose directory answered nothing', async () => {

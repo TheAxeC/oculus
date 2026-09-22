@@ -1,10 +1,10 @@
-// One local HTML file as its own tab, rendered to HTML on the server: the frame the document sits in,
-// and the address api/file answers for it.
+// One local HTML file as its own tab, rendered to HTML on the server: the frame the document sits
+// in, and the address api/file answers for it.
 //
-// The catalog and the glyphs are the real config; the bookmark is synthetic. What this does NOT cover:
-// the browser loading the document, its relative assets and its own scripts inside the frame, which is
-// what the sandbox attribute governs and no server rendering exercises; the route the frame addresses
-// is covered by tests/routes/files/file.test.ts.
+// The catalog and the glyphs are the real config; the bookmark is synthetic. What this does NOT
+// cover: the browser loading the document, its relative assets and its own scripts inside the
+// frame, which is what the sandbox attribute governs and no server rendering exercises; the route
+// the frame addresses is covered by tests/routes/files/file.test.ts.
 
 import { beforeEach, describe, expect, it } from 'vitest';
 import { render } from 'svelte/server';

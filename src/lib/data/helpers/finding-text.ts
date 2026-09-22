@@ -6,18 +6,20 @@
 // LaTeX terminal names) with it too.
 //
 // A finding's sentence is config/text/findings.yml's, never a literal of the module that raises it,
-// so a sentence is reworded in that file alone. The catalog is always an argument: nothing here holds
-// one, and the server formats every finding before it goes on the wire as a plain `message`.
+// so a sentence is reworded in that file alone. The catalog is always an argument: nothing here
+// holds one, and the server formats every finding before it goes on the wire as a plain `message`.
 
 import { byKey } from './guards.ts';
 
-/** The flat text catalog, dotted key to sentence, as textCatalog() in sources/config.ts gives it. */
+/**
+ * The flat text catalog, dotted key to sentence, as textCatalog() in sources/config.ts gives it.
+ */
 export type TextCatalog = Record<string, string>;
 
 /**
- * A template with `{0}`, `{1}` and so on replaced by the arguments at those positions. A placeholder
- * with no argument is left as it is written, so a sentence missing an argument shows the gap rather
- * than an empty word.
+ * A template with `{0}`, `{1}` and so on replaced by the arguments at those positions. A
+ * placeholder with no argument is left as it is written, so a sentence missing an argument shows
+ * the gap rather than an empty word.
  */
 export function fillPlaceholders(template: string, args: readonly (string | number)[]): string {
     return template.replace(/\{(\d+)\}/g, (placeholder, index: string) => {

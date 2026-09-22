@@ -1,4 +1,5 @@
-// The Live HPC POST route is tested at its origin and token gates and across each of its three injected actions.
+// The Live HPC POST route is tested at its origin and token gates and across each of its three
+// injected actions.
 import { describe, expect, it, vi } from 'vitest';
 import { handleHpc, type HpcTarget } from '../../../src/lib/server/machine/hpc/routes.ts';
 import { contextFixture } from '../../server/core/context-fixture.ts';

@@ -1,7 +1,7 @@
 <script lang="ts">
-    // Layer 3, primitive. The box a view fills: a header row with the view's title and its controls,
-    // and a body that scrolls. A view renders this at its root, so the shell's pane box is filled
-    // edge to edge and the scrolling happens inside the view rather than around it.
+    // Layer 3, primitive. The box a view fills: a header row with the view's title and its
+    // controls, and a body that scrolls. A view renders this at its root, so the shell's pane box
+    // is filled edge to edge and the scrolling happens inside the view rather than around it.
 
     import type { Snippet } from 'svelte';
 

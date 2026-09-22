@@ -90,7 +90,10 @@ const TEXT = Buffer.from('this is not a picture', 'utf8').toString('base64');
 const PIXEL =
     'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
 
-/** The first bytes of a PNG as far as its IHDR chunk's width and height, which is all its size needs. */
+/**
+ * The first bytes of a PNG as far as its IHDR chunk's width and height, which is all its size
+ * needs.
+ */
 function pngHead(width: number, height: number): Uint8Array {
     const bytes = Buffer.alloc(24);
     Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]).copy(bytes, 0);
@@ -332,7 +335,9 @@ describe('the request the server accepts', () => {
 });
 
 describe('the configured folder', () => {
-    /** An engine directory of this case's own: its config folder, its appearance and its local.yml. */
+    /**
+     * An engine directory of this case's own: its config folder, its appearance and its local.yml.
+     */
     function fixture(body: string): { engine: string; hub: string } {
         const root = scratch('oculus-memories-config-');
         expect(resolve(root).startsWith(resolve(tmpdir()) + sep)).toBe(true);

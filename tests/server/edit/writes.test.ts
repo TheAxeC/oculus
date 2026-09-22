@@ -1,6 +1,7 @@
-// What writeManifest does over a hub of its own: which requests it refuses, how a form value becomes
-// a manifest value, and when the file is touched at all; and the subtask, career host, entry and
-// idea writes beside it. The collection entry writes are writes-collection.test.ts beside this.
+// What writeManifest does over a hub of its own: which requests it refuses, how a form value
+// becomes a manifest value, and when the file is touched at all; and the subtask, career host,
+// entry and idea writes beside it. The collection entry writes are writes-collection.test.ts beside
+// this.
 //
 // The hub here is a synthetic one under the system temporary directory, and every path this file
 // writes is asserted to be inside it before it is written; nothing in this file opens the real hub
@@ -92,8 +93,8 @@ describe('what a write refuses', () => {
     });
 
     // `followup` is named by the schema through its children, `followup.do` and `followup.after`,
-    // and the file may hold it as a bare note, a map or a list. Clearing it whole by the parent name
-    // is the one write on the parent the editor takes; a value for the parent is refused.
+    // and the file may hold it as a bare note, a map or a list. Clearing it whole by the parent
+    // name is the one write on the parent the editor takes; a value for the parent is refused.
     it('clears a grouped field whole by its parent name, whatever shape the file holds it in', () => {
         const noted = hub(
             MANIFEST.replace('title: "A title"', 'title: "A title"\nfollowup: "ask"')

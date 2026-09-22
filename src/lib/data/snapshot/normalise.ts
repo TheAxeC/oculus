@@ -53,8 +53,8 @@ export const REGISTRY_KEYS = ['venues', 'datasets', 'pillars', 'domains', 'data'
 /**
  * The keys of the `collections:` list of config/sources.yml, in the file's order, minus the four
  * that name a registry with a dedicated view. They ship as the page's data and the page registers
- * the collection view once per key and again on every config push, so a collection is added through sources.yml and its owner
- * catalog file; the collection registration supplies its group and order.
+ * the collection view once per key and again on every config push, so a collection is added through
+ * sources.yml and its owner catalog file; the collection registration supplies its group and order.
  */
 export function collectionKeys(config: Record<string, unknown>): string[] {
     const raw = config.collections;
@@ -208,8 +208,8 @@ function staleDays(found: DocPresence[] | undefined, manifest: number | undefine
 
 /**
  * The `followup:` notes of a manifest or of a collection entry. The key holds one note as a string,
- * one as a `{ do, after }` map, or a list of either; all three arrive here as a list. A note with no
- * `do` is dropped in silence, the way str() drops a value of the wrong type.
+ * one as a `{ do, after }` map, or a list of either; all three arrive here as a list. A note with
+ * no `do` is dropped in silence, the way str() drops a value of the wrong type.
  */
 export function followups(value: unknown): Followup[] {
     const items = Array.isArray(value) ? value : [value];
@@ -252,7 +252,9 @@ export function subtasks(value: unknown): Subtask[] {
     return out;
 }
 
-/** A project. Every field comes from the manifest key of the same meaning, and nothing else does. */
+/**
+ * A project. Every field comes from the manifest key of the same meaning, and nothing else does.
+ */
 function project(
     manifest: RawManifest,
     found: DocPresence[] | undefined,
@@ -446,7 +448,9 @@ function funding(entry: RawRegistryEntry): Funding {
     });
 }
 
-/** One collection entry: its identity, and every field the YAML gave it apart from the provenance. */
+/**
+ * One collection entry: its identity, and every field the YAML gave it apart from the provenance.
+ */
 function entry(raw: RawEntry, index: number, ident = 'title'): Entry {
     const fields: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(raw)) {
@@ -473,8 +477,9 @@ function entry(raw: RawEntry, index: number, ident = 'title'): Entry {
 /**
  * The `schema:` a collection file carries, or undefined when it has none and when what it has is
  * not a list of maps naming a field and a type. It is all or nothing: half a schema would draw half
- * a record in a field order the file did not write, so a malformed one is left off whole. validate.ts
- * calls this as well and reports the case where the key is there and nothing comes back.
+ * a record in a field order the file did not write, so a malformed one is left off whole.
+ * validate.ts calls this as well and reports the case where the key is there and nothing comes
+ * back.
  */
 export function collectionSchema(value: unknown): SchemaField[] | undefined {
     if (!Array.isArray(value)) return undefined;

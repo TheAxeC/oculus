@@ -400,9 +400,9 @@ describe('watchSessions', () => {
 
     it('rescans when the overrides file changes, and not when the cache beside it does', async () => {
         const fixture = new Fixture();
-        // The cache goes in the same directory as the overrides file, which is where ~/.oculus keeps
-        // both: the watch is on that directory, so only the filename keeps a scan's own cache write
-        // from causing the next scan.
+        // The cache goes in the same directory as the overrides file, which is where ~/.oculus
+        // keeps both: the watch is on that directory, so only the filename keeps a scan's own cache
+        // write from causing the next scan.
         fixture.cache = join(fixture.root, 'transcript-cache.json');
         fixture.transcript([prompt('2026-09-10T10:00:00.000Z', 'first question')]);
         const started = start(fixture);

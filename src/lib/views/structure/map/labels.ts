@@ -18,6 +18,14 @@ export const LABEL_DROP = 4;
 /** A label's measured size: its width, and how far its box reaches above and below its baseline. */
 export type LabelSize = { width: number; above: number; below: number };
 
+/** One drawn label's size, from its box and the baseline its `y` names. */
+export function labelSize(text: SVGTextElement): LabelSize {
+    const box = text.getBBox();
+    const ys = text.y.baseVal;
+    const baseline = ys.numberOfItems > 0 ? ys.getItem(0).value : box.y;
+    return { width: box.width, above: baseline - box.y, below: box.y + box.height - baseline };
+}
+
 /** The size of a label not measured yet, which overlaps nothing. */
 export const UNMEASURED: LabelSize = { width: 0, above: 0, below: 0 };
 

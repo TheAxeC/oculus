@@ -1,4 +1,5 @@
-// The Live HPC view rendered to HTML: its four heads and every drawable acceptance item use one synthetic socket payload.
+// The Live HPC view rendered to HTML: its four heads and every drawable acceptance item use one
+// synthetic socket payload.
 import { readFileSync } from 'node:fs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render } from 'svelte/server';
@@ -126,7 +127,7 @@ describe('Live HPC view', () => {
         expect(body).toMatch(/class="[^"]*ok[^"]*"[^>]*>[^<]*live/);
         expect(body).toContain('1 running');
     });
-    it('assigns the live and failure status spans their semantic colour tokens and bold weight', () => {
+    it('audits that assigns the live and failure status spans their semantic colour tokens and bold weight', () => {
         const source = readFileSync('src/lib/views/system/hpc/Head.svelte', 'utf8');
         expect(source).toMatch(/\.ok\s*{[^}]*--c-green-d-txt[^}]*font-weight:\s*600/s);
         expect(source).toMatch(/\.bad\s*{[^}]*--c-red-d-txt[^}]*font-weight:\s*600/s);

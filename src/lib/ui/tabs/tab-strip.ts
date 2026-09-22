@@ -1,8 +1,8 @@
 // Layer 3, primitive. The tab strip's contract and the arithmetic it is driven by: what one tab
 // holds, where a dropped tab is inserted, what the strip's overflow state is, which axis of a wheel
 // gesture moves it, and where a scroll control or a reveal brings an overflowing strip to rest: a
-// tab's start at its left edge, or the strip's end. Apart from the component so all of it can be read
-// without a pointer.
+// tab's start at its left edge, or the strip's end. Apart from the component so all of it can be
+// read without a pointer.
 
 /** One tab: what it is called, what it is drawn with, and the id the callbacks name it by. */
 export type Tab = {
@@ -24,7 +24,10 @@ export type Tab = {
     cells?: { count: number; color: string; label: string }[];
     /** The tab the next single click replaces: its label is drawn in italics. */
     preview?: boolean;
-    /** The tab holds text no save has taken: a dot stands in the close control's place and its name says so. */
+    /**
+     * The tab holds text no save has taken: a dot stands in the close control's place and its name
+     * says so.
+     */
     dirty?: boolean;
 };
 
@@ -45,7 +48,10 @@ export type TabScrollState = {
     atEnd: boolean;
 };
 
-/** Overflow uses the width without controls; edge state uses the current viewport, with one pixel of rounding slack. */
+/**
+ * Overflow uses the width without controls; edge state uses the current viewport, with one pixel of
+ * rounding slack.
+ */
 export function tabScrollState(
     scrollWidth: number,
     clientWidth: number,
@@ -85,8 +91,9 @@ function rests(spans: readonly TabSpan[], max: number): number[] {
 }
 
 /**
- * Where a press of a scroll control takes the strip: to the next resting offset past the current one
- * in the direction pressed, which is the next tab start, or the strip's end past the last start.
+ * Where a press of a scroll control takes the strip: to the next resting offset past the current
+ * one in the direction pressed, which is the next tab start, or the strip's end past the last
+ * start.
  */
 export function tabEdgeStep(
     spans: readonly TabSpan[],
@@ -107,8 +114,8 @@ export function wholeAt(span: TabSpan, scrollLeft: number, width: number): boole
 /**
  * The resting offset that shows one tab whole: the current offset when it is one already, and
  * otherwise the one nearest the current offset among those from which the tab lies whole, which is
- * a tab start except at the strip's end. A tab wider than the visible part is shown from the resting
- * offset at or before its own start.
+ * a tab start except at the strip's end. A tab wider than the visible part is shown from the
+ * resting offset at or before its own start.
  */
 export function revealOffset(
     spans: readonly TabSpan[],

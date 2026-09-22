@@ -1,5 +1,7 @@
 <script lang="ts">
-    // Layer 3, shared view partial. The bordered block directly under a pane title. It accepts catalog HTML, optional additional lines, or structured content such as a status chip. A line may carry a value from a hub file, so what it is given is sanitised before it is drawn.
+    // Layer 3, shared view partial. The bordered block directly under a pane title. It accepts
+    // catalog HTML, optional additional lines, or structured content such as a status chip. A line
+    // may carry a value from a hub file, so what it is given is sanitised before it is drawn.
 
     import type { Snippet } from 'svelte';
     import { sanitise } from '$lib/ui/html';

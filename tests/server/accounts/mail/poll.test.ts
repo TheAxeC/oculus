@@ -270,7 +270,9 @@ describe('the mail poller', () => {
         await vi.advanceTimersByTimeAsync(0);
         await until(() => published(hub) && held(hub).accounts.length === 2);
         expect(held(hub).accounts.map((one) => one.status)).toEqual(['connected', 'error']);
-        /** The calls the Gmail account made, which is what the cadence of that account is read by. */
+        /**
+         * The calls the Gmail account made, which is what the cadence of that account is read by.
+         */
         const gmail = (): number =>
             google.calls.filter((call) => call.url.includes('googleapis.com')).length;
         const calls = gmail();

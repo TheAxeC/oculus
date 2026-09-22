@@ -20,16 +20,15 @@
     //
     // The picker offers every root, not the repositories among them, and each row carries the few
     // words and tone its state comes to (`views/shared/changes/repo-shape.ts`'s shapeBadge and
-    // shapeBadgeTone), the row's hover words
-    // being its path and the badge's own git's reason: a folder of notes, a repository whose read
-    // failed and a folder the reader has deleted all stay in the list and say which they are. A root that went quiet is a
-    // fact about that root, so the view neither drops it from the list nor hands itself to another
-    // one, and repositories/Repo.svelte draws the one sentence that state comes to in place of the
-    // sections.
+    // shapeBadgeTone), the row's hover words being its path and the badge's own git's reason: a
+    // folder of notes, a repository whose read failed and a folder the reader has deleted all stay
+    // in the list and say which they are. A root that went quiet is a fact about that root, so the
+    // view neither drops it from the list nor hands itself to another one, and
+    // repositories/Repo.svelte draws the one sentence that state comes to in place of the sections.
     //
     // Which repository is shown and which sections are closed are the instance's own state, so the
-    // view comes back as it was left after a tab switch, and a repository the picker no longer offers
-    // hands the view to the first one it does.
+    // view comes back as it was left after a tab switch, and a repository the picker no longer
+    // offers hands the view to the first one it does.
     //
     // The state is the channel's, pushed, so nothing here polls: a commit made in a terminal moves
     // the section within the watcher's two seconds. The one thing the channel does not carry is a

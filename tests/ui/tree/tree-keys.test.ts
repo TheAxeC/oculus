@@ -2,13 +2,15 @@
 // opens or closes, and which row holds the tree's one stop. Each case names the change that turns
 // it red.
 //
-// What this does NOT cover: the focus actually moving and Enter pressing a row, which need a DOM and
-// are tests/browser/sources/files.spec.ts and tests/browser/sources/repositories.spec.ts.
+// What this does NOT cover: the focus actually moving and Enter pressing a row, which need a DOM
+// and are tests/browser/sources/files.spec.ts and tests/browser/sources/repositories.spec.ts.
 
 import { describe, expect, it } from 'vitest';
 import { rowMove, stopOf, type KeyRow } from '../../../src/lib/ui/tree/tree-keys.ts';
 
-/** A root open over a folder open over a file, a closed folder, a file, and a second closed root. */
+/**
+ * A root open over a folder open over a file, a closed folder, a file, and a second closed root.
+ */
 const ROWS: KeyRow[] = [
     { id: 'hub', parent: null, open: true },
     { id: 'code', parent: 'hub', open: true },

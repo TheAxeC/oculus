@@ -63,7 +63,9 @@ function readFile(
     return parsed as Record<string, unknown>;
 }
 
-/** One collection: its entries in file order with provenance, and every other top-level key as meta. */
+/**
+ * One collection: its entries in file order with provenance, and every other top-level key as meta.
+ */
 function readCollection(
     hub: string,
     asked: CollectionFile,

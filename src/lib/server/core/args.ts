@@ -16,7 +16,9 @@ const FLAG = '--engine';
 export type ArgsReader = {
     /** The directory a relative path is resolved against, which is where the command was typed. */
     cwd: string;
-    /** The engine a command line naming no flag means: the directory the server's own files sit in. */
+    /**
+     * The engine a command line naming no flag means: the directory the server's own files sit in.
+     */
     fallback: string;
     /** Whether a directory holds `config/`; the start refuses one that does not. */
     hasConfig: (dir: string) => boolean;
@@ -25,15 +27,15 @@ export type ArgsReader = {
 /**
  * The engine directory one command line names, or the sentence the start prints before it exits.
  *
- * `--engine <dir>` and `--engine=<dir>` are the same thing; a relative directory is resolved against
- * the directory the command was typed in, so the path means what it looks like. Anything else on the
- * line is an error naming it, since a flag the server ignores is a setting the reader thinks holds.
- * A value beginning with `--` is another flag rather than a directory, so it is the same error as an
- * empty one: without that, `--engine --port` would read `--port` as the path and the refusal would
- * name a folder nobody typed. The line naming `--engine` twice takes the last of them, as a shell
- * takes the last redirection. A directory without `config/` is an error too: a server over nothing
- * is not a server, and a flag pointing at nothing is a typo rather than a request for an empty
- * configuration.
+ * `--engine <dir>` and `--engine=<dir>` are the same thing; a relative directory is resolved
+ * against the directory the command was typed in, so the path means what it looks like. Anything
+ * else on the line is an error naming it, since a flag the server ignores is a setting the reader
+ * thinks holds. A value beginning with `--` is another flag rather than a directory, so it is the
+ * same error as an empty one: without that, `--engine --port` would read `--port` as the path and
+ * the refusal would name a folder nobody typed. The line naming `--engine` twice takes the last of
+ * them, as a shell takes the last redirection. A directory without `config/` is an error too: a
+ * server over nothing is not a server, and a flag pointing at nothing is a typo rather than a
+ * request for an empty configuration.
  */
 export function parseEngineArgs(argv: string[], reader: ArgsReader): EngineArgs {
     const missing = { error: `${FLAG} needs the directory that holds config/` };

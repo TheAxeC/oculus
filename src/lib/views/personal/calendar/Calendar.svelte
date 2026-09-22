@@ -1,7 +1,7 @@
 <script module lang="ts">
     // Layer 3, view registration. The agenda sits in the Personal group after the photo wall, since
-    // what it holds is the reader's own days rather than a fact about the hub. The rail badge is how
-    // many of today's events have not ended yet, and nothing when none are left.
+    // what it holds is the reader's own days rather than a fact about the hub. The rail badge is
+    // how many of today's events have not ended yet, and nothing when none are left.
     import type { ViewRegistration } from '../../registry';
 
     export const registration: ViewRegistration = {
@@ -46,7 +46,8 @@
     const groups = $derived(days());
 </script>
 
-<!-- The pane is the frame every view has; the head inside it is the connector's own status line. -->
+<!-- The pane is the frame every view has; the head inside it is the connector's own status
+     line. -->
 <Pane title={t('views.calendar')} tinted>
     <div class="calendar" data-instance={instance.id}>
         <Head {data} onrefresh={refresh} />

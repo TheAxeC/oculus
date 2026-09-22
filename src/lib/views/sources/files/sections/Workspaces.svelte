@@ -7,8 +7,8 @@
     //
     // The configured roots are the first row and have no name: that workspace is the configured
     // roots and whatever the reader added without saving, which is exactly what a cleared field
-    // means everywhere else in this tree, so its row carries the words for it instead. The section is
-    // one stop of the focus order through ui/tree/TreeView.svelte.
+    // means everywhere else in this tree, so its row carries the words for it instead. The section
+    // is one stop of the focus order through ui/tree/TreeView.svelte.
     //
     // The head is drawn in every state, since it is where the roots in force are saved: a read that
     // failed says why in one row in place of the list, with the control that reads it again beside

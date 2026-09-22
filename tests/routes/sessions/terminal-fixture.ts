@@ -56,7 +56,9 @@ export function engineWith(name: string, local = ''): string {
     return dir;
 }
 
-/** The engine a case that reads no machine-local value is given: a config folder and nothing in it. */
+/**
+ * The engine a case that reads no machine-local value is given: a config folder and nothing in it.
+ */
 export const ENGINE = engineWith('engine');
 
 export const TASK_ENGINE = engineWith(
@@ -177,9 +179,9 @@ export function command(argv: string[]): string {
 }
 
 /**
- * A chat catalog template with each placeholder replaced by the argument it numbers, built by splitting
- * the template rather than by replacing into it, so an argument holding braces or a `$` pattern is
- * expected exactly as written and independently of the server's fill.
+ * A chat catalog template with each placeholder replaced by the argument it numbers, built by
+ * splitting the template rather than by replacing into it, so an argument holding braces or a `$`
+ * pattern is expected exactly as written and independently of the server's fill.
  */
 export function filled(key: string, args: string[]): string {
     const template = CHAT_CATALOG[key];

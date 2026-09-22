@@ -6,9 +6,10 @@
 // function, a helper's helper, or the variable a beforeEach fills by calling one. Anything else is
 // an audit and says so in its name, which is what makes the distinction readable in a run's output.
 //
-// The scan reads the text of a case; it cannot tell a rendered body that is asserted over from one
-// that is fetched and dropped, so it says which cases never render, not which assertions are worth
-// making.
+// The scan reads a case's code, with its strings and comments blanked, and a name counts only where
+// the file binds it outside every case. It cannot tell a rendered body that is asserted over from
+// one that is fetched and dropped, so it says which cases never render, not which assertions are
+// worth making.
 
 import { mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -17,6 +18,7 @@ import { fileURLToPath } from 'node:url';
 import { afterAll, afterEach, describe, expect, it } from 'vitest';
 
 import { isReason } from '../../fixtures/reason.ts';
+import { code } from '../source/code.ts';
 import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
 
 afterAll(sweepScratch);
@@ -66,7 +68,9 @@ const DECLARES = [
     /^\s*(\w+)\s*=\s*\S/
 ];
 
-/** The block a line opens, read to the line its braces and parentheses close on. */
+/**
+ * The block a line opens, read to the line its braces and parentheses close on, over code lines.
+ */
 function block(lines: string[], from: number): string[] {
     let depth = 0;
     for (let at = from; at < lines.length; at += 1) {
@@ -79,39 +83,51 @@ function block(lines: string[], from: number): string[] {
     return lines.slice(from);
 }
 
-/**
- * Whether a body reaches a render, directly or through one of the names already known to.
- *
- * It reads the body as written, so a name inside a string or a comment counts, and a name that is an
- * ordinary word counts wherever the word appears. What that costs is said in the head comment above.
- */
+/** Whether a body of code reaches a render, directly or through one of the names known to. */
 function reaches(body: string, names: Set<string>): boolean {
     if (/\brender\(/.test(body)) return true;
     for (const name of names) {
-        if (new RegExp(`\\b${name}\\b`).test(body)) return true;
+        // A name read as a property of something else (`page.body`) is not the file's name, and a
+        // spread of it (`...body`) is.
+        if (new RegExp(`(?<![\\w$])(?<![^.]\\.)${name}\\b`).test(body)) return true;
     }
     return false;
+}
+
+/** The lines of every case of a file, as the line numbers each case's body covers. */
+function caseLines(lines: string[], coded: string[]): Set<number> {
+    const inside = new Set<number>();
+    for (let at = 0; at < lines.length; at += 1) {
+        if (!CASE.test(lines[at])) continue;
+        const length = block(coded, at).length;
+        for (let one = at; one < at + length; one += 1) inside.add(one);
+    }
+    return inside;
 }
 
 /**
  * Every name in a file that stands for a render, starting from the names it already knows do.
  *
- * A helper that renders, a helper that calls such a helper, and the variable a beforeEach fills from
- * one are all the same thing to a case: reading the name is reading a rendering. The passes repeat
- * until nothing new is found, so a chain of helpers is followed however long it is.
+ * A helper that renders, a helper that calls such a helper, and the variable a beforeEach fills
+ * from one are all the same thing to a case: reading the name is reading a rendering. Only a name
+ * bound outside every case counts, since a name a case binds for itself is that case's own and says
+ * nothing about another case holding the same word. The passes repeat until nothing new is found,
+ * so a chain of helpers is followed however long it is.
  */
 export function renderNames(text: string, known: string[] = []): Set<string> {
     const lines = text.split('\n');
+    const coded = code(text).split('\n');
+    const own = caseLines(lines, coded);
     const names = new Set<string>(known);
     for (let pass = 0; pass < 6; pass += 1) {
         const before = names.size;
-        for (let at = 0; at < lines.length; at += 1) {
-            if (CASE.test(lines[at])) continue;
+        for (let at = 0; at < coded.length; at += 1) {
+            if (own.has(at)) continue;
             for (const pattern of DECLARES) {
-                const found = pattern.exec(lines[at]);
+                const found = pattern.exec(coded[at]);
                 if (found === null) continue;
                 if (names.has(found[1])) break;
-                if (reaches(block(lines, at).join('\n'), names)) names.add(found[1]);
+                if (reaches(block(coded, at).join('\n'), names)) names.add(found[1]);
                 break;
             }
         }
@@ -120,9 +136,10 @@ export function renderNames(text: string, known: string[] = []): Set<string> {
     return names;
 }
 
-/** Every case in a file, with the lines of its body. */
+/** Every case in a file, with the lines of its body as code. */
 export function cases(text: string): { name: string; at: number; body: string }[] {
     const lines = text.split('\n');
+    const coded = code(text).split('\n');
     const found: { name: string; at: number; body: string }[] = [];
     for (let at = 0; at < lines.length; at += 1) {
         const opens = CASE.exec(lines[at]);
@@ -131,7 +148,7 @@ export function cases(text: string): { name: string; at: number; body: string }[
         // the name is then the string that line opens with.
         const next = at + 1 < lines.length ? NAME.exec(lines[at + 1]) : null;
         const named = (opens[4] as string | undefined) ?? next?.[2] ?? '';
-        found.push({ name: named, at: at + 1, body: block(lines, at).join('\n') });
+        found.push({ name: named, at: at + 1, body: block(coded, at).join('\n') });
     }
     return found;
 }
@@ -228,7 +245,7 @@ describe('a case that never draws anything', () => {
     });
 
     it('catches a case that asserts over source text alone', () => {
-        // revert: tests/checks/tree/audits.test.ts:201 => delete
+        // revert: tests/checks/tree/audits.test.ts:218 => delete
         const dir = scratch(
             [
                 "const source = readFileSync('src/lib/views/sources/files/Files.svelte', 'utf8');",
@@ -243,7 +260,7 @@ describe('a case that never draws anything', () => {
     });
 
     it('passes a case that renders, one that uses a helper, and one that says it audits', () => {
-        // revert: tests/checks/tree/audits.test.ts:66 => delete
+        // revert: tests/checks/tree/audits.test.ts:68 => delete
         const dir = scratch(
             [
                 'function drawn(state) {',
@@ -274,7 +291,7 @@ describe('a case that never draws anything', () => {
     });
 
     it('walks a folder under tests/views as well as the files beside it', () => {
-        // revert: tests/checks/tree/audits.test.ts:181 => delete
+        // revert: tests/checks/tree/audits.test.ts:198 => delete
         const dir = scratch(
             [
                 "it('names the control in the markup', () => {",
@@ -289,7 +306,7 @@ describe('a case that never draws anything', () => {
     });
 
     it('follows a render helper into the fixture beside the file, and only a helper that renders', () => {
-        // revert: tests/checks/tree/audits.test.ts:186 => const names = renderNames(text);
+        // revert: tests/checks/tree/audits.test.ts:203 => const names = renderNames(text);
         const dir = scratch(
             [
                 "import { drawn, labelOf } from './planted-fixture.ts';",
@@ -317,20 +334,73 @@ describe('a case that never draws anything', () => {
     });
 
     it('holds the allow list to cases the tree still has', () => {
-        // revert: tests/checks/tree/audits.test.ts:188 => found.push({ file: rel, name: '', body: one.body, names });
+        // revert: tests/checks/tree/audits.test.ts:205 => found.push({ file: rel, name: '', body: one.body, names });
         const held = new Set(
             everyCase(VIEWS).map((one) => `tests/views/${one.file} :: ${one.name}`)
         );
         expect(AUDITS.filter((one) => !held.has(one))).toEqual([]);
     });
 
+    it('holds the allow list to the cases the scan still finds', () => {
+        // revert: tests/checks/tree/allow-audits.txt:11 => tests/views/boards/project.test.ts :: draws the card of the board, opened out | a reason of four words here
+        const needed = new Set(findAudits(VIEWS, []));
+        expect(AUDITS.filter((one) => !needed.has(one))).toEqual([]);
+    });
+
     it('holds every entry of the list to a reason', () => {
-        // revert: tests/checks/tree/audits.test.ts:36 => found.push({ line: line.trim(), why: 'a reason of four words here' });
+        // revert: tests/checks/tree/audits.test.ts:38 => found.push({ line: line.trim(), why: 'a reason of four words here' });
         expect(AUDIT_ENTRIES.filter((one) => !isReason(one.why)).map((one) => one.line)).toEqual(
             []
         );
         expect(readAudits('tests/views/one.test.ts :: a case\n')[0].why).toBe('');
         expect(readAudits('one :: a case | asserts over held\n')[0].why).toBe('asserts over held');
         expect(isReason('x')).toBe(false);
+    });
+
+    it('reads a render named inside a string as no render', () => {
+        // revert: tests/checks/source/code.ts:19 => return Array.from({ length: text.length }, () => 'code');
+        const dir = scratch(
+            [
+                "it('names the render in the markup', () => {",
+                "    expect(source).toContain('render(Files)');",
+                '});'
+            ].join('\n')
+        );
+        expect(findAudits(dir, [])).toEqual([
+            'tests/views/planted.test.ts :: names the render in the markup'
+        ]);
+    });
+
+    it('reads a name one case binds for itself as that case alone', () => {
+        // revert: tests/checks/tree/audits.test.ts:125 => delete
+        const dir = scratch(
+            [
+                'function drawn(state) {',
+                '    return render(Files, { props: { state } }).body;',
+                '}',
+                "it('draws the row', () => {",
+                '    const at = drawn({});',
+                "    expect(at).toContain('row');",
+                '});',
+                "it('counts the rows', () => {",
+                '    const at = 3;',
+                '    expect(at).toBe(3);',
+                '});'
+            ].join('\n')
+        );
+        expect(findAudits(dir, [])).toEqual(['tests/views/planted.test.ts :: counts the rows']);
+    });
+
+    it('reads the brackets of a comment as no brackets', () => {
+        // revert: tests/checks/source/code.ts:28 => if (false) {
+        const dir = scratch(
+            [
+                "it('draws the pane', () => {",
+                '    // a call such as foo)) is only mentioned here',
+                "    expect(render(Files, { props: {} }).body).toContain('pane');",
+                '});'
+            ].join('\n')
+        );
+        expect(findAudits(dir, [])).toEqual([]);
     });
 });

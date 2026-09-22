@@ -16,7 +16,9 @@ import {
     type SessionsOf
 } from './presets.ts';
 
-/** The name a cross-link tag carries: the short handle when the manifest has one, else the title. */
+/**
+ * The name a cross-link tag carries: the short handle when the manifest has one, else the title.
+ */
 function tagLabel(project: Project): string {
     const short = project.short?.trim() ?? '';
     return short === '' ? project.title : short;

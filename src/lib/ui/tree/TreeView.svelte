@@ -57,7 +57,9 @@
         }
     };
 
-    /** A row a pointer or a Tab put the focus on becomes the stop, so the next Tab leaves from it. */
+    /**
+     * A row a pointer or a Tab put the focus on becomes the stop, so the next Tab leaves from it.
+     */
     function entered(event: FocusEvent): void {
         const target = event.target;
         if (target instanceof HTMLElement && target.dataset.rowId !== undefined) {

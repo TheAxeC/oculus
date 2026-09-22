@@ -1,5 +1,6 @@
 <script lang="ts">
-    // Layer 3, view partial. Partition rows aggregate sinfo into idle, mixed, and allocated segments while retaining the full source table.
+    // Layer 3, view partial. Partition rows aggregate sinfo into idle, mixed, and allocated
+    // segments while retaining the full source table.
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Table from '$lib/ui/display/Table.svelte';
     import type { Column } from '$lib/ui/display/table-rows';

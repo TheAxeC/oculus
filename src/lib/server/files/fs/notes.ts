@@ -110,8 +110,8 @@ export function listNotes(dir: string): NoteRow[] {
 }
 
 /**
- * Write one note whole, making the folder on the first one. An id that is not one name, or one whose
- * file is a link out of the folder, is refused as null and nothing is written.
+ * Write one note whole, making the folder on the first one. An id that is not one name, or one
+ * whose file is a link out of the folder, is refused as null and nothing is written.
  */
 export function saveNote(dir: string, id: string, title: string, body: string): NoteRow | null {
     const file = noteFile(dir, id);

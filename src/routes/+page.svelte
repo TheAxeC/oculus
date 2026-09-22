@@ -135,9 +135,9 @@
 
     /**
      * The `docs` list of config/layout.yml, in order: one Markdown document of the hub per entry,
-     * drawn in the group it names. An entry that is not three strings, or whose label, path or group
-     * is empty, is dropped rather than drawn half-formed, exactly as a bookmark is; the server reports
-     * it as a finding.
+     * drawn in the group it names. An entry that is not three strings, or whose label, path or
+     * group is empty, is dropped rather than drawn half-formed, exactly as a bookmark is; the
+     * server reports it as a finding.
      */
     const docs = $derived<DocEntry[]>(readDocs(config()?.config.docs));
 

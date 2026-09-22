@@ -1,4 +1,5 @@
-// Layer 2, server tests. The Vite development and preview hooks carry their own context through the adapter emulator.
+// Layer 2, server tests. The Vite development and preview hooks carry their own context through the
+// adapter emulator.
 
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import { describe, expect, it, vi } from 'vitest';

@@ -6,15 +6,18 @@
 // taken away again in the same case, so the copy the next spec file serves is the one the layer
 // made. Nothing reaches the machine's own checkout.
 
-import { expect, test, type Page } from '@playwright/test';
-import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { expect, test, type Locator, type Page } from '@playwright/test';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
 import { gitIn } from '../helpers/git.ts';
 import { boot, openView } from '../helpers/rail.ts';
 import { hubDir } from '../helpers/hub.ts';
+import { keepServedFiles } from '../helpers/files.ts';
 import { t } from '../helpers/words.ts';
 import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
+
+keepServedFiles();
 
 test.afterAll(sweepScratch);
 
@@ -32,6 +35,42 @@ async function pick(page: Page, name: string): Promise<void> {
 
 function worktree(): string {
     return join(hubDir(), '.agents', 'worktrees', NAME);
+}
+
+/**
+ * Add a folder as a root through the file browser, then show it in the Repositories view. The
+ * channel reads the roots again once the workspaces file has changed, so the picker is asked until
+ * it lists the folder. Answers the view's shown section, which then names the folder.
+ */
+async function showAdded(page: Page, dir: string): Promise<Locator> {
+    const label = dir.split(sep).at(-1) ?? '';
+    await openView(page, 'files', t('views.files'));
+    await page.getByRole('button', { name: t('files.add_root'), exact: true }).click();
+    await page.getByRole('textbox', { name: t('files.root_dir') }).fill(dir);
+    await page.getByRole('button', { name: t('files.add'), exact: true }).click();
+    // the add closed the form, which is what says it was taken
+    await expect(page.getByRole('textbox', { name: t('files.root_dir') })).toHaveCount(0);
+
+    await openView(page, 'repositories', t('views.repositories'));
+    const shown = page.locator('[data-view="repositories"] [data-root]');
+    await expect(shown).toHaveAttribute('data-root', hubDir());
+    const opener = page.locator('[data-repo-picker]').getByRole('button').first();
+    await expect
+        .poll(
+            async () => {
+                await opener.click();
+                const listed = await page
+                    .getByRole('menuitem', { name: label, exact: true })
+                    .count();
+                await page.keyboard.press('Escape');
+                return listed;
+            },
+            { timeout: 10_000 }
+        )
+        .toBe(1);
+    await pick(page, label);
+    await expect(shown).toHaveAttribute('data-root', new RegExp(`${label}$`));
+    return shown;
 }
 
 test.describe('the Repositories view', () => {
@@ -88,7 +127,7 @@ test.describe('the Repositories view', () => {
             timeout: 20_000
         });
 
-        // revert: src/lib/views/sources/repositories/Repositories.svelte:85 => badgeTone: undefined,
+        // revert: src/lib/views/sources/repositories/Repositories.svelte:84 => badgeTone: undefined,
         await expect(badge(labels.missing)).toHaveAttribute('style', /--badge-bg: var\(--c-red\)/);
         await expect(badge(labels.failed)).toHaveAttribute('style', /--badge-bg: var\(--c-amber\)/);
         await expect(badge(labels.none)).toHaveAttribute('style', /--badge-bg: var\(--c-blue\)/);
@@ -314,51 +353,57 @@ test.describe('the Repositories view', () => {
         try {
             gitIn(fresh, 'init', '--quiet', '--initial-branch=start');
             writeFileSync(join(fresh, 'loose.txt'), 'x\n');
-            const label = fresh.split(sep).at(-1) ?? '';
 
             await boot(page);
-            await openView(page, 'files', t('views.files'));
-            await page.getByRole('button', { name: t('files.add_root'), exact: true }).click();
-            await page.getByRole('textbox', { name: t('files.root_dir') }).fill(fresh);
-            await page.getByRole('button', { name: t('files.add'), exact: true }).click();
-            // the add closed the form, which is what says it was taken
-            await expect(page.getByRole('textbox', { name: t('files.root_dir') })).toHaveCount(0);
-
-            await openView(page, 'repositories', t('views.repositories'));
-            const shown = page.locator('[data-view="repositories"] [data-root]');
-            await expect(shown).toHaveAttribute('data-root', hubDir());
-
-            // The channel reads the roots again once the workspaces file has changed, so the picker
-            // is asked until it lists the new repository.
-            const opener = page.locator('[data-repo-picker]').getByRole('button').first();
-            await expect
-                .poll(
-                    async () => {
-                        await opener.click();
-                        const listed = await page
-                            .getByRole('menuitem', { name: label, exact: true })
-                            .count();
-                        await page.keyboard.press('Escape');
-                        return listed;
-                    },
-                    { timeout: 10_000 }
-                )
-                .toBe(1);
-
-            await pick(page, label);
-            await expect(shown).toHaveAttribute('data-root', new RegExp(`${label}$`));
+            const shown = await showAdded(page, fresh);
             const section = page.locator('[data-view="repositories"] [data-root]');
             await expect(section.getByText('start', { exact: true }).first()).toBeVisible();
             await expect(section.locator('[data-entry="loose.txt"]')).toBeVisible();
             await expect(section.getByText(t('repositories.log_empty'))).toBeVisible();
             // Revert: push `sessions.ch_insync` whenever `bits` is empty in
             // views/shared/changes/branch-state.ts.
+
             // The branch has no upstream, so the line says nothing.
             await expect(section.getByText(t('sessions.ch_insync'))).toHaveCount(0);
 
             // Back to the hub, which the other cases of this file draw.
             await pick(page, hubDir().split(sep).at(-1) ?? '');
             await expect(shown).toHaveAttribute('data-root', hubDir());
+        } finally {
+            rmSync(fresh, { recursive: true, force: true });
+        }
+    });
+
+    // Revert: disable the create control of views/sources/repositories/Branches.svelte whenever the
+    // repository has no commit yet.
+    // revert: src/lib/views/sources/repositories/Branches.svelte:106 => disabled={busy || unborn}
+    test('creates a branch in a repository with no commit yet and checks it out', async ({
+        page
+    }) => {
+        const fresh = scratchDir('oculus-repositories-unborn-');
+        expect(resolve(fresh).startsWith(resolve(tmpdir()) + sep)).toBe(true);
+        // The folder goes when the case ends, whatever the case did.
+        try {
+            gitIn(fresh, 'init', '--quiet', '--initial-branch=start');
+            await boot(page);
+            const shown = await showAdded(page, fresh);
+            await expect(shown.getByText('start', { exact: true }).first()).toBeVisible();
+
+            const branches = shown.locator('[data-group="branches"]');
+            await branches
+                .getByRole('textbox', { name: t('git.branch_new'), exact: true })
+                .fill('made-before-a-commit');
+            await branches
+                .getByRole('button', { name: t('git.branch_new_create'), exact: true })
+                .click();
+            await page.getByRole('button', { name: t('ui.confirm_ok') }).click();
+
+            await expect
+                .poll(() => readFileSync(join(fresh, '.git', 'HEAD'), 'utf8').trim())
+                .toBe('ref: refs/heads/made-before-a-commit');
+            await expect(
+                shown.getByText('made-before-a-commit', { exact: true }).first()
+            ).toBeVisible();
         } finally {
             rmSync(fresh, { recursive: true, force: true });
         }
@@ -423,7 +468,8 @@ test.describe('the Repositories view', () => {
         }
     });
 
-    // Revert: read `open` as true whatever `collapsed` holds for the log in repositories/Repo.svelte.
+    // Revert: read `open` as true whatever `collapsed` holds for the log in
+    // repositories/Repo.svelte.
     test('closes a section from its head, and keeps it closed after a tab switch', async ({
         page
     }) => {
@@ -471,7 +517,8 @@ test.describe('the Repositories view', () => {
             section.getByRole('textbox', { name: t('git.branch_new'), exact: true })
         ).toBeFocused();
 
-        // Down walks the rows: the changed group, then the changed file, whose controls Tab reaches.
+        // Down walks the rows: the changed group, then the changed file, whose controls Tab
+        // reaches.
         await changes.focus();
         await page.keyboard.press('ArrowDown');
         const group = section.locator('[data-changes="changed"] [role="treeitem"]');

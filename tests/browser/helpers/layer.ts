@@ -1,6 +1,6 @@
 // What the browser layer knows about the machine before it serves, and how it puts the machine back
-// afterwards. Both live here rather than in serve.ts because serve.ts is a process Playwright starts:
-// importing it starts a server, so nothing in it can be held by a unit test.
+// afterwards. Both live here rather than in serve.ts because serve.ts is a process Playwright
+// starts: importing it starts a server, so nothing in it can be held by a unit test.
 
 import {
     cpSync,
@@ -95,9 +95,9 @@ export function running(pid: number): boolean {
 
 /**
  * Take the layer's lock, or refuse. One file under the temporary directory holds the pid of the run
- * that owns the copies. A second run started while the first is serving must sweep nothing and start
- * nothing: the sweep below would otherwise take the serving run's hub out from under it. A lock left
- * by a run that is gone is taken over, since its pid answers for nobody.
+ * that owns the copies. A second run started while the first is serving must sweep nothing and
+ * start nothing: the sweep below would otherwise take the serving run's hub out from under it. A
+ * lock left by a run that is gone is taken over, since its pid answers for nobody.
  */
 export function takeLock(
     root: string,

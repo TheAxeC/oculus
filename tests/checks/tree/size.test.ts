@@ -2,10 +2,10 @@
 // may not grow past that count.
 //
 // The rule is the spec's: one source file under 1000 lines and a component under about 600, checked
-// at 900 and 540 so a file is caught while it still has room to be split. Every source file the tree
-// holds is measured, a script under bin/ as much as a module under src/. Membership of the list is
-// not a pass: an entry carries a number, the file may not pass it, a file that falls back under the
-// line comes off the list, and an entry naming a file the tree no longer holds fails too.
+// at 900 and 540 so a file is caught while it still has room to be split. Every source file the
+// tree holds is measured, a script under bin/ as much as a module under src/. Membership of the
+// list is not a pass: an entry carries a number, the file may not pass it, a file that falls back
+// under the line comes off the list, and an entry naming a file the tree no longer holds fails too.
 //
 // bin/size-allow.txt is read by this and by the one-line command of the verification list, which
 // holds the same rule in awk; the two are checked against each other by the case at the end.

@@ -1,8 +1,8 @@
 // Layer 2, client state. The workbench's current session: one id, or none.
 //
 // It is not saved. A reload subscribes again and the sessions payload arrives whole, so the rail
-// picks a session the same way it picked one the first time; remembering an id across a reload would
-// only mean remembering one that has since gone.
+// picks a session the same way it picked one the first time; remembering an id across a reload
+// would only mean remembering one that has since gone.
 //
 // DESIGN.md, "sessions are six views, not one": the list sets this and the other five follow it, so
 // a click in the rail moves the detail, the timeline, the changes and the agents together. A view
@@ -52,7 +52,9 @@ export function createSelection(): SelectionStore {
         return store.id;
     }
 
-    /** The current selection when it names a terminal, and null when it names a session or nothing. */
+    /**
+     * The current selection when it names a terminal, and null when it names a session or nothing.
+     */
     function selectedTerminal(): string | null {
         return isTerminalId(store.id) ? store.id : null;
     }

@@ -227,6 +227,26 @@ const PASS_THROUGH: Record<string, string> = {
     'src/lib/ui/menu/Menu.svelte': '.heading=fs-xxs | .item=fs-sm | .item-badge=fs-3xs',
     'src/lib/ui/menu/MenuOpener.svelte':
         '.opener=fs-sm | .opener.compact=fs-lg | .opener.bare=fs-lg | .opener.rail-control=fs-xl | .opener.stacked :global(.label)=fs-3xs',
+    'src/lib/ui/controls/Confirm.svelte': '.message=fs-sm | .detail=fs-xs | .row button=fs-sm',
+    'src/lib/ui/controls/Glyph.svelte': '',
+    'src/lib/ui/controls/Search.svelte': '.search=fs-sm',
+    'src/lib/ui/controls/Segment.svelte': '',
+    'src/lib/ui/controls/Tag.svelte': '.tag=fs-sm',
+    'src/lib/ui/display/Ticker.svelte': 'li=fs-sm | .act=fs-3xs',
+    'src/lib/ui/forms/Checkbox.svelte': '.box=fs-sm',
+    'src/lib/ui/forms/DateInput.svelte': '.date=fs-sm',
+    'src/lib/ui/forms/Field.svelte': '.name=fs-xs | .help, .note=fs-xs',
+    'src/lib/ui/forms/MultiSelect.svelte': '.filter=fs-sm',
+    'src/lib/ui/forms/Select.svelte': '.select=fs-sm',
+    'src/lib/ui/forms/TextArea.svelte': '.area=fs-sm',
+    'src/lib/ui/forms/TextInput.svelte': '.text=fs-sm',
+    'src/lib/ui/frame/Sash.svelte': '',
+    'src/lib/ui/menu/KeySheet.svelte': 'h2=fs-xl | header span=fs-sm | kbd=fs-sm | .row span=fs-md',
+    'src/lib/ui/menu/Tooltip.svelte': '.bubble=fs-xs',
+    'src/lib/ui/tabs/Breadcrumb.svelte': '.crumb=fs-xs',
+    'src/lib/ui/tree/TreeItem.svelte': '.detail, .count, .end=fs-sm',
+    'src/lib/ui/tree/TreeSection.svelte': '',
+    'src/lib/ui/tree/TreeView.svelte': '',
     'src/lib/shell/rail/ActivityRail.svelte': '.group=fs-3xs | .badge=fs-3xs',
     'src/lib/shell/Workbench.svelte': ''
 };
@@ -238,6 +258,16 @@ describe('the view type scale', () => {
                 .map((file) => file.slice(`${ROOT}/`.length))
                 .sort()
         ).toEqual(Object.keys(VIEWS).sort());
+    });
+
+    // revert: tests/views/whole/type-scale.test.ts:249 => delete
+    it('audits that every ui component is listed in the pass-through audit', () => {
+        const ui = 'src/lib/ui';
+        expect(files(ui).sort()).toEqual(
+            Object.keys(PASS_THROUGH)
+                .filter((file) => file.startsWith(`${ui}/`))
+                .sort()
+        );
     });
 
     for (const [file, expected] of Object.entries(VIEWS)) {

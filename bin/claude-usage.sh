@@ -1,5 +1,6 @@
 #!/bin/sh
-# Layer 1, data. Preserve Claude Code's status-line payload for the Usage watcher and print its compact terminal status.
+# Layer 1, data. Preserve Claude Code's status-line payload for the Usage watcher and print its
+# compact terminal status.
 
 set -eu
 

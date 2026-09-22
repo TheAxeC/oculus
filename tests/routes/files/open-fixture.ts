@@ -80,8 +80,8 @@ export function writeOpenConfig(engine: string, map: unknown): void {
 
 /**
  * What a request's ServerContext carries for the open route: no configured roots, an engine of its
- * own whose config/behavior.yml holds the checked-in `open.program_ext`, and a saved workspaces file
- * whose current workspace adds `work` as a root, as the Files view's add control writes it.
+ * own whose config/behavior.yml holds the checked-in `open.program_ext`, and a saved workspaces
+ * file whose current workspace adds `work` as a root, as the Files view's add control writes it.
  */
 export function servedOver(
     hub: string,

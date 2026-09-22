@@ -43,9 +43,9 @@ export function createSocket(entities: EntitiesStore, writes: WritesStore): Sock
     let channels: string[] = [];
 
     /**
-     * The listeners of a channel, by channel name. A channel that has one is handed every message and
-     * nothing of it is stored: entities.receive keeps one message per channel, the latest, and on a
-     * `pty:` channel that rule would drop the chunk before the one that arrived.
+     * The listeners of a channel, by channel name. A channel that has one is handed every message
+     * and nothing of it is stored: entities.receive keeps one message per channel, the latest, and
+     * on a `pty:` channel that rule would drop the chunk before the one that arrived.
      */
     const listeners = new Map<string, Set<(message: Message) => void>>();
 
@@ -61,7 +61,9 @@ export function createSocket(entities: EntitiesStore, writes: WritesStore): Sock
         return socket.status;
     }
 
-    /** Open the socket and subscribe to these channels, reconnecting until disconnect() is called. */
+    /**
+     * Open the socket and subscribe to these channels, reconnecting until disconnect() is called.
+     */
     function connect(names: string[]): void {
         channels = [...names];
         wanted = true;
@@ -89,16 +91,17 @@ export function createSocket(entities: EntitiesStore, writes: WritesStore): Sock
         if (current !== null) current.close();
     }
 
-    // The token goes with the subscription rather than with each message: the server remembers which
-    // socket carried it, and a socket without it reads every channel and writes to none.
+    // The token goes with the subscription rather than with each message: the server remembers
+    // which socket carried it, and a socket without it reads every channel and writes to none.
     function subscription(): Subscription {
         return { type: 'subscribe', channels, token: writes.writeToken() };
     }
 
     /**
      * Write one message on the open socket: the terminal input and resize, and nothing else the
-     * server accepts from a page. False when there is no open socket, which a caller shows rather than
-     * queueing: keystrokes held through a reconnect would be typed into whatever the pane shows by then.
+     * server accepts from a page. False when there is no open socket, which a caller shows rather
+     * than queueing: keystrokes held through a reconnect would be typed into whatever the pane
+     * shows by then.
      */
     function send(message: unknown): boolean {
         if (live?.readyState !== WebSocket.OPEN) return false;
@@ -107,8 +110,8 @@ export function createSocket(entities: EntitiesStore, writes: WritesStore): Sock
     }
 
     /**
-     * Add channels to the subscription. The server takes a second subscribe message as more channels on
-     * the same sink, and the list is remembered so a reconnect asks for them again.
+     * Add channels to the subscription. The server takes a second subscribe message as more
+     * channels on the same sink, and the list is remembered so a reconnect asks for them again.
      */
     function subscribe(names: string[]): void {
         const added = names.filter((name) => !channels.includes(name));
@@ -118,15 +121,17 @@ export function createSocket(entities: EntitiesStore, writes: WritesStore): Sock
     }
 
     /**
-     * Take channels out of the subscription. There is no unsubscribe message on the wire, so the server
-     * keeps sending on an open socket until it closes; what this stops is the next reconnect asking for
-     * them, and with the listener gone the messages that still arrive are dropped.
+     * Take channels out of the subscription. There is no unsubscribe message on the wire, so the
+     * server keeps sending on an open socket until it closes; what this stops is the next reconnect
+     * asking for them, and with the listener gone the messages that still arrive are dropped.
      */
     function unsubscribe(names: string[]): void {
         channels = channels.filter((name) => !names.includes(name));
     }
 
-    /** Hand every message on a channel to a listener. The call it returns takes the listener off. */
+    /**
+     * Hand every message on a channel to a listener. The call it returns takes the listener off.
+     */
     function listen(channel: string, fn: (message: Message) => void): () => void {
         const held = listeners.get(channel) ?? new Set<(message: Message) => void>();
         held.add(fn);
@@ -193,10 +198,10 @@ export function createSocket(entities: EntitiesStore, writes: WritesStore): Sock
      * config: the config carries the icon names and the server turns them into the drawings this
      * installs.
      *
-     * The configuration's generation is raised once at the end, after every store took its part, so a
-     * component that draws again sees the new strings and the new tones together and never half of each.
-     * No payload at all installs nothing and raises nothing; the frame check in handle() is what keeps a
-     * payload that is not a map from reaching here.
+     * The configuration's generation is raised once at the end, after every store took its part, so
+     * a component that draws again sees the new strings and the new tones together and never half
+     * of each. No payload at all installs nothing and raises nothing; the frame check in handle()
+     * is what keeps a payload that is not a map from reaching here.
      */
     function installConfig(payload: ConfigPayload | null): void {
         if (payload === null) return;
@@ -222,8 +227,8 @@ export function createSocket(entities: EntitiesStore, writes: WritesStore): Sock
         if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) return;
         const message = parsed as Message;
         if (typeof message.channel !== 'string' || typeof message.version !== 'number') return;
-        // Every channel carries a map, so a frame whose payload is anything else is dropped here and
-        // each channel's reader may take its own payload type as read.
+        // Every channel carries a map, so a frame whose payload is anything else is dropped here
+        // and each channel's reader may take its own payload type as read.
         if (!isMap(message.payload)) return;
         const heard = listeners.get(message.channel);
         if (heard !== undefined && heard.size > 0) {

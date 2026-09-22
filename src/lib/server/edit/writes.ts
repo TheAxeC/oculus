@@ -78,8 +78,8 @@ import type { PortfolioConfig, Project } from '../../data/model.ts';
 
 /**
  * What a write needs to know: which hub to write in, what its manifests are checked against, where
- * the per-session overrides file is, and where the reader's own bookmarks are. The overrides path is
- * absent on a machine that has not set `sessions_overrides` in local.yml, and
+ * the per-session overrides file is, and where the reader's own bookmarks are. The overrides path
+ * is absent on a machine that has not set `sessions_overrides` in local.yml, and
  * `defaultOverridesPath()` is used then.
  *
  * `bookmarks` is a collection of the reader's own that lives outside the hub, so the four entry
@@ -96,9 +96,9 @@ export type WriteTarget = {
     overrides?: string;
     /**
      * The projects of the portfolio this server last published, which the deck write builds its
-     * catalog of slide keys from. It is required rather than optional so that a route reaching for a
-     * target cannot leave the deck write with no catalog and refuse every save; a process that has
-     * published no portfolio yet names no projects, and the write refuses with a reason.
+     * catalog of slide keys from. It is required rather than optional so that a route reaching for
+     * a target cannot leave the deck write with no catalog and refuse every save; a process that
+     * has published no portfolio yet names no projects, and the write refuses with a reason.
      */
     projects: () => Project[];
     bookmarks: string;
@@ -116,7 +116,9 @@ export type WriteTarget = {
 };
 
 export type WriteOutcome = {
-    /** False when the hub holds no project with that id; then nothing was read and nothing written. */
+    /**
+     * False when the hub holds no project with that id; then nothing was read and nothing written.
+     */
     found: boolean;
     changed: string[];
     refused: Refusal[];
@@ -127,7 +129,8 @@ export type WriteOutcome = {
     records?: ChangeRecord[];
     /**
      * The id the file gives the entry this write made or edited, read after the write, so a page
-     * holding a form over that entry is told where the entry now is. Only an entry write carries it.
+     * holding a form over that entry is told where the entry now is. Only an entry write carries
+     * it.
      */
     id?: string;
 };
@@ -179,8 +182,8 @@ function json(status: number, body: unknown): Response {
 }
 
 /**
- * Where writes land on this machine: the hub of local.yml, read the way every other reader does, and
- * the projects of the portfolio this request's server last published.
+ * Where writes land on this machine: the hub of local.yml, read the way every other reader does,
+ * and the projects of the portfolio this request's server last published.
  *
  * The server is passed in rather than reached from a module, so nothing here is process-wide. A
  * caller with no server in hand (a document read, a deposit action) names no projects, and only the

@@ -6,10 +6,11 @@
 // field, a window, an event state.
 //
 // A time is an ISO string exactly as the provider gave it. Google answers a timed event with its
-// own offset (a date, a `T`, a clock and `+02:00`) and an all-day event as the date alone; Microsoft
-// is asked for this machine's own zone and answers a wall-clock time with no offset, which the page
-// reads in the same zone because the page and the server are the same machine. `allDay` says which
-// of the two forms a reader is looking at, so nothing has to parse the string to find out.
+// own offset (a date, a `T`, a clock and `+02:00`) and an all-day event as the date alone;
+// Microsoft is asked for this machine's own zone and answers a wall-clock time with no offset,
+// which the page reads in the same zone because the page and the server are the same machine.
+// `allDay` says which of the two forms a reader is looking at, so nothing has to parse the string
+// to find out.
 //
 // The account types are the connector's shared ones: an account of either connector is a provider
 // and a label, and the calendar's names for them are what its own readers already say.
@@ -61,7 +62,9 @@ export type CalendarEvent = {
     end: string;
     allDay: boolean;
     location?: string;
-    /** The provider's own page for this event, opened through the server rather than by the page. */
+    /**
+     * The provider's own page for this event, opened through the server rather than by the page.
+     */
     link?: string;
     status?: CalendarEventStatus;
 };

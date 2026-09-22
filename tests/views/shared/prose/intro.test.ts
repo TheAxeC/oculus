@@ -1,4 +1,6 @@
-// Layer 4, view test. The shared intro partial owns the bordered surface, draws the catalog's own markup as written and cuts a hub value down first, and wraps its controls under the words rather than pushing them past its edge.
+// Layer 4, view test. The shared intro partial owns the bordered surface, draws the catalog's own
+// markup as written and cuts a hub value down first, and wraps its controls under the words rather
+// than pushing them past its edge.
 //
 // What this does NOT cover: the filtering. DOMPurify needs a document and this suite runs in node,
 // so `sanitise` returns its argument here; which of the two paths a line takes is read off the

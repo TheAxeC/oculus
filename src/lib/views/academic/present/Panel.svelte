@@ -5,10 +5,11 @@
     // A figure the folder does not hold is named in its place rather than left as a dead image, and
     // the reader who wrote the slide gets the same name as the finding does.
     //
-    // A diagram is a grid of labelled boxes, and a slide writes its columns and its per-box colour on
-    // the elements themselves, so it goes through the diagram profile of ui/html.ts, which is the
-    // ordinary profile plus `style`. The classes the deck's diagrams are written with are laid out
-    // below, so a diagram is drawn in the app's own surfaces and type rather than in the deck's.
+    // A diagram is a grid of labelled boxes, and a slide writes its columns and its per-box colour
+    // on the elements themselves, so it goes through the diagram profile of ui/html.ts, which is
+    // the ordinary profile plus `style`. The classes the deck's diagrams are written with are laid
+    // out below, so a diagram is drawn in the app's own surfaces and type rather than in the
+    // deck's.
 
     import { fileUrl } from '$lib/views/shared/links/file-url';
     import { HUB_ROOT } from '$lib/state/boards/collection';

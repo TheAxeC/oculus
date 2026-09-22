@@ -1,6 +1,6 @@
-// The portfolio and feed watcher against a synthetic hub and engine in temporary directories. Nothing
-// outside them is read or written, every write asserts its path is inside first, and every watcher
-// is closed when the test ends.
+// The portfolio and feed watcher against a synthetic hub and engine in temporary directories.
+// Nothing outside them is read or written, every write asserts its path is inside first, and every
+// watcher is closed when the test ends.
 
 import { cpSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -555,7 +555,8 @@ describe('watchPortfolio', () => {
             )
         ).toEqual([]);
 
-        // A README is not a `.yml` and not PRESENT.md, so this is the audit's own reason to rebuild.
+        // A README is not a `.yml` and not PRESENT.md, so this is the audit's own reason to
+        // rebuild.
         write(started.hub, 'projects/active/loewner/README.md', '# Loewner\n\nTODO: the method\n');
         await until(() => on(started.got, 'audit').length > before, 3000);
 
@@ -829,7 +830,8 @@ describe('watchPortfolio', () => {
             return last?.findings.map((finding) => finding.message) ?? [];
         };
         await until(() => messages().length > 0, 3000);
-        // The fixture hub keeps no people or organisations registry, which is two findings of its own.
+        // The fixture hub keeps no people or organisations registry, which is two findings of its
+        // own.
         expect(messages()).toEqual([
             'findings.manifests.id_not_folder "other" loewner',
             'findings.registries.file_missing',

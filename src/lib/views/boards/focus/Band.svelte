@@ -12,7 +12,7 @@
     import { daysUntil, firstSentence } from '$lib/state/boards/board';
     import { collectionLanes, type BandItem } from '$lib/state/boards/focus-lanes';
     import { daysTone } from '$lib/state/boards/ticker';
-    import { toneOf } from '$lib/state/words/tones';
+    import { namedTone, toneOf } from '$lib/state/words/tones';
     import { t } from '$lib/state/words/text';
     import { useState } from '$lib/state/client/use';
 
@@ -42,6 +42,17 @@
               }
             : collectionLanes(snapshot, config)
     );
+
+    /**
+     * The three columns' hues as the palette holds them: a tone `focus_lane_tones` names that no
+     * stylesheet defines, or none at all, is drawn in the unknown tone, so neither the column nor
+     * its header resolves to no colour.
+     */
+    const tones = $derived({
+        funding: namedTone(cards.tones.funding),
+        jobs: namedTone(cards.tones.jobs),
+        teaching: namedTone(cards.tones.teaching)
+    });
 
     const anything = $derived(
         cards.funding.length + cards.applications.length + cards.education.length > 0
@@ -107,11 +118,11 @@
         <summary>{t('focus.cards_group')}</summary>
         <div class="lanes">
             {#if cards.funding.length > 0}
-                <div class="lane" style={`--tone: var(--c-${cards.tones.funding})`}>
+                <div class="lane" style={`--tone: var(--c-${tones.funding})`}>
                     <LaneHead
                         label={t('focus.funding_lane')}
                         count={cards.funding.reduce((n, stage) => n + stage.items.length, 0)}
-                        tone={cards.tones.funding}
+                        tone={tones.funding}
                     />
                     <p class="lane-sub">{t('focus.funding_sub')}</p>
                     <div class="lane-body">
@@ -135,7 +146,7 @@
                 t('focus.jobs_lane'),
                 t('focus.jobs_glyph'),
                 t('focus.jobs_sub'),
-                cards.tones.jobs,
+                tones.jobs,
                 cards.applications
             )}
             <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
@@ -143,7 +154,7 @@
                 t('focus.teaching_lane'),
                 t('focus.teaching_glyph'),
                 t('focus.teaching_sub'),
-                cards.tones.teaching,
+                tones.teaching,
                 cards.education
             )}
         </div>
@@ -230,7 +241,8 @@
         background: var(--chip);
     }
 
-    /* Inside a lane that is already translucent, so the entry keeps its border and paints nothing. */
+    /* Inside a lane that is already translucent, so the entry keeps its border and paints
+       nothing. */
     :global(body.wall) .entry {
         background: transparent;
     }

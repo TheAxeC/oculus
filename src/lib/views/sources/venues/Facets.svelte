@@ -1,7 +1,7 @@
 <script lang="ts">
-    // Layer 3, Venues view partial. The theme toggle row, each with its venue_themes label and count
-    // from the pure venue state. It owns no selection: the view passes what is off and receives each
-    // toggle.
+    // Layer 3, Venues view partial. The theme toggle row, each with its venue_themes label and
+    // count from the pure venue state. It owns no selection: the view passes what is off and
+    // receives each toggle.
 
     import type { Snippet } from 'svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';

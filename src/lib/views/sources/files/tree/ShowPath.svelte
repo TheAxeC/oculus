@@ -3,8 +3,8 @@
     // which another view writes into the instance's state through the layout store's showInFiles:
     // the folders on the way are read here, outermost first and each only once the one above it
     // said the next name is a folder, then the ask is settled into the open folders and the
-    // selected row, the row is scrolled into view once the tree has drawn it, and the outcome line
-    // says when the path was not found as asked.
+    // selected row, the row is scrolled into view once the tree has drawn it and takes the
+    // keyboard, and the outcome line says when the path was not found as asked.
     //
     // Every step goes through the instance's state and is written only while that state still holds
     // the ask it was made for (state/sources/fs.ts's revealSettled and revealScrolled): an answer
@@ -49,7 +49,9 @@
 
     let { owner, view, roots, rootsError, rows, onpatch }: Props = $props();
 
-    /** The ask this mount is reading the folders for, so a redraw meanwhile starts no second read. */
+    /**
+     * The ask this mount is reading the folders for, so a redraw meanwhile starts no second read.
+     */
     let reading = '';
 
     // An ask made while the roots could not be read is answered at once with the reason.
@@ -75,7 +77,8 @@
         if (reading === ticket) return;
         reading = ticket;
         const from = owner;
-        // The reads answer from the store's own state, which this effect must not come to depend on.
+        // The reads answer from the store's own state, which this effect must not come to depend
+        // on.
         void untrack(() => resolveReveal(ask, held, readListing)).then((outcome) => {
             const next = revealSettled(filesViewOf(instanceState(from)), ask, outcome);
             if (next !== null) onpatch(from, next);
@@ -93,6 +96,10 @@
         );
         if (node === null) return;
         node.scrollIntoView({ block: 'center' });
+        // The reader asked to be taken to the path, so the keyboard goes there too: the arrow keys
+        // then move from the row that was shown rather than from the control that asked.
+        const item = node.querySelector('[role="treeitem"]');
+        if (item instanceof HTMLElement) item.focus({ preventScroll: true });
         const next = revealScrolled(view, ask);
         if (next !== null) onpatch(owner, next);
     });

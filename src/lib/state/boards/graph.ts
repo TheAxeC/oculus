@@ -640,7 +640,9 @@ export function mapLayout(graph: Graph, tuned: Physics | null): MapLayout {
     };
 }
 
-/** What one Map instance holds of its own: which nodes it shows and whether links are being drawn. */
+/**
+ * What one Map instance holds of its own: which nodes it shows and whether links are being drawn.
+ */
 export type MapState = GraphFilter & {
     /** Whether collaboration nodes join the graph. */
     collaborators: boolean;
@@ -680,7 +682,9 @@ export function tunedFor(state: MapState, nodes: GraphNode[]): Physics | null {
     return state.tuned.key === layoutKey(nodes) ? state.tuned.params : null;
 }
 
-/** The saved state of one Map instance, with anything that is not the shape above replaced by it. */
+/**
+ * The saved state of one Map instance, with anything that is not the shape above replaced by it.
+ */
 export function parseMapState(raw: unknown): MapState {
     const held =
         typeof raw === 'object' && raw !== null && !Array.isArray(raw)

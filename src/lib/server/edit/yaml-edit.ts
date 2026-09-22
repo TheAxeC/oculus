@@ -61,10 +61,11 @@ export const READ_ONLY = ['id', 'tier', 'type'];
 export const BLOCK_LISTS = ['results', 'ideas'];
 
 /**
- * The one dual-shape field of the tree: `followup` is a map of `do` and `after` on two manifests and
- * a bare note on one, where the note means `do`. Setting a key under a scalar parent would drop that
- * note, so the scalar is expanded into the map it stands for and the new value written into that. A
- * scalar parent this map does not name is refused, since nothing says what its value is short for.
+ * The one dual-shape field of the tree: `followup` is a map of `do` and `after` on two manifests
+ * and a bare note on one, where the note means `do`. Setting a key under a scalar parent would drop
+ * that note, so the scalar is expanded into the map it stands for and the new value written into
+ * that. A scalar parent this map does not name is refused, since nothing says what its value is
+ * short for.
  */
 const SHORTHAND: Record<string, string> = { followup: 'do' };
 
@@ -367,10 +368,10 @@ function splice(text: string, from: number, to: number, insert: string): string 
 }
 
 /**
- * Write a value over the bytes of an existing one. A list keeps the style the file has it in: a flow
- * list stays flow and a block list stays block, at its own indentation. An empty value (`venue_id:`
- * with nothing after it) is a zero-width range, so the rendering is inserted there and given the
- * space the colon has not got.
+ * Write a value over the bytes of an existing one. A list keeps the style the file has it in: a
+ * flow list stays flow and a block list stays block, at its own indentation. An empty value
+ * (`venue_id:` with nothing after it) is a zero-width range, so the rendering is inserted there and
+ * given the space the colon has not got.
  */
 function replaceValue(text: string, node: Node, value: Exclude<FieldValue, null>): Written {
     const range = rangeOf(node);
@@ -569,7 +570,8 @@ function applyOne(text: string, path: string[], value: FieldValue): Written {
         return replaceValue(text, pair.value, value);
     }
 
-    // A scalar where a map is asked for: the dual shape of `followup`, expanded so its note is kept.
+    // A scalar where a map is asked for: the dual shape of `followup`, expanded so its note is
+    // kept.
     const shorthand = byKey(SHORTHAND, parent);
     if (!isScalar(holder) || shorthand === undefined) return fail(`${parent} is not a map`);
     if (value === null) return fail('the key is not there');
@@ -659,9 +661,9 @@ export function renameKey(source: string, from: string, to: string): EditResult 
  * Set every field of a manifest's text, each in the bytes of its own value.
  *
  * A field whose value the manifest already holds is not a change and is not written. A field this
- * cannot write is refused with a reason and nothing else is affected by it. When the result fails to
- * parse, or parses to anything but the source with exactly these fields applied, nothing is written
- * at all: the source comes back with every field refused.
+ * cannot write is refused with a reason and nothing else is affected by it. When the result fails
+ * to parse, or parses to anything but the source with exactly these fields applied, nothing is
+ * written at all: the source comes back with every field refused.
  */
 export function setFields(source: string, fields: Record<string, unknown>): EditResult {
     const changed: string[] = [];

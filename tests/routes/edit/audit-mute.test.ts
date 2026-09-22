@@ -2,8 +2,9 @@
 // refusals that leave config/behavior.yml exactly as it was.
 //
 // It is its own file rather than a block of tests/routes/edit/write.test.ts, which is at the tree's
-// thousand-line limit. The behavior file is a copy under the system temporary directory, asserted to
-// be inside it before anything is written, so no case here writes the engine's own configuration.
+// thousand-line limit. The behavior file is a copy under the system temporary directory, asserted
+// to be inside it before anything is written, so no case here writes the engine's own
+// configuration.
 
 import { readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';

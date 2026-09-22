@@ -1,6 +1,6 @@
 <script lang="ts">
-    // Layer 3, primitive. A row of controls. It is a strip and a name and nothing else: the buttons,
-    // the segments and the search boxes in it are the caller's snippet.
+    // Layer 3, primitive. A row of controls. It is a strip and a name and nothing else: the
+    // buttons, the segments and the search boxes in it are the caller's snippet.
 
     import type { Snippet } from 'svelte';
 

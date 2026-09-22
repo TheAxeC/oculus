@@ -1,10 +1,10 @@
 // Layer 2, server. The subtask half of the write path, and the one career write beside it: a line
-// ticked, reopened, snoozed or taken out, a line added to a host that may have no block yet, and one
-// host of CAREER.yml moved along its pipeline.
+// ticked, reopened, snoozed or taken out, a line added to a host that may have no block yet, and
+// one host of CAREER.yml moved along its pipeline.
 //
-// A subtask hangs under one of two hosts, which is the whole of the difference between the two views
-// that draw the block: one manifest by its id, or one entry of one collection. subtaskHost resolves
-// either into the file, its text and, for an entry, the lines of that entry inside it.
+// A subtask hangs under one of two hosts, which is the whole of the difference between the two
+// views that draw the block: one manifest by its id, or one entry of one collection. subtaskHost
+// resolves either into the file, its text and, for an entry, the lines of that entry inside it.
 //
 // server/edit/writes.ts is the route and re-exports everything here.
 
@@ -118,8 +118,8 @@ export function writeSubtask(
 
 /**
  * Put one subtask line back as a change recorded it: every field the line carries now and every
- * field the earlier value carried is set to the earlier value, and a field the earlier value did not
- * carry is cleared. It is what an undo of a tick, a reopen or a snooze goes through.
+ * field the earlier value carried is set to the earlier value, and a field the earlier value did
+ * not carry is cleared. It is what an undo of a tick, a reopen or a snooze goes through.
  */
 export function restoreSubtask(
     hub: string,
@@ -197,7 +197,9 @@ export function hostStatus(
     return { found: true, value: plain(host.status) };
 }
 
-/** Set one host's status in CAREER.yml. A status outside the vocabulary is refused, never written. */
+/**
+ * Set one host's status in CAREER.yml. A status outside the vocabulary is refused, never written.
+ */
 export function writeHost(hub: string, name: string, status: string, engine: string): WriteOutcome {
     const rules = careerRules(engine);
     const file = resolve(join(hub, rules.file));

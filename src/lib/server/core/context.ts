@@ -66,7 +66,9 @@ export type ServerContext = {
     token: string;
     local: LocalConfig;
     config: Record<string, unknown>;
-    /** The directory the configuration was read from, so a route names a config file without a walk. */
+    /**
+     * The directory the configuration was read from, so a route names a config file without a walk.
+     */
     engine: string;
     /** The write chain of the workspaces file, so two POSTs cannot lose one another's change. */
     fsWrites: FsWrites;
@@ -74,18 +76,24 @@ export type ServerContext = {
     hpcLogPaths: LogPaths;
     /** The calendar consents in flight, minted by the connect action and taken by the callback. */
     calendarConnects: ConnectStates;
-    /** The folder the calendar credential files live in, resolved once for the poller and the routes. */
+    /**
+     * The folder the calendar credential files live in, resolved once for the poller and the
+     * routes.
+     */
     calendarDir: string;
     /** The mail consents in flight, minted by the connect action and taken by the callback. */
     mailConnects: ConnectStates;
     /** The folder the mail credential files and the triage notes live in, resolved once. */
     mailDir: string;
     /**
-     * How an `https` address reaches the operating system, so the one process that opens anything is
-     * this one and a test is handed a context that opens nothing.
+     * How an `https` address reaches the operating system, so the one process that opens anything
+     * is this one and a test is handed a context that opens nothing.
      */
     opener: Opener;
-    /** How the open endpoint hands a file or a folder to the operating system, injectable the same way. */
+    /**
+     * How the open endpoint hands a file or a folder to the operating system, injectable the same
+     * way.
+     */
     openPath: PathOpener;
     /** The last deposit plan per project. */
     depositPlans: Map<string, Plan>;
@@ -160,9 +168,9 @@ export function createServerContext(
     const calendarConfig = calendarSettings(config);
     const mailConfig = mailSettings(config);
     const tiers = usageTiers(config);
-    // Read for their check alone: each value is in the merged configuration the page is sent, and the
-    // open endpoint reads `open.program_ext` again at every request, so a missing or mistyped key
-    // stops the server here with the key named rather than reaching a tab.
+    // Read for their check alone: each value is in the merged configuration the page is sent, and
+    // the open endpoint reads `open.program_ext` again at every request, so a missing or mistyped
+    // key stops the server here with the key named rather than reaching a tab.
     requirePaintLimit(config);
     openSettings(config);
     const hub = make.createHub();

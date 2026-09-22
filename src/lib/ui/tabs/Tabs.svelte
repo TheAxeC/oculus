@@ -13,19 +13,19 @@
     // index a drop would land at, and `dropIndex` draws the mark at an index the caller chose.
     //
     // Whole tabs at the left edge come from the scroll controls, which jump to the next tab start,
-    // and from a tab becoming the shown one, being pressed, or being crossed or hidden by a change of
-    // width, which brings it in whole. A wheel or trackpad scrolls the strip freely and leaves it
-    // where it stops. The strip's end is the browser's largest offset, so a control press or a
+    // and from a tab becoming the shown one, being pressed, or being crossed or hidden by a change
+    // of width, which brings it in whole. A wheel or trackpad scrolls the strip freely and leaves
+    // it where it stops. The strip's end is the browser's largest offset, so a control press or a
     // reveal there may rest short of a tab start. How it scrolls is ui/tabs/tab-scroll.svelte.ts.
     //
-    // A surface that blurs what is behind it is the stacking context of everything inside it, so the
-    // strip carries a depth of its own wherever it blurs, over the pane body beside it, and a menu
-    // opened from its right end is drawn over what the pane holds rather than under it.
+    // A surface that blurs what is behind it is the stacking context of everything inside it, so
+    // the strip carries a depth of its own wherever it blurs, over the pane body beside it, and a
+    // menu opened from its right end is drawn over what the pane holds rather than under it.
     //
     // It is drawn as an editor's tab strip, every measure a token of themes/tokens.css: the surface
-    // the strip sits on, the line under it with a gap where the shown tab heads it, the mark where a
-    // dragged tab would land, and the scroll controls as bare icons, as the caller's buttons at the
-    // right are. One tab's own face, marks and close control are ui/tabs/TabFace.svelte.
+    // the strip sits on, the line under it with a gap where the shown tab heads it, the mark where
+    // a dragged tab would land, and the scroll controls as bare icons, as the caller's buttons at
+    // the right are. One tab's own face, marks and close control are ui/tabs/TabFace.svelte.
 
     import { type Tab, insertionIndex } from '$lib/ui/tabs/tab-strip';
     import { createTabScroll } from '$lib/ui/tabs/tab-scroll.svelte';
@@ -45,17 +45,26 @@
         ondblclick?: (id: string) => void;
         /** A pointer went down on a tab face, at this point in the viewport. */
         onpointerdown?: (id: string, point: { x: number; y: number }) => void;
-        /** The pointer moved over the strip, and a drop would land at this index; null on leaving. */
+        /**
+         * The pointer moved over the strip, and a drop would land at this index; null on leaving.
+         */
         onhoverindex?: (index: number | null) => void;
         /** Draw the insertion mark at this index. */
         dropIndex?: number | null;
         /** The caller's buttons at the right end, drawn `bare` to match the scroll controls. */
         menu?: Snippet;
-        /** Whether what the strip heads is the active one: only then is the shown tab's line accent. */
+        /**
+         * Whether what the strip heads is the active one: only then is the shown tab's line accent.
+         */
         focused?: boolean;
-        /** The strip at the low tab height, for a strip that sits above panes rather than heading one. */
+        /**
+         * The strip at the low tab height, for a strip that sits above panes rather than heading
+         * one.
+         */
         low?: boolean;
-        /** The surface the strip is drawn on: the ground a pane header uses, or the card surface. */
+        /**
+         * The surface the strip is drawn on: the ground a pane header uses, or the card surface.
+         */
         surface?: 'ground' | 'card';
     };
 
@@ -79,17 +88,20 @@
      * leaves null behind rather than shortening the array, so every read skips what is not there.
      */
     let faces: (HTMLElement | undefined | null)[] = $state([]);
-    /** The tab buttons themselves, in the same order, which are what the arrow keys carry focus between. */
+    /**
+     * The tab buttons themselves, in the same order, which are what the arrow keys carry focus
+     * between.
+     */
     let heads: (HTMLButtonElement | undefined | null)[] = $state([]);
     let strip: HTMLDivElement | undefined = $state();
     let opener: HTMLDivElement | undefined = $state();
     let scroller: HTMLDivElement | undefined = $state();
 
     /**
-     * The tab a Delete asked to close, with the ring it asked from. The caller may put a question in
-     * front of the close, so the keyboard is carried only once the tab has actually gone; until then
-     * it belongs to whatever is asking, and a close the reader refuses leaves the focus where the
-     * question left it.
+     * The tab a Delete asked to close, with the ring it asked from. The caller may put a question
+     * in front of the close, so the keyboard is carried only once the tab has actually gone; until
+     * then it belongs to whatever is asking, and a close the reader refuses leaves the focus where
+     * the question left it.
      */
     let asked: { id: string; ring: string[] } | null = null;
 
@@ -147,8 +159,8 @@
 
     /**
      * Take the keyboard for one tab, and only where nothing else holds it: the button that went is
-     * left holding the focus until the browser hands it to the document, so both that button and the
-     * document count as nothing, and a dialog or a field that has taken it keeps it.
+     * left holding the focus until the browser hands it to the document, so both that button and
+     * the document count as nothing, and a dialog or a field that has taken it keeps it.
      */
     function recoverStop(index: number): void {
         queueMicrotask(() => {
@@ -304,10 +316,11 @@
         background: var(--card);
     }
 
-    /* The strip is the pane's own top edge over a wallpaper: the shell's pane paints nothing behind it, so the picture reads through here too.
-       The blur makes the strip the stacking context of every list opened inside it, so the strip takes
-       a depth of its own: above the view's own blurred box in the pane body, which is drawn after it
-       and would otherwise cover an open menu, and below the rail at 5 and the drag layer at 10. */
+    /* The strip is the pane's own top edge over a wallpaper: the shell's pane paints nothing behind
+       it, so the picture reads through here too. The blur makes the strip the stacking context of
+       every list opened inside it, so the strip takes a depth of its own: above the view's own
+       blurred box in the pane body, which is drawn after it and would otherwise cover an open menu,
+       and below the rail at 5 and the drag layer at 10. */
     :global(body.wall) .strip {
         position: relative;
         z-index: 1;
@@ -319,7 +332,8 @@
         background: color-mix(in srgb, var(--card) var(--wall-panel), transparent);
     }
 
-    /* The tabs sit on the strip's foot, so a strip made taller at the right keeps them on its line. */
+    /* The tabs sit on the strip's foot, so a strip made taller at the right keeps them on its
+       line. */
     .tabs {
         display: flex;
         align-items: flex-end;

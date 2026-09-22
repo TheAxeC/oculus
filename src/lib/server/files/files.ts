@@ -2,17 +2,17 @@
 // the page. routes/api/(files)/file/[root]/[...path]/+server.ts is the endpoint and holds nothing
 // but the GET, since a route module may export only its verbs.
 //
-// It is what DESIGN.md's decision needs, "a local HTML file under a configured root
-// opens as a tab": the manuals of cathedra and game-engine are single HTML files beside their own
-// stylesheets and images, and a browser resolves `css/manual.css` against the document's own URL, so
-// every asset the page asks for comes back through this same route without the file being rewritten.
+// It is what DESIGN.md's decision needs, "a local HTML file under a configured root opens as a
+// tab": the manuals of cathedra and game-engine are single HTML files beside their own stylesheets
+// and images, and a browser resolves `css/manual.css` against the document's own URL, so every
+// asset the page asks for comes back through this same route without the file being rewritten.
 //
-// Nothing outside a root is ever served, which is DESIGN.md's "Auth" applied to a route that reads a
-// path the request names. The root's directory and the resolved file are both put through realpath
-// first, so a symbolic link pointing out of the root is refused rather than followed, and the file is
-// then required to be the directory itself or something under it. The request is checked against
-// `Origin` and `Sec-Fetch-Site` before any of that, since any page open in the browser can address
-// localhost.
+// Nothing outside a root is ever served, which is DESIGN.md's "Auth" applied to a route that reads
+// a path the request names. The root's directory and the resolved file are both put through
+// realpath first, so a symbolic link pointing out of the root is refused rather than followed, and
+// the file is then required to be the directory itself or something under it. The request is
+// checked against `Origin` and `Sec-Fetch-Site` before any of that, since any page open in the
+// browser can address localhost.
 
 import { createReadStream, realpathSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
@@ -224,11 +224,11 @@ export function rootsFile(engine: string): string {
 export const HUB_ROOT = 'hub';
 
 /**
- * The key the engine's own `config/` folder is served under. The Config view lists that folder, shows
- * each file and opens one in a source tab, and an edit saved there is an ordinary write under a root,
- * which the config watcher sees like any other. `local.yml` is a file of that folder and is served,
- * read and saved like the tracked ones. Nothing above the folder is served: the root is the folder
- * itself, so the rest of the engine directory stays outside every route.
+ * The key the engine's own `config/` folder is served under. The Config view lists that folder,
+ * shows each file and opens one in a source tab, and an edit saved there is an ordinary write under
+ * a root, which the config watcher sees like any other. `local.yml` is a file of that folder and is
+ * served, read and saved like the tracked ones. Nothing above the folder is served: the root is the
+ * folder itself, so the rest of the engine directory stays outside every route.
  */
 export const ENGINE_ROOT = 'engine';
 
@@ -241,15 +241,19 @@ export function engineRoot(engine: string): Root {
     return { key: ENGINE_ROOT, dir: configDir(engine) };
 }
 
-/** The roots config/sources.yml names, without the hub in front of them, out of a config already read. */
+/**
+ * The roots config/sources.yml names, without the hub in front of them, out of a config already
+ * read.
+ */
 export function configuredRootsOf(config: Record<string, unknown>, engine: string): Root[] {
     return readRoots(config, rootsFile(engine)).roots;
 }
 
 /**
- * The configured roots with the two fixed ones in front of them, the hub under `hub` and the engine's
- * config folder under `engine`, unless the config names that key itself, in which case the config's
- * entry stands. The hub is where `local.yml` says it is, so the tracked config never carries it twice.
+ * The configured roots with the two fixed ones in front of them, the hub under `hub` and the
+ * engine's config folder under `engine`, unless the config names that key itself, in which case the
+ * config's entry stands. The hub is where `local.yml` says it is, so the tracked config never
+ * carries it twice.
  */
 export function withFixed(list: Root[], hub: string, engine: string): Root[] {
     const fixed: Root[] = [];
@@ -264,8 +268,8 @@ export function withFixed(list: Root[], hub: string, engine: string): Root[] {
  *
  * `added` is the current workspace's own roots, so a folder the reader added in the file browser is
  * served exactly as a configured one is. The two fixed keys and every configured key win over an
- * added root carrying the same key, so a saved workspace can only ever add a root and never redirect one
- * the rest of the application reads; the inside-root check is the same for both.
+ * added root carrying the same key, so a saved workspace can only ever add a root and never
+ * redirect one the rest of the application reads; the inside-root check is the same for both.
  */
 export function rootsFrom(
     configured: Root[],
@@ -280,7 +284,8 @@ export function rootsFrom(
 
 /**
  * The same, reading the config and local itself, for a caller with no request to take them off. A
- * request carries both on its ServerContext and uses rootsFrom, so one request reads each file once.
+ * request carries both on its ServerContext and uses rootsFrom, so one request reads each file
+ * once.
  */
 export function roots(engine: string, added: Root[] = []): Root[] {
     return rootsFrom(

@@ -24,8 +24,8 @@ describe('instance identity and lookups', () => {
     });
 
     it('lists every tab of a tree at any depth of splits, and none of a page a leaf shows', () => {
-        // Revert: make tabsOf return the first pane's tabs only. That a closed page keeps the tabs of a
-        // page its leaf shows is tests/state/workbench/layout/layout-close.test.ts.
+        // Revert: make tabsOf return the first pane's tabs only. That a closed page keeps the tabs
+        // of a page its leaf shows is tests/state/workbench/layout/layout-close.test.ts.
         const tree = split(
             'row',
             [0.5, 0.5],

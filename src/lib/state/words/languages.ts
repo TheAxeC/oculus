@@ -1,20 +1,20 @@
-// Layer 2, client state. The highlighter: the core build of highlight.js with the languages the page
-// draws registered by name, and the one call that paints text.
+// Layer 2, client state. The highlighter: the core build of highlight.js with the languages the
+// page draws registered by name, and the one call that paints text.
 //
-// It sits in the state layer because two views paint with it, the source tab's code window and editor
-// and the diff pane of a repository, and a view may not import another view's partial.
+// It sits in the state layer because two views paint with it, the source tab's code window and
+// editor and the diff pane of a repository, and a view may not import another view's partial.
 //
-// The core build rather than the whole package, which carries close to two hundred languages against
-// the eighteen a research tree actually holds. The registration runs once at load and is never
-// written after, because the library keeps its own registry and there is nothing per reader about
-// which languages exist.
+// The core build rather than the whole package, which carries close to two hundred languages
+// against the eighteen a research tree actually holds. The registration runs once at load and is
+// never written after, because the library keeps its own registry and there is nothing per reader
+// about which languages exist.
 //
 // There is no Svelte grammar in the package, so a component file is painted as xml: its markup and
-// its style block colour, a `<script>` block without a `lang` attribute colours as JavaScript, and the
-// `<script lang="ts">` block every component here writes does not.
+// its style block colour, a `<script>` block without a `lang` attribute colours as JavaScript, and
+// the `<script lang="ts">` block every component here writes does not.
 //
-// The text is escaped by highlight.js before any span is emitted, which is what lets the code window
-// put the result in the document; nothing else here touches the file's bytes.
+// The text is escaped by highlight.js before any span is emitted, which is what lets the code
+// window put the result in the document; nothing else here touches the file's bytes.
 
 import hljs from 'highlight.js/lib/core';
 import type { LanguageFn } from 'highlight.js';

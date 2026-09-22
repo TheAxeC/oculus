@@ -1,5 +1,8 @@
 // The Map view rendered on the server over visible relationships, controls and the empty state.
 
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { render } from 'svelte/server';
 import { beforeEach, describe, expect, it } from 'vitest';
 import MapView from '../../../src/lib/views/structure/map/Map.svelte';
@@ -122,7 +125,9 @@ function placed(graph: BuiltGraph, tuned: Physics | null): string[] {
         .map((node) => `${node.x},${node.y}`);
 }
 
-/** The graph drawn with the parameters a pane saved, and the callback it reports a tuning through. */
+/**
+ * The graph drawn with the parameters a pane saved, and the callback it reports a tuning through.
+ */
 function drawGraph(
     client: ClientState,
     graph: BuiltGraph,
@@ -403,7 +408,7 @@ describe('the Map instance state', () => {
         });
     });
 
-    it('gives a state that carries nothing the toggles off and every filter empty', () => {
+    it('audits that gives a state that carries nothing the toggles off and every filter empty', () => {
         expect(parseMapState(null)).toEqual(OFF);
         expect(parseMapState({ enabled: 'published' })).toEqual(OFF);
         expect(parseMapState({ types: 'idea', lines: 3, connected: 'yes' })).toEqual(OFF);
@@ -418,7 +423,7 @@ describe('the Map instance state', () => {
         });
     });
 
-    it('keeps a tuning a map could be laid out from, and drops one it could not', () => {
+    it('audits that keeps a tuning a map could be laid out from, and drops one it could not', () => {
         const params = { ...DEFAULT_PHYSICS, repulse: 7777 };
         const key = layoutKey(buildGraph(fixture()).nodes);
         expect(parseMapState({ tuned: { key, params } }).tuned).toEqual({ key, params });
@@ -446,5 +451,23 @@ describe('the Map instance state', () => {
         // the instance says the toggle is off, so the box is not ticked
         expect(box.exec(off)?.[0]).not.toContain('checked');
         expect(box.exec(on)?.[0]).toContain('checked');
+    });
+});
+
+describe('the label measuring', () => {
+    // A source audit: the read is the effect's own dependency, and a page cannot isolate it, since
+    // the same change rewrites the pane's state and derives the graph again through that.
+    it('audits that it reads the text scale, so a change to the text size measures again', () => {
+        const file = resolve(
+            fileURLToPath(import.meta.url),
+            '..',
+            '..',
+            '..',
+            '..',
+            'src/lib/views/structure/map/Graph.svelte'
+        );
+        const effect = /\$effect\(\(\) => \{([\s\S]*?)\n {4}\}\);/.exec(readFileSync(file, 'utf8'));
+        expect(effect?.[1]).toContain('void textScale();');
+        expect(effect?.[1]).toContain('void tick().then(measure);');
     });
 });

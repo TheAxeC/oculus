@@ -157,8 +157,8 @@ describe("a page's close", () => {
 
     it('forgets every tab of its own tree and keeps the tabs of the page its leaf shows', () => {
         // Revert: drop `forgetTabs(tabsOf(closing.workbench.root))` from closePage, which turns the
-        // forgotten half red; have closePage also forget the tabs of each page its leaves name, which
-        // turns the kept half red.
+        // forgotten half red; have closePage also forget the tabs of each page its leaves name,
+        // which turns the kept half red.
         const { first, second } = twoPages();
         expectKept(['a', 'b', 'c', 'd', 'x', 'y']);
 

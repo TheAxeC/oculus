@@ -87,7 +87,9 @@ function failed(error: string): Outcome {
     return { ok: false, output: '', error };
 }
 
-/** ~/.oculus/deposits, resolved at the call rather than at import, as sessions/overrides.ts does. */
+/**
+ * ~/.oculus/deposits, resolved at the call rather than at import, as sessions/overrides.ts does.
+ */
 export function defaultMirrorsDir(): string {
     return join(homedir(), '.oculus', 'deposits');
 }
@@ -309,7 +311,9 @@ export function defaultBranchArgs(slug: string, branch: string): string[] {
     return ['repo', 'edit', slug, '--default-branch', branch];
 }
 
-/** OWNER/REPO out of a repo URL. `gh repo edit` rejects a bare name, so the URL is reduced to one. */
+/**
+ * OWNER/REPO out of a repo URL. `gh repo edit` rejects a bare name, so the URL is reduced to one.
+ */
 export function slugOf(url: string): string {
     const bare = url.replace(/\/+$/, '').replace(/\.git$/, '');
     const at = bare.indexOf('github.com/');

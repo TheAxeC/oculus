@@ -7,8 +7,8 @@
 // like comes back whole. What they start as is config/appearance.yml's, read through
 // state/words/appearance.ts, and never a literal here.
 //
-// It saves the same way the layout store does, under its own key and through the same small slice of
-// Storage, so a test hands it a plain object and no test touches localStorage.
+// It saves the same way the layout store does, under its own key and through the same small slice
+// of Storage, so a test hands it a plain object and no test touches localStorage.
 
 import { crtDefault, defaultTheme, themes, wallpaperOnTheme } from '../words/appearance.ts';
 
@@ -20,8 +20,8 @@ export const UI_VERSION = 2;
 
 /**
  * The one earlier envelope loadUi still reads. It differs in a single field: its `wallpaper` was
- * written by every save rather than by the toggle alone, so a value there is not the viewer's choice
- * and is read as none.
+ * written by every save rather than by the toggle alone, so a value there is not the viewer's
+ * choice and is read as none.
  */
 const UI_VERSION_UNCHOSEN = 1;
 
@@ -77,11 +77,11 @@ export type UiStore = {
 export function createUi(): UiStore {
     /**
      * What a browser that has saved nothing starts on. Two of the six come from
-     * config/appearance.yml rather than from a literal here: the theme is the first of its list and the
-     * overlay is its `crt.default`. The wallpaper starts on none, which wallpaper() answers from the
-     * theme in force, so it shows wherever one is configured until the toggle says otherwise. The glyphs
-     * start as the theme's own, which is the ASCII stand-ins on a terminal palette; `unicode` is what
-     * turns that off.
+     * config/appearance.yml rather than from a literal here: the theme is the first of its list and
+     * the overlay is its `crt.default`. The wallpaper starts on none, which wallpaper() answers
+     * from the theme in force, so it shows wherever one is configured until the toggle says
+     * otherwise. The glyphs start as the theme's own, which is the ASCII stand-ins on a terminal
+     * palette; `unicode` is what turns that off.
      */
     function defaultUi(): Ui {
         const theme = defaultTheme();
@@ -120,11 +120,11 @@ export function createUi(): UiStore {
     }
 
     /**
-     * Whether the viewer wants the wallpaper. A browser that has never pressed the toggle holds none, and
-     * the answer is then the theme's: on wherever a wallpaper shows, so a save of any other field cannot
-     * put it out. Whether one is actually drawn is this and the theme together: the shell asks
-     * appearance.wallpaperOnTheme() as well, so switching to a theme the wallpaper does not show under
-     * hides it without forgetting the choice.
+     * Whether the viewer wants the wallpaper. A browser that has never pressed the toggle holds
+     * none, and the answer is then the theme's: on wherever a wallpaper shows, so a save of any
+     * other field cannot put it out. Whether one is actually drawn is this and the theme together:
+     * the shell asks appearance.wallpaperOnTheme() as well, so switching to a theme the wallpaper
+     * does not show under hides it without forgetting the choice.
      */
     function wallpaper(): boolean {
         const chosen = store.current.wallpaper;
@@ -195,10 +195,10 @@ export function createUi(): UiStore {
     }
 
     /**
-     * Read the saved appearance and make it current, falling back to the default for anything the saved
-     * value does not hold or holds wrongly. Returns whether a saved value was read at all. The default
-     * argument is evaluated at the call and not at the import, so a test that never calls this touches
-     * no localStorage.
+     * Read the saved appearance and make it current, falling back to the default for anything the
+     * saved value does not hold or holds wrongly. Returns whether a saved value was read at all.
+     * The default argument is evaluated at the call and not at the import, so a test that never
+     * calls this touches no localStorage.
      */
     function loadUi(storage: Storable = localStorage): boolean {
         backing = storage;
@@ -265,7 +265,9 @@ export function createUi(): UiStore {
         save({ ...store.current, crt: on });
     }
 
-    /** Turn the wallpaper on or off. The only writer of the field, so the value saved is a choice. */
+    /**
+     * Turn the wallpaper on or off. The only writer of the field, so the value saved is a choice.
+     */
     function setWallpaper(on: boolean): void {
         save({ ...store.current, wallpaper: on });
     }
@@ -304,7 +306,9 @@ export function createUi(): UiStore {
         save({ ...store.current, instances: { ...store.current.instances, [id]: state } });
     }
 
-    /** Forget an instance's state when its tab closes, so a closed editor's draft does not linger. */
+    /**
+     * Forget an instance's state when its tab closes, so a closed editor's draft does not linger.
+     */
     function clearInstanceState(id: string): void {
         if (!(id in store.current.instances)) return;
         const instances = { ...store.current.instances };

@@ -112,8 +112,8 @@ function swingingFetcher(provider: { up: boolean; events: Record<string, unknown
 }
 
 /**
- * How many polls have reached the provider, counted at the calendar listing: it is the first call of
- * every attempt, so a poll that failed is counted as one and a poll that succeeded as one.
+ * How many polls have reached the provider, counted at the calendar listing: it is the first call
+ * of every attempt, so a poll that failed is counted as one and a poll that succeeded as one.
  */
 function pollCalls(fetcher: ReturnType<typeof swingingFetcher>): number {
     return fetcher.mock.calls.filter((call) => urlOf(call[0]).includes('calendarList')).length;
@@ -338,9 +338,9 @@ describe('the calendar poller', () => {
     });
 
     it('sorts the two providers events by the moment each happens, not by the string', async () => {
-        // A Microsoft wall clock has no offset and is read in the host's zone, so the case pins that
-        // zone: the two strings below are in one order and the moments they stand for in the other,
-        // and which is which cannot be stated without saying what zone the server is in.
+        // A Microsoft wall clock has no offset and is read in the host's zone, so the case pins
+        // that zone: the two strings below are in one order and the moments they stand for in the
+        // other, and which is which cannot be stated without saying what zone the server is in.
         const zone = process.env.TZ;
         process.env.TZ = 'UTC';
         try {

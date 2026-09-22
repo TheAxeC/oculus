@@ -20,8 +20,8 @@
 // first scan reads the workspaces immediately.
 //
 // The hub root is on the channel whether or not a session names it, since the deposit and the pin
-// controls read the hub's own git state; the `always` option is what names it, and the root it names
-// is opened before the first sessions message and never dropped for one.
+// controls read the hub's own git state; the `always` option is what names it, and the root it
+// names is opened before the first sessions message and never dropped for one.
 //
 // Two handles per workspace. `<root>/.git` non-recursively catches the index, HEAD and the refs,
 // which is what a commit or a checkout moves; the worktree recursively catches an edit to a file.
@@ -83,7 +83,9 @@ export type GitWatchOptions = {
      * payload's keys are in the order the Repositories view draws its sections.
      */
     roots?: () => string[];
-    /** The saved workspaces file, watched so a root added in the page is watched from that moment. */
+    /**
+     * The saved workspaces file, watched so a root added in the page is watched from that moment.
+     */
     workspacesFile?: string;
 };
 
@@ -162,9 +164,10 @@ export function watchGit(hub: Hub, options: GitWatchOptions = {}): GitWatcher {
     // already modified, or a build touching an ignored path the filter did not name. The `git`
     // channel carries state, not events, so an unchanged state is not published.
     //
-    // The `files` channel carries the event instead, and every re-read publishes one: a re-read is a
-    // write that landed under this root, and the file listings taken under it are stale whether or
-    // not git's answer moved. Nothing else on the wire says so for a file inside a project folder.
+    // The `files` channel carries the event instead, and every re-read publishes one: a re-read is
+    // a write that landed under this root, and the file listings taken under it are stale whether
+    // or not git's answer moved. Nothing else on the wire says so for a file inside a project
+    // folder.
     const reread = (root: string): void => {
         if (closed || !handles.has(root)) return;
         hub.publish('files', { root } satisfies FilesPayload);
@@ -247,8 +250,8 @@ export function watchGit(hub: Hub, options: GitWatchOptions = {}): GitWatcher {
     };
 
     /**
-     * Every root on the channel, in the order the page draws them: the always-watched root, the file
-     * browser's, then the sessions' workspaces, each named once.
+     * Every root on the channel, in the order the page draws them: the always-watched root, the
+     * file browser's, then the sessions' workspaces, each named once.
      */
     const readRoots = (): void => {
         // The file browser's roots are read off config and a file the reader edits, so a broken one

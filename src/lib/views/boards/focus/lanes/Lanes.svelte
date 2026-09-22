@@ -79,7 +79,10 @@
         return { label: date };
     }
 
-    /** What a card says it is waiting on: the people it names, else the venue, else that it is blocked. */
+    /**
+     * What a card says it is waiting on: the people it names, else the venue, else that it is
+     * blocked.
+     */
     function waitLine(project: Project): string {
         const names = personNames(snapshot);
         if (project.waitingOn.length > 0) {
@@ -164,7 +167,9 @@
         onproject(project.id);
     }
 
-    /** How many flames a card draws: none means one, faint, so the badge can be clicked to set one. */
+    /**
+     * How many flames a card draws: none means one, faint, so the badge can be clicked to set one.
+     */
     function flames(project: Project): number {
         return Math.max(flamesOf(project, config), 1);
     }

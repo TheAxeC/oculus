@@ -14,7 +14,9 @@ import { configOf, folderOf, images, sameOrigin, stream } from './images.ts';
 
 export { images, sameOrigin } from './images.ts';
 
-/** What serving needs of the configuration; a test passes its own rather than reading the config. */
+/**
+ * What serving needs of the configuration; a test passes its own rather than reading the config.
+ */
 export type Wallpaper = {
     /** The absolute directory the images are read from. */
     dir: string;
@@ -24,7 +26,10 @@ export type Wallpaper = {
     pick: 'first' | 'random';
 };
 
-/** What the owning server context remembers: the random pick per directory, and the directories refused once. */
+/**
+ * What the owning server context remembers: the random pick per directory, and the directories
+ * refused once.
+ */
 export type WallpaperMemory = { chosen: Record<string, string>; refused: Set<string> };
 
 export function wallpaperMemory(): WallpaperMemory {

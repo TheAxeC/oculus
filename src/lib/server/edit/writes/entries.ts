@@ -6,7 +6,8 @@
 // identityOf resolves the two rather than assuming they agree.
 //
 // `saved()` lives here because both of the modules that put an edit on disk are here or import this
-// one: writes/subtasks.ts reads a collection through readCollection, so it takes the writer with it.
+// one: writes/subtasks.ts reads a collection through readCollection, so it takes the writer with
+// it.
 //
 // A field's value is checked against the type its own schema declares before anything is written: a
 // select takes one of its options, a date one ISO day, a checkbox a boolean, and a text field one
@@ -70,7 +71,9 @@ export function collectionFile(
     return path.startsWith(resolve(hub) + sep) ? path : null;
 }
 
-/** The field an entry is found by: the file's own schema's first field, `title` when it has none. */
+/**
+ * The field an entry is found by: the file's own schema's first field, `title` when it has none.
+ */
 export function identityField(schema: unknown): string {
     const names = fieldNames(schema);
     return names.length > 0 ? names[0] : 'title';
@@ -155,7 +158,8 @@ function normaliseMetalists(
 
 /**
  * The id the reader gives an entry, as normalise.ts's entry() builds it: its `id`, its `key`, its
- * `title`, and for a file whose records carry none of the three the value of its own identity field.
+ * `title`, and for a file whose records carry none of the three the value of its own identity
+ * field.
  */
 function entryId(entry: Record<string, unknown>, ident: string): string {
     const id = entry.id;
@@ -251,9 +255,9 @@ export function entryOf(
 }
 
 /**
- * The id the reader gives the entry one identity value names, which is what every write addresses an
- * entry by. It is identityOf read the other way round, and an undo needs it: what a change records
- * is the identity value the file is keyed by.
+ * The id the reader gives the entry one identity value names, which is what every write addresses
+ * an entry by. It is identityOf read the other way round, and an undo needs it: what a change
+ * records is the identity value the file is keyed by.
  */
 export function idOfIdentity(collection: Collection, value: string): string | null {
     const entry = entryOf(collection, value);
@@ -381,9 +385,9 @@ export function writeEntry(
         held.source,
         setEntryFields(held.source, held.ident, value, writing)
     );
-    // The entry the edit was computed against is the value before it, and `writing` is the value the
-    // edit put there, so the record is made where both halves are in hand rather than by reading the
-    // file again.
+    // The entry the edit was computed against is the value before it, and `writing` is the value
+    // the edit put there, so the record is made where both halves are in hand rather than by
+    // reading the file again.
     const records: ChangeRecord[] = out.changed.map((field) => ({
         file: held.file,
         key: value,

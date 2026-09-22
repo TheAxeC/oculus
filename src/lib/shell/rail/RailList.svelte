@@ -1,7 +1,8 @@
 <script lang="ts">
-    // Layer 3, shell. The rail's list of entries: it takes the height above the foot, scrolls inside
-    // it with no bar, and fades at an edge that has more entries past it. The rail puts its entries
-    // in and this knows nothing about them; what it owns is the scroll position and what that says.
+    // Layer 3, shell. The rail's list of entries: it takes the height above the foot, scrolls
+    // inside it with no bar, and fades at an edge that has more entries past it. The rail puts its
+    // entries in and this knows nothing about them; what it owns is the scroll position and what
+    // that says.
     //
     // The fades are state read from the list's own scroll numbers through `listFade` of
     // shell/rail/rail.ts, so whether an edge fades is a fact of the list rather than of a
@@ -85,9 +86,9 @@
         gap: 4px;
     }
 
-    /* The fade over an edge with more past it: the rail's own surface running out to nothing, so the
-       entry under it dims into the edge rather than being cut there. It takes no pointer, so the
-       entry under it is still pressed through it. */
+    /* The fade over an edge with more past it: the rail's own surface running out to nothing, so
+       the entry under it dims into the edge rather than being cut there. It takes no pointer, so
+       the entry under it is still pressed through it. */
     .fade {
         position: absolute;
         left: 0;
@@ -106,7 +107,8 @@
         background-image: linear-gradient(to top, var(--bg), transparent);
     }
 
-    /* Over a wallpaper the rail is the panel's colour at its translucent share, so the fade is too. */
+    /* Over a wallpaper the rail is the panel's colour at its translucent share, so the fade is
+       too. */
     :global(body.wall) .fade {
         opacity: var(--wall-panel);
     }

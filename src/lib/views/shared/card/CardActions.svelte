@@ -206,20 +206,11 @@
         font-size: var(--fs-sm);
     }
 
+    /* Drawn as the card around them says, ui/frame/Card.svelte's `--card-reveal`, which the nearest
+       card sets, so the controls answer to their own card and not to a card around it. */
     .act {
         display: flex;
-        opacity: 0;
+        opacity: var(--card-reveal);
         transition: opacity 120ms ease-out;
-    }
-
-    :global(.card:hover) .act,
-    :global(.card:focus-within) .act {
-        opacity: 1;
-    }
-
-    @media (hover: none) {
-        .act {
-            opacity: 1;
-        }
     }
 </style>

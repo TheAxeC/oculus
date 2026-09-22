@@ -4,9 +4,10 @@
 // checked here: its label resolves in the text catalog and its glyph resolves in
 // config/catalogs/glyphs.yml.
 //
-// The collection views are the registrations that come from configuration rather than from a module,
-// so the keys they are registered under are checked both ways: a key the configuration lists has a
-// view, and a key it stops listing has none, in the registry and in the rail order drawn from it.
+// The collection views are the registrations that come from configuration rather than from a
+// module, so the keys they are registered under are checked both ways: a key the configuration
+// lists has a view, and a key it stops listing has none, in the registry and in the rail order
+// drawn from it.
 
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
@@ -386,7 +387,8 @@ describe('the real registrations', () => {
             label: 'views.venues',
             glyph: 'views.venues_glyph'
         });
-        // Venues is registered as a view of its own, so the generic collection list does not carry it
+        // Venues is registered as a view of its own, so the generic collection list does not carry
+        // it
         expect(COLLECTIONS).not.toContain('venues');
     });
 
@@ -400,7 +402,8 @@ describe('the real registrations', () => {
             glyph: 'views.domains_glyph'
         });
         expect(viewFor('map')).toMatchObject({ label: 'views.map', glyph: 'views.map_glyph' });
-        // Pillars is registered as a view of its own, so the generic collection list does not carry it
+        // Pillars is registered as a view of its own, so the generic collection list does not carry
+        // it
         expect(COLLECTIONS).not.toContain('pillars');
         // and Domains is too
         expect(COLLECTIONS).not.toContain('domains');

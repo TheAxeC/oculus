@@ -1,5 +1,6 @@
 // Layer 2, client-state tests. Rail badges count configured collection states and feed urgency.
-// Pure cases isolate the arithmetic; the installed-store case proves channel precedence and fallback.
+// Pure cases isolate the arithmetic; the installed-store case proves channel precedence and
+// fallback.
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {

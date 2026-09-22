@@ -31,7 +31,9 @@ export function dayOf(event: CalendarEvent): string {
     return Number.isNaN(at.getTime()) ? event.start.slice(0, 10) : localDay(at);
 }
 
-/** Whether an event is still to come at this moment; an all-day event runs to the end of its day. */
+/**
+ * Whether an event is still to come at this moment; an all-day event runs to the end of its day.
+ */
 function ahead(event: CalendarEvent, now: Date): boolean {
     if (event.allDay) return true;
     const end = new Date(event.end);

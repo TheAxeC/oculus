@@ -14,8 +14,8 @@
 </script>
 
 <script lang="ts">
-    // Layer 3, view. One scratch note: a title line, a text area, and a save that follows the typing
-    // rather than a control the reader has to remember to press.
+    // Layer 3, view. One scratch note: a title line, a text area, and a save that follows the
+    // typing rather than a control the reader has to remember to press.
     //
     // The note the reader is typing lives here and the file on disk is what it is saved to, so an
     // answer landing from the server never writes over a keystroke: the draft is seeded from the
@@ -94,7 +94,9 @@
     let tab = '';
     let named = '';
 
-    /** How tall the text area opens. A note is prose, so it takes the pane rather than three lines. */
+    /**
+     * How tall the text area opens. A note is prose, so it takes the pane rather than three lines.
+     */
     const ROWS = 20;
 
     /** The title the note is written under: the reader's own, or its first line of words. */
@@ -115,9 +117,9 @@
     }
 
     /**
-     * Put the draft back to nothing, for the note this component is about to draw. A pane draws only
-     * its active tab, and a switch from one note's tab to another's reuses this one component, so the
-     * note it drew is left through leave() below and the draft starts again for the new one.
+     * Put the draft back to nothing, for the note this component is about to draw. A pane draws
+     * only its active tab, and a switch from one note's tab to another's reuses this one component,
+     * so the note it drew is left through leave() below and the draft starts again for the new one.
      */
     function reset(): void {
         seeded = '';
@@ -130,19 +132,19 @@
     }
 
     // Which note the component is drawing. The teardown is the note being left, whether the tab
-    // closed or the pane switched to another note, and it runs for the note that was drawn, with the
-    // draft as it stands, before the draft is read for the next one.
+    // closed or the pane switched to another note, and it runs for the note that was drawn, with
+    // the draft as it stands, before the draft is read for the next one.
     $effect(() => {
         const which = id;
         reset();
         return () => leave(which);
     });
 
-    // The file is read into the draft once per note. A later answer for the same note, which is what
-    // a save asks for again, leaves it alone; so does an answer for a note the reader has already
-    // typed into, which is what a fresh note's first keystrokes are while its file is still coming.
-    // A note with no file yet is empty by construction and is seeded without waiting, so what the
-    // tab knows about its note does not depend on a round trip having landed.
+    // The file is read into the draft once per note. A later answer for the same note, which is
+    // what a save asks for again, leaves it alone; so does an answer for a note the reader has
+    // already typed into, which is what a fresh note's first keystrokes are while its file is still
+    // coming. A note with no file yet is empty by construction and is seeded without waiting, so
+    // what the tab knows about its note does not depend on a round trip having landed.
     $effect(() => {
         if (id === '' || seeded === id) return;
         if (touched && draft.id === id) {
@@ -176,8 +178,9 @@
      * What leaving a note does, which is the tab closing or the pane switching to another note. A
      * wait still running is run now rather than dropped, so what was typed in the last moment is
      * written and not lost. Nothing is deleted and no tab is closed here: a note with nothing in it
-     * has no file to take away, and the list's own delete control is the one thing that removes one.
-     * A note nothing was typed into holds no wait and may have no file, so it is left untouched.
+     * has no file to take away, and the list's own delete control is the one thing that removes
+     * one. A note nothing was typed into holds no wait and may have no file, so it is left
+     * untouched.
      */
     function leave(which: string): void {
         if (which === '' || tab === '' || vanished(which)) {
@@ -210,8 +213,8 @@
     /**
      * Write the draft to its file, under the title the note is written as, and name the tab by that
      * title: the strip draws an instance's `label`, so two open notes read as two names rather than
-     * as "Note" twice. The write that makes the file also takes the tab's `fresh` flag off, since the
-     * file is there from now on and a reload reads it rather than opening on an empty draft.
+     * as "Note" twice. The write that makes the file also takes the tab's `fresh` flag off, since
+     * the file is there from now on and a reload reads it rather than opening on an empty draft.
      */
     async function save(made = false): Promise<void> {
         if (draft.id === '' || tab === '') return;

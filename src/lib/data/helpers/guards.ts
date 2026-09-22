@@ -45,9 +45,10 @@ export function text(value: unknown, fallback = ''): string {
 
 /**
  * One value of a record by its key. An index signature promises the checker every key, so a read of
- * a record built from a file, a payload or a catalog is typed as present when it is not; this reader
- * hands back what is there, and nothing for a key the record does not hold. A name off the object
- * prototype is not a key the record holds, so `toString` reads as nothing rather than as a method.
+ * a record built from a file, a payload or a catalog is typed as present when it is not; this
+ * reader hands back what is there, and nothing for a key the record does not hold. A name off the
+ * object prototype is not a key the record holds, so `toString` reads as nothing rather than as a
+ * method.
  */
 export function byKey<T>(record: Record<string, T>, key: string): T | undefined {
     return Object.hasOwn(record, key) ? record[key] : undefined;

@@ -1,8 +1,8 @@
 <script lang="ts">
-    // Layer 3, primitive. The words a control shows after the pointer rests on it, or as soon as the
-    // keyboard brings the focus to it. It wraps whatever it is given and knows nothing about it: the
-    // caller passes the words, and a caller with none passes the empty string and gets a plain
-    // wrapper.
+    // Layer 3, primitive. The words a control shows after the pointer rests on it, or as soon as
+    // the keyboard brings the focus to it. It wraps whatever it is given and knows nothing about
+    // it: the caller passes the words, and a caller with none passes the empty string and gets a
+    // plain wrapper.
     //
     // The browser's own `title` is what this replaces. That one waits about a second, cannot be
     // styled, and never appears for a control reached by keyboard; this waits 150 ms, paints in the
@@ -14,12 +14,12 @@
     // so focus shows the bubble only when the browser draws the control's focus ring, which is its
     // answer to whether the focus came from the keyboard.
     //
-    // The bubble is positioned in viewport coordinates rather than against the wrapper, because both
-    // places it is most needed scroll: the rail's view list and the tab strip both clip their own
-    // overflow, and a bubble laid out inside either would be cut off at its edge. It is drawn on the
-    // body for the same reason: a surface that filters or clips what it holds is the containing
-    // block of a fixed element inside it, which reads those window coordinates from its own corner
-    // and cuts the bubble at its edge, and on the body there is no such ancestor.
+    // The bubble is positioned in viewport coordinates rather than against the wrapper, because
+    // both places it is most needed scroll: the rail's view list and the tab strip both clip their
+    // own overflow, and a bubble laid out inside either would be cut off at its edge. It is drawn
+    // on the body for the same reason: a surface that filters or clips what it holds is the
+    // containing block of a fixed element inside it, which reads those window coordinates from its
+    // own corner and cuts the bubble at its edge, and on the body there is no such ancestor.
 
     import { describedBy, describedControl } from '$lib/ui/menu/tooltip-target';
     import { useTipIds } from '$lib/ui/menu/tip-ids';
@@ -38,11 +38,23 @@
         presentational?: boolean;
         /**
          * Put a wrapper around non-control content in the tab order so its tooltip opens when the
-         * keyboard brings the focus to it, which `:focus-visible` answers; a click on it opens none.
+         * keyboard brings the focus to it, which `:focus-visible` answers; a click on it opens
+         * none.
          */
         focusable?: boolean;
         /** Fill the available width, for a control in the activity rail's fixed-width column. */
         block?: boolean;
+        /**
+         * The element the words describe, where it is not the control inside the wrapper: a tree
+         * row, whose focus sits on the row around the button the wrapper holds.
+         */
+        describes?: HTMLElement;
+        /**
+         * The element a pointer resting on opens the words, where it is wider than the wrapper: a
+         * tree row, whose line is what a reader points at and whose name is the wrapper. The
+         * bubble is still laid out under the wrapper, which is where the words belong.
+         */
+        over?: HTMLElement;
         children: Snippet;
     };
 
@@ -52,6 +64,8 @@
         presentational = false,
         focusable = false,
         block = false,
+        describes,
+        over,
         children
     }: Props = $props();
 
@@ -110,7 +124,9 @@
         if (event.key === 'Escape') hide();
     }
 
-    /** Focus shows the words only when it came from the keyboard, which `:focus-visible` answers. */
+    /**
+     * Focus shows the words only when it came from the keyboard, which `:focus-visible` answers.
+     */
     function focused(event: FocusEvent): void {
         const target = event.target;
         if (target instanceof Element && target.matches(':focus-visible')) show();
@@ -129,16 +145,30 @@
     }
 
     $effect(() => {
+        if (over === undefined) return;
+        const source = over;
+        source.addEventListener('pointerenter', later);
+        source.addEventListener('pointerleave', hide);
+        source.addEventListener('pointerdown', hide);
+        return () => {
+            source.removeEventListener('pointerenter', later);
+            source.removeEventListener('pointerleave', hide);
+            source.removeEventListener('pointerdown', hide);
+        };
+    });
+
+    $effect(() => {
         if (!open || typeof document === 'undefined') return;
         document.addEventListener('focusin', elsewhere);
         return () => document.removeEventListener('focusin', elsewhere);
     });
 
     // The bubble's id goes on the control, once it is in the document and the bubble has been moved
-    // onto the body: the control is what the reader focuses, so it is what the description hangs on.
+    // onto the body: the control is what the reader focuses, so it is what the description hangs
+    // on.
     $effect(() => {
         const wanted = describedBy(id, text, presentational);
-        const node = box === undefined ? null : describedControl(box, focusable);
+        const node = describes ?? (box === undefined ? null : describedControl(box, focusable));
         if (node === null) return;
         if (wanted === '') {
             node.removeAttribute('aria-describedby');
@@ -148,7 +178,9 @@
         return () => node.removeAttribute('aria-describedby');
     });
 
-    /** Move the bubble out of the wrapper's ancestors and onto the body, and take it away with it. */
+    /**
+     * Move the bubble out of the wrapper's ancestors and onto the body, and take it away with it.
+     */
     function onBody(node: HTMLElement): { destroy: () => void } {
         document.body.append(node);
         return { destroy: () => node.remove() };
@@ -196,8 +228,8 @@
         width: 100%;
     }
 
-    /* The control fills the wrapper, so a wrapped button is exactly as wide as the unwrapped one was
-       wherever its parent stretches it: the rail's column is the case that shows it. */
+    /* The control fills the wrapper, so a wrapped button is exactly as wide as the unwrapped one
+       was wherever its parent stretches it: the rail's column is the case that shows it. */
     .tip > :global(*:first-child) {
         flex: 1 1 auto;
         min-width: 0;
@@ -220,7 +252,8 @@
         pointer-events: none;
     }
 
-    /* The bubble floats over whatever it explains, so it keeps more of its colour than the pane does. */
+    /* The bubble floats over whatever it explains, so it keeps more of its colour than the pane
+       does. */
     :global(body.wall) .bubble {
         background: color-mix(in srgb, var(--panel) var(--wall-popover), transparent);
         backdrop-filter: blur(var(--wall-blur));

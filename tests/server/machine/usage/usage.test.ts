@@ -1,4 +1,5 @@
-// Layer 4, test. Synthetic account, rollout, transcript, cache, window, dedupe, live-hour and watcher coverage.
+// Layer 4, test. Synthetic account, rollout, transcript, cache, window, dedupe, live-hour and
+// watcher coverage.
 
 import { mkdirSync, rmSync, symlinkSync, utimesSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve, sep } from 'node:path';

@@ -90,9 +90,9 @@ export function subtaskLines(source: string, range: LineRange | null): SubtaskBl
 
 /**
  * Every subtask line of one host as its own map, keyed the way the block keys it: the index as text
- * for a list, the name for a map. The change log reads the text before an edit and the text the edit
- * produced through this one reader, so the value it records as written and the value the file will
- * hold cannot disagree.
+ * for a list, the name for a map. The change log reads the text before an edit and the text the
+ * edit produced through this one reader, so the value it records as written and the value the file
+ * will hold cannot disagree.
  */
 export function subtaskValues(
     source: string,

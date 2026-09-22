@@ -4,8 +4,8 @@
     //
     // A heading opens its file at its first hit and a row opens it at its own line, so the list is
     // the way into the file rather than a report about it. The match is emboldened from the hit's
-    // own column and length: the page never matches the pattern a second time, which is the only way
-    // a regular-expression hit could be marked at all.
+    // own column and length: the page never matches the pattern a second time, which is the only
+    // way a regular-expression hit could be marked at all.
 
     import Empty from '$lib/ui/frame/Empty.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';

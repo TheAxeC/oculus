@@ -1,4 +1,5 @@
-// Layer 2, server. The one POST handler for refresh, cancel, and log applies origin and token gates before dispatching an injected action target.
+// Layer 2, server. The one POST handler for refresh, cancel, and log applies origin and token gates
+// before dispatching an injected action target.
 import { hasToken, sameOrigin } from '../../core/auth.ts';
 import { cancel, validId } from './actions.ts';
 

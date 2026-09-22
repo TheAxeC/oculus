@@ -39,7 +39,9 @@ export const GIT = 'git';
 export const TIMEOUT_MS = 5000;
 /** One workspace with 4000 untracked files, or 4000 branches, must not become the payload. */
 export const MAX_ENTRIES = 200;
-/** How many commits the log carries: the view is a glance, and a terminal reads a longer history. */
+/**
+ * How many commits the log carries: the view is a glance, and a terminal reads a longer history.
+ */
 export const LOG_ENTRIES = 20;
 /** git's own letter for a path it does not track. */
 export const UNTRACKED = '?';
@@ -47,7 +49,9 @@ export const UNTRACKED = '?';
 const QUIET = [' ', UNTRACKED, '!'];
 /** A rename or a copy reports its old path as a second field. */
 const TWO_PATHS = ['R', 'C'];
-/** The one refusal of git's that means the root holds no repository; it opens every wording of it. */
+/**
+ * The one refusal of git's that means the root holds no repository; it opens every wording of it.
+ */
 const NO_REPOSITORY = 'not a git repository';
 
 /** path to (added, deleted) for the worktree; null where git reported a binary file. */
@@ -84,7 +88,8 @@ export function empty(error: string | null = null): GitState {
         // Nothing says a root is not there until a read of the path itself says so, so a read that
         // threw leaves the root where it was; state() sets this from exists() at both answers.
         present: true,
-        // A root is a repository once `rev-parse --git-dir` has said so, or once that check timed out.
+        // A root is a repository once `rev-parse --git-dir` has said so, or once that check timed
+        // out.
         repository: false,
         error
     };
@@ -129,8 +134,8 @@ function state(root: string, timeout: number): GitState {
     }
     // The one read that tells a repository from a folder: it names no commit, so a repository with
     // none yet answers it like any other. Only a check that timed out says nothing about the root,
-    // which is then kept as the repository it was taken for; a git that cannot start or is killed is
-    // taken at its word, so a plain folder never becomes a repository because git is missing.
+    // which is then kept as the repository it was taken for; a git that cannot start or is killed
+    // is taken at its word, so a plain folder never becomes a repository because git is missing.
     const gitDir = run(root, ['rev-parse', '--git-dir'], timeout);
     if (!gitDir.ok && gitDir.answered) {
         const reason = gitDir.text || NO_REPOSITORY;
@@ -141,10 +146,10 @@ function state(root: string, timeout: number): GitState {
         refused.present = exists(root);
         // A refusal git itself made, over a root where a `.git` can be seen, and that does not name
         // the root as no repository, is a repository that is there and did not read: a config it
-        // cannot parse, a file under `.git` it cannot open. The root keeps `repository`, so a reader
-        // is told the read failed rather than that there is no repository here. Every other refusal
-        // (no `.git` to be seen, a `.git` naming a gitdir that is gone, a git that could not start)
-        // leaves `repository` false.
+        // cannot parse, a file under `.git` it cannot open. The root keeps `repository`, so a
+        // reader is told the read failed rather than that there is no repository here. Every other
+        // refusal (no `.git` to be seen, a `.git` naming a gitdir that is gone, a git that could
+        // not start) leaves `repository` false.
         const ownRefusal = gitDir.ran && !reason.includes(NO_REPOSITORY);
         refused.repository = ownRefusal && seen(join(root, '.git'));
         return refused;
@@ -259,8 +264,8 @@ function ignored(root: string): boolean {
 }
 
 /**
- * Distance from the tracking branch. `--left-right --count` prints behind, then ahead. A branch with
- * no upstream is ordinary, not an error, and leaves both counts at zero.
+ * Distance from the tracking branch. `--left-right --count` prints behind, then ahead. A branch
+ * with no upstream is ordinary, not an error, and leaves both counts at zero.
  */
 function upstream(root: string, found: GitState, timeout: number): void {
     const done = run(root, ['rev-list', '--left-right', '--count', '@{upstream}...HEAD'], timeout);

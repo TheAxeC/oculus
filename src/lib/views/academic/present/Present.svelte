@@ -12,21 +12,22 @@
 </script>
 
 <script lang="ts">
-    // Layer 3, view. The public slide deck, live: one slide filling the pane, the arrow keys and the
-    // toolbar to move through it, and `O` for the grid of the whole deck.
+    // Layer 3, view. The public slide deck, live: one slide filling the pane, the arrow keys and
+    // the toolbar to move through it, and `O` for the grid of the whole deck.
     //
     // The deck is not a file this builds and it is not a copy of one: the deck-level slides are
-    // config/present.yml and the project slides are the PRESENT.md front matter the snapshot carries,
-    // so a slide edited on disk is the slide on screen at the next push.
+    // config/present.yml and the project slides are the PRESENT.md front matter the snapshot
+    // carries, so a slide edited on disk is the slide on screen at the next push.
     //
     // Where the reader is, and whether the grid is open, belong to the instance rather than to the
     // store, so two panes on the deck hold two positions and a push that rebuilds the deck leaves
     // each reader where they were. The instance's `slide` is the same key a project card sets.
     //
-    // The keys are the pane's own, bound to the view's box rather than to the window: the shell owns
-    // the digits and the chords, and a deck that swallowed an arrow key wherever the reader was
-    // looking would take the pane strip's own keys with it. The box takes the focus when the view is
-    // mounted and on a press inside it, so the arrows work from the moment the deck is opened.
+    // The keys are the pane's own, bound to the view's box rather than to the window: the shell
+    // owns the digits and the chords, and a deck that swallowed an arrow key wherever the reader
+    // was looking would take the pane strip's own keys with it. The box takes the focus when the
+    // view is mounted and on a press inside it, so the arrows work from the moment the deck is
+    // opened.
 
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
@@ -57,7 +58,10 @@
     /** The shell's card cursor, which the overview grid's tiles carry as every card list does. */
     const cursor = $derived(cardCursor(instance.state));
 
-    /** Keep the pane's own place with the instance, so the pane is where it was when its page comes back. */
+    /**
+     * Keep the pane's own place with the instance, so the pane is where it was when its page comes
+     * back.
+     */
     function write(changes: Partial<PresentState>): void {
         setInstanceState(instance.id, { ...held, ...changes });
     }
@@ -79,7 +83,9 @@
         if (!held) box.focus();
     });
 
-    /** Move, and put the keys in force, so the next arrow key reaches this pane and not the shell. */
+    /**
+     * Move, and put the keys in force, so the next arrow key reaches this pane and not the shell.
+     */
     function step(by: number): void {
         write({ slide: by > 0 ? next(held.slide) : previous(held.slide) });
         box?.focus();

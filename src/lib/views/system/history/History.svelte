@@ -22,11 +22,11 @@
     //
     // The undo control is offered on a row whose record says how to take it back. The server checks
     // that the file still holds what the write left before it writes the earlier value, so a field
-    // edited since is refused rather than written over; the sentence for each refusal is this view's
-    // and the wire word is never shown. A row whose undo was refused keeps its control unpressable,
-    // since pressing it again would be refused for the same reason until the page is read afresh.
-    // An answer that wrote no field is a refusal here too: the row says the value is back only when
-    // the endpoint names the field it wrote.
+    // edited since is refused rather than written over; the sentence for each refusal is this
+    // view's and the wire word is never shown. A row whose undo was refused keeps its control
+    // unpressable, since pressing it again would be refused for the same reason until the page is
+    // read afresh. An answer that wrote no field is a refusal here too: the row says the value is
+    // back only when the endpoint names the field it wrote.
 
     import { SvelteSet } from 'svelte/reactivity';
     import Disclosure from '$lib/ui/tree/Disclosure.svelte';

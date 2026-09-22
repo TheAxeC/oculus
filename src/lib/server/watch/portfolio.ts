@@ -1,5 +1,5 @@
-// Layer 2, server. The `portfolio`, `config`, `feeds` and `audit` channels: build once at start, then rebuild
-// and publish whenever a source file changes. This is DESIGN.md's third row of "Hot
+// Layer 2, server. The `portfolio`, `config`, `feeds` and `audit` channels: build once at start,
+// then rebuild and publish whenever a source file changes. This is DESIGN.md's third row of "Hot
 // reload", the one that is identical in development and in production, and the reason the page
 // never polls.
 //
@@ -68,8 +68,8 @@ const NEVER = ['code', 'attic'];
 /**
  * Whether the path names something the audit scan reads: one of its documents, by the last segments
  * of the path, or one of the folders it reports, by any segment. The scan reads the disk, so an
- * event on one of these is the only way a marker added to a README or a `paper/` folder made by hand
- * reaches the open Audit view.
+ * event on one of these is the only way a marker added to a README or a `paper/` folder made by
+ * hand reaches the open Audit view.
  */
 export function audited(parts: string[]): boolean {
     return AUDIT_PATHS.some((wanted) => {
@@ -83,11 +83,12 @@ export function audited(parts: string[]): boolean {
 }
 
 /**
- * Whether a watch event is one of ours: a YAML file, a project's PRESENT.md, or one of the documents
- * and folders the audit scan reads, outside every `code/` and `attic/` folder. PRESENT.md is here
- * because its front matter is in the snapshot, so a slide saved has to reach the open deck the way a
- * changed manifest reaches the open board. `code/README.md` is the one path taken from inside a
- * `code/` folder: the deposit holds thousands of files and none of the others is read by anything.
+ * Whether a watch event is one of ours: a YAML file, a project's PRESENT.md, or one of the
+ * documents and folders the audit scan reads, outside every `code/` and `attic/` folder. PRESENT.md
+ * is here because its front matter is in the snapshot, so a slide saved has to reach the open deck
+ * the way a changed manifest reaches the open board. `code/README.md` is the one path taken from
+ * inside a `code/` folder: the deposit holds thousands of files and none of the others is read by
+ * anything.
  */
 export function relevant(filename: string | null): boolean {
     if (filename === null || filename === '') return false;
@@ -101,8 +102,8 @@ export function relevant(filename: string | null): boolean {
 
 /**
  * The hub files a rebuild actually reads: every registry, collection and YAML feed file, the career
- * file, and every `project.yml` and `PRESENT.md` under a scan tier. A `.yml` kept beside one of them
- * (a note next to a registry, a draft, a second file in a project folder) changes nothing the
+ * file, and every `project.yml` and `PRESENT.md` under a scan tier. A `.yml` kept beside one of
+ * them (a note next to a registry, a draft, a second file in a project folder) changes nothing the
  * snapshot holds, so an event for it is not a rebuild. The set is derived from the same config the
  * build was made from, which is why the predicate is built again at every rebuild rather than held
  * as a constant.
@@ -122,9 +123,9 @@ export function namedByConfig(hub: string, config: PortfolioConfig): (path: stri
         const tier = tiers.find((one) => path.startsWith(one));
         if (tier === undefined) return false;
         if (perProject.includes(basename(path))) return true;
-        // The audit reads a project's documents and folders off the disk, so an event on one of them
-        // under a tier is a rebuild like a changed manifest; the path is read tier-relative, so a
-        // folder of the hub above the tier never counts as one of a project's.
+        // The audit reads a project's documents and folders off the disk, so an event on one of
+        // them under a tier is a rebuild like a changed manifest; the path is read tier-relative,
+        // so a folder of the hub above the tier never counts as one of a project's.
         return audited(
             path
                 .slice(tier.length)
@@ -149,7 +150,9 @@ export function watchedDirectories(hub: string, config: PortfolioConfig): string
     return [...dirs];
 }
 
-/** The watched directories apart from the LinkedIn folder: the ones a recursive YAML watch serves. */
+/**
+ * The watched directories apart from the LinkedIn folder: the ones a recursive YAML watch serves.
+ */
 export function roleDirectories(hub: string, config: PortfolioConfig): string[] {
     const dirs = new Set<string>();
     for (const rule of config.scan) dirs.add(join(hub, rule.dir));
@@ -177,7 +180,9 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
     /** Refusals are logged once until recovery; every rebuild still retries unopened paths. */
     const refused = new Set<string>();
     let timer: ReturnType<typeof setTimeout> | null = null;
-    /** Whether a hub path is one the build reads; replaced by every rebuild from the config read. */
+    /**
+     * Whether a hub path is one the build reads; replaced by every rebuild from the config read.
+     */
     let named: (path: string) => boolean = () => true;
     let configTouched = false;
     let feedsTouched = false;

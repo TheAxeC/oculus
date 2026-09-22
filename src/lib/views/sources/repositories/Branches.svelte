@@ -5,8 +5,9 @@
     // every other one, and the row a new branch is named on, whose visible label is the name of its
     // field.
     //
-    // A repository with no commit yet has a branch checked out that git does not list and cannot
-    // branch from, so the empty line says so and the create control is disabled with the reason.
+    // A repository with no commit yet has a branch checked out that git does not list, so the empty
+    // line says so. A new branch can still be made there: `git switch -c` moves the unborn HEAD to
+    // the new name, so the create control is offered as it is on any repository.
     //
     // It draws and reports presses; the write and its confirm are the view's.
 

@@ -22,14 +22,18 @@ export type RegistrationBadge = {
     text: string;
     /** The glyph name drawn before the text, empty for a badge that is a count and nothing else. */
     glyph: string;
-    /** The text a pane tab draws: the rail's, unless the registration says its cells carry it all. */
+    /**
+     * The text a pane tab draws: the rail's, unless the registration says its cells carry it all.
+     */
     tabText: string;
     tone?: string;
     title: string;
     cells?: BadgeCell[];
 };
 
-/** Every view takes the instance it was mounted as, and reads its own state by that instance's id. */
+/**
+ * Every view takes the instance it was mounted as, and reads its own state by that instance's id.
+ */
 export type ViewProps = { instance: Instance };
 
 export type Registration = {
@@ -61,7 +65,9 @@ export type Registration = {
     badgeTitle?: (state: ClientState) => string;
     /** The split counts shown on a pane tab. */
     badgeCells?: (state: ClientState) => BadgeCell[];
-    /** The text a pane tab draws when it differs from the rail's; empty when the cells say it all. */
+    /**
+     * The text a pane tab draws when it differs from the rail's; empty when the cells say it all.
+     */
     badgeTabText?: (state: ClientState) => string;
 };
 
@@ -110,7 +116,9 @@ export type RegistryStore = {
 };
 
 export function createRegistry(layout: LayoutStore): RegistryStore {
-    /** Insertion order is registration order, and a re-registration keeps the id's first position. */
+    /**
+     * Insertion order is registration order, and a re-registration keeps the id's first position.
+     */
     const registry = new Map<ViewId, Registration>();
 
     /** Register a view, replacing an earlier registration of the same id. */
@@ -128,7 +136,8 @@ export function createRegistry(layout: LayoutStore): RegistryStore {
 
     /**
      * Drop a view's registration and close the tabs open on it; an id the registry does not hold is
-     * left alone. A tab whose view has gone has no body the shell can draw, so it goes with the key.
+     * left alone. A tab whose view has gone has no body the shell can draw, so it goes with the
+     * key.
      */
     function unregisterView(id: ViewId): void {
         if (!registry.delete(id)) return;

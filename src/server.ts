@@ -16,8 +16,8 @@ type Handler = (req: IncomingMessage, res: ServerResponse) => void;
 
 // The command line before anything else, so a mistyped flag or a directory holding no config/ is
 // said and the process ends without loading the build or opening the port. Without the flag the
-// engine is this file's own directory, which is what development and a plain start over the checkout
-// both mean.
+// engine is this file's own directory, which is what development and a plain start over the
+// checkout both mean.
 const parsed = parseEngineArgs(process.argv.slice(2), {
     cwd: process.cwd(),
     fallback: engineDir(),

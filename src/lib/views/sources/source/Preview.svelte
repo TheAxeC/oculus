@@ -8,9 +8,9 @@
     // marked-and-sanitise call every other document of the application is drawn through.
     //
     // An image address is left as the file wrote it. The preview is the text of one file, and the
-    // file route is not asked to resolve a figure beside it. A front matter block at the head of the
-    // file is the manifest of a document and not its prose, so it is left out as the document route
-    // leaves it out.
+    // file route is not asked to resolve a figure beside it. A front matter block at the head of
+    // the file is the manifest of a document and not its prose, so it is left out as the document
+    // route leaves it out.
 
     import Markdown from '$lib/views/shared/prose/Markdown.svelte';
     import { blockMarkdown } from '$lib/ui/html';
@@ -28,7 +28,9 @@
     let { path, text, fraction }: Props = $props();
     let box: HTMLDivElement | undefined = $state();
 
-    /** A YAML front matter block at the head of the file, which the document route splits off too. */
+    /**
+     * A YAML front matter block at the head of the file, which the document route splits off too.
+     */
     const FRONT_MATTER = /^---\r?\n[\s\S]*?\r?\n---\r?\n?/;
 
     const doc = $derived({

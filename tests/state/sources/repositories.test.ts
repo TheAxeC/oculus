@@ -1,9 +1,9 @@
 // What the Repositories view computes rather than draws, and what the writes store puts on the wire
 // for the three actions it added.
 //
-// The rules are pure and are checked as such. The store is exercised with fetch replaced, so nothing
-// here starts a server or reaches a repository: what the endpoint then does with the body is
-// tests/routes/git/git.test.ts and tests/server/git/git-write.test.ts.
+// The rules are pure and are checked as such. The store is exercised with fetch replaced, so
+// nothing here starts a server or reaches a repository: what the endpoint then does with the body
+// is tests/routes/git/git.test.ts and tests/server/git/git-write.test.ts.
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { GitEntry, GitState } from '../../../src/lib/data/model.ts';

@@ -48,6 +48,7 @@
     import { useInstance } from '$lib/state/client/instance-context';
     import { t } from '$lib/state/words/text';
     import type { WriteAnswer } from '$lib/state/client/writes.svelte';
+    import { answerWords } from './answer-words';
     import { useState } from '$lib/state/client/use';
 
     const client = useState();
@@ -79,9 +80,10 @@
         onclose: () => void;
         /**
          * The form's entry is now the file's under another id: its own save renamed it. A host that
-         * draws the form over an id of its own answers this by opening the form over the new one, so
-         * the form stays where it is with what was typed into it. A host that does not supply it
-         * leaves the form as it was, and this form's save never renames what it edits underneath it.
+         * draws the form over an id of its own answers this by opening the form over the new one,
+         * so the form stays where it is with what was typed into it. A host that does not supply it
+         * leaves the form as it was, and this form's save never renames what it edits underneath
+         * it.
          */
         onrenamed?: (id: string) => void;
         /** What a write answered, for the one outcome line the view holds. */
@@ -104,7 +106,9 @@
 
     const fields = $derived([...formFields(schema, configMap()), ...extraRawFields(entry, schema)]);
 
-    /** What the entry itself holds, per field: what a control shows until the reader types in it. */
+    /**
+     * What the entry itself holds, per field: what a control shows until the reader types in it.
+     */
     const initial = $derived.by(() => {
         const next: Record<string, Draft> = {};
         for (const field of fields) {
@@ -126,8 +130,11 @@
     const target = $derived(draftTarget(formDrafts, within?.() ?? null, local));
     /** What the reader has typed, by field. A field nobody touched is not in here at all. */
     const edits = $derived(target.edits(form));
-    /** Whether a save from this form is out: its control is not pressable until the answer lands. */
+    /**
+     * Whether a save from this form is out: its control is not pressable until the answer lands.
+     */
     const busy = $derived(target.saving(form));
+
     let asked = $state('');
     let sure = $state(false);
 
@@ -146,7 +153,9 @@
         return Array.isArray(value) ? value : [];
     }
 
-    /** Keep what one control now holds, with its kind and what the control held before any typing. */
+    /**
+     * Keep what one control now holds, with its kind and what the control held before any typing.
+     */
     function hold(field: string, value: Draft): void {
         target.set(form, field, {
             value,
@@ -174,9 +183,9 @@
     }
 
     /**
-     * The value one control saves as. A control the reader emptied writes the empty string, which is
-     * the reader saying the field has no words; a control nobody touched clears the field instead,
-     * so adding an entry writes no key for what was never filled in.
+     * The value one control saves as. A control the reader emptied writes the empty string, which
+     * is the reader saying the field has no words; a control nobody touched clears the field
+     * instead, so adding an entry writes no key for what was never filled in.
      */
     function saveable(field: string, kind: string): unknown {
         const saved = savedValue(valueOf(field), kind);
@@ -187,34 +196,23 @@
     }
 
     function said(answer: WriteAnswer): void {
-        if (!answer.ok) {
-            onsaid(t('editor.failed', answer.error ?? ''));
-        } else if (answer.refused.length > 0) {
-            // A refused field answers ok with nothing changed; the reader is told why, not "saved".
-            onsaid(
-                t(
-                    'editor.failed',
-                    answer.refused.map((one) => `${one.field}: ${one.reason}`).join('; ')
-                )
-            );
-        } else {
-            onsaid(t('editor.saved', answer.changed.join(', ')));
-        }
+        onsaid(answerWords(answer));
     }
 
     /**
-     * Save the form: a new entry when the form has none, the entry's own fields when it has one. The
-     * draft settled is the one the save was pressed over, with the values it sent, both taken before
-     * the request goes: an answer landing after the tab was switched settles that draft and no other.
-     * An edit form keeps a value typed while the request was on its way, left open over it. An add
-     * form closes and forgets its draft only while its draft is still what the save sent: a form
-     * closed and opened again, or typed on, while the request was out holds the reader's newer text,
-     * which closing it would take away. Such a form goes on writing the entry its add made, so the
-     * words typed while the request was out are saved into that entry and not refused as a second
-     * entry under the same identity; typed away from that entry's identity it adds another, which is
-     * what an add form does. What it made is kept with the draft, in the instance's own state, so a
-     * tab switched away between the save and its answer does not turn the next save into a second
-     * add. An edit form whose save writes the entry under another id is carried onto it (renamed).
+     * Save the form: a new entry when the form has none, the entry's own fields when it has one.
+     * The draft settled is the one the save was pressed over, with the values it sent, both taken
+     * before the request goes: an answer landing after the tab was switched settles that draft and
+     * no other. An edit form keeps a value typed while the request was on its way, left open over
+     * it. An add form closes and forgets its draft only while its draft is still what the save
+     * sent: a form closed and opened again, or typed on, while the request was out holds the
+     * reader's newer text, which closing it would take away. Such a form goes on writing the entry
+     * its add made, so the words typed while the request was out are saved into that entry and not
+     * refused as a second entry under the same identity; typed away from that entry's identity it
+     * adds another, which is what an add form does. What it made is kept with the draft, in the
+     * instance's own state, so a tab switched away between the save and its answer does not turn
+     * the next save into a second add. An edit form whose save writes the entry under another id is
+     * carried onto it (renamed).
      *
      * The form says here that a save from it is out, and says so through the drafts rather than in
      * the component, since the tab may be switched away before the answer lands and the rules that
@@ -281,10 +279,10 @@
     /**
      * Carry the open form onto the entry its save has just written under another id. The file gives
      * the entry the id of its `id`, `key` or `title`, so a save that writes one of those writes the
-     * entry under a new one and the id the form was opened over names nothing. The write answer says
-     * which id the entry now has. The draft goes with the form, and the host is asked to open the
-     * form over the entry where it now is; without a host that can, nothing moves and the form is
-     * left as it was.
+     * entry under a new one and the id the form was opened over names nothing. The write answer
+     * says which id the entry now has. The draft goes with the form, and the host is asked to open
+     * the form over the entry where it now is; without a host that can, nothing moves and the form
+     * is left as it was.
      */
     function renamed(into: typeof target, which: string, after: string): void {
         if (entry === null || onrenamed === undefined) return;
@@ -432,8 +430,8 @@
         border-radius: var(--radius-sm);
     }
 
-    /* The box of a form the caller asked to paint one. A caller that says no gets the border and the
-       padding alone, so the fields still read as one block on whatever is behind them. */
+    /* The box of a form the caller asked to paint one. A caller that says no gets the border and
+       the padding alone, so the fields still read as one block on whatever is behind them. */
     .form.surface {
         background: var(--panel);
     }

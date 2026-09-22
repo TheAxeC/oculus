@@ -178,7 +178,9 @@
         return short;
     }
 
-    /** What the project's own tab is called in the strip: the short handle whenever there is one. */
+    /**
+     * What the project's own tab is called in the strip: the short handle whenever there is one.
+     */
     function tabLabel(item: BoardItem): string {
         const short = item.project.short;
         return short === undefined || short === '' ? item.project.title : short;

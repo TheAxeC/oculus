@@ -1,5 +1,6 @@
 <script lang="ts">
-    // Layer 3, view partial. The queue exposes every squeue field, with cancellation behind Confirm and logs limited to running jobs.
+    // Layer 3, view partial. The queue exposes every squeue field, with cancellation behind Confirm
+    // and logs limited to running jobs.
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Confirm from '$lib/ui/controls/Confirm.svelte';
     import Meter from '$lib/ui/display/Meter.svelte';
@@ -13,7 +14,10 @@
         oncancel
     }: {
         rows: HpcJob[];
-        /** Whether the cluster is answering; a control that would run a doomed ssh command is shown and not pressable. */
+        /**
+         * Whether the cluster is answering; a control that would run a doomed ssh command is shown
+         * and not pressable.
+         */
         live: boolean;
         onlog: (id: string) => void;
         oncancel: (id: string) => void;

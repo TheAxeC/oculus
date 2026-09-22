@@ -2,14 +2,15 @@
 // colours, the rail's list against its foot and the fade that says the list goes on, the foot's
 // visible names and the arrow keys along its Text row, the pane menu's length at seven pages, an
 // overflowing tab strip resting with a whole tab at its left edge, the palette's kind column, and a
-// pressed rail toggle's colours. Every one of them is a computed style, a box or a focus, which only
-// a rendered page holds.
+// pressed rail toggle's colours. Every one of them is a computed style, a box or a focus, which
+// only a rendered page holds.
 //
 // Nothing here writes to the hub. The layout and the appearance live in the browser's own storage,
 // and Playwright gives every test a context of its own.
 
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { boot, openView } from '../helpers/rail.ts';
+import { stripRest } from '../helpers/style.ts';
 import { t } from '../helpers/words.ts';
 
 /** The one open bubble, whatever control it belongs to. */
@@ -214,7 +215,8 @@ test.describe('the rail foot', () => {
             { fits: true, before: 'none' },
             { fits: true, before: 'none' }
         ]);
-        // The ASCII stand-ins are the terminal theme's; the drawings are what two glyphs compare by.
+        // The ASCII stand-ins are the terminal theme's; the drawings are what two glyphs compare
+        // by.
         await page.locator('nav [data-stop="unicode"]').click();
         const foot = page.locator('nav [data-foot]');
         for (const key of [
@@ -368,7 +370,10 @@ test.describe('tabs', () => {
         return page.locator('[data-pane]').first().getByRole('tablist');
     }
 
-    /** Ten tabs in the first pane: Status, eight views and one bookmarked document, which is showing. */
+    /**
+     * Ten tabs in the first pane: Status, eight views and one bookmarked document, which is
+     * showing.
+     */
     async function tenTabs(page: Page): Promise<Locator> {
         await boot(page);
         for (const view of ['focus', 'projects', 'coauthor', 'archive', 'pillars', 'domains']) {
@@ -382,25 +387,6 @@ test.describe('tabs', () => {
         const list = tablist(page);
         await expect(list.getByRole('tab')).toHaveCount(10);
         return list;
-    }
-
-    /** The strip's offset, whether its left edge is a tab's start, and whether the showing tab is whole. */
-    async function edge(
-        list: Locator
-    ): Promise<{ at: number; onStart: boolean; atEnd: boolean; activeWhole: boolean }> {
-        return list.evaluate((node) => {
-            const box = node.getBoundingClientRect();
-            const tabs = [...node.querySelectorAll<HTMLElement>(':scope > .tab')];
-            const onStart =
-                node.scrollLeft <= 1 ||
-                tabs.some((tab) => Math.abs(tab.getBoundingClientRect().left - box.left) <= 1);
-            const current = tabs.find((tab) => tab.classList.contains('current'));
-            const rect = current?.getBoundingClientRect();
-            const activeWhole =
-                rect !== undefined && rect.left >= box.left - 1 && rect.right <= box.right + 1;
-            const atEnd = node.scrollLeft >= node.scrollWidth - node.clientWidth - 1;
-            return { at: node.scrollLeft, onStart, atEnd, activeWhole };
-        });
     }
 
     /**
@@ -439,7 +425,7 @@ test.describe('tabs', () => {
         page
     }) => {
         const list = await tenTabs(page);
-        const seen = await edge(list);
+        const seen = await stripRest(list);
         expect(seen.at).toBeGreaterThan(0);
         expect(seen.activeWhole).toBe(true);
         const right = page.getByRole('button', { name: t('ui.tabs_scroll_right') }).first();
@@ -459,7 +445,7 @@ test.describe('tabs', () => {
             await expect
                 .poll(() => list.evaluate((node) => node.scrollLeft), { timeout: 250 })
                 .not.toBe(before);
-            const seen = await edge(list);
+            const seen = await stripRest(list);
             expect(seen.onStart || seen.atEnd).toBe(true);
         }
         await expect(left).toBeDisabled();
@@ -468,7 +454,7 @@ test.describe('tabs', () => {
             await expect
                 .poll(
                     async () => {
-                        const seen = await edge(list);
+                        const seen = await stripRest(list);
                         return seen.onStart || seen.atEnd;
                     },
                     { timeout: 250 }
@@ -515,11 +501,11 @@ test.describe('tabs', () => {
                 await toStart(page, list);
             } else {
                 while (await right.isEnabled()) {
-                    const before = (await edge(list)).at;
+                    const before = (await stripRest(list)).at;
                     await right.click();
-                    await expect.poll(async () => (await edge(list)).at).not.toBe(before);
+                    await expect.poll(async () => (await stripRest(list)).at).not.toBe(before);
                 }
-                await expect.poll(async () => (await edge(list)).atEnd).toBe(true);
+                await expect.poll(async () => (await stripRest(list)).atEnd).toBe(true);
             }
             await page.setViewportSize({ width: 2400, height: 640 });
             await expect(right).toBeHidden();
@@ -539,8 +525,8 @@ test.describe('tabs', () => {
             'aria-selected',
             'true'
         );
-        await expect.poll(async () => (await edge(list)).activeWhole).toBe(true);
-        expect((await edge(list)).onStart).toBe(true);
+        await expect.poll(async () => (await stripRest(list)).activeWhole).toBe(true);
+        expect((await stripRest(list)).onStart).toBe(true);
     });
 
     for (const [from, to] of [
@@ -556,10 +542,10 @@ test.describe('tabs', () => {
             // crosses it or takes it out of sight.
             await toStart(page, list);
             await openView(page, 'map', t('views.map'));
-            await expect.poll(async () => (await edge(list)).activeWhole).toBe(true);
+            await expect.poll(async () => (await stripRest(list)).activeWhole).toBe(true);
             await page.setViewportSize({ width: to, height: 640 });
-            await expect.poll(async () => (await edge(list)).activeWhole).toBe(true);
-            expect((await edge(list)).onStart).toBe(true);
+            await expect.poll(async () => (await stripRest(list)).activeWhole).toBe(true);
+            expect((await stripRest(list)).onStart).toBe(true);
         });
     }
 });

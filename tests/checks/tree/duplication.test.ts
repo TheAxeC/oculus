@@ -29,8 +29,8 @@ const ROOT = resolve(fileURLToPath(import.meta.url), '..', '..', '..', '..');
 /**
  * A clone two files share: the pair, the mark of the lines themselves, and the reason it is listed.
  *
- * The mark is what makes an entry stand for one clone rather than for the pair: two files already on
- * the list cannot grow a second copy under the first one's entry.
+ * The mark is what makes an entry stand for one clone rather than for the pair: two files already
+ * on the list cannot grow a second copy under the first one's entry.
  */
 export type Pair = { a: string; b: string; mark: string; why: string };
 

@@ -26,7 +26,9 @@ export type ChatOptions = StartOptions & {
     engine: string;
     /** A project in the latest portfolio snapshot. Tests provide the snapshot source they own. */
     projectFor?: (id: string) => ChatProject | null;
-    /** The merged engine config. Tests provide a fixture without changing the checked-in catalog. */
+    /**
+     * The merged engine config. Tests provide a fixture without changing the checked-in catalog.
+     */
     configFor?: () => Record<string, unknown>;
     /** Machine-local paths carried by ServerContext. */
     localFor?: () => LocalConfig;

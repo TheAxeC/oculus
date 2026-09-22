@@ -14,9 +14,12 @@
 // For each directive this copies the tree to a scratch directory, applies the edit there, runs that
 // one case, and fails when the case stays green: a case that passes with its named revert applied
 // does not hold the rule it is cited for. Where the run cannot say that much, the directive is
-// unproven and the line says why, never red: a revert that changes nothing, a case that did not run,
-// was skipped or shares its name with another, a target the copy does not hold, and a build that
-// refused the edit are all unproven.
+// unproven and the line says why, never red: a revert that changes nothing, a case that did not
+// run, was skipped or shares its name with another, a target the copy does not hold, a script the
+// revert leaves unparsable, and a build that refused the edit are all unproven.
+//
+// The case runs with its temporary directory inside the copy, and a run stopped by a signal removes
+// the copy in hand, so a run leaves nothing in the system's temporary directory.
 //
 // A case with no machine-readable revert is unchecked. Unchecked counts in the summary and in the
 // exit status, since a case nothing proves is what this exists to find; the argument list is what
@@ -30,6 +33,7 @@
 import {
     cpSync,
     existsSync,
+    mkdirSync,
     mkdtempSync,
     readFileSync,
     realpathSync,
@@ -37,10 +41,43 @@ import {
     symlinkSync,
     writeFileSync
 } from 'node:fs';
-import { tmpdir } from 'node:os';
+import os, { tmpdir } from 'node:os';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+
+/** The signals that stop a run, on each of which the copy in hand is removed. */
+const SIGNALS = ['SIGINT', 'SIGTERM', 'SIGHUP'];
+
+/**
+ * Remove one case's copy. The case's own temporary directory is inside it, so a child of the case
+ * that outlives it writes there while the removal walks the copy, which makes one pass fail on a
+ * directory that has just gained a file, or puts the path back right after it went. The removal
+ * retries inside one pass and then takes the copy again while it keeps coming back, and a copy it
+ * still cannot take away is said in a line rather than stopping the run.
+ */
+function removeCopy(dir) {
+    for (let pass = 0; pass < 5; pass += 1) {
+        try {
+            rmSync(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
+        } catch (trouble) {
+            process.stdout.write(`kept      ${dir}: ${String(trouble)}\n`);
+            return;
+        }
+        if (!existsSync(dir)) return;
+        // A child still on its way out put the path back; give it the moment it needs to go.
+        spawnSync(process.execPath, ['-e', 'setTimeout(() => {}, 200)']);
+    }
+    // A child that outlives every pass writes its cache once more as it exits, so the last word is
+    // the run's own exit, by when nothing of the case is left to write.
+    process.once('exit', () => {
+        try {
+            rmSync(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
+        } catch {
+            process.stdout.write(`kept      ${dir}\n`);
+        }
+    });
+}
 
 /** What a copy of the tree leaves behind: generated output, dependencies and the plan's folder. */
 const SKIPPED = ['node_modules', '.svelte-kit', 'build', '.git', '.scratch', 'test-results'];
@@ -106,14 +143,21 @@ export function directives(root, files) {
     return found;
 }
 
+/** Whether a line is a comment line and nothing else. */
+const COMMENT = /^\s*(\/\/|\/\*|\*)/;
+
 /**
  * The name of the case a directive belongs to, or null where it belongs to none.
  *
- * A directive on the line above a case opens that case, which is why the line under it is read
- * first; anywhere else it belongs to the case whose body it sits in, the nearest one above it.
+ * A directive above a case opens that case, with nothing but comment lines between them, which is
+ * why the lines under it are read first: the prose revert may sit between the directive and the
+ * case it names. Anywhere else it belongs to the case whose body it sits in, the nearest one above
+ * it.
  */
 function caseAbove(lines, at) {
-    const under = at + 1 < lines.length ? caseName(lines, at + 1) : null;
+    let next = at + 1;
+    while (next < lines.length && COMMENT.test(lines[next])) next += 1;
+    const under = next < lines.length ? caseName(lines, next) : null;
     if (under !== null) return under;
     for (let back = at; back >= 0; back -= 1) {
         const name = caseName(lines, back);
@@ -224,7 +268,9 @@ function isBrowserCase(file) {
     return file.startsWith('tests/browser/') && file.endsWith('.spec.ts');
 }
 
-/** The name as a pattern that matches it and nothing else: metacharacters escaped, the end anchored. */
+/**
+ * The name as a pattern that matches it and nothing else: metacharacters escaped, the end anchored.
+ */
 function exactly(caseName) {
     const escaped = caseName.replace(/[.*+?^${}()|[\]\\]/g, (one) => `\\${one}`);
     return `${escaped}$`;
@@ -274,8 +320,9 @@ function playwrightResults(report, caseName) {
  * The verdict a run of one case earns.
  *
  * One case of that name has to have run and reached a verdict of its own. No case of the name is a
- * case the runner never reached; two are a name the file uses twice, where a red sibling would prove
- * a green case; a skipped one, whether its own `.skip` or another case's `.only`, ran nothing.
+ * case the runner never reached; two are a name the file uses twice, where a red sibling would
+ * prove a green case; a skipped one, whether its own `.skip` or another case's `.only`, ran
+ * nothing.
  */
 function verdict(held) {
     if (held.length === 0) return { ran: false, why: 'the case did not run' };
@@ -294,7 +341,8 @@ function verdict(held) {
  */
 function runCase(dir, file, caseName) {
     const report = join(dir, 'revert-check-report.json');
-    const shared = { cwd: dir, encoding: 'utf8', env: caseEnv(), stdio: 'pipe' };
+    /** @type {import('node:child_process').SpawnSyncOptionsWithStringEncoding} */
+    const shared = { cwd: dir, encoding: 'utf8', env: caseEnv(dir), stdio: 'pipe' };
     if (isBrowserCase(file)) {
         const built = spawnSync('npm', ['run', 'build'], shared);
         if (built.status !== 0) return { ran: false, why: 'the build refused the revert' };
@@ -321,9 +369,15 @@ function runCase(dir, file, caseName) {
     return verdict(vitestResults(jsonOf(report), caseName));
 }
 
-/** The environment a nested run needs: the parent runner's own variables are not inherited. */
-function caseEnv() {
-    const env = { ...process.env, CI: '1' };
+/**
+ * The environment a nested run needs: the parent runner's own variables are not inherited, and the
+ * temporary directory is a folder of the copy, so whatever the run makes there, a scratch folder a
+ * reverted sweep no longer removes among it, goes when the copy does.
+ */
+function caseEnv(dir) {
+    const temp = join(dir, '.case-tmp');
+    mkdirSync(temp, { recursive: true });
+    const env = { ...process.env, CI: '1', TMPDIR: temp };
     for (const name of Object.keys(env)) {
         if (name.startsWith('VITEST') || name === 'TEST_NAME_PATTERN') delete env[name];
     }
@@ -355,6 +409,12 @@ export function checkOne(root, directive) {
         };
     }
     const dir = copyTree(root);
+    // A run stopped by a signal removes the copy on its way out rather than leaving it behind.
+    const stopped = (signal) => {
+        removeCopy(dir);
+        process.exit(128 + (os.constants.signals[signal] ?? 0));
+    };
+    for (const signal of SIGNALS) process.once(signal, stopped);
     try {
         const edit = applied(
             readFileSync(target, 'utf8'),
@@ -382,6 +442,19 @@ export function checkOne(root, directive) {
             };
         }
         writeFileSync(write, edit.text, 'utf8');
+        // A script a case runs as a process of its own fails to start once the revert breaks its
+        // syntax, which would read as red; node parses plain JavaScript without running it, so such
+        // a revert is named here instead. A module the case imports is covered by the run itself,
+        // which does not reach the case.
+        if (/\.(mjs|cjs|js)$/.test(directive.target)) {
+            const parsed = spawnSync('node', ['--check', write], { encoding: 'utf8' });
+            if (parsed.status !== 0) {
+                return {
+                    ok: false,
+                    line: `unproven  ${directive.file}:${directive.line} names ${directive.target}:${directive.first}, which the revert leaves unparsable`
+                };
+            }
+        }
         const run = runCase(dir, directive.file, directive.caseName);
         const where = `${directive.file} :: ${directive.caseName} (revert ${directive.target}:${directive.first})`;
         if (!run.ran) return { ok: false, line: `unproven  ${where} [${run.why}]` };
@@ -393,7 +466,8 @@ export function checkOne(root, directive) {
             line: `unproven  ${directive.file}:${directive.line} names ${directive.target}: ${String(trouble)}`
         };
     } finally {
-        rmSync(dir, { recursive: true, force: true });
+        for (const signal of SIGNALS) process.off(signal, stopped);
+        removeCopy(dir);
     }
 }
 

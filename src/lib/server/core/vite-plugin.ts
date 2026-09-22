@@ -1,4 +1,5 @@
-// Layer 2, server. Compose the ServerContext, WebSocket and raw-request carrier used by Vite development and preview.
+// Layer 2, server. Compose the ServerContext, WebSocket and raw-request carrier used by Vite
+// development and preview.
 
 import adapter from '@sveltejs/adapter-node';
 import { AsyncLocalStorage } from 'node:async_hooks';

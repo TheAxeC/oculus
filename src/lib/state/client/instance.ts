@@ -1,4 +1,5 @@
-// Layer 2, client state. Instance identities and tree lookups, independent of tree mutations and storage.
+// Layer 2, client state. Instance identities and tree lookups, independent of tree mutations and
+// storage.
 
 import type { Instance, Layout, Pane, ViewId } from '../workbench/layout/index.ts';
 import { item } from '../../data/helpers/guards.ts';
@@ -110,8 +111,9 @@ export function isInstanceOf(tab: Instance, view: ViewId, id?: string | null): b
 }
 
 /**
- * The instance of this view in the tree, or null when the tree holds none. An omitted identity finds
- * any instance, an explicit null finds the unpinned one, and a string finds that record's instance.
+ * The instance of this view in the tree, or null when the tree holds none. An omitted identity
+ * finds any instance, an explicit null finds the unpinned one, and a string finds that record's
+ * instance.
  */
 export function findView(layout: Layout, view: ViewId, id?: string | null): Instance | null {
     for (const { pane } of panes(layout)) {

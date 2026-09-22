@@ -44,7 +44,7 @@ import {
 } from '../sources/fs.ts';
 import { createHpc, type HpcStore } from '../system/hpc.svelte.ts';
 import { createInbox, type InboxStore } from '../feeds/inbox.svelte.ts';
-import { findInstance, tabsOf } from './instance.ts';
+import { tabsOf } from './instance.ts';
 import { createLatex, type LatexStore } from '../sessions/latex.svelte.ts';
 import { createLayout, type LayoutStore } from '../workbench/layout.svelte.ts';
 import { createManifestDraft, type ManifestDraftStore } from '../forms/manifest-draft.ts';
@@ -112,15 +112,15 @@ export type ClientState = {
  */
 export function createClientState(): ClientState {
     const entities = createEntities();
-    const writes = createWrites();
+    const writes = createWrites(() => entities.config()?.config ?? null);
     const socket = createSocket(entities, writes);
     const ui = createUi();
     const formDrafts = createFormDrafts(ui, snapshotEntries(entities.portfolio));
     // A tab's close, a pane's close and a page's close forget the state of every instance they take
     // away, and the layout is the one store that knows an instance closed. The entry forms of an
-    // instance keep their drafts in an entry of their own beside that state, so the layout is handed
-    // a forget that takes all three, with the entries its add forms made and the mark saying a save
-    // from one of its forms is out.
+    // instance keep their drafts in an entry of their own beside that state, so the layout is
+    // handed a forget that takes all three, with the entries its add forms made and the mark saying
+    // a save from one of its forms is out.
     const layout = createLayout({
         ...ui,
         clearInstanceState: (id: string) => {
@@ -137,10 +137,11 @@ export function createClientState(): ClientState {
     const terminals = createTerminals(entities, socket, writes);
     const files = createFiles(entities);
     // The file browser's bookmark forms are the fs store's to close: it is what learns that a
-    // bookmark has left the file, and a form over one that is gone has nothing to draw and nothing to
-    // save into. Which file browsers there are, what each one has open and how one is moved are the
-    // layout's, the ui store's and the form drafts' and are handed to it here. The entities store is
-    // handed to it for the `files` channel, which is what says the bookmarks file changed on disk.
+    // bookmark has left the file, and a form over one that is gone has nothing to draw and nothing
+    // to save into. Which file browsers there are, what each one has open and how one is moved are
+    // the layout's, the ui store's and the form drafts' and are handed to it here. The entities
+    // store is handed to it for the `files` channel, which is what says the bookmarks file changed
+    // on disk.
     const fs = createFs(
         writes,
         {
@@ -186,11 +187,9 @@ export function createClientState(): ClientState {
     const selectors = createSelectors(entities, layout, selection);
     const manifestDraft = createManifestDraft(ui, selectors.projectOf);
     ui.registerUnsaved(manifestDraft.manifestDirty);
-    // A file browser's root or workspace line is text no save has taken, asked by the instance's view.
-    ui.registerUnsaved((id) => {
-        const found = layout.pages().flatMap((page) => findInstance(page.workbench.root, id) ?? []);
-        return filesLineTyped(found[0]?.instance.view, ui.instanceState(id));
-    });
+    // A file browser's root or workspace line is text no save has taken, asked by the instance's
+    // view.
+    ui.registerUnsaved((id) => filesLineTyped(layout.instanceView(id), ui.instanceState(id)));
     const railBadges = createRailBadges(entities, feeds, hpc, calendar, inbox, audit, selectors);
     const paletteSource = createPaletteSource(entities, feeds);
     const registry = createRegistry(layout);

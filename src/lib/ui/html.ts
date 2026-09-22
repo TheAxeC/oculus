@@ -8,17 +8,18 @@
 // script, iframe, object or form, and a URL that is not one of the schemes the regular expression
 // names is dropped with its attribute. Two rules the profile cannot state are hooks on the module's
 // own purifier, because DOMPurify filters attribute names and never their values: a link that names
-// a scheme is given the target and the rel below, and an input that is not a task list's checkbox is
-// removed with its attributes.
+// a scheme is given the target and the rel below, and an input that is not a task list's checkbox
+// is removed with its attributes.
 //
 // The purifier is this module's instance, built from the document once, so the hooks are ours and
 // the package's shared default instance is left as it is for anything else that imports it.
 //
 // DOMPurify needs a document to parse into. The app renders in the browser alone, which is what
-// src/routes/+layout.ts says with `ssr = false`, so a runtime without a DOM draws no HTML either and
-// the text comes back as it came; tests/ui/html.test.ts reads that file and fails if the app ever
-// starts rendering on the server, because the pass-through would then be a hole. What the profile
-// does to real markup is checked in the browser, by tests/browser/workbench/sanitise.spec.ts.
+// src/routes/+layout.ts says with `ssr = false`, so a runtime without a DOM draws no HTML either
+// and the text comes back as it came; tests/ui/html.test.ts reads that file and fails if the app
+// ever starts rendering on the server, because the pass-through would then be a hole. What the
+// profile does to real markup is checked in the browser, by
+// tests/browser/workbench/sanitise.spec.ts.
 
 import DOMPurify from 'dompurify';
 import { marked } from 'marked';
@@ -69,9 +70,9 @@ export const ALLOWED_TAGS = [
 
 /**
  * The attributes those elements carry: a link's address, an image's address and text, the alignment
- * marked puts on a table cell, the language class it puts on a fenced block, the three a task list's
- * checkbox is drawn with, and the `id` a document's own anchor is jumped to by. Everything else
- * goes, handlers and `style` among it.
+ * marked puts on a table cell, the language class it puts on a fenced block, the three a task
+ * list's checkbox is drawn with, and the `id` a document's own anchor is jumped to by. Everything
+ * else goes, handlers and `style` among it.
  */
 export const ALLOWED_ATTR = [
     'align',
@@ -87,9 +88,10 @@ export const ALLOWED_ATTR = [
 ];
 
 /**
- * The addresses an `href` or a `src` may hold: the three schemes a document links out with, anything
- * that does not open with a scheme at all (a relative path, an anchor, a query), and nothing else.
- * `javascript:` and `data:` fail every branch, so the attribute carrying one is dropped.
+ * The addresses an `href` or a `src` may hold: the three schemes a document links out with,
+ * anything that does not open with a scheme at all (a relative path, an anchor, a query), and
+ * nothing else. `javascript:` and `data:` fail every branch, so the attribute carrying one is
+ * dropped.
  */
 export const ALLOWED_URI_REGEXP = /^(?:(?:https?|mailto|tel):|[^a-z]|[a-z+.-]+(?:[^a-z+.\-:]|$))/i;
 
@@ -118,10 +120,10 @@ export const PROFILE = {
 
 /**
  * The second profile, for a slide's inline diagram and nothing else. A diagram is a small grid of
- * boxes whose geometry and per-box colour are written on the elements themselves (the columns of the
- * grid, the border of a node), so the profile above would keep the boxes and throw the diagram away.
- * It is the profile above with `style` added and no other difference: the same elements, the same
- * addresses, no handler, no script, no frame.
+ * boxes whose geometry and per-box colour are written on the elements themselves (the columns of
+ * the grid, the border of a node), so the profile above would keep the boxes and throw the diagram
+ * away. It is the profile above with `style` added and no other difference: the same elements, the
+ * same addresses, no handler, no script, no frame.
  */
 export const DIAGRAM_ATTR = [...ALLOWED_ATTR, 'style'];
 
@@ -159,7 +161,9 @@ export function sanitise(html: string): string {
     return purifier.sanitize(html, PROFILE);
 }
 
-/** One slide's inline diagram, filtered by the profile that keeps the geometry it was drawn with. */
+/**
+ * One slide's inline diagram, filtered by the profile that keeps the geometry it was drawn with.
+ */
 export function sanitiseDiagram(html: string): string {
     if (purifier === null) return html;
     return purifier.sanitize(html, DIAGRAM_PROFILE);

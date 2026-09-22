@@ -1,5 +1,5 @@
-// Layer 1, data. Raw source records and portfolio entities, with relations held as ids.
-// This concern module keeps entity and source shapes together while model.ts remains the public facade.
+// Layer 1, data. Raw source records and portfolio entities, with relations held as ids. This
+// concern module keeps entity and source shapes together while model.ts remains the public facade.
 
 export type Id = string;
 
@@ -19,7 +19,10 @@ export type Tier = 'ideas' | 'active' | 'manuscripts' | 'software' | 'coauthor' 
 export type RegistryName =
     'venues' | 'datasets' | 'pillars' | 'domains' | 'funding' | 'people' | 'organisations';
 
-/** The seven hub-relative registry paths, one per registry. Declared here, used by sources/registries. */
+/**
+ * The seven hub-relative registry paths, one per registry. Declared here, used by
+ * sources/registries.
+ */
 export type RegistryFiles = {
     venues: string;
     datasets: string;
@@ -100,9 +103,13 @@ export type RawManifest = {
  */
 export type RawRegistryEntry = {
     [key: string]: unknown;
-    /** Which registry the entry came from. Not `source`: a dataset entry's own `source` is its URL. */
+    /**
+     * Which registry the entry came from. Not `source`: a dataset entry's own `source` is its URL.
+     */
     registry: RegistryName;
-    /** The entry's id, or the empty string when the registry's id field was missing or not a string. */
+    /**
+     * The entry's id, or the empty string when the registry's id field was missing or not a string.
+     */
     key: Id;
     /** Absolute path of the registry file. */
     file: string;
@@ -118,8 +125,8 @@ export type RawRegistry = {
 };
 
 /**
- * One entry of one collection as it was read. Every key the YAML map held is present untouched;
- * the reader adds only `provenance`. The entry's identity, its `key` when it has one and its `title`
+ * One entry of one collection as it was read. Every key the YAML map held is present untouched; the
+ * reader adds only `provenance`. The entry's identity, its `key` when it has one and its `title`
  * otherwise, is left where it was read and is derived by data/snapshot/normalise.ts, not here.
  */
 export type RawEntry = {
@@ -237,7 +244,8 @@ export type PresentEli5 = {
 
 /**
  * One visual of a slide. `figure` is a bare file name under the project's own `present/` folder and
- * the view resolves it through the file route; `diagramHtml` is inline markup the sanitiser filters.
+ * the view resolves it through the file route; `diagramHtml` is inline markup the sanitiser
+ * filters.
  */
 export type PresentPanel = {
     figure?: string;
@@ -254,9 +262,9 @@ export type PresentPanel = {
  * what the deck's `order`, `selection` and `slide_order` name a slide by.
  *
  * `equation` is either LaTeX the page typesets or the name of a rendered image; which one it is is
- * the value's own suffix, and data/sources/present.ts holds that rule. That reader resolves an image
- * against the disk, so the view draws `equationImage` and never chooses a folder. `body` is the
- * markdown under the front matter, which is the slide a project with no front matter draws.
+ * the value's own suffix, and data/sources/present.ts holds that rule. That reader resolves an
+ * image against the disk, so the view draws `equationImage` and never chooses a folder. `body` is
+ * the markdown under the front matter, which is the slide a project with no front matter draws.
  */
 export type PresentSlide = {
     id: Id;
@@ -268,7 +276,9 @@ export type PresentSlide = {
     hook?: string;
     eli5?: PresentEli5;
     equation?: string;
-    /** Hub-relative path of the rendered equation image, when `equation` names one that is there. */
+    /**
+     * Hub-relative path of the rendered equation image, when `equation` names one that is there.
+     */
     equationImage?: string;
     /** The named equation image is in neither place it could be, so the view draws the gap. */
     equationMissing?: boolean;
@@ -279,7 +289,9 @@ export type PresentSlide = {
     body?: string;
 };
 
-/** The six kinds of slide the deck is made of; five are the deck's own, `project` is a project's. */
+/**
+ * The six kinds of slide the deck is made of; five are the deck's own, `project` is a project's.
+ */
 export type DeckKind = 'title' | 'framing' | 'project' | 'summary' | 'ideas' | 'closing';
 
 /** One entry of the deck's `order:`. A `project` entry's `ref` is a PresentSlide id. */
@@ -431,7 +443,10 @@ export type Project = {
     chips: Chip[];
     statusLine?: string;
     focus?: string;
-    /** The flame badge of the Focus card: `high`, `med` or `low`, the `priority_levels` of vocab.yml. */
+    /**
+     * The flame badge of the Focus card: `high`, `med` or `low`, the `priority_levels` of
+     * vocab.yml.
+     */
     priority?: string;
     eli5?: string;
     next?: string;
@@ -449,7 +464,9 @@ export type Project = {
     followups: Followup[];
     /** An ISO date the project's own dates are hidden from the Focus ticker until. */
     snooze?: string;
-    /** The `subtasks:` checklist, done lines included; what is still open is the board's question. */
+    /**
+     * The `subtasks:` checklist, done lines included; what is still open is the board's question.
+     */
     subtasks: Subtask[];
     doi?: string;
     outcome?: string;
@@ -464,7 +481,10 @@ export type Project = {
     datasetIds: Id[];
     pillarIds: Id[];
     domainIds: Id[];
-    /** Keys of the people registry; the `projectPerson` table holds the same pairs from the other side. */
+    /**
+     * Keys of the people registry; the `projectPerson` table holds the same pairs from the other
+     * side.
+     */
     collaborators: Id[];
     /**
      * The free-text venue prose, for a manifest that names no `venue_id`. The manifest schema does
@@ -527,7 +547,9 @@ export type Dataset = {
     size?: string;
     access?: string;
     source?: string;
-    /** How the dataset is fetched: a map of `method`, `notes` and per-dataset keys, carried as read. */
+    /**
+     * How the dataset is fetched: a map of `method`, `notes` and per-dataset keys, carried as read.
+     */
     retrieval?: Record<string, unknown>;
     hpcPath?: string;
     /** The dataset registry's own theme words (`ecg`, `single-cell`), which are not domain keys. */
@@ -547,7 +569,9 @@ export type Pillar = {
     kind?: string;
     goal?: string;
     blurb?: string;
-    /** Funding schemes reached through the projects on this line; pillars.yml holds no funding key. */
+    /**
+     * Funding schemes reached through the projects on this line; pillars.yml holds no funding key.
+     */
     fundingIds: Id[];
     projectIds: Id[];
 };
@@ -566,9 +590,10 @@ export type Domain = {
  * surface that draws one reads it here.
  *
  * `affiliations` are keys of the organisation registry rather than the organisations themselves,
- * which is what keeps the pair JSON-safe: a person points at organisations and an organisation lists
- * its people, and neither holds the other resolved. A person holds more than one because a clinician
- * belongs to the university and to the hospital alike, and the first is the one a single line draws.
+ * which is what keeps the pair JSON-safe: a person points at organisations and an organisation
+ * lists its people, and neither holds the other resolved. A person holds more than one because a
+ * clinician belongs to the university and to the hospital alike, and the first is the one a single
+ * line draws.
  */
 export type Person = {
     id: Id;
@@ -584,7 +609,9 @@ export type Person = {
     folder?: string;
     /** True on the one entry that is the hub's owner; absent on every other. */
     self?: boolean;
-    /** Projects whose `collaborators:` name this person; filled from the other side of the relation. */
+    /**
+     * Projects whose `collaborators:` name this person; filled from the other side of the relation.
+     */
     projectIds: Id[];
     /** Entries of the joint-work collection whose `person:` is this key, by entry id. */
     jointWorkIds: Id[];

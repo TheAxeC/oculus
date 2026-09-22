@@ -102,7 +102,8 @@ export function createDeposit(): DepositStore {
     async function load(id: string): Promise<void> {
         try {
             // There is no fetch while the page is rendered on the server, and nothing to show there
-            // either: the panel stays pending and the browser asks for it on the first client render.
+            // either: the panel stays pending and the browser asks for it on the first client
+            // render.
             if (typeof window === 'undefined' || typeof fetch !== 'function') return;
             const response = await fetch(`/api/deposit?id=${encodeURIComponent(id)}`);
             const body = (await response.json()) as { state?: MirrorState; error?: string };

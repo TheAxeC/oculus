@@ -49,8 +49,8 @@ export type RawPortfolio = {
      */
     docs: Record<Id, DocPresence[]>;
     /**
-     * The slides each project's PRESENT.md declares, by project id, from sources/present.ts. It sits
-     * beside `docs` for the same reason: no manifest key names it, it is read from the folder.
+     * The slides each project's PRESENT.md declares, by project id, from sources/present.ts. It
+     * sits beside `docs` for the same reason: no manifest key names it, it is read from the folder.
      */
     present: Record<Id, PresentSlide[]>;
     findings: Finding[];
@@ -71,18 +71,20 @@ export type Vocabulary = {
      */
     hostStatuses?: string[];
     /**
-     * The keys of `focus_lanes` plus `holding`, the ideas backlog, which is what a manifest's `focus:`
-     * may name. Absent when the config holds no lanes, and `focus:` is then not checked. A value
-     * outside it is a card the board draws on no lane, which is why it is a finding and not a
+     * The keys of `focus_lanes` plus `holding`, the ideas backlog, which is what a manifest's
+     * `focus:` may name. Absent when the config holds no lanes, and `focus:` is then not checked. A
+     * value outside it is a card the board draws on no lane, which is why it is a finding and not a
      * silence.
      */
     lanes?: string[];
     /**
-     * The keys of `venue_themes`, the words a venue's `themes:` may use. Absent when the config holds
-     * no such list, and a venue theme is then not checked, as `chips` above.
+     * The keys of `venue_themes`, the words a venue's `themes:` may use. Absent when the config
+     * holds no such list, and a venue theme is then not checked, as `chips` above.
      */
     venueThemes?: string[];
-    /** The keys of `data_themes`, the words a dataset's `themes:` may use; absent as `venueThemes`. */
+    /**
+     * The keys of `data_themes`, the words a dataset's `themes:` may use; absent as `venueThemes`.
+     */
     dataThemes?: string[];
 };
 
@@ -196,9 +198,9 @@ export type Message = {
 };
 
 /**
- * The subscribe message a client sends: the channels it wants, and the write token when the page has
- * one. A socket that carried the token may send terminal input on a `pty:` channel; a socket without
- * it reads every channel and writes to none (DESIGN.md, "Auth").
+ * The subscribe message a client sends: the channels it wants, and the write token when the page
+ * has one. A socket that carried the token may send terminal input on a `pty:` channel; a socket
+ * without it reads every channel and writes to none (DESIGN.md, "Auth").
  */
 export type Subscription = {
     type: 'subscribe';

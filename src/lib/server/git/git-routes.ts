@@ -160,11 +160,12 @@ async function operate(
 }
 
 /**
- * GET /api/git: one of three reads, by the parameter it names. `diff=<root>&path=<file>&staged=<0|1>`
- * answers one file's diff, `worktree=<path>&root=<root>` answers what that worktree holds that its
- * repository's branch does not, and `root=` answers the branch listing. Each is same-origin only and
- * refused for a root this server has not published; the diffs are fetched when a pane opens rather
- * than published, since the channel carries state and not text.
+ * GET /api/git: one of three reads, by the parameter it names.
+ * `diff=<root>&path=<file>&staged=<0|1>` answers one file's diff, `worktree=<path>&root=<root>`
+ * answers what that worktree holds that its repository's branch does not, and `root=` answers the
+ * branch listing. Each is same-origin only and refused for a root this server has not published;
+ * the diffs are fetched when a pane opens rather than published, since the channel carries state
+ * and not text.
  */
 export async function handleGitGet(request: Request, options: GitOptions): Promise<Response> {
     const parameters = new URL(request.url).searchParams;
@@ -223,8 +224,8 @@ async function handleGitWorktree(
 }
 
 /**
- * GET /api/git?root=: the branches of one root, for the branch menu. A read, so it carries no token,
- * but it is still refused to another origin, and to a root this server has not published.
+ * GET /api/git?root=: the branches of one root, for the branch menu. A read, so it carries no
+ * token, but it is still refused to another origin, and to a root this server has not published.
  */
 export async function handleGitBranches(request: Request, options: GitOptions): Promise<Response> {
     if (!sameOrigin(request, request.headers.get('host') ?? '')) {

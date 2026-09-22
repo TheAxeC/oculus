@@ -124,7 +124,8 @@
         overflow: hidden;
     }
 
-    /* One line over the page, so the reader can tell which page is being shown and stop showing it. */
+    /* One line over the page, so the reader can tell which page is being shown and stop showing
+       it. */
     .head {
         display: flex;
         align-items: center;

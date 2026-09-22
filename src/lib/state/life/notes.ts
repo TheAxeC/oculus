@@ -1,10 +1,10 @@
-// Layer 2, client state. The pure half of the scratch notes: what a note is called, what it is filed
-// under, and the wait between the last keystroke and the save.
+// Layer 2, client state. The pure half of the scratch notes: what a note is called, what it is
+// filed under, and the wait between the last keystroke and the save.
 //
-// The wait is a scheduler rather than a setTimeout in the view, so it is a thing a case can drive: it
-// is given the two timer calls and hands back a poke, so a fake clock proves that typing on and on
-// saves once and that the last text typed is the text saved. Nothing here reads a clock or a timer
-// of its own.
+// The wait is a scheduler rather than a setTimeout in the view, so it is a thing a case can drive:
+// it is given the two timer calls and hands back a poke, so a fake clock proves that typing on and
+// on saves once and that the last text typed is the text saved. Nothing here reads a clock or a
+// timer of its own.
 
 /** Two digits, which is what every part of a note's id is except the milliseconds. */
 function pad(value: number, width = 2): string {
@@ -13,8 +13,8 @@ function pad(value: number, width = 2): string {
 
 /**
  * The id one note is filed under: the moment it was started, down to the millisecond, as the file
- * name it becomes. It is the reader's local time rather than UTC, since the folder is theirs and the
- * name is what they see when they open it outside oculus.
+ * name it becomes. It is the reader's local time rather than UTC, since the folder is theirs and
+ * the name is what they see when they open it outside oculus.
  */
 export function noteId(now: Date): string {
     const day = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}`;
@@ -26,8 +26,8 @@ export function noteId(now: Date): string {
 const TITLE_LIMIT = 60;
 
 /**
- * The title a note with no title of its own is listed under: its first line with words in it, cut to
- * one line's worth. A note that is empty has no title, and the view says so in its own words.
+ * The title a note with no title of its own is listed under: its first line with words in it, cut
+ * to one line's worth. A note that is empty has no title, and the view says so in its own words.
  */
 export function titleOf(body: string): string {
     for (const line of body.split('\n')) {
@@ -39,8 +39,8 @@ export function titleOf(body: string): string {
 }
 
 /**
- * When a note is saved, as the note's own toolbar and the Files view's Notes section say it: the day
- * and the clock, in the reader's own time. A note that has never been written has no time.
+ * When a note is saved, as the note's own toolbar and the Files view's Notes section say it: the
+ * day and the clock, in the reader's own time. A note that has never been written has no time.
  */
 export function stamp(when: number): string {
     if (!Number.isFinite(when) || when <= 0) return '';
@@ -65,8 +65,8 @@ export function autosaveMs(config: Record<string, unknown>): number {
 
 /**
  * Whether one keystroke writes its note now rather than behind the wait: the first one into a note
- * whose file is not there yet. The control that opens a note writes nothing, so the file is made the
- * moment the note holds anything, and a reload or a crash inside the wait cannot lose its first
+ * whose file is not there yet. The control that opens a note writes nothing, so the file is made
+ * the moment the note holds anything, and a reload or a crash inside the wait cannot lose its first
  * words. Every keystroke after that goes through the wait like any other.
  */
 export function writesNow(fresh: boolean, touched: boolean): boolean {

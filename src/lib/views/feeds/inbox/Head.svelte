@@ -60,7 +60,8 @@
     }
 </script>
 
-<!-- The pane carries the view's name, so the head is the connector's status line and its refresh. -->
+<!-- The pane carries the view's name, so the head is the connector's status line and its
+     refresh. -->
 <header>
     <p class="meta">
         <span class:ok={data?.status === 'ok'} class:bad={data?.status === 'error'}>

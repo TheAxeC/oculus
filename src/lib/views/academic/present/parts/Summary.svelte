@@ -37,7 +37,9 @@
         }))
     );
 
-    /** A row's value as the text the cell snippet renders; every column of this table holds words. */
+    /**
+     * A row's value as the text the cell snippet renders; every column of this table holds words.
+     */
     function value(row: Record<string, unknown>, key: string): string {
         const held = row[key];
         return typeof held === 'string' ? held : '';

@@ -1,10 +1,14 @@
-// Layer 2, client state. Collection cards and the manifest-lag attention line for Focus. All values are derived from the supplied snapshot and config; the view resolves configured colours through toneOf.
+// Layer 2, client state. Collection cards and the manifest-lag attention line for Focus. All values
+// are derived from the supplied snapshot and config; the view resolves configured colours through
+// toneOf.
 
 import type { Entry, Id, Project, Snapshot } from '../../data/model.ts';
 import { isMap, byKey, text as str } from '../../data/helpers/guards.ts';
 import { numericSetting } from '../workbench/rail-badges.ts';
 
-/** The manifest-lag attention line, with the four project links it draws and the remainder count. */
+/**
+ * The manifest-lag attention line, with the four project links it draws and the remainder count.
+ */
 export type ManifestBehind = {
     count: number;
     projects: { id: Id; label: string; days: number }[];

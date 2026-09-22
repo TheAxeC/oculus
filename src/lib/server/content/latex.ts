@@ -1,5 +1,6 @@
 // Layer 2, server. The LaTeX state of one project: which files under its `manuscript/` folder are
-// main files, what the last build left beside each, and the errors and warnings of that build's log.
+// main files, what the last build left beside each, and the errors and warnings of that build's
+// log.
 //
 // routes/api/(sessions)/latex/+server.ts is the endpoint and holds nothing but its GET, since a
 // route module may export only its verbs, the pattern lib/server/files/project-files.ts already
@@ -35,7 +36,9 @@ const JOIN_MAX = 8;
 
 /** One error or warning of a build: where it is, and what it says, in one line. */
 export type LatexIssue = {
-    /** The file the log named, relative to `manuscript/`, or the empty string when it named none. */
+    /**
+     * The file the log named, relative to `manuscript/`, or the empty string when it named none.
+     */
     file: string;
     /** The line the log named, and null when it named none. */
     line: number | null;
@@ -64,7 +67,9 @@ export type LatexAnswer = {
     mains: MainState[];
 };
 
-/** What a LaTeX read needs: the hub the folder sits in, and the portfolio the id is checked against. */
+/**
+ * What a LaTeX read needs: the hub the folder sits in, and the portfolio the id is checked against.
+ */
 export type LatexTarget = {
     hub: string;
     project: (id: string) => Pick<Project, 'folder'> | null;

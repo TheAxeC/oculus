@@ -21,7 +21,9 @@ import { sameOrigin } from '../core/auth.ts';
 import { target } from '../edit/writes.ts';
 import type { PortfolioConfig } from '../../data/model.ts';
 
-/** What a file listing needs: the hub, its scan rules, and the merged config `file_index` sits in. */
+/**
+ * What a file listing needs: the hub, its scan rules, and the merged config `file_index` sits in.
+ */
 export type FilesTarget = {
     hub: string;
     config: PortfolioConfig;
@@ -29,7 +31,9 @@ export type FilesTarget = {
     settings: Record<string, unknown>;
 };
 
-/** One file of a project folder: its folder-relative path, its size in bytes, and its last write. */
+/**
+ * One file of a project folder: its folder-relative path, its size in bytes, and its last write.
+ */
 export type FileRow = { path: string; size: number; mtime: number };
 
 /** What the walk found: the rows newest first, and whether the cap cut the list short. */
@@ -100,7 +104,9 @@ function inside(path: string, folder: string): boolean {
     return full === root || full.startsWith(root + sep);
 }
 
-/** The `file_index` block of the merged config: what is listed, how much of it, and whether at all. */
+/**
+ * The `file_index` block of the merged config: what is listed, how much of it, and whether at all.
+ */
 export function fileIndex(settings: Record<string, unknown>): {
     enabled: boolean;
     ext: string[];

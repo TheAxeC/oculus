@@ -4,8 +4,8 @@
     // control that asks for the read again beside it, drawn where every other row of the tree
     // carries its controls.
     //
-    // It is one component rather than a block in each of the three sections, because what a reader is
-    // offered over a read that failed is one thing and reads the same in all three.
+    // It is one component rather than a block in each of the three sections, because what a reader
+    // is offered over a read that failed is one thing and reads the same in all three.
 
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';

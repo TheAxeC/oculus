@@ -139,7 +139,10 @@ function readSplit(
     return split;
 }
 
-/** The collapsed children of a split: whole indexes inside its children, each once, and never all of them. */
+/**
+ * The collapsed children of a split: whole indexes inside its children, each once, and never all of
+ * them.
+ */
 function readFolded(
     value: unknown,
     count: number,

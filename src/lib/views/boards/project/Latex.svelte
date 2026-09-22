@@ -1,6 +1,6 @@
 <script lang="ts">
-    // Layer 3, view partial of the project tab. The manuscript's main files: one row each, with what
-    // the last build left, the two controls that build and clean it, and the errors that build
+    // Layer 3, view partial of the project tab. The manuscript's main files: one row each, with
+    // what the last build left, the two controls that build and clean it, and the errors that build
     // reported.
     //
     // A main file is content rather than configuration, so the rows are whatever the folder holds:
@@ -62,7 +62,9 @@
             : t('project.latex.pdf_at', stamp(new Date(row.pdf).toISOString(), now));
     }
 
-    /** Where one error is, as far as the log said: the file and the line, one of them, or neither. */
+    /**
+     * Where one error is, as far as the log said: the file and the line, one of them, or neither.
+     */
     function where(issue: LatexIssue): string {
         if (issue.file !== '' && issue.line !== null) {
             return t('project.latex.at', issue.file, issue.line);

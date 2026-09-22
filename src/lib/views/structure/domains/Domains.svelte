@@ -41,7 +41,9 @@
     const held = $derived(parseDomainsState(instanceState(instance.id)));
     const cursor = $derived(cardCursor(instance.state));
     const collection = $derived(collectionOf('domains'));
-    /** The registry file this view is drawn from, which the control at the end of the toolbar opens. */
+    /**
+     * The registry file this view is drawn from, which the control at the end of the toolbar opens.
+     */
     const source = $derived(viewSourceFile('domains', configMap()));
     const domains = $derived.by(() => {
         const entities = Object.values(portfolio()?.entities.domains ?? {});

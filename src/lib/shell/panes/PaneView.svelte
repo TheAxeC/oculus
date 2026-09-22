@@ -10,27 +10,27 @@
     // level.
     //
     // It is where closing is guarded. A tab holding text no save has taken is asked about before it
-    // goes, whether the close came from the tab's own control or from Delete on it, and so is a pane
-    // close over more than one tab; the question is asked of the instance id, so the pane learns
-    // nothing about what any view keeps.
+    // goes, whether the close came from the tab's own control or from Delete on it, and so is a
+    // pane close over more than one tab; the question is asked of the instance id, so the pane
+    // learns nothing about what any view keeps.
     //
     // It is also where a drag begins and where most drops land. The strip reports a press and an
     // insertion index; the body turns the pointer's place inside its own rect into an edge or a
-    // centre. Neither performs anything: the drag store holds what is hovered and the pointer coming
-    // up is what performs it.
+    // centre. Neither performs anything: the drag store holds what is hovered and the pointer
+    // coming up is what performs it.
     //
     // Every item of the pane menu is an operation the pointer has another path to, which is what
     // makes the menu the keyboard path: the opener takes focus and Menu already handles arrows and
     // Escape.
     //
-    // The strip's right end is the pane's header, drawn as an editor group's: the split to the right
-    // as a bare icon button, drawn while the pane shows a tab, and the menu as its bare more-actions
-    // opener. The one pane the rail's next view would open into draws its strip focused, and it is
-    // the active pane of the page the reader is in, so one pane strip in the window carries the
-    // accent and that tab is where a view will land. The page strip's own accent is a different
-    // mark, on a different strip: it says which page is shown, not where a view opens.
-    // The split button is the pointer's shortcut to an item the menu already holds, so it takes no
-    // stop of its own and the pane's stops stay the strip and the menu.
+    // The strip's right end is the pane's header, drawn as an editor group's: the split to the
+    // right as a bare icon button, drawn while the pane shows a tab, and the menu as its bare
+    // more-actions opener. The one pane the rail's next view would open into draws its strip
+    // focused, and it is the active pane of the page the reader is in, so one pane strip in the
+    // window carries the accent and that tab is where a view will land. The page strip's own accent
+    // is a different mark, on a different strip: it says which page is shown, not where a view
+    // opens. The split button is the pointer's shortcut to an item the menu already holds, so it
+    // takes no stop of its own and the pane's stops stay the strip and the menu.
 
     import { EMBED, PAGE, foldable, pageListItems } from '$lib/shell/panes/pane-view';
     import { closeQuestion } from '$lib/shell/closing';
@@ -74,7 +74,9 @@
     } = client;
 
     type Props = {
-        /** The node SplitView handed the snippet. Only a pane is drawn; a split never reaches here. */
+        /**
+         * The node SplitView handed the snippet. Only a pane is drawn; a split never reaches here.
+         */
         node: Layout;
         /**
          * The page whose tree holds this pane, which is the page shown at a leaf when the pane is
@@ -82,7 +84,9 @@
          * a pane of a page shown inside another acts on its own page and not on the one around it.
          */
         page?: string;
-        /** This pane's path in the page's tree, which is what a drop and every menu item name it by. */
+        /**
+         * This pane's path in the page's tree, which is what a drop and every menu item name it by.
+         */
         path?: number[];
     };
 
@@ -95,12 +99,15 @@
     const shown = $derived(instances.find((instance) => instance.id === active));
     const registration = $derived(shown === undefined ? undefined : viewFor(shown.view));
     const maximised = $derived(focused(page) !== null);
-    /** Whether this is the pane the rail's next view opens into: the one holding the instance it joins. */
+    /**
+     * Whether this is the pane the rail's next view opens into: the one holding the instance it
+     * joins.
+     */
     const activePane = $derived(active !== '' && openingInstance()?.id === active);
 
     // What the mounted view and its partials read as the instance they are drawn in. It is a reader
-    // of the active tab rather than its id at mount, since a tab switch between two instances of one
-    // view keeps the component and changes the instance it is handed.
+    // of the active tab rather than its id at mount, since a tab switch between two instances of
+    // one view keeps the component and changes the instance it is handed.
     provideInstance(() => shown?.id ?? null);
 
     /**
@@ -144,11 +151,15 @@
         return typeof held === 'string' && held !== '' ? held : null;
     }
 
-    /** The drag, and where in this pane's own tabs the tab being dragged sits, if it is one of them. */
+    /**
+     * The drag, and where in this pane's own tabs the tab being dragged sits, if it is one of them.
+     */
     const held = $derived(dragging());
     const own = $derived(held === null ? -1 : instances.findIndex((one) => one.id === held.id));
 
-    /** The mark, when the drag is over this pane's strip: back in the indices the tabs are drawn in. */
+    /**
+     * The mark, when the drag is over this pane's strip: back in the indices the tabs are drawn in.
+     */
     const dropIndex = $derived(
         held !== null && held.drop?.kind === 'strip' && here(held.drop)
             ? markAt(held.drop.index, own)
@@ -203,8 +214,9 @@
     }
 
     /**
-     * Perform the close the dialog was asking about. What to do is taken out of the state before the
-     * dialog is taken away, since the markup reads the same state and would have nothing to call.
+     * Perform the close the dialog was asking about. What to do is taken out of the state before
+     * the dialog is taken away, since the markup reads the same state and would have nothing to
+     * call.
      */
     function confirmed(): void {
         const act = confirming?.act;
@@ -328,8 +340,8 @@
         focused={activePane}
     />
     <!-- The body is where a view is mounted, and the two pointer handlers only report where a drop
-         would land while a drag is in progress. Every drop they report has an item in the pane menu,
-         which is the keyboard path. -->
+         would land while a drag is in progress. Every drop they report has an item in the pane
+         menu, which is the keyboard path. -->
     <!-- svelte-ignore a11y_no_static_element_interactions -->
     <div
         class="body"
@@ -394,8 +406,8 @@
     }
 
     /* Over a wallpaper the pane box paints nothing and keeps its border: the tab strip and the view
-       inside the body each keep their own fraction of their colour, so the picture reads through one
-       translucent layer rather than two and shows plainly around whatever the view draws. */
+       inside the body each keep their own fraction of their colour, so the picture reads through
+       one translucent layer rather than two and shows plainly around whatever the view draws. */
     :global(body.wall) .pane {
         background: transparent;
     }

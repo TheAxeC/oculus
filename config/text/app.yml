@@ -57,6 +57,7 @@ text:
         venues: 'Venues: {0}'
         version: Snapshot version {0}
         waiting: Waiting for the first snapshot
+        write_timed_out: no answer came in time, so the write was given up and may not have landed
     views:
         badge_cell: '{0}: {1}'
         badge_separator: ' | '

@@ -92,12 +92,14 @@
     --fs-2xl: calc(19px * var(--text-scale, 1));
     --fs-3xl: calc(24px * var(--text-scale, 1));
     --scan: none; /* CRT scanline layer, opt-in per theme */
-    /* The tab strip's measures, which are VS Code's editor tab defaults grown with the text the way a
-       tree row is: the tab's height, the room before its glyph, the gap from glyph to label, the
-       width the close control sits centred in, and that control's own box. The accent line on the
-       current tab's top edge is a hairline and does not grow. A low strip is a tab strip at a lower
-       height, for a strip that sits above panes rather than heading one. The unsaved dot is drawn
-       from the bullet icon, whose dot is a sixth of its box, so the box is set in ems of the text. */
+    /* The tab strip's measures, which are VS Code's editor tab measures grown with the text the way
+       a tree row is: the tab's height (35, editorTabsControl.ts), the room before its glyph (10,
+       multieditortabscontrol.css), the gap from glyph to label (6, iconlabel.css), the width the
+       close control sits centred in (28) and that control's own box (a 16 icon padded 2, both
+       multieditortabscontrol.css). The accent line on the current tab's top edge is a hairline and
+       does not grow. A low strip is a tab strip at a lower height, for a strip that sits above
+       panes rather than heading one. The unsaved dot is drawn from the bullet icon, whose dot is a
+       sixth of its box, so the box is set in ems of the text. */
     --tab-height: calc(35px * var(--text-scale, 1));
     --tab-height-low: calc(30px * var(--text-scale, 1));
     --tab-pad: calc(10px * var(--text-scale, 1));
@@ -111,12 +113,30 @@
     --tab-action: calc(22px * var(--text-scale, 1));
     --tab-action-pad: calc(2px * var(--text-scale, 1));
     --tab-action-gap: calc(2px * var(--text-scale, 1));
+    /* A tab's count badge: the narrowest it draws, the room either side of its number, and the line
+       the number sits on, so a one-digit badge is a circle. */
+    --tab-badge-min: calc(16px * var(--text-scale, 1));
+    --tab-badge-pad: calc(5px * var(--text-scale, 1));
+    --tab-badge-line: calc(16px * var(--text-scale, 1));
+    /* A tree's measures at the text's own size: a row's height, a name's size, one level's indent,
+       and the size of a section head's name. A row multiplies each by `--text-scale` where it is
+       drawn, so a tree grows with a scale any ancestor of it sets. */
+    --tree-row: 22px;
+    --tree-font: 13px;
+    --tree-indent: 12px;
+    --tree-heading-font: 11px;
     /* A split's handle, in pixels that do not grow with the text, since the gap the layout gives it
        is a fixed number too: how far past that gap a pointer still catches it, which is the 1px
        border of what sits either side; the accent line drawn while it is hovered or dragged, and
        the wider one drawn while it holds the keyboard; and how long the pointer rests on it before
-       the line shows, so a pointer crossing the gap on its way somewhere else draws nothing. */
+       the line shows, so a pointer crossing the gap on its way somewhere else draws nothing. The
+       browser tests a pointer as the whole CSS pixel that starts at it, so the reach before the
+       handle is a sliver: that pixel, from anywhere on the border before it, already overlaps the
+       handle, and a whole pixel of reach there would catch the last device pixel of the pane before
+       the border as well. A sliver of 0.1px keeps that pane out up to ten device pixels a CSS
+       one. */
     --sash-reach: 1px;
+    --sash-reach-start: 0.1px;
     --sash-line: 2px;
     --sash-focus-line: 4px;
     --sash-delay: 300ms;

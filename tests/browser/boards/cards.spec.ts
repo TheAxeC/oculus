@@ -79,6 +79,37 @@ test("a card's controls are drawn under the pointer and on Tab, and its title al
     await expect.poll(async () => (await opacities(controls)).every((one) => one === 1)).toBe(true);
 });
 
+// No view draws a card inside another today, so the case puts one there: the second card of the
+// board is moved into the first, and the pointer rests on the first card's title beside it.
+// revert: src/lib/ui/frame/Card.svelte:103 => delete
+test("a card's controls are drawn for its own card, not for a card around it", async ({ page }) => {
+    await boot(page);
+    await openView(page, 'projects', t('views.projects'));
+    await expect(page.locator('.cards .slot [data-card-actions]').nth(1)).toBeAttached();
+    await page
+        .locator('.cards')
+        .first()
+        .evaluate((grid) => {
+            const [around, inner] = [...grid.querySelectorAll('.slot .card')];
+            around.setAttribute('data-around', '');
+            inner.setAttribute('data-inner', '');
+            around.appendChild(inner);
+        });
+    const around = page.locator('[data-around]');
+    const inner = page.locator('[data-around] [data-inner]');
+    await expect(inner).toHaveCount(1);
+    const controls = inner.locator('[data-card-actions] .act');
+    const own = around.locator('[data-card-actions]').first().locator('.act');
+
+    await away(page);
+    await around.locator('.title button').first().hover();
+    // The card around it has drawn its own controls, so any fade the pointer started is over.
+    await expect.poll(() => opacities(own)).toEqual(new Array(await own.count()).fill(1));
+    expect(await opacities(controls)).toEqual(new Array(await controls.count()).fill(0));
+    await inner.locator('.title button').hover();
+    await expect.poll(() => opacities(controls)).toEqual(new Array(await controls.count()).fill(1));
+});
+
 test("a ticker row's buttons are drawn under the pointer, and the one it exists for always", async ({
     page
 }) => {
@@ -316,8 +347,8 @@ test('in a pane narrower than its cards every control and More can be pointed at
 
     // The pane narrowed again after the cards are at their narrowest, and a resize made while the
     // pane was scrolled sideways: the first card's More is still inside the pane once it is back at
-    // its left edge. Reverts: stop watching the boxes that clip the line, or stop listening to their
-    // scroll.
+    // its left edge. Reverts: stop watching the boxes that clip the line, or stop listening to
+    // their scroll.
     const first = slots.first();
     const moreInReach = async (): Promise<boolean> => {
         await first.evaluate((node) => {
@@ -532,6 +563,35 @@ test('a long unbroken title and folder stay inside the card', async ({ page }) =
     }
 });
 
+// revert: src/lib/views/boards/collection/EntryCard.svelte:425 => overflow-wrap: normal;
+test('a long unbroken title stays inside a collection entry card', async ({ page }) => {
+    const title = `An-Unbroken-Task-Title-${'Z'.repeat(80)}`;
+    const before = readHubFile('tasks/tasks.yml');
+    writeHubFile(
+        'tasks/tasks.yml',
+        `${before.trimEnd()}\n\n  - title: "${title}"\n    status: todo\n`
+    );
+    try {
+        await page.setViewportSize({ width: 1600, height: 1000 });
+        await boot(page);
+        await openView(page, 'tasks', t('views.tasks'));
+        const card = page.locator('.slot').filter({ hasText: title }).locator('.card');
+        await expect(card).toBeVisible();
+        const edges = await card.evaluate((node) => {
+            const title = node.querySelector('.title');
+            const range = document.createRange();
+            if (title !== null) range.selectNodeContents(title);
+            return {
+                card: node.getBoundingClientRect().right,
+                title: range.getBoundingClientRect().right
+            };
+        });
+        expect(edges.title).toBeLessThanOrEqual(edges.card);
+    } finally {
+        writeHubFile('tasks/tasks.yml', before);
+    }
+});
+
 test('the project view draws one Documents heading', async ({ page }) => {
     await boot(page);
     await openView(page, 'projects', t('views.projects'));
@@ -615,7 +675,8 @@ test('a Memories tile is its final size while its picture loads, and says what i
             await held;
             await route.continue();
         });
-        await page.route('**/api/memories?file=mem-02.png', (route) => route.abort());
+        // Every address of the picture fails, the ones it is asked for again at included.
+        await page.route('**/api/memories?file=mem-02.png*', (route) => route.abort());
         await boot(page);
         await openView(page, 'memories', t('views.memories'));
         const first = page.locator('[data-tile="mem-01.png"]');
@@ -633,8 +694,8 @@ test('a Memories tile is its final size while its picture loads, and says what i
         release();
         await expect(first).toHaveAttribute('data-arrived', 'loaded');
         expect(await size()).toEqual(loading);
-        // The whole picture is inside the tile, never cropped by it: fitted whole into a box that is
-        // itself inside the tile.
+        // The whole picture is inside the tile, never cropped by it: fitted whole into a box that
+        // is itself inside the tile.
         const fit = await first.evaluate((tile) => {
             const image = tile.querySelector('img');
             if (image === null) return null;

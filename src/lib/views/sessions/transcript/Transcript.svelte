@@ -55,9 +55,10 @@
     let shown = '';
 
     /**
-     * Whether the reader was at the foot the last time the column scrolled. It is kept by the scroll
-     * listener rather than measured in the effect, because the effect runs after the appended turns
-     * are in the DOM, when the old position is no longer at the foot of the new height.
+     * Whether the reader was at the foot the last time the column scrolled. It is kept by the
+     * scroll listener rather than measured in the effect, because the effect runs after the
+     * appended turns are in the DOM, when the old position is no longer at the foot of the new
+     * height.
      */
     let stuck = true;
 
@@ -69,8 +70,9 @@
         if (id !== '') follow(id, record?.lastActivity ?? null);
     });
 
-    // The store keeps a session's turns while an instance is showing it and drops them when the last
-    // one stops; the effect's cleanup is that release, so a change of session or a teardown lets go.
+    // The store keeps a session's turns while an instance is showing it and drops them when the
+    // last one stops; the effect's cleanup is that release, so a change of session or a teardown
+    // lets go.
     $effect(() => showing(record?.id ?? ''));
 
     $effect(() => {

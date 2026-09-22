@@ -1,9 +1,9 @@
 // The Search view against the served demo hub: a real query answered by the real binary, the hits
 // drawn grouped by file, and a hit pressed opening that file in a source tab with its line in view.
 //
-// This is the one place the whole path runs at once: the page's own check, the token on the request,
-// the process, the fold, the drawing, and the editor's scroll. The node suite has no document, so
-// where the cursor ends up can only be read here.
+// This is the one place the whole path runs at once: the page's own check, the token on the
+// request, the process, the fold, the drawing, and the editor's scroll. The node suite has no
+// document, so where the cursor ends up can only be read here.
 
 import { expect, test } from '@playwright/test';
 import { boot, openView } from '../helpers/rail.ts';

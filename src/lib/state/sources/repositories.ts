@@ -24,8 +24,8 @@ export function fileDiffUrl(root: string, path: string, staged: boolean): string
 
 /**
  * The endpoint a worktree's diff against its repository's branch is read from. The repository is
- * named beside the worktree: a worktree of the hub is a root of its own on the `git` channel, so the
- * server never works the repository out from the path.
+ * named beside the worktree: a worktree of the hub is a root of its own on the `git` channel, so
+ * the server never works the repository out from the path.
  */
 export function worktreeDiffUrl(root: string, path: string): string {
     return `/api/git?${new URLSearchParams({ worktree: path, root }).toString()}`;
@@ -34,12 +34,14 @@ export function worktreeDiffUrl(root: string, path: string): string {
 /** What one diff pane is over: a file under a root, staged or not, or a whole worktree. */
 export type DiffSubject = { root: string; path: string; staged: boolean; worktree: boolean };
 
-/** One diff pane's state, as the instance carries it. `id` is what makes two panes two instances. */
+/**
+ * One diff pane's state, as the instance carries it. `id` is what makes two panes two instances.
+ */
 export type DiffState = DiffSubject & { id: string; label: string };
 
 /**
- * The instance state a diff pane is opened with. The id names root, path and which side, so the same
- * file opened twice activates the pane that is already there and two files are two panes.
+ * The instance state a diff pane is opened with. The id names root, path and which side, so the
+ * same file opened twice activates the pane that is already there and two files are two panes.
  */
 export function diffState(subject: DiffSubject, label: string): DiffState {
     const side = subject.worktree ? 'worktree' : subject.staged ? 'staged' : 'changed';
@@ -64,12 +66,14 @@ export function plannedPath(root: string, name: string): string {
 }
 
 /**
- * What one Repositories view keeps about itself across a tab switch and a saved page: the repository
- * it shows and the sections the reader closed.
+ * What one Repositories view keeps about itself across a tab switch and a saved page: the
+ * repository it shows and the sections the reader closed.
  */
 export type RepositoriesView = { root: string; collapsed: string[] };
 
-/** The Repositories view's instance state, every field defaulted, so a state from any source draws. */
+/**
+ * The Repositories view's instance state, every field defaulted, so a state from any source draws.
+ */
 export function repositoriesViewOf(state: unknown): RepositoriesView {
     const map =
         typeof state === 'object' && state !== null && !Array.isArray(state)

@@ -1,8 +1,8 @@
 // Layer 2, client state. The config's colours as tones. A tone is the hue part of a palette token:
 // the config says a status is `#7c5cff`, `palette:` says that hex is the token `c-violet`, and the
-// tone is `violet`, which a component turns into `--c-violet`, `--c-violet-txt` and `--on-c-violet`.
-// Nothing outside this module reads a hex, so no component carries one and the colour gate in
-// tests/ui/colours.test.ts can insist on that.
+// tone is `violet`, which a component turns into `--c-violet`, `--c-violet-txt` and
+// `--on-c-violet`. Nothing outside this module reads a hex, so no component carries one and the
+// colour gate in tests/ui/colours.test.ts can insist on that.
 //
 // The maps are installed the way the text catalog and the glyph vocabulary are: the server ships
 // them as the page's data at first load, and every later edit of config/catalogs/vocab.yml arrives
@@ -90,11 +90,23 @@ export function setVocab(config: Record<string, unknown>): void {
 
 /**
  * The tone a hex is written as. `palette:` maps it to a token name; a `c-` token's hue is the tone.
- * A token that is not a hue (`muted`) and a hex the palette does not list are both the unknown tone,
- * since a tone must name a `--c-<tone>` the stylesheets define.
+ * A token that is not a hue (`muted`) and a hex the palette does not list are both the unknown
+ * tone, since a tone must name a `--c-<tone>` the stylesheets define.
  */
 export function toneOf(hex: string): string {
     return paletteTone(hex) ?? UNKNOWN_TONE;
+}
+
+/**
+ * A hue named directly, as `focus_lane_tones` names one, when the palette holds that hue's token,
+ * and the unknown tone otherwise: a name no stylesheet defines would draw `--c-<name>` as nothing,
+ * and an empty one as `--c-`.
+ */
+export function namedTone(name: unknown): string {
+    configGeneration();
+    const tone = scalar(name).trim();
+    if (!TONE.test(tone)) return UNKNOWN_TONE;
+    return Object.values(palette).includes(`c-${tone}`) ? tone : UNKNOWN_TONE;
 }
 
 /** A palette hue, or undefined when the value has no usable palette token. */

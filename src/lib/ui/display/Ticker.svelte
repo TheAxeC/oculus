@@ -1,20 +1,20 @@
 <script lang="ts">
-    // Layer 3, primitive. A dense list of dated lines: a glyph, a name, and what the date says about
-    // it. It knows no domain, so what a row means and what picking one does are the caller's; the
-    // Focus board draws one of these per group of its ticker, and the gallery draws one with sample
-    // rows so the shape is visible under every theme.
+    // Layer 3, primitive. A dense list of dated lines: a glyph, a name, and what the date says
+    // about it. It knows no domain, so what a row means and what picking one does are the caller's;
+    // the Focus board draws one of these per group of its ticker, and the gallery draws one with
+    // sample rows so the shape is visible under every theme.
     //
     // The tail's hue is a tone name, turned into `--c-<tone>-txt` on a custom property here, so the
     // only colours in the rules below are tokens.
     //
     // A list that `reveal`s draws a row's buttons while the pointer is in the row, the keyboard is
     // inside it, a first finger tap has opened it, or the device has no hover. What a row is not
-    // drawing is not in the page at all: it takes no width, so the name has the whole row; it answers
-    // no press, so nothing is pressed that cannot be seen; and the row is the same box to the board
-    // around it open or not, so nothing moves under the pointer. The keyboard reaches the buttons
-    // through the row: the focus landing on anything the row draws puts them in the page, and Tab
-    // then walks them in the order the caller listed them. A row that draws nothing focusable of its
-    // own, a plain row with no kept button, is a pointer's to open.
+    // drawing is not in the page at all: it takes no width, so the name has the whole row; it
+    // answers no press, so nothing is pressed that cannot be seen; and the row is the same box to
+    // the board around it open or not, so nothing moves under the pointer. The keyboard reaches the
+    // buttons through the row: the focus landing on anything the row draws puts them in the page,
+    // and Tab then walks them in the order the caller listed them. A row that draws nothing
+    // focusable of its own, a plain row with no kept button, is a pointer's to open.
     //
     // An open row draws its buttons on the line at the row's end, and the name is cut where they
     // begin by the row's own rule, so no word is under a button. A row opens drawing every button
@@ -23,16 +23,16 @@
     // `kept` names, the one the row exists for, is drawn all the time, where the caller lists it,
     // on a plain row too, and the button holding the keyboard is never taken back.
     //
-    // A finger opens a row before it presses anything in it. On a device that also has a pointer the
-    // buttons of a closed row are not in the page, so a tap that pressed straight through would
+    // A finger opens a row before it presses anything in it. On a device that also has a pointer
+    // the buttons of a closed row are not in the page, so a tap that pressed straight through would
     // reach none of them: the first tap in a row opens it and presses nothing, the next tap presses
-    // what it lands on, and a tap that misses that row closes it again. A row with no button waiting
-    // to be drawn has nothing to open, so a tap in one is an ordinary press. The pointer and the
-    // finger open the same one row: the pointer arriving over a row closes the one a tap opened, and
-    // the finger reaching the list takes the pointer off it, which closes the row the pointer was in.
-    // A row a tap opened is held by the id it was drawn under, so the lines around it may change
-    // under it; a row the list no longer holds is no longer open. A stylus hovers without pressing,
-    // so it opens a row as a mouse does.
+    // what it lands on, and a tap that misses that row closes it again. A row with no button
+    // waiting to be drawn has nothing to open, so a tap in one is an ordinary press. The pointer
+    // and the finger open the same one row: the pointer arriving over a row closes the one a tap
+    // opened, and the finger reaching the list takes the pointer off it, which closes the row the
+    // pointer was in. A row a tap opened is held by the id it was drawn under, so the lines around
+    // it may change under it; a row the list no longer holds is no longer open. A stylus hovers
+    // without pressing, so it opens a row as a mouse does.
 
     import type { TickerRow } from '$lib/ui/display/ticker-rows';
     import Glyph from '../controls/Glyph.svelte';
@@ -51,7 +51,9 @@
 
     let { rows, onpick, onaction, reveal = false, kept }: Props = $props();
 
-    /** How much of its name a row keeps whatever its buttons ask for, in the row's own text size. */
+    /**
+     * How much of its name a row keeps whatever its buttons ask for, in the row's own text size.
+     */
     const NAME_FLOOR = 5;
 
     /**
@@ -68,9 +70,9 @@
     type Tapped = { id: string; shown: number[] | null };
 
     /**
-     * Whether the row a finger went down in was already drawing its buttons. It is read on the press
-     * and not on the click, because the press moves the focus into the row on its way to the click,
-     * and a row the focus has just landed in would otherwise answer that it is already open.
+     * Whether the row a finger went down in was already drawing its buttons. It is read on the
+     * press and not on the click, because the press moves the focus into the row on its way to the
+     * click, and a row the focus has just landed in would otherwise answer that it is already open.
      */
     let wasOpen = false;
 
@@ -141,14 +143,19 @@
         pointed = { at: found.at, shown: null };
     }
 
-    /** Whether a row holds a button it does not draw until it opens, which is what a tap opens it for. */
+    /**
+     * Whether a row holds a button it does not draw until it opens, which is what a tap opens it
+     * for.
+     */
     function reveals(row: TickerRow | undefined): boolean {
         if (row === undefined || onaction === undefined || row.actions === undefined) return false;
         const keep = kept?.(row);
         return row.actions.some((action) => action.id !== keep);
     }
 
-    /** A finger going down, read for whether the row under it was open before the press reached it. */
+    /**
+     * A finger going down, read for whether the row under it was open before the press reached it.
+     */
     function down(event: PointerEvent): void {
         if (event.pointerType !== 'touch') return;
         const found = rowAt(event.target);
@@ -157,12 +164,12 @@
 
     /**
      * A finger pressing in this list. A tap in a row that was not open opens it and is spent doing
-     * that, the click taken before it reaches anything, since what the row would draw was not in the
-     * page for the finger to land on; a tap in a row that was already drawing its buttons, however
-     * it came to be open, is an ordinary press of whatever is under it, which is what tells the
-     * second tap from the first. A row with nothing to draw is never opened, so it costs one tap as
-     * it costs the pointer one press. It is the click and not the press under it that opens a row,
-     * so what the tap reaches is decided while the row is still closed.
+     * that, the click taken before it reaches anything, since what the row would draw was not in
+     * the page for the finger to land on; a tap in a row that was already drawing its buttons,
+     * however it came to be open, is an ordinary press of whatever is under it, which is what tells
+     * the second tap from the first. A row with nothing to draw is never opened, so it costs one
+     * tap as it costs the pointer one press. It is the click and not the press under it that opens
+     * a row, so what the tap reaches is decided while the row is still closed.
      */
     function tap(event: MouseEvent): void {
         if (!(event instanceof PointerEvent) || event.pointerType !== 'touch') return;
@@ -206,7 +213,9 @@
         return null;
     }
 
-    /** The buttons the row drawn at one place has room for, the button holding the keyboard kept. */
+    /**
+     * The buttons the row drawn at one place has room for, the button holding the keyboard kept.
+     */
     function roomAt(at: number): number[] {
         const li = list?.children[at];
         if (!(li instanceof HTMLElement)) return [];
@@ -449,8 +458,8 @@
     @media (hover: hover) {
         /* A row draws its buttons at its own end, so they are in one place whatever the name's
            length. What the row is not drawing is not in the page at all: it takes no width, answers
-           no press and holds no stop on the Tab path, a press at the end of a name reaches the name,
-           and the row is the same box to the board around it open or not. */
+           no press and holds no stop on the Tab path, a press at the end of a name reaches the
+           name, and the row is the same box to the board around it open or not. */
         .reveal .acts {
             margin-left: auto;
         }

@@ -354,7 +354,8 @@ describe('subscribing to a terminal', () => {
         expect(seen).toEqual(['before']);
 
         // The channel is out of the remembered list: subscribe() sends nothing for a channel it
-        // already holds, so asking for it again writing a subscribe message is what says it is gone.
+        // already holds, so asking for it again writing a subscribe message is what says it is
+        // gone.
         socket.sent = [];
         subscribePty(ID, () => undefined);
         expect(socket.written()[0].channels).toEqual(['sessions', CHANNEL]);

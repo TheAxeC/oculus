@@ -2,8 +2,8 @@
 // page list read and written through functions, and the UI store a tab's own state lives in.
 //
 // The pages are the one reactive value the store holds, so the factory declaring them is the only
-// module of this folder that carries a rune. A part that holds no rune is a plain module here and is
-// handed this object, which is why none of them reaches a page list of its own.
+// module of this folder that carries a rune. A part that holds no rune is a plain module here and
+// is handed this object, which is why none of them reaches a page list of its own.
 
 import type { UiStore } from '../ui.svelte.ts';
 import type { Layout, Page, Pages, Workbench } from './model.ts';

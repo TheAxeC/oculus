@@ -123,7 +123,9 @@ export function foldFrom(
     }
 }
 
-/** Which store a path belongs to, by its name. A rollout is the Codex one; everything else Claude. */
+/**
+ * Which store a path belongs to, by its name. A rollout is the Codex one; everything else Claude.
+ */
 export function toolOf(path: string): SessionTool {
     return isRollout(path) ? 'codex' : 'claude';
 }

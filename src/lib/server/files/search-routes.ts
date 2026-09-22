@@ -7,9 +7,9 @@
 // every file of every served root, which is more than any other read of this server gives away, and
 // DESIGN.md's "Auth" puts that behind the token minted at start and delivered to the page once.
 //
-// Nothing is searched outside a served root. The roots are the list the route composed, the same one
-// the file route and the source route compose, and a `root` that is not one of their keys is refused
-// before any process starts.
+// Nothing is searched outside a served root. The roots are the list the route composed, the same
+// one the file route and the source route compose, and a `root` that is not one of their keys is
+// refused before any process starts.
 
 import { hasToken, sameOrigin } from '../core/auth.ts';
 import { queryFrom } from '../../data/helpers/search.ts';
@@ -39,8 +39,8 @@ function json(status: number, body: unknown): Response {
 }
 
 /**
- * GET /api/search: one query over one served root or over all of them. The order is the order of the
- * refusals: the origin, the token, the query's own bounds, and only then ripgrep.
+ * GET /api/search: one query over one served root or over all of them. The order is the order of
+ * the refusals: the origin, the token, the query's own bounds, and only then ripgrep.
  */
 export async function handleSearch(
     request: Request,

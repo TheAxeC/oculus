@@ -8,18 +8,19 @@
     // one is renamed, and the page drag with its insertion point. Everything else is the layout
     // store's.
     //
-    // It is the same strip a pane heads itself with, the tabs drawn alike, told apart by where it is
-    // and what it is drawn on: it spans the top of the column right of the rail, above the area the
-    // panes fill, at the strip's low height and on the card surface. A page holding a tab with text
-    // no save has taken shows the unsaved dot and name, since closing the page would lose that text.
+    // It is the same strip a pane heads itself with, the tabs drawn alike, told apart by where it
+    // is and what it is drawn on: it spans the top of the column right of the rail, above the area
+    // the panes fill, at the strip's low height and on the card surface. A page holding a tab with
+    // text no save has taken shows the unsaved dot and name, since closing the page would lose that
+    // text.
     //
     // The strip spans the whole width above the panes, so what it opens is drawn over them: where a
     // blurred surface makes every strip its own stacking context, this one carries the depth that
     // puts its list above the strips of the panes underneath.
     //
     // A page dragged within the strip is reordered here. One carried out of the strip becomes the
-    // drag store's, which is what every pane reports a drop for, so it lands on a pane's edge and is
-    // shown there.
+    // drag store's, which is what every pane reports a drop for, so it lands on a pane's edge and
+    // is shown there.
 
     import { closeQuestion } from '$lib/shell/closing';
     import { pageInstanceIds, pageName, type Arrangement } from '$lib/shell/panes/page-strip';
@@ -103,7 +104,9 @@
         }))
     ]);
 
-    /** One page as a tab, the first nine naming the shortcut that reaches them, marked when unsaved. */
+    /**
+     * One page as a tab, the first nine naming the shortcut that reaches them, marked when unsaved.
+     */
     function tabOf(page: Page, index: number): Tab {
         const label = pageName(page, index);
         const dirty = pageInstanceIds(page).some(unsaved);
@@ -155,7 +158,9 @@
         if (found !== undefined) openArrangement(found.node, found.label);
     }
 
-    /** Hold a page until the pointer has moved far enough to distinguish the gesture from a click. */
+    /**
+     * Hold a page until the pointer has moved far enough to distinguish the gesture from a click.
+     */
     function press(id: string, point: Point): void {
         moving = { id, origin: point, armed: false };
         hovered = null;
@@ -246,7 +251,9 @@
         document.removeEventListener('keydown', dragKeys);
     }
 
-    /** Move the current page one place when a focused control in the strip receives the shortcut. */
+    /**
+     * Move the current page one place when a focused control in the strip receives the shortcut.
+     */
     function pageKeys(event: KeyboardEvent): void {
         if (!event.ctrlKey || !event.shiftKey || event.metaKey) return;
         const step = event.key === 'ArrowLeft' ? -1 : event.key === 'ArrowRight' ? 1 : 0;
@@ -258,7 +265,9 @@
 
     $effect(() => () => listen(false));
 
-    /** Give the box the caret as it appears, so the name is typed without reaching for the pointer. */
+    /**
+     * Give the box the caret as it appears, so the name is typed without reaching for the pointer.
+     */
     function takesFocus(node: HTMLElement): void {
         const box = node.querySelector('input');
         box?.focus();

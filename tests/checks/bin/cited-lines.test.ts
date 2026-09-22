@@ -1,5 +1,5 @@
-// Layer 4, test. The citation check over a report of its own: a line that is there, a range, a list,
-// a number past the end of the file, and a path the tree does not hold.
+// Layer 4, test. The citation check over a report of its own: a line that is there, a range, a
+// list, a number past the end of the file, and a path the tree does not hold.
 
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -47,7 +47,7 @@ function run(dir: string, report: string): { out: string; status: number | null 
 
 describe('the citation check', () => {
     it('prints the line the tree holds at every citation', () => {
-        // revert: bin/cited-lines.mjs:126 => out.push(`${citation.path}:${at} | `);
+        // revert: bin/cited-lines.mjs:139 => out.push(`${citation.path}:${at} | `);
         const held = fixture('The rule is at `src/rule.ts:2`, and the block at src/rule.ts:1-3.\n');
         const found = run(held.dir, held.path);
         expect(found.out).toContain('src/rule.ts:2 | const second = 2;');
@@ -69,7 +69,7 @@ describe('the citation check', () => {
     });
 
     it('calls a line past the end, and a file the tree has not, MISSING and fails', () => {
-        // revert: bin/cited-lines.mjs:117 => if (false) {
+        // revert: bin/cited-lines.mjs:120 => if (false) {
         const held = fixture('Wrong: src/rule.ts:99, and gone: src/other.ts:4.\n');
         const found = run(held.dir, held.path);
         expect(found.out).toContain('MISSING src/rule.ts:99 the file has 4 lines');
@@ -114,7 +114,7 @@ describe('the citation check', () => {
     });
 
     it('calls a citation that climbs out of the tree MISSING, and reads nothing there', () => {
-        // revert: bin/cited-lines.mjs:105 => return true;
+        // revert: bin/cited-lines.mjs:107 => return true;
         // Revert: in under of bin/cited-lines.mjs, let every path pass, and a report citing a file
         // above the tree is read and counted among the lines that are there.
         const held = fixture('The secret is at ../outside.md:1.\n');
@@ -126,7 +126,7 @@ describe('the citation check', () => {
     });
 
     it('refuses a report the tree does not hold', () => {
-        // revert: bin/cited-lines.mjs:140 => if (false) {
+        // revert: bin/cited-lines.mjs:153 => if (false) {
         const held = fixture('nothing cited\n');
         const found = run(held.dir, join(held.dir, 'gone.md'));
         expect(found.out).toContain('no such report');

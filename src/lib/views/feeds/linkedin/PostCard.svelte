@@ -11,6 +11,7 @@
     import { snippet, type LinkedinEntry } from '$lib/state/feeds/linkedin';
     import { t } from '$lib/state/words/text';
     import type { WriteAnswer } from '$lib/state/client/writes.svelte';
+    import { answerWords } from '$lib/views/shared/forms/answer-words';
     import { useState } from '$lib/state/client/use';
 
     const client = useState();
@@ -34,18 +35,7 @@
     const path = $derived(linkedinSourcePath(folder, entry.file));
 
     function say(answer: WriteAnswer): void {
-        if (!answer.ok) {
-            onsaid(t('editor.failed', answer.error ?? ''));
-        } else if (answer.refused.length > 0) {
-            onsaid(
-                t(
-                    'editor.failed',
-                    answer.refused.map((one) => `${one.field}: ${one.reason}`).join('; ')
-                )
-            );
-        } else {
-            onsaid(t('editor.saved', answer.changed.join(', ')));
-        }
+        onsaid(answerWords(answer));
     }
 
     async function promote(): Promise<void> {

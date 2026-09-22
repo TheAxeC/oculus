@@ -3,10 +3,10 @@
 // Worktrees sections with their counts and the controls of each row. Each case written for the
 // source control shape names the change that turns it red.
 //
-// The catalog and the glyphs are the real config; the git payload is the test's own, so the sections
-// are drawn without a repository anywhere. What this does NOT cover: pressing a control and the
-// fetch the Diff pane makes, neither of which a server rendering runs; both are exercised by
-// tests/browser/sources/repositories.spec.ts.
+// The catalog and the glyphs are the real config; the git payload is the test's own, so the
+// sections are drawn without a repository anywhere. What this does NOT cover: pressing a control
+// and the fetch the Diff pane makes, neither of which a server rendering runs; both are exercised
+// by tests/browser/sources/repositories.spec.ts.
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render } from 'svelte/server';
@@ -44,7 +44,9 @@ function instance(view = 'repositories', state: unknown = {}): Instance {
     return { id: `${view}-one`, view, state };
 }
 
-/** The hub's state as these cases read it: one of each kind of change, a log, branches, a worktree. */
+/**
+ * The hub's state as these cases read it: one of each kind of change, a log, branches, a worktree.
+ */
 const HUB_GIT = git({
     branch: 'main',
     ahead: 2,
@@ -148,7 +150,7 @@ function group(body: string, id: string): string {
 }
 
 describe('the Repositories view', () => {
-    it('maps each repository picker status to its own tone and a readable repository to none', () => {
+    it('audits that maps each repository picker status to its own tone and a readable repository to none', () => {
         // revert: src/lib/views/shared/changes/repo-shape.ts:51 => if (shape === 'missing') return 'blue';
         expect([
             shapeBadgeTone('missing'),
@@ -257,7 +259,8 @@ describe('the Repositories view', () => {
         expect(count(changes, `aria-label="${catalog['repositories.diff']}"`)).toBe(3);
         // The row itself and its diff control each say which side they show.
         expect(count(changes, catalog['repositories.diff_staged_title'])).toBe(2);
-        // Revert: name a change row by its file name alone; two README.md files then sound the same.
+        // Revert: name a change row by its file name alone; two README.md files then sound the
+        // same.
         expect(changes).toContain(
             `aria-label="code/one.py, ${catalog['repositories.status_modified']}"`
         );
@@ -331,7 +334,8 @@ describe('the Repositories view', () => {
     });
 
     it('warns about a repository whose .gitignore does not keep the folder out', () => {
-        // this repository's .gitignore keeps the worktree folder out, so there is nothing to warn about
+        // this repository's .gitignore keeps the worktree folder out, so there is nothing to warn
+        // about
         expect(html({ [HUB]: HUB_GIT })).not.toContain(catalog['repositories.worktrees_unignored']);
         const loose = html({ [HUB]: { ...HUB_GIT, ignoresWorktrees: false } });
         expect(loose).toContain(catalog['repositories.worktrees_unignored']);
@@ -350,7 +354,8 @@ describe('the Repositories view', () => {
 
         const payload = { [HUB]: HUB_GIT, [OTHER]: git({ branch: 'work' }) };
         expect(count(html(payload), catalog['git.busy'])).toBe(1);
-        // the write is on the other repository, and the busy mark belongs to the one it is running on
+        // the write is on the other repository, and the busy mark belongs to the one it is running
+        // on
         expect(html(payload, 'repositories', { root: OTHER })).not.toContain(catalog['git.busy']);
 
         release();
@@ -452,13 +457,15 @@ describe('the Repositories view', () => {
         expect(unnamed).toContain('class="path');
     });
 
-    // Reverts: draw the empty line `repositories.branches_empty` alone in repositories/Branches.svelte;
-    // or leave the log out of noCommitYet, which a failed listing then misreads.
+    // Reverts: draw the empty line `repositories.branches_empty` alone in
+    // repositories/Branches.svelte; or leave the log out of noCommitYet, which a failed listing
+    // then misreads.
     it('says a repository with no commit has no branch to list, and keeps New branch live', () => {
         const fresh = git({ branch: 'start', branches: [], log: [] });
         const branches = group(html({ [HUB]: fresh }), 'branches');
         expect(branches).toContain(catalog['repositories.branches_unborn'].replace('{0}', 'start'));
-        // the repository has no commit yet, which is said in its own words rather than as an empty list
+        // the repository has no commit yet, which is said in its own words rather than as an empty
+        // list
         expect(branches).not.toContain(catalog['repositories.branches_empty']);
         const form = branches.slice(branches.indexOf('data-form="branch"'));
         const create = form.slice(

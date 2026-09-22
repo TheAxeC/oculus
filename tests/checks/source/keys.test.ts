@@ -1,8 +1,8 @@
 // The catalog key gate in both directions. Every literal reader names a catalog key, and every
-// catalog key is reached by a literal, registration metadata, or one documented computed lookup. The
-// finding sentences of config/text/findings.yml are held to the source by their literals alone: every
-// `findings.` string literal under src is a key of that file and every key of it is such a literal,
-// whatever expression the formatter is handed the catalog through.
+// catalog key is reached by a literal, registration metadata, or one documented computed lookup.
+// The finding sentences of config/text/findings.yml are held to the source by their literals alone:
+// every `findings.` string literal under src is a key of that file and every key of it is such a
+// literal, whatever expression the formatter is handed the catalog through.
 
 import { statusWordKey } from '../../../src/lib/state/sources/repositories.ts';
 import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
@@ -41,7 +41,10 @@ beforeEach(() => {
 
 const SRC = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', 'src');
 
-/** Readers whose first argument is a catalog key: the client's three and the audit's `sentence`, spread or not. */
+/**
+ * Readers whose first argument is a catalog key: the client's three and the audit's `sentence`,
+ * spread or not.
+ */
 const CALL = /(?<![\w$.])(?:\.\.\.)?(t|lookup|catalogText|sentence)\(/g;
 
 /**
@@ -86,7 +89,10 @@ function afterFirstArgument(source: string, at: number): string | null {
     return null;
 }
 
-/** A `findings.` key written as a string literal in any quote, with at least one dot after the group. */
+/**
+ * A `findings.` key written as a string literal in any quote, with at least one dot after the
+ * group.
+ */
 const FINDING_LITERAL = /(['"`])(findings\.[A-Za-z0-9_]+(?:\.[A-Za-z0-9_]+)+)\1/g;
 
 /** A `findingText` call (not its declaration), up to the end of its key argument. */
@@ -96,8 +102,9 @@ const FINDING_CALL = /(?<![\w$.])(?<!function\s+)findingText\(\s*[^,()]+,\s*([^,
 const WHOLE_FINDING_KEY = /^(['"])findings\.[A-Za-z0-9_]+(?:\.[A-Za-z0-9_]+)+\1$/;
 
 /**
- * The `findingText` calls whose key is not a whole literal, each with the file and the argument text:
- * the audit's collector words a key its rules named through `sentence(`, which the reader scan holds.
+ * The `findingText` calls whose key is not a whole literal, each with the file and the argument
+ * text: the audit's collector words a key its rules named through `sentence(`, which the reader
+ * scan holds.
  */
 const COMPUTED_FINDING_KEYS = [{ file: 'lib/server/content/audit/rules.ts', key: 'key' }] as const;
 
@@ -115,7 +122,9 @@ export function computedFindingKeys(root: string): { file: string; key: string }
     return found;
 }
 
-/** Direct server indexing of the flat catalog, by subscript or through the guarded record reader. */
+/**
+ * Direct server indexing of the flat catalog, by subscript or through the guarded record reader.
+ */
 const INDEX =
     /textCatalog\([^)]*\)\s*\[\s*(['"])([^'"\\]+)\1\s*\]|byKey\(\s*textCatalog\([^)]*\)\s*,\s*(['"])([^'"\\]+)\3\s*\)/g;
 
@@ -151,7 +160,8 @@ const COMPUTED_PREFIXES = [
     },
     {
         // One word per kind of write the change log records, keyed by the body kind itself, so a
-        // kind added to writes/bodies.ts without a word fails here rather than drawing the wire word.
+        // kind added to writes/bodies.ts without a word fails here rather than drawing the wire
+        // word.
         file: 'lib/views/system/history/History.svelte',
         start: 't(`history.kind_${row.kind',
         keys: () => recordedKinds().map((kind) => `history.kind_${kind.replaceAll('-', '_')}`)
@@ -356,7 +366,8 @@ describe('text keys', () => {
         ]);
     });
 
-    // Revert: drop the WORDS scan from calls(), or read `words` only when its first argument is `catalog`.
+    // Revert: drop the WORDS scan from calls(), or read `words` only when its first argument is
+    // `catalog`.
     it('catches a computed key and a literal key, and reads past neither', () => {
         const dir = scratchDir('oculus-keys-');
         expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
@@ -383,9 +394,9 @@ describe('text keys', () => {
             "const e = textCatalog(config)['app.nav.host'];\n" +
                 "const f = byKey(textCatalog(config), 'app.search');\n"
         );
-        // Under lib/server every `words` call is read whatever its first argument is spelled, a call
-        // with no key argument reads no key, and the declaration is left out by the `function` rule.
-        // A `words` outside lib/server is another module's helper and is not read at all.
+        // Under lib/server every `words` call is read whatever its first argument is spelled, a
+        // call with no key argument reads no key, and the declaration is left out by the `function`
+        // rule. A `words` outside lib/server is another module's helper and is not read at all.
         write(
             'lib/server/pty/Words.ts',
             "const g = words(catalog, 'server.chat.chat_name', 1);\n" +

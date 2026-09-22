@@ -2,8 +2,8 @@
 // no title, when it says it was saved, how long it waits before saving, that the wait is one save
 // however long the typing goes on, and which keystroke writes its note without waiting at all.
 //
-// The wait is driven by a clock of this file's own rather than by real time: the scheduler takes the
-// two timer calls, so a case runs the wait forward by hand and nothing here sleeps.
+// The wait is driven by a clock of this file's own rather than by real time: the scheduler takes
+// the two timer calls, so a case runs the wait forward by hand and nothing here sleeps.
 //
 // What this does NOT cover: the note view's own wiring of the scheduler to its controls, which is
 // tests/views/sources/note.test.ts and the browser layer.

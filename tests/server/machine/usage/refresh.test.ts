@@ -70,7 +70,9 @@ afterEach(() => {
     rmSync(root, { recursive: true, force: true });
 });
 
-/** A tmux with named sessions, a screen, and an account file that moves when Enter follows /usage. */
+/**
+ * A tmux with named sessions, a screen, and an account file that moves when Enter follows /usage.
+ */
 function tmux(present = false) {
     const sessions = new Set<string>(present ? [NAME] : []);
     const stub = {

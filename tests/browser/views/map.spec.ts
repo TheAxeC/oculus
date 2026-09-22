@@ -14,7 +14,9 @@ import { boot, openView } from '../helpers/rail.ts';
 import { readHubYaml, shortOf } from '../helpers/hub.ts';
 import { t } from '../helpers/words.ts';
 
-/** A project of the demo hub that is a member of one line, so another line's filter takes it out. */
+/**
+ * A project of the demo hub that is a member of one line, so another line's filter takes it out.
+ */
 const BANDITS = 'projects/active/graph-bandits';
 
 /** A pillar that project is not a member of, read from the hub rather than typed here. */
@@ -152,7 +154,8 @@ test('the connected toggle takes out a project left with no line the map still d
     const loose = await nodes(page);
 
     await row.locator('[data-map-connected] button').click();
-    // the connected toggle drops a project no line in force reaches, and this one has no membership left
+    // the connected toggle drops a project no line in force reaches, and this one has no membership
+    // left
     await expect(node).toHaveCount(0);
     await expect.poll(() => nodes(page)).toBeLessThan(loose);
 });
@@ -188,4 +191,41 @@ test('a saved map is drawn again after a reload, and the re-tune control lays it
     // the placement it made the first time it was opened.
     await page.getByRole('button', { name: t('map.retune'), exact: true }).click();
     expect(await settled(page)).toEqual(fresh);
+});
+
+/** The pairs of drawn labels whose boxes overlap, each read from the page as it is drawn now. */
+function overlapping(page: Page): Promise<string[]> {
+    return page.locator('[data-map-graph] text[data-label]:not(.hidden)').evaluateAll((drawn) => {
+        const boxes = drawn.map((one) => {
+            const box = (one as SVGTextElement).getBBox();
+            return { id: one.getAttribute('data-label') ?? '', box };
+        });
+        const found: string[] = [];
+        for (let a = 0; a < boxes.length; a += 1) {
+            for (let b = a + 1; b < boxes.length; b += 1) {
+                const one = boxes[a].box;
+                const other = boxes[b].box;
+                const apart =
+                    one.x + one.width <= other.x ||
+                    other.x + other.width <= one.x ||
+                    one.y + one.height <= other.y ||
+                    other.y + other.height <= one.y;
+                if (!apart) found.push(`${boxes[a].id} ${boxes[b].id}`);
+            }
+        }
+        return found;
+    });
+}
+
+// Revert: in views/structure/map/Graph.svelte, leave the labels unmeasured when the text grows, so
+// the overlap rule reads no box for any of them and draws them all.
+test('the labels drawn after the text grows overlap none of each other', async ({ page }) => {
+    // revert: src/lib/views/structure/map/Graph.svelte:125 => delete
+    await filters(page);
+    await settled(page);
+    expect(await overlapping(page)).toEqual([]);
+    const larger = page.getByRole('button', { name: t('app.text_larger') });
+    for (let step = 0; step < 6; step += 1) await larger.click();
+    await expect(larger).toBeDisabled();
+    await expect.poll(() => overlapping(page), { timeout: 5000 }).toEqual([]);
 });

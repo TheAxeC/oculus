@@ -28,7 +28,9 @@
         path?: number[];
         /** How a pane is drawn: the tab strip, the mounted view, or a box with its path. */
         pane: Snippet<[Layout, number[], string]>;
-        /** How a collapsed child is drawn: the node, the split's direction, and how to expand it. */
+        /**
+         * How a collapsed child is drawn: the node, the split's direction, and how to expand it.
+         */
         fold: Snippet<[Layout, 'row' | 'col', () => void]>;
         /** How another page shown at this spot is drawn: the page it names, the path, the host. */
         leaf: Snippet<[string, number[], string]>;
@@ -51,7 +53,9 @@
         return whole - SASH_PX * sashes(node) - FOLD_PX * collapsed;
     }
 
-    /** The sizes of the children that are drawn, which is what a drawn share is measured against. */
+    /**
+     * The sizes of the children that are drawn, which is what a drawn share is measured against.
+     */
     function openSum(node: Extract<Layout, { kind: 'split' }>): number {
         const total = node.children.reduce(
             (sum, _, index) => (isFolded(node, index) ? sum : sum + (node.sizes[index] ?? 0)),
@@ -60,7 +64,9 @@
         return total;
     }
 
-    /** The share of the free space one open child takes; equal shares when no open child has a size. */
+    /**
+     * The share of the free space one open child takes; equal shares when no open child has a size.
+     */
     function drawn(node: Extract<Layout, { kind: 'split' }>, index: number): number {
         const total = openSum(node);
         if (total === 0) return 1 / Math.max(1, node.children.length - foldedCount(node));
@@ -75,15 +81,17 @@
         return null;
     }
 
-    /** How many handles a split draws: one before each open child that has an open child before it. */
+    /**
+     * How many handles a split draws: one before each open child that has an open child before it.
+     */
     function sashes(node: Extract<Layout, { kind: 'split' }>): number {
         return node.children.filter((_, index) => index > 0 && separated(node, index)).length;
     }
 
     /**
-     * Whether a handle is drawn before child `at`: a collapsed child gets none, and an open child gets
-     * one when an open child lies before it, on the far side of any strip between them, so two open
-     * children still trade space with a collapsed one between them.
+     * Whether a handle is drawn before child `at`: a collapsed child gets none, and an open child
+     * gets one when an open child lies before it, on the far side of any strip between them, so two
+     * open children still trade space with a collapsed one between them.
      */
     function separated(node: Extract<Layout, { kind: 'split' }>, at: number): boolean {
         return !isFolded(node, at) && openBefore(node, at) !== null;

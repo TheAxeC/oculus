@@ -14,7 +14,8 @@
     const entries = $derived(sheetRows(rows));
 </script>
 
-<!-- The keyboard path is owned by the shell, and this ground is the pointer path out of the sheet. -->
+<!-- The keyboard path is owned by the shell, and this ground is the pointer path out of the
+     sheet. -->
 <div class="ground" role="presentation" onclick={onclose}>
     <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="key-sheet-title">
         <header>

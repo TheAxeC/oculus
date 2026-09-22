@@ -15,6 +15,7 @@
         LABEL_GAP,
         UNMEASURED,
         labelBox,
+        labelSize,
         shownLabels,
         type LabelSize
     } from './labels';
@@ -36,6 +37,7 @@
         entities: { portfolio },
         layout: { openView },
         selectors: { configMap },
+        ui: { textScale },
         writes: { writeManifest }
     } = useState();
 
@@ -106,29 +108,20 @@
         ...positions.filter((node) => leading.includes(node.id))
     ]);
 
-    /**
-     * Read every drawn label's box from the page, as a width and the reach above and below the
-     * baseline its `y` names, so the box follows the node as the layout moves it.
-     */
+    /** Read every drawn label's box from the page, so the box follows the node as it moves. */
     function measure(): void {
         const next: Record<string, LabelSize> = {};
         for (const [id, text] of Object.entries(texts)) {
-            if (text?.isConnected !== true) continue;
-            const box = text.getBBox();
-            const ys = text.y.baseVal;
-            const baseline = ys.numberOfItems > 0 ? ys.getItem(0).value : box.y;
-            next[id] = {
-                width: box.width,
-                above: baseline - box.y,
-                below: box.y + box.height - baseline
-            };
+            if (text?.isConnected === true) next[id] = labelSize(text);
         }
         measured = next;
     }
 
     $effect(() => {
-        // The node set and its words are read so a label that changes is measured again.
+        // The node set, its words and the text size are read, so a label that changes, and every
+        // label once the text grows or shrinks, is measured again.
         void graph.nodes.map((node) => `${node.id}\n${node.label}`).join('\n');
+        void textScale();
         void tick().then(measure);
     });
 

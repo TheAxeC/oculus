@@ -15,7 +15,9 @@ export type MetaRow = { label: string; value: string };
 /** What one control of the form holds: a line of text, a tick, or the rows of a metalist. */
 export type FormValue = string | boolean | MetaRow[];
 
-/** One control's value as the save sees it: a tick, trimmed text, the words of a tags line, or rows. */
+/**
+ * One control's value as the save sees it: a tick, trimmed text, the words of a tags line, or rows.
+ */
 export type SavedValue = boolean | string | string[] | MetaRow[];
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -39,9 +41,9 @@ export function controlValue(value: unknown, kind: string): FormValue {
 
 /**
  * One control's value as the save writes it. Text is trimmed; a tags line is its comma-separated
- * words, each trimmed, the empty ones dropped; a metalist is its rows trimmed, a row with nothing in
- * either half dropped; a checkbox is whether it is ticked. What an empty result is written as (no
- * key, or an empty string) is the save's own choice and not decided here.
+ * words, each trimmed, the empty ones dropped; a metalist is its rows trimmed, a row with nothing
+ * in either half dropped; a checkbox is whether it is ticked. What an empty result is written as
+ * (no key, or an empty string) is the save's own choice and not decided here.
  */
 export function savedValue(value: FormValue, kind: string): SavedValue {
     if (kind === 'checkbox') return value === true;

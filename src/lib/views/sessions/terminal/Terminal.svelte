@@ -14,15 +14,15 @@
     // Layer 3, view. One terminal pane: xterm.js over the `pty:` channel and the control that
     // starts one when nothing is selected. The grid takes keyboard input and carries its own bytes.
     //
-    // xterm.js is loaded inside the effect rather than at the top of the module: it needs a DOM, and
-    // this view renders on the server like every other. The effect runs in the browser alone, so the
-    // server render is the mount point and nothing else. Its stylesheet is loaded there too: a
-    // static import of it is folded into the route's own stylesheet, which every page then carries
-    // for a grid most readers never open.
+    // xterm.js is loaded inside the effect rather than at the top of the module: it needs a DOM,
+    // and this view renders on the server like every other. The effect runs in the browser alone,
+    // so the server render is the mount point and nothing else. Its stylesheet is loaded there too:
+    // a static import of it is folded into the route's own stylesheet, which every page then
+    // carries for a grid most readers never open.
     //
     // The grid's colours are the theme's, read off the root element with getComputedStyle. They
-    // cannot be CSS: xterm paints the glyphs itself and takes its palette as strings through its own
-    // API. This is the one file in the application that reads a computed token.
+    // cannot be CSS: xterm paints the glyphs itself and takes its palette as strings through its
+    // own API. This is the one file in the application that reads a computed token.
 
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';

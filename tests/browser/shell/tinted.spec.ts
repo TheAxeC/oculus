@@ -1,7 +1,7 @@
 // Which of the two a view's box ends up painted at over a wallpaper. The box paints nothing unless
-// the view asks for the tint, and the fraction it is then painted at arrives as a custom property on
-// the root element, so the answer is a computed style and not something an audit of the CSS source
-// can read: the source only says the box takes `--wall-panel` of `--panel`.
+// the view asks for the tint, and the fraction it is then painted at arrives as a custom property
+// on the root element, so the answer is a computed style and not something an audit of the CSS
+// source can read: the source only says the box takes `--wall-panel` of `--panel`.
 
 import { expect, test } from '@playwright/test';
 import { boot, openView } from '../helpers/rail.ts';

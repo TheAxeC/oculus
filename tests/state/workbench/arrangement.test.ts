@@ -141,7 +141,9 @@ describe('the store: a named arrangement as a page', () => {
         return bench(three());
     }
 
-    /** The two-tree envelope a browser held before a page was one tree, which own() is read from. */
+    /**
+     * The two-tree envelope a browser held before a page was one tree, which own() is read from.
+     */
     function saveOwn(): string {
         return saveBench(docked(three(), pane([]), 'hidden'));
     }

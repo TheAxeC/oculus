@@ -12,7 +12,8 @@
 
 <script lang="ts">
     // Layer 3, view. The dataset registry: its access summary, search, modality facets, cards and
-    // schema-driven add and edit forms. Registry entities display while its collection handles writes.
+    // schema-driven add and edit forms. Registry entities display while its collection handles
+    // writes.
 
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Search from '$lib/ui/controls/Search.svelte';
@@ -47,7 +48,9 @@
     let { instance }: ViewProps = $props();
 
     const collection = $derived(collectionOf('data'));
-    /** The registry file this view is drawn from, which the control at the end of the toolbar opens. */
+    /**
+     * The registry file this view is drawn from, which the control at the end of the toolbar opens.
+     */
     const source = $derived(viewSourceFile('datasets', configMap()));
     const allDatasets = $derived(datasets());
     const allProjects = $derived(projects());

@@ -35,8 +35,8 @@ const SUMMARY_FIELDS = ['file_path', 'command', 'pattern', 'description'];
 const CODEX_SILENT = ['Reasoning'];
 
 /**
- * What one read answers with: the turns of the bytes read, the byte offset to ask from next, and the
- * outcomes of calls whose turn was read earlier.
+ * What one read answers with: the turns of the bytes read, the byte offset to ask from next, and
+ * the outcomes of calls whose turn was read earlier.
  */
 export type TurnsAnswer = {
     turns: Turn[];
@@ -61,7 +61,9 @@ export function readTurns(path: string, tool: SessionTool, from = 0): TurnsAnswe
     return answer;
 }
 
-/** One line of a Claude transcript: a said turn, its tool calls, or the results of earlier calls. */
+/**
+ * One line of a Claude transcript: a said turn, its tool calls, or the results of earlier calls.
+ */
 function claudeRecord(
     answer: TurnsAnswer,
     calls: Map<string, Turn>,
@@ -170,7 +172,9 @@ function summaryOf(input: unknown): string {
     return '';
 }
 
-/** What a Codex item is about: the command it ran, the paths it changed, or what it calls itself. */
+/**
+ * What a Codex item is about: the command it ran, the paths it changed, or what it calls itself.
+ */
 function codexSummary(item: Record<string, unknown>): string {
     const command = text(item.command);
     if (command !== '') return oneLine(command);

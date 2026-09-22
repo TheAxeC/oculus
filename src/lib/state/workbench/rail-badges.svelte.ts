@@ -38,6 +38,9 @@ function splitTone(value: unknown): string {
     return typeof value === 'string' && /^[a-z][a-z0-9-]*$/.test(value) ? value : UNKNOWN_TONE;
 }
 
+/** The glyph of the red mark a rail badge draws when something it watches is past due. */
+const OVERDUE_GLYPH = 'bang';
+
 /** The hover text shared by a split strip and its compact rail badge. */
 function cellsTitle(cells: BadgeCell[]): string {
     return cells
@@ -106,7 +109,10 @@ export function createRailBadges(
         return countText(inbox.actionable());
     }
 
-    /** Position Leads due inside `leads_badge_days`, from the socket feed with the summary as fallback. */
+    /**
+     * Position Leads due inside `leads_badge_days`, from the socket feed with the summary as
+     * fallback.
+     */
     function leadsBadge(): string {
         const fetched = feeds.feed('leads');
         const entries = available(fetched)
@@ -121,7 +127,9 @@ export function createRailBadges(
         );
     }
 
-    /** The glyph name of a red mark when the newest LinkedIn post is beyond `linkedin_cadence_days`. */
+    /**
+     * The glyph name of a red mark when the newest LinkedIn post is beyond `linkedin_cadence_days`.
+     */
     function linkedinBadgeGlyph(): string {
         const fetched = feeds.feed('linkedin');
         const lastPost = available(fetched)
@@ -132,7 +140,7 @@ export function createRailBadges(
             numericSetting(selectors.configMap(), 'linkedin_cadence_days'),
             Date.now()
         )
-            ? 'bang'
+            ? OVERDUE_GLYPH
             : '';
     }
 

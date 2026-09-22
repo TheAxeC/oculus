@@ -1,5 +1,6 @@
-// The `editor:` block of config/behavior.yml: the cap the source editor paints under, read leniently
-// for a page that may not have been sent a configuration yet and required at the server's start.
+// The `editor:` block of config/behavior.yml: the cap the source editor paints under, read
+// leniently for a page that may not have been sent a configuration yet and required at the server's
+// start.
 
 import { describe, expect, it } from 'vitest';
 import { paintLimit, requirePaintLimit } from '../../../src/lib/data/helpers/editor.ts';

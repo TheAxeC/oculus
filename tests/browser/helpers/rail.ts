@@ -17,8 +17,8 @@ import { t } from './words.ts';
  * Open the application and wait until the socket is up, the first snapshot is in, and the rail is
  * the one the reader ends up with.
  *
- * The groups come from the configuration the socket pushes, so until that push lands the rail has no
- * groups at all and draws every view as its own button. The push then puts the large groups into
+ * The groups come from the configuration the socket pushes, so until that push lands the rail has
+ * no groups at all and draws every view as its own button. The push then puts the large groups into
  * flyouts, which takes those buttons out of the page; a click that started on one is a click on an
  * element the retry finds detached. So the wait is for `data-group` to exist, which the rail draws
  * only after the push and only for a group of more than GROUP_MAX views: config/layout.yml's
@@ -32,7 +32,9 @@ export async function boot(page: Page): Promise<void> {
     await expect(page.locator('nav [data-group]').first()).toBeVisible();
 }
 
-/** Open a registered view in the pane a view lands in, by its id and the words the rail calls it. */
+/**
+ * Open a registered view in the pane a view lands in, by its id and the words the rail calls it.
+ */
 export async function openView(page: Page, view: string, label: string): Promise<void> {
     const direct = page.locator(`nav button[data-view="${view}"]`);
     if ((await direct.count()) > 0) {

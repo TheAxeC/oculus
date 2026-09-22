@@ -87,8 +87,8 @@ export type LeadAddWrite = { kind: 'lead-add'; fields: Record<string, unknown> }
 
 /**
  * The public deck's saved lists: which slides it shows, and where every slide of the catalog sits.
- * `order` carries the whole catalog, shown or not, so a slide unchecked and checked again comes back
- * where the reader left it.
+ * `order` carries the whole catalog, shown or not, so a slide unchecked and checked again comes
+ * back where the reader left it.
  */
 export type DeckWrite = { kind: 'deck'; selection: string[]; order: string[] };
 
@@ -120,9 +120,9 @@ export function manifestWrite(body: unknown): ManifestWrite | null {
 }
 
 /**
- * The body as a session write, or null when it is not one. A field of the wrong type makes the whole
- * body unknown rather than being dropped quietly, and a body carrying none of the three fields is
- * not a write either: there would be nothing to do and nothing to answer with.
+ * The body as a session write, or null when it is not one. A field of the wrong type makes the
+ * whole body unknown rather than being dropped quietly, and a body carrying none of the three
+ * fields is not a write either: there would be nothing to do and nothing to answer with.
  */
 export function sessionWrite(body: unknown): SessionWrite | null {
     if (!isMap(body)) return null;
@@ -308,7 +308,10 @@ export function newIdea(body: unknown): NewIdeaWrite | null {
     return { kind: 'new-idea', fields: body.fields };
 }
 
-/** The body as a mute write, or null when it is not one. The signature itself is checked by the writer. */
+/**
+ * The body as a mute write, or null when it is not one. The signature itself is checked by the
+ * writer.
+ */
 export function auditMuteWrite(body: unknown): AuditMuteWrite | null {
     if (!isMap(body) || body.kind !== 'audit-mute') return null;
     if (typeof body.signature !== 'string' || body.signature === '') return null;

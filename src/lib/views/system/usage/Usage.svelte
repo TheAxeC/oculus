@@ -11,7 +11,8 @@
 </script>
 
 <script lang="ts">
-    // Layer 3, view. Show each configured Claude or Codex subscription, its current windows, live Claude sessions and seven-day token totals.
+    // Layer 3, view. Show each configured Claude or Codex subscription, its current windows, live
+    // Claude sessions and seven-day token totals.
 
     import Card from '$lib/ui/frame/Card.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';

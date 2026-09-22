@@ -4,8 +4,8 @@
 // temporary directory before anything is written; the reader's own ~/.oculus is never watched, read
 // or written here. Every watcher a case opens is closed when it ends.
 //
-// The waits are generous because the case waits on a real file observation and the suite runs several
-// files at once: they are how long a failure takes, not how long a pass takes.
+// The waits are generous because the case waits on a real file observation and the suite runs
+// several files at once: they are how long a failure takes, not how long a pass takes.
 
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -147,8 +147,9 @@ it('makes the folder it watches when the machine has none, and publishes for the
     hub.subscribe(client.sink, ['files']);
     await armed(hub, file, client.got);
 
-    // Nothing was said, since a machine with no folder yet is no failure, and the folder is there to
-    // be watched: the first bookmark written into it is seen without the server being started again.
+    // Nothing was said, since a machine with no folder yet is no failure, and the folder is there
+    // to be watched: the first bookmark written into it is seen without the server being started
+    // again.
     expect(said).not.toHaveBeenCalled();
     expect(existsSync(folder)).toBe(true);
     // The file itself is the first bookmark's to write, so the watcher made none.

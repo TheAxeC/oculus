@@ -1,8 +1,9 @@
 <script lang="ts">
-    // Layer 3, Present partial. The governing equation at the top of a project slide, in the card the
-    // deck gives it. A slide writes it as LaTeX, which is typeset in the page, or as the name of an
-    // image rendered elsewhere, which the reader of the snapshot has already resolved to the one path
-    // that holds it; an image named in neither place is said to be missing rather than drawn dead.
+    // Layer 3, Present partial. The governing equation at the top of a project slide, in the card
+    // the deck gives it. A slide writes it as LaTeX, which is typeset in the page, or as the name
+    // of an image rendered elsewhere, which the reader of the snapshot has already resolved to the
+    // one path that holds it; an image named in neither place is said to be missing rather than
+    // drawn dead.
 
     import { fileUrl } from '$lib/views/shared/links/file-url';
     import { HUB_ROOT } from '$lib/state/boards/collection';

@@ -32,7 +32,9 @@ function scratch(): string {
     return dir;
 }
 
-/** The machine's own file where loadLocal reads it by default: inside the engine's config folder. */
+/**
+ * The machine's own file where loadLocal reads it by default: inside the engine's config folder.
+ */
 function writeLocal(dir: string, body: string): void {
     const folder = join(dir, 'config');
     const file = join(folder, LOCAL_NAME);
@@ -382,7 +384,8 @@ describe('configDir', () => {
 
     it('is the folder the engine root serves and the file a root finding names', () => {
         // The page lists and saves through that root, so a run over a copy never reaches the
-        // checkout's own folder, and the machine's own local.yml it lists is the one loadLocal read.
+        // checkout's own folder, and the machine's own local.yml it lists is the one loadLocal
+        // read.
         const engine = scratch();
         expect(engineRoot(engine)).toEqual({ key: ENGINE_ROOT, dir: join(engine, 'config') });
         expect(rootsFile(engine)).toBe(join(engine, 'config', 'sources.yml'));
@@ -483,8 +486,9 @@ describe('loadConfig', () => {
         expect(Object.keys(config)).toEqual(['stale_days']);
         expect(config.stale_days).toBe(30);
         expect(findings).toEqual([]);
-        // The same file is the one loadLocal reads, so nothing about it is unreadable, only unmerged.
-        // It warns about the merged key it carries, which is this case's own doing and is not printed.
+        // The same file is the one loadLocal reads, so nothing about it is unreadable, only
+        // unmerged. It warns about the merged key it carries, which is this case's own doing and is
+        // not printed.
         const warn = vi.spyOn(console, 'warn').mockImplementation(noop);
         try {
             expect(loadLocal(engine).hub).toBe('/srv/research-hub');
@@ -524,8 +528,8 @@ describe('loadConfig', () => {
             { file: inner, key: 'text', message: 'text catalog: app.title is not a map' },
             { file: root, key: 'text', message: 'text catalog: root is not a map' }
         ]);
-        // Without the sentence file the same finding is its key and the path, so the words above are
-        // the catalog's and not the thrown error's.
+        // Without the sentence file the same finding is its key and the path, so the words above
+        // are the catalog's and not the thrown error's.
         const bare = scratch();
         const alone = writeConfig(bare, join('text', 'root.yml'), 'text: 5\n');
         expect(loadConfig(bare).findings).toEqual([
@@ -545,8 +549,8 @@ describe('loadConfig', () => {
         expect(findings[0].message).not.toBe('');
     });
 
-    // The sentence file is one of the files loadConfig reads, so when it is the one that breaks, its
-    // own finding and every other is worded by key and arguments rather than thrown on.
+    // The sentence file is one of the files loadConfig reads, so when it is the one that breaks,
+    // its own finding and every other is worded by key and arguments rather than thrown on.
     it('names a sentence file that does not parse by its key and arguments, without throwing', () => {
         const engine = scratch();
         cpSync(join(engineDir(), 'config'), join(engine, 'config'), {
@@ -567,10 +571,14 @@ describe('loadConfig', () => {
 });
 
 describe('behaviorFindings', () => {
-    /** The merged catalog these findings are worded from, as the server's merged config holds it. */
+    /**
+     * The merged catalog these findings are worded from, as the server's merged config holds it.
+     */
     const WORDS = { text: loadConfig(engineDir()).config.text };
 
-    /** The keys a configuration needs to draw no finding of its own, beside whatever a case adds. */
+    /**
+     * The keys a configuration needs to draw no finding of its own, beside whatever a case adds.
+     */
     const SOUND = { ...WORDS, editor: { paint_limit_kb: 64 } };
 
     it('names the key that replaced a retired one, against behavior.yml', () => {
@@ -611,4 +619,5 @@ describe('behaviorFindings', () => {
     });
 });
 
-// The root files and owner catalog fragments that ship with the tool, read as the server reads them.
+// The root files and owner catalog fragments that ship with the tool, read as the server reads
+// them.

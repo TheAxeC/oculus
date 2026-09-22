@@ -10,13 +10,13 @@
 // from data/helpers/search.ts, which the page runs too, so the two sides cannot disagree about what
 // a query is.
 //
-// The cap bounds the work and not only the answer. The child's output is read as it arrives, line by
-// line, and folded as it is read; the moment a match arrives with no room left the child is killed,
-// so a one-letter pattern over a large root buffers what the cap needs instead of the whole stream.
-// MAX_OUTPUT is the bound on one root's read while it is still under the cap.
+// The cap bounds the work and not only the answer. The child's output is read as it arrives, line
+// by line, and folded as it is read; the moment a match arrives with no room left the child is
+// killed, so a one-letter pattern over a large root buffers what the cap needs instead of the whole
+// stream. MAX_OUTPUT is the bound on one root's read while it is still under the cap.
 //
-// Nothing is searched outside a served root: the roots come in as the list the route composed, and a
-// key that is not one of them is refused before any process starts.
+// Nothing is searched outside a served root: the roots come in as the list the route composed, and
+// a key that is not one of them is refused before any process starts.
 
 import { spawn } from 'node:child_process';
 import { rgPath } from '@vscode/ripgrep';
@@ -150,9 +150,9 @@ function runRipgrep(
 }
 
 /**
- * The runner's answer, or a timed-out one when the timeout passes first. The real runner carries the
- * same timeout and kills its own process, so this is the bound on a runner that answers late or not
- * at all rather than a second way of stopping one.
+ * The runner's answer, or a timed-out one when the timeout passes first. The real runner carries
+ * the same timeout and kills its own process, so this is the bound on a runner that answers late or
+ * not at all rather than a second way of stopping one.
  */
 function within(work: Promise<RunOutcome>, timeout: number): Promise<RunOutcome> {
     return new Promise((settle) => {
@@ -252,10 +252,10 @@ export type Fold = {
  * The fold over one root's JSON stream, keeping at most `room` hits.
  *
  * `truncated` has two sources. A match that arrives with no room left is the fold's own cut, and it
- * is what a file holding more matches than the answer can carry produces, since ripgrep is asked for
- * one match per file past the cap. A file whose `end` record counts more matching lines than the
- * hits kept for it is the second: that record counts what ripgrep printed, so the two differ only
- * where a printed record was one this fold could not read.
+ * is what a file holding more matches than the answer can carry produces, since ripgrep is asked
+ * for one match per file past the cap. A file whose `end` record counts more matching lines than
+ * the hits kept for it is the second: that record counts what ripgrep printed, so the two differ
+ * only where a printed record was one this fold could not read.
  */
 export function createFold(root: string, room: number): Fold {
     const files: SearchFile[] = [];

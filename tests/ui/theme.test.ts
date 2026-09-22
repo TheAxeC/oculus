@@ -3,8 +3,8 @@
 // custom properties beside them.
 //
 // The document is a plain object recording what was set, so this runs in the node environment with
-// no DOM. What it does NOT cover: that a browser then paints those tokens. The sheets themselves are
-// covered by tests/checks/look/contrast.test.ts, which measures every pair under every theme.
+// no DOM. What it does NOT cover: that a browser then paints those tokens. The sheets themselves
+// are covered by tests/checks/look/contrast.test.ts, which measures every pair under every theme.
 
 import { readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';

@@ -1,11 +1,11 @@
 <script lang="ts">
-    // Layer 3, view partial. One row per configured account: the provider, the label, the state word
-    // and the Connect control.
+    // Layer 3, view partial. One row per configured account: the provider, the label, the state
+    // word and the Connect control.
     //
     // Connect is shown only while an account has no refresh token, and is unpressable while the
-    // press it answered is still opening the provider's consent page. The hint under a not-connected
-    // account is the path of the credential file the reader creates, which is the one place that
-    // path is ever shown.
+    // press it answered is still opening the provider's consent page. The hint under a
+    // not-connected account is the path of the credential file the reader creates, which is the one
+    // place that path is ever shown.
 
     import Tag from '$lib/ui/controls/Tag.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';

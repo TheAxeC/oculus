@@ -23,7 +23,10 @@ export type PresentStore = {
     catalog: () => DeckSlide[];
     /** The keys a deck with no saved selection shows, which is what a catalog row is ticked by. */
     defaults: () => string[];
-    /** The slide a key names, the first slide when the deck does not hold it, null for an empty deck. */
+    /**
+     * The slide a key names, the first slide when the deck does not hold it, null for an empty
+     * deck.
+     */
     current: (key: string) => DeckSlide | null;
     /** The position of that slide, counting from one; zero for an empty deck. */
     position: (key: string) => number;

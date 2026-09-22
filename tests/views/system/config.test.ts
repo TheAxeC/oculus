@@ -82,7 +82,7 @@ function drawn(entries: FsEntry[], held: FileText = text(LAYOUT)): string {
 }
 
 describe('which files the view cards', () => {
-    it('is the YAML of the folder itself, in name order', () => {
+    it('audits that is the YAML of the folder itself, in name order', () => {
         expect(
             configFiles([
                 file('vocab.yml'),
@@ -239,7 +239,8 @@ describe('the Config view', () => {
         // The words themselves, so an intro that goes back to saying the file is not served fails.
         expect(body).toContain('in local.yml of the same folder');
         expect(body).toContain("which is this machine's own");
-        // the intro names the machine-local file and where it sits, rather than saying it is not served
+        // the intro names the machine-local file and where it sits, rather than saying it is not
+        // served
         expect(body).not.toContain('not served here');
     });
 

@@ -1,5 +1,6 @@
 <script module lang="ts">
-    // Layer 3, view registration. The generic collection component owns each configured collection's rail placement.
+    // Layer 3, view registration. The generic collection component owns each configured
+    // collection's rail placement.
     import type { ViewRegistration } from '../../registry';
 
     const placements: Record<string, { group: string; order: number }> = {
@@ -40,15 +41,16 @@
     // every word an entry holds, a facet bar of the statuses the file uses, an add form over the
     // file's own schema, and one card per entry, the pinned ones first.
     //
-    // It is registered once per collection key of config/sources.yml and reads which collection it is
-    // from the id of the instance it was mounted as, exactly as Projects.svelte reads which board it
-    // is. Nothing here knows what an event or a scheme is: the fields a card draws and their order
-    // come from the file's own `schema:`, through the pure functions of state/boards/collection.ts.
+    // It is registered once per collection key of config/sources.yml and reads which collection it
+    // is from the id of the instance it was mounted as, exactly as Projects.svelte reads which
+    // board it is. Nothing here knows what an event or a scheme is: the fields a card draws and
+    // their order come from the file's own `schema:`, through the pure functions of
+    // state/boards/collection.ts.
     //
-    // Two collections carry one thing of their own, and both are that collection's own file joined to
-    // the projects rather than a second view: funding adds the card of the projects no scheme covers,
-    // and code adds what the portfolio says about its own code above the cards, then the software
-    // projects of its own scan tier, which the registry file does not hold.
+    // Two collections carry one thing of their own, and both are that collection's own file joined
+    // to the projects rather than a second view: funding adds the card of the projects no scheme
+    // covers, and code adds what the portfolio says about its own code above the cards, then the
+    // software projects of its own scan tier, which the registry file does not hold.
 
     import Card from '$lib/ui/frame/Card.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
@@ -191,7 +193,9 @@
             : t('editor.failed', answer.error ?? '');
     }
 
-    /** The sequence number of the last keyboard reorder performed, so one request moves one card. */
+    /**
+     * The sequence number of the last keyboard reorder performed, so one request moves one card.
+     */
     let carried = 0;
 
     $effect(() => {

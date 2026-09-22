@@ -1,5 +1,6 @@
 <script lang="ts">
-    // Layer 3, view partial. Finished jobs stay collapsed and show memory and CPU efficiency tones with an on-demand log action.
+    // Layer 3, view partial. Finished jobs stay collapsed and show memory and CPU efficiency tones
+    // with an on-demand log action.
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Table from '$lib/ui/display/Table.svelte';
     import { type Column, cellText } from '$lib/ui/display/table-rows';
@@ -12,7 +13,10 @@
         onlog
     }: {
         rows: HpcRecent[];
-        /** Whether the cluster is answering; a control that would run a doomed ssh command is shown and not pressable. */
+        /**
+         * Whether the cluster is answering; a control that would run a doomed ssh command is shown
+         * and not pressable.
+         */
         live: boolean;
         onlog: (id: string) => void;
     } = $props();

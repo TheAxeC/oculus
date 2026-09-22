@@ -1,23 +1,25 @@
 #!/usr/bin/env node
-// Layer 1, data. Split a hub's collaborations collection into the people and organisation registries
-// and the joint-work collection.
+// Layer 1, data. Split a hub's collaborations collection into the people and organisation
+// registries and the joint-work collection.
 //
-// One entry of `network/collaborations.yml` holds two things at once: who the person is (the name and
-// the institution in `title`, the role in `sub` and in the `meta` rows Institution and Role) and how
-// the work with them stands (`status`, `tags`, `note`, `deadline`, `followup`). This writes the first
-// half to `registries/people.yml` and `registries/organisations.yml` and leaves the second half in
-// `network/joint-work.yml`, where each entry names its person by key.
+// One entry of `network/collaborations.yml` holds two things at once: who the person is (the name
+// and the institution in `title`, the role in `sub` and in the `meta` rows Institution and Role)
+// and how the work with them stands (`status`, `tags`, `note`, `deadline`, `followup`). This writes
+// the first half to `registries/people.yml` and `registries/organisations.yml` and leaves the
+// second half in `network/joint-work.yml`, where each entry names its person by key.
 //
 // A person belongs to every organisation their Institution row names, so `affiliations:` is a list
 // with the primary first. `--from <file>` reads those rows out of a collaborations file the hub no
 // longer has, which is how a hub whose people were written from the first organisation alone gains
-// the rest; a tool script never runs git, so the file is handed to it rather than read from history.
+// the rest; a tool script never runs git, so the file is handed to it rather than read from
+// history.
 //
-// It is idempotent: a registry already on the hub is read first and its entries are kept as they are,
-// so a second run over a migrated hub writes the same bytes, and a run over a hub that has gained a
-// collaborations entry since adds that one and touches nothing else. Run it as
+// It is idempotent: a registry already on the hub is read first and its entries are kept as they
+// are, so a second run over a migrated hub writes the same bytes, and a run over a hub that has
+// gained a collaborations entry since adds that one and touches nothing else. Run it as
 //
-//     node bin/migrate-joint-work.mjs <hub> [--from f] [--self-key k] [--self-name n] [--self-role r]
+//     node bin/migrate-joint-work.mjs <hub> [--from f] [--self-key k] [--self-name n] \
+//         [--self-role r]
 //
 // and it prints, per file, what it wrote and what it could not fill in.
 
@@ -36,8 +38,8 @@ const STUDENTS = 'education/student-supervision';
 const PERSON_ROWS = ['Institution', 'Role'];
 
 /**
- * What the hub's own organisation spellings mean. The registry's `name` is never taken from here: it
- * is the string the hub wrote, first spelling wins. `alias` folds a second spelling of one
+ * What the hub's own organisation spellings mean. The registry's `name` is never taken from here:
+ * it is the string the hub wrote, first spelling wins. `alias` folds a second spelling of one
  * organisation onto the first, since two spellings of one organisation would otherwise be two
  * entries of the registry. Anything not named here is written `kind: other` with no country and is
  * listed in the run's output as a row to complete.
@@ -120,8 +122,8 @@ function nameOf(title) {
 
 /**
  * The organisations one Institution row names, in the order it names them. The row is written
- * "Organisation / Organisation - Department", so the department is dropped at the first " - " and the
- * remainder is split on " / "; a trailing country code in brackets is taken as the country.
+ * "Organisation / Organisation - Department", so the department is dropped at the first " - " and
+ * the remainder is split on " / "; a trailing country code in brackets is taken as the country.
  */
 function organisationsOf(institution) {
     const at = institution.indexOf(' - ');
@@ -176,8 +178,8 @@ function students(hub) {
 
 /**
  * The people an already-migrated hub holds, by key, so a second run keeps what is there. An entry
- * still written with the one key `affiliation:` is read as a list of that one, which is what makes a
- * run over such a hub write the list without being told anything about the entry.
+ * still written with the one key `affiliation:` is read as a list of that one, which is what makes
+ * a run over such a hub write the list without being told anything about the entry.
  */
 function existingPeople(hub) {
     const held = new Map();
@@ -364,7 +366,8 @@ function migrate(hub, self, from) {
         const role = metaRow(entry, 'Role');
         const affiliations = keysOf(organisationsOf(institution ?? ''), addOrganisation);
         // An entry that already names a person has had its person facts taken out of it, so its
-        // title is the work and no name can be read from it; the registry already holds that person.
+        // title is the work and no name can be read from it; the registry already holds that
+        // person.
         const migrated = typeof entry.person === 'string';
         if (!migrated && !people.has(key)) {
             people.set(key, { key, name: nameOf(title), affiliations, role: role ?? sub });
@@ -386,7 +389,8 @@ function migrate(hub, self, from) {
     }
 
     // The Institution rows of the file named by --from: every organisation a row names becomes a
-    // key of that person's list, which is what a hub whose entries hold the first one alone is missing.
+    // key of that person's list, which is what a hub whose entries hold the first one alone is
+    // missing.
     for (const entry of entriesOf(from === '' ? {} : read('', from))) {
         const key = typeof entry.key === 'string' ? entry.key : '';
         const institution = metaRow(entry, 'Institution');

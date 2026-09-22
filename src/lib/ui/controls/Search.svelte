@@ -1,7 +1,7 @@
 <script lang="ts">
     // Layer 3, primitive. A text box that filters something. It holds no text of its own: the value
-    // comes in as a prop and every keystroke goes out as a call, so a view that saves its filter and
-    // one that does not use the same box.
+    // comes in as a prop and every keystroke goes out as a call, so a view that saves its filter
+    // and one that does not use the same box.
     //
     // Escape clears it, which is the one behaviour a search box is expected to have and the reason
     // this is a component rather than an input a view writes out itself. Enter is the other: a box

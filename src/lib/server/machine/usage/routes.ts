@@ -1,5 +1,6 @@
 // Layer 2, server. The usage refresh POST accepts one Claude account label only after the same
-// origin and ServerContext token checks as the HPC refresh route, then calls that context's refresher.
+// origin and ServerContext token checks as the HPC refresh route, then calls that context's
+// refresher.
 
 import { hasToken, sameOrigin } from '../../core/auth.ts';
 

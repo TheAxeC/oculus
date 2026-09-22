@@ -54,9 +54,9 @@ export function glyphCatalog(config: Record<string, unknown>): Record<string, st
 }
 
 /**
- * The ASCII stand-ins held in the merged config's `ascii` key: one short string per character, flat.
- * It rides with the glyphs, since it is the other half of the same vocabulary and lives in the same
- * file. It is keyed by character so glyph names that share a character share one stand-in.
+ * The ASCII stand-ins held in the merged config's `ascii` key: one short string per character,
+ * flat. It rides with the glyphs, since it is the other half of the same vocabulary and lives in
+ * the same file. It is keyed by character so glyph names that share a character share one stand-in.
  */
 export function asciiCatalog(config: Record<string, unknown>): Record<string, string> {
     return stringMap(config.ascii);
@@ -94,8 +94,8 @@ function iconFile(icon: string): string | null {
  * no row, a row naming something that is not a glyph name, and a row naming an icon the package
  * does not ship. The package is a fact about this machine's install rather than about the merged
  * files, which is why this is separate from loadConfig and takes the engine directory. Like
- * loadConfig's own findings, these are worded from the merged catalog, and a key it lacks is written
- * as the key and its arguments.
+ * loadConfig's own findings, these are worded from the merged catalog, and a key it lacks is
+ * written as the key and its arguments.
  */
 export function iconFindings(engine: string, config: Record<string, unknown>): Finding[] {
     const file = join(configDir(engine), CATALOGS_DIR, 'icons.yml');

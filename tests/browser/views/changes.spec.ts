@@ -14,9 +14,9 @@ import { expect, test, type Page, type Route } from '@playwright/test';
 import { randomUUID } from 'node:crypto';
 import { existsSync, mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { dirname, join, resolve, sep } from 'node:path';
+import { join, resolve, sep } from 'node:path';
 import { gitIn } from '../helpers/git.ts';
-import { hubDir } from '../helpers/hub.ts';
+import { servedHomeDir } from '../helpers/hub.ts';
 import { boot, openView } from '../helpers/rail.ts';
 import { t } from '../helpers/words.ts';
 import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
@@ -32,7 +32,9 @@ function inside(path: string): string {
     return path;
 }
 
-/** A fresh folder under the temporary directory, registered for removal before anything writes it. */
+/**
+ * A fresh folder under the temporary directory, registered for removal before anything writes it.
+ */
 function folder(name: string): string {
     const dir = inside(scratchDir(`oculus-changes-spec-${name}-`));
     made.push(dir);
@@ -43,10 +45,10 @@ function folder(name: string): string {
 const SPEC_STORE = 'oculus-changes-spec';
 
 /**
- * The served run's session store, which tests/browser/helpers/serve.ts makes beside the hub copy.
+ * The served run's session store, under the home directory tests/browser/helpers/serve.ts makes.
  */
 function storeRoot(): string {
-    return inside(join(dirname(hubDir()), 'home', '.claude', 'projects'));
+    return inside(join(servedHomeDir(), '.claude', 'projects'));
 }
 
 /**

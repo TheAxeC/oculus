@@ -232,7 +232,8 @@ describe('the Calendar view', () => {
     it('says the machine names no account, and draws no agenda, when it is unconfigured', () => {
         const body = draw({ ...payload, status: 'unconfigured', accounts: [], events: [] });
         expect(body).toContain('No calendar account is configured');
-        // no account is configured, so the sentence drawn is that one rather than the empty agenda's
+        // no account is configured, so the sentence drawn is that one rather than the empty
+        // agenda's
         expect(body).not.toContain('No events in this window.');
     });
 

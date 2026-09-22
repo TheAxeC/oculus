@@ -119,7 +119,8 @@ describe('the file browser as a tab', () => {
     });
 });
 
-// Pressing the control is a DOM event no server render fires, so what it does is read off the source.
+// Pressing the control is a DOM event no server render fires, so what it does is read off the
+// source.
 describe('the control that opens a note', () => {
     const source = readFileSync('src/lib/views/sources/files/Files.svelte', 'utf8');
 
@@ -256,7 +257,8 @@ describe('the tree', () => {
 });
 
 describe('the workspaces section', () => {
-    // Revert: drop the leading '' from `rows` in Workspaces.svelte, or draw `current` as `selected`.
+    // Revert: drop the leading '' from `rows` in Workspaces.svelte, or draw `current` as
+    // `selected`.
     it('lists the configured roots first and one row per saved name, the one in force current', () => {
         const { body } = render(Workspaces, {
             context: clientContext(client),
@@ -487,7 +489,8 @@ describe('a read the server refused', () => {
                   })
                 : refused('missing', 404)
         );
-        // The open folders live in the instance's own ui state, which is where toggle() writes them.
+        // The open folders live in the instance's own ui state, which is where toggle() writes
+        // them.
         fresh.ui.setInstanceState('files-one', { expanded: ['hub:'] });
         fresh.fs.workspaces();
         fresh.fs.listing('hub', '');
@@ -511,7 +514,8 @@ describe('a read the server refused', () => {
                   })
                 : refused('outside', 404)
         );
-        // The instance still remembers a folder of a root that was since taken out of the workspace.
+        // The instance still remembers a folder of a root that was since taken out of the
+        // workspace.
         fresh.ui.setInstanceState('files-one', { expanded: ['gone:', 'gone:sub'] });
         fresh.fs.workspaces();
         await settle();
@@ -521,7 +525,8 @@ describe('a read the server refused', () => {
             props: { instance: instance() }
         });
 
-        // the roots read, and the folder the instance remembers of a root that is gone is dropped without a word
+        // the roots read, and the folder the instance remembers of a root that is gone is dropped
+        // without a word
         expect(body).not.toContain('could not be read');
         expect(body).toContain('data-fs-row="hub:"');
     });

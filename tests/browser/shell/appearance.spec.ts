@@ -1,6 +1,6 @@
-// The text size at the rail's foot: larger grows every token the page is set in, reset restores
-// the default. The size is a computed style, which is what a unit test over the CSS source cannot
-// see: the tokens are declared on :root, so a scale set anywhere below would leave them as they are.
+// The text size at the rail's foot: larger grows every token the page is set in, reset restores the
+// default. The size is a computed style, which is what a unit test over the CSS source cannot see:
+// the tokens are declared on :root, so a scale set anywhere below would leave them as they are.
 //
 // The wallpaper is the same kind of fact: the rules are declared per component and the percentage
 // arrives as a custom property on the root element, so what a surface actually ends up painted with

@@ -9,15 +9,17 @@ import type { Change } from '$lib/state/sessions/changes.svelte';
 
 /**
  * One recorded value as the view shows it. A scalar is shown whole and carries no size; a list or a
- * map carries the number of things in it and its text goes under a disclosure, since a row showing a
- * whole entry would be taller than the twenty rows around it.
+ * map carries the number of things in it and its text goes under a disclosure, since a row showing
+ * a whole entry would be taller than the twenty rows around it.
  */
 export type Shown = {
     /** The value as text: the scalar itself, or the list or map as indented JSON. */
     text: string;
     /** How many things a list or a map holds; zero for a scalar and for an empty value. */
     size: number;
-    /** True when there was no value at all: a field that was not set, an entry that was not there. */
+    /**
+     * True when there was no value at all: a field that was not set, an entry that was not there.
+     */
     empty: boolean;
 };
 

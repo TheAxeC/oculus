@@ -235,7 +235,8 @@ describe('the Data view', () => {
         expect(tags).toContain('private');
         expect(tags).toContain('credentialed');
         expect(tags).toContain('public');
-        // an access word keeps the hue its chip had, which is set on the tag's own property rather than as a tone
+        // an access word keeps the hue its chip had, which is set on the tag's own property rather
+        // than as a tone
         expect(html).not.toContain('--tone: var(--c-');
         // Each access word keeps the hue its chip had, on the tag's own custom property.
         for (const hue of ['green', 'amber', 'red', 'slate', 'grey']) {

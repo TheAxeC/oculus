@@ -3,8 +3,8 @@
 // sizes carried as flex on each child; and a folded child drawn as a strip through the fold
 // snippet, with no sash on either side of it.
 //
-// What this does NOT cover: the sash's pointer behaviour and the drag arithmetic. There is no DOM in
-// this suite, so a pointer drag cannot be simulated here; svelte-check and the page are what
+// What this does NOT cover: the sash's pointer behaviour and the drag arithmetic. There is no DOM
+// in this suite, so a pointer drag cannot be simulated here; svelte-check and the page are what
 // exercise Sash, and the drag itself is checked in a browser.
 
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -56,7 +56,9 @@ const foldSnippet = createRawSnippet<[Layout, 'row' | 'col', () => void]>((node,
     }
 }));
 
-/** The caller's pane snippet: a box naming the path and the page it was handed and the tab it holds. */
+/**
+ * The caller's pane snippet: a box naming the path and the page it was handed and the tab it holds.
+ */
 const paneSnippet = createRawSnippet<[Layout, number[], string]>((node, path, page) => ({
     render: () => {
         const held = node();
@@ -65,7 +67,9 @@ const paneSnippet = createRawSnippet<[Layout, number[], string]>((node, path, pa
     }
 }));
 
-/** The caller's leaf snippet: a box naming the page shown there, its path and the page around it. */
+/**
+ * The caller's leaf snippet: a box naming the page shown there, its path and the page around it.
+ */
 const leafSnippet = createRawSnippet<[string, number[], string]>((nested, path, host) => ({
     render: () =>
         `<div class="leaf" data-nested="${nested()}" data-leaf-path="${path().join('.')}" data-host="${host()}"></div>`

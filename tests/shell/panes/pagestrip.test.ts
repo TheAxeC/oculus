@@ -95,8 +95,9 @@ describe('the page strip', () => {
 });
 
 // What a page's close asks, which is the pane's own rule over every instance the page holds rather
-// than over the count alone: a page of one saved tab goes at once and a page of one unsaved tab does
-// not. The press itself is the browser's check; the words each answer draws are the component's.
+// than over the count alone: a page of one saved tab goes at once and a page of one unsaved tab
+// does not. The press itself is the browser's check; the words each answer draws are the
+// component's.
 describe("the question a page's close asks", () => {
     const page = (root: ReturnType<typeof pane>): Page => ({
         id: 'p1',

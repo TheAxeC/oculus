@@ -1,9 +1,10 @@
-// The page's two pieces of wiring around the configuration: the load function that installs what the
-// server shipped, and the effect that keeps the collection views following the pushed config.
+// The page's two pieces of wiring around the configuration: the load function that installs what
+// the server shipped, and the effect that keeps the collection views following the pushed config.
 //
 // The redraw itself is a browser fact and is not asserted here: vitest runs this suite in node,
 // where Svelte is compiled for the server and an $effect never runs, so the effect in +page.svelte
-// is read as source and its wiring is what is checked. What it does on screen is the browser suite's.
+// is read as source and its wiring is what is checked. What it does on screen is the browser
+// suite's.
 
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';

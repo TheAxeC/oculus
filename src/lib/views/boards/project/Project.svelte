@@ -18,13 +18,14 @@
     // state, exactly as the editor reads its own.
     //
     // The LaTeX panel is project/Latex.svelte, drawn for a project whose folder holds a manuscript
-    // and drawn for no other: what it needs is the id, and everything about the files it lists comes
-    // from api/latex rather than from the snapshot.
+    // and drawn for no other: what it needs is the id, and everything about the files it lists
+    // comes from api/latex rather than from the snapshot.
     //
     // The card is views/shared/card/ProjectCard.svelte, the one the board draws, with `deposit` on
     // and no `ontoggle`: this tab's card is always open, so it carries the deposit control and no
     // expand control. It is drawn with `documents` off, since the documents section below is this
     // tab's list of the project's documents, and with no clamp state, so its ELI5 is drawn whole.
+    // That list draws a known document the project has not got as the card's tag for it.
     // Everything else the card shows, the pin, the stale badge, the file finder and the subtasks
     // among it, is the board's card unchanged.
     //
@@ -82,7 +83,9 @@
         return typeof held === 'string' ? held : '';
     }
 
-    /** Which document the tab was left showing, or the empty string when it was left showing none. */
+    /**
+     * Which document the tab was left showing, or the empty string when it was left showing none.
+     */
     function readDoc(state: unknown): string {
         if (typeof state !== 'object' || state === null || Array.isArray(state)) return '';
         const held = (state as Record<string, unknown>).doc;
@@ -91,8 +94,8 @@
 
     /**
      * The project's absolute folder, which is what the session join matches against: the record
-     * carries the folder relative to the hub and the manifest's absolute path, and the manifest sits
-     * in the folder.
+     * carries the folder relative to the hub and the manifest's absolute path, and the manifest
+     * sits in the folder.
      */
     function folderOf(one: BoardItem): string {
         const file = one.project.file;
@@ -130,6 +133,12 @@
     }
 
     const documents: SegmentItem[] = $derived(names.map((name) => ({ id: name, label: name })));
+
+    /**
+     * The known documents the project has not got, drawn as the tags the project card draws for
+     * them, since this tab lists the documents in the card's place.
+     */
+    const absent = $derived(item === null ? [] : item.project.docs.filter((doc) => !doc.present));
 
     function title(): string {
         return item === null ? t('views.project') : item.project.title;
@@ -195,6 +204,13 @@
 
             <section class="block">
                 <h3 class="heading">{t('project.documents')}</h3>
+                {#if absent.length > 0}
+                    <div class="absent" data-absent-docs>
+                        {#each absent as doc (doc.name)}
+                            <Tag label={doc.label} />
+                        {/each}
+                    </div>
+                {/if}
                 {#if shown === null}
                     <Empty message={t('project.no_documents')} glyph={t('project.none_glyph')} />
                 {:else}
@@ -239,6 +255,13 @@
 
     .block {
         min-width: 0;
+    }
+
+    .absent {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        margin-bottom: 6px;
     }
 
     .heading {

@@ -10,7 +10,9 @@
     import { t } from '$lib/state/words/text';
 
     type Props = {
-        /** The page's own origin, `location.origin`, or empty where there is no location to read. */
+        /**
+         * The page's own origin, `location.origin`, or empty where there is no location to read.
+         */
         origin: string;
     };
 

@@ -3,9 +3,10 @@
     // section: the software projects of the portfolio, listed beside the paper deposits the
     // registry file holds.
     //
-    // A software project is filed under its own scan tier and sits on no board, so this list is where
-    // it is reached from; its name opens its own tab, exactly as a coverage row does, and so does each
-    // of the papers its `related:` names, which is the same link the paper's own card draws back.
+    // A software project is filed under its own scan tier and sits on no board, so this list is
+    // where it is reached from; its name opens its own tab, exactly as a coverage row does, and so
+    // does each of the papers its `related:` names, which is the same link the paper's own card
+    // draws back.
     //
     // The rows are softwareRows() of state/boards/collection.ts; what is left here is the markup
     // and the words. The status word is the card's own codeLabel(), so one deposit state reads the

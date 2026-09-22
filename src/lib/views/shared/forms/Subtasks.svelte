@@ -1,7 +1,7 @@
 <script lang="ts">
-    // Layer 3, view partial under views/shared/. The subtasks block of one card: the open count, one
-    // row per line with what it says and when it is due, the buttons that move it, and the one-line
-    // form that adds another.
+    // Layer 3, view partial under views/shared/. The subtasks block of one card: the open count,
+    // one row per line with what it says and when it is due, the buttons that move it, and the
+    // one-line form that adds another.
     //
     // A card with no lines draws no block at all: adding its first line is one of the card's own
     // actions, which opens the add form here with no heading over it. So whether the add form is

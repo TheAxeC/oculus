@@ -2,11 +2,12 @@
 // 1 to 9 reach the first nine, closing a page that holds more than one tab asks first, and a scroll
 // control of an overflowing strip rests its left edge on a page tab's start or on the strip's end.
 //
-// Nothing here writes to the hub. The layout lives in the browser's own storage, and Playwright gives
-// every test a context of its own, so each test starts from the one default page.
+// Nothing here writes to the hub. The layout lives in the browser's own storage, and Playwright
+// gives every test a context of its own, so each test starts from the one default page.
 
-import { expect, test, type Locator } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import { openView } from '../helpers/rail.ts';
+import { stripRest } from '../helpers/style.ts';
 import { t } from '../helpers/words.ts';
 
 test('the menu adds a page and renames it', async ({ page }) => {
@@ -49,7 +50,8 @@ test('2 shows the second page and 1 the first', async ({ page }) => {
     const second = strip.getByRole('tab', { name: t('ui.page_default', 2) });
     await expect(second).toHaveAttribute('aria-selected', 'true');
 
-    // The digits act on the strip's own tab as much as anywhere else, as long as no box is typed in.
+    // The digits act on the strip's own tab as much as anywhere else, as long as no box is typed
+    // in.
     await second.click();
     await page.keyboard.press('1');
     await expect(first).toHaveAttribute('aria-selected', 'true');
@@ -147,19 +149,6 @@ test.describe('an overflowing page strip', () => {
     /** How many pages the strip holds, which at this width is several page tabs past its width. */
     const PAGES = 12;
 
-    /** The strip's offset, and whether its left edge is a page tab's start or the strip's end. */
-    async function rest(list: Locator): Promise<{ at: number; onStart: boolean; atEnd: boolean }> {
-        return list.evaluate((node) => {
-            const left = node.getBoundingClientRect().left;
-            const tabs = [...node.querySelectorAll<HTMLElement>(':scope > .tab')];
-            const onStart =
-                node.scrollLeft <= 1 ||
-                tabs.some((tab) => Math.abs(tab.getBoundingClientRect().left - left) <= 1);
-            const atEnd = node.scrollLeft >= node.scrollWidth - node.clientWidth - 1;
-            return { at: node.scrollLeft, onStart, atEnd };
-        });
-    }
-
     test('a scroll control rests the left edge on a page tab start, or on the strip end', async ({
         page
     }) => {
@@ -178,9 +167,9 @@ test.describe('an overflowing page strip', () => {
         await expect(right).toBeVisible();
 
         // To the strip's end, then left to its start and right to its end again. Every press moves
-        // the strip and rests it on a page tab's start or the end. The first walk starts wherever the
-        // newest page left the strip; each of the other two takes more than one press, so at least
-        // one rest lies between the two ends.
+        // the strip and rests it on a page tab's start or the end. The first walk starts wherever
+        // the newest page left the strip; each of the other two takes more than one press, so at
+        // least one rest lies between the two ends.
         for (const [press, far, least] of [
             [right, 'end', 0],
             [left, 'start', 2],
@@ -188,15 +177,15 @@ test.describe('an overflowing page strip', () => {
         ] as const) {
             let presses = 0;
             while (await press.isEnabled()) {
-                const before = (await rest(list)).at;
+                const before = (await stripRest(list)).at;
                 await press.click();
-                await expect.poll(async () => (await rest(list)).at).not.toBe(before);
-                const seen = await rest(list);
+                await expect.poll(async () => (await stripRest(list)).at).not.toBe(before);
+                const seen = await stripRest(list);
                 expect(seen.onStart || seen.atEnd).toBe(true);
                 presses += 1;
             }
             expect(presses).toBeGreaterThanOrEqual(least);
-            const seen = await rest(list);
+            const seen = await stripRest(list);
             if (far === 'start') expect(seen.at).toBeLessThanOrEqual(1);
             else expect(seen.atEnd).toBe(true);
         }

@@ -1,5 +1,6 @@
-// Layer 2, server. Watch usage snapshots and session changes, debounce one rebuild, and publish the complete usage channel.
-// Claude status folders are watched here. The owning context injects its session watcher signal for Codex rollout changes.
+// Layer 2, server. Watch usage snapshots and session changes, debounce one rebuild, and publish the
+// complete usage channel. Claude status folders are watched here. The owning context injects its
+// session watcher signal for Codex rollout changes.
 
 import { mkdirSync, watch } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
@@ -9,7 +10,10 @@ import { claudeAccountFile, defaultUsageRoot, usageAccounts, type UsageTiers } f
 import { UsageTranscriptFold } from './transcripts.ts';
 
 export const USAGE_DEBOUNCE = 500;
-/** A quiet hour still moves the reset durations and the live cutoff, so the payload is rebuilt on a clock too. */
+/**
+ * A quiet hour still moves the reset durations and the live cutoff, so the payload is rebuilt on a
+ * clock too.
+ */
 export const USAGE_INTERVAL = 60_000;
 
 export type UsageWatchOptions = {
@@ -37,7 +41,10 @@ function reason(error: unknown): string {
     return error instanceof Error ? error.message : String(error);
 }
 
-/** The Usage watcher reads all sources as one snapshot and uses the sessions watcher's change signal for transcripts. */
+/**
+ * The Usage watcher reads all sources as one snapshot and uses the sessions watcher's change signal
+ * for transcripts.
+ */
 export function watchUsage(hub: Hub, options: UsageWatchOptions): UsageWatcher {
     const debounce = options.debounce ?? USAGE_DEBOUNCE;
     const interval = options.interval ?? USAGE_INTERVAL;

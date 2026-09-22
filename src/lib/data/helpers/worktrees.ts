@@ -33,8 +33,8 @@ export function worktreePath(root: string, name: string): string {
 
 /**
  * Whether a name may be a worktree: one path segment, so the folder it makes is directly under the
- * worktrees folder, and not one git would read as an option. Whether it is a branch name git accepts
- * is git's own answer, asked by the write.
+ * worktrees folder, and not one git would read as an option. Whether it is a branch name git
+ * accepts is git's own answer, asked by the write.
  */
 export function validName(name: string): boolean {
     if (typeof name !== 'string' || name === '' || name.startsWith('-')) return false;

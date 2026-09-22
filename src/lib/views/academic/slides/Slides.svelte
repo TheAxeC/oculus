@@ -15,15 +15,16 @@
 
 <script lang="ts">
     // Layer 3, view. The public deck's catalog: every slide the deck could hold, in the order it
-    // would hold them, each with a tick saying whether the deck shows it, and the controls that move
-    // it. Save writes the two lists into config/present.yml and the deck is live at the next push.
+    // would hold them, each with a tick saying whether the deck shows it, and the controls that
+    // move it. Save writes the two lists into config/present.yml and the deck is live at the next
+    // push.
     //
-    // The catalog is the store's, so a slide added on disk is in this list at the next push. What is
-    // the pane's own is the reader's unsaved work: the order they have dragged the rows into, the
-    // ticks they have made and the line the status region shows, all in the instance state, so the
-    // pane is where it was when its page comes back. The work is held against the catalog it was
-    // made over, so a push that adds, removes or moves a slide draws the file again and says that
-    // the unsaved work was dropped, rather than saving an order over a deck that has moved
+    // The catalog is the store's, so a slide added on disk is in this list at the next push. What
+    // is the pane's own is the reader's unsaved work: the order they have dragged the rows into,
+    // the ticks they have made and the line the status region shows, all in the instance state, so
+    // the pane is where it was when its page comes back. The work is held against the catalog it
+    // was made over, so a push that adds, removes or moves a slide draws the file again and says
+    // that the unsaved work was dropped, rather than saving an order over a deck that has moved
     // underneath it. The pane's own save is not such a push: it writes the order it is holding, so
     // the catalog that comes back is the one the work already names.
     //
@@ -125,8 +126,8 @@
     /**
      * Keep the keyboard on the row after a move that took the pressed control out of reach: a slide
      * moved to either end disables the control that moved it, and the focus would otherwise fall to
-     * the page. The other direction's control is where the reader is. A move that leaves the pressed
-     * control pressable leaves the focus where the browser put it, on that control.
+     * the page. The other direction's control is where the reader is. A move that leaves the
+     * pressed control pressable leaves the focus where the browser put it, on that control.
      *
      * The focus is set after the update has been drawn, since the row is moved in the DOM and the
      * two controls take their new disabled state then.

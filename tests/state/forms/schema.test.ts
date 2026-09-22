@@ -1,8 +1,8 @@
 // The edit form as config/catalogs/manifest-schema.yml describes it: every field has a widget and a
 // section, and every widget that offers choices can find them.
 //
-// The schema read here is the real config, so this is the gate on that file: a field added without a
-// type, or put in a section that does not exist, fails here rather than rendering as a blank row.
+// The schema read here is the real config, so this is the gate on that file: a field added without
+// a type, or put in a section that does not exist, fails here rather than rendering as a blank row.
 // The snapshot is synthetic, since what is checked is the resolution and not the hub.
 
 import { describe, expect, it } from 'vitest';

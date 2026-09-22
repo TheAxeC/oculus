@@ -68,7 +68,9 @@ export function uniqueIdents<T extends object>(
     return (entry) => ids.get(entry) ?? base(entry);
 }
 
-/** The stable identity the feed view and the palette use for the same entry, over the whole feed. */
+/**
+ * The stable identity the feed view and the palette use for the same entry, over the whole feed.
+ */
 export function feedIdents(kind: FeedKind, entries: readonly object[]): FeedIdent {
     return uniqueIdents(entries, (entry) => feedIdentity(kind, entry), kind);
 }

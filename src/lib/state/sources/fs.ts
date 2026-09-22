@@ -1,4 +1,5 @@
-// Layer 2, client state. The pure half of the file browser: what a name is, and what the tree draws.
+// Layer 2, client state. The pure half of the file browser: what a name is, and what the tree
+// draws.
 //
 // The tree is a flat list rather than a component that renders itself. A row carries its depth, so
 // one `each` draws the whole tree and the view holds no recursion; and because the list is computed
@@ -89,7 +90,9 @@ const IMAGES = ['.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp'];
 /** The extensions that open in the document view, which is the one type this view hands on. */
 const PAGES = ['.html', '.htm'];
 
-/** The extension of a name, lowercased and with its dot, or the empty string for a name with none. */
+/**
+ * The extension of a name, lowercased and with its dot, or the empty string for a name with none.
+ */
 export function extensionOf(name: string): string {
     const base =
         name
@@ -154,7 +157,9 @@ export function childPath(path: string, name: string): string {
     return path === '' ? name : `${path}/${name}`;
 }
 
-/** The open folders an instance's state holds, which is what the tree remembers across a tab switch. */
+/**
+ * The open folders an instance's state holds, which is what the tree remembers across a tab switch.
+ */
 export function expandedOf(state: unknown): string[] {
     if (typeof state !== 'object' || state === null || Array.isArray(state)) return [];
     const held = (state as Record<string, unknown>).expanded;
@@ -174,21 +179,22 @@ export type RowRef = { root: string; path: string };
 export type FilesForm = 'root' | 'workspace' | 'bookmark' | '';
 
 /**
- * The forms of one file browser: which one is open, the bookmark the bookmark form edits ('' while it
- * adds one), the text typed into the root or the workspace line form, and how many times a press has
- * opened or closed a form. Each string is '' where the open form does not have it, so a record naming
- * a bookmark while no bookmark form is open names nothing. The count tells one opening of a form from
- * the next opening of the same form, which is what an answer to a request from the first must not
- * close.
+ * The forms of one file browser: which one is open, the bookmark the bookmark form edits ('' while
+ * it adds one), the text typed into the root or the workspace line form, and how many times a press
+ * has opened or closed a form. Each string is '' where the open form does not have it, so a record
+ * naming a bookmark while no bookmark form is open names nothing. The count tells one opening of a
+ * form from the next opening of the same form, which is what an answer to a request from the first
+ * must not close.
  */
 export type FilesForms = { form: FilesForm; editing: string; typed: string; opening: number };
 
 /**
  * What one file browser keeps about itself across a tab switch and a saved page: the open folders,
- * the selected row, the filter text, the sections under the tree that are closed, and its open form
- * with what was typed into a line form. A bookmark form's typed values are not here: they are the
- * form drafts of state/forms/form-drafts.svelte.ts, kept beside this record as every entry form's
- * are.
+ * the selected row, the filter text, the sections under the tree that are closed, its open form
+ * with what was typed into a line form, and the refusal and outcome lines that answered its last
+ * press, which come back with the form they answered. A bookmark form's typed values are not here:
+ * they are the form drafts of state/forms/form-drafts.svelte.ts, kept beside this record as every
+ * entry form's are.
  */
 export type FilesView = FilesForms & {
     expanded: string[];
@@ -199,8 +205,16 @@ export type FilesView = FilesForms & {
     reveal: RevealAsk | null;
     /** What the last ask came to when it did not find its path, for the view's outcome line. */
     revealed: RevealOutcome | null;
-    /** How many times this browser has been asked to show a path, which tells one ask from the next. */
+    /**
+     * How many times this browser has been asked to show a path, which tells one ask from the next.
+     */
     revealing: number;
+    /**
+     * What the last press was refused with, in the reader's words, and the empty string for none.
+     */
+    note: string;
+    /** What the bookmark form's last write answered, which is a report and not a refusal. */
+    said: string;
 };
 
 /**
@@ -262,7 +276,9 @@ export function filesViewOf(state: unknown): FilesView {
         opening: countOf(map.opening),
         reveal: askOf(map.reveal),
         revealed: outcomeOf(map.revealed),
-        revealing: countOf(map.revealing)
+        revealing: countOf(map.revealing),
+        note: typeof map.note === 'string' ? map.note : '',
+        said: typeof map.said === 'string' ? map.said : ''
     };
 }
 
@@ -307,9 +323,9 @@ function outcomeOf(raw: unknown): RevealOutcome | null {
 
 /**
  * An instance's state with one more ask to show a path in it, the rest kept. A path given with no
- * root is a path of the hub, and it is asked for by its segments (collection.ts's normalisePath), so
- * `network/../funding` is `funding`; a path still climbing above its root is asked for as it is and
- * is shown at the root's own line, since no listing holds an entry named `..`. The filter is
+ * root is a path of the hub, and it is asked for by its segments (collection.ts's normalisePath),
+ * so `network/../funding` is `funding`; a path still climbing above its root is asked for as it is
+ * and is shown at the root's own line, since no listing holds an entry named `..`. The filter is
  * cleared, since a filter would leave the row asked for out of the tree, and the last ask's outcome
  * goes with it.
  */
@@ -407,15 +423,17 @@ export function formsOf(view: FilesForms): FilesForms {
 
 /**
  * The forms a section's own control leaves: the form it names opens, or closes when it is the one
- * open, and a bookmark form open over an entry gives way to the one that adds. Whatever line of text
- * was typed goes with the form it was typed into.
+ * open, and a bookmark form open over an entry gives way to the one that adds. Whatever line of
+ * text was typed goes with the form it was typed into.
  */
 export function formShown(now: FilesForms, which: Exclude<FilesForm, ''>): FilesForms {
     const closing = now.form === which && now.editing === '';
     return { form: closing ? '' : which, editing: '', typed: '', opening: now.opening + 1 };
 }
 
-/** The forms a bookmark row's edit control leaves: that bookmark's form, or none when it was open. */
+/**
+ * The forms a bookmark row's edit control leaves: that bookmark's form, or none when it was open.
+ */
 export function editShown(now: FilesForms, id: string): FilesForms {
     const same = now.form === 'bookmark' && now.editing === id;
     return {
@@ -427,8 +445,9 @@ export function editShown(now: FilesForms, id: string): FilesForms {
 }
 
 /**
- * Whether the bookmark form is open over a bookmark the bookmarks file no longer holds, read once the
- * file has been read without an error. Such a form has nothing to draw and nothing to save into.
+ * Whether the bookmark form is open over a bookmark the bookmarks file no longer holds, read once
+ * the file has been read without an error. Such a form has nothing to draw and nothing to save
+ * into.
  *
  * A form with a save of its own out (`saving`) is not one of them until its answer lands: a write
  * from elsewhere on the page can take the bookmark away while the reader is typing into that form,
@@ -468,9 +487,9 @@ export function filesLineTyped(view: string | undefined, state: unknown): boolea
 }
 
 /**
- * The bookmark form a move from one set of forms to the next closes, as the bookmark it edited ('' for
- * the form that adds), or null when no bookmark form closes. A move that keeps the same bookmark form
- * open closes nothing.
+ * The bookmark form a move from one set of forms to the next closes, as the bookmark it edited (''
+ * for the form that adds), or null when no bookmark form closes. A move that keeps the same
+ * bookmark form open closes nothing.
  */
 export function bookmarkLeft(now: FilesForms, next: FilesForms): { editing: string } | null {
     if (now.form !== 'bookmark') return null;

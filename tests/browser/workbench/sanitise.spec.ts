@@ -1,8 +1,8 @@
 // What ui/html.ts's sanitise does to real markup, in the browser, which is the only place DOMPurify
 // runs: the unit suite is node, where the library has no document and sanitise hands the text back.
-// The fixtures are the demo's own files, a title in demo/feeds/position-leads.yml and a block at the
-// end of demo/projects/active/graph-bandits/README.md, and every assertion here is about what Chrome
-// ended up with in the page.
+// The fixtures are the demo's own files, a title in demo/feeds/position-leads.yml and a block at
+// the end of demo/projects/active/graph-bandits/README.md, and every assertion here is about what
+// Chrome ended up with in the page.
 //
 // The transcript path of views/sessions/transcript/Transcript.svelte is here too, over the fixture
 // transcript demo/sessions/ holds: tests/browser/helpers/serve.ts copies it into the run's own home
@@ -33,7 +33,9 @@ function dialogs(page: Page): string[] {
     return seen;
 }
 
-/** Open the project tab of the demo project whose README holds the block, and hand back its body. */
+/**
+ * Open the project tab of the demo project whose README holds the block, and hand back its body.
+ */
 async function openDocument(page: Page): Promise<Locator> {
     await boot(page);
     await openView(page, 'projects', t('views.projects'));

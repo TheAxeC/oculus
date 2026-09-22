@@ -57,7 +57,9 @@ export function rolloutSlug(store: string, path: string): string {
     return folder.startsWith(prefix) ? folder.slice(prefix.length) : basename(folder);
 }
 
-/** The text of a Codex content list, whose blocks carry `text` under a `type` of `text` or `Text`. */
+/**
+ * The text of a Codex content list, whose blocks carry `text` under a `type` of `text` or `Text`.
+ */
 function contentText(content: unknown): string {
     const pieces: string[] = [];
     for (const block of list(content)) {

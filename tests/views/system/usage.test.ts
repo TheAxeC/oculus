@@ -1,4 +1,5 @@
-// Layer 4, view test. The Usage view renders account cards, meters, live rows, history totals and both empty states.
+// Layer 4, view test. The Usage view renders account cards, meters, live rows, history totals and
+// both empty states.
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render } from 'svelte/server';

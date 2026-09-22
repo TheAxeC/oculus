@@ -5,10 +5,11 @@
     // whose notes file is what that task writes.
     //
     // A task is an ordinary Claude session, so its permission prompts are answered in the terminal
-    // pane and a press starts it straight away. While `tasks.skip_permissions` is on there is nobody
-    // to answer them and the session decides for itself, so the press asks first: the confirmation
-    // is the one place a reader is told which of the two a press is about to do. It is asked once
-    // per press and not remembered, since the answer is about this run and not about the setting.
+    // pane and a press starts it straight away. While `tasks.skip_permissions` is on there is
+    // nobody to answer them and the session decides for itself, so the press asks first: the
+    // confirmation is the one place a reader is told which of the two a press is about to do. It is
+    // asked once per press and not remembered, since the answer is about this run and not about the
+    // setting.
 
     import Confirm from '$lib/ui/controls/Confirm.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';

@@ -246,7 +246,8 @@ describe('the folders read on the way and what the path comes to', () => {
         expect(stub.asked).toEqual(['hub:', 'hub:funding']);
     });
 
-    // Revert: in resolveReveal, drop the `entry.kind !== 'dir'` test for a name that is not the last.
+    // Revert: in resolveReveal, drop the `entry.kind !== 'dir'` test for a name that is not the
+    // last.
     it('does not walk through a file as if it were a folder', async () => {
         const outcome = await resolveReveal(
             { root: 'hub', path: 'README.md/inside' },
@@ -556,7 +557,8 @@ describe("the store's awaited listing read", () => {
         expect(client.fs.listing('hub', 'funding').loading).toBe(false);
     });
 
-    // Revert: in loadListing, return nothing when the round moved, so the awaited read answers empty.
+    // Revert: in loadListing, return nothing when the round moved, so the awaited read answers
+    // empty.
     it('answers what the server said even when a newer round began meanwhile', async () => {
         answering([file('b.txt')]);
         const pending = client.fs.readListing('hub', '');

@@ -20,7 +20,9 @@ import {
     wholeAt
 } from '$lib/ui/tabs/tab-strip';
 
-/** What the scroller reads of the component: its elements and which tab is showing, as they are now. */
+/**
+ * What the scroller reads of the component: its elements and which tab is showing, as they are now.
+ */
 export type TabScrollParts = {
     /** The scrolling tab list. */
     list: () => HTMLElement | undefined | null;
@@ -39,7 +41,10 @@ export type TabScroll = {
     state: () => TabScrollState;
     /** Measure the strip again after a scroll. */
     scrolled: () => void;
-    /** Measure the strip again after a change of size, and bring the showing tab back if that took it out. */
+    /**
+     * Measure the strip again after a change of size, and bring the showing tab back if that took
+     * it out.
+     */
     resized: () => void;
     /** Bring one tab in whole, resting on a tab's start where the strip's end allows. */
     reveal: (index: number) => void;

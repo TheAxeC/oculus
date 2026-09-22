@@ -59,6 +59,9 @@ const NO_FORM = { form: '', editing: '', typed: '', opening: 0 } as const;
  */
 const NO_REVEAL = { reveal: null, revealed: null, revealing: 0 } as const;
 
+/** The refusal and outcome lines of a file browser nothing has answered. */
+const NO_LINES = { note: '', said: '' } as const;
+
 function root(key: string, fixed = true): FsRoot {
     return { key, dir: `/tmp/${key}`, fixed };
 }
@@ -186,7 +189,9 @@ describe('the explorer over the rows', () => {
                 expanded: ['hub:'],
                 selected: { root: 'hub', path: 'code' },
                 filter: 'run',
-                collapsed: ['notes', 3]
+                collapsed: ['notes', 3],
+                note: 'refused',
+                said: 7
             })
         ).toEqual({
             ...NO_FORM,
@@ -194,11 +199,14 @@ describe('the explorer over the rows', () => {
             expanded: ['hub:'],
             selected: { root: 'hub', path: 'code' },
             filter: 'run',
-            collapsed: ['notes']
+            collapsed: ['notes'],
+            note: 'refused',
+            said: ''
         });
         const empty = {
             ...NO_FORM,
             ...NO_REVEAL,
+            ...NO_LINES,
             expanded: [],
             selected: null,
             filter: '',
@@ -233,7 +241,8 @@ describe('the explorer over the rows', () => {
         // Empty: no form, and an empty bookmark id is the form that adds.
         expect(forms({})).toEqual(NO_FORM);
         expect(forms({ form: 'bookmark', editing: '' })).toEqual({ ...NO_FORM, form: 'bookmark' });
-        // A name that is no form, a field of the wrong type, and a field of a form that is not open.
+        // A name that is no form, a field of the wrong type, and a field of a form that is not
+        // open.
         expect(forms({ form: 'note', editing: 'x', typed: 'y' })).toEqual(NO_FORM);
         expect(forms({ form: 'expanded' })).toEqual(NO_FORM);
         expect(forms({ form: 'bookmark', editing: 3, typed: 'left over' })).toEqual({
@@ -340,7 +349,7 @@ describe('the forms of the file browser', () => {
         expect(editedGone(NO_FORM, loaded, false)).toBe(false);
     });
 
-    // revert: src/lib/state/sources/fs.ts:458 => return { ...part };
+    // revert: src/lib/state/sources/fs.ts:477 => return { ...part };
     // Revert: in patchedFilesView of state/sources/fs.ts, write the part over nothing.
     it('writes part of a file browser over whatever else its record holds', () => {
         expect(patchedFilesView({ filter: 'x', form: 'root' }, { form: 'bookmark' })).toEqual({
@@ -353,7 +362,7 @@ describe('the forms of the file browser', () => {
         expect(patchedFilesView('a word', { editing: 'one' })).toEqual({ editing: 'one' });
     });
 
-    // revert: src/lib/state/sources/fs.ts:444 => if (marks.loading || marks.error !== '') return false;
+    // revert: src/lib/state/sources/fs.ts:463 => if (marks.loading || marks.error !== '') return false;
     // Revert: in editedGone of state/sources/fs.ts, drop `saving` from the line that answers false.
     it('leaves the form a save of its own is out from until that answer lands', () => {
         const loaded = { entries: [{ id: 'the manual renamed' }], loading: false, error: '' };

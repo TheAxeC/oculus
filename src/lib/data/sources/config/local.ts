@@ -37,8 +37,8 @@ export type LocalConfig = {
      */
     workspaces?: string;
     /**
-     * Where the reader's own bookmarks live, `bookmarks` in the file. Absent unless the machine sets
-     * it, and the file browser then uses ~/.oculus/bookmarks.yml.
+     * Where the reader's own bookmarks live, `bookmarks` in the file. Absent unless the machine
+     * sets it, and the file browser then uses ~/.oculus/bookmarks.yml.
      */
     bookmarks?: string;
     /**
@@ -51,7 +51,9 @@ export type LocalConfig = {
      * write path then uses ~/.oculus/changes.jsonl.
      */
     changes?: string;
-    /** Absolute or PATH-resolved Claude CLI the update tasks and the chat terminal are started with. */
+    /**
+     * Absolute or PATH-resolved Claude CLI the update tasks and the chat terminal are started with.
+     */
     claudeBin: string;
     /** Claude and Codex config folders shown by the Usage view. */
     accounts: UsageAccountConfig[];
@@ -74,7 +76,9 @@ export type LocalConfig = {
 /** The default development port; the reserved port 8787 is never used. */
 export const DEFAULT_PORT = 8790;
 
-/** The name of the machine-local file inside the config directory, which loadConfig never merges. */
+/**
+ * The name of the machine-local file inside the config directory, which loadConfig never merges.
+ */
 export const LOCAL_NAME = 'local.yml';
 
 const LOCAL_KEYS = [
@@ -95,7 +99,10 @@ const LOCAL_KEYS = [
     'mail_dir'
 ];
 
-/** The defaults: the hub is two directories above tools/oculus, the port is 8790, and Claude is resolved on PATH. */
+/**
+ * The defaults: the hub is two directories above tools/oculus, the port is 8790, and Claude is
+ * resolved on PATH.
+ */
 export function localDefaults(engine: string): LocalConfig {
     return {
         hub: resolve(engine, '..', '..'),
@@ -161,9 +168,9 @@ const ACCOUNT_LABEL = /^[a-z0-9][a-z0-9-]*$/;
 
 /**
  * The rows of `calendars:` or `mail:`: one provider and one label each, the label unique per
- * provider inside its own list. A bad row throws the sentence naming the file, the list and the row,
- * as the accounts above do, so a machine whose own file is wrong is told at the start rather than
- * served an empty view.
+ * provider inside its own list. A bad row throws the sentence naming the file, the list and the
+ * row, as the accounts above do, so a machine whose own file is wrong is told at the start rather
+ * than served an empty view.
  */
 function connectAccounts(value: unknown, file: string, list: string): ConnectAccountConfig[] {
     if (!Array.isArray(value)) throw new Error(`${file}: ${list} must be a list`);
@@ -194,9 +201,9 @@ function connectAccounts(value: unknown, file: string, list: string): ConnectAcc
 }
 
 /**
- * Which file loadLocal reads: local.yml of the engine's config directory, which is the whole of what
- * the machine's own configuration is. A relative path inside it resolves against the engine rather
- * than the file's own folder, so a relative `hub` is read from the engine directory.
+ * Which file loadLocal reads: local.yml of the engine's config directory, which is the whole of
+ * what the machine's own configuration is. A relative path inside it resolves against the engine
+ * rather than the file's own folder, so a relative `hub` is read from the engine directory.
  */
 function localFile(engine: string): string {
     return join(configDir(engine), LOCAL_NAME);
@@ -274,9 +281,9 @@ function applyLocal(
 
 /**
  * Read local.yml of the engine's config directory. A missing file means the defaults, since every
- * key has one. An unknown key is reported on stderr and ignored. A key of the wrong type is an error
- * naming the file and the key, which is what a start reads: a machine whose own file is malformed is
- * told at once rather than served wrongly.
+ * key has one. An unknown key is reported on stderr and ignored. A key of the wrong type is an
+ * error naming the file and the key, which is what a start reads: a machine whose own file is
+ * malformed is told at once rather than served wrongly.
  */
 export function loadLocal(engine: string): LocalConfig {
     const file = localFile(engine);
@@ -287,15 +294,17 @@ export function loadLocal(engine: string): LocalConfig {
     );
 }
 
-/** Sentences already printed by loadLocalOrDefaults, so a bad file is named once and not per call. */
+/**
+ * Sentences already printed by loadLocalOrDefaults, so a bad file is named once and not per call.
+ */
 const reportedLocal = new Set<string>();
 
 /**
- * The machine's own values for a reader that runs on a request, with the defaults in place of a file
- * that does not read. The file is the one of the config folder whose bad content would otherwise be
- * fatal: a request would answer 500 rather than a page, and the request that saves the file back
- * would be one of them. The sentence is printed once and the start keeps throwing, so a malformed
- * file is still seen and is still repairable from the source tab.
+ * The machine's own values for a reader that runs on a request, with the defaults in place of a
+ * file that does not read. The file is the one of the config folder whose bad content would
+ * otherwise be fatal: a request would answer 500 rather than a page, and the request that saves the
+ * file back would be one of them. The sentence is printed once and the start keeps throwing, so a
+ * malformed file is still seen and is still repairable from the source tab.
  */
 export function loadLocalOrDefaults(engine: string): LocalConfig {
     try {
@@ -312,9 +321,9 @@ export function loadLocalOrDefaults(engine: string): LocalConfig {
 
 /**
  * The sentence loadLocal would throw over this text, or null when it would read it. The source
- * endpoint checks a save of the machine's own file with it, so a body that would stop the next start
- * is refused with that sentence rather than written. A file name makes the sentence the reader's own
- * ("local.yml: port must be an integer"); a parse error is given by its first line.
+ * endpoint checks a save of the machine's own file with it, so a body that would stop the next
+ * start is refused with that sentence rather than written. A file name makes the sentence the
+ * reader's own ("local.yml: port must be an integer"); a parse error is given by its first line.
  */
 export function checkLocal(text: string, file: string = LOCAL_NAME): string | null {
     try {

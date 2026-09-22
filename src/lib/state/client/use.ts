@@ -12,7 +12,10 @@ import type { ClientState } from './context.ts';
 /** The one key the client's stores are provided under. */
 export const STATE_KEY = Symbol('client state');
 
-/** Provide one client's stores to everything the root renders. Called by the page and by nothing else. */
+/**
+ * Provide one client's stores to everything the root renders. Called by the page and by nothing
+ * else.
+ */
 export function provideState(state: ClientState): void {
     setContext(STATE_KEY, state);
 }

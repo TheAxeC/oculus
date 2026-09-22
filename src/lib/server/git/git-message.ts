@@ -21,7 +21,9 @@ export const CLAUDE = 'claude';
 /** Milliseconds the CLI is given to answer. */
 export const TIMEOUT_MS = 60000;
 
-/** How a message is asked for: the instruction, the model or the empty string, the diff on stdin. */
+/**
+ * How a message is asked for: the instruction, the model or the empty string, the diff on stdin.
+ */
 export type Ask = (prompt: string, model: string, input: string) => Promise<Outcome>;
 
 export type MessageOptions = {

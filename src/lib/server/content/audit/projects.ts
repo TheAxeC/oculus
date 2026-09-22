@@ -53,9 +53,9 @@ const STANDARD = ['idea', 'active', 'manuscript'];
 
 /**
  * Every folder-relative path and folder name the scan reads off the disk. The portfolio watcher
- * imports it so that an event on one of them under a scan tier rebuilds: a marker added to a README,
- * a retired document put back, a `paper/` folder made, all of which the scan reports and none of
- * which is a `.yml` the watcher would otherwise notice.
+ * imports it so that an event on one of them under a scan tier rebuilds: a marker added to a
+ * README, a retired document put back, a `paper/` folder made, all of which the scan reports and
+ * none of which is a `.yml` the watcher would otherwise notice.
  */
 export const AUDIT_PATHS: string[] = [
     ...SCANNED,
@@ -301,8 +301,8 @@ export function conformance(input: AuditInput, add: (f: Raised) => void): void {
 }
 
 /**
- * The status guardrails: what a project's tier and type say its chips cannot be, and the one field a
- * live project must fill in. They are soft: drift to clear, never a bad value.
+ * The status guardrails: what a project's tier and type say its chips cannot be, and the one field
+ * a live project must fill in. They are soft: drift to clear, never a bad value.
  */
 export function guardrails(input: AuditInput, add: (f: Raised) => void): void {
     const { rules } = input;
@@ -403,7 +403,9 @@ export function readability(input: AuditInput, add: (f: Raised) => void): void {
     }
 }
 
-/** The collection invariants: the file is there, and every entry says what it is and where it is. */
+/**
+ * The collection invariants: the file is there, and every entry says what it is and where it is.
+ */
 export function collections(input: AuditInput, add: (f: Raised) => void): void {
     const { rules } = input;
     const ids = new Set(input.projects.filter((one) => !one.ghost).map((one) => one.id));
@@ -418,8 +420,8 @@ export function collections(input: AuditInput, add: (f: Raised) => void): void {
             });
             continue;
         }
-        // A registry is a collection here too, and a venue or a dataset has no status to be missing:
-        // the file's own `schema:` is what says whether its entries are tracked by one.
+        // A registry is a collection here too, and a venue or a dataset has no status to be
+        // missing: the file's own `schema:` is what says whether its entries are tracked by one.
         const tracked = (collection.schema ?? []).some((field) => field.field === 'status');
         for (const entry of collection.entries) {
             const label = labelOf(entry.title, entry.index);

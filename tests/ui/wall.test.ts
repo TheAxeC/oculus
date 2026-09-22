@@ -2,10 +2,10 @@
 // surface a reader sees the page through is translucent, and the controls text is read off are not.
 //
 // A component paints its own surface, so the rule that makes it translucent lives beside the colour
-// it modifies rather than in a shared sheet. This walks every component under ui/, shell/ and views/
-// and pairs each surface declaration with the rule that answers it under `body.wall`. What is left
-// unpaired is solid on purpose and is listed here with its reason, so a surface added without the
-// rule fails and an entry that stops being needed fails too.
+// it modifies rather than in a shared sheet. This walks every component under ui/, shell/ and
+// views/ and pairs each surface declaration with the rule that answers it under `body.wall`. What
+// is left unpaired is solid on purpose and is listed here with its reason, so a surface added
+// without the rule fails and an entry that stops being needed fails too.
 
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
@@ -29,8 +29,8 @@ const WALL_MIX =
 
 /**
  * Whether a rule under `body.wall` answers for the surface it names. Two answers count: the surface
- * at the wallpaper's fraction, and nothing at all. Any other background covers the picture exactly as
- * the flat rule did, so a rule that sets one is no answer and leaves the surface unpaired.
+ * at the wallpaper's fraction, and nothing at all. Any other background covers the picture exactly
+ * as the flat rule did, so a rule that sets one is no answer and leaves the surface unpaired.
  */
 export function answersForWallpaper(body: string): boolean {
     const found = [...body.matchAll(/background:\s*([^;}]+)/g)];
@@ -66,8 +66,8 @@ function rules(file: string): Rule[] {
 }
 
 /**
- * What a rule paints, with the body class it is conditioned on taken off: `:global(body.rice) header`
- * and `:global(body.rice.wall) header` both answer for `header`, which is what pairs them.
+ * What a rule paints, with the body class it is conditioned on taken off: `:global(body.rice)
+ * header` and `:global(body.rice.wall) header` both answer for `header`, which is what pairs them.
  */
 function target(selector: string): string {
     return selector
@@ -76,7 +76,9 @@ function target(selector: string): string {
         .join(', ');
 }
 
-/** The targets a component paints a surface colour on, and the targets its wall rules answer for. */
+/**
+ * The targets a component paints a surface colour on, and the targets its wall rules answer for.
+ */
 function audit(file: string): { painted: string[]; answered: Set<string> } {
     const painted: string[] = [];
     const answered = new Set<string>();
@@ -89,10 +91,10 @@ function audit(file: string): { painted: string[]; answered: Set<string> } {
 }
 
 /**
- * The surfaces that stay solid over a picture, each with why. A control is what a reader presses and
- * reads a word off at the size of a word, and a hover response is the control answering, so neither
- * takes the picture behind it. A track is read as a proportion of itself, which a picture through it
- * would take away.
+ * The surfaces that stay solid over a picture, each with why. A control is what a reader presses
+ * and reads a word off at the size of a word, and a hover response is the control answering, so
+ * neither takes the picture behind it. A track is read as a proportion of itself, which a picture
+ * through it would take away.
  */
 const SOLID: Record<string, string> = {
     'src/lib/ui/controls/Chip.svelte .chip': 'a control, read at the size of a word',

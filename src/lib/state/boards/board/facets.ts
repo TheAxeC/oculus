@@ -76,7 +76,8 @@ function orderValues(facet: string, counts: Map<string, number>, preset: BoardPr
     if (facet === 'sessions') return SESSIONS_VALUES.filter(has);
     const values = [...counts.keys()].filter(has);
     // A year axis reads newest first; every other free facet reads by weight, and by its own value
-    // where two weigh the same, so the order does not depend on the order the projects were read in.
+    // where two weigh the same, so the order does not depend on the order the projects were read
+    // in.
     if (facet === 'year') {
         const years = values.filter((value) => value !== NONE).sort((a, b) => b.localeCompare(a));
         return values.includes(NONE) ? [...years, NONE] : years;

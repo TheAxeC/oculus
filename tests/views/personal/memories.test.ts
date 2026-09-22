@@ -199,7 +199,7 @@ describe('the answer the wall reads', () => {
         );
     });
 
-    it('reads a name given twice as a failed read, not as one tile', async () => {
+    it('audits that reads a name given twice as a failed read, not as one tile', async () => {
         expect(
             await answered([
                 { name: 'one.png', width: 10, height: 20 },
@@ -221,7 +221,7 @@ describe('the answer the wall reads', () => {
 const source = readFileSync('src/lib/views/personal/memories/Memories.svelte', 'utf8');
 
 describe('the wall as it is written', () => {
-    it('posts one picture through the writes store rather than its own fetch', () => {
+    it('audits that posts one picture through the writes store rather than its own fetch', () => {
         expect(source).toContain('writes: { addMemory }');
         // the upload goes through the writes store, so the view holds no request of its own
         expect(source).not.toContain('fetch(');
@@ -258,7 +258,7 @@ describe('the wall as it is written', () => {
         expect(body).not.toContain(catalog['memories.empty']);
     });
 
-    it('keeps every failed file of one add rather than only the last', () => {
+    it('audits that keeps every failed file of one add rather than only the last', () => {
         expect(source).toContain('refused.push(');
         expect(source).toContain("t('memories.failed_many', failed.length)");
     });
@@ -270,9 +270,10 @@ describe('the wall as it is written', () => {
         );
     });
 
-    it('looks for the tile to refocus inside its own pane', () => {
+    it('audits that looks for the tile to refocus inside its own pane', () => {
         expect(source).toContain('box?.querySelector(');
-        // the tile is looked for inside the pane's own box, so a second wall on the page is not reached
+        // the tile is looked for inside the pane's own box, so a second wall on the page is not
+        // reached
         expect(source).not.toContain('document.querySelector(');
     });
 });

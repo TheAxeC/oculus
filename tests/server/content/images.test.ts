@@ -13,7 +13,7 @@ import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
-import { readSize, sizeOf, type ReadAt } from '../../../src/lib/server/content/images.ts';
+import { SEGMENTS, readSize, sizeOf, type ReadAt } from '../../../src/lib/server/content/images.ts';
 import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
 
 afterAll(sweepScratch);
@@ -138,8 +138,8 @@ function exif(orientation: number, order: 'II' | 'MM', padding = 0): number[] {
 
 /**
  * A TIFF structure whose first directory names `orientation` after a Make entry, as a camera writes
- * one, followed by `padding` bytes: the body of an EXIF block after its header, and the whole body of
- * a PNG `eXIf` chunk.
+ * one, followed by `padding` bytes: the body of an EXIF block after its header, and the whole body
+ * of a PNG `eXIf` chunk.
  */
 function tiff(orientation: number, order: 'II' | 'MM', padding = 0): number[] {
     const u16 = order === 'II' ? le16 : be16;
@@ -330,7 +330,8 @@ describe('the size of a JPEG', () => {
     });
 
     it('steps over a Huffman table and an arithmetic coding table before the frame', () => {
-        // Read as a frame, the table's first five bytes would give a height of 256 and a width of 512.
+        // Read as a frame, the table's first five bytes would give a height of 256 and a width of
+        // 512.
         const huffman = segment(0xc4, [
             0x00,
             0x01,
@@ -496,6 +497,29 @@ describe('how far into a file the size is read', () => {
         const reading = counted(jpeg(exif(6, 'MM', 60000), frame(640, 480)));
         expect(readSize(reading.read)).toEqual({ width: 480, height: 640 });
         expect(reading.total()).toBeLessThan(1200);
+    });
+
+    it('turns a PNG whose eXIf chunk is the last the walk reaches, and not one a chunk later', () => {
+        // revert: src/lib/server/content/images.ts:122 => for (let passed = 0; passed <= SEGMENTS; passed += 1) {
+        // revert: src/lib/server/content/images.ts:122 => for (let passed = 1; passed < SEGMENTS; passed += 1) {
+        const before = (count: number): Uint8Array[] =>
+            Array.from({ length: count }, () => chunk('tEXt', ascii('k\0v')));
+        const inside = pngWith(400, 300, ...before(SEGMENTS - 1), chunk('eXIf', tiff(6, 'MM')));
+        expect(readSize(counted(inside).read)).toEqual({ width: 300, height: 400 });
+        const past = pngWith(400, 300, ...before(SEGMENTS), chunk('eXIf', tiff(6, 'MM')));
+        expect(readSize(counted(past).read)).toEqual({ width: 400, height: 300 });
+    });
+
+    it('sizes a JPEG whose frame is the last segment the walk reaches, and not one a segment later', () => {
+        // revert: src/lib/server/content/images.ts:214 => for (let passed = 0; passed <= SEGMENTS; passed += 1) {
+        // revert: src/lib/server/content/images.ts:214 => for (let passed = 1; passed < SEGMENTS; passed += 1) {
+        const before = (count: number): number[][] =>
+            Array.from({ length: count }, () => segment(0xfe, ascii('a comment')));
+        expect(readSize(counted(jpeg(...before(SEGMENTS - 1), frame(640, 480))).read)).toEqual({
+            width: 640,
+            height: 480
+        });
+        expect(readSize(counted(jpeg(...before(SEGMENTS), frame(640, 480))).read)).toBeNull();
     });
 
     it('gives up on a file of fill bytes without reading it whole', () => {

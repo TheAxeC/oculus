@@ -50,7 +50,9 @@
     let { instance }: ViewProps = $props();
 
     const collection = $derived(collectionOf('venues'));
-    /** The registry file this view is drawn from, which the control at the end of the toolbar opens. */
+    /**
+     * The registry file this view is drawn from, which the control at the end of the toolbar opens.
+     */
     const source = $derived(viewSourceFile('venues', configMap()));
     const allVenues = $derived(venues());
     const allProjects = $derived(realProjects(projects(), archiveDead()));

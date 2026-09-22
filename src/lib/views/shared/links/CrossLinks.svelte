@@ -113,7 +113,8 @@
     }
 
     /* Every flex box on the path from the card to a title keeps its content's minimum width unless
-       told otherwise, so each is capped here; the cut then happens at the label and nowhere above. */
+       told otherwise, so each is capped here; the cut then happens at the label and nowhere
+       above. */
     .group,
     .members {
         min-width: 0;

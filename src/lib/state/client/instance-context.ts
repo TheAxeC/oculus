@@ -12,7 +12,9 @@ import { getContext, setContext } from 'svelte';
 /** The one key the instance reader is provided under. */
 export const INSTANCE_KEY = Symbol('view instance');
 
-/** What a component inside a pane reads: the id of the instance the pane shows, or null for none. */
+/**
+ * What a component inside a pane reads: the id of the instance the pane shows, or null for none.
+ */
 export type InstanceReader = () => string | null;
 
 /** Provide the reader of the instance a pane mounts. Called by the pane and by nothing else. */

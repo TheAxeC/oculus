@@ -12,7 +12,9 @@ import type { TranscriptFile } from '../transcripts/stores.ts';
 import { isMap, readJson, whole, writeJsonAtomic } from './stores/json.ts';
 import { newAcc, type Acc } from './record.ts';
 
-/** One transcript on disk: its path, and the three facts that say whether a cache entry still fits. */
+/**
+ * One transcript on disk: its path, and the three facts that say whether a cache entry still fits.
+ */
 export type Found = TranscriptFile;
 
 /**

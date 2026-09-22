@@ -2,8 +2,9 @@
 //
 // Every repository here is built inside a temporary directory and thrown away, and every write
 // asserts its path is inside that directory first. `user.email` and `user.name` are passed on the
-// command line, so this machine's git config is neither read nor written, and no git command in this
-// file ever names a path outside the temporary directory: the hub's own repository is never touched.
+// command line, so this machine's git config is neither read nor written, and no git command in
+// this file ever names a path outside the temporary directory: the hub's own repository is never
+// touched.
 //
 // Two gates sit at the end. The module's source names no writing subcommand, and the recorder in
 // git.ts reports every argument vector the module ran over this whole file, which must use nothing
@@ -525,7 +526,7 @@ describe('failure', () => {
     });
 
     it('keeps a repository whose config git cannot parse a repository, and says why', () => {
-        // revert: src/lib/server/git/git.ts:149 =>         refused.repository = false;
+        // revert: src/lib/server/git/git.ts:154 =>         refused.repository = false;
         const broken = join(dir, 'broken');
         mkdirSync(broken);
         git(broken, 'init', '--initial-branch=work');

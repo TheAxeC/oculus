@@ -3,10 +3,10 @@
 //
 // DESIGN.md's wire model keeps documents out of the snapshot, so a document is fetched rather than
 // selected: document(id, name) asks api/docs the first time a pair is wanted and holds the answer,
-// and every later call for that pair reads what is held. hubDocument(path) and manual() are the same
-// rule over the other two shapes the endpoint answers. The fetch is scheduled on a microtask rather
-// than run inside the call, so reading this from a $derived never writes state while a derived is
-// running.
+// and every later call for that pair reads what is held. hubDocument(path) and manual() are the
+// same rule over the other two shapes the endpoint answers. The fetch is scheduled on a microtask
+// rather than run inside the call, so reading this from a $derived never writes state while a
+// derived is running.
 //
 // The `files` channel's version is what makes a document stale: the git watcher publishes on it
 // each time it re-reads a root, which is every write under a folder it watches, so an edited README
@@ -60,9 +60,9 @@ export function createDocs(entities: EntitiesStore): DocsStore {
 
     /**
      * What one document is held under. A project id is a folder basename and a name is one of four
-     * literals, so neither holds a bar. The hub's documents and the manual are held under a key that
-     * opens with a bar, which no project's key does since an id is never empty, so a project folder
-     * named `hub` or `manual` is a different key and invalidating it leaves them alone.
+     * literals, so neither holds a bar. The hub's documents and the manual are held under a key
+     * that opens with a bar, which no project's key does since an id is never empty, so a project
+     * folder named `hub` or `manual` is a different key and invalidating it leaves them alone.
      */
     function keyOf(id: string, name: string): string {
         return `${id}|${name}`;
@@ -73,7 +73,9 @@ export function createDocs(entities: EntitiesStore): DocsStore {
         return `|${kind}|${name}`;
     }
 
-    /** The version of the `files` channel, or 0 before a write has been seen under any watched root. */
+    /**
+     * The version of the `files` channel, or 0 before a write has been seen under any watched root.
+     */
     function version(): number {
         return entities.message('files')?.version ?? 0;
     }
@@ -139,7 +141,8 @@ export function createDocs(entities: EntitiesStore): DocsStore {
             if (versions[key] !== undefined && versions[key] !== at) invalidate(id);
             versions[key] = at;
             // There is no fetch while the page is rendered on the server, and nothing to show there
-            // either: the pair stays pending and the browser asks for it on the first client render.
+            // either: the pair stays pending and the browser asks for it on the first client
+            // render.
             if (typeof fetch !== 'function') return;
             const response = await fetch(url);
             const body = (await response.json()) as {

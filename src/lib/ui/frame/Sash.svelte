@@ -7,15 +7,18 @@
     // It is drawn as an editor's handle: nothing at rest, since what it parts already shows where
     // it parts; the accent line once the pointer has rested on it for `--sash-delay`, and at once
     // while it is dragged or holds the keyboard, where the line widens to `--sash-focus-line` in
-    // place of the browser's focus ring. A pointer catches it `--sash-reach` past its own thickness
-    // on either side, over the border of what sits there and never inside it, on a layer that takes
-    // no room, so the thickness a split lays out is still SASH_PX.
+    // place of the browser's focus ring. A pointer catches it past its own thickness on either
+    // side, over the border of what sits there and never inside it, at every device pixel ratio, on
+    // a layer that takes no room, so the thickness a split lays out is still SASH_PX.
 
     import { SASH_PX, STEP } from '$lib/ui/frame/sash-size';
     import { t } from '$lib/state/words/text';
 
     type Props = {
-        /** The direction of the split. A row of children is separated by a handle that moves sideways. */
+        /**
+         * The direction of the split. A row of children is separated by a handle that moves
+         * sideways.
+         */
         dir: 'row' | 'col';
         /**
          * The share of the split held by the child before the handle, 0 to 1. It is read for
@@ -114,7 +117,9 @@
         touch-action: none;
     }
 
-    /* The reach: the handle's own box grown along the split's direction by the token on each side. */
+    /* The reach: the handle's own box grown along the split's direction over the border on each
+       side, by `--sash-reach-start` before it and `--sash-reach` after it (themes/tokens.css says
+       why the two differ). */
     .sash::before {
         content: '';
         position: absolute;
@@ -127,7 +132,7 @@
     .sash.row::before {
         top: 0;
         bottom: 0;
-        left: calc(-1 * var(--sash-reach));
+        left: calc(-1 * var(--sash-reach-start));
         right: calc(-1 * var(--sash-reach));
     }
 
@@ -138,7 +143,7 @@
     .sash.col::before {
         left: 0;
         right: 0;
-        top: calc(-1 * var(--sash-reach));
+        top: calc(-1 * var(--sash-reach-start));
         bottom: calc(-1 * var(--sash-reach));
     }
 
@@ -163,7 +168,8 @@
         width: 100%;
     }
 
-    /* A resting pointer draws it after the delay: a change of colour that takes no time, only a wait. */
+    /* A resting pointer draws it after the delay: a change of colour that takes no time, only a
+       wait. */
     .sash:hover .line {
         background: var(--accent);
         transition: background-color 0s var(--sash-delay);

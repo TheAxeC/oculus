@@ -2,10 +2,10 @@
 // the two endpoint sets as data, the consent URL, the pending states, and the two token calls.
 //
 // PKCE is what makes the flow safe on a machine-local redirect. The consent URL carries the SHA-256
-// of a verifier this process minted and holds in memory; the token call carries the verifier itself,
-// so a code intercepted on the loopback hop is worth nothing without the process that minted it. The
-// Google client is a Desktop client, whose secret is not a secret and whose loopback redirect allows
-// any port; the Microsoft application is a public client and has no secret at all.
+// of a verifier this process minted and holds in memory; the token call carries the verifier
+// itself, so a code intercepted on the loopback hop is worth nothing without the process that
+// minted it. The Google client is a Desktop client, whose secret is not a secret and whose loopback
+// redirect allows any port; the Microsoft application is a public client and has no secret at all.
 //
 // The kind is what a connector differs by: it picks the scopes asked for and the callback route the
 // provider is sent to. A calendar consent therefore never carries mail rights and a mail consent
@@ -128,11 +128,11 @@ export class ConnectStates {
 
     /**
      * The consent a state names, or null when there is none. Three things guard it: an entry is
-     * taken once, since it is removed as it is read, so a code replayed against it finds nothing; an
-     * entry past its ten minutes was already dropped by the prune above; and each candidate of the
-     * same length is compared with timingSafeEqual rather than with ===, so the comparison of one
-     * candidate does not end early on the first differing byte. The walk itself is over the map in
-     * insertion order and its length is the number of consents open, which this does not hide.
+     * taken once, since it is removed as it is read, so a code replayed against it finds nothing;
+     * an entry past its ten minutes was already dropped by the prune above; and each candidate of
+     * the same length is compared with timingSafeEqual rather than with ===, so the comparison of
+     * one candidate does not end early on the first differing byte. The walk itself is over the map
+     * in insertion order and its length is the number of consents open, which this does not hide.
      */
     take(state: string): Pending | null {
         this.#prune();
@@ -154,7 +154,9 @@ export class ConnectStates {
     }
 }
 
-/** The consent page a reader is sent to: the kind's scopes, the state, the challenge, the loopback. */
+/**
+ * The consent page a reader is sent to: the kind's scopes, the state, the challenge, the loopback.
+ */
 export function consentUrl(
     kind: ConnectKind,
     credentials: Credentials,

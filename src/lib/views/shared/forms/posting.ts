@@ -7,7 +7,7 @@ import { hrefOf } from '$lib/state/boards/collection';
 /**
  * The web page an address names, or nothing for a value that names no web page. A value written
  * without its scheme is one, since `hrefOf` puts `https://` in front of a host; a hub path and any
- * other scheme are not, which is what these cards drew before.
+ * other scheme are not.
  */
 export function posting(value: string): string | undefined {
     const held = value.trim();

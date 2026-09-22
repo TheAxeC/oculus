@@ -1,6 +1,6 @@
 // What the form specs share: the ui store's per-instance records as the browser's own storage holds
-// them, the keys of those that hold entry form drafts, and a tab switched away from and back to, with
-// the view checked to be gone in between, since a pane mounts only its active tab.
+// them, the keys of those that hold entry form drafts, and a tab switched away from and back to,
+// with the view checked to be gone in between, since a pane mounts only its active tab.
 
 import { expect, type Locator, type Page } from '@playwright/test';
 import { t, tabNamed } from './words.ts';

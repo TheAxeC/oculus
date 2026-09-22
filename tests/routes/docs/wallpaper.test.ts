@@ -142,7 +142,9 @@ describe('the response', () => {
 });
 
 describe('the configured settings', () => {
-    /** An engine directory of this case's own: its config folder, its appearance and its local.yml. */
+    /**
+     * An engine directory of this case's own: its config folder, its appearance and its local.yml.
+     */
     function fixture(body: string): { engine: string; hub: string } {
         const root = scratchDir('oculus-wallpaper-config-');
         expect(resolve(root).startsWith(resolve(tmpdir()) + sep)).toBe(true);

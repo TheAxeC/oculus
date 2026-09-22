@@ -53,7 +53,9 @@ export function urlOf(folder: string, path: string): string {
     return `/api/file/hub/${parts.join('/')}`;
 }
 
-/** Open a registered collection or registry view at one label, and nothing when none is registered. */
+/**
+ * Open a registered collection or registry view at one label, and nothing when none is registered.
+ */
 export function goto(client: ClientState, view: string, label: string): void {
     if (client.registry.viewFor(view) !== undefined) {
         client.layout.openView(view, { label });
@@ -71,8 +73,8 @@ export function openDocument(client: ClientState, folder: string, path: string):
 
 /**
  * The slide the deck opens at for one project: the first of the slides its PRESENT.md declares, and
- * nothing for a project that declares none. It is the whole of what the card's deck control decides,
- * so which slide a card opens is a plain call rather than a rendered page.
+ * nothing for a project that declares none. It is the whole of what the card's deck control
+ * decides, so which slide a card opens is a plain call rather than a rendered page.
  */
 export function deckSlideOf(project: BoardItem['project']): string | null {
     return (project.present ?? [])[0]?.id ?? null;

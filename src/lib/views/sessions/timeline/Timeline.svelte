@@ -55,7 +55,10 @@
 
     let column: HTMLDivElement | undefined = $state();
 
-    /** The session on screen. A change to it is what makes the column fresh and sends it to the foot. */
+    /**
+     * The session on screen. A change to it is what makes the column fresh and sends it to the
+     * foot.
+     */
     let shown = '';
 
     $effect(() => {

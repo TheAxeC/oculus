@@ -3,11 +3,11 @@
 // view like that asks ui/frame/Pane.svelte for the tint; a view that draws cards, lanes or frames
 // of its own does not, because its own surfaces are then the one translucent layer.
 //
-// Which views are which is read off the sources rather than listed here: a view is bare when neither
-// it nor any partial it renders declares a wallpaper surface or renders a Card. A partial the view
-// renders with `surface={false}` paints nothing for that view, so a view whose only surface was that
-// partial's is bare and asks. So a new bare view fails this until it asks for the tint, and a view
-// that grows a card of its own fails until it stops asking.
+// Which views are which is read off the sources rather than listed here: a view is bare when
+// neither it nor any partial it renders declares a wallpaper surface or renders a Card. A partial
+// the view renders with `surface={false}` paints nothing for that view, so a view whose only
+// surface was that partial's is bare and asks. So a new bare view fails this until it asks for the
+// tint, and a view that grows a card of its own fails until it stops asking.
 //
 // The audit is a function of the sources it is given, so the two sides of the rule are also driven
 // over a synthetic pair below rather than only over whatever the tree happens to hold.
@@ -48,7 +48,9 @@ function css(source: string): string {
         .replace(/\/\*[\s\S]*?\*\//g, ' ');
 }
 
-/** What the audit needs of one component: what it paints, what it renders, what it renders it with. */
+/**
+ * What the audit needs of one component: what it paints, what it renders, what it renders it with.
+ */
 type Read = {
     /** Whether it keeps a surface of its own over the picture. */
     surface: boolean;
@@ -112,7 +114,9 @@ function bare(file: string, held: Map<string, Read>, seen = new Set<string>()): 
     return source.partials.every((partial) => bare(partial, held, seen));
 }
 
-/** The two ways the rule is broken: a bare view that does not ask, and a surfaced view that does. */
+/**
+ * The two ways the rule is broken: a bare view that does not ask, and a surfaced view that does.
+ */
 function faults(held: Map<string, Read>): { missing: string[]; extra: string[] } {
     const boxes = [...held.entries()].filter(([, source]) => source.pane);
     return {

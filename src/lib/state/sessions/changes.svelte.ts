@@ -1,14 +1,14 @@
 // Layer 2, client state. What the History view knows about the change log.
 //
 // The log is a machine-local file and is not in the snapshot, so it is fetched from GET
-// /api/changes: one page on the first read, an older page each time the reader asks for one, and the
-// whole list again after an undo. The wire shape is declared here rather than imported, since the
-// boundary table of DESIGN.md lets `state/` import `data/model` and nothing of `server/`;
+// /api/changes: one page on the first read, an older page each time the reader asks for one, and
+// the whole list again after an undo. The wire shape is declared here rather than imported, since
+// the boundary table of DESIGN.md lets `state/` import `data/model` and nothing of `server/`;
 // server/git/changes.ts holds the same shape on its own side.
 //
 // The fetch is scheduled on a microtask rather than run inside the call, so reading this from a
-// $derived never writes state while a derived is running, and it is only ever made in the browser: a
-// server-rendered page holds nothing and asks for nothing.
+// $derived never writes state while a derived is running, and it is only ever made in the browser:
+// a server-rendered page holds nothing and asks for nothing.
 
 /** One recorded write, as the endpoint answers it. */
 export type Change = {

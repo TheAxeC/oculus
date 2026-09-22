@@ -68,7 +68,9 @@ export function createLatex(
 ): LatexStore {
     const held: Record<string, LatexState | undefined> = $state({});
 
-    /** The terminal each project is waiting on, by project id. A rune: the ask is derived from it. */
+    /**
+     * The terminal each project is waiting on, by project id. A rune: the ask is derived from it.
+     */
     const waiting: Record<string, string | undefined> = $state({});
 
     /** What each held id was fetched at. Not reactive: only requests read it. */
@@ -88,8 +90,8 @@ export function createLatex(
     }
 
     /**
-     * What the held answer belongs to. A project waiting on no terminal has one answer, whatever the
-     * sessions payload does; one waiting on a build asks again on every push until it has gone.
+     * What the held answer belongs to. A project waiting on no terminal has one answer, whatever
+     * the sessions payload does; one waiting on a build asks again on every push until it has gone.
      */
     function signature(id: string): string {
         const terminal = waiting[id];
@@ -167,11 +169,12 @@ export function createLatex(
 
     /**
      * Stop waiting once the terminal has left the list, deciding from the signature the answer was
-     * fetched at rather than from the list as it stands now. An answer fetched before the list moved
-     * is one build behind: the read that would have asked again while it was out was dropped by the
-     * in-flight guard, so the signature it was asked at is cleared and the next read asks again. The
-     * answer fetched at the signature that no longer holds the terminal is the one that settles, and
-     * clearing the signature with the wait is what stops the next read asking a third time.
+     * fetched at rather than from the list as it stands now. An answer fetched before the list
+     * moved is one build behind: the read that would have asked again while it was out was dropped
+     * by the in-flight guard, so the signature it was asked at is cleared and the next read asks
+     * again. The answer fetched at the signature that no longer holds the terminal is the one that
+     * settles, and clearing the signature with the wait is what stops the next read asking a third
+     * time.
      */
     function settle(id: string, at: string): void {
         const terminal = waiting[id];

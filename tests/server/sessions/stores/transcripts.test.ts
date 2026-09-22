@@ -137,7 +137,9 @@ function turn(stamp: string, millis = 1200): Json {
     };
 }
 
-/** One temporary fixture: a store with one transcript, a registry, a cache and an overrides file. */
+/**
+ * One temporary fixture: a store with one transcript, a registry, a cache and an overrides file.
+ */
 class Fixture {
     root: string;
     store: string;
@@ -680,7 +682,9 @@ describe('the incremental read', () => {
 });
 
 describe('the live registry', () => {
-    /** A transcript whose tail reads as mid-turn, so a registry status has something to override. */
+    /**
+     * A transcript whose tail reads as mid-turn, so a registry status has something to override.
+     */
     function midTurn(f: Fixture): void {
         f.write([
             human('2026-01-01T10:00:00.000Z', 'go'),

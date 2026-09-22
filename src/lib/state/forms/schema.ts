@@ -8,8 +8,8 @@
 // change.
 //
 // The current values come from the snapshot's Project, which carries what the model declares and no
-// more. Eleven of the schema's fields are not in the model (NOT_IN_MODEL below), so the form opens them
-// empty; the write itself handles them like any other, since it reads the manifest from disk.
+// more. Eleven of the schema's fields are not in the model (NOT_IN_MODEL below), so the form opens
+// them empty; the write itself handles them like any other, since it reads the manifest from disk.
 
 import type { Id, Project, Snapshot } from '../../data/model.ts';
 import { isMap, scalar } from '../../data/helpers/guards.ts';
@@ -73,9 +73,9 @@ export function formSections(config: Record<string, unknown>): string[] {
 }
 
 /**
- * Every field of the form, in file order. A field without a `type` or a `section` is still returned,
- * with the empty string for what it does not say, so a schema half edited shows as itself rather
- * than as a shorter form.
+ * Every field of the form, in file order. A field without a `type` or a `section` is still
+ * returned, with the empty string for what it does not say, so a schema half edited shows as itself
+ * rather than as a shorter form.
  */
 export function formFields(config: Record<string, unknown>): FormField[] {
     const fields = schemaOf(config).fields;
@@ -154,7 +154,8 @@ export function choicesFor(
 
 /**
  * What the form opens with: the project's current value under each schema field name. The names are
- * the manifest's and the values are the model's, so this is the one place the two vocabularies meet.
+ * the manifest's and the values are the model's, so this is the one place the two vocabularies
+ * meet.
  */
 export function fieldValues(project: Project): Record<string, unknown> {
     const code = project.codeAvailability ?? {};
@@ -204,7 +205,9 @@ export function asList(value: unknown): string[] {
     return [];
 }
 
-/** One value as the text a control shows. A list is one item per line, which `lines` writes back. */
+/**
+ * One value as the text a control shows. A list is one item per line, which `lines` writes back.
+ */
 export function asText(value: unknown): string {
     if (value === undefined || value === null) return '';
     if (Array.isArray(value)) return value.map((one) => scalar(one)).join('\n');

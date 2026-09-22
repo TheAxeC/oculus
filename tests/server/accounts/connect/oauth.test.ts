@@ -80,7 +80,9 @@ function callback(query: string): Request {
     return new Request(`http://127.0.0.1:8791${callbackPath('calendar')}?${query}`);
 }
 
-/** A fetcher answering the token endpoint with one refresh token, and recording what it was sent. */
+/**
+ * A fetcher answering the token endpoint with one refresh token, and recording what it was sent.
+ */
 function tokenFetcher(): { fetcher: Fetcher; forms: URLSearchParams[] } {
     const forms: URLSearchParams[] = [];
     const fetcher = vi.fn<Fetcher>((_url, init) => {

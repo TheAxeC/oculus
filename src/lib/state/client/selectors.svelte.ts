@@ -3,10 +3,10 @@
 // joins anything itself, so what a card shows is decided in one place and tested without a browser.
 //
 // There is no $derived in this file, and that is deliberate. A selector reads the entities store
-// inside the caller's reactive scope, so a component writing `const items = $derived(board(preset))`
-// gets a derived that re-runs when the snapshot changes, exactly as if the join were written in the
-// component. A $derived created inside a function would be a second derived per call and would say
-// nothing more.
+// inside the caller's reactive scope, so a component writing `const items =
+// $derived(board(preset))` gets a derived that re-runs when the snapshot changes, exactly as if the
+// join were written in the component. A $derived created inside a function would be a second
+// derived per call and would say nothing more.
 
 import {
     BOARDS,
@@ -112,7 +112,9 @@ export function createSelectors(
     layout: LayoutStore,
     selection: SelectionStore
 ): SelectorsStore {
-    /** The merged config the `config` channel delivered, or an empty map before the first message. */
+    /**
+     * The merged config the `config` channel delivered, or an empty map before the first message.
+     */
     function configMap(): Record<string, unknown> {
         return entities.config()?.config ?? {};
     }
@@ -127,7 +129,8 @@ export function createSelectors(
 
     /**
      * Each extension a file may carry to be offered to its program, with the application it opens
-     * in: `open.program_ext` of config/behavior.yml, and nothing until the config channel has spoken.
+     * in: `open.program_ext` of config/behavior.yml, and nothing until the config channel has
+     * spoken.
      */
     function programAppsOf(): ProgramApps {
         return programApps(configMap()) ?? {};
@@ -139,8 +142,8 @@ export function createSelectors(
     }
 
     /**
-     * The projects of one board, joined and sorted. Before the first snapshot there are none, which is
-     * the empty board the view shows its empty state for.
+     * The projects of one board, joined and sorted. Before the first snapshot there are none, which
+     * is the empty board the view shows its empty state for.
      */
     function board(preset: BoardPreset): BoardItem[] {
         const snapshot = entities.portfolio();
@@ -149,7 +152,8 @@ export function createSelectors(
 
     /**
      * The strip above one board, over the board's own projects and the venue registry they aim at.
-     * Before the first snapshot the venues are empty, which is a strip of zeroes and no venue chips.
+     * Before the first snapshot the venues are empty, which is a strip of zeroes and no venue
+     * chips.
      */
     function boardStats(items: BoardItem[]): BoardStats {
         return stats(items, entities.portfolio()?.entities.venues ?? {}, configMap());
@@ -167,16 +171,20 @@ export function createSelectors(
         return snapshot === null ? [] : disseminated(snapshot, id);
     }
 
-    /** The domains registry as a form's choices, for the one field of the new-idea form that has any. */
+    /**
+     * The domains registry as a form's choices, for the one field of the new-idea form that has
+     * any.
+     */
     function domainChoices(): Choice[] {
         const domains = entities.portfolio()?.entities.domains ?? {};
         return Object.values(domains).map((one) => ({ id: one.id, label: one.title }));
     }
 
     /**
-     * The hub's own absolute path, or the empty string before the first snapshot. A project carries its
-     * manifest's absolute path and its folder relative to the hub, so the root is the one less the
-     * other and no channel has to carry it. The terminal view offers it as a place to start one in.
+     * The hub's own absolute path, or the empty string before the first snapshot. A project carries
+     * its manifest's absolute path and its folder relative to the hub, so the root is the one less
+     * the other and no channel has to carry it. The terminal view offers it as a place to start one
+     * in.
      */
     function hubRoot(): string {
         const snapshot = entities.portfolio();
@@ -191,9 +199,10 @@ export function createSelectors(
     }
 
     /**
-     * What the sessions facet says about one project: a session running in its folder now, a session in
-     * the payload's two-day window with none running, or none at all. Every session the payload holds is
-     * inside that window, which is why there is nothing to compare a date against here.
+     * What the sessions facet says about one project: a session running in its folder now, a
+     * session in the payload's two-day window with none running, or none at all. Every session the
+     * payload holds is inside that window, which is why there is nothing to compare a date against
+     * here.
      */
     function sessionsOf(project: Project): string {
         const rows = sessionsForProject(folderOf(project));
@@ -202,10 +211,10 @@ export function createSelectors(
     }
 
     /**
-     * One collection of the snapshot, by the key its file is read under, or null when the snapshot does
-     * not carry it: before the first message, and for a collection key that names a registry, which
-     * normalise leaves out. The collection view is registered once per key and reads its own by the id
-     * of the view it was mounted as, so this is the whole of its join.
+     * One collection of the snapshot, by the key its file is read under, or null when the snapshot
+     * does not carry it: before the first message, and for a collection key that names a registry,
+     * which normalise leaves out. The collection view is registered once per key and reads its own
+     * by the id of the view it was mounted as, so this is the whole of its join.
      */
     function collectionOf(key: string): Collection | null {
         const snapshot = entities.portfolio();
@@ -214,11 +223,11 @@ export function createSelectors(
     }
 
     /**
-     * One project as a board card shows it, whichever board holds its tier. The project view draws the
-     * same card as the board does and has no board of its own, so the preset is found by the project's
-     * tier rather than by a view id; a tier no board claims falls back to the first board, exactly as
-     * presetFor does with a view id it does not know, and its project is still joined, so a software
-     * project opens as a card in its own tab although no board lists it.
+     * One project as a board card shows it, whichever board holds its tier. The project view draws
+     * the same card as the board does and has no board of its own, so the preset is found by the
+     * project's tier rather than by a view id; a tier no board claims falls back to the first
+     * board, exactly as presetFor does with a view id it does not know, and its project is still
+     * joined, so a software project opens as a card in its own tab although no board lists it.
      */
     function boardItemOf(id: Id): BoardItem | null {
         const snapshot = entities.portfolio();
@@ -231,15 +240,19 @@ export function createSelectors(
         return boardItemFor(snapshot, project, preset, sessionsOf);
     }
 
-    /** One project of the snapshot, or null before the first one arrives and for an id it does not hold. */
+    /**
+     * One project of the snapshot, or null before the first one arrives and for an id it does not
+     * hold.
+     */
     function projectOf(id: Id): Project | null {
         return entities.portfolio()?.entities.projects[id] ?? null;
     }
 
     /**
-     * Every project of the snapshot, in the order the scan found them. The collection view joins the
-     * entries of a file to them: which projects name a funding scheme, a collaborator or an entry's
-     * `related:` id, which of them no scheme covers, and what each of them says about its own code.
+     * Every project of the snapshot, in the order the scan found them. The collection view joins
+     * the entries of a file to them: which projects name a funding scheme, a collaborator or an
+     * entry's `related:` id, which of them no scheme covers, and what each of them says about its
+     * own code.
      */
     function projects(): Project[] {
         const snapshot = entities.portfolio();
@@ -276,16 +289,19 @@ export function createSelectors(
         return formSections(configMap());
     }
 
-    /** What one field of choices may be set to, over the snapshot and the vocabulary as they stand. */
+    /**
+     * What one field of choices may be set to, over the snapshot and the vocabulary as they stand.
+     */
     function fieldChoices(field: FormField): Choice[] {
         return choicesFor(field, entities.portfolio(), configMap());
     }
 
-    // ------------------------------------------------------------------ sessions
-    // The joins over the `sessions` and `git` payloads. The tree the server grouped is what every one of
-    // them reads: a record in `records` carries no workspace and no area, and those are the two things a
-    // session view most needs, so a lookup by id answers with the grouped session rather than the bare
-    // record. Every session of the payload is in the tree, so nothing is lost by reading it there.
+    // ------------------------------------------------------------------ sessions The joins over
+    // the `sessions` and `git` payloads. The tree the server grouped is what every one of them
+    // reads: a record in `records` carries no workspace and no area, and those are the two things a
+    // session view most needs, so a lookup by id answers with the grouped session rather than the
+    // bare record. Every session of the payload is in the tree, so nothing is lost by reading it
+    // there.
 
     /** The context window a meter measures against, `context_window` in config/behavior.yml. */
     function contextWindow(): number {
@@ -302,7 +318,9 @@ export function createSelectors(
         return found;
     }
 
-    /** How many sessions of the payload carry an unanswered permission prompt, for the tab's title. */
+    /**
+     * How many sessions of the payload carry an unanswered permission prompt, for the tab's title.
+     */
     function waitingCount(): number {
         let count = 0;
         for (const session of grouped()) {
@@ -316,16 +334,18 @@ export function createSelectors(
         return count;
     }
 
-    /** One session by id, with where it was grouped, or null for an id the payload does not hold. */
+    /**
+     * One session by id, with where it was grouped, or null for an id the payload does not hold.
+     */
     function sessionById(id: string | null): GroupedSession | null {
         if (id === null || id === '') return null;
         return grouped().find((session) => session.id === id) ?? null;
     }
 
     /**
-     * The session a view instance shows: the id its own state pins, and the workbench's selection when
-     * it pins none. A pinned or selected session the payload no longer holds is null, which is the empty
-     * state a view draws.
+     * The session a view instance shows: the id its own state pins, and the workbench's selection
+     * when it pins none. A pinned or selected session the payload no longer holds is null, which is
+     * the empty state a view draws.
      */
     function sessionFor(instanceId: string): GroupedSession | null {
         const pinned = pinnedSession(layout.instanceLayoutState(instanceId));
@@ -333,8 +353,8 @@ export function createSelectors(
     }
 
     /**
-     * The workspace tree, with the sessions the user dismissed taken out of it. An area left with no
-     * session, and a workspace left with no area, are dropped as well, so nothing draws an empty
+     * The workspace tree, with the sessions the user dismissed taken out of it. An area left with
+     * no session, and a workspace left with no area, are dropped as well, so nothing draws an empty
      * heading. Asking for the dismissed ones gives the tree exactly as the payload holds it.
      */
     function sessionsByWorkspace(includeDismissed = false): Workspace[] {
@@ -365,10 +385,11 @@ export function createSelectors(
     }
 
     /**
-     * The areas a session in one workspace may be pinned to by hand: the known areas of the grouping,
-     * plus every project folder of the snapshot that no session has touched yet, which is why a folder
-     * with no session of its own is still offered. The snapshot's folders join only for the workspace
-     * that is the hub itself, since a folder outside it is no project of the portfolio.
+     * The areas a session in one workspace may be pinned to by hand: the known areas of the
+     * grouping, plus every project folder of the snapshot that no session has touched yet, which is
+     * why a folder with no session of its own is still offered. The snapshot's folders join only
+     * for the workspace that is the hub itself, since a folder outside it is no project of the
+     * portfolio.
      */
     function pinnableAreas(workspace: string): Area[] {
         const known = knownAreas(workspace);
@@ -400,8 +421,9 @@ export function createSelectors(
     }
 
     /**
-     * Every root the `git` channel carries, in the order the server watched them, which is the order
-     * the file browser lists its roots in and therefore the order the Repositories view draws.
+     * Every root the `git` channel carries, in the order the server watched them, which is the
+     * order the file browser lists its roots in and therefore the order the Repositories view
+     * draws.
      */
     function gitRoots(): string[] {
         const payload = entities.git();
@@ -409,8 +431,9 @@ export function createSelectors(
     }
 
     /**
-     * The live sessions holding one path open, other than the one asking. It is what the "also open"
-     * mark on a touched file names: two agents editing one file is the thing worth seeing at once.
+     * The live sessions holding one path open, other than the one asking. It is what the "also
+     * open" mark on a touched file names: two agents editing one file is the thing worth seeing at
+     * once.
      */
     function touchers(path: string, exclude: string | null = null): GroupedSession[] {
         if (path === '') return [];
@@ -423,10 +446,10 @@ export function createSelectors(
     }
 
     /**
-     * The sessions working in one project's absolute folder, whether they were filed there or are only
-     * sitting in it: the area the grouping chose, or the working directory itself. A session the reader
-     * dismissed is not one of them, so the card's row and the sessions facet count what the sessions
-     * list shows.
+     * The sessions working in one project's absolute folder, whether they were filed there or are
+     * only sitting in it: the area the grouping chose, or the working directory itself. A session
+     * the reader dismissed is not one of them, so the card's row and the sessions facet count what
+     * the sessions list shows.
      */
     function sessionsForProject(folder: string): GroupedSession[] {
         if (folder === '') return [];

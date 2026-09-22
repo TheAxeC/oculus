@@ -1,5 +1,6 @@
 <script lang="ts">
-    // Layer 3, view partial. The log box owns loading, output, empty, and failure states while its controls repeat or close the selected tail.
+    // Layer 3, view partial. The log box owns loading, output, empty, and failure states while its
+    // controls repeat or close the selected tail.
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { t } from '$lib/state/words/text';
     let {
@@ -13,7 +14,9 @@
         id: string;
         status: string;
         output: string;
-        /** Whether the cluster is answering; the tail runs an ssh command, so it waits until it is. */
+        /**
+         * Whether the cluster is answering; the tail runs an ssh command, so it waits until it is.
+         */
         live: boolean;
         onrefresh: () => void;
         onclose: () => void;

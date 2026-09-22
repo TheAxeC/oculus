@@ -94,7 +94,8 @@ describe('the source editor', () => {
             props: { instance }
         }).body;
         expect(restored).toContain('unsaved working copy');
-        // the draft is the unsaved working copy, which is what the editor opens on rather than the saved text
+        // the draft is the unsaved working copy, which is what the editor opens on rather than the
+        // saved text
         expect(restored).not.toContain('saved original');
         expect(instanceState(instance.id)).toMatchObject({
             text: 'unsaved working copy',
@@ -170,8 +171,8 @@ describe('the source editor', () => {
         expect(tab('notes.md')).not.toContain(words);
     });
 
-    // The mirror is the code window's highlighter, so a file being written is coloured exactly as the
-    // same file shown read only is, for every language the highlighter has registered.
+    // The mirror is the code window's highlighter, so a file being written is coloured exactly as
+    // the same file shown read only is, for every language the highlighter has registered.
     it('paints the mirror of a writable file through the highlighter of the code window', () => {
         const painted = (path: string, text: string): string =>
             render(Editor, {
@@ -208,8 +209,8 @@ describe('the source editor', () => {
         expect(plain).toContain('&lt;one&gt;');
     });
 
-    // The cap is a key of the configuration rather than a constant, so a client that has been sent a
-    // smaller one paints the same file plain, and one sent nothing at all paints plain as well.
+    // The cap is a key of the configuration rather than a constant, so a client that has been sent
+    // a smaller one paints the same file plain, and one sent nothing at all paints plain as well.
     it('paints under the cap the configuration it was sent carries, and plain before there is one', () => {
         const text = 'import sys  # <one>\n'.repeat(4);
         const painted = (): string =>
@@ -357,7 +358,8 @@ describe('a file the source tab may not write', () => {
 
         expect(body).toContain(catalog['source.truncated']);
         expect(body).toContain('data-fs-code="big.log"');
-        // the read was cut, so what is drawn is the code window rather than an editor over half a file
+        // the read was cut, so what is drawn is the code window rather than an editor over half a
+        // file
         expect(body).not.toContain('data-source-editor');
     });
 
@@ -424,7 +426,7 @@ describe('the code window', () => {
         expect(body).toContain('aria-label="code/run.py, read only"');
     });
 
-    it('draws a language it has none for as plain escaped text', () => {
+    it('audits that draws a language it has none for as plain escaped text', () => {
         expect(codeHtml('a < b\n', 'klingon')).toBe('a &lt; b\n');
     });
 });

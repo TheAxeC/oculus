@@ -37,7 +37,9 @@ export type BoardPreset = {
     typeOrder: string[];
     /** The label mode the board starts in, from config/behavior.yml. */
     labels: LabelMode;
-    /** The search box's placeholder from config/layout.yml, or the empty string when it has none. */
+    /**
+     * The search box's placeholder from config/layout.yml, or the empty string when it has none.
+     */
     search: string;
 };
 
@@ -130,7 +132,9 @@ export type BoardStats = {
     venues: VenueCount[];
 };
 
-/** One venue of the stats strip: how many of the board's projects aim at it, and whether that warns. */
+/**
+ * One venue of the stats strip: how many of the board's projects aim at it, and whether that warns.
+ */
 export type VenueCount = {
     id: Id;
     /** The registry's short name, which is what the chip carries. */
@@ -138,7 +142,9 @@ export type VenueCount = {
     /** The registry's full name, which is what the chip's tooltip carries. */
     name: string;
     count: number;
-    /** True from `venue_conc_warn` of config/behavior.yml up: too much of the board on one venue. */
+    /**
+     * True from `venue_conc_warn` of config/behavior.yml up: too much of the board on one venue.
+     */
     warn: boolean;
 };
 
@@ -331,7 +337,9 @@ export function bucketOf(project: Project, rollup: RollupBucket[]): string {
     return '';
 }
 
-/** The venue as the card writes it: name, quartile, JIF and cost, in that order, joined by a bar. */
+/**
+ * The venue as the card writes it: name, quartile, JIF and cost, in that order, joined by a bar.
+ */
 export function venueText(venue: Venue): string {
     const parts = [venue.name];
     if (venue.quartile !== undefined && venue.quartile !== '') parts.push(venue.quartile);

@@ -84,7 +84,9 @@ export type InboxThread = {
     subject: string;
     /** When the newest message arrived, as the provider gave it. */
     received: string;
-    /** The provider's own one-line preview, which is the only message text that leaves the server. */
+    /**
+     * The provider's own one-line preview, which is the only message text that leaves the server.
+     */
     snippet: string;
     /** How many messages the thread holds. */
     messages: number;

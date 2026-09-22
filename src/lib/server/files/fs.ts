@@ -2,25 +2,25 @@
 // root, the workspaces the reader saved on this machine, and the two things the reader keeps beside
 // them, their own bookmarks and their scratch notes.
 //
-// The bookmarks and the notes are read here and written through this route because they are the file
-// browser's: a bookmark is a file under a root and a note is a file in a folder. What each one is
-// kept in is its own module, fs/bookmarks.ts and fs/notes.ts; a bookmark is written by the collection
-// write path instead, since it is a collection file and the entry form edits it.
+// The bookmarks and the notes are read here and written through this route because they are the
+// file browser's: a bookmark is a file under a root and a note is a file in a folder. What each one
+// is kept in is its own module, fs/bookmarks.ts and fs/notes.ts; a bookmark is written by the
+// collection write path instead, since it is a collection file and the entry form edits it.
 //
 // A listing is one level deep and read at the call. The tree asks for a folder when the folder is
-// opened, so nothing walks a root: a home directory with a hundred thousand files under it costs one
-// readdir of whatever folder is on screen. Dotfiles and the three build folders are left out because
-// a tree that is mostly node_modules is a tree nobody reads; the file route still serves them, since
-// what is served and what is offered are different questions. A symbolic link is resolved and then
-// listed as the kind its target is, under the same rule the file route serves one by: inside the
-// root it is an ordinary entry, and pointing out of the root it is left out.
+// opened, so nothing walks a root: a home directory with a hundred thousand files under it costs
+// one readdir of whatever folder is on screen. Dotfiles and the three build folders are left out
+// because a tree that is mostly node_modules is a tree nobody reads; the file route still serves
+// them, since what is served and what is offered are different questions. A symbolic link is
+// resolved and then listed as the kind its target is, under the same rule the file route serves one
+// by: inside the root it is an ordinary entry, and pointing out of the root it is left out.
 //
-// A workspace is a name and a list of roots, saved at ~/.oculus/workspaces.json. The hub key and the
-// keys the configuration names are reserved: a saved root carrying one is dropped on the read and
-// named back to the page, so a saved file can only ever add a root and never redirect one the rest of
-// the application reads. The file is written whole and atomically, as the other two ~/.oculus files
-// are, because it holds work the reader did by hand, and the writes of one process are chained so two
-// requests in flight cannot lose one another's change.
+// A workspace is a name and a list of roots, saved at ~/.oculus/workspaces.json. The hub key and
+// the keys the configuration names are reserved: a saved root carrying one is dropped on the read
+// and named back to the page, so a saved file can only ever add a root and never redirect one the
+// rest of the application reads. The file is written whole and atomically, as the other two
+// ~/.oculus files are, because it holds work the reader did by hand, and the writes of one process
+// are chained so two requests in flight cannot lose one another's change.
 //
 // The fold from a saved file to the roots on screen is pure: workspaceRoots takes the configured
 // roots and the object the file parsed to, and reads nothing. The reading is readSaved's alone.
@@ -45,15 +45,18 @@ export type SavedWorkspace = { name: string; roots: Root[] };
 
 /**
  * The whole of ~/.oculus/workspaces.json as it was read: which workspace is current, every saved
- * one, and the keys the read dropped because the configuration reserves them. Only the first two are
- * written back.
+ * one, and the keys the read dropped because the configuration reserves them. Only the first two
+ * are written back.
  */
 export type Saved = { current: string; workspaces: SavedWorkspace[]; dropped: string[] };
 
 /** One root as the page reads it: `fixed` is a root a removal refuses. */
 export type ShownRoot = Root & { fixed: boolean };
 
-/** What a GET with no root answers: the workspace in force, every one there is, and what was dropped. */
+/**
+ * What a GET with no root answers: the workspace in force, every one there is, and what was
+ * dropped.
+ */
 export type WorkspacesAnswer = {
     current: string;
     workspaces: { name: string; roots: ShownRoot[] }[];
@@ -81,7 +84,10 @@ export function fsWrites(): FsWrites {
     return { chain: Promise.resolve() };
 }
 
-/** What one request needs: the files to read and write, the roots no workspace may touch, and the chain. */
+/**
+ * What one request needs: the files to read and write, the roots no workspace may touch, and the
+ * chain.
+ */
 export type FsTarget = {
     /** The workspaces file this request reads and writes. */
     file: string;
@@ -139,7 +145,9 @@ export function readSaved(file: string, reserved: string[] = []): Saved {
     return { current: known ? current : DEFAULT_WORKSPACE, workspaces, dropped };
 }
 
-/** Write the file whole, through the same atomic replace the other ~/.oculus files are written by. */
+/**
+ * Write the file whole, through the same atomic replace the other ~/.oculus files are written by.
+ */
 export function writeSaved(file: string, saved: Saved): void {
     writeJsonAtomic(file, { current: saved.current, workspaces: saved.workspaces });
 }
@@ -171,7 +179,9 @@ export function workspaceRoots(fixed: Root[], saved: Saved, name: string): Shown
     return shown;
 }
 
-/** The roots the file route adds to the configured ones: the workspace's own, or the default folder. */
+/**
+ * The roots the file route adds to the configured ones: the workspace's own, or the default folder.
+ */
 export function addedRoots(fixed: Root[], saved: Saved): Root[] {
     return workspaceRoots(fixed, saved, saved.current)
         .filter((one) => !fixed.some((held) => held.key === one.key))
@@ -302,8 +312,8 @@ export function workspacesAnswer(into: FsTarget, saved: Saved): WorkspacesAnswer
 
 /**
  * GET /api/fs: one of five reads, chosen by what the query names. `bookmarks` answers the reader's
- * own bookmarks and their schema, `notes` every scratch note, `note` one note's own text, a root and
- * a path the entries of that directory, and nothing at all the workspaces.
+ * own bookmarks and their schema, `notes` every scratch note, `note` one note's own text, a root
+ * and a path the entries of that directory, and nothing at all the workspaces.
  *
  * A read, so it carries no token; it is still refused to another origin, since any page open in the
  * browser can address this server. One file is read, whichever answer is given.
@@ -428,7 +438,9 @@ function removeNote(fields: Record<string, unknown>, into: FsTarget): Response {
     return json(200, { ok: true, changed: ['note'], refused: [] });
 }
 
-/** One action, read and written behind the process's chain so no change is lost to another's write. */
+/**
+ * One action, read and written behind the process's chain so no change is lost to another's write.
+ */
 function act(action: string, fields: Record<string, unknown>, into: FsTarget): Response {
     if (action === 'note-save') return writeNote(fields, into);
     if (action === 'note-delete') return removeNote(fields, into);

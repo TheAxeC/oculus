@@ -1,4 +1,5 @@
-// Layer 2, server. The injected ssh runner for Live HPC. Its small result shape makes every caller testable without opening a connection.
+// Layer 2, server. The injected ssh runner for Live HPC. Its small result shape makes every caller
+// testable without opening a connection.
 import { spawn } from 'node:child_process';
 
 export type RunResult = { stdout: string; stderr: string; code: number };

@@ -15,9 +15,9 @@
     // Layer 3, view. Oculus's own manual: tools/oculus/HELP.md, drawn as prose.
     //
     // The manual is a file beside DESIGN.md rather than text in the catalog, because it is pages of
-    // prose about the whole tool and a catalog is words a surface draws. It is read through api/docs,
-    // the one route that turns Markdown into HTML, which serves that one path of the engine directory
-    // and nothing else around it.
+    // prose about the whole tool and a catalog is words a surface draws. It is read through
+    // api/docs, the one route that turns Markdown into HTML, which serves that one path of the
+    // engine directory and nothing else around it.
 
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Markdown from '../../shared/prose/Markdown.svelte';

@@ -144,10 +144,15 @@ test('quick add writes a follow-up and the ticker shows it', async ({ page }) =>
     await expect.poll(() => readHubFile(`${BANDITS}/project.yml`), { timeout: 5000 }).toBe(before);
 });
 
-/** The widths every measured case runs at: a wide pane, two the board's columns crowd, and a narrow one. */
+/**
+ * The widths every measured case runs at: a wide pane, two the board's columns crowd, and a narrow
+ * one.
+ */
 const WIDTHS = [1600, 900, 760, 480];
 
-/** The row of the board carrying the most buttons, which is the row a narrowing pane crowds first. */
+/**
+ * The row of the board carrying the most buttons, which is the row a narrowing pane crowds first.
+ */
 async function busiest(page: Page): Promise<Locator> {
     const rows = page.locator('.ticker li');
     await expect(rows.first()).toBeVisible();
@@ -196,7 +201,9 @@ async function drawnOf(row: Locator): Promise<string[]> {
     return last;
 }
 
-/** What a row holds while its buttons wait: the width of its button box, and the room its name has. */
+/**
+ * What a row holds while its buttons wait: the width of its button box, and the room its name has.
+ */
 function atRest(row: Locator): Promise<{ box: number; held: number; name: number; free: number }> {
     return row.evaluate((node) => {
         const line = node.getBoundingClientRect();
@@ -219,7 +226,10 @@ function atRest(row: Locator): Promise<{ box: number; held: number; name: number
     });
 }
 
-/** What an open row draws: what its buttons cover of the name, where they end, and what answers a press. */
+/**
+ * What an open row draws: what its buttons cover of the name, where they end, and what answers a
+ * press.
+ */
 function whileOpen(
     row: Locator
 ): Promise<{ cover: number; spill: number; missed: string[]; drawn: number; all: number }> {
@@ -264,7 +274,7 @@ test('a row keeps its name while its buttons wait, and drawing them covers none 
 }) => {
     await boot(page);
     await openView(page, 'focus', t('views.focus'));
-    // revert: src/lib/ui/display/Ticker.svelte:459 => display: inline-block;
+    // revert: src/lib/ui/display/Ticker.svelte:468 => display: inline-block;
     // Draw the waiting buttons at rest and they take the name's room, which is the cut the reader
     // saw in a narrow pane.
     for (const paint of ['light', 'mocha']) {
@@ -290,7 +300,7 @@ test('a row keeps its name while its buttons wait, and drawing them covers none 
                 .toBe(true);
             await drawnOf(row);
             const open = await whileOpen(row);
-            // revert: src/lib/ui/display/Ticker.svelte:413 => align-self: baseline;
+            // revert: src/lib/ui/display/Ticker.svelte:422 => align-self: baseline;
             // A row that changed height as its buttons came onto the line would move the rows the
             // board's columns hold around it, and the pointer would land on another row.
             expect(
@@ -312,7 +322,7 @@ test('the keyboard walks the buttons a row draws, in the order the row lists the
 }) => {
     await boot(page);
     await openView(page, 'focus', t('views.focus'));
-    // revert: src/lib/ui/display/Ticker.svelte:475 => display: inline-block;
+    // revert: src/lib/ui/display/Ticker.svelte:484 => display: inline-block;
     // Draw the buttons a row has no room for and the walk reaches one the row cannot show.
     for (const wide of WIDTHS) {
         await page.setViewportSize({ width: wide, height: 900 });
@@ -372,7 +382,7 @@ test('a button the keyboard reaches writes what it names, and the row wakes back
     const short = shortOf(TRANSFER);
     const line = page.getByRole('listitem').filter({ hasText: short }).first();
     await expect(line).toBeVisible();
-    // revert: src/lib/ui/display/Ticker.svelte:463 => display: none;
+    // revert: src/lib/ui/display/Ticker.svelte:472 => display: none;
     // Leave a button undrawn while its row is open and the keyboard never reaches it to press it.
     const wanted = t('project.action.snooze_1w');
     await line.locator('.name').focus();
@@ -403,9 +413,9 @@ test('a press at the end of a name reaches the name while the buttons are not dr
 }) => {
     await boot(page);
     await openView(page, 'focus', t('views.focus'));
-    // revert: src/lib/ui/display/Ticker.svelte:459 => position: absolute; right: 0;
+    // revert: src/lib/ui/display/Ticker.svelte:468 => position: absolute; right: 0;
     // Stack the waiting buttons over the row's end instead and the end of a name presses one.
-    // revert: src/lib/ui/display/Ticker.svelte:284 => onpointerdown={reveal ? tap : undefined}
+    // revert: src/lib/ui/display/Ticker.svelte:293 => onpointerdown={reveal ? tap : undefined}
     // Open the row on the press under the finger instead of on the click that press raises, and the
     // buttons arrive before the click is aimed, so the tap presses one of them.
     expect(await page.evaluate(() => matchMedia('(hover: hover)').matches)).toBe(true);
@@ -484,7 +494,7 @@ async function keeping(page: Page): Promise<Locator> {
 test('the button a row keeps is drawn at the row end, waiting or not', async ({ page }) => {
     await boot(page);
     await openView(page, 'focus', t('views.focus'));
-    // revert: src/lib/ui/display/Ticker.svelte:455 => margin-left: 0;
+    // revert: src/lib/ui/display/Ticker.svelte:464 => margin-left: 0;
     // Let the button group follow the name instead of sitting at the row's end, and the kept button
     // lands wherever the name happens to stop.
     for (const wide of WIDTHS) {
@@ -546,7 +556,7 @@ test.describe('on a device with no pointer', () => {
         await boot(page);
         await openView(page, 'focus', t('views.focus'));
         const row = await busiest(page);
-        // revert: src/lib/ui/display/Ticker.svelte:449 => @media (hover: none) {
+        // revert: src/lib/ui/display/Ticker.svelte:458 => @media (hover: none) {
         // Hide the waiting buttons on a device with no pointer and nothing can ever be pressed.
         const drawn = row.locator('.act');
         await expect
@@ -562,8 +572,8 @@ test.describe('on a device with no pointer', () => {
 
 // A device that has a finger and a pointer both. Chrome answers `hover: none` out of the device
 // emulation `hasTouch` turns on, so the taps below are dispatched through the debugging protocol on
-// an ordinary page, which keeps `hover: hover` and with it the rule that leaves a waiting button out
-// of the page until its row is open.
+// an ordinary page, which keeps `hover: hover` and with it the rule that leaves a waiting button
+// out of the page until its row is open.
 type Spot = { x: number; y: number };
 
 /** A finger tap at a point, on a page whose primary pointer is still a mouse. */
@@ -616,7 +626,7 @@ test('the first tap opens a row, the next presses what it lands on, and a tap of
     const tabs = page.locator('[data-pane] [role="tab"]');
     const opened = await tabs.count();
 
-    // revert: src/lib/ui/display/Ticker.svelte:168 => return;
+    // revert: src/lib/ui/display/Ticker.svelte:175 => return;
     // Take a tap in a closed row as an ordinary press and the row's buttons stay out of the page,
     // so the next tap reaches none of them either.
     const name = await centre(row.locator('.name'));
@@ -626,7 +636,8 @@ test('the first tap opens a row, the next presses what it lands on, and a tap of
     await expect(tabs).toHaveCount(opened);
 
     // A tap in another row closes this one and opens that one, and a tap off every row closes
-    // whichever is open: nothing says the finger has moved on, so the next press that misses it does.
+    // whichever is open: nothing says the finger has moved on, so the next press that misses it
+    // does.
     const other = page
         .locator('.ticker li')
         .filter({ hasNotText: short })
@@ -653,7 +664,7 @@ test('the first tap opens a row, the next presses what it lands on, and a tap of
         .poll(() => readHubFile(`${ANOMALY}/project.yml`), { timeout: 5000 })
         .toContain('snooze:');
 
-    // revert: src/lib/ui/display/Ticker.svelte:85 => return held === null ? -1 : 0;
+    // revert: src/lib/ui/display/Ticker.svelte:87 => return held === null ? -1 : 0;
     // revert: src/lib/views/boards/focus/rows.ts:162 => const identity = String(at++);
     // Hold the row a tap opened by a place in the list instead of by the row itself, and the line
     // that moves into that place draws open in its stead.
@@ -692,7 +703,7 @@ test('the pointer and the finger open the same one row, whichever opened it', as
     await expect(two).toBeVisible();
     const open = page.locator('.ticker li.open');
 
-    // revert: src/lib/ui/display/Ticker.svelte:254 => if (false && missed(event.target)) tapped = null;
+    // revert: src/lib/ui/display/Ticker.svelte:263 => if (false && missed(event.target)) tapped = null;
     // Leave the row a tap opened open while the pointer arrives in another, and two rows draw their
     // buttons at once.
     await tapAt(session, await centre(one.locator('.name')));
@@ -703,7 +714,7 @@ test('the pointer and the finger open the same one row, whichever opened it', as
     await expect(open).toHaveCount(1);
     await expect(two).toHaveClass(/open/);
 
-    // revert: src/lib/ui/display/Ticker.svelte:286 => onpointerleave={undefined}
+    // revert: src/lib/ui/display/Ticker.svelte:295 => onpointerleave={undefined}
     // Keep the row the pointer was in open when the finger takes the pointer off the list, and the
     // row a tap then opens is the second one drawing its buttons.
     await tapAt(session, await centre(one.locator('.name')));
@@ -723,7 +734,7 @@ test('a row with no button to draw opens what it names on the first tap', async 
     // This fixture line has a direct destination and therefore needs no trailing control.
     await expect(row.locator('.act')).toHaveCount(0);
 
-    // revert: src/lib/ui/display/Ticker.svelte:172 => if (false) return;
+    // revert: src/lib/ui/display/Ticker.svelte:179 => if (false) return;
     // Open a row that draws nothing and the tap that opened it is spent, so the line takes two taps
     // where the pointer takes one press.
     await tapAt(session, await centre(row.getByRole('button', { name: LEAD })));

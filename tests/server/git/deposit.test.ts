@@ -7,8 +7,9 @@
 // checkout, ~/.oculus, or the network.
 //
 // The last describe is the module's gate, the mirror image of the one over git-write.ts: every
-// argument vector the suite ran is either `-C <path under tmpdir> <enumerated subcommand>` or one of
-// the three `gh` shapes, and the force option appears exactly once in the source of deposit-git.ts.
+// argument vector the suite ran is either `-C <path under tmpdir> <enumerated subcommand>` or one
+// of the three `gh` shapes, and the force option appears exactly once in the source of
+// deposit-git.ts.
 
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
@@ -207,8 +208,9 @@ beforeAll(() => {
     git(seed, 'push', '-q', bare, 'main');
     known.set('beta-code', bare);
 
-    // gamma names its repository the way the hub's deposited manuscripts do: by the url of a deposit
-    // already made, with no `repo` key. The stub does not know the name, so only the url can find it.
+    // gamma names its repository the way the hub's deposited manuscripts do: by the url of a
+    // deposit already made, with no `repo` key. The stub does not know the name, so only the url
+    // can find it.
     const history = join(dir, 'remote', 'gamma-history.git');
     execFileSync('git', ['init', '--bare', '-b', 'main', history]);
     git(seed, 'push', '-q', history, 'main');
@@ -435,7 +437,8 @@ describe('what one gh answer makes the deposit do', () => {
 
         const sent = await push('beta', { mirrors, into, gh: played });
         expect(sent.ok).toBe(true);
-        // The mirror was cloned, so it has a remote: `gh repo create` is not one of the shapes here.
+        // The mirror was cloned, so it has a remote: `gh repo create` is not one of the shapes
+        // here.
         expect(calls.map((one) => one[1])).toEqual(['view', 'edit']);
         expect(sent.output).toBe(url);
         expect(readFileSync(manifestOf('beta'), 'utf8')).toContain(url);

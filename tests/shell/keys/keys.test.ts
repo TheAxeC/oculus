@@ -1,5 +1,5 @@
-// Layer 3, shell test. Pure keyboard routing for the workbench: rail positions, timed chords, cursor directions,
-// scrolling sequences, and the field and overlay guards, without mounting a DOM.
+// Layer 3, shell test. Pure keyboard routing for the workbench: rail positions, timed chords,
+// cursor directions, scrolling sequences, and the field and overlay guards, without mounting a DOM.
 
 import { describe, expect, it } from 'vitest';
 import {

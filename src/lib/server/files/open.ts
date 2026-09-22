@@ -1,22 +1,23 @@
-// Layer 2, server. The authenticated open action for a file or a folder, and the two ways oculus hands
-// anything to macOS `open`.
+// Layer 2, server. The authenticated open action for a file or a folder, and the two ways oculus
+// hands anything to macOS `open`.
 //
-// A requested path is resolved inside one of the roots the file browser serves, with realpath on both
-// ends, before the operating system sees it. The boundary is the roots: a dotfile or a file under a
-// build folder, which the tree leaves out of its listing, is resolved like any other path under a
-// root.
+// A requested path is resolved inside one of the roots the file browser serves, with realpath on
+// both ends, before the operating system sees it. The boundary is the roots: a dotfile or a file
+// under a build folder, which the tree leaves out of its listing, is resolved like any other path
+// under a root.
 //
 // A folder is never opened: it is revealed, `open -R`, which has Finder select it in its parent's
 // window and launches nothing, so an application or installer bundle is shown rather than run. A
 // symlink named like a file that points at a folder is revealed as that folder.
 //
 // A file is opened by the one application `open.program_ext` of config/behavior.yml names for its
-// extension, `open -b <bundle id>`, so neither a per-file Open With choice nor the machine's default
-// for the type decides the program. The extension of the name asked for and of the real name must
-// both have an entry, and the real one's names the application. A listed file is still refused when
-// its mode carries an execute bit, when its first bytes are a Finder bookmark (`book`, four bytes,
-// `mark`), or when its `com.apple.FinderInfo` attribute marks it as an alias, since `open` follows an
-// alias to wherever it points. The map is read at every request, so an edit to it applies at once.
+// extension, `open -b <bundle id>`, so neither a per-file Open With choice nor the machine's
+// default for the type decides the program. The extension of the name asked for and of the real
+// name must both have an entry, and the real one's names the application. A listed file is still
+// refused when its mode carries an execute bit, when its first bytes are a Finder bookmark (`book`,
+// four bytes, `mark`), or when its `com.apple.FinderInfo` attribute marks it as an alias, since
+// `open` follows an alias to wherever it points. The map is read at every request, so an edit to it
+// applies at once.
 
 import { scalar } from '../../data/helpers/guards.ts';
 import { execFile } from 'node:child_process';
@@ -27,21 +28,27 @@ import { hasToken, sameOrigin } from '../core/auth.ts';
 import { HUB_ROOT, resolveRootPath, type Root } from './files.ts';
 
 /**
- * How an `https` address reaches the operating system, for the calendar's and the mail's consent and
- * event links. It is injectable so route tests open nothing.
+ * How an `https` address reaches the operating system, for the calendar's and the mail's consent
+ * and event links. It is injectable so route tests open nothing.
  */
 export type Opener = (target: string) => Promise<void> | void;
 
-/** What the open endpoint hands to the operating system: a file and its application, or a folder. */
+/**
+ * What the open endpoint hands to the operating system: a file and its application, or a folder.
+ */
 export type OpenTarget =
     { kind: 'file'; path: string; app: string } | { kind: 'folder'; path: string };
 
-/** How a file or a folder reaches the operating system. It is injectable so route tests open nothing. */
+/**
+ * How a file or a folder reaches the operating system. It is injectable so route tests open
+ * nothing.
+ */
 export type PathOpener = (target: OpenTarget) => Promise<void> | void;
 
 /**
  * What reads a file's `com.apple.FinderInfo` extended attribute: its bytes, or null when the file
- * carries no such attribute. Any other failure rejects. It is injectable so a test can make it fail.
+ * carries no such attribute. Any other failure rejects. It is injectable so a test can make it
+ * fail.
  */
 export type FinderInfoReader = (path: string) => Promise<Buffer | null>;
 
@@ -146,7 +153,9 @@ function hasBookmarkHead(real: string): boolean {
     }
 }
 
-/** Whether FinderInfo marks a file as an alias. A read that fails for any reason but absence does. */
+/**
+ * Whether FinderInfo marks a file as an alias. A read that fails for any reason but absence does.
+ */
 async function aliasFlagged(real: string, reader: FinderInfoReader): Promise<boolean> {
     let info: Buffer | null;
     try {
@@ -167,9 +176,9 @@ async function safeFile(real: string, reader: FinderInfoReader): Promise<boolean
 }
 
 /**
- * What `open` may be handed for a real path, or null. `asked` is the path as the request named it: a
- * file's asked name and real name must both have an application in the map, and the real name's is
- * the one used. A folder is always revealed. Anything that cannot be read is refused.
+ * What `open` may be handed for a real path, or null. `asked` is the path as the request named it:
+ * a file's asked name and real name must both have an application in the map, and the real name's
+ * is the one used. A folder is always revealed. Anything that cannot be read is refused.
  */
 async function openTarget(
     real: string,
@@ -234,14 +243,16 @@ export async function openable(
 
 /**
  * The arguments `open` is run with: `-b <bundle id> <path>` for a file, `-R <path>` for a folder.
- * `open`'s manual documents no `--` separator, so none is passed; the path is an absolute real path,
- * which starts with `/` and so is never read as an option.
+ * `open`'s manual documents no `--` separator, so none is passed; the path is an absolute real
+ * path, which starts with `/` and so is never read as an option.
  */
 export function openArgs(target: OpenTarget): string[] {
     return target.kind === 'file' ? ['-b', target.app, target.path] : ['-R', target.path];
 }
 
-/** Hand one file to its application or reveal one folder, refusing what `openable` does not take. */
+/**
+ * Hand one file to its application or reveal one folder, refusing what `openable` does not take.
+ */
 export async function macOpenPath(target: OpenTarget): Promise<void> {
     if (!(await openable(target))) throw new Error('open refused');
     await run(OPEN, openArgs(target));

@@ -1,6 +1,6 @@
 // The saved form of a layout: the invariants over a folded split, and the two older envelopes read
-// by migration. A browser that holds a workbench of two trees and a docked panel opens it as the one
-// tree a page now is, and no tab is lost on the way.
+// by migration. A browser that holds a workbench of two trees and a docked panel opens it as the
+// one tree a page now is, and no tab is lost on the way.
 //
 // Nothing here touches localStorage or the DOM: every case reads a hand-built envelope.
 
@@ -181,8 +181,8 @@ describe('the version 2 envelope, read as one tree', () => {
         );
     });
 
-    // A share outside the range a panel could take is normalised rather than refused, since refusing
-    // the envelope would drop every tab of the page.
+    // A share outside the range a panel could take is normalised rather than refused, since
+    // refusing the envelope would drop every tab of the page.
     it('normalises a numeric share the old range would have refused', () => {
         const saved = read({ panelSize: 0.95 });
         expect(saved).toEqual(

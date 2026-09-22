@@ -129,7 +129,7 @@ afterEach(() => vi.unstubAllGlobals());
 afterAll(() => vi.useRealTimers());
 
 describe('the LinkedIn view', () => {
-    it('opens Edit in a source tab using the hub-relative folder and post file', () => {
+    it('audits that opens Edit in a source tab using the hub-relative folder and post file', () => {
         loadLayout({ getItem: () => null, setItem: noop });
         const folder = 'theaxec.github.io/_linkedin';
         const id = openLinkedinSource(client.layout, folder, 'xx-zeta.md');
@@ -150,7 +150,8 @@ describe('the LinkedIn view', () => {
     // control and the card's own control above is the way into the text.
     it('carries no toolbar control over its own source, its cards carrying one each', () => {
         const body = draw('linkedin-source', entries, '', false);
-        // the view is drawn from a folder of one file per post, so there is no one file for a toolbar control to name
+        // the view is drawn from a folder of one file per post, so there is no one file for a
+        // toolbar control to name
         expect(body).not.toContain('data-source-path');
         // and no words offering it either
         expect(body).not.toContain(catalog['views.open_source']);
@@ -286,7 +287,7 @@ describe('the LinkedIn view', () => {
         expect(failed).toContain('theaxec.github.io/_linkedin');
     });
 
-    it('sends the two LinkedIn write bodies through the state helpers', async () => {
+    it('audits that sends the two LinkedIn write bodies through the state helpers', async () => {
         const requests: Record<string, unknown>[] = [];
         vi.stubGlobal('fetch', (_url: string, init: RequestInit) => {
             requests.push(JSON.parse(scalar(init.body)) as Record<string, unknown>);

@@ -124,9 +124,10 @@ export function sessionRecord(hub: HubLike, session: string): SessionRecord | nu
 }
 
 /**
- * The workspace roots the last published `git` payload names. They are what a git write may address:
- * server/git/git-write.ts refuses any other root, so the panel can only ever act on a checkout the
- * sessions views are already showing. An empty list is a process that has published nothing yet.
+ * The workspace roots the last published `git` payload names. They are what a git write may
+ * address: server/git/git-write.ts refuses any other root, so the panel can only ever act on a
+ * checkout the sessions views are already showing. An empty list is a process that has published
+ * nothing yet.
  */
 export function gitRoots(hub: HubLike): string[] {
     const message = hub.latest('git');
@@ -136,7 +137,9 @@ export function gitRoots(hub: HubLike): string[] {
     return Object.keys(payload);
 }
 
-/** One entity map of the last published `portfolio` payload, and nothing when it holds no such map. */
+/**
+ * One entity map of the last published `portfolio` payload, and nothing when it holds no such map.
+ */
 function entityMap(hub: HubLike, kind: string): Record<string, unknown> | null {
     const message = hub.latest('portfolio');
     if (message === undefined) return null;
@@ -155,7 +158,9 @@ export function projectIds(hub: HubLike): string[] {
     return projects === null ? [] : Object.keys(projects);
 }
 
-/** One project in the last published portfolio payload, for a server action scoped by project id. */
+/**
+ * One project in the last published portfolio payload, for a server action scoped by project id.
+ */
 export function project(hub: HubLike, id: string): Project | null {
     const projects = entityMap(hub, 'projects');
     const found = projects === null ? undefined : projects[id];
@@ -163,7 +168,9 @@ export function project(hub: HubLike, id: string): Project | null {
     return isMap(found) ? (found as Project) : null;
 }
 
-/** Every project in the last published portfolio payload, for an action over the whole portfolio. */
+/**
+ * Every project in the last published portfolio payload, for an action over the whole portfolio.
+ */
 export function projects(hub: HubLike): Project[] {
     const held = entityMap(hub, 'projects');
     return held === null
@@ -173,7 +180,9 @@ export function projects(hub: HubLike): Project[] {
               .map((one) => one as Project);
 }
 
-/** Dataset keys in the last portfolio payload, for recovery requests to address by snapshot only. */
+/**
+ * Dataset keys in the last portfolio payload, for recovery requests to address by snapshot only.
+ */
 export function datasetIds(hub: HubLike): string[] {
     const datasets = entityMap(hub, 'datasets');
     return datasets === null ? [] : Object.keys(datasets);

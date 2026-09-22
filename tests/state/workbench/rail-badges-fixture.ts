@@ -1,4 +1,5 @@
-// Layer 2, client-state test fixture. Synthetic board and collection records exercise badge hooks without reading or writing hub data.
+// Layer 2, client-state test fixture. Synthetic board and collection records exercise badge hooks
+// without reading or writing hub data.
 
 import type { Project, Snapshot, Tier } from '../../../src/lib/data/model.ts';
 import type { ClientState } from '../../fixtures/client.ts';
@@ -30,7 +31,10 @@ function project(id: string, tier: Tier, type: string, chips: string[] = []): Pr
     };
 }
 
-/** Two project-board types, three archive outcomes and four coauthor outcomes, including a first-bucket overlap. */
+/**
+ * Two project-board types, three archive outcomes and four coauthor outcomes, including a
+ * first-bucket overlap.
+ */
 export function badgeSnapshot(empty = false): Snapshot {
     const projects = empty
         ? []

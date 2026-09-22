@@ -52,12 +52,14 @@ export function createTranscripts(): TranscriptsStore {
     /** The sessions with a request in flight, so a second render does not send a second request. */
     const inflight = new Set<string>();
 
-    /** The sessions whose tail was wanted while a request was in flight, asked again when it lands. */
+    /**
+     * The sessions whose tail was wanted while a request was in flight, asked again when it lands.
+     */
     const again = new Set<string>();
 
     /**
-     * The turns of one session. The first call for a session asks the server for the whole file; every
-     * later call reads what is held, and follow() is what asks for the rest.
+     * The turns of one session. The first call for a session asks the server for the whole file;
+     * every later call reads what is held, and follow() is what asks for the rest.
      */
     function turnsFor(id: string): TurnsState {
         if (id === '') return NOTHING;
@@ -67,9 +69,10 @@ export function createTranscripts(): TranscriptsStore {
     }
 
     /**
-     * Read what has been appended since the last read, when the record says there is something. Called
-     * from the view's effect with the record's lastActivity: the first call for a session only notes the
-     * stamp, since the read turnsFor() scheduled already carries everything written up to it.
+     * Read what has been appended since the last read, when the record says there is something.
+     * Called from the view's effect with the record's lastActivity: the first call for a session
+     * only notes the stamp, since the read turnsFor() scheduled already carries everything written
+     * up to it.
      */
     function follow(id: string, lastActivity: string | null): void {
         if (id === '') return;
@@ -83,16 +86,20 @@ export function createTranscripts(): TranscriptsStore {
         request(id, state.offset);
     }
 
-    /** How many instances are showing each session, so the last one to close is what drops its turns. */
+    /**
+     * How many instances are showing each session, so the last one to close is what drops its
+     * turns.
+     */
     const viewers: Record<string, number> = {};
 
     /**
-     * Note that one instance is showing the session, and hand back the call that says it stopped. What
-     * is held otherwise stays held for the page's life: a session opened once keeps its whole transcript
-     * in memory, and a long day's transcript is the larger part of what the page holds. When the last
-     * instance showing a session closes, its turns are dropped and the next open reads the tail again.
-     * Calling the returned function twice counts once, so an instance that releases on both a teardown
-     * and a change of session does not drop turns another instance is still drawing.
+     * Note that one instance is showing the session, and hand back the call that says it stopped.
+     * What is held otherwise stays held for the page's life: a session opened once keeps its whole
+     * transcript in memory, and a long day's transcript is the larger part of what the page holds.
+     * When the last instance showing a session closes, its turns are dropped and the next open
+     * reads the tail again. Calling the returned function twice counts once, so an instance that
+     * releases on both a teardown and a change of session does not drop turns another instance is
+     * still drawing.
      */
     function showing(id: string): () => void {
         if (id === '') {
@@ -116,7 +123,9 @@ export function createTranscripts(): TranscriptsStore {
         };
     }
 
-    /** Drop everything held for one session, so the next call for it fetches from the start again. */
+    /**
+     * Drop everything held for one session, so the next call for it fetches from the start again.
+     */
     function forget(id: string): void {
         // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- a Map here would change the shape every reader of this record depends on
         delete viewers[id];
@@ -142,8 +151,8 @@ export function createTranscripts(): TranscriptsStore {
 
     async function load(id: string, from: number): Promise<void> {
         try {
-            // Nothing is fetched while the page is rendered on the server: there is no window to draw
-            // it in, and the browser asks for it on the first client render.
+            // Nothing is fetched while the page is rendered on the server: there is no window to
+            // draw it in, and the browser asks for it on the first client render.
             if (typeof window === 'undefined' || typeof fetch !== 'function') return;
             const url = `/api/transcript?id=${encodeURIComponent(id)}&from=${from}`;
             const response = await fetch(url);

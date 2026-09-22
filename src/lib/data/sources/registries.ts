@@ -95,7 +95,9 @@ function readFile(
     return parsed as Record<string, unknown>;
 }
 
-/** One registry: its entries in file order with provenance, and every other top-level key as meta. */
+/**
+ * One registry: its entries in file order with provenance, and every other top-level key as meta.
+ */
 function readRegistry(
     hub: string,
     name: RegistryName,
@@ -152,10 +154,10 @@ function readRegistry(
 }
 
 /**
- * Read the seven registries. Each returns its entries and the file's other top-level keys as `meta`,
- * both untouched apart from the `registry`, `key` and `file` provenance added to every entry. A file
- * that is missing, does not parse, is not a map, or has no entry list gives an empty list and one
- * finding; nothing here throws and no entry is repaired.
+ * Read the seven registries. Each returns its entries and the file's other top-level keys as
+ * `meta`, both untouched apart from the `registry`, `key` and `file` provenance added to every
+ * entry. A file that is missing, does not parse, is not a map, or has no entry list gives an empty
+ * list and one finding; nothing here throws and no entry is repaired.
  */
 export function readRegistries(
     hub: string,

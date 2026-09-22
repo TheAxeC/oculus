@@ -17,14 +17,18 @@
         glyph?: string;
         /** Draw it as the one in force. */
         active?: boolean;
-        /** Whether this button's controlled content is open. Omitted for buttons with no content. */
+        /**
+         * Whether this button's controlled content is open. Omitted for buttons with no content.
+         */
         expanded?: boolean;
         /** A toggle button's current state. Omitted for ordinary action buttons. */
         pressed?: boolean;
         onclick: (event: MouseEvent) => void;
         /** A second press in quick succession, for a control whose two speeds mean two things. */
         ondblclick?: (event: MouseEvent) => void;
-        /** The tooltip, when it should say more than the label does. A button with none shows none. */
+        /**
+         * The tooltip, when it should say more than the label does. A button with none shows none.
+         */
         title?: string;
         /** One of an exclusive group: the button becomes a radio and reports this as its state. */
         checked?: boolean;
@@ -61,7 +65,9 @@
          * control at the stop and -1 for the rest. A button with none is an ordinary stop.
          */
         tabindex?: number;
-        /** This control's name in the strip that carries the stop, rendered for that strip to read. */
+        /**
+         * This control's name in the strip that carries the stop, rendered for that strip to read.
+         */
         stop?: string;
         /** A key pressed on the button, for a strip that moves its own stop with the arrow keys. */
         onkeydown?: (event: KeyboardEvent) => void;
@@ -168,7 +174,8 @@
         padding: 3px 5px;
     }
 
-    /* The rail's height is a floor, not a size: a stacked label that wraps makes its button taller. */
+    /* The rail's height is a floor, not a size: a stacked label that wraps makes its button
+       taller. */
     .tool.rail-control {
         justify-content: center;
         width: 100%;
@@ -275,8 +282,8 @@
         color: var(--accent-txt, var(--accent));
     }
 
-    /* The brackets are a row's shape, around a word with the glyph inside them. A stacked control is
-       a column of a glyph over a label, where the pair would be two lines of their own above and
+    /* The brackets are a row's shape, around a word with the glyph inside them. A stacked control
+       is a column of a glyph over a label, where the pair would be two lines of their own above and
        below it, and a rail control is a glyph in a box the rail's width sets, a third of it in the
        rail's row of text steps; in both the terminal stand-in the glyph draws carries its own
        brackets already. A bare button is a strip's icon and draws none, as a bare menu opener

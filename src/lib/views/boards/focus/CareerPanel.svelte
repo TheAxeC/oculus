@@ -278,7 +278,8 @@
         cursor: pointer;
     }
 
-    /* Inside the panel, which is already translucent: these rows keep their rules and paint nothing. */
+    /* Inside the panel, which is already translucent: these rows keep their rules and paint
+       nothing. */
     :global(body.wall) .career > summary {
         background: transparent;
     }

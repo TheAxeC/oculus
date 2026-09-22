@@ -22,16 +22,19 @@ export type Point = { x: number; y: number };
 export type Rect = { x: number; y: number; width: number; height: number };
 
 /**
- * Where a dragged instance would land: at an index in a pane's tab strip, alone in a new pane on one
- * edge of a pane's body, or at the end of a pane's strip, which is what the middle of a body means.
- * Each names the page whose tree the path is in; a drop carrying none lands in the page on screen.
+ * Where a dragged instance would land: at an index in a pane's tab strip, alone in a new pane on
+ * one edge of a pane's body, or at the end of a pane's strip, which is what the middle of a body
+ * means. Each names the page whose tree the path is in; a drop carrying none lands in the page on
+ * screen.
  */
 export type Drop =
     | { kind: 'strip'; path: number[]; index: number; page?: string }
     | { kind: 'centre'; path: number[]; page?: string }
     | { kind: 'edge'; path: number[]; edge: Edge; page?: string };
 
-/** The operations a drop is performed through. The store's are the default; a test hands its own. */
+/**
+ * The operations a drop is performed through. The store's are the default; a test hands its own.
+ */
 export type DragSink = {
     transfer: (id: string, path: number[], index: number, page?: string) => void;
     split: (id: string, path: number[], edge: Edge, page?: string) => void;
@@ -61,7 +64,9 @@ export type Dragging = {
 /** An index past every tab, which the pane's own clamp turns into the end of the strip. */
 export const AT_END = Number.MAX_SAFE_INTEGER;
 
-/** How far the pointer moves before a press becomes a drag, so a click on a tab is still a click. */
+/**
+ * How far the pointer moves before a press becomes a drag, so a click on a tab is still a click.
+ */
 export const THRESHOLD = 6;
 
 type Held = Dragging & { origin: Point; armed: boolean };
@@ -132,12 +137,16 @@ export function createDrag(layout: LayoutStore): DragStore {
 
     let sink: DragSink = storeSink;
 
-    /** Perform drops through these operations instead of the store's. Null puts the store's back. */
+    /**
+     * Perform drops through these operations instead of the store's. Null puts the store's back.
+     */
     function setDragSink(next: DragSink | null): void {
         sink = next ?? storeSink;
     }
 
-    /** The drag in progress, or null when there is none or the pointer has not moved far enough yet. */
+    /**
+     * The drag in progress, or null when there is none or the pointer has not moved far enough yet.
+     */
     function dragging(): Dragging | null {
         const held = store.current;
         if (!held?.armed) return null;
@@ -146,8 +155,9 @@ export function createDrag(layout: LayoutStore): DragStore {
     }
 
     /**
-     * A pointer went down on a tab. Nothing is drawn and nothing will be performed until the pointer has
-     * moved THRESHOLD pixels, so the press that starts a drag is the same press that selects a tab.
+     * A pointer went down on a tab. Nothing is drawn and nothing will be performed until the
+     * pointer has moved THRESHOLD pixels, so the press that starts a drag is the same press that
+     * selects a tab.
      */
     function start(id: string, label: string, point: Point): void {
         store.current = {
@@ -166,8 +176,8 @@ export function createDrag(layout: LayoutStore): DragStore {
 
     /**
      * A page is being carried out of the strip. The gesture that starts it has already crossed the
-     * threshold inside the strip, so this one is armed from the first move: the ghost is drawn where
-     * the pointer already is rather than THRESHOLD pixels further on.
+     * threshold inside the strip, so this one is armed from the first move: the ghost is drawn
+     * where the pointer already is rather than THRESHOLD pixels further on.
      */
     function startPage(id: string, label: string, point: Point): void {
         store.current = {
@@ -193,8 +203,9 @@ export function createDrag(layout: LayoutStore): DragStore {
     }
 
     /**
-     * Where the drop would land now, from whatever the pointer is over, and null when it is over nothing
-     * that takes one. The rect is the pane body the indicator is drawn over, for an edge or a centre.
+     * Where the drop would land now, from whatever the pointer is over, and null when it is over
+     * nothing that takes one. The rect is the pane body the indicator is drawn over, for an edge or
+     * a centre.
      */
     function hover(drop: Drop | null, rect: Rect | null = null, refused = false): void {
         const held = store.current;
@@ -205,7 +216,9 @@ export function createDrag(layout: LayoutStore): DragStore {
         store.current = { ...held, drop: taken, rect, refused: taken === null && refused };
     }
 
-    /** The pointer came up: the hovered drop is performed, and nothing happens when none is hovered. */
+    /**
+     * The pointer came up: the hovered drop is performed, and nothing happens when none is hovered.
+     */
     function end(): void {
         const held = store.current;
         store.current = null;
@@ -243,8 +256,9 @@ export function createDrag(layout: LayoutStore): DragStore {
     }
 
     /**
-     * The document listeners a drag needs, and the text selection it must not make. There is no document
-     * in the test suite, so a drag driven by its own calls runs there exactly as it does in a browser.
+     * The document listeners a drag needs, and the text selection it must not make. There is no
+     * document in the test suite, so a drag driven by its own calls runs there exactly as it does
+     * in a browser.
      */
     function listen(on: boolean): void {
         if (typeof document === 'undefined') return;

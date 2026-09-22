@@ -1,8 +1,8 @@
 // The six session views rendered to HTML on the server: what each one draws over one synthetic
 // payload, and what each one draws when nothing is selected.
 //
-// The catalog, glyphs and vocabulary are the real config. The sessions and git state are the test's own: nothing reads
-// ~/.claude, ~/.codex or ~/.oculus, and nothing writes anywhere.
+// The catalog, glyphs and vocabulary are the real config. The sessions and git state are the test's
+// own: nothing reads ~/.claude, ~/.codex or ~/.oculus, and nothing writes anywhere.
 //
 // What this does NOT cover: anything that needs a DOM. There is no browser in this suite, so no row
 // is clicked, no dismissal is sent and the timeline's scrolling never runs; the selection a click
@@ -236,7 +236,7 @@ function html(view: Component<ViewProps>, state: unknown = {}, id = `probe-${(co
 }
 
 describe('the session list', () => {
-    it('offers a labelled pinned pane action for sessions and terminals', () => {
+    it('audits that offers a labelled pinned pane action for sessions and terminals', () => {
         const session = sessionRowItems(live, '').find((item) => item.id === 'pinned');
         const terminal = terminalRowItems().find((item) => item.id === 'pinned');
         expect(session).toEqual({
@@ -584,7 +584,7 @@ describe('the terminal toolbar pin', () => {
         expect(found[0]).not.toContain('<span class="label">');
     });
 
-    it('renames the pinned tab to the terminal own name rather than to the name at the pin', () => {
+    it('audits that renames the pinned tab to the terminal own name rather than to the name at the pin', () => {
         const source = readFileSync('src/lib/views/sessions/terminal/Terminal.svelte', 'utf8');
         expect(source).toContain(
             'restateInstance(instance.id, { session: held, label: live.name })'
@@ -755,7 +755,8 @@ describe('resuming a session into a terminal', () => {
         const body = html(SessionDetail);
         expect(body).toContain(catalog['sessions.resume_label']);
         expect(body).toContain(catalog['sessions.resume']);
-        // the session has ended, so the control is offered rather than the sentence saying why it cannot be
+        // the session has ended, so the control is offered rather than the sentence saying why it
+        // cannot be
         expect(body).not.toContain(catalog['sessions.resume_live']);
         select(null);
     });

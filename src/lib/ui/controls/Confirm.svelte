@@ -22,7 +22,9 @@
         cancel: string;
         onconfirm: () => void;
         oncancel: () => void;
-        /** A line under the message: the branch, the count, whatever names what is being acted on. */
+        /**
+         * A line under the message: the branch, the count, whatever names what is being acted on.
+         */
         detail?: string;
     };
 
@@ -119,7 +121,8 @@
         box-shadow: var(--shadow);
     }
 
-    /* The box floats over a pane and holds the question, so it keeps more of its colour than the pane does. */
+    /* The box floats over a pane and holds the question, so it keeps more of its colour than the
+       pane does. */
     :global(body.wall) .box {
         background: color-mix(in srgb, var(--panel) var(--wall-popover), transparent);
         backdrop-filter: blur(var(--wall-blur));

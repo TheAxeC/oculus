@@ -14,28 +14,28 @@
 
 <script lang="ts">
     // Layer 3, view. One file under one root as its own tab, for the files an editor cannot show: a
-    // picture, a PDF in a frame, and a name with a link for anything else. An HTML file never reaches
-    // here; the file browser opens it in the document view, which gives it a document of its own so
-    // its relative assets resolve.
+    // picture, a PDF in a frame, and a name with a link for anything else. An HTML file never
+    // reaches here; the file browser opens it in the document view, which gives it a document of
+    // its own so its relative assets resolve.
     //
-    // A text file does not stay here either. The file browser opens one in the source tab, and a text
-    // file that reaches this view another way (a bookmark, a saved layout from before, a deep link)
-    // is handed to the source tab and this tab goes: one file is read in one place, whichever way the
-    // reader arrived at it. Which files those are is the file's own first bytes, so a file whose name
-    // does not say what it is reads as being read until they have arrived: a download offered for a
-    // second over a file that is about to open in an editor would be a flicker saying the wrong
-    // thing.
+    // A text file does not stay here either. The file browser opens one in the source tab, and a
+    // text file that reaches this view another way (a bookmark, a saved layout from before, a deep
+    // link) is handed to the source tab and this tab goes: one file is read in one place, whichever
+    // way the reader arrived at it. Which files those are is the file's own first bytes, so a file
+    // whose name does not say what it is reads as being read until they have arrived: a download
+    // offered for a second over a file that is about to open in an editor would be a flicker saying
+    // the wrong thing.
     //
-    // Everything is read through api/file, the one route that serves a local file, so the inside-root
-    // check is the same here as it is for a manual's stylesheet.
+    // Everything is read through api/file, the one route that serves a local file, so the
+    // inside-root check is the same here as it is for a manual's stylesheet.
     //
     // The PDF frame carries no sandbox: Chrome refuses to run its own PDF viewer inside a sandboxed
     // frame and draws an error page instead, and what the frame shows is a file this server serves
     // from a root it checked, so the frame is as trusted as the page around it.
     //
-    // The address carries the file's version from the fs store, so a file written under the open tab,
-    // which is what a LaTeX build does to the PDF it rebuilds, is a new address and the frame fetches
-    // the new bytes instead of drawing the ones the browser cached.
+    // The address carries the file's version from the fs store, so a file written under the open
+    // tab, which is what a LaTeX build does to the PDF it rebuilds, is a new address and the frame
+    // fetches the new bytes instead of drawing the ones the browser cached.
     //
     // The star in the toolbar is `shared/links/BookmarkStar.svelte`, which the source tab draws
     // too: a reader bookmarks the file in front of them, whichever of the two tabs is showing it.
@@ -91,7 +91,9 @@
      * picture or a PDF, which the name says at once, or a file whose first bytes say it is no text.
      */
     const holds = $derived(src !== '' && known !== null && known.kind !== 'text');
-    /** Whether the view offers to open the file in its program: it holds it and the map names one. */
+    /**
+     * Whether the view offers to open the file in its program: it holds it and the map names one.
+     */
     const openable = $derived(holds && opensInProgram(path, programApps()));
     /** What the tree knew the file's size to be, which is what an undrawn type reports. */
     const size = $derived(humanSize(number(instance.state, 'size')));
@@ -114,8 +116,9 @@
      * replaces; when the source tab took this instance's own place, there is nothing left to close.
      *
      * Everything this reads about the instance is taken before the first await. Opening the source
-     * tab makes it the pane's active one, and the props of a component the pane is no longer drawing
-     * are not this tab's any more, so an id read afterwards would name the tab that took its place.
+     * tab makes it the pane's active one, and the props of a component the pane is no longer
+     * drawing are not this tab's any more, so an id read afterwards would name the tab that took
+     * its place.
      */
     async function handOn(
         mine: string,
@@ -197,7 +200,8 @@
         min-height: 0;
     }
 
-    /* The frame is the body: the document inside it scrolls, so the pane does not scroll around it. */
+    /* The frame is the body: the document inside it scrolls, so the pane does not scroll around
+       it. */
     .frame {
         display: block;
         width: 100%;

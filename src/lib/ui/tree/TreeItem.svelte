@@ -1,14 +1,16 @@
 <script lang="ts">
     // Layer 3, primitive. One row of an explorer: a line of one fixed height holding the indent
     // guides of its depth, the expand arrow of a row that opens, a glyph, the name and a muted
-    // detail, then the row's own controls, and at the right edge a count or a mark. A heading row is
-    // the same line drawn as the head of a section, its name in small capitals.
+    // detail, then the row's own controls, and at the right edge a count or a mark. A heading row
+    // is the same line drawn as the head of a section, its name in small capitals.
     //
-    // A row with something to do when pressed carries one button over the whole line, which is what
-    // a pointer presses; a row given nothing to do is the same line as text. The controls sit beside
-    // the line rather than inside it, since a button holds no button. They are shown while the
-    // pointer is over the row or the focus is inside it, and are otherwise transparent rather than
-    // removed, so a control is where the reader's pointer will land.
+    // A row with something to do when pressed carries a button over its name, which is what a
+    // pointer presses, and the row itself answers a press on the space beyond its parts, so the
+    // whole line opens what the name opens; a row given nothing to do is the same line as text.
+    // The controls sit beside the line rather than inside it, since a button holds no button, and
+    // the tooltip opens while the pointer is anywhere over the row. They are shown while
+    // the pointer is over the row or the focus is inside it, and are otherwise transparent rather
+    // than removed, so a control is where the reader's pointer will land.
     //
     // A row drawn in a ui/tree/TreeView.svelte is a treeitem with its level, and the treeitem is
     // what takes the keyboard's focus: it reads its place in the focus order and its key handler
@@ -20,8 +22,8 @@
     // never does.
     //
     // Selected is the reader's cursor and is drawn with the accent tint under the ink; current is
-    // what is in force (a checked-out branch, the workspace in use) and is drawn as a bold name with
-    // a check, never as a selection.
+    // what is in force (a checked-out branch, the workspace in use) and is drawn as a bold name
+    // with a check, never as a selection.
     //
     // The tooltip sits inside the button, around the line, so it opens for a pointer resting on the
     // row and never for the keyboard's focus: a tooltip opened by an arrow key would cover the row
@@ -51,7 +53,9 @@
         heading?: boolean;
         /** The row's accessible name, when it says more than the label drawn. */
         name?: string;
-        /** Draw the name muted, or in the warning or the error hue, for a row that says something. */
+        /**
+         * Draw the name muted, or in the warning or the error hue, for a row that says something.
+         */
         tone?: 'muted' | 'warn' | 'error';
         /** A number drawn at the right edge, for a heading or a group that counts its rows. */
         count?: number;
@@ -123,6 +127,11 @@
         onclick?.(event);
     }
 
+    /** A press on the row's own space, beyond every part drawn in it, opens the row. */
+    function pressedRow(event: MouseEvent): void {
+        if (event.target === box && onclick !== undefined) pressed(event);
+    }
+
     function left(event: FocusEvent): void {
         const next = event.relatedTarget;
         if (box !== undefined && next instanceof Node && box.contains(next)) return;
@@ -153,8 +162,8 @@
     {/if}
 {/snippet}
 
-<!-- The row is a treeitem whenever it is a stop of a tree, which is the one case it takes a tabindex;
-     the check cannot see a role chosen by a prop. -->
+<!-- The row is a treeitem whenever it is a stop of a tree, which is the one case it takes a
+     tabindex; the check cannot see a role chosen by a prop. -->
 <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 <div
     class="item"
@@ -173,6 +182,7 @@
     data-row-id={id}
     tabindex={inTree ? nav?.tabindex(id ?? '') : undefined}
     bind:this={box}
+    onclick={pressedRow}
     onkeydown={keyed}
     onfocusin={() => (inside = true)}
     onfocusout={left}
@@ -195,7 +205,14 @@
             onclick={pressed}
             {ondblclick}
         >
-            <Tooltip text={title ?? ''} block>
+            <!-- The words describe the element that takes the focus: the row in a tree, whose
+                 button takes none, and the button outside one. -->
+            <Tooltip
+                text={title ?? ''}
+                block
+                describes={level === undefined ? button : box}
+                over={box}
+            >
                 <span class="line">
                     <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
                     {@render line()}
@@ -215,16 +232,17 @@
 </div>
 
 <style>
-    /* The row's height, one level's indent and the two type sizes are read from custom properties an
-       ancestor may set, with the explorer's own sizes as the fallback, each scaled by the text size. */
+    /* The row's height, one level's indent and the two type sizes are the tokens of
+       themes/tokens.css, which an ancestor may set for a tree of its own, each multiplied here by
+       the text size. */
     .item {
         display: flex;
         align-items: center;
-        height: var(--tree-row, calc(22px * var(--text-scale, 1)));
+        height: calc(var(--tree-row) * var(--text-scale, 1));
         min-width: 0;
         border-radius: var(--radius-sm);
         color: var(--ink-txt, var(--ink));
-        font-size: var(--tree-font, calc(13px * var(--text-scale, 1)));
+        font-size: calc(var(--tree-font) * var(--text-scale, 1));
     }
 
     /* A row that only says something (no bookmark yet, nothing changed) has nothing to point at. */
@@ -244,11 +262,15 @@
         outline-offset: -1px;
     }
 
+    /* The row's parts follow its name rather than the pane's far edge: the name takes the width it
+       needs and no more, so a row's controls and count sit beside the name a reader is pointing at
+       however wide the pane is. The row itself still spans the pane, and a press on the space
+       beyond its parts opens it as a press on the name does. */
     .main {
         display: flex;
-        flex: 1 1 auto;
+        flex: 0 1 auto;
         align-items: center;
-        height: var(--tree-row, calc(22px * var(--text-scale, 1)));
+        height: calc(var(--tree-row) * var(--text-scale, 1));
         min-width: 0;
         padding: 0 4px 0 2px;
         border: 0;
@@ -268,7 +290,8 @@
         gap: 4px;
     }
 
-    /* A row a name is typed into keeps its words to their own width and gives the rest to the field. */
+    /* A row a name is typed into keeps its words to their own width and gives the rest to the
+       field. */
     .main.labelled {
         flex: 0 0 auto;
     }
@@ -284,11 +307,11 @@
         min-width: 0;
     }
 
-    /* One guide per level: a column the indent's width with the line on its left edge, so the guides
-       of the rows under one folder join into one vertical rule. It is drawn while the tree is hovered
-       or holds the focus, and is transparent otherwise. */
+    /* One guide per level: a column the indent's width with the line on its left edge, so the
+       guides of the rows under one folder join into one vertical rule. It is drawn while the tree
+       is hovered or holds the focus, and is transparent otherwise. */
     .guide {
-        flex: 0 0 var(--tree-indent, calc(12px * var(--text-scale, 1)));
+        flex: 0 0 calc(var(--tree-indent) * var(--text-scale, 1));
         align-self: stretch;
         box-sizing: border-box;
         margin-left: 4px;
@@ -377,7 +400,7 @@
     }
 
     .heading {
-        font-size: var(--tree-heading-font, calc(11px * var(--text-scale, 1)));
+        font-size: calc(var(--tree-heading-font) * var(--text-scale, 1));
     }
 
     .heading .main {
@@ -402,6 +425,14 @@
     .item:hover .actions,
     .item:focus-within .actions {
         opacity: 1;
+    }
+
+    /* A screen with no pointer that hovers shows them all the time: they are pressable there too,
+       and a control pressed where nothing is drawn is one nobody can aim at. */
+    @media (hover: none) {
+        .actions {
+            opacity: 1;
+        }
     }
 
     /* A control on a row is a glyph on the row's own surface: the box a toolbar button draws would

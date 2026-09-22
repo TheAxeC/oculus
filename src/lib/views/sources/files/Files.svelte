@@ -13,30 +13,33 @@
 </script>
 
 <script lang="ts">
-    // Layer 3, view. The roots of the current workspace as an explorer: the workspace picker and the
-    // add-root control on the view's header, a filter and a breadcrumb over one tree per root, each
-    // under a head carrying that root's icon controls, and the bookmarks, the notes and the
+    // Layer 3, view. The roots of the current workspace as an explorer: the workspace picker and
+    // the add-root control on the view's header, a filter and a breadcrumb over one tree per root,
+    // each under a head carrying that root's icon controls, and the bookmarks, the notes and the
     // workspaces as sections under the trees in the same row style. Every control is drawn in every
-    // state the view is in: a section whose file could not be read keeps its head and its control and
-    // says why in its one row.
+    // state the view is in: a section whose file could not be read keeps its head and its control
+    // and says why in its one row.
     //
-    // A folder is read one level at a time, when it is opened: a root is a whole checkout and walking
-    // one to draw it would read a hundred thousand names to show twenty. Which folders are open, the
-    // selected row, the filter text, which sections are closed, which form is open and the line typed
-    // into a root or a workspace form live in the instance's own state, so a tree left half open is
-    // the same tree when the tab comes back, a form left open is open again with what was typed into
-    // it, and two file browsers on two pages are open at two different places. What stays in this
-    // component is what answers the press just made: the refusal line (`note`), the entry form's
-    // outcome line (`said`) and the root the removal confirm is open for (`removing`), all gone after
-    // a switch, since a pane mounts only its active tab.
+    // A folder is read one level at a time, when it is opened: a root is a whole checkout and
+    // walking one to draw it would read a hundred thousand names to show twenty. Which folders are
+    // open, the selected row, the filter text, which sections are closed, which form is open and
+    // the line typed into a root or a workspace form live in the instance's own state, so a tree
+    // left half open is the same tree when the tab comes back, a form left open is open again with
+    // what was typed into it, and two file browsers on two pages are open at two different places.
+    // The refusal line (`note`) and the bookmark form's outcome line (`said`) are kept there too,
+    // since each answers a form that comes back and a form without its answer would be asked again.
+    // What stays in this component is the root the removal confirm is open for (`removing`), gone
+    // after a switch, since a pane mounts only its active tab and a question left open over a tab
+    // nobody is looking at is one nobody answers.
     //
-    // A write closes its form on its answer, which may land after the reader has opened another form,
-    // opened the same one again or switched the tab away. The instance id and the forms are taken
-    // before the request goes, and the answer closes only that opening in that instance
-    // (formSettled): once the tab is switched, the `instance` prop reads the tab the pane shows now.
-    // A bookmark the file no longer holds closes its form in every file browser the layout holds,
-    // which the fs store does on each bookmarks answer rather than this view on each render: a pane
-    // mounts only the tab it shows, so a form of a browser nobody is looking at is closed there too.
+    // A write closes its form on its answer, which may land after the reader has opened another
+    // form, opened the same one again or switched the tab away. The instance id and the forms are
+    // taken before the request goes, and the answer closes only that opening in that instance
+    // (formSettled): once the tab is switched, the `instance` prop reads the tab the pane shows
+    // now. A bookmark the file no longer holds closes its form in every file browser the layout
+    // holds, which the fs store does on each bookmarks answer rather than this view on each render:
+    // a pane mounts only the tab it shows, so a form of a browser nobody is looking at is closed
+    // there too.
     //
     // The three sections are files/sections/Sections.svelte's, which reads the workspaces, the
     // bookmarks and the notes for itself and answers a read of any of them that failed. What this
@@ -51,13 +54,13 @@
     // first bytes. One click opens the pane's preview tab and a double click opens a tab that is
     // kept.
     //
-    // A bookmark is a collection entry, so it is added and edited by the form every other collection
-    // is edited by, over the schema its own file carries; the one thing this view supplies is the
-    // list of roots a bookmark may name, since that is what the workspace in force says and not what
-    // the file said when it was written. Its typed values are that form's drafts, and closing the
-    // form by a control of this view forgets them through toggleAdd and toggleEdit, as a collection
-    // view's own Add and Edit controls do. A note opens as a tab and is a file in a folder of its own,
-    // written by the first keystroke typed into it.
+    // A bookmark is a collection entry, so it is added and edited by the form every other
+    // collection is edited by, over the schema its own file carries; the one thing this view
+    // supplies is the list of roots a bookmark may name, since that is what the workspace in force
+    // says and not what the file said when it was written. Its typed values are that form's drafts,
+    // and closing the form by a control of this view forgets them through toggleAdd and toggleEdit,
+    // as a collection view's own Add and Edit controls do. A note opens as a tab and is a file in a
+    // folder of its own, written by the first keystroke typed into it.
     //
     // Another view shows a path here through the layout store's showInFiles, which writes the ask
     // into this instance's state; files/tree/ShowPath.svelte reads the folders on the way, opens
@@ -132,10 +135,6 @@
     /** The store calls a file or a bookmark is opened through. */
     const opener = { openView, keepPreview, readFileKind };
 
-    /** What the endpoint refused the last attempt with, in the reader's own words. */
-    let note = $state('');
-    /** What the entry form's last write answered, which is a report and not a refusal. */
-    let said = $state('');
     /** The root the removal confirm is open for, and the empty string while it is closed. */
     let removing = $state('');
 
@@ -219,6 +218,16 @@
     }
 
     /**
+     * Say what a request answered in the instance it was sent from, which the reader may have
+     * switched away from by the time it lands. A tab closed meanwhile has no record left, and is
+     * not given one back for a line nobody will see.
+     */
+    function answerAt(owner: string, part: Pick<Partial<FilesView>, 'note' | 'said'>): void {
+        if (owner !== instance.id && instanceState(owner) === undefined) return;
+        patchAt(owner, part);
+    }
+
+    /**
      * Open or close one folder. While a filter draws the tree, a folder is drawn open because the
      * filter holds it so, and a press on it writes nothing, so clearing the filter gives back the
      * folders that were open before it.
@@ -239,11 +248,12 @@
     }
 
     /**
-     * Bookmark one file, or take the bookmark on it away again. The label is the file's name, or its
-     * path under the root when another bookmark already carries that name; a label that is taken
-     * even so is refused rather than written over, and the refusal is said.
+     * Bookmark one file, or take the bookmark on it away again. The label is the file's name, or
+     * its path under the root when another bookmark already carries that name; a label that is
+     * taken even so is refused rather than written over, and the refusal is said.
      */
     async function bookmark(row: TreeRow): Promise<void> {
+        const owner = instance.id;
         const found = marks.entries.find(
             (one) => one.fields.root === row.root && one.fields.path === row.path
         );
@@ -258,19 +268,20 @@
         const reason = answer.ok
             ? answer.refused.map((one) => one.reason).join('; ')
             : (answer.error ?? '');
-        note = reason === '' ? '' : t('files.bookmark_failed', reason);
+        answerAt(owner, { note: reason === '' ? '' : t('files.bookmark_failed', reason) });
     }
 
     async function remove(key: string): Promise<void> {
+        const owner = instance.id;
         const answer = await removeRoot(key);
-        note = answer.ok ? '' : refusal(answer.error ?? '');
+        answerAt(owner, { note: answer.ok ? '' : refusal(answer.error ?? '') });
     }
 
     /**
      * Add the root or save the workspace the open line form names. The form closes on the answer
      * only when it is still the opening the request went from, holding the same line: a form the
-     * reader opened, reopened or typed on meanwhile stays as the reader left it, and a closed tab is
-     * not given its record back.
+     * reader opened, reopened or typed on meanwhile stays as the reader left it, and a closed tab
+     * is not given its record back.
      */
     async function confirm(): Promise<void> {
         const owner = instance.id;
@@ -278,27 +289,31 @@
         const answer =
             asked.form === 'root' ? await addRoot(asked.typed) : await saveWorkspace(asked.typed);
         if (!answer.ok) {
-            note = refusal(answer.error ?? '');
+            answerAt(owner, { note: refusal(answer.error ?? '') });
             return;
         }
-        note = '';
+        answerAt(owner, { note: '' });
         settle(owner, asked);
     }
 
-    /** Close the form an answer was for in the instance it was sent from, if it is still open as it was. */
+    /**
+     * Close the form an answer was for in the instance it was sent from, if it is still open as it
+     * was.
+     */
     function settle(owner: string, asked: FilesForms): void {
         const closed = formSettled(filesViewOf(instanceState(owner)), asked);
         if (closed !== null) patchAt(owner, closed);
     }
 
     async function select(name: string): Promise<void> {
+        const owner = instance.id;
         const answer = await selectWorkspace(name);
-        note = answer.ok ? '' : refusal(answer.error ?? '');
+        answerAt(owner, { note: answer.ok ? '' : refusal(answer.error ?? '') });
     }
 
     /** Open one note. Its file is written by the first keystroke, so nothing is made here. */
     function addNote(): void {
-        note = '';
+        patch({ note: '' });
         // The tab is told its note has no file yet, so it knows the note is empty without a round
         // trip and asks the server for nothing that is not there.
         openView('note', { id: noteId(new Date()), fresh: true });
@@ -311,8 +326,9 @@
 
     /** Take one note off the disk, and take its tab with it: what it drew is not there any more. */
     async function dropNote(id: string): Promise<void> {
+        const owner = instance.id;
         const answer = await deleteNote(id);
-        note = answer.ok ? '' : refusal(answer.error ?? '');
+        answerAt(owner, { note: answer.ok ? '' : refusal(answer.error ?? '') });
         if (answer.ok) closeRecord('note', id);
     }
 
@@ -324,8 +340,7 @@
     /** Move to the forms a press asks for, clearing the lines that answered the last press. */
     function move(next: FilesForms): void {
         shift(next);
-        note = '';
-        said = '';
+        patch({ note: '', said: '' });
     }
 
     function show(which: 'root' | 'workspace' | 'bookmark'): void {
@@ -347,9 +362,9 @@
 
     /**
      * Open the bookmark form over the id its own save gave the bookmark. The form is drawn per
-     * instance and per opening, and a rename moves neither, so the form stays as it is with what was
-     * typed into it; the bookmark it edits is the one the file now holds, so the close of a form
-     * over a bookmark that is gone has nothing to close.
+     * instance and per opening, and a rename moves neither, so the form stays as it is with what
+     * was typed into it; the bookmark it edits is the one the file now holds, so the close of a
+     * form over a bookmark that is gone has nothing to close.
      */
     function renameMark(owner: string, id: string): void {
         patchAt(owner, { editing: id });
@@ -376,15 +391,15 @@
                 help={view.form === 'root' ? t('files.root_dir_help') : ''}
                 confirm={view.form === 'root' ? t('files.add') : t('files.save')}
                 value={view.typed}
-                {note}
+                note={view.note}
                 oninput={(value: string) => patch({ typed: value })}
                 onconfirm={() => void confirm()}
                 oncancel={() => {
                     show(view.form === 'root' ? 'root' : 'workspace');
                 }}
             />
-        {:else if note !== ''}
-            <p class="note" aria-live="polite">{note}</p>
+        {:else if view.note !== ''}
+            <p class="note" aria-live="polite">{view.note}</p>
         {/if}
         {#if markForm}
             {#key `${instance.id} ${view.opening}`}
@@ -397,15 +412,15 @@
                     onadd={addBookmark}
                     onclose={closeMark}
                     onrenamed={renameMark}
-                    onsaid={(answer: string) => {
-                        said = answer;
+                    onsaid={(owner: string, answer: string) => {
+                        answerAt(owner, { said: answer });
                         bookmarksChanged();
                     }}
                 />
             {/key}
         {/if}
-        {#if said !== ''}
-            <p class="said" aria-live="polite">{said}</p>
+        {#if view.said !== ''}
+            <p class="said" aria-live="polite">{view.said}</p>
         {/if}
         <ShowPath
             owner={instance.id}

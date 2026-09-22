@@ -13,14 +13,14 @@
 
 <script lang="ts">
     // Layer 3, view. One local text file as a tab: every text file of the file browser opens here.
-    // It reads once through api/file, asks api/source whether this machine's mode lets it be written,
-    // keeps working and saved copies in its instance's ui state across tab switches, and writes
-    // through api/source.
+    // It reads once through api/file, asks api/source whether this machine's mode lets it be
+    // written, keeps working and saved copies in its instance's ui state across tab switches, and
+    // writes through api/source.
     //
     // A file it holds but may not write is drawn by the code window under a line saying why, rather
     // than by an editor that would take typing and refuse every save: a file this machine's mode
-    // locks, and a file too long to have been read whole, where writing the copy back would take the
-    // rest of the file off the disk.
+    // locks, and a file too long to have been read whole, where writing the copy back would take
+    // the rest of the file off the disk.
     //
     // A keystroke keeps a preview tab. A file opened by a single click is the tab the next single
     // click replaces, and typing into it is a reader saying they are working in it.

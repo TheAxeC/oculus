@@ -67,7 +67,8 @@ describe('the entry form', () => {
     });
 
     it('offers no delete on the add form', () => {
-        // there is nothing to delete on the add form, which is the form of an entry that does not exist yet
+        // there is nothing to delete on the add form, which is the form of an entry that does not
+        // exist yet
         expect(form(null)).not.toContain(catalog['collection.form_delete']);
     });
 
@@ -203,7 +204,8 @@ describe('what a reorder and a cleared control send', () => {
         const order = source.slice(source.indexOf('function fileOrder()'));
         const body = order.slice(0, order.indexOf('\n    }'));
         expect(body).toContain('(collection?.entries ?? [])');
-        // the order written is the file's own, so the reader that draws the pinned card first is not in it
+        // the order written is the file's own, so the reader that draws the pinned card first is
+        // not in it
         expect(body).not.toContain('pinnedFirst');
         // nor a map over any other list of entries
         expect(body).not.toContain('entries.map');

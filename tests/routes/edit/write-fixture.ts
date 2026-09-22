@@ -1,8 +1,8 @@
 // The synthetic hub, the deck file and the request every case of the write endpoint is made over.
 //
 // The hub is under the system temporary directory and every path is asserted to be inside it before
-// anything is written, the overrides file, the reader's own bookmarks and the change log included, so
-// no case of either suite reaches ~/.oculus or the checkout.
+// anything is written, the overrides file, the reader's own bookmarks and the change log included,
+// so no case of either suite reaches ~/.oculus or the checkout.
 //
 // It is its own file because two suites are made over it: tests/routes/edit/write.test.ts, which is
 // what each write kind answers, and tests/routes/edit/undo.test.ts, which is what taking one of

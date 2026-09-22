@@ -77,10 +77,14 @@ export type LayoutStore = {
     /** The instance the rail's next view would join, which is the pane it would open into. */
     openingInstance: () => Instance | null;
     instanceLayoutState: (id: string) => unknown;
+    /** The view one instance shows, from whichever page's tree holds it, or undefined for none. */
+    instanceView: (id: string) => ViewId | undefined;
     restateInstance: (id: string, state: unknown) => void;
     pinInstance: (id: string, session: string, label: string) => void;
     unpinInstance: (id: string) => void;
-    /** Keep a preview tab, which is what a double click, a keystroke, a drag and a split do to one. */
+    /**
+     * Keep a preview tab, which is what a double click, a keystroke, a drag and a split do to one.
+     */
     keepPreview: (id: string) => void;
     loadLayout: (storage?: Storable) => boolean;
     openArrangement: (raw: unknown, label: string) => boolean;
@@ -121,9 +125,10 @@ export type LayoutStore = {
 
 export function createLayout(ui: UiStore): LayoutStore {
     /**
-     * The pages, and which of them is on screen. The label of the page this starts on is empty because
-     * the catalog is not installed when this module is evaluated; loadLayout names it, and the strip
-     * draws a page carrying no name by its position, which is the one moment such a page is on screen.
+     * The pages, and which of them is on screen. The label of the page this starts on is empty
+     * because the catalog is not installed when this module is evaluated; loadLayout names it, and
+     * the strip draws a page carrying no name by its position, which is the one moment such a page
+     * is on screen.
      */
     const store: { current: Pages } = $state({ current: defaultPages('') });
 
@@ -155,8 +160,9 @@ export function createLayout(ui: UiStore): LayoutStore {
 
     /**
      * The page an operation addresses: the one its page argument names, the page on screen when it
-     * names none, and nothing at all when it names a page the list does not hold. An operation given
-     * an id of a page that is gone therefore changes nothing rather than acting on another page.
+     * names none, and nothing at all when it names a page the list does not hold. An operation
+     * given an id of a page that is gone therefore changes nothing rather than acting on another
+     * page.
      */
     function at(page?: string): Page | null {
         return page === undefined ? currentPage() : pageOf(page);
@@ -209,10 +215,11 @@ export function createLayout(ui: UiStore): LayoutStore {
     const files = createShowInFiles(access, attention, opening.openView);
 
     /**
-     * Read the saved arrangement and make it current, falling back to the default when there is none or
-     * the saved value fails parseLayout. Returns whether a saved arrangement was restored, which is how
-     * a page knows whether it is looking at the default. The default argument is evaluated at the call
-     * and not at the import, so a test that never calls this touches no localStorage.
+     * Read the saved arrangement and make it current, falling back to the default when there is
+     * none or the saved value fails parseLayout. Returns whether a saved arrangement was restored,
+     * which is how a page knows whether it is looking at the default. The default argument is
+     * evaluated at the call and not at the import, so a test that never calls this touches no
+     * localStorage.
      */
     function loadLayout(held: Storable = localStorage): boolean {
         storage.attach(held);
@@ -223,8 +230,8 @@ export function createLayout(ui: UiStore): LayoutStore {
         attention.clear();
         // A browser that ran before pages holds one workbench, and holds the user's own arrangement
         // beside it when the rail control pages retired had put the sessions arrangement on screen.
-        // Both are kept: the user's own becomes page 1 and what was on screen becomes page 2, so the
-        // control's restore is not needed to reach either of them.
+        // Both are kept: the user's own becomes page 1 and what was on screen becomes page 2, so
+        // the control's restore is not needed to reach either of them.
         if (parsed !== null && previous !== null && parseWorkbench(raw) !== null) {
             const shown = newPage(t('ui.page_sessions'), parsed.pages[0].workbench);
             // Written at once: the version 2 envelope under LAYOUT_KEY still holds only what was on
@@ -288,9 +295,9 @@ export function createLayout(ui: UiStore): LayoutStore {
     }
 
     /**
-     * Close a page, with every tab on it. The page after it becomes current, or the one before it when
-     * it was the last in the strip; closing the only page leaves one fresh default page, since a
-     * workbench with no page to render is nothing at all. Every tab of the page's own tree is
+     * Close a page, with every tab on it. The page after it becomes current, or the one before it
+     * when it was the last in the strip; closing the only page leaves one fresh default page, since
+     * a workbench with no page to render is nothing at all. Every tab of the page's own tree is
      * forgotten as its own close would forget it; a page one of its leaves shows is still in the
      * strip, so the tabs of that page are not the closed page's and keep what they hold.
      */
@@ -308,16 +315,16 @@ export function createLayout(ui: UiStore): LayoutStore {
                 store.current.current === id
                     ? left[Math.min(at, left.length - 1)].id
                     : store.current.current;
-            // A page that is gone is shown nowhere: every leaf naming it is taken out, so no tree is
-            // left pointing at a page the strip no longer holds.
+            // A page that is gone is shown nowhere: every leaf naming it is taken out, so no tree
+            // is left pointing at a page the strip no longer holds.
             savePages(clearPage({ pages: left, current: next }, id));
         }
         instances.forgetTabs(tabsOf(closing.workbench.root));
     }
 
     /**
-     * Show the page at `index`, counting from 1, which is what the digits 1 to 9 do. It answers whether
-     * there was one, so the handler swallows the key only when the shortcut did something.
+     * Show the page at `index`, counting from 1, which is what the digits 1 to 9 do. It answers
+     * whether there was one, so the handler swallows the key only when the shortcut did something.
      */
     function pageShortcut(index: number): boolean {
         const page = item(store.current.pages, index - 1);
@@ -385,8 +392,9 @@ export function createLayout(ui: UiStore): LayoutStore {
     }
 
     /**
-     * Collapse a child of a split to its edge. The maximised pane is given back first when it is the
-     * one being folded or sits inside it, since a pane shown alone and collapsed at once is neither.
+     * Collapse a child of a split to its edge. The maximised pane is given back first when it is
+     * the one being folded or sits inside it, since a pane shown alone and collapsed at once is
+     * neither.
      */
     function foldPane(path: number[], page?: string): void {
         if (path.length === 0) return;
@@ -411,8 +419,8 @@ export function createLayout(ui: UiStore): LayoutStore {
 
     /**
      * The instance the next view opened without a page named would join: the active instance of the
-     * page the reader is in. It is the one pane in the window the rail opens into, whether that page
-     * is the one the strip is on or one drawn inside it.
+     * page the reader is in. It is the one pane in the window the rail opens into, whether that
+     * page is the one the strip is on or one drawn inside it.
      */
     function openingInstance(): Instance | null {
         return instances.activeInstance(attention.touched().id);
@@ -428,6 +436,7 @@ export function createLayout(ui: UiStore): LayoutStore {
         activeInstance: instances.activeInstance,
         openingInstance,
         instanceLayoutState: instances.instanceLayoutState,
+        instanceView: instances.instanceView,
         restateInstance: instances.restateInstance,
         pinInstance: instances.pinInstance,
         unpinInstance: instances.unpinInstance,

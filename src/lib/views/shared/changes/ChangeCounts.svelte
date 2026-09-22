@@ -1,7 +1,7 @@
 <script lang="ts">
-    // Layer 3, shared view partial. The line counts of one changed path: the lines added and deleted
-    // in their two hues, or the word for a binary file. The session views' Changes panel and the
-    // Repositories view's change rows both draw them, so the counts read the same in both.
+    // Layer 3, shared view partial. The line counts of one changed path: the lines added and
+    // deleted in their two hues, or the word for a binary file. The session views' Changes panel
+    // and the Repositories view's change rows both draw them, so the counts read the same in both.
 
     import type { GitEntry } from '$lib/state/client/selectors.svelte';
     import { t } from '$lib/state/words/text';

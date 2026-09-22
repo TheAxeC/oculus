@@ -1,4 +1,5 @@
-// Layer 2, server. Read the five safe Claude account fields, Claude status-line snapshots, and Codex rollout rate windows.
+// Layer 2, server. Read the five safe Claude account fields, Claude status-line snapshots, and
+// Codex rollout rate windows.
 
 import {
     closeSync,
@@ -61,7 +62,10 @@ function tierLabel(tier: string, tiers: UsageTiers): string {
 }
 
 /** The account file is beside ~/.claude, and inside every other Claude config folder. */
-/** Whether a folder is Claude Code's default one, whose account file sits beside it in the home folder. */
+/**
+ * Whether a folder is Claude Code's default one, whose account file sits beside it in the home
+ * folder.
+ */
 export function isDefaultClaudeDir(dir: string): boolean {
     try {
         return realpathSync(dir) === realpathSync(join(homedir(), '.claude'));
@@ -302,10 +306,15 @@ function rateLimits(record: Record<string, unknown>): Record<string, unknown> | 
     return isMap(info.rate_limits) ? info.rate_limits : null;
 }
 
-/** How much of the newest rollout's end is read for its last rate-limit event; a tool result can be large. */
+/**
+ * How much of the newest rollout's end is read for its last rate-limit event; a tool result can be
+ * large.
+ */
 export const CODEX_TAIL_BYTES = 4 * 1024 * 1024;
 
-/** Read at most the last tailBytes, retaining only complete JSON records at the leading boundary. */
+/**
+ * Read at most the last tailBytes, retaining only complete JSON records at the leading boundary.
+ */
 function rolloutTail(path: string, tailBytes: number): string[] {
     const handle = openSync(path, 'r');
     try {
@@ -324,7 +333,10 @@ function rolloutTail(path: string, tailBytes: number): string[] {
     }
 }
 
-/** The limit id Codex gives the account's own bucket; a model family with a bucket of its own carries another id. */
+/**
+ * The limit id Codex gives the account's own bucket; a model family with a bucket of its own
+ * carries another id.
+ */
 export const CODEX_ACCOUNT_LIMIT = 'codex';
 
 /** How many of the newest rollouts are read for a rate-limit event before the search gives up. */

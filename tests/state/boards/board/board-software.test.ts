@@ -1,6 +1,7 @@
-// The software cross-link of a board item: one edge, read from either side. A software project's own
-// join names the projects its `related:` holds; every other project's join names the software whose
-// `related:` holds it, which is why a paper needs no manifest key of its own for the software.
+// The software cross-link of a board item: one edge, read from either side. A software project's
+// own join names the projects its `related:` holds; every other project's join names the software
+// whose `related:` holds it, which is why a paper needs no manifest key of its own for the
+// software.
 //
 // Its own fixture rather than tests/state/boards/board/board.test.ts's, which is the whole
 // portfolio and says nothing about relations: what is checked here is three projects and one

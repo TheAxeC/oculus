@@ -6,11 +6,19 @@
 // case inside the copy; the dependencies are reached by a link to this project's node_modules, so a
 // case costs one vitest start rather than an install.
 
-import { mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import {
+    chmodSync,
+    mkdirSync,
+    readFileSync,
+    readdirSync,
+    rmSync,
+    symlinkSync,
+    writeFileSync
+} from 'node:fs';
 import { basename, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { afterAll, afterEach, describe, expect, it } from 'vitest';
 import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
 
@@ -90,7 +98,7 @@ describe('the revert check', () => {
         'calls a case red when its revert breaks it and GREEN when it does not',
         { timeout: 120000 },
         () => {
-            // revert: bin/revert-check.mjs:388 => if (run.green) return { ok: true, line: `red       ${where}` };
+            // revert: bin/revert-check.mjs:461 => if (run.green) return { ok: true, line: `red       ${where}` };
             const dir = fixture();
             const held = run(dir, ['tests/rule.test.js']);
             expect(held.out).toContain(
@@ -105,7 +113,7 @@ describe('the revert check', () => {
     );
 
     it('lists a case with no machine-readable revert as unchecked, never as passed', () => {
-        // revert: bin/revert-check.mjs:422 => delete
+        // revert: bin/revert-check.mjs:496 => delete
         const dir = fixture();
         writeFileSync(
             join(dir, 'tests', 'rule.test.js'),
@@ -124,7 +132,7 @@ describe('the revert check', () => {
     });
 
     it('refuses a directive whose file or line the tree does not hold', () => {
-        // revert: bin/revert-check.mjs:171 => if (false) {
+        // revert: bin/revert-check.mjs:215 => if (false) {
         const dir = fixture();
         writeFileSync(
             join(dir, 'tests', 'rule.test.js'),
@@ -151,7 +159,7 @@ describe('the revert check', () => {
         'calls a case whose name holds a bracket by that name, and not by it as a pattern',
         { timeout: 120000 },
         () => {
-            // revert: bin/revert-check.mjs:229 => const escaped = caseName;
+            // revert: bin/revert-check.mjs:275 => const escaped = caseName;
             const dir = fixture();
             withFile(
                 dir,
@@ -177,7 +185,7 @@ describe('the revert check', () => {
     );
 
     it('calls a revert the build refused unproven, never red', { timeout: 60000 }, () => {
-        // revert: bin/revert-check.mjs:300 => if (built.status !== 0) return { ran: true, green: false };
+        // revert: bin/revert-check.mjs:348 => if (built.status !== 0) return { ran: true, green: false };
         const dir = fixture();
         writeFileSync(
             join(dir, 'package.json'),
@@ -210,17 +218,23 @@ describe('the revert check', () => {
         'calls a replacement that leaves the file unparsable unproven, never red',
         { timeout: 120000 },
         () => {
-            // revert: bin/revert-check.mjs:281 => if (held.length === 0) return { ran: true, green: false };
-            const dir = fixture();
+            // revert: bin/revert-check.mjs:328 => if (held.length === 0) return { ran: true, green: false };
+            // A TypeScript module, which node cannot parse on its own, so the run itself is what
+            // finds it broken.
+            const dir = withFile(
+                fixture(),
+                'src/rule.ts',
+                RULE.replace('(size)', '(size: number)')
+            );
             withFile(
                 dir,
                 'tests/rule.test.js',
                 [
                     "import { expect, it } from 'vitest';",
-                    "import { allowed } from '../src/rule.mjs';",
+                    "import { allowed } from '../src/rule.ts';",
                     '',
                     "it('refuses a size under the limit', () => {",
-                    `    ${DIRECTIVE} src/rule.mjs:2 => return (;`,
+                    `    ${DIRECTIVE} src/rule.ts:2 => return (;`,
                     '    expect(allowed(1)).toBe(false);',
                     '});',
                     ''
@@ -240,7 +254,7 @@ describe('the revert check', () => {
         'names a directive whose target a copy leaves behind, and runs the ones after it',
         { timeout: 120000 },
         () => {
-            // revert: bin/revert-check.mjs:351 => if (false) {
+            // revert: bin/revert-check.mjs:405 => if (false) {
             const dir = fixture();
             withFile(dir, '.scratch/plan.md', 'a plan the copy leaves behind\n');
             withFile(
@@ -273,7 +287,7 @@ describe('the revert check', () => {
     );
 
     it('calls a skipped case unproven, and one another case excludes', { timeout: 120000 }, () => {
-        // revert: bin/revert-check.mjs:284 => if (held[0] === 'skipped') return { ran: true, green: false };
+        // revert: bin/revert-check.mjs:331 => if (held[0] === 'skipped') return { ran: true, green: false };
         const dir = fixture();
         withFile(
             dir,
@@ -314,7 +328,7 @@ describe('the revert check', () => {
         'calls a title two cases share unproven, however the siblings ran',
         { timeout: 120000 },
         () => {
-            // revert: bin/revert-check.mjs:282 => if (held.length > 99)
+            // revert: bin/revert-check.mjs:329 => if (held.length > 99)
             const dir = fixture();
             withFile(
                 dir,
@@ -342,7 +356,7 @@ describe('the revert check', () => {
     );
 
     it('calls a revert that changes nothing unproven', () => {
-        // revert: bin/revert-check.mjs:155 => if (false) {
+        // revert: bin/revert-check.mjs:199 => if (false) {
         const dir = fixture();
         withFile(
             dir,
@@ -383,7 +397,7 @@ describe('the revert check', () => {
     });
 
     it('refuses a target that escapes the tree, and writes nothing outside the copy', () => {
-        // revert: bin/revert-check.mjs:339 => if (false) {
+        // revert: bin/revert-check.mjs:393 => if (false) {
         const dir = fixture();
         const outside = join(dir, '..', `escape-target-${basename(dir)}.txt`);
         writeFileSync(outside, 'the file a directive must not reach\n');
@@ -412,7 +426,7 @@ describe('the revert check', () => {
     // Revert: in real of bin/revert-check.mjs, compare the path as written instead of following the
     // links on it, and a symlink inside the tree carries the edit to the file it names outside.
     it('names a directive whose target is a symlink out of the tree', { timeout: 120000 }, () => {
-        // revert: bin/revert-check.mjs:116 => const held = resolve(path);
+        // revert: bin/revert-check.mjs:243 => return held;
         const dir = fixture();
         const outside = join(dir, '..', `link-target-${basename(dir)}.txt`);
         writeFileSync(outside, 'the file a link must not reach\n');
@@ -440,7 +454,7 @@ describe('the revert check', () => {
     });
 
     it('reads a directive on the line above a case as that case', { timeout: 120000 }, () => {
-        // revert: bin/revert-check.mjs:115 => const under = null;
+        // revert: bin/revert-check.mjs:160 => const under = null;
         const dir = fixture();
         withFile(
             dir,
@@ -466,5 +480,175 @@ describe('the revert check', () => {
         );
         expect(held.out).toContain('unchecked tests/rule.test.js :: the case above');
         expect(held.status).toBe(1);
+    });
+
+    it('leaves nothing a case made in the temporary directory', { timeout: 120000 }, () => {
+        // revert: bin/revert-check.mjs:380 => const env = { ...process.env, CI: '1' };
+        const dir = fixture();
+        const probe = `oculus-leak-probe-${basename(dir)}-`;
+        withFile(
+            dir,
+            'tests/rule.test.js',
+            [
+                "import { mkdtempSync } from 'node:fs';",
+                "import { tmpdir } from 'node:os';",
+                "import { join } from 'node:path';",
+                "import { expect, it } from 'vitest';",
+                "import { allowed } from '../src/rule.mjs';",
+                '',
+                "it('makes a folder it never removes', () => {",
+                `    ${DIRECTIVE} src/rule.mjs:2 => return true;`,
+                `    mkdtempSync(join(tmpdir(), '${probe}'));`,
+                '    expect(allowed(1)).toBe(false);',
+                '});',
+                ''
+            ].join('\n')
+        );
+        const held = run(dir, ['tests/rule.test.js']);
+        expect(held.out).toContain(
+            'red       tests/rule.test.js :: makes a folder it never removes'
+        );
+        const left = readdirSync(tmpdir()).filter((name) => name.startsWith(probe));
+        for (const name of left) rmSync(join(tmpdir(), name), { recursive: true, force: true });
+        expect(left).toEqual([]);
+    });
+
+    it(
+        'removes its copy of the tree when it is stopped by a signal',
+        { timeout: 120000 },
+        async () => {
+            // revert: bin/revert-check.mjs:417 => delete
+            const dir = fixture();
+            const temp = scratchDir('oculus-revert-signal-');
+            expect(resolve(temp).startsWith(resolve(tmpdir()) + sep)).toBe(true);
+            withFile(
+                dir,
+                'tests/rule.test.js',
+                [
+                    "import { expect, it } from 'vitest';",
+                    "import { allowed } from '../src/rule.mjs';",
+                    '',
+                    "it('takes a few seconds', async () => {",
+                    `    ${DIRECTIVE} src/rule.mjs:2 => return true;`,
+                    '    await new Promise((done) => setTimeout(done, 3000));',
+                    '    expect(allowed(1)).toBe(false);',
+                    '});',
+                    ''
+                ].join('\n')
+            );
+            const child = spawn(
+                'node',
+                ['bin/revert-check.mjs', '--root', dir, 'tests/rule.test.js'],
+                {
+                    cwd: process.cwd(),
+                    env: { ...process.env, TMPDIR: temp },
+                    stdio: 'ignore'
+                }
+            );
+            const ended = new Promise<void>((done) => child.on('exit', () => done()));
+            const copies = (): string[] =>
+                readdirSync(temp).filter((name) => name.startsWith('oculus-revert-'));
+            await expect.poll(copies, { timeout: 60000, interval: 100 }).toHaveLength(1);
+            child.kill('SIGTERM');
+            await ended;
+            expect(copies()).toEqual([]);
+        }
+    );
+
+    it(
+        'calls a revert that breaks the syntax of a script the case runs unproven, never red',
+        {
+            timeout: 120000
+        },
+        () => {
+            // revert: bin/revert-check.mjs:449 => if (false) {
+            const dir = fixture();
+            withFile(dir, 'src/tool.mjs', "console.log('ran');\n");
+            withFile(
+                dir,
+                'tests/rule.test.js',
+                [
+                    "import { spawnSync } from 'node:child_process';",
+                    "import { expect, it } from 'vitest';",
+                    '',
+                    "it('runs the tool to its end', () => {",
+                    `    ${DIRECTIVE} src/tool.mjs:1 => console.log('ran';`,
+                    "    expect(spawnSync('node', ['src/tool.mjs']).status).toBe(0);",
+                    '});',
+                    ''
+                ].join('\n')
+            );
+            const held = run(dir, ['tests/rule.test.js']);
+            expect(held.out).toContain('names src/tool.mjs:1, which the revert leaves unparsable');
+            expect(held.out).not.toContain('red ');
+            expect(held.status).toBe(1);
+        }
+    );
+
+    it(
+        'reads a directive above the prose revert of a case as that case',
+        { timeout: 120000 },
+        () => {
+            // revert: bin/revert-check.mjs:159 => delete
+            const dir = fixture();
+            withFile(
+                dir,
+                'tests/rule.test.js',
+                [
+                    "import { expect, it } from 'vitest';",
+                    "import { allowed } from '../src/rule.mjs';",
+                    '',
+                    "it('the case above', () => {",
+                    '    expect(allowed(5)).toBe(true);',
+                    '});',
+                    '',
+                    `${DIRECTIVE} src/rule.mjs:2 => return true;`,
+                    '// Revert: let every size through in allowed of src/rule.mjs.',
+                    "it('the case under the prose', () => {",
+                    '    expect(allowed(1)).toBe(false);',
+                    '});',
+                    ''
+                ].join('\n')
+            );
+            const held = run(dir, ['tests/rule.test.js']);
+            expect(held.out).toContain(
+                'red       tests/rule.test.js :: the case under the prose (revert src/rule.mjs:2)'
+            );
+            expect(held.out).toContain('unchecked tests/rule.test.js :: the case above');
+        }
+    );
+});
+
+describe("a case's copy, on its way out", () => {
+    it('is said and not thrown over when the case left it unremovable', { timeout: 120000 }, () => {
+        // revert: bin/revert-check.mjs:60-79 => rmSync(dir, { recursive: true, force: true });
+        const dir = fixture();
+        withFile(
+            dir,
+            'tests/rule.test.js',
+            [
+                "import { chmodSync } from 'node:fs';",
+                "import { join } from 'node:path';",
+                "import { expect, it } from 'vitest';",
+                "import { allowed } from '../src/rule.mjs';",
+                '',
+                `${DIRECTIVE} src/rule.mjs:2 => return true;`,
+                "it('the case', () => {",
+                // The case takes the write bit off a folder of its own copy, which is what a child
+                // still writing into the copy does to the removal that follows the case.
+                "    chmodSync(join(process.cwd(), 'src'), 0o500);",
+                '    expect(allowed(1)).toBe(false);',
+                '});',
+                ''
+            ].join('\n')
+        );
+
+        const held = run(dir, ['tests/rule.test.js']);
+        expect(held.out).toContain('1 reverts, 0 unproven');
+        const kept = /^kept {6}(\S+):/m.exec(held.out);
+        expect(kept).not.toBeNull();
+        if (kept === null) return;
+        chmodSync(join(kept[1], 'src'), 0o700);
+        rmSync(kept[1], { recursive: true, force: true });
     });
 });

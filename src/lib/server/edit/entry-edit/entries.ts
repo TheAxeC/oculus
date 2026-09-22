@@ -97,11 +97,11 @@ export function setEntryFields(
  * nothing. YAML has no empty block list, so such a file is in one of two states: it carries no list
  * key at all, which is a file nothing has ever been written to, or it carries the key with nothing
  * under it, which is what deleting the last entry leaves. The first gets the key at the end of the
- * file, the second gets the block under the key it already has, and a file whose list holds an entry
- * is left alone, since appendEntry is what grows one.
+ * file, the second gets the block under the key it already has, and a file whose list holds an
+ * entry is left alone, since appendEntry is what grows one.
  *
- * The result is verified the way an append is: the file parses, the key is a list of exactly the one
- * entry, and every other key is what it was.
+ * The result is verified the way an append is: the file parses, the key is a list of exactly the
+ * one entry, and every other key is what it was.
  */
 export function startEntries(source: string, listKey: string, block: string): EditResult {
     const doc = document(source);
@@ -193,7 +193,9 @@ export function appendEntry(source: string, listKey: string, block: string): Edi
     return { text, changed: [listKey], refused: [] };
 }
 
-/** One entry as a reorder sees it: the value its identity field holds, and the lines it occupies. */
+/**
+ * One entry as a reorder sees it: the value its identity field holds, and the lines it occupies.
+ */
 type Placed = { value: string; range: LineRange };
 
 /**

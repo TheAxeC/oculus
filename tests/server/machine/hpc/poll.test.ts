@@ -11,7 +11,9 @@ import type { RunResult, Runner } from '../../../../src/lib/server/machine/hpc/s
 
 const options = { host: 'fixture', days: 3, pollMin: 20, quotaMin: 60, prewarm: true };
 const MINUTE = 60000;
-/** One queued job, one finished job and one partition, in the shape the batch command answers with. */
+/**
+ * One queued job, one finished job and one partition, in the shape the batch command answers with.
+ */
 const ANSWER = `1|x|cpu|RUNNING|1|2|1|1||1G|1||n\n${SEC_RC}0@@\n${SEC_SACCT}\n9|y|COMPLETED|0:0|10:00|2026-09-11T10:00:00|1G|512M|1:00|1|1|600\n${SEC_SINFO}\ncpu|up|1|idle|(null)`;
 
 /** The payload the hub currently holds on the hpc channel. */

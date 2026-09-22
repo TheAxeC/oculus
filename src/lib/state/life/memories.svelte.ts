@@ -1,16 +1,16 @@
 // Layer 2, client state. The pictures on the Memories wall, each name with its width and height.
 //
-// The folder is not in the snapshot: it is a directory of images beside the wallpaper, not portfolio
-// data, so it is fetched from GET /api/memories the first time the wall asks and read again after
-// the wall adds one. The fetch is scheduled on a microtask rather than run inside the call, so
-// reading this from a $derived never writes state while a derived is running, and it is only ever
-// made in the browser: a server-rendered page holds nothing and asks for nothing.
+// The folder is not in the snapshot: it is a directory of images beside the wallpaper, not
+// portfolio data, so it is fetched from GET /api/memories the first time the wall asks and read
+// again after the wall adds one. The fetch is scheduled on a microtask rather than run inside the
+// call, so reading this from a $derived never writes state while a derived is running, and it is
+// only ever made in the browser: a server-rendered page holds nothing and asks for nothing.
 //
 // The sizes are what give a tile its shape before its picture has arrived. They are read off the
 // answer as whole positive numbers or not at all, since the shape a tile takes is written into its
 // style, and `tileRatio` is the one rule turning a size into that shape. An answer the server could
-// not have meant (no list, a picture with no name, a name twice) is held as a failed read naming what
-// was wrong, rather than as a wall with fewer tiles or none.
+// not have meant (no list, a picture with no name, a name twice) is held as a failed read naming
+// what was wrong, rather than as a wall with fewer tiles or none.
 
 import { isMap } from '../../data/helpers/guards.ts';
 import type { Picture } from '../../data/model.ts';
@@ -29,8 +29,9 @@ const PENDING: Wall = { images: [], error: '', loading: true };
 
 /**
  * How far a tile's shape may leave the square: three times as wide as it is tall, or three times as
- * tall as it is wide. A picture past that, drawn at its own shape, would be a sliver across a column
- * or a column of its own, so its box stops at the bound and the picture is fitted whole inside it.
+ * tall as it is wide. A picture past that, drawn at its own shape, would be a sliver across a
+ * column or a column of its own, so its box stops at the bound and the picture is fitted whole
+ * inside it.
  */
 export const TILE_BOUND = 3;
 
@@ -115,7 +116,8 @@ export function createMemories(): MemoriesStore {
     async function load(): Promise<void> {
         try {
             // There is no fetch while the page is rendered on the server, and nothing to show there
-            // either: the wall stays pending and the browser asks for it on the first client render.
+            // either: the wall stays pending and the browser asks for it on the first client
+            // render.
             if (typeof window === 'undefined' || typeof fetch !== 'function') return;
             const response = await fetch('/api/memories');
             const body = (await response.json()) as { images?: unknown; error?: string };

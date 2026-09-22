@@ -3,10 +3,10 @@
 // sender.
 //
 // Whether a file may be saved is the file's own mode, asked of the source route when the tab opens
-// and held with the draft: no list of extensions decides it, so a tab over a file this machine locks
-// shows it and says so, and a tab over anything else is an editor. The read is cut at the same limit
-// the file route's readers use, and a draft that was cut saves nothing: writing back a copy that
-// stops at two megabytes would take the rest of the file off the disk.
+// and held with the draft: no list of extensions decides it, so a tab over a file this machine
+// locks shows it and says so, and a tab over anything else is an editor. The read is cut at the
+// same limit the file route's readers use, and a draft that was cut saves nothing: writing back a
+// copy that stops at two megabytes would take the rest of the file off the disk.
 
 import { TEXT_LIMIT } from '../sources/fs.ts';
 import { readCapped } from '../sources/fs.svelte.ts';
@@ -28,17 +28,27 @@ export type SourceDraft = {
     text: string;
     saved: string;
     loaded: boolean;
-    /** The page lifetime the disk was last read in; another value means the draft came from storage. */
+    /**
+     * The page lifetime the disk was last read in; another value means the draft came from storage.
+     */
     readIn?: string;
     error: string;
     message: string;
     /** Whether the rendered half is drawn beside the editor, for a file that has one. */
     rendered: boolean;
-    /** Whether this machine's mode on the file refuses a write, which the tab draws instead of an editor. */
+    /**
+     * Whether this machine's mode on the file refuses a write, which the tab draws instead of an
+     * editor.
+     */
     readonly: boolean;
-    /** Whether the read stopped at the limit, which is the other way a tab holds no complete file. */
+    /**
+     * Whether the read stopped at the limit, which is the other way a tab holds no complete file.
+     */
     truncated: boolean;
-    /** The file the draft was read for, as `root/path`, so a read that lands after the tab was pointed at another file is thrown away. */
+    /**
+     * The file the draft was read for, as `root/path`, so a read that lands after the tab was
+     * pointed at another file is thrown away.
+     */
     file: string;
 };
 
@@ -168,9 +178,10 @@ export function createSource(writes: WritesStore, ui: UiStore): SourceStore {
     }
 
     /**
-     * Read once per instance per page lifetime, sharing an unfinished read across tab switches. A draft
-     * restored from the browser's storage after a reload is read again from disk: an unsaved edit is
-     * kept as the working text over the disk's copy, a draft with no edit takes the disk's text.
+     * Read once per instance per page lifetime, sharing an unfinished read across tab switches. A
+     * draft restored from the browser's storage after a reload is read again from disk: an unsaved
+     * edit is kept as the working text over the disk's copy, a draft with no edit takes the disk's
+     * text.
      *
      * The read belongs to the file it was started for. A preview tab pointed at a second file while
      * the first file's read is still in flight has its draft cleared and asks for the second file:

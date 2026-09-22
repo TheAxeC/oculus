@@ -3,8 +3,8 @@
     // thing of its own, which column it is sorted by: the order is a property of this table on this
     // screen and not of the data, so two tables over the same rows sort apart.
     //
-    // A cell is the value as text unless the caller passes the `cell` snippet, which is how a column
-    // of chips or of links is drawn without this component learning what either is.
+    // A cell is the value as text unless the caller passes the `cell` snippet, which is how a
+    // column of chips or of links is drawn without this component learning what either is.
 
     import { type Column, type Sort, cellText, order } from '$lib/ui/display/table-rows';
     import type { Snippet } from 'svelte';
@@ -109,7 +109,8 @@
         white-space: nowrap;
     }
 
-    /* A sticky heading sits over the rows it labels, so it keeps a pane's fraction of the panel colour rather than going clear. */
+    /* A sticky heading sits over the rows it labels, so it keeps a pane's fraction of the panel
+       colour rather than going clear. */
     :global(body.wall) th {
         background: color-mix(in srgb, var(--panel) var(--wall-panel), transparent);
         backdrop-filter: blur(var(--wall-blur));
@@ -159,7 +160,8 @@
         font-variant-numeric: tabular-nums;
     }
 
-    /* The terminal shape: a hairline under the heading row only, and no banding under the pointer. */
+    /* The terminal shape: a hairline under the heading row only, and no banding under the
+       pointer. */
     :global(body.rice) th {
         text-transform: none;
     }

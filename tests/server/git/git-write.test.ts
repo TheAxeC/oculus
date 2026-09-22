@@ -6,8 +6,8 @@
 // mirror image of the one over git.ts: git.ts may name no writing subcommand at all, and this may
 // name only the enumerated ones, each at one call site, and `--force` nowhere.
 //
-// What this does NOT cover: `claude` is never run. suggestMessage is exercised with the diff and the
-// subprocess both handed in, which is what its options exist for.
+// What this does NOT cover: `claude` is never run. suggestMessage is exercised with the diff and
+// the subprocess both handed in, which is what its options exist for.
 
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';

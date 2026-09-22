@@ -12,9 +12,9 @@
 // refuses, so the key is absent until the first bookmark and startEntries() writes it with that
 // bookmark under it.
 //
-// A read of a file that is not there answers the scaffold's own schema rather than none, so the form
-// that adds the first bookmark has its controls before anything has been written; the file itself is
-// still made by that first write and by nothing else.
+// A read of a file that is not there answers the scaffold's own schema rather than none, so the
+// form that adds the first bookmark has its controls before anything has been written; the file
+// itself is still made by that first write and by nothing else.
 //
 // Nothing here holds state between calls; the path comes in from the caller, so two servers in one
 // process read two files.
@@ -57,7 +57,9 @@ const SCAFFOLD = [
     ''
 ].join('\n');
 
-/** Write the scaffold for a machine that has no bookmarks file yet. An existing file is left alone. */
+/**
+ * Write the scaffold for a machine that has no bookmarks file yet. An existing file is left alone.
+ */
 export function ensureBookmarksFile(file: string): void {
     if (existsSync(file)) return;
     writeTextAtomic(file, SCAFFOLD);
@@ -65,7 +67,8 @@ export function ensureBookmarksFile(file: string): void {
 
 /**
  * The schema of the file that has not been written yet, read out of the scaffold itself so the form
- * a reader sees before their first bookmark and the file that first bookmark makes are the one shape.
+ * a reader sees before their first bookmark and the file that first bookmark makes are the one
+ * shape.
  */
 function scaffoldSchema(): SchemaField[] {
     return collectionSchema((parse(SCAFFOLD) as { schema?: unknown }).schema) ?? [];

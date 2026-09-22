@@ -1,7 +1,7 @@
 // Layer 2, server tests. The command line the built server is started with. The parser is a pure
 // function over the argument list, so every rule of it is a case here and none of them starts a
-// process; that a started server reads the directory it was given is the package's own verification,
-// which stands one up over a temporary engine directory and reads the page back.
+// process; that a started server reads the directory it was given is the package's own
+// verification, which stands one up over a temporary engine directory and reads the page back.
 
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';

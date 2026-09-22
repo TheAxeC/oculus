@@ -1,8 +1,9 @@
 // The Search view rendered on the server: the query row, the count line with the time and the cap
 // word, the hits grouped by file with their line numbers, and the emboldened match.
 //
-// Nothing here reaches the endpoint. The answer is put into the instance's own state, which is where
-// a run leaves it, so the view is drawn over a fixture exactly as it is drawn over a real answer.
+// Nothing here reaches the endpoint. The answer is put into the instance's own state, which is
+// where a run leaves it, so the view is drawn over a fixture exactly as it is drawn over a real
+// answer.
 
 import { render } from 'svelte/server';
 import { beforeEach, describe, expect, it } from 'vitest';

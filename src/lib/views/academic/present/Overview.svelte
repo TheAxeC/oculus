@@ -64,7 +64,8 @@
         border-left-color: var(--tone);
     }
 
-    /* The slide in force is told from the rest by its own hairline, apart from the shell's cursor. */
+    /* The slide in force is told from the rest by its own hairline, apart from the shell's
+       cursor. */
     .tile.current {
         outline: 1px solid var(--accent);
         outline-offset: 1px;

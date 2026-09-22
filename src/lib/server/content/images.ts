@@ -11,12 +11,13 @@
 //
 // A picture's width and height are read here too, from its header bytes, since the Memories wall
 // draws each tile at its picture's proportions before the picture arrives. The format is taken from
-// the bytes rather than the extension, as the browser does when it draws one, and only as many bytes
-// as the header needs are read through a file handle: a folder of photographs is megabytes a picture
-// and a listing reads a few hundred bytes of each. No image library is used, since three header
-// layouts are all the four extensions carry. The size is the one the browser draws: a JPEG's EXIF
-// block and a PNG's `eXIf` chunk are read for an orientation that turns the picture a quarter, and a
-// WebP's is not, since the browser does not turn a WebP.
+// the bytes rather than the extension, as the browser does when it draws one, and only as many
+// bytes as the header needs are read through a file handle: a folder of photographs is megabytes a
+// picture and a listing reads a few hundred bytes of each. No image library is used, since three
+// header layouts are all the four extensions carry. The size is the one the browser draws: a JPEG's
+// EXIF block and a PNG's `eXIf` chunk are read for an orientation that turns the picture a quarter,
+// and a WebP's is not, since the browser does not turn a WebP. A walk stops after SEGMENTS chunks,
+// so a picture whose orientation tag sits past that is drawn here at its stored shape.
 
 import { closeSync, createReadStream, openSync, readdirSync, readSync, statSync } from 'node:fs';
 import { extname, join, resolve, sep } from 'node:path';
@@ -49,22 +50,30 @@ export function images(dir: string): string[] {
         .sort();
 }
 
-/** A picture's width and height in pixels, as the browser draws it: a quarter turn already applied. */
+/**
+ * A picture's width and height in pixels, as the browser draws it: a quarter turn already applied.
+ */
 export type Size = { width: number; height: number };
 
 /** The bytes of one file from a position, as many as are there up to `length`. */
 export type ReadAt = (position: number, length: number) => Uint8Array;
 
-/** The bytes a PNG or WebP header's size sits within: the PNG IHDR and the widest WebP chunk head. */
+/**
+ * The bytes a PNG or WebP header's size sits within: the PNG IHDR and the widest WebP chunk head.
+ */
 const HEAD = 30;
 
-/** The JPEG segments or PNG chunks a walk passes before it gives up, so no file is read whole. */
-const SEGMENTS = 512;
+/**
+ * The JPEG segments or PNG chunks a walk passes before it gives up, so no file is read whole. A PNG
+ * whose orientation chunk comes after that many chunks is sized at its stored shape, and a JPEG
+ * whose frame comes after that many segments gives no size.
+ */
+export const SEGMENTS = 512;
 
 /**
- * The bytes of a JPEG EXIF block or a PNG `eXIf` chunk read for its orientation. The tag sits in the
- * first directory, whose entries are in tag order with 0x0112 among the first few, so a camera's
- * block has it well inside this; the thumbnail and the rest of the block are not read.
+ * The bytes of a JPEG EXIF block or a PNG `eXIf` chunk read for its orientation. The tag sits in
+ * the first directory, whose entries are in tag order with 0x0112 among the first few, so a
+ * camera's block has it well inside this; the thumbnail and the rest of the block are not read.
  */
 const EXIF = 1024;
 
@@ -76,7 +85,9 @@ function isFrame(code: number): boolean {
     return code >= 0xc0 && code <= 0xcf && code !== 0xc4 && code !== 0xc8 && code !== 0xcc;
 }
 
-/** Whether an EXIF orientation turns a picture a quarter (5 to 8), so its two sides trade places. */
+/**
+ * Whether an EXIF orientation turns a picture a quarter (5 to 8), so its two sides trade places.
+ */
 function isTurned(orientation: number): boolean {
     return orientation >= 5 && orientation <= 8;
 }
@@ -95,15 +106,17 @@ function sized(width: number, height: number): Size | null {
     return width > 0 && height > 0 ? { width, height } : null;
 }
 
-/** The size a picture is drawn at: its stored sides, traded when its orientation turns it a quarter. */
+/**
+ * The size a picture is drawn at: its stored sides, traded when its orientation turns it a quarter.
+ */
 function turned(orientation: number, width: number, height: number): Size | null {
     return isTurned(orientation) ? sized(height, width) : sized(width, height);
 }
 
 /**
- * The orientation a PNG's `eXIf` chunk names, or 0 when it has none. The chunks after IHDR are walked
- * by their lengths as far as the first image data, where the chunk must already have come, under the
- * JPEG walk's two caps; a chunk head that is not four letters ends the walk.
+ * The orientation a PNG's `eXIf` chunk names, or 0 when it has none. The chunks after IHDR are
+ * walked by their lengths as far as the first image data, where the chunk must already have come,
+ * under the JPEG walk's two caps; a chunk head that is not four letters ends the walk.
  */
 function pngOrientation(read: ReadAt, at: number): number {
     for (let passed = 0; passed < SEGMENTS; passed += 1) {
@@ -157,7 +170,8 @@ function webp(head: Uint8Array): Size | null {
 
 /**
  * The orientation a JPEG APP1 segment's body names, or 0 when it names none: an `Exif` header and
- * then the TIFF structure a PNG's `eXIf` chunk holds bare. An APP1 of another kind (XMP) names none.
+ * then the TIFF structure a PNG's `eXIf` chunk holds bare. An APP1 of another kind (XMP) names
+ * none.
  */
 function exifOrientation(body: Uint8Array): number {
     if (!spells(body, 0, 'Exif') || body[4] !== 0 || body[5] !== 0) return 0;
@@ -190,9 +204,9 @@ function tiffOrientation(body: Uint8Array): number {
 /**
  * A JPEG's size, from the first frame header, walking the segments before it by their lengths, so a
  * large EXIF block or colour profile before the frame is stepped over rather than read whole. The
- * first EXIF block met on the way is read as far as its orientation, and a quarter turn swaps the two
- * sides, since the browser draws the picture turned. A scan or the end of the file before any frame
- * gives no size.
+ * first EXIF block met on the way is read as far as its orientation, and a quarter turn swaps the
+ * two sides, since the browser draws the picture turned. A scan or the end of the file before any
+ * frame gives no size.
  */
 function jpeg(read: ReadAt): Size | null {
     let at = 2;
@@ -241,10 +255,10 @@ export function readSize(read: ReadAt): Size | null {
 }
 
 /**
- * The size of the picture at `path`, read from its header through one file handle, and null when the
- * path is not a regular file or its header cannot be read. It never throws, since one unreadable file
- * must not take the rest of a listing with it. The regular-file check comes before the open because
- * opening a named pipe waits for a writer, and a listing is read on the request.
+ * The size of the picture at `path`, read from its header through one file handle, and null when
+ * the path is not a regular file or its header cannot be read. It never throws, since one
+ * unreadable file must not take the rest of a listing with it. The regular-file check comes before
+ * the open because opening a named pipe waits for a writer, and a listing is read on the request.
  */
 export function sizeOf(path: string): Size | null {
     let handle: number;
@@ -340,7 +354,9 @@ export function folderOf(
     return dir;
 }
 
-/** The merged configuration of one engine directory, read per request so an edit shows on reload. */
+/**
+ * The merged configuration of one engine directory, read per request so an edit shows on reload.
+ */
 export function configOf(engine: string): Record<string, unknown> {
     return loadConfig(engine).config;
 }

@@ -7,9 +7,9 @@
 // the hub, and the save writes the copy of the engine's config/ inside the engine directory
 // tests/browser/helpers/serve.ts starts the run over, never the checkout's own.
 //
-// One case changes that copy's deck and it is the last in the file, since the specs share one server:
-// a case reading the deck after it would be reading what that case wrote rather than the shipped
-// deck. The others tick and move without saving, and each runs on its own page.
+// One case changes that copy's deck and it is the last in the file, since the specs share one
+// server: a case reading the deck after it would be reading what that case wrote rather than the
+// shipped deck. The others tick and move without saving, and each runs on its own page.
 
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { boot, openView } from '../helpers/rail.ts';
@@ -84,7 +84,8 @@ test('a project slide draws its own front matter and typesets its equation', asy
     ).toBeVisible();
     await expect(slide.getByText(t('present.method'), { exact: true })).toBeVisible();
     await expect(slide.getByText(t('present.results'), { exact: true })).toBeVisible();
-    // The slide's equation is LaTeX, so KaTeX typeset it into the page rather than leaving the source.
+    // The slide's equation is LaTeX, so KaTeX typeset it into the page rather than leaving the
+    // source.
     await expect(slide.locator('.katex').first()).toBeVisible();
 });
 
@@ -243,6 +244,7 @@ test('a slide unticked and a slide moved reach the deck when the catalog is save
     await expect(page.locator('[data-overview]')).toBeVisible();
     await expect(
         page.getByRole('button', { name: 'Probing the node that tells you most' })
-        // the overview lists the slides of the deck the reader is in, and that slide belongs to another deck
+        // the overview lists the slides of the deck the reader is in, and that slide belongs to
+        // another deck
     ).toHaveCount(0);
 });

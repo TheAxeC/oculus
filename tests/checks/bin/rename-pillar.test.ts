@@ -17,7 +17,9 @@ afterAll(sweepScratch);
 // The fixture hub, under the system temporary directory; nothing outside it is read or written.
 const root = scratchDir('oculus-pillar-');
 
-/** Write one manifest under the fixture hub, asserting the path stays inside it before any write. */
+/**
+ * Write one manifest under the fixture hub, asserting the path stays inside it before any write.
+ */
 function manifest(where: string, text: string): string {
     const dir = resolve(root, 'projects', where);
     expect(dir.startsWith(root + sep)).toBe(true);

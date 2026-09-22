@@ -1,9 +1,9 @@
 // Layer 2, server. One account's credential file: where it is, what it may hold, and the one write
 // that puts a refresh token into it.
 //
-// The client half of the file is the reader's own: a Google Desktop OAuth client's id and secret, or
-// an Entra public-client application's id and tenant. Neither is in the tracked tree and neither is
-// in config/local.yml, so nothing the repository holds names an account of the reader's. The
+// The client half of the file is the reader's own: a Google Desktop OAuth client's id and secret,
+// or an Entra public-client application's id and tenant. Neither is in the tracked tree and neither
+// is in config/local.yml, so nothing the repository holds names an account of the reader's. The
 // connector writes one field, `refresh_token`, and reads the file at every poll.
 //
 // Each connector has a folder of its own, which the kind selects, and an account of one connector

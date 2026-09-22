@@ -1,10 +1,10 @@
 // Layer 2, client state. The preview tab: which instance a preview open replaces, and the two
 // rewrites that replace it and that keep it.
 //
-// A pane holds at most one preview tab, so a reader walking a tree with single clicks reads one file
-// after another in one tab instead of leaving a strip of them behind. Keeping the tab is the flag
-// going away rather than a second field, since a tab is either the one that is replaced next or it
-// is not.
+// A pane holds at most one preview tab, so a reader walking a tree with single clicks reads one
+// file after another in one tab instead of leaving a strip of them behind. Keeping the tab is the
+// flag going away rather than a second field, since a tab is either the one that is replaced next
+// or it is not.
 
 import { findInstance } from '../../../client/instance.ts';
 import { rewrite } from '../tree.ts';

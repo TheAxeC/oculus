@@ -73,8 +73,8 @@ const ENTRY_CATEGORIES = ['event', 'teaching', 'task', 'position', 'collab'];
  * What a ticker line's buttons act on, and nothing about what they say. A view derives the buttons
  * from the shape: a `manifest` or an `entry` is snoozed, an `entry` carrying `statuses` also gets
  * its lifecycle buttons, a line carrying a `subtask` key is ticked, reopened, snoozed or deleted, a
- * `followup` is cleared, a snoozed line is woken, and a `lead` carries none: its line opens the Leads view, where its
- * actions are.
+ * `followup` is cleared, a snoozed line is woken, and a `lead` carries none: its line opens the
+ * Leads view, where its actions are.
  *
  * Keeping the words out is what lets one view draw every group: the buttons are the write path's
  * vocabulary and the sentences are the text catalogs', and neither of them is here.
@@ -87,7 +87,9 @@ export type TickerTarget = {
     collection?: string;
     /** The key of the subtask line, for a line that is one. */
     subtask?: string;
-    /** The lifecycle values of the entry's own collection, minus none; the view drops the current. */
+    /**
+     * The lifecycle values of the entry's own collection, minus none; the view drops the current.
+     */
     statuses?: string[];
 };
 

@@ -157,7 +157,9 @@ export function fieldNames(schema: unknown): string[] {
     return [];
 }
 
-/** Split the dotted names: `status.chips` puts `status` in `top` and `chips` under it in `nested`. */
+/**
+ * Split the dotted names: `status.chips` puts `status` in `top` and `chips` under it in `nested`.
+ */
 export function schemaKeys(schema: unknown): SchemaKeys {
     const top = new Set<string>(PROVENANCE);
     const nested = new Map<string, Set<string>>();
@@ -244,9 +246,9 @@ function checkType(
 
 /**
  * The manifest's `focus:` names a lane of `focus_lanes` or `holding`, the ideas backlog. A value
- * outside them is not drawn anywhere: the board puts a non-idea on no lane at all and an idea in the
- * backlog, and until this check that was silent. No lanes in the vocabulary means the check is off,
- * the way `chips` behaves.
+ * outside them is not drawn anywhere: the board puts a non-idea on no lane at all and an idea in
+ * the backlog, and until this check that was silent. No lanes in the vocabulary means the check is
+ * off, the way `chips` behaves.
  */
 function checkFocus(
     manifest: RawManifest,
@@ -271,8 +273,8 @@ function checkFocus(
 
 /**
  * The sentence for a field whose value has the wrong shape: what the field must be, which is one
- * catalog key per shape and nullability, and what it is instead. A null in a field that may not hold
- * one takes the same sentence as any other wrong shape, with `null` as what it is.
+ * catalog key per shape and nullability, and what it is instead. A null in a field that may not
+ * hold one takes the same sentence as any other wrong shape, with `null` as what it is.
  */
 function shapeSentence(
     catalog: TextCatalog,
@@ -557,11 +559,11 @@ function checkEntryIdentity(raw: RawPortfolio, catalog: TextCatalog, findings: F
 }
 
 /**
- * Every key of a person's `affiliations:` names an organisation of the registry, the entry writes the
- * list under that name, and exactly one entry carries `self: true`. The affiliations are what draw
- * the person's organisations everywhere a person is shown, so a free string there is a name nothing
- * can be looked up by; `self` is how the hub knows which entry is its owner, and two of them or none
- * leaves that question unanswered.
+ * Every key of a person's `affiliations:` names an organisation of the registry, the entry writes
+ * the list under that name, and exactly one entry carries `self: true`. The affiliations are what
+ * draw the person's organisations everywhere a person is shown, so a free string there is a name
+ * nothing can be looked up by; `self` is how the hub knows which entry is its owner, and two of
+ * them or none leaves that question unanswered.
  */
 function checkPeople(
     raw: RawPortfolio,

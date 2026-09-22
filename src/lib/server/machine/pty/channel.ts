@@ -2,8 +2,8 @@
 // socket accepts anything from the page beyond a subscription.
 //
 // A page subscribes to `pty:<id>`, gets what the pane already shows as its first message, and then
-// one message per chunk tmux reports for that pane. It sends back `input` and `resize`, and both are
-// accepted only on a socket whose subscribe message carried the write token; a socket without
+// one message per chunk tmux reports for that pane. It sends back `input` and `resize`, and both
+// are accepted only on a socket whose subscribe message carried the write token; a socket without
 // the token reads every channel and writes to none. That is DESIGN.md's "The socket accepts nothing
 // from the page except subscriptions and, later, terminal input", made concrete.
 //
@@ -280,7 +280,9 @@ export class Terminals {
     #poll: number;
     #idlePoll: number;
     #timer: ReturnType<typeof setInterval> | null = null;
-    /** The period the running timer was armed with, so an attach that changes nothing rearms none. */
+    /**
+     * The period the running timer was armed with, so an attach that changes nothing rearms none.
+     */
     #period = 0;
     #closed = false;
 
@@ -291,8 +293,8 @@ export class Terminals {
         this.#driver.onOutput((id, bytes) => this.#output(id, bytes));
         this.#driver.onChange(() => this.refresh());
         this.#poll = options.poll ?? POLL_MS;
-        // `poll: 0` is how a caller asks for no list poll at all, so the idle rate follows it unless
-        // the caller named one of its own.
+        // `poll: 0` is how a caller asks for no list poll at all, so the idle rate follows it
+        // unless the caller named one of its own.
         this.#idlePoll = options.idlePoll ?? (this.#poll === 0 ? 0 : IDLE_POLL_MS);
         this.#arm();
         this.refresh();
@@ -446,7 +448,8 @@ export class Terminals {
         const screen = text.replace(/\r?\n/g, '\r\n');
         const message = {
             channel: ptyChannel(id),
-            // The scrollback is not a chunk, so it carries no chunk number; the chunks count from 1.
+            // The scrollback is not a chunk, so it carries no chunk number; the chunks count from
+            // 1.
             version: 0,
             payload: { bytes: Buffer.from(screen, 'utf8').toString('base64') }
         };

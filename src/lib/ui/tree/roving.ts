@@ -4,7 +4,10 @@
 // with the arrow keys. The arithmetic is here rather than in each strip so the wrap is written once
 // and asserted without a DOM.
 
-/** Which pair of arrow keys a strip answers: the row keys for a tab strip, the column keys for the rail. */
+/**
+ * Which pair of arrow keys a strip answers: the row keys for a tab strip, the column keys for the
+ * rail.
+ */
 export type RovingAxis = 'row' | 'column';
 
 /**

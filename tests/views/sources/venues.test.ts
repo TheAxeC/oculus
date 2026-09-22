@@ -307,7 +307,8 @@ describe('the journal section and venue card', () => {
         const journal = venueCard(body, 'journal');
         expect(journal).toMatch(/class="slot [^"]*concentrated"/);
         expect(journal).toMatch(/class="tag /);
-        // a venue concentrated by the portfolio is drawn in the tone the concentration gives it, not in a hue of its own
+        // a venue concentrated by the portfolio is drawn in the tone the concentration gives it,
+        // not in a hue of its own
         expect(journal).not.toContain('--tone: var(--c-');
         expect(journal).toContain(catalog['venues.conc']);
         expect(journal).toContain(catalog['venues.conc_tip']);
@@ -336,7 +337,8 @@ describe('the journal section and venue card', () => {
             catalog['venues.show_in_files_tip'].replace('{0}', 'registries/venues.yml')
         );
         expect(journal).toContain('href="/api/file/hub/registries/venues.yml"');
-        // The site link leaves the application as the collection cards' links do, never replacing it.
+        // The site link leaves the application as the collection cards' links do, never replacing
+        // it.
         expect(journal).toContain('target="_blank"');
     });
 
@@ -368,7 +370,8 @@ describe('the journal section and venue card', () => {
     // Revert: in hubPathsOf of state/boards/collection.ts, take every `link` value.
     it('offers no Show in Files for a link that is a web address, and opens it in a tab of its own', () => {
         const journal = venueCard(html(), 'journal');
-        // the link is a web address, which no folder holds, so there is nothing to show in the file browser
+        // the link is a web address, which no folder holds, so there is nothing to show in the file
+        // browser
         expect(journal).not.toContain(catalog['venues.show_in_files']);
         expect(journal).toMatch(/href="https:\/\/example.org\/journal"[^>]*target="_blank"/);
     });

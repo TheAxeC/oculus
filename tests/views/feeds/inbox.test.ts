@@ -193,7 +193,7 @@ describe('the Inbox view', () => {
         expect(card(open, 'action')).not.toContain(catalog['inbox.draft_label']);
     });
 
-    it('names the address a reply reaches in the confirmation, not the sender it came from', () => {
+    it('audits that names the address a reply reaches in the confirmation, not the sender it came from', () => {
         const desk = thread('desk', {
             sender: 'Ada <ada@example.invalid>',
             replyTo: 'Journal desk <desk@example.invalid>'
@@ -305,7 +305,8 @@ describe('the Inbox view', () => {
     it('offers no control over a feed file, since the plate is not read from one', () => {
         serve();
         const body = draw('inbox-no-source');
-        // the plate is read from the mail account rather than from a file, so there is no source to open
+        // the plate is read from the mail account rather than from a file, so there is no source to
+        // open
         expect(body).not.toContain('data-source-path');
     });
 

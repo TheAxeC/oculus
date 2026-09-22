@@ -18,9 +18,9 @@
     // Layer 3, view. One diff as its own tab: a file of a repository, staged or as the worktree has
     // it, or everything a worktree holds that its repository's branch does not.
     //
-    // The text is read when the pane opens and again when the instance is pointed at something else,
-    // rather than carried on the `git` channel, since a diff is text and the channel carries state.
-    // A press that changes the repository is a new read: the pane's own control asks again.
+    // The text is read when the pane opens and again when the instance is pointed at something
+    // else, rather than carried on the `git` channel, since a diff is text and the channel carries
+    // state. A press that changes the repository is a new read: the pane's own control asks again.
     //
     // The painting is the page's highlighter with the `diff` grammar, which escapes the text before
     // it emits a span, so what a repository holds cannot reach the document as markup.
@@ -36,7 +36,9 @@
 
     let { instance }: ViewProps = $props();
 
-    /** The instance state, with every field defaulted: a pane opened with nothing draws its empty. */
+    /**
+     * The instance state, with every field defaulted: a pane opened with nothing draws its empty.
+     */
     const held = $derived(read(instance.state));
 
     let text = $state('');
@@ -115,7 +117,8 @@
         {:else if text === ''}
             <p class="note">{t('repositories.diff_empty')}</p>
         {:else}
-            <!-- Keep pre and code on one line: a line break inside pre would enter the drawn text. -->
+            <!-- Keep pre and code on one line: a line break inside pre would enter the drawn
+                 text. -->
             <!-- eslint-disable-next-line svelte/no-at-html-tags -- highlight.js escapes the text before it emits its own span classes -->
             <pre class="text" role="region" aria-label={title}><code>{@html painted}</code></pre>
         {/if}

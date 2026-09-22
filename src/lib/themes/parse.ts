@@ -3,9 +3,9 @@
 //
 // parseBlocks reads `:root` and every `body.<name>` block; resolveTheme merges the blocks a body
 // class string names over `:root`, in the order the sheet declares them, which is the order the
-// browser resolves them in when two blocks set the same token. deriveTokens then turns that map into
-// the readable foregrounds. Nothing here touches the document or the filesystem: the caller passes
-// the stylesheet text, so this runs in the browser, in a test, and on the server alike.
+// browser resolves them in when two blocks set the same token. deriveTokens then turns that map
+// into the readable foregrounds. Nothing here touches the document or the filesystem: the caller
+// passes the stylesheet text, so this runs in the browser, in a test, and on the server alike.
 
 /** Tokens by block: the key is `:root` or the body class name (`dark`, `mocha`, `rice`). */
 export type ThemeBlocks = Record<string, Record<string, string>>;

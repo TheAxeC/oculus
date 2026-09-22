@@ -89,7 +89,8 @@ describe('a card', () => {
 
     it('draws a local HTML link as a control that opens it as a document tab', () => {
         expect(card).toContain('network/a-talk/slides.html');
-        // an HTML file opens as a document tab of its own, so the card names the path and carries no file link
+        // an HTML file opens as a document tab of its own, so the card names the path and carries
+        // no file link
         expect(card).not.toContain('href="/api/file/hub/network/a-talk/slides.html"');
     });
 
@@ -128,7 +129,8 @@ describe('a card', () => {
         for (const card of [budget, report]) {
             expect(card).toContain('<button type="button" class="tool');
             expect(card).toContain(catalog['file.open_program']);
-            // a .docx and a .xlsx open in their own program, so neither card offers a link to fetch the bytes
+            // a .docx and a .xlsx open in their own program, so neither card offers a link to fetch
+            // the bytes
             expect(card).not.toContain('href="/api/file/hub/');
         }
         const kept: [string, string][] = [
@@ -141,7 +143,8 @@ describe('a card', () => {
         ];
         for (const [card, href] of kept) {
             expect(card).toContain(href);
-            // each of these is read in a tab, so none of them is offered the open-in-program control
+            // each of these is read in a tab, so none of them is offered the open-in-program
+            // control
             expect(card).not.toContain(catalog['file.open_program']);
         }
     });
@@ -166,7 +169,8 @@ describe('a card', () => {
         const address = drawnCards.find((one) => one.includes('data-card="A later scheme"')) ?? '';
         const path = drawnCards.find((one) => one.includes('data-card="A funded scheme"')) ?? '';
         expect(address).not.toBe('');
-        // this entry's link is a web address, which no folder holds, so there is nothing to show in the file browser
+        // this entry's link is a web address, which no folder holds, so there is nothing to show in
+        // the file browser
         expect(address).not.toContain('data-action="files:');
         // and the control that would open that folder is not offered on it either
         expect(address).not.toContain(catalog['collection.show_in_files']);

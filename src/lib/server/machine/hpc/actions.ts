@@ -1,9 +1,12 @@
-// Layer 2, server. Explicit Live HPC actions. IDs and remembered log paths are validated before either can enter a remote command.
+// Layer 2, server. Explicit Live HPC actions. IDs and remembered log paths are validated before
+// either can enter a remote command.
 import { run, type Runner } from './ssh.ts';
 
 export const JOB_ID = /^\d+(_\d+)?(\.\w+)?$/;
 export const SAFE_PATH = /^\/[^'"\\\s][^'"\\\n]*$/;
-/** The log path found per job id, kept by the owning server context so the search runs once per job. */
+/**
+ * The log path found per job id, kept by the owning server context so the search runs once per job.
+ */
 export type LogPaths = Map<string, string>;
 const PATH = '@@oculus:logpath=';
 const TIMEOUT = '@@oculus:logtimeout@@';

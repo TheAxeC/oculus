@@ -1,4 +1,5 @@
-// Layer 2, server. What a stop signal does to the process: close the server objects once, then exit.
+// Layer 2, server. What a stop signal does to the process: close the server objects once, then
+// exit.
 //
 // The Node entry owns watchers, a control-client timer and open sockets, none of which a bare
 // process exit gives a chance to let go of: a tmux control client left behind keeps reading, and an
@@ -22,7 +23,8 @@ const ASKED = 0;
 
 /**
  * Close on the first stop signal and exit when the close calls back; exit at once on a second one.
- * `close` is given the callback rather than a promise because the http server's own close takes one.
+ * `close` is given the callback rather than a promise because the http server's own close takes
+ * one.
  */
 export function onShutdown(target: SignalTarget, close: (done: () => void) => void): void {
     let closing = false;

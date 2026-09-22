@@ -18,7 +18,9 @@ import { daysUntil } from './board/index.ts';
 import { UNKNOWN_TONE, toneOf } from '../words/tones.ts';
 import { waitingLabel } from './waiting.ts';
 
-/** The clusters of `focus_lanes`, top to bottom: your move, then on others, then idea to project. */
+/**
+ * The clusters of `focus_lanes`, top to bottom: your move, then on others, then idea to project.
+ */
 export const CLUSTERS = ['now', 'parked', 'incubate'];
 
 /** One lane of the board: what `focus:` value it holds, its words, its hue and its cluster. */
@@ -40,7 +42,9 @@ export type Priority = {
 /** A label with a count, and the registry id when the tally names one venue. */
 export type Tally = { id?: string; label: string; count: number };
 
-/** The awaiting-a-response strip: who you chase, what you wait on, and how much is simply blocked. */
+/**
+ * The awaiting-a-response strip: who you chase, what you wait on, and how much is simply blocked.
+ */
 export type Waiting = {
     people: Tally[];
     venues: Tally[];
@@ -97,7 +101,9 @@ export function snoozed(value: unknown, now: number): boolean {
     return days !== null && days > 0;
 }
 
-/** A number out of `behavior.yml`, and the fallback that file's comment names when it holds none. */
+/**
+ * A number out of `behavior.yml`, and the fallback that file's comment names when it holds none.
+ */
 export function setting(config: Record<string, unknown>, key: string, fallback: number): number {
     const held = config[key];
     return typeof held === 'number' && Number.isFinite(held) ? held : fallback;

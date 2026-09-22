@@ -3,8 +3,9 @@
 // terminal-actions.test.ts beside this.
 //
 // Nothing here runs tmux, `claude` or `codex`. handleTerminal is called with an options bag holding
-// a `run` that records the argv and answers the list itself, and a `recordFor` the test owns instead
-// of the bridge to the last published payload, so only the synthetic hub and state folder are read.
+// a `run` that records the argv and answers the list itself, and a `recordFor` the test owns
+// instead of the bridge to the last published payload, so only the synthetic hub and state folder
+// are read.
 
 import { rmSync } from 'node:fs';
 import { afterAll, describe, expect, it } from 'vitest';

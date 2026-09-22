@@ -48,7 +48,9 @@ const RULES: ValidationRules = {
     text: CATALOG
 };
 
-/** One manifest record with the provenance a reader would have added, plus the keys the test needs. */
+/**
+ * One manifest record with the provenance a reader would have added, plus the keys the test needs.
+ */
 function manifest(data: Record<string, unknown> = {}, id = 'alpha'): RawManifest {
     return {
         file: `/hub/projects/active/${id}/project.yml`,

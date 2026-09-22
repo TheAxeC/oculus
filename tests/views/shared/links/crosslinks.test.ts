@@ -1,4 +1,5 @@
-// Layer 4, view test. The shared cross-link partial renders each project type as a closed disclosure; the open state is exercised in the browser suite.
+// Layer 4, view test. The shared cross-link partial renders each project type as a closed
+// disclosure; the open state is exercised in the browser suite.
 
 import { render } from 'svelte/server';
 import { readFileSync } from 'node:fs';

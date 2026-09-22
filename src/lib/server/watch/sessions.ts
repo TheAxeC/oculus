@@ -3,12 +3,13 @@
 // (transcripts), ~/.claude/sessions (the registry) and ~/.codex/sessions (the rollouts).
 //
 // Four handles, one debounce. A transcript is appended to as a session works, so a change there is
-// an ordinary .jsonl write; a registry file appears when a session starts, changes when it goes from
-// busy to idle, and vanishes when it ends; a rollout appends under YYYY/MM/DD, and a new day makes a
-// new folder, which the recursive watch on the store's root sees. The fourth is the overrides file,
-// which no session writes: it is api/write's, and without it a dismissal or a pin made on one page
-// would not reach another until a transcript happened to change. The byte-offset cache in
-// sessions/cache.ts is what makes the rescan cost the appended bytes rather than the whole store.
+// an ordinary .jsonl write; a registry file appears when a session starts, changes when it goes
+// from busy to idle, and vanishes when it ends; a rollout appends under YYYY/MM/DD, and a new day
+// makes a new folder, which the recursive watch on the store's root sees. The fourth is the
+// overrides file, which no session writes: it is api/write's, and without it a dismissal or a pin
+// made on one page would not reach another until a transcript happened to change. The byte-offset
+// cache in sessions/cache.ts is what makes the rescan cost the appended bytes rather than the whole
+// store.
 //
 // The 15 s liveness re-check is the fourth thing that can change the payload and the only one no
 // file event announces. A process can die without its registry file changing, and a Codex rollout
@@ -170,7 +171,8 @@ export function watchSessions(hub: Hub, options: SessionsWatchOptions = {}): Ses
 
     /**
      * The slow clock's full rescan: read both stores again whatever the events said, and publish
-     * only when what was read is not what stands on the channel, so a quiet machine sees no traffic.
+     * only when what was read is not what stands on the channel, so a quiet machine sees no
+     * traffic.
      */
     const sweep = (): void => {
         try {

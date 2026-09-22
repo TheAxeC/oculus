@@ -67,7 +67,9 @@
     }: Props = $props();
 
     let asking: 'send' | 'archive' | null = $state(null);
-    /** The draft as the editor holds it; null while nothing has been typed since the last publish. */
+    /**
+     * The draft as the editor holds it; null while nothing has been typed since the last publish.
+     */
     let typed: string | null = $state(null);
 
     const kind = $derived(kindOf(thread));

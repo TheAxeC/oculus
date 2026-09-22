@@ -110,7 +110,9 @@ export type Host = {
     tag?: string;
     status: string;
     scores: Record<string, string | undefined>;
-    /** The prose under the row, with the `[proposal: ...]` prefix the chips already show removed. */
+    /**
+     * The prose under the row, with the `[proposal: ...]` prefix the chips already show removed.
+     */
     note?: string;
 };
 

@@ -1,5 +1,5 @@
-// Layer 2, server route. The source endpoint only joins Kit's request, its roots and the token to the
-// server module because route modules may export only HTTP verbs.
+// Layer 2, server route. The source endpoint only joins Kit's request, its roots and the token to
+// the server module because route modules may export only HTTP verbs.
 //
 // The roots are the file browser's own list, folded by lib/server/files/roots.ts and by nothing
 // else: a folder the reader added in the file browser is read there and written here, so a file

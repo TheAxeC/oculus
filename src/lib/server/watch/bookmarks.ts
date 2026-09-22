@@ -7,10 +7,10 @@
 // next write this page happens to make, and the Files view's close of a form over a bookmark that
 // is gone waits with it.
 //
-// It is the `files` channel rather than one of its own because that channel already carries what has
-// changed on the disk under the file browser: a message names a root when a write landed under it,
-// and this one names the bookmarks, which lie under no root. A page reads the payload and asks again
-// for that one thing, so a write inside a project folder does not re-read the bookmarks and a
+// It is the `files` channel rather than one of its own because that channel already carries what
+// has changed on the disk under the file browser: a message names a root when a write landed under
+// it, and this one names the bookmarks, which lie under no root. A page reads the payload and asks
+// again for that one thing, so a write inside a project folder does not re-read the bookmarks and a
 // bookmark written by hand does not re-read a tree.
 //
 // The one file is polled rather than its directory watched. `watchFile` follows creation and
@@ -20,8 +20,8 @@
 // The folder is made when the machine has none, since there is nothing else to watch: a handle over
 // a folder that is not there cannot be opened, and the first bookmark would then be written into a
 // folder nothing is watching and reach no other page until the server was started again. It is
-// oculus's own folder for this machine's state, and an empty directory is the whole of what is made;
-// the bookmarks file itself is written by the first bookmark and not here.
+// oculus's own folder for this machine's state, and an empty directory is the whole of what is
+// made; the bookmarks file itself is written by the first bookmark and not here.
 
 import { existsSync, mkdirSync, unwatchFile, watchFile } from 'node:fs';
 import { dirname } from 'node:path';
@@ -31,9 +31,9 @@ import type { Watcher } from './portfolio.ts';
 
 /**
  * Milliseconds of quiet after the last event before one message is published. It is the session
- * watcher's window rather than the portfolio's: a page that writes several bookmarks in a row is one
- * read on every other page instead of one per write, and half a second is no wait for a file the
- * reader edited by hand.
+ * watcher's window rather than the portfolio's: a page that writes several bookmarks in a row is
+ * one read on every other page instead of one per write, and half a second is no wait for a file
+ * the reader edited by hand.
  */
 export const DEBOUNCE = 500;
 

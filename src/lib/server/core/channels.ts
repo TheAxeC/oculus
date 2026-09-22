@@ -9,9 +9,9 @@
 // for the same channel, and goes out when the send completes. A slow page sees the newest state and
 // never a backlog.
 //
-// That rule is right for a state channel, where the newest payload is the whole truth, and wrong for
-// a byte stream, where an overwritten message is output the terminal never shows again. A channel
-// may therefore name how two of its messages combine, which is what the `pty:` channels do:
+// That rule is right for a state channel, where the newest payload is the whole truth, and wrong
+// for a byte stream, where an overwritten message is output the terminal never shows again. A
+// channel may therefore name how two of its messages combine, which is what the `pty:` channels do:
 // their held chunk and the next one are concatenated rather than replaced, so a page that falls
 // behind sees every byte, late, rather than a hole. The `files` channel also registers a merge: its
 // newest root and its bookmark-change marker are independent facts in one payload.
@@ -97,7 +97,9 @@ export class Hub {
         else this.#merges.set(channel, merge);
     }
 
-    /** Store a payload as the channel's current message and send it to that channel's subscribers. */
+    /**
+     * Store a payload as the channel's current message and send it to that channel's subscribers.
+     */
     publish(channel: string, payload: unknown): number {
         const message: Message = { channel, version: this.nextVersion(channel), payload };
         this.#latest.set(channel, message);

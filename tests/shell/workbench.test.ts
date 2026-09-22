@@ -277,7 +277,8 @@ describe('the workbench', () => {
         expect([...whole.matchAll(/aria-haspopup="menu"/g)]).toHaveLength(5);
     });
 
-    // Revert: take the ToolButton out of PaneView.svelte's paneMenu snippet, or give it no tabindex.
+    // Revert: take the ToolButton out of PaneView.svelte's paneMenu snippet, or give it no
+    // tabindex.
     it("draws the pane header's split button beside every pane menu, out of the focus order", () => {
         const splits = [
             ...whole.matchAll(/<button[^>]*aria-label="Split tab to the right"[^>]*>/g)
@@ -593,9 +594,9 @@ describe('the insertion mark', () => {
 
 // The two the application registers, mounted through the same shell with the real catalog and the
 // real glyph vocabulary: a label key, a glyph key or a glyph name that did not resolve would throw
-// here. The registrations arrive by importing the route loader in this block's own setup rather than
-// in a case, so that the rail above still sees only the two views this file registered and no case
-// is timed against the cost of compiling every view.
+// here. The registrations arrive by importing the route loader in this block's own setup rather
+// than in a case, so that the rail above still sees only the two views this file registered and no
+// case is timed against the cost of compiling every view.
 describe('the views the application registers', () => {
     // Every view of the application is compiled here, which on a loaded machine is slower than the
     // per-case timeout the assertions are measured against.
@@ -802,10 +803,13 @@ describe('a page shown inside another', () => {
 
     // Answer with the active instance of the page the strip is on and the pane inside the leaf
     // never draws its strip focused, wherever the reader is.
-    // revert: src/lib/state/workbench/layout.svelte.ts:418 => return instances.activeInstance();
+    // revert: src/lib/state/workbench/layout.svelte.ts:426 => return instances.activeInstance();
     it('draws the strip of the one pane the rail opens into, on whichever page the reader is in', () => {
         const { host, shown } = nested();
-        /** The strip class of the pane the named page draws, the host's first and the leaf's after it. */
+        /**
+         * The strip class of the pane the named page draws, the host's first and the leaf's after
+         * it.
+         */
         const strips = (body: string): string[] =>
             [host, shown].map((id) => {
                 const pane = body.slice(body.indexOf(`data-pane-page="${id}"`));

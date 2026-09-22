@@ -216,8 +216,13 @@ describe('a project as its own tab', () => {
         const headings = body.split(`>${catalog['project.documents']}</`).length - 1;
         expect(headings).toBe(1);
         expect(body).toContain(`<h3 class="heading`);
-        // The card's own list is where an absent document is drawn as a tag; the tab has none.
-        expect(body).not.toContain('>TEX</span>');
+    });
+
+    it('draws a known document the project has not got as the tag the card draws for it', () => {
+        // revert: src/lib/views/boards/project/Project.svelte:141 => const absent = $derived([]);
+        const section = body.slice(body.indexOf(`>${catalog['project.documents']}</`));
+        expect(section).toContain('data-absent-docs');
+        expect(body.split('>TEX</span>').length - 1).toBe(1);
     });
 
     it('offers the Markdown documents the project has, and no others', () => {
@@ -262,7 +267,8 @@ describe('a project as its own tab', () => {
     it('draws the sessions working in the project folder, and no others', () => {
         expect(body).toContain(catalog['project.sessions']);
         expect(body).toContain('A session in alpha');
-        // the sessions drawn are the ones working in this project's folder, and that one works in another
+        // the sessions drawn are the ones working in this project's folder, and that one works in
+        // another
         expect(body).not.toContain('elsewhere');
     });
 
@@ -450,7 +456,8 @@ describe('a software project and the paper it names', () => {
         const body = html('kit');
         expect(body).toContain(catalog['project.card.software_papers']);
         expect(body).toContain('Alpha, the whole title');
-        // this is the software's own tab, so it names the papers rather than the software of a paper
+        // this is the software's own tab, so it names the papers rather than the software of a
+        // paper
         expect(body).not.toContain(catalog['project.card.software']);
     });
 

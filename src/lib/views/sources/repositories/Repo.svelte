@@ -112,8 +112,8 @@
 
     {#if shape !== 'readable'}
         <!-- git's reason as the row's hover words, the attribute the Changes panel carries it on:
-             ui/tree/TreeItem.svelte draws its own tooltip for a row that is pressed, and this row is
-             text. -->
+             ui/tree/TreeItem.svelte draws its own tooltip for a row that is pressed, and this row
+             is text. -->
         <div data-repo={shape} title={git.error ?? undefined}>
             <TreeItem label={rowLabel(shape, git)} tone={shape === 'failed' ? 'error' : 'muted'} />
         </div>

@@ -1,4 +1,5 @@
-// The client object: what one call to createClientState() holds, and that two of them share nothing.
+// The client object: what one call to createClientState() holds, and that two of them share
+// nothing.
 //
 // It is the whole of what the context provides, so the two things worth checking are that every
 // store named in the type is actually built, and that a write through one object is invisible to

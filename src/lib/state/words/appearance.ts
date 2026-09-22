@@ -1,9 +1,9 @@
 // Layer 2, client state. config/appearance.yml as the page reads it: the picker's order, the class
 // string each theme puts on the body, the words it is offered under, the wallpaper's numbers and
-// what the CRT overlay and terminal text size start as. It is
-// installed the way the tone vocabulary is - the server ships the `themes` key as the page's data at
-// first load, and every later edit of config/appearance.yml arrives on the `config` channel - so a
-// theme is added by editing YAML and nothing else.
+// what the CRT overlay and terminal text size start as. It is installed the way the tone vocabulary
+// is - the server ships the `themes` key as the page's data at first load, and every later edit of
+// config/appearance.yml arrives on the `config` channel - so a theme is added by editing YAML and
+// nothing else.
 //
 // This holds no runes of its own: every lookup is pure over what was last installed and reads the
 // configuration's generation, state/client/generation.svelte.ts, so a component calling one during
@@ -59,7 +59,9 @@ function stringAt(node: unknown, key: string): string | undefined {
     return typeof value === 'string' ? value : undefined;
 }
 
-/** The number at `key` of a record, clamped to `low`..`high`, or the fallback when it is not one. */
+/**
+ * The number at `key` of a record, clamped to `low`..`high`, or the fallback when it is not one.
+ */
 function numberAt(node: unknown, key: string, fallback: number, low: number, high: number): number {
     const value = isRecord(node) ? node[key] : undefined;
     if (typeof value !== 'number' || !Number.isFinite(value)) return fallback;
@@ -127,7 +129,9 @@ export function setAppearance(config: Record<string, unknown>): void {
     }
 }
 
-/** Every theme the picker offers, in the config's order. A copy, so a caller cannot edit the list. */
+/**
+ * Every theme the picker offers, in the config's order. A copy, so a caller cannot edit the list.
+ */
 export function themes(): Theme[] {
     configGeneration();
     return list.map((theme) => ({ ...theme, label: resolveGlyphTokens(theme.label) }));

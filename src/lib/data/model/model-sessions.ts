@@ -29,7 +29,10 @@ export type SessionAgent = {
     resultChars: number;
 };
 
-/** One thing that happened, for the timeline: `prompt`, `tool`, `edit`, `turn`, `bust`, `compaction`. */
+/**
+ * One thing that happened, for the timeline: `prompt`, `tool`, `edit`, `turn`, `bust`,
+ * `compaction`.
+ */
 export type SessionEvent = {
     ts: string | null;
     kind: string;
@@ -37,9 +40,10 @@ export type SessionEvent = {
 };
 
 /**
- * The call one `tool` turn is about. `id` is the transcript's own `tool_use_id`, which is what pairs
- * the call with its result; the result may be read in a later tail read, so the id travels with the
- * turn rather than being resolved away on the server. `ok` is null while the call is still out.
+ * The call one `tool` turn is about. `id` is the transcript's own `tool_use_id`, which is what
+ * pairs the call with its result; the result may be read in a later tail read, so the id travels
+ * with the turn rather than being resolved away on the server. `ok` is null while the call is still
+ * out.
  */
 export type TurnTool = {
     id: string;
@@ -50,8 +54,8 @@ export type TurnTool = {
 
 /**
  * One turn of a session's conversation, as the transcript view draws it. `html` is the rendered
- * Markdown of an assistant turn and the empty string on every other role; `text` is capped and `cut`
- * says the cap applied. A `tool` turn carries `tool` and nothing in `text`.
+ * Markdown of an assistant turn and the empty string on every other role; `text` is capped and
+ * `cut` says the cap applied. A `tool` turn carries `tool` and nothing in `text`.
  */
 export type Turn = {
     at: string | null;
@@ -71,7 +75,9 @@ export type SessionTokens = {
     thinking: number;
 };
 
-/** The prompt cache's window: its TTL, when it was last written and read, and how often it broke. */
+/**
+ * The prompt cache's window: its TTL, when it was last written and read, and how often it broke.
+ */
 export type SessionCache = {
     ttl: string | null;
     lastCreation: string | null;
@@ -103,7 +109,9 @@ export type SessionRecord = {
     id: Id;
     /** Absolute path of the transcript or rollout. */
     path: string;
-    /** The store folder the file sits in: the project slug for Claude, the date folder for Codex. */
+    /**
+     * The store folder the file sits in: the project slug for Claude, the date folder for Codex.
+     */
     slug: string;
     tool: SessionTool;
     cwd: string | null;
@@ -211,7 +219,9 @@ export type Workspace = {
 export type SessionsPayload = {
     records: SessionRecord[];
     workspaces: Workspace[];
-    /** Every tmux session oculus started, so a terminal appears on the page as soon as it exists. */
+    /**
+     * Every tmux session oculus started, so a terminal appears on the page as soon as it exists.
+     */
     terminals: Terminal[];
 };
 
@@ -367,7 +377,9 @@ export type GitState = {
      * check timed out or whose git would not start, each of the last two with `error` set.
      */
     repository: boolean;
-    /** Why a read failed, or null. Set on a repository as well, so it does not mean "no repository". */
+    /**
+     * Why a read failed, or null. Set on a repository as well, so it does not mean "no repository".
+     */
     error: string | null;
 };
 
@@ -377,8 +389,8 @@ export type GitPayload = Record<string, GitState>;
 /**
  * The payload of the `files` channel: what on the disk the file browser reads has just changed. A
  * message naming a root says a write landed somewhere under that root, so every file listing taken
- * under it may be stale. The portfolio snapshot does not say this: it is rebuilt only for a file the
- * config names, and a file written inside a project folder moves no version of it.
+ * under it may be stale. The portfolio snapshot does not say this: it is rebuilt only for a file
+ * the config names, and a file written inside a project folder moves no version of it.
  *
  * A message with `bookmarks` is the reader's own bookmarks file, which lies under no root and is
  * watched on its own; it names no root, and the page reads the bookmarks again for it.
@@ -436,7 +448,10 @@ export type HpcPayload = {
     /** When the cluster last answered, so a failed poll can say how old the rows under it are. */
     lastOk?: string;
     pollMin: number;
-    /** Minutes between attempts while the cluster is not answering; absent from a payload written before it was carried. */
+    /**
+     * Minutes between attempts while the cluster is not answering; absent from a payload written
+     * before it was carried.
+     */
     retryMin?: number;
     host: string;
 };
@@ -468,7 +483,10 @@ export type UsageRefresher = {
     since: string;
     reason: string;
     lastRefresh: string;
-    /** Whether the last refresh moved the account file; Claude Code renews it only after five minutes. */
+    /**
+     * Whether the last refresh moved the account file; Claude Code renews it only after five
+     * minutes.
+     */
     renewed: boolean;
 };
 export type UsageAccount = {

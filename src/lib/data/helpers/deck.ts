@@ -33,8 +33,8 @@ const LAST_RANK = 9;
 /**
  * The tiers whose slides are on the deck on their own. Work that is finished or somebody else's is
  * shown only when the `order:` places it or a saved selection holds it, so a public deck does not
- * grow an archived project the day its PRESENT.md is written. The catalog still offers it, unticked,
- * so the reader can put it on the deck.
+ * grow an archived project the day its PRESENT.md is written. The catalog still offers it,
+ * unticked, so the reader can put it on the deck.
  */
 const OPEN_TIERS = ['active', 'manuscripts', 'ideas'];
 
@@ -76,8 +76,9 @@ export function savedKeys(value: unknown): string[] | null {
 }
 
 /**
- * Every project slide there is, in the order the slides no `order:` line placed are appended: active
- * work first, then manuscripts, then ideas, then everything else, each by its project's title.
+ * Every project slide there is, in the order the slides no `order:` line placed are appended:
+ * active work first, then manuscripts, then ideas, then everything else, each by its project's
+ * title.
  */
 export function deckSources(projects: Project[]): DeckSource[] {
     const rows = projects.flatMap((project) =>

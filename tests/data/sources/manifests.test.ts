@@ -40,8 +40,8 @@ function write(hub: string, rel: string, body: string): void {
 
 /**
  * A hub with the five tiers that always exist, a flat and a nested project each, and the awkward
- * cases. The optional software tier is deliberately absent, since that is the hub every test but the
- * two software ones below is read against.
+ * cases. The optional software tier is deliberately absent, since that is the hub every test but
+ * the two software ones below is read against.
  */
 function buildHub(): string {
     const hub = scratch();

@@ -31,7 +31,9 @@ function forms(path: string): Record<string, unknown>[] {
     return [{ root: 'hub', path }, { path }];
 }
 
-/** Post both forms and assert each is refused on `path` with the reason, the opener never called. */
+/**
+ * Post both forms and assert each is refused on `path` with the reason, the opener never called.
+ */
 async function refusedBoth(
     path: string,
     roots: Root[],
@@ -162,6 +164,7 @@ describe('a file handed to the application its extension names', () => {
     });
 
     it('refuses a file whose FinderInfo read fails for any reason but its absence', async () => {
+        // revert: src/lib/server/files/open.ts:164 => return false;
         const { roots } = withFiles();
         const failing: FinderInfoReader = () => Promise.reject(new Error('xattr: [Errno 1]'));
         await refusedBoth('projects/active/alpha/report.docx', roots, checkedIn, failing);
@@ -190,10 +193,13 @@ describe('a file handed to the application its extension names', () => {
     });
 
     it('refuses a listed file it cannot read', async () => {
+        // revert: src/lib/server/files/open.ts:150 => return false;
         const { report, roots } = withFiles();
         chmodSync(report, 0o000);
+        // A reader that finds no FinderInfo, so the unread first bytes alone refuse the file.
+        const none: FinderInfoReader = () => Promise.resolve(null);
         try {
-            await refusedBoth('projects/active/alpha/report.docx', roots);
+            await refusedBoth('projects/active/alpha/report.docx', roots, checkedIn, none);
         } finally {
             chmodSync(report, 0o644);
         }
@@ -206,6 +212,25 @@ describe('a file handed to the application its extension names', () => {
         const text = (): ProgramApps => ({ '.txt': 'com.apple.TextEdit' });
         await refusedBoth('projects/active/alpha/notes.txt', roots);
         await openedBoth('projects/active/alpha/notes.txt', notes, roots, text);
+    });
+
+    it('opens a file under a root when an earlier root in the list is gone', async () => {
+        // revert: src/lib/server/files/open.ts:217 => return null;
+        const { work, sheet } = withFiles();
+        const roots = [
+            { key: 'gone', dir: join(work, 'removed-since-it-was-saved') },
+            { key: 'work', dir: work }
+        ];
+        const opener = vi.fn();
+        const response = await handleOpen(
+            request({ path: sheet }),
+            TOKEN,
+            roots,
+            checkedIn,
+            opener
+        );
+        expect(response.status).toBe(200);
+        expect(opener.mock.calls).toEqual([[opened(realpathSync(sheet), APPS)]]);
     });
 });
 
@@ -335,6 +360,7 @@ describe('what macOS open is run with and the floor under it', () => {
     });
 
     it('refuses a relative path, an option and a path with nothing at it', async () => {
+        // revert: src/lib/server/files/open.ts:240 => return true;
         const { hub } = withFiles();
         const word = 'com.microsoft.Word';
         expect(await openable({ kind: 'folder', path: join(hub, 'nothing-here') })).toBe(false);

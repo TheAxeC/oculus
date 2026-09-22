@@ -46,8 +46,8 @@ if ! TMPDIR="$browser_root" npx playwright test >/dev/null 2>&1; then
 fi
 echo "browser after $(left "$browser_root")"
 
-# A red suite is a red command: the verification list reads the exit status, and a count taken over a
-# suite that did not finish says nothing about what a whole run leaves behind.
+# A red suite is a red command: the verification list reads the exit status, and a count taken over
+# a suite that did not finish says nothing about what a whole run leaves behind.
 if [ "$(left "$node_root")" = 0 ] && [ "$(left "$browser_root")" = 0 ] && [ "$red" = 0 ]; then
     exit 0
 fi

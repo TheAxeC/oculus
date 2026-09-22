@@ -1,7 +1,8 @@
 // The project board rendered to HTML on the server: one card per project of the board, what a card
 // carries, what an open card adds, and the list mode's table.
 //
-// The catalog, glyphs, vocabulary and board preset are the real config. The projects are synthetic: what is checked is the view, not the hub.
+// The catalog, glyphs, vocabulary and board preset are the real config. The projects are synthetic:
+// what is checked is the view, not the hub.
 //
 // What this does NOT cover: anything that needs a DOM. There is no browser in this suite, so no
 // menu opens, no card is clicked and no $effect runs; the state a click would write is written
@@ -196,7 +197,9 @@ function snapshot(): Snapshot {
     };
 }
 
-/** Alpha's absolute folder, which is what the session join matches: the manifest's own directory. */
+/**
+ * Alpha's absolute folder, which is what the session join matches: the manifest's own directory.
+ */
 const ALPHA = '/hub/projects/active/alpha';
 
 /** Two sessions in alpha's folder, one of them running, and none anywhere else. */
@@ -489,7 +492,8 @@ describe('the list mode', () => {
             expect(drawn).toHaveLength(2);
             for (const cell of drawn) expect(cell.match(/<svg/g)).toHaveLength(1);
             for (const name of marks) {
-                // the list mode draws the mark as an icon, so the glyph the terminal mode would draw is not in the body
+                // the list mode draws the mark as an icon, so the glyph the terminal mode would
+                // draw is not in the body
                 expect(body).not.toContain(glyphCatalog(config)[name]);
             }
             // Each mark is drawn in its own status's hue with its words as the title, so the
@@ -569,7 +573,8 @@ describe('the stats strip', () => {
     });
 
     it('is not drawn on the archive board or the coauthor board', () => {
-        // the venue line is drawn for work in flight, which neither the archive nor the coauthor board holds
+        // the venue line is drawn for work in flight, which neither the archive nor the coauthor
+        // board holds
         expect(html('archive')).not.toContain(catalog['board.stat_venues_tip']);
         // nor on the board of somebody else's work, which aims at no venue of its own
         expect(html('coauthor')).not.toContain(catalog['board.stat_venues_tip']);
@@ -587,7 +592,8 @@ describe('the controls beside the search', () => {
     it('offers the two quick filters on the projects board and on no other', () => {
         expect(html('projects')).toContain(catalog['board.quick_stale']);
         expect(html('projects')).toContain(catalog['board.quick_deadline']);
-        // the quick filters are for the projects board, which is the only board whose cards go stale
+        // the quick filters are for the projects board, which is the only board whose cards go
+        // stale
         expect(html('archive')).not.toContain(catalog['board.quick_stale']);
     });
 
@@ -642,7 +648,8 @@ describe('the card controls', () => {
             }
         });
         expect(body).toContain(words('project.card.stale_behind', '3'));
-        // the behind-count is drawn from the docs this case handed in, which the standing snapshot does not carry
+        // the behind-count is drawn from the docs this case handed in, which the standing snapshot
+        // does not carry
         expect(html('projects')).not.toContain(words('project.card.stale_behind', '3'));
     });
 
@@ -822,8 +829,9 @@ describe('the file finder', () => {
                 )
             )
         );
-        // A new version on the `files` channel is what makes the store ask again: an earlier case in
-        // this file opened the same card with no stub in place, and what is held is held per version.
+        // A new version on the `files` channel is what makes the store ask again: an earlier case
+        // in this file opened the same card with no stub in place, and what is held is held per
+        // version.
         receive({ channel: 'files', version: 2, payload: { root: '/hub' } });
         // The first rendering asks for the listing, the second draws what the answer left held.
         html('projects', { expanded: ['alpha'] });

@@ -24,14 +24,15 @@
     // than a square stops at `TILE_BOUND` of state/life/memories.svelte.ts and is fitted whole
     // inside, and a picture whose header the server could not read keeps a 4:3 box it is fitted
     // into whole; no picture is cropped. Until it arrives the tile is a muted surface of that same
-    // box, and a picture that fails draws its alternative words in the box instead.
+    // box, and a picture that fails draws its alternative words in the box instead, until the
+    // folder answers again and the picture is asked for anew.
     //
     // The enlarged picture is this view's own overlay rather than a primitive, since it is the one
     // place in oculus where a picture is shown over the pane and `ui/` would gain a component with
-    // one reader. It closes on Escape, on a press outside the picture and on its own control, and the
-    // tile that opened it takes the keyboard back, so the wall is where the reader left it.
+    // one reader. It closes on Escape, on a press outside the picture and on its own control, and
+    // the tile that opened it takes the keyboard back, so the wall is where the reader left it.
 
-    import { tick } from 'svelte';
+    import { tick, untrack } from 'svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Toolbar from '$lib/ui/frame/Toolbar.svelte';
@@ -55,6 +56,30 @@
     /** What became of each tile's picture by name: absent while it loads. */
     let arrived: Record<string, 'loaded' | 'failed'> = $state({});
 
+    /**
+     * The answer of the folder at which each picture that failed is asked for again, by name. A new
+     * answer drops what the wall knew of every picture that failed, so a picture rewritten under
+     * its name is asked for again rather than left as its words, and asked for at an address of its
+     * own: the browser keeps a picture's answer for an hour, and would draw the failed one from it.
+     */
+    let retried: Partial<Record<string, number>> = $state({});
+
+    /** How many answers of the folder the wall has drawn. */
+    let answers = 0;
+
+    $effect(() => {
+        if (held.loading) return;
+        answers += 1;
+        const known = untrack(() => arrived);
+        const failed = Object.keys(known).filter((name) => known[name] === 'failed');
+        if (failed.length === 0) return;
+        arrived = Object.fromEntries(Object.entries(known).filter(([, one]) => one !== 'failed'));
+        retried = {
+            ...untrack(() => retried),
+            ...Object.fromEntries(failed.map((name) => [name, answers]))
+        };
+    });
+
     /** The picture the overlay shows, and the empty string when it shows none. */
     let open = $state('');
 
@@ -67,12 +92,19 @@
     /** The hidden input the add control presses, which is the only way a file is chosen. */
     let chooser: HTMLInputElement | null = $state(null);
 
-    /** The address one picture is served at. */
+    /**
+     * The address one picture is served at, with the answer it is asked for again at after it
+     * failed.
+     */
     function source(name: string): string {
-        return `/api/memories?file=${encodeURIComponent(name)}`;
+        const base = `/api/memories?file=${encodeURIComponent(name)}`;
+        const again = retried[name];
+        return again === undefined ? base : `${base}&again=${again}`;
     }
 
-    /** The overlay's own box, which takes the keyboard so Escape reaches it wherever it is pressed. */
+    /**
+     * The overlay's own box, which takes the keyboard so Escape reaches it wherever it is pressed.
+     */
     let overlay: HTMLDivElement | null = $state(null);
 
     /** This pane's own box, so a second Memories pane keeps its own tiles and its own keyboard. */
@@ -113,8 +145,8 @@
 
     /**
      * Add every file the reader chose, then ask the folder again. Each file that was not written is
-     * kept with its own sentence, so five chosen files that fail for three reasons say all three.
-     * A file larger than the wall takes is refused here, before it is read: the request that carried
+     * kept with its own sentence, so five chosen files that fail for three reasons say all three. A
+     * file larger than the wall takes is refused here, before it is read: the request that carried
      * it would be refused by the server's own parser, and the reader would meet that and not a
      * sentence.
      */
@@ -278,10 +310,11 @@
     }
 
     /* The tile's box is its shape and the whole picture is fitted inside it, so the placeholder a
-       loading picture shows is the box the picture is drawn in. The 4:3 here is the box of a picture
-       with no size; a sized one sets its own ratio on the element. The ratio is the content box's,
-       the border drawn outside it, so a picture of that ratio fills the box to the pixel; the border's
-       width is one property, read by the border and by the width that leaves room for it. */
+       loading picture shows is the box the picture is drawn in. The 4:3 here is the box of a
+       picture with no size; a sized one sets its own ratio on the element. The ratio is the content
+       box's, the border drawn outside it, so a picture of that ratio fills the box to the pixel;
+       the border's width is one property, read by the border and by the width that leaves room for
+       it. */
     .tile {
         --tile-border: 1px;
         position: relative;

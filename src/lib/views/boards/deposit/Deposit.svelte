@@ -112,8 +112,8 @@
     }
 
     /**
-     * One action on this project. `confirmed` is set by the caller that came through the dialog, and
-     * by no other: the endpoint refuses the five destructive actions without it.
+     * One action on this project. `confirmed` is set by the caller that came through the dialog,
+     * and by no other: the endpoint refuses the five destructive actions without it.
      */
     async function act(
         action: string,

@@ -3,16 +3,18 @@
 // three custom properties the wallpaper's translucent surfaces are painted through.
 //
 // The two stylesheets reach this module as text through Vite's `?raw` import, which is the same
-// bytes the page is styled with. The derivation therefore runs on the authored values themselves and
-// nothing restates a colour in TypeScript. The caller may pass its own two sheets instead, which is
-// how the test runs it over the files read from disk.
+// bytes the page is styled with. The derivation therefore runs on the authored values themselves
+// and nothing restates a colour in TypeScript. The caller may pass its own two sheets instead,
+// which is how the test runs it over the files read from disk.
 
 import { deriveTokens } from '$lib/themes/derive';
 import { parseBlocks, resolveTheme } from '$lib/themes/parse';
 import tokensCss from '$lib/themes/tokens.css?raw';
 import themesCss from '$lib/themes/themes.css?raw';
 
-/** What this needs of a Document, so a test can hand it a plain object and read back what was set. */
+/**
+ * What this needs of a Document, so a test can hand it a plain object and read back what was set.
+ */
 export type Themeable = {
     body: { className: string };
     documentElement: { style: { setProperty: (name: string, value: string) => void } };

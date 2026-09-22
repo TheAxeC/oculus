@@ -1,5 +1,5 @@
-// Layer 2, client state tests. Layout pins live on the instance, identify one tab per session and can be
-// replaced in place without moving the tab or changing another tree.
+// Layer 2, client state tests. Layout pins live on the instance, identify one tab per session and
+// can be replaced in place without moving the tab or changing another tree.
 
 import { beforeEach, describe, expect, it } from 'vitest';
 import {

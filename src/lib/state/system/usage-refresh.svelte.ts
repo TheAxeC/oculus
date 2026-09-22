@@ -7,7 +7,9 @@ import type { EntitiesStore } from '../client/entities.svelte.ts';
 import { t } from '../words/text.ts';
 import type { WritesStore } from '../client/writes.svelte.ts';
 
-/** The route's error words, each answered by a catalog string; anything else is the request failing. */
+/**
+ * The route's error words, each answered by a catalog string; anything else is the request failing.
+ */
 function refusalText(body: unknown): string {
     const error =
         typeof body === 'object' && body !== null && 'error' in body ? body.error : undefined;

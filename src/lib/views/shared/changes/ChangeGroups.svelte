@@ -1,8 +1,8 @@
 <script lang="ts">
     // Layer 3, shared view partial. The three groups of a repository's changes as the Changes panel
-    // of the session views draws them: staged, changed and untracked, each row its letter, its path,
-    // its line counts and the controls that act on it. What a row offers beyond staging is the
-    // caller's: the "also open" mark is a snippet the session views supply.
+    // of the session views draws them: staged, changed and untracked, each row its letter, its
+    // path, its line counts and the controls that act on it. What a row offers beyond staging is
+    // the caller's: the "also open" mark is a snippet the session views supply.
     //
     // The Repositories view draws the same changes as explorer rows of its own, and takes the two
     // things both must agree on from one place each: the colour of a status letter from

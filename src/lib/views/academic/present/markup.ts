@@ -19,13 +19,15 @@ import { blockMarkdown, inlineMarkdown } from '$lib/ui/html';
 /**
  * The four delimiter pairs a slide writes a formula in: `$$...$$` and `\[...\]` set a display
  * formula, `\(...\)` and `$...$` an inline one. The single-dollar form takes no space just inside
- * the delimiters and no line break between them, so a price and a lone dollar sign in prose are left
- * alone; a `$` written `\$` is not a delimiter at all.
+ * the delimiters and no line break between them, so a price and a lone dollar sign in prose are
+ * left alone; a `$` written `\$` is not a delimiter at all.
  */
 const MATH =
     /\$\$([\s\S]+?)\$\$|\\\[([\s\S]+?)\\\]|\\\(([\s\S]+?)\\\)|(?<!\\)\$(?!\s)([^$\n]+?)(?<!\s)\$/g;
 
-/** What a lifted formula is left behind as. Letters and digits, so no renderer reads it as markup. */
+/**
+ * What a lifted formula is left behind as. Letters and digits, so no renderer reads it as markup.
+ */
 const MARK = '0katexmath0';
 
 /**

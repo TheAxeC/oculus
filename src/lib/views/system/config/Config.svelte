@@ -17,12 +17,12 @@
     // control that opens it in a source tab.
     //
     // The folder is read through the file browser's own endpoint under the `engine` root, which
-    // serves the engine's config folder and nothing above it, so listing a folder, reading a file and
-    // saving an edit are the three things this view does and each is a route that already exists. An
-    // edit saved from the source tab lands in that folder, which the config watcher is watching, and
-    // the push it sends moves the config channel's version; the effect below hands that version to
-    // the file browser's store, which asks again for this root's listing and texts and for nothing
-    // under any other root, so a saved edit shows here without a reload.
+    // serves the engine's config folder and nothing above it, so listing a folder, reading a file
+    // and saving an edit are the three things this view does and each is a route that already
+    // exists. An edit saved from the source tab lands in that folder, which the config watcher is
+    // watching, and the push it sends moves the config channel's version; the effect below hands
+    // that version to the file browser's store, which asks again for this root's listing and texts
+    // and for nothing under any other root, so a saved edit shows here without a reload.
     //
     // The machine-local file, local.yml, is a file of that folder like the tracked ones, so it is
     // listed, read and saved the same way; it is drawn last and carries a tag saying it is this
@@ -50,7 +50,9 @@
 
     let { instance }: ViewProps = $props();
 
-    /** The version of the config channel, which the watcher moves after a write under the folder. */
+    /**
+     * The version of the config channel, which the watcher moves after a write under the folder.
+     */
     const pushed = $derived(message('config')?.version ?? 0);
 
     // The version is drawn on the box as well as handed to the store, so what the cards were last

@@ -16,7 +16,9 @@
 import { execFile, spawn } from 'node:child_process';
 import type { ChildProcessWithoutNullStreams } from 'node:child_process';
 
-/** The binary. Resolved on PATH, since a homebrew tmux and a system tmux sit in different places. */
+/**
+ * The binary. Resolved on PATH, since a homebrew tmux and a system tmux sit in different places.
+ */
 export const TMUX = 'tmux';
 
 /** How long a tmux command may take before it is killed, in milliseconds. */
@@ -209,8 +211,8 @@ export type ControlClient = {
 
 /**
  * A control client attached to one session of the user's own tmux server, which is why a session
- * oculus started is also reachable from any terminal with `tmux attach -t oculus-<id>`. Replies come
- * back in the order the commands went out, so the pending queue is a plain FIFO.
+ * oculus started is also reachable from any terminal with `tmux attach -t oculus-<id>`. Replies
+ * come back in the order the commands went out, so the pending queue is a plain FIFO.
  */
 export function control(
     session: string,

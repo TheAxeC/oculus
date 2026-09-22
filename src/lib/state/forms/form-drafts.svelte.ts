@@ -6,11 +6,11 @@
 // browser saves. They are not written into the host view's own record, since that record is the
 // host's: most hosts write it whole from a parse that keeps only their own keys, which would drop a
 // draft kept there at the next filter the reader typed. Each instance's drafts therefore sit in an
-// entry of their own, under the instance id with FORMS_SUFFIX appended, which the layout's ids never
-// end in (a new instance's id is a UUID).
+// entry of their own, under the instance id with FORMS_SUFFIX appended, which the layout's ids
+// never end in (a new instance's id is a UUID).
 //
-// One instance may hold several forms (the add form and a card's edit form), so the drafts are keyed
-// by the form as well: the collection and the entry's id, or null for the form that adds one,
+// One instance may hold several forms (the add form and a card's edit form), so the drafts are
+// keyed by the form as well: the collection and the entry's id, or null for the form that adds one,
 // encoded as one JSON array so no collection name or entry id can make two forms share a key.
 //
 // Whether a typed value is unsaved work is decided against the entry as the snapshot holds it now,
@@ -23,14 +23,16 @@
 // instance's drafts drops it.
 //
 // A form drawn outside any pane has no instance to keep its values for. It keeps them in a local
-// target (localDrafts) with the same shape, and draftTarget() is the one place a form is given one or
-// the other.
+// target (localDrafts) with the same shape, and draftTarget() is the one place a form is given one
+// or the other.
 
 import type { Collection, Entry, Snapshot } from '../../data/model.ts';
 import { controlValue, sameSaved, type FormValue } from './form-values.ts';
 import type { UiStore } from '../workbench/ui.svelte.ts';
 
-/** One typed field: what the control holds, its kind, and what the control held when it was typed. */
+/**
+ * One typed field: what the control holds, its kind, and what the control held when it was typed.
+ */
 export type TypedField = { value: FormValue; kind: string; base: FormValue };
 
 /** One form's typed fields, by field name. */
@@ -42,7 +44,9 @@ type Drafts = Record<string, FormDraft>;
 /** What turns an instance id into the ui store key its form drafts are kept under. */
 export const FORMS_SUFFIX = '#forms';
 
-/** What turns an instance id into the ui store key the entries its add forms made are kept under. */
+/**
+ * What turns an instance id into the ui store key the entries its add forms made are kept under.
+ */
 export const ADDED_SUFFIX = '#added';
 
 /** The ui store key one instance's form drafts are kept under. */
@@ -55,7 +59,9 @@ export function addedKey(instance: string): string {
     return `${instance}${ADDED_SUFFIX}`;
 }
 
-/** The key of one form inside an instance: its collection, and its entry's id or null for adding. */
+/**
+ * The key of one form inside an instance: its collection, and its entry's id or null for adding.
+ */
 export function formKey(collection: string, entry: string | null): string {
     return JSON.stringify([collection, entry]);
 }
@@ -111,7 +117,9 @@ export function parseDrafts(raw: unknown): Drafts {
     return drafts;
 }
 
-/** The entry one add form made: how a later save of that form addresses it, and under what value. */
+/**
+ * The entry one add form made: how a later save of that form addresses it, and under what value.
+ */
 export type AddedEntry = {
     /** The id the file gives it, which is what a write names it by. */
     id: string;
@@ -152,7 +160,9 @@ export function snapshotEntries(portfolio: () => Snapshot | null): EntryLookup {
     };
 }
 
-/** What a form reads and writes its typed values through, whether an instance keeps them or it does. */
+/**
+ * What a form reads and writes its typed values through, whether an instance keeps them or it does.
+ */
 export type DraftTarget = {
     edits: (form: string) => Record<string, FormValue>;
     set: (form: string, field: string, typed: TypedField) => void;
@@ -161,8 +171,8 @@ export type DraftTarget = {
     settle: (form: string, sent: Record<string, FormValue>) => boolean;
     /**
      * Forget a draft a save took whole, and answer whether it did. A draft holding a field the save
-     * did not send, or missing one it sent, is a form the reader closed and opened again or typed on
-     * while the request was out: it is left as the reader left it and nothing is forgotten.
+     * did not send, or missing one it sent, is a form the reader closed and opened again or typed
+     * on while the request was out: it is left as the reader left it and nothing is forgotten.
      */
     taken: (form: string, sent: Record<string, FormValue>) => boolean;
     /** The entry an add from this form made, or null while it has made none. */
@@ -350,7 +360,8 @@ export function createFormDrafts(ui: UiStore, entryOf: EntryLookup): FormDraftsS
      *
      * The write goes through keep(), which drops a draft whose entry the snapshot's collection says
      * is gone, so a move onto an id the snapshot has not been told about yet keeps nothing. The
-     * bookmarks are in no snapshot, which is why the bookmark form is the one carried over a rename.
+     * bookmarks are in no snapshot, which is why the bookmark form is the one carried over a
+     * rename.
      */
     function moveFormDraft(instance: string, form: string, next: string): void {
         if (next === form) return;
@@ -385,8 +396,8 @@ export function createFormDrafts(ui: UiStore, entryOf: EntryLookup): FormDraftsS
     }
 
     /**
-     * Forget a draft a save took whole, and answer whether it did. A form closed and opened again or
-     * typed on while the request was out holds something else: that draft is the reader's and is
+     * Forget a draft a save took whole, and answer whether it did. A form closed and opened again
+     * or typed on while the request was out holds something else: that draft is the reader's and is
      * left, so the answer closes nothing and forgets nothing.
      */
     function takeFormDraft(
@@ -419,7 +430,9 @@ export function createFormDrafts(ui: UiStore, entryOf: EntryLookup): FormDraftsS
         );
     }
 
-    /** Open or close a view's add form, forgetting its draft when it closes. Answers the new state. */
+    /**
+     * Open or close a view's add form, forgetting its draft when it closes. Answers the new state.
+     */
     function toggleAdd(instance: string, collection: string, open: boolean): boolean {
         if (open) clearFormDraft(instance, formKey(collection, null));
         return !open;
@@ -526,7 +539,9 @@ export function localDrafts(): DraftTarget {
     };
 }
 
-/** What a form keeps its typed values in: its instance's drafts inside a pane, its own outside one. */
+/**
+ * What a form keeps its typed values in: its instance's drafts inside a pane, its own outside one.
+ */
 export function draftTarget(
     store: FormDraftsStore,
     instance: string | null,

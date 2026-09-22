@@ -94,9 +94,9 @@ export function resolveKey(
     }
     const held = context.typing || context.paletteOpen || context.trayOpen || context.confirmOpen;
     // Ctrl and a bracket carry the focused pane one tab along, the left one backwards. The browser
-    // keeps Ctrl and Tab for its own tabs and never hands it to a page, so the pair is the brackets,
-    // which Chrome binds to nothing. A field, a textarea and an overlay keep the keyboard while they
-    // hold it, and Cmd and a bracket is left alone, being a browser's own navigation.
+    // keeps Ctrl and Tab for its own tabs and never hands it to a page, so the pair is the
+    // brackets, which Chrome binds to nothing. A field, a textarea and an overlay keep the keyboard
+    // while they hold it, and Cmd and a bracket is left alone, being a browser's own navigation.
     if (
         (event.key === ']' || event.key === '[') &&
         event.ctrlKey === true &&

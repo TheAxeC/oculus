@@ -1,6 +1,6 @@
-// The canonical form of a search: the arguments each option combination runs as, the inputs that are
-// refused before anything runs, the window one hit's line is cut to, and the parameters the page
-// writes and the server reads.
+// The canonical form of a search: the arguments each option combination runs as, the inputs that
+// are refused before anything runs, the window one hit's line is cut to, and the parameters the
+// page writes and the server reads.
 //
 // Nothing here starts a process: this is the rule both sides share, so it is read on its own.
 

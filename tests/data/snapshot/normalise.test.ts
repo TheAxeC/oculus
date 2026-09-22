@@ -456,7 +456,9 @@ describe('normalise, the field mapping', () => {
 });
 
 describe("normalise, a collection's schema", () => {
-    /** The events collection with one `schema:` value under its meta, as the file would carry it. */
+    /**
+     * The events collection with one `schema:` value under its meta, as the file would carry it.
+     */
     function events(schema: unknown) {
         const raw = portfolio();
         raw.collections.events.meta.schema = schema;

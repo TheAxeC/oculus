@@ -2,10 +2,10 @@
 // hit as.
 //
 // The answer arrives grouped by file, so nothing here regroups it; what it does is read the saved
-// instance state back safely, since a page restored from storage carries whatever was written there,
-// and cut each hit's line into the three pieces a row draws: what is before the match, the match,
-// and what follows. The view therefore emboldens without matching the pattern a second time, which
-// is the only way a regular-expression hit can be drawn at all.
+// instance state back safely, since a page restored from storage carries whatever was written
+// there, and cut each hit's line into the three pieces a row draws: what is before the match, the
+// match, and what follows. The view therefore emboldens without matching the pattern a second time,
+// which is the only way a regular-expression hit can be drawn at all.
 
 import { ALL_ROOTS, clampMax, type SearchQuery } from '../../data/helpers/search.ts';
 import type { SearchAnswer, SearchFailure, SearchFile, SearchHit } from '../../data/model.ts';

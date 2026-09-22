@@ -163,9 +163,10 @@ function listingUrl(args: MailReadArgs, signal: Signal): string {
 /**
  * The messages of one signal, at most `per_signal` of them, every listing asked newest first. A
  * filtered signal is one page, sorted here as well so the order does not rest on the provider. The
- * unlabeled signal has no filter, and its pages are followed until it holds `per_signal` uncategorised messages
- * or UNLABELED_PAGE_MAX pages have been read: the category test is made here, so a page of messages
- * that are all filed yields none of them and the next page is where the signal's own rows are.
+ * unlabeled signal has no filter, and its pages are followed until it holds `per_signal`
+ * uncategorised messages or UNLABELED_PAGE_MAX pages have been read: the category test is made
+ * here, so a page of messages that are all filed yields none of them and the next page is where the
+ * signal's own rows are.
  */
 async function messagesFor(args: MailReadArgs, signal: Signal): Promise<Record<string, unknown>[]> {
     const kept: Record<string, unknown>[] = [];

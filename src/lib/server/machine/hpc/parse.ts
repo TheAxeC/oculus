@@ -1,11 +1,14 @@
-// Layer 2, server. Pure SLURM text parsers, the section markers they read and the accounting window date the queries are built with, so every one of them is exercised without ssh.
+// Layer 2, server. Pure SLURM text parsers, the section markers they read and the accounting window
+// date the queries are built with, so every one of them is exercised without ssh.
 import type { HpcJob, HpcPartition, HpcQuotaItem, HpcRecent } from '../../../data/model.ts';
 
 export const SEC_SACCT = '@@oculus:sacct@@';
 export const SEC_SINFO = '@@oculus:sinfo@@';
 export const SEC_RC = '@@oculus:squeue_rc=';
 
-/** The day an accounting query starts from, as many days back as asked, which sacct reads as a date. */
+/**
+ * The day an accounting query starts from, as many days back as asked, which sacct reads as a date.
+ */
 export function dateFrom(days: number): string {
     const date = new Date();
     date.setUTCDate(date.getUTCDate() - Math.max(1, days));

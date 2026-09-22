@@ -119,7 +119,9 @@ export function stampOf(value: unknown): string | null {
     return typeof value === 'string' && value !== '' ? value : null;
 }
 
-/** Note the moment: the first stamp seen opens the session and every one moves its last activity. */
+/**
+ * Note the moment: the first stamp seen opens the session and every one moves its last activity.
+ */
 export function touch(acc: Acc, stamp: string | null): void {
     if (stamp === null) return;
     acc.started ??= stamp;

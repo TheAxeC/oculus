@@ -1,6 +1,6 @@
 // Layer 2, client state. The instances on a page: which tab is active, the state a tab holds, and
-// every way a tab leaves the pane it is in, whether it is closed, carried to another pane or carried
-// to another page.
+// every way a tab leaves the pane it is in, whether it is closed, carried to another pane or
+// carried to another page.
 //
 // A tab moved between pages keeps its id, so the view it mounts keeps whatever state it holds, and
 // the pane it left is cleaned as closing its tab would clean it. A tab landing anywhere is first
@@ -44,6 +44,8 @@ import { focusedPane, restore, settleFocus, splitWith } from './workbench.ts';
 export type Instances = {
     activeInstance: (page?: string) => Instance | null;
     instanceLayoutState: (id: string) => unknown;
+    /** The view one instance shows, from whichever page's tree holds it, or undefined for none. */
+    instanceView: (id: string) => ViewId | undefined;
     restateInstance: (id: string, state: unknown) => void;
     pinInstance: (id: string, session: string, label: string) => void;
     unpinInstance: (id: string) => void;
@@ -69,12 +71,21 @@ export function createInstances(access: LayoutAccess, attention: Attention): Ins
     }
 
     /**
-     * One layout instance's own saved state, from whichever page's tree holds it: a tab inside a
-     * page shown in another page is held by the page it belongs to and not by the one showing it.
+     * One instance as whichever page's tree holds it: a tab inside a page shown in another page is
+     * held by the page it belongs to and not by the one showing it.
      */
-    function instanceLayoutState(id: string): unknown {
+    function held(id: string): Instance | undefined {
         const page = access.holding(id);
-        return page === null ? undefined : findInstance(page.workbench.root, id)?.instance.state;
+        return page === null ? undefined : findInstance(page.workbench.root, id)?.instance;
+    }
+
+    /** One layout instance's own saved state. */
+    function instanceLayoutState(id: string): unknown {
+        return held(id)?.state;
+    }
+
+    function instanceView(id: string): ViewId | undefined {
+        return held(id)?.view;
     }
 
     /** Replace one instance's layout state. A missing id changes nothing. */
@@ -98,7 +109,9 @@ export function createInstances(access: LayoutAccess, attention: Attention): Ins
         restateInstance(id, { session, label });
     }
 
-    /** Clear the pin and label in place; another unpinned instance of the view may already exist. */
+    /**
+     * Clear the pin and label in place; another unpinned instance of the view may already exist.
+     */
     function unpinInstance(id: string): void {
         restateInstance(id, {});
     }
@@ -138,8 +151,8 @@ export function createInstances(access: LayoutAccess, attention: Attention): Ins
 
     /**
      * Close the instance a view was opened for one record with, wherever it is. It is what a record
-     * going away means for the arrangement: a note deleted from the Files view leaves no tab drawing
-     * a file that is not there.
+     * going away means for the arrangement: a note deleted from the Files view leaves no tab
+     * drawing a file that is not there.
      */
     function closeRecord(view: ViewId, id: string): void {
         for (const page of access.held().pages) {
@@ -170,8 +183,8 @@ export function createInstances(access: LayoutAccess, attention: Attention): Ins
     }
 
     /**
-     * Move one instance to another page, taking it out of the page it is on and putting it at the end
-     * of the first pane of that page's tree.
+     * Move one instance to another page, taking it out of the page it is on and putting it at the
+     * end of the first pane of that page's tree.
      */
     function moveInstanceToPage(id: string, page: string): void {
         const from = access.holding(id);
@@ -232,7 +245,9 @@ export function createInstances(access: LayoutAccess, attention: Attention): Ins
         access.ui.clearInstanceState(id);
     }
 
-    /** Close a whole pane, with every tab it holds, each forgotten as its own close would forget it. */
+    /**
+     * Close a whole pane, with every tab it holds, each forgotten as its own close would forget it.
+     */
     function closePane(path: number[], page?: string): void {
         const id = access.at(page)?.id;
         if (id === undefined) return;
@@ -256,9 +271,9 @@ export function createInstances(access: LayoutAccess, attention: Attention): Ins
     }
 
     /**
-     * What a tab landing in a pane needs of the rest of the arrangement: another pane maximised hides
-     * the one it is landing in, and a folded ancestor hides it too. Either way the tab would be moved
-     * out of sight, which is the one thing a move must not look like.
+     * What a tab landing in a pane needs of the rest of the arrangement: another pane maximised
+     * hides the one it is landing in, and a folded ancestor hides it too. Either way the tab would
+     * be moved out of sight, which is the one thing a move must not look like.
      */
     function reveal(path: number[], page?: string): Workbench {
         const current = access.workbench(page);
@@ -268,9 +283,9 @@ export function createInstances(access: LayoutAccess, attention: Attention): Ins
     }
 
     /**
-     * Move an instance to a pane's tab strip, from wherever it is now. The pane is named in the page
-     * the argument names, and the instance is taken out of whichever page holds it, so a tab dragged
-     * into a pane of a page shown nested moves between the two pages.
+     * Move an instance to a pane's tab strip, from wherever it is now. The pane is named in the
+     * page the argument names, and the instance is taken out of whichever page holds it, so a tab
+     * dragged into a pane of a page shown nested moves between the two pages.
      */
     function transferInstance(id: string, path: number[], index: number, page?: string): void {
         const to = access.at(page);
@@ -316,6 +331,7 @@ export function createInstances(access: LayoutAccess, attention: Attention): Ins
     return {
         activeInstance,
         instanceLayoutState,
+        instanceView,
         restateInstance,
         pinInstance,
         unpinInstance,

@@ -1,6 +1,6 @@
 // The pty channels on a real Hub with a recording sink and a recording driver. No tmux runs here:
-// the driver records the argument list every channel operation built, which is what makes "the input
-// reached send-keys" an assertion rather than a process.
+// the driver records the argument list every channel operation built, which is what makes "the
+// input reached send-keys" an assertion rather than a process.
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Hub } from '../../../../src/lib/server/core/channels.ts';

@@ -2,8 +2,8 @@
 // machine-local file as JSON lines and read back newest first.
 //
 // The record is made where the write is made. Every writer holds the value the file had and the
-// value it wrote at the point of the edit, and hands both back on its outcome, so nothing here reads
-// a file a second time and nothing compares one version of a file with another.
+// value it wrote at the point of the edit, and hands both back on its outcome, so nothing here
+// reads a file a second time and nothing compares one version of a file with another.
 //
 // The log is this machine's and not the researcher's data: git already holds the hub's history, and
 // what this answers is what oculus did here. It lives beside the other files under ~/.oculus, or
@@ -22,16 +22,21 @@ import type { FsWrites } from '../files/fs.ts';
 
 /**
  * How a change is taken back: `field` writes `before` back at the same address, `create` is undone
- * by a delete and `delete` by a create, `reorder` puts the earlier order back, and `none` is a write
- * with no inverse writer (a scaffolded idea folder, a renamed LinkedIn post).
+ * by a delete and `delete` by a create, `reorder` puts the earlier order back, and `none` is a
+ * write with no inverse writer (a scaffolded idea folder, a renamed LinkedIn post).
  */
 export type UndoKind = 'field' | 'create' | 'delete' | 'reorder' | 'none';
 
-/** What a writer says about one thing it changed. The time and the body kind are added on append. */
+/**
+ * What a writer says about one thing it changed. The time and the body kind are added on append.
+ */
 export type ChangeRecord = {
     /** The file written, relative to the hub inside it and absolute outside it. */
     file: string;
-    /** What the write addressed: a project id, an entry identity, a session id, a collection, `deck`. */
+    /**
+     * What the write addressed: a project id, an entry identity, a session id, a collection,
+     * `deck`.
+     */
     key: string;
     /**
      * The field the write set, or `entries` when the whole record at `file` changed: an entry
@@ -47,7 +52,9 @@ export type ChangeRecord = {
 export type Change = ChangeRecord & {
     /** The moment the line was written, ISO, unique in the file and rising down it. */
     at: string;
-    /** The body kind of the write the record came from, which is the writer an undo goes through. */
+    /**
+     * The body kind of the write the record came from, which is the writer an undo goes through.
+     */
     kind: string;
     /** The `at` of the change this one took back, absent on a change that took nothing back. */
     undoes?: string;
@@ -145,8 +152,8 @@ function allOf(log: ChangeLog): Change[] {
  * One page of the log, newest first. `before` walks back: it is the `at` of the oldest row a page
  * already shows, and the answer is the page before that one.
  *
- * The page is PAGE rows whatever the cap is. `keep` bounds the file and not the read: the file holds
- * up to twice it, and a page cut to the cap would leave the rows past it unreachable.
+ * The page is PAGE rows whatever the cap is. `keep` bounds the file and not the read: the file
+ * holds up to twice it, and a page cut to the cap would leave the rows past it unreachable.
  */
 export function readChanges(log: ChangeLog, before?: string): Change[] {
     const rows = allOf(log).reverse();

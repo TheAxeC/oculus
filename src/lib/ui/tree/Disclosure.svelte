@@ -1,5 +1,6 @@
 <script lang="ts">
-    // Layer 3, primitive. A compact disclosure control on the same surface as a Chip. It keeps the count, label and open state separate so grouped links read as a group rather than an action.
+    // Layer 3, primitive. A compact disclosure control on the same surface as a Chip. It keeps the
+    // count, label and open state separate so grouped links read as a group rather than an action.
 
     import Glyph from '../controls/Glyph.svelte';
 

@@ -13,9 +13,9 @@ import { samePath, type Layout, type Page } from '../model.ts';
 import { showsPage } from '../nested.ts';
 
 /**
- * The instance the last openBeside made on a page, and the one that was being read when the pane was
- * split off, so a second view asked for beside the one being read joins the pane the first one made
- * rather than splitting again.
+ * The instance the last openBeside made on a page, and the one that was being read when the pane
+ * was split off, so a second view asked for beside the one being read joins the pane the first one
+ * made rather than splitting again.
  */
 export type Beside = { made: string; from: string | null };
 
@@ -31,7 +31,9 @@ export type Attention = {
     active: (page?: string) => string | null;
     /** Remember which instance a page was last left on. */
     remembered: (id: string | null, page?: string) => void;
-    /** The page the reader is in, which is what a view opened by anything naming no page lands in. */
+    /**
+     * The page the reader is in, which is what a view opened by anything naming no page lands in.
+     */
     touched: () => Page;
     /** The reader acted in a pane of this page. */
     touchPane: (page: string) => void;
@@ -53,8 +55,8 @@ export type Attention = {
 
 export function createAttention(access: LayoutAccess, where: Touched = { page: null }): Attention {
     /**
-     * The instance activated last on each page, which is what makes one of its panes the active one,
-     * keyed by page id so returning to a page finds the pane it was left on.
+     * The instance activated last on each page, which is what makes one of its panes the active
+     * one, keyed by page id so returning to a page finds the pane it was left on.
      */
     const lastActive: Record<string, string | null> = {};
 

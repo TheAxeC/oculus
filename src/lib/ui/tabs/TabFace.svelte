@@ -3,18 +3,18 @@
     // control beside it. It is given one tab and the callbacks that name it, so ui/tabs/Tabs.svelte
     // keeps the measuring, the scrolling and the keyboard while this keeps the drawing.
     //
-    // The face is a button and the close control is a second button beside it, since a button inside
-    // a button is not valid HTML. The pair sits in a presentation wrapper, so the strip's tab list
-    // still has its tabs as its only meaningful children, and that wrapper is what the strip
-    // measures: the caller binds it, and the face button too, which is what the arrow keys carry the
-    // focus between.
+    // The face is a button and the close control is a second button beside it, since a button
+    // inside a button is not valid HTML. The pair sits in a presentation wrapper, so the strip's
+    // tab list still has its tabs as its only meaningful children, and that wrapper is what the
+    // strip measures: the caller binds it, and the face button too, which is what the arrow keys
+    // carry the focus between.
     //
     // It is drawn as an editor's tab, every measure a token of themes/tokens.css: one height with a
     // line down its right side; the shown tab on the surface it heads, over a gap in the line under
     // the strip, with an accent line along its top on a focused strip only; a close control on the
-    // shown tab and under the pointer, keeping its room on every tab; and a tab holding unsaved text
-    // showing a dot there until hovered, and named for it, since a dot says nothing to a screen
-    // reader.
+    // shown tab and under the pointer, keeping its room on every tab; and a tab holding unsaved
+    // text showing a dot there until hovered, and named for it, since a dot says nothing to a
+    // screen reader.
 
     import { type Tab } from '$lib/ui/tabs/tab-strip';
     import Glyph from '../controls/Glyph.svelte';
@@ -185,15 +185,15 @@
 
     .tab-badge {
         display: inline-block;
-        min-width: 16px;
-        padding: 0 5px;
+        min-width: var(--tab-badge-min);
+        padding: 0 var(--tab-badge-pad);
         border-radius: var(--radius-pill);
         background: var(--tab-badge-bg, var(--chip));
         color: var(--tab-badge-fg, var(--accent-txt, var(--accent)));
         font-family: var(--font-num);
         font-size: var(--fs-xs);
         font-weight: 700;
-        line-height: 16px;
+        line-height: var(--tab-badge-line);
         text-align: center;
     }
 
@@ -265,8 +265,9 @@
         justify-content: center;
     }
 
-    /* The dot is centred on the cross's box at any icon size, and its icon, larger than the control,
-       takes no press. It shows on a tab holding unsaved text until the pointer is over the tab. */
+    /* The dot is centred on the cross's box at any icon size, and its icon, larger than the
+       control, takes no press. It shows on a tab holding unsaved text until the pointer is over the
+       tab. */
     .dot {
         position: relative;
         display: none;

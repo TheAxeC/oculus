@@ -2,29 +2,34 @@
 // typed into them after the tab is switched away from and back, and the bookmark form after a
 // reload, since a pane mounts only its active tab and the open form is the instance's state. A
 // bookmark form's draft is forgotten when the section's add control closes the form, when a row's
-// edit moves it to another bookmark and when its bookmark is taken away; the form is mounted anew per
-// opening. A write answered after the reader opened another form, closed and opened the same form
-// again, or switched the tab away closes only the form it was made from, in the file browser it was
-// made from. A value typed while a save is on its way stays where it was typed, in the add form left
-// open over it and in a form whose bookmark leaves the file while that save is out; once the answer
-// has landed, a bookmark the file no longer holds closes the form over it in every file browser the
-// layout holds, including one whose tab is not shown and one on a page with no file browser drawn.
+// edit moves it to another bookmark and when its bookmark is taken away; the form is mounted anew
+// per opening. A write answered after the reader opened another form, closed and opened the same
+// form again, or switched the tab away closes only the form it was made from, in the file browser
+// it was made from. A value typed while a save is on its way stays where it was typed, in the add
+// form left open over it and in a form whose bookmark leaves the file while that save is out; once
+// the answer has landed, a bookmark the file no longer holds closes the form over it in every file
+// browser the layout holds, including one whose tab is not shown and one on a page with no file
+// browser drawn.
 //
-// The drafts and the open forms are the ui store's, kept in the browser's own storage. The roots are
-// folders made under the system temporary directory, and every bookmark a case writes is taken away
-// before it ends.
+// The drafts and the open forms are the ui store's, kept in the browser's own storage. The roots
+// are folders made under the system temporary directory, and the bookmarks and roots a case saves
+// are put back as they were after it, passed or failed, by tests/browser/helpers/files.ts.
 
-import { sep } from 'node:path';
+import { existsSync, readFileSync } from 'node:fs';
+import { join, sep } from 'node:path';
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { nestedRoot, row, scratch } from '../helpers/files.ts';
+import { keepServedFiles, nestedRoot, row, scratch } from '../helpers/files.ts';
 import { draftKeys, switchAndBack, uiInstances } from '../helpers/forms.ts';
+import { servedHomeDir } from '../helpers/hub.ts';
 import { boot, openView } from '../helpers/rail.ts';
 import { t, tabNamed } from '../helpers/words.ts';
 
+keepServedFiles();
+
 /**
- * Hold every POST to one path until the case releases it. `sent` settles once the first one has left
- * the page, so a case presses its next control while the request is known to be on its way, and
- * `answered` once the page has its response.
+ * Hold every POST to one path until the case releases it. `sent` settles once the first one has
+ * left the page, so a case presses its next control while the request is known to be on its way,
+ * and `answered` once the page has its response.
  */
 async function holdPosts(
     page: Page,
@@ -45,7 +50,8 @@ async function holdPosts(
             new URL(response.url()).pathname === path &&
             holds(response.request().postData() ?? '')
     );
-    // A case that never waits for the answer does not leave a rejection behind when its page closes.
+    // A case that never waits for the answer does not leave a rejection behind when its page
+    // closes.
     answered.catch(() => undefined);
     await page.route(`**${path}`, async (route) => {
         // A case that names which body to hold lets every other write through, so it can press a
@@ -168,6 +174,50 @@ test('the root form is open with its typed folder after a tab switch, and cancel
     await page.getByRole('button', { name: t('files.cancel'), exact: true }).click();
 });
 
+// Revert: in filesViewOf of state/sources/fs.ts, read no refusal line, so the line lives only as
+// long as the component that drew it.
+test('a refused root comes back with its form and its refusal after a tab switch', async ({
+    page
+}) => {
+    // revert: src/lib/state/sources/fs.ts:280 => note: '',
+    await boot(page);
+    await openView(page, 'files', t('views.files'));
+    await page.getByRole('button', { name: t('files.add_root'), exact: true }).click();
+    const box = page.getByRole('textbox', { name: t('files.root_dir') });
+    await box.fill('a-folder-that-is-not-absolute');
+    await page.getByRole('button', { name: t('files.add'), exact: true }).click();
+    const refused = page.getByText(t('files.refused_not_absolute'), { exact: true });
+    await expect(refused).toBeVisible();
+
+    await switchAndBack(page, t('views.files'), page.locator('[data-fs-bookmarks]'));
+    await expect(box).toHaveValue('a-folder-that-is-not-absolute');
+    await expect(refused).toBeVisible();
+
+    await page.getByRole('button', { name: t('files.cancel'), exact: true }).click();
+    // Cancel closed the form, and the refusal went with the press that closed it.
+    await expect(refused).toHaveCount(0);
+});
+
+// Revert: in filesViewOf of state/sources/fs.ts, read no outcome line.
+test("the bookmark form's outcome line comes back after a tab switch", async ({ page }) => {
+    // revert: src/lib/state/sources/fs.ts:281 => said: '',
+    await boot(page);
+    await openView(page, 'files', t('views.files'));
+    const { key } = await nestedRoot(page);
+    await page.getByRole('button', { name: t('files.add_bookmark'), exact: true }).click();
+    const adding = page.locator('[data-form="add"]');
+    await adding.getByRole('textbox', { name: 'Label' }).fill('notes.md');
+    await adding.getByRole('combobox', { name: 'Root' }).selectOption(key);
+    await adding.getByRole('textbox', { name: 'Path' }).fill('notes.md');
+    await adding.getByRole('button', { name: t('collection.form_save') }).click();
+    const said = page.locator('[data-instance] > .said');
+    await expect(said).toBeVisible();
+    const words = await said.textContent();
+
+    await switchAndBack(page, t('views.files'), page.locator('[data-fs-bookmarks]'));
+    await expect(said).toHaveText(words ?? '');
+});
+
 // Revert: in confirm() of views/sources/files/Files.svelte, patch every form closed on a good
 // answer instead of settle(owner, asked).
 test('a root added while another form was opened leaves that form open with what was typed into it', async ({
@@ -232,18 +282,6 @@ test("a bookmark added while another bookmark's form was opened leaves that form
     await expect(editing).toBeVisible();
     await expect(page.locator('[data-form="add"]')).toHaveCount(0);
     expect(await draftKeys(page)).toEqual([]);
-
-    // Both taken away again, so the bookmarks this run saves are the ones the other cases expect.
-    await kept.hover();
-    await kept.getByRole('button', { name: t('files.bookmark_edit'), exact: true }).click();
-    await expect(editing).toHaveCount(0);
-    await page.unroute('**/api/write');
-    await page.locator(`[data-fs-row="${key}:tool.py"]`).hover();
-    await star('tool.py').click();
-    await page.locator(`[data-fs-row="${key}:notes.md"]`).hover();
-    await star('notes.md').click();
-    await expect(kept).toHaveCount(0);
-    await expect(page.locator('[data-fs-bookmark="notes.md"]')).toHaveCount(0);
 });
 
 // Revert: in confirm() of views/sources/files/Files.svelte, settle through `instance.id` read after
@@ -303,14 +341,6 @@ test('a bookmark added while the tab is switched away closes its form in the fil
     await toFiles(page);
     await expect(page.locator('[data-fs-bookmark="notes.md"]')).toBeVisible();
     await expect(page.locator('[data-form]')).toHaveCount(0);
-
-    // Taken away again, so the bookmarks this run saves are the ones the other cases expect.
-    await page.unroute('**/api/write');
-    await row(page, key).click();
-    const line = page.locator(`[data-fs-row="${key}:notes.md"]`);
-    await line.hover();
-    await line.getByRole('button', { name: t('files.row_bookmark'), exact: true }).click();
-    await expect(page.locator('[data-fs-bookmark="notes.md"]')).toHaveCount(0);
 });
 
 // Revert: in formSettled of state/sources/fs.ts, leave `opening` out of what it compares.
@@ -350,7 +380,7 @@ test("a row's edit moving a typed edit form to another bookmark forgets what was
 }) => {
     await boot(page);
     await openView(page, 'files', t('views.files'));
-    const { star, mark, edit } = await twoMarks(page);
+    const { edit } = await twoMarks(page);
     const editing = page.locator('[data-form="edit"]');
 
     await edit('tool.py');
@@ -362,17 +392,15 @@ test("a row's edit moving a typed edit form to another bookmark forgets what was
 
     await edit('notes.md');
     await expect(editing).toHaveCount(0);
-    await star('tool.py');
-    await star('notes.md');
-    await expect(mark('tool.py')).toHaveCount(0);
-    await expect(mark('notes.md')).toHaveCount(0);
 });
 
-// Revert: in views/sources/files/Files.svelte, draw BookmarkForm without its `{#key}` block.
+// Revert: in views/sources/files/Files.svelte, draw BookmarkForm without its `{#key}` block, or
+// key it by the instance alone, so the add form's component is kept for the edit form.
+// revert: src/lib/views/sources/files/Files.svelte:405 => {#key instance.id}
 test('an edit form opened from the add form is the one its Cancel closes', async ({ page }) => {
     await boot(page);
     await openView(page, 'files', t('views.files'));
-    const { star, mark, edit } = await twoMarks(page);
+    const { edit } = await twoMarks(page);
 
     await page.getByRole('button', { name: t('files.add_bookmark'), exact: true }).click();
     await expect(page.locator('[data-form="add"]')).toBeVisible();
@@ -381,15 +409,10 @@ test('an edit form opened from the add form is the one its Cancel closes', async
     await expect(editing).toBeVisible();
     await editing.getByRole('button', { name: t('collection.form_cancel'), exact: true }).click();
     await expect(page.locator('[data-form]')).toHaveCount(0);
-
-    await star('tool.py');
-    await star('notes.md');
-    await expect(mark('tool.py')).toHaveCount(0);
-    await expect(mark('notes.md')).toHaveCount(0);
 });
 
 // Revert: in closeGoneForms of state/sources/fs.svelte.ts, sweep no browser at all.
-// revert: src/lib/state/sources/fs.svelte.ts:685 => for (const one of forms.browsers().slice(0, 0)) {
+// revert: src/lib/state/sources/fs.svelte.ts:696 => for (const one of forms.browsers().slice(0, 0)) {
 test('a bookmark taken away while its typed edit form is open closes the form, and the tab closes without asking', async ({
     page
 }) => {
@@ -406,8 +429,6 @@ test('a bookmark taken away while its typed edit form is open closes the form, a
     await expect(editing).toHaveCount(0);
     await expect.poll(() => draftKeys(page)).toEqual([]);
 
-    await star('notes.md');
-    await expect(mark('notes.md')).toHaveCount(0);
     await page
         .locator('.tab', { has: page.getByRole('tab', { name: tabNamed(t('views.files')) }) })
         .getByRole('button', { name: t('ui.close_tab') })
@@ -418,7 +439,7 @@ test('a bookmark taken away while its typed edit form is open closes the form, a
 
 // Revert: in save() of views/shared/forms/EntryForm.svelte, clear the add form's draft and close it
 // on every answer, through into.clear(which) in place of into.taken(which, sent).
-// revert: src/lib/views/shared/forms/EntryForm.svelte:269 => const took = (into.clear(which), true);
+// revert: src/lib/views/shared/forms/EntryForm.svelte:267 => const took = (into.clear(which), true);
 test('a bookmark add form typed on while its save was out keeps the typing, open over it', async ({
     page
 }) => {
@@ -443,27 +464,17 @@ test('a bookmark add form typed on while its save was out keeps the typing, open
     await expect(adding).toBeVisible();
     await expect(label).toHaveValue('a label typed while the save was out');
     expect(await draftKeys(page)).toHaveLength(1);
-
-    // Taken away again, so the bookmarks this run saves are the ones the other cases expect.
-    await page.getByRole('button', { name: t('files.add_bookmark'), exact: true }).click();
-    await expect(adding).toHaveCount(0);
-    await page.unroute('**/api/write');
-    await row(page, key).click();
-    const line = page.locator(`[data-fs-row="${key}:notes.md"]`);
-    await line.hover();
-    await line.getByRole('button', { name: t('files.row_bookmark'), exact: true }).click();
-    await expect(page.locator('[data-fs-bookmark="notes.md"]')).toHaveCount(0);
 });
 
 // Revert: in views/sources/files/Files.svelte, hand the bookmark form a rename that opens nothing,
 // so the form stays over the id its bookmark had before the save.
-// revert: src/lib/views/sources/files/Files.svelte:399 => onrenamed={() => undefined}
+// revert: src/lib/views/sources/files/Files.svelte:414 => onrenamed={() => undefined}
 test('a bookmark renamed by its form keeps what was typed, open over the bookmark it renamed', async ({
     page
 }) => {
     await boot(page);
     await openView(page, 'files', t('views.files'));
-    const { star, mark, edit } = await twoMarks(page);
+    const { mark, edit } = await twoMarks(page);
     const editing = page.locator('[data-form="edit"]');
     const own = await filesId(page);
     const typing = 'typed/while/the/save/was/out';
@@ -489,20 +500,15 @@ test('a bookmark renamed by its form keeps what was typed, open over the bookmar
     await expect(editing.getByRole('textbox', { name: 'Label' })).toHaveValue('tool.py renamed');
     expect(await draftKeys(page)).toHaveLength(1);
 
-    // The form's own Cancel still closes it: what the rename moved is the bookmark, not the opening.
+    // The form's own Cancel still closes it: what the rename moved is the bookmark, not the
+    // opening.
     await editing.getByRole('button', { name: t('collection.form_cancel') }).click();
     await expect(editing).toHaveCount(0);
     await expect.poll(() => draftKeys(page)).toEqual([]);
-
-    await page.unroute('**/api/write');
-    await star('tool.py');
-    await star('notes.md');
-    await expect(mark('tool.py renamed')).toHaveCount(0);
-    await expect(mark('notes.md')).toHaveCount(0);
 });
 
 // Revert: in editedGone of state/sources/fs.ts, drop `saving` from the line that answers false.
-// revert: src/lib/state/sources/fs.ts:444 => if (marks.loading || marks.error !== '') return false;
+// revert: src/lib/state/sources/fs.ts:463 => if (marks.loading || marks.error !== '') return false;
 test('a bookmark taken away while a save from its form is out leaves the form until it lands', async ({
     page
 }) => {
@@ -521,8 +527,8 @@ test('a bookmark taken away while a save from its form is out leaves the form un
     await held.sent;
 
     // The bookmark leaves the file while the save from its form is still on its way. The form has
-    // nothing to draw without its bookmark, and its opening and what was typed into it are kept: the
-    // request may yet put the bookmark back, and the reader's words are not forgotten under it.
+    // nothing to draw without its bookmark, and its opening and what was typed into it are kept:
+    // the request may yet put the bookmark back, and the reader's words are not forgotten under it.
     await star('tool.py');
     await expect(mark('tool.py')).toHaveCount(0);
     expect(await draftKeys(page)).toHaveLength(1);
@@ -541,29 +547,25 @@ test('a bookmark taken away while a save from its form is out leaves the form un
             editing: ''
         });
     await expect.poll(() => draftKeys(page)).toEqual([]);
-
-    await page.unroute('**/api/write');
-    await star('notes.md');
-    await expect(mark('notes.md')).toHaveCount(0);
 });
 
 // Revert: in closeGoneForms of state/sources/fs.svelte.ts, sweep no browser, which is what the rule
 // living in an $effect of the mounted view came to for a page that draws none.
-// revert: src/lib/state/sources/fs.svelte.ts:685 => for (const one of forms.browsers().slice(0, 0)) {
+// revert: src/lib/state/sources/fs.svelte.ts:696 => for (const one of forms.browsers().slice(0, 0)) {
 test('a bookmark taken away closes its form with no file browser on screen at all', async ({
     page
 }) => {
     await boot(page);
     await openView(page, 'files', t('views.files'));
-    const { key, star, mark, edit } = await twoMarks(page);
+    const { key, mark, edit } = await twoMarks(page);
     const hidden = await filesId(page);
 
     await edit('tool.py');
     await page.locator('[data-form="edit"]').getByRole('textbox', { name: 'Path' }).fill('typed');
     expect(await draftKeys(page)).toHaveLength(1);
 
-    // The file's own tab takes the pane, so no file browser is mounted anywhere on the page, and the
-    // bookmark is taken away from that tab rather than from a tree.
+    // The file's own tab takes the pane, so no file browser is mounted anywhere on the page, and
+    // the bookmark is taken away from that tab rather than from a tree.
     await row(page, key, 'tool.py').click();
     await expect(page.locator('[data-fs-bookmarks]')).toHaveCount(0);
     await page.getByRole('button', { name: t('file.unbookmark'), exact: true }).click();
@@ -578,13 +580,11 @@ test('a bookmark taken away closes its form with no file browser on screen at al
 
     await page.getByRole('tab', { name: tabNamed(t('views.files')) }).click();
     await expect(mark('tool.py')).toHaveCount(0);
-    await star('notes.md');
-    await expect(mark('notes.md')).toHaveCount(0);
 });
 
 // Revert: in closeGoneForms of state/sources/fs.svelte.ts, sweep no browser, which is what the rule
 // living in an $effect of the mounted view came to for a page that draws none.
-// revert: src/lib/state/sources/fs.svelte.ts:685 => for (const one of forms.browsers().slice(0, 0)) {
+// revert: src/lib/state/sources/fs.svelte.ts:696 => for (const one of forms.browsers().slice(0, 0)) {
 test('a bookmark taken away closes the form of a file browser whose tab is not shown', async ({
     page
 }) => {
@@ -615,7 +615,44 @@ test('a bookmark taken away closes the form of a file browser whose tab is not s
         .poll(async () => (await uiInstances(page))[hidden])
         .toMatchObject({ form: '', editing: '' });
     await expect.poll(() => draftKeys(page)).toEqual([]);
+});
 
-    await star('notes.md');
-    await expect(mark('notes.md')).toHaveCount(0);
+/** What one of the served run's own files holds, or the empty string when it is not there. */
+function servedFile(name: string): string {
+    const path = join(servedHomeDir(), '.oculus', name);
+    return existsSync(path) ? readFileSync(path, 'utf8') : '';
+}
+
+// The two run in order, and the first one's title ends in the second's, so a run of the second by
+// its name runs the first before it.
+test.describe('the bookmarks and roots of a case that stops halfway', () => {
+    test.describe.configure({ mode: 'serial' });
+    let left = '';
+
+    test('a case that saves a root and a bookmark and stops is put back as it was before', async ({
+        page
+    }) => {
+        test.fail();
+        await boot(page);
+        await openView(page, 'files', t('views.files'));
+        const { key } = await nestedRoot(page);
+        await row(page, key).click();
+        const line = page.locator(`[data-fs-row="${key}:tool.py"]`);
+        await line.hover();
+        await line.getByRole('button', { name: t('files.row_bookmark'), exact: true }).click();
+        await expect(page.locator('[data-fs-bookmark="tool.py"]')).toBeVisible();
+        expect(servedFile('bookmarks.yml')).toContain(key);
+        expect(servedFile('workspaces.json')).toContain(key);
+        left = key;
+        throw new Error('the case stops here, before any line of its own takes the two away');
+    });
+
+    // revert: tests/browser/helpers/files.ts:38-40 => delete
+    test('is put back as it was before', () => {
+        expect(left).not.toBe('');
+        // The case before put its bookmark here, and the helper took the file back after it.
+        expect(servedFile('bookmarks.yml')).not.toContain(left);
+        // The case before added its root here, and the helper took the file back after it.
+        expect(servedFile('workspaces.json')).not.toContain(left);
+    });
 });

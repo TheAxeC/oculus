@@ -10,7 +10,9 @@ import { parse } from 'yaml';
 
 const here = dirname(fileURLToPath(import.meta.url));
 
-/** The temporary copy of demo/ the server of this run is reading, asserted to be a temporary one. */
+/**
+ * The temporary copy of demo/ the server of this run is reading, asserted to be a temporary one.
+ */
 export function hubDir(): string {
     const path = readFileSync(join(here, '.hub'), 'utf8').trim();
     if (!resolve(path).startsWith(resolve(tmpdir()) + sep)) {
@@ -75,13 +77,32 @@ export function removeFromHub(relative: string): void {
 }
 
 /**
- * The engine directory this run serves, beside the hub copy under the one temporary directory
- * `serve.ts` made: it holds the copy of `config/`, so a spec whose subject is a configured setting
- * edits that copy and never the checkout's. The config folder is asserted to be there.
+ * Where `serve.ts` puts each part of a run inside the one temporary directory it makes: the hub
+ * copy, the engine directory and the home directory. It is named here once, so the server that
+ * makes the folders and a spec that reads one agree on where it is.
+ */
+export function runLayout(temp: string): { hub: string; engine: string; home: string } {
+    return { hub: join(temp, 'demo'), engine: join(temp, 'engine'), home: join(temp, 'home') };
+}
+
+/**
+ * The engine directory this run serves: it holds the copy of `config/`, so a spec whose subject is
+ * a configured setting edits that copy and never the checkout's. The config folder is asserted to
+ * be there.
  */
 export function servedEngineDir(): string {
-    const dir = join(dirname(hubDir()), 'engine');
+    const dir = runLayout(dirname(hubDir())).engine;
     if (!existsSync(join(dir, 'config'))) throw new Error(`${dir} holds no config folder`);
+    return dir;
+}
+
+/**
+ * The home directory this run's server runs under: its session stores and its `~/.oculus` files
+ * (bookmarks, workspaces, notes) are there and never in the owner's. It is asserted to be there.
+ */
+export function servedHomeDir(): string {
+    const dir = runLayout(dirname(hubDir())).home;
+    if (!existsSync(dir)) throw new Error(`${dir} is not there`);
     return dir;
 }
 

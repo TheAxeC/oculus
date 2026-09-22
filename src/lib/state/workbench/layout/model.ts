@@ -74,7 +74,10 @@ export const MAX_CHILDREN = Math.floor(1 / MIN_SIZE);
 /** The view a fresh page starts on. */
 export const MAIN_VIEW = 'status';
 
-/** The envelope version serialiseLayout writes and parseLayout demands: the list of pages, one tree each. */
+/**
+ * The envelope version serialiseLayout writes and parseLayout demands: the list of pages, one tree
+ * each.
+ */
 export const LAYOUT_VERSION = 4;
 
 /**

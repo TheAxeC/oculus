@@ -2,9 +2,9 @@
 // reader is in.
 //
 // The ask is written into the Files instance's own state rather than acted on here: the folders on
-// the way are read by the view, which is what draws them, and an ask written into the state is still
-// there for a tab that mounts after it. It is its own module because it is the one part of the store
-// that opens a named view for another part of the app rather than for the reader.
+// the way are read by the view, which is what draws them, and an ask written into the state is
+// still there for a tab that mounts after it. It is its own module because it is the one part of
+// the store that opens a named view for another part of the app rather than for the reader.
 
 import { revealAsked } from '../../../sources/fs.ts';
 import { findView } from '../../../client/instance.ts';
@@ -24,9 +24,9 @@ export function createShowInFiles(
     openView: (view: ViewId, state?: unknown, page?: string) => string
 ): ShowInFiles {
     /**
-     * Show one path in the file browser. The Files tab of the page the reader is in is activated, or
-     * one is opened there when the page has none, and it is asked to open the folders on the way,
-     * select the path and scroll it into view.
+     * Show one path in the file browser. The Files tab of the page the reader is in is activated,
+     * or one is opened there when the page has none, and it is asked to open the folders on the
+     * way, select the path and scroll it into view.
      */
     function showInFiles(path: string, root?: string): string {
         const page = attention.touched().id;

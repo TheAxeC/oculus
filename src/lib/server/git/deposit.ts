@@ -6,8 +6,8 @@
 //
 // The order of one deposit is the order of the functions below: `adopt` makes the mirror (a clone
 // when the repository already exists, which is how a project that is also a public repository keeps
-// its history), `sync` answers the plan, `commit` writes the message, `push` sends it and writes the
-// manifest back. `snapshot` is the mode of today kept as a second button: one orphan commit
+// its history), `sync` answers the plan, `commit` writes the message, `push` sends it and writes
+// the manifest back. `snapshot` is the mode of today kept as a second button: one orphan commit
 // replacing the remote's `main`, after which the history that was there is gone.
 //
 // What ships is `code/` minus `__pycache__`, `*.pyc` and `.git`, with the mirror's `.gitignore`
@@ -74,7 +74,9 @@ const SECRET_HINTS = ['.secrets', '.env', '.netrc', 'id_rsa', 'credentials'];
 const SECRET_SUFFIXES = ['.pem', '.key'];
 const BIG_FILE_MB = 25;
 
-/** GitHub refuses a repository description over this, so it is cut rather than sent and rejected. */
+/**
+ * GitHub refuses a repository description over this, so it is cut rather than sent and rejected.
+ */
 const DESCRIPTION_MAX = 350;
 
 /** What a deposit never copies out of `code/`, whatever the ignore files say. */
@@ -127,7 +129,9 @@ export type PlanOutcome = Outcome & { plan: Plan | null };
 export type BranchOutcome = Outcome & { branches: Branch[] };
 
 export type DepositOptions = {
-    /** The mirrors folder; `~/.oculus/deposits` when absent. Every test passes one under mkdtemp. */
+    /**
+     * The mirrors folder; `~/.oculus/deposits` when absent. Every test passes one under mkdtemp.
+     */
     mirrors?: string;
     /** Which hub the project is read and written in; the engine's local.yml says when absent. */
     into?: WriteTarget;
@@ -165,9 +169,9 @@ function done(output: string): Outcome {
 }
 
 /**
- * Where the deposit reads and writes: the target the caller named, or the one the engine directory it
- * named says. A caller that gives neither is the endpoint without its server settings, which is a
- * fault in the wiring rather than in a request, so it is said as one.
+ * Where the deposit reads and writes: the target the caller named, or the one the engine directory
+ * it named says. A caller that gives neither is the endpoint without its server settings, which is
+ * a fault in the wiring rather than in a request, so it is said as one.
  */
 function hubTarget(options: DepositOptions): WriteTarget {
     if (options.into !== undefined) return options.into;
@@ -490,9 +494,9 @@ export async function switchBranch(
         return failed('the mirror is dirty, so switching would carry the changes across');
     }
     // Both listings are what the deletion is computed from. Without them there is no difference to
-    // delete, and copying the new branch on top of what the old one left would leave `code/` holding
-    // the union of the two, which is the state the switch is there to avoid: a listing that failed
-    // is a switch that failed, answered with git's own words.
+    // delete, and copying the new branch on top of what the old one left would leave `code/`
+    // holding the union of the two, which is the state the switch is there to avoid: a listing that
+    // failed is a switch that failed, answered with git's own words.
     const before = await lsFiles(deposit.at);
     if (!before.ok) return before;
     const switched = await switchCmd(deposit.at, [name]);
@@ -587,8 +591,8 @@ function copyable(source: string): boolean {
 /**
  * The mirror's `.gitignore`, from the patterns of `code/.gitignore` and `code/.depositignore`.
  * Comments are dropped on purpose: they explain the hub-and-deposit split and name a file the
- * deposit does not have. Without a `.depositignore`, `attic/` is added, since the dead-end record is
- * the hub's and never the deposit's.
+ * deposit does not have. Without a `.depositignore`, `attic/` is added, since the dead-end record
+ * is the hub's and never the deposit's.
  */
 function writeIgnore(code: string, mirror: string): void {
     const patterns: string[] = [];
@@ -615,7 +619,9 @@ function linesOf(file: string): string[] {
     }
 }
 
-/** The mirror's checkout back into `code/`, everything but `.git` and the generated `.gitignore`. */
+/**
+ * The mirror's checkout back into `code/`, everything but `.git` and the generated `.gitignore`.
+ */
 function copyBack(deposit: Deposit): void {
     for (const entry of readdirSync(deposit.at.dir)) {
         if (entry === '.git' || entry === '.gitignore') continue;
@@ -754,7 +760,9 @@ async function pointDefaultAtMain(deposit: Deposit, run: GhRun): Promise<boolean
     return (await run(defaultBranchArgs(slugOf(url), MAIN), NETWORK_TIMEOUT_MS)).ok;
 }
 
-/** The `defaultBranchRef.name` of `gh repo view --json url,defaultBranchRef`, or the empty string. */
+/**
+ * The `defaultBranchRef.name` of `gh repo view --json url,defaultBranchRef`, or the empty string.
+ */
 function defaultBranchOf(output: string): string {
     try {
         const body = JSON.parse(output) as { defaultBranchRef?: { name?: unknown } };

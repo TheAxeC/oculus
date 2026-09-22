@@ -2,8 +2,8 @@
 // editor's instance so a tab switch and a reload keep them, the way the source tab keeps its draft.
 //
 // The record is the editor's alone: the project the tab was opened for lives in the layout's
-// instance, and nothing else writes the ui record of an editor instance. The draft names the project
-// it was typed for, so a draft is never read by the form of another project.
+// instance, and nothing else writes the ui record of an editor instance. The draft names the
+// project it was typed for, so a draft is never read by the form of another project.
 //
 // What an edit is compared against is the project's value in the snapshot now, through the same
 // rule the form marks a changed field by, so whether the tab holds unsaved work and what the form
@@ -76,9 +76,10 @@ export function createManifestDraft(
 
     /**
      * Drop what a successful save took. A field the server refused keeps its edit, since the file
-     * does not hold it; a field typed again while the save was on its way keeps the newer edit, since
-     * that is not what was sent; and an edit that equals the project's value is dropped as well,
-     * since it holds nothing a save would write. A draft the tab's close took away stays gone.
+     * does not hold it; a field typed again while the save was on its way keeps the newer edit,
+     * since that is not what was sent; and an edit that equals the project's value is dropped as
+     * well, since it holds nothing a save would write. A draft the tab's close took away stays
+     * gone.
      */
     function settleManifest(
         instance: string,
@@ -103,8 +104,8 @@ export function createManifestDraft(
 
     /**
      * Whether the instance holds an edit the project does not, which is what closing its tab asks a
-     * confirmation about. A draft for a project the snapshot no longer holds is compared with nothing,
-     * so any edit with words in it is unsaved.
+     * confirmation about. A draft for a project the snapshot no longer holds is compared with
+     * nothing, so any edit with words in it is unsaved.
      */
     function manifestDirty(instance: string): boolean {
         const held = draft(instance);

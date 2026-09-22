@@ -69,8 +69,8 @@ export function createStorage(): LayoutStorage {
         try {
             backing.setItem(LAYOUT_KEY, serialiseLayout(next));
         } catch {
-            // A full or refused storage loses the arrangement at the next load and nothing else: the
-            // arrangement in memory is what the shell renders and it is already current.
+            // A full or refused storage loses the arrangement at the next load and nothing else:
+            // the arrangement in memory is what the shell renders and it is already current.
         }
     }
 

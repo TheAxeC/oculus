@@ -11,10 +11,10 @@
 // rather than text.
 //
 // An upload is behind the write token as well as the origin check, and the name is reduced to its
-// last segment before anything is done with it, so a name that tried to reach out of the folder is a
-// file name in the folder or is refused. The three extensions the wall accepts are the JPEG and PNG
-// ones: a picture arrives from a camera or a phone, and `.webp` is served if the reader puts one in
-// the folder by hand but is not something the control offers to write.
+// last segment before anything is done with it, so a name that tried to reach out of the folder is
+// a file name in the folder or is refused. The three extensions the wall accepts are the JPEG and
+// PNG ones: a picture arrives from a camera or a phone, and `.webp` is served if the reader puts
+// one in the folder by hand but is not something the control offers to write.
 //
 // The extension is not taken as the reader's word for what the file is: the first bytes must be the
 // ones that format starts with, and must be the format the extension names, so a script or a text
@@ -40,9 +40,9 @@ const MAGIC: Record<string, number[][]> = {
 
 /**
  * The largest picture the wall takes, in bytes. It is the decoded size, so the request that carries
- * it is a third larger again; `BODY_LIMIT_BYTES` is what the server tells its own request parser and
- * `src/server.ts` is where that is set. The page checks the file against this before it encodes one,
- * so an oversized picture reads a sentence rather than a refused request.
+ * it is a third larger again; `BODY_LIMIT_BYTES` is what the server tells its own request parser
+ * and `src/server.ts` is where that is set. The page checks the file against this before it encodes
+ * one, so an oversized picture reads a sentence rather than a refused request.
  */
 export const MAX_UPLOAD_BYTES = 32 * 1024 * 1024;
 
@@ -51,12 +51,14 @@ export const MAX_UPLOAD_MB = MAX_UPLOAD_BYTES / (1024 * 1024);
 
 /**
  * The request body the server accepts, which is the picture base64-encoded (four bytes per three)
- * inside a small JSON wrapper. A request above it is refused by the parser before any route runs, so
- * it is set from the picture's own limit rather than guessed.
+ * inside a small JSON wrapper. A request above it is refused by the parser before any route runs,
+ * so it is set from the picture's own limit rather than guessed.
  */
 export const BODY_LIMIT_BYTES = Math.ceil((MAX_UPLOAD_BYTES * 4) / 3) + 64 * 1024;
 
-/** What the owning server context remembers: the folders refused once, so a bad one is said once. */
+/**
+ * What the owning server context remembers: the folders refused once, so a bad one is said once.
+ */
 export type MemoriesMemory = { refused: Set<string> };
 
 export function memoriesMemory(): MemoriesMemory {
@@ -134,7 +136,9 @@ export function write(dir: string, asked: Upload): UploadOutcome {
     return { written: name };
 }
 
-/** The pictures of the folder with their sizes, as JSON. 403 covers a request from another origin. */
+/**
+ * The pictures of the folder with their sizes, as JSON. 403 covers a request from another origin.
+ */
 export function listing(dir: string | null, headers: Headers): Response {
     if (!sameOrigin(headers)) return new Response(null, { status: 403 });
     return new Response(JSON.stringify({ images: dir === null ? [] : pictures(dir) }), {

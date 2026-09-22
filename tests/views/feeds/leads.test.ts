@@ -1,4 +1,5 @@
-// The Position Leads view rendered over a received feed with live, expired, undated, and run-log rows.
+// The Position Leads view rendered over a received feed with live, expired, undated, and run-log
+// rows.
 
 import { scalar } from '../../../src/lib/data/helpers/guards.ts';
 import { render } from 'svelte/server';
@@ -182,7 +183,8 @@ describe('the Position Leads view', () => {
             context: clientContext(client),
             props: { instance: instance('leads-hidden', true) }
         }).body;
-        // the instance hides the dismissed ones, which is what the count beside the control offers back
+        // the instance hides the dismissed ones, which is what the count beside the control offers
+        // back
         expect(hidden).not.toContain('data-lead="Dismissed role"');
         expect(hidden).toContain(catalog['leads.show_dismissed'].replace('{0}', '1'));
 
@@ -246,9 +248,9 @@ describe('the Position Leads view', () => {
         expect(body).toContain(catalog['leads.posting']);
         // a posting link is drawn only for a scheme a browser opens, and ftp is not one
         expect(body).not.toContain('ftp://example.org/not-shown');
-        // revert: src/lib/views/feeds/leads/LeadCard.svelte:104 => return href.startsWith('https://e') ? href : undefined;
-        // Revert: in posting of LeadCard.svelte, draw only a value that already carries its scheme,
-        // and a posting written as `jobs.example.org/x` draws no link at all.
+        // revert: src/lib/views/shared/forms/posting.ts:15 => const href = held;
+        // Revert: in posting of views/shared/forms/posting.ts, draw only a value that already
+        // carries its scheme, and a posting written as `jobs.example.org/x` draws no link at all.
         expect(body).toContain('href="https://jobs.example.org/strong"');
         expect(body).toContain(catalog['leads.action.applied']);
         expect(body).toContain(catalog['leads.action.decline']);
@@ -358,7 +360,8 @@ describe('the Position Leads view', () => {
         const label = catalog['leads.action.dismiss'];
         expect(card(body, '**Strong** role')).toContain(`aria-label="${label}"`);
         for (const title of ['Applied role', 'Declined role', 'Dismissed role']) {
-            // each of these is already out of the running, so none of them is offered the dismiss control
+            // each of these is already out of the running, so none of them is offered the dismiss
+            // control
             expect(card(body, title)).not.toContain(`aria-label="${label}"`);
         }
     });
@@ -381,7 +384,7 @@ describe('the Position Leads view', () => {
         expect(positions).toEqual([...positions].sort((left, right) => left - right));
     });
 
-    it('uses the dedicated add callback for a new lead form', async () => {
+    it('audits that uses the dedicated add callback for a new lead form', async () => {
         let request: Record<string, unknown> | null = null;
         vi.stubGlobal('fetch', (_url: string, init: RequestInit) => {
             request = JSON.parse(scalar(init.body)) as Record<string, unknown>;

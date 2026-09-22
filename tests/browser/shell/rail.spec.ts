@@ -3,8 +3,8 @@
 // element a reader's pointer would reach at a point, which is what says whether a list or a tooltip
 // is painted over the panes or under them.
 //
-// The theme is mocha, which draws the stand-ins and turns the wallpaper on, so one page carries both
-// the terminal shape and the picture every surface is read through.
+// The theme is mocha, which draws the stand-ins and turns the wallpaper on, so one page carries
+// both the terminal shape and the picture every surface is read through.
 
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { boot, openView } from '../helpers/rail.ts';
@@ -84,7 +84,10 @@ test('a rail button under a terminal palette is one glyph over one label', async
     expect(shape.scrollWidth).toBeLessThanOrEqual(shape.clientWidth);
 });
 
-/** The one open bubble: its rectangle, the window it is laid out in, and what is drawn at its centre. */
+/**
+ * The one open bubble: its rectangle, the window it is laid out in, and what is drawn at its
+ * centre.
+ */
 async function bubbleShape(page: Page): Promise<{
     left: number;
     top: number;

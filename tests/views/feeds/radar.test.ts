@@ -132,9 +132,9 @@ describe('the Lit Watch view', () => {
         // every glyph is filled in from the catalog, so no placeholder is left in the words
         expect(body).not.toContain('{G.');
         expect(body).toContain(catalog['radar.search']);
-        // revert: src/lib/views/feeds/radar/RadarCard.svelte:83 => return href.startsWith('https://e') ? href : undefined;
-        // Revert: in posting of RadarCard.svelte, draw only a value that already carries its scheme,
-        // and a paper written as `papers.example.org/x` draws no link at all.
+        // revert: src/lib/views/shared/forms/posting.ts:15 => const href = held;
+        // Revert: in posting of views/shared/forms/posting.ts, draw only a value that already
+        // carries its scheme, and a paper written as `papers.example.org/x` draws no link at all.
         expect(body).toContain('href="https://papers.example.org/risk"');
         for (const label of ['Pre-emption risk', 'Idea sparks', 'Cite / baseline', 'Adjacent'])
             expect(body).toContain(label);

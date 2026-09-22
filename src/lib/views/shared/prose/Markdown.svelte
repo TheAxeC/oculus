@@ -3,8 +3,9 @@
     // still being read, it failed, or it is the HTML the server rendered.
     //
     // The HTML is a file on disk turned into markup by marked, so it is drawn through ui/html.ts's
-    // sanitise and holds only what that profile allows. The words for the two states the document is
-    // not in come from the view that owns the document, since each of them names what it is reading.
+    // sanitise and holds only what that profile allows. The words for the two states the document
+    // is not in come from the view that owns the document, since each of them names what it is
+    // reading.
 
     import { sanitise } from '$lib/ui/html';
     import type { DocState } from '$lib/state/system/docs.svelte';

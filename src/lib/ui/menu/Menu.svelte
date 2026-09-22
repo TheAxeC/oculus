@@ -14,9 +14,9 @@
     // is open and which item has the keyboard: what the choices are and what picking one means
     // belong to the caller.
     //
-    // A choice that holds a list of its own shows that list in place of the menu's when picked, with a
-    // first choice that goes back, so a list that would grow by one line per page stays the length of
-    // its own choices. Opening the menu always starts on its own list.
+    // A choice that holds a list of its own shows that list in place of the menu's when picked,
+    // with a first choice that goes back, so a list that would grow by one line per page stays the
+    // length of its own choices. Opening the menu always starts on its own list.
     //
     // The list closes on Escape, on a pointer down anywhere outside it, and on a pick. The pointer
     // listener is installed only while the list is open and is removed with it, so a page holding
@@ -68,7 +68,8 @@
         rail?: boolean;
         /**
          * The opener as a strip's bare icon box, the same box a bare ToolButton draws: the glyph
-         * alone, no border and no fill until the pointer is over it. The list it opens is unchanged.
+         * alone, no border and no fill until the pointer is over it. The list it opens is
+         * unchanged.
          */
         bare?: boolean;
         /** Draw a compact rail glyph above its visible label instead of hiding the label. */
@@ -78,7 +79,9 @@
          * control at the stop and -1 for the rest. An opener with none is an ordinary stop.
          */
         tabindex?: number;
-        /** This opener's name in the strip that carries the stop, rendered for that strip to read. */
+        /**
+         * This opener's name in the strip that carries the stop, rendered for that strip to read.
+         */
         stop?: string;
         /** A key pressed on the opener, for a strip that moves its own stop with the arrow keys. */
         onkeydown?: (event: KeyboardEvent) => void;
@@ -148,7 +151,10 @@
         return () => document.removeEventListener('pointerdown', outside, true);
     });
 
-    /** Whether the list opens beside its button rather than above or below it: a compact menu opening upward sits in the rail. */
+    /**
+     * Whether the list opens beside its button rather than above or below it: a compact menu
+     * opening upward sits in the rail.
+     */
     const beside = $derived(compact && placement !== 'down');
 
     /** The inline position of a list opening beside the rail, measured when it opens. */
@@ -158,8 +164,8 @@
      * Where a list beside the rail goes, in window coordinates: level with its button, hanging down
      * from the button's top when the button is in the upper half of the window and rising from its
      * bottom when it is in the lower half, and never taller than the room on that side. A list of
-     * seventeen themes at the foot therefore grows upward and scrolls, and a group's list at the top
-     * of the rail hangs beside its button rather than at the foot of the window.
+     * seventeen themes at the foot therefore grows upward and scrolls, and a group's list at the
+     * top of the rail hangs beside its button rather than at the foot of the window.
      */
     function place(): string {
         if (!beside || button === undefined || typeof window === 'undefined') return '';

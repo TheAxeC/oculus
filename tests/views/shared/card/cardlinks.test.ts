@@ -200,8 +200,8 @@ describe('the card tag lines', () => {
         expect(datasets).not.toContain('class="tool');
     });
 
-    // A server render carries no handler, so what pressing a cross-link does is read off the source;
-    // the press itself, and the press of the control, are in the browser suite.
+    // A server render carries no handler, so what pressing a cross-link does is read off the
+    // source; the press itself, and the press of the control, are in the browser suite.
     it('opens a cross-link entry by its label in the view of its own kind', () => {
         const source = readFileSync('src/lib/views/shared/card/CardLinks.svelte', 'utf8');
         expect(source).toContain('goto(client, linkView(kind.key), tag.label)');
@@ -253,7 +253,7 @@ describe('the card tag lines', () => {
 });
 
 describe('linkView', () => {
-    it('names the view each cross-link kind opens, and nothing for the other two', () => {
+    it('audits that names the view each cross-link kind opens, and nothing for the other two', () => {
         expect(linkView('funding')).toBe('funding');
         expect(linkView('collaborators')).toBe('person');
         expect(linkView('pillars')).toBe('');

@@ -1,8 +1,8 @@
-// Layer 4, test helper. What a case over a watcher needs of the channel bus and of the clock: a sink
-// that records what was published, and the two waits a real file event is watched for.
+// Layer 4, test helper. What a case over a watcher needs of the channel bus and of the clock: a
+// sink that records what was published, and the two waits a real file event is watched for.
 //
-// A watcher case waits on the operating system rather than on a promise of its own, so it polls: the
-// wait is how long a failure takes and not how long a pass takes.
+// A watcher case waits on the operating system rather than on a promise of its own, so it polls:
+// the wait is how long a failure takes and not how long a pass takes.
 
 import type { Message } from '../../../src/lib/data/model.ts';
 import type { Sink } from '../../../src/lib/server/core/channels.ts';

@@ -2,15 +2,16 @@
 // the one set of checks both of them run.
 //
 // It exists once because the page refuses a query before sending it and the server refuses the same
-// query when it arrives, and a copy of the rule on each side would let the two disagree about what a
-// query is. Nothing here runs a process or touches a file: a query in, the argument list and the
+// query when it arrives, and a copy of the rule on each side would let the two disagree about what
+// a query is. Nothing here runs a process or touches a file: a query in, the argument list and the
 // refusal out.
 //
 // The argument list is ripgrep's, built as a list so the pattern is one argument and can never be
-// read as syntax. The pattern goes in through --regexp, so a pattern that opens with a dash is still
-// a pattern, and the directory to search is named as `.` rather than left out: ripgrep given no path
-// and a pipe for its standard input reads that pipe instead of the working directory, which is what
-// a server process hands a child, so a search with no path would wait for input nobody sends.
+// read as syntax. The pattern goes in through --regexp, so a pattern that opens with a dash is
+// still a pattern, and the directory to search is named as `.` rather than left out: ripgrep given
+// no path and a pipe for its standard input reads that pipe instead of the working directory, which
+// is what a server process hands a child, so a search with no path would wait for input nobody
+// sends.
 
 /** The root key that means every served root rather than one of them. */
 export const ALL_ROOTS = 'all';
@@ -54,7 +55,10 @@ export function emptyQuery(max: number): SearchQuery {
     return { q: '', root: ALL_ROOTS, word: false, case: false, regex: false, max };
 }
 
-/** A hit count held between one and the configured cap, so neither side can ask for nothing or for everything. */
+/**
+ * A hit count held between one and the configured cap, so neither side can ask for nothing or for
+ * everything.
+ */
 export function clampMax(max: number, cap: number): number {
     if (!Number.isFinite(max) || max < 1) return cap;
     return Math.min(Math.floor(max), cap);
@@ -80,18 +84,19 @@ export const SEARCH_PATH = '.';
 /**
  * How many matches ripgrep may print per file: one more than the answer can hold.
  *
- * ripgrep's `end` record counts the lines it printed rather than the lines the file holds, so a file
- * cut short by --max-count looks exactly like a file that held that many. Asking for one past the
- * cap makes the loss visible instead: a file with more matches than the answer has room for sends
- * one record the fold has nowhere to put, and that is what says the answer was cut.
+ * ripgrep's `end` record counts the lines it printed rather than the lines the file holds, so a
+ * file cut short by --max-count looks exactly like a file that held that many. Asking for one past
+ * the cap makes the loss visible instead: a file with more matches than the answer has room for
+ * sends one record the fold has nowhere to put, and that is what says the answer was cut.
  */
 export function perFileCount(max: number): number {
     return max + 1;
 }
 
 /**
- * ripgrep's arguments for this query. The order is fixed so a test reads the list word for word: the
- * JSON stream, the caps, the skipped directories, the three options, the pattern, and the directory.
+ * ripgrep's arguments for this query. The order is fixed so a test reads the list word for word:
+ * the JSON stream, the caps, the skipped directories, the three options, the pattern, and the
+ * directory.
  */
 export function searchArgs(query: SearchQuery): string[] {
     const args = [
@@ -123,8 +128,8 @@ export function pathIn(path: string): string {
 
 /**
  * One matching line cut to a window around the match, with the match's place in the window. A line
- * shorter than the window is left as it is; a longer one keeps the match and as much of each side as
- * fits, so a minified file answers a readable row rather than a screen of one line.
+ * shorter than the window is left as it is; a longer one keeps the match and as much of each side
+ * as fits, so a minified file answers a readable row rather than a screen of one line.
  */
 export function trimAround(
     text: string,

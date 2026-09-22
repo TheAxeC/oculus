@@ -1,6 +1,6 @@
 // The catalog, in the spec's own process. A spec locates a control by its accessible name, and that
-// name is what the page read out of the owner files under config/text/, so the spec reads it through
-// the same flattening and never from an English string typed into a spec.
+// name is what the page read out of the owner files under config/text/, so the spec reads it
+// through the same flattening and never from an English string typed into a spec.
 //
 // The flattening is data/sources/config.ts's, the same call tests/checks/source/text.test.ts makes.
 // The lookup and the interpolation are repeated here rather than imported from state/words/text.ts,
@@ -27,7 +27,9 @@ export function vocabulary(key: string): { key: string; label: string }[] {
     });
 }
 
-/** The words for a dotted key, with {0} and {1} replaced. A key that is not in the catalog throws. */
+/**
+ * The words for a dotted key, with {0} and {1} replaced. A key that is not in the catalog throws.
+ */
 export function t(key: string, ...args: (string | number)[]): string {
     const template = byKey(catalog, key);
     if (template === undefined) throw new Error(`text key not in the catalog: ${key}`);
@@ -39,8 +41,8 @@ export function t(key: string, ...args: (string | number)[]): string {
 
 /**
  * The accessible name of a tab with this label, clean or holding unsaved text: the label alone, or
- * the catalog's unsaved name around it. A spec that finds a tab by its label finds it either way, and
- * nothing else whose name only starts with the label.
+ * the catalog's unsaved name around it. A spec that finds a tab by its label finds it either way,
+ * and nothing else whose name only starts with the label.
  */
 export function tabNamed(label: string): RegExp {
     const escape = (text: string): string => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');

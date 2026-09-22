@@ -110,12 +110,14 @@ describe('POST /api/terminal, the task action', () => {
                 `'/opt/Claude CLI/claude' '/research-cockpit scout'`
             );
         }
-        // The key under its retired name is not read, so a task started over it runs with prompts on.
+        // The key under its retired name is not read, so a task started over it runs with prompts
+        // on.
         const retired = await taskArgv('scout', { chat: { skip_permissions: true } });
         expect(retired.started[retired.started.length - 1]).toBe(
             `'/opt/Claude CLI/claude' '/research-cockpit scout'`
         );
-        // A configuration with no `tasks:` block at all, which is what the engine of this suite holds.
+        // A configuration with no `tasks:` block at all, which is what the engine of this suite
+        // holds.
         const bare = await taskArgv('scout', {});
         expect(bare.started[bare.started.length - 1]).toBe(
             `'/opt/Claude CLI/claude' '/research-cockpit scout'`
@@ -171,8 +173,8 @@ describe('POST /api/terminal, the task action', () => {
     });
 
     it('is wired to that reader by the route module, not to the context snapshot', () => {
-        // The route is read rather than imported, the reason tests/routes/shape.test.ts gives: a Kit
-        // route pulls its `./$types` in with it. What is asserted is the one line that decides
+        // The route is read rather than imported, the reason tests/routes/shape.test.ts gives: a
+        // Kit route pulls its `./$types` in with it. What is asserted is the one line that decides
         // whether a saved setting takes effect before the next restart.
         const route = readFileSync(
             resolve(

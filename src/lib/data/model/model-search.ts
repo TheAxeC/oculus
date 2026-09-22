@@ -1,5 +1,5 @@
-// Layer 1, data. What a search across files answers: the hits of one file, the files of one run, and
-// what the run cost.
+// Layer 1, data. What a search across files answers: the hits of one file, the files of one run,
+// and what the run cost.
 //
 // A hit carries the line's own text rather than an offset into the file, so the page draws a result
 // without reading the file, and it carries where the match sits in that text so the page emboldens

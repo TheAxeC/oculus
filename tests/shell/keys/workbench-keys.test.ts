@@ -51,7 +51,9 @@ function paneElement(path: string, active: string, page?: string): HTMLElement {
     return new PaneStandin(path, active, page) as unknown as HTMLElement;
 }
 
-/** A focused element inside no pane: it carries no path, which is what the handler reads for one. */
+/**
+ * A focused element inside no pane: it carries no path, which is what the handler reads for one.
+ */
 function strayElement(): HTMLElement {
     const element = new PaneStandin('', '');
     delete element.dataset.panePath;

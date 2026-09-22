@@ -49,7 +49,8 @@ describe('whether bytes are text', () => {
 
     it('refuses bytes that are not UTF-8, however few of them there are', () => {
         // A lone continuation byte, a lead byte with nothing after it, an overlong encoding of a
-        // character that has a shorter form, a surrogate half, and a value past the last code point.
+        // character that has a shorter form, a surrogate half, and a value past the last code
+        // point.
         expect(isTextBytes(new Uint8Array([0x80]))).toBe(false);
         expect(isTextBytes(new Uint8Array([0xc3]))).toBe(false);
         expect(isTextBytes(new Uint8Array([0xc0, 0xaf]))).toBe(false);
@@ -60,7 +61,8 @@ describe('whether bytes are text', () => {
 
     it('reads the window and the one byte after it a caller hands over', () => {
         // What a caller reads is TEXT_SNIFF_READ, the window and one byte: the extra byte is what
-        // says the file goes on, so a character lying across the window's end is the window's doing.
+        // says the file goes on, so a character lying across the window's end is the window's
+        // doing.
         expect(TEXT_SNIFF_READ).toBe(TEXT_SNIFF + 1);
         const straddling = bytes('a'.repeat(TEXT_SNIFF - 1) + '\u00e9' + 'more');
         expect(isTextBytes(straddling.subarray(0, TEXT_SNIFF_READ))).toBe(true);

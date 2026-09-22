@@ -231,8 +231,8 @@ describe('contrast', () => {
     });
 
     // The reading itself, over text no component holds: a lane text on a panel, a property holding
-    // lane text beside no lane, one read in a block that fills with something else, a lane text read
-    // outside any declaration, and the two shapes that are allowed.
+    // lane text beside no lane, one read in a block that fills with something else, a lane text
+    // read outside any declaration, and the two shapes that are allowed.
     //
     // Revert: in offLane above, drop the `--` branch (a property set to a lane text is then read as
     // a paint), drop the `fills(line, lane)` arm (a token pair written on one line is then a

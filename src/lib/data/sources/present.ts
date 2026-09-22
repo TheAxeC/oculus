@@ -3,14 +3,15 @@
 // import it.
 //
 // A PRESENT.md is a YAML front matter and a markdown body. The front matter's `present:` map is the
-// project's own slide and its `slides:` list holds the further slides of the same project, each with
-// an `id:` of its own; a file with neither still yields one slide, carrying the body, so a project
-// that has written only the narrative is in the deck rather than missing from it. A file that
-// declared a slide leaves its body on disk: that slide is what the deck draws, and the narrative
-// would be the one long document in a snapshot that carries none.
+// project's own slide and its `slides:` list holds the further slides of the same project, each
+// with an `id:` of its own; a file with neither still yields one slide, carrying the body, so a
+// project that has written only the narrative is in the deck rather than missing from it. A file
+// that declared a slide leaves its body on disk: that slide is what the deck draws, and the
+// narrative would be the one long document in a snapshot that carries none.
 //
-// Nothing here throws and nothing is repaired: a file that cannot be read, a slide id used twice and
-// a figure that names no file are each a Finding, and the rest of the file still reaches the deck.
+// Nothing here throws and nothing is repaired: a file that cannot be read, a slide id used twice
+// and a figure that names no file are each a Finding, and the rest of the file still reaches the
+// deck.
 
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';

@@ -61,8 +61,8 @@ type LatexStep = (typeof LATEX_STEPS)[number];
 export type TerminalOptions = StartOptions &
     ChatOptions & {
         /**
-         * The session record a resume is about, from the last published `sessions` payload. Defaulted
-         * Tests and the route pass the source they own.
+         * The session record a resume is about, from the last published `sessions` payload.
+         * Defaulted Tests and the route pass the source they own.
          */
         recordFor?: (id: string) => SessionRecord | null;
         /** Dataset keys in the server's latest portfolio payload. */
@@ -139,7 +139,8 @@ async function recoverDataset(
     options: TerminalOptions
 ): Promise<Response> {
     // A key that starts with a dash would read as a flag of the recovery script (its --all fetches
-    // every dataset), so it is refused before the snapshot is consulted; the snapshot decides the rest.
+    // every dataset), so it is refused before the snapshot is consulted; the snapshot decides the
+    // rest.
     if (typeof key !== 'string' || key === '' || key.startsWith('-')) {
         return json(400, { error: 'key is not a valid dataset key' });
     }

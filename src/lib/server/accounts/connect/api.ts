@@ -42,9 +42,9 @@ async function parsed(response: Response): Promise<{ read: boolean; body: unknow
  * One authenticated GET, answered as a parsed object. A refused call throws the one line the view
  * shows: the provider, the status and the provider's own code.
  *
- * An answer this cannot read is a refusal too, whatever its status: a 2xx whose body is not JSON, or
- * is JSON that is not an object, tells nothing about the account, and reading it as an empty answer
- * would mark the account connected and replace its last good rows with nothing.
+ * An answer this cannot read is a refusal too, whatever its status: a 2xx whose body is not JSON,
+ * or is JSON that is not an object, tells nothing about the account, and reading it as an empty
+ * answer would mark the account connected and replace its last good rows with nothing.
  */
 export async function getJson(
     provider: ConnectProvider,
@@ -95,9 +95,10 @@ export function rowsOf(body: Record<string, unknown>, key: string): Record<strin
 export const PAGE_MAX = 20;
 
 /**
- * A provider's page for something, and nothing when what it gave is not an `https` address. The link
- * is the one field of a provider's answer that the operating system or the browser is later asked to
- * open, so a scheme that is not `https` is dropped here rather than carried into a payload.
+ * A provider's page for something, and nothing when what it gave is not an `https` address. The
+ * link is the one field of a provider's answer that the operating system or the browser is later
+ * asked to open, so a scheme that is not `https` is dropped here rather than carried into a
+ * payload.
  */
 export function httpsLink(value: string | undefined): string | undefined {
     if (value === undefined) return undefined;

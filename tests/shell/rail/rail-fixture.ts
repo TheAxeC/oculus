@@ -44,7 +44,9 @@ export function count(body: string, fragment: string): number {
     return body.split(fragment).length - 1;
 }
 
-/** The rendered button carrying one attribute, or nothing when the attribute stayed on a wrapper. */
+/**
+ * The rendered button carrying one attribute, or nothing when the attribute stayed on a wrapper.
+ */
 export function buttonWith(body: string, attribute: string): string | undefined {
     return [...body.matchAll(/<button\b[^>]*>/g)]
         .map(([button]) => button)

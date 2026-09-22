@@ -11,7 +11,8 @@
 </script>
 
 <script lang="ts">
-    // Layer 3, view. What one session is: the key-value block, then the three measurements under it.
+    // Layer 3, view. What one session is: the key-value block, then the three measurements under
+    // it.
     //
     // The meter is the context window, and what it measures is the last turn's occupancy, never the
     // lifetime sums beside it: a session that has run for hours has sent far more tokens than any
@@ -64,7 +65,9 @@
      */
     let armed = $state(false);
 
-    /** Where the meter changes hue: a window under half full, then three quarters, then above it. */
+    /**
+     * Where the meter changes hue: a window under half full, then three quarters, then above it.
+     */
     const MID = 0.5;
     const HIGH = 0.75;
 
@@ -76,20 +79,26 @@
     const used = $derived(record === null ? 0 : record.contextTokens);
     const level = $derived(limit > 0 ? used / limit : 0);
 
-    /** The window the session's turns are measured against: the transcript's own, else the config. */
+    /**
+     * The window the session's turns are measured against: the transcript's own, else the config.
+     */
     function windowFor(session: GroupedSession | null): number {
         const own = session?.contextWindow ?? null;
         return own !== null && own > 0 ? own : contextWindow();
     }
 
-    /** The meter's hue: green while there is room, amber as it fills, red when it is nearly full. */
+    /**
+     * The meter's hue: green while there is room, amber as it fills, red when it is nearly full.
+     */
     function tone(fill: number): string {
         if (fill > HIGH) return 'red';
         if (fill > MID) return 'amber';
         return 'green';
     }
 
-    /** The status line: what the registry says while it is live, and that it ended when it is not. */
+    /**
+     * The status line: what the registry says while it is live, and that it ended when it is not.
+     */
     function status(session: GroupedSession): string {
         if (!session.live) return t('sessions.state_ended');
         if (session.liveStatus === 'busy') return t('sessions.live_busy');
@@ -126,7 +135,9 @@
         return `${word} ${when}`.trim();
     }
 
-    /** The areas the session may be pinned to: every project folder, touched by a session or not. */
+    /**
+     * The areas the session may be pinned to: every project folder, touched by a session or not.
+     */
     const areas = $derived(record === null ? [] : pinnableAreas(record.workspace));
 
     const choices = $derived(

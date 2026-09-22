@@ -23,8 +23,9 @@ import type { PageServerLoad } from './$types';
 // from a fetch, so the rail draws every collection on the first frame.
 //
 // The write token rides with them, which is how DESIGN.md's "Auth" delivers it to the page: it is
-// minted by ServerContext, put on the event by hooks.server.ts, and reaches the browser here and nowhere else. invalidateAll() runs this
-// load again, which is how a page that met a 403 gets the token a restarted server minted.
+// minted by ServerContext, put on the event by hooks.server.ts, and reaches the browser here and
+// nowhere else. invalidateAll() runs this load again, which is how a page that met a 403 gets the
+// token a restarted server minted.
 export const load: PageServerLoad = ({ locals }) => {
     const { config } = loadConfig(locals.server.engine);
     return {

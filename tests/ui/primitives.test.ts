@@ -1,6 +1,6 @@
 // Every primitive rendered to HTML on the server, with props: the roles and the ARIA attributes it
-// owes a screen reader, the tone it was given, and what it does with a value or a row it cannot draw
-// as it stands.
+// owes a screen reader, the tone it was given, and what it does with a value or a row it cannot
+// draw as it stands.
 //
 // What this does NOT cover: anything that needs a DOM. There is no browser in this suite, so a sort
 // is not clicked, Escape is not pressed and no $effect runs; the sort itself is checked through the
@@ -499,7 +499,7 @@ describe('Ticker', () => {
     });
 
     // Revert: in Ticker.svelte, draw a row's buttons whether or not the caller said what one means.
-    // revert: src/lib/ui/display/Ticker.svelte:324 => {#if row.actions !== undefined}
+    // revert: src/lib/ui/display/Ticker.svelte:333 => {#if row.actions !== undefined}
     it('draws a row action as a button only when the caller says what one means', () => {
         expect(html(Ticker, { rows })).not.toContain('1w');
         const body = html(Ticker, { rows, onaction: noop });
@@ -509,7 +509,7 @@ describe('Ticker', () => {
     });
 
     // Revert: in Ticker.svelte, mark no button as the one the row keeps.
-    // revert: src/lib/ui/display/Ticker.svelte:331 => class:kept={false}
+    // revert: src/lib/ui/display/Ticker.svelte:340 => class:kept={false}
     it('lists the buttons in the order the row gives them, marking the one it keeps', () => {
         const body = html(Ticker, {
             rows,
@@ -550,7 +550,9 @@ describe('Tooltip', () => {
         }).body;
     }
 
-    /** An element as the description code uses it: what it holds, and the attributes it was given. */
+    /**
+     * An element as the description code uses it: what it holds, and the attributes it was given.
+     */
     function element(child: Element | null = null): {
         attributes: Record<string, string>;
         querySelector: (selectors: string) => Element | null;
@@ -749,7 +751,8 @@ describe('one strip, one stop of the focus order', () => {
             onselect: noop,
             onclose: noop
         });
-        // Every control the strip draws: three tab faces, three close controls, two scroll controls.
+        // Every control the strip draws: three tab faces, three close controls, two scroll
+        // controls.
         const controls = [...body.matchAll(/<button[^>]*/g)].map((found) => found[0]);
         expect(controls).toHaveLength(8);
         const stops = controls.filter((control) => control.includes('tabindex="0"'));
@@ -762,9 +765,9 @@ describe('one strip, one stop of the focus order', () => {
     });
 });
 
-// What a node render can show of the tab look: the classes a tab carries for being the one shown and
-// for holding unsaved text, the dot drawn only for the latter, and a preview's mark. The pointer's
-// hover, and what each class paints, are tests/browser/workbench/tabs.spec.ts.
+// What a node render can show of the tab look: the classes a tab carries for being the one shown
+// and for holding unsaved text, the dot drawn only for the latter, and a preview's mark. The
+// pointer's hover, and what each class paints, are tests/browser/workbench/tabs.spec.ts.
 describe('the marks a tab carries', () => {
     function strip(): string {
         return html(Tabs, {

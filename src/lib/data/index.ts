@@ -41,7 +41,9 @@ function list(value: unknown): unknown[] {
     return Array.isArray(value) ? value : [];
 }
 
-/** The `scan:` rules of the layout config. A rule with no `dir` names no directory and is dropped. */
+/**
+ * The `scan:` rules of the layout config. A rule with no `dir` names no directory and is dropped.
+ */
 function scanRules(value: unknown): ScanRule[] {
     const rules: ScanRule[] = [];
     for (const item of list(value)) {
@@ -79,7 +81,9 @@ const FEED_FILES: FeedFiles = {
     linkedin: 'theaxec.github.io/_linkedin'
 };
 
-/** The `key` of every entry of a keyed vocabulary list, `status_legend` being the one that matters. */
+/**
+ * The `key` of every entry of a keyed vocabulary list, `status_legend` being the one that matters.
+ */
 function vocabKeys(value: unknown): string[] {
     const keys: string[] = [];
     for (const item of list(value)) {
@@ -93,8 +97,8 @@ function vocabKeys(value: unknown): string[] {
  * The portfolio's half of the merged config. The six `*_file` keys give six registry paths and the
  * `collections:` list gives the seventh, since funding/funding.yml is named there and nowhere else.
  * A key the config does not hold falls back to the path the hub uses today, so a config that has
- * moved on in one place still builds. The text catalog travels with it, since every reader words its
- * findings from config/text/findings.yml.
+ * moved on in one place still builds. The text catalog travels with it, since every reader words
+ * its findings from config/text/findings.yml.
  */
 export function portfolioConfigFrom(
     merged: Record<string, unknown>,

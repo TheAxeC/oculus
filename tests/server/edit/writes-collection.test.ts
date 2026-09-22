@@ -45,7 +45,7 @@ describe('writing one collection entry', () => {
         expect(tasksOf(root)).toBe(TASKS.replace('status: open', 'status: done'));
     });
 
-    // revert: src/lib/server/edit/writes/entries.ts:377 => (drop the `id:` line of the outcome)
+    // revert: src/lib/server/edit/writes/entries.ts:401 => delete
     // Revert: in writeEntry of server/edit/writes/entries.ts, leave the id out of the outcome, so
     // the answer says nothing about where the entry now is.
     it('says the id the entry has after the write, which a write of the identity field moves', () => {
@@ -62,7 +62,7 @@ describe('writing one collection entry', () => {
         expect(venue.id).toBe('existing');
     });
 
-    // revert: src/lib/server/edit/writes/entries.ts:325 => if (false) {
+    // revert: src/lib/server/edit/writes/entries.ts:332 => if (false) {
     // Revert: in writeEntry of server/edit/writes/entries.ts, let a write set the identity field to
     // a value another entry already holds.
     it('refuses a write that moves an entry onto another entry of the same file', () => {

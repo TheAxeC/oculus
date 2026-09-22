@@ -21,9 +21,10 @@
 //
 // Nothing here is reachable from a watcher, a timer or the socket. The one caller is server/
 // git-routes.ts, which answers POST /api/git only for a request carrying the write token, coming
-// from this application's own page, and (for the eight destructive actions) carrying the confirm the
-// page sets from a dialog. DESIGN.md's decision on git writes is that shape: commit, push, branches
-// and worktrees on the repositories oculus knows, every write behind the token and a confirm.
+// from this application's own page, and (for the eight destructive actions) carrying the confirm
+// the page sets from a dialog. DESIGN.md's decision on git writes is that shape: commit, push,
+// branches and worktrees on the repositories oculus knows, every write behind the token and a
+// confirm.
 //
 // `git.ts`'s `run` is not imported: putting a writing subcommand through the read-only module's one
 // call site would run it past that module's recorder and break the gate that says what it ran.
@@ -124,8 +125,8 @@ export function permitted(root: string, roots: string[] = allowedRoots()): boole
 }
 
 /**
- * Whether a path is one this module will hand to git: relative to the repository, staying inside it,
- * and not a lone dash git would read as an option.
+ * Whether a path is one this module will hand to git: relative to the repository, staying inside
+ * it, and not a lone dash git would read as an option.
  */
 export function insideRepo(root: string, path: string): boolean {
     if (typeof path !== 'string' || path === '' || path.startsWith('-')) return false;
@@ -219,8 +220,9 @@ export async function commit(
 /**
  * Push the current branch to its upstream. A branch with no upstream is refused with that as the
  * reason, before anything is sent: `--set-upstream` decides where a branch lives, and that decision
- * is Axel's at a terminal rather than a side effect of a button. Nothing is ever forced: the gate in
- * tests/server/git/git-write.test.ts asserts that the option does not appear in this file at all.
+ * is Axel's at a terminal rather than a side effect of a button. Nothing is ever forced: the gate
+ * in tests/server/git/git-write.test.ts asserts that the option does not appear in this file at
+ * all.
  */
 export async function push(root: string, roots: string[] = allowedRoots()): Promise<Outcome> {
     if (!permitted(root, roots)) return failed('that directory is not a workspace oculus knows');
@@ -292,9 +294,9 @@ export async function fileDiff(
  * that branch to the worktree's own HEAD, which is what the reader is about to merge back. A
  * detached checkout has no branch to name, so its HEAD stands in.
  *
- * The repository is named by the caller and never worked out from the path: a worktree of the hub is
- * itself a workspace on the `git` channel and therefore a root of its own, so a path would answer
- * with itself and every worktree this hub makes would be refused.
+ * The repository is named by the caller and never worked out from the path: a worktree of the hub
+ * is itself a workspace on the `git` channel and therefore a root of its own, so a path would
+ * answer with itself and every worktree this hub makes would be refused.
  */
 export async function worktreeDiff(
     root: string,
@@ -474,7 +476,9 @@ function diff(root: string, args: string[]): Promise<Outcome> {
     return run(root, ['diff', ...args], TIMEOUT_MS);
 }
 
-/** The one `branch` call site: the listing the menu draws, and the delete a worktree removal makes. */
+/**
+ * The one `branch` call site: the listing the menu draws, and the delete a worktree removal makes.
+ */
 function branch(root: string, args: string[]): Promise<Outcome> {
     return run(root, ['branch', ...args], TIMEOUT_MS);
 }

@@ -26,7 +26,9 @@
 
     const groups = $derived(coverage(projects, dead));
 
-    /** Which group is open. Only one is, since three open groups are the whole portfolio at once. */
+    /**
+     * Which group is open. Only one is, since three open groups are the whole portfolio at once.
+     */
     let shown = $state('');
 
     /** The words of one group, which are keys rather than the group's own machine name. */

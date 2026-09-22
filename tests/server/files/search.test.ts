@@ -2,9 +2,9 @@
 // process, what it makes of ripgrep's JSON stream, where it stops reading, and what it says when a
 // root will not answer.
 //
-// Most cases hand in their own runner, so no process starts and the argument vector is read word for
-// word. The last group runs the real binary of the `@vscode/ripgrep` dependency over mkdtemp folders,
-// which is where the dependency itself and ripgrep's own --max-count are exercised.
+// Most cases hand in their own runner, so no process starts and the argument vector is read word
+// for word. The last group runs the real binary of the `@vscode/ripgrep` dependency over mkdtemp
+// folders, which is where the dependency itself and ripgrep's own --max-count are exercised.
 
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -81,7 +81,9 @@ function match(path: string, line: number, text: string, start: number, matched:
     });
 }
 
-/** The begin and end records ripgrep wraps one file's matches in, with its own matched-line count. */
+/**
+ * The begin and end records ripgrep wraps one file's matches in, with its own matched-line count.
+ */
 function file(path: string, matches: string[], counted = matches.length): string {
     return [
         JSON.stringify({ type: 'begin', data: { path: { text: `./${path}` } } }),
@@ -93,7 +95,9 @@ function file(path: string, matches: string[], counted = matches.length): string
     ].join('\n');
 }
 
-/** A folder of this case's own, under the system temporary directory and asserted to be inside it. */
+/**
+ * A folder of this case's own, under the system temporary directory and asserted to be inside it.
+ */
 function scratch(): string {
     const dir = scratchDir('oculus-search-');
     expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);

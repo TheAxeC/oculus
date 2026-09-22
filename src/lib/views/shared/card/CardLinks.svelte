@@ -8,7 +8,8 @@
     //
     // The software kind is the one link between two projects, so its entries open a project tab
     // rather than a registered view, and its label says which end of the link the card is on: a
-    // paper lists the software that implements it, and a software project lists the papers it names.
+    // paper lists the software that implements it, and a software project lists the papers it
+    // names.
 
     import Tag from '$lib/ui/controls/Tag.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';

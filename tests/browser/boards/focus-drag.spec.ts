@@ -1,7 +1,7 @@
-// The drag the orchestrator has never been able to check by hand: a Focus card picked up on one lane
-// and dropped on another. views/boards/focus/lanes/LaneCard.svelte arms it with `ondragstart` on
-// the card and views/boards/focus/lanes/Lanes.svelte takes it with `ondrop` on the lane body, which
-// are HTML5 drag events; Chrome automation that only moves the mouse never fires them.
+// The drag the orchestrator has never been able to check by hand: a Focus card picked up on one
+// lane and dropped on another. views/boards/focus/lanes/LaneCard.svelte arms it with `ondragstart`
+// on the card and views/boards/focus/lanes/Lanes.svelte takes it with `ondrop` on the lane body,
+// which are HTML5 drag events; Chrome automation that only moves the mouse never fires them.
 //
 // The card is put back on the lane it came from at the end, and the manifest is asserted to be the
 // bytes the test found.

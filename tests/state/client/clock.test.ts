@@ -1,8 +1,8 @@
 // Layer 4, state test. The minute clock the Focus board's day is derived from: it moves on its own,
 // it runs only while a view holds it, and one interval serves however many views read it.
 //
-// What this does NOT cover: the redraw. There is no DOM in this suite, so nothing observes the rune;
-// what is checked is the value the board's $derived reads and the timer behind it.
+// What this does NOT cover: the redraw. There is no DOM in this suite, so nothing observes the
+// rune; what is checked is the value the board's $derived reads and the timer behind it.
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createClientState, type ClientState } from '../../fixtures/client.ts';

@@ -108,10 +108,10 @@ export function setHidden(sessionId: unknown, hidden: boolean, path?: string): O
 
 /**
  * Pin one session to an area, rename it, or clear either. Only the fields named are touched: every
- * other key of the file, and every other key of that session's own entry, is kept, and an entry left
- * with nothing in it is removed rather than left as a shell. An area that is not an absolute path is
- * refused rather than written, because group.ts matches a pin against absolute workspace paths and a
- * relative one would silently never match. Nothing is written when nothing changed.
+ * other key of the file, and every other key of that session's own entry, is kept, and an entry
+ * left with nothing in it is removed rather than left as a shell. An area that is not an absolute
+ * path is refused rather than written, because group.ts matches a pin against absolute workspace
+ * paths and a relative one would silently never match. Nothing is written when nothing changed.
  */
 export function setOverride(
     sessionId: unknown,

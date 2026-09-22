@@ -154,7 +154,9 @@ export function removeNode(layout: Layout, path: number[]): Layout {
     return rewrite(layout, path, () => null) ?? emptyPane();
 }
 
-/** The tree with one tab gone from the pane at `path`, the pane cleaned away if it held only that. */
+/**
+ * The tree with one tab gone from the pane at `path`, the pane cleaned away if it held only that.
+ */
 export function removeTab(layout: Layout, path: number[], index: number): Layout {
     const pane = paneAt(layout, path);
     if (pane === null) return layout;
@@ -178,7 +180,9 @@ export function openInstance(layout: Layout, path: number[], instance: Instance)
     return rewrite(layout, path, edit) ?? layout;
 }
 
-/** Remove an instance wherever it sits, cleaning away a pane and a split left with nothing to hold. */
+/**
+ * Remove an instance wherever it sits, cleaning away a pane and a split left with nothing to hold.
+ */
 export function closeInstance(layout: Layout, id: string): Layout {
     const found = findInstance(layout, id);
     if (found === null) return layout;
@@ -294,9 +298,9 @@ export function splitPane(
 }
 
 /**
- * Put `fresh` beside the leaf at `path`, which is a pane or a page shown there. It is splitPane over
- * any node a leaf may be: the arithmetic of the share, the direction and the side is the same one,
- * and only what lands beside the leaf differs.
+ * Put `fresh` beside the leaf at `path`, which is a pane or a page shown there. It is splitPane
+ * over any node a leaf may be: the arithmetic of the share, the direction and the side is the same
+ * one, and only what lands beside the leaf differs.
  */
 export function splitLeaf(
     layout: Layout,
@@ -407,8 +411,8 @@ export function equalSizes(count: number): number[] {
 
 /**
  * Sizes that sum to 1 with none below MIN_SIZE. Anything that is not a positive number counts as
- * zero, the rest are scaled to sum to 1, and then each child below the floor is raised to it and the
- * difference taken from the others in proportion. Raising one child can push another below the
+ * zero, the rest are scaled to sum to 1, and then each child below the floor is raised to it and
+ * the difference taken from the others in proportion. Raising one child can push another below the
  * floor, so that repeats; a set of sizes too crowded to satisfy at all falls back to equal shares.
  */
 export function normaliseSizes(raw: number[]): number[] {

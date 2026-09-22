@@ -1,16 +1,55 @@
-// The file browser's shared fixtures for the browser specs: a scratch root under the system temporary
-// directory holding one file of each kind the tree opens differently, the row of the tree a root or a
-// path is drawn as, and the same root added through the page's own control.
+// The file browser's shared fixtures for the browser specs: a scratch root under the system
+// temporary directory holding one file of each kind the tree opens differently, the row of the tree
+// a root or a path is drawn as, and the same root added through the page's own control.
 
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join, resolve, sep } from 'node:path';
+import { dirname, join, resolve, sep } from 'node:path';
 import { expect, test, type Page } from '@playwright/test';
+import { servedHomeDir } from './hub.ts';
 import { t } from './words.ts';
 import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
 
-// Every spec that takes a fixture from here has its scratch roots swept when the file is done.
-test.afterAll(sweepScratch);
+/**
+ * The served run's own files a case writes through the file browser: the bookmarks the stars and
+ * the bookmark form save, the workspaces file the roots it adds are kept in, and the notes the
+ * Notes section writes one file each under `.oculus/notes`. A spec that writes any of them, or
+ * takes a scratch root from here, calls this once at its top. Each is put back after every case as
+ * it was before the case, passed or failed, so a case that stops halfway leaves no bookmark, root
+ * or note for the cases after it to start from, and the scratch roots are swept when the spec is
+ * done.
+ *
+ * The hooks are registered by the call and not by this module's first load: a worker loads a
+ * module once for every spec it runs, so a hook registered at the module's top would be the first
+ * spec's alone, and a later spec whose case failed would leave its roots behind when its worker is
+ * replaced.
+ */
+export function keepServedFiles(): void {
+    test.afterAll(sweepScratch);
+    const before = new Map<string, string | null>();
+    const notes = (): string => join(servedHomeDir(), '.oculus', 'notes');
+    const noteFiles = (): string[] =>
+        existsSync(notes()) ? readdirSync(notes()).map((name) => join(notes(), name)) : [];
+    test.beforeEach(() => {
+        before.clear();
+        const held = ['.oculus/bookmarks.yml', '.oculus/workspaces.json'].map((name) =>
+            join(servedHomeDir(), name)
+        );
+        for (const path of [...held, ...noteFiles()]) {
+            before.set(path, existsSync(path) ? readFileSync(path, 'utf8') : null);
+        }
+    });
+    test.afterEach(() => {
+        for (const path of noteFiles()) if (!before.has(path)) rmSync(path, { force: true });
+        for (const [path, held] of before) {
+            if (held === null) rmSync(path, { force: true });
+            else {
+                mkdirSync(dirname(path), { recursive: true });
+                writeFileSync(path, held);
+            }
+        }
+    });
+}
 
 /** The smallest PDF with a drawable page, so the type and not the size is what is exercised. */
 const PDF = [
@@ -25,7 +64,10 @@ const PDF = [
     ''
 ].join('\n');
 
-/** A folder of the calling spec's own, under the system temporary directory and asserted to be inside it. */
+/**
+ * A folder of the calling spec's own, under the system temporary directory and asserted to be
+ * inside it.
+ */
 export function scratch(): string {
     const dir = scratchDir('oculus-files-spec-');
     expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);

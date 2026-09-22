@@ -142,8 +142,8 @@ const ACTIVITY = ['events', 'education', 'applications'];
 
 /**
  * The events, education and applications entries whose `related:` names one project, which is where
- * the work was disseminated. An events entry the reader only attended is not one: its `role` says `attend`, and
- * attending somebody else's conference is not this project appearing anywhere.
+ * the work was disseminated. An events entry the reader only attended is not one: its `role` says
+ * `attend`, and attending somebody else's conference is not this project appearing anywhere.
  */
 export function disseminated(snapshot: Snapshot, id: Id): Dissemination[] {
     const found: Dissemination[] = [];

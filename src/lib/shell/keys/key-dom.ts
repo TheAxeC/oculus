@@ -1,5 +1,6 @@
 // Layer 3, shell. Keyboard actions over the focused pane's DOM. Each reports whether a target
-// exists and was acted on, so an unavailable action leaves the browser's default key handling intact.
+// exists and was acted on, so an unavailable action leaves the browser's default key handling
+// intact.
 
 /** Focus and select the pane's search text only when a search input exists. */
 export function focusSearch(pane: ParentNode | null): boolean {

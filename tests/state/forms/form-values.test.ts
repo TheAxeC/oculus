@@ -1,6 +1,7 @@
-// The entry form's two value rules: how an entry's value is held by its control, and what a control's
-// value is saved as. The form's save and the drafts' unsaved check both go through them, so a case
-// here is the one rule both follow. Which open forms a host view's saved state names is at the end.
+// The entry form's two value rules: how an entry's value is held by its control, and what a
+// control's value is saved as. The form's save and the drafts' unsaved check both go through them,
+// so a case here is the one rule both follow. Which open forms a host view's saved state names is
+// at the end.
 
 import { describe, expect, it } from 'vitest';
 import { controlValue, sameSaved, savedValue } from '../../../src/lib/state/forms/form-values.ts';

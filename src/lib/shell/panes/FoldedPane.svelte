@@ -40,7 +40,8 @@
     /**
      * What the strip is called: the name of the tab a collapsed pane is showing, the name of the
      * page a collapsed page leaf shows, and nothing for a collapsed split, which is neither. A tab
-     * is read by the rule the document title reads it by, so the strip and the title never disagree.
+     * is read by the rule the document title reads it by, so the strip and the title never
+     * disagree.
      */
     const label = $derived.by(() => {
         if (node.kind === 'page') return pageNameOf(pages(), node.page);
@@ -78,8 +79,8 @@
         overflow: hidden;
     }
 
-    /* The mark a folded strip carries is the line a shown tab carries: the accent along its top edge,
-       at the strip's own border width, which is the width a tab draws it at. */
+    /* The mark a folded strip carries is the line a shown tab carries: the accent along its top
+       edge, at the strip's own border width, which is the width a tab draws it at. */
     .fold.marked {
         border-top-color: var(--accent);
     }

@@ -44,13 +44,17 @@ export type SubtaskBlock = {
 /** Either the new text or the reason there is none, the shape every edit step answers with. */
 export type Written = { text: string } | { reason: string };
 
-/** One change the verification applies to the parsed source; `remove` deletes instead of setting. */
+/**
+ * One change the verification applies to the parsed source; `remove` deletes instead of setting.
+ */
 export type Change = { path: (string | number)[]; value?: unknown; remove?: boolean };
 
 /** A host of subtasks: the map node they hang under, and its path in the parsed document. */
 export type Host = { node: YAMLMap; path: (string | number)[] };
 
-/** One entry of a collection file: where it is in the file and where it is in the parsed document. */
+/**
+ * One entry of a collection file: where it is in the file and where it is in the parsed document.
+ */
 export type Located = { list: string; index: number; node: YAMLMap; range: LineRange };
 
 export function fail(reason: string): Written {

@@ -1,5 +1,5 @@
-// One file as its own tab, rendered to HTML on the server: what the view draws for each of the files
-// an editor cannot show, and the star over the open file.
+// One file as its own tab, rendered to HTML on the server: what the view draws for each of the
+// files an editor cannot show, and the star over the open file.
 //
 // The catalog and the glyphs are the real config; the instance state is synthetic. What this does
 // NOT cover: the handing-on of a text file to the source tab. It runs in an effect over the file's
@@ -87,7 +87,8 @@ describe('one file as its own tab', () => {
         // A download offered over a file that is about to open in an editor would say the wrong
         // thing for as long as the read takes.
         expect(body).toContain('Reading...');
-        // the first bytes have not been read, so what the file is is still unknown and no download is offered over it
+        // the first bytes have not been read, so what the file is is still unknown and no download
+        // is offered over it
         expect(body).not.toContain('download="set.npz"');
     });
 
@@ -132,7 +133,7 @@ describe('one file as its own tab', () => {
         ).toEqual([]);
     });
 
-    it('is one instance per root and path, so opening the same file twice is one tab', () => {
+    it('audits that is one instance per root and path, so opening the same file twice is one tab', () => {
         const { openView } = client.layout;
         const first = openView('file', { root: 'hub', path: 'code/run.py', label: 'run.py' });
         const again = openView('file', { root: 'hub', path: 'code/run.py', label: 'run.py' });
@@ -153,8 +154,8 @@ describe('the control that opens a file in its program', () => {
     });
 
     /**
-     * The view over one file whose first bytes the store has already read, as a zip or as text, on a
-     * client holding the given configuration, the checked-in one by default.
+     * The view over one file whose first bytes the store has already read, as a zip or as text, on
+     * a client holding the given configuration, the checked-in one by default.
      */
     async function held(
         path: string,
@@ -310,7 +311,7 @@ describe('a bookmark the endpoint refused', () => {
         vi.unstubAllGlobals();
     });
 
-    it('carries the reason through the store answer rather than dropping it', async () => {
+    it('audits that carries the reason through the store answer rather than dropping it', async () => {
         vi.stubGlobal('window', {});
         vi.stubGlobal('fetch', (url: string) =>
             Promise.resolve(

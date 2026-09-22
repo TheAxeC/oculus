@@ -15,14 +15,14 @@
 <script lang="ts">
     // Layer 3, view. What the hub is missing, in the six sections the scan reports: an open marker
     // left in a document, a manifest field a live project has not filled in, a folder the tier
-    // standard does not name, a status chip the project's own tier and type contradict, a field that
-    // has stopped being a glance, and the public website's list against the portfolio.
+    // standard does not name, a status chip the project's own tier and type contradict, a field
+    // that has stopped being a glance, and the public website's list against the portfolio.
     //
     // A finding is reported and never repaired here. What the reader can do is park one: the mute
-    // control writes its signature into the `audit_ignore:` list of config/behavior.yml, the watcher
-    // pushes the file back within a second, and the card is drawn in the muted section at the end
-    // with the control that brings it back. A parked finding is still true; muting only says the
-    // reader has chosen to leave it.
+    // control writes its signature into the `audit_ignore:` list of config/behavior.yml, the
+    // watcher pushes the file back within a second, and the card is drawn in the muted section at
+    // the end with the control that brings it back. A parked finding is still true; muting only
+    // says the reader has chosen to leave it.
     //
     // The errors in the files themselves, a bad id or an unknown chip, are the Findings view's and
     // are not repeated here.

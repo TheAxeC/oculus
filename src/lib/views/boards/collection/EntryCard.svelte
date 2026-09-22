@@ -7,8 +7,8 @@
     // Nothing here knows what a scheme or an event is. Which fields are drawn and in what order is
     // drawnFields() over the file's `schema:`, which projects cross-link is crossLinks() over the
     // collection key, and every control is one call of the write path. A field the schema draws its
-    // choices from the people registry for is the one exception in kind rather than in name: it holds
-    // a person's key, so the card draws the control that opens that person by their name.
+    // choices from the people registry for is the one exception in kind rather than in name: it
+    // holds a person's key, so the card draws the control that opens that person by their name.
     //
     // A link is one of three things: a local HTML file opens in the document view, a path inside
     // the hub whose extension `open.program_ext` of config/behavior.yml names an application for (a
@@ -123,8 +123,8 @@
     let addingSubtask = $state(false);
 
     /**
-     * One Show in Files control per hub path the entry's `link`, `url` or `folder` names. It needs no
-     * identity to write by, so a card of a file with no schema carries it too.
+     * One Show in Files control per hub path the entry's `link`, `url` or `folder` names. It needs
+     * no identity to write by, so a card of a file with no schema carries it too.
      */
     const shows: CardAction[] = $derived(
         hubPathsOf(entry.fields).map((path): CardAction => ({
@@ -140,8 +140,8 @@
 
     /**
      * The card's controls: the pin, the edit form, while the entry has no subtask adding its first,
-     * and the Show in Files controls. A file with no schema has no identity to write by, so its cards
-     * carry the file's other lifecycle statuses instead of the first three.
+     * and the Show in Files controls. A file with no schema has no identity to write by, so its
+     * cards carry the file's other lifecycle statuses instead of the first three.
      */
     const actions = $derived.by((): CardAction[] => {
         if (!addressable) {
@@ -339,7 +339,8 @@
                     </div>
                 {:else if drawn.kind === 'link'}
                     {#if isDocument(drawn.values[0])}
-                        <!-- A local HTML file opens in the document view, a hub file the list lets open opens in its program, and every other link leaves the page. -->
+                        <!-- A local HTML file opens in the document view, a hub file the list lets
+                             open opens in its program, and every other link leaves the page. -->
                         <p class="body">
                             <ToolButton
                                 label={drawn.values[0]}

@@ -133,7 +133,8 @@ describe('the Pillars view', () => {
         const body = card(html(snapshot), 'pillar');
         const article = /<article\b[^>]*>/.exec(body)?.[0];
         expect(article).toBeDefined();
-        // the colour is off the palette, so the card is drawn plain rather than in a hue no theme paints
+        // the colour is off the palette, so the card is drawn plain rather than in a hue no theme
+        // paints
         expect(article).not.toContain('--tone:');
     });
 

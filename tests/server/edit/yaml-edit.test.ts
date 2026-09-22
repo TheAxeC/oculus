@@ -431,8 +431,8 @@ describe('renaming a key', () => {
 });
 
 describe('the self-verification', () => {
-    // An anchored value is one value in two places: writing the bytes of `title` writes `short` with
-    // it, which is more than the field that was asked for. The guard is what turns that into a
+    // An anchored value is one value in two places: writing the bytes of `title` writes `short`
+    // with it, which is more than the field that was asked for. The guard is what turns that into a
     // refusal, and the document is a real one rather than a broken function.
     const anchored = 'id: a\ntitle: &t one\nshort: *t\n';
 

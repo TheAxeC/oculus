@@ -4,9 +4,9 @@
 // root's key and a path.
 //
 // Every root here is synthetic, under the system temporary directory, and every path written is
-// asserted to be inside it first. What this does NOT cover: the browser painting the document in its
-// iframe, and roots() reading the machine's own config/sources.yml, which is exercised by the curl in
-// the package's verification and by tests/checks/config/config.test.ts.
+// asserted to be inside it first. What this does NOT cover: the browser painting the document in
+// its iframe, and roots() reading the machine's own config/sources.yml, which is exercised by the
+// curl in the package's verification and by tests/checks/config/config.test.ts.
 
 import { mkdirSync, symlinkSync, writeFileSync } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
@@ -215,8 +215,8 @@ describe('the two fixed roots', () => {
     });
 });
 
-// roots() runs on a request, so a machine file that does not read must not take the request with it:
-// the source save that would put the file back is one of those requests.
+// roots() runs on a request, so a machine file that does not read must not take the request with
+// it: the source save that would put the file back is one of those requests.
 describe('the roots over a machine file that does not read', () => {
     it('answers the default hub and says once what is wrong, rather than throwing', () => {
         const engine = folder({ 'config/local.yml': 'port: eight\n' });

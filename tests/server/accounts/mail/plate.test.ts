@@ -275,7 +275,9 @@ const CONVERSATIONS: Record<string, Record<string, unknown>[]> = {
     binned: [graphMessage('binned', { folder: 'trash-folder' })]
 };
 
-/** The three listings a whole-plate case answers: unread, the todo category, and everything else. */
+/**
+ * The three listings a whole-plate case answers: unread, the todo category, and everything else.
+ */
 function listingsFor(unlabeled: Record<string, unknown>[]) {
     return [
         {

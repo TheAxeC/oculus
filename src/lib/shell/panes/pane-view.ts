@@ -87,7 +87,9 @@ export function pageListItems(
     ];
 }
 
-/** Whether the pane at `path` can be collapsed: the root cannot, nor the last open child of a split. */
+/**
+ * Whether the pane at `path` can be collapsed: the root cannot, nor the last open child of a split.
+ */
 export function foldable(layout: Layout, path: number[]): boolean {
     return path.length > 0 && fold(layout, path) !== layout;
 }

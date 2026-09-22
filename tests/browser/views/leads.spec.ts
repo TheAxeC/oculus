@@ -63,8 +63,9 @@ test('a dismissed lead is dismissed in the file, after a reload, until it is reo
     // the lead was dismissed, and a dismissed lead is held back until it is asked for
     await expect(cardOf(page)).toHaveCount(0);
 
-    // boot() waits for the socket line of the Status view, which the opened tab has replaced, so the
-    // reload waits for the rail the config push draws instead and opens the view again from there.
+    // boot() waits for the socket line of the Status view, which the opened tab has replaced, so
+    // the reload waits for the rail the config push draws instead and opens the view again from
+    // there.
     await page.reload();
     await expect(page.locator('nav [data-group]').first()).toBeVisible();
     await openView(page, 'leads', t('views.leads'));

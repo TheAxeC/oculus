@@ -2,8 +2,8 @@
 // be written at all, one project.yml edited, and one new idea folder scaffolded.
 //
 // The path written is the reader's, never the request's: the id names a manifest readManifests
-// already found under the hub's own scan directories, and insideHub checks the resolved path against
-// them again before the write. Nothing outside them is ever opened for writing.
+// already found under the hub's own scan directories, and insideHub checks the resolved path
+// against them again before the write. Nothing outside them is ever opened for writing.
 //
 // server/edit/writes.ts is the route and re-exports everything here, so an importer names either
 // file.
@@ -198,8 +198,8 @@ export function writeManifest(
 
     const edit = setFields(source, wanted);
     if (edit.changed.length > 0) writeFileSync(manifest.file, edit.text, 'utf8');
-    // The value each field had is read off the manifest the edit was computed against, so the record
-    // is made where both halves are in hand rather than by reading the file again.
+    // The value each field had is read off the manifest the edit was computed against, so the
+    // record is made where both halves are in hand rather than by reading the file again.
     const records: ChangeRecord[] = edit.changed.map((field) => ({
         file: manifest.file,
         key: id,

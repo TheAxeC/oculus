@@ -1,13 +1,13 @@
-// A file the page draws nothing for, opened in its program on this machine, in Chrome: from the File
-// view, from a project card's file list and from a collection card's link, and the project card's
-// folder control beside them.
+// A file the page draws nothing for, opened in its program on this machine, in Chrome: from the
+// File view, from a project card's file list and from a collection card's link, and the project
+// card's folder control beside them.
 //
 // The fixtures are written under the system temporary directory and copied into the run's copy of
-// the hub: two office files in a folder of this spec's own, a `.docx` in a demo project's folder, and
-// one entry appended to the copy's events file whose link names a `.xlsx`. All of it is taken away
-// again after the spec. `/api/open` is answered by a route handler of this spec that records what the
-// page posted and opens nothing, so no program on this machine is started: what is checked is the
-// page's end, the body it posts and the sentence it shows for a refusal. The server's end is
+// the hub: two office files in a folder of this spec's own, a `.docx` in a demo project's folder,
+// and one entry appended to the copy's events file whose link names a `.xlsx`. All of it is taken
+// away again after the spec. `/api/open` is answered by a route handler of this spec that records
+// what the page posted and opens nothing, so no program on this machine is started: what is checked
+// is the page's end, the body it posts and the sentence it shows for a refusal. The server's end is
 // tests/routes/files/open.test.ts.
 
 import { writeFileSync } from 'node:fs';
@@ -16,7 +16,7 @@ import { join, resolve, sep } from 'node:path';
 import { expect, test, type Page, type Route } from '@playwright/test';
 import { copyIntoHub, readHubFile, removeFromHub, shortOf, writeHubFile } from '../helpers/hub.ts';
 import { boot, openView } from '../helpers/rail.ts';
-import { t } from '../helpers/words.ts';
+import { t, tabNamed } from '../helpers/words.ts';
 import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
 
 test.afterAll(sweepScratch);
@@ -193,6 +193,43 @@ test('a refusal that lands after a later press has opened the file is never show
     await expect(page.getByText(t('file.open_failed', OUTSIDE))).toHaveCount(0);
 });
 
+// An audit: the answer lands in a component that is gone, which today draws nothing and throws
+// nothing, and no revert of ui/ or views/ turns it red. It exercises the path the counter of
+// views/shared/links/ProgramButton.svelte leaves to Svelte, so a change that made it draw or throw
+// would be seen.
+test('a refusal that lands after its File tab has closed draws nothing and throws nothing', async ({
+    page
+}) => {
+    const thrown: string[] = [];
+    page.on('pageerror', (error) => thrown.push(error.message));
+    const { posted, release } = await answerOpen(page, [REFUSED], [1]);
+    await boot(page);
+    await openReport(page);
+
+    await toolbarControl(page).click();
+    await expect.poll(() => posted.length).toBe(1);
+    await page
+        .locator('.tab', { has: page.getByRole('tab', { name: tabNamed(REPORT) }) })
+        .getByRole('button', { name: t('ui.close_tab') })
+        .click();
+    // The tab was closed while its press was still out.
+    await expect(page.getByRole('tab', { name: tabNamed(REPORT) })).toHaveCount(0);
+
+    const refused = page.waitForResponse(
+        (one) => one.url().endsWith('/api/open') && one.status() === 403
+    );
+    release(1);
+    await refused;
+    await page.waitForTimeout(500);
+    // The refusal landed in a component that is gone, which draws nothing.
+    await expect(page.getByText(t('file.open_failed', OUTSIDE))).toHaveCount(0);
+    expect(thrown).toEqual([]);
+
+    await openReport(page);
+    // The file opened again draws its own control, and the old refusal is not carried to it.
+    await expect(page.getByText(t('file.open_failed', OUTSIDE))).toHaveCount(0);
+});
+
 /** Open the Projects board and expand the demo project's card, returning the card. */
 async function projectCard(page: Page): Promise<ReturnType<Page['locator']>> {
     await boot(page);
@@ -271,7 +308,8 @@ test("a collection card's hub link to a .xlsx opens in its program, and a refusa
     await openView(page, 'events', t('views.events'));
     const card = page.locator('.cards [data-entry]').filter({ hasText: ENTRY });
     const control = card.getByRole('button', { name: LINKED, exact: true });
-    // the entry's link opens in its program, so the card carries a control rather than a link to the bytes
+    // the entry's link opens in its program, so the card carries a control rather than a link to
+    // the bytes
     await expect(card.locator(`a[href="/api/file/hub/${LINKED}"]`)).toHaveCount(0);
 
     await control.click();

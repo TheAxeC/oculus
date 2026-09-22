@@ -148,7 +148,8 @@
                 onclick={() => stepTextScale(1)}
             />
         </div>
-        <!-- The group is named by its label; this is the same word drawn, so it is not read twice. -->
+        <!-- The group is named by its label; this is the same word drawn, so it is not read
+             twice. -->
         <span class="caption" aria-hidden="true">{t('app.text')}</span>
     </div>
     <ToolButton
@@ -209,7 +210,8 @@
         flex-shrink: 0;
     }
 
-    /* The three steps side by side, each a third of the rail's width, over the one name they share. */
+    /* The three steps side by side, each a third of the rail's width, over the one name they
+       share. */
     .steps {
         display: flex;
         gap: 2px;

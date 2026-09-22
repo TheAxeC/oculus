@@ -61,7 +61,10 @@
         typeof config.venue_conc_warn === 'number' ? config.venue_conc_warn : 4
     );
 
-    /** The word a collection's own dates are named by. The keys are literal so keys.test.ts sees them. */
+    /**
+     * The word a collection's own dates are named by. The keys are literal so keys.test.ts sees
+     * them.
+     */
     function word(kind: string): string {
         if (kind === 'event') return t('focus.command.word_event');
         if (kind === 'teaching') return t('focus.command.word_teaching');
@@ -181,7 +184,9 @@
         return { index, rows };
     });
 
-    /** The "refresh live data" rows: what is stale, how stale, and the command that refreshes it. */
+    /**
+     * The "refresh live data" rows: what is stale, how stale, and the command that refreshes it.
+     */
     const refreshView = $derived.by(() => {
         const index: Record<string, (typeof nudges)[number] | undefined> = {};
         const rows = nudges.map((one, at): TickerRow => {

@@ -1,6 +1,7 @@
 // Layer 3, view helper tests. The measured rules of a card's layout, over numbers: where a card's
 // controls sit and how many stay on their line before the rest go behind More, when a description
-// is longer than its clamp and which control that draws, and which late measurement is still wanted.
+// is longer than its clamp and which control that draws, and which late measurement is still
+// wanted.
 //
 // What this does NOT cover: the measuring, the hover and the menu, which need a page and are
 // tests/browser/boards/cards.spec.ts.

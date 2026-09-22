@@ -95,7 +95,12 @@
 </article>
 
 <style>
+    /* `--card-reveal` says whether what a card draws only under the pointer or the keyboard is
+       drawn: 0 at rest and 1 while the card is hovered or holds the focus, or always on a screen
+       whose pointer does not hover. Every card sets it, so a card drawn inside another answers for
+       itself and not for the card around it. */
     .card {
+        --card-reveal: 0;
         position: relative;
         display: flex;
         background: var(--card);
@@ -105,7 +110,20 @@
         overflow: hidden;
     }
 
-    /* Over a wallpaper a card keeps most of its own colour and lets the picture through the rest. The backdrop blur takes the picture's detail out from behind the text without smearing the picture itself. */
+    .card:hover,
+    .card:focus-within {
+        --card-reveal: 1;
+    }
+
+    @media (hover: none) {
+        .card {
+            --card-reveal: 1;
+        }
+    }
+
+    /* Over a wallpaper a card keeps most of its own colour and lets the picture through the rest.
+       The backdrop blur takes the picture's detail out from behind the text without smearing the
+       picture itself. */
     :global(body.wall) .card {
         background: color-mix(in srgb, var(--card) var(--wall-panel), transparent);
         backdrop-filter: blur(var(--wall-blur));

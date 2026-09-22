@@ -15,7 +15,9 @@ import type { FeedKind } from '../../data/model.ts';
 /** One file of the hub, addressed the way the source tab addresses it. */
 export type ViewSource = { root: string; path: string };
 
-/** What a view is drawn from: one of the three feeds, one of the five registries, or a collection. */
+/**
+ * What a view is drawn from: one of the three feeds, one of the five registries, or a collection.
+ */
 export type ViewSourceKind = FeedKind | 'collection' | RegistryKind;
 
 /** The registry views drawn from a file of their own, each by the view's own id. */

@@ -107,8 +107,8 @@ export function resumeRefusal(error: string): string {
 const ESC = 0x1b;
 
 /**
- * A filter that drops the window-title sequences of a pane, `ESC k <name> ESC \`: a shell writes one
- * to name its tmux window after the running command, tmux passes it through as pane output, and
+ * A filter that drops the window-title sequences of a pane, `ESC k <name> ESC \`: a shell writes
+ * one to name its tmux window after the running command, tmux passes it through as pane output, and
  * xterm.js does not know it and would print the name as text. The filter keeps what a chunk ends
  * with when a sequence is cut across two chunks, so each call is handed the bytes to write and the
  * next call finishes the sequence. Anything else in the stream passes through unchanged.
@@ -136,7 +136,8 @@ export function titleStripper(): (bytes: Uint8Array) => Uint8Array {
             }
             const open = indexOfPair(all, ESC, 0x6b, at);
             if (open === -1) {
-                // A lone ESC at the very end may be the first byte of a title: carried, not written.
+                // A lone ESC at the very end may be the first byte of a title: carried, not
+                // written.
                 const last = all.length - 1;
                 if (all[last] === ESC && last >= at) {
                     for (let i = at; i < last; i += 1) out.push(all[i]);
@@ -219,7 +220,8 @@ export function createTerminals(
     }
 
     async function post(body: unknown): Promise<TerminalAnswer> {
-        // There is no fetch while the page is rendered on the server, and nothing to start there either.
+        // There is no fetch while the page is rendered on the server, and nothing to start there
+        // either.
         if (typeof fetch !== 'function') return { ok: false, id: '', error: '' };
         try {
             const response = await fetch('/api/terminal', {
@@ -268,7 +270,10 @@ export function createTerminals(
         return post({ action: 'start', kind, cwd, cols, rows });
     }
 
-    /** Recover one dataset in a shell terminal; the server supplies both the command and the hub cwd. */
+    /**
+     * Recover one dataset in a shell terminal; the server supplies both the command and the hub
+     * cwd.
+     */
     async function recoverDataset(
         key: string,
         cols: number = COLS,
@@ -277,7 +282,9 @@ export function createTerminals(
         return post({ action: 'recover', key, cols, rows });
     }
 
-    /** Start one update skill as a Claude terminal; the server supplies its argv and hub directory. */
+    /**
+     * Start one update skill as a Claude terminal; the server supplies its argv and hub directory.
+     */
     async function startTask(
         kind: TaskKind,
         cols: number = COLS,
@@ -297,8 +304,8 @@ export function createTerminals(
 
     /**
      * Build or clean one main file of a project's manuscript. The page sends the project id and the
-     * file's name; the server checks the name against the project's own main files and supplies both
-     * the latexmk command and the manuscript folder it runs in.
+     * file's name; the server checks the name against the project's own main files and supplies
+     * both the latexmk command and the manuscript folder it runs in.
      */
     async function latex(
         id: string,
@@ -310,7 +317,10 @@ export function createTerminals(
         return post({ action: 'latex', id, main, step, cols, rows });
     }
 
-    /** Start a project-focused or portfolio-wide Claude chat; the server supplies argv and directory. */
+    /**
+     * Start a project-focused or portfolio-wide Claude chat; the server supplies argv and
+     * directory.
+     */
     async function startChat(
         id: string | null,
         cols: number = COLS,
@@ -321,8 +331,8 @@ export function createTerminals(
 
     /**
      * Continue an observed session in a terminal: DESIGN.md's one explicit migration, which runs
-     * `claude --resume <id>` or `codex resume <id>` in the session's own directory. The server reads
-     * the directory off the record, so nothing about where it starts travels from the page.
+     * `claude --resume <id>` or `codex resume <id>` in the session's own directory. The server
+     * reads the directory off the record, so nothing about where it starts travels from the page.
      */
     async function resumeTerminal(
         tool: TerminalResume['tool'],
@@ -338,7 +348,9 @@ export function createTerminals(
         return post({ action: 'stop', id });
     }
 
-    /** Resize one terminal's tmux window, for a page whose socket is not open to carry the message. */
+    /**
+     * Resize one terminal's tmux window, for a page whose socket is not open to carry the message.
+     */
     async function resizeTerminal(id: string, cols: number, rows: number): Promise<TerminalAnswer> {
         return post({ action: 'resize', id, cols, rows });
     }
@@ -368,9 +380,9 @@ export function createTerminals(
     }
 
     /**
-     * Read one terminal's output. The listener is handed the scrollback first, then every chunk after
-     * it, and the call returned takes the listener off without unsubscribing, for a view that is
-     * swapping one terminal for another.
+     * Read one terminal's output. The listener is handed the scrollback first, then every chunk
+     * after it, and the call returned takes the listener off without unsubscribing, for a view that
+     * is swapping one terminal for another.
      */
     function subscribePty(id: string, onBytes: PtyListener): () => void {
         const channel = ptyChannel(id);
@@ -383,7 +395,9 @@ export function createTerminals(
         return off;
     }
 
-    /** Stop reading one terminal's output, and stop asking for its channel on the next reconnect. */
+    /**
+     * Stop reading one terminal's output, and stop asking for its channel on the next reconnect.
+     */
     function unsubscribePty(id: string): void {
         socket.unsubscribe([ptyChannel(id)]);
     }

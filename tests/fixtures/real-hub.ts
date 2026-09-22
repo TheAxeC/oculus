@@ -1,11 +1,11 @@
 // Layer 4, test helper. Whether the real hub is there to be read, for the cases that read it.
 //
-// A case over the real hub skips where the hub is not on the machine. The hub's path existing is not
-// that question: a sparse checkout of this repository holds the root and its documents and none of
-// the data folders, so the path is there and every folder under it is empty. A case guarded on the
-// path alone then runs against nothing and fails on a count, which reads as a defect in the code and
-// is a fact about the checkout. The question asked here is whether the folders the config names hold
-// anything, so such a checkout skips and a hub that lost its data still fails loudly.
+// A case over the real hub skips where the hub is not on the machine. The hub's path existing is
+// not that question: a sparse checkout of this repository holds the root and its documents and none
+// of the data folders, so the path is there and every folder under it is empty. A case guarded on
+// the path alone then runs against nothing and fails on a count, which reads as a defect in the
+// code and is a fact about the checkout. The question asked here is whether the folders the config
+// names hold anything, so such a checkout skips and a hub that lost its data still fails loudly.
 
 import { existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';

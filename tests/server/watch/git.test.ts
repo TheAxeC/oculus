@@ -132,7 +132,9 @@ async function until(holds: () => boolean, ms: number): Promise<void> {
     while (!holds() && Date.now() < deadline) await sleep(20);
 }
 
-/** Wait until no message has arrived for a short while, so a count taken after it is a whole one. */
+/**
+ * Wait until no message has arrived for a short while, so a count taken after it is a whole one.
+ */
 async function quiet(client: { got: unknown[] }): Promise<void> {
     let seen = -1;
     let still = 0;
@@ -165,7 +167,9 @@ async function armed(root: string, got: Message[]): Promise<void> {
     }
 }
 
-/** A clock whose window the test closes: nothing the watcher scheduled runs until fire() runs it. */
+/**
+ * A clock whose window the test closes: nothing the watcher scheduled runs until fire() runs it.
+ */
 type Manual = { clock: Clock; fire(): void; pending(): number };
 
 /**

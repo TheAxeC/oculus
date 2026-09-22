@@ -1,11 +1,11 @@
 // Layer 2, server. Taking one recorded change back: what the file holds at that address now, and
 // the write that puts the earlier value there.
 //
-// One table, read twice. A change names a body kind and an undo kind, and this is the one place that
-// says, for each pair, where the value sits and which writer restores it; the check and the write
-// read the same row, so a change can never be checked at one address and written at another. Every
-// writer it reaches is the writer the change itself came from, so an undo is an ordinary write and
-// is recorded like one.
+// One table, read twice. A change names a body kind and an undo kind, and this is the one place
+// that says, for each pair, where the value sits and which writer restores it; the check and the
+// write read the same row, so a change can never be checked at one address and written at another.
+// Every writer it reaches is the writer the change itself came from, so an undo is an ordinary
+// write and is recorded like one.
 //
 // The check is why an undo is safe to offer: the value the record says the write left is compared
 // with the value the file holds now, and a field edited since is refused rather than written over.
@@ -50,15 +50,18 @@ import type { WriteOutcome, WriteTarget } from '../writes.ts';
 
 /**
  * Why an undo was not made, or the outcome of the write that made it. `refused` carries what the
- * writer would not write: an undo that changed no byte is a refusal and never an answer the page can
- * read as success, since the row would otherwise say the value is back when it is not.
+ * writer would not write: an undo that changed no byte is a refusal and never an answer the page
+ * can read as success, since the row would otherwise say the value is back when it is not.
  */
 export type UndoOutcome =
     | { error: 'unknown' | 'gone' | 'moved' | 'nothing' }
     | { error: 'refused'; refused: WriteOutcome['refused'] }
     | WriteOutcome;
 
-/** The absolute path a record's `file` names: it is hub-relative inside the hub and absolute outside. */
+/**
+ * The absolute path a record's `file` names: it is hub-relative inside the hub and absolute
+ * outside.
+ */
 function fileOf(into: WriteTarget, change: Change): string {
     return resolve(isAbsolute(change.file) ? change.file : join(into.hub, change.file));
 }

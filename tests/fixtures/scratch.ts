@@ -1,13 +1,14 @@
 // Layer 4, test helper. A directory of a case's own under the system temporary directory, taken
 // away again when the file that made it is done.
 //
-// Every scratch directory a test makes comes from here, so that a run leaves the temporary directory
-// with the count it found. The sweep is registered by the suite that uses it, with its own runner:
-// a vitest file calls afterAll(sweepScratch) and a browser spec calls test.afterAll(sweepScratch),
-// so one helper serves both layers and a red case takes its directory with it either way.
+// Every scratch directory a test makes comes from here, so that a run leaves the temporary
+// directory with the count it found. The sweep is registered by the suite that uses it, with its
+// own runner: a vitest file calls afterAll(sweepScratch) and a browser spec calls
+// test.afterAll(sweepScratch), so one helper serves both layers and a red case takes its directory
+// with it either way.
 //
-// The path is checked to be inside the system temporary directory before it is handed back, which is
-// what keeps a case that joins a path onto it from writing into the checkout or the hub.
+// The path is checked to be inside the system temporary directory before it is handed back, which
+// is what keeps a case that joins a path onto it from writing into the checkout or the hub.
 
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';

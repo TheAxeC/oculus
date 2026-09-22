@@ -1,13 +1,13 @@
-// Layer 2, client state, pure. The Slides view's own state: which slides the reader has ticked, what
-// order they have dragged them into, and the line the status region is showing.
+// Layer 2, client state, pure. The Slides view's own state: which slides the reader has ticked,
+// what order they have dragged them into, and the line the status region is showing.
 //
 // It is here rather than inside the component because it is what the view is: a tick and a move are
 // answers over two lists, and a pure answer is a plain call in a test rather than a rendered page.
 // The catalog itself is not here; it is the deck's, and state/life/present.ts computes it.
 //
 // The work is held against the catalog it was made over. A push that adds or removes a slide leaves
-// the two out of step, and the view then draws what the file says and says that the unsaved work was
-// dropped, rather than saving an order over a deck that has moved underneath it.
+// the two out of step, and the view then draws what the file says and says that the unsaved work
+// was dropped, rather than saving an order over a deck that has moved underneath it.
 
 import { movedOrder } from '../boards/collection.ts';
 import { t } from '../words/text.ts';
@@ -20,7 +20,9 @@ export type SlidePicks = {
     picked: string[];
 };
 
-/** One Slides pane's own state: the reader's work, the catalog it was made over, and the last line. */
+/**
+ * One Slides pane's own state: the reader's work, the catalog it was made over, and the last line.
+ */
 export type SlidesState = SlidePicks & {
     /** The signature of the catalog the work was made over; empty when there is no work. */
     at: string;
@@ -37,7 +39,9 @@ function words(value: unknown): string[] {
     return value.filter((one): one is string => typeof one === 'string');
 }
 
-/** One pane's own state out of whatever its instance holds, with the defaults for what is missing. */
+/**
+ * One pane's own state out of whatever its instance holds, with the defaults for what is missing.
+ */
 export function parseSlidesState(value: unknown): SlidesState {
     if (typeof value !== 'object' || value === null || Array.isArray(value)) {
         return { at: '', order: [], picked: [], said: '' };
@@ -52,8 +56,9 @@ export function parseSlidesState(value: unknown): SlidesState {
 }
 
 /**
- * The catalog a piece of work was made over. Work held against a different one is the reader's edits
- * over a deck that has since gained, lost or moved a slide, so it is dropped and the file answers.
+ * The catalog a piece of work was made over. Work held against a different one is the reader's
+ * edits over a deck that has since gained, lost or moved a slide, so it is dropped and the file
+ * answers.
  */
 export function catalogSignature(keys: string[]): string {
     return keys.join('\n');
@@ -73,7 +78,10 @@ export function fileState(
     return { order: [...keys], picked: keys.filter((key) => shown.includes(key)) };
 }
 
-/** One slide ticked or unticked. The ticks stay in the catalog's own order, whatever order they came in. */
+/**
+ * One slide ticked or unticked. The ticks stay in the catalog's own order, whatever order they came
+ * in.
+ */
 export function withTick(held: SlidePicks, key: string, on: boolean): SlidePicks {
     if (!held.order.includes(key)) return held;
     const picked = held.order.filter((one) => (one === key ? on : held.picked.includes(one)));

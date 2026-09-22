@@ -2,10 +2,10 @@
 // Nothing outside that directory is read or written and every write asserts its path is inside it
 // first, so no case reads the real hub or the engine's own configuration.
 //
-// The words are the engine's own catalog, read through loadConfig, so a case asserts the message the
-// reader sees rather than a copy of it typed here. What this does NOT cover: the watcher publishing
-// the scan, which is tests/server/watch/portfolio.test.ts, and the view drawing it, which is
-// tests/views/system/audit.test.ts.
+// The words are the engine's own catalog, read through loadConfig, so a case asserts the message
+// the reader sees rather than a copy of it typed here. What this does NOT cover: the watcher
+// publishing the scan, which is tests/server/watch/portfolio.test.ts, and the view drawing it,
+// which is tests/views/system/audit.test.ts.
 
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';

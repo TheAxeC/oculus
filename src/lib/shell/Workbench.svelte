@@ -48,16 +48,22 @@
         groups?: NavGroup[];
         /** The `bookmarks` list of the merged config, for the rail's Docs section. */
         bookmarks?: Bookmark[];
-        /** The `docs` list of the merged config: the hub documents the rail draws in their groups. */
+        /**
+         * The `docs` list of the merged config: the hub documents the rail draws in their groups.
+         */
         docs?: DocEntry[];
         /**
-         * The reader's own bookmarks, for the same section after the configured ones. The page reads
-         * them off the fs store and hands them on, since the shell may not read that store itself.
+         * The reader's own bookmarks, for the same section after the configured ones. The page
+         * reads them off the fs store and hands them on, since the shell may not read that store
+         * itself.
          */
         saved?: Bookmark[];
         /** The `arrangements:` of the merged config, for the page strip's menu. */
         arrangements?: Arrangement[];
-        /** The `direct_chord` of the merged config: the letter a digit after it counts into the rail. */
+        /**
+         * The `direct_chord` of the merged config: the letter a digit after it counts into the
+         * rail.
+         */
         directChord?: string;
         /**
          * How many sessions wait on a permission, for the document title. The page reads it from
@@ -82,7 +88,10 @@
     let sheetOpen = $state(false);
     let handledUpdateRequest = $state(updateTrayRequested());
 
-    /** The maximised pane, when one is: it is drawn alone and the rest of the workbench is not drawn. */
+    /**
+     * The maximised pane, when one is: it is drawn alone and the rest of the workbench is not
+     * drawn.
+     */
     const focus = $derived(focused());
     const zoomed = $derived(focus === null ? null : paneAt(layout(), focus.path));
 

@@ -1,6 +1,6 @@
-// Layer 1, data. Walks the scan tiers and reads every project.yml into a raw record with provenance.
-// Server side only: it reads the filesystem and no client module may import it.
-// It validates nothing and resolves nothing. Every failure is a Finding; nothing here throws, so one
+// Layer 1, data. Walks the scan tiers and reads every project.yml into a raw record with
+// provenance. Server side only: it reads the filesystem and no client module may import it. It
+// validates nothing and resolves nothing. Every failure is a Finding; nothing here throws, so one
 // unparseable manifest costs its own record and no more.
 
 import { readFileSync, readdirSync, statSync } from 'node:fs';
@@ -189,13 +189,13 @@ function ghost(
 /**
  * Read every project.yml the scan rules reach.
  *
- * A flat rule reads `<hub>/<dir>/<name>/project.yml` and gives each manifest the rule's `type`.
- * A nested rule walks `<hub>/<dir>` to any depth, takes `type` from the manifest, and records the
- * first folder under the tier as `category`. A flat-tier folder without a project.yml is a ghost;
- * a manifest that does not parse, or parses to something other than a map, is a finding and no
+ * A flat rule reads `<hub>/<dir>/<name>/project.yml` and gives each manifest the rule's `type`. A
+ * nested rule walks `<hub>/<dir>` to any depth, takes `type` from the manifest, and records the
+ * first folder under the tier as `category`. A flat-tier folder without a project.yml is a ghost; a
+ * manifest that does not parse, or parses to something other than a map, is a finding and no
  * record. A missing scan directory is a finding unless the rule is `optional`, which is how a tier
- * the hub need not have costs nothing until its folder exists. Records come back sorted by `folder`,
- * so two runs on one tree agree byte for byte.
+ * the hub need not have costs nothing until its folder exists. Records come back sorted by
+ * `folder`, so two runs on one tree agree byte for byte.
  */
 export function readManifests(
     hub: string,

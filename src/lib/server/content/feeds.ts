@@ -192,7 +192,10 @@ function linkedinFolder(hub: string, config: PortfolioConfig): string | null {
     return folder;
 }
 
-/** How many characters of the slug a filename keeps, so a long title stays well inside a name's limit. */
+/**
+ * How many characters of the slug a filename keeps, so a long title stays well inside a name's
+ * limit.
+ */
 const SLUG_MAX = 80;
 
 function slugOf(title: string): string {
@@ -380,13 +383,13 @@ export function addLead(
 }
 
 /**
- * Put one recorded feed entry back exactly as it was recorded: every field it held, in the order the
- * file's own schema names them, and nothing derived. It is what an undo of a deletion goes through,
- * since addLead fills a missing status and today's date for an entry the reader is adding and an
- * entry that is coming back needs neither.
+ * Put one recorded feed entry back exactly as it was recorded: every field it held, in the order
+ * the file's own schema names them, and nothing derived. It is what an undo of a deletion goes
+ * through, since addLead fills a missing status and today's date for an entry the reader is adding
+ * and an entry that is coming back needs neither.
  *
- * A feed whose last entry was deleted keeps its `entries:` key with nothing under it, which is not a
- * list to append to; the entry is then written under that key the way a first entry is.
+ * A feed whose last entry was deleted keeps its `entries:` key with nothing under it, which is not
+ * a list to append to; the entry is then written under that key the way a first entry is.
  */
 export function restoreFeedEntry(
     hub: string,

@@ -2,50 +2,42 @@
 // with its flames and its next sentence, the ticker's groups, the awaiting strip, the band, and the
 // empty state of a portfolio with nothing in it.
 //
-// The catalog, glyphs and vocabulary are the real config. The projects are synthetic: what is checked is
-// the view, not the hub.
+// The catalog, glyphs and vocabulary are the real config. The projects are synthetic: what is
+// checked is the view, not the hub.
 //
-// What this does NOT cover: anything that needs a DOM. There is no browser in this suite, so no menu
-// opens, no card is clicked and no write is made; the menu's two writes are checked in a browser.
-// The countdowns are the real clock's, so the dates below are far enough from any run date that
-// which side of today they fall on is not in question.
+// What this does NOT cover: anything that needs a DOM. There is no browser in this suite, so no
+// menu opens, no card is clicked and no write is made; the menu's two writes are checked in a
+// browser. The countdowns are the real clock's, so the dates below are far enough from any run date
+// that which side of today they fall on is not in question.
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { scalar } from '../../../src/lib/data/helpers/guards.ts';
-import { NO_FEEDS } from '../../fixtures/entities-fixture.ts';
+
 import { render } from 'svelte/server';
 import Focus from '../../../src/lib/views/boards/focus/Focus.svelte';
 import Band from '../../../src/lib/views/boards/focus/Band.svelte';
-import {
-    engineDir,
-    glyphCatalog,
-    loadConfig,
-    textCatalog,
-    vocabCatalog
-} from '../../../src/lib/data/sources/config.ts';
+
 import { holdingTone, lanes } from '../../../src/lib/state/boards/focus.ts';
-import { setCatalog, setGlyphs } from '../../../src/lib/state/words/text.ts';
+
 import {
     chipLabel,
     statusMarkTone,
     statusTone,
-    UNKNOWN_TONE,
-    setVocab
+    UNKNOWN_TONE
 } from '../../../src/lib/state/words/tones.ts';
-import type {
-    Career,
-    Collection,
-    Funding,
-    Id,
-    Project,
-    Relations,
-    Snapshot,
-    Tier,
-    Venue
-} from '../../../src/lib/data/model.ts';
 import type { Instance } from '../../../src/lib/state/workbench/layout/index.ts';
 import { noop } from '../../fixtures/doubles.ts';
 import { clientContext, createClientState, type ClientState } from '../../fixtures/client.ts';
+import {
+    INSTANCE,
+    bare,
+    catalog,
+    collection,
+    escaped,
+    html,
+    installFixture,
+    snapshot,
+    config
+} from './focus-fixture.ts';
 
 let client: ClientState;
 let startMinuteClock: ClientState['clock']['startMinuteClock'];
@@ -55,342 +47,12 @@ beforeEach(() => {
     client = createClientState();
     ({ startMinuteClock } = client.clock);
     ({ receive } = client.entities);
-    installFixture();
+    installFixture(receive);
 });
-
-const { config } = loadConfig(engineDir());
-const catalog = textCatalog(config);
-setCatalog(catalog);
-setGlyphs(glyphCatalog(config));
-setVocab(vocabCatalog(config));
-
-const INSTANCE = 'focus-one';
-
-const EMPTY_RELATIONS: Relations = {
-    projectVenue: [],
-    projectFunding: [],
-    projectDataset: [],
-    projectPillar: [],
-    projectDomain: [],
-    projectRelated: [],
-    fundingPillar: [],
-    projectPerson: [],
-    jointWorkPerson: [],
-    personOrganisation: [],
-    fundingOrganisation: []
-};
-
-function project(id: Id, tier: Tier, over: Partial<Project> = {}): Project {
-    return {
-        id,
-        tier,
-        ghost: false,
-        title: id,
-        chips: [],
-        results: [],
-        ideas: [],
-        waitingOn: [],
-        followups: [],
-        subtasks: [],
-        relatedIds: [],
-        fundingIds: [],
-        datasetIds: [],
-        pillarIds: [],
-        domainIds: [],
-        collaborators: [],
-        docs: [],
-        folder: `projects/${tier}/${id}`,
-        file: `/hub/projects/${tier}/${id}/project.yml`,
-        ...over
-    };
-}
-
-function scheme(id: Id, over: Partial<Funding> = {}): Funding {
-    return {
-        id,
-        title: id,
-        followups: [],
-        subtasks: [],
-        tags: [],
-        projectIds: [],
-        pillarIds: [],
-        ...over
-    };
-}
-
-function collection(
-    id: string,
-    rows: Record<string, unknown>[],
-    statuses: string[] = []
-): Collection {
-    const file = `/hub/${id}.yml`;
-    const held: Collection = {
-        id,
-        title: id,
-        file,
-        entries: rows.map((fields, index) => ({
-            id: scalar(fields.key ?? fields.title, String(index)),
-            title: scalar(fields.title),
-            fields,
-            file,
-            index
-        }))
-    };
-    if (statuses.length > 0) {
-        held.schema = [
-            { field: 'title', type: 'text' },
-            { field: 'status', type: 'select', options: statuses }
-        ];
-    }
-    return held;
-}
-
-function venue(id: Id, over: Partial<Venue> = {}): Venue {
-    return { id, name: id, themes: [], ...over };
-}
-
-/** Two cards on the Run lane, a parked idea, a paper out for review, and a deadline long gone. */
-function snapshot(): Snapshot {
-    const projects = [
-        project('alpha', 'active', {
-            type: 'active',
-            title: 'Alpha, the whole title',
-            short: 'Alpha',
-            focus: 'run',
-            priority: 'high',
-            chips: ['lead'],
-            next: 'Run the sweep. Then write it up.',
-            waitingOn: ['someone'],
-            followups: [{ do: 'chase the coauthor' }],
-            subtasks: [
-                { key: 'fig', do: 'redraw figure 2', deadline: daysOff(6), done: false },
-                { key: 'note', do: 'write the cover letter', done: false }
-            ]
-        }),
-        project('foxtrot', 'active', {
-            type: 'active',
-            title: 'Foxtrot',
-            focus: 'run',
-            staleDays: 4,
-            deadline: daysOff(4),
-            snooze: daysOff(40)
-        }),
-        project('bravo', 'manuscripts', {
-            type: 'manuscript',
-            title: 'Bravo',
-            focus: 'run',
-            deadline: '2000-01-01'
-        }),
-        project('charlie', 'manuscripts', {
-            type: 'manuscript',
-            title: 'Charlie',
-            focus: 'review',
-            chips: ['submitted'],
-            venueId: 'jbi',
-            followups: [{ do: 'ping the editor', after: daysOff(-2) }]
-        }),
-        project('golf', 'manuscripts', {
-            type: 'manuscript',
-            title: 'Golf',
-            focus: 'review',
-            venueId: 'jbi'
-        }),
-        project('hotel', 'manuscripts', {
-            type: 'manuscript',
-            title: 'Hotel',
-            focus: 'review',
-            venueId: 'jbi'
-        }),
-        project('india', 'manuscripts', {
-            type: 'manuscript',
-            title: 'India',
-            focus: 'review',
-            venueId: 'jbi'
-        }),
-        project('delta', 'ideas', { type: 'idea', title: 'Delta', focus: 'holding' }),
-        project('echo', 'manuscripts', { type: 'manuscript', title: 'Echo' })
-    ];
-    const byId: Record<Id, Project> = {};
-    for (const one of projects) byId[one.id] = one;
-    return {
-        version: 1,
-        entities: {
-            feeds: {
-                leads: [{ title: 'A lead', deadline: daysOff(8), status: 'open', fit: 'strong' }],
-                radar: { lastRun: '2020-01-01' },
-                scout: { lastRun: '2020-01-01' },
-                linkedin: { lastPost: '2020-01-01' }
-            },
-            career: CAREER,
-            projects: byId,
-            venues: {
-                jbi: venue('jbi', { name: 'Journal of Biomedical Informatics', short: 'JBI' })
-            },
-            datasets: {},
-            pillars: {},
-            domains: {},
-            funding: {
-                prep: scheme('prep', {
-                    title: 'A grant in prep',
-                    status: 'in-prep',
-                    deadline: daysOff(10),
-                    note: 'The concept is written. The budget is not.',
-                    followups: [{ do: 'ask the officer' }]
-                })
-            },
-            people: {
-                someone: {
-                    id: 'someone',
-                    name: 'Some One',
-                    affiliations: [],
-                    links: [],
-                    projectIds: [],
-                    jointWorkIds: []
-                }
-            },
-            organisations: {},
-            collections: {
-                funding: collection('funding', [
-                    {
-                        key: 'prep',
-                        title: 'A grant in prep',
-                        status: 'in-prep',
-                        deadline: daysOff(10),
-                        note: 'The concept is written. The budget is not.'
-                    }
-                ]),
-                applications: collection('applications', [
-                    { title: 'A live position', status: 'active' },
-                    { title: 'An applied position', status: 'applied' }
-                ]),
-                'joint-work': collection('joint-work', [
-                    { key: 'someone', title: 'A shared paper', person: 'someone', status: 'active' }
-                ]),
-                events: collection(
-                    'events',
-                    [{ title: 'A coming talk', status: 'upcoming', date: daysOff(9) }],
-                    ['upcoming', 'planned', 'not-attending', 'past']
-                ),
-                education: collection('education', [{ title: 'A course', status: 'ongoing' }]),
-                tasks: collection(
-                    'tasks',
-                    [
-                        { title: 'A standing chore', status: 'todo' },
-                        { title: 'A dated chore', status: 'todo', deadline: daysOff(5) }
-                    ],
-                    ['todo', 'doing', 'done']
-                )
-            }
-        },
-        relations: EMPTY_RELATIONS,
-        findings: []
-    };
-}
-
-/** One host in flight, one dropped candidate, and a milestone whose brackets the summary drops. */
-const CAREER: Career = {
-    title: 'Career strategy',
-    milestone: 'FWO Senior - 2 shots left (Nov 2026 and Nov 2027).',
-    situation: [{ label: 'PhD', value: 'May 2023, KU Leuven' }],
-    order: [{ task: 'Veni pre-proposal', when: '1 Sep' }],
-    hosts: [
-        {
-            name: 'Naesens',
-            inst: 'KU Leuven',
-            tag: 'transplant',
-            status: 'awaiting',
-            scores: { proposal: 'Strong', backing: 'High' },
-            note: 'Federated outcome prediction across consortia.'
-        }
-    ],
-    hostCriteria: ['Clinic-embedded'],
-    notHosts: [{ who: 'Peeters', why: 'former advisor' }],
-    eligibility: { rule: ['PhD 3-6 yr before the start'], shots: ['Nov 2026'], caveat: 'a caveat' },
-    dropped: [{ what: 'MSCA-PF 2026' }]
-};
-
-/**
- * A date the given number of days from the run date. The deadline window is counted from the real
- * clock here, so a date meant to be inside it is written relative to today rather than pinned.
- */
-function daysOff(days: number): string {
-    return new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-}
-
-/** Nothing at all: the portfolio a fresh hub would publish. */
-function bare(): Snapshot {
-    return {
-        version: 2,
-        entities: {
-            feeds: NO_FEEDS,
-            career: null,
-            projects: {},
-            venues: {},
-            datasets: {},
-            pillars: {},
-            domains: {},
-            funding: {},
-            people: {
-                someone: {
-                    id: 'someone',
-                    name: 'Some One',
-                    affiliations: [],
-                    links: [],
-                    projectIds: [],
-                    jointWorkIds: []
-                }
-            },
-            organisations: {},
-            collections: {}
-        },
-        relations: EMPTY_RELATIONS,
-        findings: []
-    };
-}
-
-/** A catalog string as the rendered page carries it: Svelte escapes the ampersand and nothing else here. */
-function escaped(key: string): string {
-    return catalog[key].replace(/&/g, '&amp;');
-}
-
-function html(): string {
-    const instance: Instance = { id: INSTANCE, view: 'focus', state: {} };
-    return render(Focus, { context: clientContext(client), props: { instance } }).body;
-}
-
-/** What every case here starts from, installed into the case's own client. */
-function installFixture(): void {
-    receive({ channel: 'config', version: 1, payload: { config, text: catalog, findings: [] } });
-    receive({ channel: 'portfolio', version: 1, payload: snapshot() });
-    // The inbox count and the triage-notes nudge are the `inbox` channel's, not the snapshot's.
-    receive({
-        channel: 'inbox',
-        version: 1,
-        payload: {
-            status: 'ok',
-            accounts: [],
-            threads: ['one', 'two', 'three'].map((id) => ({
-                id,
-                account: 'google-work',
-                provider: 'google',
-                sender: 'Someone',
-                subject: id,
-                received: '2026-09-11T09:00:00.000Z',
-                snippet: '',
-                messages: 1,
-                triage: { kind: 'reply', triaged: false }
-            })),
-            updated: '2026-09-11T12:00:00.000Z',
-            pollMin: 10,
-            retryMin: 2,
-            notesRun: '2020-01-01'
-        }
-    });
-}
 
 let body: string;
 beforeEach(() => {
-    body = html();
+    body = html(client);
 });
 
 /** What the command center drew, and what the tasks section under it drew. */
@@ -425,8 +87,8 @@ describe('the Live HPC pill', () => {
                 host: 'fixture'
             }
         });
-        expect(html()).toContain('1 HPC job running');
-        expect(html()).toContain('2 pending');
+        expect(html(client)).toContain('1 HPC job running');
+        expect(html(client)).toContain('2 pending');
     });
 });
 
@@ -464,6 +126,32 @@ describe('the board', () => {
         );
     });
 
+    it('draws a column whose tone the palette lacks, or that names none, and its header in the unknown tone', () => {
+        // revert: src/lib/state/words/tones.ts:109 => return tone;
+        receive({
+            channel: 'config',
+            version: 2,
+            payload: {
+                config: {
+                    ...config,
+                    focus_lane_tones: { funding: 'no-such-hue', jobs: '', teaching: 'teal' }
+                },
+                text: catalog,
+                findings: []
+            }
+        });
+        const drawn = html(client);
+        const grey = `--lane: var(--c-${UNKNOWN_TONE}-lane); --lane-txt: var(--c-${UNKNOWN_TONE}-lane-txt)`;
+        expect(drawn).toContain(`style="--tone: var(--c-${UNKNOWN_TONE})"`);
+        // The palette holds no such hue, so the column is drawn in the unknown one instead.
+        expect(drawn).not.toContain('--c-no-such-hue');
+        // A tone that names nothing is drawn in the unknown one, never as an empty hue.
+        expect(drawn).not.toContain('--c--lane');
+        // A tone that names nothing is drawn in the unknown one, never as an empty hue.
+        expect(drawn).not.toContain('var(--c-)');
+        expect(drawn.split(grey).length - 1).toBeGreaterThanOrEqual(2);
+    });
+
     it('counts what sits on a lane', () => {
         const run = body.slice(body.indexOf('>Run<'));
         expect(run.slice(0, 200)).toContain('>3<');
@@ -498,8 +186,9 @@ describe('a card', () => {
     });
 
     // A status mark is its glyph and its word, in the hue of the status it stands for, so a lane's
-    // row reads at a glance without a tooltip. Revert: draw each mark as the `span.chipicon` holding
-    // the glyph alone with the word in its `title`, which leaves no mark tag and no word here.
+    // row reads at a glance without a tooltip. Revert: draw each mark as the `span.chipicon`
+    // holding the glyph alone with the word in its `title`, which leaves no mark tag and no word
+    // here.
     it('draws each status mark as its word in the hue of its own status', () => {
         const marks = [
             ...body.matchAll(
@@ -581,7 +270,8 @@ describe('the command center', () => {
         expect(commandBody).toContain(catalog['project.action.done']);
         expect(commandBody).toContain(catalog['project.action.del']);
         expect(commandBody).toContain('ping the editor');
-        // a dated follow-up is the command center's, so the tasks section below does not draw it too
+        // a dated follow-up is the command center's, so the tasks section below does not draw it
+        // too
         expect(tasksBody).not.toContain('ping the editor');
     });
 
@@ -705,7 +395,7 @@ describe('the career panel', () => {
 describe('an empty portfolio', () => {
     it('says there is nothing rather than drawing an empty board', () => {
         receive({ channel: 'portfolio', version: 2, payload: bare() });
-        const empty = html();
+        const empty = html(client);
         expect(empty).toContain(catalog['focus.none']);
         // the portfolio is empty, so there is no card to draw
         expect(empty).not.toContain('Alpha');
@@ -730,7 +420,7 @@ describe('an empty portfolio', () => {
                 notesRun: null
             }
         });
-        const empty = html();
+        const empty = html(client);
         // nothing dated is left, so the command center is not drawn at all
         expect(empty).not.toContain(catalog['focus.command.command_center']);
         // and the tasks section under it is not drawn either
@@ -742,7 +432,7 @@ describe('an empty portfolio', () => {
 describe('a lane card under the keyboard cursor', () => {
     it('carries the project id the workbench cursor moves over', () => {
         receive({ channel: 'portfolio', version: 4, payload: snapshot() });
-        const drawn = html();
+        const drawn = html(client);
         for (const id of ['alpha', 'bravo', 'charlie']) {
             expect(drawn).toContain(`data-card="${id}"`);
         }
@@ -777,11 +467,11 @@ describe('the board day', () => {
             vi.setSystemTime(day);
             stop = startMinuteClock();
             receive({ channel: 'portfolio', version: 6, payload: snap });
-            const opened = due(html());
+            const opened = due(html(client));
             vi.setSystemTime(day + 2 * 24 * 60 * 60 * 1000);
-            const later = due(html());
+            const later = due(html(client));
             vi.advanceTimersByTime(60000);
-            const ticked = due(html());
+            const ticked = due(html(client));
             expect(opened).toEqual(['6d']);
             expect(later).toEqual(opened);
             expect(ticked).toEqual(['4d']);
@@ -855,7 +545,8 @@ describe('the tasks section', () => {
         }
         const note = rows.find((row) => row.includes('chase the coauthor')) ?? '';
         expect(note).toContain(catalog['project.action.done']);
-        // a follow-up is answered or dropped by its own control, so no delete is offered on the line
+        // a follow-up is answered or dropped by its own control, so no delete is offered on the
+        // line
         expect(note).not.toContain(catalog['project.action.del']);
     });
 
@@ -865,7 +556,8 @@ describe('the tasks section', () => {
         expect(chore).toContain('>doing<');
         expect(chore).toContain('>done<');
         expect(chore).toContain(catalog['project.action.snooze_1w']);
-        // a task row moves through the lifecycle statuses of the file, so it carries no delete either
+        // a task row moves through the lifecycle statuses of the file, so it carries no delete
+        // either
         expect(chore).not.toContain(catalog['project.action.del']);
     });
 });

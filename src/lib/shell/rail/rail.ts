@@ -1,9 +1,10 @@
 // Layer 3, shell. What the activity rail is made of and how it is grouped: a configured group, a
-// docs bookmark and a configured hub document with the state that opens each, and the two folds that
-// put the registrations and the documents under their groups and turn them into key order. Apart
-// from the component so the grouping can be read without a rendering.
+// docs bookmark and a configured hub document with the state that opens each, and the two folds
+// that put the registrations and the documents under their groups and turn them into key order.
+// Apart from the component so the grouping can be read without a rendering.
 
-import type { Registration } from '$lib/views/registry';
+import { registrationGlyph, type Registration } from '$lib/views/registry';
+import { t } from '$lib/state/words/text';
 import type { RailOrder } from '../keys/keys';
 import { nextStop } from '$lib/ui/tree/roving';
 
@@ -56,8 +57,8 @@ export function docPick(entry: DocEntry): string {
 }
 
 /**
- * The rail as it is drawn: a group's registrations and its documents, or the ungrouped ones under no
- * heading. The documents follow the views, since a group is its views first.
+ * The rail as it is drawn: a group's registrations and its documents, or the ungrouped ones under
+ * no heading. The documents follow the views, since a group is its views first.
  */
 export type Section = {
     label: string | null;
@@ -74,8 +75,8 @@ export function sectionSize(section: Section): number {
 
 /**
  * Whether a group is drawn as one button with a list beside it rather than as a heading over one
- * button per entry. The ungrouped trailing section has no heading to name such a button and stays as
- * buttons however many it holds.
+ * button per entry. The ungrouped trailing section has no heading to name such a button and stays
+ * as buttons however many it holds.
  */
 export function isFlyout(section: Section): boolean {
     return section.label !== null && sectionSize(section) > GROUP_MAX;
@@ -85,8 +86,8 @@ export function isFlyout(section: Section): boolean {
  * How many entries a group may hold and still be drawn as a heading over one button per entry. Its
  * views and its documents both count. A larger group is drawn as one button with a list beside it,
  * which is reached by the letter the group configures and by no other, so a group that crosses this
- * needs a `chord:`. The ungrouped trailing section has no heading to name such a button and stays as
- * buttons however many it holds.
+ * needs a `chord:`. The ungrouped trailing section has no heading to name such a button and stays
+ * as buttons however many it holds.
  */
 export const GROUP_MAX = 4;
 
@@ -159,12 +160,15 @@ export function railOrder(
     return { direct, chords };
 }
 
-/** Which edges of the rail's list have more entries past them, each drawn as a fade at that edge. */
+/**
+ * Which edges of the rail's list have more entries past them, each drawn as a fade at that edge.
+ */
 export type ListFade = { above: boolean; below: boolean };
 
 /**
  * How far past an edge the list must reach before that edge fades. A browser reports a fractional
- * scroll position at a zoom or a text scale, so a list resting at its end may be a pixel short of it.
+ * scroll position at a zoom or a text scale, so a list resting at its end may be a pixel short of
+ * it.
  */
 const FADE_SLACK = 1;
 
@@ -207,4 +211,14 @@ export function railStop(
     const place = at < 0 ? places.indexOf(current) : places.indexOf(inRow[0]);
     const next = nextStop(key, place, places.length, 'column');
     return next === null ? null : places[next];
+}
+
+/**
+ * The glyph a group's button carries: the group's own, or its first view's when it has none. A
+ * group holding documents alone carries the document glyph.
+ */
+export function groupGlyph(section: Section): string {
+    if (section.glyph !== undefined) return section.glyph;
+    if (section.items.length === 0) return t('views.doc_glyph');
+    return registrationGlyph(section.items[0]);
 }

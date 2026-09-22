@@ -22,8 +22,8 @@ const STALE_DAYS: Record<string, number> = { litwatch: 14, inbox: 10, scout: 7 }
 
 /**
  * One "needs attention" line. `kind` says what it is and the view words it: `inbox` counts threads
- * of the live plate waiting on an answer, `linkedin` counts days since the last post, `venue` counts the in-flight
- * papers aimed at the one venue it names.
+ * of the live plate waiting on an answer, `linkedin` counts days since the last post, `venue`
+ * counts the in-flight papers aimed at the one venue it names.
  */
 export type AttentionItem = {
     kind: string;

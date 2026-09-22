@@ -284,7 +284,8 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
 
     /**
      * Ask the view showing this pane to carry the card under the cursor one place. The shell holds
-     * no order of its own: what a list is ordered by is the view's, so it is asked rather than told.
+     * no order of its own: what a list is ordered by is the view's, so it is asked rather than
+     * told.
      */
     function moveCard(pane: HTMLElement | null, direction: 'left' | 'right'): boolean {
         const id = instanceIn(pane);

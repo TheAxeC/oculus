@@ -1,6 +1,7 @@
 // Layer 2, server. One short-lived tmux session per Claude account and per refresh asks Claude Code
 // for its usage figures: started, sent /usage, read and killed, so nothing stays resident between
-// ticks. A serialized queue per account keeps a route request and a scheduled tick from overlapping.
+// ticks. A serialized queue per account keeps a route request and a scheduled tick from
+// overlapping.
 
 import type { UsageAccountConfig, UsageRefresher } from '../../../data/model.ts';
 import { usageAccountLabel } from '../../../data/sources/config.ts';
@@ -10,7 +11,10 @@ import { claudeUsageFetchedAt, isDefaultClaudeDir } from './accounts.ts';
 
 export const USAGE_WAIT_MS = 15_000;
 export const USAGE_POLL_MS = 250;
-/** How long after the sheet shows the account file is given to move before the refresh counts as not renewed. */
+/**
+ * How long after the sheet shows the account file is given to move before the refresh counts as not
+ * renewed.
+ */
 export const USAGE_RENEW_WAIT_MS = 3_000;
 /** How long a freshly started Claude Code may take to show its prompt before /usage is typed. */
 export const USAGE_START_WAIT_MS = 30_000;
@@ -53,7 +57,9 @@ function shellWord(value: string): string {
     return `'${value.replaceAll("'", `'"'"'`)}'`;
 }
 
-/** The tmux name of one account's refresh session; the same name every tick, so a leftover is found. */
+/**
+ * The tmux name of one account's refresh session; the same name every tick, so a leftover is found.
+ */
 export function usageSessionName(account: UsageAccountConfig): string {
     return `${USAGE_PREFIX}${usageAccountLabel(account.label)}`;
 }
@@ -93,7 +99,10 @@ function plain(screen: string): string {
     return screen.replace(/\u001b\[[0-?]*[ -/]*[@-~]/g, '');
 }
 
-/** Claude Code draws its footer under the prompt, so the prompt is one of the last lines, not the last. */
+/**
+ * Claude Code draws its footer under the prompt, so the prompt is one of the last lines, not the
+ * last.
+ */
 export const PROMPT_TAIL_LINES = 8;
 
 export function hasPrompt(screen: string): boolean {
@@ -129,7 +138,10 @@ function wait(milliseconds: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
 
-/** Start the per-account queues and the configured cadence. Every tick starts and kills its own session. */
+/**
+ * Start the per-account queues and the configured cadence. Every tick starts and kills its own
+ * session.
+ */
 export function watchUsageRefresh(options: UsageRefreshOptions): UsageRefreshWatcher {
     if (!Number.isFinite(options.refreshMin) || options.refreshMin <= 0) {
         throw new Error('usage_refresh_min must be a positive number');
@@ -232,7 +244,10 @@ export function watchUsageRefresh(options: UsageRefreshOptions): UsageRefreshWat
         return false;
     };
 
-    /** One refresh: a session started, the prompt awaited, /usage sent, the result read, the session killed. */
+    /**
+     * One refresh: a session started, the prompt awaited, /usage sent, the result read, the session
+     * killed.
+     */
     const one = async (account: UsageAccountConfig): Promise<void> => {
         if (closed) return;
         // A session of this name left by a crash or an earlier server is never reused.

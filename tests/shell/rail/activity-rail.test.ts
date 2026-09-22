@@ -28,13 +28,17 @@ setGlyphs(glyphCatalog(config));
 setAscii(asciiCatalog(config));
 setVocab(vocabCatalog(config));
 
-/** The rail's markup, with the appearance controls at its foot and whatever views were registered. */
+/**
+ * The rail's markup, with the appearance controls at its foot and whatever views were registered.
+ */
 function railHtml(): string {
     const client = createClientState();
     return render(ActivityRail, { context: clientContext(client), props: {} }).body;
 }
 
-/** Every `data-stop` name in the order the rail draws them, with what the button says about itself. */
+/**
+ * Every `data-stop` name in the order the rail draws them, with what the button says about itself.
+ */
 function stops(body: string): { name: string; tabindex: string; disabled: boolean }[] {
     const found: { name: string; tabindex: string; disabled: boolean }[] = [];
     const pattern = /data-stop="([^"]*)"([^>]*)/g;

@@ -5,11 +5,11 @@
 // The wall is the one surface whose content only a server answers and whose overlay only a browser
 // runs: a server rendering makes no fetch and has no Escape key. The pictures are the engine's own
 // assets/memories folder, which the run serves through the configured directory, and the two files
-// the shape case puts into the served hub's copy of that folder and takes away again: one that is no
-// picture at all, and one PNG whose own eXIf chunk turns it a quarter.
+// the shape case puts into the served hub's copy of that folder and takes away again: one that is
+// no picture at all, and one PNG whose own eXIf chunk turns it a quarter.
 
 import { crc32, deflateSync } from 'node:zlib';
-import { rmSync, writeFileSync } from 'node:fs';
+import { readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -29,8 +29,8 @@ const PICTURES = ['mem-01.png', 'mem-02.png'];
 
 const engine = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 
-// The served hub is a copy of demo/, which carries no wall of its own, so this file makes one out of
-// two of the engine's own pictures and takes it away again.
+// The served hub is a copy of demo/, which carries no wall of its own, so this file makes one out
+// of two of the engine's own pictures and takes it away again.
 test.beforeAll(() => {
     for (const name of PICTURES) {
         copyIntoHub(join(FOLDER, name), join(engine, 'assets', 'memories', name));
@@ -89,8 +89,8 @@ function chunk(code: string, body: Uint8Array): Uint8Array {
 }
 
 /**
- * A PNG of one colour whose `eXIf` chunk names orientation 6, written to a file of its own under the
- * system temporary directory. Chrome draws such a PNG turned, so its stored width is its drawn
+ * A PNG of one colour whose `eXIf` chunk names orientation 6, written to a file of its own under
+ * the system temporary directory. Chrome draws such a PNG turned, so its stored width is its drawn
  * height; the case is what proves the server's answer and the browser's picture agree.
  */
 function turnedPicture(width: number, height: number): string {
@@ -120,10 +120,14 @@ function turnedPicture(width: number, height: number): string {
     return path;
 }
 
-/** A tile's box as the page draws it: its content box's width over height, its height, its state. */
+/**
+ * A tile's box as the page draws it: its content box's width over height, its height, its state.
+ */
 type Box = { ratio: number; height: number; arrived: string };
 
-/** The box of every tile by name, measured inside its border, which is where the picture is drawn. */
+/**
+ * The box of every tile by name, measured inside its border, which is where the picture is drawn.
+ */
 async function boxes(page: Page): Promise<Record<string, Box>> {
     const measured = await wall(page)
         .locator('[data-tile]')
@@ -209,8 +213,8 @@ test('a tall and a wide picture draw tiles of their own shape before and after t
         expect(Math.max(...ratios)).toBeGreaterThan(1);
         // Chrome turned the PNG: it is stored 40 wide by 30 tall and drawn 30 by 40.
         expect(shapes[TURNED]).toBeCloseTo(30 / 40, 3);
-        // Three places: the box inside the border is the picture's own shape to layout's rounding, so
-        // a ratio taken over the border as well, a pixel off on each side, is caught.
+        // Three places: the box inside the border is the picture's own shape to layout's rounding,
+        // so a ratio taken over the border as well, a pixel off on each side, is caught.
         for (const name of drawn) {
             expect(before[name].arrived).toBe('loading');
             expect(before[name].ratio).toBeCloseTo(shapes[name], 3);
@@ -278,4 +282,38 @@ test('the close control and a press outside the picture both put it away', async
         .click({ position: { x: 5, y: 5 } });
     // a press outside the picture puts it away too
     await expect(shown).toHaveCount(0);
+});
+
+// Revert: in views/personal/memories/Memories.svelte, keep a failed tile's mark when the folder
+// answers again, or ask for the picture again at the address it failed at, which the browser
+// answers from the failed bytes it kept.
+test('a picture that failed is drawn once it is rewritten and the folder answers again', async ({
+    page
+}) => {
+    // revert: src/lib/views/personal/memories/Memories.svelte:76 => delete
+    // revert: src/lib/views/personal/memories/Memories.svelte:77-80 => delete
+    const BROKEN = 'mem-00c.png';
+    const ADDED = 'mem-00d.png';
+    writeHubFile(join(FOLDER, BROKEN), 'not a picture yet');
+    try {
+        await openWall(page);
+        const tile = wall(page).locator(`[data-tile="${BROKEN}"]`);
+        await expect(tile).toHaveAttribute('data-arrived', 'failed');
+
+        // The picture is written under the same name, and adding another is what asks the folder
+        // again.
+        copyIntoHub(join(FOLDER, BROKEN), join(engine, 'assets', 'memories', PICTURES[0]));
+        await wall(page)
+            .locator('input[type="file"]')
+            .setInputFiles({
+                name: ADDED,
+                mimeType: 'image/png',
+                buffer: readFileSync(join(engine, 'assets', 'memories', PICTURES[1]))
+            });
+        await expect(wall(page).locator(`[data-tile="${ADDED}"]`)).toBeVisible();
+        await expect(tile).toHaveAttribute('data-arrived', 'loaded');
+    } finally {
+        removeFromHub(join(FOLDER, BROKEN));
+        removeFromHub(join(FOLDER, ADDED));
+    }
 });

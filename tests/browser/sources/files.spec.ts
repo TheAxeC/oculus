@@ -1,6 +1,6 @@
-// The file browser in Chrome: the rail opens it, a root reads its first level from the server, a file
-// in that level opens as the tab its own bytes ask for, and the explorer answers the arrow keys, the
-// filter, the breadcrumb, a row's hover and a section's head.
+// The file browser in Chrome: the rail opens it, a root reads its first level from the server, a
+// file in that level opens as the tab its own bytes ask for, and the explorer answers the arrow
+// keys, the filter, the breadcrumb, a row's hover and a section's head.
 //
 // This is the one check that the fetches actually reach the server, which no server rendering runs:
 // the workspaces, one directory listing, the file's own bytes, and the add-root write. The hub is
@@ -18,10 +18,12 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join, sep } from 'node:path';
 import { expect, test, type Page } from '@playwright/test';
-import { nestedRoot, row, scratch } from '../helpers/files.ts';
+import { keepServedFiles, nestedRoot, row, scratch } from '../helpers/files.ts';
 import { boot, openView } from '../helpers/rail.ts';
 import { alphaOf } from '../helpers/style.ts';
 import { t } from '../helpers/words.ts';
+
+keepServedFiles();
 
 /** The alpha a locator's background is painted at. */
 async function backgroundAlpha(target: ReturnType<Page['locator']>): Promise<number> {
@@ -88,7 +90,8 @@ test('a script opens for editing from the tree, and the save it makes lands on d
     await page.getByRole('tab', { name: t('views.files') }).click();
     await row(page, key, 'data.txt').click();
     await expect(page.getByRole('link', { name: t('file.download') })).toBeVisible();
-    // the first bytes say the file is an archive, so it is offered as a download and no editor opens on it
+    // the first bytes say the file is an archive, so it is offered as a download and no editor
+    // opens on it
     await expect(page.locator('[data-source-editor="data.txt"]')).toHaveCount(0);
 });
 
@@ -124,7 +127,8 @@ test('a single click previews one file after another and a double click keeps th
     // editor holding that other file's text rather than the one the tab was opened on.
     await page.getByRole('tab', { name: t('views.files') }).click();
     await row(page, key, 'notes.md').click();
-    // a single click reuses the preview tab, so the file it held before is no longer a tab of its own
+    // a single click reuses the preview tab, so the file it held before is no longer a tab of its
+    // own
     await expect(page.getByRole('tab', { name: 'tool.py' })).toHaveCount(0);
     const second = page.getByRole('tab', { name: 'notes.md' });
     await expect(second).toHaveAttribute('data-tab-preview', '');
@@ -140,10 +144,10 @@ test('a single click previews one file after another and a double click keeps th
     );
     await page.getByRole('button', { name: t('editor.revert'), exact: true }).click();
 
-    // Asking for the same file a second time keeps its tab, which is what the two clicks of a double
-    // click on the row are. The file browser is a tab of this pane, so the file it opens takes the
-    // pane from it and the tree has to be brought back between the two clicks; where the tree is
-    // drawn beside the file the two clicks land on the row as one double click.
+    // Asking for the same file a second time keeps its tab, which is what the two clicks of a
+    // double click on the row are. The file browser is a tab of this pane, so the file it opens
+    // takes the pane from it and the tree has to be brought back between the two clicks; where the
+    // tree is drawn beside the file the two clicks land on the row as one double click.
     await page.getByRole('tab', { name: t('views.files') }).click();
     await row(page, key, 'tool.py').click();
     await expect(page.getByRole('tab', { name: 'tool.py' })).toHaveAttribute(
@@ -203,13 +207,14 @@ test('a root added in the page serves its own files, each in the view its name a
     await row(page, key, 'notes.md').click();
     await expect(page.locator('[data-source-editor="notes.md"]')).toBeVisible();
 
-    // The PDF: the frame addresses the file route, and the route answers the page's own request with
-    // the bytes and the type. What the browser's viewer then does with them is the browser's.
+    // The PDF: the frame addresses the file route, and the route answers the page's own request
+    // with the bytes and the type. What the browser's viewer then does with them is the browser's.
     await page.getByRole('tab', { name: t('views.files') }).click();
     await row(page, key, 'paper.pdf').click();
     const frame = page.locator(`iframe[src="/api/file/${key}/paper.pdf"]`);
     await expect(frame).toBeVisible();
-    // the bytes come from the page's own origin through the file route, and a sandbox would stop the browser's own PDF viewer
+    // the bytes come from the page's own origin through the file route, and a sandbox would stop
+    // the browser's own PDF viewer
     await expect(frame).not.toHaveAttribute('sandbox');
     const served = await page.evaluate(async (address) => {
         const answer = await fetch(address);
@@ -266,100 +271,6 @@ test("a file is bookmarked from its own tab, and the rail draws the reader's own
     await expect(page.locator('nav button[data-bookmark="hub/README.md"]')).toHaveCount(0);
 });
 
-test('a note is opened from its section, typed into, saved on its own, and deleted', async ({
-    page
-}) => {
-    await boot(page);
-    await openView(page, 'files', t('views.files'));
-
-    await page.getByRole('button', { name: t('files.add_note'), exact: true }).click();
-    const body = page.getByRole('textbox', { name: t('note.body_label') });
-    await expect(body).toBeVisible();
-
-    // Typing saves on its own: the first keystroke writes the file and the ones after it go behind
-    // the wait config/behavior.yml names. What proves it is the file the server reads back.
-    await page.getByRole('textbox', { name: t('note.title_label') }).fill('a browser note');
-    await body.fill('the body of it\n');
-    await expect
-        .poll(
-            async () =>
-                page.evaluate(async () => {
-                    const answer = await fetch('/api/fs?notes=1');
-                    const held = (await answer.json()) as { notes: { title: string }[] };
-                    return held.notes.map((one) => one.title).join('|');
-                }),
-            { timeout: 10_000 }
-        )
-        .toContain('a browser note');
-
-    // The tab carries what was typed, so two open notes read as two names.
-    await expect(page.getByRole('tab', { name: 'a browser note' })).toBeVisible();
-
-    // The Files view lists it, and the confirm is what takes it away. The note's own tab is still
-    // open, and the removal takes that with it rather than leaving a tab over a file that is gone.
-    await page.getByRole('tab', { name: t('views.files') }).click();
-    const listed = page.locator('[data-fs-note]').filter({ hasText: 'a browser note' });
-    await expect(listed).toBeVisible();
-    await listed.getByRole('button', { name: t('files.note_delete') }).click();
-    await page
-        .getByRole('button', { name: t('files.note_delete'), exact: true })
-        .last()
-        .click();
-    // the confirm deleted the note, so the section lists none
-    await expect(page.locator('[data-fs-note]')).toHaveCount(0);
-    // the removal takes the note's own tab with it rather than leaving a tab over a file that is gone
-    await expect(page.getByRole('tab', { name: 'a browser note' })).toHaveCount(0);
-
-    // The note's own tab was closed while a save could still have been waiting on it. It stays
-    // deleted: nothing writes it back once the wait would have run.
-    await expect
-        .poll(
-            async () =>
-                page.evaluate(async () => {
-                    const answer = await fetch('/api/fs?notes=1');
-                    const held = (await answer.json()) as { notes: { title: string }[] };
-                    return held.notes.length;
-                }),
-            { timeout: 5000, intervals: [400, 800, 1600] }
-        )
-        .toBe(0);
-});
-
-/** How many notes the server holds now. */
-async function noteCount(page: Page): Promise<number> {
-    return page.evaluate(async () => {
-        const answer = await fetch('/api/fs?notes=1');
-        const held = (await answer.json()) as { notes: unknown[] };
-        return held.notes.length;
-    });
-}
-
-test("a note's file is made by the first keystroke, and the tab stays until then", async ({
-    page
-}) => {
-    await boot(page);
-    await openView(page, 'files', t('views.files'));
-
-    // The control makes no file, so a tab left with nothing typed into it leaves nothing on the
-    // disk. The tab is still open, and the reader is the one who closes it.
-    await page.getByRole('button', { name: t('files.add_note'), exact: true }).click();
-    const body = page.getByRole('textbox', { name: t('note.body_label') });
-    await expect(body).toBeVisible();
-    await page.getByRole('tab', { name: t('views.files') }).click();
-
-    // nothing was typed, so no file was made and there is no note to list
-    await expect(page.locator('[data-fs-note]')).toHaveCount(0);
-    await expect(page.getByRole('tab', { name: t('views.note') })).toBeVisible();
-    expect(await noteCount(page)).toBe(0);
-
-    // One character is a note, and the file is there for it.
-    await page.getByRole('tab', { name: t('views.note') }).click();
-    await body.fill('a');
-    await expect.poll(() => noteCount(page), { timeout: 10_000 }).toBe(1);
-    await page.getByRole('tab', { name: t('views.files') }).click();
-    await expect(page.locator('[data-fs-note]')).toHaveCount(1);
-});
-
 test('the file browser tints its box over a wallpaper and its form paints nothing', async ({
     page
 }) => {
@@ -410,9 +321,9 @@ test('the first bookmark is made from the form, and an HTML one is one tab from 
     await expect(page.locator(`nav button[data-bookmark="${key}/page.html"]`)).toBeVisible();
     await expect(page.locator('[data-fs-bookmark="the spec page"]')).toBeVisible();
 
-    // The tree opens the page as a document, and the rail's bookmark on the same file activates that
-    // tab rather than opening a second one. What it is called then is the bookmark's own label, which
-    // is the state the activation carries.
+    // The tree opens the page as a document, and the rail's bookmark on the same file activates
+    // that tab rather than opening a second one. What it is called then is the bookmark's own
+    // label, which is the state the activation carries.
     await row(page, key).click();
     await row(page, key, 'page.html').click();
     const frame = page.locator(`iframe[src="/api/file/${key}/page.html"]`);
@@ -698,6 +609,46 @@ test("a row's controls appear on hover, and bookmark the file and open it in a k
     await expect(tab).not.toHaveAttribute('data-tab-preview', '');
 });
 
+// Revert: in ui/tree/TreeItem.svelte, leave the tooltip describing the button, which a tree never
+// focuses.
+// revert: src/lib/ui/tree/TreeItem.svelte:210-215 => <Tooltip text={title ?? ''} block>
+test("a tree row gives a screen reader its tooltip's words as its description", async ({
+    page
+}) => {
+    await boot(page);
+    await openView(page, 'files', t('views.files'));
+    const { key } = await nestedRoot(page);
+    await row(page, key).click();
+    const line = page.locator(`[data-fs-row="${key}:tool.py"]`);
+    await line.hover();
+    await line.getByRole('button', { name: t('files.row_bookmark'), exact: true }).click();
+    const mark = page.locator('[data-fs-bookmark="tool.py"] [role="treeitem"]');
+    await expect(mark).toHaveAccessibleDescription(
+        t('files.bookmark_open_title', `${key}/tool.py`)
+    );
+});
+
+// Revert: in ui/tree/TreeItem.svelte, drop the rule that draws a row's controls on a screen whose
+// pointer does not hover.
+// revert: src/lib/ui/tree/TreeItem.svelte:434 => opacity: 0;
+test("a row's controls are drawn on a screen that has no hover, with no pointer over them", async ({
+    browser
+}) => {
+    const context = await browser.newContext({ hasTouch: true, isMobile: true });
+    const page = await context.newPage();
+    try {
+        await boot(page);
+        await openView(page, 'files', t('views.files'));
+        const { key } = await nestedRoot(page);
+        await row(page, key).click();
+        const controls = page.locator(`[data-fs-row="${key}:tool.py"] .actions`);
+        expect(await page.evaluate(() => matchMedia('(hover: none)').matches)).toBe(true);
+        await expect.poll(() => controls.evaluate((el) => getComputedStyle(el).opacity)).toBe('1');
+    } finally {
+        await context.close();
+    }
+});
+
 // Revert: draw `.guide` with `border-left-color: var(--line)` whatever the tree's state is.
 test('the indent guides are drawn while the tree is hovered and not while it is left alone', async ({
     page
@@ -717,8 +668,8 @@ test('the indent guides are drawn while the tree is hovered and not while it is 
     await expect.poll(alpha).toBeGreaterThan(0);
 });
 
-// Revert: set `height: var(--tree-row, 24px)`, draw `.item.selected` in the accent's text colour, or
-// leave the row's height or indent unscaled by --text-scale.
+// Revert: set `--tree-row` in themes/tokens.css to 24px, draw `.item.selected` in the accent's text
+// colour, or leave the row's height or indent unscaled by --text-scale.
 test('a row is 22 pixels at 13-pixel names under 11-pixel heads, a selected row reads on its tint, and the row grows with the text size', async ({
     page
 }) => {
@@ -835,7 +786,7 @@ test('a second file of the same name is bookmarked under its path from the row s
     await expect(page.locator('[data-fs-bookmark="README.md"]')).toHaveCount(0);
 });
 
-// revert: src/lib/state/sources/fs.svelte.ts:652 => answered(BOOKMARKS, at);
+// revert: src/lib/state/sources/fs.svelte.ts:663 => answered(BOOKMARKS, at);
 test('a bookmarks read that failed is asked again by its own control, without a reload', async ({
     page
 }) => {

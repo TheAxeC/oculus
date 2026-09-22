@@ -34,7 +34,8 @@ describe('the funding view', () => {
             const mixed = html('funding');
             expect(mixed.match(/data-project-group="work"/g)).toHaveLength(1);
             expect(mixed).toMatch(/data-project-group="work"[\s\S]*?class="count">2<\/strong>/);
-            // an active and a manuscript project fold into the one work group, so no manuscript group is drawn
+            // an active and a manuscript project fold into the one work group, so no manuscript
+            // group is drawn
             expect(mixed).not.toContain('data-project-group="manuscript"');
         } finally {
             receive({ channel: 'portfolio', version: 1, payload: snapshot() });

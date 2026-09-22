@@ -23,7 +23,7 @@ const driver = (close: () => void = noop): TerminalDriver => ({
 });
 
 describe('ServerContext', () => {
-    // revert: src/lib/server/core/context.ts:306 => delete
+    // revert: src/lib/server/core/context.ts:314 => delete
     it('builds and closes each process-owned object once and carries its token', () => {
         const closes = Array.from({ length: 10 }, () => vi.fn());
         const hub = new Hub();
@@ -115,7 +115,7 @@ describe('ServerContext', () => {
             watchUsage
         });
 
-        // revert: src/lib/server/core/context.ts:169 => delete
+        // revert: src/lib/server/core/context.ts:177 => delete
         expect(merge).toHaveBeenCalledWith('files', expect.any(Function));
         expect(context.token).toBe('context-token');
         for (const built of [
@@ -140,8 +140,9 @@ describe('ServerContext', () => {
         // on the `git` channel whether or not a session names it, which is what the deposit and the
         // pin controls read.
         expect(watchGit.mock.calls[0][1]).toMatchObject({ always: '/hub' });
-        // The roots the git channel carries are read at the call and not off the copy taken here, so
-        // a root added to sources.yml while the server runs is watched when the config push follows.
+        // The roots the git channel carries are read at the call and not off the copy taken here,
+        // so a root added to sources.yml while the server runs is watched when the config push
+        // follows.
         const read = loadConfig.mock.calls.length;
         const roots = (watchGit.mock.calls[0][1] as { roots: () => string[] }).roots();
         expect(loadConfig.mock.calls.length).toBeGreaterThan(read);
@@ -149,8 +150,8 @@ describe('ServerContext', () => {
         // One log-path map, two writers: the poller's prewarm fills in what a press has not asked
         // for yet, and the route's log action reads and writes the same object.
         expect(watchHpc.mock.calls[0][1].logPaths).toBe(context.hpcLogPaths);
-        // The calendar poller reads the credential folder the routes read, so the connect action and
-        // the poll are always looking at the same files.
+        // The calendar poller reads the credential folder the routes read, so the connect action
+        // and the poll are always looking at the same files.
         expect(watchCalendar.mock.calls[0][1].dir).toBe(context.calendarDir);
         // The mail poller reads the credential folder and the triage notes the routes read, for the
         // same reason.
@@ -166,7 +167,7 @@ describe('ServerContext', () => {
         for (const close of closes) expect(close).toHaveBeenCalledTimes(1);
     });
 
-    // revert: src/lib/server/core/context.ts:217 => onSessionsChange: undefined
+    // revert: src/lib/server/core/context.ts:225 => onSessionsChange: undefined
     it('keeps session rescan signals inside their owning context', () => {
         const rescans: (() => void)[] = [];
         const refreshes = [vi.fn(noopAsync), vi.fn(noopAsync)];

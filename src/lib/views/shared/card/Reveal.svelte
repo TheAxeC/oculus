@@ -1,7 +1,7 @@
 <script lang="ts">
-    // Layer 3, shared view partial. One wrapper around a card that may be the palette's destination:
-    // it scrolls that card to the middle, flashes it once, then tells the owning view to clear the
-    // reveal id from its instance state.
+    // Layer 3, shared view partial. One wrapper around a card that may be the palette's
+    // destination: it scrolls that card to the middle, flashes it once, then tells the owning view
+    // to clear the reveal id from its instance state.
 
     import type { Snippet } from 'svelte';
 

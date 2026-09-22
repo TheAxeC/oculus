@@ -12,8 +12,8 @@
     // edited: what a repository ignores is its owner's to decide.
     //
     // The checkout itself is not a row: it is not a worktree to remove, to merge back, or to open a
-    // diff of. The merge back is offered only while the repository has a branch checked out, since a
-    // detached HEAD has nothing to merge into.
+    // diff of. The merge back is offered only while the repository has a branch checked out, since
+    // a detached HEAD has nothing to merge into.
 
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
     import TreeSection from '$lib/ui/tree/TreeSection.svelte';

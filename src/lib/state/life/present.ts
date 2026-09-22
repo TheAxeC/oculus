@@ -1,5 +1,5 @@
-// Layer 2, client state, pure. The deck as data: the `deck:` map of config/present.yml read into the
-// typed Deck, and the ordered list of slides the Present view draws.
+// Layer 2, client state, pure. The deck as data: the `deck:` map of config/present.yml read into
+// the typed Deck, and the ordered list of slides the Present view draws.
 //
 // Which slides the deck places, under which keys and in which order, is data/helpers/deck.ts: the
 // write that saves a selection checks the keys it was sent against the same rule, and a second copy
@@ -94,7 +94,9 @@ export type PresentState = {
     overview: boolean;
 };
 
-/** One pane's own state out of whatever its instance holds, with the defaults for what is missing. */
+/**
+ * One pane's own state out of whatever its instance holds, with the defaults for what is missing.
+ */
 export function parsePresentState(value: unknown): PresentState {
     const held = fields(value);
     return { slide: str(held.slide) ?? '', overview: held.overview === true };

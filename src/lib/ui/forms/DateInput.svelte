@@ -1,8 +1,8 @@
 <script lang="ts">
     // Layer 3, primitive. One date. The browser's date control only ever holds a full ISO date, and
     // a manifest may hold something else in a date field, so a value that is not one is edited as
-    // text instead: showing a picker with nothing in it, over a value the file does hold, would look
-    // like the field was empty and would clear it on the next save.
+    // text instead: showing a picker with nothing in it, over a value the file does hold, would
+    // look like the field was empty and would clear it on the next save.
 
     type Props = {
         value: string;

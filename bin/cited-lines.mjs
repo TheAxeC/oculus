@@ -4,13 +4,13 @@
 // A report that cites a line by number is checked against the tree before it is sent: the citation
 // is read out of the report, the file is opened, and the line is printed beside it. A path the tree
 // does not hold, a number past the end of the file, a number below one, a range that runs backwards
-// or spans more than a screenful, and a number that lands on a line holding nothing or nothing but a
-// brace are printed as MISSING and make the command fail, which is the wrong-citation half of the
-// rule that a claim names what it was read from. A line with nothing to read on it is a miss because
-// a citation stands for a line a reader can read back, and a line number that has drifted by one
-// lands on the blank or the brace between two blocks as often as on a line of code.
+// or spans more than a screenful, and a number that lands on a line holding nothing or nothing but
+// a brace are printed as MISSING and make the command fail, which is the wrong-citation half of the
+// rule that a claim names what it was read from. A line with nothing to read on it is a miss
+// because a citation stands for a line a reader can read back, and a line number that has drifted
+// by one lands on the blank or the brace between two blocks as often as on a line of code.
 //
-// A citation may name one line (`src/lib/server/git/git.ts:345`), a range (`:138-144`) or a list
+// A citation may name one line (`src/lib/server/git/git.ts:350`), a range (`:138-144`) or a list
 // (`:55,185,193`); every line named is printed. Usage:
 //
 //     node bin/cited-lines.mjs [--root <dir>] <report>
@@ -99,7 +99,9 @@ export function citations(text) {
     return found;
 }
 
-/** Whether a cited path stays under the root, so a citation names a file of the tree and no other. */
+/**
+ * Whether a cited path stays under the root, so a citation names a file of the tree and no other.
+ */
 function under(root, path) {
     const base = resolve(root);
     const held = resolve(path);

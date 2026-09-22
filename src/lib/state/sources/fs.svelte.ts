@@ -1,14 +1,14 @@
-// Layer 2, client state. What the file browser fetched: one directory's entries, the workspaces, one
-// file's text, the reader's own bookmarks and their scratch notes.
+// Layer 2, client state. What the file browser fetched: one directory's entries, the workspaces,
+// one file's text, the reader's own bookmarks and their scratch notes.
 //
 // It is state/system/docs.svelte.ts's shape over the reads this endpoint offers, and for the same
 // reason: none of them is in the snapshot, so the first call asks the server and every later call
 // reads what is held. The request is scheduled on a microtask rather than run inside the call, so
 // reading this from a $derived never writes state while a derived is running.
 //
-// Nothing polls. A write moves the round on, which is what makes the next render ask
-// again for everything held; a bookmark is written through /api/write rather than here, since it is
-// a collection entry, so that write moves the round on too; what is held stays drawn until the fresh
+// Nothing polls. A write moves the round on, which is what makes the next render ask again for
+// everything held; a bookmark is written through /api/write rather than here, since it is a
+// collection entry, so that write moves the round on too; what is held stays drawn until the fresh
 // answer lands, so a tree does not blink out on every add or removal, and an answer from an earlier
 // round is dropped rather than written in over the newer request's. A folder whose contents changed
 // on disk is re-read by closing it and opening it, since a poller over an open tree would read the
@@ -16,10 +16,10 @@
 //
 // A read of the workspaces, the bookmarks or the notes that ended in an error holds nothing: the
 // round is written by the answer that arrived and not by the one that failed, so the next ask reads
-// again and a sentence saying why goes as soon as one succeeds. What keeps that from being a request
-// per frame while the endpoint is down is the failed round, remembered per key: the ask of the round
-// that failed is made once, and asking again is what clears it. The view's own control clears it,
-// and so does mounting the view, which is the reader coming back to it.
+// again and a sentence saying why goes as soon as one succeeds. What keeps that from being a
+// request per frame while the endpoint is down is the failed round, remembered per key: the ask of
+// the round that failed is made once, and asking again is what clears it. The view's own control
+// clears it, and so does mounting the view, which is the reader coming back to it.
 //
 // The bookmarks file is also read again when it changes on the disk. The `files` channel carries a
 // message for it, published by the watcher over ~/.oculus, and the round the bookmarks belong to is
@@ -36,11 +36,11 @@
 // same folder in the same round are one request.
 //
 // The bookmark forms of every file browser the layout holds are read on each bookmarks answer, and
-// the form over a bookmark the file no longer holds is closed there and then. It is read here rather
-// than in the view because a pane mounts only the tab it shows: a file browser on a page the reader
-// is not looking at draws nothing, and its tab would go on asking about text over a bookmark that is
-// gone. What a file browser's forms are and how one is moved come from the client's state, handed in
-// as BookmarkForms, so this module knows the rule's occasion and not the layout.
+// the form over a bookmark the file no longer holds is closed there and then. It is read here
+// rather than in the view because a pane mounts only the tab it shows: a file browser on a page the
+// reader is not looking at draws nothing, and its tab would go on asking about text over a bookmark
+// that is gone. What a file browser's forms are and how one is moved come from the client's state,
+// handed in as BookmarkForms, so this module knows the rule's occasion and not the layout.
 //
 // The file text is read through the file route and stopped at the window's limit: the reader is
 // cancelled once the limit is in, so a forty-megabyte file costs two megabytes of transfer and not
@@ -77,15 +77,17 @@ export { fileBytesUrl, FS_PATH, listingUrl, readCapped } from './fs-transport.ts
 
 /**
  * What the bookmark forms of the file browsers are read and moved through. The layout, the instance
- * records and the form drafts are all the client's, and this store is given the three reads it needs
- * rather than any of those stores.
+ * records and the form drafts are all the client's, and this store is given the three reads it
+ * needs rather than any of those stores.
  */
 export type BookmarkForms = {
     /** Every file browser the layout holds, mounted or not, with the forms each one has open. */
     browsers: () => { id: string; forms: FilesForms }[];
     /** Whether a save from one browser's bookmark form over that bookmark is out. */
     saving: (owner: string, editing: string) => boolean;
-    /** Move one browser to other forms, forgetting the draft of the bookmark form the move closes. */
+    /**
+     * Move one browser to other forms, forgetting the draft of the bookmark form the move closes.
+     */
     shift: (owner: string, now: FilesForms, next: FilesForms) => void;
 };
 
@@ -176,14 +178,15 @@ export type FsStore = {
     entries: (root: string, path: string) => FsEntry[];
     /**
      * The entries of one folder as far as they have been read, and null for a folder never read. It
-     * asks the server for nothing, which is what lets a filter look through every folder already read
-     * without reading the rest of the root.
+     * asks the server for nothing, which is what lets a filter look through every folder already
+     * read without reading the rest of the root.
      */
     heldEntries: (root: string, path: string) => FsEntry[] | null;
     /**
-     * One directory once it is answered: what is held for the round without a request, or the answer
-     * of the one request the round makes for it, shared with every other caller asking meanwhile.
-     * It is what a caller that has to know what a folder holds before its next step awaits.
+     * One directory once it is answered: what is held for the round without a request, or the
+     * answer of the one request the round makes for it, shared with every other caller asking
+     * meanwhile. It is what a caller that has to know what a folder holds before its next step
+     * awaits.
      */
     readListing: (root: string, path: string) => Promise<Listing>;
     workspaces: () => WorkspacesState;
@@ -196,7 +199,9 @@ export type FsStore = {
     readFileKind: (root: string, path: string) => Promise<FileType>;
     /** The same answer as far as it is known now, and null while the bytes are still being read. */
     heldFileKind: (root: string, path: string) => FileType | null;
-    /** Ask again for what is held under one root, at the version of whatever said it had changed. */
+    /**
+     * Ask again for what is held under one root, at the version of whatever said it had changed.
+     */
     refresh: (root: string, version: number) => void;
     /**
      * How many times one file has been said to have been written since the page opened. It rides on
@@ -276,8 +281,9 @@ export function createFs(
 
     /**
      * The round a read of one of the three whole-file keys failed in. A failure writes no round, so
-     * the next round asks again on its own; this says that the ask of the round that failed has been
-     * made, which is what keeps a page whose endpoint is down from sending a request per frame.
+     * the next round asks again on its own; this says that the ask of the round that failed has
+     * been made, which is what keeps a page whose endpoint is down from sending a request per
+     * frame.
      *
      * A rune because the getters read it: clearing a key is what makes the view ask again, and the
      * control that offers the reader a second read clears it.
@@ -292,8 +298,8 @@ export function createFs(
 
     /**
      * Which round of answers is current, and which round of notes. A write moves one of them on and
-     * what that round holds is asked again; they are runes because every read of them happens inside
-     * a derived, which has to run again when one moves.
+     * what that round holds is asked again; they are runes because every read of them happens
+     * inside a derived, which has to run again when one moves.
      *
      * The notes have a round of their own because a note is saved while it is typed: on the one
      * round a save would ask for every open listing and every open file's text again, which is
@@ -413,7 +419,9 @@ export function createFs(
         return at === clock.round;
     }
 
-    /** One directory. The first call for a folder asks the server; later calls read what is held. */
+    /**
+     * One directory. The first call for a folder asks the server; later calls read what is held.
+     */
     function listing(root: string, path: string): Listing {
         if (root === '') return { entries: [], error: '', loading: false };
         const key = treeKey(root, path);
@@ -436,10 +444,10 @@ export function createFs(
     }
 
     /**
-     * One directory, awaited. A folder held for the round is answered as held; otherwise the round's
-     * request is made or joined, and its answer is what comes back even when a newer round has begun
-     * meanwhile and the store did not keep it. Where there is no page nothing is asked, and the
-     * answer says so.
+     * One directory, awaited. A folder held for the round is answered as held; otherwise the
+     * round's request is made or joined, and its answer is what comes back even when a newer round
+     * has begun meanwhile and the store did not keep it. Where there is no page nothing is asked,
+     * and the answer says so.
      */
     async function readListing(root: string, path: string): Promise<Listing> {
         if (root === '') return { entries: [], error: '', loading: false };
@@ -460,7 +468,10 @@ export function createFs(
         return listings[treeKey(root, path)]?.entries ?? null;
     }
 
-    /** Ask for one directory and hold the answer when its round is still current; return it either way. */
+    /**
+     * Ask for one directory and hold the answer when its round is still current; return it either
+     * way.
+     */
     async function loadListing(root: string, path: string, at: number): Promise<Listing> {
         const key = treeKey(root, path);
         let answer: Listing;
@@ -584,8 +595,8 @@ export function createFs(
      * all is a download, which is what the file view draws for it.
      *
      * The answer is held for the round, and the asks made while one read is in flight are that one
-     * read: a double click opens a row three times and the tab it opens asks once more, which is one
-     * request between them and none at all on the next click.
+     * read: a double click opens a row three times and the tab it opens asks once more, which is
+     * one request between them and none at all on the next click.
      */
     async function readFileKind(root: string, path: string): Promise<FileType> {
         const named = typeOfFile(path);
@@ -723,7 +734,9 @@ export function createFs(
         }
     }
 
-    /** One note's own text, asked for once a notes round. A note that was deleted is not asked for. */
+    /**
+     * One note's own text, asked for once a notes round. A note that was deleted is not asked for.
+     */
     function note(id: string): NoteState {
         if (id === '') return { ...NO_NOTE, loading: false };
         const found = notes[id];
@@ -776,8 +789,8 @@ export function createFs(
     /**
      * Ask the server again for everything held: the workspaces, the bookmarks, every listing, every
      * file text and the notes. What is held keeps being drawn until each new answer lands, and an
-     * answer from the round before this one is dropped, so a listing fetched before a removal cannot
-     * reappear after it.
+     * answer from the round before this one is dropped, so a listing fetched before a removal
+     * cannot reappear after it.
      */
     function invalidate(): void {
         clock.round += 1;
@@ -790,11 +803,11 @@ export function createFs(
     }
 
     /**
-     * Ask again for the listings and the texts held under one root, and for nothing under any other.
-     * The version is whatever said the root had changed, the config channel's for the engine's own
-     * folder; a version already refreshed at writes the same value and asks for nothing again. The
-     * version never moves backwards: the round is the shared round plus this one, and a lower value
-     * would let an older answer in over a newer one.
+     * Ask again for the listings and the texts held under one root, and for nothing under any
+     * other. The version is whatever said the root had changed, the config channel's for the
+     * engine's own folder; a version already refreshed at writes the same value and asks for
+     * nothing again. The version never moves backwards: the round is the shared round plus this
+     * one, and a lower value would let an older answer in over a newer one.
      */
     function refresh(root: string, version: number): void {
         if (root === '' || refreshed[root] === version) return;
@@ -840,7 +853,9 @@ export function createFs(
         return answer;
     }
 
-    /** One collection write on the bookmarks file, which is /api/write rather than this endpoint. */
+    /**
+     * One collection write on the bookmarks file, which is /api/write rather than this endpoint.
+     */
     async function bookmarkWrite(fields: Record<string, unknown>): Promise<WriteAnswer> {
         const answer = await writes.send(fields);
         if (answer.ok) invalidate();

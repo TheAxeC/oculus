@@ -1,4 +1,5 @@
-// Layer 3, view support. Schedule a terminal option update and wait one more animation frame before fitting and reporting its measured rows and columns.
+// Layer 3, view support. Schedule a terminal option update and wait one more animation frame before
+// fitting and reporting its measured rows and columns.
 
 export type Frame = (run: () => void) => number;
 export type CancelFrame = (frame: number) => void;

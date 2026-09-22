@@ -3,8 +3,9 @@
     // themselves, a box that filters the rest, and the keyboard through them. It is the control the
     // relation fields need, where the list is a registry of a hundred keys and nobody scrolls it.
     //
-    // `free` is what tells a field of names from a field of keys: with it, what is typed is a choice
-    // of its own, which is how `authors` and `waiting-on` take a person the registries do not hold.
+    // `free` is what tells a field of names from a field of keys: with it, what is typed is a
+    // choice of its own, which is how `authors` and `waiting-on` take a person the registries do
+    // not hold.
 
     import Tag from '../controls/Tag.svelte';
     import ToolButton from '../controls/ToolButton.svelte';

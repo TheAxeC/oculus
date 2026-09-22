@@ -1,4 +1,5 @@
-// Layer 2, server. The log path of many finished jobs at once, resolved from listings so the first press on a log is as fast as the second.
+// Layer 2, server. The log path of many finished jobs at once, resolved from listings so the first
+// press on a log is as fast as the second.
 import { safePath, validId } from './actions.ts';
 import { dateFrom } from './parse.ts';
 import { run, type RunResult, type Runner } from './ssh.ts';
@@ -22,7 +23,9 @@ const RUNG_SECS = 15;
 const SEC_WD = '@@oculus:wd=';
 const SEC_RUNG = '@@oculus:rung@@';
 
-/** Milliseconds the working-directory query is given: one sacct over the same window the poll reads. */
+/**
+ * Milliseconds the working-directory query is given: one sacct over the same window the poll reads.
+ */
 const SACCT_TIMEOUT_MS = 30000;
 
 /**
@@ -40,10 +43,16 @@ const LISTING_SLACK_MS = 15000;
  */
 export const PREWARM_DIRS = 4;
 
-/** How many resolved paths are kept before the map starts again, so a long run cannot grow it without end. */
+/**
+ * How many resolved paths are kept before the map starts again, so a long run cannot grow it
+ * without end.
+ */
 export const PREWARM_MAX = 500;
 
-/** The states sacct gives a job that will write to its log no more, which is all the prewarm may resolve. */
+/**
+ * The states sacct gives a job that will write to its log no more, which is all the prewarm may
+ * resolve.
+ */
 const FINISHED_STATES = [
     'COMPLETED',
     'FAILED',
@@ -66,12 +75,18 @@ export function isFinished(state: string): boolean {
     return FINISHED_STATES.includes(state.split(' ')[0]);
 }
 
-/** Milliseconds the listing of this many directories is given, all of their rungs' budgets and the round trip. */
+/**
+ * Milliseconds the listing of this many directories is given, all of their rungs' budgets and the
+ * round trip.
+ */
 export function listingTimeout(dirs: number): number {
     return dirs * PREWARM_RUNGS.length * RUNG_SECS * 1000 + LISTING_SLACK_MS;
 }
 
-/** The working directories to list, as one remote script with a marked section per directory and rung. */
+/**
+ * The working directories to list, as one remote script with a marked section per directory and
+ * rung.
+ */
 export function listingCommand(dirs: string[]): string {
     const parts: string[] = [];
     for (const dir of dirs) {
@@ -173,7 +188,8 @@ export async function prewarmLogs(
     for (const line of listed.stdout.split('\n')) {
         const fields = line.trim().split('|');
         if (fields.length >= 2 && wanted.has(fields[0])) {
-            // The same gate a remembered path passes: absolute, and nothing a quoted shell word breaks out of.
+            // The same gate a remembered path passes: absolute, and nothing a quoted shell word
+            // breaks out of.
             const dir = safePath(fields[1]);
             if (dir) dirOf.set(fields[0], dir);
         }
@@ -196,7 +212,8 @@ export async function prewarmLogs(
     } catch {
         return found;
     }
-    // A rung that ran out of its budget leaves the sections before it intact, so what did answer is read.
+    // A rung that ran out of its budget leaves the sections before it intact, so what did answer is
+    // read.
     const perDir = parseListing(listing.stdout);
     for (const id of want) {
         const dir = dirOf.get(id);

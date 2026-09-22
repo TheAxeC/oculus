@@ -2,15 +2,15 @@
 // each click moves the strip to the next tab's edge, the wheel over the strip scrolls it sideways,
 // and the tab that becomes active is scrolled into view. A narrow window makes seven tabs overflow.
 //
-// And how the strips and the handles are drawn, which is an editor's: a tab's height against the
-// 35 px of VS Code's editor tabs grown with the text, the gap under the shown tab and the line past
+// And how the strips and the handles are drawn, which is an editor's: a tab's height against the 35
+// px of VS Code's editor tabs grown with the text, the gap under the shown tab and the line past
 // the last, the muted text of the others, the accent line over the shown tab of the active pane
 // alone, the close control on the shown tab and under the pointer, the dot and the spoken name of a
 // tab or a page holding unsaved text, the pane header's split button, the strip's buttons as one
-// bare icon box in a plain and a terminal theme, the page strip's tabs in the same look at their own
-// height and surface, and a handle hidden at rest, drawn after a rest of the pointer and at once in
-// a drag or under the keyboard, caught on the panes' borders and never inside them, in a split and
-// in the Source view.
+// bare icon box in a plain and a terminal theme, the page strip's tabs in the same look at their
+// own height and surface, and a handle hidden at rest, drawn after a rest of the pointer and at
+// once in a drag or under the keyboard, caught on the panes' borders and never inside them, in a
+// split and in the Source view.
 //
 // Nothing here writes to the hub; the layout and a typed draft live in the browser's own storage.
 
@@ -21,7 +21,9 @@ import { t, tabNamed } from '../helpers/words.ts';
 
 test.use({ viewport: { width: 720, height: 640 } });
 
-/** The tab strip of the page's one pane: the tablist holding the Status tab, and the strip round it. */
+/**
+ * The tab strip of the page's one pane: the tablist holding the Status tab, and the strip round it.
+ */
 function mainStrip(page: Page): { list: Locator; strip: Locator } {
     const list = page.locator('[role="tablist"]', {
         has: page.getByRole('tab', { name: t('views.status') })
@@ -85,7 +87,10 @@ test('the scroll controls appear on overflow, move to the next tab start, and fo
     await expect(left).toBeDisabled();
 });
 
-/** A colour value, such as `var(--accent)`, as the browser computes it, read off a probe painted with it. */
+/**
+ * A colour value, such as `var(--accent)`, as the browser computes it, read off a probe painted
+ * with it.
+ */
 async function colourOf(page: Page, value: string): Promise<string> {
     return page.evaluate((css) => {
         const probe = document.createElement('span');
@@ -109,7 +114,10 @@ type Look = {
     close: string;
 };
 
-/** What one tab wrapper draws: its height, its top and bottom borders, its text and its close control. */
+/**
+ * What one tab wrapper draws: its height, its top and bottom borders, its text and its close
+ * control.
+ */
 async function lookOf(tab: Locator): Promise<Look> {
     return tab.evaluate((node) => {
         const style = getComputedStyle(node);
@@ -278,7 +286,7 @@ test.describe('the look', () => {
     // Revert: drop `dirty: unsaved(instance.id)` from shell/panes/PaneView.svelte, set `dirty` to
     // false in shell/panes/PageStrip.svelte's tabOf, drop the tab face's `aria-label` or the
     // `.tab.dirty:not(:hover) .dot` rule from ui/tabs/TabFace.svelte.
-    // revert: src/lib/ui/tabs/TabFace.svelte:289 => display: none;
+    // revert: src/lib/ui/tabs/TabFace.svelte:290 => display: none;
     test('a tab or a page holding unsaved text shows a dot in the close control place until hovered, and says so in its name', async ({
         page
     }) => {
@@ -466,7 +474,8 @@ test.describe('the look', () => {
         expect(await surface(pages.locator('.strip'))).toBe(card);
         expect(await surface(page.locator('[data-pane] .strip').first())).toBe(ground);
 
-        // Over a wallpaper both strips paint through, and the page strip keeps a surface of its own.
+        // Over a wallpaper both strips paint through, and the page strip keeps a surface of its
+        // own.
         await theme(page, /mocha/);
         await expect(page.locator('.wallpaper')).toHaveCount(1);
         const pageOver = await surface(pages.locator('.strip'));
@@ -560,9 +569,9 @@ test.describe('the look', () => {
         const middle = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
         expect(box.height).toBe(6);
 
-        // The row of border above the gap and the row below it are the handle's; the pane body's own
-        // last row above it is not, and neither is the row under the lower pane's border. A hit test
-        // is read at whole pixels, so each probe names the row it starts.
+        // The row of border above the gap and the row below it are the handle's; the pane body's
+        // own last row above it is not, and neither is the row under the lower pane's border. A hit
+        // test is read at whole pixels, so each probe names the row it starts.
         const upper = await page
             .locator('[data-pane-body]')
             .first()
@@ -618,6 +627,48 @@ test.describe('the look', () => {
     });
 });
 
+// A pointer at a device pixel of a fractional ratio sits at a fraction of a CSS pixel, which the
+// whole-pixel probes of the look above never reach. At each ratio every device pixel column from
+// two CSS pixels before the left pane's edge to two after the right pane's is pointed at; the
+// handle is caught on every column of the two borders and on none of either pane. A column's
+// position is its index over the ratio, so no sum of fractions drifts across an edge.
+// revert: src/lib/ui/frame/Sash.svelte:135 => left: calc(-1 * var(--sash-reach));
+test("a split's handle is caught on the panes' borders alone at every device pixel", async ({
+    browser
+}) => {
+    const wrong: string[] = [];
+    for (const ratio of [1, 1.25, 1.5, 2, 3]) {
+        const context = await browser.newContext({ deviceScaleFactor: ratio });
+        const page = await context.newPage();
+        try {
+            await boot(page);
+            await openView(page, 'projects', t('views.projects'));
+            await splitRight(page, t('views.projects'));
+            const handle = page.getByRole('separator');
+            const box = await handle.boundingBox();
+            expect(box).not.toBeNull();
+            if (box === null) continue;
+            const y = box.y + box.height / 2;
+            const [before, after] = await page
+                .locator('[data-pane-body]')
+                .evaluateAll((all) => all.map((one) => one.getBoundingClientRect()));
+            const first = Math.round((before.right - 2) * ratio);
+            const last = Math.round((after.left + 2) * ratio);
+            for (let column = first; column <= last; column += 1) {
+                await page.mouse.move(column / ratio, y);
+                const caught = await handle.evaluate((node) => node.matches(':hover'));
+                const border = column >= before.right * ratio && column < after.left * ratio;
+                if (caught !== border) {
+                    wrong.push(`${ratio}: ${column / ratio} ${caught ? 'caught' : 'missed'}`);
+                }
+            }
+        } finally {
+            await context.close();
+        }
+    }
+    expect(wrong).toEqual([]);
+});
+
 // Where the rail opens a view, and nothing else, carries the accent line: one shown tab in the
 // window at a time, whichever page the reader is in, and the folded strip of a pane the rail would
 // open into rather than no mark at all.
@@ -655,7 +706,7 @@ test.describe('the one accent line', () => {
 
     // Answer with the active instance of the page the strip is on and the accent never follows the
     // reader into the page drawn inside it.
-    // revert: src/lib/state/workbench/layout.svelte.ts:418 => return instances.activeInstance();
+    // revert: src/lib/state/workbench/layout.svelte.ts:426 => return instances.activeInstance();
     test('one shown tab carries it, and it follows the reader into a page drawn inside another', async ({
         page
     }) => {
@@ -691,7 +742,7 @@ test.describe('the one accent line', () => {
 
         // A press that activates no tab moves the reader all the same: the empty end of a strip
         // changes nothing about the arrangement, and the mark follows it.
-        // revert: src/lib/state/workbench/layout.svelte.ts:204 => const where: Touched = { page: null };
+        // revert: src/lib/state/workbench/layout.svelte.ts:210 => const where: Touched = { page: null };
         // Hold where the reader is outside a rune and a press that changes no tree redraws nothing,
         // so the mark stays on the pane the reader has left.
         await pressStrip(host);
@@ -702,7 +753,7 @@ test.describe('the one accent line', () => {
 
     // Leave the folded strip unmarked and the window says nowhere while the rail still opens into
     // the pane the strip stands for.
-    // revert: src/lib/shell/panes/FoldedPane.svelte:51 => const marked = $derived(false);
+    // revert: src/lib/shell/panes/FoldedPane.svelte:52 => const marked = $derived(false);
     test('a folded pane the rail opens into carries it on its strip, and no shown tab does', async ({
         page
     }) => {
@@ -759,14 +810,14 @@ async function hitOf(list: Locator): Promise<{ inside: boolean; hit: string }> {
 }
 
 // A blurred surface is the stacking context of every list opened inside it, so a menu can be drawn
-// under what the surface's own siblings paint. Every opener the shell has is pressed here, under two
-// themes that carry a wallpaper and one that carries none.
+// under what the surface's own siblings paint. Every opener the shell has is pressed here, under
+// two themes that carry a wallpaper and one that carries none.
 test.describe('a menu list over what is beside it', () => {
     test.use({ viewport: { width: 1200, height: 900 } });
 
     // Leave the blurred strip at the depth of the pane body and the view's own blurred box, drawn
     // after the strip inside the pane, covers the list the pane menu opens.
-    // revert: src/lib/ui/tabs/Tabs.svelte:313 => z-index: auto;
+    // revert: src/lib/ui/tabs/Tabs.svelte:326 => z-index: auto;
     test('every opener draws a list that answers a press, in a pane, in the page strip, in the rail and on a card', async ({
         page
     }) => {

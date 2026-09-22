@@ -1,4 +1,5 @@
-// Layer 2, server. The Live HPC watcher publishes one complete state message, with quota refreshed on its slower independent cadence.
+// Layer 2, server. The Live HPC watcher publishes one complete state message, with quota refreshed
+// on its slower independent cadence.
 import type { HpcPayload } from '../../../data/model.ts';
 import type { Hub } from '../../core/channels.ts';
 import type { LogPaths } from './actions.ts';
@@ -44,12 +45,15 @@ const quotaCommand = `quota -s 2>/dev/null; echo "---df---"; df -h "$HOME" 2>/de
 
 /**
  * Minutes before the next attempt while the cluster is not answering. The regular cadence is tuned
- * for a cluster that answers; after a failure it is the time a reader sits in front of a stale page,
- * and a connect that fails costs one refused socket.
+ * for a cluster that answers; after a failure it is the time a reader sits in front of a stale
+ * page, and a connect that fails costs one refused socket.
  */
 export const RETRY_MIN = 2;
 
-/** The rows of one good answer, kept so a failed poll shows the last known queue rather than nothing. */
+/**
+ * The rows of one good answer, kept so a failed poll shows the last known queue rather than
+ * nothing.
+ */
 type Rows = Pick<HpcPayload, 'jobs' | 'running' | 'pending' | 'total' | 'recent' | 'sinfo'>;
 const NO_ROWS: Rows = { jobs: [], running: 0, pending: 0, total: 0, recent: [], sinfo: [] };
 
@@ -75,7 +79,8 @@ export function watchHpc(hub: Hub, options: HpcOptions): HpcWatcher {
     const stopped = (): boolean => closed;
     /**
      * A publish the cluster did not answer: the state word and its hint over the last good rows and
-     * the time they came from, so an off-VPN page shows what the queue was rather than an empty one.
+     * the time they came from, so an off-VPN page shows what the queue was rather than an empty
+     * one.
      */
     const degraded = (status: HpcPayload['status'], hint?: string): HpcPayload => ({
         status,
@@ -222,10 +227,10 @@ export function watchHpc(hub: Hub, options: HpcOptions): HpcWatcher {
     /**
      * The poll in flight, if there is one, and the one follow-up poll every refresh asked for
      * meanwhile shares. A refresh never opens a second connection beside the poll running, so the
-     * rows, the last good time and the cadence are always the newest poll's; it does get a poll that
-     * starts after the one in flight, since what asked for it (a cancel, the Refresh control) wants
-     * the cluster's state after its own action and not the answer of a poll begun before it. The
-     * prewarm is not on this gate, and a press never waits on one.
+     * rows, the last good time and the cadence are always the newest poll's; it does get a poll
+     * that starts after the one in flight, since what asked for it (a cancel, the Refresh control)
+     * wants the cluster's state after its own action and not the answer of a poll begun before it.
+     * The prewarm is not on this gate, and a press never waits on one.
      */
     let running: Promise<void> | null = null;
     let queued: Promise<void> | null = null;

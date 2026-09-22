@@ -214,7 +214,8 @@ describe('the changes view', () => {
         expect(body).toContain('title="not a git repository"');
     });
 
-    // Revert: draw the `none` section for `shape === 'none' || shape === 'failed'` in Changes.svelte.
+    // Revert: draw the `none` section for `shape === 'none' || shape === 'failed'` in
+    // Changes.svelte.
     it('says a repository whose read failed could not be read, with git own reason in the text', () => {
         const reason = 'fatal: .git/index: index file smaller than expected';
         otherGit(git({ error: reason }));
@@ -239,7 +240,8 @@ describe('the changes view', () => {
         const body = html(Changes);
         expect(said(body)).toEqual(['unplaced']);
         expect(body).toContain(catalog['sessions.ch_noworkspace']);
-        // the session names no folder at all, which is a different thing from a folder that is no repository
+        // the session names no folder at all, which is a different thing from a folder that is no
+        // repository
         expect(body).not.toContain(catalog['sessions.ch_norepo']);
         expect(repoShape('', null)).toBe('unplaced');
     });
@@ -294,7 +296,8 @@ describe('the changes view', () => {
         const body = html(Changes);
         expect(body).toContain(catalog['git.push']);
         expect(body).toContain(catalog['git.push_none']);
-        // the branch has no upstream, which is said in its own words rather than as a lookup still running
+        // the branch has no upstream, which is said in its own words rather than as a lookup still
+        // running
         expect(body).not.toContain(catalog['git.push_pending']);
         expect(body).toContain('disabled');
     });
@@ -309,7 +312,8 @@ describe('the changes view', () => {
         select('live-one');
         const body = html(Changes);
         expect(body).toContain(catalog['git.push_pending']);
-        // git has not answered yet, so the lookup is what is said rather than that there is no upstream
+        // git has not answered yet, so the lookup is what is said rather than that there is no
+        // upstream
         expect(body).not.toContain(catalog['git.push_none']);
         expect(body).toContain('disabled');
         receive({ channel: 'git', version: 4, payload: { [HUB]: HUB_GIT, '/other': other } });
@@ -341,7 +345,7 @@ describe('the branch-state sentence both git views draw', () => {
 
     // Revert: drop `state.detached` from views/shared/changes/branch-state.ts, or read `ahead` and
     // `behind` the other way round.
-    it('names detached, the distance ahead, the distance behind, and both distances in order', () => {
+    it('audits that names detached, the distance ahead, the distance behind, and both distances in order', () => {
         expect(branchState(git({ detached: true, upstream: false }))).toBe(detached);
         expect(branchState(git({ ahead: 3, upstream: true }))).toBe(ahead(3));
         expect(branchState(git({ behind: 2, upstream: true }))).toBe(behind(2));
@@ -355,7 +359,7 @@ describe('the branch-state sentence both git views draw', () => {
 
     // Revert: push `sessions.ch_insync` whenever `bits` is empty in
     // views/shared/changes/branch-state.ts.
-    it('says in step only for a branch the state gives an upstream', () => {
+    it('audits that says in step only for a branch the state gives an upstream', () => {
         expect(branchState(git({ upstream: true }))).toBe(insync);
         expect(branchState(git({ upstream: false }))).toBe('');
         expect(branchState(git({ upstream: null }))).toBe('');

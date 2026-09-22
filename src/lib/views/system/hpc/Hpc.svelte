@@ -15,7 +15,8 @@
 </script>
 
 <script lang="ts">
-    // Layer 3, view. Live HPC composes the socket state, explicit actions, capacity, queue, recent jobs, quota, and one selected log.
+    // Layer 3, view. Live HPC composes the socket state, explicit actions, capacity, queue, recent
+    // jobs, quota, and one selected log.
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Head from './Head.svelte';
     import Capacity from './Capacity.svelte';

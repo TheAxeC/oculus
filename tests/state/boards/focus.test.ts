@@ -353,7 +353,9 @@ describe('laneItems', () => {
 });
 
 describe('laneItems over every tier', () => {
-    /** The fixture's projects with a coauthor and an archive paper on a lane, and two that are not. */
+    /**
+     * The fixture's projects with a coauthor and an archive paper on a lane, and two that are not.
+     */
     function wider(): Project[] {
         const more = snapshot();
         const held = more.entities.projects;

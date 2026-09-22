@@ -10,9 +10,10 @@
     // other row is a folder or a file, and a file row carries its star and its new-tab control. The
     // controls that change the workspace are the view's toolbar, since they belong to no one root.
     //
-    // A file row has two speeds: one click opens it as the pane's preview tab, which the next single
-    // click replaces, and a double click opens it to keep. The two clicks of a double click open the
-    // same file twice as a preview first, which is the same tab, so nothing is left behind.
+    // A file row has two speeds: one click opens it as the pane's preview tab, which the next
+    // single click replaces, and a double click opens it to keep. The two clicks of a double click
+    // open the same file twice as a preview first, which is the same tab, so nothing is left
+    // behind.
     //
     // The tree is one stop of the focus order through ui/tree/TreeView.svelte, and the stop is the
     // selected row, which is the instance's, so it is the same row when the tab comes back. A key

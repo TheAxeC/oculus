@@ -1,10 +1,11 @@
 <script lang="ts">
     // Layer 3, view partial. The agenda: one heading per day that has events, each event one line.
     //
-    // A line is its time or the all-day word, its title, the calendar it is in and the account label as
-    // a tag, its place, and the control that opens it at the provider. A cancelled event is drawn
-    // struck through and a tentative one is marked, since both are still on the calendar and a reader
-    // deciding what the day holds needs to see them and to see that they are not settled.
+    // A line is its time or the all-day word, its title, the calendar it is in and the account
+    // label as a tag, its place, and the control that opens it at the provider. A cancelled event
+    // is drawn struck through and a tentative one is marked, since both are still on the calendar
+    // and a reader deciding what the day holds needs to see them and to see that they are not
+    // settled.
 
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';

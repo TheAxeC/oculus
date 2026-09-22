@@ -1,8 +1,8 @@
 // Layer 2, server. One account's Gmail plate, and the two writes the Inbox view can make on it.
 //
 // Four calls per round: one thread listing per plate signal, then one metadata read per candidate.
-// The metadata read asks for the headers alone, so no message body is ever fetched; what the payload
-// carries of a message is the thread snippet Gmail puts in its own list.
+// The metadata read asks for the headers alone, so no message body is ever fetched; what the
+// payload carries of a message is the thread snippet Gmail puts in its own list.
 //
 // The two writes are a reply on the thread and an archive. A reply is one `messages/send` of a raw
 // RFC 2822 message carrying the thread's own `In-Reply-To` and `References`, so the answer lands in
@@ -122,7 +122,9 @@ export async function readGoogleMail(args: MailReadArgs): Promise<Candidate[]> {
     return candidates;
 }
 
-/** A subject that already says it is an answer keeps its own words; one that does not gains them. */
+/**
+ * A subject that already says it is an answer keeps its own words; one that does not gains them.
+ */
 function replySubject(subject: string): string {
     return /^\s*re\s*:/i.test(subject) ? subject : `Re: ${subject}`;
 }

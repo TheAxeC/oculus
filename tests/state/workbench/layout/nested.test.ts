@@ -3,7 +3,8 @@
 // layout.test.ts and the page list is pages.test.ts; what is here is what nesting adds to both.
 //
 // Nothing here touches localStorage or the DOM: the pure half takes hand-built pages and the store
-// takes the storage it is given. The catalog is installed because the store names the page it makes.
+// takes the storage it is given. The catalog is installed because the store names the page it
+// makes.
 
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
@@ -68,7 +69,9 @@ function flat(): Pages {
     };
 }
 
-/** Three pages: one holding a leaf of the second, the second a leaf of the third, the third bare. */
+/**
+ * Three pages: one holding a leaf of the second, the second a leaf of the third, the third bare.
+ */
 function chain(): Pages {
     return {
         pages: [
@@ -322,6 +325,14 @@ describe('the store over nested pages', () => {
         expect(store.instanceLayoutState('a')).toEqual({ cursor: 'card-1' });
     });
 
+    it('names the view of a tab on whichever page holds it, and none for a tab no page holds', () => {
+        // revert: src/lib/state/workbench/layout/instances.ts:88 => return undefined;
+        const store = load(chain());
+        store.moveInstanceToPage('a', 'three');
+        expect(store.instanceView('a')).toBe('projects');
+        expect(store.instanceView('no-such-tab')).toBeUndefined();
+    });
+
     it('takes a tab out of whichever page holds it when one is dragged into a nested pane', () => {
         const store = load(chain());
         store.transferInstance('a', [], 0, 'three');
@@ -441,7 +452,9 @@ describe('the store over nested pages', () => {
 });
 
 describe('one drawing of a page on a screen', () => {
-    /** Two pages that both draw the third: the first is the screen, the second a page it may show. */
+    /**
+     * Two pages that both draw the third: the first is the screen, the second a page it may show.
+     */
     function shared(): Pages {
         return {
             pages: [

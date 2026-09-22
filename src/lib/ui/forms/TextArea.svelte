@@ -14,9 +14,9 @@
         /** Browser spelling support, off for source code. */
         spellcheck?: boolean;
         /**
-         * A key pressed in the box, for a caller where a key means something other than a character:
-         * the composer sends on Enter and recalls what it sent on the up arrow. The caller decides
-         * whether the key still types, since only it knows.
+         * A key pressed in the box, for a caller where a key means something other than a
+         * character: the composer sends on Enter and recalls what it sent on the up arrow. The
+         * caller decides whether the key still types, since only it knows.
          */
         onkeydown?: (event: KeyboardEvent) => void;
         /** The caller may keep a visual mirror aligned with this field. */

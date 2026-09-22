@@ -13,7 +13,10 @@ import type { GitBranch, GitCommit, GitWorktree } from '../../data/model.ts';
 /** The branch listing's format: the name, its upstream and the marker on the checked-out one. */
 export const BRANCH_FORMAT = '--format=%(refname:short)%09%(upstream:short)%09%(HEAD)';
 
-/** The log's format: the hash, the abbreviated hash, the subject and the author date, unit separated. */
+/**
+ * The log's format: the hash, the abbreviated hash, the subject and the author date, unit
+ * separated.
+ */
 export const LOG_FORMAT = '--format=%H%x1f%h%x1f%s%x1f%aI';
 
 /** The field separator of LOG_FORMAT, which no field of it can hold. */

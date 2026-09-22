@@ -25,7 +25,10 @@ const OSASCRIPT = '/usr/bin/osascript';
 const NOTIFY_TIMEOUT_MS = 2000;
 const APP_TITLE = 'oculus';
 
-/** The two hook_event_name values this route understands; anything else answers 200 and records nothing. */
+/**
+ * The two hook_event_name values this route understands; anything else answers 200 and records
+ * nothing.
+ */
 const EVENT_NAMES: Record<string, HookEvent['event']> = {
     Notification: 'notification',
     Stop: 'stop'
@@ -118,7 +121,10 @@ export function notifyConfig(config: Record<string, unknown>): NotifyConfig {
     return { enabled, events, quietSeconds };
 }
 
-/** Which config key an event pushes under: the notification_type for a Notification, "stop" for a Stop. */
+/**
+ * Which config key an event pushes under: the notification_type for a Notification, "stop" for a
+ * Stop.
+ */
 function eventKey(event: HookEvent): string {
     return event.event === 'stop' ? 'stop' : (event.kind ?? '');
 }
@@ -128,7 +134,10 @@ export function escapeAppleScript(text: string): string {
     return text.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
 }
 
-/** The `execFile` shape notify() needs; node:child_process's own signature, narrowed to what is used. */
+/**
+ * The `execFile` shape notify() needs; node:child_process's own signature, narrowed to what is
+ * used.
+ */
 export type ExecFile = (
     file: string,
     args: string[],
@@ -174,7 +183,9 @@ function logFirstPayload(logged: Set<string>, name: string, body: unknown): void
     console.error(`hooks: first ${name} payload: ${JSON.stringify(body)}`);
 }
 
-/** What handleHookRequest needs: where events are kept, the real Hub when one is bound, and config. */
+/**
+ * What handleHookRequest needs: where events are kept, the real Hub when one is bound, and config.
+ */
 export type HookTarget = {
     store: HookStore;
     hub: HubLike | null;
@@ -186,7 +197,9 @@ export type HookTarget = {
     stopMessage?: string;
     exec?: ExecFile;
     now?: () => number;
-    /** The session's record, for the notification's subtitle; null when the route has none to offer. */
+    /**
+     * The session's record, for the notification's subtitle; null when the route has none to offer.
+     */
     recordFor?: (session: string) => SessionRecord | null;
 };
 

@@ -1,4 +1,5 @@
-// Layer 2, state tests. Collection dates, configured colours and manifest lag are derived solely from arguments, without installing a vocabulary or using a browser.
+// Layer 2, state tests. Collection dates, configured colours and manifest lag are derived solely
+// from arguments, without installing a vocabulary or using a browser.
 
 import { describe, expect, it } from 'vitest';
 import {

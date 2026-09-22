@@ -83,7 +83,10 @@ export function entry(index: number, title: string, fields: Record<string, unkno
     return { id: title, title, fields: { title, ...fields }, file: FILE, index };
 }
 
-/** Three entries in file order: one of everything, one with a field the schema does not name, one bare. */
+/**
+ * Three entries in file order: one of everything, one with a field the schema does not name, one
+ * bare.
+ */
 export const ENTRIES: Entry[] = [
     entry(0, 'A talk', {
         sub: 'the subtitle',

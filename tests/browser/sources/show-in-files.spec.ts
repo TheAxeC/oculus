@@ -1,15 +1,15 @@
-// Show in Files in Chrome: the control on a project card, on a collection card whose `link` is a path
-// of the hub, and on a person's supervision folder opens the Files tab of the page with the
-// path selected, the folders above it open and its row in view; a path that is not there selects the
-// nearest folder on its way and the view says so; a maximised pane is restored and the page's Files tab
-// used; an ask made while the roots cannot be read says so at once; and a read of
-// the folders on the way that lands after a later ask, or after the Files tab was closed, writes
+// Show in Files in Chrome: the control on a project card, on a collection card whose `link` is a
+// path of the hub, and on a person's supervision folder opens the Files tab of the page with the
+// path selected, the folders above it open and its row in view; a path that is not there selects
+// the nearest folder on its way and the view says so; a maximised pane is restored and the page's
+// Files tab used; an ask made while the roots cannot be read says so at once; and a read of the
+// folders on the way that lands after a later ask, or after the Files tab was closed, writes
 // nothing.
 //
 // The folders on the way are real listings of the run's copy of demo/, read through /api/fs. The
-// Funding and people files are given path values for their cases and put back before each case ends.
-// A read is held back by a route on its one listing address, released by the case once the next step
-// is taken.
+// Funding and people files are given path values for their cases and put back before each case
+// ends. A read is held back by a route on its one listing address, released by the case once the
+// next step is taken.
 
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { row } from '../helpers/files.ts';
@@ -52,6 +52,62 @@ async function press(page: Page, card: Locator, action: string, label: string): 
     await card.locator('[data-action-more]').getByRole('button').first().click();
     await page.getByRole('menuitem', { name: label, exact: true }).click();
 }
+
+// Revert: in views/sources/files/tree/ShowPath.svelte, scroll the row into view and leave the focus
+// on the control that asked.
+// revert: src/lib/views/sources/files/tree/ShowPath.svelte:102 => void item;
+test('a Show in Files pressed from the keyboard puts the keyboard on the row it shows', async ({
+    page
+}) => {
+    await boot(page);
+    await openView(page, 'projects', t('views.projects'));
+    const card = projectCard(page, BANDITS);
+    await card.locator('.title button').first().focus();
+    const inline = card.locator('[data-action="files"]').getByRole('button');
+    if ((await inline.count()) > 0) {
+        await inline.focus();
+        await page.keyboard.press('Enter');
+    } else {
+        await card.locator('[data-action-more]').getByRole('button').first().focus();
+        await page.keyboard.press('Enter');
+        await page
+            .getByRole('menuitem', { name: t('project.helper.show_in_files'), exact: true })
+            .focus();
+        await page.keyboard.press('Enter');
+    }
+    const item = treeItem(page, `hub:${BANDITS}`);
+    await expect(item).toHaveAttribute('aria-selected', 'true');
+    await expect(item).toBeFocused();
+    // The arrow keys go on from the row that was shown.
+    await page.keyboard.press('ArrowUp');
+    await expect(treeItem(page, 'hub:projects/active')).toBeFocused();
+});
+
+// Revert: take the ASCII stand-in of the Show in Files glyph out of config/catalogs/glyphs.yml, so
+// a terminal theme draws the character it has no font for.
+// revert: config/catalogs/glyphs.yml:282 => delete
+test('a terminal theme draws the Show in Files control with its ASCII stand-in', async ({
+    page
+}) => {
+    await boot(page);
+    await page.getByRole('button', { name: t('ui.theme') }).click();
+    await page.getByRole('menuitem', { name: /mocha/ }).first().click();
+    await openView(page, 'projects', t('views.projects'));
+    const card = projectCard(page, BANDITS);
+    await card.locator('.title').first().hover();
+    const inline = card.locator('[data-action="files"]').getByRole('button');
+    const control =
+        (await inline.count()) > 0
+            ? inline
+            : page.getByRole('menuitem', { name: t('project.helper.show_in_files'), exact: true });
+    if ((await inline.count()) === 0) {
+        await card.locator('[data-action-more]').getByRole('button').first().click();
+    }
+    await expect(control).toContainText('[@]');
+    // The glyph's own character, which a terminal theme's font may not hold.
+    await expect(control).not.toContainText(String.fromCharCode(0x2316));
+    await expect(control).not.toContainText('[[@]]');
+});
 
 /** The Funding file with a `link` field in its schema and on its first two entries. */
 function fundingWithLinks(first: string, second: string): string {
@@ -265,7 +321,8 @@ test('a read on the way to a path lands after a later ask and writes nothing', a
         await held.answered;
         await drain(page);
         await expect(later).toHaveAttribute('aria-selected', 'true');
-        // the listing that was in flight was for a folder the later ask left, so its rows are never drawn
+        // the listing that was in flight was for a folder the later ask left, so its rows are never
+        // drawn
         await expect(page.locator('[data-fs-row="hub:projects/active"]')).toHaveCount(0);
     } finally {
         writeHubFile(FUNDING, before);

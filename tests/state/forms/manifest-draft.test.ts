@@ -1,6 +1,6 @@
 // The manifest editor's draft: the edits kept in the editor instance's ui record, compared against
-// the project's value in the snapshot now, forgotten by Revert and by what a save took, and read back
-// after a reload through a fake storage.
+// the project's value in the snapshot now, forgotten by Revert and by what a save took, and read
+// back after a reload through a fake storage.
 //
 // The project is synthetic and handed to the store through its projectOf argument, so what is
 // checked is the draft. Typing into the form and pressing Save is

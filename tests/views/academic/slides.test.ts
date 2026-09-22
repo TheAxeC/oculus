@@ -93,7 +93,9 @@ function install(deck: Record<string, unknown>, projects: Project[] = [PROJECT])
     client.entities.receive({ channel: 'portfolio', version: 1, payload: snapshot(projects) });
 }
 
-/** The `deck:` map of the real config, which is what the view draws over unless a case says more. */
+/**
+ * The `deck:` map of the real config, which is what the view draws over unless a case says more.
+ */
 const DECK = config.deck as Record<string, unknown>;
 
 /** Every key the catalog offers over that deck and that one project. */
@@ -224,7 +226,8 @@ describe('the slide catalog', () => {
                 said: catalog[key]
             });
             expect(status(html)).toBe(catalog[key]);
-            // the words drawn are the catalog sentence for the outcome, never the key it is held under
+            // the words drawn are the catalog sentence for the outcome, never the key it is held
+            // under
             expect(html).not.toContain('invalid_order');
         }
     });

@@ -1,6 +1,6 @@
-// Layer 4, view test. The file list of an opened project card, rendered to HTML on the server: which
-// row opens in the document view, which is a link the browser opens, and which is handed to its
-// program on this machine.
+// Layer 4, view test. The file list of an opened project card, rendered to HTML on the server:
+// which row opens in the document view, which is a link the browser opens, and which is handed to
+// its program on this machine.
 //
 // The catalog and the glyphs are the real config; the listing is a stubbed api/project-files
 // answer. What this does NOT cover: the press itself and the sentence a refused open leaves on the
@@ -153,7 +153,8 @@ describe('the file list of a project card', () => {
             expect(found[name]).toContain('<button type="button" class="tool');
             expect(found[name]).toContain(catalog['file.open_program']);
             expect(found[name]).toContain(glyphs[catalog['file.open_program_glyph']]);
-            // the file opens in its program, so the row is a control rather than a link to the bytes
+            // the file opens in its program, so the row is a control rather than a link to the
+            // bytes
             expect(found[name]).not.toContain('<a ');
         }
     });
@@ -203,7 +204,8 @@ describe('the file list of a project card', () => {
         });
         const found = rows();
         expect(found['run.log']).toContain(catalog['file.open_program']);
-        // the configuration now names one extension, and a name it does not name is offered no program
+        // the configuration now names one extension, and a name it does not name is offered no
+        // program
         expect(found['report.docx']).not.toContain(catalog['file.open_program']);
         expect(found['report.docx']).toContain(`href="/api/file/hub/${FOLDER}/drafts/report.docx"`);
     });

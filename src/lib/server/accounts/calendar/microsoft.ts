@@ -1,8 +1,9 @@
 // Layer 2, server. One account's Microsoft calendars and their events over the window, read-only.
 //
-// Two calls per account plus one per calendar: `/me/calendars`, then `calendarView` on each with the
-// window as its two parameters, which is the call that expands a recurring series into the instances
-// inside the window. `@odata.nextLink` is followed until it stops or PAGE_MAX pages have been read.
+// Two calls per account plus one per calendar: `/me/calendars`, then `calendarView` on each with
+// the window as its two parameters, which is the call that expands a recurring series into the
+// instances inside the window. `@odata.nextLink` is followed until it stops or PAGE_MAX pages have
+// been read.
 //
 // Graph answers a time as a wall clock with no offset, in whatever zone the request asked for, so
 // the request asks for this machine's own zone: the server and the page are the same machine, and a

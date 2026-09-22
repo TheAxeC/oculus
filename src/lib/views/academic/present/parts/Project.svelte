@@ -1,6 +1,6 @@
 <script lang="ts">
-    // Layer 3, Present partial. A project's slide: the domain and status chips, the headline and the
-    // hook, the spec strip, then the method and results beside the equation and the figures. A
+    // Layer 3, Present partial. A project's slide: the domain and status chips, the headline and
+    // the hook, the spec strip, then the method and results beside the equation and the figures. A
     // PRESENT.md that wrote no front matter reaches here as a slide carrying its narrative alone,
     // and that narrative is what the slide draws.
 

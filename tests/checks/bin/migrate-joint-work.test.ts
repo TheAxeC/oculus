@@ -1,7 +1,7 @@
-// Layer 4, test. The split of a collaborations collection into the two registries and the joint-work
-// collection, over a scratch hub: a row naming two organisations gives its person both keys, a second
-// run writes the same bytes, and `--from` carries the rows of the file it names onto people
-// the registry already holds.
+// Layer 4, test. The split of a collaborations collection into the two registries and the
+// joint-work collection, over a scratch hub: a row naming two organisations gives its person both
+// keys, a second run writes the same bytes, and `--from` carries the rows of the file it names onto
+// people the registry already holds.
 
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -34,7 +34,9 @@ function write(dir: string, relative: string, body: string): string {
     return file;
 }
 
-/** One collaborations file with a two-organisation row, a one-organisation row and no row at all. */
+/**
+ * One collaborations file with a two-organisation row, a one-organisation row and no row at all.
+ */
 const COLLABORATIONS = `title: Collaborations
 schema: []
 entries:
@@ -100,7 +102,8 @@ describe('migrate-joint-work.mjs', () => {
 
     it('carries the Institution rows of a handed-in file onto people the registry already holds', () => {
         const hub = scratch();
-        // A hub already split, whose people carry the one key the list replaced and one organisation.
+        // A hub already split, whose people carry the one key the list replaced and one
+        // organisation.
         write(
             hub,
             'registries/people.yml',
