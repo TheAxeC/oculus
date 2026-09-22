@@ -205,6 +205,7 @@ One line per package: the status mark, the id, the title, and where the rest is 
 - ✅ Q3 workbench and view polish (landed 2026-09-12; brief `agents/briefs/Q3.md`; review `agents/reviews/Q3.md`)
 - ✅ Q3b the terminal pane (landed 2026-09-12; brief `agents/briefs/Q3b.md`; review `agents/reviews/Q3b.md`)
 - O31 worker sessions: a worker on the other harness is drawn from the dispatch block, and the three hardcoded session stores read `config/local.yml`'s `accounts` (Axel 2026-09-11 and 2026-09-21; brief `agents/briefs/O31.md`, which holds this line whole and the premises)
+  - Step 0, stopped 2026-09-23: the mechanism that makes a builder on the other harness visible is not ruled (a dispatch note, the ledger's dispatch block, or dropped); the options and the recommendation are the open item in `orchestrator-state.md`.
 - O30 native window (I): Electron, Tauri or pywebview, chosen after O19 from how much the browser gets in the way with a terminal in it (1 commit)
 
 ## Could run in parallel
