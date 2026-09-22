@@ -205,7 +205,7 @@ One line per package: the status mark, the id, the title, and where the rest is 
 - ✅ Q3 workbench and view polish (landed 2026-09-12; brief `agents/briefs/Q3.md`; review `agents/reviews/Q3.md`)
 - ✅ Q3b the terminal pane (landed 2026-09-12; brief `agents/briefs/Q3b.md`; review `agents/reviews/Q3b.md`)
 - O31 worker sessions: a worker on the other harness is drawn from the dispatch block, and the three hardcoded session stores read `config/local.yml`'s `accounts` (Axel 2026-09-11 and 2026-09-21; brief `agents/briefs/O31.md`, which holds this line whole and the premises)
-  - Step 0, stopped 2026-09-23: the mechanism that makes a builder on the other harness visible is not ruled (a dispatch note, the ledger's dispatch block, or dropped); the options and the recommendation are the open item in `orchestrator-state.md`.
+  - Step 0, ruled 2026-09-23 by Axel: a launch note in `~/.oculus/dispatches.json`, written by one script any skill's launcher calls, and the account folders built beside Q65.
 - O30 native window (I): Electron, Tauri or pywebview, chosen after O19 from how much the browser gets in the way with a terminal in it (1 commit)
 
 ## Could run in parallel
@@ -251,6 +251,7 @@ Independent of each other; two may run side by side under R9's rule when their b
 - 2026-09-17 16:05, Axel: Q41's lane colours as option (a) of the second set: the header strip at `LANE_SHARE` 0.5, every touching and stacked pair of headers apart under every theme, colours allowed to repeat only between headers that do not touch (twelve distinct headers cannot be had in the eight-colour themes), Review and De-risk chosen on purpose.
 - 2026-09-22, Axel, on `agents/reviews/axel-2026-09-21.md`: the page strip, the rail pages, the two view groups, the language server client (D23), a personal project's manifest (D24), Q58's widening, and Q65, L3, L4, R18 and E1 booked (the ruling whole in `orchestrator-state.md`)
 - 2026-09-23, Axel, on Q65's stop: the Files view's hidden and ignored toggles reach the server as `hidden=1` and `ignored=1` on the listing request, beside the endpoint's `notes=1` and `bookmarks=1`.
+- 2026-09-23, Axel, on O31's stop: a builder on the other harness is shown from a launch note in `~/.oculus/dispatches.json`, written by one script any launcher calls, safe when several write at once.
 - 2026-09-22, Axel, on Q58's stop: the ten-items rule covers every folder under `src`, `tests`, `bin` and `config`, counting what git tracks; the package root, `demo/` and `assets/` are not covered; `glyphs.yml`, `icons.yml`, `vocab.yml`, `meta.yml` and `manifest-schema.yml` move into `config/catalogs/`; `config/text/views` gets one subfolder per rail group.
 - 2026-09-22, Axel, on Q58's open item: a view opened for something rather than listed sits in the rail group it is opened from, in `src/lib/views/<group>/` and in `config/text/views/<group>/` alike; there is no `opened/` folder.
 - 2026-09-17 18:44, Axel: Q41 lands as built: the lane headers that touch on the open board differ under every theme; a collapsed cluster or a hidden band column is not held, since no colours can hold every such layout.
