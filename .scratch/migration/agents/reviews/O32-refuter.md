@@ -104,3 +104,115 @@ B6. Reader-visible change the report does state: a record with a pid now ignores
 ## Usage
 
 About 25 tool calls. Wall time about 25 minutes, most of it the full suite (103 s) and 7 revert-check runs of the writer test file (about 2 minutes each).
+
+# Repair round 1, refuted
+
+Verification (run from .agents/worktrees/O32/tools/oculus, Node v24.21.0, on the round's final tree; `git status --short` before and after: the 8 modified files plus `?? tests/checks/bin/dispatch-note-race.test.ts`)
+
+1. `npx vitest run --reporter=dot`: `Test Files  284 passed (284)` / `Tests  4572 passed (4572)` / `Duration  97.27s`
+2. `npm run check`: `COMPLETED 1311 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS`
+3. `npm run build`: `build exit 0`
+4. `npm run format:check`: `All matched files use Prettier code style!`
+5. `npm run lint`: `lint exit 0`
+6. The brief's `LC_ALL=C perl ...` ASCII gate: printed nothing.
+7. `sh bin/size-check.sh`: `size 0`. `sh bin/folder-check.sh`: `folder 0`. `wc -l` matches the report's counts (404, 197, 243, 315, 321, 487, 448, 64, 573).
+8. `node bin/revert-check.mjs tests/server/sessions/registry.test.ts tests/server/sessions/stores/dispatches.test.ts tests/checks/bin/dispatch-note-race.test.ts tests/server/watch/sessions.test.ts`: `26 reverts, 0 unproven, 11 unchecked`. Every new case red, including the race case (`revert bin/dispatch-note.mjs:171`), the two `:145` cases, the one-ps case (`transcripts.ts:255`), and the watcher's `:130` and `:133` cases. The 11 unchecked are the existing audit case and 10 existing watcher cases without a directive.
+8b. `node bin/revert-check.mjs tests/checks/bin/dispatch-note.test.ts`, 5 runs in a row (15:02 to 15:18): `20 reverts, 0 unproven, 0 unchecked` every time.
+9. `ls -d $TMPDIR/oculus-* | wc -l`: `7015` before the suite and `7017` after. The two new entries are `oculus-browser.lock` (14:57:45) and `oculus-browser-VfFjl7` (14:57:46), made during my run. The lock named pid 78731, which was `node tests/browser/helpers/serve.ts`, and that process was gone moments later. This step's node suite starts no browser server, so the two entries most likely come from L3's browser run. Not verified.
+
+The launch recipe, run for real in a scratch folder with `HOME=<scratch>` and `sleep 3` as the builder, launched detached with `nohup sh -c '... --pid $$ > id; sleep 3; status=$?; node <note> end "$(cat id)"; echo "exit $status" > exit' &` and `echo $! > pid`:
+- The record's `pid` is `52304`, which is the pid file's value, and `ps` shows that pid as the `sh -c` wrapper.
+- `pidStart` is `Wed Sep 23 12:56:36 2026`. That is exactly what `TZ=UTC LC_ALL=C ps -o lstart=` printed; the local `ps` printed 14:56:36.
+- `transcript "$(cat id)" <path>` from a later Bash call exited 0 and set the transcript.
+- The exit file read `exit 0`, and `endedAt` was `2026-09-23T12:56:39.825Z`.
+- A second launch (`sleep 6`) was read with the reader's own functions under `TZ=Asia/Tokyo` through `node --experimental-strip-types`. It gave `live: true` while the wrapper ran. After I sent SIGTERM to that wrapper, which I had started, it gave `live: false` with `endedAt: ""`.
+
+## Spec
+
+none. Each of the ten rulings is addressed in the delta:
+- S1: the recipe case plus the real run above.
+- S6: `newRecord` at `bin/dispatch-note.mjs:331` refuses on signal 0 alone, and `startOf` no longer checks liveness itself.
+- P1: two `:145` cases.
+- P4: the race file, plus the new `:158` revert on the 150-round case.
+- B1/T1: `liveSignature` and the head comment at `watch/sessions.ts:18-25`.
+- B2: one `starts` call in `scan`.
+- B4: `TZ: 'UTC'` at `:109` and the `.utc` reading at `dispatches.ts:148`.
+- T2: the Doc text now quotes the current lines.
+- T3: the test is renamed.
+- B3/B6: the report gives a before and after.
+
+Two edits go beyond the brief's path list: `watch/sessions.ts` (ruling 5 allowed it) and the refactor of `registry.ts` and `transcripts.ts` (ruling 6). The report names both.
+
+## Proof
+
+P1. The report's verification row 8 quotes `25 reverts, 0 unproven, 12 unchecked` for the four-file revert-check "on the final tree". My run of the same command on the final tree printed `26 reverts, 0 unproven, 11 unchecked`. The quoted line predates the signature case's new directive (`watch/sessions.ts:133`). The report's note mentions that directive, but the table still shows the stale output.
+
+P2. `tests/checks/bin/dispatch-note.test.ts`, case "records a running pid whose start time `ps` cannot give, with an empty start":
+`const path = { PATH: dirname(process.execPath) };`
+The case relies on node's own folder holding no `ps`. That holds for this nvm install. On a machine where node is `/usr/bin/node` (a distro package on Linux, where `ps` is `/usr/bin/ps`), the writer finds `ps`, records a real stamp, and `expect(record.pidStart).toBe('')` fails. The case does not check its own premise, for example that `spawnSync('ps', ..., { env: { PATH } })` fails, so there it would fail rather than skip.
+
+P3. No case checks that the liveness re-check stays quiet while a launched agent's status holds. "publishes nothing on a re-check that finds the same live sessions" builds no launch and carries no directive. From reading the code, the new `liveSignature` parts depend only on `agent.id` and `agent.status`. `status` in `dispatchedAgent` (`dispatches.ts:110-112`) comes from `endedAt`, `builderLive`, `launcherLive` and `child.live`, and none of these changes between scans unless the state really changes. So I see no churn in steady state; this is not run.
+
+One exception exists. A record with a parseable `pidStart` whose pid has been reused flips between running and done whenever `ps` fails or times out on some scans and not others: `actual === undefined` gives `true` at `:145`, and a mismatch gives `false`. Each flip republishes. It needs a reused pid and a flaky `ps`.
+
+The fixed-interleaving race case is sound. The real `breakStale` never renames, and the mocked `renameSync` makes the second writer's takeover certain under the aside revert, which was red in my run. The 150-round case's new revert (`:158 => return true;`) was red in 5 of 5 runs.
+
+The two TZ cases are sound. The writer runs under `Pacific/Kiritimati` (+14) and the reader sets `process.env.TZ` to `America/Los_Angeles` in-process and restores it in `finally`. Each revert shifts the comparison by hours, and both were red in all 5 runs.
+
+## Standards
+
+T1. `src/lib/server/sessions/registry.ts:207-214`: `export function liveSessions(registries, probe = systemProbe)` now has no caller in `src`. `grep -rn "liveSessions(" src` hits only its own definition, and the only callers are in `tests/server/sessions/stores/transcripts.test.ts:747-793`. The function is kept for the tests alone, and those tests exercise a composition (`registryCandidates` then `probe.starts` then `liveFrom`) that `scan` does not run: `scan` passes a `starts` map that also holds builder pids. The spec's YAGNI line covers this. Either the registry cases move to `registryCandidates`/`liveFrom` or to `scan`, or the function is named as a test helper.
+
+T2. Doc text, HELP.md:183 replacement: "a row with a pid reads running while that process runs and done within about 15 seconds of it exiting or its pid being taken by a later process". When `ps` gave no start time at `start`, `pidStart` is `''` (`bin/dispatch-note.mjs:332`, `dispatches.ts:145`), and a pid taken by a later process then reads running. The DESIGN.md:115 replacement states this exception ("or with no start time to compare"); the HELP sentence does not. Every other Doc text sentence I checked matches the code, and each "now reads" quote matches `grep -n` on DESIGN.md:114, DESIGN.md:115 and HELP.md:183 in full.
+
+## Behaviour
+
+B1. `src/lib/server/sessions/stores/transcripts.ts:253-254`:
+`const pending = pendingBuilders(notes);`
+`const answered = new Set(pending.map((note) => note.pid).filter((pid) => probe.running(pid)));`
+Every scan now sends signal 0 to the pid of every unstamped record in the note, whether or not its parent is in the scan window. Any such pid that answers is passed to `ps`. The note is never pruned, so records whose launcher died without an end stamp pile up. The work grows with the note's lifetime, not with the window. The report states this as a judgment call. The cost is small per pid; how many pids a long-lived note would carry is not measured.
+
+B2. The recipe records the `sh -c` wrapper (`--pid $$`), not the builder. If the wrapper dies while its child builder lives, the row reads done with the builder still running; the report's landing look (step 4, SIGTERM to the wrapper) produces exactly this. In my scratch run, the `sleep` child was not signalled when I killed the wrapper. A reader following that look should expect the `sleep 60` to keep running while the row reads done.
+
+B3. The one-`ps` refactor keeps the registry's liveness: the body of `liveFrom` is the old loop unchanged. `systemProbe.starts` ignores `ps`'s exit status and reads every line, so adding builder pids to the call cannot drop a registry pid's answer. Every registry and watcher case passes. No finding.
+
+## Not checked
+
+- The browser suite and the look at the Agents view on the TEST page.
+- The report's timing of one `ps` versus two per scan (median 24.4 vs 20.3 ms): not rerun.
+- A watcher run showing that re-checks with a steady launched agent publish nothing: reasoned from the code, not run (P3).
+- The P2 case on a machine where node's folder holds `ps`.
+- Whether the two new `oculus-browser*` temp entries came from L3.
+- The codex and claude forms of the launch lines with a real builder: only `sleep` stood in for the builder.
+
+## Usage
+
+About 25 tool calls, about 30 minutes of wall time. Most of it went to the full suite (97 s), one four-file revert-check and five writer-file revert-checks (about 3 to 4 minutes each).
+
+## Closed
+
+The first run's findings, closed in repair round 1 (`agents/reviews/O32-report.md`, "# Repair round 1") unless named otherwise:
+
+- S1, launch lines that did not fit the recipes: the lines run inside the detached `sh -c` wrapper with an id file beside the pid file; a case runs them for real. Corrected at landing: the wrapper starts the builder in its background and records the builder's own pid (`--pid $builder`), not the wrapper's `$$`, so a killed wrapper cannot mark a live builder done; the case checks the recorded pid is a `sleep` whose parent is the wrapper.
+- S2, S3, S4, S5: the locale fix, the `transcripts.ts` widening and the sharper wait case kept; the probe interface reused.
+- S6, a live pid whose `ps` fails refused with a false message: signal 0 alone decides, and such a pid is recorded with an empty start.
+- P1, the no-start-time branch unproven: two cases, red under `dispatches.ts:145`.
+- P4, the race case's revert green by chance: a fixed-interleaving case in `dispatch-note-race.test.ts` carries the aside revert, and the 150-round case carries a revert that is red every time; five revert-check runs of the file, 0 unproven.
+- T1 and B1, a builder that exits unstamped reaching the page up to five minutes late: `liveSignature` carries each launched agent's status, and the 15 s re-check publishes the change.
+- T2, the Doc text quoting elided lines: quoted in full.
+- T3, history wording in a test name: reworded.
+- B2, two `ps` calls per scan: one `probe.starts` per scan answers both.
+- B3, B6, the before and after: stated in the round's report.
+- B4, a launcher and a server in different time zones: the writer runs `ps` with `TZ=UTC` and the reader compares the UTC reading; two cases.
+
+The run over repair round 1, closed at landing on 2026-09-23:
+
+- Proof P1, a stale revert count in the report's table: a record in the ledger, no change to the tree.
+- Proof P2, the no-ps case relying on node's folder holding no `ps`: it now runs the writer with an empty folder as PATH and asserts first that `ps` cannot be found there.
+- Proof P3, churn on re-checks: none in steady state, from the reading; a reused pid whose `ps` fails on some scans and not others flips its row and republishes, which needs both a reused pid and a failing `ps`. Not changed.
+- Standards T1, `liveSessions` kept for the tests alone: removed from `registry.ts`; the tests build it from `registryCandidates` and `liveFrom` in a helper of their own.
+- Standards T2, the HELP sentence missing the no-start-time exception: the applied HELP.md text states it.
+- Behaviour B1, signal 0 for every unstamped record of a note that is never pruned: `pendingBuilders` takes the scan's window and leaves out launches started before it, which read as rows without a pid; a case is red under each of its three reverts.
+- Behaviour B2, the wrapper's pid recorded instead of the builder's: closed under S1 above.
+- Behaviour B3: no finding.
+- Found at landing: the watcher case's fixture launch was dated 2026-09-10, outside the new window; it is dated at the moment the case runs.

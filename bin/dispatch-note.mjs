@@ -5,9 +5,12 @@
 // A builder that is a native subagent is named by its parent's transcript; one started as a
 // separate process (a Codex worker, or `claude -p`) is named nowhere the parent wrote. The launcher
 // runs this at the launch, again when it learns the builder's transcript, and once more when the
-// builder exits. The note is `~/.oculus/dispatches.json`, resolved at the call, a JSON list of
-// records with the fields below; server/sessions/stores/dispatches.ts reads it. Any skill that
-// starts an agent process may write it, so nothing here knows about plans.
+// builder exits. Given the builder's pid, `start` records it with the start time `ps` prints for
+// it in UTC, so a launch whose launcher never stamps the end still reads done once that process is
+// gone, and a pid a later process has taken is never read as the builder. The note is
+// `~/.oculus/dispatches.json`, resolved at the call, a JSON list of records with the fields below;
+// server/sessions/stores/dispatches.ts reads it. Any skill that starts an agent process may write
+// it, so nothing here knows about plans.
 //
 // Several launchers may write at one moment, so every write holds a lock beside the note: the lock
 // file is created exclusively, a busy one is retried, and one whose holder is gone, or that is
@@ -19,12 +22,13 @@
 // repository calls it by path. Usage:
 //
 //     node bin/dispatch-note.mjs start --launcher <what> --label <work> --harness claude|codex
-//         --parent <session id> --cwd <dir> [--model <model>] [--transcript <path>]
+//         --parent <session id> --cwd <dir> [--model <model>] [--transcript <path>] [--pid <n>]
 //     node bin/dispatch-note.mjs transcript <id> <path>
 //     node bin/dispatch-note.mjs end <id>
 //
 // `start` prints the new record's id, which the other two take.
 
+import { spawnSync } from 'node:child_process';
 import { randomBytes, randomUUID } from 'node:crypto';
 import {
     linkSync,
@@ -46,7 +50,16 @@ import { fileURLToPath } from 'node:url';
 export const HARNESSES = ['claude', 'codex'];
 
 /** The flags `start` takes, each a field of the record. */
-export const START_FLAGS = ['launcher', 'label', 'harness', 'model', 'parent', 'cwd', 'transcript'];
+export const START_FLAGS = [
+    'launcher',
+    'label',
+    'harness',
+    'model',
+    'parent',
+    'cwd',
+    'transcript',
+    'pid'
+];
 
 /** The flags `start` refuses to go without. */
 export const REQUIRED = ['launcher', 'label', 'harness', 'parent', 'cwd'];
@@ -75,6 +88,38 @@ function alive(pid) {
         // EPERM is a live process owned by another user.
         return error.code === 'EPERM';
     }
+}
+
+/** Milliseconds `ps` may take before the start time counts as unreadable. */
+export const PS_TIMEOUT_MS = 3000;
+
+/** A start time as `ps -o lstart=` prints it under the C locale: `Wed Sep  9 14:08:35 2026`. */
+const LSTART = /^[A-Z][a-z]{2} [A-Z][a-z]{2} +\d{1,2} \d{2}:\d{2}:\d{2} \d{4}$/;
+
+/**
+ * The start time of process `pid` as `ps` prints it, or '' when `ps` gives no readable time. It is
+ * asked the way server/sessions/registry.ts's systemProbe asks, list arguments under the C locale
+ * with a timeout, and in UTC, so the stamp names one moment whatever zone the launcher and the
+ * server run in; the reader parses it with that module's parseStamp and takes its UTC reading.
+ */
+export function startOf(pid) {
+    const done = spawnSync('ps', ['-o', 'lstart=', '-p', String(pid)], {
+        encoding: 'utf8',
+        timeout: PS_TIMEOUT_MS,
+        env: { ...process.env, LC_ALL: 'C', TZ: 'UTC' }
+    });
+    if (done.error !== undefined || done.status !== 0 || typeof done.stdout !== 'string') return '';
+    const stamp = done.stdout.trim();
+    return LSTART.test(stamp) ? stamp : '';
+}
+
+/** The pid `--pid` names, which must be a whole number above zero written in digits alone. */
+function pidOf(value) {
+    const pid = Number(value);
+    if (!/^[1-9][0-9]*$/.test(value) || !Number.isSafeInteger(pid)) {
+        throw new Error(`--pid must be a process id: ${value}`);
+    }
+    return pid;
 }
 
 /** The pid a lock's content names, or 0 when it names none. */
@@ -269,7 +314,12 @@ export function readFlags(argv) {
     return flags;
 }
 
-/** The new record `start` writes, with the time it started and nothing ended yet. */
+/**
+ * The new record `start` writes, with the time it started and nothing ended yet. A `--pid` is
+ * refused when signal 0 finds no process with that pid, and recorded with its start time otherwise;
+ * a start time `ps` could not give is left empty, which the reader takes as the running pid being
+ * the only witness. Without `--pid`, `pid` is 0 and `pidStart` empty: no process to watch.
+ */
 export function newRecord(flags, now = new Date()) {
     for (const name of REQUIRED) {
         if (!flags[name]) throw new Error(`start needs --${name}`);
@@ -277,6 +327,9 @@ export function newRecord(flags, now = new Date()) {
     if (!HARNESSES.includes(flags.harness)) {
         throw new Error(`--harness must be one of ${HARNESSES.join(', ')}: ${flags.harness}`);
     }
+    const pid = flags.pid === undefined ? 0 : pidOf(flags.pid);
+    if (pid !== 0 && !alive(pid)) throw new Error(`--pid ${pid} names no running process`);
+    const pidStart = pid === 0 ? '' : startOf(pid);
     return {
         id: randomUUID(),
         launcher: flags.launcher,
@@ -287,7 +340,9 @@ export function newRecord(flags, now = new Date()) {
         cwd: resolve(flags.cwd),
         transcript: flags.transcript ? resolve(flags.transcript) : '',
         startedAt: now.toISOString(),
-        endedAt: ''
+        endedAt: '',
+        pid,
+        pidStart
     };
 }
 
@@ -327,7 +382,7 @@ export function run(argv, path = notePath()) {
             return id;
         });
     }
-    throw new Error('usage: start --launcher ... | transcript <id> <path> | end <id>');
+    throw new Error('usage: start --launcher ... [--pid <n>] | transcript <id> <path> | end <id>');
 }
 
 /** Whether this file is the script node was asked to run, through a symlink or not. */

@@ -100,3 +100,175 @@ HELP.md:183, now:
 `183:A launcher that starts an agent as a process of its own (a Codex worker, or \`claude -p\`) records it with \`node bin/dispatch-note.mjs start --launcher <what> --label <work> --harness claude|codex --parent <session id> --cwd <dir> [--model <m>] [--transcript <path>]\`, which prints an id; ... once the launcher's session is not live, it follows its builder's own session when the scan holds it.`
 Replacement:
 `A launcher that starts an agent as a process of its own (a Codex worker, or \`claude -p\`) records it with \`node bin/dispatch-note.mjs start --launcher <what> --label <work> --harness claude|codex --parent <session id> --cwd <dir> [--model <m>] [--transcript <path>] [--pid <n>]\`, which prints an id; \`transcript <id> <path>\` adds the transcript once known and \`end <id>\` stamps the end. \`--pid\` names the builder's running process, and a pid no process has is refused. The Agents view draws each record under the session named as its parent. A launched row reads done once its end is stamped. Before that, a row with a pid reads running while that process runs and done once it is gone or its pid names a later process; a row without one reads running while its launcher's session is live, and once the launcher's session is not live, it follows its builder's own session when the scan holds it.`
+
+# Repair round 1
+
+Everything in the brief and in the ten rulings is done. I did not run the browser suite and did not look at the view on screen; both are the orchestrator's.
+
+## What each finding came to
+
+**1. (S1) Launch lines in the recipes' detached form.** The lines are below under "Launch lines". A new case in `tests/checks/bin/dispatch-note.test.ts`, "records a detached builder under its wrapper pid, takes its transcript later, and ends it", runs those exact lines through `sh -c` with `sleep 3` as the builder. It checks four things:
+- While the builder runs, the record's `pid` equals the number in the pid file (`$!`, which is the wrapper's `$$`), and `endedAt` is empty.
+- `transcript "$(cat <id file>)" <path>`, run from a separate `sh -c`, sets the transcript.
+- After the builder, the exit file reads `exit 0`.
+- The record carries an `endedAt` stamp.
+
+Revert `bin/dispatch-note.mjs:344 => pid: 0,` turns it red.
+
+**2. (S6) A live pid whose `ps` fails.** Signal 0 alone decides now. `newRecord` refuses only when `alive(pid)` is false (`bin/dispatch-note.mjs:331`). `startOf` returns `''` on any `ps` failure, and that is recorded as `pidStart: ''`. New case "records a running pid whose start time `ps` cannot give, with an empty start" runs the writer with a PATH holding node and no `ps`, `--pid 1`. It expects exit 0, an empty stderr, `pid` 1 and `pidStart` ''. Its revert restores the old refusal on line 332 and turns it red.
+
+**3. (P1) The reader's branch where no start time is known.** Two new cases in `tests/server/sessions/stores/dispatches.test.ts`, both red under `dispatches.ts:145 => return false;`:
+- "reads running while the recorded process runs and `ps` gave no start time for it".
+- "reads running while the recorded process runs and its recorded start does not parse", which covers both an unparseable and an empty `pidStart`.
+
+**4. (P4) The race revert.** The clearer that moves the lock aside is now proven by one fixed interleaving, in a new file `tests/checks/bin/dispatch-note-race.test.ts`:
+- It wraps `node:fs` through `vi.mock` so that a second writer takes the lock the instant anything renames the lock path. It then calls `breakStale(lock, '1 judged-dead')` over a live writer's lock.
+- It expects the live lock untouched, no rename, and no leftover files.
+- Under the aside revert (`bin/dispatch-note.mjs:171-187`) it fails with `expected '72133 second-live-writer' to be '72133 first-live-writer'`. That is the lost-holder failure, not an error.
+
+The 150-round case is unchanged except its revert, which is now `bin/dispatch-note.mjs:158 => return true;` (every lock judged stale). I measured this in a scratch driver running the same 150 rounds of 24 writers against a dead writer's lock:
+- the "every lock stale" revert lost records in 30 of 150 rounds, twice;
+- the no-recheck revert lost records in 2, 3 and 2 of 150;
+- the aside revert, for comparison, is the one that went green once in 7 runs.
+
+Five consecutive `node bin/revert-check.mjs tests/checks/bin/dispatch-note.test.ts` runs each printed `20 reverts, 0 unproven, 0 unchecked`.
+
+**5. (T1, B1) The 15 s re-check now publishes a launched builder's status.**
+- `liveSignature` (`src/lib/server/watch/sessions.ts:124-136`) adds `<session id>><agent id>:<status>` for every agent with `dispatch`, under any session, live or not.
+- The head comment at `:18-25` now names this second change no file event announces.
+- New case "republishes on the liveness re-check when a launched builder's process exits unstamped" is red under `sessions.ts:130 => if (false)`. In it, the launcher is not live, there is no end stamp, and the pid is dropped from the stub probe.
+- New case "names every launched agent's status, under a session live or not, and no subagent's" has the same revert.
+- The existing signature case got `agents: []` in its stub and a revert (`:133 => delete`).
+- The existing watcher reverts moved to their new lines, `:278` and `:288`.
+
+**6. (B2) One `ps` per scan.**
+- `registry.ts` now exports `registryCandidates` (signal 0 per registry entry) and `liveFrom(candidates, starts)`. `liveSessions` is kept, built from those two.
+- `scan` (`transcripts.ts:249-256`) reads the note first, asks signal 0 for registry pids and for pending builder pids, and makes one `probe.starts` call over both.
+- `builderProcesses(pending, running, starts)` and `joinDispatches(..., processes)` take that shared answer.
+- New case "asks `ps` once per scan for the registry's sessions and the launched builders together" expects exactly one `starts` call with `[7272, 8108]`. It is red under a revert that splits it into two calls.
+
+I timed `systemProbe.starts` with a scratch node script, 40 iterations, registry pids `[1, own pid]`, builder pid `[ppid]`, machine shared with L3:
+- two calls per scan (before): median 24.4 ms, max 29.5 ms;
+- one call per scan (after): median 20.3 ms, max 23.4 ms.
+
+**7. (B4) Time zones.**
+- The writer runs `ps` with `env: { ...process.env, LC_ALL: 'C', TZ: 'UTC' }` (`bin/dispatch-note.mjs:109`).
+- The reader compares `parseStamp(pidStart).utc` with the probe's epoch seconds (`dispatches.ts:148`).
+- The dispatches fixture writes stamps with `formatStamp(seconds, true)`.
+
+In `dispatch-note.test.ts`, "a launcher and a server in different time zones" has two cases over one setup:
+- The writer records pid 1 under `TZ=Pacific/Kiritimati`. The reader then runs `readDispatches`, `systemProbe.starts` and `builderProcesses` in-process under `TZ=America/Los_Angeles`.
+- One case is red under the writer revert `:109 => env: { ...process.env, LC_ALL: 'C' }`.
+- The other is red under the reader revert `:148 => ... recorded.local ...`.
+- The pid-1 case now compares `.utc`.
+
+**8. (T2)** The Doc text below quotes each current line in full.
+
+**9. (T3)** The test is renamed "reads a record without the pid fields, or with a pid that is not one, by the rules without a pid". Its comment is now "A record without the pid fields."
+
+**10. (B3, B6) Before and after, and what to look at.**
+- **Registry under a non-English locale** (e.g. `LC_ALL=nl_NL.UTF-8`, where `ps` prints `wo 23 sep. 13:11:54 2026`):
+  - Before, a Claude session whose registry pid had been reused by another process read live, because the start-time check could not parse `ps` and fell back to the pid alone.
+  - Now `ps` runs under the C locale, and that session reads ended.
+  - Nothing changes under `en_US`, which is Axel's locale.
+- **Agents view, launched row whose pid exits while its launcher lives:**
+  - Before, it read running until the end stamp.
+  - Now it reads done, and the page gets it at the next 15 s re-check rather than the 5-minute rescan.
+  - A launched row whose pid is alive while its launcher's session is gone and its own session is not live now reads running; before it read done.
+  - Rows without a pid read as before.
+- **For the landing look:**
+  1. Open the Agents view on the TEST page.
+  2. From the orchestrator's live session, launch `sleep 60` through the recipe below with `--parent` set to that session's id.
+  3. Expect a launched row reading running under that session.
+  4. Kill the wrapper with signal 15 from the terminal. Within about 15 s the row should read done with no end stamp written; the note file keeps `endedAt: ""` because the wrapper never reached `end`.
+  5. A second launch left to finish should read done with its end stamp.
+
+## Verification
+
+All run from `.agents/worktrees/O32/tools/oculus`, Node v24.21.0, on the final tree.
+
+| # | Command | Output |
+|---|---|---|
+| 1 | `npx vitest run --reporter=dot` | `Test Files  284 passed (284)` / `Tests  4572 passed (4572)`. One earlier full run had `tests/server/watch/git.test.ts > reads a root added to the workspaces file while it is running` fail under load; alone it gave `Tests  22 passed (22)`, and the two full runs since passed whole. |
+| 2 | `npm run check` | `COMPLETED 1311 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS` |
+| 3 | `npm run build` | `build exit 0` |
+| 4 | `npm run format:check` | `All matched files use Prettier code style!` |
+| 5 | `npm run lint` | `lint exit 0` |
+| 6 | the brief's `LC_ALL=C perl ...` ASCII gate | printed nothing |
+| 7 | `sh bin/size-check.sh`; `sh bin/folder-check.sh` | `size 0`, `folder 0` |
+| 8 | `node bin/revert-check.mjs tests/server/sessions/registry.test.ts tests/server/sessions/stores/dispatches.test.ts tests/checks/bin/dispatch-note-race.test.ts tests/server/watch/sessions.test.ts` | `25 reverts, 0 unproven, 12 unchecked` |
+| 8 | `node bin/revert-check.mjs tests/server/watch/sessions.test.ts`, after its signature case got a revert | every directive red |
+| 8 | `node bin/revert-check.mjs tests/checks/bin/dispatch-note.test.ts`, 5 runs in a row | `20 reverts, 0 unproven, 0 unchecked` each time |
+| 9 | `ls -d $TMPDIR/oculus-* \| wc -l` | 7017 before the last suite run, 7015 after it, 7017 at the end |
+
+Notes on item 8: the 12 unchecked are the existing audit case in `dispatches.test.ts` and 11 existing watcher cases that carry no directive. None of them is new or changed this round, except the signature case, which now has one.
+
+Notes on item 9: the two entries added at the end are `oculus-browser-JoDGNK` and `oculus-browser.lock`, stamped 14:49:40. I ran no browser suite. The only `oculus-revert-*` left is dated 00:31, before this step.
+
+## Files changed this round (`wc -l`)
+
+- `bin/dispatch-note.mjs`: 404
+- `src/lib/server/sessions/stores/dispatches.ts`: 197
+- `src/lib/server/sessions/registry.ts`: 243
+- `src/lib/server/sessions/stores/transcripts.ts`: 315
+- `src/lib/server/watch/sessions.ts`: 321 (path widened per ruling 5)
+- `tests/server/sessions/stores/dispatches.test.ts`: 487
+- `tests/checks/bin/dispatch-note.test.ts`: 448
+- `tests/checks/bin/dispatch-note-race.test.ts`: 64 (new)
+- `tests/server/watch/sessions.test.ts`: 573
+
+`tests/server/sessions/registry.test.ts` (30) is unchanged this round. Nothing under `src/lib/shell`, `src/lib/views` or `config` was touched.
+
+## Launch lines
+
+Set `launch_note: /Users/axelfaes/workspace/research-hub/tools/oculus/bin/dispatch-note.mjs`; any absolute path to the script works. `<note>` below stands for that value. The id file sits beside the pid file.
+
+Claude Code builder from a shell:
+
+```sh
+nohup sh -c 'node <note> start --launcher plan-orchestration --label <step> --harness claude --model <model> --parent <orchestrator session id> --cwd <worktree>/<tool dir> --pid $$ > <id file>; cd <worktree>/<tool dir> && claude -p --model <model> --permission-mode acceptEdits --output-format json < <prompt file> > <report file> 2> <stderr file>; status=$?; node <note> end "$(cat <id file>)"; echo "exit $status" > <exit file>' &
+echo $! > <pid file>
+```
+
+Codex builder:
+
+```sh
+nohup sh -c 'node <note> start --launcher plan-orchestration --label <step> --harness codex --model <model> --parent <orchestrator session id> --cwd <worktree>/<tool dir> --pid $$ > <id file>; codex exec -C <worktree>/<tool dir> -s workspace-write -c "sandbox_workspace_write.network_access=true" -c "model_reasoning_effort=\"<worker_effort>\"" -m <model> -o <report file> --json - < <prompt file> > <event log> 2> <stderr file>; status=$?; node <note> end "$(cat <id file>)"; echo "exit $status" > <exit file>' &
+echo $! > <pid file>
+```
+
+Later, from any shell call, once the transcript or rollout path is known:
+
+```sh
+node <note> transcript "$(cat <id file>)" <transcript or rollout path>
+```
+
+`status=$?` keeps the builder's own exit code for the exit file, so `end` does not overwrite it. If `start` fails (no Node, or a refused flag), the builder still runs, since the note is a record only.
+
+## Judgment calls this round (each reversible)
+
+- **One place probes for both the registry and the builders.** The shared signal-0-then-one-`ps` probe lives in `scan` (`transcripts.ts`) rather than in either module, since it serves both.
+- **Signal 0 now covers every unstamped builder in the note.** `builderProcesses` asks signal 0 for every note with a pid and no end stamp, not only those whose parent the scan holds, because the one `ps` must run before folding. `ps` is asked only about pids that answered.
+- **The 150-round race case gets a new revert.** It carries the reliable "every lock stale" revert, and the aside revert moved to the fixed-interleaving case.
+
+## Doc text
+
+DESIGN.md:114 now reads:
+`114:- The live registry: \`<dir>/sessions/<pid>.json\` of each Claude account, with \`sessionId\`, \`status\` (\`busy\` or \`idle\`), \`name\`, \`cwd\`. Liveness is \`kill(pid, 0)\` plus a \`procStart\` match; the registry writes that stamp in UTC and \`ps\` reports local time, so the match parses both and allows two seconds.`
+
+Replacement:
+`- The live registry: \`<dir>/sessions/<pid>.json\` of each Claude account, with \`sessionId\`, \`status\` (\`busy\` or \`idle\`), \`name\`, \`cwd\`. Liveness is \`kill(pid, 0)\` plus a \`procStart\` match; the registry writes that stamp in UTC and \`ps\`, run under the C locale so its stamp is readable, reports local time, so the match parses both and allows two seconds. One \`ps\` per scan answers the start times of the registry's pids and the launched builders' pids together.`
+
+DESIGN.md:115 now reads:
+`115:- Launched builders: \`~/.oculus/dispatches.json\`, one record per launch (\`id\`, \`launcher\`, \`label\`, \`harness\`, \`model\`, \`parent\`, \`cwd\`, \`transcript\`, \`startedAt\`, \`endedAt\`), written by \`bin/dispatch-note.mjs\` under a lock with an atomic replace, a dead lock cleared only under a second lock that re-checks it; each record whose \`parent\` is a scanned session joins that session's \`agents\` as \`dispatch:<id>\`, and its row names the builder's own session when the scan found that transcript. With no end stamp the row reads running while the launcher's session is live, and follows the builder's session once the launcher's is not.`
+
+Replacement:
+`- Launched builders: \`~/.oculus/dispatches.json\`, one record per launch (\`id\`, \`launcher\`, \`label\`, \`harness\`, \`model\`, \`parent\`, \`cwd\`, \`transcript\`, \`startedAt\`, \`endedAt\`, \`pid\`, \`pidStart\`), written by \`bin/dispatch-note.mjs\` under a lock with an atomic replace, a dead lock cleared only under a second lock that re-checks it; each record whose \`parent\` is a scanned session joins that session's \`agents\` as \`dispatch:<id>\`, and its row names the builder's own session when the scan found that transcript. \`pid\` is the builder's process as \`start --pid\` gave it (0 when none), refused when signal 0 finds no process, and \`pidStart\` its start time as \`ps\` printed it under the C locale in UTC, empty when \`ps\` gave none. With no end stamp, a row with a pid reads running while that pid runs with that start time (or with no start time to compare) and done once it does not; a row without one reads running while the launcher's session is live, and follows the builder's session once the launcher's is not. The sessions watcher's 15 s liveness re-check compares every launched agent's status as well as the live sessions' states, so a builder whose process exits unstamped reaches the page at the next re-check.`
+
+HELP.md:183 now reads:
+`183:A launcher that starts an agent as a process of its own (a Codex worker, or \`claude -p\`) records it with \`node bin/dispatch-note.mjs start --launcher <what> --label <work> --harness claude|codex --parent <session id> --cwd <dir> [--model <m>] [--transcript <path>]\`, which prints an id; \`transcript <id> <path>\` adds the transcript once known and \`end <id>\` stamps the end. The Agents view draws each record under the session named as its parent. A launched row reads running until its end is stamped while its launcher's session is live; once the launcher's session is not live, it follows its builder's own session when the scan holds it.`
+
+Replacement:
+`A launcher that starts an agent as a process of its own (a Codex worker, or \`claude -p\`) records it with \`node bin/dispatch-note.mjs start --launcher <what> --label <work> --harness claude|codex --parent <session id> --cwd <dir> [--model <m>] [--transcript <path>] [--pid <n>]\`, which prints an id; \`transcript <id> <path>\` adds the transcript once known and \`end <id>\` stamps the end. \`--pid\` names the builder's running process, typically the \`$$\` of the \`sh -c\` wrapper the builder runs in, and a pid no process has is refused. The Agents view draws each record under the session named as its parent. A launched row reads done once its end is stamped. Before that, a row with a pid reads running while that process runs and done within about 15 seconds of it exiting or its pid being taken by a later process; a row without one reads running while its launcher's session is live, and once the launcher's session is not live, it follows its builder's own session when the scan holds it.`
+
+The watcher's re-check wording is code, not a doc: `src/lib/server/watch/sessions.ts:18-25`, rewritten this round. No line of DESIGN.md or HELP.md describes the 15 s re-check today (`grep -n "re-check\|liveness" DESIGN.md HELP.md` has no hit about it), so the re-check sentence is carried in the DESIGN.md:115 replacement above.

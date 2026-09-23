@@ -22,14 +22,21 @@ import {
     type ScanOptions
 } from '../../../../src/lib/server/sessions/stores/transcripts.ts';
 import {
-    liveSessions,
     formatStamp,
+    liveFrom,
+    registryCandidates,
     type Probe
 } from '../../../../src/lib/server/sessions/registry.ts';
 import { hiddenIds, setHidden } from '../../../../src/lib/server/sessions/overrides.ts';
 import { CACHE_VERSION } from '../../../../src/lib/server/sessions/cache.ts';
-import type { SessionRecord } from '../../../../src/lib/data/model.ts';
+import type { LiveEntry, SessionRecord } from '../../../../src/lib/data/model.ts';
 import { scratchDir, sweepScratch } from '../../../fixtures/scratch.ts';
+
+/** The registry's live sessions alone: signal 0 per entry, then one `ps` for the ones that ran. */
+function liveSessions(registries: string[], probe: Probe): Map<string, LiveEntry> {
+    const candidates = registryCandidates(registries, probe);
+    return liveFrom(candidates, probe.starts(candidates.map((entry) => entry.pid)));
+}
 
 afterAll(sweepScratch);
 

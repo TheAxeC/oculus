@@ -38,7 +38,7 @@ export type Probe = {
 };
 
 /** One registry file, reduced to what a record needs, plus the two fields only the check uses. */
-type Candidate = LiveEntry & { sessionId: string; pid: number; procStart: string };
+export type Candidate = LiveEntry & { sessionId: string; pid: number; procStart: string };
 
 export const systemProbe: Probe = {
     running(pid: number): boolean {
@@ -58,10 +58,13 @@ export const systemProbe: Probe = {
         if (wanted.length === 0) return starts;
         const args = ['-o', 'pid=,lstart='];
         for (const pid of wanted) args.push('-p', String(pid));
-        // List arguments, never a shell, and a timeout: a hung `ps` must not hang a scan.
+        // List arguments, never a shell, and a timeout: a hung `ps` must not hang a scan. The C
+        // locale, since `ps` names the weekday and month in the locale's words, which parseStamp
+        // reads only in English; bin/dispatch-note.mjs records a builder's start the same way.
         const done = spawnSync('ps', args, {
             encoding: 'utf8',
-            timeout: PS_TIMEOUT_SEC * 1000
+            timeout: PS_TIMEOUT_SEC * 1000,
+            env: { ...process.env, LC_ALL: 'C' }
         });
         if (done.error !== undefined || typeof done.stdout !== 'string') return starts;
         for (const line of done.stdout.split('\n')) {
@@ -152,15 +155,12 @@ function sameProcess(claimed: string, actual: number | undefined): boolean {
 }
 
 /**
- * Session id to live entry, for the sessions whose process is really running, read from every
- * registry folder given; two folders that resolve to one real path are read once. Never throws: a
- * missing folder reads as empty, and a malformed, vanished or unreadable file drops that one entry.
- * The `.key` files beside the registry entries hold credentials and are never opened.
+ * Every usable registry entry whose pid answers signal 0, read from every registry folder given;
+ * two folders that resolve to one real path are read once. Never throws: a missing folder reads as
+ * empty, and a malformed, vanished or unreadable file drops that one entry. The `.key` files beside
+ * the registry entries hold credentials and are never opened.
  */
-export function liveSessions(
-    registries: readonly string[],
-    probe: Probe = systemProbe
-): Map<string, LiveEntry> {
+export function registryCandidates(registries: readonly string[], probe: Probe): Candidate[] {
     const candidates: Candidate[] = [];
     for (const folder of distinctFolders(registries)) {
         let names: string[];
@@ -175,7 +175,18 @@ export function liveSessions(
             if (entry !== null && probe.running(entry.pid)) candidates.push(entry);
         }
     }
-    const starts = probe.starts(candidates.map((entry) => entry.pid));
+    return candidates;
+}
+
+/**
+ * Session id to live entry, for the candidates whose start time agrees with the registry's.
+ * `starts` is one `probe.starts` answer, which a scan shares with the launch note's builders so
+ * that `ps` runs once per scan.
+ */
+export function liveFrom(
+    candidates: readonly Candidate[],
+    starts: ReadonlyMap<number, number>
+): Map<string, LiveEntry> {
     const live = new Map<string, LiveEntry>();
     for (const entry of candidates) {
         if (!sameProcess(entry.procStart, starts.get(entry.pid))) continue;

@@ -270,11 +270,27 @@ function start(
 describe('liveSignature', () => {
     it('names every live session and the state it is in, and nothing else', () => {
         const record = (id: string, live: boolean, state: string) =>
-            ({ id, live, state, liveStatus: live ? 'busy' : null }) as never;
+            ({ id, live, state, liveStatus: live ? 'busy' : null, agents: [] }) as never;
+        // revert: src/lib/server/watch/sessions.ts:133 => delete
         const before = liveSignature([record('a', true, 'working'), record('b', false, 'ended')]);
         expect(before).toBe('a:working:busy');
         expect(liveSignature([record('a', true, 'idle')])).not.toBe(before);
         expect(liveSignature([])).toBe('');
+    });
+
+    it("names every launched agent's status, under a session live or not, and no subagent's", () => {
+        const agent = (id: string, status: string, launched: boolean) => ({
+            id,
+            status,
+            ...(launched ? { dispatch: {} } : {})
+        });
+        const record = (agents: unknown[]) =>
+            ({ id: 'p', live: false, state: 'ended', liveStatus: null, agents }) as never;
+        // revert: src/lib/server/watch/sessions.ts:130 => if (false)
+        const running = liveSignature([record([agent('dispatch:x', 'running', true)])]);
+        expect(running).toBe('p>dispatch:x:running');
+        expect(liveSignature([record([agent('dispatch:x', 'done', true)])])).not.toBe(running);
+        expect(liveSignature([record([agent('toolu_1', 'running', false)])])).toBe('');
     });
 });
 
@@ -434,7 +450,7 @@ describe('watchSessions', () => {
         const started = start(fixture);
         await until(() => started.got.length >= 1, WAIT);
         expect(latest(started.got).records[0].agents).toEqual([]);
-        // revert: src/lib/server/watch/sessions.ts:279 => delete
+        // revert: src/lib/server/watch/sessions.ts:288 => delete
         await armed(fixture.root, 'dispatches.json', started.got);
 
         // One launch, as bin/dispatch-note.mjs writes it.
@@ -457,6 +473,42 @@ describe('watchSessions', () => {
         expect(joined()).toEqual(['dispatch:launch-one']);
     });
 
+    it("republishes on the liveness re-check when a launched builder's process exits unstamped", async () => {
+        const fixture = new Fixture();
+        fixture.transcript([prompt('2026-09-10T10:00:00.000Z', 'first question')]);
+        // The launcher's session is not live and the launch is never stamped ended; only the
+        // builder's recorded process says whether it runs.
+        fixture.alive.add(9191);
+        writeFileSync(
+            fixture.dispatches,
+            JSON.stringify([
+                {
+                    id: 'launch-pid',
+                    launcher: 'plan-orchestration',
+                    label: 'O99',
+                    harness: 'codex',
+                    model: 'gpt-test',
+                    parent: SID,
+                    cwd: '/tmp/fixture/worktree',
+                    transcript: '',
+                    startedAt: new Date().toISOString(),
+                    endedAt: '',
+                    pid: 9191,
+                    pidStart: ''
+                }
+            ])
+        );
+        const started = start(fixture, 100);
+        const status = (): string | undefined => latest(started.got).records[0].agents[0]?.status;
+        await until(() => started.got.length >= 1, WAIT);
+        expect(status()).toBe('running');
+
+        // revert: src/lib/server/watch/sessions.ts:130 => if (false)
+        fixture.alive.delete(9191);
+        await until(() => status() === 'done', WAIT);
+        expect(status()).toBe('done');
+    });
+
     it("rescans when a second account's registry changes", async () => {
         const fixture = new Fixture();
         const second = join(fixture.root, 'second-registry');
@@ -466,7 +518,7 @@ describe('watchSessions', () => {
         const started = start(fixture);
         await until(() => started.got.length >= 1, WAIT);
         expect(latest(started.got).records[0].live).toBe(false);
-        // revert: src/lib/server/watch/sessions.ts:269 => delete
+        // revert: src/lib/server/watch/sessions.ts:278 => delete
         await armed(second, 'not-a-registry-entry.txt', started.got);
 
         fixture.alive.add(PID);

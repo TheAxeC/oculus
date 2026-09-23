@@ -1,6 +1,7 @@
 // The launch note read back: a missing, empty or garbled note, the records it keeps, and a launch
 // joined to its parent session's agents with its harness, model, state, the builder's own session
-// and a Codex builder's token totals.
+// and a Codex builder's token totals, and a launch whose builder's pid is recorded read by that
+// process: running while it runs, done once it is gone or its pid names a later process.
 //
 // Every store, note and transcript is made here under the temporary directory, and the liveness
 // probes are stubs: no test reads ~/.claude, ~/.codex or ~/.oculus, and nothing is signalled.
@@ -10,10 +11,12 @@ import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
 import {
+    pendingBuilders,
     readDispatches,
     type DispatchNote
 } from '../../../../src/lib/server/sessions/stores/dispatches.ts';
 import { scan } from '../../../../src/lib/server/sessions/stores/transcripts.ts';
+import { formatStamp } from '../../../../src/lib/server/sessions/registry.ts';
 import type { SessionAgent, SessionRecord } from '../../../../src/lib/data/model.ts';
 import { scratchDir, sweepScratch } from '../../../fixtures/scratch.ts';
 
@@ -39,6 +42,8 @@ function launch(fields: Partial<DispatchNote> = {}): DispatchNote {
         transcript: '',
         startedAt: '2026-09-23T10:00:05.000Z',
         endedAt: '',
+        pid: 0,
+        pidStart: '',
         ...fields
     };
 }
@@ -83,6 +88,12 @@ class Fixture {
     registry: string;
     /** The pids the liveness probe answers running for. */
     alive = new Set<number>();
+    /** The start time, in epoch seconds, the probe's `ps` answers for a pid. */
+    startOf = new Map<number, number>();
+    /** Every pid the probe was asked whether it runs. */
+    asked: number[] = [];
+    /** The pids of every `starts` call the probe answered, one list per call. */
+    startsCalls: number[][] = [];
 
     constructor() {
         expect(resolve(this.root).startsWith(resolve(tmpdir()) + sep)).toBe(true);
@@ -151,9 +162,33 @@ class Fixture {
             cachePath: join(this.root, 'oculus', 'transcript-cache.json'),
             overridesPath: join(this.root, 'oculus', 'sessions.json'),
             dispatchesPath: this.note,
-            probe: { running: (pid) => this.alive.has(pid), starts: () => new Map() },
+            probe: {
+                running: (pid) => {
+                    this.asked.push(pid);
+                    return this.alive.has(pid);
+                },
+                starts: (pids) => {
+                    this.startsCalls.push([...pids]);
+                    return new Map(pids.flatMap((pid) => this.startsFor(pid)));
+                }
+            },
             codexProbe: { commands: () => [] }
         });
+    }
+
+    /**
+     * A builder process the probe answers running, started at `seconds`; its launch fields, with
+     * the start time written as the writer writes it, `ps` in UTC.
+     */
+    builder(pid: number, seconds: number): Pick<DispatchNote, 'pid' | 'pidStart'> {
+        this.alive.add(pid);
+        this.startOf.set(pid, seconds);
+        return { pid, pidStart: formatStamp(seconds, true) };
+    }
+
+    startsFor(pid: number): [number, number][] {
+        const start = this.startOf.get(pid);
+        return start === undefined ? [] : [[pid, start]];
     }
 
     /** The one record with this id, which the case expects the scan to hold. */
@@ -174,7 +209,7 @@ const NOW = new Date().toISOString();
 describe('reading the launch note', () => {
     it('reads a missing, empty, garbled or non-list note as no records', () => {
         const f = new Fixture();
-        // revert: src/lib/server/sessions/stores/dispatches.ts:50 => for (const item of readJson(path) as unknown[]) {
+        // revert: src/lib/server/sessions/stores/dispatches.ts:68 => for (const item of readJson(path) as unknown[]) {
         expect(readDispatches(f.note)).toEqual([]);
         for (const body of ['', '{not json', '{"id": "one"}', 'null', '"a string"']) {
             f.write(body);
@@ -186,7 +221,7 @@ describe('reading the launch note', () => {
         const f = new Fixture();
         f.write([
             launch(),
-            // revert: src/lib/server/sessions/stores/dispatches.ts:65 => delete
+            // revert: src/lib/server/sessions/stores/dispatches.ts:85 => delete
             launch({ label: 'the same id again' }),
             launch({ id: '' }),
             launch({ id: 'no-parent', parent: '' }),
@@ -201,7 +236,7 @@ describe('reading the launch note', () => {
 
     it('reads a field of the wrong type as empty rather than refusing the record', () => {
         const f = new Fixture();
-        // revert: src/lib/server/sessions/stores/dispatches.ts:57 => model: item.model as string,
+        // revert: src/lib/server/sessions/stores/dispatches.ts:75 => model: item.model as string,
         f.write([{ ...launch(), model: 42, endedAt: null, transcript: ['x'] }]);
         const [note] = readDispatches(f.note);
         expect(note.model).toBe('');
@@ -214,7 +249,7 @@ describe('a launch joined to its parent', () => {
     it("joins the launch to its parent's agents, marked as launched, with its harness and model", () => {
         const f = new Fixture();
         f.transcript(PARENT, [prompt(NOW, 'orchestrate')]);
-        // revert: src/lib/server/sessions/stores/dispatches.ts:128 => delete
+        // revert: src/lib/server/sessions/stores/dispatches.ts:201 => delete
         f.write([launch()]);
         const [row] = f.launched();
         expect(row.id).toBe('dispatch:launch-one');
@@ -236,7 +271,7 @@ describe('a launch joined to its parent', () => {
     it('says a launch whose note is stamped ended is done, with its end', () => {
         const f = new Fixture();
         f.transcript(PARENT, [prompt(NOW, 'orchestrate')]);
-        // revert: src/lib/server/sessions/stores/dispatches.ts:100 => status: 'running',
+        // revert: src/lib/server/sessions/stores/dispatches.ts:124 => status: 'running',
         f.write([launch({ endedAt: '2026-09-23T10:30:00.000Z' })]);
         const [row] = f.launched();
         expect(row.status).toBe('done');
@@ -247,7 +282,7 @@ describe('a launch joined to its parent', () => {
         const f = new Fixture();
         f.transcript(PARENT, [prompt(NOW, 'orchestrate')]);
         const child = f.transcript(CHILD, [prompt(NOW, 'build it')]);
-        // revert: src/lib/server/sessions/stores/transcripts.ts:281 => () => null
+        // revert: src/lib/server/sessions/stores/transcripts.ts:293 => () => null,
         f.write([launch({ transcript: child })]);
         const [row] = f.launched();
         expect(row.dispatch?.session).toBe(CHILD);
@@ -275,7 +310,7 @@ describe('a launch joined to its parent', () => {
         expect(live.status).toBe('running');
         expect(live.ended).toBeNull();
         // The builder's process is gone and its launcher never stamped the end.
-        // revert: src/lib/server/sessions/stores/dispatches.ts:91 => const done = note.endedAt !== '';
+        // revert: src/lib/server/sessions/stores/dispatches.ts:115 => const done = note.endedAt !== '';
         f.alive.delete(7171);
         const [gone] = f.launched();
         expect(gone.status).toBe('done');
@@ -290,7 +325,7 @@ describe('a launch joined to its parent', () => {
         // The launcher is live and the builder reads not live, which a Codex builder inside a long
         // command does; the launcher will stamp the end, so the row keeps reading running.
         f.enrol(PARENT, 7272);
-        // revert: src/lib/server/sessions/stores/dispatches.ts:91 => const done = note.endedAt !== '' || (child !== null && !child.live);
+        // revert: src/lib/server/sessions/stores/dispatches.ts:115 => const done = note.endedAt !== '' || (child !== null && !child.live);
         const [row] = f.launched();
         expect(row.status).toBe('running');
         expect(row.ended).toBeNull();
@@ -300,7 +335,7 @@ describe('a launch joined to its parent', () => {
         const f = new Fixture();
         f.transcript(PARENT, [prompt(NOW, 'orchestrate')]);
         const rollout = f.rollout(900, 70);
-        // revert: src/lib/server/sessions/stores/dispatches.ts:108 => tokens: null
+        // revert: src/lib/server/sessions/stores/dispatches.ts:132 => tokens: null
         f.write([launch({ harness: 'codex', model: '', transcript: rollout })]);
         const [row] = f.launched();
         expect(row.dispatch?.session).toBe(ROLLOUT);
@@ -317,7 +352,7 @@ describe('a launch joined to its parent', () => {
     it('joins nothing for a parent the scan does not hold', () => {
         const f = new Fixture();
         f.transcript(PARENT, [prompt(NOW, 'orchestrate')]);
-        // revert: src/lib/server/sessions/stores/dispatches.ts:127 => delete
+        // revert: src/lib/server/sessions/stores/dispatches.ts:194 => delete
         f.write([launch({ parent: 'no-such-session' })]);
         const records = f.scan();
         expect(records.map((record) => record.id)).toEqual([PARENT]);
@@ -327,9 +362,139 @@ describe('a launch joined to its parent', () => {
     it('keeps a launch and a subagent apart when the note reuses the subagent id', () => {
         const f = new Fixture();
         f.transcript(PARENT, [prompt(NOW, 'orchestrate'), dispatch(NOW, 'toolu_same')]);
-        // revert: src/lib/server/sessions/stores/dispatches.ts:94 => id: note.id,
+        // revert: src/lib/server/sessions/stores/dispatches.ts:118 => id: note.id,
         f.write([launch({ id: 'toolu_same' })]);
         const ids = f.record(PARENT).agents.map((agent) => agent.id);
         expect(ids.sort()).toEqual(['dispatch:toolu_same', 'toolu_same']);
+    });
+});
+
+describe("a launch read by its builder's process", () => {
+    it('watches only the unstamped launches with a pid that started inside the window', () => {
+        const since = Date.parse('2026-09-23T00:00:00.000Z');
+        const recent = launch({ id: 'recent', pid: 7272 });
+        const old = launch({ id: 'old', pid: 8108, startedAt: '2026-09-20T10:00:05.000Z' });
+        const ended = launch({ id: 'ended', pid: 9191, endedAt: '2026-09-23T11:00:00.000Z' });
+        const none = launch({ id: 'none' });
+        // revert: src/lib/server/sessions/stores/dispatches.ts:158 => (note) => note.pid > 0 && note.endedAt === ''
+        expect(pendingBuilders([recent, old, ended, none], since).map((note) => note.id)).toEqual([
+            'recent'
+        ]);
+    });
+
+    const BEGAN = Math.floor(Date.parse('2026-09-23T10:00:04.000Z') / 1000);
+
+    it('reads running while the recorded process runs, though its launcher and session are gone', () => {
+        const f = new Fixture();
+        f.transcript(PARENT, [prompt(NOW, 'orchestrate')]);
+        // The builder's session is not live and neither is its launcher's, which alone reads done.
+        const child = f.transcript(CHILD, [prompt(NOW, 'build it')]);
+        // revert: src/lib/server/sessions/stores/dispatches.ts:115 => const done = note.endedAt !== '' || unwitnessed;
+        f.write([launch({ transcript: child, ...f.builder(8101, BEGAN) })]);
+        const [row] = f.launched();
+        expect(row.status).toBe('running');
+        expect(row.ended).toBeNull();
+    });
+
+    it('reads done once the recorded process is gone, though its launcher lives', () => {
+        const f = new Fixture();
+        f.transcript(PARENT, [prompt(NOW, 'orchestrate')]);
+        f.enrol(PARENT, 7272);
+        const fields = f.builder(8102, BEGAN);
+        f.write([launch(fields)]);
+        expect(f.launched()[0].status).toBe('running');
+        // revert: src/lib/server/sessions/stores/dispatches.ts:143 => delete
+        f.alive.delete(8102);
+        f.startOf.delete(8102);
+        expect(f.launched()[0].status).toBe('done');
+    });
+
+    it('reads done when the pid now names a process with another start time', () => {
+        const f = new Fixture();
+        f.transcript(PARENT, [prompt(NOW, 'orchestrate')]);
+        f.enrol(PARENT, 7272);
+        const fields = f.builder(8103, BEGAN);
+        // The builder exited and a later process took its pid an hour on.
+        f.startOf.set(8103, BEGAN + 3600);
+        // revert: src/lib/server/sessions/stores/dispatches.ts:148 => return true;
+        f.write([launch(fields)]);
+        expect(f.launched()[0].status).toBe('done');
+        // Within the registry's slack the same process still reads as the builder.
+        f.startOf.set(8103, BEGAN + 1);
+        expect(f.launched()[0].status).toBe('running');
+    });
+
+    it('reads a record without the pid fields, or with a pid that is not one, by the rules without a pid', () => {
+        const f = new Fixture();
+        f.transcript(PARENT, [prompt(NOW, 'orchestrate')]);
+        // A record without the pid fields.
+        const older: Json = { ...launch({ id: 'older-writer' }) };
+        delete older.pid;
+        delete older.pidStart;
+        // revert: src/lib/server/sessions/stores/dispatches.ts:158 => (note) => note.endedAt === '' && !(Date.parse(note.startedAt) < since)
+        f.write([
+            older,
+            launch({ id: 'no-pid' }),
+            { ...launch({ id: 'negative' }), pid: -5 },
+            { ...launch({ id: 'fraction' }), pid: 1.5 },
+            { ...launch({ id: 'text' }), pid: '8104', pidStart: 42 }
+        ]);
+        // The launcher is gone and no builder session is held: no witness, so running till the end.
+        const rows = f.launched();
+        expect(rows.map((row) => row.status)).toEqual([
+            'running',
+            'running',
+            'running',
+            'running',
+            'running'
+        ]);
+        expect(f.asked).toEqual([]);
+        expect(readDispatches(f.note).map((note) => [note.pid, note.pidStart])).toEqual(
+            Array.from({ length: 5 }, () => [0, ''])
+        );
+    });
+
+    it('asks nothing about a launch whose end is stamped, which reads done by the stamp', () => {
+        const f = new Fixture();
+        f.transcript(PARENT, [prompt(NOW, 'orchestrate')]);
+        const fields = f.builder(8105, BEGAN);
+        // revert: src/lib/server/sessions/stores/dispatches.ts:158 => (note) => note.pid > 0 && !(Date.parse(note.startedAt) < since)
+        f.write([launch({ ...fields, endedAt: '2026-09-23T10:30:00.000Z' })]);
+        const [row] = f.launched();
+        expect(row.status).toBe('done');
+        expect(f.asked).toEqual([]);
+    });
+
+    it('reads running while the recorded process runs and `ps` gave no start time for it', () => {
+        const f = new Fixture();
+        f.transcript(PARENT, [prompt(NOW, 'orchestrate')]);
+        f.enrol(PARENT, 7272);
+        const fields = f.builder(8106, BEGAN);
+        // Signal 0 answers, and `ps` failed or timed out, so no start time came back.
+        f.startOf.delete(8106);
+        // revert: src/lib/server/sessions/stores/dispatches.ts:145 => return false;
+        f.write([launch(fields)]);
+        expect(f.launched()[0].status).toBe('running');
+    });
+
+    it('reads running while the recorded process runs and its recorded start does not parse', () => {
+        const f = new Fixture();
+        f.transcript(PARENT, [prompt(NOW, 'orchestrate')]);
+        f.enrol(PARENT, 7272);
+        const { pid } = f.builder(8107, BEGAN);
+        // revert: src/lib/server/sessions/stores/dispatches.ts:145 => return false;
+        f.write([launch({ pid, pidStart: 'not a start time' }), launch({ id: 'empty', pid })]);
+        expect(f.launched().map((row) => row.status)).toEqual(['running', 'running']);
+    });
+
+    it("asks `ps` once per scan for the registry's sessions and the launched builders together", () => {
+        const f = new Fixture();
+        f.transcript(PARENT, [prompt(NOW, 'orchestrate')]);
+        f.enrol(PARENT, 7272);
+        f.write([launch(f.builder(8108, BEGAN))]);
+        // revert: src/lib/server/sessions/stores/transcripts.ts:255 => const starts = new Map([...probe.starts(candidates.map((entry) => entry.pid)), ...probe.starts([...answered])]);
+        f.startsCalls = [];
+        expect(f.launched()[0].status).toBe('running');
+        expect(f.startsCalls.map((pids) => [...pids].sort())).toEqual([[7272, 8108]]);
     });
 });

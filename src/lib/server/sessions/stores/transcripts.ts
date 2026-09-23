@@ -41,10 +41,16 @@ import {
 import { claudeTranscripts, codexRollouts, isRollout } from '../../transcripts/stores.ts';
 import { claudeState, foldClaude } from '../fold.ts';
 import { whole } from './json.ts';
-import { defaultDispatchesPath, joinDispatches, readDispatches } from './dispatches.ts';
+import {
+    builderProcesses,
+    defaultDispatchesPath,
+    joinDispatches,
+    pendingBuilders,
+    readDispatches
+} from './dispatches.ts';
 import { distinctFolders, realFolder } from '../folders.ts';
 import { defaultOverridesPath, hiddenIds } from '../overrides.ts';
-import { liveSessions, mergeLive, systemProbe, type Probe } from '../registry.ts';
+import { liveFrom, mergeLive, registryCandidates, systemProbe, type Probe } from '../registry.ts';
 import { finish, newAcc, prune, type Acc } from '../record.ts';
 
 export const DEFAULT_WINDOW_DAYS = 2;
@@ -240,7 +246,14 @@ export function scan(options: ScanOptions = {}): SessionRecord[] {
     const now = options.now ?? Date.now();
 
     const previous = loadCache(cachePath);
-    const live = liveSessions(options.registries ?? [], options.probe ?? systemProbe);
+    const probe = options.probe ?? systemProbe;
+    const notes = readDispatches(options.dispatchesPath ?? defaultDispatchesPath());
+    // The registry's sessions and the launched builders ask signal 0 per pid and share one `ps`.
+    const candidates = registryCandidates(options.registries ?? [], probe);
+    const pending = pendingBuilders(notes, now - windowDays * 86_400_000);
+    const answered = new Set(pending.map((note) => note.pid).filter((pid) => probe.running(pid)));
+    const starts = probe.starts([...candidates.map((entry) => entry.pid), ...answered]);
+    const live = liveFrom(candidates, starts);
     const dismissed = hiddenIds(options.overridesPath ?? defaultOverridesPath());
     const fresh: Record<string, CacheEntry> = {};
     const found: { record: SessionRecord; mtimeMs: number }[] = [];
@@ -271,14 +284,14 @@ export function scan(options: ScanOptions = {}): SessionRecord[] {
         take(file, store, 'codex');
     }
 
-    const notes = readDispatches(options.dispatchesPath ?? defaultDispatchesPath());
     // Every folded file by its real path, since a note may name a transcript through a symlink.
     const byReal = new Map<string, SessionRecord>();
     if (notes.length > 0) for (const [path, record] of byPath) byReal.set(realFolder(path), record);
     joinDispatches(
         found.map((item) => item.record),
         notes,
-        (note) => (note.transcript ? (byReal.get(realFolder(note.transcript)) ?? null) : null)
+        (note) => (note.transcript ? (byReal.get(realFolder(note.transcript)) ?? null) : null),
+        builderProcesses(pending, answered, starts)
     );
 
     saveCache(cachePath, previous, fresh);

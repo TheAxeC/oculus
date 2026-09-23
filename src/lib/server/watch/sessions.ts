@@ -15,12 +15,14 @@
 // byte-offset cache in sessions/cache.ts is what makes the rescan cost the appended bytes rather
 // than the whole store.
 //
-// The 15 s liveness re-check covers the one change to the payload no file event announces. A
-// process can die without its registry file changing, and a Codex rollout is live only while a
-// codex process runs and the file is fresh (sessions/stores/codex.ts, codexLive), so a session goes
-// from live to ended with nothing written anywhere. The re-check therefore rescans on a timer and
-// publishes only when the set of live ids or one of their states changed, so a quiet machine sees
-// no traffic on the channel.
+// The 15 s liveness re-check covers the changes to the payload no file event announces. A process
+// can die without its registry file changing, and a Codex rollout is live only while a codex
+// process runs and the file is fresh (sessions/stores/codex.ts, codexLive), so a session goes from
+// live to ended with nothing written anywhere; and a launched builder whose recorded process exits
+// before its launcher stamps the end goes from running to done the same way
+// (sessions/stores/dispatches.ts). The re-check therefore rescans on a timer and publishes only
+// when the set of live ids, one of their states or a launched agent's status changed, so a quiet
+// machine sees no traffic on the channel.
 //
 // The slow clock beside it is a full rescan every few minutes whatever the events said. A write
 // that lands while a watch is being opened is announced to nobody, and a re-check that sees the
@@ -117,10 +119,17 @@ export type SessionsWatcher = Watcher & {
     onChange: (listener: () => void) => () => void;
 };
 
-/** What the liveness re-check compares: every live session's id and the state it is in. */
+/**
+ * What the liveness re-check compares: every live session's id and the state it is in, and every
+ * launched agent's id and status under any session, live or not.
+ */
 export function liveSignature(records: SessionRecord[]): string {
     const parts: string[] = [];
     for (const record of records) {
+        for (const agent of record.agents) {
+            if (agent.dispatch !== undefined)
+                parts.push(`${record.id}>${agent.id}:${agent.status}`);
+        }
         if (!record.live) continue;
         parts.push(`${record.id}:${record.state}:${record.liveStatus ?? ''}`);
     }
