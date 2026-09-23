@@ -98,7 +98,7 @@ describe('the revert check', () => {
         'calls a case red when its revert breaks it and GREEN when it does not',
         { timeout: 120000 },
         () => {
-            // revert: bin/revert-check.mjs:461 => if (run.green) return { ok: true, line: `red       ${where}` };
+            // revert: bin/revert-check.mjs:464 => if (run.green) return { ok: true, line: `red       ${where}` };
             const dir = fixture();
             const held = run(dir, ['tests/rule.test.js']);
             expect(held.out).toContain(
@@ -113,7 +113,7 @@ describe('the revert check', () => {
     );
 
     it('lists a case with no machine-readable revert as unchecked, never as passed', () => {
-        // revert: bin/revert-check.mjs:496 => delete
+        // revert: bin/revert-check.mjs:499 => delete
         const dir = fixture();
         writeFileSync(
             join(dir, 'tests', 'rule.test.js'),
@@ -254,7 +254,7 @@ describe('the revert check', () => {
         'names a directive whose target a copy leaves behind, and runs the ones after it',
         { timeout: 120000 },
         () => {
-            // revert: bin/revert-check.mjs:405 => if (false) {
+            // revert: bin/revert-check.mjs:408 => if (false) {
             const dir = fixture();
             withFile(dir, '.scratch/plan.md', 'a plan the copy leaves behind\n');
             withFile(
@@ -397,7 +397,7 @@ describe('the revert check', () => {
     });
 
     it('refuses a target that escapes the tree, and writes nothing outside the copy', () => {
-        // revert: bin/revert-check.mjs:393 => if (false) {
+        // revert: bin/revert-check.mjs:396 => if (false) {
         const dir = fixture();
         const outside = join(dir, '..', `escape-target-${basename(dir)}.txt`);
         writeFileSync(outside, 'the file a directive must not reach\n');
@@ -483,7 +483,7 @@ describe('the revert check', () => {
     });
 
     it('leaves nothing a case made in the temporary directory', { timeout: 120000 }, () => {
-        // revert: bin/revert-check.mjs:380 => const env = { ...process.env, CI: '1' };
+        // revert: bin/revert-check.mjs:383 => const env = { ...process.env, CI: '1' };
         const dir = fixture();
         const probe = `oculus-leak-probe-${basename(dir)}-`;
         withFile(
@@ -517,7 +517,7 @@ describe('the revert check', () => {
         'removes its copy of the tree when it is stopped by a signal',
         { timeout: 120000 },
         async () => {
-            // revert: bin/revert-check.mjs:417 => delete
+            // revert: bin/revert-check.mjs:420 => delete
             const dir = fixture();
             const temp = scratchDir('oculus-revert-signal-');
             expect(resolve(temp).startsWith(resolve(tmpdir()) + sep)).toBe(true);
@@ -561,7 +561,7 @@ describe('the revert check', () => {
             timeout: 120000
         },
         () => {
-            // revert: bin/revert-check.mjs:449 => if (false) {
+            // revert: bin/revert-check.mjs:452 => if (false) {
             const dir = fixture();
             withFile(dir, 'src/tool.mjs', "console.log('ran');\n");
             withFile(
@@ -650,5 +650,32 @@ describe("a case's copy, on its way out", () => {
         if (kept === null) return;
         chmodSync(join(kept[1], 'src'), 0o700);
         rmSync(kept[1], { recursive: true, force: true });
+    });
+});
+
+describe('a case the check runs', () => {
+    it('runs with the compile cache off, so no child writes into its copy as it exits', () => {
+        // revert: bin/revert-check.mjs:383 => const env = { ...process.env, CI: '1', TMPDIR: temp };
+        const dir = fixture();
+        const held = spawnSync(
+            process.execPath,
+            [
+                '--input-type=module',
+                '-e',
+                "const m = await import('./bin/revert-check.mjs'); process.stdout.write(String(m.caseEnv(process.argv[1]).NODE_DISABLE_COMPILE_CACHE));",
+                dir
+            ],
+            // The flag is out of what the child inherits, so only the line under test sets it.
+            {
+                cwd: process.cwd(),
+                encoding: 'utf8',
+                env: Object.fromEntries(
+                    Object.entries(process.env).filter(
+                        ([name]) => name !== 'NODE_DISABLE_COMPILE_CACHE'
+                    )
+                )
+            }
+        );
+        expect(held.stdout).toBe('1');
     });
 });

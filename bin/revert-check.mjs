@@ -374,10 +374,13 @@ function runCase(dir, file, caseName) {
  * temporary directory is a folder of the copy, so whatever the run makes there, a scratch folder a
  * reverted sweep no longer removes among it, goes when the copy does.
  */
-function caseEnv(dir) {
+export function caseEnv(dir) {
     const temp = join(dir, '.case-tmp');
     mkdirSync(temp, { recursive: true });
-    const env = { ...process.env, CI: '1', TMPDIR: temp };
+    // Node writes its compile cache into the temporary directory as a process exits, and a child of
+    // the case that exits after the copy is removed would put the copy's path back; with the cache
+    // off, nothing of the case writes there once it has run.
+    const env = { ...process.env, CI: '1', TMPDIR: temp, NODE_DISABLE_COMPILE_CACHE: '1' };
     for (const name of Object.keys(env)) {
         if (name.startsWith('VITEST') || name === 'TEST_NAME_PATTERN') delete env[name];
     }
