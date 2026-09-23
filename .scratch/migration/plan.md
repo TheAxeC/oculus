@@ -174,6 +174,12 @@ One line per package: the status mark, the id, the title, and where the rest is 
 - D23 a language server client in the D13 editor: pyright for Python, clangd for C++, one server per root and language, hover, go to definition, references and diagnostics (Axel 2026-09-22, reversing his ruling of 2026-09-13 00:45; after D13; brief `agents/briefs/D23.md`)
 - D24 a Personal board: `<repo>/.oculus/project.yml` in each Files root that has one, drawn as project cards (Axel 2026-09-22; brief `agents/briefs/D24.md`)
 - E1 apps added while oculus runs, designed before any code: a DESIGN.md section on where they live, what they read, how they write and how they are isolated, ruled by Axel before a build step is booked (Axel 2026-09-22; after L3; brief `agents/briefs/E1.md`)
+- A1 review with feedback: a comment on a line of a session's diff, from the Changes view, sent to that session as a prompt (Axel 2026-09-23, from the comparison with VS Code's Agents window; brief at dispatch)
+  - Step 0, open 2026-09-23: how a comment reaches a session, verbatim in `orchestrator-state.md`'s open items.
+- A2 a session in a new worktree: Claude or Codex started in a fresh worktree of a repository from the Repositories view (Axel 2026-09-23, from the same comparison; with D20; brief at dispatch)
+  - Step 0, open 2026-09-23: where the worktree lives, its branch and what removes it, verbatim in `orchestrator-state.md`'s open items.
+- A3 scheduled runs: an Update tray task that re-runs on a schedule, as VS Code's Automations re-run a saved prompt (Axel 2026-09-23, from the same comparison; after D17; brief at dispatch)
+  - Step 0, open 2026-09-23: where a schedule is written and what happens to a run missed while oculus was not running, verbatim in `orchestrator-state.md`'s open items.
 - ✅ D19 the Usage view: one card per Claude or Codex account from `accounts:` in `local.yml` with its plan tier, the rate windows, the live sessions and a seven-day token table; `bin/claude-usage.sh` as Claude Code's status-line command (Axel 2026-09-13 13:30; landed the same day, see the state file).
 - ✅ D19b the bars `/usage` shows, from Claude Code's cached utilization per account: the 5-hour, weekly and per-model (Fable) windows with their severity (Axel 2026-09-13 17:45; landed the same day).
 - ✅ D19c fresh usage figures: a hidden tmux Claude Code session per account, named `oculus-usage-<account>`, sent `/usage` every 10 minutes and on a Refresh control, restarted on any failure, never listed (Axel 2026-09-13 21:25; brief `agents/briefs/D19c.md`).
@@ -219,7 +225,7 @@ One line per package: the status mark, the id, the title, and where the rest is 
 ## Could run in parallel
 
 - The feature stretch after R17, three in flight at all times, one dispatched at each landing (Axel 2026-09-14 17:50 and 2026-09-15 19:58; the steps that run alone and the order are in `orchestrator-state.md`, which holds this line whole)
-- The queue, in order: U1; L5; L4; Q66; Q35; D11 + D13 + D14; D23 + D15 + D17; D18 + D20 + D24; M3 + E1; M4; then R2, O29, O30, X2 last.
+- The queue, in order: U1; L5; L4; Q66; Q35; D11 + D13 + D14; D23 + D15 + D17; D18 + D20 + D24; A1 + A2 + A3; M3 + E1; M4; then R2, O29, O30, X2 last.
 Independent of each other; two may run side by side under R9's rule when their briefs name disjoint paths and different views, else they run one at a time.
 - S1 with anything after R1.
 - O5 with O2 to O4.
