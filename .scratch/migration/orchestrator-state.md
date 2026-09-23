@@ -45,9 +45,10 @@ dispatch:
     worktree: .agents/worktrees/O32
     base: 138afb83
     launched: 2026-09-23
-    report: tools/oculus/.scratch/migration/agents/reviews/O32-report.md
+    report: tools/oculus/.scratch/migration/agents/reviews/O32-report.md (saved; builder 174,033 tokens, 58 tool uses, 2,531 s)
+    review: agents/reviews/O32-refuter.md (saved; reviewer claude:opus, 138,720 tokens, 30 tool uses, 1,341 s)
     landing: not-started
-    round: 0
+    round: 1                 # sent 2026-09-23 from the worktree's wip 5c68be5e: launch lines in the recipes' detached form, a live pid ps cannot date recorded rather than refused, the ps-failure branch proven, the race case's revert made reliable, launched rows in the watcher's signature, one ps per scan, the stamp in UTC, full Doc text, history wording, before and after
 ```
 
 ## The standing demands (from Axel, in force)
