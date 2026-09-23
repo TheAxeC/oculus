@@ -67,7 +67,7 @@ test('a dismissed lead is dismissed in the file, after a reload, until it is reo
     // the reload waits for the rail the config push draws instead and opens the view again from
     // there.
     await page.reload();
-    await expect(page.locator('nav [data-group]').first()).toBeVisible();
+    await expect(page.locator('nav [data-rail-page] button').first()).toBeVisible();
     await openView(page, 'leads', t('views.leads'));
     const toggle = page.getByRole('button', { name: t('leads.show_dismissed', 1) });
     await expect(toggle).toBeVisible();

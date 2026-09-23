@@ -1,6 +1,6 @@
 <script module lang="ts">
     // Layer 3, view registration. The agenda sits in the Personal group after the photo wall, since
-    // what it holds is the reader's own days rather than a fact about the hub. The rail badge is
+    // what it holds is the reader's own days rather than a fact about the hub. The view's badge is
     // how many of today's events have not ended yet, and nothing when none are left.
     import type { ViewRegistration } from '../../registry';
 

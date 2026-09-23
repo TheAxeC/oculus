@@ -37,7 +37,7 @@ const LAYERS = ['data', 'server', 'server/transcripts', 'state', 'ui', 'shell', 
 // the age on a card; `data/helpers/deck` because the deck's placement rule has two readers, the
 // Present view and the write that saves a selection, and a copy of it on each side would let them
 // disagree about what a slide key is; `data/accounts/leads` for the same reason, since the statuses
-// that close a lead are read by the Position Leads view, its rail badge and the ticker on the
+// that close a lead are read by the Position Leads view, its badge and the ticker on the
 // client, and by the summary the snapshot carries on the server; `data/helpers/worktrees` likewise,
 // the Repositories view naming the path a worktree will take and the write making it;
 // `data/helpers/text-kind`, the file browser deciding which tab a file opens in and the source
@@ -51,16 +51,21 @@ const LAYERS = ['data', 'server', 'server/transcripts', 'state', 'ui', 'shell', 
 // sends it and the search route refusing the same query when it arrives, from one rule and one
 // argument list; and `data/helpers/finding-text`, whose placeholder rule is the one the client's
 // t() fills a catalog string with and the one the server words every finding with before the
-// snapshot carries it. The model's own concern modules (`data/model-*`) are reached through the
-// facade only, which is why they are not listed here.
+// snapshot carries it; and `data/sources/config/rail`, the rule over the `rail:` list of
+// config/layout.yml, which the page drawing the rail, the Settings view editing it and the server
+// writing it and wording its findings all read, so the three agree on which entries are pages. The
+// model's own concern modules (`data/model-*`) are reached through the facade only, which is why
+// they are not listed here.
 //
-// The shell's row names the state modules the workbench is made of, one at a time. The one drag in
-// progress belongs to the shell, as do the theme picker and the configuration it offers; views do
-// not read or write either concern. A shell component reaches those stores through the client
-// object (`state/client/context`, read with `state/client/use`), which names every store there is,
-// so the row alone would no longer hold the shell to its own: the stores a shell file may take out
-// of the object are SHELL_STORES below, and the second rule checks each destructuring against that
-// list.
+// The shell's row names the state modules the workbench is made of, one at a time, and the folder
+// `state/workbench/navigation/`, whose modules (the rail's pages, the view catalogue and its keys,
+// what a page is called and what closing it asks) the shell and the views both read. The one drag
+// in progress is the drag store's, which the shell's strips start and draw and the Pages view
+// starts for a page carried out of its list. A shell component reaches those stores through the
+// client object (`state/client/context`, read with `state/client/use`), which names every store
+// there is, so the row alone would no longer hold the shell to its own: the stores a shell file may
+// take out of the object are SHELL_STORES below, and the second rule checks each destructuring
+// against that list.
 //
 // `state/client/context` is where the client's stores are wired together, so it is the one module
 // of the state layer that names the view registry and the primitives' tooltip counter.
@@ -80,6 +85,7 @@ const ALLOWED: Record<string, string[]> = {
         'state/workbench/palette',
         'state/workbench/palette-source',
         'state/workbench/selection',
+        'state/workbench/navigation/**',
         'state/sessions/terminals',
         'views/registry'
     ],
@@ -100,6 +106,7 @@ const ALLOWED: Record<string, string[]> = {
         'data/helpers/editor',
         'data/helpers/search',
         'data/helpers/finding-text',
+        'data/sources/config/rail',
         'views/registry',
         'ui/menu/tip-ids'
     ],
@@ -399,22 +406,22 @@ function scratch(name: string): string {
 
 describe('layer boundaries', () => {
     it('holds across src/lib', () => {
-        // revert: tests/checks/tree/boundaries.test.ts:86 => views: ['state/**', 'views/registry'],
+        // revert: tests/checks/tree/boundaries.test.ts:92 => views: ['state/**', 'views/registry'],
         expect(findViolations(LIB)).toEqual([]);
     });
 
     it('holds no process-wide state under src', () => {
-        // revert: tests/checks/tree/boundaries.test.ts:252 => delete
+        // revert: tests/checks/tree/boundaries.test.ts:259 => delete
         expect(findGlobalState(SRC)).toEqual([]);
     });
 
     it('keeps every shell file to the stores its row names', () => {
-        // revert: tests/checks/tree/boundaries.test.ts:274 => delete
+        // revert: tests/checks/tree/boundaries.test.ts:281 => delete
         expect(findShellStores(LIB)).toEqual([]);
     });
 
     it('catches a shell file reading a store the shell may not read', () => {
-        // revert: tests/checks/tree/boundaries.test.ts:298 => delete
+        // revert: tests/checks/tree/boundaries.test.ts:305 => delete
         const dir = scratch('oculus-shell-stores-');
         mkdirSync(join(dir, 'shell'), { recursive: true });
         writeFileSync(
@@ -428,7 +435,7 @@ describe('layer boundaries', () => {
     });
 
     it('catches process-wide state outside app.d.ts', () => {
-        // revert: tests/checks/tree/boundaries.test.ts:213 => delete
+        // revert: tests/checks/tree/boundaries.test.ts:220 => delete
         const dir = scratch('oculus-global-state-');
         mkdirSync(join(dir, 'lib', 'server'), { recursive: true });
         writeFileSync(join(dir, 'bad.ts'), 'declare global {}\nconst held = globalThis.value;\n');
@@ -452,7 +459,7 @@ describe('layer boundaries', () => {
     });
 
     it('catches a violation of every row it can be shown one of', () => {
-        // revert: tests/checks/tree/boundaries.test.ts:177 => if (false) {
+        // revert: tests/checks/tree/boundaries.test.ts:184 => if (false) {
         const dir = scratch('oculus-boundaries-');
 
         const write = (rel: string, body: string) => {
@@ -495,7 +502,7 @@ describe('layer boundaries', () => {
         );
         // A sibling view of the same group is another view: the rule is the view's own folder,
         // never the group's.
-        // revert: tests/checks/tree/boundaries.test.ts:127 => return [`views/${parts[1]}/**`];
+        // revert: tests/checks/tree/boundaries.test.ts:134 => return [`views/${parts[1]}/**`];
         write(
             'views/boards/focus/CommandCenter.svelte',
             "<script>\nimport Row from './Row.svelte';\nimport Bad from '../projects/Projects.svelte';\n</script>"
@@ -527,7 +534,7 @@ describe('layer boundaries', () => {
 
     // revert: tests/checks/tree/allow-styling.ts:72 => line: 'views/sources/search/Results.svelte styles .label of ui/controls/Chip.svelte, ui/tabs/Tabs.svelte, ui/controls/Tag.svelte through .hit :global(.label)',
     it('lets no view or shell component style a primitive own class', () => {
-        // revert: tests/checks/tree/boundaries.test.ts:362 => delete
+        // revert: tests/checks/tree/boundaries.test.ts:369 => delete
         expect(
             findPrimitiveStyling(
                 LIB,
@@ -537,7 +544,7 @@ describe('layer boundaries', () => {
     });
 
     it('catches a view reaching into a primitive, and passes the theme class and its own', () => {
-        // revert: tests/checks/tree/boundaries.test.ts:358 => const owned = undefined;
+        // revert: tests/checks/tree/boundaries.test.ts:365 => const owned = undefined;
         const dir = scratch('oculus-primitive-styling-');
         const write = (rel: string, body: string) => {
             const full = join(dir, rel);
@@ -580,7 +587,7 @@ describe('layer boundaries', () => {
     });
 
     it('holds the styling lists to rules the tree still has', () => {
-        // revert: tests/checks/tree/boundaries.test.ts:363 => delete
+        // revert: tests/checks/tree/boundaries.test.ts:370 => delete
         const held = findPrimitiveStyling(LIB);
         expect(
             [...DELIBERATE, ...HELD]

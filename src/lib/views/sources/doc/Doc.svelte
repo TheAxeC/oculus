@@ -1,6 +1,6 @@
 <script module lang="ts">
-    // Layer 3, view registration. A hub document opens from its group in the rail and is not
-    // listed.
+    // Layer 3, view registration. A hub document opens from its group in the view catalogue and
+    // is not listed as a view of its own.
     import type { ViewRegistration } from '../../registry';
 
     export const registration: ViewRegistration = {

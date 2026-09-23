@@ -12,8 +12,8 @@ export const EMBED = 'embed:';
 
 /**
  * Every page but the one on screen, as the item that moves the active tab onto it. A page with
- * no name of its own is numbered by its place in the whole strip, which is the number the page
- * strip draws for it, so the item names the page the reader sees rather than its place among
+ * no name of its own is numbered by its place in the whole page list, which is the number the
+ * Pages view draws for it, so the item names the page the reader sees rather than its place among
  * the others.
  */
 export function pageMoveItems(
@@ -35,10 +35,10 @@ export function pageMoveItems(
 }
 
 /**
- * Every page that may be shown beside a pane of `host` while `screen` is the page the strip is on,
+ * Every page that may be shown beside a pane of `host` while `screen` is the page on screen,
  * as the item that shows it there: not the page the pane is in, not a page that would then draw
  * itself, and not one already drawn somewhere on the screen. A page with no name of its own is
- * numbered by its place in the strip, as the move items number it.
+ * numbered by its place in the page list, as the move items number it.
  */
 export function embedPageItems(
     pages: readonly Page[],
@@ -67,7 +67,7 @@ export const EMBED_LIST = 'show-a-page';
  * lists the pages that can be shown beside the pane, each present only when it has a page to offer.
  * The menu shows a choice's pages in place of its own list, so the menu is its fixed items and at
  * most these two however many pages the layout holds. `host` is the page the pane is in and
- * `screen` the page the strip is on.
+ * `screen` the page on screen.
  */
 export function pageListItems(
     pages: readonly Page[],

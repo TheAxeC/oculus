@@ -228,9 +228,10 @@ export function deriveTokens(theme: Record<string, string>): Record<string, stri
     if (effective['--muted'] && chip) derived['--muted-txt'] = everywhere(effective['--muted']);
     if (effective['--accent'] && chip) derived['--accent-txt'] = everywhere(effective['--accent']);
 
-    // The surface a pressed toggle in the rail fills with: the accent mixed into the page the rail
-    // is drawn on. Its glyph and name take a text colour of their own, readable on that surface
-    // first, as a hue's is on its own tint, so the accent text everywhere else is left as it is.
+    // The surface the rail button of the page on screen fills with: the accent mixed into the page
+    // the rail is drawn on. Its glyph and name take a text colour of their own, readable on that
+    // surface first, as a hue's is on its own tint, so the accent text everywhere else is left as
+    // it is.
     if (effective['--accent'] && page && chip) {
         const tint = mix(effective['--accent'], page, ACCENT_SHARE);
         derived['--accent-bg'] = tint;

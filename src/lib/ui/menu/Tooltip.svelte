@@ -15,9 +15,9 @@
     // answer to whether the focus came from the keyboard.
     //
     // The bubble is positioned in viewport coordinates rather than against the wrapper, because
-    // both places it is most needed scroll: the rail's view list and the tab strip both clip their
-    // own overflow, and a bubble laid out inside either would be cut off at its edge. It is drawn
-    // on the body for the same reason: a surface that filters or clips what it holds is the
+    // both places it is most needed scroll: the rail's list of pages and the tab strip both clip
+    // their own overflow, and a bubble laid out inside either would be cut off at its edge. It is
+    // drawn on the body for the same reason: a surface that filters or clips what it holds is the
     // containing block of a fixed element inside it, which reads those window coordinates from its
     // own corner and cuts the bubble at its edge, and on the body there is no such ancestor.
 

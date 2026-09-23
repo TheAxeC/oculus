@@ -249,10 +249,11 @@
         color: var(--on-accent);
     }
 
-    /* A toggle in the rail that is on fills with the accent's tint and draws its border in the
-       accent and its glyph and name in the tint's own text colour, which the contrast test measures
-       on that tint. The solid accent block of a toolbar button is too heavy in a column of bare
-       glyphs, and a terminal theme that fills no other button still fills this one. */
+    /* A rail control that is on, the button of the page on screen, fills with the accent's tint
+       and draws its border in the accent and its glyph and name in the tint's own text colour,
+       which the contrast test measures on that tint. The solid accent block of a toolbar button is
+       too heavy in a column of bare glyphs, and a terminal theme that fills no other button still
+       fills this one. */
     .tool.rail-control.active,
     :global(body.rice) .tool.rail-control.active {
         border: 1px solid var(--accent);
@@ -284,8 +285,8 @@
 
     /* The brackets are a row's shape, around a word with the glyph inside them. A stacked control
        is a column of a glyph over a label, where the pair would be two lines of their own above and
-       below it, and a rail control is a glyph in a box the rail's width sets, a third of it in the
-       rail's row of text steps; in both the terminal stand-in the glyph draws carries its own
+       below it, and a rail control is a glyph in a box the rail's width sets; in both the terminal
+       stand-in the glyph draws carries its own
        brackets already. A bare button is a strip's icon and draws none, as a bare menu opener
        beside it draws none. */
     :global(body.rice) .tool:not(.stacked):not(.rail-control):not(.bare)::before {

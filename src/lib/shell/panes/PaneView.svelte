@@ -27,17 +27,17 @@
     //
     // The strip's right end is the pane's header, drawn as an editor group's: the split to the
     // right as a bare icon button, drawn while the pane shows a tab, and the menu as its bare
-    // more-actions opener. The one pane the rail's next view would open into draws its strip
+    // more-actions opener. The one pane the next view opened would land in draws its strip
     // focused, and it is the active pane of the page the reader is in, so one pane strip in the
-    // window carries the accent and that tab is where a view will land. The page strip's own accent
-    // is a different mark, on a different strip: it says which page is shown, not where a view
-    // opens. The split button is the pointer's shortcut to an item the menu already holds, so it
-    // takes no stop of its own and the pane's stops stay the strip and the menu.
+    // window carries the accent and that tab is where a view will land. The rail's button drawn in
+    // force is a different mark: it says which page is shown, not where a view opens. The split
+    // button is the pointer's shortcut to an item the menu already holds, so it takes no stop of
+    // its own and the pane's stops stay the strip and the menu.
 
     import { untrack } from 'svelte';
     import { EMBED, PAGE, foldable, pageListItems } from '$lib/shell/panes/pane-view';
-    import { closeQuestion } from '$lib/shell/closing';
-    import Confirm from '$lib/ui/controls/Confirm.svelte';
+    import { closeQuestion } from '$lib/state/workbench/navigation/pages';
+    import CloseQuestion from '$lib/ui/controls/CloseQuestion.svelte';
     import Menu from '$lib/ui/menu/Menu.svelte';
     import type { MenuItem } from '$lib/ui/menu/menu-items';
     import Tabs from '$lib/ui/tabs/Tabs.svelte';
@@ -102,7 +102,7 @@
     const shown = $derived(instances.find((instance) => instance.id === active));
     const maximised = $derived(focused(page) !== null);
     /**
-     * Whether this is the pane the rail's next view opens into: the one holding the instance it
+     * Whether this is the pane the next view opened lands in: the one holding the instance it
      * joins.
      */
     const activePane = $derived(active !== '' && openingInstance()?.id === active);
@@ -371,15 +371,11 @@
     </div>
 </div>
 
-{#if confirming !== null}
-    <Confirm
-        message={confirming.message}
-        confirm={t('ui.confirm_ok')}
-        cancel={t('ui.confirm_cancel')}
-        onconfirm={confirmed}
-        oncancel={() => (confirming = null)}
-    />
-{/if}
+<CloseQuestion
+    message={confirming?.message ?? null}
+    onconfirm={confirmed}
+    oncancel={() => (confirming = null)}
+/>
 
 {#snippet paneMenu()}
     {#if active !== ''}

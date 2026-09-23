@@ -56,10 +56,10 @@ tests/views/boards/focus-rows.test.ts :: is none on a snoozed project, a project
 tests/views/system/help.test.ts :: describes every configuration file in the words the Config view shows | the case draws nothing and asserts over files.length
 tests/views/system/help.test.ts :: holds every key of the sheet in its table | the case draws nothing and asserts over missing
 tests/views/system/help.test.ts :: names every key the machine-local file may carry | the case draws nothing and asserts over keys
-tests/views/system/help.test.ts :: names every rail group that has a chord, by its label and its letter | the case draws nothing and asserts over groups.length
-tests/views/system/help.test.ts :: names every view the rail lists, by its id | the case draws nothing and asserts over missing
+tests/views/system/help.test.ts :: names every catalogue group that has a chord, by its label and its letter | the case draws nothing and asserts over groups.length
+tests/views/system/help.test.ts :: names every view the catalogue lists, by its id | the case draws nothing and asserts over missing
 tests/views/system/help.test.ts :: names the machine-local file, the checks and where the hub comes from | the case draws nothing and asserts over MANUAL
-tests/views/system/help.test.ts :: writes down every letter a rail group is reached by | the case draws nothing and asserts over missing
+tests/views/system/help.test.ts :: writes down every letter a catalogue group is reached by | the case draws nothing and asserts over missing
 tests/views/system/history.test.ts :: has a sentence of its own for every word the endpoint answers, and never the word | the case draws nothing and asserts over outcome
 tests/views/system/history.test.ts :: matches a filter against the file, the key and the field, and nothing else | the case draws nothing and asserts over matching(rows, ''
 tests/views/system/history.test.ts :: reads the filter out of whatever the instance state is | the case draws nothing and asserts over filterOf({ filter: 'tasks' })
@@ -89,7 +89,7 @@ tests/views/personal/memories.test.ts :: reads a size that is not two whole posi
 tests/views/personal/memories.test.ts :: reads an answer whose pictures are not a list as a failed read, not as an empty wall | the case draws nothing and asserts over await answered('mem-01.png')
 tests/views/personal/memories.test.ts :: reads an item with no name as a failed read, not as a wall without it | the case draws nothing and asserts over await answered(['names.png', { name: 'one.png', width: 10, h
 tests/views/personal/memories.test.ts :: refuses a file larger than the wall takes before it reads one | the case draws nothing and asserts over source
-tests/views/personal/memories.test.ts :: sits in the Personal group and is offered in the rail | the case draws nothing and asserts over registered
+tests/views/personal/memories.test.ts :: sits in the Personal group and is listed in the view catalogue | the case draws nothing and asserts over registered
 tests/views/sources/note.test.ts :: deletes no note and closes no tab when one is left | the case draws nothing and asserts over fn('leave')
 tests/views/sources/note.test.ts :: is closed by the removal, so no tab is left drawing a note that is gone | the case draws nothing and asserts over first
 tests/views/sources/note.test.ts :: is one instance per note, so opening the same note twice is one tab | the case draws nothing and asserts over first
@@ -109,10 +109,7 @@ tests/views/feeds/radar.test.ts :: opens its own feed file as a source tab and r
 tests/views/whole/registry.test.ts :: closes the tabs open on a collection it drops, so no tab is left with no body | the case draws nothing and asserts over tabs.kind === 'pane' ? tabs.tabs.map((tab
 tests/views/whole/registry.test.ts :: discovers a registered module at any nesting depth | the case draws nothing and asserts over viewFor('probe-nested')?.component
 tests/views/whole/registry.test.ts :: drops the collections whose keys a later call no longer lists | the case draws nothing and asserts over viewFor(kept)
-tests/views/whole/registry.test.ts :: gives every flyout group a glyph no view inside it carries | the case draws nothing and asserts over clashes
 tests/views/whole/registry.test.ts :: gives every view its exact group and order | the case draws nothing and asserts over a value it built itself
-tests/views/whole/registry.test.ts :: gives every view of the rail a glyph of its own, the collections apart | the case draws nothing and asserts over shared
-tests/views/whole/registry.test.ts :: gives the Agents and Changes views a glyph of their own in the rail | the case draws nothing and asserts over of('sessions.agents_glyph')
 tests/views/whole/registry.test.ts :: has nothing for an id nobody registered | the case draws nothing and asserts over viewFor('probe-nothing')
 tests/views/whole/registry.test.ts :: ignores a partial without registration metadata | the case draws nothing and asserts over (
 tests/views/whole/registry.test.ts :: keeps a collection in its first position when it is registered again | the case draws nothing and asserts over real(

@@ -84,6 +84,8 @@ function target(keep = 500): WriteTarget {
         projects: () => [],
         bookmarks,
         behaviorFile: join(dir, 'behavior.yml'),
+        layoutFile: join(dir, 'layout.yml'),
+        glyphs: [],
         changes: { file: log, keep, writes: fsWrites() }
     };
 }
@@ -144,6 +146,8 @@ function deckTarget(): WriteTarget {
         projects: () => [slideProject('alpha', 'active'), slideProject('gamma', 'archive')],
         bookmarks: join(dir, 'bookmarks.yml'),
         behaviorFile: join(dir, 'behavior.yml'),
+        layoutFile: join(dir, 'layout.yml'),
+        glyphs: [],
         changes: { file: log, keep: 500, writes: fsWrites() }
     };
 }

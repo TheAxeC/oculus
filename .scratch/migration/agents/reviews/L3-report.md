@@ -221,3 +221,214 @@ DESIGN.md:
 - Apply the Doc text. help.test then passes; rerun `npx vitest run --reporter=dot tests/views/system/help.test.ts`.
 - Rule on open item 1, the `bookmarks:` key and the config-folder `EXPECTED` update after the first start.
 - If main has moved at landing, regenerate `docs/diagrams` with `node bin/diagrams.mjs`.
+
+# Repair round 1
+
+Every numbered item of the round, 1 to 13, is built. Four things are still not green or need a ruling:
+- **HELP.md not yet edited.** `npx vitest run --reporter=dot` has 2 failing cases, both in `tests/views/system/help.test.ts`: "names every view the catalogue lists, by its id" and "describes every configuration file in the words the Config view shows". Both pass once the HELP.md Doc text below is applied; the brief forbids me editing HELP.md.
+- **Premise found wrong in item 12, for Axel.** The ruling says the rail badges include "the sessions waiting count" that `badgeOf` served the old rail. No registration carries that count.
+  - `grep -rln "badge:" src/lib/views` lists Calendar, Inbox, Leads, Hpc, Audit, Collection, Projects, LaneCard and Repositories.
+  - `grep -rn "waitingCount" src/lib` finds only `selectors.svelte.ts`, whose count feeds the window title, not a badge.
+  - So no rail button shows a waiting count. I did not add a session-list badge: that is a new user-visible choice.
+- **Reading taken in item 12.** A rail page not made yet draws the badges of the views its arrangement will hold, so a button shows badges before its first press. The alternative reading is that such a button draws none.
+- **Test harness choice.** `boot()` in `tests/browser/helpers/rail.ts` now seeds a saved layout of one Status page before the first load. That keeps every spec not about the first load on the neutral page it was written for. A new `bootFresh()` loads with no saved layout; the fresh-start case uses it. The other way was to rewrite some 60 cases around the Focus board.
+
+## What each item came to
+
+1. **Bookmarks move removed.**
+   - `moveLayoutBookmarks`, its call in `core/context.ts` and `bookmarks-move.test.ts` are gone; `bookmarks.ts` and `context.ts` are back to their base text.
+   - The `bookmarks:` key and its comment are out of `config/layout.yml`, and `bookmarks` is out of config-folder `EXPECTED`. The bookmark-roots case of config-folder is removed with the key it read.
+   - `tests/browser/helpers/serve.ts` writes the served HOME's `~/.oculus/bookmarks.yml` with the two manuals. The rail.spec BOOKMARKS case checks the two manuals and a bookmark added from Files, red under `ActivityRail.svelte:273 => {#if false}`.
+   - `config/sources.yml` and `Document.svelte` no longer name the layout.yml key.
+   - Two context.test directives aimed at the wrong lines are now correct (217, 237).
+2. **Fresh start on the first rail page.**
+   - `layout.svelte.ts` gains `startOnRailPage` and a `fresh` flag. The flag is set by `loadLayout` when nothing was saved and cleared by any save. `Workbench.svelte:148` calls it once the rail list arrives.
+   - Browser case "a browser with no saved layout opens on the first rail page, and digit 1 shows it again" is red under `Workbench.svelte:148 => delete`. A node case is in `tests/state/workbench/layout/pages.test.ts`.
+3. **Status words.**
+   - Server item: "server: up / down / waiting". Live item: "live sessions: N". Unsaved item: "unsaved tabs: N".
+   - 31 Save-button lookups and 3 saved-message lookups in 9 specs now use `exact: true`. The status bar tests read the words through `t()` and also as literals.
+4. **One parser for the rail list.**
+   - `railRows` and `glyphNames` in `src/lib/data/sources/config/rail.ts` are used by `railDraft`, `configRail`, `railLists`, undo, the write target and the RailEditor.
+   - `railPages` passes the glyph list, so an unknown glyph draws no button.
+   - Node case red under `navigation/rail.ts:36 => ... without glyphs`. Browser case "a rail entry hand-edited to a glyph the vocabulary does not hold draws no button" is red under the same revert.
+5. **Shared close question.**
+   - `src/lib/ui/controls/CloseQuestion.svelte` holds the block; PaneView and Pages both draw it.
+   - The allow-duplication entry `3ed93ba68ad5` is gone.
+6. **Toggle cases.** Browser cases for CRT (red under `Appearance.svelte:94`) and for keeping the real glyphs on mocha (red under `Appearance.svelte:112`).
+7. **Status bar in the shell.**
+   - The bar is `src/lib/shell/status/StatusBar.svelte`, drawn by `Workbench.svelte`.
+   - The page hands in `status` words from `src/lib/state/workbench/navigation/status.ts` and imports no status bar. The shell counts the unsaved tabs itself from the layout and ui stores.
+   - The boundary rows and SHELL_STORES are unchanged.
+   - Tests: `tests/state/workbench/navigation/status.test.ts` and `tests/shell/status/status-bar.test.ts`.
+8. **False comments and strings.** Every file the review lists is reworded, `list-edit.ts` is reflowed, and the workbench.test case name is fixed.
+   - `isFlyout` is renamed to `isChorded`.
+   - The Menu's rail, stacked and beside looks, `menuPlacement` and their primitives cases are removed: no caller used them after the flyouts went.
+   - Case names reworded in keys, help, memories, calendar, audit and rail-badges tests, with allow-audits updated. Browser wording is fixed in icons, nested, tabs and files specs.
+   - The re-grep for rail wording leaves these lines on purpose:
+     - Sessions list, which calls itself the rail: `selection.svelte.ts:3,8`, `writes.svelte.ts:37`, `bodies.ts:18`, `Terminal.svelte:21,110,210`, `terminal.yml no_terminal`, `session-list.yml detail_empty/restore_tip`.
+     - Wording still true of the activity rail: bookmarks, width, list, pages and the Present page.
+     - The module names `rail-badges.ts` and `rail-badges.svelte.ts`. The badges are drawn on rail buttons again under item 12, so the name holds.
+9. **Shortcut words.** `ui.page_shortcut` and `workbench.catalogue_key` now read "{0}, key {1}". Literal checks "Page i, key 9" and "Focus, key v1" are added.
+10. **Doc text.** In full below.
+11. **Behaviour.** Before and after below.
+12. **Rail badges.**
+    - `railPageViews` in `navigation/pages.ts` gives the page's views in tab order, each once. The views come from the made page or, before that, from its arrangement.
+    - `ActivityRail.svelte` draws them in `[data-rail-badges]`.
+    - Node cases are in the navigation pages test and `tests/shell/rail/rail.test.ts`. Browser case "a rail page button draws the badges of the views its page holds" is red under `ActivityRail.svelte:253 => {#if false}`.
+13. **Catalogue target.**
+    - The layout store tracks `previousPage()`, which is not saved.
+    - `Catalogue.svelte` `showTarget()` shows the previous page, or the first rail page when there is none, then opens the view there; shift opens beside there.
+    - views.spec cases are red under `Catalogue.svelte:95 => delete` and `Catalogue.svelte:87 => delete`. layout.spec shift-click is rewritten.
+    - Chords and digits still open on the page on screen.
+    - The hint text now reads "A click opens the view on the page you came from and shows that page; a shift-click opens it in a pane beside, on that page."
+
+## Verification
+
+| # | Command | Output | State |
+|---|---|---|---|
+| 1 | `npx vitest run --reporter=dot` | `Test Files 1 failed \| 289 passed (290)`, `Tests 2 failed \| 4585 passed (4587)`; both failures are the help.test cases above | NOT DONE (waits on HELP.md) |
+| 2 | `npm run check` | `COMPLETED 1328 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS` | DONE |
+| 3 | `npm run build` | `exit 0` | DONE |
+| 4 | `npm run format:check` | `All matched files use Prettier code style!` | DONE |
+| 5 | `npm run lint` | `exit 0` | DONE |
+| 6 | perl ASCII gate | no output, `perl exit 0` | DONE |
+| 7 | `sh bin/size-check.sh`, `sh bin/folder-check.sh` | `size exit 0`, `folder exit 0` | DONE |
+| 8 | listed browser cases red under revert | see items 1, 2, 4, 6, 12 and 13 above | DONE |
+| 9 | `npx playwright test` | `327 passed (6.8m)`, `exit 0` | DONE |
+| 10 | `node bin/revert-check.mjs` over changed browser specs | full run `84 reverts, 2 unproven`; the two re-aimed and rerun: settings plus shell-defects `10 reverts, 0 unproven` | DONE |
+| 10 | `node bin/revert-check.mjs` over the 24 node test files aimed at files changed this round | `176 reverts, 4 unproven`; the 4 were settings.test directives shifted one line, re-aimed and rerun: `8 reverts, 0 unproven, 0 unchecked` | DONE |
+| 10 | `node bin/revert-check.mjs` over the new and rewritten node files (27 files) | `151 reverts, 3 unproven`; after re-aiming: catalogue plus rail route `31 reverts, 0 unproven`, rail.test `43 reverts` in the combined run, 0 unproven | DONE |
+| 11 | `ls -d $TMPDIR/oculus-* \| wc -l` | 7015 before, 7015 after | DONE |
+
+## Before and after for item 11
+- **Rail landmark name.** Before: "Views". After: "Pages" (`ui.rail`).
+- **Shift-click.** Before, on a rail button it opened a view beside. After, the rail opens pages only, and shift-click opens beside from the catalogue, on the page the reader came from.
+- **Rail hover words.** Before: the view's name. After: "Focus, key 1" for the first nine buttons and the label alone after them.
+- **First load of Axel's saved pages.**
+  - A browser with a saved layout keeps every page as it is. `startOnRailPage` acts only when nothing was saved.
+  - On the first press of a rail button, a saved page with no rail key whose name equals that button's label becomes the button's page.
+  - With the 13 labels, that takes his page named "Sessions" (`ui.page_sessions`, the page the older layout migration made) for the Sessions button. It also takes any page he named Focus, Projects, Academic Life, Pillars, Feeds, References, Present, Explorer, Info/more, Calendar, Inbox or Views and Settings. Other pages stay unowned and are reached from the Pages view.
+- **Catalogue press.** Before: opened on the Views and Settings page itself. After: shows the page the reader was on before and opens the view there. After a load straight onto Views and Settings, it uses the first rail page.
+- **Fresh browser.** Before: "Page 1" with the Status view, no button active. After: the Focus page, button active.
+- **Rail badges.** Before this round: none. After: each page button draws the badges of its page's views.
+
+## Files changed this round
+From `find src tests config docs -newer L3-refuter.md`, lines in parentheses.
+
+**Added:**
+- src/lib/shell/status/StatusBar.svelte (94)
+- src/lib/state/workbench/navigation/status.ts (62)
+- src/lib/ui/controls/CloseQuestion.svelte (28)
+- tests/shell/status/status-bar.test.ts (57)
+- tests/state/workbench/navigation/status.test.ts (95)
+
+**Removed:**
+- src/lib/views/system/workbench/StatusBar.svelte
+- tests/views/system/workbench/status-bar.test.ts
+- tests/server/files/bookmarks-move.test.ts
+
+**Changed, config:**
+- config/appearance.yml (61), config/layout.yml (159), config/sources.yml (100)
+- config/text/ui.yml (57)
+- config/text/views/sources/doc.yml (10), config/text/views/sources/document.yml (10)
+- config/text/views/system/config.yml (24), config/text/views/system/workbench.yml (60)
+- docs/diagrams: all six files regenerated with `node bin/diagrams.mjs`
+
+**Changed, source:**
+- data: accounts/leads.ts (49), sources/config/rail.ts (149)
+- server: content/docs.ts (416), core/context.ts (355), edit/list-edit.ts (194), edit/writes.ts (531), edit/writes/rail.ts (115), edit/writes/undo.ts (301), files/fs/bookmarks.ts (110)
+- shell: panes/PaneView.svelte (432), rail/ActivityRail.svelte (410), Workbench.svelte (332)
+- state: feeds/inbox.ts (141), life/calendar.svelte.ts (90), life/calendar.ts (69), system/audit.svelte.ts (60), system/docs.svelte.ts (181)
+- state/workbench: layout.svelte.ts (516), layout/open/opening.ts (170), navigation/catalogue.ts (220), navigation/pages.ts (83), navigation/rail.ts (109), rail-badges.svelte.ts (256), rail-badges.ts (111)
+- themes/derive.ts (266)
+- ui: controls/ToolButton.svelte (306), menu/menu-items.ts (42), menu/Menu.svelte (425), menu/MenuOpener.svelte (117), menu/Tooltip.svelte (267), tabs/Tabs.svelte (360)
+- views registry.ts (160)
+- views, registration heads: Slides, Deposit, Person, Project, Inbox, Calendar, Agents, SessionDetail, Terminal, Timeline, Transcript, Data, Doc, Document, Files, Repositories
+- views/system/workbench: Catalogue.svelte (237), Pages.svelte (296), RailEditor.svelte (238)
+- routes: +page.server.ts (40), +page.svelte (140)
+
+**Changed, tests:**
+- browser specs: board, collection, focus-buttons, boot, icons, keyboard, rail, settings, shell-defects, views, files-forms, files, history, layout, nested, pages, tabs, unsaved-forms
+- browser helpers: rail.ts (196), serve.ts (292)
+- node checks: config-folder, allow-audits, allow-duplication, boundaries, type-scale
+- node tests: context, docs, rail route, keys, activity-rail, rail-config, rail.test, workbench.test, calendar-store, calendar, audit, layout pages, navigation arrangement/catalogue/pages/rail, rail-badges, primitives, project, calendar view, memories, help, catalogue, registry, settings
+
+## Doc text (grep -n from the worktree; replacements in full)
+
+HELP.md
+- `HELP.md:7:Down the left is the rail. Across the top of the work area is the page strip. Everything else is the pane tree: one tree per page, made of splits and panes, each pane a stack of tabs, each tab one view.`
+  - Replace with: "Down the left is the rail, and along the bottom is the status bar. Everything else is the pane tree: one tree per page, made of splits and panes, each pane a stack of tabs, each tab one view."
+- `HELP.md:13:The rail draws one button per view, under the heading of the group the view belongs to. A group of more than four entries is drawn as one button with a list beside it instead, so the rail never grows an icon per view. The groups, their order, their letters and the hub documents they carry are the `nav_groups` and `docs` keys of `config/layout.yml`.`
+  - Replace with: "The rail draws one button per entry of the `rail:` list of `config/layout.yml`, each `{label, glyph, page}`, where `page` names an arrangement under `arrangements:`. A button shows its page: made from its arrangement the first time and shown as it was left after that. A browser with no saved layout starts on the first of them. A button draws the badges of the views its page holds, in the order of the page's tabs, the arrangement's views before the page is first made. Every view, and every hub document of the `docs` key, is listed in the Views catalogue on the Views and Settings page, under its `nav_groups` group; the groups, their order and their letters are those two keys."
+- `HELP.md:15:A click opens the view where views land, which is the pane whose tab was activated last; a view already open is activated where it is rather than opened twice. A shift-click opens it in a new pane to the right of that one, and the next shift-click joins that pane as a tab while it is still open.`
+  - Replace with: "In the catalogue a click shows the page the reader was on before the Views and Settings page and opens the view there, where views land, which is the pane whose tab was activated last; after a load straight onto the Views and Settings page it opens on the first rail page. A view already open is activated where it is rather than opened twice. A shift-click opens it in a new pane to the right, on that same page, and the next shift-click joins that pane as a tab while it is still open."
+- `HELP.md:17:` (the whole paragraph from "A group also carries the hub documents")
+  - Replace with: "Under the page buttons sit the bookmarks, the reader's own from `~/.oculus/bookmarks.yml`, which the Files view adds and takes away, each opened as a tab of its own. At the foot of the rail are Search, which opens the palette, and Update, which opens the update tray, each drawn with its name under its glyph. The button of the page on screen is filled with a tint of the accent. The list above the foot scrolls on its own, and a fade at its top or bottom edge says more entries are past it. The appearance controls (Theme, the Text row of smaller, reset and larger, CRT, Wallpaper where the theme has one, and Glyphs) are in the Settings view."
+- `HELP.md:23:A page is a whole working surface with a name: its own tree, its own tabs, its own arrangement. The strip across the top switches between pages, makes one, renames one and closes one. The digits 1 to 9 switch pages directly.`
+  - Replace with: "A page is a whole working surface with a name: its own tree, its own tabs, its own arrangement. The rail's buttons switch to their pages. The Pages view on the Views and Settings page lists every page and makes, renames, shows and closes one, asking first when the page holds more than one tab, and marks a page holding unsaved text. The digits 1 to 9 show the rail page of that place."
+- `HELP.md:32:- **Drag.** A tab moves inside its pane, to another pane, and to another page by way of the strip.`
+  - Replace with: "- **Drag.** A tab moves inside its pane and to another pane, and a page's name dragged from the Pages view onto a pane's edge shows that page there."
+- `HELP.md:35:` delete the sentence "The page strip scrolls the same way."
+- `HELP.md:36:` five changes:
+  - "The shown tab of the one pane the rail opens a view into carries an accent line" becomes "The shown tab of the one pane a view opens into carries an accent line".
+  - "the page strip's shown tab keeps its own accent because it says which page is shown." is deleted.
+  - "a folded pane the rail opens into carries the accent" becomes "a folded pane a view opens into carries the accent".
+  - "a page holding such a tab shows the dot and says the same in the page strip." becomes "the Pages view marks a page holding such a tab as unsaved."
+  - "The page strip is drawn the same way, lower and on the card surface." is deleted.
+- `HELP.md:44:| 1-9 | switch page |` becomes `| 1-9 | show the rail's page of that place |`.
+- `HELP.md:50:| v1-v9 | open a view of the rail by its place |` becomes `| v1-v9 | open a view of the small groups of the Views catalogue by its place |`.
+- `HELP.md:65:| Ctrl+Shift+Left / Right | move the page |`: delete the row.
+- `HELP.md:71:` the sentence "A group's documents follow its views in its chord" becomes "A group's documents follow its views in its chord, in the catalogue's order". Then add a new paragraph after line 71: "The status bar along the bottom reads the server connection (`server: up`, `down` or `waiting`), the usage refresher, the Live HPC poll, the live sessions (`live sessions: N`) and the tabs holding text no save has taken (`unsaved tabs: N`). Each item opens its view; the last shows the first such tab on its own page and is not pressable at 0."
+- After `HELP.md:119:| `history` | History | ...`, add three rows:
+  - "| `catalogue` | Views | Every view and hub document by group, with its key and badge; a press opens it on the page the reader came from and a shift-press beside there. |"
+  - "| `settings` | Settings | The theme, text size, CRT, wallpaper and glyphs, and the rail list, edited and saved to `config/layout.yml`. |"
+  - "| `pages` | Pages | Every page, with show, rename and close, and New page. |"
+- `HELP.md:123:` two changes:
+  - "Five views are opened for something rather than listed in the rail:" becomes "Five views are opened for something rather than listed in the Views catalogue:".
+  - "(one Markdown document of the hub, from a group of the rail)" becomes "(one Markdown document of the hub, from a group of the catalogue)".
+- `HELP.md:161:| `layout.yml` | How things are arranged: the rail groups, the hub documents, the board chrome, the tab rollups, the live badges and the saved arrangements. |`
+  - Replace with: "| `layout.yml` | How things are arranged: the rail's pages and the arrangements each starts as, the view catalogue's groups, the hub documents, the board chrome, the tab rollups and the live badges. |" (the Config view's `desc_layout` now reads this).
+- `HELP.md:169:` the phrase "a view's file in the folder of its rail group" becomes "a view's file in the folder of its view group".
+
+DESIGN.md
+- `DESIGN.md:46:` "a view's strings, in the folder of its rail group" becomes "a view's strings, in the folder of its view group".
+- `DESIGN.md:59:      shell/                        LAYER 3, the workbench: rail/, panes/, keys/, Workbench.svelte` becomes "LAYER 3, the workbench: rail/, panes/, keys/, status/, Workbench.svelte".
+- `DESIGN.md:60:` "one folder per rail group" becomes "one folder per view group".
+- `DESIGN.md:71:` "A view's rail group is its folder:" becomes "A view's group in the Views catalogue is its folder:".
+- `DESIGN.md:75:` "(the rail's groups, the board chrome" becomes "(the rail's pages and their arrangements, the view catalogue's groups, the board chrome".
+- `DESIGN.md:149:` "An activity rail on the left selecting what the rail lists;" becomes "An activity rail on the left whose buttons switch pages and carry their pages' badges, and a status bar along the foot, drawn from words the page hands in;".
+- `DESIGN.md:158:` add `state/workbench/navigation` to the shell row's allowed list.
+- `DESIGN.md:160:` add `data/sources/config/rail` to the state row's allowed list.
+- `DESIGN.md:191:` "which a pressed toggle in the rail fills with" becomes "which the rail button of the page on screen fills with".
+- `DESIGN.md:193:` two changes:
+  - "The toggle in the rail starts on whatever the theme answers" becomes "The wallpaper toggle in the Settings view starts on whatever the theme answers".
+  - "a pane's tab strip carries depth 1 over its pane body, the page strip carries depth 2 over every pane strip, the rail carries depth 5 over the panes beside it, and all stay under the drag layer at 10" becomes "a pane's tab strip carries depth 1 over its pane body and stays under the drag layer at 10".
+- `DESIGN.md:237:` two changes:
+  - "bookmarks in `layout.yml`, the two user manuals of cathedra and game-engine first" becomes "bookmarks in the reader's own `~/.oculus/bookmarks.yml`".
+  - "the rail draws a large `nav_groups` group as one button with a flyout, so it does not grow one icon per view" becomes "the rail draws one button per page of `rail:`, and every view is listed in the Views catalogue".
+- `DESIGN.md:243:` "(shift-click on the rail, a session detail" becomes "(shift-click in the Views catalogue, a session detail".
+- `DESIGN.md:244:` four changes:
+  - "switching the strip to it" becomes "switching to it".
+  - "closed from the strip" becomes "closed from the Pages view".
+  - "a bare digit is still the strip's page" becomes "a bare digit is the rail page of its place".
+  - "a page tab dragged out of the strip onto a pane's edge" becomes "a page's name dragged from the Pages view onto a pane's edge".
+- `DESIGN.md:245:` two changes:
+  - "A strip of page names runs across the top of the work area; the rail stays what it is. A page is made by a control at the end of the strip and named from its menu; the saved arrangements of `layout.yml` open as pages." becomes "The rail's buttons are the pages of `rail:`, each tied to its arrangement by key; a browser with no saved layout starts on the first; the Pages view makes, renames and closes pages. The Views catalogue opens a view on the page shown before the Views and Settings page, which the layout store tracks and does not save."
+  - "The digits 1 to 9 switch pages" becomes "The digits 1 to 9 show the rail page of their place".
+- `DESIGN.md:251:` "drawn in that rail group after the group's views" becomes "listed in the catalogue under that group after its views".
+- `DESIGN.md:256:` "with the open count as its rail badge" becomes "with the open count as its badge".
+- `DESIGN.md:262:` "the Position Leads view, its rail badge and the ticker" becomes "the Position Leads view, its badge and the ticker".
+- `DESIGN.md:267:` "which is what the reader's own press does to the text reset" becomes "which is what a save of the rail list or a bookmark taken away does".
+- `DESIGN.md:278:` three changes:
+  - "The foot's controls are stacked with a visible name, the three text steps one row under one name answering the left and right arrows inside the row and the up and down arrows to leave it (`railStop` in `shell/rail/rail.ts`), and text reset draws `note_back`. A rail toggle that is on fills with" becomes "The foot's controls, Search and Update, are stacked with a visible name, and the up and down arrows move along the whole rail (`railStop` in `shell/rail/rail.ts`). The button of the page on screen fills with".
+  - "for the pane strips and the page strip alike" becomes "for the pane strips".
+  - Add after "(`pageListItems` in `shell/panes/pane-view.ts`)": "The close question a pane and the Pages view ask is `ui/controls/CloseQuestion.svelte`."
+- `DESIGN.md:286:` three changes:
+  - "so one pane strip says where the rail opens a view" becomes "so one pane strip says where a view opens".
+  - These are deleted: "The page strip's current tab keeps its own accent because it says which page is shown.", "and from any of its instances for a page tab", and "`shell/panes/PageStrip.svelte` gives Tabs `low` (`--tab-height-low`, 30 px) and `surface=\"card\"`, which keeps its own tint over a wallpaper."
+  - "the page strip at 30 px on `--card`," and "the page strip as a second strip," are removed from the "Kept against VS Code" list.
+
+## Next
+- Apply the Doc text, then rerun `npx vitest run --reporter=dot tests/views/system/help.test.ts`.
+- Rule on the sessions waiting count (item 12 premise) and on unmade pages drawing their arrangement's badges.
+- At landing: copy the two manuals into this machine's `~/.oculus/bookmarks.yml`, and rerun `node bin/diagrams.mjs` if main moved.

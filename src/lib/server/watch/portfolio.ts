@@ -36,6 +36,7 @@ import {
 import { MANIFEST } from '../../data/sources/manifests.ts';
 import { PRESENT_DOC } from '../../data/sources/present.ts';
 import { docFindings, layoutFile } from '../content/docs.ts';
+import { railFindings } from '../../data/sources/config/rail.ts';
 import { readRoots, rootsFile } from '../files/files.ts';
 import { buildFeeds, isLinkedinFile } from '../content/feeds.ts';
 import type { AuditPayload, ConfigPayload, PortfolioConfig } from '../../data/model.ts';
@@ -281,7 +282,10 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
                 // checked here rather than in loadConfig, which merges files and never touches the
                 // disk: a root whose directory is not on this machine, a document with no file at
                 // its path, and an icon the installed package does not ship are all facts about the
-                // machine, and they belong on the same channel as the rest.
+                // machine, and they belong on the same channel as the rest. The rail list of
+                // layout.yml is checked here with them, against the arrangements and the glyphs of
+                // the same merged config, so its findings reach the page with the config they
+                // are about.
                 paths.icons.set = iconSet(config);
                 const payload: ConfigPayload = {
                     config,
@@ -292,7 +296,8 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
                         ...iconFindings(paths.engine, config),
                         ...behaviorFindings(paths.engine, config),
                         ...readRoots(config, rootsFile(paths.engine)).findings,
-                        ...docFindings(config, paths.hub, layoutFile(paths.engine))
+                        ...docFindings(config, paths.hub, layoutFile(paths.engine)),
+                        ...railFindings(config, layoutFile(paths.engine), textCatalog(config))
                     ]
                 };
                 hub.publish('config', payload);

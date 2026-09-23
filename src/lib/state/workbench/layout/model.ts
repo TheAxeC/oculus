@@ -55,9 +55,11 @@ export type Workbench = {
 
 /**
  * One page: a whole workbench with a name of its own. Pages sit above the layout tree so tree and
- * workbench operations remain independent of page selection.
+ * workbench operations remain independent of page selection. `rail` is the `arrangements:` key of
+ * config/layout.yml the page was made from by a rail button, which is what ties the page to that
+ * button: renaming the button keeps the page, and a page no button made carries none.
  */
-export type Page = { id: string; label: string; workbench: Workbench };
+export type Page = { id: string; label: string; workbench: Workbench; rail?: string };
 
 /** Every page, and which of them is on screen. This is the unit that is saved. */
 export type Pages = { pages: Page[]; current: string };
@@ -138,23 +140,18 @@ export function defaultWorkbench(): Workbench {
  * A fresh page around a workbench, with the id every page operation addresses it by. The words are
  * the caller's: they come from the catalog, which the layout modules do not read.
  */
-export function newPage(label: string, workbench: Workbench = defaultWorkbench()): Page {
-    return { id: crypto.randomUUID(), label, workbench };
+export function newPage(
+    label: string,
+    workbench: Workbench = defaultWorkbench(),
+    rail?: string
+): Page {
+    const page: Page = { id: crypto.randomUUID(), label, workbench };
+    if (rail !== undefined) page.rail = rail;
+    return page;
 }
 
 /** The pages a browser that has never held any starts from: one, on the default workbench. */
 export function defaultPages(label: string): Pages {
     const page = newPage(label);
     return { pages: [page], current: page.id };
-}
-
-/** Move one page to a clamped index while leaving the page on screen unchanged. */
-export function movePage(held: Pages, id: string, index: number): Pages {
-    const at = held.pages.findIndex((page) => page.id === id);
-    if (at < 0) return held;
-    const pages = held.pages.filter((page) => page.id !== id);
-    const next = Math.max(0, Math.min(Math.trunc(index), pages.length));
-    if (next === at) return held;
-    pages.splice(next, 0, held.pages[at]);
-    return { pages, current: held.current };
 }

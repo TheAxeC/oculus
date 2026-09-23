@@ -206,6 +206,34 @@ writeFileSync(
     { mode: 0o755 }
 );
 
+// The reader's own bookmarks file under this run's HOME, holding the two manuals a machine's file
+// carries, so the rail's BOOKMARKS group has entries to draw and one of them a label too long for
+// one line. It is the Files view's collection shape, which that view's bookmark form edits.
+const bookmarks = inside(join(home, '.oculus', 'bookmarks.yml'), tmpdir());
+mkdirSync(dirname(bookmarks), { recursive: true });
+writeFileSync(
+    bookmarks,
+    [
+        '# The bookmarks of this machine, written by oculus from the Files view.',
+        '# Each entry is a file under one of the roots the file browser serves.',
+        'title: Bookmarks',
+        '',
+        'schema:',
+        '  - { field: label, type: text, label: Label, required: true }',
+        '  - { field: root, type: select, label: Root }',
+        '  - { field: path, type: text, label: Path }',
+        '',
+        'entries:',
+        '  - label: cathedra manual',
+        '    root: cathedra',
+        '    path: docs/user/manual.html',
+        '  - label: game-engine manual',
+        '    root: game-engine',
+        '    path: docs/user/manual.html',
+        ''
+    ].join('\n')
+);
+
 // The calendar connector reads its credential files here, which is this run's own folder and never
 // the owner's ~/.oculus/calendar. The one account holds a client half and no refresh token, so the
 // poller marks it not connected, reaches no provider and the view has an account row to draw.

@@ -1,5 +1,6 @@
 <script module lang="ts">
-    // Layer 3, view registration. A project opens from a board card and is not listed in the rail.
+    // Layer 3, view registration. A project opens from a board card and is not listed in the view
+    // catalogue.
     import type { ViewRegistration } from '../../registry';
     export const registration: ViewRegistration = {
         id: 'project',

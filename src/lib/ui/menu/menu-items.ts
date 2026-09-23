@@ -1,36 +1,11 @@
-// Layer 3, primitive. The compact menu's contract and its placement arithmetic: what one choice
-// holds, which list a choice with a list of its own puts in place of the menu's, and where the
-// fixed-position list sits beside its button or containing rail. Apart from the component so the
-// geometry and the level can be read without a viewport.
-
-/** The rectangle fields used to place a compact menu beside its button or containing rail. */
-export type MenuRect = { right: number; top: number; height: number; bottom: number };
-
-/** How far the compact list stays from the viewport edge and from the containing rail. */
-const EDGE = 8;
-const GAP = 4;
-
-/** The fixed-position style for a compact menu, anchored to the rail when one contains it. */
-export function menuPlacement(
-    button: MenuRect,
-    rail: MenuRect | null,
-    viewportHeight: number
-): string {
-    const anchor = rail ?? button;
-    const left = `left: ${Math.round(anchor.right + GAP)}px;`;
-    if (button.top + button.height / 2 < viewportHeight / 2) {
-        const room = viewportHeight - button.top - EDGE;
-        return `${left} top: ${Math.round(button.top)}px; max-height: ${Math.round(room)}px;`;
-    }
-    const room = button.bottom - EDGE;
-    const bottom = viewportHeight - button.bottom;
-    return `${left} bottom: ${Math.round(bottom)}px; max-height: ${Math.round(room)}px;`;
-}
+// Layer 3, primitive. The menu's contract: what one choice holds, and which list a choice with a
+// list of its own puts in place of the menu's. Apart from the component so the level can be read
+// without a viewport.
 
 /**
  * One choice in the list. `active` marks the one in force, which the menu shows as checked, and
  * `glyph` is a name in `glyphs:` drawn before the words, for a list whose choices are things
- * that have an icon of their own (the views of a rail group).
+ * that have an icon of their own.
  */
 export type MenuItem = {
     id: string;

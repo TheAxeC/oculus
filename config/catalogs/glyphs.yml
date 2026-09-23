@@ -147,6 +147,10 @@ glyphs:
   # the tab strip's header actions: a pane's more-actions opener and its split control
   more: "⋯"
   split_right: "◫"
+  # the Views and Settings page's three views
+  catalogue: "▣"
+  sliders: "⛭"
+  pages: "❐"
 
 
 # Terminal themes resolve each named glyph through these short character-keyed stand-ins.
@@ -283,3 +287,7 @@ ascii:
   # the tab strip's header actions
   "⋯": "..."
   "◫": "||"
+  # the Views and Settings page's three views
+  "▣": "[V]"
+  "⛭": "[S]"
+  "❐": "[G]"

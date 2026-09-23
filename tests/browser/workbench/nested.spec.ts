@@ -1,13 +1,14 @@
-// A page shown inside another page: the pane menu's page list shows one, the leaf draws that page's
-// own panes, a view opened while reading inside it is open on that page when the strip is switched
-// to it, a page that would show itself is never offered, and the leaf's control stops showing it.
+// A page shown inside another page: the pane menu's page list shows one, a row carried out of the
+// Pages view onto a pane's edge shows one, the leaf draws that page's own panes, a view opened
+// while reading inside it is open on that page when that page is shown, a page that would show
+// itself is never offered, and the leaf's control stops showing it.
 //
 // Nothing here writes to the hub. The layout lives in the browser's own storage, and Playwright
 // gives every test a context of its own, so each test starts from the one default page.
 
-import { expect, test } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 import { readHubYaml, shortOf } from '../helpers/hub.ts';
-import { boot, openView } from '../helpers/rail.ts';
+import { boot, openView, pagesRow, twoPages } from '../helpers/rail.ts';
 import { t } from '../helpers/words.ts';
 
 const FUNDING = 'funding/funding.yml';
@@ -23,8 +24,19 @@ function scheme(): string {
     throw new Error(`${FUNDING}: no scheme carries a key`);
 }
 
-/** Page 2 shown inside page 1, from the first pane's menu, with the strip left on page 1. */
-async function showSecond(page: import('@playwright/test').Page): Promise<void> {
+/** Close the tab of one view in the pane a locator names. */
+async function closeTab(pane: Locator, label: string): Promise<void> {
+    await pane
+        .locator('.tab', { has: pane.page().getByRole('tab', { name: label }) })
+        .getByRole('button', { name: t('ui.close_tab') })
+        .click();
+}
+
+/**
+ * Page 2 shown inside page 1, from the first pane's menu, with page 1 on screen. The Pages tab page
+ * 2 was left from by twoPages is closed inside the leaf, so page 2 holds its Status tab alone.
+ */
+async function showSecond(page: Page): Promise<void> {
     await page
         .locator('[data-pane]')
         .first()
@@ -35,25 +47,15 @@ async function showSecond(page: import('@playwright/test').Page): Promise<void> 
         .getByRole('menuitem', { name: t('ui.embed_page', t('ui.page_default', 2)), exact: true })
         .click();
     await expect(page.locator('[data-page-leaf]')).toHaveCount(1);
-}
-
-/** A second page, made from the strip's menu, with the strip left on the first one. */
-async function twoPages(page: import('@playwright/test').Page): Promise<void> {
-    await boot(page);
-    const strip = page.getByRole('region', { name: t('ui.pages') });
-    await strip.getByRole('button', { name: t('ui.page_menu') }).click();
-    await page.getByRole('menuitem', { name: t('ui.page_new') }).click();
-    await expect(strip.getByRole('tab')).toHaveCount(2);
-    await page.keyboard.press('1');
-    await expect(strip.getByRole('tab', { name: t('ui.page_default', 1) })).toHaveAttribute(
-        'aria-selected',
-        'true'
-    );
+    const inside = page.locator('[data-page-leaf] [data-pane]');
+    await closeTab(inside, t('views.pages'));
+    await expect(inside.getByRole('tab')).toHaveCount(1);
 }
 
 test('the pane menu shows the second page in the first, and its control stops showing it', async ({
     page
 }) => {
+    await boot(page);
     await twoPages(page);
     const pane = page.locator('[data-pane]').first();
     await pane.getByRole('button', { name: t('ui.pane_menu'), exact: true }).click();
@@ -88,10 +90,11 @@ test('the pane menu shows the second page in the first, and its control stops sh
 });
 
 test('a view opened while reading inside the shown page is open on that page', async ({ page }) => {
+    await boot(page);
     await twoPages(page);
     await showSecond(page);
 
-    // The pane inside the leaf is pressed first, so the rail opens the view in the page it shows.
+    // The pane inside the leaf is pressed first, so a view opened next lands in the page it shows.
     const inside = page.locator('[data-page-leaf] [data-pane]');
     await inside.getByRole('tab').first().click();
     await openView(page, 'funding', t('views.funding'));
@@ -108,9 +111,13 @@ test('a view opened while reading inside the shown page is open on that page', a
     await card.getByRole('button', { name, exact: true }).click();
     await expect(inside.getByRole('tab', { name })).toHaveCount(1);
 
-    // It is the same page and not a copy: the strip switched to it shows the tabs that were opened.
-    await page.keyboard.press('2');
-    // the strip switched to the page itself, so it is no longer shown inside another
+    // It is the same page and not a copy: shown from the Pages view, it holds the tabs that were
+    // opened. The Pages view opens where the reader is, which is inside the shown page.
+    await openView(page, 'pages', t('views.pages'));
+    await pagesRow(page, t('ui.page_default', 2))
+        .getByRole('button', { name: t('workbench.pages_open') })
+        .click();
+    // the page itself is on screen now, so it is no longer shown inside another
     await expect(page.locator('[data-page-leaf]')).toHaveCount(0);
     await expect(page.getByRole('tab', { name: t('views.funding') })).toHaveCount(1);
     await expect(page.getByRole('tab', { name })).toHaveCount(1);
@@ -119,13 +126,15 @@ test('a view opened while reading inside the shown page is open on that page', a
 test('a page already shown on the screen is refused in words, and is not shown twice', async ({
     page
 }) => {
+    await boot(page);
     await twoPages(page);
     await showSecond(page);
 
-    // Page 1 is dragged onto the pane inside page 2: it draws that pane, so it cannot be drawn in
-    // it. The ghost says so and the pointer coming up leaves the tree as it was.
-    const strip = page.getByRole('region', { name: t('ui.pages') });
-    const first = strip.getByRole('tab', { name: t('ui.page_default', 1) });
+    // Page 1 is carried from its row onto the pane inside page 2: it draws that pane, so it cannot
+    // be drawn in it. The ghost says so and the pointer coming up leaves the tree as it was.
+    await page.locator('[data-pane]').first().getByRole('tab').first().click();
+    await openView(page, 'pages', t('views.pages'));
+    const first = pagesRow(page, t('ui.page_default', 1)).locator('.name');
     const from = await first.boundingBox();
     const body = await page.locator('[data-page-leaf] [data-pane-body]').boundingBox();
     expect(from).not.toBeNull();
@@ -141,10 +150,11 @@ test('a page already shown on the screen is refused in words, and is not shown t
     );
     await page.mouse.up();
     await expect(page.locator('[data-page-leaf]')).toHaveCount(1);
-    await expect(strip.getByRole('tab')).toHaveCount(2);
+    await expect(page.locator('[data-pages] [data-page-row]')).toHaveCount(2);
 });
 
 test('a tab dropped on the leaf header edge lands beside the whole leaf', async ({ page }) => {
+    await boot(page);
     await twoPages(page);
     await showSecond(page);
     await expect(page.locator('.split > .child')).toHaveCount(2);
@@ -173,6 +183,7 @@ test('a tab dropped on the leaf header edge lands beside the whole leaf', async 
 });
 
 test('a pane menu inside the shown page acts on that page', async ({ page }) => {
+    await boot(page);
     await twoPages(page);
     await showSecond(page);
     const inside = page.locator('[data-page-leaf] [data-pane]');
@@ -210,6 +221,7 @@ test('a pane menu inside the shown page acts on that page', async ({ page }) => 
 });
 
 test('a page that would show itself is offered nowhere', async ({ page }) => {
+    await boot(page);
     await twoPages(page);
     await page
         .locator('[data-pane]')
@@ -242,10 +254,14 @@ test('a page that would show itself is offered nowhere', async ({ page }) => {
     ).toHaveCount(0);
 });
 
-test('a page tab dragged out of the strip onto a pane edge is shown there', async ({ page }) => {
+test('a row carried out of the Pages view onto a pane edge shows that page there', async ({
+    page
+}) => {
+    // revert: src/lib/views/system/workbench/Pages.svelte:147 => delete
+    await boot(page);
     await twoPages(page);
-    const strip = page.getByRole('region', { name: t('ui.pages') });
-    const second = strip.getByRole('tab', { name: t('ui.page_default', 2) });
+    await openView(page, 'pages', t('views.pages'));
+    const second = pagesRow(page, t('ui.page_default', 2)).locator('.name');
     const from = await second.boundingBox();
     const body = await page.locator('[data-pane-body]').first().boundingBox();
     expect(from).not.toBeNull();
@@ -254,7 +270,7 @@ test('a page tab dragged out of the strip onto a pane edge is shown there', asyn
 
     await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
     await page.mouse.down();
-    // Out of the strip first, which is what turns the reorder into a drag of the page itself, then
+    // Past the drag threshold first, which is what turns the press into a drag of the page, then
     // onto the right edge of the pane's body.
     await page.mouse.move(body.x + body.width / 2, body.y + body.height / 2, { steps: 5 });
     await page.mouse.move(body.x + body.width - 4, body.y + body.height / 2, { steps: 5 });
@@ -263,6 +279,8 @@ test('a page tab dragged out of the strip onto a pane edge is shown there', asyn
     const leaf = page.locator('[data-page-leaf]');
     await expect(leaf).toHaveCount(1);
     await expect(leaf.locator('[data-page-leaf-label]')).toHaveText(t('ui.page_default', 2));
-    // The strip still lists both pages: showing one inside another is not moving it.
-    await expect(strip.getByRole('tab')).toHaveCount(2);
+    // Showing one page inside another is not moving it: the host's list still holds both.
+    await expect(
+        page.locator('[data-pane]').first().locator('[data-pages] [data-page-row]')
+    ).toHaveCount(2);
 });

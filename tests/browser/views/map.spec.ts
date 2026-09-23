@@ -10,7 +10,7 @@
 // picture comes back.
 
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { boot, openView } from '../helpers/rail.ts';
+import { SHOWN_VIEW, boot, openView } from '../helpers/rail.ts';
 import { readHubYaml, shortOf } from '../helpers/hub.ts';
 import { t } from '../helpers/words.ts';
 
@@ -224,7 +224,18 @@ test('the labels drawn after the text grows overlap none of each other', async (
     await filters(page);
     await settled(page);
     expect(await overlapping(page)).toEqual([]);
-    const larger = page.getByRole('button', { name: t('app.text_larger') });
+    // The Settings view is split off to a pane of its own, so the Map stays on screen while the
+    // text grows beside it.
+    await openView(page, 'settings', t('views.settings'));
+    await page
+        .locator('[data-pane]', { has: page.getByRole('tab', { name: t('views.settings') }) })
+        .getByRole('button', { name: t('ui.split_right'), exact: true })
+        .click();
+    await page.getByRole('tab', { name: t('views.map') }).click();
+    await expect(page.locator('[data-map-graph]')).toBeVisible();
+    const larger = page
+        .locator('[data-settings-view]')
+        .getByRole('button', { name: t('app.text_larger') });
     for (let step = 0; step < 6; step += 1) await larger.click();
     await expect(larger).toBeDisabled();
     await expect.poll(() => overlapping(page), { timeout: 5000 }).toEqual([]);
@@ -240,9 +251,13 @@ test('the labels drawn after the text grew while the Map was hidden overlap none
     await filters(page);
     await settled(page);
     expect(await overlapping(page)).toEqual([]);
-    await page.getByRole('tab', { name: t('views.status') }).click();
+    // The Settings view is opened as a tab of the Map's own pane, which hides the Map and keeps
+    // its view mounted while the text grows.
+    await openView(page, 'settings', t('views.settings'));
     await expect(page.locator('[data-map-graph]')).toBeHidden();
-    const larger = page.getByRole('button', { name: t('app.text_larger') });
+    const larger = page
+        .locator(`${SHOWN_VIEW} [data-settings-view]`)
+        .getByRole('button', { name: t('app.text_larger') });
     for (let step = 0; step < 6; step += 1) await larger.click();
     await expect(larger).toBeDisabled();
     await page.getByRole('tab', { name: t('views.map') }).click();

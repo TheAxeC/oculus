@@ -17,6 +17,15 @@ text:
             cannot_read: 'cannot be read: {0}'
         docs:
             missing: document does not exist
+        rail:
+            not_a_list: rail is not a list of buttons
+            shape: a rail button is not a map of label, glyph and page; it is not drawn
+            label: the rail button for {0} has no label; it is not drawn
+            glyph: the rail button for {0} names no glyph; it is not drawn
+            glyph_unknown: the rail button for {0} names a glyph glyphs.yml does not hold; it is not drawn
+            page: a rail button names no page; it is not drawn
+            page_unknown: the rail button for {0} names a page arrangements does not hold; it is not drawn
+            repeated: a second rail button names the page {0}; only the first is drawn
         manifests:
             id_not_folder: id {0} is not the folder name {1}
             type_not_tier: "type {0} is not the tier's {1}"

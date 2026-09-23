@@ -1,7 +1,7 @@
 // Layer 4, test fixture. The registrations, catalog and helpers the rail suites share: the views
 // this suite registers of its own, and the renderers that draw the rail to HTML over them.
 
-import { type DocEntry } from '../../../src/lib/shell/rail/rail.ts';
+import { type DocEntry } from '../../../src/lib/state/workbench/navigation/catalogue.ts';
 import {
     collectionKeys,
     engineDir,

@@ -57,6 +57,7 @@ digraph layers {
         "shell/keys";
         "shell/panes";
         "shell/rail";
+        "shell/status";
     }
     subgraph "cluster_views" {
         label="views"; style=solid;
@@ -113,11 +114,11 @@ digraph layers {
     "routes" -> "data/snapshot";
     "routes" -> "data/sources";
     "routes" -> "shell";
-    "routes" -> "shell/panes";
     "routes" -> "shell/rail";
     "routes" -> "state/client";
     "routes" -> "state/sources";
     "routes" -> "state/words";
+    "routes" -> "state/workbench";
     "routes" -> "themes";
     "routes" -> "ui/menu";
     "routes" -> "views";
@@ -215,13 +216,13 @@ digraph layers {
     "shell" -> "shell/keys";
     "shell" -> "shell/panes";
     "shell" -> "shell/rail";
+    "shell" -> "shell/status";
     "shell" -> "state/client";
     "shell" -> "state/words";
     "shell" -> "state/workbench";
     "shell" -> "ui";
     "shell" -> "ui/menu";
     "shell" -> "views";
-    "shell/keys" -> "shell/rail";
     "shell/keys" -> "state/client";
     "shell/keys" -> "state/words";
     "shell/keys" -> "state/workbench";
@@ -232,20 +233,21 @@ digraph layers {
     "shell/panes" -> "state/words";
     "shell/panes" -> "state/workbench";
     "shell/panes" -> "ui/controls";
-    "shell/panes" -> "ui/forms";
     "shell/panes" -> "ui/frame";
     "shell/panes" -> "ui/menu";
     "shell/panes" -> "ui/tabs";
     "shell/panes" -> "views";
-    "shell/rail" -> "shell/keys";
     "shell/rail" -> "state/client";
     "shell/rail" -> "state/sessions";
     "shell/rail" -> "state/words";
     "shell/rail" -> "state/workbench";
     "shell/rail" -> "ui/controls";
-    "shell/rail" -> "ui/menu";
     "shell/rail" -> "ui/tree";
     "shell/rail" -> "views";
+    "shell/status" -> "state/client";
+    "shell/status" -> "state/words";
+    "shell/status" -> "state/workbench";
+    "shell/status" -> "ui/controls";
     "src" -> "? src/server.ts:40" [style=dashed];
     "src" -> "data/helpers";
     "src" -> "data/sources";
@@ -314,6 +316,7 @@ digraph layers {
     "state/words" -> "state/sources";
     "state/workbench" -> "data";
     "state/workbench" -> "data/helpers";
+    "state/workbench" -> "data/sources";
     "state/workbench" -> "state/boards";
     "state/workbench" -> "state/client";
     "state/workbench" -> "state/feeds";
@@ -322,6 +325,7 @@ digraph layers {
     "state/workbench" -> "state/sources";
     "state/workbench" -> "state/system";
     "state/workbench" -> "state/words";
+    "state/workbench" -> "views";
     "ui" -> "themes";
     "ui/controls" -> "state/words";
     "ui/controls" -> "ui";
@@ -450,10 +454,13 @@ digraph layers {
     "views/system" -> "state/sources";
     "views/system" -> "state/system";
     "views/system" -> "state/words";
+    "views/system" -> "state/workbench";
     "views/system" -> "ui";
     "views/system" -> "ui/controls";
     "views/system" -> "ui/display";
+    "views/system" -> "ui/forms";
     "views/system" -> "ui/frame";
+    "views/system" -> "ui/menu";
     "views/system" -> "ui/tree";
     "views/system" -> "views";
     "views/system" -> "views/shared";

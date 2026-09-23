@@ -92,7 +92,7 @@ export function createDocs(entities: EntitiesStore): DocsStore {
         );
     }
 
-    /** One Markdown document of the hub, by the path the rail's `docs:` entry names. */
+    /** One Markdown document of the hub, by the path its `docs:` entry in layout.yml names. */
     function hubDocument(path: string): DocState {
         if (path === '') return NOTHING;
         return reading(ownKey(HUB, path), `${DOCS}?hub=${encodeURIComponent(path)}`);

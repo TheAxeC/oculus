@@ -55,6 +55,7 @@ memories:
 
 
 # The CRT overlay (scanlines and vignette, cosmetic only): what a browser that has never been told
-# otherwise starts on. The rail's toggle writes the viewer's own choice into the appearance store.
+# otherwise starts on. The Settings view's CRT toggle writes the viewer's own choice into the
+# appearance store.
 crt:
   default: false

@@ -75,6 +75,7 @@ digraph channels {
         "views/system/findings";
         "views/system/status";
         "views/system/usage";
+        "views/system/workbench";
     }
     subgraph "cluster_read routes" {
         label="routes"; style=solid;
@@ -98,6 +99,7 @@ digraph channels {
     "ch config" -> "views/system/config";
     "ch config" -> "views/system/findings";
     "ch config" -> "views/system/usage";
+    "ch config" -> "views/system/workbench";
     "ch feeds" -> "routes/+page" [style=dashed];
     "ch feeds" -> "state/feeds/feeds";
     "ch files" -> "routes/+page" [style=dashed];
@@ -108,6 +110,7 @@ digraph channels {
     "ch git" -> "state/client/selectors";
     "ch git" -> "views/system/status";
     "ch hpc" -> "routes/+page" [style=dashed];
+    "ch hpc" -> "routes/+page";
     "ch hpc" -> "state/system/hpc";
     "ch inbox" -> "routes/+page" [style=dashed];
     "ch inbox" -> "state/feeds/inbox";
@@ -130,11 +133,13 @@ digraph channels {
     "ch portfolio" -> "views/system/status";
     "ch pty:*" -> "state/sessions/terminals";
     "ch sessions" -> "routes/+page" [style=dashed];
+    "ch sessions" -> "routes/+page";
     "ch sessions" -> "state/client/selectors";
     "ch sessions" -> "state/sessions/latex";
     "ch sessions" -> "state/sessions/terminals";
     "ch sessions" -> "views/system/status";
     "ch usage" -> "routes/+page" [style=dashed];
+    "ch usage" -> "routes/+page";
     "ch usage" -> "state/system/usage-refresh";
     "ch usage" -> "views/system/usage";
     "server/accounts/calendar/poll" -> "ch calendar";

@@ -136,7 +136,8 @@ function handler(
     page?: string,
     focus: () => null = () => null,
     overlays: Overlays = {},
-    setUpdateOpen: (open: boolean) => void = noop
+    setUpdateOpen: (open: boolean) => void = noop,
+    railPage: (index: number) => boolean = () => false
 ) {
     const element = paneElement(path, 'b', page);
     held.document = fakeDocument(element, overlays.confirm === true);
@@ -154,7 +155,8 @@ function handler(
         setUpdateOpen,
         setSheetOpen: noop,
         openPalette: noop,
-        openDoc: noop
+        openDoc: noop,
+        railPage
     });
     keys.paneFocused({ target: element } as unknown as FocusEvent);
     return keys;
@@ -337,5 +339,30 @@ describe('Escape while the update tray is open', () => {
         keys.keys(second.event);
         expect(closed).toHaveBeenCalledWith(false);
         expect(second.prevented).toHaveBeenCalledOnce();
+    });
+});
+
+describe('a bare digit', () => {
+    it('shows the rail page of its place, and is swallowed only when there was one', () => {
+        // revert: src/lib/shell/keys/workbench-keys.svelte.ts:182 => return options.railPage(action.index + 1);
+        const asked: number[] = [];
+        const keys = handler(
+            '1',
+            undefined,
+            () => null,
+            {},
+            noop,
+            (index) => {
+                asked.push(index);
+                return index <= 2;
+            }
+        );
+        const first = keyEvent('2', false);
+        keys.keys(first.event);
+        expect(first.prevented).toHaveBeenCalledOnce();
+        const past = keyEvent('7', false);
+        keys.keys(past.event);
+        expect(past.prevented).not.toHaveBeenCalled();
+        expect(asked).toEqual([2, 7]);
     });
 });

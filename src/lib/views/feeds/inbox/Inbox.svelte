@@ -1,5 +1,5 @@
 <script module lang="ts">
-    // Layer 3, view registration. Inbox follows Position Leads in the feeds group. The rail badge
+    // Layer 3, view registration. Inbox follows Position Leads in the feeds group. The view's badge
     // is how many threads of the live plate are still waiting on an answer or an action.
     import type { ViewRegistration } from '../../registry';
     export const registration: ViewRegistration = {

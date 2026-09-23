@@ -23,6 +23,8 @@ import {
 } from '../../content/feeds.ts';
 import { overrides, setHidden, setOverride } from '../../sessions/overrides.ts';
 import { deckNow, writeDeck } from './deck.ts';
+import { railNow, writeRail } from './rail.ts';
+import { railRows } from '../../../data/sources/config/rail.ts';
 import {
     createEntry,
     entryOf,
@@ -119,6 +121,10 @@ export function valueNow(into: WriteTarget, change: Change): { found: boolean; v
         const lists = deckNow(into.config);
         return lists === null ? { found: false, value: null } : { found: true, value: lists };
     }
+    if (change.kind === 'rail') {
+        const rail = railNow(into.layoutFile);
+        return rail === null ? { found: false, value: null } : { found: true, value: rail };
+    }
     if (change.kind === 'subtask' || change.kind === 'subtask-add') {
         return subtaskValue(into.hub, into.config, subtaskTarget(into, change), change.field);
     }
@@ -213,6 +219,10 @@ function apply(into: WriteTarget, change: Change): WriteOutcome | null {
             wordsOf(before.selection),
             wordsOf(before.order)
         );
+        return 'error' in outcome ? null : { found: true, ...outcome };
+    }
+    if (change.kind === 'rail') {
+        const outcome = writeRail(into.layoutFile, railRows(change.before) ?? [], into.glyphs);
         return 'error' in outcome ? null : { found: true, ...outcome };
     }
     if (change.kind === 'subtask') {

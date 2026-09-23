@@ -28,7 +28,6 @@ src/lib/server/accounts/calendar/routes.ts src/lib/server/accounts/mail/routes.t
 src/lib/server/accounts/calendar/routes.ts src/lib/server/accounts/mail/routes.ts 4b4407a40424 the same 8 lines at 108 and 193, to fold into one place
 src/lib/server/accounts/calendar/routes.ts src/lib/server/accounts/mail/routes.ts 960e66320731 the same 8 lines at 148 and 247, to fold into one place
 src/lib/server/accounts/calendar/routes.ts src/lib/server/accounts/mail/routes.ts b23af83c85c1 the same 8 lines at 167 and 266, to fold into one place
-src/lib/server/edit/deck-edit.ts src/lib/server/edit/writes/audit-mute.ts 8c2628da8765 the same 8 lines at 57 and 54, to fold into one place
 src/lib/server/git/deposit-git.ts src/lib/server/git/git-parse.ts 05cee2d0cdf8 the same 8 lines at 255 and 28, to fold into one place
 src/lib/server/git/deposit-git.ts src/lib/server/git/git-write.ts 789edce9ee59 the same 8 lines at 148 and 90, to fold into one place
 src/lib/server/git/deposit-git.ts src/lib/server/git/git-write.ts f6da88e69cee the same 8 lines at 321 and 535, to fold into one place
@@ -52,8 +51,6 @@ src/lib/server/git/git-routes.ts src/lib/server/machine/pty/routes.ts 4c23bcded2
 src/lib/server/machine/hpc/routes.ts src/lib/server/accounts/mail/routes.ts 4b4407a40424 the same 8 lines at 18 and 193, to fold into one place
 src/lib/server/files/open.ts src/lib/server/machine/pty/routes.ts 4c23bcded24d the same 8 lines at 327 and 277, to fold into one place
 src/lib/server/machine/pty/channel.ts src/lib/server/core/socket.ts 9d9d34a4a92f the same 8 lines at 102 and 53, to fold into one place
-src/lib/shell/panes/PageStrip.svelte src/lib/shell/panes/PaneView.svelte 0a7f20b31189 the same 8 lines at 339 and 384, to fold into one place
-src/lib/shell/panes/PageStrip.svelte src/lib/shell/panes/PaneView.svelte 3ed93ba68ad5 the same 8 lines at 312 and 360, to fold into one place
 src/lib/state/words/appearance.ts src/lib/state/words/tones.ts 6df64cd3fcbc the same 8 lines at 51 and 35, to fold into one place
 src/lib/state/sources/files.svelte.ts src/lib/state/sessions/latex.svelte.ts 044217652a12 the same 8 lines at 101 and 142, to fold into one place
 src/lib/state/client/instance.ts src/lib/state/workbench/layout/tree.ts 056376e2a434 the same 8 lines at 132 and 59, to fold into one place
@@ -232,8 +229,6 @@ tests/server/machine/usage/usage.test.ts tests/views/system/usage.test.ts 37f9ca
 tests/server/machine/usage/usage.test.ts tests/views/system/usage.test.ts 578723f7b40b the same 8 lines at 435 and 193, to fold into one place
 tests/server/watch/sessions.test.ts tests/server/watch/portfolio.test.ts 820f2f2c8974 the same 8 lines at 224 and 148, to fold into one place
 tests/shell/keys/palette.test.ts tests/views/sources/source.test.ts cf6105d754c4 the same 8 lines at 33 and 53, to fold into one place
-tests/shell/rail/rail-config.test.ts tests/views/whole/registry.test.ts 2c7833868d61 the same 8 lines at 145 and 209, to fold into one place
-tests/shell/rail/rail-config.test.ts tests/views/whole/registry.test.ts be66eb27e10d the same 8 lines at 144 and 368, to fold into one place
 tests/state/system/audit.test.ts tests/views/system/audit.test.ts f3976d0578ee the same 8 lines at 18 and 39, to fold into one place
 tests/state/boards/board/board-fixture.ts tests/state/boards/board/board-software.test.ts 3538d24336d3 the same 8 lines at 76 and 22, to fold into one place
 tests/state/boards/board/board-fixture.ts tests/state/boards/board/board-software.test.ts 88829917ef23 the same 8 lines at 190 and 73, to fold into one place

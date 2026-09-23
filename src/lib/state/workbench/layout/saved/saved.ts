@@ -234,10 +234,19 @@ export function checkPages(pages: Pages): string[] {
     const problems: string[] = [];
     if (pages.pages.length === 0) problems.push('no page');
     const ids = new Set<string>();
+    const rails = new Set<string>();
     const instances = new Set<string>();
     for (const page of pages.pages) {
         if (ids.has(page.id)) problems.push(`page id ${JSON.stringify(page.id)} is used twice`);
         ids.add(page.id);
+        if (page.rail !== undefined) {
+            if (page.rail === '') {
+                problems.push(`page ${JSON.stringify(page.label)} has an empty rail key`);
+            } else if (rails.has(page.rail)) {
+                problems.push(`rail key ${JSON.stringify(page.rail)} is on two pages`);
+            }
+            rails.add(page.rail);
+        }
         for (const problem of checkWorkbench(page.workbench, pages, page.id)) {
             problems.push(`page ${JSON.stringify(page.label)} ${problem}`);
         }
@@ -284,12 +293,25 @@ export function parseLayout(value: unknown, label: string): Pages | null {
                 ? readWorkbench(entry.workbench)
                 : readDockedWorkbench(entry.workbench);
         if (workbench === null) return null;
-        pages.push({ id: entry.id, label: entry.label, workbench });
+        const page: Page = { id: entry.id, label: entry.label, workbench };
+        const rail = railKey(entry.rail, pages);
+        if (rail !== null) page.rail = rail;
+        pages.push(page);
     }
     // A leaf naming a page this envelope does not hold, or one that would make a page show itself,
     // becomes an empty pane: the rest of the arrangement is still the one the viewer left.
     const read: Pages = settlePageLeaves({ pages, current });
     return checkPages(read).length === 0 ? read : null;
+}
+
+/**
+ * The rail key a saved page carries, or null for none. A key that is not a non-empty string, or one
+ * an earlier page already carries, is read as none: one rail button is one page, and the later of
+ * two becomes a page of its own rather than a second page behind the same button.
+ */
+function railKey(value: unknown, earlier: Page[]): string | null {
+    if (typeof value !== 'string' || value === '') return null;
+    return earlier.some((page) => page.rail === value) ? null : value;
 }
 
 /** Make a one-page collection from a supported one-workbench envelope. */

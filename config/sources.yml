@@ -93,8 +93,8 @@ career_file: CAREER.yml
 # carries no user or machine path; a relative dir is a finding. Nothing outside a root is ever served:
 # both ends are resolved through realpath and the file must sit inside the root, so a symlink pointing
 # out of it serves nothing. A dir that is not on this machine is a finding on the Findings view and its
-# root serves nothing. The bookmarks that open as tabs are the `bookmarks:` list in layout.yml, which
-# names a root by its key here.
+# root serves nothing. The bookmarks that open as tabs are the entries of the reader's own
+# ~/.oculus/bookmarks.yml, each naming a root by its key here.
 roots:
   - { key: cathedra,    dir: ~/workspace/cathedra }
   - { key: game-engine, dir: ~/workspace/game-engine }

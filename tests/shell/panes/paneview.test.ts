@@ -1,5 +1,6 @@
-// Layer 3, shell test. The pane menu's move-to-page items and the question a close asks, over
-// hand-built page lists and instance ids.
+// Layer 3, shell test. The pane menu's move-to-page and show-a-page items and its fold item, over
+// hand-built page lists. What a page is called and what a close asks are
+// tests/state/workbench/navigation/pages.test.ts.
 //
 // What this does NOT cover: the menu opening and the item being pressed. There is no DOM in this
 // suite, so a closed Menu renders its opener and no list; the move itself is
@@ -17,8 +18,6 @@ import {
     PAGE
 } from '../../../src/lib/shell/panes/pane-view.ts';
 import { menuLevel, type MenuItem } from '../../../src/lib/ui/menu/menu-items.ts';
-import { closeQuestion } from '../../../src/lib/shell/closing.ts';
-import { pageName, pageNameOf } from '../../../src/lib/shell/panes/page-strip.ts';
 import { pane, split } from '../../state/workbench/layout/layout-fixture.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
 import { setCatalog, t } from '../../../src/lib/state/words/text.ts';
@@ -208,16 +207,6 @@ describe('the pane menu show-a-page items', () => {
     });
 });
 
-describe('what a page is called', () => {
-    it('is its own name, or its place in the strip when it has none', () => {
-        const pages = [page('one', 'Writing'), page('two', '')];
-        expect(pageName(pages[0], 0)).toBe('Writing');
-        expect(pageName(pages[1], 1)).toBe(t('ui.page_default', 2));
-        expect(pageNameOf(pages, 'two')).toBe(t('ui.page_default', 2));
-        expect(pageNameOf(pages, 'gone')).toBe('');
-    });
-});
-
 describe('the fold item', () => {
     it('is offered on a child of a split and not on the root pane', () => {
         const root = split('row', [0.5, 0.5], [pane(['a']), pane(['b'])]);
@@ -231,29 +220,5 @@ describe('the fold item', () => {
         const root = { ...split('row', [0.5, 0.5], [pane(['a']), pane(['b'])]), folded: [0] };
         expect(foldable(root, [1])).toBe(false);
         expect(foldable(root, [0])).toBe(false);
-    });
-});
-
-// The one rule the tab's own close, the pane menu's close and a page's close all take, so the same
-// tabs asked about in three places get the same question.
-describe('the question a close asks', () => {
-    const dirty = (id: string): boolean => id === 'unsaved';
-
-    it('asks nothing over one instance with nothing unsaved in it', () => {
-        expect(closeQuestion(['saved'], dirty)).toBe('none');
-        expect(closeQuestion([], dirty)).toBe('none');
-    });
-
-    it('asks about the text over one instance holding unsaved text', () => {
-        expect(closeQuestion(['unsaved'], dirty)).toBe('dirty');
-    });
-
-    it("asks the caller's own question over more than one, unsaved or not", () => {
-        expect(closeQuestion(['saved', 'other'], dirty)).toBe('many');
-        expect(closeQuestion(['saved', 'unsaved'], dirty)).toBe('many');
-    });
-
-    it('asks nothing of any instance when nothing reports unsaved text', () => {
-        expect(closeQuestion(['unsaved'], () => false)).toBe('none');
     });
 });

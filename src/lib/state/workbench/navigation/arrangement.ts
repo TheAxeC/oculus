@@ -9,7 +9,7 @@ import {
     type Instance,
     type Layout,
     type Workbench
-} from './layout/index.ts';
+} from '../layout/index.ts';
 
 /**
  * One arrangement of `arrangements:` in config/layout.yml as a workbench, with a fresh instance id

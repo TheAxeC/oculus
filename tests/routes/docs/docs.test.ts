@@ -11,8 +11,8 @@
 // exercise the fallback that finds the folder under the scan rules.
 //
 // The other two shapes the route answers are here as well: a Markdown document of the hub, which is
-// what the `docs:` list of config/layout.yml offers in the rail, and the manual, which is the one
-// path of the engine directory this route opens.
+// what the `docs:` list of config/layout.yml lists in the view catalogue, and the manual, which is
+// the one path of the engine directory this route opens.
 
 import { cpSync, mkdirSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';

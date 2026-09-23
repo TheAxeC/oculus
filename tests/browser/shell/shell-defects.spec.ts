@@ -1,15 +1,15 @@
 // The shell as a reader sees it on a served page: a tooltip a press leaves behind, the scrollbars'
 // colours, the rail's list against its foot and the fade that says the list goes on, the foot's
-// visible names and the arrow keys along its Text row, the pane menu's length at seven pages, an
-// overflowing tab strip resting with a whole tab at its left edge, the palette's kind column, and a
-// pressed rail toggle's colours. Every one of them is a computed style, a box or a focus, which
-// only a rendered page holds.
+// visible names and the arrow keys along the rail, the pane menu's length at seven pages, an
+// overflowing tab strip resting with a whole tab at its left edge, the palette's kind column, and
+// the colours of the rail button whose page is on screen. Every one of them is a computed style, a
+// box or a focus, which only a rendered page holds.
 //
 // Nothing here writes to the hub. The layout and the appearance live in the browser's own storage,
 // and Playwright gives every test a context of its own.
 
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { boot, openView } from '../helpers/rail.ts';
+import { boot, makePage, openView, pickTheme, showPage, showRailPage } from '../helpers/rail.ts';
 import { stripRest } from '../helpers/style.ts';
 import { t } from '../helpers/words.ts';
 
@@ -18,10 +18,9 @@ function bubbles(page: Page): Locator {
     return page.locator('[role="tooltip"]:not([hidden])');
 }
 
-/** Pick a theme from the rail's theme list by the end of its label. */
-async function theme(page: Page, name: RegExp): Promise<void> {
-    await page.getByRole('button', { name: t('ui.theme') }).click();
-    await page.getByRole('menuitem', { name }).first().click();
+/** Put a theme on by its name, and take the pointer off every control. */
+async function theme(page: Page, name: string): Promise<void> {
+    await pickTheme(page, name);
     await page.mouse.move(700, 400);
 }
 
@@ -35,7 +34,7 @@ test.describe('tooltips', () => {
         page
     }) => {
         await boot(page);
-        const entry = page.locator('nav button[data-view]').first();
+        const entry = page.locator('nav [data-rail-page] button').first();
         await entry.click();
         await page.waitForTimeout(SETTLE);
         // a press closes the bubble, so none is left over the control it was pressed on
@@ -118,7 +117,7 @@ test.describe('scrollbars', () => {
         expect(light.width).toBe('thin');
         expect(light.colour).toBe(light.tokens);
 
-        await theme(page, /\sdark$/);
+        await theme(page, 'dark');
         await expect(page.locator('body')).toHaveClass(/\bdark\b/);
         const dark = await bars(page);
         expect(dark.width).toBe('thin');
@@ -141,7 +140,8 @@ test.describe('scrollbars', () => {
 });
 
 test.describe('the rail list', () => {
-    test.use({ viewport: { width: 1280, height: 800 } });
+    // Short enough that the rail's pages and bookmarks do not fit above its foot.
+    test.use({ viewport: { width: 1280, height: 520 } });
 
     /** The list scrolled to its end: the last entry's box and the foot's box. */
     async function atEnd(page: Page): Promise<{ last: number; foot: number }> {
@@ -156,7 +156,7 @@ test.describe('the rail list', () => {
 
     for (const [name, pick] of [
         ['the default theme', null],
-        ['a terminal theme', /mocha/]
+        ['a terminal theme', 'mocha']
     ] as const) {
         test(`under ${name} the list fades at an edge with more entries past it`, async ({
             page
@@ -195,96 +195,50 @@ test.describe('the rail list', () => {
 test.describe('the rail foot', () => {
     test.use({ viewport: { width: 1280, height: 800 } });
 
-    test('every foot control carries its visible name, and no two share a glyph', async ({
+    test('Search and Update carry their visible names, each with a drawing of its own', async ({
         page
     }) => {
+        // revert: src/lib/shell/rail/ActivityRail.svelte:317 => glyph="cmd"
         await boot(page);
-        await theme(page, /mocha/);
-        // Under the terminal theme each text step draws its stand-in whole inside its third of the
-        // row, with no bracket pair of its own around it.
-        const steps = await page
-            .locator('nav [data-foot] [role="group"] button')
-            .evaluateAll((buttons) =>
-                buttons.map((one) => ({
-                    fits: one.scrollWidth <= one.clientWidth + 1,
-                    before: getComputedStyle(one, '::before').content
-                }))
-            );
-        expect(steps).toEqual([
-            { fits: true, before: 'none' },
-            { fits: true, before: 'none' },
-            { fits: true, before: 'none' }
-        ]);
-        // The ASCII stand-ins are the terminal theme's; the drawings are what two glyphs compare
-        // by.
-        await page.locator('nav [data-stop="unicode"]').click();
+        await theme(page, 'mocha');
         const foot = page.locator('nav [data-foot]');
-        for (const key of [
-            'app.search',
-            'app.update',
-            'ui.theme',
-            'app.text',
-            'ui.crt_on',
-            'ui.wallpaper',
-            'ui.unicode'
-        ]) {
+        for (const key of ['app.search', 'app.update']) {
             await expect(foot.getByText(t(key), { exact: true })).toBeVisible();
         }
-        const text = foot.locator('[role="group"]');
-        await expect(text).toHaveAccessibleName(t('app.text'));
-        const row = await text
-            .getByRole('button')
-            .evaluateAll((buttons) =>
-                buttons.map((one) => Math.round(one.getBoundingClientRect().top))
-            );
-        expect(row).toHaveLength(3);
-        expect(new Set(row).size).toBe(1);
-        expect(
-            await text
-                .getByRole('button')
-                .evaluateAll((buttons) => buttons.map((one) => one.getAttribute('aria-label')))
-        ).toEqual([t('app.text_smaller'), t('app.text_reset'), t('app.text_larger')]);
-
+        await theme(page, 'light');
         const drawings = await foot
             .locator('button')
             .evaluateAll((buttons) =>
                 buttons.map((one) => one.querySelector('.glyph')?.innerHTML ?? '')
             );
-        expect(drawings.length).toBeGreaterThanOrEqual(9);
+        expect(drawings).toHaveLength(2);
         expect(drawings.every((one) => one !== '')).toBe(true);
-        expect(new Set(drawings).size).toBe(drawings.length);
+        expect(new Set(drawings).size).toBe(2);
     });
 });
 
-test.describe('the arrow keys in the foot', () => {
+test.describe('the arrow keys along the rail', () => {
     test.use({ viewport: { width: 1280, height: 800 } });
 
-    test('left and right move along the Text row, up and down leave it', async ({ page }) => {
+    test('up and down move along the pages, the bookmarks and the foot, wrapping at the ends', async ({
+        page
+    }) => {
+        // revert: src/lib/shell/rail/rail.ts:59 => const next = nextStop(key, ring.indexOf(current), ring.length, 'row');
         await boot(page);
         const rail = page.locator('nav.rail');
         const stop = (name: string): Locator => rail.locator(`[data-stop="${name}"]`);
-        // One step up makes the reset available, so all three steps are in the ring.
-        await stop('text-larger').click();
-        await expect(stop('text-reset')).toBeEnabled();
-
-        await stop('text-smaller').focus();
-        await page.keyboard.press('ArrowRight');
-        await expect(stop('text-reset')).toBeFocused();
-        await page.keyboard.press('ArrowRight');
-        await expect(stop('text-larger')).toBeFocused();
-        await page.keyboard.press('ArrowRight');
-        await expect(stop('text-larger')).toBeFocused();
+        await stop('page:focus').focus();
+        await page.keyboard.press('ArrowDown');
+        await expect(stop('page:projects')).toBeFocused();
+        await page.keyboard.press('ArrowUp');
+        await page.keyboard.press('ArrowUp');
+        await expect(stop('update')).toBeFocused();
+        await page.keyboard.press('ArrowDown');
+        await expect(stop('page:focus')).toBeFocused();
+        await page.keyboard.press('End');
+        await expect(stop('update')).toBeFocused();
         await page.keyboard.press('ArrowLeft');
-        await expect(stop('text-reset')).toBeFocused();
-
-        await page.keyboard.press('ArrowDown');
-        await expect(stop('crt')).toBeFocused();
-        await page.keyboard.press('ArrowUp');
-        await expect(stop('text-smaller')).toBeFocused();
-        await page.keyboard.press('ArrowUp');
-        await expect(stop('theme')).toBeFocused();
-        await page.keyboard.press('ArrowDown');
-        await expect(stop('text-smaller')).toBeFocused();
+        await expect(stop('update')).toBeFocused();
     });
 });
 
@@ -315,13 +269,9 @@ test.describe('the pane menu', () => {
         page
     }) => {
         await boot(page);
-        const strip = page.getByRole('region', { name: t('ui.pages') });
-        for (let made = 1; made < 7; made += 1) {
-            await strip.getByRole('button', { name: t('ui.page_menu') }).click();
-            await page.getByRole('menuitem', { name: t('ui.page_new') }).click();
-        }
-        await expect(strip.getByRole('tab')).toHaveCount(7);
-        await page.keyboard.press('1');
+        // The first page, the Views and Settings page, and five made from its Pages view.
+        for (let made = 3; made <= 7; made += 1) await makePage(page);
+        await showPage(page, t('ui.page_default', 1));
 
         let list = await paneMenu(page);
         await expect(list.getByRole('menuitem')).toHaveCount(FIXED + 2);
@@ -331,9 +281,10 @@ test.describe('the pane menu', () => {
 
         await list.getByRole('menuitem', { name: t('ui.move_to_page_list') }).click();
         await expect(list).toBeVisible();
-        const pages = [2, 3, 4, 5, 6, 7].map((at) =>
-            t('ui.move_to_page', t('ui.page_default', at))
-        );
+        const pages = [
+            t('ui.move_to_page', 'Views and Settings'),
+            ...[3, 4, 5, 6, 7].map((at) => t('ui.move_to_page', t('ui.page_default', at)))
+        ];
         await expect.poll(() => names(list)).toEqual([t('ui.menu_back'), ...pages]);
         await expect(list.getByRole('menuitem').first()).toBeFocused();
 
@@ -515,7 +466,7 @@ test.describe('tabs', () => {
         }
     });
 
-    test('a tab activated from the rail is brought in whole with a start at the left edge', async ({
+    test('a tab activated from the palette is brought in whole with a start at the left edge', async ({
         page
     }) => {
         const list = await tenTabs(page);
@@ -590,13 +541,13 @@ test.describe('the palette', () => {
     });
 });
 
-test.describe('a pressed rail toggle', () => {
+test.describe('the rail button of the page on screen', () => {
     test.use({ viewport: { width: 1280, height: 800 } });
 
-    /** One foot control's fill, border, glyph and name colours, and the three tokens resolved. */
-    async function paint(page: Page, stop: string): Promise<Record<string, string>> {
+    /** One rail button's fill, border, glyph and name colours, and the three tokens resolved. */
+    async function paint(page: Page, key: string): Promise<Record<string, string>> {
         return page.evaluate((name) => {
-            const button = document.querySelector(`nav [data-stop="${name}"]`);
+            const button = document.querySelector(`nav [data-rail-page="${name}"] button`);
             const label = button?.querySelector('.label');
             if (!button || !label) return {};
             const probe = document.createElement('span');
@@ -619,37 +570,31 @@ test.describe('a pressed rail toggle', () => {
                 name: getComputedStyle(label).color,
                 ...tokens
             };
-        }, stop);
+        }, key);
     }
 
-    for (const [name, pick] of [
-        ['the light theme', null],
-        ['a terminal theme', /mocha/]
-    ] as const) {
-        test(`under ${name} a pressed toggle fills with the accent tint and names itself in the accent text`, async ({
-            page
-        }) => {
-            await boot(page);
+    test('under the light theme and a terminal theme it fills with the accent tint and names itself in the accent text', async ({
+        page
+    }) => {
+        // revert: src/lib/shell/rail/ActivityRail.svelte:244 => active={false}
+        await boot(page);
+        for (const pick of [null, 'mocha'] as const) {
             if (pick !== null) await theme(page, pick);
-            const rail = page.locator('nav.rail');
-            const off = await paint(page, 'crt');
-            expect(off.background).toBe('rgba(0, 0, 0, 0)');
-
-            await rail.locator('[data-stop="unicode"]').click();
-            await rail.locator('[data-stop="crt"]').click();
+            await showRailPage(page, 'focus');
             await page.mouse.move(700, 400);
-            await expect(rail.locator('[data-stop="crt"]')).toHaveAttribute('aria-pressed', 'true');
-            await expect(rail.locator('[data-stop="unicode"]')).toHaveAttribute(
-                'aria-pressed',
-                'true'
+            const off = await paint(page, 'projects');
+            expect(off.background, `the button off, under ${pick ?? 'light'}`).toBe(
+                'rgba(0, 0, 0, 0)'
             );
-            const crt = await paint(page, 'crt');
-            const glyphs = await paint(page, 'unicode');
-            expect(crt).toEqual(glyphs);
-            expect(crt.background).toBe(crt.tint);
-            expect(crt.border).toBe(crt.accent);
-            expect(crt.glyph).toBe(crt.text);
-            expect(crt.name).toBe(crt.text);
-        });
-    }
+
+            await showRailPage(page, 'projects');
+            await page.mouse.move(700, 400);
+            const on = await paint(page, 'projects');
+            expect(on.background).toBe(on.tint);
+            expect(on.border).toBe(on.accent);
+            expect(on.glyph).toBe(on.text);
+            expect(on.name).toBe(on.text);
+            expect((await paint(page, 'focus')).background).toBe('rgba(0, 0, 0, 0)');
+        }
+    });
 });

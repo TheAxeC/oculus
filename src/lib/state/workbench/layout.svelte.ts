@@ -6,7 +6,7 @@
 // The saved unit is every page: each one a whole workbench (one tree and the maximised pane, if
 // there is one) with a name, and which page is on screen. Every operation that names a path names
 // the page it addresses, and the page on screen is what it means when it names none, so a caller
-// that knows nothing of pages reads and writes the one the strip is on.
+// that knows nothing of pages reads and writes the one on screen.
 // Every change reaches the store through apply() or savePages(), which are also what save, so
 // neither an arrangement nor a page is changed without being written down.
 //
@@ -33,7 +33,6 @@ import {
     fold,
     LAYOUT_KEY,
     maximise,
-    movePage as movePageIn,
     newPage,
     parseLayout,
     parseWorkbench,
@@ -56,7 +55,7 @@ import {
     type ViewId,
     type Workbench
 } from './layout/index.ts';
-import { parseArrangement } from './arrangement.ts';
+import { parseArrangement } from './navigation/arrangement.ts';
 import { t } from '../words/text.ts';
 
 export { LAYOUT_KEY, PREVIOUS_KEY };
@@ -74,7 +73,7 @@ export type LayoutStore = {
     workbench: (page?: string) => Workbench;
     layout: (page?: string) => Layout;
     activeInstance: (page?: string) => Instance | null;
-    /** The instance the rail's next view would join, which is the pane it would open into. */
+    /** The instance the next view opened would join, which is the pane it would open into. */
     openingInstance: () => Instance | null;
     instanceLayoutState: (id: string) => unknown;
     /** The view one instance shows, from whichever page's tree holds it, or undefined for none. */
@@ -87,13 +86,32 @@ export type LayoutStore = {
      */
     keepPreview: (id: string) => void;
     loadLayout: (storage?: Storable) => boolean;
-    openArrangement: (raw: unknown, label: string) => boolean;
+    /**
+     * Show the page of one rail button, made from its arrangement the first time and switched to
+     * after that. It answers whether a page is on screen for the button.
+     */
+    openRailPage: (key: string, label: string, raw: unknown) => boolean;
+    /**
+     * Put the first rail page on screen in place of the default page, on a browser that had no
+     * saved layout and has changed nothing since. Anywhere else it changes nothing.
+     */
+    startOnRailPage: (key: string, label: string, raw: unknown) => void;
+    /**
+     * Whether a browser with no saved layout still waits for the rail list to choose its first
+     * page, so the shell draws no page until it has; false once a page was chosen or saved.
+     */
+    startingFresh: () => boolean;
+    /** The rail list came and names no page: the default page stays, and is drawn. */
+    keepDefaultPage: () => void;
+    /**
+     * The id of the page that was on screen before the one on screen now, while that page is still
+     * in the list; null on a fresh load and after it was closed. It is not saved.
+     */
+    previousPage: () => string | null;
     openPage: (label: string) => void;
     switchPage: (id: string) => void;
     renamePage: (id: string, label: string) => void;
-    movePage: (id: string, index: number) => void;
     closePage: (id: string) => void;
-    pageShortcut: (index: number) => boolean;
     apply: (next: Workbench, page?: string) => void;
     change: (edit: (tree: Layout) => Layout, page?: string) => void;
     activateInstance: (id: string, page?: string) => void;
@@ -127,10 +145,20 @@ export function createLayout(ui: UiStore): LayoutStore {
     /**
      * The pages, and which of them is on screen. The label of the page this starts on is empty
      * because the catalog is not installed when this module is evaluated; loadLayout names it, and
-     * the strip draws a page carrying no name by its position, which is the one moment such a page
-     * is on screen.
+     * a page carrying no name is called by its position, which is the one moment such a page is on
+     * screen.
      */
     const store: { current: Pages } = $state({ current: defaultPages('') });
+
+    /**
+     * Whether the pages are the default a browser with no saved layout was given and nothing has
+     * changed them since. It is state, so a caller that asks while the rail list is still on its
+     * way asks again once loadLayout has run.
+     */
+    let fresh = $state(false);
+
+    /** The page on screen before the current one, which previousPage answers while it is there. */
+    let previous: string | null = $state(null);
 
     /** Where apply() saves, once loadLayout has named it. Nothing is saved before that. */
     const storage = createStorage();
@@ -148,7 +176,7 @@ export function createLayout(ui: UiStore): LayoutStore {
         return held.pages.find((page) => page.id === held.current) ?? held.pages[0];
     }
 
-    /** Every page, in the order the strip draws them. */
+    /** Every page, in the order the Pages view lists them. */
     function pages(): Page[] {
         return store.current.pages;
     }
@@ -204,8 +232,8 @@ export function createLayout(ui: UiStore): LayoutStore {
 
     /**
      * Where the reader is, held as a rune so what is drawn from it redraws: a press that moves the
-     * reader from one pane to another changes no tree, and the mark saying where the rail opens a
-     * view has nothing else to follow.
+     * reader from one pane to another changes no tree, and the mark saying where a view opens has
+     * nothing else to follow.
      */
     const where: Touched = $state({ page: null });
 
@@ -239,27 +267,67 @@ export function createLayout(ui: UiStore): LayoutStore {
             savePages({ pages: [newPage(first, previous), shown], current: shown.id });
         } else {
             store.current = parsed ?? defaultPages(first);
+            fresh = parsed === null;
         }
         if (previous !== null) storage.remember(PREVIOUS_KEY, '');
         return parsed !== null;
     }
 
     /**
-     * A named arrangement of config/layout.yml as a page of its own, made current. A page already
-     * carrying that name is switched to instead, so the control that opens one is idempotent and a
-     * second press does not fill the strip with copies. An arrangement that does not parse changes
-     * nothing and says so.
+     * The page of the rail button whose arrangement key is `key`, made current. The page that
+     * carries the key is the one the reader arranged and is switched to as it is; with none, a page
+     * no button has taken yet whose name is the button's label becomes the button's page, which is
+     * how a page opened by name before the rail had buttons is kept; with neither, the page is made
+     * from the arrangement, named with the label. An empty key, or an arrangement that does not
+     * parse when a page has to be made from it, changes nothing and says so.
      */
-    function openArrangement(raw: unknown, label: string): boolean {
-        const found = store.current.pages.find((page) => page.label === label);
+    function openRailPage(key: string, label: string, raw: unknown): boolean {
+        if (key === '') return false;
+        const held = store.current.pages;
+        const found = held.find((page) => page.rail === key);
         if (found !== undefined) {
             switchPage(found.id);
             return true;
         }
+        const named = held.find((page) => page.rail === undefined && page.label === label);
+        if (named !== undefined) {
+            attention.forgetTouched();
+            savePages({
+                pages: held.map((page) => (page.id === named.id ? { ...page, rail: key } : page)),
+                current: named.id
+            });
+            return true;
+        }
         const next = parseArrangement(raw);
         if (next === null) return false;
-        addPage(newPage(label, next));
+        attention.forgetTouched();
+        addPage(newPage(label, next, key));
         return true;
+    }
+
+    /**
+     * The first rail page as the one page of a browser that had no saved layout: made from its
+     * arrangement in place of the default page, so the reader starts on a page a button owns and
+     * digit 1 shows it again. Once any change was saved the pages are the reader's and stay.
+     */
+    function startOnRailPage(key: string, label: string, raw: unknown): void {
+        if (!fresh) return;
+        const next = key === '' ? null : parseArrangement(raw);
+        if (next === null) {
+            // The first entry names nothing drawable: the default page stays the reader's first.
+            fresh = false;
+            return;
+        }
+        const page = newPage(label, next, key);
+        attention.forgetTouched();
+        savePages({ pages: [page], current: page.id });
+    }
+
+    /** The page on screen before the current one, while it is still one of the pages. */
+    function previousPage(): string | null {
+        const held = previous;
+        if (held === null || held === store.current.current) return null;
+        return store.current.pages.some((page) => page.id === held) ? held : null;
     }
 
     /** A new page, on the default workbench, made current. */
@@ -267,7 +335,7 @@ export function createLayout(ui: UiStore): LayoutStore {
         addPage(newPage(label));
     }
 
-    /** Put a page at the end of the strip and show it. */
+    /** Put a page at the end of the page list and show it. */
     function addPage(page: Page): void {
         savePages({ pages: [...store.current.pages, page], current: page.id });
     }
@@ -289,17 +357,12 @@ export function createLayout(ui: UiStore): LayoutStore {
         });
     }
 
-    /** Move a page to a clamped position in the strip and save the new order. */
-    function movePage(id: string, index: number): void {
-        savePages(movePageIn(store.current, id, index));
-    }
-
     /**
      * Close a page, with every tab on it. The page after it becomes current, or the one before it
-     * when it was the last in the strip; closing the only page leaves one fresh default page, since
+     * when it was the last in the list; closing the only page leaves one fresh default page, since
      * a workbench with no page to render is nothing at all. Every tab of the page's own tree is
      * forgotten as its own close would forget it; a page one of its leaves shows is still in the
-     * strip, so the tabs of that page are not the closed page's and keep what they hold.
+     * list, so the tabs of that page are not the closed page's and keep what they hold.
      */
     function closePage(id: string): void {
         const held = store.current.pages;
@@ -316,21 +379,10 @@ export function createLayout(ui: UiStore): LayoutStore {
                     ? left[Math.min(at, left.length - 1)].id
                     : store.current.current;
             // A page that is gone is shown nowhere: every leaf naming it is taken out, so no tree
-            // is left pointing at a page the strip no longer holds.
+            // is left pointing at a page the list no longer holds.
             savePages(clearPage({ pages: left, current: next }, id));
         }
         instances.forgetTabs(tabsOf(closing.workbench.root));
-    }
-
-    /**
-     * Show the page at `index`, counting from 1, which is what the digits 1 to 9 do. It answers
-     * whether there was one, so the handler swallows the key only when the shortcut did something.
-     */
-    function pageShortcut(index: number): boolean {
-        const page = item(store.current.pages, index - 1);
-        if (index < 1 || page === undefined) return false;
-        switchPage(page.id);
-        return true;
     }
 
     /** Make an arrangement a page's and save every page. An id naming no page changes nothing. */
@@ -346,6 +398,8 @@ export function createLayout(ui: UiStore): LayoutStore {
 
     /** Make a set of pages current and save it. */
     function savePages(next: Pages): void {
+        fresh = false;
+        if (next.current !== store.current.current) previous = store.current.current;
         store.current = next;
         storage.write(next);
     }
@@ -359,7 +413,7 @@ export function createLayout(ui: UiStore): LayoutStore {
     /**
      * Show another page at the pane or page leaf at `path`, splitting it to the named edge. Nothing
      * changes when the page may not be shown there: the host itself, a page that shows the host, or
-     * a page already drawn somewhere on the screen the strip is on.
+     * a page already drawn somewhere on the screen.
      */
     function embedPage(nested: string, path: number[], edge: Edge, page?: string): void {
         const host = at(page);
@@ -419,8 +473,8 @@ export function createLayout(ui: UiStore): LayoutStore {
 
     /**
      * The instance the next view opened without a page named would join: the active instance of the
-     * page the reader is in. It is the one pane in the window the rail opens into, whether that
-     * page is the one the strip is on or one drawn inside it.
+     * page the reader is in. It is the one pane in the window a view opens into, whether that
+     * page is the one on screen or one drawn inside it.
      */
     function openingInstance(): Instance | null {
         return instances.activeInstance(attention.touched().id);
@@ -442,13 +496,17 @@ export function createLayout(ui: UiStore): LayoutStore {
         unpinInstance: instances.unpinInstance,
         keepPreview: instances.keepPreview,
         loadLayout,
-        openArrangement,
+        openRailPage,
+        startOnRailPage,
+        startingFresh: () => fresh,
+        keepDefaultPage: () => {
+            fresh = false;
+        },
+        previousPage,
         openPage,
         switchPage,
         renamePage,
-        movePage,
         closePage,
-        pageShortcut,
         apply,
         change,
         activateInstance: instances.activateInstance,

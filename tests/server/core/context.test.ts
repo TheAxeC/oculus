@@ -142,7 +142,7 @@ describe('ServerContext', () => {
         }
         // The sessions watcher reads every account local.yml names, so a session of the second
         // Claude account is read from that account's own registry and transcripts.
-        // revert: src/lib/server/core/context.ts:209 => delete
+        // revert: src/lib/server/core/context.ts:217 => delete
         expect(watchSessions.mock.calls[0][1]).toMatchObject({
             stores: ['/machine/.claude/projects', '/machine/.claude-work/projects'],
             registries: ['/machine/.claude/sessions', '/machine/.claude-work/sessions'],
@@ -182,7 +182,7 @@ describe('ServerContext', () => {
         for (const close of closes) expect(close).toHaveBeenCalledTimes(1);
     });
 
-    // revert: src/lib/server/core/context.ts:229 => onSessionsChange: undefined
+    // revert: src/lib/server/core/context.ts:237 => onSessionsChange: undefined
     it('keeps session rescan signals inside their owning context', () => {
         const rescans: (() => void)[] = [];
         const refreshes = [vi.fn(noopAsync), vi.fn(noopAsync)];

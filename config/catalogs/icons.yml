@@ -144,3 +144,7 @@ icons:
     # the tab strip's header actions: a pane's more-actions opener and its split control
     more: ellipsis
     split_right: columns-2
+    # the Views and Settings page's three views
+    catalogue: layout-grid
+    sliders: sliders-horizontal
+    pages: layers

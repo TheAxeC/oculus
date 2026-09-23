@@ -1,5 +1,5 @@
 <script module lang="ts">
-    // Layer 3, view registration. The file browser sits in the rail's Sources section, after the
+    // Layer 3, view registration. The file browser sits in the catalogue's Sources group, after the
     // collections the configuration names.
     import type { ViewRegistration } from '../../registry';
 

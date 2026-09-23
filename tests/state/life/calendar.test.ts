@@ -1,5 +1,5 @@
 // The agenda's two pure rules: which day an event lands on, and how many of today's are still to
-// come, which is the number the rail badge draws.
+// come, which is the number the view's badge draws.
 
 import { describe, expect, it } from 'vitest';
 import type { CalendarEvent } from '../../../src/lib/data/model.ts';

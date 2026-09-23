@@ -14,8 +14,8 @@
 
 <script lang="ts">
     // Layer 3, view. A local HTML file under a configured root opens as a tab. The file is the
-    // manuals of cathedra and game-engine today, and the bookmarks in config/layout.yml are what
-    // the rail offers.
+    // manuals of cathedra and game-engine today, opened from the reader's bookmarks file, which the
+    // rail's BOOKMARKS group draws.
     //
     // The document is an iframe rather than markup pulled into the page: the manuals are whole
     // documents with their own stylesheets, scripts and relative assets, and an iframe is the one

@@ -6,7 +6,7 @@
 // the consent page is opening.
 //
 // The moment the day groups and today's count are measured from is the client's minute clock rather
-// than a reading taken here, so the agenda's today heading and the rail's count move across
+// than a reading taken here, so the agenda's today heading and the view's badge move across
 // midnight with every other countdown on the page. The rules themselves are the pure functions of
 // state/life/calendar.ts, which take that moment as an argument and are tested on their own.
 

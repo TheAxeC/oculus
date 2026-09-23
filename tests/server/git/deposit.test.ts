@@ -229,7 +229,9 @@ beforeAll(() => {
         overrides: join(dir, 'sessions.json'),
         projects: () => [],
         bookmarks: join(dir, 'bookmarks.yml'),
-        behaviorFile: join(dir, 'behavior.yml')
+        behaviorFile: join(dir, 'behavior.yml'),
+        layoutFile: join(dir, 'layout.yml'),
+        glyphs: []
     };
 });
 

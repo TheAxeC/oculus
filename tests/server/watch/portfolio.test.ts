@@ -454,7 +454,9 @@ describe('watchPortfolio', () => {
                 engine: started.engine,
                 projects: () => [],
                 bookmarks: join(started.hub, 'bookmarks.yml'),
-                behaviorFile: join(started.engine, 'config', 'behavior.yml')
+                behaviorFile: join(started.engine, 'config', 'behavior.yml'),
+                layoutFile: join(started.engine, 'config', 'layout.yml'),
+                glyphs: []
             }
         );
         expect(response.status).toBe(200);
@@ -597,7 +599,9 @@ describe('watchPortfolio', () => {
                 engine: started.engine,
                 projects: () => [],
                 bookmarks: join(started.hub, 'bookmarks.yml'),
-                behaviorFile: join(started.engine, 'config', 'behavior.yml')
+                behaviorFile: join(started.engine, 'config', 'behavior.yml'),
+                layoutFile: join(started.engine, 'config', 'layout.yml'),
+                glyphs: []
             }
         );
         expect(response.status).toBe(200);
@@ -632,6 +636,31 @@ describe('watchPortfolio', () => {
         const payload = on(started.got, 'config')[0].payload as ConfigPayload;
         expect(payload.findings.map((finding) => finding.key)).toEqual(['Gone']);
         expect(payload.findings[0].message).toContain('GONE.md; this document draws nothing');
+        expect(payload.findings[0].file).toBe(join(started.engine, 'config', 'layout.yml'));
+    });
+
+    it('reports a rail button naming a page no arrangement holds, in the catalog words', async () => {
+        // revert: src/lib/server/watch/portfolio.ts:300 => delete
+        const started = start((_hub, engine) => {
+            write(
+                engine,
+                'config/layout.yml',
+                [
+                    LAYOUT,
+                    'arrangements:',
+                    '  focus: { root: { kind: pane, view: focus } }',
+                    'rail:',
+                    '  - { label: "Focus", glyph: focus, page: focus }',
+                    '  - { label: "Gone", glyph: focus, page: gone }',
+                    ''
+                ].join('\n')
+            );
+        });
+        await until(() => on(started.got, 'config').length >= 1, 2000);
+
+        const payload = on(started.got, 'config')[0].payload as ConfigPayload;
+        expect(payload.findings.map((finding) => finding.key)).toEqual(['rail[1]']);
+        expect(payload.findings[0].message).toContain('gone');
         expect(payload.findings[0].file).toBe(join(started.engine, 'config', 'layout.yml'));
     });
 

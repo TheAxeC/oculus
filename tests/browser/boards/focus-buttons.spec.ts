@@ -7,7 +7,7 @@
 
 import { expect, test, type CDPSession, type Locator, type Page } from '@playwright/test';
 import { readHubFile, shortOf } from '../helpers/hub.ts';
-import { boot, openView } from '../helpers/rail.ts';
+import { boot, openView, pickTheme } from '../helpers/rail.ts';
 import { t, vocabulary } from '../helpers/words.ts';
 
 /** The opacity of every button of a row. */
@@ -127,7 +127,7 @@ test('quick add writes a follow-up and the ticker shows it', async ({ page }) =>
     await page.getByRole('button', { name: t('focus.add_followup') }).click();
     await page.getByRole('combobox', { name: t('focus.qa_project') }).selectOption({ label: name });
     await page.getByRole('textbox', { name: t('focus.add_followup') }).fill(NOTE);
-    await page.getByRole('button', { name: t('focus.qa_save') }).click();
+    await page.getByRole('button', { name: t('focus.qa_save'), exact: true }).click();
 
     // The file first: the outcome line says "saved" whether or not anything was written, because
     // views/boards/focus/QuickAdd.svelte reports `changed` and never `refused`.
@@ -163,16 +163,9 @@ async function busiest(page: Page): Promise<Locator> {
     return rows.nth(at);
 }
 
-/**
- * A theme by its name in the picker, as tests/browser/boards/focus-look.spec.ts picks one: the
- * glyph and then the name alone, since other labels end in the same word, and the light theme puts
- * no class on the body.
- */
+/** A theme by its name, put on through the palette as every spec that needs one does. */
 async function theme(page: Page, name: string): Promise<void> {
-    await page.getByRole('button', { name: t('ui.theme') }).click();
-    await page.getByRole('menuitem', { name: new RegExp(`^\\S+\\s+${name}$`) }).click();
-    const expected = name === 'light' ? /^(?!.*\b(dark|rice)\b)/ : new RegExp(`\\b${name}\\b`);
-    await expect(page.locator('body')).toHaveClass(expected);
+    await pickTheme(page, name);
 }
 
 /**
@@ -646,13 +639,10 @@ test('the first tap opens a row, the next presses what it lands on, and a tap of
     await tapAt(session, await centre(other.locator('.name')));
     await expect(snooze).toBeHidden();
     await expect(other.locator('.act').first()).toBeVisible();
-    const filler = await page
-        .getByRole('region', { name: t('ui.pages') })
-        .locator('.tabs')
-        .evaluate((node) => {
-            const box = node.getBoundingClientRect();
-            return { x: box.right - 8, y: box.top + box.height / 2 };
-        });
+    const filler = await page.locator('[data-status-bar]').evaluate((node) => {
+        const box = node.getBoundingClientRect();
+        return { x: box.right - 8, y: box.top + box.height / 2 };
+    });
     await tapAt(session, filler);
     await expect(other.locator('.act').first()).toBeHidden();
 

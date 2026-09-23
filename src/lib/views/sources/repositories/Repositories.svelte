@@ -1,6 +1,6 @@
 <script module lang="ts">
-    // Layer 3, view registration. Repositories sits in the rail's Sources section, after the file
-    // browser: the same roots, read as repositories rather than as folders.
+    // Layer 3, view registration. Repositories sits in the catalogue's Sources group, after the
+    // file browser: the same roots, read as repositories rather than as folders.
     import type { ViewRegistration } from '../../registry';
 
     export const registration: ViewRegistration = {

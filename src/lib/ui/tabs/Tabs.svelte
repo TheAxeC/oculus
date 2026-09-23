@@ -57,15 +57,6 @@
          * Whether what the strip heads is the active one: only then is the shown tab's line accent.
          */
         focused?: boolean;
-        /**
-         * The strip at the low tab height, for a strip that sits above panes rather than heading
-         * one.
-         */
-        low?: boolean;
-        /**
-         * The surface the strip is drawn on: the ground a pane header uses, or the card surface.
-         */
-        surface?: 'ground' | 'card';
     };
 
     let {
@@ -78,9 +69,7 @@
         onhoverindex,
         dropIndex = null,
         menu,
-        focused = true,
-        low = false,
-        surface = 'ground'
+        focused = true
     }: Props = $props();
 
     /**
@@ -231,8 +220,6 @@
 <div
     class="strip"
     class:unfocused={!focused}
-    class:low
-    class:card={surface === 'card'}
     bind:this={strip}
     onpointermove={over}
     onpointerleave={out}
@@ -308,28 +295,16 @@
         background: var(--bg);
     }
 
-    .strip.low {
-        --tab-height: var(--tab-height-low);
-    }
-
-    .strip.card {
-        background: var(--card);
-    }
-
     /* The strip is the pane's own top edge over a wallpaper: the shell's pane paints nothing behind
        it, so the picture reads through here too. The blur makes the strip the stacking context of
        every list opened inside it, so the strip takes a depth of its own: above the view's own
        blurred box in the pane body, which is drawn after it and would otherwise cover an open menu,
-       and below the rail at 5 and the drag layer at 10. */
+       and below the drag layer at 10. */
     :global(body.wall) .strip {
         position: relative;
         z-index: 1;
         background: color-mix(in srgb, var(--bg) var(--wall-panel), transparent);
         backdrop-filter: blur(var(--wall-blur));
-    }
-
-    :global(body.wall) .strip.card {
-        background: color-mix(in srgb, var(--card) var(--wall-panel), transparent);
     }
 
     /* The tabs sit on the strip's foot, so a strip made taller at the right keeps them on its

@@ -1,7 +1,7 @@
 <script module lang="ts">
     // Layer 3, view registration. A person opens from a collaborator tag, a joint-work entry and
-    // the Map's node, and is not listed in the rail: opened bare it can only report that it was
-    // opened for nobody.
+    // the Map's node, and is not listed in the view catalogue: opened bare it can only report that
+    // it was opened for nobody.
     import type { ViewRegistration } from '../../registry';
     export const registration: ViewRegistration = {
         id: 'person',

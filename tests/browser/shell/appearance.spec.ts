@@ -1,13 +1,21 @@
-// The text size at the rail's foot: larger grows every token the page is set in, reset restores the
-// default. The size is a computed style, which is what a unit test over the CSS source cannot see:
-// the tokens are declared on :root, so a scale set anywhere below would leave them as they are.
+// The text size of the Settings view: larger grows every token the page is set in, reset restores
+// the default. The size is a computed style, which is what a unit test over the CSS source cannot
+// see: the tokens are declared on :root, so a scale set anywhere below would leave them as they
+// are.
 //
 // The wallpaper is the same kind of fact: the rules are declared per component and the percentage
 // arrives as a custom property on the root element, so what a surface actually ends up painted with
 // is only readable from a rendered page.
 
 import { expect, test } from '@playwright/test';
-import { SHOWN_VIEW, boot, openView } from '../helpers/rail.ts';
+import {
+    SHOWN_VIEW,
+    boot,
+    inSettings,
+    openView,
+    pickTheme,
+    showRailPage
+} from '../helpers/rail.ts';
 import { alphaOf } from '../helpers/style.ts';
 import { t } from '../helpers/words.ts';
 
@@ -16,31 +24,31 @@ async function backgroundAlpha(target: import('@playwright/test').Locator): Prom
     return alphaOf(await target.evaluate((el) => getComputedStyle(el).backgroundColor));
 }
 
-/** The font size a page tab is drawn at, in px. */
+/** The font size the Settings tab is drawn at, in px. */
 async function tabSize(page: import('@playwright/test').Page): Promise<number> {
-    const tab = page
-        .getByRole('region', { name: t('ui.pages') })
-        .getByRole('tab')
-        .first();
+    const tab = page.getByRole('tab', { name: t('views.settings') });
     return tab.evaluate((el) => Number.parseFloat(getComputedStyle(el).fontSize));
 }
 
-test('larger text grows a page tab and reset restores it', async ({ page }) => {
+test('larger text grows a tab and reset restores it', async ({ page }) => {
+    // revert: src/lib/views/system/workbench/Appearance.svelte:84 => onclick={() => stepTextScale(-1)}
     await boot(page);
+    await showRailPage(page, 'views');
+    const settings = page.locator(`${SHOWN_VIEW} [data-settings-view]`);
     const before = await tabSize(page);
-    await page.getByRole('button', { name: t('app.text_larger') }).click();
-    await page.getByRole('button', { name: t('app.text_larger') }).click();
+    await settings.getByRole('button', { name: t('app.text_larger') }).click();
+    await settings.getByRole('button', { name: t('app.text_larger') }).click();
     await expect.poll(() => tabSize(page)).toBeGreaterThan(before * 1.15);
-    await page.getByRole('button', { name: t('app.text_reset') }).click();
+    await settings.getByRole('button', { name: t('app.text_reset') }).click();
     await expect.poll(() => tabSize(page)).toBeCloseTo(before, 1);
 });
 
 test('a wallpaper theme paints the cards through and the toggle takes it away', async ({
     page
 }) => {
+    // revert: src/lib/views/system/workbench/Appearance.svelte:103 => onclick={() => setWallpaper(wallpaper())}
     await boot(page);
-    await page.getByRole('button', { name: t('ui.theme') }).click();
-    await page.getByRole('menuitem', { name: /mocha/ }).click();
+    await pickTheme(page, 'mocha');
     await openView(page, 'projects', t('views.projects'));
 
     const layer = page.locator('.wallpaper');
@@ -54,7 +62,9 @@ test('a wallpaper theme paints the cards through and the toggle takes it away', 
     expect(await backgroundAlpha(shellBox)).toBe(0);
     expect(await backgroundAlpha(viewBox)).toBe(0);
 
-    await page.getByRole('button', { name: t('ui.wallpaper') }).click();
+    await inSettings(page, (settings) =>
+        settings.getByRole('button', { name: t('ui.wallpaper') }).click()
+    );
     // the toggle took the wallpaper away, so there is no layer left to paint through
     await expect(layer).toHaveCount(0);
     await expect.poll(() => backgroundAlpha(card)).toBe(1);

@@ -97,3 +97,117 @@ Verification (run from /Users/axelfaes/workspace/research-hub/.agents/worktrees/
 ## Usage
 
 About 205k tokens of context and 40 tool calls. Wall time was dominated by the full browser run (7.8 min) and three revert-check runs (about 1 to 6 min each).
+
+# Repair round 1, refuted
+
+Verification (run from /Users/axelfaes/workspace/research-hub/.agents/worktrees/L3/tools/oculus, Node v24.21.0):
+- `ls -d $TMPDIR/oculus-* | wc -l` before: `7015`
+- `npx vitest run --reporter=dot`: `Test Files  1 failed | 289 passed (290)` / `Tests  2 failed | 4585 passed (4587)`. Both failures are in tests/views/system/help.test.ts. One is "names every view the catalogue lists, by its id". The other is "describes every configuration file in the words the Config view shows" (`expected [ 'layout.yml' ] to deeply equal []`). Both are the HELP.md failures the report expects.
+- `npm run check`: `COMPLETED 1328 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS`
+- `npm run build`: `build exit 0`
+- `npm run format:check`: `All matched files use Prettier code style!`
+- `npm run lint`: `lint exit 0`
+- perl ASCII gate: no output, `perl exit 0`
+- `sh bin/size-check.sh`: `size exit 0`. `sh bin/folder-check.sh`: `folder exit 0`
+- `lsof -iTCP:8792 -sTCP:LISTEN`: nothing (exit 1). `npx playwright test`: `327 passed (6.7m)`
+- HELP.md Doc text: I applied every HELP.md entry of the round's Doc text to a copy of the tree under $TMPDIR, then ran `npx vitest run --reporter=dot tests/views/system/help.test.ts tests/checks` there: `Test Files  24 passed | 1 skipped (25)` / `Tests  293 passed | 9 skipped (302)`. The copy is deleted.
+- `node bin/revert-check.mjs tests/state/workbench/navigation/status.test.ts tests/shell/status/status-bar.test.ts tests/state/workbench/navigation/pages.test.ts tests/state/workbench/layout/pages.test.ts tests/shell/rail/rail.test.ts tests/state/workbench/navigation/rail.test.ts`: `52 reverts, 0 unproven, 28 unchecked`. The 28 unchecked are older layout/pages.test cases.
+- `node bin/revert-check.mjs tests/browser/shell/settings.spec.ts tests/browser/shell/views.spec.ts tests/browser/workbench/pages.spec.ts tests/browser/shell/rail.spec.ts tests/browser/shell/shell-defects.spec.ts`: `25 reverts, 0 unproven, 35 unchecked`. Every case the round names is red under its revert: fresh start `Workbench.svelte:148`, badges `ActivityRail.svelte:253`, catalogue `Catalogue.svelte:95` and `:87`, glyph `navigation/rail.ts:36`, CRT `Appearance.svelte:94`, glyphs `Appearance.svelte:112`, status `StatusBar.svelte:48` and `:31`, bookmarks `ActivityRail.svelte:273`.
+- `md5 config/layout.yml` gave `25a258cca122047c256e054379fdf5dd` and `md5 ~/.oculus/bookmarks.yml` gave `6bf9f6f0bfe27704f81c2da09f0493a2`, both the same before and after every run.
+- `git diff 138afb83 --stat -- src/lib/server/core/context.ts src/lib/server/files/fs/bookmarks.ts` prints nothing: both files are back to base. `grep -rn "layoutFile\|layout\.yml" src/lib/server` shows the only writer of layout.yml is `writeRail` (`writes.ts:467`, `undo.ts:225`), the Settings save and its undo. So the server never writes layout.yml on its own.
+- `ls -d $TMPDIR/oculus-* | wc -l` after: `7015`
+
+## Spec
+
+1. The move of the two manuals is now a manual landing step, and nothing books it.
+   - After the round, no code moves `layout.yml`'s two bookmarks into a machine's bookmarks file. The key is deleted from `config/layout.yml` (the removed hunk ran from `-# The old home of two bookmarks...` to `-  - { label: "game-engine manual", ... }`). The only copy of the two entries left is the test fixture `tests/browser/helpers/serve.ts:209-235`.
+   - `grep -n "cathedra\|game-engine" ~/.oculus/bookmarks.yml` prints nothing, so Axel's real file does not hold them.
+   - The report's "Next" says "At landing: copy the two manuals into this machine's `~/.oculus/bookmarks.yml`". But `grep -n -i "manual.*bookmarks\|bookmarks.yml" orchestrator-state.md plan.md` finds no booking of that step.
+   - Plan.md:151 rules that "The two `layout.yml` bookmarks move into the bookmarks file". Unless the copy is booked and done at landing, the two manuals leave Axel's rail. This is the premise conflict of the first review's Spec 1, closed as its option (a), and it holds only if the landing does the copy.
+2. The catalogue's target is "the page on screen before the current one" (`layout.svelte.ts:100-103`, `savePages` sets `previous = store.current.current`). It is not "the page the reader was on before the Views and Settings page".
+   - The two agree only while the catalogue sits on the Views and Settings page.
+   - If Axel moves the Catalogue tab onto one of his own pages, a press there switches away from that page to whichever page was shown before it (`Catalogue.svelte:80-88`, `showTarget`).
+   - The ruling says "the page the reader was on before switching to Views and Settings". The first HELP.md:15 replacement sentence says the same. No case covers the catalogue on any other page. This is from reading the code, not a run.
+
+## Proof
+
+1. The badges browser case proves less than its name. `tests/browser/workbench/pages.spec.ts:35-69` loops over five views, keeps those whose catalogue badge starts with a digit, and asserts only `expect(counted.length).toBeGreaterThan(0)`. It passes when one of the five rail buttons draws a badge. Tab order is proven only by the node cases (`tests/state/workbench/navigation/pages.test.ts:117`, `tests/shell/rail/rail.test.ts:151`).
+2. `openDoc`'s `showTarget()` call (`Catalogue.svelte:102`) is under no revert. Both catalogue cases press a view. No case presses a document entry, and none presses shift on the first-rail-page fallback.
+3. `bootFresh()` does not assert what a fresh browser draws before the rail list arrives. I ran a probe spec in a scratch copy: a MutationObserver over the `role="tab"` names under `bootFresh()`. It printed `SEEN ["","Status","Focus"]`. A browser with no saved layout first mounts the default Page 1 with the Status view, then replaces it with Focus once the config push lands (see Behaviour 1). With boot() seeding a Status page, every other spec starts past this point, so the flash is covered nowhere.
+4. The report's Doc text quotes its current line in full only for HELP.md 7, 13, 15, 23, 32, 44, 50, 65, 161 and DESIGN.md 59. Every other entry quotes a fragment:
+   - HELP.md 17 (by its opening words), 35, 36, 71, 123 and 169
+   - DESIGN.md 46, 60, 71, 75, 149, 158, 160, 191, 193, 237, 243, 244, 245, 251, 256, 262, 267, 278 and 286
+
+   I checked each quoted fragment against `sed -n` of the worktree's HELP.md and DESIGN.md. Each is present verbatim, and every HELP.md replacement applies (my scratch script asserted each one).
+
+## Standards
+
+1. Comments and case names the step makes false, not carried by item 8:
+   - `tests/browser/helpers/rail.ts:152-153` (added in this step, `git diff 138afb83`): "which shows it at once as the strip of pages once did". This is history in a comment.
+   - `tests/browser/workbench/pages.spec.ts:9`: "gives every test a context of its own, so each test starts on the first rail page." Six cases of that file call `boot()`, which starts on the seeded Status page (`grep -c "await boot(page)"` gives 6). Only one calls `bootFresh()`.
+   - `tests/browser/shell/shell-defects.spec.ts:469`, case name "a tab activated from the rail is brought in whole..." The case opens the view through `openView`, the palette. The rail no longer activates a view's tab.
+   - `tests/browser/workbench/kept-tabs.spec.ts:104-105`: "rather than a view opened from the rail, since walking the rail's menus presses Escape". The rail has no menus now.
+   - `tests/browser/sources/view-source.spec.ts:2`: "it is opened from the rail on the demo hub". Line 16 opens it with `openView(page, 'radar', ...)`.
+   - `tests/state/workbench/layout/pages.test.ts:251`, case name "...when that was the last in the strip": there is no page strip.
+2. `src/lib/state/workbench/navigation/status.ts` holds the status bar's socket, usage, HPC and session words. That is not navigation. It sits in `navigation/` because that folder is what the shell's boundary row admits (`'state/workbench/navigation/**'`, widened in 67ad42f3). "Boundary rows unchanged" is true only because the module was placed under the glob the first delivery widened for the rail and the catalogue. The report does not name this placement as a structural choice.
+3. The three shortcut strings now read "{0}, key {1}" (`config/text/ui.yml` `page_shortcut`, `workbench.yml` `catalogue_key`). No finding against them. `grep` over `config/text` finds no other " - " pattern in the round's strings.
+
+The removed checks, judged:
+- The Menu's `rail`, `stacked` and beside looks, and `menuPlacement` with its two "Menu placement" cases: dead code, not a guard.
+  - Every remaining `<Menu` caller with `compact` passes `placement="down"`: PaneView, CardActions, SessionWorkspace, TerminalRows and files/tree/Controls.
+  - `beside` was `compact && placement !== 'down'`, so no caller reached it.
+  - Tooltip's `block` prop is still used by `TreeItem.svelte:217`.
+- The config-folder case "names a root of its own for every bookmark, and a path under it" went with the key it read. No closure hides a defect.
+- The 36 added `exact: true` lookups (`git diff 67ad42f3 -- tests/browser | grep -c "^+.*exact: true"`; 34 are Save or saved-message lookups) tighten matching. None was loosened. A Save button with a longer accessible name would turn them red, not green.
+
+## Behaviour
+
+1. A fresh browser flashes the Status page. The probe above shows the Status tab drawn and mounted before the Focus page replaces it (`SEEN ["","Status","Focus"]`). The Status view mounts and is torn down on every first load. Also, if the reader presses anything that saves (for example New page, or a tab close) before the config push lands, `fresh` is cleared (`layout.svelte.ts:390`) and the browser stays on the unowned "Page 1". That rule is stated, but the window in which it can happen is not.
+2. The catalogue target when the Catalogue tab lives on another page: see Spec 2.
+3. Before a rail page is made, its button draws the badges of the arrangement's views (`navigation/pages.ts` `railPageViews`). But the first press may adopt an existing keyless page named after the label (`layout.svelte.ts:270` onward), whose views differ, for example Axel's older "Sessions" page. From then on the badges change to that page's views. The report states the adoption rule and the before-first-press reading separately, not this interaction.
+4. Shift-press and the fallback: a shift-press after a load straight onto Views and Settings makes the first rail page, shows it and opens beside there. I read this from `Catalogue.svelte:80-97`; no run covers it (Proof 2).
+5. Status words: "server: up / down / waiting", "usage: ...", "HPC: ...", "live sessions: N", "unsaved tabs: N" (`config/text/views/system/workbench.yml`). The last two are the ruled words. The socket item says "server". The ruling names the socket state, not a word, so this is not a finding.
+
+## Not checked
+
+- Nothing was looked at on screen in Axel's Chrome. How the rail badges fit on a 98 px button when a page holds several counted views (Info/more, Academic Life) was not seen.
+- revert-check was not rerun over the other 13 browser specs the round changed (board, collection, focus-buttons, boot, icons, keyboard, files-forms, files, history, layout, nested, tabs, unsaved-forms), nor over the round's other changed node files. The report's 84-revert and 176-revert runs are not reproduced.
+- The DESIGN.md Doc text was not applied to a copy. Nothing tests DESIGN.md, and its entries were checked by reading them against the code.
+- `node bin/diagrams.mjs` was not rerun to compare the regenerated docs/diagrams.
+- `RailEditor.svelte` and `Pages.svelte` were read only where the round's delta touches them.
+
+## Usage
+
+About 150k tokens of context and 45 tool calls. The wall time went mostly to the full browser run (6.7 min), the browser revert-check (about 10 min), the node suite (84 s) and the scratch help run (53 s).
+
+## Closed
+
+The first run's findings, closed in repair round 1 (`agents/reviews/L3-report.md`, "# Repair round 1") unless named otherwise:
+
+- Spec 1, the server rewriting the tracked `config/layout.yml`: the move and its call are removed and the key is gone from the file; the two manuals were copied into this machine's `~/.oculus/bookmarks.yml` at landing.
+- Spec 2, a fresh browser on a page no button owns: it starts on the first rail page.
+- Spec 3, status words chosen for the tests: "unsaved tabs" and "live sessions", as ruled, with exact selectors.
+- Spec 4 and Spec 6, the rail badges and the catalogue's target: ruled by Axel, both (a), built as items 12 and 13.
+- Spec 5, page reordering gone: kept, stated.
+- Proof 1 and Standards 1, three rail parsers and an unknown glyph drawn: one parser with the glyph check, cases for both.
+- Proof 2, the Confirm block exempted: folded into `ui/controls/CloseQuestion.svelte`, the allowance removed.
+- Proof 3, the boundary widenings: kept, explained.
+- Proof 4, the CRT and glyph toggles unpressed: browser cases for both.
+- Standards 2, 3, 6, false strings and comments: reworded; the lines left on purpose are listed in the round's report.
+- Standards 4, incomplete Doc text: completed.
+- Standards 5, a spaced hyphen as a dash: reworded to "{0}, key {1}".
+- Standards 7, the status bar placed as a view: moved under `src/lib/shell/status/`.
+- Behaviour 1 and 3: before and after stated in the round's report.
+
+The run over repair round 1, closed at landing on 2026-09-23:
+
+- Spec 1, the two manuals' move unbooked: done at landing; `~/.oculus/bookmarks.yml` lists `settings.json`, `cathedra manual` and `game-engine manual`, parsed back with yaml, the file as it was kept in the session's scratchpad.
+- Spec 2, the catalogue's target read as the page before the current one: a press opens on the previous page only when the catalogue sits on its own rail page, whose arrangement holds it (`onCataloguePage` in `state/workbench/navigation/catalogue.ts`, `nodeHolds` reading the arrangement under its `root`); a catalogue moved onto another page opens on that page. Node cases and a browser case, each red under its revert.
+- Proof 1, the badge case passing on one counted view: it also checks the Projects button's badges in tab order and that the badge row sits under its button.
+- Proof 2, the document entry and the shift fallback unpressed: a browser case for each, red under its revert.
+- Proof 3 and Behaviour 1, a fresh browser mounting the Status page before Focus: the shell draws no page while a browser with no saved layout waits for the rail list (`configured` from the page, `startingFresh` and `keepDefaultPage` in the layout store); a browser case records every tab drawn from the first paint and finds no Status tab; node cases for the wait.
+- Proof 4, Doc text quoting fragments: every fragment was present verbatim and applied; no change needed.
+- Standards 1, six stale comments and case names: reworded.
+- Standards 2, the status words module under `navigation/`: kept; `state/workbench/` holds ten items, so a module of its own there would break the folder rule.
+- Behaviour 3, badges changing after a page is adopted: stated in the landing report.
+- Found at landing, in the look: the rail badges sat over the button's name ("Projects" hidden under 52 16 25); they are now a row of their own under the button, and the badge case asserts it, red under its revert.

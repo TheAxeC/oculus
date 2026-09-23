@@ -1,7 +1,8 @@
-// The workbench rendered to HTML on the server: the rail, the page's tree, a tab strip over every
-// pane, the sashes, the strip a collapsed child is drawn as, the view each pane is showing, and the
-// one pane a maximised workbench draws instead of all of them. Two views are registered here rather
-// than the application's own, so what is checked is the shell and not what a view happens to draw.
+// The workbench rendered to HTML on the server: the rail of pages, the page's tree, a tab strip
+// over every pane, the sashes, the strip a collapsed child is drawn as, the view each pane is
+// showing, the status bar the page hands it, and the one pane a maximised workbench draws instead
+// of all of them. Two views are registered here rather than the application's own, so what is
+// checked is the shell and not what a view happens to draw.
 //
 // What this does NOT cover: the theme effect, the menus opening, the drags. There is no DOM in this
 // suite, so an $effect never runs and a pointer is never pressed; applyTheme is covered on its own
@@ -108,9 +109,18 @@ function bench(folded?: number[]): Bench {
     return { root: folded === undefined ? root : { ...root, folded } };
 }
 
-function html(folded?: number[], groups: { id: string; label: string }[] = []): string {
+/** Two rail pages, the shape the page reads out of the `rail:` list of config/layout.yml. */
+const PAGES = [
+    { label: 'First', glyph: 'compass', page: 'first', node: null },
+    { label: 'Second', glyph: 'inbox', page: 'second', node: null }
+];
+
+/** The words the page hands the status bar, told apart by a word of their own. */
+const STATUS = { socket: 'probe-socket', usage: 'ok', hpc: 'starting', live: 0 };
+
+function html(folded?: number[]): string {
     apply(bench(folded));
-    return render(Workbench, { context: clientContext(client), props: { groups } }).body;
+    return render(Workbench, { context: clientContext(client), props: { pages: PAGES } }).body;
 }
 
 let whole: string;
@@ -158,9 +168,11 @@ describe('the workbench', () => {
         expect(windowTitle(2, 'Status')).toBe('oculus (2 waiting) | axel@research: ~/Status');
     });
 
-    it('draws one rail button per registered view', () => {
-        const rail = [...whole.matchAll(/data-view="([^"]*)"/g)].map((match) => match[1]);
-        expect(rail).toEqual(['alpha', 'beta']);
+    it('draws one rail button per rail page and none per view', () => {
+        // revert: src/lib/shell/Workbench.svelte:242 => <ActivityRail {saved} onsearch={() => openPalette('')} onupdate={openUpdate} />
+        const rail = [...whole.matchAll(/data-rail-page="([^"]*)"/g)].map((match) => match[1]);
+        expect(rail).toEqual(['first', 'second']);
+        expect(whole).not.toContain('data-view=');
     });
 
     it('includes the catalog-backed keyboard sheet in the workbench markup', () => {
@@ -171,11 +183,11 @@ describe('the workbench', () => {
         expect(source).toContain('<KeySheet');
     });
 
-    // Four strips, not three: the page strip over the whole area is drawn with the same primitive,
-    // and the one page it draws is one more tab.
+    // Three strips for three panes: no strip of pages is drawn over the area.
     it('draws a tab strip over every pane of the tree', () => {
-        expect([...whole.matchAll(/role="tablist"/g)]).toHaveLength(4);
-        expect([...whole.matchAll(/role="tab"/g)]).toHaveLength(4);
+        // revert: src/lib/shell/Workbench.svelte:244 => <div class="area"><div role="tablist"><div role="tab"></div></div>
+        expect([...whole.matchAll(/role="tablist"/g)]).toHaveLength(3);
+        expect([...whole.matchAll(/role="tab"/g)]).toHaveLength(3);
     });
 
     it('carries every pane path on its own element, which is how a key reaches its tabs', () => {
@@ -183,9 +195,17 @@ describe('the workbench', () => {
         expect(paths).toEqual(['0', '1.0', '1.1']);
     });
 
-    it('draws the page strip above the area, and the current page in it', () => {
-        expect(whole.indexOf('aria-label="Pages"')).toBeLessThan(whole.indexOf('class="area'));
-        expect(whole).toContain('Page 1');
+    it('draws the status bar after the area with the words the page hands it, and no strip of pages', () => {
+        // revert: src/lib/shell/Workbench.svelte:270 => delete
+        const withStatus = render(Workbench, {
+            context: clientContext(client),
+            props: { pages: PAGES, status: STATUS }
+        }).body;
+        expect(withStatus).toContain('probe-socket');
+        expect(withStatus.indexOf('class="area')).toBeLessThan(
+            withStatus.indexOf('data-status-bar')
+        );
+        expect(whole).not.toContain('Page 1');
     });
 
     it('draws the tree of the page on screen and nothing of the page beside it', () => {
@@ -233,6 +253,7 @@ describe('the workbench', () => {
     });
 
     it('draws a folded pane as a strip with its expand control and the name of its tab', () => {
+        // revert: src/lib/shell/Workbench.svelte:244 => <div class="area"><div role="tablist"><div role="tab"></div></div>
         const collapsed = html([0]);
         expect(collapsed).toContain('data-fold');
         expect(collapsed).toMatch(/data-fold-label[^>]*>Status</);
@@ -241,40 +262,28 @@ describe('the workbench', () => {
         expect(collapsed).not.toContain('data-alpha="one"');
         expect(collapsed).toContain('data-beta="two"');
         expect([...collapsed.matchAll(/role="separator"/g)]).toHaveLength(1);
-        expect([...collapsed.matchAll(/role="tablist"/g)]).toHaveLength(3);
+        expect([...collapsed.matchAll(/role="tablist"/g)]).toHaveLength(2);
     });
 
     it('draws a folded split as the strip with its control alone: it has no one tab to name', () => {
+        // revert: src/lib/shell/Workbench.svelte:244 => <div class="area"><div role="tablist"><div role="tab"></div></div>
         const collapsed = html([1]);
         expect(collapsed).toContain('aria-label="Expand pane"');
         expect(collapsed).not.toContain('data-fold-label');
         expect(collapsed).not.toContain('data-beta="two"');
         expect(collapsed).not.toContain('data-beta="three"');
         expect([...collapsed.matchAll(/role="separator"/g)]).toHaveLength(0);
-        expect([...collapsed.matchAll(/role="tablist"/g)]).toHaveLength(2);
-    });
-
-    it('groups a rail button under a group that names it, and leaves the rest ungrouped', () => {
-        const grouped = html(undefined, [{ id: 'probe', label: 'Portfolio' }]);
-        expect(grouped).toContain('Portfolio');
-        expect([...grouped.matchAll(/data-view="([^"]*)"/g)].map((match) => match[1])).toEqual([
-            'alpha',
-            'beta'
-        ]);
-    });
-
-    it('draws no heading for a group no registered view belongs to', () => {
-        const grouped = html(undefined, [{ id: 'nothing', label: 'Nothing here' }]);
-        expect(grouped).not.toContain('Nothing here');
+        expect([...collapsed.matchAll(/role="tablist"/g)]).toHaveLength(1);
     });
 
     // A Menu draws its opener and nothing else until it is opened, so the items behind it (close,
     // maximise, the fold and the two splits) are not in this HTML. They are checked in the
     // browser, where the menu can be opened.
     it('puts a pane menu at the right of every tab strip', () => {
+        // revert: src/lib/shell/Workbench.svelte:244 => <div class="area"><button aria-haspopup="menu">x</button>
         expect([...whole.matchAll(/aria-label="Pane"/g)]).toHaveLength(3);
-        // The three pane menus, the page strip's, and the theme menu at the foot of the rail.
-        expect([...whole.matchAll(/aria-haspopup="menu"/g)]).toHaveLength(5);
+        // The three pane menus and no other: neither the rail nor the window draws a menu.
+        expect([...whole.matchAll(/aria-haspopup="menu"/g)]).toHaveLength(3);
     });
 
     // Revert: take the ToolButton out of PaneView.svelte's paneMenu snippet, or give it no
@@ -317,18 +326,6 @@ describe('the workbench', () => {
         );
         expect(two).toMatch(/class="tab[^"]*dirty/);
         expect(two).toContain(`aria-label="${t('ui.tab_unsaved', 'Findings')}"`);
-    });
-
-    // Revert: set `dirty` to false in PageStrip.svelte's tabOf.
-    it('marks the page holding that tab in the page strip, and names it so', () => {
-        const clean = html();
-        const strip = (body: string): string =>
-            body.slice(body.indexOf('aria-label="Pages"'), body.indexOf('class="area'));
-        expect(strip(clean)).not.toMatch(/class="tab[^"]*dirty/);
-        client.ui.registerUnsaved((id) => id === 'two');
-        const marked = strip(html());
-        expect(marked).toMatch(/class="tab[^"]*dirty/);
-        expect(marked).toContain(`aria-label="${t('ui.tab_unsaved', 'Page 1')}"`);
     });
 
     // Revert: drop `focused={activePane}` from PaneView.svelte's Tabs.
@@ -381,10 +378,11 @@ describe('a maximised pane', () => {
     });
 
     it('draws the focused pane and no other', () => {
+        // revert: src/lib/shell/Workbench.svelte:244 => <div class="area"><div role="tablist"><div role="tab"></div></div>
         expect(one).toContain('data-beta="two"');
         expect(one).not.toContain('data-alpha="one"');
         expect(one).not.toContain('data-beta="three"');
-        expect([...one.matchAll(/role="tablist"/g)]).toHaveLength(2);
+        expect([...one.matchAll(/role="tablist"/g)]).toHaveLength(1);
     });
 
     it('draws no sash at all, since no split is shown', () => {
@@ -402,9 +400,10 @@ describe('a maximised pane', () => {
     });
 
     it('draws the whole workbench again when the focus names no pane', () => {
+        // revert: src/lib/shell/Workbench.svelte:244 => <div class="area"><div role="tablist"><div role="tab"></div></div>
         // [0, 0] is inside a pane, which is no node at all, and the arrangement is drawn whole.
         const stale = zoomed([0, 0]);
-        expect([...stale.matchAll(/role="tablist"/g)]).toHaveLength(4);
+        expect([...stale.matchAll(/role="tablist"/g)]).toHaveLength(3);
     });
 });
 
@@ -595,7 +594,7 @@ describe('the insertion mark', () => {
 // The two the application registers, mounted through the same shell with the real catalog and the
 // real glyph vocabulary: a label key, a glyph key or a glyph name that did not resolve would throw
 // here. The registrations arrive by importing the route loader in this block's own setup rather
-// than in a case, so that the rail above still sees only the two views this file registered and no
+// than in a case, so that the cases above still see only the two views this file registered and no
 // case is timed against the cost of compiling every view.
 describe('the views the application registers', () => {
     // Every view of the application is compiled here, which on a loaded machine is slower than the
@@ -681,6 +680,7 @@ describe('the views the application registers', () => {
     );
 
     it('renders HPC cells without a pane count pill and hides both when the queue is empty', () => {
+        // revert: src/lib/ui/tabs/TabFace.svelte:122 => {#if false}
         for (const total of [3, 0]) {
             receive({
                 channel: 'hpc',
@@ -706,9 +706,6 @@ describe('the views the application registers', () => {
             if (total) {
                 expect(tab).toContain('title="running: 2 | pending: 1"');
                 expect([...tab.matchAll(/class="cell\s/g)]).toHaveLength(2);
-                expect(body).toMatch(
-                    /class="badge[^>]*title="running: 2 \| pending: 1"[^>]*>\s*2 1\s*</
-                );
             } else {
                 expect(tab).not.toContain('class="cells');
             }
@@ -803,8 +800,8 @@ describe('a page shown inside another', () => {
 
     // Answer with the active instance of the page the strip is on and the pane inside the leaf
     // never draws its strip focused, wherever the reader is.
-    // revert: src/lib/state/workbench/layout.svelte.ts:426 => return instances.activeInstance();
-    it('draws the strip of the one pane the rail opens into, on whichever page the reader is in', () => {
+    // revert: src/lib/state/workbench/layout.svelte.ts:480 => return instances.activeInstance();
+    it('draws the strip of the one pane a view opens into, on whichever page the reader is in', () => {
         const { host, shown } = nested();
         /**
          * The strip class of the pane the named page draws, the host's first and the leaf's after

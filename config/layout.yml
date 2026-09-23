@@ -1,12 +1,28 @@
 # ===========================================================================
 # layout.yml
-# oculus's own configuration - how things are arranged: the rail's groups, the board chrome, the
-# tab-button rollups, the live count badges, and which title a surface draws.
+# oculus's own configuration, how things are arranged: the rail's pages and what each page starts as, the view catalogue's groups, the board chrome, the tab-button rollups, the live count badges, and which title a surface draws.
 # Merged with the other config/*.yml by loadConfig().
 # ===========================================================================
 
 
-# The rail's groups are drawn in this order. A view names its group and position in its registration. A group with no registered views is not drawn. A group holding more than four entries, its views and its documents together, is one labelled button with a flyout, reached only by its `chord`. `glyph` is the flyout button's glyph name, and `chord` is its optional one-letter keyboard prefix.
+# The rail: one button per page, drawn in this order, the digits 1 to 9 showing the first nine. `label` is the button's words, `glyph` a name in config/catalogs/glyphs.yml, and `page` a key of `arrangements:` below, which is what the page is first made from and what the saved page stays tied to, so a button renamed keeps its page. A page key named twice, or naming no arrangement, draws no second button and is a finding. The Settings view edits this list.
+rail:
+  - { label: "Focus", glyph: compass, page: focus }
+  - { label: "Projects", glyph: paper, page: projects }
+  - { label: "Academic Life", glyph: scout, page: academic }
+  - { label: "Pillars", glyph: pillar, page: pillars }
+  - { label: "Feeds", glyph: litwatch, page: feeds }
+  - { label: "References", glyph: venue, page: references }
+  - { label: "Present", glyph: poster, page: present }
+  - { label: "Explorer", glyph: folder, page: explorer }
+  - { label: "Sessions", glyph: live, page: sessions }
+  - { label: "Info/more", glyph: info, page: info }
+  - { label: "Calendar", glyph: calendar, page: calendar }
+  - { label: "Inbox", glyph: inbox, page: inbox }
+  - { label: "Views and Settings", glyph: sliders, page: views }
+
+
+# The view catalogue's groups, in the order the Views view lists them. A view names its group and position in its registration. A group with no registered views is not listed. A group holding more than four entries, its views and its documents together, is reached only by its `chord`; the others are counted under `direct_chord`. `glyph` is the group heading's glyph name, and `chord` is its optional one-letter keyboard prefix.
 nav_groups:
   boards: { label: "Boards" }
   structure: { label: "Pillars", glyph: pillar }
@@ -18,16 +34,28 @@ nav_groups:
   system: { label: "System", glyph: audit, chord: y }
 
 
-# The one-letter prefix that reaches the rail's directly drawn views by number: the letter, then a digit for the view's place in the rail. The groups above name their own prefixes; a value that is not one lowercase letter means no such prefix, and the rail is reached by its buttons alone.
+# The one-letter prefix that reaches the views of the catalogue's groups of four entries or fewer by number: the letter, then a digit for the view's place among them. The groups above name their own prefixes; a value that is not one lowercase letter means no such prefix, and those views are reached from the catalogue alone.
 direct_chord: v
 
 
-# Saved arrangements: a whole page written by hand, applied by a control in the page strip's menu.
-# An arrangement carries `root`, the page's one tree. A node is `{ kind: split, dir, sizes, children }`
-# or `{ kind: pane, view }`, where `view` is one view id or a list of them (the tabs of that pane). It is
-# the layout tree of DESIGN.md with the instance ids left out, since those are minted fresh every time
-# the arrangement is applied. An arrangement that does not add up is ignored.
+# What each rail page is first made from, by the key its `rail:` entry names. After that first press the page is the one the reader arranged, kept in the saved layout. An arrangement carries `root`, the page's one tree. A node is `{ kind: split, dir, sizes, children }` or `{ kind: pane, view }`, where `view` is one view id or a list of them (the tabs of that pane). It is the layout tree of DESIGN.md with the instance ids left out, since those are minted fresh when the page is made. An arrangement that does not add up makes no page.
 arrangements:
+  focus:
+    root: { kind: pane, view: focus }
+  projects:
+    root: { kind: pane, view: [projects, coauthor, archive] }
+  academic:
+    root: { kind: pane, view: [funding, events, education, applications, joint-work, tasks] }
+  pillars:
+    root: { kind: pane, view: [pillars, domains, map] }
+  feeds:
+    root: { kind: pane, view: [radar, leads, linkedin] }
+  references:
+    root: { kind: pane, view: [venues, data, code, statements] }
+  present:
+    root: { kind: pane, view: present }
+  explorer:
+    root: { kind: pane, view: [files, repositories, search] }
   sessions:
     root:
       kind: split
@@ -46,6 +74,25 @@ arrangements:
                 - { kind: pane, view: terminal }
                 - { kind: pane, view: [transcript, timeline] }
         - { kind: pane, view: [session-detail, changes, agents] }
+  info:
+    root: { kind: pane, view: [status, findings, audit, history, usage, help] }
+  calendar:
+    root: { kind: pane, view: calendar }
+  inbox:
+    root: { kind: pane, view: inbox }
+  views:
+    root:
+      kind: split
+      dir: row
+      sizes: [0.5, 0.5]
+      children:
+        - { kind: pane, view: catalogue }
+        - kind: split
+          dir: col
+          sizes: [0.6, 0.4]
+          children:
+            - { kind: pane, view: settings }
+            - { kind: pane, view: pages }
 
 
 # Board (Projects / Archive / Coauthor) chrome: list-view column headers, the per-board search placeholder,
@@ -105,14 +152,7 @@ archive_label_mode: short    # Archive tab cards / list rows (live Aa toggle ove
 map_label_mode: short        # Map tab nodes
 
 
-# Documents in the rail's Docs section - a local HTML file under one of `roots:` (sources.yml), opened as
-# its own tab by the `document` view. `root` is a key of that list, `path` is relative to the root's dir.
-bookmarks:
-  - { label: "cathedra manual",    root: cathedra,    path: docs/user/manual.html }
-  - { label: "game-engine manual", root: game-engine, path: docs/user/manual.html }
-
-
-# Hub documents in the rail - one button inside its group, drawn after the group's views, opening the `doc` view over api/docs. `path` is relative to the research hub, `group` is a key of `nav_groups` above, and `label` is the tab's words. A path with no file there draws the view's own missing line.
+# Hub documents in the view catalogue: one entry inside its group, listed after the group's views, opening the `doc` view over api/docs. `path` is relative to the research hub, `group` is a key of `nav_groups` above, and `label` is the tab's words. A path with no file there draws the view's own missing line.
 docs:
   - { label: "Research approach", path: RESEARCH-APPROACH.md, group: personal }
   - { label: "Agent approach",    path: AGENT-APPROACH.md,    group: personal }

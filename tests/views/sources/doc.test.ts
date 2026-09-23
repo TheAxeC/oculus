@@ -11,7 +11,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { render } from 'svelte/server';
 import Doc from '../../../src/lib/views/sources/doc/Doc.svelte';
 import Markdown from '../../../src/lib/views/shared/prose/Markdown.svelte';
-import { docState, type DocEntry } from '../../../src/lib/shell/rail/rail.ts';
+import { docState, type DocEntry } from '../../../src/lib/state/workbench/navigation/catalogue.ts';
 import {
     engineDir,
     glyphCatalog,

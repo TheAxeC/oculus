@@ -260,7 +260,7 @@ test('a save of the add form takes its draft away', async ({ page }) => {
         await boot(page);
         await typeTask(page);
         expect(await draftKeys(page)).toHaveLength(1);
-        await page.getByRole('button', { name: t('collection.form_save') }).click();
+        await page.getByRole('button', { name: t('collection.form_save'), exact: true }).click();
         await expect.poll(() => readHubFile(TASKS), { timeout: 5000 }).toContain(TYPED);
         await expect(page.locator('[data-form="add"]')).toHaveCount(0);
         expect(await draftKeys(page)).toEqual([]);
@@ -323,8 +323,8 @@ test('a manifest editor with an edit asks before it closes, and a save clears th
         await asked.getByRole('button', { name: t('ui.confirm_cancel'), exact: true }).click();
         await expect(asked).toHaveCount(0);
 
-        await page.getByRole('button', { name: t('editor.save') }).click();
-        await expect(page.getByText(t('editor.saved', FIELD))).toBeVisible();
+        await page.getByRole('button', { name: t('editor.save'), exact: true }).click();
+        await expect(page.getByText(t('editor.saved', FIELD), { exact: true })).toBeVisible();
         await expect.poll(() => readHubFile(file)).toContain(LINE);
         await expect(page.getByRole('textbox', { name: labelOf(FIELD) })).toHaveValue(LINE);
 
@@ -342,7 +342,7 @@ test('a manifest editor with an edit asks before it closes, and a save clears th
 test('a save no answer reaches is given up after the configured time, said on its form, and Save is pressable again', async ({
     page
 }) => {
-    // revert: src/lib/state/client/writes.svelte.ts:412 => const wait = null;
+    // revert: src/lib/state/client/writes.svelte.ts:423 => const wait = null;
     const behavior = 'config/behavior.yml';
     const held = readEngineFile(behavior);
     const short = held.replace('timeout_seconds: 30', 'timeout_seconds: 1');
@@ -356,7 +356,7 @@ test('a save no answer reaches is given up after the configured time, said on it
         await typeTask(page);
         const save = page
             .locator('[data-form="add"]')
-            .getByRole('button', { name: t('collection.form_save') });
+            .getByRole('button', { name: t('collection.form_save'), exact: true });
         await save.click();
         await expect(save).toBeDisabled();
         await expect(
@@ -392,7 +392,7 @@ test('an edit form keeps a value typed while its save was on its way, open over 
             .click();
         await kindBox(page).fill('kind sent');
         await slowWrites(page);
-        await page.getByRole('button', { name: t('collection.form_save') }).click();
+        await page.getByRole('button', { name: t('collection.form_save'), exact: true }).click();
         await kindBox(page).fill('kind typed while the save was out');
         await expect.poll(() => readHubFile(TASKS), { timeout: 10000 }).toContain('kind sent');
         await expect(page.locator('[data-form="edit"]')).toHaveCount(1);
@@ -413,7 +413,7 @@ test('an add form nothing touched while its save was out closes once its entry i
         await boot(page);
         await typeTask(page);
         await slowWrites(page);
-        await page.getByRole('button', { name: t('collection.form_save') }).click();
+        await page.getByRole('button', { name: t('collection.form_save'), exact: true }).click();
         await expect.poll(() => readHubFile(TASKS), { timeout: 10000 }).toContain(TYPED);
         await expect(page.locator('[data-form="add"]')).toHaveCount(0);
         expect(await draftKeys(page)).toEqual([]);
@@ -433,7 +433,7 @@ test('an add form keeps a value typed while its save was on its way, open over i
         await boot(page);
         await typeTask(page);
         await slowWrites(page);
-        await page.getByRole('button', { name: t('collection.form_save') }).click();
+        await page.getByRole('button', { name: t('collection.form_save'), exact: true }).click();
         await titleBox(page).fill(`${TYPED} and more`);
         await expect.poll(() => readHubFile(TASKS), { timeout: 10000 }).toContain(TYPED);
         await expect(page.locator('[data-form="add"]')).toHaveCount(1);
@@ -456,7 +456,7 @@ test('an add form closed and opened again while its save was out keeps its new t
         await boot(page);
         await typeTask(page);
         await slowWrites(page);
-        await page.getByRole('button', { name: t('collection.form_save') }).click();
+        await page.getByRole('button', { name: t('collection.form_save'), exact: true }).click();
         const add = page.getByRole('button', { name: t('collection.add') });
         await add.click();
         await expect(page.locator('[data-form="add"]')).toHaveCount(0);
@@ -493,12 +493,12 @@ test('an add form left open by its answer writes the entry it added, not a secon
         await boot(page);
         await typeTask(page);
         await slowWrites(page);
-        await page.getByRole('button', { name: t('collection.form_save') }).click();
+        await page.getByRole('button', { name: t('collection.form_save'), exact: true }).click();
         await addKindBox(page).fill('typed while the save was out');
         await expect.poll(() => readHubFile(TASKS), { timeout: 10000 }).toContain(TYPED);
 
         // The form is still open over the entry it made, and its next save writes that entry.
-        await page.getByRole('button', { name: t('collection.form_save') }).click();
+        await page.getByRole('button', { name: t('collection.form_save'), exact: true }).click();
         await expect
             .poll(() => entriesTitled(TYPED).map((one) => one.kind), { timeout: 10000 })
             .toEqual(['typed while the save was out']);
@@ -518,10 +518,10 @@ test('a second save from the add form that added an entry adds no second entry',
         await boot(page);
         await typeTask(page);
         await slowWrites(page);
-        await page.getByRole('button', { name: t('collection.form_save') }).click();
+        await page.getByRole('button', { name: t('collection.form_save'), exact: true }).click();
         await addKindBox(page).fill('a second save');
         await expect.poll(() => readHubFile(TASKS), { timeout: 10000 }).toContain(TYPED);
-        await page.getByRole('button', { name: t('collection.form_save') }).click();
+        await page.getByRole('button', { name: t('collection.form_save'), exact: true }).click();
 
         // The file holds the one entry the form made, and the second save went into it rather than
         // being refused as another entry under the same title.
@@ -551,7 +551,7 @@ test('the Save control is not pressable while its own save is out, and adds noth
             }
         });
         await slowWrites(page);
-        const save = page.getByRole('button', { name: t('collection.form_save') });
+        const save = page.getByRole('button', { name: t('collection.form_save'), exact: true });
         await save.click();
         await expect(save).toBeDisabled();
 
@@ -578,7 +578,7 @@ test('an add form whose tab was switched away before its answer still writes the
         await boot(page);
         await typeTask(page);
         await slowWrites(page);
-        await page.getByRole('button', { name: t('collection.form_save') }).click();
+        await page.getByRole('button', { name: t('collection.form_save'), exact: true }).click();
         await addKindBox(page).fill('typed while the save was out');
 
         // Away and back before the answer lands: the component that drew the form is gone in
@@ -587,7 +587,7 @@ test('an add form whose tab was switched away before its answer still writes the
         await expect.poll(() => readHubFile(TASKS), { timeout: 10000 }).toContain(TYPED);
         await expect(addKindBox(page)).toHaveValue('typed while the save was out');
 
-        await page.getByRole('button', { name: t('collection.form_save') }).click();
+        await page.getByRole('button', { name: t('collection.form_save'), exact: true }).click();
         await expect
             .poll(() => entriesTitled(TYPED).map((one) => one.kind), { timeout: 10000 })
             .toEqual(['typed while the save was out']);
@@ -609,13 +609,13 @@ test('an add form typed away from the entry it added adds another, it does not r
         await boot(page);
         await typeTask(page);
         await slowWrites(page);
-        await page.getByRole('button', { name: t('collection.form_save') }).click();
+        await page.getByRole('button', { name: t('collection.form_save'), exact: true }).click();
         await titleBox(page).fill(second);
         await expect.poll(() => readHubFile(TASKS), { timeout: 10000 }).toContain(TYPED);
 
         // The form is still the add form, over another title: the next save adds that entry.
         await expect(page.locator('[data-form="add"]')).toHaveCount(1);
-        await page.getByRole('button', { name: t('collection.form_save') }).click();
+        await page.getByRole('button', { name: t('collection.form_save'), exact: true }).click();
         await expect.poll(() => entriesTitled(second).length, { timeout: 10000 }).toBe(1);
         expect(entriesTitled(TYPED)).toHaveLength(1);
     } finally {

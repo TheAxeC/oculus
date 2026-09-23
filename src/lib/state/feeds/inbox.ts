@@ -89,9 +89,9 @@ export function inboxSearch(threads: InboxThread[], search: string): InboxThread
 }
 
 /**
- * How many threads the rail counts: the ones nobody has finished with that ask for an answer or an
- * action. A thread no note has classified counts too, since what it wants is not known yet and a
- * badge that hid it would hide exactly the threads nothing has looked at.
+ * How many threads the view's badge counts: the ones nobody has finished with that ask for an
+ * answer or an action. A thread no note has classified counts too, since what it wants is not known
+ * yet and a badge that hid it would hide exactly the threads nothing has looked at.
  */
 export function untriagedActionable(threads: InboxThread[]): number {
     return threads.filter((thread) => !thread.triage.triaged && thread.triage.kind !== 'info')

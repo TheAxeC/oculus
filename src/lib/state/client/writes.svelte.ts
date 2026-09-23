@@ -100,6 +100,7 @@ export type WritesStore = {
     markPosted: (file: string) => Promise<WriteAnswer>;
     newEntry: (collection: string, fields: Record<string, unknown>) => Promise<WriteAnswer>;
     writeDeck: (selection: string[], order: string[]) => Promise<WriteAnswer>;
+    writeRail: (rail: { label: string; glyph: string; page: string }[]) => Promise<WriteAnswer>;
     muteFinding: (signature: string, muted: boolean) => Promise<WriteAnswer>;
     addMemory: (name: string, data: string) => Promise<WriteAnswer>;
     newIdea: (fields: {
@@ -334,6 +335,16 @@ export function createWrites(
     }
 
     /**
+     * Save the rail list: the endpoint rewrites the `rail:` list of config/layout.yml and the
+     * watcher pushes the config, which is what redraws the rail.
+     */
+    async function writeRail(
+        rail: { label: string; glyph: string; page: string }[]
+    ): Promise<WriteAnswer> {
+        return send({ kind: 'rail', rail });
+    }
+
+    /**
      * Park one audit finding, or bring it back. The signature is the scan's own; the endpoint
      * writes it into the `audit_ignore:` list of config/behavior.yml and the watcher pushes the
      * scan again.
@@ -485,6 +496,7 @@ export function createWrites(
         markPosted,
         newEntry,
         writeDeck,
+        writeRail,
         muteFinding,
         addMemory,
         newIdea,

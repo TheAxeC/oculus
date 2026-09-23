@@ -20,7 +20,7 @@ import type { PageServerLoad } from './$types';
 //
 // The collection keys ride with them for the same reason: the page registers the collection view
 // once per key before it renders, and the registry is filled in the page's script body rather than
-// from a fetch, so the rail draws every collection on the first frame.
+// from a fetch, so the view catalogue and the pane tabs draw every collection on the first frame.
 //
 // The write token rides with them, which is how DESIGN.md's "Auth" delivers it to the page: it is
 // minted by ServerContext, put on the event by hooks.server.ts, and reaches the browser here and

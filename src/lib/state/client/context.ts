@@ -54,6 +54,7 @@ import {
     type PaletteSourceStore
 } from '../workbench/palette-source.svelte.ts';
 import { createPresent, type PresentStore } from '../life/present.svelte.ts';
+import { configRail, railTyped } from '../workbench/navigation/rail.ts';
 import { createRailBadges, type RailBadgesStore } from '../workbench/rail-badges.svelte.ts';
 import { createRepositories, type RepositoriesStore } from '../sources/repositories.svelte.ts';
 import { createSelection, type SelectionStore } from '../workbench/selection.svelte.ts';
@@ -190,6 +191,15 @@ export function createClientState(): ClientState {
     // A file browser's root or workspace line is text no save has taken, asked by the instance's
     // view.
     ui.registerUnsaved((id) => filesLineTyped(layout.instanceView(id), ui.instanceState(id)));
+    // A Settings tab's rail list differing from the one config/layout.yml holds is text no save has
+    // taken, asked against the config the page holds now.
+    ui.registerUnsaved((id) =>
+        railTyped(
+            layout.instanceView(id),
+            ui.instanceState(id),
+            configRail(entities.config()?.config)
+        )
+    );
     const railBadges = createRailBadges(entities, feeds, hpc, calendar, inbox, audit, selectors);
     const paletteSource = createPaletteSource(entities, feeds);
     const registry = createRegistry(layout);

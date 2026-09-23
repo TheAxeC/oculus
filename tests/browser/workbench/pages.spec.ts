@@ -1,193 +1,249 @@
-// The page strip of shell/panes/PageStrip.svelte: its menu makes a page and renames one, the digits
-// 1 to 9 reach the first nine, closing a page that holds more than one tab asks first, and a scroll
-// control of an overflowing strip rests its left edge on a page tab's start or on the strip's end.
+// The pages of the workbench: a browser with no saved layout starts on the first rail page; a rail
+// button shows its page, made from its arrangement the first time and kept as the reader arranged
+// it after that, across a reload too, and draws the badges of the views its page holds; no strip
+// of pages is drawn over the panes; and the Pages view on the Views and Settings page makes a
+// page, renames one, shows another and closes one, asking first when the page holds more than one
+// tab.
 //
 // Nothing here writes to the hub. The layout lives in the browser's own storage, and Playwright
-// gives every test a context of its own, so each test starts from the one default page.
+// gives every test a context of its own: a case that boots starts on a saved page of the Status
+// view, and the one case that boots fresh starts on the first rail page.
 
-import { expect, test } from '@playwright/test';
-import { openView } from '../helpers/rail.ts';
-import { stripRest } from '../helpers/style.ts';
+import { expect, test, type Locator, type Page } from '@playwright/test';
+import { SHOWN_VIEW, boot, bootFresh, openView, pagesRow, showRailPage } from '../helpers/rail.ts';
 import { t } from '../helpers/words.ts';
 
-test('the menu adds a page and renames it', async ({ page }) => {
-    await page.goto('/');
-    const strip = page.getByRole('region', { name: t('ui.pages') });
-    await expect(strip.getByRole('tab')).toHaveCount(1);
+/** The rail button of one page, by its arrangement key. */
+function railButton(page: Page, key: string): Locator {
+    return page.locator(`nav [data-rail-page="${key}"] button`);
+}
 
-    await strip.getByRole('button', { name: t('ui.page_menu') }).click();
-    await page.getByRole('menuitem', { name: t('ui.page_new') }).click();
-    await expect(strip.getByRole('tab')).toHaveCount(2);
-    await expect(strip.getByRole('tab', { name: t('ui.page_default', 2) })).toBeVisible();
+test('a browser with no saved layout opens on the first rail page, and digit 1 shows it again', async ({
+    page
+}) => {
+    // revert: src/lib/shell/Workbench.svelte:155 => if (false) client.layout.startOnRailPage(first.page, first.label, first.node);
+    await bootFresh(page);
+    await expect(railButton(page, 'focus')).toHaveClass(/\bactive\b/);
+    await expect(page.getByRole('tab', { name: t('views.focus') })).toBeVisible();
+    // The first rail page is the one page there was: no page no button owns was made.
+    await showRailPage(page, 'views');
+    await expect(page.locator(`${SHOWN_VIEW} [data-pages] [data-page-row]`)).toHaveCount(2);
+    await page.locator('body').click({ position: { x: 5, y: 5 } });
+    await page.keyboard.press('1');
+    await expect(railButton(page, 'focus')).toHaveClass(/\bactive\b/);
+});
 
-    await strip.getByRole('button', { name: t('ui.page_menu') }).click();
-    await page.getByRole('menuitem', { name: t('ui.page_rename') }).click();
-    // The box is typed into the moment it appears, so it carries the focus without being clicked.
-    const box = strip.getByRole('textbox', { name: t('ui.page_rename_label') });
+test('a browser with no saved layout draws no page before its first rail page', async ({
+    page
+}) => {
+    // revert: src/lib/shell/Workbench.svelte:248 => {#if false}
+    // Every tab name drawn from the first paint on, so a page drawn and replaced is seen too.
+    await page.addInitScript(() => {
+        const seen: string[] = [];
+        (window as unknown as { tabsSeen: string[] }).tabsSeen = seen;
+        new MutationObserver(() => {
+            for (const tab of document.querySelectorAll('[role="tab"]')) {
+                const name = tab.textContent.trim();
+                if (name !== '' && !seen.includes(name)) seen.push(name);
+            }
+        }).observe(document, { childList: true, subtree: true });
+    });
+    await bootFresh(page);
+    await expect(page.getByRole('tab', { name: t('views.focus') })).toBeVisible();
+    const seen = await page.evaluate(() => (window as unknown as { tabsSeen: string[] }).tabsSeen);
+    expect(seen.some((name) => name.startsWith(t('views.status')))).toBe(false);
+});
+
+test('a rail page button draws the badges of the views its page holds', async ({ page }) => {
+    // revert: src/lib/shell/rail/ActivityRail.svelte:253 => {#if false}
+    // revert: src/lib/shell/rail/ActivityRail.svelte:376 => position: absolute; bottom: 0;
+    await boot(page);
+    await showRailPage(page, 'views');
+    // Each view here sits in the arrangement of the rail page named beside it; the demo hub gives
+    // the first of them that counts anything a number, which the catalogue draws beside the view.
+    const held: [string, string][] = [
+        ['projects', 'projects'],
+        ['leads', 'feeds'],
+        ['repositories', 'explorer'],
+        ['audit', 'info'],
+        ['inbox', 'inbox']
+    ];
+    const counted: [string, string][] = [];
+    for (const [view, key] of held) {
+        const listed = page
+            .locator(`${SHOWN_VIEW} [data-catalogue] .entry`, {
+                has: page.locator(`button[data-view="${view}"]`)
+            })
+            .locator('.badge');
+        if ((await listed.count()) === 0) continue;
+        const text = ((await listed.textContent()) ?? '').trim();
+        if (/^\d/.test(text)) counted.push([key, text]);
+    }
+    expect(counted.map(([key]) => key)).toContain('projects');
+    // The Projects page holds Projects, Coauthor and Archive in that tab order, and its button
+    // draws their counts in the same order.
+    const order: string[] = [];
+    for (const view of ['projects', 'coauthor', 'archive']) {
+        const badge = page
+            .locator(`${SHOWN_VIEW} [data-catalogue] .entry`, {
+                has: page.locator(`button[data-view="${view}"]`)
+            })
+            .locator('.badge');
+        order.push(((await badge.textContent()) ?? '').trim());
+    }
+    const drawn = (
+        await page
+            .locator('nav [data-rail-page="projects"] [data-rail-badges] .badge')
+            .allTextContents()
+    ).map((text) => text.trim());
+    const at = order.map((text) => drawn.indexOf(text));
+    expect(at.every((index) => index >= 0)).toBe(true);
+    expect([...at].sort((a, b) => a - b)).toEqual(at);
+    // The badges sit under the button, clear of its name.
+    const button = await page.locator('nav [data-rail-page="projects"] button').boundingBox();
+    const row = await page
+        .locator('nav [data-rail-page="projects"] [data-rail-badges]')
+        .boundingBox();
+    expect(button).not.toBeNull();
+    expect(row).not.toBeNull();
+    if (button !== null && row !== null)
+        expect(row.y).toBeGreaterThanOrEqual(button.y + button.height - 1);
+    for (const [key, text] of counted) {
+        await expect(
+            page
+                .locator(`nav [data-rail-page="${key}"] [data-rail-badges] .badge`, {
+                    hasText: text
+                })
+                .first()
+        ).toBeVisible();
+    }
+});
+
+test('a rail button shows its page, and a second press shows it as it was left', async ({
+    page
+}) => {
+    // revert: src/lib/state/workbench/layout.svelte.ts:287 => const found = undefined;
+    await boot(page);
+    await showRailPage(page, 'projects');
+    for (const view of ['views.projects', 'views.coauthor', 'views.archive']) {
+        await expect(page.getByRole('tab', { name: t(view) })).toBeVisible();
+    }
+    await expect(railButton(page, 'projects')).toHaveClass(/\bactive\b/);
+    await openView(page, 'help', t('views.help'));
+
+    await showRailPage(page, 'focus');
+    await expect(railButton(page, 'focus')).toHaveClass(/\bactive\b/);
+    // The Help tab was opened on the Projects page, so the Focus page does not hold it.
+    await expect(page.getByRole('tab', { name: t('views.help') })).toHaveCount(0);
+
+    await showRailPage(page, 'projects');
+    await expect(page.getByRole('tab', { name: t('views.help') })).toBeVisible();
+    await expect(page.getByRole('tab', { name: t('views.projects') })).toBeVisible();
+});
+
+test('a rail page the reader rearranged is the same page after a reload', async ({ page }) => {
+    // revert: src/lib/state/workbench/layout/saved/saved.ts:298 => delete
+    await boot(page);
+    await showRailPage(page, 'projects');
+    await openView(page, 'help', t('views.help'));
+    // Renamed, so after the reload the page is found by its button's key and not by its name.
+    await showRailPage(page, 'views');
+    const projects = pagesRow(page, 'Projects');
+    await projects.getByRole('button', { name: t('workbench.pages_rename') }).click();
+    await projects.getByRole('textbox').fill('Mine');
+    await projects.getByRole('textbox').press('Enter');
+    await expect(pagesRow(page, 'Mine')).toBeVisible();
+    await showRailPage(page, 'focus');
+
+    // The reload comes back to the Focus page, so it waits for the rail the config push draws
+    // rather than for the Status view's socket line.
+    await page.reload();
+    await expect(railButton(page, 'focus')).toHaveClass(/\bactive\b/);
+    await showRailPage(page, 'projects');
+    await expect(page.getByRole('tab', { name: t('views.help') })).toBeVisible();
+    await expect(railButton(page, 'projects')).toHaveClass(/\bactive\b/);
+});
+
+test('no strip of pages is drawn over the panes', async ({ page }) => {
+    // revert: src/lib/shell/Workbench.svelte:244 => <div class="area"><div role="tablist" aria-label="Pages"></div>
+    await boot(page);
+    // The page on screen is one pane, and its strip is the only list of tabs in the window.
+    await expect(page.getByRole('tablist')).toHaveCount(1);
+    // The one page there is was never given a name, and nothing draws a tab for a page.
+    await expect(page.getByRole('tab', { name: t('ui.page_default', 1) })).toHaveCount(0);
+});
+
+test('the Pages view makes a page, renames it, shows another and closes one', async ({ page }) => {
+    // revert: src/lib/views/system/workbench/Pages.svelte:106 => if (typed !== '') renamePage(renaming.id, 'Other');
+    await boot(page);
+    await showRailPage(page, 'views');
+    const pages = page.locator(`${SHOWN_VIEW} [data-pages]`);
+    await expect(pages).toBeVisible();
+    await pages.getByRole('button', { name: t('ui.page_new') }).click();
+    // The new page is shown at once, on the default view, and no rail button is its.
+    await expect(page.locator('nav [data-rail-page] button.active')).toHaveCount(0);
+    await expect(page.getByRole('tab', { name: t('views.status') })).toBeVisible();
+
+    await showRailPage(page, 'views');
+    const made = pagesRow(page, t('ui.page_default', 3));
+    await expect(made).toBeVisible();
+    await made.getByRole('button', { name: t('workbench.pages_rename') }).click();
+    const box = made.getByRole('textbox', {
+        name: t('workbench.pages_rename_label', t('ui.page_default', 3))
+    });
     await expect(box).toBeFocused();
     await box.fill('Renamed');
     await box.press('Enter');
-    await expect(strip.getByRole('tab', { name: 'Renamed' })).toBeVisible();
-    // the page carries the name it was given, so the default one is no longer drawn
-    await expect(strip.getByRole('tab', { name: t('ui.page_default', 2) })).toHaveCount(0);
+    await expect(pagesRow(page, 'Renamed')).toBeVisible();
 
     // A name typed away to nothing is not a name: the page keeps the one it has.
-    await strip.getByRole('button', { name: t('ui.page_menu') }).click();
-    await page.getByRole('menuitem', { name: t('ui.page_rename') }).click();
-    const again = strip.getByRole('textbox', { name: t('ui.page_rename_label') });
-    await again.fill('   ');
-    await again.press('Enter');
-    await expect(strip.getByRole('tab', { name: 'Renamed' })).toBeVisible();
-});
+    const renamed = pagesRow(page, 'Renamed');
+    await renamed.getByRole('button', { name: t('workbench.pages_rename') }).click();
+    await renamed.getByRole('textbox').fill('   ');
+    await renamed.getByRole('textbox').press('Enter');
+    await expect(pagesRow(page, 'Renamed')).toBeVisible();
 
-test('2 shows the second page and 1 the first', async ({ page }) => {
-    await page.goto('/');
-    const strip = page.getByRole('region', { name: t('ui.pages') });
-    await strip.getByRole('button', { name: t('ui.page_menu') }).click();
-    await page.getByRole('menuitem', { name: t('ui.page_new') }).click();
-
-    const first = strip.getByRole('tab', { name: t('ui.page_default', 1) });
-    const second = strip.getByRole('tab', { name: t('ui.page_default', 2) });
-    await expect(second).toHaveAttribute('aria-selected', 'true');
-
-    // The digits act on the strip's own tab as much as anywhere else, as long as no box is typed
-    // in.
-    await second.click();
-    await page.keyboard.press('1');
-    await expect(first).toHaveAttribute('aria-selected', 'true');
-    await expect(second).toHaveAttribute('aria-selected', 'false');
-
-    await page.keyboard.press('2');
-    await expect(second).toHaveAttribute('aria-selected', 'true');
-    await expect(first).toHaveAttribute('aria-selected', 'false');
-});
-
-test('dragging the second page before the first saves their order', async ({ page }) => {
-    await page.goto('/');
-    const strip = page.getByRole('region', { name: t('ui.pages') });
-    await strip.getByRole('button', { name: t('ui.page_menu') }).click();
-    await page.getByRole('menuitem', { name: t('ui.page_new') }).click();
-
-    const first = strip.getByRole('tab', { name: t('ui.page_default', 1) });
-    const second = strip.getByRole('tab', { name: t('ui.page_default', 2) });
-    const firstBox = await first.boundingBox();
-    const secondBox = await second.boundingBox();
-    expect(firstBox).not.toBeNull();
-    expect(secondBox).not.toBeNull();
-    if (firstBox === null || secondBox === null) return;
-
-    await page.mouse.move(secondBox.x + secondBox.width / 2, secondBox.y + secondBox.height / 2);
-    await page.mouse.down();
-    await page.mouse.move(firstBox.x + 1, firstBox.y + firstBox.height / 2, { steps: 5 });
-    await expect(strip.locator('span.mark')).toHaveCount(1);
-    await page.mouse.up();
-
-    await expect(strip.getByRole('tab').first()).toHaveAccessibleName(t('ui.page_default', 2));
-    await page.reload();
-    await expect(strip.getByRole('tab').first()).toHaveAccessibleName(t('ui.page_default', 2));
-});
-
-test('Ctrl+Shift+Left and Right move the focused page and save its position', async ({ page }) => {
-    await page.goto('/');
-    const strip = page.getByRole('region', { name: t('ui.pages') });
-    await strip.getByRole('button', { name: t('ui.page_menu') }).click();
-    await page.getByRole('menuitem', { name: t('ui.page_new') }).click();
-
-    const second = strip.getByRole('tab', { name: t('ui.page_default', 2) });
-    await second.focus();
-    await second.press('Control+Shift+ArrowLeft');
-    await expect(strip.getByRole('tab').first()).toHaveAccessibleName(t('ui.page_default', 2));
-
-    await page.reload();
-    await expect(strip.getByRole('tab').first()).toHaveAccessibleName(t('ui.page_default', 2));
-
-    await strip.getByRole('tab', { name: t('ui.page_default', 2) }).focus();
-    await page.keyboard.press('Control+Shift+ArrowRight');
-    await expect(strip.getByRole('tab').first()).toHaveAccessibleName(t('ui.page_default', 1));
-    await page.reload();
-    await expect(strip.getByRole('tab').first()).toHaveAccessibleName(t('ui.page_default', 1));
-});
-
-test('closing a page asks first: cancel keeps it, confirm removes it', async ({ page }) => {
-    await page.goto('/');
-    const strip = page.getByRole('region', { name: t('ui.pages') });
-    await strip.getByRole('button', { name: t('ui.page_menu') }).click();
-    await page.getByRole('menuitem', { name: t('ui.page_new') }).click();
-    await expect(strip.getByRole('tab')).toHaveCount(2);
-
-    // A new page holds one tab, the Status view; a second view opened into it makes two, so the
-    // close asks.
-    await openView(page, 'focus', t('views.focus'));
-    await strip.getByRole('tab', { name: t('ui.page_default', 2) }).hover();
-    await strip
-        .getByRole('button', { name: t('ui.close_tab') })
-        .last()
+    await pagesRow(page, t('ui.page_default', 1))
+        .getByRole('button', { name: t('workbench.pages_open') })
         .click();
+    await expect(page.getByRole('tab', { name: t('views.status') })).toBeVisible();
+    // The first page holds the Status view alone, so no Pages view is on screen once it shows.
+    await expect(page.locator(`${SHOWN_VIEW} [data-pages]`)).toHaveCount(0);
+
+    await showRailPage(page, 'views');
+    await pagesRow(page, 'Renamed')
+        .getByRole('button', { name: t('workbench.pages_close') })
+        .click();
+    // The close took the renamed page off the list.
+    await expect(pagesRow(page, 'Renamed')).toHaveCount(0);
+    // The renamed page held one saved tab, so its close asked nothing.
+    await expect(page.getByRole('alertdialog')).toHaveCount(0);
+});
+
+test('closing a page of several tabs asks first: cancel keeps it, confirm removes it', async ({
+    page
+}) => {
+    // revert: src/lib/views/system/workbench/Pages.svelte:71 => const asks = 'none';
+    await boot(page);
+    await showRailPage(page, 'projects');
+    await showRailPage(page, 'views');
+    const projects = pagesRow(page, 'Projects');
+    await projects.getByRole('button', { name: t('workbench.pages_close') }).click();
     const dialog = page.getByRole('alertdialog');
     await expect(dialog).toBeVisible();
     await dialog.getByRole('button', { name: t('ui.confirm_cancel') }).click();
-    // cancel closes the question and keeps the page
+    // Cancel closes the question and keeps the page.
     await expect(dialog).toHaveCount(0);
-    await expect(strip.getByRole('tab')).toHaveCount(2);
+    await expect(projects).toBeVisible();
 
-    await strip.getByRole('tab', { name: t('ui.page_default', 2) }).hover();
-    await strip
-        .getByRole('button', { name: t('ui.close_tab') })
-        .last()
-        .click();
+    await projects.getByRole('button', { name: t('workbench.pages_close') }).click();
     await page
         .getByRole('alertdialog')
         .getByRole('button', { name: t('ui.confirm_ok') })
         .click();
-    await expect(strip.getByRole('tab')).toHaveCount(1);
-    await expect(strip.getByRole('tab', { name: t('ui.page_default', 1) })).toBeVisible();
-});
-
-test.describe('an overflowing page strip', () => {
-    test.use({ viewport: { width: 480, height: 640 } });
-
-    /** How many pages the strip holds, which at this width is several page tabs past its width. */
-    const PAGES = 12;
-
-    test('a scroll control rests the left edge on a page tab start, or on the strip end', async ({
-        page
-    }) => {
-        await page.goto('/');
-        const strip = page.getByRole('region', { name: t('ui.pages') });
-        for (let made = 1; made < PAGES; made += 1) {
-            await strip.getByRole('button', { name: t('ui.page_menu') }).click();
-            await page.getByRole('menuitem', { name: t('ui.page_new') }).click();
-        }
-        await expect(strip.getByRole('tab')).toHaveCount(PAGES);
-
-        const list = strip.getByRole('tablist');
-        const left = strip.getByRole('button', { name: t('ui.tabs_scroll_left') });
-        const right = strip.getByRole('button', { name: t('ui.tabs_scroll_right') });
-        await expect(left).toBeVisible();
-        await expect(right).toBeVisible();
-
-        // To the strip's end, then left to its start and right to its end again. Every press moves
-        // the strip and rests it on a page tab's start or the end. The first walk starts wherever
-        // the newest page left the strip; each of the other two takes more than one press, so at
-        // least one rest lies between the two ends.
-        for (const [press, far, least] of [
-            [right, 'end', 0],
-            [left, 'start', 2],
-            [right, 'end', 2]
-        ] as const) {
-            let presses = 0;
-            while (await press.isEnabled()) {
-                const before = (await stripRest(list)).at;
-                await press.click();
-                await expect.poll(async () => (await stripRest(list)).at).not.toBe(before);
-                const seen = await stripRest(list);
-                expect(seen.onStart || seen.atEnd).toBe(true);
-                presses += 1;
-            }
-            expect(presses).toBeGreaterThanOrEqual(least);
-            const seen = await stripRest(list);
-            if (far === 'start') expect(seen.at).toBeLessThanOrEqual(1);
-            else expect(seen.atEnd).toBe(true);
-        }
-    });
+    // The confirm took the page away, which is the whole of what it was asked.
+    await expect(projects).toHaveCount(0);
+    // The button makes the page again from its arrangement.
+    await showRailPage(page, 'projects');
+    await expect(page.getByRole('tab', { name: t('views.coauthor') })).toBeVisible();
 });

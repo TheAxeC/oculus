@@ -14,7 +14,7 @@
 
 import { readFileSync, writeFileSync } from 'node:fs';
 import { parse } from 'yaml';
-import { setList } from '../list-edit.ts';
+import { othersThan, readBack, setList } from '../list-edit.ts';
 import { SIGNATURE } from '../../content/audit.ts';
 
 /** The top-level key of config/behavior.yml the parked signatures live under. */
@@ -40,29 +40,16 @@ function mapOf(value: unknown): Record<string, unknown> {
     return value as Record<string, unknown>;
 }
 
-/** Every key of a map but the named one, as one comparable value. */
-function others(map: Record<string, unknown>): string {
-    return JSON.stringify(Object.entries(map).filter(([key]) => key !== IGNORE));
-}
-
 /**
  * Whether the edited source still says what the original said, with the one list replaced: it must
  * parse, it must hold exactly the signatures asked for, and every other top-level key must be
  * unchanged.
  */
 function kept(source: string, edited: string, wanted: string[]): boolean {
-    let before: unknown;
-    let after: unknown;
-    try {
-        before = parse(source);
-        after = parse(edited);
-    } catch {
-        return false;
-    }
-    const first = mapOf(before);
-    const second = mapOf(after);
-    if (others(first) !== others(second)) return false;
-    return JSON.stringify(second[IGNORE] ?? []) === JSON.stringify(wanted);
+    const read = readBack(source, edited);
+    if (read === null) return false;
+    if (othersThan(read.before, [IGNORE]) !== othersThan(read.after, [IGNORE])) return false;
+    return JSON.stringify(read.after[IGNORE] ?? []) === JSON.stringify(wanted);
 }
 
 /** The list one write leaves behind: the signature added at the end, or taken out. */

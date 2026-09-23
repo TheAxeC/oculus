@@ -1,4 +1,5 @@
-// The keyboard bindings of shell/keys/keys.ts in a real page: `v` and a digit open a rail view,
+// The keyboard bindings of shell/keys/keys.ts in a real page: a bare digit shows the rail page of
+// its place, `v` and a digit open a view of the catalogue,
 // Ctrl and a digit activate a tab of the focused pane, Ctrl and a bracket cycle that pane's tabs
 // while a bare Tab stays the browser's focus move, `?` opens and closes the sheet, `/` focuses the
 // board's search, the card cursor moves with j and k and Enter opens the card, and `g g` and `G`
@@ -9,7 +10,11 @@
 
 import { expect, test, type Page } from '@playwright/test';
 import { SHOWN_VIEW, boot, openView } from '../helpers/rail.ts';
+import { readEngineFile, writeEngineFile } from '../helpers/hub.ts';
 import { t } from '../helpers/words.ts';
+
+/** The engine's layout file, whose rail list one case edits and puts back. */
+const LAYOUT = 'config/layout.yml';
 
 /** Press a key with nothing focused in a field: the strip's ground takes the focus first. */
 async function press(page: Page, key: string): Promise<void> {
@@ -17,7 +22,20 @@ async function press(page: Page, key: string): Promise<void> {
     await page.keyboard.press(key);
 }
 
-test('the direct chord opens a rail view, ? toggles the sheet', async ({ page }) => {
+test('a bare digit shows the rail page of its place', async ({ page }) => {
+    // revert: src/lib/shell/keys/workbench-keys.svelte.ts:182 => return options.railPage(action.index + 1);
+    await boot(page);
+    await press(page, '2');
+    await expect(page.locator('nav [data-rail-page="projects"] button')).toHaveClass(/\bactive\b/);
+    await expect(page.getByRole('tab', { name: t('views.coauthor') })).toBeVisible();
+    await press(page, '1');
+    await expect(page.locator('nav [data-rail-page="focus"] button')).toHaveClass(/\bactive\b/);
+    await press(page, '2');
+    // The second press shows the page the first one made, rather than a copy of it.
+    await expect(page.getByRole('tab', { name: t('views.coauthor') })).toHaveCount(1);
+});
+
+test('the direct chord opens a view of the catalogue, ? toggles the sheet', async ({ page }) => {
     await boot(page);
     await press(page, 'v');
     await page.keyboard.press('2');
@@ -248,24 +266,26 @@ test('Delete closes the focused tab and the keyboard lands on the tab that takes
     expect(await page.evaluate(() => document.activeElement?.getAttribute('tabindex'))).toBe('0');
 });
 
-test('a rail control the reader disables hands the stop and the focus to its neighbour', async ({
+test('a rail page taken out of the list under the focus hands the stop to its neighbour', async ({
     page
 }) => {
+    // revert: src/lib/shell/rail/ActivityRail.svelte:138 => delete
     await boot(page);
     const rail = page.locator('[data-rail]');
-    const reset = rail.locator('[data-stop="text-reset"]');
-    await expect(reset).toBeDisabled();
-
-    // One step makes the reset available, which is the control this case presses away again.
-    await rail.locator('[data-stop="text-larger"]').click();
-    await expect(reset).toBeEnabled();
-
-    await reset.focus();
-    await page.keyboard.press('Enter');
-    await expect(reset).toBeDisabled();
-    // The control that took its place, the step after it in the Text row, holds the stop and the
-    // keyboard, rather than the document.
-    await expect(rail.locator('[data-stop="text-larger"]')).toBeFocused();
-    await expect(rail.locator('[data-stop="text-larger"]')).toHaveAttribute('tabindex', '0');
-    await expect(rail.locator('[data-stop][tabindex="0"]')).toHaveCount(1);
+    const inbox = rail.locator('[data-stop="page:inbox"]');
+    await inbox.focus();
+    const before = readEngineFile(LAYOUT);
+    try {
+        writeEngineFile(
+            LAYOUT,
+            before.replace('  - { label: "Inbox", glyph: inbox, page: inbox }\n', '')
+        );
+        // The button went with its entry, and the one that took its place holds the keyboard.
+        await expect(inbox).toHaveCount(0);
+        await expect(rail.locator('[data-stop="page:views"]')).toBeFocused();
+        await expect(rail.locator('[data-stop][tabindex="0"]')).toHaveCount(1);
+    } finally {
+        writeEngineFile(LAYOUT, before);
+        await expect(inbox).toHaveCount(1);
+    }
 });

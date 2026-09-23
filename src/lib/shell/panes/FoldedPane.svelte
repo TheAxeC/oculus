@@ -4,13 +4,13 @@
     // apart without expanding either. That name is the one the document title uses, so this reads
     // the registry as PaneView does, which is why the strip is drawn here and not in SplitView.
     //
-    // A folded pane the rail's next view would open into draws the accent line a shown tab draws,
+    // A folded pane the next view opened would land in draws the accent line a shown tab draws,
     // along the strip's top edge, so folding a pane never leaves the window with nothing saying
     // where a view will land.
 
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { activeLabel } from '$lib/shell/workbench-title';
-    import { pageNameOf } from '$lib/shell/panes/page-strip';
+    import { pageNameOf } from '$lib/state/workbench/navigation/pages';
     import { t } from '$lib/state/words/text';
     import type { Layout } from '$lib/state/workbench/layout';
     import { useState } from '$lib/state/client/use';
@@ -48,7 +48,7 @@
         return shown === null ? '' : activeLabel(client.registry, shown);
     });
 
-    /** Whether this folded pane is the one the rail's next view opens into. */
+    /** Whether this folded pane is the one the next view opened lands in. */
     const marked = $derived(shown !== null && openingInstance()?.id === shown.id);
 </script>
 

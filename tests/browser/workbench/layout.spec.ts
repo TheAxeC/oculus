@@ -6,7 +6,7 @@
 // gives every test a context of its own, so each test starts from the one default page.
 
 import { expect, test } from '@playwright/test';
-import { boot, openView } from '../helpers/rail.ts';
+import { SHOWN_VIEW, boot, openView, showRailPage } from '../helpers/rail.ts';
 import { t } from '../helpers/words.ts';
 
 test('a pane folds from its menu, shows its tab name in the strip, and expands again', async ({
@@ -77,14 +77,22 @@ test('the folded state survives a reload', async ({ page }) => {
     await expect(page.locator('[data-fold] [data-fold-label]')).toHaveText(t('views.projects'));
 });
 
-test('shift-clicking a rail button opens the view in a pane of its own, and the next joins it', async ({
+test('shift-clicking a catalogue entry opens the view in a pane of its own, and the next joins it', async ({
     page
 }) => {
+    // revert: src/lib/views/system/workbench/Catalogue.svelte:99 => if (event.shiftKey) openView(view.id);
     await boot(page);
-    await expect(page.locator('[data-pane]')).toHaveCount(1);
+    // The page boot() starts on is one pane; the catalogue opens onto it, the page the reader
+    // came from.
+    const panes = page.locator('[data-pane]');
+    await expect(panes).toHaveCount(1);
+    await showRailPage(page, 'views');
+    const catalogue = page.locator(`${SHOWN_VIEW} [data-catalogue]`);
 
-    await page.locator('nav button[data-view="focus"]').click({ modifiers: ['Shift'] });
-    await expect(page.locator('[data-pane]')).toHaveCount(2);
+    await catalogue.locator('button[data-view="focus"]').click({ modifiers: ['Shift'] });
+    // The page shown again is the Status page, which no rail button owns.
+    await expect(page.locator('nav [data-rail-page] button.active')).toHaveCount(0);
+    await expect(panes).toHaveCount(2);
     const opened = page.locator('[data-pane]', {
         has: page.getByRole('tab', { name: t('views.focus') })
     });
@@ -92,8 +100,9 @@ test('shift-clicking a rail button opens the view in a pane of its own, and the 
     await expect(opened.getByRole('tab')).toHaveCount(1);
 
     // The pane the first one made takes the second as a tab rather than splitting again.
-    await page.locator('nav button[data-view="projects"]').click({ modifiers: ['Shift'] });
-    await expect(page.locator('[data-pane]')).toHaveCount(2);
+    await showRailPage(page, 'views');
+    await catalogue.locator('button[data-view="projects"]').click({ modifiers: ['Shift'] });
+    await expect(panes).toHaveCount(2);
     await expect(opened.getByRole('tab')).toHaveCount(2);
 });
 

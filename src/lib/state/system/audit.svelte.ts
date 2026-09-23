@@ -1,7 +1,7 @@
 // Layer 2, client state. What the audit scan last said, split the way the view draws it: the
 // findings the reader has not parked, in section order, and the ones they have.
 //
-// The split is here rather than in the view because the rail's badge needs the open count too, and
+// The split is here rather than in the view because the view's badge needs the open count too, and
 // a count computed in two places is a count the two can disagree about.
 
 import type { AuditFinding, AuditKind } from '../../data/model.ts';
@@ -22,7 +22,7 @@ export type AuditStore = {
     parked: () => AuditFinding[];
     /** The open findings of one section. */
     section: (kind: AuditKind) => AuditFinding[];
-    /** How many findings are open, which is what the rail's badge counts. */
+    /** How many findings are open, which is what the view's badge counts. */
     openCount: () => number;
 };
 

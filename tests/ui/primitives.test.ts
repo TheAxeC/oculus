@@ -21,7 +21,6 @@ import KeySheet from '../../src/lib/ui/menu/KeySheet.svelte';
 import { sheetRows } from '../../src/lib/ui/menu/key-rows.ts';
 import Menu from '../../src/lib/ui/menu/Menu.svelte';
 import Meter from '../../src/lib/ui/display/Meter.svelte';
-import { menuPlacement } from '../../src/lib/ui/menu/menu-items.ts';
 import Pane from '../../src/lib/ui/frame/Pane.svelte';
 import { heldStop, nextStop } from '../../src/lib/ui/tree/roving.ts';
 import Search from '../../src/lib/ui/controls/Search.svelte';
@@ -79,23 +78,6 @@ function html<Props extends Record<string, unknown>>(
 ): string {
     return render(component, { context: clientContext(client), props }).body;
 }
-
-describe('Menu placement', () => {
-    it('anchors beside the containing rail and falls back to the button', () => {
-        const button = { right: 44, top: 100, height: 20, bottom: 120 };
-        const rail = { right: 52, top: 0, height: 800, bottom: 800 };
-        expect(menuPlacement(button, rail, 800)).toBe('left: 56px; top: 100px; max-height: 692px;');
-        expect(menuPlacement(button, null, 800)).toBe('left: 48px; top: 100px; max-height: 692px;');
-    });
-
-    it('anchors a button in the lower half by its bottom edge', () => {
-        const button = { right: 44, top: 600, height: 20, bottom: 620 };
-        const rail = { right: 52, top: 0, height: 800, bottom: 800 };
-        expect(menuPlacement(button, rail, 800)).toBe(
-            'left: 56px; bottom: 180px; max-height: 612px;'
-        );
-    });
-});
 
 describe('Card', () => {
     it('draws its title at the level it was given', () => {
@@ -830,9 +812,9 @@ describe('the marks a tab carries', () => {
         }
     });
 
-    // Revert: drop `class:unfocused`, `class:low` or `class:card` from the strip in
-    // ui/tabs/Tabs.svelte.
-    it('marks the strip unfocused, low and on the card surface only when asked', () => {
+    // Revert: drop `class:unfocused` from the strip in ui/tabs/Tabs.svelte.
+    it('marks the strip unfocused only when asked', () => {
+        // revert: src/lib/ui/tabs/Tabs.svelte:222 => class:unfocused={focused}
         const classes = (body: string): string =>
             /<div class="(strip[^"]*)"/.exec(body)?.[1].replace(/\s*svelte-\S+/g, '') ?? '';
         expect(classes(strip())).toBe('strip');
@@ -841,11 +823,9 @@ describe('the marks a tab carries', () => {
             active: 'one',
             onselect: noop,
             onclose: noop,
-            focused: false,
-            low: true,
-            surface: 'card'
+            focused: false
         });
-        expect(classes(asked)).toBe('strip unfocused low card');
+        expect(classes(asked)).toBe('strip unfocused');
     });
 
     // Revert: drop `class:bare` from ui/controls/ToolButton.svelte or from the opener of

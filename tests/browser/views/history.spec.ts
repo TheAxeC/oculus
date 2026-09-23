@@ -51,8 +51,8 @@ test('a manifest edit shows in History and its control puts the value back', asy
     await expect(page.getByRole('heading', { name: title })).toBeVisible();
 
     await page.getByRole('textbox', { name: labelOf(FIELD) }).fill(TYPED);
-    await page.getByRole('button', { name: t('editor.save') }).click();
-    await expect(page.getByText(t('editor.saved', FIELD))).toBeVisible();
+    await page.getByRole('button', { name: t('editor.save'), exact: true }).click();
+    await expect(page.getByText(t('editor.saved', FIELD), { exact: true })).toBeVisible();
     await expect.poll(() => lineOf()).toBe(TYPED);
 
     await openView(page, 'history', t('views.history'));

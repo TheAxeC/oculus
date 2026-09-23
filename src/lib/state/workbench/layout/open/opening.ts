@@ -1,10 +1,10 @@
 // Layer 2, client state. Showing a view: where a view asked for lands, which instance it lands in,
 // and what it does to the tab a single click opened.
 //
-// A view already open is activated where it is rather than opened twice, so the rail never leaves
-// two copies of one view behind. Where a new one lands is the pane the reader was last in, or a new
-// pane beside it when the caller asked for one, and a pane hidden inside a folded child is expanded
-// first, since opening a view into something invisible would look like nothing happening.
+// A view already open is activated where it is rather than opened twice, so opening a view never
+// leaves two copies of it behind. Where a new one lands is the pane the reader was last in, or a
+// new pane beside it when the caller asked for one, and a pane hidden inside a folded child is
+// expanded first, since opening a view into something invisible would look like nothing happening.
 
 import {
     activePath,
@@ -40,8 +40,8 @@ export function createOpening(
     keepPreview: (id: string) => void
 ): Opening {
     /**
-     * Show a view: the instance already open is activated, so the rail never opens a second copy of
-     * the same view, and otherwise a new instance opens in the pane holding the instance activated
+     * Show a view: the instance already open is activated, so no opener makes a second copy of the
+     * same view, and otherwise a new instance opens in the pane holding the instance activated
      * last. A pane hidden inside a folded child is expanded first, since opening a view into
      * something invisible would look like nothing happening.
      *

@@ -1,56 +1,35 @@
 <script lang="ts">
-    // Layer 3, shell. The strip down the left: one button per registered view, then the appearance
-    // controls at the foot. A click opens or activates the view in the pane a view lands in and a
-    // shift-click opens it in a new pane beside that one, which is the whole of what the rail
-    // decides; where a view then lands in the tree is the store's.
+    // Layer 3, shell. The strip down the left: one button per page of the `rail:` list of
+    // config/layout.yml, then the reader's bookmarks, then Search and Update at the foot. A page
+    // button shows its page, made from its arrangement the first time and switched to after that,
+    // which is the whole of what the rail decides; what a page holds is the layout store's, and
+    // every view is reached from the catalogue on the Views and Settings page. A button draws the
+    // badges of the views its page holds, in the order of the page's tabs, as each tab draws its
+    // own.
 
-    import {
-        DOC_PICK,
-        type Bookmark,
-        type DocEntry,
-        type NavGroup,
-        type Section,
-        arrange,
-        groupGlyph,
-        TEXT_ROW,
-        docState,
-        documentState,
-        isFlyout,
-        railStop
-    } from '$lib/shell/rail/rail';
-    import Glyph from '$lib/ui/controls/Glyph.svelte';
-    import Menu from '$lib/ui/menu/Menu.svelte';
-    import type { MenuItem } from '$lib/ui/menu/menu-items';
-    import RailAppearance from './RailAppearance.svelte';
+    import { documentState, railStop, type Bookmark } from '$lib/shell/rail/rail';
     import RailList from './RailList.svelte';
+    import Glyph from '$lib/ui/controls/Glyph.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import { railPageViews } from '$lib/state/workbench/navigation/pages';
+    import { badgeOf, type RegistrationBadge } from '$lib/views/registry';
     import { heldStop } from '$lib/ui/tree/roving';
+    import type { RailPage } from '$lib/state/workbench/navigation/rail';
     import { t } from '$lib/state/words/text';
-    import { wallpaperOnTheme } from '$lib/state/words/appearance';
-    import { badgeOf, registrationGlyph, registrationLabel } from '$lib/views/registry';
     import { useState } from '$lib/state/client/use';
 
     const client = useState();
-
     const {
-        layout: { openBeside, openView },
-        ui: { theme, textScale },
-        registry: { views }
+        layout: { currentPage, openRailPage, openView, pages: allPages },
+        registry: { viewFor }
     } = client;
 
     type Props = {
+        /** The rail's pages, read by the page out of the merged config and handed on. */
+        pages?: RailPage[];
         /**
-         * The `nav_groups`-shaped list from the merged config; the page reads it and passes it on.
-         */
-        groups?: NavGroup[];
-        /** The `bookmarks` list of the merged config; the page reads it and passes it on. */
-        bookmarks?: Bookmark[];
-        /** The `docs` list of the merged config: the hub documents drawn inside their groups. */
-        docs?: DocEntry[];
-        /**
-         * The reader's own bookmarks, from their own file rather than the configuration; the page
-         * reads them off the fs store and passes them on, and they are drawn after the configured
-         * ones under the same heading.
+         * The reader's own bookmarks, from ~/.oculus/bookmarks.yml; the page reads them off the fs
+         * store and passes them on, since the shell may not read that store itself.
          */
         saved?: Bookmark[];
         /** Open the workbench search overlay. */
@@ -64,26 +43,43 @@
         // A rail without a search or update owner still draws its buttons.
     }
 
-    let {
-        groups = [],
-        bookmarks = [],
-        docs = [],
-        saved = [],
-        onsearch = ignore,
-        onupdate = ignore
-    }: Props = $props();
+    let { pages = [], saved = [], onsearch = ignore, onupdate = ignore }: Props = $props();
+
+    /** How many rail pages a digit reaches: the bare digits 1 to 9, resolved in shell/keys. */
+    const SHORTCUTS = 9;
+
+    /** The rail key of the page on screen, which is the button drawn as the one in force. */
+    const shown = $derived(currentPage().rail);
 
     /**
-     * Every bookmark the Docs section draws: the configured ones first, then the reader's own. A
-     * saved one naming a file a configured one already names is left out, since the two would be
-     * one button pressed twice; the configured one wins, as it does everywhere else.
+     * The hover words of one page button: the digit that reaches it for the first nine, and the
+     * label alone after them.
      */
-    const marks = $derived([
-        ...bookmarks,
-        ...saved.filter(
-            (one) => !bookmarks.some((held) => held.root === one.root && held.path === one.path)
-        )
-    ]);
+    function hint(entry: RailPage, index: number): string {
+        return index < SHORTCUTS ? t('ui.page_shortcut', entry.label, index + 1) : entry.label;
+    }
+
+    /**
+     * The badges one page button draws: those of the views its page holds, in the order of the
+     * page's tabs, leaving out a view whose badge is empty.
+     */
+    function badgesOf(entry: RailPage): RegistrationBadge[] {
+        return railPageViews(allPages(), entry.page, entry.node).flatMap((id) => {
+            const found = viewFor(id);
+            if (found === undefined) return [];
+            const badge = badgeOf(found, client);
+            return badge.text === '' && badge.glyph === '' ? [] : [badge];
+        });
+    }
+
+    /**
+     * The status pair for a badge's tone; absent leaves the accent pair in the stylesheet.
+     */
+    function badgeStyle(tone: string | undefined): string | undefined {
+        return tone === undefined
+            ? undefined
+            : `--badge-bg: var(--c-${tone}); --badge-fg: var(--on-c-${tone})`;
+    }
 
     /**
      * What one bookmark opens as, which the bookmark itself says. The file view is given the root,
@@ -98,117 +94,16 @@
         openView('document', documentState(mark));
     }
 
-    /* A view registered as not listed (the editor, a project, a document) is opened from a card or
-       a bookmark and has nothing to show when opened bare, so the rail draws no button for it. */
-    const sections = $derived(
-        arrange(
-            views().filter((view) => view.listed !== false),
-            groups,
-            docs
-        )
-    );
-
-    /** A plain click opens the view where a view lands; a shift-click opens it in a pane beside. */
-    function open(view: string, event: MouseEvent): void {
-        if (event.shiftKey) openBeside(view);
-        else openView(view);
-    }
-
-    /** The view a configured hub document opens in, one instance per path. */
-    const DOC_VIEW = 'doc';
-
-    /** The same two paths for a document: where a view lands, or in a pane beside it. */
-    function openDoc(entry: DocEntry, event: MouseEvent): void {
-        if (event.shiftKey) openBeside(DOC_VIEW, docState(entry));
-        else openView(DOC_VIEW, docState(entry));
-    }
-
-    /**
-     * What picking one choice of a group's list means: a document by its path, or a view by its id.
-     */
-    function pick(section: Section, id: string, event: MouseEvent): void {
-        if (!id.startsWith(DOC_PICK)) {
-            open(id, event);
-            return;
-        }
-        const path = id.slice(DOC_PICK.length);
-        const entry = section.docs.find((one) => one.path === path);
-        if (entry !== undefined) openDoc(entry, event);
-    }
-
-    /**
-     * The entries of one group as the choices of its list: its views with their own glyph and
-     * words, then its documents, which carry the document glyph and no badge.
-     */
-    function groupItems(section: Section): MenuItem[] {
-        const items: MenuItem[] = section.items.map((view) => {
-            const badge = badgeOf(view, client);
-            return {
-                id: view.id,
-                label: registrationLabel(view),
-                glyph: registrationGlyph(view),
-                badge: badge.text,
-                badgeGlyph: badge.glyph,
-                badgeTone: badge.tone,
-                badgeTitle: badge.text === '' ? undefined : badge.title
-            };
-        });
-        return [
-            ...items,
-            ...section.docs.map((entry) => ({
-                id: `${DOC_PICK}${entry.path}`,
-                label: entry.label,
-                glyph: t('views.doc_glyph')
-            }))
-        ];
-    }
-
-    /**
-     * The status pair for a registration's badge; absent leaves the accent pair in the stylesheet.
-     */
-    function badgeStyle(tone: string | undefined): string | undefined {
-        return tone === undefined
-            ? undefined
-            : `--badge-bg: var(--c-${tone}); --badge-fg: var(--on-c-${tone})`;
-    }
-
-    /**
-     * The wallpaper toggle is drawn only where there is one to switch: it is config and a theme.
-     */
-    const offersWallpaper = $derived(wallpaperOnTheme(theme()));
-
-    /**
-     * The two text steps say what they cannot do, and a control that cannot be pressed is no stop.
-     */
-    const canShrink = $derived((textScale() ?? 1) > 0.7);
-    const canGrow = $derived((textScale() ?? 1) < 1.6);
-    const canReset = $derived(textScale() !== null);
-
     /**
      * Every control of the rail that takes the keyboard, in the order they are drawn. The rail is
      * one stop of the browser's focus order, so this list is the ring the arrow keys move along and
-     * the name of each entry is what its button renders for this component to find it by. A control
-     * that is not pressable is left out, since focus put on it would land nowhere.
+     * the name of each entry is what its button renders for this component to find it by.
      */
     const stops = $derived([
-        ...sections.flatMap((section, index) =>
-            section.label !== null && isFlyout(section)
-                ? [`group:${index}`]
-                : [
-                      ...section.items.map((view) => `view:${view.id}`),
-                      ...section.docs.map((entry) => `doc:${entry.path}`)
-                  ]
-        ),
-        ...marks.map((_, at) => `mark:${at}`),
+        ...pages.map((entry) => `page:${entry.page}`),
+        ...saved.map((_, at) => `mark:${at}`),
         'search',
-        'update',
-        'theme',
-        ...(canShrink ? ['text-smaller'] : []),
-        ...(canReset ? ['text-reset'] : []),
-        ...(canGrow ? ['text-larger'] : []),
-        'crt',
-        ...(offersWallpaper ? ['wall'] : []),
-        'unicode'
+        'update'
     ]);
 
     /** The control the rail's stop is on. A stop whose control has gone falls back to the first. */
@@ -229,10 +124,9 @@
      */
     let ring: string[] = [];
 
-    // A control the reader's own press makes unavailable (the reset once the text size is back, a
-    // step at its end, the wallpaper toggle under a theme without one) leaves the ring under the
-    // focus, and the browser drops the focus to the document. The stop moves to the control that
-    // took its place and takes the keyboard back with it.
+    // A control that leaves the ring under the focus (a page taken out of the rail list by a save,
+    // a bookmark taken away in the Files view) drops the focus to the document. The stop moves to
+    // the control that took its place and takes the keyboard back with it.
     $effect(() => {
         const now = stops;
         const was = ring;
@@ -253,16 +147,13 @@
     }
 
     /**
-     * Take the keyboard back for the stop, and only where nothing else holds it. A control disabled
-     * under the focus is left holding it until the browser hands it to the document, so both that
-     * control and the document count as nothing.
+     * Take the keyboard back for the stop, and only where nothing else holds it: the control that
+     * went took the focus with it, and the browser left it on the document.
      */
     function recoverStop(id: string): void {
         queueMicrotask(() => {
             const at = document.activeElement;
-            const loose =
-                at === null || at === document.body || !at.isConnected || at.matches('[disabled]');
-            if (loose) focusStop(id);
+            if (at === null || at === document.body || !at.isConnected) focusStop(id);
         });
     }
 
@@ -282,14 +173,13 @@
 
     /**
      * The keyboard on one control of the ring: the up and down arrows carry the stop along the
-     * rail, wrapping at either end, and the left and right arrows along the foot's row of text
-     * steps, by `railStop` of shell/rail/rail.ts. Each control answers for itself, so an open
-     * list's own arrows are never this, and a key held with a modifier belongs to the shell.
+     * rail, wrapping at either end, by `railStop` of shell/rail/rail.ts. Each control answers for
+     * itself, and a key held with a modifier belongs to the shell.
      */
     function ringKeys(id: string): (event: KeyboardEvent) => void {
         return (event: KeyboardEvent) => {
             if (event.metaKey || event.ctrlKey || event.altKey) return;
-            const next = railStop(event.key, id, stops, TEXT_ROW);
+            const next = railStop(event.key, id, stops);
             if (next === null) return;
             event.preventDefault();
             held = next;
@@ -311,14 +201,19 @@
 
     /**
      * The focus going to another control is the reader leaving the rail, and so is the focus going
-     * nowhere from a control that can still be pressed, which is a click on the page's blank space.
-     * The one departure the rail keeps holding through is a control disabled under the keyboard,
-     * whose focus the browser hands to the document on its own.
+     * nowhere from a control still on the page, which is a click on the page's blank space. The one
+     * departure the rail keeps holding through is its control leaving the page under the focus,
+     * which is told apart once the update that took it away is done.
      */
     function departed(event: FocusEvent): void {
+        if (event.relatedTarget !== null) {
+            holding = false;
+            return;
+        }
         const from = event.target;
-        const disabled = from instanceof HTMLElement && from.matches('[disabled]');
-        if (event.relatedTarget !== null || !disabled) holding = false;
+        queueMicrotask(() => {
+            if (!(from instanceof HTMLElement) || from.isConnected) holding = false;
+        });
     }
 </script>
 
@@ -338,99 +233,48 @@
         onfocusout={departed}
     >
         <RailList>
-            <!-- Keyed by position: two config groups may carry the same label, and a duplicate key
-             would be an error rather than a repeated heading. -->
-            {#each sections as section, index (index)}
-                {@const label = section.label}
-                <!-- A large group is one button with a list beside it, so the rail does not grow an
-                     icon per view; a small one stays a heading over its buttons. The list opens
-                     where the theme menu at the foot does, since `compact` is what fixes it beside
-                     the rail. -->
-                {#if label !== null && isFlyout(section)}
-                    <div class="flyout" data-group={label} data-chord={section.chord}>
-                        <p class="group">{label}</p>
-                        <Menu
-                            {label}
-                            glyph={groupGlyph(section)}
-                            compact
-                            rail
-                            stacked
-                            stop={`group:${index}`}
-                            tabindex={stopIndex(`group:${index}`)}
-                            onkeydown={ringKeys(`group:${index}`)}
-                            items={groupItems(section)}
-                            onpick={(id: string, event: MouseEvent) => pick(section, id, event)}
-                        />
-                    </div>
-                {:else}
-                    {#if label !== null}
-                        <p class="group">{label}</p>
+            <!-- Keyed by the arrangement key, which the rule over the list holds unique. -->
+            {#each pages as entry, index (entry.page)}
+                {@const badges = badgesOf(entry)}
+                <div class="control" data-rail-page={entry.page}>
+                    <ToolButton
+                        label={entry.label}
+                        title={hint(entry, index)}
+                        glyph={entry.glyph}
+                        active={shown === entry.page}
+                        compact
+                        rail
+                        stacked
+                        stop={`page:${entry.page}`}
+                        tabindex={stopIndex(`page:${entry.page}`)}
+                        onkeydown={ringKeys(`page:${entry.page}`)}
+                        onclick={() => openRailPage(entry.page, entry.label, entry.node)}
+                    />
+                    {#if badges.length > 0}
+                        <span class="badges" aria-hidden="true" data-rail-badges>
+                            <!-- Keyed by position: the list is the page's views in tab order. -->
+                            {#each badges as badge, at (at)}
+                                <span
+                                    class="badge"
+                                    style={badgeStyle(badge.tone)}
+                                    title={badge.title}
+                                >
+                                    {#if badge.glyph !== ''}<Glyph
+                                            name={badge.glyph}
+                                        />{/if}{badge.text}
+                                </span>
+                            {/each}
+                        </span>
                     {/if}
-                    {#each section.items as view (view.id)}
-                        {@const badge = badgeOf(view, client)}
-                        <div class="control">
-                            <ToolButton
-                                label={registrationLabel(view)}
-                                glyph={registrationGlyph(view)}
-                                dataView={view.id}
-                                compact
-                                rail
-                                stacked
-                                stop={`view:${view.id}`}
-                                tabindex={stopIndex(`view:${view.id}`)}
-                                onkeydown={ringKeys(`view:${view.id}`)}
-                                onclick={(event: MouseEvent) => open(view.id, event)}
-                            />
-                            {#if badge.glyph !== ''}
-                                <span
-                                    class="badge"
-                                    style={badgeStyle(badge.tone)}
-                                    title={badge.title}
-                                    aria-hidden="true"
-                                >
-                                    <Glyph name={badge.glyph} />{badge.text}
-                                </span>
-                            {:else if badge.text !== ''}
-                                <span
-                                    class="badge"
-                                    style={badgeStyle(badge.tone)}
-                                    title={badge.title}
-                                    aria-hidden="true"
-                                >
-                                    {badge.text}
-                                </span>
-                            {/if}
-                        </div>
-                    {/each}
-                    <!-- The group's documents, after its views: a configured hub document is not a
-                     registration, so it is drawn here rather than by the loop above. -->
-                    {#each section.docs as entry (entry.path)}
-                        <div class="control">
-                            <ToolButton
-                                label={entry.label}
-                                glyph={t('views.doc_glyph')}
-                                dataDoc={entry.path}
-                                compact
-                                rail
-                                stacked
-                                stop={`doc:${entry.path}`}
-                                tabindex={stopIndex(`doc:${entry.path}`)}
-                                onkeydown={ringKeys(`doc:${entry.path}`)}
-                                onclick={(event: MouseEvent) => openDoc(entry, event)}
-                            />
-                        </div>
-                    {/each}
-                {/if}
+                </div>
             {/each}
 
-            <!-- The reader's own bookmarks. They are not registrations, so they sit under a heading
-                 of their own rather than in a section arrange() built. -->
-            {#if marks.length > 0}
+            <!-- The reader's own bookmarks, which the Files view adds and takes away. -->
+            {#if saved.length > 0}
                 <p class="group">{t('ui.docs')}</p>
-                <!-- Keyed by position, as the sections above are: two of the reader's own bookmarks
-                     may name one file under two labels, and a duplicate key would be an error
-                     rather than a second button. -->
-                {#each marks as mark, at (at)}
+                <!-- Keyed by position: two bookmarks may name one file under two labels, and a
+                     duplicate key would be an error rather than a second button. -->
+                {#each saved as mark, at (at)}
                     <div class="control">
                         <ToolButton
                             label={mark.label}
@@ -449,16 +293,38 @@
             {/if}
         </RailList>
 
-        <RailAppearance
-            {stopIndex}
-            {ringKeys}
-            {canShrink}
-            {canGrow}
-            {canReset}
-            {offersWallpaper}
-            {onsearch}
-            {onupdate}
-        />
+        <!-- Every control draws its glyph over a short name of its own, so the foot reads without a
+             hover. -->
+        <div class="controls" data-foot>
+            <div data-action="search">
+                <ToolButton
+                    label={t('app.search')}
+                    title={t('app.search_tip')}
+                    glyph="cmd"
+                    compact
+                    rail
+                    stacked
+                    stop="search"
+                    tabindex={stopIndex('search')}
+                    onkeydown={ringKeys('search')}
+                    onclick={onsearch}
+                />
+            </div>
+            <div data-action="update">
+                <ToolButton
+                    label={t('app.update')}
+                    title={t('app.update_tip')}
+                    glyph="refresh"
+                    compact
+                    rail
+                    stacked
+                    stop="update"
+                    tabindex={stopIndex('update')}
+                    onkeydown={ringKeys('update')}
+                    onclick={onupdate}
+                />
+            </div>
+        </div>
     </div>
 </nav>
 
@@ -472,13 +338,13 @@
         box-sizing: border-box;
         background: var(--bg);
         border-right: 1px solid var(--line);
-        /* The two menus at the foot open beside the rail; hiding overflow here would clip them to
-           the rail's width. The view list scrolls on its own. */
+        /* A tooltip opens beside the rail; hiding overflow here would clip it to the rail's width.
+           The list scrolls on its own. */
         overflow: visible;
     }
 
-    /* The controls fill the rail between its edges: the list of views at the top and the appearance
-       controls at the foot. */
+    /* The controls fill the rail between its edges: the pages and bookmarks at the top and the two
+       openers at the foot. */
     .ring {
         display: flex;
         flex-direction: column;
@@ -486,12 +352,6 @@
         flex: 1 1 auto;
         min-height: 0;
         overflow: visible;
-    }
-
-    /* The group's button is a Menu, which is a flex row of its own; this gives it the top margin a
-       heading would have had, so a flyout sits where the heading it replaces sat. */
-    .flyout {
-        margin-top: 6px;
     }
 
     .group {
@@ -509,10 +369,18 @@
         width: 100%;
     }
 
+    /* The badges of a page button sit on a row of their own under it, one after another in the
+       order of the page's tabs, and wrap rather than run over the button's name. */
+    .badges {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 1px;
+        margin-top: 1px;
+        pointer-events: none;
+    }
+
     .badge {
-        position: absolute;
-        right: -2px;
-        bottom: -2px;
         padding: 0 3px;
         border-radius: var(--radius-pill);
         background: var(--badge-bg, var(--chip));
@@ -521,14 +389,21 @@
         font-size: var(--fs-3xs);
     }
 
+    /* On a short window the list is what gives way, and it scrolls. Without the flex-shrink the
+       foot shrinks with it and its buttons pile over each other. */
+    .controls {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        min-height: 0;
+        flex-shrink: 0;
+    }
+
     /* Over a wallpaper the rail goes translucent with the panes, and takes the pane's colour while
-       it does: the two are one surface to the eye once the picture shows through them. The filter
-       makes the rail the stacking context of every fixed thing it holds, its flyout lists and its
-       tooltips, so the rail carries the order that context paints in: above the panes beside it,
-       and below the drag layer at 10 and the overlays above that. */
+       it does: the two are one surface to the eye once the picture shows through them. The rail
+       holds nothing drawn past its own box, since a tooltip's bubble is drawn on the body, so it
+       needs no depth over the panes beside it. */
     :global(body.wall) .rail {
-        position: relative;
-        z-index: 5;
         background: color-mix(in srgb, var(--panel) var(--wall-panel), transparent);
         backdrop-filter: blur(var(--wall-blur));
     }

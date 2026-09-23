@@ -46,3 +46,4 @@ text:
         kind_deck: deck
         kind_new_idea: idea scaffolded
         kind_audit_mute: audit mute
+        kind_rail: rail list

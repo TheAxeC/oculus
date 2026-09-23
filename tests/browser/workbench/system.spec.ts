@@ -16,7 +16,7 @@
 // covered by tests/browser/sources/source.spec.ts.
 
 import { expect, test, type Page } from '@playwright/test';
-import { boot, openView } from '../helpers/rail.ts';
+import { SHOWN_VIEW, boot, openView, pickTheme, showRailPage } from '../helpers/rail.ts';
 import { removeFromHub, writeHubFile } from '../helpers/hub.ts';
 import { t, tabNamed } from '../helpers/words.ts';
 import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
@@ -74,9 +74,8 @@ test('the manual draws the three diagrams in the colour of its prose, light and 
     // revert: src/lib/views/system/help/Diagram.svelte:74 => color: black;
     await boot(page);
     const colours: string[] = [];
-    for (const theme of [/^\S+ light$/, /^\S+ dark$/]) {
-        await page.getByRole('button', { name: t('ui.theme') }).click();
-        await page.getByRole('menuitem', { name: theme }).click();
+    for (const theme of ['light', 'dark']) {
+        await pickTheme(page, theme);
         await openView(page, 'help', t('views.help'));
         await expect(page.locator('[data-diagram]')).toHaveCount(NAMES.length);
         for (const name of NAMES) {
@@ -265,22 +264,12 @@ test('every configuration card is as tall as what it holds, and the list scrolls
     expect(cut).toEqual([]);
 });
 
-test('a hub document opens from its group in the rail', async ({ page }) => {
+test('a hub document opens from its group in the catalogue', async ({ page }) => {
     writeHubFile(HPC.path, HOWTO);
     try {
         await boot(page);
-        // The System group holds more than four entries, so its document is a choice of its list.
-        const groups = page.locator('nav [data-group]');
-        const many = await groups.count();
-        for (let at = 0; at < many; at += 1) {
-            await groups.nth(at).getByRole('button').first().click();
-            const item = page.getByRole('menuitem', { name: HPC.label, exact: true });
-            if ((await item.count()) > 0) {
-                await item.click();
-                break;
-            }
-            await page.keyboard.press('Escape');
-        }
+        await showRailPage(page, 'views');
+        await page.locator(`${SHOWN_VIEW} [data-catalogue] button[data-doc="${HPC.path}"]`).click();
 
         await expect(page.getByRole('tab', { name: HPC.label })).toBeVisible();
         await expect(page.getByRole('heading', { name: 'The cluster' })).toBeVisible();

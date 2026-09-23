@@ -92,6 +92,12 @@ const VIEWS: Record<string, string> = {
     'academic/slides/Slides.svelte': '.intro=fs-md | .at=fs-xs | .said=fs-md',
     'sources/source/Source.svelte': '.message=fs-sm | .locked=fs-sm',
     'system/status/Status.svelte': '.view=fs-md',
+    'system/workbench/Appearance.svelte': 'h3=fs-sm | .caption, .value=fs-sm',
+    'system/workbench/Catalogue.svelte':
+        '.hint=fs-sm | h3=fs-sm | .chord, .key=fs-3xs | .badge=fs-3xs',
+    'system/workbench/Pages.svelte': '',
+    'system/workbench/RailEditor.svelte': 'h3=fs-sm | .empty, .outcome=fs-sm | .problems=fs-sm',
+    'system/workbench/Settings.svelte': '',
     'sources/venues/Venues.svelte': '.said=fs-md | .empty=fs-md',
     'boards/collection/Coverage.svelte': '.label=fs-xxs',
     'boards/collection/Software.svelte': '.label=fs-xxs | .kind=fs-xxs | .none=fs-xs',
@@ -214,6 +220,7 @@ const PASS_THROUGH: Record<string, string> = {
     'src/lib/ui/frame/Card.svelte':
         '.title=fs-xl | .meta :global(.chip), .meta :global(.tag)=fs-xs | .body=fs-md | .footer=fs-sm | :global(body.rice) .title=fs-md',
     'src/lib/ui/controls/Chip.svelte': '.chip=fs-sm',
+    'src/lib/ui/controls/CloseQuestion.svelte': '',
     'src/lib/ui/tree/Disclosure.svelte': '.disclosure=fs-sm',
     'src/lib/views/shared/prose/Intro.svelte': '.intro=fs-md',
     'src/lib/ui/display/Table.svelte': 'table=fs-md | th=fs-xs',
@@ -228,7 +235,7 @@ const PASS_THROUGH: Record<string, string> = {
         '.tab-badge=fs-xs | .cells=fs-xxs | .face=fs-lg | .close=fs-lg',
     'src/lib/ui/menu/Menu.svelte': '.heading=fs-xxs | .item=fs-sm | .item-badge=fs-3xs',
     'src/lib/ui/menu/MenuOpener.svelte':
-        '.opener=fs-sm | .opener.compact=fs-lg | .opener.bare=fs-lg | .opener.rail-control=fs-xl | .opener.stacked :global(.label)=fs-3xs',
+        '.opener=fs-sm | .opener.compact=fs-lg | .opener.bare=fs-lg',
     'src/lib/ui/controls/Confirm.svelte': '.message=fs-sm | .detail=fs-xs | .row button=fs-sm',
     'src/lib/ui/controls/Glyph.svelte': '',
     'src/lib/ui/controls/Search.svelte': '.search=fs-sm',
@@ -250,6 +257,7 @@ const PASS_THROUGH: Record<string, string> = {
     'src/lib/ui/tree/TreeSection.svelte': '',
     'src/lib/ui/tree/TreeView.svelte': '',
     'src/lib/shell/rail/ActivityRail.svelte': '.group=fs-3xs | .badge=fs-3xs',
+    'src/lib/shell/status/StatusBar.svelte': '.bar=fs-xs',
     'src/lib/shell/Workbench.svelte': ''
 };
 
@@ -263,7 +271,7 @@ describe('the view type scale', () => {
         ).toEqual(Object.keys(VIEWS).sort());
     });
 
-    // revert: tests/views/whole/type-scale.test.ts:250 => delete
+    // revert: tests/views/whole/type-scale.test.ts:257 => delete
     it('audits that every ui component is listed in the pass-through audit', () => {
         const ui = 'src/lib/ui';
         expect(files(ui).sort()).toEqual(

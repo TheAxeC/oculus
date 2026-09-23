@@ -5,7 +5,7 @@ text:
         desc_behavior: "Thresholds, horizons and cadences: read limits, stale days, the context window, the Live HPC settings, the audit's waiting statuses and mute list, the source editor's `editor.paint_limit_kb`, the update tasks' `tasks.skip_permissions`, the application `open.program_ext` names for each extension that may open, git and chat."
         desc_glyphs: 'The glyph vocabulary, one character per name, and the ASCII stand-in a terminal theme draws instead.'
         desc_icons: 'The line icon each glyph name is drawn as, one row per name in the glyph vocabulary.'
-        desc_layout: 'How things are arranged: the rail groups, the hub documents, the board chrome, the tab rollups, the live badges and the saved arrangements.'
+        desc_layout: "How things are arranged: the rail's pages and the arrangements each starts as, the view catalogue's groups, the hub documents, the board chrome, the tab rollups and the live badges."
         desc_local: "This machine's own values, read on their own and never merged into the configuration: the hub path, the port, the ssh alias of the cluster, the Claude command, the account folders, the calendar accounts, the mail accounts and where the machine-local state is kept."
         desc_manifest_schema: 'The project.yml edit form as data: its sections, its fields, the widget each field is edited by, and where a widget takes its choices from.'
         desc_meta: 'The tool identity: the title and the subtitle the window carries.'

@@ -1,4 +1,4 @@
-// Layer 2, client-state tests. Rail badges count configured collection states and feed urgency.
+// Layer 2, client-state tests. View badges count configured collection states and feed urgency.
 // Pure cases isolate the arithmetic; the installed-store case proves channel precedence and
 // fallback.
 
@@ -70,7 +70,7 @@ afterEach(() => {
     vi.unstubAllGlobals();
 });
 
-describe('rail badge counts', () => {
+describe('view badge counts', () => {
     it('splits project types in the supplied order and keeps zero cells', () => {
         expect(
             typeSplit(

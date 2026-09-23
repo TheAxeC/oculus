@@ -28,7 +28,7 @@
     //
     // The button that opens the list, in each of its looks, is MenuOpener.svelte beside this.
 
-    import { type MenuItem, menuLevel, menuPlacement } from '$lib/ui/menu/menu-items';
+    import { type MenuItem, menuLevel } from '$lib/ui/menu/menu-items';
     import Glyph from '../controls/Glyph.svelte';
     import MenuOpener from './MenuOpener.svelte';
     import { t } from '$lib/state/words/text';
@@ -41,9 +41,7 @@
         groups?: MenuGroup[];
         /**
          * What picking a choice means. The pointer event is passed on so a caller can read its
-         * modifiers: the rail opens a view where a view lands, and in a pane beside it when shift
-         * is held, whether the view was picked from a button or from a group's list. A choice of a
-         * group names that group's id as the third argument.
+         * modifiers. A choice of a group names that group's id as the third argument.
          */
         onpick: (id: string, event: MouseEvent, group?: string) => void;
         /** A glyph name drawn before the label, or nothing. */
@@ -64,16 +62,12 @@
          * right edge of the window lines up `right`, or its list runs off the screen.
          */
         align?: 'left' | 'right';
-        /** Use the activity rail's one full-width, 34 px opener box. */
-        rail?: boolean;
         /**
          * The opener as a strip's bare icon box, the same box a bare ToolButton draws: the glyph
          * alone, no border and no fill until the pointer is over it. The list it opens is
          * unchanged.
          */
         bare?: boolean;
-        /** Draw a compact rail glyph above its visible label instead of hiding the label. */
-        stacked?: boolean;
         /**
          * The opener's place in the browser's focus order, for a strip that is one stop: 0 for the
          * control at the stop and -1 for the rest. An opener with none is an ordinary stop.
@@ -96,9 +90,7 @@
         compact = false,
         placement = 'up',
         align = 'left',
-        rail = false,
         bare = false,
-        stacked = false,
         tabindex,
         stop,
         onkeydown
@@ -151,29 +143,6 @@
         return () => document.removeEventListener('pointerdown', outside, true);
     });
 
-    /**
-     * Whether the list opens beside its button rather than above or below it: a compact menu
-     * opening upward sits in the rail.
-     */
-    const beside = $derived(compact && placement !== 'down');
-
-    /** The inline position of a list opening beside the rail, measured when it opens. */
-    let placed = $state('');
-
-    /**
-     * Where a list beside the rail goes, in window coordinates: level with its button, hanging down
-     * from the button's top when the button is in the upper half of the window and rising from its
-     * bottom when it is in the lower half, and never taller than the room on that side. A list of
-     * seventeen themes at the foot therefore grows upward and scrolls, and a group's list at the
-     * top of the rail hangs beside its button rather than at the foot of the window.
-     */
-    function place(): string {
-        if (!beside || button === undefined || typeof window === 'undefined') return '';
-        const rect = button.getBoundingClientRect();
-        const rail = button.closest('[data-rail]')?.getBoundingClientRect() ?? null;
-        return menuPlacement(rect, rail, window.innerHeight);
-    }
-
     /** The hue of one item's dot, as the one inline style this primitive writes. */
     function dotStyle(tone: string): string {
         return `--tone: var(--c-${tone})`;
@@ -190,7 +159,6 @@
         open = !open;
         if (open) {
             opened = null;
-            placed = place();
             focusAt(0);
         }
     }
@@ -294,9 +262,7 @@
         bind:button
         {glyph}
         {compact}
-        {rail}
         {bare}
-        {stacked}
         {tabindex}
         {stop}
         {onkeydown}
@@ -304,11 +270,9 @@
     {#if open}
         <div
             class="list"
-            class:beside
             class:down={placement === 'down'}
             class:right={align === 'right'}
             class:grouped={groups !== undefined}
-            style={placed}
             role="menu"
             aria-label={label}
         >
@@ -387,24 +351,6 @@
     .list.right {
         left: auto;
         right: 0;
-    }
-
-    /* A compact menu that opens upward sits in the rail, a strip too narrow for the list, so the
-       list opens beside the rail rather than above the button: fixed to the window, level with its
-       button, and bounded by the room on that side, all of which place() measures when it opens and
-       writes as the inline style. Under a wallpaper the rail's backdrop filter makes the rail the
-       containing block instead of the viewport; the rail spans the window's height from its left
-       edge, so the two agree. A compact menu that opens downward (a pane's menu) keeps its
-       placement. The list carries `beside` itself: the tooltip wrapper sits between the opener and
-       the list, so a sibling selector on the opener would not reach it. */
-    .list.beside {
-        position: fixed;
-        right: auto;
-        top: auto;
-        bottom: auto;
-        overflow-y: auto;
-        box-sizing: border-box;
-        margin: 0;
     }
 
     /* A list of several headed groups can be longer than the pane under it, so it scrolls. */

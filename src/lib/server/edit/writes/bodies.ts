@@ -99,6 +99,9 @@ export type LinkedinPostWrite = { kind: 'linkedin-post'; file: string };
 /** One audit finding parked, or brought back, by the signature the scan gave it. */
 export type AuditMuteWrite = { kind: 'audit-mute'; signature: string; muted: boolean };
 
+/** The rail's whole list of pages, in order, each entry a label, a glyph name and a page key. */
+export type RailWrite = { kind: 'rail'; rail: { label: string; glyph: string; page: string }[] };
+
 const ACTIONS: SubtaskAction[] = ['done', 'reopen', 'snooze', 'delete'];
 
 /** The `target` of a subtask body: `{ id }` for a manifest, `{ collection, id }` for an entry. */
@@ -317,4 +320,23 @@ export function auditMuteWrite(body: unknown): AuditMuteWrite | null {
     if (typeof body.signature !== 'string' || body.signature === '') return null;
     if (typeof body.muted !== 'boolean') return null;
     return { kind: 'audit-mute', signature: body.signature, muted: body.muted };
+}
+
+/**
+ * The body as a rail write, or null when it is not one: a list of maps of three strings. What the
+ * strings may be is the writer's to check, against the file it writes.
+ */
+export function railWrite(body: unknown): RailWrite | null {
+    if (!isMap(body) || body.kind !== 'rail') return null;
+    if (!Array.isArray(body.rail)) return null;
+    const rail: RailWrite['rail'] = [];
+    for (const row of body.rail) {
+        if (!isMap(row)) return null;
+        const { label, glyph, page } = row;
+        if (typeof label !== 'string' || typeof glyph !== 'string' || typeof page !== 'string') {
+            return null;
+        }
+        rail.push({ label, glyph, page });
+    }
+    return { kind: 'rail', rail };
 }

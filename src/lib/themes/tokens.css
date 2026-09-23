@@ -97,11 +97,9 @@
        multieditortabscontrol.css), the gap from glyph to label (6, iconlabel.css), the width the
        close control sits centred in (28) and that control's own box (a 16 icon padded 2, both
        multieditortabscontrol.css). The accent line on the current tab's top edge is a hairline and
-       does not grow. A low strip is a tab strip at a lower height, for a strip that sits above
-       panes rather than heading one. The unsaved dot is drawn from the bullet icon, whose dot is a
-       sixth of its box, so the box is set in ems of the text. */
+       does not grow. The unsaved dot is drawn from the bullet icon, whose dot is a sixth of its
+       box, so the box is set in ems of the text. */
     --tab-height: calc(35px * var(--text-scale, 1));
-    --tab-height-low: calc(30px * var(--text-scale, 1));
     --tab-pad: calc(10px * var(--text-scale, 1));
     --tab-icon-gap: calc(6px * var(--text-scale, 1));
     --tab-actions: calc(28px * var(--text-scale, 1));

@@ -10,7 +10,7 @@ import { chmodSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
 import { expect, test } from '@playwright/test';
-import { boot, openView } from '../helpers/rail.ts';
+import { boot, makePage, openView, pagesRow, showRailPage } from '../helpers/rail.ts';
 import { keepServedFiles } from '../helpers/files.ts';
 import { t, tabNamed } from '../helpers/words.ts';
 import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
@@ -254,10 +254,7 @@ test('a pane holding one tab with an unsaved edit asks before its menu closes it
 
 test('a page holding one tab with an unsaved edit asks before it closes', async ({ page }) => {
     await boot(page);
-    const strip = page.getByRole('region', { name: t('ui.pages') });
-    await strip.getByRole('button', { name: t('ui.page_menu') }).click();
-    await page.getByRole('menuitem', { name: t('ui.page_new') }).click();
-    await expect(strip.getByRole('tab')).toHaveCount(2);
+    await makePage(page);
 
     // The new page is brought down to one tab, the source tab, with an unsaved edit in it.
     await openView(page, 'radar', t('views.radar'));
@@ -280,19 +277,19 @@ test('a page holding one tab with an unsaved edit asks before it closes', async 
     await page.keyboard.press('End');
     await page.keyboard.type(' typed-in-the-spec');
 
-    // The page's own close: one tab, so the words are the tab's and not the page's count.
-    await strip.getByRole('tab', { name: t('ui.page_default', 2) }).hover();
-    await strip
-        .getByRole('button', { name: t('ui.close_tab') })
-        .last()
-        .click();
+    // The page's own close, from the Pages view: one tab, so the words are the tab's and not the
+    // page's count.
+    await showRailPage(page, 'views');
+    const made = pagesRow(page, t('ui.page_default', 3));
+    await made.getByRole('button', { name: t('workbench.pages_close') }).click();
     const asked = page.getByRole('alertdialog');
     await expect(asked).toBeVisible();
     await expect(asked).toContainText(t('ui.tab_close_dirty'));
     await asked.getByRole('button', { name: t('ui.confirm_cancel'), exact: true }).click();
     // cancel closes the question and keeps the page
     await expect(asked).toHaveCount(0);
-    await expect(strip.getByRole('tab')).toHaveCount(2);
+    await expect(made).toBeVisible();
+    await made.getByRole('button', { name: t('workbench.pages_open') }).click();
     await expect(editor.getByRole('textbox')).toHaveValue(/ typed-in-the-spec$/);
 
     // Nothing is saved: the demo hub's feed file stays as it was.

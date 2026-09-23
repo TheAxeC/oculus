@@ -12,7 +12,7 @@
 
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { readHubFile, shortOf, writeHubFile } from '../helpers/hub.ts';
-import { boot, openView } from '../helpers/rail.ts';
+import { boot, inSettings, openView, pickTheme } from '../helpers/rail.ts';
 import { t, vocabulary } from '../helpers/words.ts';
 import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
 import { ratio } from '../../../src/lib/themes/derive.ts';
@@ -263,11 +263,7 @@ test('a lane header paints its lane tokens at full opacity, in light and in a te
     expect(await page.evaluate(() => document.body.className.includes('rice'))).toBe(false);
 
     for (const theme of ['light', 'mocha']) {
-        if (theme !== 'light') {
-            await page.getByRole('button', { name: t('ui.theme') }).click();
-            await page.getByRole('menuitem', { name: new RegExp(theme) }).click();
-            await expect(page.locator('body')).toHaveClass(new RegExp(`\\b${theme}\\b`));
-        }
+        if (theme !== 'light') await pickTheme(page, theme);
         // Revert: draw the header in LaneHead.svelte on `--c-<hue>-txt` and the panel, or take its
         // background off, and the painted colours stop matching the lane tokens.
         const read = await header(page, LANE);
@@ -288,15 +284,13 @@ test('every word of every lane and column header sits on its own lane surface, r
     await boot(page);
     await openView(page, 'focus', t('views.focus'));
     const known = headerHues();
-    // A theme is picked by its label, the picker's glyph and then the name alone, since other
-    // labels end in the same word ("gruvbox light"); the light theme puts no class on the body.
-    const theme = async (name: string): Promise<void> => {
-        await page.getByRole('button', { name: t('ui.theme') }).click();
-        await page.getByRole('menuitem', { name: new RegExp(`^\\S+\\s+${name}$`) }).click();
-        const expected = name === 'light' ? /^(?!.*\b(dark|rice)\b)/ : new RegExp(`\\b${name}\\b`);
-        await expect(page.locator('body')).toHaveClass(expected);
+    const theme = (name: string): Promise<void> => pickTheme(page, name);
+    const wall = {
+        click: (): Promise<void> =>
+            inSettings(page, (settings) =>
+                settings.getByRole('button', { name: t('ui.wallpaper') }).click()
+            )
     };
-    const wall = page.getByRole('button', { name: t('ui.wallpaper') });
     const walled = (): Promise<boolean> =>
         page.evaluate(() => document.body.classList.contains('wall'));
 

@@ -1,4 +1,4 @@
-// The file browser in Chrome: the rail opens it, a root reads its first level from the server, a
+// The file browser in Chrome: the palette opens it, a root reads its first level from the server, a
 // file in that level opens as the tab its own bytes ask for, and the explorer answers the arrow
 // keys, the filter, the breadcrumb, a row's hover and a section's head.
 //
@@ -19,7 +19,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { join, sep } from 'node:path';
 import { expect, test, type Page } from '@playwright/test';
 import { keepServedFiles, nestedRoot, row, scratch } from '../helpers/files.ts';
-import { boot, openView } from '../helpers/rail.ts';
+import { boot, openView, pickTheme } from '../helpers/rail.ts';
 import { alphaOf } from '../helpers/style.ts';
 import { t } from '../helpers/words.ts';
 
@@ -30,7 +30,7 @@ async function backgroundAlpha(target: ReturnType<Page['locator']>): Promise<num
     return alphaOf(await target.evaluate((el) => getComputedStyle(el).backgroundColor));
 }
 
-test('the rail opens the file browser, a root expands, and a text file opens for editing', async ({
+test('the palette opens the file browser, a root expands, and a text file opens for editing', async ({
     page
 }) => {
     await boot(page);
@@ -78,7 +78,7 @@ test('a script opens for editing from the tree, and the save it makes lands on d
     await expect(area).toHaveValue('print("before")\n');
     await area.fill('print("after")\n');
     await page.getByRole('button', { name: t('editor.save'), exact: true }).click();
-    await expect(page.getByText(t('source.saved'))).toBeVisible();
+    await expect(page.getByText(t('source.saved'), { exact: true })).toBeVisible();
     expect(readFileSync(join(dir, 'tool.py'), 'utf8')).toBe('print("after")\n');
 
     // A .md from the same tree opens the same way, and the two are two tabs.
@@ -275,8 +275,7 @@ test('the file browser tints its box over a wallpaper and its form paints nothin
     page
 }) => {
     await boot(page);
-    await page.getByRole('button', { name: t('ui.theme') }).click();
-    await page.getByRole('menuitem', { name: /mocha/ }).click();
+    await pickTheme(page, 'mocha');
     await expect(page.locator('.wallpaper')).toHaveCount(1);
     await openView(page, 'files', t('views.files'));
 
@@ -315,7 +314,7 @@ test('the first bookmark is made from the form, and an HTML one is one tab from 
     await form.getByRole('textbox', { name: 'Label' }).fill('the spec page');
     await form.getByRole('combobox', { name: 'Root' }).selectOption(key);
     await form.getByRole('textbox', { name: 'Path' }).fill('page.html');
-    await form.getByRole('button', { name: t('collection.form_save') }).click();
+    await form.getByRole('button', { name: t('collection.form_save'), exact: true }).click();
 
     // The rail draws it and the Files view lists it, both off the file the save made.
     await expect(page.locator(`nav button[data-bookmark="${key}/page.html"]`)).toBeVisible();

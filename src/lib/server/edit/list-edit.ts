@@ -13,10 +13,11 @@
 // The edit is only safe for a file written in blocks, which is how these files are written; a
 // flow-style map has no line to replace and no line to append to. Rather than knowing every shape
 // it cannot keep, each caller reads its own result back and compares it with the original before
-// anything is written: server/edit/deck-edit.ts for the deck's two lists and
-// server/edit/writes/audit-mute.ts for the audit's mute list.
+// anything is written, through readBack and othersThan below: server/edit/deck-edit.ts for the
+// deck's two lists, server/edit/writes/audit-mute.ts for the audit's mute list and
+// server/edit/writes/rail.ts for the rail's list of pages.
 
-import { isMap, isScalar, parseDocument } from 'yaml';
+import { isMap, isScalar, isSeq, parse, parseDocument } from 'yaml';
 import type { Node, Pair } from 'yaml';
 
 /** The indentation a file with no nesting to read it from would be written at. */
@@ -54,7 +55,7 @@ function rangeOf(node: unknown): [number, number] | null {
 }
 
 /** One key written as the list's entry: plain where that reads back as itself, quoted otherwise. */
-function entryText(key: string): string {
+export function entryText(key: string): string {
     return PLAIN.test(key) && !key.includes(': ') ? key : JSON.stringify(key);
 }
 
@@ -63,17 +64,17 @@ function newlineOf(source: string): string {
     return source.includes('\r\n') ? '\r\n' : '\n';
 }
 
-/** The lines one list is written as, with no trailing newline. */
+/** The lines one list is written as, each item already text, with no trailing newline. */
 function listText(
     field: string,
-    keys: string[],
+    items: string[],
     indent: number,
     inner: number,
     newline: string
 ): string {
     const pad = ' '.repeat(indent);
-    if (keys.length === 0) return `${pad}${field}: []`;
-    const rows = keys.map((key) => `${' '.repeat(inner)}- ${entryText(key)}`);
+    if (items.length === 0) return `${pad}${field}: []`;
+    const rows = items.map((item) => `${' '.repeat(inner)}- ${item}`);
     return [`${pad}${field}:`, ...rows].join(newline);
 }
 
@@ -95,6 +96,20 @@ export function setList(
     owner: string | null,
     field: string,
     keys: string[]
+): string {
+    return setItems(source, owner, field, keys.map(entryText));
+}
+
+/**
+ * The same edit over items the caller has already written as YAML text, one line each: a flow map
+ * `{ label: "Focus", glyph: focus, page: focus }` for a list of maps. What makes each item read
+ * back as what was asked is the caller's to check, which it does by reading its result back.
+ */
+export function setItems(
+    source: string,
+    owner: string | null,
+    field: string,
+    items: string[]
 ): string {
     const root = parseDocument(source).contents;
     if (!isMap(root)) return source;
@@ -119,11 +134,19 @@ export function setList(
                 ? 0
                 : outerIndent + STEP
             : indentAt(source, firstKey[0]);
-    const inner = owner === null ? STEP : indent + Math.max(indent - outerIndent, 1);
+    const held = map.items.find((pair) => nameOf(pair) === field);
+    // A list the file already writes keeps the indentation its first item has, so rewriting it with
+    // the same items changes no byte; a new list takes the file's own step.
+    const firstItem = isSeq(held?.value) ? rangeOf(held.value.items.at(0)) : null;
+    const inner =
+        firstItem !== null
+            ? indentAt(source, firstItem[0])
+            : owner === null
+              ? STEP
+              : indent + Math.max(indent - outerIndent, 1);
 
     const newline = newlineOf(source);
-    const held = map.items.find((pair) => nameOf(pair) === field);
-    const block = listText(field, keys, indent, inner, newline);
+    const block = listText(field, items, indent, inner, newline);
     if (held === undefined) {
         const at = trimmed(source, span[1], span[0]);
         return `${source.slice(0, at)}${newline}${block}${source.slice(at)}`;
@@ -141,4 +164,31 @@ export function setList(
     const stop = trimmed(source, value === null ? source.indexOf(':', key[1]) + 1 : value[1], from);
     if (stop <= from) return source;
     return source.slice(0, from) + block + source.slice(stop);
+}
+
+/** A parsed value as a map, or an empty one for anything that is not a map. */
+function rootMap(value: unknown): Record<string, unknown> {
+    if (typeof value !== 'object' || value === null || Array.isArray(value)) return {};
+    return value as Record<string, unknown>;
+}
+
+/**
+ * The text before an edit and the text after it, each read as the map of its top-level keys, or
+ * null when either does not parse. It is the first half of every caller's guard: the result must
+ * read back before anything in it can be compared.
+ */
+export function readBack(
+    source: string,
+    edited: string
+): { before: Record<string, unknown>; after: Record<string, unknown> } | null {
+    try {
+        return { before: rootMap(parse(source)), after: rootMap(parse(edited)) };
+    } catch {
+        return null;
+    }
+}
+
+/** Every key of a map but the named ones, as one comparable value. */
+export function othersThan(map: Record<string, unknown>, skip: string[]): string {
+    return JSON.stringify(Object.entries(map).filter(([key]) => !skip.includes(key)));
 }

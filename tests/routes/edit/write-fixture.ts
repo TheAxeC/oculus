@@ -100,6 +100,8 @@ export function target(): WriteTarget {
         projects: () => [],
         bookmarks,
         behaviorFile: join(dir, 'behavior.yml'),
+        layoutFile: join(dir, 'layout.yml'),
+        glyphs: [],
         changes: { file: changes, keep: 500, writes: fsWrites() }
     };
 }
@@ -219,6 +221,8 @@ export function deckTarget(): WriteTarget {
         projects: () => [slideProject('alpha', 'active'), slideProject('gamma', 'archive')],
         bookmarks: join(dir, 'bookmarks.yml'),
         behaviorFile: join(dir, 'behavior.yml'),
+        layoutFile: join(dir, 'layout.yml'),
+        glyphs: [],
         changes: { file: changes, keep: 500, writes: fsWrites() }
     };
 }

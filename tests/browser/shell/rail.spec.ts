@@ -1,27 +1,24 @@
 // The rail under a terminal palette and over a wallpaper. Three facts only a rendered page holds: a
 // pseudo-element's content, the room a glyph's ASCII stand-in needs inside its box, and which
 // element a reader's pointer would reach at a point, which is what says whether a list or a tooltip
-// is painted over the panes or under them.
+// is painted over the panes or under them. And the rail's BOOKMARKS group: the reader's own
+// bookmarks file, which the served run starts holding two manuals, and a bookmark the Files view
+// adds to it.
 //
 // The theme is mocha, which draws the stand-ins and turns the wallpaper on, so one page carries
 // both the terminal shape and the picture every surface is read through.
 
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { boot, openView } from '../helpers/rail.ts';
+import { SHOWN_VIEW, boot, openView, pickTheme, showRailPage } from '../helpers/rail.ts';
+import { readFileSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { servedHomeDir } from '../helpers/hub.ts';
 import { t } from '../helpers/words.ts';
-import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
-
-/** The System group's words, as config/layout.yml names them and the rail writes them. */
-const SYSTEM = ((): string => {
-    const groups = loadConfig(engineDir()).config.nav_groups as Record<string, { label: string }>;
-    return groups.system.label;
-})();
 
 /** The board behind the rail, under the terminal palette that also carries the wallpaper. */
 async function board(page: Page): Promise<void> {
     await boot(page);
-    await page.getByRole('button', { name: t('ui.theme') }).click();
-    await page.getByRole('menuitem', { name: /mocha/ }).click();
+    await pickTheme(page, 'mocha');
     await expect(page.locator('.wallpaper')).toHaveCount(1);
     // The blur is what makes the rail the containing block and the stacking context of the fixed
     // things inside it, so a page without it reaches none of what these tests are for.
@@ -47,16 +44,20 @@ async function centreIsInside(target: Locator): Promise<boolean> {
     });
 }
 
-test('the rail flyout and the theme list paint over the board', async ({ page }) => {
+test('a rail button tooltip and the Settings theme list paint over what is beside them', async ({
+    page
+}) => {
+    // revert: src/lib/ui/menu/Tooltip.svelte:185 => void node;
     await board(page);
 
-    await page.locator(`nav [data-group="${SYSTEM}"]`).getByRole('button').first().click();
-    const flyout = page.getByRole('menu', { name: SYSTEM });
-    await expect(flyout).toBeVisible();
-    expect(await centreIsInside(flyout)).toBe(true);
-    await page.keyboard.press('Escape');
+    await page.locator('nav [data-rail-page="projects"] button').hover();
+    expect((await bubbleShape(page)).inside).toBe(true);
 
-    await page.getByRole('button', { name: t('ui.theme') }).click();
+    await showRailPage(page, 'views');
+    await page
+        .locator(`${SHOWN_VIEW} [data-settings-view]`)
+        .getByRole('button', { name: t('ui.theme') })
+        .click();
     const themes = page.getByRole('menu', { name: t('ui.theme') });
     await expect(themes).toBeVisible();
     expect(await centreIsInside(themes)).toBe(true);
@@ -64,9 +65,10 @@ test('the rail flyout and the theme list paint over the board', async ({ page })
 });
 
 test('a rail button under a terminal palette is one glyph over one label', async ({ page }) => {
+    // revert: src/lib/shell/rail/ActivityRail.svelte:246 => delete
     await board(page);
 
-    const shape = await page.locator('nav button[data-view="projects"]').evaluate((el) => {
+    const shape = await page.locator('nav [data-rail-page="projects"] button').evaluate((el) => {
         const glyph = el.querySelector('.glyph');
         return {
             height: el.getBoundingClientRect().height,
@@ -172,4 +174,29 @@ test('a bookmark label the rail cannot hold on one line wraps to a second and is
     });
     expect(box.lines).toBe(2);
     expect(box.clipped).toBe(false);
+});
+
+test('the BOOKMARKS group lists the manuals of the bookmarks file and a bookmark of Files', async ({
+    page
+}) => {
+    // revert: src/lib/shell/rail/ActivityRail.svelte:273 => {#if false}
+    await boot(page);
+    const marks = page.locator('nav button[data-bookmark]');
+    await expect(marks.filter({ hasText: 'cathedra manual' })).toHaveCount(1);
+    await expect(marks.filter({ hasText: 'game-engine manual' })).toHaveCount(1);
+
+    // The bookmark this case adds is taken out again, so the specs after it find the file as the
+    // run wrote it.
+    const file = join(servedHomeDir(), '.oculus', 'bookmarks.yml');
+    const held = readFileSync(file, 'utf8');
+    try {
+        await openView(page, 'files', t('views.files'));
+        await page.locator('[data-fs-row="hub:"]').getByRole('button').first().click();
+        const readme = page.locator('[data-fs-row="hub:README.md"]');
+        await readme.hover();
+        await readme.getByRole('button', { name: t('files.row_bookmark'), exact: true }).click();
+        await expect(marks.filter({ hasText: 'README.md' })).toHaveCount(1);
+    } finally {
+        writeFileSync(file, held);
+    }
 });

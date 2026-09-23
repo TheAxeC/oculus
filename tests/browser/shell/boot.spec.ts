@@ -3,11 +3,12 @@
 // is the spec that says whether the harness itself is sound.
 
 import { expect, test } from '@playwright/test';
-import { openView } from '../helpers/rail.ts';
+import { boot, openView } from '../helpers/rail.ts';
 import { t } from '../helpers/words.ts';
 
 test('the page boots, the socket opens and the snapshot holds the demo hub', async ({ page }) => {
-    await page.goto('/');
+    // The Status view is where the snapshot's counts are said, and boot() starts on it.
+    await boot(page);
     const status = page.locator('.view', { hasText: t('app.socket', t('app.socket_open')) });
     await expect(status).toContainText(t('app.socket', t('app.socket_open')));
     await expect(status).toContainText(t('app.projects', 11));
@@ -21,7 +22,8 @@ test('a feed view opened cold holds the entries the feeds channel delivered at b
     page
 }) => {
     await page.goto('/');
-    await expect(page.locator('nav button[data-view]').first()).toBeVisible();
+    // revert: src/lib/shell/rail/ActivityRail.svelte:239 => <div class="control" data-rail-button={entry.page}>
+    await expect(page.locator('nav [data-rail-page] button').first()).toBeVisible();
     await openView(page, 'leads', t('views.leads'));
     await expect(page.locator('[data-lead]').first()).toBeVisible();
 });

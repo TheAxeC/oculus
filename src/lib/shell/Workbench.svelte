@@ -1,7 +1,9 @@
 <script lang="ts">
-    // Layer 3, shell. The page: the rail and the one tree the page is. It reads the arrangement
-    // from the store and every change goes back through the store, so the whole of what is on
-    // screen is the saved workbench and a reload puts it back as it was.
+    // Layer 3, shell. The window: the rail, the one tree the page on screen is, and the status bar
+    // along the foot. It reads the arrangement from the store and every change goes back through
+    // the store, so the whole of what is on screen is the saved workbench and a reload puts it back
+    // as it was. Four of the status bar's items read stores the shell may not, so the page hands in
+    // their words and the shell draws the bar.
     //
     // A page is one tree, so every split is the same kind of split and every child of one can be
     // collapsed to its edge and shown again through the same control.
@@ -12,11 +14,9 @@
 
     import { activeLabel, windowTitle } from '$lib/shell/workbench-title';
     import ActivityRail from './rail/ActivityRail.svelte';
-    import { docState, railOrder, type Bookmark, type DocEntry, type NavGroup } from './rail/rail';
+    import type { Bookmark } from './rail/rail';
     import DropLayer from './panes/DropLayer.svelte';
     import { createWorkbenchKeys } from './keys/workbench-keys.svelte';
-    import PageStrip from './panes/PageStrip.svelte';
-    import type { Arrangement } from './panes/page-strip';
     import Palette from './keys/Palette.svelte';
     import FoldedPane from './panes/FoldedPane.svelte';
     import PageLeaf from './panes/PageLeaf.svelte';
@@ -26,6 +26,15 @@
     import KeySheet from '$lib/ui/menu/KeySheet.svelte';
     import { WALL_CLASS, applyTheme, applyWallpaper } from '$lib/ui/theme';
     import { paneAt, resize, type Layout } from '$lib/state/workbench/layout';
+    import {
+        docState,
+        railOrder,
+        type DocEntry,
+        type NavGroup
+    } from '$lib/state/workbench/navigation/catalogue';
+    import type { RailPage } from '$lib/state/workbench/navigation/rail';
+    import type { StatusWords } from '$lib/state/workbench/navigation/status';
+    import StatusBar from './status/StatusBar.svelte';
     import { setGlyphMode, t } from '$lib/state/words/text';
     import {
         terminalTheme,
@@ -44,27 +53,32 @@
     } = client;
 
     type Props = {
-        /** The `nav_groups`-shaped list from the merged config, for the rail. */
+        /** The `nav_groups` of the merged config, which the chords count into. */
         groups?: NavGroup[];
-        /** The `bookmarks` list of the merged config, for the rail's Docs section. */
-        bookmarks?: Bookmark[];
-        /**
-         * The `docs` list of the merged config: the hub documents the rail draws in their groups.
-         */
+        /** The `docs` list of the merged config: the hub documents a chord counts after views. */
         docs?: DocEntry[];
+        /** The rail's pages: the `rail:` list of the merged config with their arrangements. */
+        pages?: RailPage[];
         /**
-         * The reader's own bookmarks, for the same section after the configured ones. The page
-         * reads them off the fs store and hands them on, since the shell may not read that store
-         * itself.
+         * Whether the merged config has come. It carries the rail list a browser with no saved
+         * layout starts on, so until then such a browser draws no page.
+         */
+        configured?: boolean;
+        /**
+         * The reader's own bookmarks, for the rail's BOOKMARKS group. The page reads them off the
+         * fs store and hands them on, since the shell may not read that store itself.
          */
         saved?: Bookmark[];
-        /** The `arrangements:` of the merged config, for the page strip's menu. */
-        arrangements?: Arrangement[];
         /**
          * The `direct_chord` of the merged config: the letter a digit after it counts into the
-         * rail.
+         * catalogue's small groups.
          */
         directChord?: string;
+        /**
+         * The words of the status bar's socket, usage, HPC and live-session items. The page makes
+         * them from the stores the shell may not read and hands them on.
+         */
+        status?: StatusWords;
         /**
          * How many sessions wait on a permission, for the document title. The page reads it from
          * the sessions channel and hands it on, since the shell may not read entities itself.
@@ -74,11 +88,12 @@
 
     let {
         groups = [],
-        bookmarks = [],
         docs = [],
+        pages = [],
+        configured = true,
         saved = [],
-        arrangements = [],
         directChord,
+        status = { socket: '', usage: '', hpc: '', live: 0 },
         waiting = 0
     }: Props = $props();
 
@@ -123,7 +138,22 @@
             const entry = docs.find((one) => one.path === path);
             if (entry !== undefined) client.layout.openView('doc', docState(entry), at);
         },
+        railPage: (index) => {
+            const entry = pages.at(index - 1);
+            if (index < 1 || entry === undefined) return false;
+            return client.layout.openRailPage(entry.page, entry.label, entry.node);
+        },
         openPalette: (prefill) => openPalette(prefill)
+    });
+
+    // A browser with no saved layout starts on the first rail page rather than on a page no button
+    // owns. The rail list comes with the config push, so this waits for it; the store answers only
+    // while its pages are still the untouched default.
+    $effect(() => {
+        if (!configured) return;
+        const first = pages.at(0);
+        if (first !== undefined) client.layout.startOnRailPage(first.page, first.label, first.node);
+        else client.layout.keepDefaultPage();
     });
 
     $effect(() => {
@@ -209,21 +239,15 @@
              negative depth paints over the page's own background and under every panel. -->
         <div class="wallpaper" style={image}></div>
     {/if}
-    <ActivityRail
-        {groups}
-        {bookmarks}
-        {docs}
-        {saved}
-        onsearch={() => openPalette('')}
-        onupdate={openUpdate}
-    />
+    <ActivityRail {pages} {saved} onsearch={() => openPalette('')} onupdate={openUpdate} />
     <div class="column">
-        <PageStrip {arrangements} />
         <div class="area">
             <!-- Keyed by the page, so a switch unmounts the hidden page's views and mounts the
                  shown page's: nothing is drawn twice, and every view rebuilds from the stores. -->
             {#key page.id}
-                {#if zoomed !== null && focus !== null}
+                {#if client.layout.startingFresh()}
+                    <!-- No page until the rail list chose the first, so no view mounts twice. -->
+                {:else if zoomed !== null && focus !== null}
                     <div class="tree" style="flex: 1 1 0">
                         <PaneView node={zoomed} path={focus.path} page={page.id} />
                     </div>
@@ -243,6 +267,7 @@
                 {/if}
             {/key}
         </div>
+        <StatusBar {status} />
     </div>
 </div>
 <DropLayer />
@@ -283,7 +308,7 @@
         pointer-events: none;
     }
 
-    /* The column right of the rail: the page strip over the area the page's tree fills. */
+    /* The column right of the rail: the area the page's tree fills over the status bar. */
     .column {
         display: flex;
         flex-direction: column;

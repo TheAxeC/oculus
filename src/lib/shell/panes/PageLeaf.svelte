@@ -17,7 +17,7 @@
     import PaneView from './PaneView.svelte';
     import SplitView from './SplitView.svelte';
     import PageLeaf from './PageLeaf.svelte';
-    import { pageNameOf } from './page-strip';
+    import { pageNameOf } from '$lib/state/workbench/navigation/pages';
     import { edgeAt } from '$lib/state/workbench/drag.svelte';
     import { paneAt, resize, showable, type Layout } from '$lib/state/workbench/layout';
     import { t } from '$lib/state/words/text';

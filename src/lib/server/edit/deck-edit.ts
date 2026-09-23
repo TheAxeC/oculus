@@ -10,8 +10,7 @@
 // compares it with the original: the two lists must be what was asked and every other key must be
 // what it was, or nothing is written. What the caller gets then is null, and the endpoint refuses.
 
-import { parse } from 'yaml';
-import { setList } from './list-edit.ts';
+import { othersThan, readBack, setList } from './list-edit.ts';
 
 /** The map the two lists live under, and the two keys themselves. */
 const DECK = 'deck';
@@ -41,12 +40,6 @@ function same(left: unknown, right: unknown): boolean {
     return JSON.stringify(left ?? null) === JSON.stringify(right ?? null);
 }
 
-/** Every key of a map but the named ones, as one comparable value. */
-function others(map: Record<string, unknown>, skip: string[]): string {
-    const held = Object.entries(map).filter(([key]) => !skip.includes(key));
-    return JSON.stringify(held);
-}
-
 /**
  * Whether the edited source still says what the original said, with the two lists replaced. It is
  * the whole guard on the shapes the text edit cannot keep: the result must parse, the `deck:` map
@@ -54,22 +47,15 @@ function others(map: Record<string, unknown>, skip: string[]): string {
  * every other top-level key of the document must be unchanged.
  */
 function kept(source: string, edited: string, lists: DeckLists): boolean {
-    let before: unknown;
-    let after: unknown;
-    try {
-        before = parse(source);
-        after = parse(edited);
-    } catch {
-        return false;
-    }
-    const first = mapOf(before);
-    const second = mapOf(after);
-    if (others(first, [DECK]) !== others(second, [DECK])) return false;
+    const read = readBack(source, edited);
+    if (read === null) return false;
+    const { before: first, after: second } = read;
+    if (othersThan(first, [DECK]) !== othersThan(second, [DECK])) return false;
     const deck = mapOf(second.deck);
     if (!same(deck[SELECTION], lists.selection)) return false;
     if (!same(deck[ORDER], lists.slideOrder)) return false;
     const written = [SELECTION, ORDER];
-    return others(mapOf(first.deck), written) === others(deck, written);
+    return othersThan(mapOf(first.deck), written) === othersThan(deck, written);
 }
 
 /**

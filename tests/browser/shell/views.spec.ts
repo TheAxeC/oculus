@@ -1,13 +1,15 @@
-// The behaviours of the views that only a rendered page holds: a tooltip closing when an overlay
-// takes focus, the two places a long value meets the edge of its card, which of an intro's two
-// paths filters the markup it is given, and where a tree row's controls sit in a wide pane.
+// The behaviours of the views that only a rendered page holds: the Views catalogue opening a view
+// on the page the reader came from beside the keys that open one on the page on screen, a tooltip
+// closing when an overlay takes focus, the two places a long value meets the edge of its card,
+// which of an intro's two paths filters the markup it is given, and where a tree row's controls sit
+// in a wide pane.
 //
 // The unit suite reads them off the source, because a cut and a box are layout effects no server
 // render measures and DOMPurify has no document in node. What is measured here is the box the
 // reader ends up with and the elements Chrome kept.
 
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { SHOWN_VIEW, boot, openView } from '../helpers/rail.ts';
+import { SHOWN_VIEW, boot, openView, showRailPage } from '../helpers/rail.ts';
 import { shortOf } from '../helpers/hub.ts';
 import { t } from '../helpers/words.ts';
 
@@ -44,9 +46,125 @@ async function projectCard(page: Page): Promise<Locator> {
     return card;
 }
 
+test('the catalogue opens a view on the page the reader came from, and a chord and a digit on the page on screen', async ({
+    page
+}) => {
+    // revert: src/lib/views/system/workbench/Catalogue.svelte:98 => delete
+    await boot(page);
+    await showRailPage(page, 'projects');
+    await showRailPage(page, 'views');
+    const catalogue = page.locator(`${SHOWN_VIEW} [data-catalogue]`);
+    await catalogue.locator('button[data-view="help"]').click();
+    // The press showed the Projects page again, the page the reader came from, with Help on it.
+    await expect(page.locator('nav [data-rail-page="projects"] button')).toHaveClass(/\bactive\b/);
+    await expect(page.getByRole('tab', { name: t('views.help') })).toBeVisible();
+    await expect(page.getByRole('tab', { name: t('views.projects') })).toBeVisible();
+
+    // A shift-press opens the view in a pane beside, on that same page.
+    await showRailPage(page, 'views');
+    await catalogue.locator('button[data-view="usage"]').click({ modifiers: ['Shift'] });
+    await expect(page.locator('nav [data-rail-page="projects"] button')).toHaveClass(/\bactive\b/);
+    await expect(page.locator('[data-pane]')).toHaveCount(2);
+    await expect(
+        page
+            .locator('[data-pane]')
+            .nth(1)
+            .getByRole('tab', { name: t('views.usage') })
+    ).toBeVisible();
+
+    // The keys open a view where a view lands on the page on screen, which stays the page shown.
+    await showRailPage(page, 'views');
+    // The first entry drawn with a key whose view no page holds yet, with the name its tab takes.
+    const held = ['help', 'usage', 'projects', 'coauthor', 'archive', 'focus', 'status'].concat([
+        'catalogue',
+        'settings',
+        'pages'
+    ]);
+    let name = '';
+    let key = '';
+    for (const entry of await catalogue.locator('.entry:has(.key):has(button[data-view])').all()) {
+        const button = entry.locator('button[data-view]');
+        if (held.includes((await button.getAttribute('data-view')) ?? '')) continue;
+        name = ((await button.locator('.label').textContent()) ?? '').trim();
+        key = ((await entry.locator('.key').textContent()) ?? '').trim();
+        break;
+    }
+    expect(key).toMatch(/^[a-z][1-9]$/);
+    await page.locator('body').click({ position: { x: 5, y: 5 } });
+    await page.keyboard.press(key[0]);
+    await page.keyboard.press(key[1]);
+    await expect(page.getByRole('tab', { name, exact: true })).toBeVisible();
+    await expect(page.locator('nav [data-rail-page="views"] button')).toHaveClass(/\bactive\b/);
+});
+
+// revert: src/lib/views/system/workbench/Catalogue.svelte:83 => delete
+test("a catalogue moved onto a page of the reader's own opens a view on that page", async ({
+    page
+}) => {
+    await boot(page);
+    await showRailPage(page, 'focus');
+    await showRailPage(page, 'projects');
+    await openView(page, 'catalogue', t('views.catalogue'));
+    const catalogue = page.locator(`${SHOWN_VIEW} [data-catalogue]`);
+    await catalogue.locator('button[data-view="help"]').click();
+    // The Projects page stays shown and takes the view, rather than the page shown before it.
+    await expect(page.locator('nav [data-rail-page="projects"] button')).toHaveClass(/\bactive\b/);
+    await expect(page.getByRole('tab', { name: t('views.help') })).toBeVisible();
+});
+
+test('a catalogue press after a load straight onto its page opens the view on the first rail page', async ({
+    page
+}) => {
+    // revert: src/lib/views/system/workbench/Catalogue.svelte:90 => delete
+    await boot(page);
+    await showRailPage(page, 'views');
+    // The reload puts the Views and Settings page on screen with no page shown before it.
+    await page.reload();
+    await expect(page.locator('nav [data-rail-page="views"] button')).toHaveClass(/\bactive\b/);
+    await page.locator(`${SHOWN_VIEW} [data-catalogue] button[data-view="help"]`).click();
+    await expect(page.locator('nav [data-rail-page="focus"] button')).toHaveClass(/\bactive\b/);
+    await expect(page.getByRole('tab', { name: t('views.help') })).toBeVisible();
+    await expect(page.getByRole('tab', { name: t('views.focus') })).toBeVisible();
+});
+
+test('a catalogue press on a hub document opens it on the page the reader came from', async ({
+    page
+}) => {
+    // revert: src/lib/views/system/workbench/Catalogue.svelte:105 => delete
+    await boot(page);
+    await showRailPage(page, 'projects');
+    await showRailPage(page, 'views');
+    await page
+        .locator(`${SHOWN_VIEW} [data-catalogue] button[data-doc="RESEARCH-APPROACH.md"]`)
+        .click();
+    await expect(page.locator('nav [data-rail-page="projects"] button')).toHaveClass(/\bactive\b/);
+    await expect(page.getByRole('tab', { name: 'Research approach' })).toBeVisible();
+});
+
+test('a shift-press after a load straight onto the catalogue opens beside on the first rail page', async ({
+    page
+}) => {
+    // revert: src/lib/views/system/workbench/Catalogue.svelte:99 => if (event.shiftKey) openView(view.id);
+    await boot(page);
+    await showRailPage(page, 'views');
+    await page.reload();
+    await expect(page.locator('nav [data-rail-page="views"] button')).toHaveClass(/\bactive\b/);
+    await page
+        .locator(`${SHOWN_VIEW} [data-catalogue] button[data-view="usage"]`)
+        .click({ modifiers: ['Shift'] });
+    await expect(page.locator('nav [data-rail-page="focus"] button')).toHaveClass(/\bactive\b/);
+    await expect(page.locator('[data-pane]')).toHaveCount(2);
+    await expect(
+        page
+            .locator('[data-pane]')
+            .nth(1)
+            .getByRole('tab', { name: t('views.usage') })
+    ).toBeVisible();
+});
+
 test('a tooltip on a hovered control closes when the palette takes the focus', async ({ page }) => {
     await boot(page);
-    const button = page.locator('nav button[data-view]').first();
+    const button = page.locator('nav [data-rail-page] button').first();
     await button.hover();
     const bubble = page.locator('span.bubble:not([hidden])');
     await expect(bubble).toHaveCount(1);
@@ -61,7 +179,7 @@ test('a tooltip describes the control it wraps, and not the wrapper around it', 
     page
 }) => {
     await boot(page);
-    const button = page.locator('nav button[data-view]').first();
+    const button = page.locator('nav [data-rail-page] button').first();
     const id = await button.getAttribute('aria-describedby');
     expect(id).toMatch(/^tip-\d+$/);
     await expect(page.locator(`#${id}`)).toHaveAttribute('role', 'tooltip');

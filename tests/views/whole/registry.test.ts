@@ -6,8 +6,8 @@
 //
 // The collection views are the registrations that come from configuration rather than from a
 // module, so the keys they are registered under are checked both ways: a key the configuration
-// lists has a view, and a key it stops listing has none, in the registry and in the rail order
-// drawn from it.
+// lists has a view, and a key it stops listing has none, in the registry and in the catalogue
+// order drawn from it.
 
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
@@ -18,7 +18,12 @@ import {
     textCatalog
 } from '../../../src/lib/data/sources/config.ts';
 import type { ViewProps } from '../../../src/lib/views/registry.ts';
-import { GROUP_MAX, arrange, railOrder, type NavGroup } from '../../../src/lib/shell/rail/rail.ts';
+import {
+    GROUP_MAX,
+    arrange,
+    railOrder,
+    type NavGroup
+} from '../../../src/lib/state/workbench/navigation/catalogue.ts';
 import type { Instance } from '../../../src/lib/state/workbench/layout/index.ts';
 import type { Component } from 'svelte';
 // Importing the route loader registers real views; collections use the keys of sources.yml.
@@ -148,12 +153,13 @@ describe('the view registry', () => {
 });
 
 describe('the real registrations', () => {
-    /** The views the application registers, which is what the rail and the tabs draw. */
+    /** The views the application registers, which is what the catalogue and the tabs draw. */
     function real() {
         return views().filter((view) => !view.id.startsWith('probe-'));
     }
 
     it('registers every view id the application has', () => {
+        // revert: src/lib/views/system/workbench/Pages.svelte:5 => id: 'page',
         expect(
             real()
                 .map((view) => view.id)
@@ -213,17 +219,22 @@ describe('the real registrations', () => {
                 'applications',
                 'joint-work',
                 'tasks',
-                'code'
+                'code',
+                'catalogue',
+                'settings',
+                'pages'
             ].sort()
         );
     });
 
     it('gives every view its exact group and order', () => {
+        // revert: src/lib/views/system/workbench/Catalogue.svelte:10 => order: 12
         const expected: Record<string, { group: string; order: number }> = {
             agents: { group: 'sessions', order: 6 },
             applications: { group: 'academic', order: 3 },
             audit: { group: 'system', order: 7 },
             calendar: { group: 'personal', order: 1 },
+            catalogue: { group: 'system', order: 9 },
             archive: { group: 'boards', order: 3 },
             changes: { group: 'sessions', order: 5 },
             coauthor: { group: 'boards', order: 2 },
@@ -253,6 +264,7 @@ describe('the real registrations', () => {
             map: { group: 'structure', order: 2 },
             memories: { group: 'personal', order: 0 },
             note: { group: '', order: 0 },
+            pages: { group: 'system', order: 11 },
             person: { group: '', order: 0 },
             present: { group: 'academic', order: 6 },
             pillars: { group: 'structure', order: 0 },
@@ -264,6 +276,7 @@ describe('the real registrations', () => {
             search: { group: 'sources', order: 6 },
             'session-detail': { group: 'sessions', order: 1 },
             'session-list': { group: 'sessions', order: 0 },
+            settings: { group: 'system', order: 10 },
             slides: { group: '', order: 0 },
             source: { group: '', order: 0 },
             statements: { group: 'sources', order: 3 },
@@ -337,7 +350,7 @@ describe('the real registrations', () => {
             glyph: 'views.config_glyph',
             group: 'system'
         });
-        // A hub document is opened for one path, so it is not offered bare in the rail.
+        // A hub document is opened for one path, so it is not listed bare in the catalogue.
         expect(viewFor('doc')).toMatchObject({
             id: 'doc',
             label: 'views.doc',
@@ -460,8 +473,8 @@ describe('the real registrations', () => {
     });
 
     /**
-     * The rail draws the listed registrations in order, so a dropped view leaves this list. With no
-     * group configured every registration is drawn directly, which is the whole of the rail.
+     * The catalogue lists the listed registrations in order, so a dropped view leaves this list.
+     * With no group configured every registration is counted directly, which is the whole of it.
      */
     function railIds(): string[] {
         return railOrder(
@@ -484,9 +497,9 @@ describe('the real registrations', () => {
         expect(COLLECTIONS.filter((key) => !railIds().includes(key))).toEqual([]);
     });
 
-    it('gives every view of the rail a glyph of its own, the collections apart', () => {
+    it('audits that every view of the catalogue carries a glyph of its own, the collections apart', () => {
         // The collections share the folder glyph by design; every other view is told apart by its
-        // glyph alone when the rail draws no label, so two views with one glyph read as one.
+        // glyph alone on a tab and in the catalogue, so two views with one glyph read as one.
         // The probes this file registers borrow real glyph keys and are not the application's.
         const own = views().filter(
             (registration) =>
@@ -501,9 +514,9 @@ describe('the real registrations', () => {
         expect(shared).toEqual([]);
     });
 
-    it('gives every flyout group a glyph no view inside it carries', () => {
-        // The opener of a group and the entries in its list are drawn together, so a group wearing
-        // one of its own views' marks reads as that view rather than as the group.
+    it('audits that every chorded group carries a glyph no view inside it carries', () => {
+        // The heading of a group and its entries are drawn together in the catalogue, so a group
+        // wearing one of its own views' marks reads as that view rather than as the group.
         const raw = loadConfig(engineDir()).config.nav_groups as Record<
             string,
             Omit<NavGroup, 'id'>
@@ -513,8 +526,9 @@ describe('the real registrations', () => {
             views().filter((view) => view.listed !== false),
             groups
         );
-        // Only a flyout draws a group glyph: a small group is a heading over one button per view,
-        // and shell/rail/ActivityRail.svelte reads section.glyph nowhere else.
+        // A group reached by its own chord carries a glyph of its own; a small group's heading
+        // borrows its first view's, which groupGlyph of state/workbench/navigation/catalogue.ts
+        // answers.
         const clashes = sections
             .filter((section) => section.items.length > GROUP_MAX)
             .filter((section) => section.glyph !== undefined)
@@ -525,7 +539,7 @@ describe('the real registrations', () => {
         expect(clashes).toEqual([]);
     });
 
-    it('gives the Agents and Changes views a glyph of their own in the rail', () => {
+    it('audits that the Agents and Changes views carry a glyph of their own in the catalogue', () => {
         const of = (key: string): string => glyphs[catalog[key]];
         expect(of('sessions.agents_glyph')).toBeDefined();
         expect(of('sessions.changes_glyph')).toBeDefined();

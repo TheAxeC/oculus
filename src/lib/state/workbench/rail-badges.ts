@@ -105,7 +105,7 @@ export function rollup(projects: BadgeProject[], buckets: BadgeBucket[]): Rollup
     }));
 }
 
-/** Badge text, with zero represented by the empty string the rail does not draw. */
+/** Badge text, with zero represented by the empty string no badge draws. */
 export function countText(count: number): string {
     return count > 0 ? String(count) : '';
 }

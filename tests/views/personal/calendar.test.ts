@@ -129,7 +129,7 @@ function atFixtureMoment<T>(run: () => T): T {
     }
 }
 
-describe("the Calendar view's rail badge", () => {
+describe("the Calendar view's badge", () => {
     /** The badge hooks of the real registration over a client holding one payload. */
     function badge(data: CalendarPayload) {
         return atFixtureMoment(() => {

@@ -21,7 +21,7 @@ import { expect, test, type Locator, type Page } from '@playwright/test';
 import { keepServedFiles, nestedRoot, row, scratch } from '../helpers/files.ts';
 import { draftKeys, reloadAndShow, switchAndBack, uiInstances } from '../helpers/forms.ts';
 import { servedHomeDir } from '../helpers/hub.ts';
-import { boot, openView } from '../helpers/rail.ts';
+import { boot, makePage, openView } from '../helpers/rail.ts';
 import { t, tabNamed } from '../helpers/words.ts';
 
 keepServedFiles();
@@ -210,7 +210,7 @@ test("the bookmark form's outcome line comes back after a reload", async ({ page
     await adding.getByRole('textbox', { name: 'Label' }).fill('notes.md');
     await adding.getByRole('combobox', { name: 'Root' }).selectOption(key);
     await adding.getByRole('textbox', { name: 'Path' }).fill('notes.md');
-    await adding.getByRole('button', { name: t('collection.form_save') }).click();
+    await adding.getByRole('button', { name: t('collection.form_save'), exact: true }).click();
     const said = page.locator('[data-instance] > .said');
     await expect(said).toBeVisible();
     const words = await said.textContent();
@@ -270,7 +270,7 @@ test("a bookmark added while another bookmark's form was opened leaves that form
     await adding.getByRole('textbox', { name: 'Label' }).fill('notes.md');
     await adding.getByRole('combobox', { name: 'Root' }).selectOption(key);
     await adding.getByRole('textbox', { name: 'Path' }).fill('notes.md');
-    await adding.getByRole('button', { name: t('collection.form_save') }).click();
+    await adding.getByRole('button', { name: t('collection.form_save'), exact: true }).click();
     await held.sent;
     await kept.hover();
     await kept.getByRole('button', { name: t('files.bookmark_edit'), exact: true }).click();
@@ -330,7 +330,7 @@ test('a bookmark added while the tab is switched away closes its form in the fil
     await adding.getByRole('textbox', { name: 'Path' }).fill('notes.md');
 
     const held = await holdPosts(page, '/api/write');
-    await adding.getByRole('button', { name: t('collection.form_save') }).click();
+    await adding.getByRole('button', { name: t('collection.form_save'), exact: true }).click();
     await held.sent;
     await toStatus(page);
     held.release();
@@ -455,7 +455,7 @@ test('a bookmark add form typed on while its save was out keeps the typing, open
     await adding.getByRole('textbox', { name: 'Path' }).fill('notes.md');
 
     const held = await holdPosts(page, '/api/write');
-    await adding.getByRole('button', { name: t('collection.form_save') }).click();
+    await adding.getByRole('button', { name: t('collection.form_save'), exact: true }).click();
     await held.sent;
     await label.fill('a label typed while the save was out');
     held.release();
@@ -485,7 +485,7 @@ test('a bookmark renamed by its form keeps what was typed, open over the bookmar
     // form was opened over names nothing once the answer has landed.
     await editing.getByRole('textbox', { name: 'Label' }).fill('tool.py renamed');
     const held = await holdPosts(page, '/api/write');
-    await editing.getByRole('button', { name: t('collection.form_save') }).click();
+    await editing.getByRole('button', { name: t('collection.form_save'), exact: true }).click();
     await held.sent;
     await editing.getByRole('textbox', { name: 'Path' }).fill(typing);
     held.release();
@@ -524,7 +524,7 @@ test('a bookmark taken away while a save from its form is out leaves the form un
     await editing.getByRole('textbox', { name: 'Path' }).fill(typing);
     // Only this form's own write is held, so the row star below is answered while it is on its way.
     const held = await holdPosts(page, '/api/write', (body) => body.includes(typing));
-    await editing.getByRole('button', { name: t('collection.form_save') }).click();
+    await editing.getByRole('button', { name: t('collection.form_save'), exact: true }).click();
     await held.sent;
 
     // The bookmark leaves the file while the save from its form is still on its way. The form has
@@ -602,9 +602,7 @@ test('a bookmark taken away closes the form of a file browser whose tab is not s
 
     // A page of its own draws a file browser of its own, and the first page's is not mounted while
     // the second is the page on screen.
-    const strip = page.getByRole('region', { name: t('ui.pages') });
-    await strip.getByRole('button', { name: t('ui.page_menu') }).click();
-    await page.getByRole('menuitem', { name: t('ui.page_new') }).click();
+    await makePage(page);
     await openView(page, 'files', t('views.files'));
     expect(await filesId(page)).not.toBe(hidden);
     await expect(page.locator('[data-form="edit"]')).toHaveCount(0);

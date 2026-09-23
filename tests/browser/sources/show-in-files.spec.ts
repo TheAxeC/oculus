@@ -15,7 +15,7 @@ import { expect, test, type Locator, type Page } from '@playwright/test';
 import { row } from '../helpers/files.ts';
 import { uiInstances } from '../helpers/forms.ts';
 import { readHubFile, shortOf, writeHubFile } from '../helpers/hub.ts';
-import { boot, openView } from '../helpers/rail.ts';
+import { boot, openView, pickTheme } from '../helpers/rail.ts';
 import { t } from '../helpers/words.ts';
 
 const BANDITS = 'projects/active/graph-bandits';
@@ -85,13 +85,12 @@ test('a Show in Files pressed from the keyboard puts the keyboard on the row it 
 
 // Revert: take the ASCII stand-in of the Show in Files glyph out of config/catalogs/glyphs.yml, so
 // a terminal theme draws the character it has no font for.
-// revert: config/catalogs/glyphs.yml:282 => delete
+// revert: config/catalogs/glyphs.yml:286 => delete
 test('a terminal theme draws the Show in Files control with its ASCII stand-in', async ({
     page
 }) => {
     await boot(page);
-    await page.getByRole('button', { name: t('ui.theme') }).click();
-    await page.getByRole('menuitem', { name: /mocha/ }).first().click();
+    await pickTheme(page, 'mocha');
     await openView(page, 'projects', t('views.projects'));
     const card = projectCard(page, BANDITS);
     await card.locator('.title').first().hover();

@@ -1,5 +1,5 @@
 <script module lang="ts">
-    // Layer 3, view registration. Data is the second source registry in the rail.
+    // Layer 3, view registration. Data is the second source registry in the view catalogue.
     import type { ViewRegistration } from '../../registry';
     export const registration: ViewRegistration = {
         id: 'data',

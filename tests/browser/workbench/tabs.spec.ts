@@ -6,17 +6,23 @@
 // px of VS Code's editor tabs grown with the text, the gap under the shown tab and the line past
 // the last, the muted text of the others, the accent line over the shown tab of the active pane
 // alone, the close control on the shown tab and under the pointer, the dot and the spoken name of a
-// tab or a page holding unsaved text, the pane header's split button, the strip's buttons as one
-// bare icon box in a plain and a terminal theme, the page strip's tabs in the same look at their
-// own height and surface, and a handle hidden at rest, drawn after a rest of the pointer and at
-// once in a drag or under the keyboard, caught on the panes' borders and never inside them, in a
-// split and in the Source view.
+// tab holding unsaved text and the Pages view naming its page, the pane header's split button, the
+// strip's buttons as one bare icon box in a plain and a terminal theme, and a handle hidden at
+// rest, drawn after a rest of the pointer and at once in a drag or under the keyboard, caught on
+// the panes' borders and never inside them, in a split and in the Source view.
 //
 // Nothing here writes to the hub; the layout and a typed draft live in the browser's own storage.
 
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { boot, openView } from '../helpers/rail.ts';
-import { alphaOf } from '../helpers/style.ts';
+import {
+    boot,
+    inSettings,
+    openView,
+    pagesRow,
+    pickTheme,
+    showRailPage,
+    twoPages
+} from '../helpers/rail.ts';
 import { t, tabNamed } from '../helpers/words.ts';
 
 test.use({ viewport: { width: 720, height: 640 } });
@@ -144,10 +150,9 @@ async function rest(page: Page): Promise<void> {
     await page.mouse.move(360, 600);
 }
 
-/** Pick a theme from the rail's theme list by the end of its label. */
-async function theme(page: Page, name: RegExp): Promise<void> {
-    await page.getByRole('button', { name: t('ui.theme') }).click();
-    await page.getByRole('menuitem', { name }).first().click();
+/** Put a theme on by its name, and take the pointer off every control. */
+async function theme(page: Page, name: string): Promise<void> {
+    await pickTheme(page, name);
     await rest(page);
 }
 
@@ -249,7 +254,9 @@ test.describe('the look', () => {
         expect(past.room).toBeGreaterThan(100);
 
         // The measures grow with the text, the way a tree row does.
-        await page.getByRole('button', { name: t('app.text_larger') }).click();
+        await inSettings(page, (settings) =>
+            settings.getByRole('button', { name: t('app.text_larger') }).click()
+        );
         const scale = await page.evaluate(() =>
             Number(document.documentElement.style.getPropertyValue('--text-scale'))
         );
@@ -283,11 +290,10 @@ test.describe('the look', () => {
         await expect.poll(tops).toEqual([accent, line]);
     });
 
-    // Revert: drop `dirty: unsaved(instance.id)` from shell/panes/PaneView.svelte, set `dirty` to
-    // false in shell/panes/PageStrip.svelte's tabOf, drop the tab face's `aria-label` or the
-    // `.tab.dirty:not(:hover) .dot` rule from ui/tabs/TabFace.svelte.
+    // Revert: drop `dirty: unsaved(instance.id)` from shell/panes/PaneView.svelte, drop the tab
+    // face's `aria-label` or the `.tab.dirty:not(:hover) .dot` rule from ui/tabs/TabFace.svelte.
     // revert: src/lib/ui/tabs/TabFace.svelte:290 => display: none;
-    test('a tab or a page holding unsaved text shows a dot in the close control place until hovered, and says so in its name', async ({
+    test('a tab holding unsaved text shows a dot in the close control place until hovered, says so in its name, and the Pages view names its page', async ({
         page
     }) => {
         await boot(page);
@@ -295,8 +301,6 @@ test.describe('the look', () => {
         const { list } = mainStrip(page);
         const tasks = tabIn(list, t('views.tasks'));
         const status = tabIn(list, t('views.status'));
-        const pages = page.getByRole('region', { name: t('ui.pages') });
-        const first = tabIn(pages, t('ui.page_default', 1));
         const marks = (tab: Locator): Promise<{ dot: boolean; cross: boolean; close: string }> =>
             tab.evaluate((node) => {
                 const drawn = (selector: string): boolean => {
@@ -315,18 +319,13 @@ test.describe('the look', () => {
 
         await rest(page);
         expect(await marks(tasks)).toEqual({ dot: false, cross: true, close: '1' });
-        expect(await marks(first)).toEqual({ dot: false, cross: true, close: '1' });
         // nothing is unsaved, so no tab carries the unsaved name
         await expect(named(t('views.tasks'))).toHaveCount(0);
-        // and no page tab carries it either
-        await expect(named(t('ui.page_default', 1))).toHaveCount(0);
 
         await typeTask(page);
         await rest(page);
         await expect.poll(() => marks(tasks)).toEqual({ dot: true, cross: false, close: '1' });
         await expect(named(t('views.tasks'))).toHaveCount(1);
-        await expect.poll(() => marks(first)).toEqual({ dot: true, cross: false, close: '1' });
-        await expect(named(t('ui.page_default', 1))).toHaveCount(1);
 
         // The dot sits where the cross sits. What is measured is the mark as it is drawn, the svg
         // inside the box, since the box keeps its 1em whatever the svg inside it does.
@@ -351,6 +350,12 @@ test.describe('the look', () => {
         await rest(page);
         await expect.poll(() => marks(tasks)).toEqual({ dot: true, cross: false, close: '1' });
         expect(await marks(status)).toEqual({ dot: false, cross: true, close: '1' });
+
+        // The page holding the tab says so in the Pages view, before a close would lose the text.
+        await showRailPage(page, 'views');
+        await expect(pagesRow(page, t('ui.page_default', 1))).toContainText(
+            t('workbench.pages_unsaved')
+        );
     });
 
     // Revert: take the ToolButton out of shell/panes/PaneView.svelte's paneMenu snippet, or drop
@@ -400,8 +405,8 @@ test.describe('the look', () => {
     // the Menu in shell/panes/PaneView.svelte, or `:not(.bare)` from
     // ui/controls/ToolButton.svelte's bracket rules.
     for (const [name, pattern] of [
-        ['light', /light$/],
-        ['gruvbox', /gruvbox$/]
+        ['light', 'light'],
+        ['gruvbox', 'gruvbox']
     ] as const) {
         test(`under ${name} the strip's scroll controls, split button and menu opener are one box`, async ({
             page
@@ -444,46 +449,6 @@ test.describe('the look', () => {
             }
         });
     }
-
-    // Revert: drop `low` or `surface="card"` from shell/panes/PageStrip.svelte's Tabs, or drop
-    // `:global(body.wall) .strip.card` from ui/tabs/Tabs.svelte (the page strip takes the pane
-    // strip's tint over a wallpaper).
-    test('the page strip draws its tabs in the same look, at its own height and on its own surface', async ({
-        page
-    }) => {
-        await boot(page);
-        const pages = page.getByRole('region', { name: t('ui.pages') });
-        await pages.getByRole('button', { name: t('ui.page_menu') }).click();
-        await page.getByRole('menuitem', { name: t('ui.page_new') }).click();
-        await expect(pages.getByRole('tab')).toHaveCount(2);
-        const accent = await colourOf(page, 'var(--accent)');
-        await rest(page);
-
-        const shown = tabIn(pages, t('ui.page_default', 2));
-        const other = tabIn(pages, t('ui.page_default', 1));
-        expect(await lookOf(shown)).toMatchObject({ height: 30, top: accent, close: '1' });
-        expect(await lookOf(other)).toMatchObject({ height: 30, top: NONE, close: '0' });
-        await other.hover();
-        await expect.poll(async () => (await lookOf(other)).close).toBe('1');
-
-        const surface = (strip: Locator): Promise<string> =>
-            strip.evaluate((node) => getComputedStyle(node).backgroundColor);
-        const card = await colourOf(page, 'var(--card)');
-        const ground = await colourOf(page, 'var(--bg)');
-        expect(card).not.toBe(ground);
-        expect(await surface(pages.locator('.strip'))).toBe(card);
-        expect(await surface(page.locator('[data-pane] .strip').first())).toBe(ground);
-
-        // Over a wallpaper both strips paint through, and the page strip keeps a surface of its
-        // own.
-        await theme(page, /mocha/);
-        await expect(page.locator('.wallpaper')).toHaveCount(1);
-        const pageOver = await surface(pages.locator('.strip'));
-        const paneOver = await surface(page.locator('[data-pane] .strip').first());
-        expect(pageOver).not.toBe(paneOver);
-        expect(alphaOf(pageOver)).toBeLessThan(1);
-        expect(alphaOf(paneOver)).toBeLessThan(1);
-    });
 
     // Revert: in ui/frame/Sash.svelte, drop the transparent `.line` background (drawn at rest), the
     // `.sash:hover .line` background (never drawn on a rest) or its delay (drawn at once), the
@@ -669,9 +634,9 @@ test("a split's handle is caught on the panes' borders alone at every device pix
     expect(wrong).toEqual([]);
 });
 
-// Where the rail opens a view, and nothing else, carries the accent line: one shown tab in the
-// window at a time, whichever page the reader is in, and the folded strip of a pane the rail would
-// open into rather than no mark at all.
+// Where a view opens, and nothing else, carries the accent line: one shown tab in the window at a
+// time, whichever page the reader is in, and the folded strip of a pane a view would open into
+// rather than no mark at all.
 test.describe('the one accent line', () => {
     /** The top border colour of every shown pane tab drawn, in the order the panes are drawn. */
     async function paneTops(page: Page): Promise<string[]> {
@@ -690,23 +655,9 @@ test.describe('the one accent line', () => {
         await rest(pane.page());
     }
 
-    /** A second page from the strip's menu, with the strip left on the first one. */
-    async function twoPages(page: Page): Promise<void> {
-        const strip = page.getByRole('region', { name: t('ui.pages') });
-        await strip.getByRole('button', { name: t('ui.page_menu') }).click();
-        await page.getByRole('menuitem', { name: t('ui.page_new') }).click();
-        const tabs = strip.getByRole('tab');
-        await expect(tabs).toHaveCount(2);
-        await page.keyboard.press('1');
-        await expect(tabs.filter({ hasText: t('ui.page_default', 1) })).toHaveAttribute(
-            'aria-selected',
-            'true'
-        );
-    }
-
-    // Answer with the active instance of the page the strip is on and the accent never follows the
+    // Answer with the active instance of the page on screen and the accent never follows the
     // reader into the page drawn inside it.
-    // revert: src/lib/state/workbench/layout.svelte.ts:426 => return instances.activeInstance();
+    // revert: src/lib/state/workbench/layout.svelte.ts:480 => return instances.activeInstance();
     test('one shown tab carries it, and it follows the reader into a page drawn inside another', async ({
         page
     }) => {
@@ -742,7 +693,7 @@ test.describe('the one accent line', () => {
 
         // A press that activates no tab moves the reader all the same: the empty end of a strip
         // changes nothing about the arrangement, and the mark follows it.
-        // revert: src/lib/state/workbench/layout.svelte.ts:210 => const where: Touched = { page: null };
+        // revert: src/lib/state/workbench/layout.svelte.ts:238 => const where: Touched = { page: null };
         // Hold where the reader is outside a rune and a press that changes no tree redraws nothing,
         // so the mark stays on the pane the reader has left.
         await pressStrip(host);
@@ -754,7 +705,7 @@ test.describe('the one accent line', () => {
     // Leave the folded strip unmarked and the window says nowhere while the rail still opens into
     // the pane the strip stands for.
     // revert: src/lib/shell/panes/FoldedPane.svelte:52 => const marked = $derived(false);
-    test('a folded pane the rail opens into carries it on its strip, and no shown tab does', async ({
+    test('a folded pane a view opens into carries it on its strip, and no shown tab does', async ({
         page
     }) => {
         await boot(page);
@@ -817,8 +768,8 @@ test.describe('a menu list over what is beside it', () => {
 
     // Leave the blurred strip at the depth of the pane body and the view's own blurred box, drawn
     // after the strip inside the pane, covers the list the pane menu opens.
-    // revert: src/lib/ui/tabs/Tabs.svelte:326 => z-index: auto;
-    test('every opener draws a list that answers a press, in a pane, in the page strip, in the rail and on a card', async ({
+    // revert: src/lib/ui/tabs/Tabs.svelte:305 => z-index: auto;
+    test('every opener draws a list that answers a press, in a pane, in the Settings view and on a card', async ({
         page
     }) => {
         await boot(page);
@@ -833,7 +784,7 @@ test.describe('a menu list over what is beside it', () => {
             ['mocha', 1],
             ['light', 0]
         ] as [string, number][]) {
-            await theme(page, new RegExp(`^\\S+\\s+${paint}$`));
+            await theme(page, paint);
             await expect(page.locator('.wallpaper')).toHaveCount(wall);
             const where = `${paint}, wallpaper ${wall === 1 ? 'on' : 'off'}`;
 
@@ -853,20 +804,14 @@ test.describe('a menu list over what is beside it', () => {
             await page.getByRole('menuitem', { name: t('ui.pane_restore'), exact: true }).click();
             await expect(page.locator('[data-pane]')).toHaveCount(2);
 
-            const pages = page.getByRole('region', { name: t('ui.pages') });
-            await pages.getByRole('button', { name: t('ui.page_menu') }).click();
-            expect(
-                await hitOf(page.getByRole('menu', { name: t('ui.page_menu') })),
-                `the page menu under ${where}`
-            ).toEqual({ inside: true, hit: 'BUTTON.item' });
-            await page.keyboard.press('Escape');
-
-            await page.getByRole('button', { name: t('ui.theme') }).click();
-            expect(
-                await hitOf(page.getByRole('menu', { name: t('ui.theme') })),
-                `the rail's theme menu under ${where}`
-            ).toEqual({ inside: true, hit: 'BUTTON.item' });
-            await page.keyboard.press('Escape');
+            await inSettings(page, async (settings) => {
+                await settings.getByRole('button', { name: t('ui.theme') }).click();
+                expect(
+                    await hitOf(page.getByRole('menu', { name: t('ui.theme') })),
+                    `the Settings view's theme menu under ${where}`
+                ).toEqual({ inside: true, hit: 'BUTTON.item' });
+                await page.keyboard.press('Escape');
+            });
 
             await page
                 .getByRole('button', { name: t('focus.move_to') })

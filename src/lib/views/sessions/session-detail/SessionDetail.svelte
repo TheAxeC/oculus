@@ -1,5 +1,5 @@
 <script module lang="ts">
-    // Layer 3, view registration. Session detail follows the list in the sessions flyout.
+    // Layer 3, view registration. Session detail follows the list in the Sessions group.
     import type { ViewRegistration } from '$lib/views/registry';
     export const registration: ViewRegistration = {
         id: 'session-detail',

@@ -1,8 +1,8 @@
 // Layer 2, client state. The one drag in progress, of a pane's tab or of a page carried out of the
-// page strip. A strip starts it, whatever the pointer is over reports where a drop would land, and
-// the pointer coming up performs it. There is one drag at a time on the page, so this is a module
-// and not a component's state: the strip that started the drag and the pane the pointer ended over
-// never meet.
+// Pages view. A strip or a page row starts it, whatever the pointer is over reports where a drop
+// would land, and the pointer coming up performs it. There is one drag at a time on the page, so
+// this is a module and not a component's state: the control that started the drag and the pane the
+// pointer ended over never meet.
 //
 // Nothing here reads the layout tree. A Drop names a pane's path and how the instance lands there;
 // the operation that carries it out is state/workbench/layout.svelte.ts's, and it is reached
@@ -10,7 +10,7 @@
 //
 // The document listeners exist only while a drag is in progress. They are installed by start() and
 // removed by end() and cancel(), so a page nobody is dragging on carries none, and a drag survives
-// the pointer leaving the strip it began in, which is the whole reason they are on the document.
+// the pointer leaving the control it began in, which is the whole reason they are on the document.
 
 import type { LayoutStore } from './layout.svelte.ts';
 import type { Edge } from './layout/index.ts';
@@ -43,7 +43,7 @@ export type DragSink = {
 
 /**
  * What is being dragged: a tab of a pane, which lands in a strip, a body or an edge, or a page from
- * the strip, which lands on an edge alone, since a page has no tab to put among another pane's.
+ * the Pages view, which lands on an edge alone, since a page has no tab to put among a pane's.
  */
 export type DragKind = 'tab' | 'page';
 
@@ -175,8 +175,8 @@ export function createDrag(layout: LayoutStore): DragStore {
     }
 
     /**
-     * A page is being carried out of the strip. The gesture that starts it has already crossed the
-     * threshold inside the strip, so this one is armed from the first move: the ghost is drawn
+     * A page is being carried out of the Pages view. The gesture that starts it has already crossed
+     * the threshold on the page's row, so this one is armed from the first move: the ghost is drawn
      * where the pointer already is rather than THRESHOLD pixels further on.
      */
     function startPage(id: string, label: string, point: Point): void {

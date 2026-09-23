@@ -20,7 +20,7 @@ import {
     type KeyAction,
     type RailOrder
 } from './keys';
-import { DOC_PICK } from '../rail/rail';
+import { DOC_PICK } from '$lib/state/workbench/navigation/catalogue';
 
 type Options = {
     drag: DragStore;
@@ -36,8 +36,13 @@ type Options = {
     setUpdateOpen: (open: boolean) => void;
     setSheetOpen: (open: boolean) => void;
     openPalette: (prefill: string) => void;
-    /** Open one configured hub document by its path, in the page named, the way the rail does. */
+    /** Open one configured hub document by its path, in the page named, as the catalogue does. */
     openDoc: (path: string, page: string | undefined) => void;
+    /**
+     * Show the page of the rail button at `index`, counting from 1, which is what the digits 1 to 9
+     * do. It answers whether there was one, so the key is swallowed only when it did something.
+     */
+    railPage: (index: number) => boolean;
 };
 
 export type WorkbenchKeys = {
@@ -143,9 +148,9 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
 
     /**
      * The page the reader is in: the one shown at the pane that last took the pointer or the
-     * keyboard, and the page on screen when no such pane is drawn any more. A control outside the
-     * trees, the rail above all, reads it so a view it opens lands in the page being read rather
-     * than in the one around it.
+     * keyboard, and the page on screen when no such pane is drawn any more. A chord read outside
+     * the trees reads it so a view it opens lands in the page being read rather than in the one
+     * around it.
      */
     function pageOf(): string {
         const page = lastPagePane?.isConnected === true ? lastPagePane.dataset.panePage : undefined;
@@ -157,7 +162,7 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
         if (action.kind === 'open') {
             clearCursor();
             // A chord counts a group's documents after its views, so the entry a digit lands on
-            // may be a document rather than a view: it opens through the rail's own path.
+            // may be a document rather than a view: it opens through the catalogue's own path.
             if (action.view.startsWith(DOC_PICK)) {
                 options.openDoc(action.view.slice(DOC_PICK.length), pageOf());
             } else {
@@ -174,7 +179,7 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
         } else if (action.kind === 'scroll') {
             return scrollRegion(scrollContainer(pane), action.edge);
         } else if (action.kind === 'page') {
-            return options.layout.pageShortcut(action.index);
+            return options.railPage(action.index);
         } else if (action.kind === 'tab') {
             return activateTab(pane, action.index);
         } else if (action.kind === 'cycle-tab') {
@@ -392,8 +397,8 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
     function rememberPane(target: EventTarget | null): void {
         const pane =
             target instanceof HTMLElement ? target.closest<HTMLElement>('[data-pane]') : null;
-        // The page is kept when the press lands outside every pane, since a rail button pressed
-        // after reading inside a nested page is still a view asked for in that page.
+        // The page is kept when the press lands outside every pane, since a chord typed after
+        // reading inside a nested page is still a view asked for in that page.
         if (pane !== null) lastPagePane = pane;
         if (pane === lastFocusedPane) return;
         writeCursor(lastFocusedPane ?? pane, null);

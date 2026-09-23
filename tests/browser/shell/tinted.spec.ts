@@ -4,7 +4,7 @@
 // source can read: the source only says the box takes `--wall-panel` of `--panel`.
 
 import { expect, test } from '@playwright/test';
-import { SHOWN_VIEW, boot, openView } from '../helpers/rail.ts';
+import { SHOWN_VIEW, boot, openView, pickTheme } from '../helpers/rail.ts';
 import { alphaOf } from '../helpers/style.ts';
 import { t } from '../helpers/words.ts';
 
@@ -18,8 +18,7 @@ test('a view that draws its own text tints its box and a board leaves it clear',
     page
 }) => {
     await boot(page);
-    await page.getByRole('button', { name: t('ui.theme') }).click();
-    await page.getByRole('menuitem', { name: /mocha/ }).click();
+    await pickTheme(page, 'mocha');
     await expect(page.locator('.wallpaper')).toHaveCount(1);
 
     // The board draws cards, which are its one translucent layer, so its box stays out of the way.

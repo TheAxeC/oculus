@@ -55,7 +55,7 @@ function tile(body: string, name: string): string {
 const registered = registration as ViewRegistration;
 
 describe('the Memories registration', () => {
-    it('sits in the Personal group and is offered in the rail', () => {
+    it('sits in the Personal group and is listed in the view catalogue', () => {
         expect(registered).toMatchObject({
             id: 'memories',
             label: 'views.memories',

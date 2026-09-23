@@ -1,9 +1,8 @@
 <script lang="ts">
     // Layer 3, primitive. The button a Menu opens its list from, in the looks a menu takes: a word
-    // with an optional glyph, the glyph alone in a narrow strip, the rail's full-width box, a
-    // strip's bare icon box, and a rail glyph above its visible label. It holds nothing: whether
-    // the list is open and what a press does are the menu's, and the menu reads the button itself
-    // through `button` to give it the focus back and to measure where a list beside the rail goes.
+    // with an optional glyph, the glyph alone in a narrow strip, and a strip's bare icon box. It
+    // holds nothing: whether the list is open and what a press does are the menu's, and the menu
+    // reads the button itself through `button` to give it the focus back.
 
     import Glyph from '../controls/Glyph.svelte';
     import Tooltip from './Tooltip.svelte';
@@ -18,9 +17,7 @@
         button?: HTMLButtonElement;
         glyph?: string;
         compact?: boolean;
-        rail?: boolean;
         bare?: boolean;
-        stacked?: boolean;
         tabindex?: number;
         stop?: string;
         onkeydown?: (event: KeyboardEvent) => void;
@@ -33,9 +30,7 @@
         button = $bindable(),
         glyph,
         compact = false,
-        rail = false,
         bare = false,
-        stacked = false,
         tabindex,
         stop,
         onkeydown
@@ -44,14 +39,12 @@
 
 <!-- A compact menu is an icon in a narrow column, so its words go beside it; a menu that shows
      its label has room underneath. -->
-<Tooltip text={label} placement={compact ? 'beside' : 'below'} presentational block={rail}>
+<Tooltip text={label} placement={compact ? 'beside' : 'below'} presentational>
     <button
         type="button"
         class="opener"
         class:compact
-        class:rail-control={rail}
         class:bare
-        class:stacked
         bind:this={button}
         aria-haspopup="menu"
         aria-expanded={open}
@@ -64,7 +57,7 @@
         {#if glyph !== undefined}
             <Glyph name={glyph} />
         {/if}
-        {#if !compact || stacked}
+        {#if !compact}
             <span class="label">{label}</span>
         {/if}
     </button>
@@ -115,32 +108,6 @@
         border-color: transparent;
         background: var(--chip);
         color: var(--ink-txt, var(--ink));
-    }
-
-    .opener.rail-control {
-        height: 34px;
-        box-sizing: border-box;
-        background: none;
-        font-size: var(--fs-xl);
-        padding: 0;
-    }
-
-    .opener.stacked {
-        flex-direction: column;
-        gap: 1px;
-    }
-
-    .opener.stacked :global(.label) {
-        display: block;
-        width: 100%;
-        min-width: 0;
-        max-width: 100%;
-        overflow: hidden;
-        color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-3xs);
-        line-height: 1;
-        text-overflow: ellipsis;
-        white-space: nowrap;
     }
 
     .opener:focus-visible {

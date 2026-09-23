@@ -1,6 +1,6 @@
 <script module lang="ts">
     // Layer 3, view registration. The slide catalog is opened from the deck's toolbar, never from
-    // the rail: it is about one deck and says nothing on its own.
+    // the view catalogue: it is about one deck and says nothing on its own.
     import type { ViewRegistration } from '../../registry';
 
     export const registration: ViewRegistration = {

@@ -1,0 +1,60 @@
+# Oculus text owned by the workbench views: the Views catalogue, the Settings view, the Pages view and the status bar.
+text:
+    views:
+        catalogue: Views
+        catalogue_glyph: catalogue
+        pages: Pages
+        pages_glyph: pages
+        settings: Settings
+        settings_glyph: sliders
+    workbench:
+        catalogue_hint: A click opens the view on the page you came from and shows that page; a shift-click opens it in a pane beside, on that page.
+        catalogue_key: '{0}, key {1}'
+        pages_close: Close
+        pages_current: shown
+        pages_drag: Drag onto the edge of a pane to show {0} there
+        pages_on_rail: 'rail: {0}'
+        pages_open: Show
+        pages_rename: Rename
+        pages_rename_label: Name of {0}
+        pages_unsaved: unsaved
+        rail_add: Add a button
+        rail_down: Move button {0} down
+        rail_empty: The rail has no button.
+        rail_glyph: Glyph of button {0}
+        rail_glyph_empty: Choose a glyph
+        rail_invalid: the server refused the list
+        rail_label: Label of button {0}
+        rail_page: Page of button {0}
+        rail_page_empty: Choose a page
+        rail_refused: 'The rail list was not saved: {0}'
+        rail_remove: Remove button {0}
+        rail_revert: Revert
+        rail_save: Save
+        rail_saved: Saved.
+        rail_saving: Saving...
+        rail_title: Rail
+        rail_unwritable: layout.yml could not be written
+        rail_up: Move button {0} up
+        rail_why_glyph: 'button {0} names no glyph'
+        rail_why_glyph_unknown: 'button {0} names a glyph glyphs.yml does not hold'
+        rail_why_label: 'button {0} has no label'
+        rail_why_page: 'button {0} names no page'
+        rail_why_page_unknown: 'button {0} names a page arrangements does not hold'
+        rail_why_repeated: 'button {0} names a page an earlier button already shows'
+        rail_why_shape: 'button {0} is not a label, a glyph and a page'
+        settings_appearance: Appearance
+        status_bar: Status bar
+        status_hpc: 'HPC: {0}'
+        status_live: 'live sessions: {0}'
+        status_socket: 'server: {0}'
+        status_socket_closed: down
+        status_socket_connecting: waiting
+        status_socket_open: up
+        status_unsaved: 'unsaved tabs: {0}'
+        status_unsaved_none: No tab holds text no save has taken.
+        status_usage: 'usage: {0}'
+        status_usage_down: down
+        status_usage_none: no refresher
+        status_usage_ok: ok
+        status_usage_refreshing: refreshing

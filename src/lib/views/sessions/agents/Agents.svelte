@@ -1,5 +1,5 @@
 <script module lang="ts">
-    // Layer 3, view registration. Agents closes the sessions flyout.
+    // Layer 3, view registration. Agents closes the Sessions group.
     import type { ViewRegistration } from '$lib/views/registry';
     export const registration: ViewRegistration = {
         id: 'agents',

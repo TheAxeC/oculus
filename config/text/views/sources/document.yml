@@ -1,7 +1,7 @@
 # Oculus text owned by the document view.
 text:
     document:
-        none: No document chosen. Open one from the Docs section of the rail.
+        none: No document chosen. Open one from the rail's bookmarks.
         none_glyph: paper
         open_outside: Open in a browser tab
         toolbar: Document controls

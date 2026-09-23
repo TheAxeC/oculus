@@ -101,8 +101,8 @@ test('Escape pressed while another tab is shown leaves a hidden Quick add form o
     const form = page.locator('.qa .form');
     await expect(form).toBeVisible();
 
-    // The Status tab of the same pane is pressed rather than a view opened from the rail, since
-    // walking the rail's menus presses Escape of its own while the form is still on screen.
+    // The Status tab of the same pane is pressed, so the switch is one press on a tab and nothing
+    // else reaches the form while it is still on screen.
     await page.getByRole('tab', { name: tabNamed(t('views.status')) }).click();
     await expect(form).toBeHidden();
     await expect(form).toHaveCount(1);
@@ -134,7 +134,7 @@ test('Escape pressed while another tab is shown leaves a hidden new-idea form op
     await expect(field).toBeVisible();
 });
 
-// revert: src/lib/shell/keys/workbench-keys.svelte.ts:239 => (one) => one !== null
+// revert: src/lib/shell/keys/workbench-keys.svelte.ts:244 => (one) => one !== null
 test('a confirm left open in a hidden tab holds no key: Ctrl and a bracket still cycle the tabs', async ({
     page
 }) => {

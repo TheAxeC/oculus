@@ -116,7 +116,7 @@ test('the new-idea form scaffolds a manifest and a README and the card appears',
     await page.getByRole('button', { name: t('board.new_idea') }).click();
     await page.getByRole('textbox', { name: t('board.new_idea_id') }).fill(IDEA);
     await page.getByRole('textbox', { name: t('board.new_idea_title') }).fill(IDEA_TITLE);
-    await page.getByRole('button', { name: t('board.new_idea_save') }).click();
+    await page.getByRole('button', { name: t('board.new_idea_save'), exact: true }).click();
 
     await expect
         .poll(() => hubFileExists(`projects/ideas/${IDEA}/project.yml`), { timeout: 5000 })

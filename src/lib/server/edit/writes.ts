@@ -40,6 +40,8 @@ import type { HubLike } from '../sessions/stores/hooks.ts';
 import { createIdea, writeManifest } from './writes/manifest.ts';
 import { writeDeck } from './writes/deck.ts';
 import { writeMute } from './writes/audit-mute.ts';
+import { writeRail } from './writes/rail.ts';
+import { glyphNames } from '../../data/sources/config/rail.ts';
 import { createEntry, removeEntry, reorderCollection, writeEntry } from './writes/entries.ts';
 import { writeHost, writeSubtask, writeSubtaskAdd } from './writes/subtasks.ts';
 import {
@@ -64,6 +66,7 @@ import {
     linkedinPostWrite,
     newEntry,
     newIdea,
+    railWrite,
     reorderWrite,
     sessionWrite,
     subtaskAdd,
@@ -113,6 +116,16 @@ export type WriteTarget = {
      * directory writes that copy rather than the checkout's.
      */
     behaviorFile: string;
+    /**
+     * The engine's own config/layout.yml, where the rail's list of pages lives, named here for the
+     * reason `behaviorFile` is.
+     */
+    layoutFile: string;
+    /**
+     * The glyph names of config/catalogs/glyphs.yml as this write's configuration holds them, which
+     * a rail entry's glyph must be one of.
+     */
+    glyphs: string[];
 };
 
 export type WriteOutcome = {
@@ -149,6 +162,7 @@ export {
 export { writeHost, writeSubtask, writeSubtaskAdd } from './writes/subtasks.ts';
 export type { SubtaskAction, SubtaskTarget } from './writes/subtasks.ts';
 export { writeMute } from './writes/audit-mute.ts';
+export { writeRail } from './writes/rail.ts';
 export {
     auditMuteWrite,
     deckWrite,
@@ -163,6 +177,7 @@ export {
     linkedinPostWrite,
     newEntry,
     newIdea,
+    railWrite,
     reorderWrite,
     sessionWrite,
     subtaskAdd,
@@ -173,6 +188,9 @@ export { undoChange, valueNow } from './writes/undo.ts';
 
 /** The engine config file the audit's mute list lives in. */
 const BEHAVIOR = 'behavior.yml';
+
+/** The engine config file the rail's list of pages lives in. */
+const LAYOUT = 'layout.yml';
 
 function json(status: number, body: unknown): Response {
     return new Response(JSON.stringify(body), {
@@ -200,6 +218,8 @@ export function target(engine: string, server?: { hub: HubLike; fsWrites: FsWrit
         projects: () => (server === undefined ? [] : projectsOf(server.hub)),
         bookmarks: local.bookmarks ?? defaultBookmarksPath(),
         behaviorFile: join(configDir(engine), BEHAVIOR),
+        layoutFile: join(configDir(engine), LAYOUT),
+        glyphs: glyphNames(merged) ?? [],
         changes:
             server === undefined
                 ? undefined
@@ -438,6 +458,22 @@ export async function handleWrite(
             return json(outcome.error === 'unwritable' ? 500 : 400, { error: outcome.error });
         }
         return answer({ found: true, ...outcome }, 'audit-mute', into);
+    }
+
+    const rail = railWrite(body);
+    if (rail !== null) {
+        let outcome;
+        try {
+            outcome = writeRail(into.layoutFile, rail.rail, into.glyphs);
+        } catch {
+            // The file is the reader's own configuration and anything about it can go wrong on this
+            // machine; the page is told which of the refusals it was and the file is left alone.
+            return json(500, { error: 'unwritable' });
+        }
+        if ('error' in outcome) {
+            return json(outcome.error === 'unwritable' ? 500 : 400, { error: outcome.error });
+        }
+        return answer({ found: true, ...outcome }, 'rail', into);
     }
 
     const idea = newIdea(body);

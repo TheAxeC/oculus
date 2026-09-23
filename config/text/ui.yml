@@ -22,17 +22,11 @@ text:
         move_to_page_list: Move tab to page...
         page_close_confirm: Close the page {0} and the {1} tabs on it?
         page_default: Page {0}
-        page_from: Open {0} as a page
         page_leaf_close: Stop showing this page here
         page_leaf_close_glyph: dismiss
-        page_menu: Page
-        page_menu_glyph: expand
         page_new: New page
-        page_rename: Rename this page
-        page_rename_label: Page name
         page_sessions: Sessions
-        page_shortcut: '{0} - press {1}'
-        pages: Pages
+        page_shortcut: '{0}, key {1}'
         pane_close: Close pane
         pane_close_confirm: Close this pane and the {0} tabs in it?
         pane_expand: Expand pane
@@ -44,7 +38,7 @@ text:
         pane_more_glyph: more
         pane_restore: Restore panes
         preview_tab: 'The next single click replaces this tab; double-click to keep it.'
-        rail: Views
+        rail: Pages
         row_menu: Row actions
         sash: Resize
         split_down: Split tab downwards

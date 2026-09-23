@@ -12,7 +12,6 @@ import {
     LAYOUT_VERSION,
     checkPages,
     defaultPages,
-    movePage,
     newPage,
     parseLayout,
     serialiseLayout,
@@ -36,7 +35,6 @@ let layout: ClientState['layout']['layout'];
 let loadLayout: ClientState['layout']['loadLayout'];
 let moveInstanceToPage: ClientState['layout']['moveInstanceToPage'];
 let openPage: ClientState['layout']['openPage'];
-let pageShortcut: ClientState['layout']['pageShortcut'];
 let pages: ClientState['layout']['pages'];
 let renamePage: ClientState['layout']['renamePage'];
 let switchPage: ClientState['layout']['switchPage'];
@@ -53,7 +51,6 @@ beforeEach(() => {
         loadLayout,
         moveInstanceToPage,
         openPage,
-        pageShortcut,
         pages,
         renamePage,
         switchPage,
@@ -251,7 +248,7 @@ describe('the store: the page operations', () => {
         expect(currentPage().label).toBe('Page 3');
     });
 
-    it('shows the page before the one it closed when that was the last in the strip', () => {
+    it('shows the page before the one it closed when that was the last in the list', () => {
         loaded();
         openPage('Page 2');
         closePage(currentPage().id);
@@ -277,24 +274,6 @@ describe('the store: the page operations', () => {
         expect(saved(storage)?.pages).toHaveLength(1);
     });
 
-    it('shows the page a shortcut names, and answers whether there was one', () => {
-        loaded();
-        openPage('Page 2');
-        expect(pageShortcut(1)).toBe(true);
-        expect(currentPage().label).toBe('Page 1');
-        expect(pageShortcut(2)).toBe(true);
-        expect(currentPage().label).toBe('Page 2');
-    });
-
-    it('answers no for a shortcut out of range, and changes nothing', () => {
-        loaded();
-        expect(pageShortcut(2)).toBe(false);
-        expect(pageShortcut(0)).toBe(false);
-        expect(pageShortcut(9)).toBe(false);
-        expect(pages()).toHaveLength(1);
-        expect(currentPage().label).toBe('Page 1');
-    });
-
     it('saves every page under the one key on every change', () => {
         const storage = loaded();
         openPage('Page 2');
@@ -307,42 +286,50 @@ describe('the store: the page operations', () => {
     });
 });
 
-describe('movePage', () => {
-    /** Three named pages with the second one current. */
-    function held(): Pages {
-        const pages = [newPage('One'), newPage('Two'), newPage('Three')];
-        return { pages, current: pages[1].id };
+describe("a page's rail key in the saved layout", () => {
+    /** Two pages, the first made by the rail button of `key`, as the store saves them. */
+    function withKey(first: unknown, second?: unknown): string {
+        const pages = [newPage('One'), newPage('Two')];
+        const raw = JSON.parse(serialiseLayout({ pages, current: pages[0].id })) as {
+            pages: Record<string, unknown>[];
+        };
+        raw.pages[0].rail = first;
+        if (second !== undefined) raw.pages[1].rail = second;
+        return JSON.stringify(raw);
     }
 
-    function labels(value: Pages): string[] {
-        return value.pages.map((page) => page.label);
-    }
-
-    it('moves a page to the front', () => {
-        const value = held();
-        expect(labels(movePage(value, value.pages[2].id, 0))).toEqual(['Three', 'One', 'Two']);
+    it('reads the key a rail page was saved with and writes it back', () => {
+        // revert: src/lib/state/workbench/layout/saved/saved.ts:298 => delete
+        const read = present(parseLayout(withKey('focus'), ''), 'layout');
+        expect(read.pages.map((page) => page.rail)).toEqual(['focus', undefined]);
+        const written = JSON.parse(serialiseLayout(read)) as { pages: { rail?: string }[] };
+        expect(written.pages[0].rail).toBe('focus');
     });
 
-    it('moves a page to the end', () => {
-        const value = held();
-        expect(labels(movePage(value, value.pages[0].id, 2))).toEqual(['Two', 'Three', 'One']);
+    it('reads an empty key, or one that is not a string, as none', () => {
+        // revert: src/lib/state/workbench/layout/saved/saved.ts:313 => if (typeof value !== 'string') return null;
+        for (const odd of ['', 3, null]) {
+            const read = present(parseLayout(withKey(odd), ''), 'layout');
+            expect(read.pages[0].rail).toBe(undefined);
+        }
     });
 
-    it('clamps a destination past the end', () => {
-        const value = held();
-        expect(labels(movePage(value, value.pages[1].id, 99))).toEqual(['One', 'Three', 'Two']);
+    it('keeps a key on the first page carrying it and reads the second as a page of its own', () => {
+        // revert: src/lib/state/workbench/layout/saved/saved.ts:314 => return value;
+        const read = present(parseLayout(withKey('focus', 'focus'), ''), 'layout');
+        expect(read.pages.map((page) => page.rail)).toEqual(['focus', undefined]);
     });
 
-    it('does nothing for an unknown page id', () => {
-        const value = held();
-        expect(movePage(value, 'missing', 0)).toBe(value);
-    });
-
-    it('keeps the current page current when that page moves', () => {
-        const value = held();
-        const moved = movePage(value, value.current, 0);
-        expect(moved.current).toBe(value.current);
-        expect(labels(moved)).toEqual(['Two', 'One', 'Three']);
+    it('names a key on two pages, and an empty one, as a problem of the page list', () => {
+        // revert: src/lib/state/workbench/layout/saved/saved.ts:246 => delete
+        const pages = [newPage('One', undefined, 'focus'), newPage('Two', undefined, 'focus')];
+        expect(checkPages({ pages, current: pages[0].id })).toEqual([
+            'rail key "focus" is on two pages'
+        ]);
+        const empty = [newPage('One', undefined, '')];
+        expect(checkPages({ pages: empty, current: empty[0].id })).toEqual([
+            'page "One" has an empty rail key'
+        ]);
     });
 });
 
@@ -406,5 +393,67 @@ describe('the store: a view leaving the registry', () => {
         closeInstancesOfView('sessions');
         expect(viewsOf(layout())).toEqual(['projects', 'projects', 'projects']);
         expect(saved(storage)?.pages).toHaveLength(1);
+    });
+});
+
+describe('the first rail page on a browser with no saved layout', () => {
+    const FOCUS = { root: { kind: 'pane', view: 'focus' } };
+
+    it('replaces the default page with the first rail page while nothing has changed', () => {
+        // revert: src/lib/state/workbench/layout.svelte.ts:314 => delete
+        loadLayout(fakeStorage());
+        client.layout.startOnRailPage('focus', 'Focus', FOCUS);
+        expect(pages().map((page) => [page.label, page.rail])).toEqual([['Focus', 'focus']]);
+        expect(viewsOf(layout())).toEqual(['focus']);
+
+        // A browser with a saved layout keeps its pages whatever the rail list says.
+        const storage = fakeStorage();
+        loadLayout(storage);
+        renamePage(currentPage().id, 'Mine');
+        loadLayout(storage);
+        client.layout.startOnRailPage('focus', 'Focus', FOCUS);
+        expect(pages().map((page) => page.label)).toEqual(['Mine']);
+
+        // Nor does a fresh one once the reader has changed anything.
+        loadLayout(fakeStorage());
+        openPage('Other');
+        client.layout.startOnRailPage('focus', 'Focus', FOCUS);
+        expect(pages().map((page) => page.label)).toEqual(['Page 1', 'Other']);
+    });
+
+    it('waits for the rail list on a fresh browser, and stops waiting when it names no page', () => {
+        // revert: src/lib/state/workbench/layout.svelte.ts:318 => delete
+        loadLayout(fakeStorage());
+        expect(client.layout.startingFresh()).toBe(true);
+        client.layout.startOnRailPage('broken', 'Broken', { root: 'not a node' });
+        expect(client.layout.startingFresh()).toBe(false);
+        expect(pages().map((page) => page.label)).toEqual(['Page 1']);
+
+        loadLayout(fakeStorage());
+        client.layout.keepDefaultPage();
+        expect(client.layout.startingFresh()).toBe(false);
+
+        // A browser with a saved layout never waits.
+        const storage = fakeStorage();
+        loadLayout(storage);
+        renamePage(currentPage().id, 'Mine');
+        loadLayout(storage);
+        expect(client.layout.startingFresh()).toBe(false);
+    });
+});
+
+describe('the page shown before the one on screen', () => {
+    it('is the page switched away from, and none on a fresh load or once it was closed', () => {
+        // revert: src/lib/state/workbench/layout.svelte.ts:402 => delete
+        loadLayout(fakeStorage());
+        const first = currentPage().id;
+        expect(client.layout.previousPage()).toBe(null);
+        openPage('Second');
+        expect(client.layout.previousPage()).toBe(first);
+        const second = currentPage().id;
+        switchPage(first);
+        expect(client.layout.previousPage()).toBe(second);
+        closePage(second);
+        expect(client.layout.previousPage()).toBe(null);
     });
 });

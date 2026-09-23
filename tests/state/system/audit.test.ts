@@ -1,5 +1,5 @@
 // The audit store: what the `audit` channel delivered, split into the findings the reader has not
-// parked and the ones they have, and the open count the rail badge draws.
+// parked and the ones they have, and the open count the view's badge draws.
 //
 // Nothing here touches the network or the real hub: a case hands the client a message of its own.
 
@@ -71,7 +71,7 @@ describe('the audit store', () => {
         expect(client.audit.openCount()).toBe(0);
     });
 
-    it('is what the rail badge counts, and draws nothing at zero', () => {
+    it('is what the view badge counts, and draws nothing at zero', () => {
         expect(client.railBadges.auditBadge()).toBe('');
         deliver({ findings: [finding(), finding({ signature: 'aaaabbbbcccc' })], muted: [] });
         expect(client.railBadges.auditBadge()).toBe('2');

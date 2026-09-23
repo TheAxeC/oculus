@@ -1,4 +1,5 @@
-// Layer 2, client state. Reactive rail badges over the latest portfolio and socket feed payload.
+// Layer 2, client state. Reactive view badges over the latest portfolio and socket feed payload,
+// drawn in the view catalogue and on pane tabs.
 // The snapshot summary remains the starting and read-error fallback until a usable feed arrives.
 
 import { scalar } from '../../data/helpers/guards.ts';
@@ -38,17 +39,17 @@ function splitTone(value: unknown): string {
     return typeof value === 'string' && /^[a-z][a-z0-9-]*$/.test(value) ? value : UNKNOWN_TONE;
 }
 
-/** The glyph of the red mark a rail badge draws when something it watches is past due. */
+/** The glyph of the red mark a view badge draws when something it watches is past due. */
 const OVERDUE_GLYPH = 'bang';
 
-/** The hover text shared by a split strip and its compact rail badge. */
+/** The hover text shared by a split strip and its compact badge. */
 function cellsTitle(cells: BadgeCell[]): string {
     return cells
         .map((cell) => t('views.badge_cell', cell.label, cell.count))
         .join(t('views.badge_separator'));
 }
 
-/** The reactive rail badges of one client. */
+/** The reactive view badges of one client. */
 export type RailBadgesStore = {
     boardBadge: (view: string) => string;
     collectionBadge: (key: string) => string;
@@ -209,7 +210,7 @@ export function createRailBadges(
         ];
     }
 
-    /** The one count the Calendar rail badge carries: today's events that have not ended. */
+    /** The one count the Calendar badge carries: today's events that have not ended. */
     function calendarCells(): BadgeCell[] {
         return [
             {

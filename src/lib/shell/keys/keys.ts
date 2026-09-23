@@ -1,10 +1,9 @@
 // Layer 3, shell. Pure keyboard routing and card geometry. The workbench supplies DOM-derived
 // guard state and performs the returned action, leaving shortcut precedence testable without a DOM.
 
-export type RailOrder = {
-    direct: string[];
-    chords: Record<string, string[] | undefined>;
-};
+import type { RailOrder } from '$lib/state/workbench/navigation/catalogue';
+
+export type { RailOrder };
 
 export type KeyContext = {
     cursorActive: boolean;
@@ -126,7 +125,7 @@ export function resolveKey(
     if (/^[1-9]$/.test(event.key)) {
         const cleared = { ...state, chord: '' };
         // A live chord names the list the digit counts into, and a digit past that list opens
-        // nothing rather than falling through to a page, which would be a different surface.
+        // nothing rather than falling through to a rail page, which would be a different surface.
         const chorded = now - state.chordAt < CHORD_MS ? order.chords[state.chord] : undefined;
         if (chorded !== undefined) {
             const view = chorded.at(Number(event.key) - 1);

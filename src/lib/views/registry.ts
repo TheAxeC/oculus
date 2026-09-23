@@ -17,13 +17,14 @@ import { glyph, lookup, t } from '$lib/state/words/text';
 /** A split cell carries a theme hue, its count and its configured label. */
 export type BadgeCell = { count: number; color: string; label: string };
 
-/** The badge values shared by the rail and pane tabs. */
+/** The badge values shared by the view catalogue and pane tabs. */
 export type RegistrationBadge = {
     text: string;
     /** The glyph name drawn before the text, empty for a badge that is a count and nothing else. */
     glyph: string;
     /**
-     * The text a pane tab draws: the rail's, unless the registration says its cells carry it all.
+     * The text a pane tab draws: the catalogue's, unless the registration says its cells carry it
+     * all.
      */
     tabText: string;
     tone?: string;
@@ -45,28 +46,29 @@ export type Registration = {
      */
     glyph: string;
     component: Component<ViewProps>;
-    /** The stable id of the rail group that owns this view. */
+    /** The stable id of the `nav_groups` group of the view catalogue that owns this view. */
     group: string;
     /** Position inside the group; equal positions are resolved by id. */
     order: number;
     /**
-     * Whether the rail offers the view. Every view is listed unless it says otherwise; one that is
-     * only ever opened for something (a project's editor, a project, a document) says `false`,
-     * since opened bare it can only report that it was opened for nothing.
+     * Whether the view catalogue lists the view. Every view is listed unless it says otherwise; one
+     * that is only ever opened for something (a project's editor, a project, a document) says
+     * `false`, since opened bare it can only report that it was opened for nothing.
      */
     listed?: boolean;
-    /** Live text drawn beside the rail glyph; an empty string draws no badge. */
+    /** Live text drawn beside the view's glyph in the catalogue; an empty string draws no badge. */
     badge?: (state: ClientState) => string;
     /** A glyph name drawn in the badge before its text, for a badge that is a mark, not a count. */
     badgeGlyph?: (state: ClientState) => string;
-    /** A hue name from state/words/tones.ts; absent keeps the rail's accent badge. */
+    /** A hue name from state/words/tones.ts; absent keeps the accent badge. */
     badgeTone?: (state: ClientState) => string;
     /** The badge's hover words, supplied by the registration's state selectors. */
     badgeTitle?: (state: ClientState) => string;
     /** The split counts shown on a pane tab. */
     badgeCells?: (state: ClientState) => BadgeCell[];
     /**
-     * The text a pane tab draws when it differs from the rail's; empty when the cells say it all.
+     * The text a pane tab draws when it differs from the catalogue's; empty when the cells say it
+     * all.
      */
     badgeTabText?: (state: ClientState) => string;
 };

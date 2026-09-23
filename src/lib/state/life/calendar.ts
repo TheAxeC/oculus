@@ -60,7 +60,7 @@ export function dayGroups(events: CalendarEvent[], now: Date): CalendarDay[] {
     );
 }
 
-/** How many of today's events have not ended yet, which is what the rail badge counts. */
+/** How many of today's events have not ended yet, which is what the view's badge counts. */
 export function remainingToday(events: CalendarEvent[], now: Date): number {
     const today = localDay(now);
     return events.filter(

@@ -141,7 +141,7 @@ describe('the pending Connect press', () => {
 });
 
 describe('the calendar store readers', () => {
-    it('reads the payload, its day groups and the rail badge count off the socket entity', () => {
+    it('reads the payload, its day groups and the badge count off the socket entity', () => {
         vi.useFakeTimers();
         try {
             vi.setSystemTime(Date.parse('2031-03-02T08:30:00'));

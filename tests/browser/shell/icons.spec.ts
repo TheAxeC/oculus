@@ -5,12 +5,12 @@
 // nothing a drawing may not carry: no script, no handler, no address out of the page. The ASCII
 // vocabulary is the other half of the same control, and there an icon is not drawn at all.
 //
-// A rail badge that is a mark rather than a count is not here: the demo hub carries no LinkedIn
-// folder, so its cadence badge never appears. That badge is rendered in
-// tests/shell/rail/rail.test.ts.
+// A view badge that is a mark rather than a count is not here: the demo hub carries no LinkedIn
+// folder, so its cadence badge never appears. A tab's mark badge is rendered in
+// tests/shell/workbench.test.ts.
 
 import { expect, test } from '@playwright/test';
-import { boot } from '../helpers/rail.ts';
+import { boot, inSettings, pickTheme } from '../helpers/rail.ts';
 import { t } from '../helpers/words.ts';
 
 test('every glyph in the rail is a line icon and none of them carries anything that runs', async ({
@@ -56,13 +56,15 @@ test('an icon is drawn in the colour of the control it sits in', async ({ page }
 test('a terminal theme draws the ASCII stand-in and no icon, until the glyphs are asked for', async ({
     page
 }) => {
+    // revert: src/lib/views/system/workbench/Appearance.svelte:112 => onclick={() => setUnicode(unicode())}
     await boot(page);
-    await page.getByRole('button', { name: t('ui.theme') }).click();
-    await page.getByRole('menuitem', { name: /mocha/ }).click();
+    await pickTheme(page, 'mocha');
     // a terminal theme draws the ASCII stand-in, so no icon is drawn until the glyphs are asked for
     await expect(page.locator('nav .glyph svg')).toHaveCount(0);
     await expect(page.locator('nav .glyph').first()).not.toBeEmpty();
 
-    await page.getByRole('button', { name: t('ui.unicode') }).click();
+    await inSettings(page, (settings) =>
+        settings.getByRole('button', { name: t('ui.unicode') }).click()
+    );
     await expect(page.locator('nav .glyph svg').first()).toBeVisible();
 });

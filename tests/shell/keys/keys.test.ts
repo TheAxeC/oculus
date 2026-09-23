@@ -49,7 +49,7 @@ describe('digit and chord navigation', () => {
         expect(press('9').action).toEqual({ kind: 'page', index: 9 });
     });
 
-    it('opens the rail view at the digit after the direct chord, and nothing past its end', () => {
+    it('opens the catalogue view at the digit after the direct chord, and nothing past its end', () => {
         const started = press('v', initialKeyState(), 2000);
         expect(started.action).toBe(null);
         expect(press('1', started.state, 2000 + CHORD_MS - 1).action).toEqual({
@@ -103,7 +103,7 @@ describe('digit and chord navigation', () => {
         });
     });
 
-    it('does not start a chord for a letter absent from the rail config', () => {
+    it('does not start a chord for a letter no group of the config names', () => {
         expect(press('x').state.chord).toBe('');
     });
 

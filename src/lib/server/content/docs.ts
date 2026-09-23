@@ -8,7 +8,8 @@
 //
 // A request names one of three things. `project` with `name` is one of that project's own
 // documents; `hub` is a path relative to the research hub, which is what the `docs:` list of
-// config/layout.yml offers in the rail; `manual` is the engine's own HELP.md and takes no path.
+// config/layout.yml lists in the view catalogue; `manual` is the engine's own HELP.md and takes
+// no path.
 // Everything else is a 404 naming what was wrong.
 //
 // The path read is the reader's, never the request's: the id names a project the server already
@@ -272,10 +273,10 @@ export function renderDoc(into: DocTarget, id: string, name: string): Response {
 
 /**
  * One Markdown document of the hub, named by a path relative to it: the documents the `docs:` list
- * of config/layout.yml offers in the rail. Only a Markdown file is served, since nothing else
- * renders, and the joined path is checked against the hub again before the file is opened, so a
- * path climbing out of it is a 404 and nothing is opened. The hub's own files are already served to
- * this page by api/file under the `hub` root; this is the same ground, rendered as prose.
+ * of config/layout.yml lists in the view catalogue. Only a Markdown file is served, since nothing
+ * else renders, and the joined path is checked against the hub again before the file is opened, so
+ * a path climbing out of it is a 404 and nothing is opened. The hub's own files are already served
+ * to this page by api/file under the `hub` root; this is the same ground, rendered as prose.
  */
 export function renderHubDoc(into: DocTarget, path: string): Response {
     if (path === '' || !path.endsWith('.md')) {

@@ -1,6 +1,6 @@
 // The config folder oculus ships, read the way the server reads it: which keys sit in which file,
 // that no key is defined in two, that every file carries the one line the Config view and the
-// manual show, and that the glyphs, the icons and the rail groups the files name resolve. The
+// manual show, and that the glyphs, the icons and the catalogue groups the files name resolve. The
 // machine's own local.yml is left out of every list here, since a checkout has one or it has none
 // and neither may change a result.
 
@@ -25,10 +25,10 @@ import { readRoots, rootsFile } from '../../../src/lib/server/files/files.ts';
 import { descriptionKey } from '../../../src/lib/views/system/config/files.ts';
 import {
     arrange,
-    isFlyout,
+    isChorded,
     type DocEntry,
     type NavGroup
-} from '../../../src/lib/shell/rail/rail.ts';
+} from '../../../src/lib/state/workbench/navigation/catalogue.ts';
 // Importing the route loader registers views; collection registrations use sources.yml keys.
 import { registerAll, registerCollections } from '../../../src/routes/views.ts';
 import { createClientState, type ClientState } from '../../fixtures/client.ts';
@@ -146,6 +146,7 @@ describe("oculus's own config directory", () => {
         'catalogs/glyphs.yml': ['glyphs', 'ascii'],
         'catalogs/icons.yml': ['icons'],
         'layout.yml': [
+            'rail',
             'nav_groups',
             'direct_chord',
             'arrangements',
@@ -153,7 +154,6 @@ describe("oculus's own config directory", () => {
             'tab_split',
             'tab_rollup',
             'nav_live',
-            'bookmarks',
             'docs',
             'focus_label_mode',
             'project_label_mode',
@@ -255,7 +255,8 @@ describe("oculus's own config directory", () => {
         'views/system/history.yml',
         'views/system/hpc.yml',
         'views/system/status.yml',
-        'views/system/usage.yml'
+        'views/system/usage.yml',
+        'views/system/workbench.yml'
     ];
 
     it('merges without a finding, so no key is defined in two files', () => {
@@ -354,12 +355,14 @@ describe("oculus's own config directory", () => {
     });
 
     it('holds exactly the expected top-level keys, and no more', () => {
+        // revert: config/layout.yml:9 => rails:
         const { config } = loadConfig(engineDir());
         const expected = [...new Set([...Object.values(EXPECTED).flat(), 'text'])].sort();
         expect(Object.keys(config).sort()).toEqual(expected);
     });
 
     it('reads one catalog file per owner and no legacy catalog file', () => {
+        // revert: config/text/views/system/workbench.yml:1 => delete
         const { config } = loadConfig(engineDir());
         const dir = join(engineDir(), 'config', 'text');
         const names = [
@@ -404,19 +407,6 @@ describe("oculus's own config directory", () => {
         expect(readRoots(loadConfig(engineDir()).config, rootsFile(engineDir())).findings).toEqual(
             []
         );
-    });
-
-    it('names a root of its own for every bookmark, and a path under it', () => {
-        const { config } = loadConfig(engineDir());
-        const keys = ROOTS.map((root) => root.key);
-        const bookmarks = config.bookmarks as { label: string; root: string; path: string }[];
-        expect(bookmarks.map((mark) => mark.root)).toEqual(['cathedra', 'game-engine']);
-        for (const mark of bookmarks) {
-            expect(keys).toContain(mark.root);
-            expect(mark.path.startsWith('/')).toBe(false);
-            expect(mark.path.includes('..')).toBe(false);
-            expect(mark.label.length).toBeGreaterThan(0);
-        }
     });
 
     it('names a group of its own and a path under the hub for every document', () => {
@@ -514,7 +504,7 @@ describe("oculus's own config directory", () => {
         expect(Object.keys(glyphCatalog(config)).filter((name) => !read.has(name))).toEqual([]);
     });
 
-    // revert: config/catalogs/glyphs.yml:157 => "~~": "[-]"
+    // revert: config/catalogs/glyphs.yml:161 => "~~": "[-]"
     it('carries an ASCII stand-in only for a character a glyph name holds', () => {
         const { config } = loadConfig(engineDir());
         const held = new Set(Object.values(glyphCatalog(config)));
@@ -557,7 +547,8 @@ describe("oculus's own config directory", () => {
         expect(iconSet(drifted)).toEqual({});
     });
 
-    it('configures one lowercase chord and a glyph on every group the rail flies out', () => {
+    it('configures one lowercase chord and a glyph on every group reached by a chord of its own', () => {
+        // revert: config/layout.yml:29 => sessions: { label: "Sessions", glyph: live }
         const { config } = loadConfig(engineDir());
         registerAll(client.registry);
         registerCollections(client.registry, collectionKeys(config));
@@ -568,19 +559,18 @@ describe("oculus's own config directory", () => {
             groups,
             config.docs as DocEntry[]
         );
-        // A group of more entries than the group maximum, its documents counted, is one button with
-        // a list beside it, so it needs a mark of its own and a letter to reach it by: a group
-        // drawn as buttons is reached through the direct chord, and one drawn as a list is reached
-        // only through its own. This holds for whichever groups those are.
-        const flyouts = sections.filter(isFlyout);
-        expect(flyouts.map((section) => section.label)).toEqual([
+        // A group of more entries than the group maximum, its documents counted, is reached only by
+        // a letter of its own, and its catalogue heading carries a mark of its own: a group of four
+        // or fewer is reached through the direct chord. This holds for whichever groups those are.
+        const chorded = sections.filter(isChorded);
+        expect(chorded.map((section) => section.label)).toEqual([
             'Sessions',
             'Academic life',
             'Sources',
             'System'
         ]);
-        expect(flyouts.filter((section) => section.glyph === undefined)).toEqual([]);
-        expect(flyouts.map((section) => section.chord)).toEqual(['m', 'c', 's', 'y']);
+        expect(chorded.filter((section) => section.glyph === undefined)).toEqual([]);
+        expect(chorded.map((section) => section.chord)).toEqual(['m', 'c', 's', 'y']);
         for (const group of groups) {
             if (group.chord !== undefined) expect(group.chord).toMatch(/^[a-z]$/);
         }
@@ -604,6 +594,7 @@ describe("oculus's own config directory", () => {
     });
 
     it('reads each file on its own and finds its own keys there and nowhere else', () => {
+        // revert: config/layout.yml:9 => rails:
         const dir = join(engineDir(), 'config');
         const seen: Record<string, string> = {};
         for (const [name, keys] of Object.entries(EXPECTED)) {
