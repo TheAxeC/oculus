@@ -45,9 +45,10 @@ dispatch:
     worktree: .agents/worktrees/O31
     base: 10c2852c
     launched: 2026-09-23
-    report: tools/oculus/.scratch/migration/agents/reviews/O31-report.md (the builder returns it as its final message; the orchestrator saves it)
+    report: tools/oculus/.scratch/migration/agents/reviews/O31-report.md (saved)
+    review: agents/reviews/O31-refuter.md (saved; reviewer claude:opus, 172,007 tokens, 45 tool uses, 594 s)
     landing: not-started
-    round: 0
+    round: 1                 # sent 2026-09-23 to the same builder: the lock race, the reused pid, a builder's liveness from its own session, no builder transcript folded outside the window, crash litter swept, the report's counts re-run
 ```
 
 ## The standing demands (from Axel, in force)
@@ -86,7 +87,7 @@ dispatch:
 None. Axel lifted it on 2026-09-23 with `/plan-orchestration oculus/migration` and no stop time: the loop runs until nothing unblocked is left or a decision is his. The earlier pauses (after Q58, after Q59) are over; both steps are landed.
 
 ## Open items (only what Axel must rule on; every report opens with this list verbatim and repeats it until he has ruled)
-Nothing is waiting on a ruling.
+- O31, a launched builder whose launcher dies before `end` (raised 2026-09-23 by O31's review, `agents/reviews/O31-refuter.md`, Spec 3). When the builder's own transcript is known, its row follows that session's own liveness, which the repair round builds. When no transcript was ever recorded, nothing in the ruled record says whether the builder still runs, so its row reads `running` for good. Options: (a) add the builder's process id to the record (`--pid` on `start`, checked the way `sessions/registry.ts` checks a registry pid), so a launch with no transcript is known dead once its process is; (b) leave the record as ruled, and a launch with no transcript and no `end` reads `running` until someone ends it. Recommended (a): the row otherwise tells the reader something false, and a pid is the one fact that answers it; it is one optional field and the writer already runs where the launcher knows the child's pid. (b) is the lazy option. O31 lands without it either way; (a) would be a small step of its own.
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is booked as its own step in `plan.md` and carried in the Booked section below, since it needs no ruling from him.
 
