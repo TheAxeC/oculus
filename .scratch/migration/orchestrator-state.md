@@ -37,9 +37,9 @@ dispatch:
     base: fbe3c308
     launched: 2026-09-23
     report: tools/oculus/.scratch/migration/agents/reviews/Q65-report.md (saved; builder 602,567 tokens, 296 tool uses, 6,347 s)
-    review: dispatched over the worktree, reviewer claude:opus
+    review: agents/reviews/Q65-refuter.md (saved; reviewer claude:opus, 254,015 tokens, 87 tool uses, 2,132 s)
     landing: not-started
-    round: 0
+    round: 1                 # sent 2026-09-23: the white-page cause fixed with a style-first case, the keys a hidden confirm blocks, the tab-switch cases re-proven, check-ignore through server/git, the map labels of a hidden tab, and the smaller findings
 ```
 
 ## The standing demands (from Axel, in force)
