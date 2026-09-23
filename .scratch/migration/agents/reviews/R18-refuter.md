@@ -77,3 +77,114 @@ Not checked
 - Every line of the three `.svg` files: I sampled the head and counted every fill and stroke value (only `currentColor` and `none`).
 
 Usage: not measured. The session ran one full unit suite, one alone rerun, two runs of the system browser spec, one build, one revert-check over seven files, and scratchpad probes.
+
+# Repair round 1, refuted
+
+Verification (run from .agents/worktrees/R18/tools/oculus, Node v24.21.0, Doc text NOT applied unless marked "copy")
+
+1. `npx vitest run --reporter=dot`: `Test Files 1 failed | 281 passed (282)`, `Tests 1 failed | 4542 passed (4543)`. The one failure is `tests/views/system/help.test.ts > the diagrams in the manual > audits that the manual shows every diagram the generator writes, each one committed` (`expected [] to deeply equal [ 'channels', 'layers', 'writes' ]`), which is the HELP.md gate. This matches the report.
+2. `npm run check`: `COMPLETED 1309 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS`.
+3. `npm run build`: `build exit=0`.
+4. `npm run format:check`: `All matched files use Prettier code style!`
+5. `npm run lint`: `lint exit=0`.
+6. The perl ASCII gate prints nothing (`ascii exit=0`). `LC_ALL=C grep -c '[^ -~]' docs/diagrams/*` gives 0 for all six files.
+7. `sh bin/size-check.sh`: exit 0. `sh bin/folder-check.sh`: exit 0. `ls bin | wc -l` gives 10. `wc -l bin/diagrams.mjs` gives 876.
+8. `node bin/diagrams.mjs` run twice gives `identical`. The hashes match the committed files and the report: channels.dot 7491ef89, channels.svg ff54c8a9, layers.dot a6e2fab4, layers.svg e2b7a314, writes.dot 053ef7dd, writes.svg 1994d5f6.
+9. Copy at $TMPDIR/r18-refute2 with the report's revised HELP.md Doc text inserted before `## Running it and checking it`:
+   - `npx vitest run` over help.test.ts, diagrams.test.ts and routes/docs/diagrams.test.ts: `38 passed`.
+   - `npm run build` exit 0. `lsof -iTCP:8792 -sTCP:LISTEN` printed nothing.
+   - `npx playwright test tests/browser/workbench/system.spec.ts`: `11 passed (17.9s)`.
+   - The whole browser suite was not rerun.
+10. Copy: `node bin/revert-check.mjs tests/checks/diagrams/diagrams.test.ts tests/routes/docs/diagrams.test.ts tests/views/system/help.test.ts tests/browser/workbench/system.spec.ts` gave `35 reverts, 0 unproven, 14 unchecked`, every directive `red`. This matches the report.
+11. `ls -d $TMPDIR/oculus-* | wc -l`: 7015 before and 7015 after every run.
+
+Round-report counts, measured:
+- layers.svg is `width="4014pt" height="986pt"`, writes.svg `1788pt` by `1349pt`, channels.svg `462pt` by `1264pt`.
+- `grep -c " -> "` gives layers 361, writes 113, channels 71.
+- system.spec.ts is 290 lines.
+- writes.svg has 0 `<a ` and 103 `<title>.*: `. writes.dot has 103 `tooltip=`, so every tooltip edge carries its names in its title.
+- `grep -n "? src" docs/diagrams/*.dot` gives `audit-mute.ts:79 SIGNATURE.test(` and `server.ts:40 import(built)`.
+- writes.dot:130-131 draw `writes.ts -> data/sources/config/merge.ts` and `-> settings.ts`.
+- All reproduce.
+
+Spec
+
+- bin/diagrams.mjs:10-15 claims more than the code does (ruling 2). The head comment says "every import, publish, read or call a reader cannot follow, is drawn with its file and line ... A diagram never hides what its reader met and did not understand." A scratchpad probe of the exported readers shows each of these is dropped with no edge and no "not placed" entry:
+  - Layers: `import(\`./x/${a}\`)`, because line 256's pattern `(?!['"\`])` excludes a template literal and IMPORT reads only `'` and `"`.
+  - Layers: `import.meta.glob('...')`. This occurs in the tree at src/routes/views.ts:33 (`export const viewModules = import.meta.glob('$lib/views/**/*.svelte', ...)`). The committed layers.dot has no entry for it; `"routes" -> "views"` exists only through the type import at views.ts:5.
+  - Channels: `switch (channel) { case 'old': }` and `channel === NAME`. Line 338 reads only `channel === '<literal>'`.
+  - Writes, `export * from './old.ts'` in a barrel: importsOf's pattern (bin/diagrams.mjs:507) has no `export *` form. The trace draws `writes.ts -> all.ts` and stops, so the writer and the disk are lost and the barrel lands in "reached, writes nothing".
+  - Writes: `import * as fs from 'node:fs'; fs.writeFileSync(...)` and `import fs from 'node:fs'; fs.writeFileSync(...)`. The fs set gets `fs=*` or `fs=fs`, and METHOD finds `fs` in neither spaces nor names, so no disk edge and no entry.
+  - Writes: a call through a parameter or a local alias (`function handleWrite(save) { save(); }`, `const save = pick(kind); save();`).
+  - Only the glob is in the tree today. The rule the round was sent to close still does not hold.
+- The HELP.md Doc text sentence "What a diagram's reader meets and cannot place or follow (a module no layer row names, an import, a publish or a read whose target is not written out, ...) is drawn with its file and line in a dashed group named "not placed"" is false in two ways (ruling 11):
+  - It is false for a template-literal import and for a `channel === NAME` read, per the probe above.
+  - It is false for "a module no layer row names": that is drawn as a bare folder node (`"assets";`, `"highlight-languages.d.ts";` at layers.dot:95-96) with no file and line.
+  - The DESIGN.md item 4 text repeats the same sentence.
+
+Proof
+
+- src/lib/views/system/help/Diagram.svelte:55 `$effect(() => ask(load(name)));` (ruling 3). In the copy I replaced it with `$effect(() => { ask(load(name)); });`, which drops the cleanup newestAnswer returns, then rebuilt. `npx playwright test tests/browser/workbench/system.spec.ts` gave `11 passed`, and help.test.ts gave `16 passed`. The wiring that makes the after-close and superseded guards take effect in the component can be dropped with every check green. The two newest.ts cases prove newestAnswer alone. The report's "Remaining notes" says this, but the spec's "in flight, after close, and superseded" is still unproven for the component.
+- Two lost paths added this round have no case:
+  - bin/diagrams.mjs:387 `if (builds.length === 0) lost.push({ at: match.index, what: match[0] });`, a `.listen(`/`.subscribe(` with no naming function.
+  - bin/diagrams.mjs:394 `else if (part.trim() !== '')`, a non-literal `connect([...])` entry.
+  - In the copy, with both conditions set to `false`, diagrams.test.ts and help.test.ts gave `32 passed`. The report lists both under ruling 2 but names cases only for the import, the publish, `message(which)` and `HANDLERS[kind]()`.
+- The METHOD-on-imported-value lost branch (bin/diagrams.mjs:598-602) has no dedicated case. Only the byte-for-byte stale case reaches it, through audit-mute.ts:79 in the committed writes.dot.
+- tests/browser/workbench/system.spec.ts:129 uses one directive `revert: src/lib/ui/html.ts:260 => export const GRAPH_TAGS = ['svg', 'style', 'g', 'polygon', ...]`. It adds `style` and removes `title` at once, so it shows that one of the two assertions (titles hold `logChanges`; `svg style` count 0) is live, but not that each one is.
+- tests/views/system/help.test.ts names the two newestAnswer cases "audits that ...". Both are red under `newest.ts:17 => take(answer);`, so they are proofs of the helper and not audits in the spec's sense. The name undersells them for newest.ts and oversells nothing, but it muddles the audit vocabulary.
+
+Standards
+
+- R18-report.md, repair round item 3: "I also wrote a browser case that renamed a figure while its answer was out. It stayed green under the guard revert, so it proved nothing, and I removed it." This narrates a wrong turn taken and backed out, which the spec's report rule forbids. The end-state fact (the browser cannot reach the superseded path, because docs.svelte.ts:140-141 remounts every figure) can stand without it.
+- The rest of the delta has no history in comments, no non-ASCII and no comment past column 100.
+  - newest.ts opens with a layer head comment (`// Layer 3, view helper.`), as manual.ts does.
+  - html.ts's `drawingProfile` removes the repetition the first review named, and no list was widened: GRAPH_TAGS and GRAPH_ATTR are unchanged apart from comments.
+
+Behaviour
+
+- The standalone grey (ruling 9) is wrong for an `.svg` opened on its own under a dark scheme.
+  - In Chrome (playwright, `channel: 'chrome'`, `colorScheme: 'dark'`), `file://.../docs/diagrams/writes.svg` computes `color: rgb(204, 204, 204)` with `backgroundColor: rgba(0, 0, 0, 0)`.
+  - The screenshot shows light grey lines on a white canvas: Chrome draws a standalone SVG document on white whatever the scheme, and the file declares no `color-scheme` and no background.
+  - So the report's reader-visible change ("a .svg opened on its own draws ... light grey on a dark one") and the HELP.md Doc text sentence "Opened on its own, outside oculus, each .svg draws in a grey of its own: dark on a light background, light on a dark one" do not describe what a dark-mode Chrome user sees: #cccccc on white.
+  - Under a light scheme it is #333333 on white, which is readable.
+- Route (ruling 5): `diagramPath` builds the folder as `join(realpathSync(engine), DIAGRAM_DIR)` and compares `dirname(real)` against it (src/lib/server/content/diagrams.ts:45-47). A link at `docs/` or at `docs/diagrams/` is refused. The new case at tests/routes/docs/diagrams.test.ts:80-93 covers both and is red under its directive (revert-check). No finding.
+- Edge titles (ruling 8): no `<a `, no `xlink:title` and no `loading=` in any diagram file or in the help view folder (grep). The browser case finds `logChanges` in a `g.edge > title` after the filter. No finding.
+- The `<style>` and the filter (ruling 9): each `.svg` opens with the style line (layers.svg:3). GRAPH_TAGS has no `style`, and the browser case asserts `svg style` count 0 in the Help view (passes in the copy). No finding beyond the dark-scheme one above.
+
+Not checked
+
+- The whole browser suite with the Doc text applied. Only system.spec.ts was run.
+- The Help view in Axel's Chrome on the TEST page.
+- How an `.svg` renders as an `<img>` inside a Markdown viewer's dark theme (for example GitHub), where `prefers-color-scheme` inside the image may follow the OS and not the page.
+- Whether DOMPurify leaves the removed `<style>`'s text as a stray text node. The browser case checks the element count only; `style` is in DOMPurify's default FORBID_CONTENTS, so I expect not, but this is not verified.
+- Over-drawing by the "refers" pattern (bin/diagrams.mjs:584), which also matches an imported name inside a string literal or a type position. Not probed against the tree.
+- The package-lock.json entries.
+
+Usage: not measured. The session ran one full unit suite; check, build, format, lint and the ASCII, size and folder gates; two generator runs; one scratch copy with one build, one system.spec run and one revert-check over four files (4m04s); one rebuild and system.spec run under the cleanup-drop revert; two targeted vitest runs under the lost-path reverts; one Chrome standalone-SVG look; and scratchpad probes. The scratch copy is removed.
+
+## Closed
+
+The first run's findings, closed in repair round 1 (`agents/reviews/R18-report.md`, "# Repair round 1") unless named otherwise:
+
+- Spec, the write diagram cutting placed modules: every module the trace reaches is drawn, the ones with no path to the disk in the dashed group "reached, writes nothing"; red under its revert.
+- Spec, readers skipping what they cannot follow: a publish, a `message(...)`, a listen or subscribe with no naming function, a connect entry, a computed-member call and a method call on an imported value whose target is not written out are named with file and line under "not placed"; the dispatch table is followed to its writer.
+- Spec, the widened paths: each needed by the mechanism, as the review found; kept.
+- Proof, the Diagram guard: moved into `views/system/help/newest.ts`, whose two cases are red under `newest.ts:17 => take(answer);`.
+- Proof, the manual gate on a regex: it renders through `renderManual`, and an image in a code block counts for nothing, red under its revert.
+- Proof, a linked docs folder served: refused, red under its revert.
+- Proof, the stale test stopping at one file: `staleFiles` names every one, and a source change turns it red.
+- Standards, the two SVG profiles repeating each other: one `drawingProfile` builds both.
+- Behaviour, the edge names lost in the Help view: each edge's `<title>` carries its function names; the Help browser case finds them after the filter.
+- Behaviour, black on transparent outside oculus: each file carries its own colours in a `<style>` the graph filter drops.
+- The report's counts: measured in the round.
+
+The run over repair round 1, closed at landing on 2026-09-23:
+
+- Spec, the readers still dropping what they cannot follow: `import.meta.glob` (in the tree at `src/routes/views.ts:33`) now draws its layer edge; a template-literal import, a non-literal `channel ===` comparison, a non-literal `case` under `switch (channel)` (a literal case is read), and a whole-module `export * from` are named with file and line under "not placed"; a write through a namespace or default import of `node:fs` reaches the disk. A call through a parameter or a local alias is not followed, and the head comment of `bin/diagrams.mjs` and the Doc text say so. Nine new cases in `tests/checks/diagrams/diagrams.test.ts`; `node bin/revert-check.mjs tests/checks/diagrams/diagrams.test.ts`: 25 reverts, 0 unproven, 0 unchecked.
+- Spec and Standards, the Doc text sentence that claimed more than the code: HELP.md and DESIGN.md now list exactly what is named, say a module no layer row places is drawn in the "not placed" group, and state the alias limit.
+- Proof, the two lost paths with no case (a listen with no naming function, a non-literal connect entry) and the method-call branch: each has a case, red under its revert.
+- Proof, the one directive changing two things: split into two directives, one per assertion, each red.
+- Proof, the Diagram wiring (`$effect(() => ask(load(name)))`) that can lose its cleanup unseen: not covered by a case. The node tests render components on the server, where effects do not run, and in the running app the two paths the cleanup guards cannot be observed: a changed manual remounts every figure (`docs.svelte.ts:140-141`), so a mounted Diagram never changes its name, and an answer landing after close changes nothing a page can see. `newestAnswer` itself is proven by its two cases.
+- Proof, the newest-answer cases named "audits that": not a defect here. `tests/checks/tree/audits.test.ts` requires every case under `tests/views/` that never renders a component to carry that name, and renaming them turns that check red.
+- Standards, the round's report narrating a removed browser case: a record in the ledger, no change to the tree.
+- Behaviour, light grey on Chrome's white canvas under a dark scheme: the file's dark rule also sets a dark ground (`background: #1e1e1e`); the standalone colour case matches the new rule. The standalone file under a dark scheme was not looked at again after the change.

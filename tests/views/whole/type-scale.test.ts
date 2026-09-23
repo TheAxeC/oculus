@@ -62,6 +62,7 @@ const VIEWS: Record<string, string> = {
     'system/findings/Findings.svelte': '.view=fs-md | .file, .key=fs-sm',
     'boards/focus/Focus.svelte': '.said=fs-md | .wait-head, .seg-lbl=fs-xs',
     'system/gallery/Gallery.svelte': 'h3=fs-xs',
+    'system/help/Diagram.svelte': '.note=fs-md',
     'system/help/Help.svelte': '',
     'system/history/History.svelte':
         '.when=fs-sm | .kind=fs-xs | .file, .lbl=fs-sm | .what, .value=fs-md | .empty, .said=fs-md | .raw=fs-sm',
@@ -254,6 +255,7 @@ const PASS_THROUGH: Record<string, string> = {
 
 describe('the view type scale', () => {
     it('lists every view file in the audit', () => {
+        // revert: tests/views/whole/type-scale.test.ts:65 => delete
         expect(
             files(ROOT)
                 .map((file) => file.slice(`${ROOT}/`.length))

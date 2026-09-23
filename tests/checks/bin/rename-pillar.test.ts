@@ -9,7 +9,11 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve, sep } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
 import { RENAMED_FIELDS } from '../../../src/lib/data/snapshot/validate.ts';
-import { manifestsUnder, migrateHub, theRename } from '../../../bin/rename-program-to-pillar.ts';
+import {
+    manifestsUnder,
+    migrateHub,
+    theRename
+} from '../../../bin/migrations/rename-program-to-pillar.ts';
 import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
 
 afterAll(sweepScratch);

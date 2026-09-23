@@ -47,8 +47,11 @@ const PREFIX = 'oculus-browser-';
 /** The one file that says which run owns those directories. */
 const LOCK = 'oculus-browser.lock';
 
-/** The one file of an engine directory outside its config folder: oculus's own manual. */
+/** The file of an engine directory beside its config folder that the Help view draws. */
 const MANUAL = 'HELP.md';
+
+/** The folder of the engine directory the manual's diagrams are served from. */
+const DIAGRAMS = join('docs', 'diagrams');
 
 /** The ssh alias the Live HPC poller is given, which this run's own ssh answers for. */
 const CLUSTER = 'demo-cluster';
@@ -150,6 +153,9 @@ copyConfig(join(engine, 'config'), engineConfig);
 // The manual is a file of the engine directory beside its config folder, which is what the help
 // view draws, so the run's own engine directory carries it as the checkout does.
 cpSync(join(engine, MANUAL), inside(join(runEngine, MANUAL), tmpdir()));
+// The diagrams the manual shows are files of the engine directory too, served by the diagram route
+// from the run's own copy.
+cpSync(join(engine, DIAGRAMS), inside(join(runEngine, DIAGRAMS), tmpdir()), { recursive: true });
 // The Focus board draws a position lead only inside `leads_horizon_days` of today, so the demo's
 // dated lead is moved to a week from now in the copy: the spec that clicks its line holds on any
 // day.

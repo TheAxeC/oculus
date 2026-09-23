@@ -190,6 +190,24 @@ What each thread wants, the line about it and the answer drafted for it are the 
 
 Every write through the write endpoint that changed something is recorded in the change log, `~/.oculus/changes.jsonl`: when it was made, which file it wrote, what it addressed, and the value that file held before it against the value it holds after. That is the manifest fields, the collection entries, the subtasks, the feeds, the deck and the per-session overrides, and a scaffolded idea and the two LinkedIn writes, which are recorded and cannot be taken back; a text file saved from a source tab and a scratch note go through their own endpoints and are not recorded. The History view draws the log newest first, and the control on a row puts the earlier value back through the writer the change came from, refusing when the file has changed since. `changes.keep` in `behavior.yml` is how many changes the file holds.
 
+## How the code fits together
+
+Three diagrams are drawn from the source by `node bin/diagrams.mjs`, which writes each to `docs/diagrams/` as a Graphviz `.dot` file and the `.svg` drawn from it. `npm test` fails while a committed diagram differs from what the source gives now and names every such file, so a change that moves an import, a channel or a write is committed with the diagrams it redraws. A module no layer row places is drawn in a dashed group named "not placed"; so is, with its file and line, an import, a publish, a channel read or comparison, a re-export of a whole module, or a call through a computed member or a method of an imported value, whose target is not written out. A call through a parameter or a local alias is not followed.
+
+The layers: one box per folder of `src/lib` and `src/routes`, grouped by the layer rows `tests/checks/tree/boundaries.test.ts` enforces, and an arrow for each pair of folders some import or glob joins.
+
+![The layers of oculus and the imports between their folders](docs/diagrams/layers.svg)
+
+The channels: each server module that publishes, the channels it publishes on, and the stores and views that read each one. A dashed arrow is the page's subscription.
+
+![The channels, from the modules that publish them to the stores and views that read them](docs/diagrams/channels.svg)
+
+The write chain: from the write route through the refusals, drawn dashed and labelled with the check that refuses, the edit modules and the change log, to the file on disk, each arrow into it labelled with the call that writes. A dotted arrow is a function or a value referred to without being called, such as an entry of a dispatch table. Every module the trace reaches from which no path leads to the disk is drawn in a dashed group named "reached, writes nothing". Pointing at any other arrow shows the functions it calls.
+
+![The write chain, from the route to the file on disk](docs/diagrams/writes.svg)
+
+In the Help view each diagram takes the page's text colour. Opened on its own, outside oculus, each `.svg` draws in dark grey, or under a dark colour scheme in light grey on a dark ground of its own.
+
 ## Running it and checking it
 
 The server runs on this machine only, bound to the loopback address, on the port `local.yml` names. `npm run dev` runs it in development, where a component's stylesheet is always served compiled, whichever the page asks for first; `npm run build` builds it and `npm run preview` serves that build. The built server is `node src/server.ts`, and its one argument is `--engine <dir>`, the directory holding the `config/` folder it reads and writes and the `HELP.md` this page is drawn from; without it that directory is `tools/oculus` itself. The server reads no environment variable of its own; the one it does read is the operating system's `SHELL`, which is the command a plain terminal starts, `/bin/zsh` when the environment names none.

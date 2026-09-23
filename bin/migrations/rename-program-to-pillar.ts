@@ -8,13 +8,13 @@
 // nothing else, so the comments, the ordering and the quoting a hand-written manifest carries come
 // through untouched. A manifest the rename is refused over is reported and left alone.
 //
-// Usage: node bin/rename-program-to-pillar.ts <hub-root> [<hub-root> ...]
+// Usage: node bin/migrations/rename-program-to-pillar.ts <hub-root> [<hub-root> ...]
 
 import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import type { Dirent } from 'node:fs';
 import { join } from 'node:path';
-import { RENAMED_FIELDS } from '../src/lib/data/snapshot/validate.ts';
-import { renameKey } from '../src/lib/server/edit/yaml-edit.ts';
+import { RENAMED_FIELDS } from '../../src/lib/data/snapshot/validate.ts';
+import { renameKey } from '../../src/lib/server/edit/yaml-edit.ts';
 
 /** The manifest filename every project folder holds. */
 const MANIFEST = 'project.yml';
@@ -84,7 +84,9 @@ export function theRename(): { from: string; to: string } {
 
 function main(roots: string[]): number {
     if (roots.length === 0) {
-        process.stderr.write('usage: node bin/rename-program-to-pillar.ts <hub-root> ...\n');
+        process.stderr.write(
+            'usage: node bin/migrations/rename-program-to-pillar.ts <hub-root> ...\n'
+        );
         return 2;
     }
     const { from, to } = theRename();

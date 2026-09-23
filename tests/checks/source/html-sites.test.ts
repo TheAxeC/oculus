@@ -1,8 +1,8 @@
 // Every place the app writes raw HTML into the page draws one of three things: the output of
-// ui/html.ts's sanitise or sanitiseSvg, one line of inline Markdown (inlineMarkdown sanitises what
-// it renders), or a string from config/text/, which oculus wrote for itself. A site that draws
-// anything else is listed below by file and expression with the reason it is safe, or this test
-// fails. Adding a {@html} to a view is therefore a choice a reader of this file can see.
+// ui/html.ts's sanitise, sanitiseSvg or sanitiseGraph, one line of inline Markdown (inlineMarkdown
+// sanitises what it renders), or a string from config/text/, which oculus wrote for itself. A site
+// that draws anything else is listed below by file and expression with the reason it is safe, or
+// this test fails. Adding a {@html} to a view is therefore a choice a reader of this file can see.
 
 import { mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -20,7 +20,7 @@ const LIB = resolve(fileURLToPath(import.meta.url), '..', '..', '..', '..', 'src
  * The calls whose result is filtered already. A site is one of these, a catalog line, or named
  * below.
  */
-const FILTERED = ['sanitise(', 'sanitiseSvg(', 'inlineMarkdown('];
+const FILTERED = ['sanitise(', 'sanitiseSvg(', 'sanitiseGraph(', 'inlineMarkdown('];
 
 /** The sites that draw neither, each with why its HTML cannot carry anything but its own markup. */
 const ALLOWED: Record<string, string> = {
@@ -237,6 +237,7 @@ export function looseTrustedIntros(root: string): string[] {
 
 describe('every {@html} site', () => {
     it('draws the sanitiser, inline Markdown, the catalog, or a named exception', () => {
+        // revert: tests/checks/source/html-sites.test.ts:23 => const FILTERED = ['sanitise(', 'sanitiseSvg(', 'inlineMarkdown('];
         expect(unfilteredSites(LIB)).toEqual([]);
     });
 

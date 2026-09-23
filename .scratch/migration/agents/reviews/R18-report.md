@@ -149,3 +149,151 @@ The write chain: from the write route through the refusals, drawn dashed and lab
    ```
 7. Line 239: after `the `help` view draws it through `api/docs`, which serves that one path of the engine directory and nothing around it.`, add: `The three diagrams it shows are read through `api/diagrams/<name>.svg`, which serves only the `.svg` files of the engine's `docs/diagrams/` by name, and are drawn inline through `sanitiseGraph` of `ui/html.ts` so their lines and text take the prose colour.`
 
+
+# Repair round 1
+
+**Not done on the tree as delivered:** one unit case is red until the HELP.md Doc text below is applied. It is `tests/views/system/help.test.ts :: audits that the manual shows every diagram the generator writes, each one committed`, the gate that HELP.md shows the three diagrams. The Help-view browser cases have the same dependency. Every run below that says "Doc text applied" used a temporary HELP.md built from the section below. HELP.md was restored after each run: `shasum HELP.md` gives `fe3f1d08c10f1102f89ff844346835b519aa5ae1` before and after every run. Everything else in the brief and in the eleven rulings is done.
+
+## What each finding came to
+
+1. **Write diagram drops placed modules.**
+   - Every module the trace reaches is now drawn. Modules with no path to the disk go in a dashed cluster named "reached, writes nothing" (`IDLE`, bin/diagrams.mjs); `chainTo` became `reachesDisk`, which only decides grouping.
+   - The committed writes.dot now holds `data/index.ts`, `helpers/{dates,deck,finding-text,guards}`, `snapshot/{normalise,validate}`, `sources/{career,manifests,registries}`, `sources/config/{local,merge,settings}` and the server modules that write nothing (auth, bodies, yaml-edit, the entry-edit modules, list-edit, deck-edit, hooks, audit/rules). The edges `writes.ts -> merge.ts` and `-> settings.ts` are drawn (`grep -n "reached, writes" docs/diagrams/writes.dot`: line 38).
+   - Case: "draws every module it reaches, the ones that write nothing in a group that says so". It is red under `bin/diagrams.mjs:726 => const folder = posix.dirname(path); if (!writing.has(path)) continue;`.
+
+2. **Readers skip what they cannot follow.** Each diagram now names what its reader cannot follow, with file and line, in a dashed "not placed" group, through `unfollowed()`.
+   - Layers: a dynamic import with a non-literal argument.
+   - Channels: a publish whose channel it cannot resolve; `message(<non-literal>)`; a `.listen(`/`.subscribe(` in a module that calls no naming function; a non-literal entry of `connect([...])`.
+   - Writes: a computed-member call such as `HANDLERS[kind]()`, and a method call on an imported value.
+   - Writes also now follows a name that is referred to without being called: an imported value is drawn as a dotted edge, and a module-level declaration is traced. That is how a dispatch table leads to its writer.
+   - The tree today yields `src/server.ts:40 import(built)` in layers and `src/lib/server/edit/writes/audit-mute.ts:79 SIGNATURE.test(` in writes (`grep -n "? src" docs/diagrams/*.dot`).
+   - Cases, each red under its own revert: "names an import it cannot follow with its file and line", "names a publish it cannot follow...", "names a read through a channel that is not a literal..." (`message(which)`), and "follows a dispatch table to its writer and names the call it cannot follow" (`HANDLERS[kind]()`, with `table.ts -> old.ts` dotted and `old.ts -> file on disk`).
+   - The head comment (bin/diagrams.mjs:10-13) now says what the code does.
+
+3. **Diagram.svelte after close and superseded.**
+   - The guard moved into `src/lib/views/system/help/newest.ts` (`newestAnswer`). Diagram.svelte runs `$effect(() => ask(load(name)))`, so the effect's cleanup marks a fetch stale.
+   - Two new unit cases: "audits that an answer for a name a later one replaced is dropped" and "audits that an answer landing after the view closed is dropped". Both are red under `newest.ts:17 => take(answer);`.
+   - I also wrote a browser case that renamed a figure while its answer was out. It stayed green under the guard revert, so it proved nothing, and I removed it. The reason: a changed manual remounts every figure. `docs.svelte.ts:140-141` calls `invalidate('')` for the manual key, the held manual is dropped, and Help draws its loading branch. In the running app the superseded path is therefore reached only through the unit case.
+   - The browser "in flight" case stays red under its directive. Its after-close half proves the unmount and that no page error occurs, not the guard, and its title now says only that.
+
+4. **Manual gate.** The gate now renders HELP.md through `renderManual` from src/lib/server/content/docs.ts, the same answer the Help view receives. New case: "audits that an image written inside a code block is no diagram", red under `src/lib/server/content/docs.ts:212 => if (base === null) return text.replace(...)`.
+
+5. **Route follows a linked folder.** `diagramPath` now builds the folder as `join(realpathSync(engine), 'docs/diagrams')`, and the file must resolve directly inside it. New case: "refuses a docs or a diagrams folder that is a link out of the engine directory", red under `src/lib/server/content/diagrams.ts:45 => const folder = realpathSync(join(engine, DIAGRAM_DIR));`.
+
+6. **Stale test.**
+   - New `staleFiles(engine)` in bin/diagrams.mjs returns every stale file. The committed-tree case asserts `toEqual([])`, so a failure lists them all.
+   - New case "are named stale, every one at once, when an import and a publish are added": a scratch copy of src, the boundary test and docs/diagrams, with an import appended to `ui/html.ts` and a `hub.publish('brandnew')` appended to `watch/git.ts`. It expects exactly layers.dot, layers.svg, channels.dot and channels.svg, and is red under `bin/diagrams.mjs:856 => if (!existsSync(path)) stale.push(file);`.
+
+7. **html.ts repetition.** One builder, `drawingProfile(tags, attrs)`, freezes both lists and returns the profile; `SVG_PROFILE` and `GRAPH_PROFILE` both come from it. No list was widened.
+
+8. **Edge names lost in the Help view.** `renderSvg` moves each Graphviz tooltip wrapper's words into the edge's own `<title>` ("ends: names") and removes the `<a>`.
+   - writes.svg now has 0 `<a ` and 103 titles carrying names (`grep -c "<a "`, `grep -c "<title>.*: "`), for example `<title>lib/server/edit/writes.ts&#45;&gt;lib/server/git/changes.ts: changeAt, defaultChangesPath, logChanges, pathOf</title>`.
+   - Cases: node "carries the functions a write edge calls in the edge title, with no link around it" (red under `bin/diagrams.mjs:810 => /(?!)/g,`), and browser "a write edge names the functions it calls on hover, and no style of the file is drawn". The browser case finds `logChanges` in a `g.edge > title` of the filtered writes drawing, and is red under `src/lib/ui/html.ts:260` (GRAPH_TAGS with `style` added and `title` removed).
+
+9. **Standalone colour.** Each .svg now opens with `<style>svg { color: #333333; } @media (prefers-color-scheme: dark) { svg { color: #cccccc; } }</style>`; `currentColor` stays everywhere else. The graph filter drops `style`.
+   - Node case "carries its own grey for a light and a dark viewer outside oculus" is red under `bin/diagrams.mjs:808 => delete`.
+   - The browser case in item 8 asserts that the filtered drawing holds no `style`.
+
+10. **Counts, all measured this round.**
+    - layers.svg is `width="4014pt" height="986pt"`, writes.svg `1788pt x 1349pt`, channels.svg `462pt x 1264pt`.
+    - Edges (`grep -c " -> "`): layers 361, writes 113, channels 71.
+    - system.spec.ts is 290 lines (`wc -l`).
+    - The timing case `revert-check.test.ts :: removes its copy of the tree when it is stopped by a signal` did not fail in either full run this round; neither run needed a rerun.
+
+11. **Doc text.** Rewritten below. The "never left out" sentence is replaced by what the code does.
+
+## Verification
+
+| # | Command | Output |
+|---|---|---|
+| 1 | `npx vitest run --reporter=dot` | As delivered: `Test Files 1 failed \| 281 passed (282)`, `Tests 1 failed \| 4542 passed (4543)`; the one failure is the HELP.md gate. Doc text applied: `Test Files 282 passed (282)`, `Tests 4543 passed (4543)` |
+| 2 | `npm run check` | `COMPLETED 1309 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS` |
+| 3 | `npm run build` | `build exit=0` |
+| 4 | `npm run format:check` | `All matched files use Prettier code style!` |
+| 5 | `npm run lint` | `lint exit=0` |
+| 6 | perl ASCII gate | prints nothing (`ascii exit=0`); `LC_ALL=C grep -c '[^ -~]'` is 0 for all six diagram files and the Doc text |
+| 7 | `sh bin/size-check.sh`, `sh bin/folder-check.sh` | `size exit=0`, `folder exit=0`; `bin/diagrams.mjs` is 876 lines |
+| 8 | `node bin/diagrams.mjs` twice, `shasum`, `diff` | `identical`. Hashes: channels.dot 7491ef89, channels.svg ff54c8a9, layers.dot a6e2fab4, layers.svg e2b7a314, writes.dot 053ef7dd, writes.svg 1994d5f6 |
+| 9 | `npm run build`, then `npx playwright test tests/browser/workbench/system.spec.ts` (Doc text applied) | `11 passed (16.0s)`. The whole suite, `npx playwright test` (Doc text applied, because html.ts changed): `317 passed (9.4m)`, `exit=0`. `lsof -iTCP:8792 -sTCP:LISTEN` printed nothing beforehand |
+| 10 | `node bin/revert-check.mjs` over tests/checks/diagrams/diagrams.test.ts, tests/routes/docs/diagrams.test.ts, tests/views/system/help.test.ts and tests/browser/workbench/system.spec.ts (Doc text applied) | `35 reverts, 0 unproven, 14 unchecked`, every directive `red`. The 14 unchecked are existing cases I did not touch: 5 in system.spec.ts and 9 in help.test.ts |
+| 11 | `ls -d $TMPDIR/oculus-* \| wc -l` | `7015` before and after every run |
+
+## Files changed this round (line counts after)
+
+- `bin/diagrams.mjs`: 876 lines.
+- `src/lib/server/content/diagrams.ts`: 60.
+- `src/lib/ui/html.ts`: 324.
+- `src/lib/views/system/help/Diagram.svelte`: 82.
+- `src/lib/views/system/help/newest.ts`: 23 (new).
+- `tests/checks/diagrams/diagrams.test.ts`: 305.
+- `tests/routes/docs/diagrams.test.ts`: 112.
+- `tests/views/system/help.test.ts`: 282.
+- `tests/browser/workbench/system.spec.ts`: 290.
+- Regenerated diagrams: `docs/diagrams/` channels.dot 154, channels.svg 797, layers.dot 460, layers.svg 2423, writes.dot 216, writes.svg 985.
+
+## Reader-visible changes
+
+All in the Help view, with the Doc text applied, in the "How the code fits together" section:
+- **Hover titles:** hovering a write arrow shows its function names, for example writes.ts to changes.ts: "changeAt, defaultChangesPath, logChanges, pathOf". Before, the arrow had no names.
+- **Write diagram contents:** it now also shows the "reached, writes nothing" dashed group (data helpers, yaml-edit, entry-edit and others), dotted reference arrows, and a "not placed" entry `audit-mute.ts:79 SIGNATURE.test(`.
+- **Layer diagram contents:** it shows `src/server.ts:40 import(built)` under "not placed".
+- **Outside oculus:** a `.svg` opened on its own draws in dark grey on a light background and light grey on a dark one. Before, it drew black on transparent.
+
+## Doc text (revised, in full)
+
+**HELP.md.** Current anchor: `193:## Running it and checking it`. Insert before that line:
+
+```
+## How the code fits together
+
+Three diagrams are drawn from the source by `node bin/diagrams.mjs`, which writes each to `docs/diagrams/` as a Graphviz `.dot` file and the `.svg` drawn from it. `npm test` fails while a committed diagram differs from what the source gives now and names every such file, so a change that moves an import, a channel or a write is committed with the diagrams it redraws. What a diagram's reader meets and cannot place or follow (a module no layer row names, an import, a publish or a read whose target is not written out, a call through a computed name or a method of an imported value) is drawn with its file and line in a dashed group named "not placed".
+
+The layers: one box per folder of `src/lib` and `src/routes`, grouped by the layer rows `tests/checks/tree/boundaries.test.ts` enforces, and an arrow for each pair of folders some import joins.
+
+![The layers of oculus and the imports between their folders](docs/diagrams/layers.svg)
+
+The channels: each server module that publishes, the channels it publishes on, and the stores and views that read each one. A dashed arrow is the page's subscription.
+
+![The channels, from the modules that publish them to the stores and views that read them](docs/diagrams/channels.svg)
+
+The write chain: from the write route through the refusals, drawn dashed and labelled with the check that refuses, the edit modules and the change log, to the file on disk, each arrow into it labelled with the call that writes. A dotted arrow is a function or a value referred to without being called, such as an entry of a dispatch table. Every module the trace reaches from which no path leads to the disk is drawn in a dashed group named "reached, writes nothing". Pointing at any other arrow shows the functions it calls.
+
+![The write chain, from the route to the file on disk](docs/diagrams/writes.svg)
+
+In the Help view each diagram takes the page's text colour. Opened on its own, outside oculus, each `.svg` draws in a grey of its own: dark on a light background, light on a dark one.
+```
+
+**DESIGN.md**
+
+1. Now: `66:  bin/                              the checks the verification list runs, and the hub scripts`. Replace with:
+   ```
+     bin/                              the checks the verification list runs and bin/diagrams.mjs;
+                                       migrations/ holds the one-off hub migrations
+     docs/diagrams/                    the layer, channel and write diagrams bin/diagrams.mjs draws
+   ```
+2. Line 256: `` `bin/migrate-joint-work.mjs` writes the lists `` becomes `` `bin/migrations/migrate-joint-work.mjs` writes the lists ``.
+3. Line 259: `` `bin/rename-program-to-pillar.ts` carries `` becomes `` `bin/migrations/rename-program-to-pillar.ts` carries ``.
+4. After `155:SvelteKit enforces the last row's server half by refusing client imports of `$lib/server`.`, add:
+   ```
+   The import graph as the source has it now, grouped by those rows, is drawn by `node bin/diagrams.mjs` into `docs/diagrams/` with the channel and write diagrams below, each as a Graphviz `.dot` file and the `.svg` drawn from it; `tests/checks/diagrams/diagrams.test.ts` fails, naming every file, while a committed diagram differs from the source. What a reader of the source meets and cannot place or follow (a module no row names; an import, a publish or a read whose target is not written out; a call through a computed name or a method of an imported value) is drawn with its file and line in a dashed group named "not placed".
+
+   ![The layers and the imports between their folders](docs/diagrams/layers.svg)
+   ```
+5. After the paragraph at `104:**Watchers.** Each channel has one w...`, add:
+   ```
+   ![The channels, from the modules that publish them to the stores and views that read them](docs/diagrams/channels.svg)
+   ```
+6. After the paragraph at `127:**The change log.** Every write that...`, add:
+   ```
+   Every module the trace from the write route reaches is drawn: the ones on a path to the disk grouped by folder, the rest in a dashed group named "reached, writes nothing". A refusal is a dashed arrow labelled with its check, a function or value referred to without a call is a dotted arrow, an arrow into the disk is labelled with the node:fs call, and every other arrow's `<title>` names the functions it calls.
+
+   ![The write chain, from the route through the refusals and the change log to the file on disk](docs/diagrams/writes.svg)
+   ```
+7. Line 239: after `the `help` view draws it through `api/docs`, which serves that one path of the engine directory and nothing around it.`, add: ``The three diagrams it shows are read through `api/diagrams/<name>.svg`, which serves only a `.svg` file directly inside the engine directory's own `docs/diagrams/`, by name, and they are drawn inline through `sanitiseGraph` of `ui/html.ts`, so their lines and text take the prose colour; the filter drops the `<style>` each file carries to give itself a grey of its own when it is opened outside oculus.``
+
+## Remaining notes
+
+- **Superseded fetch:** proven by the unit case on `newestAnswer`. The component wiring, `$effect(() => ask(load(name)))`, has no case that goes red if the cleanup is not returned. The browser cannot reach the superseded path while a manual refetch remounts every figure.
+- **Timed wait:** none of the browser cases this round uses a timed wait.
+- **Not-placed noise:** the "not placed" group in writes now names `SIGNATURE.test(`, a method call on an imported regular expression. It is a true "cannot follow", but it carries no write.
+

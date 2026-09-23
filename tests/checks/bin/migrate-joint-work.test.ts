@@ -71,7 +71,7 @@ function people(hub: string): PersonEntry[] {
 }
 
 function run(...args: string[]): { status: number | null; stdout: string; stderr: string } {
-    const out = spawnSync('node', ['bin/migrate-joint-work.mjs', ...args], {
+    const out = spawnSync('node', ['bin/migrations/migrate-joint-work.mjs', ...args], {
         cwd: process.cwd(),
         encoding: 'utf8'
     });

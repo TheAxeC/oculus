@@ -1,0 +1,216 @@
+digraph writes {
+    graph [bgcolor="transparent", rankdir=LR, fontname="Helvetica,Arial,sans-serif", fontsize=12, nodesep=0.2, ranksep=0.5];
+    node [shape=box, color="black", fontcolor="black", fontname="Helvetica,Arial,sans-serif", fontsize=10, height=0.3, margin="0.12,0.04"];
+    edge [color="black", fontcolor="black", fontname="Helvetica,Arial,sans-serif", fontsize=8, arrowsize=0.6];
+    subgraph "cluster_lib/server/content" {
+        label="lib/server/content"; style=solid;
+        "lib/server/content/feeds.ts" [label="feeds.ts"];
+    }
+    subgraph "cluster_lib/server/edit" {
+        label="lib/server/edit"; style=solid;
+        "lib/server/edit/writes.ts" [label="writes.ts"];
+    }
+    subgraph "cluster_lib/server/edit/writes" {
+        label="lib/server/edit/writes"; style=solid;
+        "lib/server/edit/writes/audit-mute.ts" [label="audit-mute.ts"];
+        "lib/server/edit/writes/deck.ts" [label="deck.ts"];
+        "lib/server/edit/writes/entries.ts" [label="entries.ts"];
+        "lib/server/edit/writes/manifest.ts" [label="manifest.ts"];
+        "lib/server/edit/writes/subtasks.ts" [label="subtasks.ts"];
+        "lib/server/edit/writes/undo.ts" [label="undo.ts"];
+    }
+    subgraph "cluster_lib/server/files/fs" {
+        label="lib/server/files/fs"; style=solid;
+        "lib/server/files/fs/bookmarks.ts" [label="bookmarks.ts"];
+    }
+    subgraph "cluster_lib/server/git" {
+        label="lib/server/git"; style=solid;
+        "lib/server/git/changes.ts" [label="changes.ts"];
+    }
+    subgraph "cluster_lib/server/sessions" {
+        label="lib/server/sessions"; style=solid;
+        "lib/server/sessions/overrides.ts" [label="overrides.ts"];
+    }
+    subgraph "cluster_lib/server/sessions/stores" {
+        label="lib/server/sessions/stores"; style=solid;
+        "lib/server/sessions/stores/json.ts" [label="json.ts"];
+    }
+    subgraph "cluster_reached, writes nothing" {
+        label="reached, writes nothing"; style=dashed;
+        "lib/data/helpers/dates.ts" [label="data/helpers/dates.ts"];
+        "lib/data/helpers/deck.ts" [label="data/helpers/deck.ts"];
+        "lib/data/helpers/finding-text.ts" [label="data/helpers/finding-text.ts"];
+        "lib/data/helpers/guards.ts" [label="data/helpers/guards.ts"];
+        "lib/data/index.ts" [label="data/index.ts"];
+        "lib/data/snapshot/normalise.ts" [label="data/snapshot/normalise.ts"];
+        "lib/data/snapshot/validate.ts" [label="data/snapshot/validate.ts"];
+        "lib/data/sources/career.ts" [label="data/sources/career.ts"];
+        "lib/data/sources/config/local.ts" [label="data/sources/config/local.ts"];
+        "lib/data/sources/config/merge.ts" [label="data/sources/config/merge.ts"];
+        "lib/data/sources/config/settings.ts" [label="data/sources/config/settings.ts"];
+        "lib/data/sources/manifests.ts" [label="data/sources/manifests.ts"];
+        "lib/data/sources/registries.ts" [label="data/sources/registries.ts"];
+        "lib/server/content/audit/rules.ts" [label="server/content/audit/rules.ts"];
+        "lib/server/core/auth.ts" [label="server/core/auth.ts"];
+        "lib/server/edit/deck-edit.ts" [label="server/edit/deck-edit.ts"];
+        "lib/server/edit/entry-edit/entries.ts" [label="server/edit/entry-edit/entries.ts"];
+        "lib/server/edit/entry-edit/host-status.ts" [label="server/edit/entry-edit/host-status.ts"];
+        "lib/server/edit/entry-edit/lines.ts" [label="server/edit/entry-edit/lines.ts"];
+        "lib/server/edit/entry-edit/render.ts" [label="server/edit/entry-edit/render.ts"];
+        "lib/server/edit/entry-edit/subtasks.ts" [label="server/edit/entry-edit/subtasks.ts"];
+        "lib/server/edit/list-edit.ts" [label="server/edit/list-edit.ts"];
+        "lib/server/edit/writes/bodies.ts" [label="server/edit/writes/bodies.ts"];
+        "lib/server/edit/yaml-edit.ts" [label="server/edit/yaml-edit.ts"];
+        "lib/server/sessions/stores/hooks.ts" [label="server/sessions/stores/hooks.ts"];
+    }
+    subgraph "cluster_routes/api/write" {
+        label="routes/api/write"; style=solid;
+        "routes/api/write/+server.ts" [label="+server.ts"];
+    }
+    subgraph "cluster_lost" {
+        label="not placed"; style=dashed;
+        "? src/lib/server/edit/writes/audit-mute.ts:79" [label="src/lib/server/edit/writes/audit-mute.ts:79 SIGNATURE.test("];
+    }
+    "file on disk" [shape=cylinder];
+    "lib/data/helpers/deck.ts" -> "lib/data/helpers/guards.ts" [tooltip="isMap, str, strings"];
+    "lib/data/helpers/finding-text.ts" -> "lib/data/helpers/guards.ts" [tooltip="byKey"];
+    "lib/data/index.ts" -> "lib/data/helpers/guards.ts" [tooltip="isMap"];
+    "lib/data/index.ts" -> "lib/data/sources/career.ts" [tooltip="CAREER_FILE", style=dotted];
+    "lib/data/index.ts" -> "lib/data/sources/config/merge.ts" [tooltip="configDir, textCatalog"];
+    "lib/data/index.ts" -> "lib/data/sources/registries.ts" [tooltip="REGISTRY_FILES", style=dotted];
+    "lib/data/snapshot/normalise.ts" -> "lib/data/helpers/guards.ts" [tooltip="isMap, str, strings"];
+    "lib/data/snapshot/validate.ts" -> "lib/data/helpers/guards.ts" [tooltip="isMap"];
+    "lib/data/sources/config/local.ts" -> "lib/data/sources/config/merge.ts" [tooltip="configDir"];
+    "lib/data/sources/config/merge.ts" -> "lib/data/helpers/finding-text.ts" [tooltip="findingText"];
+    "lib/data/sources/config/merge.ts" -> "lib/data/sources/config/local.ts" [tooltip="LOCAL_NAME", style=dotted];
+    "lib/data/sources/manifests.ts" -> "lib/data/helpers/finding-text.ts" [tooltip="findingText"];
+    "lib/server/content/feeds.ts" -> "file on disk" [label="renameSync, writeFileSync"];
+    "lib/server/content/feeds.ts" -> "lib/data/helpers/dates.ts" [tooltip="localDate"];
+    "lib/server/content/feeds.ts" -> "lib/data/helpers/guards.ts" [tooltip="isMap, scalar"];
+    "lib/server/content/feeds.ts" -> "lib/data/snapshot/normalise.ts" [tooltip="collectionSchema"];
+    "lib/server/content/feeds.ts" -> "lib/data/snapshot/validate.ts" [tooltip="fieldNames"];
+    "lib/server/content/feeds.ts" -> "lib/server/edit/entry-edit/entries.ts" [tooltip="appendEntry, deleteEntry, setEntryFields
+startEntries"];
+    "lib/server/content/feeds.ts" -> "lib/server/edit/entry-edit/render.ts" [tooltip="renderEntry"];
+    "lib/server/content/feeds.ts" -> "lib/server/edit/writes/entries.ts" [tooltip="saved"];
+    "lib/server/content/feeds.ts" -> "lib/server/edit/yaml-edit.ts" [tooltip="asFieldValue"];
+    "lib/server/content/feeds.ts" -> "lib/server/edit/yaml-edit.ts" [tooltip="NOT_A_FIELD_VALUE", style=dotted];
+    "lib/server/content/feeds.ts" -> "lib/server/git/changes.ts" [tooltip="plain"];
+    "lib/server/edit/deck-edit.ts" -> "lib/server/edit/list-edit.ts" [tooltip="setList"];
+    "lib/server/edit/entry-edit/entries.ts" -> "lib/data/helpers/guards.ts" [tooltip="scalar"];
+    "lib/server/edit/entry-edit/entries.ts" -> "lib/server/edit/entry-edit/lines.ts" [tooltip="applyEntryField, asJs, document
+endOffset, isRecord, lineAt
+linesOf, listOf, locate
+pairOf, rangeOf, refuseAll
+verified"];
+    "lib/server/edit/entry-edit/entries.ts" -> "lib/server/edit/entry-edit/lines.ts" [tooltip="LIST, isRecord", style=dotted];
+    "lib/server/edit/entry-edit/entries.ts" -> "lib/server/edit/yaml-edit.ts" [tooltip="asFieldValue, deepEqual, isBlockMap
+sameValue"];
+    "lib/server/edit/entry-edit/entries.ts" -> "lib/server/edit/yaml-edit.ts" [tooltip="NOT_A_FIELD_VALUE", style=dotted];
+    "lib/server/edit/entry-edit/host-status.ts" -> "lib/server/edit/entry-edit/lines.ts" [tooltip="document, fail, flowScalar
+pairEnd, pairOf, refuseAll
+replaceIn, splice, verified"];
+    "lib/server/edit/entry-edit/host-status.ts" -> "lib/server/edit/yaml-edit.ts" [tooltip="sameValue"];
+    "lib/server/edit/entry-edit/lines.ts" -> "lib/data/helpers/guards.ts" [tooltip="scalar"];
+    "lib/server/edit/entry-edit/lines.ts" -> "lib/server/edit/yaml-edit.ts" [tooltip="deepEqual, isBlockMap, isMetalist
+renderBlockMap, renderMetalist, renderScalar"];
+    "lib/server/edit/entry-edit/render.ts" -> "lib/data/helpers/guards.ts" [tooltip="byKey"];
+    "lib/server/edit/entry-edit/render.ts" -> "lib/server/edit/entry-edit/lines.ts" [tooltip="flowScalar, renderFlowList"];
+    "lib/server/edit/entry-edit/render.ts" -> "lib/server/edit/yaml-edit.ts" [tooltip="isBlockMap, isMetalist, renderBlockMap
+renderMetalist, renderScalar"];
+    "lib/server/edit/entry-edit/subtasks.ts" -> "lib/server/edit/entry-edit/lines.ts" [tooltip="columnAt, document, indentOf
+isRecord, lastKeyLine, lastLineOf
+lineAt, listOf, pairOf
+rangeOf, refuseAll, verified"];
+    "lib/server/edit/entry-edit/subtasks.ts" -> "lib/server/edit/entry-edit/lines.ts" [tooltip="LABEL, SUBTASKS", style=dotted];
+    "lib/server/edit/entry-edit/subtasks.ts" -> "lib/server/edit/entry-edit/render.ts" [tooltip="renderFlowMap"];
+    "lib/server/edit/entry-edit/subtasks.ts" -> "lib/server/edit/yaml-edit.ts" [tooltip="asFieldValue, sameValue"];
+    "lib/server/edit/writes.ts" -> "lib/data/index.ts" [tooltip="portfolioConfigFrom"];
+    "lib/server/edit/writes.ts" -> "lib/data/sources/config/local.ts" [tooltip="loadLocalOrDefaults"];
+    "lib/server/edit/writes.ts" -> "lib/data/sources/config/merge.ts" [tooltip="configDir, loadConfig"];
+    "lib/server/edit/writes.ts" -> "lib/data/sources/config/settings.ts" [tooltip="changesKeep"];
+    "lib/server/edit/writes.ts" -> "lib/server/content/feeds.ts" [tooltip="addLead, addLinkedinIdea, deleteFeedEntry
+markLinkedinPosted, writeFeedField"];
+    "lib/server/edit/writes.ts" -> "lib/server/content/feeds.ts" [label="isFeedKind", style=dashed];
+    "lib/server/edit/writes.ts" -> "lib/server/core/auth.ts" [label="hasToken, sameOrigin", style=dashed];
+    "lib/server/edit/writes.ts" -> "lib/server/edit/writes/audit-mute.ts" [tooltip="writeMute"];
+    "lib/server/edit/writes.ts" -> "lib/server/edit/writes/bodies.ts" [tooltip="auditMuteWrite, deckWrite, deleteEntryWrite
+entryWrite, feedDeleteWrite, feedFieldWrite
+hostWrite, leadAddWrite, linkedinIdeaWrite
+linkedinPostWrite, manifestWrite, newEntry
+newIdea, reorderWrite, sessionWrite
+subtaskAdd, subtaskWrite, undoWrite"];
+    "lib/server/edit/writes.ts" -> "lib/server/edit/writes/deck.ts" [tooltip="writeDeck"];
+    "lib/server/edit/writes.ts" -> "lib/server/edit/writes/entries.ts" [tooltip="createEntry, removeEntry, reorderCollection
+writeEntry"];
+    "lib/server/edit/writes.ts" -> "lib/server/edit/writes/manifest.ts" [tooltip="createIdea, writeManifest"];
+    "lib/server/edit/writes.ts" -> "lib/server/edit/writes/subtasks.ts" [tooltip="writeHost, writeSubtask, writeSubtaskAdd"];
+    "lib/server/edit/writes.ts" -> "lib/server/edit/writes/undo.ts" [tooltip="undoChange"];
+    "lib/server/edit/writes.ts" -> "lib/server/files/fs/bookmarks.ts" [tooltip="defaultBookmarksPath"];
+    "lib/server/edit/writes.ts" -> "lib/server/git/changes.ts" [tooltip="changeAt, defaultChangesPath, logChanges
+pathOf"];
+    "lib/server/edit/writes.ts" -> "lib/server/sessions/overrides.ts" [tooltip="setHidden, setOverride"];
+    "lib/server/edit/writes.ts" -> "lib/server/sessions/stores/hooks.ts" [tooltip="projects"];
+    "lib/server/edit/writes/audit-mute.ts" -> "? src/lib/server/edit/writes/audit-mute.ts:79" [style=dashed];
+    "lib/server/edit/writes/audit-mute.ts" -> "file on disk" [label="writeFileSync"];
+    "lib/server/edit/writes/audit-mute.ts" -> "lib/server/content/audit/rules.ts" [tooltip="SIGNATURE", style=dotted];
+    "lib/server/edit/writes/audit-mute.ts" -> "lib/server/edit/list-edit.ts" [tooltip="setList"];
+    "lib/server/edit/writes/bodies.ts" -> "lib/data/helpers/guards.ts" [tooltip="isMap"];
+    "lib/server/edit/writes/deck.ts" -> "file on disk" [label="writeFileSync"];
+    "lib/server/edit/writes/deck.ts" -> "lib/data/helpers/deck.ts" [tooltip="catalogKeys, deckOrder, deckSources
+savedKeys"];
+    "lib/server/edit/writes/deck.ts" -> "lib/data/helpers/guards.ts" [tooltip="fields"];
+    "lib/server/edit/writes/deck.ts" -> "lib/server/edit/deck-edit.ts" [tooltip="setDeckLists"];
+    "lib/server/edit/writes/entries.ts" -> "file on disk" [label="writeFileSync"];
+    "lib/server/edit/writes/entries.ts" -> "lib/data/helpers/guards.ts" [tooltip="byKey, isMap, scalar"];
+    "lib/server/edit/writes/entries.ts" -> "lib/data/snapshot/normalise.ts" [tooltip="collectionSchema"];
+    "lib/server/edit/writes/entries.ts" -> "lib/data/snapshot/validate.ts" [tooltip="fieldNames"];
+    "lib/server/edit/writes/entries.ts" -> "lib/server/edit/entry-edit/entries.ts" [tooltip="appendEntry, deleteEntry, reorderEntries
+setEntryFields, startEntries"];
+    "lib/server/edit/writes/entries.ts" -> "lib/server/edit/entry-edit/render.ts" [tooltip="renderEntry"];
+    "lib/server/edit/writes/entries.ts" -> "lib/server/edit/yaml-edit.ts" [tooltip="asFieldValue"];
+    "lib/server/edit/writes/entries.ts" -> "lib/server/edit/yaml-edit.ts" [tooltip="NOT_A_FIELD_VALUE", style=dotted];
+    "lib/server/edit/writes/entries.ts" -> "lib/server/files/fs/bookmarks.ts" [tooltip="ensureBookmarksFile"];
+    "lib/server/edit/writes/entries.ts" -> "lib/server/files/fs/bookmarks.ts" [tooltip="BOOKMARKS", style=dotted];
+    "lib/server/edit/writes/entries.ts" -> "lib/server/git/changes.ts" [tooltip="plain"];
+    "lib/server/edit/writes/manifest.ts" -> "file on disk" [label="mkdirSync, writeFileSync"];
+    "lib/server/edit/writes/manifest.ts" -> "lib/data/helpers/guards.ts" [tooltip="isMap"];
+    "lib/server/edit/writes/manifest.ts" -> "lib/data/snapshot/validate.ts" [tooltip="fieldNames"];
+    "lib/server/edit/writes/manifest.ts" -> "lib/data/sources/manifests.ts" [tooltip="readManifests"];
+    "lib/server/edit/writes/manifest.ts" -> "lib/server/edit/yaml-edit.ts" [tooltip="renderScalar, setFields"];
+    "lib/server/edit/writes/manifest.ts" -> "lib/server/git/changes.ts" [tooltip="plain"];
+    "lib/server/edit/writes/subtasks.ts" -> "lib/data/helpers/guards.ts" [tooltip="isMap"];
+    "lib/server/edit/writes/subtasks.ts" -> "lib/data/sources/config/merge.ts" [tooltip="loadConfig"];
+    "lib/server/edit/writes/subtasks.ts" -> "lib/data/sources/manifests.ts" [tooltip="readManifests"];
+    "lib/server/edit/writes/subtasks.ts" -> "lib/server/edit/entry-edit/host-status.ts" [tooltip="setHostStatus"];
+    "lib/server/edit/writes/subtasks.ts" -> "lib/server/edit/entry-edit/lines.ts" [tooltip="entryRange"];
+    "lib/server/edit/writes/subtasks.ts" -> "lib/server/edit/entry-edit/subtasks.ts" [tooltip="addSubtask, deleteSubtask, setSubtask
+subtaskValues"];
+    "lib/server/edit/writes/subtasks.ts" -> "lib/server/edit/writes/entries.ts" [tooltip="identityOf, readCollection, saved"];
+    "lib/server/edit/writes/subtasks.ts" -> "lib/server/edit/writes/manifest.ts" [tooltip="insideHub"];
+    "lib/server/edit/writes/subtasks.ts" -> "lib/server/git/changes.ts" [tooltip="plain"];
+    "lib/server/edit/writes/undo.ts" -> "lib/data/helpers/guards.ts" [tooltip="fields, scalar"];
+    "lib/server/edit/writes/undo.ts" -> "lib/server/content/feeds.ts" [tooltip="deleteFeedEntry, isFeedKind, readFeedFile
+restoreFeedEntry, writeFeedField"];
+    "lib/server/edit/writes/undo.ts" -> "lib/server/content/feeds.ts" [tooltip="FEED_RULES", style=dotted];
+    "lib/server/edit/writes/undo.ts" -> "lib/server/edit/writes/deck.ts" [tooltip="deckNow, writeDeck"];
+    "lib/server/edit/writes/undo.ts" -> "lib/server/edit/writes/entries.ts" [tooltip="createEntry, entryOf, idOfIdentity
+identityOrder, readCollection, removeEntry
+reorderCollection, writeEntry"];
+    "lib/server/edit/writes/undo.ts" -> "lib/server/edit/writes/manifest.ts" [tooltip="manifestValue, writeManifest"];
+    "lib/server/edit/writes/undo.ts" -> "lib/server/edit/writes/subtasks.ts" [tooltip="hostStatus, restoreSubtask, subtaskValue
+writeHost, writeSubtask, writeSubtaskAdd"];
+    "lib/server/edit/writes/undo.ts" -> "lib/server/git/changes.ts" [tooltip="same"];
+    "lib/server/edit/writes/undo.ts" -> "lib/server/sessions/overrides.ts" [tooltip="overrides, setHidden, setOverride"];
+    "lib/server/edit/yaml-edit.ts" -> "lib/data/helpers/guards.ts" [tooltip="byKey"];
+    "lib/server/files/fs/bookmarks.ts" -> "lib/server/sessions/stores/json.ts" [tooltip="writeTextAtomic"];
+    "lib/server/git/changes.ts" -> "file on disk" [label="appendFileSync, mkdirSync"];
+    "lib/server/git/changes.ts" -> "lib/server/sessions/stores/json.ts" [tooltip="writeTextAtomic"];
+    "lib/server/sessions/overrides.ts" -> "lib/data/helpers/guards.ts" [tooltip="isMap"];
+    "lib/server/sessions/overrides.ts" -> "lib/server/git/changes.ts" [tooltip="plain"];
+    "lib/server/sessions/overrides.ts" -> "lib/server/sessions/stores/json.ts" [tooltip="readJson, writeJsonAtomic"];
+    "lib/server/sessions/stores/hooks.ts" -> "lib/data/helpers/guards.ts" [tooltip="isMap"];
+    "lib/server/sessions/stores/hooks.ts" -> "lib/data/helpers/guards.ts" [tooltip="isMap", style=dotted];
+    "lib/server/sessions/stores/json.ts" -> "file on disk" [label="mkdirSync, renameSync, rmSync"];
+    "routes/api/write/+server.ts" -> "lib/server/edit/writes.ts" [tooltip="handleWrite, target"];
+}

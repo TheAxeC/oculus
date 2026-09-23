@@ -1,0 +1,154 @@
+digraph channels {
+    graph [bgcolor="transparent", rankdir=LR, fontname="Helvetica,Arial,sans-serif", fontsize=12, nodesep=0.2, ranksep=0.5];
+    node [shape=box, color="black", fontcolor="black", fontname="Helvetica,Arial,sans-serif", fontsize=10, height=0.3, margin="0.12,0.04"];
+    edge [color="black", fontcolor="black", fontname="Helvetica,Arial,sans-serif", fontsize=8, arrowsize=0.6];
+    subgraph "cluster_publish server/accounts" {
+        label="server/accounts"; style=solid;
+        "server/accounts/calendar/poll";
+        "server/accounts/mail/poll";
+    }
+    subgraph "cluster_publish server/core" {
+        label="server/core"; style=solid;
+        "server/core/hooks";
+    }
+    subgraph "cluster_publish server/machine" {
+        label="server/machine"; style=solid;
+        "server/machine/hpc/poll";
+        "server/machine/pty/channel";
+        "server/machine/usage/watch";
+    }
+    subgraph "cluster_publish server/watch" {
+        label="server/watch"; style=solid;
+        "server/watch/bookmarks";
+        "server/watch/git";
+        "server/watch/portfolio";
+        "server/watch/sessions";
+    }
+    subgraph "cluster_channels" {
+        label="channels"; style=solid;
+        "ch audit" [label="audit", shape=ellipse];
+        "ch calendar" [label="calendar", shape=ellipse];
+        "ch config" [label="config", shape=ellipse];
+        "ch feeds" [label="feeds", shape=ellipse];
+        "ch files" [label="files", shape=ellipse];
+        "ch git" [label="git", shape=ellipse];
+        "ch hpc" [label="hpc", shape=ellipse];
+        "ch inbox" [label="inbox", shape=ellipse];
+        "ch portfolio" [label="portfolio", shape=ellipse];
+        "ch pty:*" [label="pty:*", shape=ellipse];
+        "ch sessions" [label="sessions", shape=ellipse];
+        "ch usage" [label="usage", shape=ellipse];
+    }
+    subgraph "cluster_read state" {
+        label="state"; style=solid;
+        "state/client/context";
+        "state/client/selectors";
+        "state/client/socket";
+        "state/feeds/feeds";
+        "state/feeds/inbox";
+        "state/life/calendar";
+        "state/life/present";
+        "state/sessions/latex";
+        "state/sessions/terminals";
+        "state/sources/files";
+        "state/sources/fs";
+        "state/sources/search";
+        "state/system/audit";
+        "state/system/docs";
+        "state/system/hpc";
+        "state/system/usage-refresh";
+        "state/workbench/palette-source";
+        "state/workbench/rail-badges";
+    }
+    subgraph "cluster_read views" {
+        label="views"; style=solid;
+        "views/boards/collection";
+        "views/boards/focus";
+        "views/boards/person";
+        "views/feeds/leads";
+        "views/feeds/radar";
+        "views/shared/card";
+        "views/structure/domains";
+        "views/structure/map";
+        "views/structure/pillars";
+        "views/system/config";
+        "views/system/findings";
+        "views/system/status";
+        "views/system/usage";
+    }
+    subgraph "cluster_read routes" {
+        label="routes"; style=solid;
+        "routes/+page";
+    }
+    "ch audit" -> "routes/+page" [style=dashed];
+    "ch audit" -> "state/system/audit";
+    "ch calendar" -> "routes/+page" [style=dashed];
+    "ch calendar" -> "state/life/calendar";
+    "ch config" -> "routes/+page" [style=dashed];
+    "ch config" -> "routes/+page";
+    "ch config" -> "state/client/context";
+    "ch config" -> "state/client/selectors";
+    "ch config" -> "state/client/socket";
+    "ch config" -> "state/life/present";
+    "ch config" -> "state/sessions/terminals";
+    "ch config" -> "state/sources/search";
+    "ch config" -> "state/workbench/palette-source";
+    "ch config" -> "views/feeds/leads";
+    "ch config" -> "views/feeds/radar";
+    "ch config" -> "views/system/config";
+    "ch config" -> "views/system/findings";
+    "ch config" -> "views/system/usage";
+    "ch feeds" -> "routes/+page" [style=dashed];
+    "ch feeds" -> "state/feeds/feeds";
+    "ch files" -> "routes/+page" [style=dashed];
+    "ch files" -> "state/sources/files";
+    "ch files" -> "state/sources/fs";
+    "ch files" -> "state/system/docs";
+    "ch git" -> "routes/+page" [style=dashed];
+    "ch git" -> "state/client/selectors";
+    "ch git" -> "views/system/status";
+    "ch hpc" -> "routes/+page" [style=dashed];
+    "ch hpc" -> "state/system/hpc";
+    "ch inbox" -> "routes/+page" [style=dashed];
+    "ch inbox" -> "state/feeds/inbox";
+    "ch inbox" -> "state/workbench/palette-source";
+    "ch portfolio" -> "routes/+page" [style=dashed];
+    "ch portfolio" -> "state/client/context";
+    "ch portfolio" -> "state/client/selectors";
+    "ch portfolio" -> "state/life/present";
+    "ch portfolio" -> "state/workbench/palette-source";
+    "ch portfolio" -> "state/workbench/rail-badges";
+    "ch portfolio" -> "views/boards/collection";
+    "ch portfolio" -> "views/boards/focus";
+    "ch portfolio" -> "views/boards/person";
+    "ch portfolio" -> "views/feeds/radar";
+    "ch portfolio" -> "views/shared/card";
+    "ch portfolio" -> "views/structure/domains";
+    "ch portfolio" -> "views/structure/map";
+    "ch portfolio" -> "views/structure/pillars";
+    "ch portfolio" -> "views/system/findings";
+    "ch portfolio" -> "views/system/status";
+    "ch pty:*" -> "state/sessions/terminals";
+    "ch sessions" -> "routes/+page" [style=dashed];
+    "ch sessions" -> "state/client/selectors";
+    "ch sessions" -> "state/sessions/latex";
+    "ch sessions" -> "state/sessions/terminals";
+    "ch sessions" -> "views/system/status";
+    "ch usage" -> "routes/+page" [style=dashed];
+    "ch usage" -> "state/system/usage-refresh";
+    "ch usage" -> "views/system/usage";
+    "server/accounts/calendar/poll" -> "ch calendar";
+    "server/accounts/mail/poll" -> "ch inbox";
+    "server/core/hooks" -> "ch sessions";
+    "server/machine/hpc/poll" -> "ch hpc";
+    "server/machine/pty/channel" -> "ch pty:*";
+    "server/machine/usage/watch" -> "ch usage";
+    "server/watch/bookmarks" -> "ch files";
+    "server/watch/git" -> "ch files";
+    "server/watch/git" -> "ch git";
+    "server/watch/portfolio" -> "ch audit";
+    "server/watch/portfolio" -> "ch config";
+    "server/watch/portfolio" -> "ch feeds";
+    "server/watch/portfolio" -> "ch portfolio";
+    "server/watch/sessions" -> "ch sessions";
+}

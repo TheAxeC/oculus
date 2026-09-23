@@ -18,9 +18,17 @@
     // prose about the whole tool and a catalog is words a surface draws. It is read through
     // api/docs, the one route that turns Markdown into HTML, which serves that one path of the
     // engine directory and nothing else around it.
+    //
+    // The manual shows the diagrams bin/diagrams.mjs draws from the source. Each is an image of
+    // docs/diagrams/ in HELP.md, which manual.ts cuts out of the HTML so Diagram.svelte can draw it
+    // in the page's text colour; the prose between them is drawn by the Markdown partial, one run
+    // at a time.
 
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Markdown from '../../shared/prose/Markdown.svelte';
+    import Diagram from './Diagram.svelte';
+    import { splitManual, type ManualPart } from './manual';
+    import type { DocState } from '$lib/state/system/docs.svelte';
     import { t } from '$lib/state/words/text';
     import type { ViewProps } from '../../registry';
     import { useState } from '$lib/state/client/use';
@@ -32,11 +40,36 @@
     let { instance }: ViewProps = $props();
 
     const shown = $derived(manual());
+
+    const parts = $derived(splitManual(shown.html));
+
+    /** One run of prose as the document the Markdown partial draws, the manual's state kept. */
+    function prose(part: ManualPart): DocState {
+        return { ...shown, html: part.kind === 'html' ? part.html : '' };
+    }
 </script>
 
 <Pane title={t('views.help')}>
     <div class="view" data-instance={instance.id}>
-        <Markdown doc={shown} loading={t('help.loading')} failed={t('help.failed', shown.error)} />
+        {#if shown.loading || shown.error !== ''}
+            <Markdown
+                doc={shown}
+                loading={t('help.loading')}
+                failed={t('help.failed', shown.error)}
+            />
+        {:else}
+            {#each parts as part, at (at)}
+                {#if part.kind === 'diagram'}
+                    <Diagram name={part.name} alt={part.alt} />
+                {:else}
+                    <Markdown
+                        doc={prose(part)}
+                        loading={t('help.loading')}
+                        failed={t('help.failed', shown.error)}
+                    />
+                {/if}
+            {/each}
+        {/if}
     </div>
 </Pane>
 

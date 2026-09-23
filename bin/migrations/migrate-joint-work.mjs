@@ -18,7 +18,7 @@
 // are, so a second run over a migrated hub writes the same bytes, and a run over a hub that has
 // gained a collaborations entry since adds that one and touches nothing else. Run it as
 //
-//     node bin/migrate-joint-work.mjs <hub> [--from f] [--self-key k] [--self-name n] \
+//     node bin/migrations/migrate-joint-work.mjs <hub> [--from f] [--self-key k] [--self-name n] \
 //         [--self-role r]
 //
 // and it prints, per file, what it wrote and what it could not fill in.
@@ -455,7 +455,7 @@ function options(argv) {
 const { hub, self, from } = options(process.argv.slice(2));
 if (hub === undefined) {
     console.error(
-        'usage: node bin/migrate-joint-work.mjs <hub> [--from f] [--self-key k] [--self-name n]'
+        'usage: node bin/migrations/migrate-joint-work.mjs <hub> [--from f] [--self-key k] [--self-name n]'
     );
     process.exit(2);
 }

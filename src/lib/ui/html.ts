@@ -219,19 +219,25 @@ export const SVG_ATTR = [
     'y2'
 ];
 
-// The filter lowercases the lists a profile hands it, in place, so these two are frozen: what this
-// file exports stays what it declares however often an icon is drawn.
-Object.freeze(SVG_TAGS);
-Object.freeze(SVG_ATTR);
+/**
+ * The filter for a drawing: its own elements and attributes, and nothing a document's profile
+ * allows. The filter lowercases the lists a profile hands it, in place, so both are frozen here:
+ * what this file exports stays what it declares however often a drawing is filtered.
+ */
+function drawingProfile(tags: string[], attrs: string[]) {
+    Object.freeze(tags);
+    Object.freeze(attrs);
+    return {
+        ALLOWED_TAGS: tags,
+        ALLOWED_ATTR: attrs,
+        ALLOW_DATA_ATTR: false,
+        ALLOW_ARIA_ATTR: false,
+        ALLOW_UNKNOWN_PROTOCOLS: false
+    };
+}
 
-/** The filter for an icon: the drawing's own elements, and nothing a document's profile allows. */
-export const SVG_PROFILE = {
-    ALLOWED_TAGS: SVG_TAGS,
-    ALLOWED_ATTR: SVG_ATTR,
-    ALLOW_DATA_ATTR: false,
-    ALLOW_ARIA_ATTR: false,
-    ALLOW_UNKNOWN_PROTOCOLS: false
-};
+/** The filter for an icon. */
+export const SVG_PROFILE = drawingProfile(SVG_TAGS, SVG_ATTR);
 
 /**
  * One icon as the profile above allows it to be drawn. The file is read from the icon package by
@@ -241,6 +247,59 @@ export const SVG_PROFILE = {
 export function sanitiseSvg(svg: string): string {
     if (purifier === null) return svg;
     return purifier.sanitize(svg, SVG_PROFILE);
+}
+
+/**
+ * The elements a graph drawn by bin/diagrams.mjs is made of: what Graphviz writes for a group, a
+ * box, an ellipse, a cylinder, an edge and its arrowhead, the text of each label, and the `title`
+ * of a node or an edge, which the browser shows on hover and which carries the functions a write
+ * edge calls. There is no `a`, no `style` and nothing that loads, runs or embeds, so a diagram file
+ * carries a drawing and nothing else, and the grey its own `style` sets for a viewer outside oculus
+ * is dropped here, which leaves the drawing in the page's text colour.
+ */
+export const GRAPH_TAGS = ['svg', 'g', 'title', 'polygon', 'polyline', 'path', 'ellipse', 'text'];
+
+/**
+ * The attributes those elements carry: the box the drawing is laid out in and moved by, the
+ * geometry of each shape, how its stroke and fill are painted, the dashes of a dashed edge, and how
+ * a label's text is set. The file writes every colour as `currentColor`, which is what makes the
+ * drawing take the colour of the text around it; there is no `id`, so no name in the drawing can
+ * shadow one of the page's.
+ */
+export const GRAPH_ATTR = [
+    'class',
+    'cx',
+    'cy',
+    'd',
+    'fill',
+    'font-family',
+    'font-size',
+    'height',
+    'points',
+    'rx',
+    'ry',
+    'stroke',
+    'stroke-dasharray',
+    'stroke-width',
+    'text-anchor',
+    'transform',
+    'viewbox',
+    'width',
+    'x',
+    'y'
+];
+
+/** The filter for a generated graph. */
+export const GRAPH_PROFILE = drawingProfile(GRAPH_TAGS, GRAPH_ATTR);
+
+/**
+ * One diagram of docs/diagrams/ as the profile above allows it to be drawn. The file is oculus's
+ * own, written by its generator, and it still passes the filter: what reaches the page is a
+ * drawing whatever the folder holds.
+ */
+export function sanitiseGraph(svg: string): string {
+    if (purifier === null) return svg;
+    return purifier.sanitize(svg, GRAPH_PROFILE);
 }
 
 /**

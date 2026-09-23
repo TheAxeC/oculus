@@ -154,7 +154,7 @@ One line per package: the status mark, the id, the title, and where the rest is 
   - Step 0, ruled 2026-09-23 by Axel: (a) on both O31 open items, the `launch_note:` key and the builder's pid in the record.
 - Q66 a hidden tab defers its work: a tab the pane hides takes no re-read and follows nothing until it is shown, then catches up once; a Terminal keeps its stream so no output is lost (Axel 2026-09-23; after L3; brief `agents/briefs/Q66.md`)
   - Step 0, ruled 2026-09-23 by Axel: (a) on Q65's open item, measured in `agents/reviews/Q65-report.md`, round 1, item 9.
-- R18 oculus's diagrams generated from the source: the layer graph, the watchers to channels to views, the write chain, with a test that fails when they are stale (Axel 2026-09-22; after Q58; brief `agents/briefs/R18.md`)
+- ✅ R18 oculus's diagrams generated from the source: the layer graph, the watchers to channels to views, the write chain, with a test that fails when they are stale (Axel 2026-09-22; after Q58; brief `agents/briefs/R18.md`; one repair round; reviews `agents/reviews/R18-refuter.md`; seen on TEST; landing `agents/reviews/R18-landing.md`); landed 2026-09-23
 - M3 `registries/resources.yml`: clusters, machines and storage, each with its access recipe; `slurm.host` and a manifest's `compute:` point at entries (Axel 2026-09-16 00:40; after D8; brief at dispatch)
 - ✅ D8 the calendar connector: Google and Microsoft read-only through a server poller on the `calendar` channel, PKCE to the server's own callback, the token in a file under `calendar_dir`, a Calendar view in the Personal group, never in the Command center (Axel 2026-09-12 23:45 and 23:55; brief `agents/briefs/D8.md`; review `agents/reviews/D8.md`); landed 2026-09-16 08:06
 - ✅ D9 the mail connector: the inbox plate read live from Gmail and Outlook on the `inbox` channel, reply and archive through the provider behind a confirmation, the triage notes in `<mail_dir>/triage.json`, `feeds/inbox.yml` retired everywhere (Axel 2026-09-12 23:45; brief `agents/briefs/D9.md`; review `agents/reviews/D9.md`); landed 2026-09-16 13:32
@@ -215,7 +215,7 @@ One line per package: the status mark, the id, the title, and where the rest is 
 ## Could run in parallel
 
 - The feature stretch after R17, three in flight at all times, one dispatched at each landing (Axel 2026-09-14 17:50 and 2026-09-15 19:58; the steps that run alone and the order are in `orchestrator-state.md`, which holds this line whole)
-- The queue, in order: R18 (in flight); L3 + O32; L4; Q66; Q35; D11 + D13 + D14; D23 + D15 + D17; D18 + D20 + D24; M3 + E1; M4; then R2, O29, O30, X2 last.
+- The queue, in order: L3 + O32; L4; Q66; Q35; D11 + D13 + D14; D23 + D15 + D17; D18 + D20 + D24; M3 + E1; M4; then R2, O29, O30, X2 last.
 Independent of each other; two may run side by side under R9's rule when their briefs name disjoint paths and different views, else they run one at a time.
 - S1 with anything after R1.
 - O5 with O2 to O4.
