@@ -145,7 +145,7 @@ One line per package: the status mark, the id, the title, and where the rest is 
 - ✅ R14 the eleven checks of the recurring-findings pass of 2026-09-17 (brief `agents/briefs/R14.md`; review `agents/reviews/R14-refuter.md`; landing `agents/reviews/R14-landing.md`); landed 2026-09-18 10:44
 - ✅ Q58 the eleven files of `bin/size-allow.txt` split by concern, ten tracked items at most in a folder under `src`, `tests`, `bin` and `config`, and the history wording read out of every authored file (Axel 2026-09-22; brief `agents/briefs/Q58.md`, which holds this line whole; reviews and landing beside it); landed 2026-09-22
 - ✅ Q59 every outstanding finding of the recurring pass and the closure audit, closed in one step, the list whole in its brief (brief `agents/briefs/Q59.md`; built inline; reviews `agents/reviews/Q59-refuter.md`, the first and the run over repair round 1; seen 2026-09-22 on the TEST page in vscode dark modern; landing `agents/reviews/Q59-landing.md`); landed 2026-09-22
-- Q65 Axel's fixes and small requests of 2026-09-21: the Files view's hidden and ignored toggles, Save and Revert in the bookmark bar, the blank page diagnosed and fixed, the Config cards' clipped buttons, a shown tab kept mounted, the note and bookmark controls always visible, the refresher's label, a new terminal per tab and a tab per session (Axel 2026-09-22; brief `agents/briefs/Q65.md`)
+- ✅ Q65 Axel's fixes and small requests of 2026-09-21: the Files view's hidden and ignored toggles, Save and Revert in the bookmark bar, the blank page diagnosed and fixed, the Config cards' clipped buttons, a shown tab kept mounted, the note and bookmark controls always visible, the refresher's label, a new terminal per tab and a tab per session (Axel 2026-09-22; brief `agents/briefs/Q65.md`; one repair round; reviews `agents/reviews/Q65-refuter.md`; seen on TEST; landing `agents/reviews/Q65-landing.md`); landed 2026-09-23
   - Step 0, ruled 2026-09-23 by Axel: the Files view's listing request carries the tab's two toggles as `hidden=1` and `ignored=1`, and the server leaves out what they do not ask for.
 - L3 the rail switches pages: Axel's own list of page buttons, the page strip at the top removed, a Views and Settings page (every view, the settings, the pages not on the rail), a status bar along the foot, one bookmarks list (Axel 2026-09-22; brief `agents/briefs/L3.md`)
 - L4 floating panes: a pane floated over the page with an orange border, on top on every page, docked still on every page (Axel 2026-09-22; after L3; brief `agents/briefs/L4.md`)
@@ -210,7 +210,7 @@ One line per package: the status mark, the id, the title, and where the rest is 
 ## Could run in parallel
 
 - The feature stretch after R17, three in flight at all times, one dispatched at each landing (Axel 2026-09-14 17:50 and 2026-09-15 19:58; the steps that run alone and the order are in `orchestrator-state.md`, which holds this line whole)
-- The queue, in order: Q65; L3; L4; Q35 + R18; D11 + D13 + D14; D23 + D15 + D17; D18 + D20 + D24; M3 + E1; M4; then R2, O29, O30, X2 last.
+- The queue, in order: L3; L4; Q35 + R18; D11 + D13 + D14; D23 + D15 + D17; D18 + D20 + D24; M3 + E1; M4; then R2, O29, O30, X2 last.
 Independent of each other; two may run side by side under R9's rule when their briefs name disjoint paths and different views, else they run one at a time.
 - S1 with anything after R1.
 - O5 with O2 to O4.

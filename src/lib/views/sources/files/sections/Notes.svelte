@@ -15,8 +15,8 @@
 
     import Confirm from '$lib/ui/controls/Confirm.svelte';
     import Failed from '../tree/Failed.svelte';
+    import Section from './Section.svelte';
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
-    import TreeSection from '$lib/ui/tree/TreeSection.svelte';
     import TreeView from '$lib/ui/tree/TreeView.svelte';
     import type { TreeNav } from '$lib/ui/tree/tree-keys';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
@@ -58,24 +58,20 @@
 <div class="notes" data-fs-notes>
     <TreeView label={t('files.notes')} rows={keyRows} {ontoggle}>
         {#snippet children(nav: TreeNav)}
-            <TreeSection
+            <Section
                 label={t('files.notes')}
-                id="head"
                 {nav}
                 count={rows.length}
                 {open}
                 {ontoggle}
+                add={{
+                    label: t('files.add_note'),
+                    title: t('files.add_note_title'),
+                    glyph: t('files.note_glyph')
+                }}
+                {onadd}
+                showActions
             >
-                {#snippet actions(reach: number)}
-                    <ToolButton
-                        label={t('files.add_note')}
-                        title={t('files.add_note_title')}
-                        glyph={t('files.note_glyph')}
-                        compact
-                        tabindex={reach}
-                        onclick={onadd}
-                    />
-                {/snippet}
                 {#if error !== ''}
                     <li role="none">
                         <Failed
@@ -116,7 +112,7 @@
                         </TreeItem>
                     </li>
                 {/each}
-            </TreeSection>
+            </Section>
         {/snippet}
     </TreeView>
 </div>

@@ -724,6 +724,18 @@ describe('a terminal in the payload', () => {
         select(null);
     });
 
+    // revert: src/lib/views/sessions/terminal/Terminal.svelte:112 => const fresh = false;
+    it('shows the start form in a tab opened for a terminal of its own, whatever the rail selected', () => {
+        const body = withTerminals(() => {
+            select(pane.id);
+            return html(Terminal, { id: 'a-tab-of-its-own' });
+        });
+        expect(body).toContain(catalog['sessions.start_terminal']);
+        // the tab owns no terminal yet, so the terminal the rail selected is not drawn in it
+        expect(body).not.toContain(`data-terminal="${pane.id}"`);
+        select(null);
+    });
+
     it('offers pin and unpin in place', () => {
         const body = withTerminals(() => {
             select(pane.id);

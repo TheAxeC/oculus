@@ -1,7 +1,7 @@
 // The source tab: the control closing Lit Watch's toolbar opens the feed file as an editable tab,
-// an unsaved edit survives leaving the tab and coming back, since the shell mounts only the active
-// view and the draft belongs to the instance rather than to the component, and a file this
-// machine's mode locks opens as the code window under the line that says so.
+// an unsaved edit survives a reload, since the draft belongs to the instance rather than to the
+// component, and a file this machine's mode locks opens as the code window under the line that says
+// so.
 //
 // Closing a tab is here too, because the question a tab holding an unsaved edit asks is the pane's
 // answer to what the instance holds, which only a rendered page has.
@@ -28,7 +28,8 @@ function scratch(): string {
     return dir;
 }
 
-test('the toolbar control opens the feed file and an unsaved edit survives a tab switch', async ({
+// revert: src/lib/state/workbench/ui.svelte.ts:252 => delete
+test('the toolbar control opens the feed file and an unsaved edit survives a reload', async ({
     page
 }) => {
     await boot(page);
@@ -46,9 +47,7 @@ test('the toolbar control opens the feed file and an unsaved edit survives a tab
     await page.keyboard.type(' typed-in-the-spec');
     await expect(area).toHaveValue(`${before} typed-in-the-spec`);
 
-    await page.getByRole('tab', { name: t('views.radar') }).click();
-    // the tab was switched away, so the editor of the other tab is not on the page
-    await expect(editor).toHaveCount(0);
+    await page.reload();
     await page.getByRole('tab', { name: 'literature-radar.yml' }).click();
     await expect(page.locator('[data-source-editor]').getByRole('textbox')).toHaveValue(
         `${before} typed-in-the-spec`
@@ -297,4 +296,40 @@ test('a page holding one tab with an unsaved edit asks before it closes', async 
     await expect(editor.getByRole('textbox')).toHaveValue(/ typed-in-the-spec$/);
 
     // Nothing is saved: the demo hub's feed file stays as it was.
+});
+
+// revert: src/lib/views/sources/source/Source.svelte:117 => {#if false}
+test('Save, Revert, Preview and the star sit on the pane bar in one row, and the editor draws no bar', async ({
+    page
+}) => {
+    await boot(page);
+    await openView(page, 'files', t('views.files'));
+    await page.locator('[data-fs-row="hub:"]').getByRole('button').first().click();
+    await page.locator('[data-fs-row="hub:README.md"]').getByRole('button').first().dblclick();
+    const editor = page.locator('[data-source-editor="README.md"]');
+    await expect(editor).toBeVisible();
+    // the text controls are on the pane's bar, so the editor under it draws no bar of its own
+    await expect(editor.getByRole('toolbar')).toHaveCount(0);
+
+    const bar = page.getByRole('toolbar', { name: t('source.toolbar'), exact: true });
+    const names = [t('editor.save'), t('editor.revert'), t('source.preview'), t('file.bookmark')];
+    const boxes = [];
+    for (const name of names) {
+        const control = bar.getByRole('button', { name, exact: true });
+        await expect(control).toBeVisible();
+        boxes.push(await control.boundingBox());
+    }
+    const drawn = boxes.filter((box) => box !== null);
+    expect(drawn).toHaveLength(names.length);
+    // one row: every control's middle at the height of the first one's, each to the right of the
+    // one before it
+    const middle = drawn[0].y + drawn[0].height / 2;
+    for (const [at, box] of drawn.entries()) {
+        expect(Math.abs(box.y + box.height / 2 - middle)).toBeLessThan(2);
+        if (at > 0) expect(box.x).toBeGreaterThan(drawn[at - 1].x);
+    }
+    // and the bar sits above the editor, not inside it
+    const top = await editor.boundingBox();
+    expect(top).not.toBeNull();
+    expect(middle).toBeLessThan(top?.y ?? 0);
 });

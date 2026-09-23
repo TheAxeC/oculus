@@ -21,6 +21,7 @@
         revealSettled,
         rootsUnread,
         rowKey,
+        shownOf,
         type FilesView,
         type RevealOutcome,
         type RowRef,
@@ -79,7 +80,8 @@
         const from = owner;
         // The reads answer from the store's own state, which this effect must not come to depend
         // on.
-        void untrack(() => resolveReveal(ask, held, readListing)).then((outcome) => {
+        const read = (root: string, path: string) => readListing(root, path, shownOf(view));
+        void untrack(() => resolveReveal(ask, held, read)).then((outcome) => {
             const next = revealSettled(filesViewOf(instanceState(from)), ask, outcome);
             if (next !== null) onpatch(from, next);
         });

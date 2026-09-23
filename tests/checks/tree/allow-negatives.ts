@@ -10,10 +10,8 @@
 
 export const NEGATIVES: Record<string, string[]> = {
     'browser/sources/files-forms.spec.ts': [
-        '[data-fs-bookmarks]',
         'await expect(form).toHaveCount(0);',
         'await expect(form).toHaveCount(0);',
-        'await expect(box).toHaveCount(0);',
         'await expect(box).toHaveCount(0);',
         'await expect(name).toHaveCount(0);',
         '[data-form="add"]',
@@ -29,7 +27,6 @@ export const NEGATIVES: Record<string, string[]> = {
         'views.files',
         'await expect(editing).toHaveCount(0);',
         "await expect(mark('tool.py')).toHaveCount(0);",
-        '[data-fs-bookmarks]',
         "await expect(mark('tool.py')).toHaveCount(0);",
         '[data-form="edit"]',
         "await expect(mark('tool.py')).toHaveCount(0);"
@@ -52,14 +49,12 @@ export const NEGATIVES: Record<string, string[]> = {
         '[data-form="add"]',
         'alertdialog',
         'await expect(card).toHaveCount(0);',
-        '.editor[data-project]',
         'await expect(asked).toHaveCount(0);',
         'await expect(asked).toHaveCount(0);',
         'views.editor',
         '[data-form="add"]',
         '${TYPED} and more',
         '[data-form="add"]',
-        'await expect(name).toHaveCount(0);',
         '[data-form="add"]',
         'await expect(asked).toHaveCount(0);',
         'views.files'

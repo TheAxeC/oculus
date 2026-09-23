@@ -8,10 +8,15 @@
     // press twice. So it is a real dialog: modal, focus on the confirm, Escape cancels, Tab stays
     // inside it. A click on the ground behind it cancels too, which is the way out for a pointer.
     //
+    // A confirm left open in a tab the pane hides keeps no focus, so the confirm takes the keyboard
+    // again when its tab shows, and Escape and Tab reach it as before.
+    //
     // The keyboard comes back to the control the dialog was raised from when the dialog goes, so a
     // cancel leaves the reader where they pressed. A yes may take that control off the page, and
     // the strip it was in is then what says where the keyboard lands, so a control that has gone is
     // left alone here.
+
+    import { onShown } from '$lib/ui/shown';
 
     type Props = {
         /** What is about to happen, in the caller's own words, already translated. */
@@ -39,6 +44,8 @@
     $effect(() => {
         yes?.focus();
     });
+
+    $effect(() => (box === undefined ? undefined : onShown(box, () => yes?.focus())));
 
     // No dependency, so the body runs once and the cleanup runs when the dialog goes.
     $effect(() => () => {

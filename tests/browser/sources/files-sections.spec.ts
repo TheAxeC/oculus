@@ -3,7 +3,10 @@
 // from its section.
 
 import { expect, test, type Page } from '@playwright/test';
-import { keepServedFiles } from '../helpers/files.ts';
+import { keepServedFiles, row, scratch } from '../helpers/files.ts';
+import { spawnSync } from 'node:child_process';
+import { writeFileSync } from 'node:fs';
+import { join, sep } from 'node:path';
 import { boot, openView } from '../helpers/rail.ts';
 import { t } from '../helpers/words.ts';
 
@@ -140,4 +143,137 @@ test("a note's file is made by the first keystroke, and the tab stays until then
     await expect.poll(() => noteCount(page), { timeout: 10_000 }).toBe(1);
     await page.getByRole('tab', { name: t('views.files') }).click();
     await expect(page.locator('[data-fs-note]')).toHaveCount(1);
+});
+
+/** The opacity the controls box around one control is painted at. */
+async function controlsOpacity(control: ReturnType<Page['locator']>): Promise<string> {
+    return control.evaluate((el) => getComputedStyle(el.closest('.actions') ?? el).opacity);
+}
+
+// revert: src/lib/views/sources/files/sections/Notes.svelte:73 => delete
+// revert: src/lib/views/sources/files/sections/Bookmarks.svelte:75 => delete
+// revert: src/lib/ui/tree/TreeItem.svelte:229 => <span class="actions">{@render actions(inside ? 0 : -1)}</span>
+test('the add controls on the Notes and Bookmarks heads are drawn whether or not the pointer is over them', async ({
+    page
+}) => {
+    await boot(page);
+    await openView(page, 'files', t('views.files'));
+    await page.mouse.move(0, 0);
+
+    const addNote = page
+        .locator('[data-fs-notes]')
+        .getByRole('button', { name: t('files.add_note'), exact: true });
+    const addMark = page
+        .locator('[data-fs-bookmarks]')
+        .getByRole('button', { name: t('files.add_bookmark'), exact: true });
+    await expect(addNote).toBeVisible();
+    await expect(addMark).toBeVisible();
+    expect(await controlsOpacity(addNote)).toBe('1');
+    expect(await controlsOpacity(addMark)).toBe('1');
+
+    // A row's own controls keep their reveal: a root's line draws them only under the pointer.
+    const rootControls = page.locator('[data-fs-row="hub:"] .actions').first();
+    await expect(rootControls).toHaveCount(1);
+    expect(await rootControls.evaluate((el) => getComputedStyle(el).opacity)).toBe('0');
+    await page.locator('[data-fs-row="hub:"]').first().hover();
+    await expect.poll(() => rootControls.evaluate((el) => getComputedStyle(el).opacity)).toBe('1');
+});
+
+/**
+ * A scratch root that is a git repository of its own, ignoring `*.log`, holding one dotfile and one
+ * ignored file beside the files every scratch root holds, added through the page's own control.
+ */
+async function toggleRoot(page: Page): Promise<{ dir: string; key: string }> {
+    const dir = scratch();
+    writeFileSync(join(dir, '.gitignore'), '*.log\n');
+    writeFileSync(join(dir, '.hidden-note'), 'hidden\n');
+    writeFileSync(join(dir, 'run.log'), 'ignored\n');
+    const made = spawnSync('git', ['-C', dir, 'init', '--quiet'], { encoding: 'utf8' });
+    expect(made.status, made.stderr).toBe(0);
+    await page.getByRole('button', { name: t('files.add_root'), exact: true }).click();
+    await page.getByRole('textbox', { name: t('files.root_dir') }).fill(dir);
+    await page.getByRole('button', { name: t('files.add'), exact: true }).click();
+    const key = dir.split(sep).at(-1) ?? '';
+    await expect(row(page, key)).toBeVisible();
+    await row(page, key).click();
+    await expect(row(page, key, 'tool.py')).toBeVisible();
+    return { dir, key };
+}
+
+// revert: src/lib/views/sources/files/Files.svelte:245 => delete
+test('the two header toggles list the hidden and the ignored files, each on its own query', async ({
+    page
+}) => {
+    const asked: string[] = [];
+    page.on('request', (request) => {
+        if (request.url().includes('/api/fs?root=')) asked.push(request.url());
+    });
+    await boot(page);
+    await openView(page, 'files', t('views.files'));
+    const { key } = await toggleRoot(page);
+    const dotfile = page.locator(`[data-fs-row="${key}:.hidden-note"]`);
+    const logged = page.locator(`[data-fs-row="${key}:run.log"]`);
+    // both toggles are off, so the tree lists neither the dotfile nor what git ignores
+    await expect(dotfile).toHaveCount(0);
+    // and the ignored file is left out the same way
+    await expect(logged).toHaveCount(0);
+
+    const hidden = page.getByRole('button', { name: t('files.show_hidden'), exact: true });
+    await hidden.click();
+    await expect(hidden).toHaveAttribute('aria-pressed', 'true');
+    await expect(dotfile).toBeVisible();
+    expect(asked.some((url) => url.includes(`root=${key}`) && url.includes('hidden=1'))).toBe(true);
+
+    await page.getByRole('button', { name: t('files.show_ignored'), exact: true }).click();
+    await expect(logged).toBeVisible();
+    expect(asked.some((url) => url.includes(`root=${key}`) && url.includes('ignored=1'))).toBe(
+        true
+    );
+});
+
+// revert: src/lib/views/sources/files/tree/Controls.svelte:63 => delete
+test('a toggle that is on is drawn filled, apart from one that is off', async ({ page }) => {
+    await boot(page);
+    await openView(page, 'files', t('views.files'));
+    const hidden = page.getByRole('button', { name: t('files.show_hidden'), exact: true });
+    const ignored = page.getByRole('button', { name: t('files.show_ignored'), exact: true });
+    const fill = (button: typeof hidden) =>
+        button.evaluate((element) => getComputedStyle(element).backgroundColor);
+    const off = await fill(ignored);
+    expect(await fill(hidden)).toBe(off);
+    await hidden.click();
+    await expect(hidden).toHaveAttribute('aria-pressed', 'true');
+    await expect.poll(() => fill(hidden)).not.toBe(off);
+});
+
+// revert: src/lib/views/sources/files/Files.svelte:244 => delete
+test('flipping a toggle reads the open folders again, so a file made since shows', async ({
+    page
+}) => {
+    await boot(page);
+    await openView(page, 'files', t('views.files'));
+    const { dir, key } = await toggleRoot(page);
+    const hidden = page.getByRole('button', { name: t('files.show_hidden'), exact: true });
+    await hidden.click();
+    await expect(page.locator(`[data-fs-row="${key}:.hidden-note"]`)).toBeVisible();
+    await hidden.click();
+    await expect(hidden).toHaveAttribute('aria-pressed', 'false');
+
+    writeFileSync(join(dir, '.made-since'), 'new\n');
+    await hidden.click();
+    await expect(page.locator(`[data-fs-row="${key}:.made-since"]`)).toBeVisible();
+});
+
+// revert: src/lib/views/sources/files/Files.svelte:159 => (root, path) => heldEntries(root, path),
+test('the filter looks through what the toggles list, so a hidden file is found once they show it', async ({
+    page
+}) => {
+    await boot(page);
+    await openView(page, 'files', t('views.files'));
+    const { key } = await toggleRoot(page);
+    await page.getByRole('button', { name: t('files.show_hidden'), exact: true }).click();
+    const dotfile = page.locator(`[data-fs-row="${key}:.hidden-note"]`);
+    await expect(dotfile).toBeVisible();
+    await page.getByPlaceholder(t('files.filter')).fill('hidden-note');
+    await expect(dotfile).toBeVisible();
 });

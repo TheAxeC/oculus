@@ -214,3 +214,140 @@ Also replace "Under a filter over the folders already read" with "Under a filter
 
 **HELP.md** (general, after line 65 or in the workbench section). Add:
 > Switching tabs keeps each tab's view as it was left: a pane keeps the view of every tab it has shown until that tab closes.
+
+# Repair round 1
+
+Repair round 1 for Q65: all twelve findings are fixed as ruled or answered with measurements.
+
+Two things need the orchestrator's attention:
+- **Terminal in item 9 is not fully measured.** In the served layer, starting a shell behind a real, isolated tmux fails. The page gets `400 {"error":"the terminal did not start: 91f787-shell"}`, even though the tmux sessions exist and `listTerminals()` finds them when I run it by hand with the same PATH. I did not find the cause. Only an idle Terminal tab (no terminal started) was measured.
+- **The `check-ignore` run is now synchronous.** Routing it through `git.ts` means it uses that module's one `spawnSync` call site. A listing on a slow mount can now block the server for up to the 5 s timeout, the same as the other git reads.
+
+## What each finding came to
+
+**1. Style module requested before its component: fixed.**
+- Fix: new `src/lib/server/core/style-first.ts`, registered as the first plugin in `vite.config.ts:15`. Before the Svelte plugin answers a `?svelte&type=style` id, it has the asking environment run `transformRequest` on the parent component, so the compiled CSS exists.
+- `this.load({ id })` does not work for this: `vite-plugin-svelte:load` still logged "failed to load virtual css module" with it.
+- `tests/server/core/dev-server.test.ts` has two cases:
+  - Client path: `npm run dev` in an engine copy, style module requested first, then again after the component.
+  - SSR path: a middleware-mode server calling `ssrLoadModule('/src/routes/+layout.svelte?inline&svelte&type=style&lang.css')` first.
+  - Raw is told from compiled by "starts with `<script` or holds a `<style` tag", not by `scrollbar-width`.
+- Before the fix both cases failed (`AssertionError: expected true to be false`, twice). After it: `Tests 2 passed (2)`. `node bin/revert-check.mjs tests/server/core/dev-server.test.ts` gives `2 reverts, 0 unproven, 0 unchecked`, red under `vite.config.ts:15 => delete`.
+- `--force` is dropped, because no case shows it is needed. `package.json:7` is back to `"dev": "vite dev"`.
+
+**2. A confirm in a hidden tab no longer blocks the workbench keys.**
+- `workbench-keys.svelte.ts:69` and `:124` now call `dialogShown()`. It counts only an `[role="alertdialog"]` not inside a `[data-tab-view][hidden]`.
+- New case in `kept-tabs.spec.ts`: remove-root confirm open, Ctrl+1, then Ctrl+] must cycle. It is red under `workbench-keys.svelte.ts:239 => (one) => one !== null`.
+- The node fake document in `tests/shell/keys/workbench-keys.test.ts` now answers `querySelectorAll`.
+
+**3. Tab-switch cases.**
+- New helper `reloadAndShow` in `tests/browser/helpers/forms.ts`.
+- Cases that claim state lives in the instance now reload instead of switching. Each is red under `ui.svelte.ts:252 => delete` (the storage write) or its existing `fs.ts` line revert:
+  - files-forms: the root form (renamed "…after a reload"), the refused root, the bookmark outcome line.
+  - unsaved-forms: the card's edit form, the manifest editor, the Venues add form.
+  - source.spec: the unsaved edit.
+  - Two cases that already reloaded now also carry the storage directive.
+- Cases whose claim is the switch itself keep the switch:
+  - "a root added while the tab is switched away": red under `Files.svelte:299 => delete`.
+  - "a bookmark added while …": red under `Files.svelte:363 => delete`.
+  - "an add form whose tab was switched away…": red under its existing `form-drafts.svelte.ts:273` directive.
+- Browser revert-check over kept-tabs, files-forms, unsaved-forms, source and map: every changed case red. The one unproven case, the existing Map case, is covered under item 5.
+
+**4. `check-ignore` now runs through `server/git/git.ts`.**
+- New export `ignoredIn(root, names, timeout = TIMEOUT_MS)` goes through `run()`, the module's one call site, which gained an `input` parameter. It keeps the 5 s timeout and returns nothing ignored on any failure.
+- `fs/ignored.ts` is deleted. `listShown` and `handleFs` are synchronous again, so `tests/routes/files/fs.test.ts` matches base.
+- `git.test.ts`:
+  - `check-ignore` is added to `ALLOWED`, `PINNED` and `PINNED_SOURCE`.
+  - New case "names the entries the repository ignores, and leaves it as it was", red under `git.ts:145`.
+  - The source-vector gate is renamed "…pinned five…" and is red under `git.ts:217`.
+  - The whole-file gate is renamed "audits that nothing but those commands ran over this whole file…". It fails when run alone even without a revert (`vitest -t` gave `1 failed`), so no revert-check run of it can prove anything.
+
+**5. Map labels: the defect was real and is fixed.**
+- New case in `map.spec.ts`: Map shown, switch to Status, grow the text six steps, switch back, no drawn labels overlap. Before the fix it failed with `+ "project::tensor-sketch line::graphs"`.
+- Fix: `onShown()` in `views/structure/map/labels.ts` uses a ResizeObserver that measures only when the drawing comes back from width 0. Graph calls `$effect(() => onShown(svg, measure))`.
+- It fires only on the way back from zero, so the existing "labels after the text grows" case stays red under its own revert (`Graph.svelte:126`).
+- Proof: `node bin/revert-check.mjs tests/browser/views/map.spec.ts` gives `2 reverts, 0 unproven`.
+- One earlier run of `map.spec.ts` had "a pressed type chip…" time out at 30 s. After that: `--repeat-each=3` gave `15 passed`, and the final whole suite passed.
+
+**6.** `form-drafts.svelte.ts` comment rewritten. It now says the form may be in a tab never shown, on a page not drawn, or drawn anew since the save went, while the request is still out.
+
+**7.** The finding's comment in `ignored.ts` is gone with the file. The comments I rewrapped are in `fs.ts`, `labels.ts` and the spec headers. The comment-width check passes (part of `Tests 4475 passed`).
+
+**8. Reverts for the two unchecked cases.**
+- `usage.test.ts` "renders the refreshing … only then" is red under `Usage.svelte:155 => if (refresher.state !== 'down') {`.
+- `source.test.ts` "draws the highlight mirror … no control row" is red under `Editor.svelte:144 => <div role="toolbar"></div><div class="row" bind:this={box}>`.
+
+**9. What a hidden tab keeps doing: one minute each, shown against hidden.**
+- Setup: a scratch Playwright/CDP script against the served build. Page ms are CDP `TaskDuration`. Server CPU is `ps` time of the server process. `check-ignore` runs were counted by a logging `git` wrapper.
+
+| Tab | Page task ms | HTTP requests | Socket frames | Server CPU s | `check-ignore` runs |
+|---|---|---|---|---|---|
+| Files, 4 folders open, quiet minute, shown | 31 | 0 | 1 | 0.05 | 0 |
+| Files, same, hidden | 43 | 0 | 1 | 0.05 | 0 |
+| Files, one bookmark written in the minute, shown | 77 | 9 | 3 | 0.49 | 4 |
+| Files, one bookmark written in the minute, hidden (two runs) | 80 / 77 | 9 / 9 | 2 / 3 | 0.44 / 0.42 | 4 / 4 |
+| Transcript, a line appended every 5 s, shown | 211 | 24 | 25 | 1.28 | 0 |
+| Transcript, same, hidden | 127 | 24 | 25 | 1.19 | 0 |
+| Terminal, idle with no terminal | 30 | 0 | 1 | 0.07 | 0 |
+
+- A hidden tab does the same network and server work as a shown one. A hidden Files tab re-reads every open folder, with one `check-ignore` each, on every write that moves the store's round.
+- A running Terminal was not measured (see the top of this report). I removed my isolated tmux server and its socket folder afterwards.
+
+**10. Changes a reader sees, before and after.**
+- Starting a terminal: before, a start from the Terminal form also selected the new terminal in the rail. After, the terminal becomes that tab's own and the rail selection is left as it was.
+- Stale refresher line: before `refresher: running, figures fetched at HH:MM; Claude Code renews them after five minutes`. After `refresher: ok, figures fetched at HH:MM; Claude Code renews them after five minutes`.
+- Tab switches: before, switching tabs threw away an open confirm, an open form's component state and any scroll position. After, all three survive the switch and are there when the tab is shown again (for example the Files remove-root confirm).
+
+**11. Rail and palette opens.** Opening Transcript or Session from the rail or the palette still carries no state. It shares one tab that follows the selected session, which is kept as it was. This is the same as the Terminal tab opened from the rail. Every in-view open (session list, session detail, project card) names its session and gets a tab of its own.
+
+**12.** Measured with `wc -l`: `885 src/lib/state/sources/fs.svelte.ts`. Other files: `Files.svelte` 536, `Graph.svelte` 536, `git.ts` 487.
+
+## Verification over the final tree
+- `npx vitest run --reporter=dot`: `Test Files 276 passed (276)`, `Tests 4475 passed (4475)`.
+- `npm run check`: `0 ERRORS 0 WARNINGS`.
+- `npm run build`: exit 0. `npm run format:check`: `All matched files use Prettier code style!` `npm run lint`: exit 0.
+- ASCII gate prints nothing. `size-check`: exit 0. `folder-check`: exit 0.
+- Whole browser suite `npx playwright test`: `308 passed (6.7m)`. The one ✘ printed is the existing `test.fail()` case at `files-forms.spec.ts:633`.
+- Revert-check:
+  - Node (dev-server, ignored, server fs, git, workbench-keys, usage, source, negatives, duplication): `39 reverts, 0 unproven`.
+  - Browser (kept-tabs, files-forms, unsaved-forms, source): all red.
+  - Map: `2 reverts, 0 unproven`.
+- `ls -d $TMPDIR/oculus-* | wc -l`: 7015 before and 7015 after.
+
+## Files changed this round (+ added / − removed, against base)
+- New: `src/lib/server/core/style-first.ts` (43).
+- Deleted: `src/lib/server/files/fs/ignored.ts`.
+- `package.json`: back to base.
+- `vite.config.ts` +5/−1
+- `src/lib/server/git/git.ts` +30/−3
+- `src/lib/server/files/fs.ts` +66/−15
+- `src/lib/shell/keys/workbench-keys.svelte.ts` +13/−2
+- `src/lib/state/forms/form-drafts.svelte.ts` +10/−10
+- `src/lib/views/structure/map/Graph.svelte` +4/−0
+- `src/lib/views/structure/map/labels.ts` +15/−0
+- Tests:
+  - `tests/server/core/dev-server.test.ts` (231 lines)
+  - `tests/server/files/ignored.test.ts` (185 lines)
+  - `tests/server/git/git.test.ts` +24/−5
+  - `tests/shell/keys/workbench-keys.test.ts` +6/−3
+  - `tests/browser/helpers/forms.ts` +19/−4
+  - `tests/browser/sources/files-forms.spec.ts` +28/−27
+  - `tests/browser/workbench/unsaved-forms.spec.ts` +21/−22
+  - `tests/browser/sources/source.spec.ts` +42/−7
+  - `tests/browser/views/map.spec.ts` +21/−1
+  - `tests/browser/workbench/kept-tabs.spec.ts` (159 lines)
+  - `tests/checks/tree/allow-negatives.ts` +0/−5 (five stale entries)
+  - `tests/views/system/usage.test.ts` +44/−6
+  - `tests/views/sources/source.test.ts` +40/−16
+  - `tests/views/whole/type-scale.test.ts` +4/−3
+- `tests/routes/files/fs.test.ts` is back to base.
+
+## Doc text that changed from round 0
+- **DESIGN.md:114.** Replace my round-0 "append" with these edits to the paragraph:
+  - "Exactly nine read-only command forms over eight subcommands (" becomes "Exactly ten read-only command forms over nine subcommands (".
+  - Add "`check-ignore --stdin -z`" to the list.
+  - After "list arguments only.", add: "The file browser's listing asks the same call site which of a folder's entries the repository ignores (`ignoredIn`), and a failure leaves out nothing."
+  - "`branch`, `symbolic-ref` and `worktree`, which have writing forms, and `rev-parse`" becomes "`branch`, `symbolic-ref` and `worktree`, which have writing forms, `rev-parse` and `check-ignore`".
+- **HELP.md:191.** Drop the earlier replacement. `npm run dev` is unchanged. Instead add after that sentence: "In development a component's stylesheet is always served compiled, whichever the page asks for first."
+- **DESIGN.md, the Shell or Map text.** Add: "A view kept hidden draws at no size; the Map measures its labels again when its drawing comes back to a size (`onShown` in `views/structure/map/labels.ts`)."
+- Every other Doc text line from round 0 stands.

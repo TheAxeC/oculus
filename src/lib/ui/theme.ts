@@ -1,6 +1,6 @@
-// Layer 3, primitive, and the only one that is not a component. Putting a theme on the document:
-// the class string on the body, the derived colour tokens on the root element, and beside them the
-// three custom properties the wallpaper's translucent surfaces are painted through.
+// Layer 3, primitive, and one of the three that are not components. Putting a theme on the
+// document: the class string on the body, the derived colour tokens on the root element, and beside
+// them the three custom properties the wallpaper's translucent surfaces are painted through.
 //
 // The two stylesheets reach this module as text through Vite's `?raw` import, which is the same
 // bytes the page is styled with. The derivation therefore runs on the authored values themselves

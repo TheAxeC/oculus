@@ -10,7 +10,9 @@
     // The controls sit beside the line rather than inside it, since a button holds no button, and
     // the tooltip opens while the pointer is anywhere over the row. They are shown while
     // the pointer is over the row or the focus is inside it, and are otherwise transparent rather
-    // than removed, so a control is where the reader's pointer will land.
+    // than removed, so a control is where the reader's pointer will land. A row given
+    // `showActions` draws them at full strength always, for a section head whose one control adds
+    // to the section and is looked for before the pointer is over it.
     //
     // A row drawn in a ui/tree/TreeView.svelte is a treeitem with its level, and the treeitem is
     // what takes the keyboard's focus: it reads its place in the focus order and its key handler
@@ -74,6 +76,8 @@
         field?: Snippet;
         /** The row's own controls, handed the tabindex they take. */
         actions?: Snippet<[number]>;
+        /** Draw the controls at full strength whether or not the pointer is over the row. */
+        showActions?: boolean;
         /** Drawn at the right edge after the controls: a status letter. */
         end?: Snippet;
     };
@@ -98,6 +102,7 @@
         detail,
         field,
         actions,
+        showActions = false,
         end
     }: Props = $props();
 
@@ -221,7 +226,7 @@
         </button>
     {/if}
     {#if actions !== undefined}
-        <span class="actions">{@render actions(inside ? 0 : -1)}</span>
+        <span class="actions" class:shown={showActions}>{@render actions(inside ? 0 : -1)}</span>
     {/if}
     {#if count !== undefined}
         <span class="count">{count}</span>
@@ -423,7 +428,8 @@
     }
 
     .item:hover .actions,
-    .item:focus-within .actions {
+    .item:focus-within .actions,
+    .actions.shown {
         opacity: 1;
     }
 

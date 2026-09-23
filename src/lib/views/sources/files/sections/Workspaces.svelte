@@ -18,11 +18,10 @@
 
     import { workspaceChoices } from '$lib/state/sources/fs';
     import Failed from '../tree/Failed.svelte';
+    import Section from './Section.svelte';
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
-    import TreeSection from '$lib/ui/tree/TreeSection.svelte';
     import TreeView from '$lib/ui/tree/TreeView.svelte';
     import type { TreeNav } from '$lib/ui/tree/tree-keys';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { t } from '$lib/state/words/text';
 
     type Props = {
@@ -59,25 +58,16 @@
 <div class="spaces" data-fs-workspaces>
     <TreeView label={t('files.workspaces')} rows={keyRows} {ontoggle}>
         {#snippet children(nav: TreeNav)}
-            <TreeSection
+            <Section
                 label={t('files.workspaces')}
-                id="head"
                 {nav}
                 count={rows.length}
                 {open}
                 {ontoggle}
+                add={{ label: t('files.save_as'), title: t('files.save_as_title'), glyph: 'save' }}
+                adding={saving}
+                onadd={onsave}
             >
-                {#snippet actions(reach: number)}
-                    <ToolButton
-                        label={t('files.save_as')}
-                        title={t('files.save_as_title')}
-                        glyph="save"
-                        compact
-                        tabindex={reach}
-                        expanded={saving}
-                        onclick={onsave}
-                    />
-                {/snippet}
                 {#if error !== ''}
                     <li role="none">
                         <Failed
@@ -101,7 +91,7 @@
                         />
                     </li>
                 {/each}
-            </TreeSection>
+            </Section>
         {/snippet}
     </TreeView>
 </div>

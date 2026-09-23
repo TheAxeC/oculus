@@ -25,17 +25,19 @@
     // A keystroke keeps a preview tab. A file opened by a single click is the tab the next single
     // click replaces, and typing into it is a reader saying they are working in it.
     //
-    // The star in the pane's own bar is `shared/links/BookmarkStar.svelte`, which the file view
-    // draws too, so a reader bookmarks the file in front of them whichever of the two tabs is
-    // showing it. The controls that act on the text (Save, Revert, the rendered half) are the
-    // editor's own bar. A file whose extension `open.program_ext` names an application for, such as
-    // a `.rtf` whose bytes are text, also carries `shared/links/ProgramButton.svelte` there, the
-    // control the file view draws.
+    // Every control of the tab is on the pane's own bar, in one row: Save, Revert and, for a
+    // Markdown file, the rendered half, which act on the text and are drawn while the text may be
+    // written; then the star, `shared/links/BookmarkStar.svelte`, which the file view draws too, so
+    // a reader bookmarks the file in front of them whichever of the two tabs is showing it; then,
+    // for a file whose extension `open.program_ext` names an application for, such as a `.rtf`
+    // whose bytes are text, `shared/links/ProgramButton.svelte`, the control the file view draws.
+    // The editor below draws no bar of its own.
 
     import { untrack } from 'svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Glyph from '$lib/ui/controls/Glyph.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
+    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Toolbar from '$lib/ui/frame/Toolbar.svelte';
     import BookmarkStar from '../../shared/links/BookmarkStar.svelte';
     import ProgramButton from '../../shared/links/ProgramButton.svelte';
@@ -74,6 +76,10 @@
     const locked = $derived(
         draft.readonly ? t('source.readonly') : draft.truncated ? t('source.truncated') : ''
     );
+    /** Whether the editor is drawn, which is when the text controls have text to act on. */
+    const editing = $derived(error === '' && draft.loaded && locked === '');
+    /** Whether the file has a rendered half, which is what a Markdown file has. */
+    const markdown = $derived(languageOf(path) === 'markdown');
 
     $effect(() => {
         if (blocked) return;
@@ -108,9 +114,28 @@
 
 {#snippet tools()}
     <Toolbar label={t('source.toolbar')}>
+        {#if editing}
+            <ToolButton label={t('editor.save')} glyph="check" onclick={() => void save()} />
+            <ToolButton
+                label={t('editor.revert')}
+                glyph={t('editor.revert_glyph')}
+                onclick={() => revertSourceDraft(instance.id)}
+            />
+            {#if markdown}
+                <ToolButton
+                    label={t('source.preview')}
+                    glyph={t('source.preview_glyph')}
+                    pressed={draft.rendered}
+                    onclick={() => toggleSourceRendered(instance.id)}
+                />
+            {/if}
+        {/if}
         <BookmarkStar {root} {path} />
         {#if !blocked && opensInProgram(path, programApps())}
             <ProgramButton {root} {path} />
+        {/if}
+        {#if editing && draft.message !== ''}
+            <span class="message" aria-live="polite">{draft.message}</span>
         {/if}
     </Toolbar>
 {/snippet}
@@ -128,17 +153,7 @@
             </p>
             <Code text={draft.text} language={languageOf(path)} {path} />
         {:else}
-            <Editor
-                {path}
-                {line}
-                text={draft.text}
-                message={draft.message}
-                rendered={draft.rendered}
-                oninput={typed}
-                onsave={save}
-                onrevert={() => revertSourceDraft(instance.id)}
-                onrendered={() => toggleSourceRendered(instance.id)}
-            />
+            <Editor {path} {line} text={draft.text} rendered={draft.rendered} oninput={typed} />
         {/if}
     </div>
 </Pane>
@@ -155,6 +170,11 @@
     .source:has(.locked) {
         grid-template-rows: auto minmax(0, 1fr);
         gap: 6px;
+    }
+
+    .message {
+        color: var(--muted-txt, var(--muted));
+        font-size: var(--fs-sm);
     }
 
     .locked {

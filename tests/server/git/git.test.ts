@@ -35,6 +35,7 @@ import {
     MAX_ENTRIES,
     capped,
     empty,
+    ignoredIn,
     statusFor
 } from '../../../src/lib/server/git/git.ts';
 import { BRANCH_FORMAT } from '../../../src/lib/server/git/git-parse.ts';
@@ -52,6 +53,7 @@ const MODULE = resolve(
 /** Everything git.ts is allowed to run. The source scan below asserts it holds no other. */
 const ALLOWED = [
     'branch',
+    'check-ignore',
     'diff',
     'log',
     'rev-list',
@@ -68,13 +70,15 @@ const ALLOWED = [
 const CALLS = [...ALLOWED, 'rev-parse'].sort();
 
 /**
- * The exact vectors four subcommands may run as. `branch <name>` and `branch -d` make and delete a
+ * The exact vectors five subcommands may run as. `branch <name>` and `branch -d` make and delete a
  * branch, `symbolic-ref HEAD <ref>` moves HEAD and `worktree add` makes a checkout, so each of
  * those is held to its one reading vector; `rev-parse` has no writing form and is held to the
- * module's two reads so a third use is a change this gate sees.
+ * module's two reads so a third use is a change this gate sees, and `check-ignore` to the one form
+ * the file browser reads its ignored entries by.
  */
 const PINNED: Partial<Record<string, string[][]>> = {
     branch: [['branch', BRANCH_FORMAT]],
+    'check-ignore': [['check-ignore', '--stdin', '-z']],
     'rev-parse': [
         ['rev-parse', '--git-dir'],
         ['rev-parse', '--abbrev-ref', 'HEAD']
@@ -86,6 +90,7 @@ const PINNED: Partial<Record<string, string[][]>> = {
 /** The same vectors as the module's source writes them, one list literal per call. */
 const PINNED_SOURCE = [
     "['branch', BRANCH_FORMAT]",
+    "['check-ignore', '--stdin', '-z']",
     "['rev-parse', '--git-dir']",
     "['rev-parse', '--abbrev-ref', 'HEAD']",
     "['symbolic-ref', '--short', 'HEAD']",
@@ -526,7 +531,7 @@ describe('failure', () => {
     });
 
     it('keeps a repository whose config git cannot parse a repository, and says why', () => {
-        // revert: src/lib/server/git/git.ts:154 =>         refused.repository = false;
+        // revert: src/lib/server/git/git.ts:181 =>         refused.repository = false;
         const broken = join(dir, 'broken');
         mkdirSync(broken);
         git(broken, 'init', '--initial-branch=work');
@@ -689,6 +694,39 @@ describe('failure', () => {
 });
 
 describe('read only', () => {
+    /**
+     * Runs every read of the module once, so each gate below holds when it runs alone: the status
+     * of a repository with an upstream and of one with no commit yet, and the ignored names of a
+     * folder. What the cases before it ran stays in the record and is checked with it.
+     */
+    function everyRead(): void {
+        const clone = join(dir, 'clone');
+        const done = spawnSync('git', ['clone', '--quiet', repo, clone], {
+            encoding: 'utf8',
+            timeout: 30000
+        });
+        expect(done.status).toBe(0);
+        const unborn = join(dir, 'unborn');
+        mkdirSync(unborn);
+        git(unborn, 'init', '--initial-branch=fresh');
+        write('.gitignore', '*.log\n');
+        write('a.log', 'ignored\n');
+        const states = statusFor([clone, unborn]);
+        expect(states[clone].upstream).toBe(true);
+        expect(states[unborn].branch).toBe('fresh');
+        expect([...ignoredIn(repo, ['a.log', 'kept.txt'])]).toEqual(['a.log']);
+    }
+
+    // revert: src/lib/server/git/git.ts:145 => const done = run(root, ['check-ignore', '--stdin'], milliseconds(timeout), input);
+    it('names the entries the repository ignores, and leaves it as it was', () => {
+        write('.gitignore', '*.log\n');
+        write('a.log', 'ignored\n');
+        write('keep.txt', 'kept\n');
+        const before = git(repo, 'status', '--porcelain=v1', '--ignored');
+        expect([...ignoredIn(repo, ['a.log', 'keep.txt', '.gitignore'])]).toEqual(['a.log']);
+        expect(git(repo, 'status', '--porcelain=v1', '--ignored')).toBe(before);
+    });
+
     it('leaves a repository exactly as it was', () => {
         write('kept.txt', 'one\ntwo\nthree\nfour\n');
         write('loose.txt', 'x\n');
@@ -709,7 +747,8 @@ describe('read only', () => {
     });
 
     // Revert: write the `symbolic-ref` call in server/git/git.ts as `['symbolic-ref', 'HEAD']`.
-    it('holds only the allowed subcommands at its call site, the pinned four as their exact vectors', () => {
+    // revert: src/lib/server/git/git.ts:217 => const unborn = run(root, ['symbolic-ref', 'HEAD'], timeout);
+    it('holds only the allowed subcommands at its call site, the pinned five as their exact vectors', () => {
         const source = readFileSync(MODULE, 'utf8');
         const calls = [...source.matchAll(/\brun\(\s*root\s*,\s*\[\s*'([a-z-]+)'/g)];
         expect(calls.map((call) => call[1]).sort()).toEqual(CALLS);
@@ -718,17 +757,19 @@ describe('read only', () => {
         for (const form of PINNED_SOURCE) expect(source).toContain(form);
     });
 
+    // revert: src/lib/server/git/git.ts:402 => const argv = ['-C', root, ...args];
     it('ran every command without optional locks, so a read writes no index lock', () => {
+        everyRead();
         expect(ran.length).toBeGreaterThan(0);
         for (const args of ran) {
             expect(args, args.join(' ')).toContain('--no-optional-locks');
         }
     });
 
-    // Revert: write the `symbolic-ref` call in server/git/git.ts as `['symbolic-ref', 'HEAD']`, or
-    // the branch listing as `['branch', '--list', BRANCH_FORMAT]`; the vector it runs is then none
-    // of the pinned ones.
-    it('ran nothing but those commands over this whole file, the pinned four as their vectors', () => {
+    // revert: src/lib/server/git/git.ts:217 => const unborn = run(root, ['symbolic-ref', 'HEAD'], timeout);
+    // revert: src/lib/server/git/git.ts:243 => const done = run(root, ['branch', '--list', BRANCH_FORMAT], timeout);
+    it('ran nothing but those commands over this file, the pinned five as their vectors', () => {
+        everyRead();
         expect(ran.length).toBeGreaterThan(0);
         const used = new Set<string>();
         for (const args of ran) {

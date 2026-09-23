@@ -1,14 +1,21 @@
 // Layer 3, shell tests. Structural DOM stand-ins exercise target availability and scroll-region
-// precedence without a browser. Actual focus, layout and event defaults are browser-suite checks.
+// precedence without a browser, each action looking inside the view the pane shows (SHOWN_VIEW).
+// Actual focus, layout and event defaults are browser-suite checks.
 
 import { describe, expect, it, vi } from 'vitest';
 import {
+    SHOWN_VIEW,
     activateCursor,
     cardSelector,
     focusSearch,
     scrollContainer,
     scrollRegion
 } from '../../../src/lib/shell/keys/key-dom.ts';
+
+/** A pane whose shown view is the element given. */
+function paneShowing(view: HTMLElement): HTMLElement {
+    return element({ [SHOWN_VIEW]: view });
+}
 
 /** A queryable element with named matches and descendants supplied in document order. */
 function element(
@@ -29,24 +36,30 @@ describe('optional keyboard actions', () => {
         expect(focusSearch(element())).toBe(false);
     });
 
+    // revert: src/lib/shell/keys/key-dom.ts:20 => const search = pane?.querySelector<HTMLInputElement>('input[data-search]');
     it('focuses and selects an available search input', () => {
         const search = { focus: vi.fn(), select: vi.fn() };
-        expect(focusSearch(element({ 'input[data-search]': search }))).toBe(true);
+        expect(focusSearch(paneShowing(element({ 'input[data-search]': search })))).toBe(true);
         expect(search.focus).toHaveBeenCalledOnce();
         expect(search.select).toHaveBeenCalledOnce();
     });
 
+    // revert: src/lib/shell/keys/key-dom.ts:36 => const control = card;
     it('leaves activation unhandled without a pane, cursor card, or control', () => {
         expect(activateCursor(null, 'one')).toBe(false);
         expect(activateCursor(element(), null)).toBe(false);
         expect(activateCursor(element(), 'one')).toBe(false);
-        expect(activateCursor(element({ [cardSelector('one')]: element() }), 'one')).toBe(false);
+        const plain = paneShowing(element({ [cardSelector('one')]: element() }));
+        expect(activateCursor(plain, 'one')).toBe(false);
     });
 
+    // revert: src/lib/shell/keys/key-dom.ts:35 => const card = pane?.querySelector<HTMLElement>(cardSelector(cursor));
     it('clicks the available cursor control', () => {
         const control = { click: vi.fn() };
         const card = element({ '.title button, [data-card-toggle]': control });
-        expect(activateCursor(element({ [cardSelector('one')]: card }), 'one')).toBe(true);
+        expect(activateCursor(paneShowing(element({ [cardSelector('one')]: card })), 'one')).toBe(
+            true
+        );
         expect(control.click).toHaveBeenCalledOnce();
     });
 
@@ -66,38 +79,42 @@ describe('optional keyboard actions', () => {
 });
 
 describe('view scroll region', () => {
+    // revert: src/lib/shell/keys/key-dom.ts:50 => const body = pane?.querySelector<HTMLElement>('[data-pane-body]');
     it('prefers a mark nested inside the view body, the column a view scrolls itself', () => {
         const column = element({}, [], 9000);
         const board = element({ '[data-scroll]': column });
         const body = element({ '[data-scroll]': board });
-        expect(scrollContainer(element({ '[data-pane-body]': body }))).toBe(column);
+        expect(scrollContainer(paneShowing(body))).toBe(column);
     });
 
+    // revert: src/lib/shell/keys/key-dom.ts:50 => const body = pane?.querySelector<HTMLElement>('[data-pane-body]');
     it('selects the marked view body before considering nested scroll ranges', () => {
         const board = element();
         const fileList = element({}, [], 10000);
         const body = element({ '[data-scroll]': board }, [fileList]);
         const overflow = vi.fn(() => 'auto');
-        expect(scrollContainer(element({ '[data-pane-body]': body }), overflow)).toBe(board);
+        expect(scrollContainer(paneShowing(body), overflow)).toBe(board);
         expect(overflow).not.toHaveBeenCalled();
     });
 
+    // revert: src/lib/shell/keys/key-dom.ts:50 => const body = pane?.querySelector<HTMLElement>('[data-pane-body]');
     it('falls back to the first scrolling descendant in document order', () => {
         const clipped = element();
         const root = element({}, [], 400);
         const nested = element({}, [], 10000);
         const body = element({}, [clipped, root, nested]);
         expect(
-            scrollContainer(element({ '[data-pane-body]': body }), (candidate) =>
+            scrollContainer(paneShowing(body), (candidate) =>
                 candidate === clipped ? 'hidden' : 'auto'
             )
         ).toBe(root);
     });
 
+    // revert: src/lib/shell/keys/key-dom.ts:58 => }) ?? body
     it('returns no region when the pane, body, or scrolling descendant is absent', () => {
         expect(scrollContainer(null)).toBe(null);
         expect(scrollContainer(element())).toBe(null);
         const body = element({}, [element()]);
-        expect(scrollContainer(element({ '[data-pane-body]': body }), () => 'hidden')).toBe(null);
+        expect(scrollContainer(paneShowing(body), () => 'hidden')).toBe(null);
     });
 });

@@ -66,7 +66,7 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
             !typingIn(event.target) &&
             !options.paletteOpen() &&
             !options.updateOpen() &&
-            document.querySelector('[role="alertdialog"]') === null &&
+            !dialogShown() &&
             !event.defaultPrevented &&
             !event.metaKey &&
             !event.ctrlKey &&
@@ -121,7 +121,7 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
                 typing: typingIn(event.target),
                 paletteOpen: options.paletteOpen(),
                 trayOpen: options.updateOpen(),
-                confirmOpen: document.querySelector('[role="alertdialog"]') !== null
+                confirmOpen: dialogShown()
             },
             keyState,
             Date.now()
@@ -227,6 +227,17 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
         clearCursor();
         options.layout.activateInstance(id, pane?.dataset.panePage);
         return true;
+    }
+
+    /**
+     * Whether a confirm dialog holds the keys. A pane keeps the view of a tab it hides mounted, so
+     * a confirm left open in that view stays in the page, hidden with it; only one outside a
+     * hidden tab view is on screen and counts.
+     */
+    function dialogShown(): boolean {
+        return [...document.querySelectorAll('[role="alertdialog"]')].some(
+            (one) => one.closest('[data-tab-view][hidden]') === null
+        );
     }
 
     /** Find the pane keyboard navigation should address from focus, cursor or active main tab. */

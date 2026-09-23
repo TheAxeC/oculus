@@ -7,7 +7,7 @@
 // reader ends up with and the elements Chrome kept.
 
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { boot, openView } from '../helpers/rail.ts';
+import { SHOWN_VIEW, boot, openView } from '../helpers/rail.ts';
 import { shortOf } from '../helpers/hub.ts';
 import { t } from '../helpers/words.ts';
 
@@ -113,7 +113,7 @@ test('an intro filters a hub value and draws a catalog line as it is written', a
     await boot(page);
 
     await openView(page, 'tasks', t('views.tasks'));
-    const hubIntro = page.locator('.intro').first();
+    const hubIntro = page.locator(`${SHOWN_VIEW} .intro`).first();
     await expect(hubIntro).toBeVisible();
     await expect(hubIntro).toContainText('Standing tasks');
     // the intro is markup from the hub file, so the filter takes the script out of it
@@ -121,12 +121,12 @@ test('an intro filters a hub value and draws a catalog line as it is written', a
     await expect(hubIntro).not.toContainText('alert(1)');
 
     await openView(page, 'domains', t('views.domains'));
-    const catalogIntro = page.locator('.intro').first();
+    const catalogIntro = page.locator(`${SHOWN_VIEW} .intro`).first();
     await expect(catalogIntro.locator('b').first()).toHaveText('application domain');
     expect(alerts).toEqual([]);
 });
 
-// revert: src/lib/ui/tree/TreeItem.svelte:271 => flex: 1 1 auto;
+// revert: src/lib/ui/tree/TreeItem.svelte:276 => flex: 1 1 auto;
 test("a tree row's controls follow its name rather than the pane's edge", async ({ page }) => {
     await boot(page);
     await openView(page, 'files', t('views.files'));
@@ -150,7 +150,7 @@ test("a tree row's controls follow its name rather than the pane's edge", async 
     expect(rowBox.x + rowBox.width - (actionBox.x + actionBox.width)).toBeGreaterThan(200);
 });
 
-// revert: src/lib/ui/tree/TreeItem.svelte:214 => over={undefined}
+// revert: src/lib/ui/tree/TreeItem.svelte:219 => over={undefined}
 test("a tree row's words open while the pointer is anywhere over the row", async ({ page }) => {
     await boot(page);
     await openView(page, 'files', t('views.files'));
@@ -165,7 +165,7 @@ test("a tree row's words open while the pointer is anywhere over the row", async
     await expect(page.locator('span.bubble:not([hidden])')).toHaveCount(1);
 });
 
-// revert: src/lib/ui/tree/TreeItem.svelte:185 => delete
+// revert: src/lib/ui/tree/TreeItem.svelte:190 => delete
 test("a press on a tree row's own space opens it, as a press on its name does", async ({
     page
 }) => {

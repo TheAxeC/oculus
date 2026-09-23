@@ -611,7 +611,7 @@ test("a row's controls appear on hover, and bookmark the file and open it in a k
 
 // Revert: in ui/tree/TreeItem.svelte, leave the tooltip describing the button, which a tree never
 // focuses.
-// revert: src/lib/ui/tree/TreeItem.svelte:210-215 => <Tooltip text={title ?? ''} block>
+// revert: src/lib/ui/tree/TreeItem.svelte:215-220 => <Tooltip text={title ?? ''} block>
 test("a tree row gives a screen reader its tooltip's words as its description", async ({
     page
 }) => {
@@ -630,7 +630,7 @@ test("a tree row gives a screen reader its tooltip's words as its description", 
 
 // Revert: in ui/tree/TreeItem.svelte, drop the rule that draws a row's controls on a screen whose
 // pointer does not hover.
-// revert: src/lib/ui/tree/TreeItem.svelte:434 => opacity: 0;
+// revert: src/lib/ui/tree/TreeItem.svelte:440 => opacity: 0;
 test("a row's controls are drawn on a screen that has no hover, with no pointer over them", async ({
     browser
 }) => {
@@ -786,7 +786,7 @@ test('a second file of the same name is bookmarked under its path from the row s
     await expect(page.locator('[data-fs-bookmark="README.md"]')).toHaveCount(0);
 });
 
-// revert: src/lib/state/sources/fs.svelte.ts:663 => answered(BOOKMARKS, at);
+// revert: src/lib/state/sources/fs.svelte.ts:649 => answered(BOOKMARKS, at);
 test('a bookmarks read that failed is asked again by its own control, without a reload', async ({
     page
 }) => {

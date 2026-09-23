@@ -287,7 +287,7 @@ describe('the workspaces section', () => {
         expect(body).not.toContain('aria-selected="true"');
     });
 
-    // revert: src/lib/views/sources/files/sections/Workspaces.svelte:81 => {#if false}
+    // revert: src/lib/views/sources/files/sections/Workspaces.svelte:71 => {#if false}
     it('says why the workspaces could not be read, with the control that reads them again', () => {
         const { body } = render(Workspaces, {
             context: clientContext(client),
@@ -311,7 +311,7 @@ describe('the workspaces section', () => {
         expect(body).toContain('aria-label="save as"');
     });
 
-    // revert: src/lib/views/sources/files/sections/Workspaces.svelte:47 => const rows = $derived(workspaceChoices(names));
+    // revert: src/lib/views/sources/files/sections/Workspaces.svelte:46 => const rows = $derived(workspaceChoices(names));
     it('draws no workspace row at all over a read that failed, not even the configured roots', () => {
         const { body } = render(Workspaces, {
             context: clientContext(client),

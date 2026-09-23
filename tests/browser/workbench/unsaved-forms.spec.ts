@@ -1,22 +1,22 @@
 // Unsaved form input in Chrome: what a reader typed into a collection's add form, a card's edit
 // form or the manifest editor is still there, in a form still open, after the tab was switched away
-// from and back (a pane mounts only its active tab, so the component that drew the form is gone in
-// between) and after a reload; the tab holding it asks before it closes, measured against the entry
-// as the file holds it now; Cancel, the view's Add and Edit toggles and a save take the question
-// away, and they and a delete leave no draft in the browser's storage. A value typed while a save
-// is on its way stays in the open form, an edit's and an add's alike, and so does the text of an
-// add form closed and opened again while its save was out; an add form nothing touched while its
-// save was out closes once its entry is added, and one left open goes on writing the entry it added
-// rather than adding a second. The Save control is not pressable while its own save is out. A pane
-// closed from its menu takes the drafts and the records of every tab in it out of the browser's
-// storage. A file browser's root line typed and not added is asked about the same way.
+// from and back and after a reload, which draws the view anew from what its instance kept; the tab
+// holding it asks before it closes, measured against the entry as the file holds it now; Cancel,
+// the view's Add and Edit toggles and a save take the question away, and they and a delete leave no
+// draft in the browser's storage. A value typed while a save is on its way stays in the open form,
+// an edit's and an add's alike, and so does the text of an add form closed and opened again while
+// its save was out; an add form nothing touched while its save was out closes once its entry is
+// added, and one left open goes on writing the entry it added rather than adding a second. The Save
+// control is not pressable while its own save is out. A pane closed from its menu takes the drafts
+// and the records of every tab in it out of the browser's storage. A file browser's root line typed
+// and not added is asked about the same way.
 //
 // The drafts are the ui store's, kept in the browser's own storage. The writes here go to the
 // temporary copy of demo/, and every file a case writes is put back before the case ends.
 
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { pressCardAction } from '../helpers/cards.ts';
-import { draftKeys, switchAndBack, uiInstances } from '../helpers/forms.ts';
+import { draftKeys, reloadAndShow, switchAndBack, uiInstances } from '../helpers/forms.ts';
 import {
     readEngineFile,
     readHubFile,
@@ -94,6 +94,7 @@ async function typeManifest(page: Page): Promise<Locator> {
     return tab;
 }
 
+// revert: src/lib/state/workbench/ui.svelte.ts:252 => delete
 test('text typed into an add form is there, in the open form, after a tab switch and a reload', async ({
     page
 }) => {
@@ -112,7 +113,8 @@ test('text typed into an add form is there, in the open form, after a tab switch
     expect(readHubFile(TASKS)).toBe(before);
 });
 
-test("text typed into a card's edit form is there, in the open form, after a tab switch", async ({
+// revert: src/lib/state/workbench/ui.svelte.ts:252 => delete
+test("text typed into a card's edit form is there, in the open form, after a reload", async ({
     page
 }) => {
     await boot(page);
@@ -122,7 +124,7 @@ test("text typed into a card's edit form is there, in the open form, after a tab
         .click();
     await kindBox(page).fill('kind typed into the card');
 
-    await switchAndBack(page, t('views.tasks'), page.locator('[data-collection="tasks"]'));
+    await reloadAndShow(page, t('views.tasks'), page.locator('[data-collection="tasks"]'));
     await expect(kindBox(page)).toHaveValue('kind typed into the card');
 });
 
@@ -293,14 +295,12 @@ test('a delete from the edit form takes its draft away', async ({ page }) => {
     }
 });
 
-test('an edit typed into the manifest editor is there after a tab switch', async ({ page }) => {
+// revert: src/lib/state/workbench/ui.svelte.ts:252 => delete
+test('an edit typed into the manifest editor is there after a reload', async ({ page }) => {
     await boot(page);
     const tab = await typeManifest(page);
 
-    // A view opened now lands in the editor's pane, which was the last one used, and replaces the
-    // editor on the page until its tab is pressed again.
-    await openView(page, 'history', t('views.history'));
-    await expect(page.locator('.editor[data-project]')).toHaveCount(0);
+    await page.reload();
     await tab.click();
     await expect(page.getByRole('textbox', { name: labelOf(FIELD) })).toHaveValue(LINE);
     await expect(page.getByText(t('editor.dirty', 1))).toBeVisible();
@@ -623,7 +623,8 @@ test('an add form typed away from the entry it added adds another, it does not r
     }
 });
 
-test("the Venues add form is kept across a tab switch, and its Add and a card's Edit toggles forget what was typed", async ({
+// revert: src/lib/state/workbench/ui.svelte.ts:252 => delete
+test("the Venues add form is kept across a reload, and its Add and a card's Edit toggles forget what was typed", async ({
     page
 }) => {
     // Revert: Venues holding its add and edit forms' open state in the component, or its toggles
@@ -635,9 +636,7 @@ test("the Venues add form is kept across a tab switch, and its Add and a card's 
         .locator('[data-form="add"]')
         .getByRole('textbox', { name: 'name', exact: true });
     await name.fill('A venue typed and left unsaved');
-    await page.getByRole('tab', { name: tabNamed(t('views.status')) }).click();
-    await expect(name).toHaveCount(0);
-    await page.getByRole('tab', { name: tabNamed(t('views.venues')) }).click();
+    await reloadAndShow(page, t('views.venues'), page.locator('[data-form="add"]'));
     await expect(name).toHaveValue('A venue typed and left unsaved');
 
     await page.getByRole('button', { name: t('collection.add') }).click();

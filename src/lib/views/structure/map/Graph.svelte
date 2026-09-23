@@ -9,6 +9,7 @@
     // top.
 
     import { onMount, tick } from 'svelte';
+    import { onShown } from '$lib/ui/shown';
     import { writeRelated } from './edge-write';
     import {
         LABEL_DROP,
@@ -124,6 +125,9 @@
         void textScale();
         void tick().then(measure);
     });
+
+    // A hidden tab draws at no size and measures no label, so each is measured again once it shows.
+    $effect(() => onShown(svg, measure));
 
     function point(id: string): PointNode | undefined {
         return positions.find((node) => node.id === id);

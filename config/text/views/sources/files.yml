@@ -82,6 +82,10 @@ text:
         save: save
         save_as: save as
         save_as_title: Save these roots as a workspace of their own
+        show_hidden: hidden files
+        show_hidden_title: List dotfiles and the node_modules, __pycache__ and .git folders
+        show_ignored: ignored files
+        show_ignored_title: List the files git ignores in a repository
         toolbar: File browser controls
         tree: Roots and folders
         workspace: Workspace

@@ -49,10 +49,14 @@
         return SESSION_VIEWS.some((view) => findView(layout(), view, null) !== null);
     }
 
-    /** Select one session and open a detail view when no session view is visible. */
+    /**
+     * Select one session and, when no session view is visible, open that session's own detail tab
+     * beside the board.
+     */
     function pick(entry: GroupedSession): void {
         select(entry.id);
-        if (!sessionViewOpen()) openBeside('session-detail');
+        if (!sessionViewOpen())
+            openBeside('session-detail', { session: entry.id, label: entry.title });
     }
 </script>
 

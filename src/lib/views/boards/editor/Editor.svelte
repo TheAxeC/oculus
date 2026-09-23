@@ -21,8 +21,8 @@
     // it is edited, and the edit sits over it until it is saved or reverted; so nothing has to be
     // copied when the project changes, and what Save posts is exactly the map of edits. The edits
     // are kept in the instance's state through state/forms/manifest-draft.ts rather than in this
-    // component, since a pane mounts only its active tab: a tab switch and a reload keep them, and
-    // the tab asks before it closes over them.
+    // component, so a reload keeps them as a tab switch does, and the tab asks before it closes
+    // over them.
     //
     // A save the server took drops the edits it took, keeping an edit typed while it was on its way
     // and one the server refused. The page sees its own write when the watcher pushes the rebuilt

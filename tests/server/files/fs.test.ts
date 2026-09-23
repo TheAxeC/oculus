@@ -127,6 +127,20 @@ describe('one directory under a root', () => {
         expect(entriesOf([{ key: 'one', dir }], 'one', '')).toEqual(['src', 'keep.txt']);
     });
 
+    // revert: src/lib/server/files/fs.ts:325 => .filter((entry) => !skipped(entry.name))
+    it('lists dotfiles and the three build folders when hidden files are asked for', () => {
+        const dir = folder({ '.env': 'x\n', 'keep.txt': 'k\n' }, [
+            '.git',
+            'node_modules',
+            '__pycache__',
+            'src'
+        ]);
+        const found = listDir([{ key: 'one', dir }], 'one', '', true);
+        const names = 'entries' in found ? found.entries.map((entry) => entry.name) : [];
+
+        expect(names).toEqual(['__pycache__', '.git', 'node_modules', 'src', '.env', 'keep.txt']);
+    });
+
     it('lists a link inside the root as the kind its target is', () => {
         const dir = folder({ 'a.txt': 'four\n' }, ['sub']);
         symlinkSync(join(dir, 'a.txt'), join(dir, 'to-file'));

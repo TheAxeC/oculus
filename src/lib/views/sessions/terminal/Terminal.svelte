@@ -14,6 +14,13 @@
     // Layer 3, view. One terminal pane: xterm.js over the `pty:` channel and the control that
     // starts one when nothing is selected. The grid takes keyboard input and carries its own bytes.
     //
+    // A tab owns the terminal it was opened on or started, kept in its own instance state as
+    // `session`, so several terminals show at once, one per tab. The bar's `new terminal` control
+    // opens another Terminal tab, which carries an identity of its own and no terminal and so shows
+    // the start form rather than the selection; a start from any tab makes the terminal it started
+    // that tab's own. A tab opened with neither follows the terminal selected in the rail, as the
+    // pin control's unpinned state does.
+    //
     // xterm.js is loaded inside the effect rather than at the top of the module: it needs a DOM,
     // and this view renders on the server like every other. The effect runs in the browser alone,
     // so the server render is the mount point and nothing else. Its stylesheet is loaded there too:
@@ -32,6 +39,7 @@
     import Toolbar from '$lib/ui/frame/Toolbar.svelte';
     import { terminalFontPx } from '$lib/state/words/appearance';
     import { pinnedTerminal } from '$lib/state/workbench/selection.svelte';
+    import { stateId } from '$lib/state/client/instance';
     import { titleStripper, type TerminalKind } from '$lib/state/sessions/terminals.svelte';
     import { t } from '$lib/state/words/text';
     import { scheduleReflow } from './reflow';
@@ -41,9 +49,9 @@
     import { useState } from '$lib/state/client/use';
 
     const {
-        layout: { instanceLayoutState, pinInstance, restateInstance, unpinInstance },
+        layout: { instanceLayoutState, openView, pinInstance, restateInstance, unpinInstance },
         selectors: { hubRoot, sessionsByWorkspace },
-        selection: { select, selectedTerminal },
+        selection: { selectedTerminal },
         terminals: {
             resizeTerminal,
             sendInput,
@@ -97,7 +105,12 @@
     let refit: (() => void) | null = null;
 
     const pinned = $derived(pinnedTerminal(instanceLayoutState(instance.id)));
-    const id = $derived(pinned ?? selectedTerminal());
+    /**
+     * Whether the tab was opened to start a terminal of its own: it carries an identity and no
+     * terminal yet, so it shows the start form rather than whatever the rail has selected.
+     */
+    const fresh = $derived(pinned === null && stateId(instanceLayoutState(instance.id)) !== null);
+    const id = $derived(pinned ?? (fresh ? null : selectedTerminal()));
     const terminal = $derived(terminalById(id));
     const roots = $derived(sessionsByWorkspace(true).map((one) => one.key));
     const hub = $derived(hubRoot());
@@ -192,14 +205,33 @@
         if (!sendResize(to, size.cols, size.rows)) void resizeTerminal(to, size.cols, size.rows);
     }
 
+    /**
+     * Start a terminal and make it this tab's own. The tab is named after the kind until the
+     * terminal's own name arrives, which the effect above then puts on it. The rail's selection is
+     * left as it was: a tab following the selection goes on showing what it showed, so one
+     * terminal is not drawn in two tabs.
+     */
     async function start(): Promise<void> {
         const size = measure?.() ?? null;
+        const owner = instance.id;
+        const started = kind;
         const answer =
             size === null
-                ? await startTerminal(kind, chosen)
-                : await startTerminal(kind, chosen, size.cols, size.rows);
+                ? await startTerminal(started, chosen)
+                : await startTerminal(started, chosen, size.cols, size.rows);
         failure = answer.error;
-        if (answer.ok && answer.id !== '') select(answer.id);
+        if (!answer.ok || answer.id === '') return;
+        restateInstance(owner, { session: answer.id, label: kindLabel(started) });
+    }
+
+    /** The words for one kind of terminal, which is what a tab is named before its terminal is. */
+    function kindLabel(of: TerminalKind): string {
+        return kinds.find((one) => one.id === of)?.label ?? t('sessions.view_terminal');
+    }
+
+    /** Open another Terminal tab, with an identity of its own, showing the start form. */
+    function openAnother(): void {
+        openView('terminal', { id: crypto.randomUUID() });
     }
 
     // One effect for one mounted grid: it is torn down and built again when the terminal changes,
@@ -309,6 +341,12 @@
 
 {#snippet tools()}
     <Toolbar label={t('sessions.view_terminal')}>
+        <ToolButton
+            label={t('sessions.new_terminal')}
+            title={t('sessions.new_terminal_title')}
+            glyph={t('sessions.terminal_glyph')}
+            onclick={openAnother}
+        />
         {#if terminal !== null || pinned !== null}
             <ToolButton
                 label={pinned === null ? t('sessions.pin_pane') : t('sessions.unpin_pane')}

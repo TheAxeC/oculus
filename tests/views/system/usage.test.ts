@@ -70,7 +70,8 @@ function draw(payload: UsagePayload): string {
 function refreshPayload(
     state: 'running' | 'refreshing' = 'running',
     renewed = true,
-    fetchedAt?: string
+    fetchedAt?: string,
+    lastRefresh = ''
 ): UsagePayload {
     return {
         accounts: [
@@ -90,7 +91,7 @@ function refreshPayload(
                     state,
                     since: '2026-09-13T12:00:00Z',
                     reason: '',
-                    lastRefresh: '',
+                    lastRefresh,
                     renewed
                 }
             }
@@ -100,17 +101,54 @@ function refreshPayload(
     };
 }
 
+/** Deliver `usage_refresh_min` on the config channel, as the server's config message carries it. */
+function cadence(minutes: number): void {
+    version += 1;
+    receive({
+        channel: 'config',
+        version,
+        payload: { config: { usage_refresh_min: minutes }, text: {}, icons: {}, findings: [] }
+    });
+}
+
 describe('Usage', () => {
-    it.each(['running', 'refreshing'] as const)('renders the %s refresher state', (state) => {
-        expect(draw(refreshPayload(state))).toContain(`refresher: ${state}`);
+    // revert: src/lib/views/system/usage/Usage.svelte:155 => if (refresher.state !== 'down') {
+    it('renders the refreshing refresher state while a refresh runs, and only then', () => {
+        expect(draw(refreshPayload('refreshing'))).toContain('refresher: refreshing');
+        cadence(10);
+        const healthy = draw(refreshPayload('running', true, undefined, '2026-09-13T12:30:00Z'));
+        // the last refresh has finished, so the line names it and the next one instead
+        expect(healthy).not.toContain('refreshing');
     });
 
+    // revert: src/lib/views/system/usage/Usage.svelte:177 => return t('usage.refresher_ok_last', last);
+    it('names the last refresh and the next one, the next at the configured cadence', () => {
+        cadence(10);
+        const payload = refreshPayload('running', true, undefined, '2026-09-13T12:30:00Z');
+        expect(draw(payload)).toContain('refresher: ok, last 14:30, next 14:40');
+        cadence(25);
+        expect(draw(payload)).toContain('refresher: ok, last 14:30, next 14:55');
+    });
+
+    // revert: src/lib/views/system/usage/Usage.svelte:175 => delete
+    it('names the last refresh alone before the cadence is delivered', () => {
+        const html = draw(refreshPayload('running', true, undefined, '2026-09-13T12:30:00Z'));
+        expect(html).toContain('refresher: ok, last 14:30<');
+    });
+
+    // revert: src/lib/views/system/usage/Usage.svelte:174 => if (last === '') return t('usage.refresher_ok_last', last);
+    it('says ok alone before a refresh has a time', () => {
+        cadence(10);
+        expect(draw(refreshPayload('running'))).toContain('refresher: ok<');
+    });
+
+    // revert: src/lib/views/system/usage/Usage.svelte:159 => const stale = false;
     it('says when a refresh renewed nothing and when Claude Code renews the figures', () => {
         const html = draw(refreshPayload('running', false, '2026-09-13T12:34:00Z'));
         expect(html).toContain(
-            'refresher: running, figures fetched at 14:34; Claude Code renews them after five minutes'
+            'refresher: ok, figures fetched at 14:34; Claude Code renews them after five minutes'
         );
-        expect(draw(refreshPayload('running', false))).toContain('refresher: running');
+        expect(draw(refreshPayload('running', false))).toContain('refresher: ok<');
     });
 
     it('sends the card account and token, shows refusal until the next usage payload', async () => {

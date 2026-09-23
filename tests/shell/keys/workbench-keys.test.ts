@@ -67,13 +67,16 @@ function fieldElement(): HTMLElement {
 
 /**
  * A document holding one focused pane, which is all focusedPaneElement() reads, and an answer for
- * the one query the handler makes of it: whether a confirmation is open.
+ * the one query the handler makes of it: whether a confirmation is open, as a dialog inside no
+ * hidden tab view.
  */
 function fakeDocument(focused: HTMLElement | null, confirming = false): Document {
+    const dialog = { closest: (): unknown => null };
     return {
         activeElement: focused,
-        querySelector: (): unknown => (confirming ? {} : null),
-        querySelectorAll: (): unknown[] => []
+        querySelector: (): unknown => (confirming ? dialog : null),
+        querySelectorAll: (selector: string): unknown[] =>
+            confirming && selector.includes('alertdialog') ? [dialog] : []
     } as unknown as Document;
 }
 

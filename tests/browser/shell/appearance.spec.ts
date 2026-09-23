@@ -7,7 +7,7 @@
 // is only readable from a rendered page.
 
 import { expect, test } from '@playwright/test';
-import { boot, openView } from '../helpers/rail.ts';
+import { SHOWN_VIEW, boot, openView } from '../helpers/rail.ts';
 import { alphaOf } from '../helpers/style.ts';
 import { t } from '../helpers/words.ts';
 
@@ -46,7 +46,7 @@ test('a wallpaper theme paints the cards through and the toggle takes it away', 
     const layer = page.locator('.wallpaper');
     const card = page.locator('.board .cards .card').first();
     const shellBox = page.locator('[data-pane]').first();
-    const viewBox = page.locator('[data-pane] .pane').first();
+    const viewBox = page.locator(`[data-pane] ${SHOWN_VIEW} .pane`).first();
     await expect(layer).toHaveCount(1);
     await expect.poll(() => backgroundAlpha(card)).toBeLessThan(1);
     // Neither box paints, so a card is the one translucent layer between the reader and the picture

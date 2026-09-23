@@ -65,7 +65,7 @@ function installFixture(): void {
 beforeEach(() => loadUi({ getItem: () => null, setItem: noop }));
 afterEach(() => vi.unstubAllGlobals());
 
-const actions = { oninput: noop, onsave: noop, onrevert: noop, onrendered: noop };
+const actions = { oninput: noop };
 
 describe('the source editor', () => {
     it('restores the working and saved copies when Source is rendered again after another tab', async () => {
@@ -132,25 +132,52 @@ describe('the source editor', () => {
         expect(editable).toContain(catalog['source.saved']);
     });
 
-    it('draws the highlight mirror, editable textarea, Save, Revert, and saved word', () => {
+    // revert: src/lib/views/sources/source/Editor.svelte:144 => <div role="toolbar"></div><div class="row" bind:this={box}>
+    it('draws the highlight mirror and the editable textarea, and no control row of its own', () => {
         const { body } = render(Editor, {
             context: clientContext(client),
-            props: {
-                path: 'notes.yml',
-                text: 'title: "A < B"',
-                message: catalog['source.saved'],
-                ...actions
-            }
+            props: { path: 'notes.md', text: 'title: "A < B"', ...actions }
         });
         expect(body).toMatch(/class="mirror(?:\s|")/);
-        expect(body).toContain('hljs-attr');
         expect(body).toContain('&lt; B');
-        expect(body).toContain(`>${catalog['editor.save']}</span>`);
-        expect(body).toContain(`>${catalog['editor.revert']}</span>`);
-        expect(body).toContain(glyphCatalog(config)[catalog['editor.revert_glyph']]);
-        expect(body).toContain(catalog['source.saved']);
+        // Save, Revert and the rendered half are the pane's bar, which Source draws, so the
+        // editor draws no bar of its own
+        expect(body).not.toContain('role="toolbar"');
+        // nor the save control that bar carries
+        expect(body).not.toContain(`>${catalog['editor.save']}</span>`);
+        // nor the control that takes the rendered half away
+        expect(body).not.toContain(`>${catalog['source.preview']}</span>`);
         // a file the reader may change is drawn without the flag that locks the editor
         expect(body).not.toContain('readonly');
+    });
+
+    // revert: src/lib/views/sources/source/Source.svelte:117 => {#if false}
+    it('draws Save, Revert, Preview and the star on the pane bar in that order, the saved word after', async () => {
+        vi.stubGlobal('fetch', (_url: string, init?: RequestInit) =>
+            Promise.resolve(
+                new Response(init === undefined ? '# notes' : JSON.stringify({ ok: true }))
+            )
+        );
+        setToken('source-token');
+        const instance = {
+            id: 'source-bar',
+            view: 'source',
+            state: sourceTabState('hub', 'notes.md')
+        };
+        await loadSourceDraft(instance.id, 'hub', 'notes.md');
+        await saveSourceDraft(instance.id, 'hub', 'notes.md');
+        const body = render(Source, { context: clientContext(client), props: { instance } }).body;
+        const bar = body.slice(body.indexOf('role="toolbar"'), body.indexOf('class="source"'));
+        const at = (words: string): number => bar.indexOf(`>${words}</span>`);
+        expect(at(catalog['editor.save'])).toBeGreaterThan(-1);
+        expect(at(catalog['editor.revert'])).toBeGreaterThan(at(catalog['editor.save']));
+        expect(at(catalog['source.preview'])).toBeGreaterThan(at(catalog['editor.revert']));
+        const star = bar.indexOf(catalog['file.bookmark']);
+        expect(star).toBeGreaterThan(at(catalog['source.preview']));
+        expect(bar).toContain(glyphCatalog(config)[catalog['editor.revert_glyph']]);
+        expect(bar.indexOf(catalog['source.saved'])).toBeGreaterThan(star);
+        // the bar is the one row of controls: the body under it holds none
+        expect(body.split('role="toolbar"').length - 1).toBe(1);
     });
 
     it('carries the program control in its bar for a listed .rtf, and none for a Markdown file', () => {
@@ -262,13 +289,10 @@ describe('the source editor', () => {
         const markdown = drawn('notes.md');
         expect(markdown).toContain('data-source-preview="notes.md"');
         expect(markdown).toContain('<h1>A heading</h1>');
-        expect(markdown).toContain(`>${catalog['source.preview']}</span>`);
 
         const yaml = drawn('notes.yml');
         // a .yml has no rendered form, so no preview is drawn for it
         expect(yaml).not.toContain('data-source-preview');
-        // and the control that would open one is not drawn either
-        expect(yaml).not.toContain(`>${catalog['source.preview']}</span>`);
     });
 
     it('leaves a front matter block out of the rendered half and a relative image as written', () => {

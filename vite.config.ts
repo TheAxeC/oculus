@@ -1,14 +1,18 @@
-// Layer 2, server. Vite development and preview use one plugin to carry ServerContext into Kit.
+// Layer 2, server. Vite development and preview use one plugin to carry ServerContext into Kit,
+// and one more compiles a Svelte component before its style module is answered
+// (src/lib/server/core/style-first.ts).
 
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vitest/config';
 import { engineDir, loadLocal } from './src/lib/data/sources/config.ts';
+import { componentBeforeStyle } from './src/lib/server/core/style-first.ts';
 import { oculusViteServer } from './src/lib/server/core/vite-plugin.ts';
 
 const development = oculusViteServer(engineDir());
 
 export default defineConfig({
     plugins: [
+        componentBeforeStyle(),
         sveltekit({
             compilerOptions: {
                 runes: ({ filename }) =>

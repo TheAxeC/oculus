@@ -28,7 +28,8 @@ const target = (server: App.Locals['server']): FsTarget => ({
         server.local.hub,
         server.engine
     ),
-    writes: server.fsWrites
+    writes: server.fsWrites,
+    ignored: server.ignoredCache
 });
 
 export const GET: RequestHandler = ({ request, locals }) =>

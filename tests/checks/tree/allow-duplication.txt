@@ -94,10 +94,7 @@ src/lib/views/sources/data/DatasetCard.svelte src/lib/views/structure/pillars/Li
 src/lib/views/sources/data/DatasetCard.svelte src/lib/views/sources/venues/VenueCard.svelte 15c4a1a3d2f4 the same 8 lines at 76 and 123, to fold into one place
 src/lib/views/structure/domains/DomainCard.svelte src/lib/views/structure/pillars/LineCard.svelte 7c5761338578 the same 8 lines at 41 and 66, to fold into one place
 src/lib/views/structure/domains/DomainCard.svelte src/lib/views/sources/venues/VenueCard.svelte 7de515d6d9b3 the same 8 lines at 43 and 124, to fold into one place
-src/lib/views/sources/files/sections/Bookmarks.svelte src/lib/views/sources/files/sections/Notes.svelte d731d44fc2e5 the same 8 lines at 64 and 63, to fold into one place
-src/lib/views/sources/files/sections/Bookmarks.svelte src/lib/views/sources/files/sections/Notes.svelte edef7239e57a the same 8 lines at 118 and 114, to fold into one place
-src/lib/views/sources/files/sections/Bookmarks.svelte src/lib/views/sources/files/sections/Workspaces.svelte d731d44fc2e5 the same 8 lines at 64 and 64, to fold into one place
-src/lib/views/sources/files/sections/Notes.svelte src/lib/views/sources/files/sections/Workspaces.svelte d731d44fc2e5 the same 8 lines at 63 and 64, to fold into one place
+src/lib/views/sources/files/sections/Bookmarks.svelte src/lib/views/sources/files/sections/Notes.svelte 33b85f55f7fb the same 8 lines at 114 and 110, to fold into one place
 src/lib/views/boards/focus/CommandCenter.svelte src/lib/views/boards/focus/Tasks.svelte 6864604f815c the same 8 lines at 39 and 21, to fold into one place
 src/lib/views/structure/pillars/LineCard.svelte src/lib/views/sources/venues/VenueCard.svelte 7de515d6d9b3 the same 8 lines at 68 and 124, to fold into one place
 src/lib/views/sessions/agents/Agents.svelte src/lib/views/sessions/changes/Changes.svelte 6e76435e59be the same 8 lines at 83 and 193, to fold into one place

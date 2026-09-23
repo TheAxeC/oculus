@@ -96,9 +96,10 @@
         if (!answer.ok) failure = answer.error;
     }
 
+    /** Open the session's own Transcript tab, so each session read has a tab of its own. */
     function openTranscript(row: GroupedSession): void {
         select(row.id);
-        openView('transcript');
+        openView('transcript', { session: row.id, label: row.title });
     }
 
     function openPinnedSession(row: GroupedSession): void {

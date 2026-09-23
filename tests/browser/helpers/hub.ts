@@ -2,6 +2,7 @@
 // writes that path here; a spec that asserts on a file reads it back through readHubFile, so a
 // write the DOM says happened is checked against the bytes on disk.
 
+import { randomUUID } from 'node:crypto';
 import { copyFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -104,6 +105,45 @@ export function servedHomeDir(): string {
     const dir = runLayout(dirname(hubDir())).home;
     if (!existsSync(dir)) throw new Error(`${dir} is not there`);
     return dir;
+}
+
+/**
+ * One ended session as a transcript in a folder of the served run's session store: named `title`,
+ * working in `cwd`, one question and one answer, stamped with this moment so the scan reads it. The
+ * folder is asserted to be inside the temporary directory before anything is written.
+ */
+export function writeTranscript(
+    dir: string,
+    title: string,
+    cwd: string,
+    said: { asked: string; answered: string }
+): void {
+    if (!resolve(dir).startsWith(resolve(tmpdir()) + sep)) {
+        throw new Error(`${dir} is not inside the temporary directory`);
+    }
+    const line = { timestamp: new Date().toISOString(), cwd, gitBranch: '', version: '2.0.0' };
+    const rows = [
+        { type: 'ai-title', aiTitle: title },
+        {
+            type: 'user',
+            ...line,
+            origin: { kind: 'human' },
+            message: { role: 'user', content: said.asked }
+        },
+        {
+            type: 'assistant',
+            ...line,
+            message: {
+                role: 'assistant',
+                model: 'claude-opus-5',
+                content: [{ type: 'text', text: said.answered }],
+                usage: { input_tokens: 1, output_tokens: 1 }
+            }
+        }
+    ];
+    mkdirSync(dir, { recursive: true });
+    const file = join(dir, `${randomUUID()}.jsonl`);
+    writeFileSync(file, rows.map((row) => JSON.stringify(row)).join('\n') + '\n');
 }
 
 /** One file of that engine directory, by its path relative to the engine root. */

@@ -14,6 +14,13 @@ import { expect, type Page } from '@playwright/test';
 import { t } from './words.ts';
 
 /**
+ * The selector of the view a pane shows. A pane keeps the view of every tab it has shown mounted
+ * and hidden while another tab is shown, so a selector over a pane's views reaches through this to
+ * the one on screen.
+ */
+export const SHOWN_VIEW = '[data-tab-view]:not([hidden])';
+
+/**
  * Open the application and wait until the socket is up, the first snapshot is in, and the rail is
  * the one the reader ends up with.
  *

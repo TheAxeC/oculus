@@ -1,0 +1,61 @@
+<script lang="ts">
+    // Layer 3, partial of views/sources/files/sections/. One section under the file browser's
+    // trees: a head that opens and closes it and carries the one control that adds to it (a note,
+    // a bookmark, a workspace), and the section's own rows under it. The three sections share the
+    // head and differ in their rows, so the head is drawn here once.
+    //
+    // `showActions` draws the head's control at full strength whether or not the pointer is over
+    // the head, for a control a reader looks for before the pointer is there; without it the
+    // control is shown the way every row's controls are, under the pointer or the focus.
+
+    import type { Snippet } from 'svelte';
+    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import TreeSection from '$lib/ui/tree/TreeSection.svelte';
+    import type { TreeNav } from '$lib/ui/tree/tree-keys';
+
+    type Props = {
+        /** The section's name, already translated. */
+        label: string;
+        nav: TreeNav;
+        /** How many rows the section holds, drawn on its head. */
+        count: number;
+        open: boolean;
+        ontoggle: () => void;
+        /** The head's control: its words, its tooltip and its glyph, already translated. */
+        add: { label: string; title: string; glyph: string };
+        /** Whether what the control opens is open, for a control that opens a form. */
+        adding?: boolean;
+        onadd: () => void;
+        showActions?: boolean;
+        /** The rows, each an `li` with role none around a row of level 2. */
+        children: Snippet;
+    };
+
+    let {
+        label,
+        nav,
+        count,
+        open,
+        ontoggle,
+        add,
+        adding,
+        onadd,
+        showActions = false,
+        children
+    }: Props = $props();
+</script>
+
+<TreeSection {label} id="head" {nav} {count} {open} {ontoggle} {showActions}>
+    {#snippet actions(reach: number)}
+        <ToolButton
+            label={add.label}
+            title={add.title}
+            glyph={add.glyph}
+            compact
+            tabindex={reach}
+            expanded={adding}
+            onclick={onadd}
+        />
+    {/snippet}
+    {@render children()}
+</TreeSection>

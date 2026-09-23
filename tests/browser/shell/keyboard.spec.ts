@@ -8,7 +8,7 @@
 // Nothing here writes to the hub. The layout lives in the browser's own storage.
 
 import { expect, test, type Page } from '@playwright/test';
-import { boot, openView } from '../helpers/rail.ts';
+import { SHOWN_VIEW, boot, openView } from '../helpers/rail.ts';
 import { t } from '../helpers/words.ts';
 
 /** Press a key with nothing focused in a field: the strip's ground takes the focus first. */
@@ -58,10 +58,10 @@ test('the card cursor, the search key and the scroll keys act on the focused pan
     expect(secondId).not.toBeNull();
 
     await press(page, '/');
-    await expect(pane.locator('[data-search]')).toBeFocused();
+    await expect(pane.locator(`${SHOWN_VIEW} [data-search]`)).toBeFocused();
     await page.keyboard.press('Escape');
 
-    const scroller = pane.locator('[data-scroll]').first();
+    const scroller = pane.locator(`${SHOWN_VIEW} [data-scroll]`).first();
     await press(page, 'G');
     await expect.poll(() => scroller.evaluate((node) => node.scrollTop)).toBeGreaterThan(0);
     await page.keyboard.press('g');

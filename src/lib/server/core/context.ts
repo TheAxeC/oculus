@@ -37,7 +37,13 @@ import { RateLimiter, notifyConfig, type HookTarget } from './hooks.ts';
 import type { LogPaths } from '../machine/hpc/actions.ts';
 import type { Plan } from '../git/deposit.ts';
 import { defaultBookmarksPath } from '../files/fs/bookmarks.ts';
-import { defaultWorkspacesPath, fsWrites, type FsWrites } from '../files/fs.ts';
+import {
+    defaultWorkspacesPath,
+    fsWrites,
+    ignoredCache,
+    type FsWrites,
+    type IgnoredCache
+} from '../files/fs.ts';
 import { memoriesMemory, type MemoriesMemory } from '../content/memories.ts';
 import { repositoryRoots } from '../files/roots.ts';
 import { wallpaperMemory, type WallpaperMemory } from '../content/wallpaper.ts';
@@ -73,6 +79,8 @@ export type ServerContext = {
     engine: string;
     /** The write chain of the workspaces file, so two POSTs cannot lose one another's change. */
     fsWrites: FsWrites;
+    /** The ignored names the file browser's listings asked git for lately. */
+    ignoredCache: IgnoredCache;
     /** The log path found per HPC job id. */
     hpcLogPaths: LogPaths;
     /** The calendar consents in flight, minted by the connect action and taken by the callback. */
@@ -292,6 +300,7 @@ export function createServerContext(
         config,
         engine,
         fsWrites: fsWrites(),
+        ignoredCache: ignoredCache(),
         hpcLogPaths,
         calendarConnects: new ConnectStates(),
         calendarDir,

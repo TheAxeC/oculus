@@ -23,11 +23,27 @@
         title?: string;
         /** The section's own controls, drawn on its head and handed the tabindex they take. */
         actions?: Snippet<[number]>;
+        /**
+         * Draw the head's controls at full strength always, rather than while the pointer is over
+         * the head: for a control that adds to the section, which a reader looks for first.
+         */
+        showActions?: boolean;
         /** The rows, each an `li` with role none around a row of level 2. */
         children?: Snippet;
     };
 
-    let { label, id, nav, count, open, ontoggle, title, actions, children }: Props = $props();
+    let {
+        label,
+        id,
+        nav,
+        count,
+        open,
+        ontoggle,
+        title,
+        actions,
+        showActions = false,
+        children
+    }: Props = $props();
 </script>
 
 <div class="section">
@@ -42,6 +58,7 @@
         {title}
         onclick={ontoggle}
         {actions}
+        {showActions}
     />
     {#if open && children !== undefined}
         <ul class="list" role="group" aria-label={label}>

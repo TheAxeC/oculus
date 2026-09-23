@@ -8,24 +8,21 @@
     // shown read only; the token classes are the code window's and are coloured from the same six
     // hues of the palette.
     //
-    // A Markdown file is written and read at once: the row under the toolbar splits into the editor
-    // and the rendered half, with the handle between them, and the toolbar carries the control that
-    // takes the rendered half away. A file of any other kind is the editor alone.
+    // A Markdown file is written and read at once: the row splits into the editor and the rendered
+    // half, with the handle between them. A file of any other kind is the editor alone.
     //
-    // Every file drawn here can be written: one the tab may not write is the code window under the
-    // line that says why, so nothing here draws a Save that would be refused.
+    // The controls that act on the text (Save, Revert and the rendered half) are the pane's own
+    // bar, which Source.svelte draws, so the tab spends one row on its controls and the editor
+    // none.
 
     import { untrack } from 'svelte';
     import Preview from './Preview.svelte';
     import Sash from '$lib/ui/frame/Sash.svelte';
     import TextArea from '$lib/ui/forms/TextArea.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import Toolbar from '$lib/ui/frame/Toolbar.svelte';
     import { SASH_PX } from '$lib/ui/frame/sash-size';
     import { PLAIN, codeHtml } from '$lib/state/words/languages';
     import { languageOf } from '$lib/state/sources/fs';
     import { lineStart } from '$lib/state/sessions/source.svelte';
-    import { t } from '$lib/state/words/text';
     import { useState } from '$lib/state/client/use';
 
     const {
@@ -40,27 +37,12 @@
          * on once per line the tab is pointed at: every scroll after that is the reader's own.
          */
         line?: number;
-        message?: string;
         /** Whether the reader wants the rendered half, for a file that has one. */
         rendered?: boolean;
         oninput: (value: string) => void;
-        onsave: () => void;
-        onrevert: () => void;
-        /** Show or hide the rendered half. */
-        onrendered: () => void;
     };
 
-    let {
-        path,
-        line = 0,
-        text,
-        message = '',
-        rendered = true,
-        oninput,
-        onsave,
-        onrevert,
-        onrendered
-    }: Props = $props();
+    let { path, line = 0, text, rendered = true, oninput }: Props = $props();
 
     let mirror: HTMLPreElement | undefined = $state();
     let box: HTMLDivElement | undefined = $state();
@@ -159,25 +141,6 @@
     data-source-editor={path}
     data-source-line={line === 0 ? undefined : line}
 >
-    <Toolbar label={t('source.edit')}>
-        <ToolButton label={t('editor.save')} glyph="check" onclick={onsave} />
-        <ToolButton
-            label={t('editor.revert')}
-            glyph={t('editor.revert_glyph')}
-            onclick={onrevert}
-        />
-        {#if markdown}
-            <ToolButton
-                label={t('source.preview')}
-                glyph={t('source.preview_glyph')}
-                pressed={rendered}
-                onclick={onrendered}
-            />
-        {/if}
-        {#if message !== ''}
-            <span class="message" aria-live="polite">{message}</span>
-        {/if}
-    </Toolbar>
     <div class="row" bind:this={box}>
         <div class="editor-wrap" bind:this={wrap} style="flex: {split ? share : 1} 1 0">
             <!-- Keep pre and code on one line: a line break inside pre would enter the mirror's
@@ -208,15 +171,9 @@
 <style>
     .source-editor {
         display: grid;
-        grid-template-rows: auto minmax(0, 1fr);
-        gap: 8px;
+        grid-template-rows: minmax(0, 1fr);
         height: 100%;
         min-height: 0;
-    }
-
-    .message {
-        color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-sm);
     }
 
     .row {

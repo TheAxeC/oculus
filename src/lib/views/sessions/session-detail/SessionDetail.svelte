@@ -176,9 +176,10 @@
         await write({ title: text });
     }
 
-    /** Show the turns of the session, in the transcript view already up or in a new tab. */
+    /** Show the turns of the session in its own Transcript tab, opened or brought forward. */
     function openTranscript(): void {
-        openView('transcript');
+        if (record === null) return;
+        openView('transcript', { session: record.id, label: record.title });
     }
 
     /** Pin this detail to what it shows, or return it to following the workbench selection. */

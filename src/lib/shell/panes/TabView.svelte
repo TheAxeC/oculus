@@ -1,0 +1,52 @@
+<script lang="ts">
+    // Layer 3, shell. The view of one tab inside a pane body, kept mounted while the tab is open
+    // and hidden while another tab of the pane is shown, so a switch back finds the view as it was
+    // left: nothing is built again and nothing is fetched again.
+    //
+    // It is what tells the view which instance it is drawn in, through
+    // state/client/instance-context.ts, so a partial deep inside a view keys what it keeps by the
+    // instance without a prop through every level. Each kept view provides its own, since several
+    // are mounted in one pane at once.
+    //
+    // A hidden view is `display: none` and out of the accessibility tree, so no control of it takes
+    // a press, the focus or a screen reader's attention. The keyboard's pane actions read the view
+    // a pane shows through `data-tab-view` and `hidden` (shell/keys/key-dom.ts).
+
+    import { provideInstance } from '$lib/state/client/instance-context';
+    import type { Instance } from '$lib/state/workbench/layout';
+    import type { Registration } from '$lib/views/registry';
+
+    type Props = {
+        instance: Instance;
+        /** The registration the instance's view resolved to. */
+        registration: Registration;
+        /** Whether this is the tab the pane shows. */
+        shown: boolean;
+    };
+
+    let { instance, registration, shown }: Props = $props();
+
+    provideInstance(() => instance.id);
+
+    const View = $derived(registration.component);
+</script>
+
+<div class="tab-view" data-tab-view={instance.id} hidden={!shown}>
+    <View {instance} />
+</div>
+
+<style>
+    .tab-view {
+        height: 100%;
+        min-width: 0;
+        min-height: 0;
+    }
+
+    .tab-view[hidden] {
+        display: none;
+    }
+
+    .tab-view > :global(*) {
+        height: 100%;
+    }
+</style>

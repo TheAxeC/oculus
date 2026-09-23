@@ -1,10 +1,23 @@
 // Layer 3, shell. Keyboard actions over the focused pane's DOM. Each reports whether a target
 // exists and was acted on, so an unavailable action leaves the browser's default key handling
 // intact.
+//
+// A pane keeps the views of the tabs it has shown mounted, the one it shows drawn and the others
+// hidden (shell/panes/TabView.svelte), so every action here looks inside the view the pane shows
+// and never at a hidden one: a search box or a card of a tab the reader is not looking at is not
+// one a key acts on.
 
-/** Focus and select the pane's search text only when a search input exists. */
+/** The selector of the view a pane shows, among the tab views it keeps mounted. */
+export const SHOWN_VIEW = '[data-tab-view]:not([hidden])';
+
+/** The view the pane shows, or null for a pane showing none. */
+export function shownView(pane: ParentNode | null): HTMLElement | null {
+    return pane?.querySelector<HTMLElement>(SHOWN_VIEW) ?? null;
+}
+
+/** Focus and select the shown view's search text only when a search input exists. */
 export function focusSearch(pane: ParentNode | null): boolean {
-    const search = pane?.querySelector<HTMLInputElement>('input[data-search]');
+    const search = shownView(pane)?.querySelector<HTMLInputElement>('input[data-search]');
     if (!search) return false;
     search.focus();
     search.select();
@@ -19,7 +32,7 @@ export function cardSelector(id: string): string {
 /** Activate the selected card's title, or its marked toggle when the title is plain. */
 export function activateCursor(pane: ParentNode | null, cursor: string | null): boolean {
     if (cursor === null) return false;
-    const card = pane?.querySelector<HTMLElement>(cardSelector(cursor));
+    const card = shownView(pane)?.querySelector<HTMLElement>(cardSelector(cursor));
     const control = card?.querySelector<HTMLElement>('.title button, [data-card-toggle]');
     if (!control) return false;
     control.click();
@@ -27,14 +40,14 @@ export function activateCursor(pane: ParentNode | null, cursor: string | null): 
 }
 
 /**
- * Prefer the view's marked body, and inside it a nested mark when the view scrolls its own column
- * (Transcript); otherwise use the first scrolling descendant in document order.
+ * Prefer the shown view's marked body, and inside it a nested mark when the view scrolls its own
+ * column (Transcript); otherwise use the first scrolling descendant in document order.
  */
 export function scrollContainer(
     pane: ParentNode | null,
     overflowY: (element: HTMLElement) => string = (element) => getComputedStyle(element).overflowY
 ): HTMLElement | null {
-    const body = pane?.querySelector<HTMLElement>('[data-pane-body]');
+    const body = shownView(pane);
     if (!body) return null;
     const marked = body.querySelector<HTMLElement>('[data-scroll]');
     if (marked) return marked.querySelector<HTMLElement>('[data-scroll]') ?? marked;

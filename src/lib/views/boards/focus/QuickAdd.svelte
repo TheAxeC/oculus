@@ -4,7 +4,9 @@
     //
     // The form is inline rather than a dialog: it is two fields, and a dialog over a board whose
     // whole point is one glance costs the glance. Escape closes it and the save control writes the
-    // one field through state/client/writes.svelte.ts, like every other write on this board.
+    // one field through state/client/writes.svelte.ts, like every other write on this board. Escape
+    // acts only while the form is on screen: a pane keeps the view of a tab it hides mounted, and a
+    // key pressed in another tab is not one this form was asked to answer.
 
     import DateInput from '$lib/ui/forms/DateInput.svelte';
     import Select from '$lib/ui/forms/Select.svelte';
@@ -31,6 +33,7 @@
     let field = $state<'followup' | 'deadline' | null>(null);
     let project = $state('');
     let value = $state('');
+    let box: HTMLElement | undefined = $state();
 
     const choices = $derived(
         projects
@@ -50,7 +53,7 @@
     }
 
     function keyed(event: KeyboardEvent): void {
-        if (event.key === 'Escape' && field !== null) close();
+        if (event.key === 'Escape' && field !== null && box?.checkVisibility() === true) close();
     }
 
     /**
@@ -76,7 +79,7 @@
 
 <svelte:window onkeydown={keyed} />
 
-<section class="qa">
+<section class="qa" bind:this={box}>
     <div class="bar">
         <span class="lbl">{t('focus.quick_add')}</span>
         <ToolButton

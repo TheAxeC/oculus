@@ -55,7 +55,7 @@ async function press(page: Page, card: Locator, action: string, label: string): 
 
 // Revert: in views/sources/files/tree/ShowPath.svelte, scroll the row into view and leave the focus
 // on the control that asked.
-// revert: src/lib/views/sources/files/tree/ShowPath.svelte:102 => void item;
+// revert: src/lib/views/sources/files/tree/ShowPath.svelte:104 => void item;
 test('a Show in Files pressed from the keyboard puts the keyboard on the row it shows', async ({
     page
 }) => {

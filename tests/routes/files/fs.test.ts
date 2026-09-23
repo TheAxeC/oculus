@@ -14,6 +14,7 @@ import { afterAll, describe, expect, it } from 'vitest';
 import {
     addedRoots,
     fsWrites,
+    ignoredCache,
     handleFs,
     handleFsWrite,
     readSaved,
@@ -68,7 +69,8 @@ function target(): FsTarget & { hub: string } {
         bookmarks: join(store, 'bookmarks.yml'),
         notes: join(store, 'notes'),
         fixed,
-        writes: fsWrites()
+        writes: fsWrites(),
+        ignored: ignoredCache()
     };
 }
 

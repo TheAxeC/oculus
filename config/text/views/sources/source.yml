@@ -4,7 +4,6 @@ text:
         binary: This file is not text on disk; the editor saves nothing over it.
         cannot_open: 'Cannot open: {0}'
         code: '{0}, read only'
-        edit: edit
         failed: failed
         locked_glyph: lock
         preview: Preview

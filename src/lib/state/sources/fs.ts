@@ -34,6 +34,15 @@ export type FsEntry = { name: string; kind: 'file' | 'dir'; size: number; mtime:
 /** One root as /api/fs answers it: `fixed` is a configured root, which a removal refuses. */
 export type FsRoot = { key: string; dir: string; fixed: boolean };
 
+/**
+ * What a listing asks to see beside what the tree offers by default: the dotfiles and the build
+ * folders (`hidden`), and the entries git ignores (`ignored`). A file browser's two toggles.
+ */
+export type ListingShown = { hidden: boolean; ignored: boolean };
+
+/** What every listing shows unless a file browser's toggles ask for more. */
+export const SHOWN_DEFAULT: ListingShown = { hidden: false, ignored: false };
+
 /** One line of the tree: what it is, how deep it sits, and whether a folder is open. */
 export type TreeRow = {
     root: string;
@@ -191,31 +200,36 @@ export type FilesForms = { form: FilesForm; editing: string; typed: string; open
 /**
  * What one file browser keeps about itself across a tab switch and a saved page: the open folders,
  * the selected row, the filter text, the sections under the tree that are closed, its open form
- * with what was typed into a line form, and the refusal and outcome lines that answered its last
- * press, which come back with the form they answered. A bookmark form's typed values are not here:
- * they are the form drafts of state/forms/form-drafts.svelte.ts, kept beside this record as every
- * entry form's are.
+ * with what was typed into a line form, the refusal and outcome lines that answered its last press,
+ * which come back with the form they answered, and its two toggles, whether hidden files and the
+ * files git ignores are listed. A bookmark form's typed values are not here: they are the form
+ * drafts of state/forms/form-drafts.svelte.ts, kept beside this record as every entry form's are.
  */
-export type FilesView = FilesForms & {
-    expanded: string[];
-    selected: RowRef | null;
-    filter: string;
-    collapsed: string[];
-    /** The path another view asked this browser to show, until it is selected and scrolled to. */
-    reveal: RevealAsk | null;
-    /** What the last ask came to when it did not find its path, for the view's outcome line. */
-    revealed: RevealOutcome | null;
-    /**
-     * How many times this browser has been asked to show a path, which tells one ask from the next.
-     */
-    revealing: number;
-    /**
-     * What the last press was refused with, in the reader's words, and the empty string for none.
-     */
-    note: string;
-    /** What the bookmark form's last write answered, which is a report and not a refusal. */
-    said: string;
-};
+export type FilesView = FilesForms &
+    ListingShown & {
+        expanded: string[];
+        selected: RowRef | null;
+        filter: string;
+        collapsed: string[];
+        /**
+         * The path another view asked this browser to show, until it is selected and scrolled to.
+         */
+        reveal: RevealAsk | null;
+        /** What the last ask came to when it did not find its path, for the view's outcome line. */
+        revealed: RevealOutcome | null;
+        /**
+         * How many times this browser has been asked to show a path, which tells one ask from the
+         * next.
+         */
+        revealing: number;
+        /**
+         * What the last press was refused with, in the reader's words, and the empty string for
+         * none.
+         */
+        note: string;
+        /** What the bookmark form's last write answered, which is a report and not a refusal. */
+        said: string;
+    };
 
 /**
  * One ask to show a path: the row asked for, which ask it is, and whether the view has read the
@@ -278,8 +292,15 @@ export function filesViewOf(state: unknown): FilesView {
         revealed: outcomeOf(map.revealed),
         revealing: countOf(map.revealing),
         note: typeof map.note === 'string' ? map.note : '',
-        said: typeof map.said === 'string' ? map.said : ''
+        said: typeof map.said === 'string' ? map.said : '',
+        hidden: map.hidden === true,
+        ignored: map.ignored === true
     };
+}
+
+/** The two toggles of one file browser, which is what each of its listings is asked with. */
+export function shownOf(view: ListingShown): ListingShown {
+    return { hidden: view.hidden, ignored: view.ignored };
 }
 
 /** A count a saved record holds, and 0 for anything that is not a whole number from 0 up. */
@@ -601,6 +622,33 @@ export function treeKeyRows(
             fixed: filtering
         };
     });
+}
+
+/**
+ * The row keys the reader's own bookmarks name, which the tree draws its star from. An entry whose
+ * root or path is not a string names no row.
+ */
+export function markedKeys(entries: { fields: Record<string, unknown> }[]): string[] {
+    return entries.flatMap((one) =>
+        typeof one.fields.root === 'string' && typeof one.fields.path === 'string'
+            ? [treeKey(one.fields.root, one.fields.path)]
+            : []
+    );
+}
+
+/**
+ * The bookmarks schema the entry form draws, with the roots of the workspace in force as the
+ * choices of its root field. The file's own schema names the field and its type; which roots there
+ * are is the reader's workspace and changes under it, so it is supplied here rather than written
+ * into the file, where a root added later would not be one a bookmark could name.
+ */
+export function markSchemaFor<T extends { field: string }>(
+    schema: T[],
+    roots: { key: string }[]
+): (T & { options?: string[] })[] {
+    return schema.map((field) =>
+        field.field === 'root' ? { ...field, options: roots.map((one) => one.key) } : field
+    );
 }
 
 /**

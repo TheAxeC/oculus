@@ -1,4 +1,4 @@
-// Layer 3, primitive, and one of the two that are not components. The HTML the app draws and the
+// Layer 3, primitive, and one of the three that are not components. The HTML the app draws and the
 // one sanitiser every string of it passes through. A hub file, a feed value and an agent's
 // transcript are markup somebody else wrote, so what they turn into is filtered before a view draws
 // it; the catalog's own text under config/text/ is oculus writing to itself and is drawn as it is.

@@ -22,24 +22,21 @@
     //
     // A folder is read one level at a time, when it is opened: a root is a whole checkout and
     // walking one to draw it would read a hundred thousand names to show twenty. Which folders are
-    // open, the selected row, the filter text, which sections are closed, which form is open and
-    // the line typed into a root or a workspace form live in the instance's own state, so a tree
-    // left half open is the same tree when the tab comes back, a form left open is open again with
-    // what was typed into it, and two file browsers on two pages are open at two different places.
-    // The refusal line (`note`) and the bookmark form's outcome line (`said`) are kept there too,
-    // since each answers a form that comes back and a form without its answer would be asked again.
-    // What stays in this component is the root the removal confirm is open for (`removing`), gone
-    // after a switch, since a pane mounts only its active tab and a question left open over a tab
-    // nobody is looking at is one nobody answers.
+    // open, the selected row, the filter text, which sections are closed, which form is open, the
+    // line typed into a root or a workspace form and the two toggles (hidden files, ignored files)
+    // live in the instance's own state, so a tree left half open is the same tree after a reload,
+    // and two file browsers on two pages are open at two different places and list the same folder
+    // each their own way. The refusal line (`note`) and the bookmark form's outcome line (`said`)
+    // are kept there too, since each answers a form that comes back. What stays in this component
+    // is the root the removal confirm is open for (`removing`), which a reload forgets.
     //
     // A write closes its form on its answer, which may land after the reader has opened another
-    // form, opened the same one again or switched the tab away. The instance id and the forms are
-    // taken before the request goes, and the answer closes only that opening in that instance
-    // (formSettled): once the tab is switched, the `instance` prop reads the tab the pane shows
-    // now. A bookmark the file no longer holds closes its form in every file browser the layout
-    // holds, which the fs store does on each bookmarks answer rather than this view on each render:
-    // a pane mounts only the tab it shows, so a form of a browser nobody is looking at is closed
-    // there too.
+    // form, opened the same one again or closed the tab. The instance id and the forms are taken
+    // before the request goes, and the answer closes only that opening in that instance
+    // (formSettled). A bookmark the file no longer holds closes its form in every file browser the
+    // layout holds, which the fs store does on each bookmarks answer rather than this view on each
+    // render: a file browser on a page not drawn, or in a tab never shown, is mounted nowhere, and
+    // its form is closed there too.
     //
     // The three sections are files/sections/Sections.svelte's, which reads the workspaces, the
     // bookmarks and the notes for itself and answers a read of any of them that failed. What this
@@ -80,7 +77,7 @@
     import { refusal } from './tree/refusal';
     import { openBookmark, openRow } from './opening';
     import Tree from './tree/Tree.svelte';
-    import type { Entry, SchemaField } from '$lib/state/boards/collection';
+    import type { Entry } from '$lib/state/boards/collection';
     import {
         collapseRoot,
         crumbsOf,
@@ -91,9 +88,12 @@
         formShown,
         formsOf,
         markLabel,
+        markSchemaFor,
+        markedKeys,
         patchedFilesView,
         rowKey,
         setExpanded,
+        shownOf,
         toggleExpanded,
         treeKey,
         treeRows,
@@ -119,6 +119,7 @@
             invalidate,
             listing,
             readFileKind,
+            relist,
             removeBookmark,
             removeRoot,
             saveWorkspace,
@@ -145,9 +146,21 @@
         saved.workspaces.find((one) => one.name === saved.current) ?? { name: '', roots: [] }
     );
     const view = $derived(filesViewOf(instanceState(instance.id)));
-    const rows = $derived(treeRows(current.roots, entries, view.expanded));
+    /** What this tab's listings show beside the default: its two toggles. */
+    const listed = $derived(shownOf(view));
+    const rows = $derived(
+        treeRows(current.roots, (root, path) => entries(root, path, listed), view.expanded)
+    );
     const filtering = $derived(view.filter.trim() !== '');
-    const shown = $derived(filtering ? filterRows(current.roots, heldEntries, view.filter) : rows);
+    const shown = $derived(
+        filtering
+            ? filterRows(
+                  current.roots,
+                  (root, path) => heldEntries(root, path, listed),
+                  view.filter
+              )
+            : rows
+    );
     const crumbs = $derived(crumbsOf(view.selected));
     const fixed = $derived(current.roots.filter((one) => one.fixed).map((one) => one.key));
     /** The root keys an ask to show a path is answered against, and null until they are read. */
@@ -168,27 +181,10 @@
     );
 
     /** The row keys a bookmark of the reader's own names, which the tree draws its star from. */
-    const marked = $derived(
-        marks.entries.flatMap((one) =>
-            typeof one.fields.root === 'string' && typeof one.fields.path === 'string'
-                ? [treeKey(one.fields.root, one.fields.path)]
-                : []
-        )
-    );
+    const marked = $derived(markedKeys(marks.entries));
 
-    /**
-     * The bookmarks schema the form draws, with the roots of the workspace in force as the choices
-     * of its root field. The file's own schema names the field and its type; which roots there are
-     * is the reader's workspace and changes under it, so it is supplied here rather than written
-     * into the file, where a root added later would not be one a bookmark could name.
-     */
-    const markSchema = $derived<SchemaField[]>(
-        marks.schema.map((field) =>
-            field.field === 'root'
-                ? { ...field, options: current.roots.map((one) => one.key) }
-                : field
-        )
-    );
+    /** The bookmarks schema the form draws, its root field offering the workspace's roots. */
+    const markSchema = $derived(markSchemaFor(marks.schema, current.roots));
 
     /**
      * The open folders on screen the server would not list. Without this a root whose directory
@@ -202,7 +198,7 @@
             .map((row) => ({
                 root: row.root,
                 path: row.path,
-                error: listing(row.root, row.path).error
+                error: listing(row.root, row.path, listed).error
             }))
             .filter((one) => one.error !== '')
     );
@@ -240,6 +236,13 @@
     /** Select one row; the outcome line of an ask to show a path is about the row it selected. */
     function selectRow(row: RowRef): void {
         patch({ selected: { root: row.root, path: row.path }, revealed: null });
+    }
+
+    /** Flip one toggle, and read every folder held under the pair it now names again. */
+    function flip(which: 'hidden' | 'ignored'): void {
+        const next = { ...listed, [which]: !listed[which] };
+        relist(next);
+        patch(next);
     }
 
     /** Open or close one section under the trees. */
@@ -376,7 +379,9 @@
         current={saved.current}
         names={saved.workspaces.map((one) => one.name)}
         adding={view.form === 'root'}
+        shown={listed}
         onselect={(name: string) => void select(name)}
+        onshow={flip}
         onadd={() => {
             show('root');
         }}

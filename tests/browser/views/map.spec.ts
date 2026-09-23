@@ -220,12 +220,32 @@ function overlapping(page: Page): Promise<string[]> {
 // Revert: in views/structure/map/Graph.svelte, leave the labels unmeasured when the text grows, so
 // the overlap rule reads no box for any of them and draws them all.
 test('the labels drawn after the text grows overlap none of each other', async ({ page }) => {
-    // revert: src/lib/views/structure/map/Graph.svelte:125 => delete
+    // revert: src/lib/views/structure/map/Graph.svelte:126 => delete
     await filters(page);
     await settled(page);
     expect(await overlapping(page)).toEqual([]);
     const larger = page.getByRole('button', { name: t('app.text_larger') });
     for (let step = 0; step < 6; step += 1) await larger.click();
     await expect(larger).toBeDisabled();
+    await expect.poll(() => overlapping(page), { timeout: 5000 }).toEqual([]);
+});
+
+// A pane keeps the Map's view mounted and hidden while another tab is shown, and a hidden label
+// measures at no size; the text grows while it is hidden, and the labels drawn when it is shown
+// again are measured at the size they are drawn at.
+// revert: src/lib/ui/shown.ts:14 => if (element.clientWidth < 0) shown();
+test('the labels drawn after the text grew while the Map was hidden overlap none of each other', async ({
+    page
+}) => {
+    await filters(page);
+    await settled(page);
+    expect(await overlapping(page)).toEqual([]);
+    await page.getByRole('tab', { name: t('views.status') }).click();
+    await expect(page.locator('[data-map-graph]')).toBeHidden();
+    const larger = page.getByRole('button', { name: t('app.text_larger') });
+    for (let step = 0; step < 6; step += 1) await larger.click();
+    await expect(larger).toBeDisabled();
+    await page.getByRole('tab', { name: t('views.map') }).click();
+    await expect(page.locator('[data-map-graph]')).toBeVisible();
     await expect.poll(() => overlapping(page), { timeout: 5000 }).toEqual([]);
 });

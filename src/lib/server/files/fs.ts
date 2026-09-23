@@ -10,10 +10,14 @@
 // A listing is one level deep and read at the call. The tree asks for a folder when the folder is
 // opened, so nothing walks a root: a home directory with a hundred thousand files under it costs
 // one readdir of whatever folder is on screen. Dotfiles and the three build folders are left out
-// because a tree that is mostly node_modules is a tree nobody reads; the file route still serves
-// them, since what is served and what is offered are different questions. A symbolic link is
-// resolved and then listed as the kind its target is, under the same rule the file route serves one
-// by: inside the root it is an ordinary entry, and pointing out of the root it is left out.
+// unless the request carries `hidden=1`, because a tree that is mostly node_modules is a tree
+// nobody reads; every entry git ignores is left out unless it carries `ignored=1`, read by
+// server/git/git.ts's ignoredIn, the module of the read-only git forms this server runs. The two
+// are the reader's own toggles on the tab, so the same folder is listed either way on request. The
+// file route still serves what a listing leaves out, since what is served and what is offered are
+// different questions. A symbolic link is resolved and then listed as the kind its target is, under
+// the same rule the file route serves one by: inside the root it is an ordinary entry, and pointing
+// out of the root it is left out.
 //
 // A workspace is a name and a list of roots, saved at ~/.oculus/workspaces.json. The hub key and
 // the keys the configuration names are reserved: a saved root carrying one is dropped on the read
@@ -34,6 +38,7 @@ import { basename, isAbsolute, join, sep } from 'node:path';
 import { hasToken, sameOrigin } from '../core/auth.ts';
 import { expandHome, HUB_ROOT, resolveRootPath, type Root } from './files.ts';
 import { readBookmarks } from './fs/bookmarks.ts';
+import { ignoredIn } from '../git/git.ts';
 import { deleteNote, listNotes, readNote, saveNote } from './fs/notes.ts';
 import { isMap, readJson, writeJsonAtomic } from '../sessions/stores/json.ts';
 
@@ -63,8 +68,22 @@ export type WorkspacesAnswer = {
     dropped: string[];
 };
 
-/** The folders a tree never offers, whatever a root holds. Dotfiles are left out beside them. */
+/**
+ * The folders a tree offers only when hidden files are asked for. Dotfiles are left out beside
+ * them.
+ */
 const SKIPPED = ['node_modules', '__pycache__', '.git'];
+
+/** What one listing request asks to see beside what the tree offers by default. */
+export type Shown = {
+    /** Dotfiles and the three build folders. */
+    hidden: boolean;
+    /** Entries git ignores in the folder listed. */
+    ignored: boolean;
+};
+
+/** A listing request that asks for nothing beyond the default. */
+export const DEFAULT_SHOWN: Shown = { hidden: false, ignored: false };
 
 /** Where a workspace starts when neither the configuration nor the reader names a root. */
 const DEFAULT_ROOT = { key: 'workspace', dir: '~/workspace' };
@@ -85,6 +104,45 @@ export function fsWrites(): FsWrites {
 }
 
 /**
+ * How long one folder's ignored names are reused. A write that moves the file browser's round has
+ * every open folder of every Files tab, shown or hidden, listed again at once, and each listing
+ * asks git; within this window the same folder with the same entries is asked once. It is the
+ * cadence the git watcher reads a root at (watch/git.ts).
+ */
+export const IGNORED_REUSE_MS = 2000;
+
+/** The ignored names asked for lately, per folder and its entries, held by one ServerContext. */
+export type IgnoredCache = { held: Map<string, { at: number; ignored: Set<string> }> };
+
+/** An empty cache, for a ServerContext being built. */
+export function ignoredCache(): IgnoredCache {
+    return { held: new Map() };
+}
+
+/**
+ * The names of a folder's entries that git ignores, asked of `ask` unless the same folder with the
+ * same entries was asked within IGNORED_REUSE_MS. An entry added or removed since makes the key
+ * differ, so an answer is never reused for a listing it was not given.
+ */
+export function cachedIgnored(
+    cache: IgnoredCache,
+    folder: string,
+    names: string[],
+    ask: (folder: string, names: string[]) => Set<string> = ignoredIn,
+    now: number = Date.now()
+): Set<string> {
+    const key = `${folder}\0${names.join('\0')}`;
+    const held = cache.held.get(key);
+    if (held !== undefined && now - held.at < IGNORED_REUSE_MS) return held.ignored;
+    const ignored = ask(folder, names);
+    for (const [one, entry] of cache.held) {
+        if (now - entry.at >= IGNORED_REUSE_MS) cache.held.delete(one);
+    }
+    cache.held.set(key, { at: now, ignored });
+    return ignored;
+}
+
+/**
  * What one request needs: the files to read and write, the roots no workspace may touch, and the
  * chain.
  */
@@ -99,6 +157,8 @@ export type FsTarget = {
     fixed: Root[];
     /** The process's write chain. */
     writes: FsWrites;
+    /** The ignored names asked for lately, which listings reuse for a moment. */
+    ignored: IgnoredCache;
 };
 
 /** ~/.oculus/workspaces.json, resolved at the call rather than at import. */
@@ -205,7 +265,10 @@ export function rootKey(dir: string, taken: string[]): string {
     }
 }
 
-/** Whether a name is one the tree leaves out: a dotfile, or one of the three build folders. */
+/**
+ * Whether a name is one the tree leaves out unless hidden files are asked for: a dotfile, or one
+ * of the three build folders.
+ */
 function skipped(name: string): boolean {
     return name.startsWith('.') || SKIPPED.includes(name);
 }
@@ -235,9 +298,10 @@ function described(dir: string, name: string): Entry | null {
 }
 
 /**
- * The entries of one directory under a named root, folders first and then files, each side by name.
- * A path that leaves the root, a root nothing names and a path that is not a directory are all the
- * same refusal to the caller, which is what the route answers 404 for.
+ * The entries of one directory under a named root, folders first and then files, each side by name,
+ * and the directory's own path. A path that leaves the root, a root nothing names and a path that
+ * is not a directory are all the same refusal to the caller, which is what the route answers 404
+ * for. Dotfiles and the build folders are listed only when `hidden` is true.
  *
  * An entry is kept only when its real path is still inside the root, which is the check the file
  * route applies before serving one: a link out of the root is not offered, since pressing it would
@@ -246,8 +310,9 @@ function described(dir: string, name: string): Entry | null {
 export function listDir(
     list: Root[],
     key: string,
-    path: string
-): { entries: Entry[] } | { error: 'outside' | 'missing' } {
+    path: string,
+    hidden = false
+): { entries: Entry[]; at: string } | { error: 'outside' | 'missing' } {
     const found = resolveRootPath(list, key, path);
     if ('error' in found) return found;
     const root = list.find((one) => one.key === key);
@@ -257,7 +322,7 @@ export function listDir(
     try {
         if (!statSync(found.path).isDirectory()) return { error: 'missing' };
         entries = readdirSync(found.path, { withFileTypes: true })
-            .filter((entry) => !skipped(entry.name))
+            .filter((entry) => hidden || !skipped(entry.name))
             .filter((entry) => {
                 if (!entry.isSymbolicLink()) return true;
                 const target = real(join(found.path, entry.name));
@@ -272,7 +337,34 @@ export function listDir(
         if (left.kind !== right.kind) return left.kind === 'dir' ? -1 : 1;
         return left.name.localeCompare(right.name);
     });
-    return { entries };
+    return { entries, at: found.path };
+}
+
+/**
+ * One directory as a listing request asks for it: listDir's entries, without the ones git ignores
+ * there unless the request asks for those too.
+ */
+export function listShown(
+    list: Root[],
+    key: string,
+    path: string,
+    shown: Shown = DEFAULT_SHOWN,
+    cache: IgnoredCache = ignoredCache()
+): { entries: Entry[] } | { error: 'outside' | 'missing' } {
+    const found = listDir(list, key, path, shown.hidden);
+    if ('error' in found) return found;
+    if (shown.ignored) return { entries: found.entries };
+    const ignored = cachedIgnored(
+        cache,
+        found.at,
+        found.entries.map((one) => one.name)
+    );
+    return { entries: found.entries.filter((one) => !ignored.has(one.name)) };
+}
+
+/** What a listing request asks to see, from its query: `hidden=1` and `ignored=1`, each alone. */
+export function shownOf(query: URLSearchParams): Shown {
+    return { hidden: query.get('hidden') === '1', ignored: query.get('ignored') === '1' };
 }
 
 /** Whether a real path is a real directory itself or something under it. */
@@ -313,7 +405,8 @@ export function workspacesAnswer(into: FsTarget, saved: Saved): WorkspacesAnswer
 /**
  * GET /api/fs: one of five reads, chosen by what the query names. `bookmarks` answers the reader's
  * own bookmarks and their schema, `notes` every scratch note, `note` one note's own text, a root
- * and a path the entries of that directory, and nothing at all the workspaces.
+ * and a path the entries of that directory (with `hidden=1` and `ignored=1` asking for what the
+ * tree leaves out by default), and nothing at all the workspaces.
  *
  * A read, so it carries no token; it is still refused to another origin, since any page open in the
  * browser can address this server. One file is read, whichever answer is given.
@@ -334,7 +427,8 @@ export function handleFs(request: Request, into: FsTarget): Response {
     const path = url.searchParams.get('path') ?? '';
     const saved = readSaved(into.file, reservedKeys(into.fixed));
     if (key === '') return json(200, workspacesAnswer(into, saved));
-    const found = listDir([...into.fixed, ...addedRoots(into.fixed, saved)], key, path);
+    const roots = [...into.fixed, ...addedRoots(into.fixed, saved)];
+    const found = listShown(roots, key, path, shownOf(url.searchParams), into.ignored);
     if ('error' in found) return json(404, { error: found.error });
     return json(200, { root: key, path, entries: found.entries });
 }

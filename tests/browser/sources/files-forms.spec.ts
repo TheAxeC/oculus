@@ -1,6 +1,6 @@
 // The file browser's forms in Chrome: the bookmark form and the root form stay open with what was
 // typed into them after the tab is switched away from and back, and the bookmark form after a
-// reload, since a pane mounts only its active tab and the open form is the instance's state. A
+// reload, since the open form is the instance's state and a reload draws the view anew. A
 // bookmark form's draft is forgotten when the section's add control closes the form, when a row's
 // edit moves it to another bookmark and when its bookmark is taken away; the form is mounted anew
 // per opening. A write answered after the reader opened another form, closed and opened the same
@@ -19,7 +19,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join, sep } from 'node:path';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { keepServedFiles, nestedRoot, row, scratch } from '../helpers/files.ts';
-import { draftKeys, switchAndBack, uiInstances } from '../helpers/forms.ts';
+import { draftKeys, reloadAndShow, switchAndBack, uiInstances } from '../helpers/forms.ts';
 import { servedHomeDir } from '../helpers/hub.ts';
 import { boot, openView } from '../helpers/rail.ts';
 import { t, tabNamed } from '../helpers/words.ts';
@@ -80,10 +80,10 @@ async function formsElsewhere(page: Page, owner: string): Promise<string[]> {
         .map(([key]) => key);
 }
 
-/** The Status tab, drawn in place of the file browser. */
+/** The Status tab, drawn in place of the file browser, which stays mounted and hidden. */
 async function toStatus(page: Page): Promise<void> {
     await page.getByRole('tab', { name: tabNamed(t('views.status')) }).click();
-    await expect(page.locator('[data-fs-bookmarks]')).toHaveCount(0);
+    await expect(page.locator('[data-fs-bookmarks]')).toBeHidden();
 }
 
 /** Back to the file browser tab. */
@@ -126,6 +126,7 @@ async function twoMarks(page: Page): Promise<{
 
 // Revert: in shift() of views/sources/files/Files.svelte, hold the forms in a component `$state`
 // instead of patch(next); or drop its toggleAdd call, which leaves the draft behind.
+// revert: src/lib/state/workbench/ui.svelte.ts:252 => delete
 test('the bookmark form is open with its typed label after a tab switch and a reload, and its own control closing it forgets the label', async ({
     page
 }) => {
@@ -153,7 +154,8 @@ test('the bookmark form is open with its typed label after a tab switch and a re
 
 // Revert: in views/sources/files/Files.svelte, hold the root form's `typed` in a component `$state`
 // instead of patch({ typed }).
-test('the root form is open with its typed folder after a tab switch, and cancel lets it go', async ({
+// revert: src/lib/state/workbench/ui.svelte.ts:252 => delete
+test('the root form is open with its typed folder after a reload, and cancel lets it go', async ({
     page
 }) => {
     await boot(page);
@@ -162,12 +164,13 @@ test('the root form is open with its typed folder after a tab switch, and cancel
     const box = page.getByRole('textbox', { name: t('files.root_dir') });
     await box.fill('~/a-folder-typed-and-not-added');
 
-    await switchAndBack(page, t('views.files'), page.locator('[data-fs-bookmarks]'));
+    await reloadAndShow(page, t('views.files'), page.locator('[data-fs-bookmarks]'));
     await expect(box).toHaveValue('~/a-folder-typed-and-not-added');
 
     await page.getByRole('button', { name: t('files.cancel'), exact: true }).click();
     await expect(box).toHaveCount(0);
-    await switchAndBack(page, t('views.files'), page.locator('[data-fs-bookmarks]'));
+    await reloadAndShow(page, t('views.files'), page.locator('[data-fs-bookmarks]'));
+    // the cancel closed the form in the instance, so the reload draws it closed
     await expect(box).toHaveCount(0);
     await page.getByRole('button', { name: t('files.add_root'), exact: true }).click();
     await expect(box).toHaveValue('');
@@ -176,10 +179,8 @@ test('the root form is open with its typed folder after a tab switch, and cancel
 
 // Revert: in filesViewOf of state/sources/fs.ts, read no refusal line, so the line lives only as
 // long as the component that drew it.
-test('a refused root comes back with its form and its refusal after a tab switch', async ({
-    page
-}) => {
-    // revert: src/lib/state/sources/fs.ts:280 => note: '',
+test('a refused root comes back with its form and its refusal after a reload', async ({ page }) => {
+    // revert: src/lib/state/sources/fs.ts:294 => note: '',
     await boot(page);
     await openView(page, 'files', t('views.files'));
     await page.getByRole('button', { name: t('files.add_root'), exact: true }).click();
@@ -189,7 +190,7 @@ test('a refused root comes back with its form and its refusal after a tab switch
     const refused = page.getByText(t('files.refused_not_absolute'), { exact: true });
     await expect(refused).toBeVisible();
 
-    await switchAndBack(page, t('views.files'), page.locator('[data-fs-bookmarks]'));
+    await reloadAndShow(page, t('views.files'), page.locator('[data-fs-bookmarks]'));
     await expect(box).toHaveValue('a-folder-that-is-not-absolute');
     await expect(refused).toBeVisible();
 
@@ -199,8 +200,8 @@ test('a refused root comes back with its form and its refusal after a tab switch
 });
 
 // Revert: in filesViewOf of state/sources/fs.ts, read no outcome line.
-test("the bookmark form's outcome line comes back after a tab switch", async ({ page }) => {
-    // revert: src/lib/state/sources/fs.ts:281 => said: '',
+test("the bookmark form's outcome line comes back after a reload", async ({ page }) => {
+    // revert: src/lib/state/sources/fs.ts:295 => said: '',
     await boot(page);
     await openView(page, 'files', t('views.files'));
     const { key } = await nestedRoot(page);
@@ -214,7 +215,7 @@ test("the bookmark form's outcome line comes back after a tab switch", async ({ 
     await expect(said).toBeVisible();
     const words = await said.textContent();
 
-    await switchAndBack(page, t('views.files'), page.locator('[data-fs-bookmarks]'));
+    await reloadAndShow(page, t('views.files'), page.locator('[data-fs-bookmarks]'));
     await expect(said).toHaveText(words ?? '');
 });
 
@@ -284,8 +285,8 @@ test("a bookmark added while another bookmark's form was opened leaves that form
     expect(await draftKeys(page)).toEqual([]);
 });
 
-// Revert: in confirm() of views/sources/files/Files.svelte, settle through `instance.id` read after
-// the answer instead of the `owner` taken before the request.
+// The answer lands while the file browser's tab is hidden, and closes its form all the same.
+// revert: src/lib/views/sources/files/Files.svelte:299 => delete
 test('a root added while the tab is switched away closes its form in the file browser it came from', async ({
     page
 }) => {
@@ -313,8 +314,8 @@ test('a root added while the tab is switched away closes its form in the file br
     await page.unroute('**/api/fs');
 });
 
-// Revert: in views/sources/files/sections/BookmarkForm.svelte, close through the `owner` prop read
-// when the close runs instead of `opened.owner`.
+// The answer lands while the file browser's tab is hidden, and closes its form all the same.
+// revert: src/lib/views/sources/files/Files.svelte:363 => delete
 test('a bookmark added while the tab is switched away closes its form in the file browser it came from', async ({
     page
 }) => {
@@ -396,7 +397,7 @@ test("a row's edit moving a typed edit form to another bookmark forgets what was
 
 // Revert: in views/sources/files/Files.svelte, draw BookmarkForm without its `{#key}` block, or
 // key it by the instance alone, so the add form's component is kept for the edit form.
-// revert: src/lib/views/sources/files/Files.svelte:405 => {#key instance.id}
+// revert: src/lib/views/sources/files/Files.svelte:410 => {#key instance.id}
 test('an edit form opened from the add form is the one its Cancel closes', async ({ page }) => {
     await boot(page);
     await openView(page, 'files', t('views.files'));
@@ -412,7 +413,7 @@ test('an edit form opened from the add form is the one its Cancel closes', async
 });
 
 // Revert: in closeGoneForms of state/sources/fs.svelte.ts, sweep no browser at all.
-// revert: src/lib/state/sources/fs.svelte.ts:696 => for (const one of forms.browsers().slice(0, 0)) {
+// revert: src/lib/state/sources/fs.svelte.ts:682 => for (const one of forms.browsers().slice(0, 0)) {
 test('a bookmark taken away while its typed edit form is open closes the form, and the tab closes without asking', async ({
     page
 }) => {
@@ -468,7 +469,7 @@ test('a bookmark add form typed on while its save was out keeps the typing, open
 
 // Revert: in views/sources/files/Files.svelte, hand the bookmark form a rename that opens nothing,
 // so the form stays over the id its bookmark had before the save.
-// revert: src/lib/views/sources/files/Files.svelte:414 => onrenamed={() => undefined}
+// revert: src/lib/views/sources/files/Files.svelte:419 => onrenamed={() => undefined}
 test('a bookmark renamed by its form keeps what was typed, open over the bookmark it renamed', async ({
     page
 }) => {
@@ -508,7 +509,7 @@ test('a bookmark renamed by its form keeps what was typed, open over the bookmar
 });
 
 // Revert: in editedGone of state/sources/fs.ts, drop `saving` from the line that answers false.
-// revert: src/lib/state/sources/fs.ts:463 => if (marks.loading || marks.error !== '') return false;
+// revert: src/lib/state/sources/fs.ts:484 => if (marks.loading || marks.error !== '') return false;
 test('a bookmark taken away while a save from its form is out leaves the form until it lands', async ({
     page
 }) => {
@@ -551,7 +552,7 @@ test('a bookmark taken away while a save from its form is out leaves the form un
 
 // Revert: in closeGoneForms of state/sources/fs.svelte.ts, sweep no browser, which is what the rule
 // living in an $effect of the mounted view came to for a page that draws none.
-// revert: src/lib/state/sources/fs.svelte.ts:696 => for (const one of forms.browsers().slice(0, 0)) {
+// revert: src/lib/state/sources/fs.svelte.ts:682 => for (const one of forms.browsers().slice(0, 0)) {
 test('a bookmark taken away closes its form with no file browser on screen at all', async ({
     page
 }) => {
@@ -564,10 +565,10 @@ test('a bookmark taken away closes its form with no file browser on screen at al
     await page.locator('[data-form="edit"]').getByRole('textbox', { name: 'Path' }).fill('typed');
     expect(await draftKeys(page)).toHaveLength(1);
 
-    // The file's own tab takes the pane, so no file browser is mounted anywhere on the page, and
+    // The file's own tab takes the pane, so no file browser is drawn anywhere on the page, and
     // the bookmark is taken away from that tab rather than from a tree.
     await row(page, key, 'tool.py').click();
-    await expect(page.locator('[data-fs-bookmarks]')).toHaveCount(0);
+    await expect(page.locator('[data-fs-bookmarks]')).toBeHidden();
     await page.getByRole('button', { name: t('file.unbookmark'), exact: true }).click();
 
     await expect
@@ -584,7 +585,7 @@ test('a bookmark taken away closes its form with no file browser on screen at al
 
 // Revert: in closeGoneForms of state/sources/fs.svelte.ts, sweep no browser, which is what the rule
 // living in an $effect of the mounted view came to for a page that draws none.
-// revert: src/lib/state/sources/fs.svelte.ts:696 => for (const one of forms.browsers().slice(0, 0)) {
+// revert: src/lib/state/sources/fs.svelte.ts:682 => for (const one of forms.browsers().slice(0, 0)) {
 test('a bookmark taken away closes the form of a file browser whose tab is not shown', async ({
     page
 }) => {

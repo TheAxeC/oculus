@@ -23,6 +23,7 @@ import {
     editShown,
     filesLineTyped,
     filesViewOf,
+    shownOf,
     filterRows,
     formSettled,
     formShown,
@@ -52,6 +53,11 @@ function dir(name: string): FsEntry {
 
 /** The forms of a file browser with none open. */
 const NO_FORM = { form: '', editing: '', typed: '', opening: 0 } as const;
+
+/**
+ * The two toggles of a file browser nobody has flipped: the tree lists what it lists by default.
+ */
+const NO_TOGGLES = { hidden: false, ignored: false } as const;
 
 /**
  * The asks to show a path of a file browser nothing has asked. Revert: in filesViewOf of
@@ -179,6 +185,19 @@ describe('the explorer over the rows', () => {
         expect(collapseRoot([...open, 'hubby:x'], 'hub')).toEqual(['hub:', 'notes:', 'hubby:x']);
     });
 
+    // revert: src/lib/state/sources/fs.ts:296 => hidden: false,
+    it('reads the two toggles an instance keeps, and false for anything that is not true', () => {
+        expect(filesViewOf({ hidden: true, ignored: true })).toMatchObject({
+            hidden: true,
+            ignored: true
+        });
+        expect(filesViewOf({ hidden: 'yes', ignored: 1 })).toMatchObject(NO_TOGGLES);
+        expect(shownOf(filesViewOf({ hidden: true, filter: 'x' }))).toEqual({
+            hidden: true,
+            ignored: false
+        });
+    });
+
     // Revert: read `selected` without checking that root and path are strings; or, for the
     // `...NO_REVEAL` expectations, default `reveal` or `revealed` to anything but null or
     // `revealing` to anything but 0 in filesViewOf (askOf, outcomeOf, countOf of
@@ -196,6 +215,7 @@ describe('the explorer over the rows', () => {
         ).toEqual({
             ...NO_FORM,
             ...NO_REVEAL,
+            ...NO_TOGGLES,
             expanded: ['hub:'],
             selected: { root: 'hub', path: 'code' },
             filter: 'run',
@@ -207,6 +227,7 @@ describe('the explorer over the rows', () => {
             ...NO_FORM,
             ...NO_REVEAL,
             ...NO_LINES,
+            ...NO_TOGGLES,
             expanded: [],
             selected: null,
             filter: '',
@@ -349,7 +370,7 @@ describe('the forms of the file browser', () => {
         expect(editedGone(NO_FORM, loaded, false)).toBe(false);
     });
 
-    // revert: src/lib/state/sources/fs.ts:477 => return { ...part };
+    // revert: src/lib/state/sources/fs.ts:498 => return { ...part };
     // Revert: in patchedFilesView of state/sources/fs.ts, write the part over nothing.
     it('writes part of a file browser over whatever else its record holds', () => {
         expect(patchedFilesView({ filter: 'x', form: 'root' }, { form: 'bookmark' })).toEqual({
@@ -362,7 +383,7 @@ describe('the forms of the file browser', () => {
         expect(patchedFilesView('a word', { editing: 'one' })).toEqual({ editing: 'one' });
     });
 
-    // revert: src/lib/state/sources/fs.ts:463 => if (marks.loading || marks.error !== '') return false;
+    // revert: src/lib/state/sources/fs.ts:484 => if (marks.loading || marks.error !== '') return false;
     // Revert: in editedGone of state/sources/fs.ts, drop `saving` from the line that answers false.
     it('leaves the form a save of its own is out from until that answer lands', () => {
         const loaded = { entries: [{ id: 'the manual renamed' }], loading: false, error: '' };

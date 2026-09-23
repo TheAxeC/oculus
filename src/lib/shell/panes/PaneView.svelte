@@ -1,13 +1,15 @@
 <script lang="ts">
     // Layer 3, shell. One pane of a tree: the tab strip over its instances, the pane menu at the
-    // right of that strip, and the active instance's view mounted below it. It reaches a view only
-    // through the registry, so no module in the shell names a view, and a saved arrangement naming
-    // a view this release does not have still renders: the tab says so and the body is empty, which
-    // is the rule state/workbench/layout/ states for a ViewId the registry does not hold.
+    // right of that strip, and below it the view of every tab the pane has shown, the active one
+    // drawn and the rest hidden (panes/TabView.svelte). It reaches a view only through the
+    // registry, so no module in the shell names a view, and a saved arrangement naming a view this
+    // release does not have still renders: the tab says so and the body is empty, which is the rule
+    // state/workbench/layout/ states for a ViewId the registry does not hold.
     //
-    // It tells what it mounts which instance that is, through state/client/instance-context.ts, so
-    // a partial deep inside a view keys what it keeps by the instance without a prop through every
-    // level.
+    // A tab's view is mounted the first time the tab is shown and stays mounted until the tab
+    // closes or leaves the pane, so switching back to it neither builds the view again nor fetches
+    // what it read again, and a tab never shown costs nothing. There is no cap on the views one
+    // pane keeps: it is the number of tabs the reader has opened and looked at.
     //
     // It is where closing is guarded. A tab holding text no save has taken is asked about before it
     // goes, whether the close came from the tab's own control or from Delete on it, and so is a
@@ -32,6 +34,7 @@
     // opens. The split button is the pointer's shortcut to an item the menu already holds, so it
     // takes no stop of its own and the pane's stops stay the strip and the menu.
 
+    import { untrack } from 'svelte';
     import { EMBED, PAGE, foldable, pageListItems } from '$lib/shell/panes/pane-view';
     import { closeQuestion } from '$lib/shell/closing';
     import Confirm from '$lib/ui/controls/Confirm.svelte';
@@ -43,7 +46,7 @@
     import { edgeAt, markAt, withoutOwn } from '$lib/state/workbench/drag.svelte';
     import { t } from '$lib/state/words/text';
     import { badgeOf, registrationGlyph, registrationLabel } from '$lib/views/registry';
-    import { provideInstance } from '$lib/state/client/instance-context';
+    import TabView from './TabView.svelte';
     import { showable, type Instance, type Layout } from '$lib/state/workbench/layout';
     import { useState } from '$lib/state/client/use';
 
@@ -97,7 +100,6 @@
     const instances = $derived<Instance[]>(node.kind === 'pane' ? node.tabs : []);
     const active = $derived(node.kind === 'pane' ? node.active : '');
     const shown = $derived(instances.find((instance) => instance.id === active));
-    const registration = $derived(shown === undefined ? undefined : viewFor(shown.view));
     const maximised = $derived(focused(page) !== null);
     /**
      * Whether this is the pane the rail's next view opens into: the one holding the instance it
@@ -105,10 +107,20 @@
      */
     const activePane = $derived(active !== '' && openingInstance()?.id === active);
 
-    // What the mounted view and its partials read as the instance they are drawn in. It is a reader
-    // of the active tab rather than its id at mount, since a tab switch between two instances of
-    // one view keeps the component and changes the instance it is handed.
-    provideInstance(() => shown?.id ?? null);
+    /**
+     * The tabs this pane has shown, in the order they were first shown. A closed tab, or one moved
+     * to another pane, is dropped as soon as the pane no longer holds it.
+     */
+    let seen: string[] = $state([]);
+    $effect(() => {
+        const open = instances.map((one) => one.id);
+        const held = untrack(() => seen).filter((id) => open.includes(id));
+        if (active !== '' && !held.includes(active)) held.push(active);
+        if (held.join('\n') !== untrack(() => seen).join('\n')) seen = held;
+    });
+
+    /** The tabs whose views are mounted: the one shown, and every other one shown before it. */
+    const kept = $derived(instances.filter((one) => one.id === active || seen.includes(one.id)));
 
     /**
      * A tab per instance: the registry's words and glyph, or the view's own id when it has none. An
@@ -350,10 +362,12 @@
         onpointermove={bodyHover}
         onpointerleave={bodyLeave}
     >
-        {#if shown !== undefined && registration !== undefined}
-            {@const View = registration.component}
-            <View instance={shown} />
-        {/if}
+        {#each kept as instance (instance.id)}
+            {@const found = viewFor(instance.view)}
+            {#if found !== undefined}
+                <TabView {instance} registration={found} shown={instance.id === active} />
+            {/if}
+        {/each}
     </div>
 </div>
 
@@ -418,9 +432,5 @@
         min-width: 0;
         min-height: 0;
         overflow: hidden;
-    }
-
-    .body > :global(*) {
-        height: 100%;
     }
 </style>

@@ -11,12 +11,11 @@
 // removed when the case ends.
 
 import { expect, test, type Page, type Route } from '@playwright/test';
-import { randomUUID } from 'node:crypto';
-import { existsSync, mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
 import { gitIn } from '../helpers/git.ts';
-import { servedHomeDir } from '../helpers/hub.ts';
+import { servedHomeDir, writeTranscript } from '../helpers/hub.ts';
 import { boot, openView } from '../helpers/rail.ts';
 import { t } from '../helpers/words.ts';
 import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
@@ -63,30 +62,7 @@ function store(): string {
 
 /** A transcript whose session works in `cwd` and is named `title`, stamped with this moment. */
 function session(title: string, cwd: string): void {
-    const when = new Date().toISOString();
-    const line = { timestamp: when, cwd, gitBranch: '', version: '2.0.0' };
-    const rows = [
-        { type: 'ai-title', aiTitle: title },
-        {
-            type: 'user',
-            ...line,
-            origin: { kind: 'human' },
-            message: { role: 'user', content: 'Look at the changes.' }
-        },
-        {
-            type: 'assistant',
-            ...line,
-            message: {
-                role: 'assistant',
-                model: 'claude-opus-5',
-                content: [{ type: 'text', text: 'Looked.' }],
-                usage: { input_tokens: 1, output_tokens: 1 }
-            }
-        }
-    ];
-    mkdirSync(store(), { recursive: true });
-    const file = inside(join(store(), `${randomUUID()}.jsonl`));
-    writeFileSync(file, rows.map((row) => JSON.stringify(row)).join('\n') + '\n');
+    writeTranscript(store(), title, cwd, { asked: 'Look at the changes.', answered: 'Looked.' });
 }
 
 /** The workspace a branch listing was asked for, or empty for any other request. */

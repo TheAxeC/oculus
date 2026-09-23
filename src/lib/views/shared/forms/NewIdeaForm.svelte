@@ -1,6 +1,8 @@
 <script lang="ts">
     // Layer 3, shared view partial. The new-idea form used by the Projects board and Lit Watch.
     // Optional seed values let a radar spark pre-fill the same form without duplicating its write.
+    // Escape closes it only while it is on screen: a pane keeps the view of a tab it hides mounted,
+    // and a key pressed in another tab is not one this form was asked to answer.
 
     import Select from '$lib/ui/forms/Select.svelte';
     import TextInput from '$lib/ui/forms/TextInput.svelte';
@@ -28,9 +30,10 @@
     let domain = $state('');
     let eli5 = $state(untrack(() => seed?.eli5 ?? ''));
     const choices = $derived(domainChoices());
+    let box: HTMLDivElement | undefined = $state();
 
     function keyed(event: KeyboardEvent): void {
-        if (event.key === 'Escape') onclose();
+        if (event.key === 'Escape' && box?.checkVisibility() === true) onclose();
     }
 
     async function save(): Promise<void> {
@@ -56,7 +59,7 @@
 
 <svelte:window onkeydown={keyed} />
 
-<div class="form">
+<div class="form" bind:this={box}>
     <TextInput
         value={id}
         label={t('board.new_idea_id')}

@@ -121,6 +121,22 @@ describe('the addresses the store reads', () => {
         expect(fileBytesUrl('hub', 'a/paper.pdf', 2)).toBe('/api/file/hub/a/paper.pdf?v=2');
     });
 
+    // revert: src/lib/state/sources/fs-transport.ts:101 => return at;
+    it('asks for hidden and ignored files on the query only while their toggle is on', () => {
+        expect(listingUrl('hub', 'a', { hidden: false, ignored: false })).toBe(
+            '/api/fs?root=hub&path=a'
+        );
+        expect(listingUrl('hub', 'a', { hidden: true, ignored: false })).toBe(
+            '/api/fs?root=hub&path=a&hidden=1'
+        );
+        expect(listingUrl('hub', 'a', { hidden: false, ignored: true })).toBe(
+            '/api/fs?root=hub&path=a&ignored=1'
+        );
+        expect(listingUrl('hub', 'a', { hidden: true, ignored: true })).toBe(
+            '/api/fs?root=hub&path=a&hidden=1&ignored=1'
+        );
+    });
+
     it('escapes the root and the path of a listing', () => {
         expect(listingUrl('game engine', 'a b/c#d')).toBe(
             '/api/fs?root=game%20engine&path=a%20b%2Fc%23d'

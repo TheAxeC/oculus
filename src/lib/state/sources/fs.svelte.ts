@@ -35,12 +35,19 @@
 // the way to a path it was asked to show, one after the other; that read and a render's read of the
 // same folder in the same round are one request.
 //
+// A folder is listed under a pair of toggles, whether hidden files and the files git ignores are
+// asked for, and each pair is an answer of its own, held under its own key, since two file
+// browsers may list one folder with two different pairs. A folder not yet answered under the pair
+// asked for draws what another pair holds of it until its answer lands. relist() asks again for
+// every folder held under one pair, which is what flipping a toggle does.
+//
 // The bookmark forms of every file browser the layout holds are read on each bookmarks answer, and
 // the form over a bookmark the file no longer holds is closed there and then. It is read here
-// rather than in the view because a pane mounts only the tab it shows: a file browser on a page the
-// reader is not looking at draws nothing, and its tab would go on asking about text over a bookmark
-// that is gone. What a file browser's forms are and how one is moved come from the client's state,
-// handed in as BookmarkForms, so this module knows the rule's occasion and not the layout.
+// rather than in the view because a file browser may be mounted nowhere: one on a page the reader
+// is not looking at, or in a tab its pane has never shown, draws nothing, and its tab would go on
+// asking about text over a bookmark that is gone. What a file browser's forms are and how one is
+// moved come from the client's state, handed in as BookmarkForms, so this module knows the rule's
+// occasion and not the layout.
 //
 // The file text is read through the file route and stopped at the window's limit: the reader is
 // cancelled once the limit is in, so a forty-megabyte file costs two megabytes of transfer and not
@@ -52,14 +59,32 @@ import type { Entry, FilesPayload, SchemaField } from '../../data/model.ts';
 import { TEXT_SNIFF_READ } from '../../data/helpers/text-kind.ts';
 import type { EntitiesStore } from '../client/entities.svelte.ts';
 import {
+    LISTING_FORMS,
+    NO_BOOKMARKS,
+    NO_LISTING,
+    NO_NOTE,
+    NO_NOTES,
+    NO_TEXT,
+    NO_WORKSPACES,
     fileBytesUrl,
     FS_PATH,
+    listingAnswer,
+    listingForm,
+    listingKey,
     listingUrl,
     noteUrl,
     readCapped,
-    readCappedBytes
+    readCappedBytes,
+    type BookmarksState,
+    type FileText,
+    type Listing,
+    type NoteRow,
+    type NoteState,
+    type NotesState,
+    type WorkspacesState
 } from './fs-transport.ts';
 import {
+    SHOWN_DEFAULT,
     TEXT_LIMIT,
     editShown,
     editedGone,
@@ -68,12 +93,22 @@ import {
     type FileType,
     type FilesForms,
     type FsEntry,
-    type FsRoot
+    type FsRoot,
+    type ListingShown
 } from './fs.ts';
 import { t } from '../words/text.ts';
 import type { WriteAnswer, WritesStore } from '../client/writes.svelte.ts';
 
 export { fileBytesUrl, FS_PATH, listingUrl, readCapped } from './fs-transport.ts';
+export type {
+    BookmarksState,
+    FileText,
+    Listing,
+    NoteRow,
+    NoteState,
+    NotesState,
+    WorkspacesState
+} from './fs-transport.ts';
 
 /**
  * What the bookmark forms of the file browsers are read and moved through. The layout, the instance
@@ -101,70 +136,6 @@ export const BOOKMARK_COLLECTION = 'bookmarks';
 /** What a save of a note this page deleted is refused with, in the endpoint's own vocabulary. */
 export const NOTE_GONE = 'no-such-note';
 
-/** One directory as the tree reads it. */
-export type Listing = {
-    entries: FsEntry[];
-    /** What the request failed with, or the empty string. */
-    error: string;
-    /** True while the first answer for the folder is still to come. */
-    loading: boolean;
-};
-
-/** The workspaces as the toolbar reads them. */
-export type WorkspacesState = {
-    current: string;
-    workspaces: { name: string; roots: FsRoot[] }[];
-    /** The keys the server dropped because the configuration reserves them. */
-    dropped: string[];
-    error: string;
-    loading: boolean;
-};
-
-/** The reader's own bookmarks as the rail and the Files view read them. */
-export type BookmarksState = {
-    entries: Entry[];
-    /** The file's own schema, which is what the entry form draws its controls from. */
-    schema: SchemaField[];
-    error: string;
-    loading: boolean;
-};
-
-/** One scratch note as the Files view lists it. */
-export type NoteRow = { id: string; title: string; modified: number };
-
-/** The scratch notes as the Files view reads them. */
-export type NotesState = { notes: NoteRow[]; error: string; loading: boolean };
-
-/** One note as its own view reads it. */
-export type NoteState = NoteRow & { body: string; error: string; loading: boolean };
-
-/** One file's text as the code window reads it. */
-export type FileText = {
-    text: string;
-    /** True when the file is longer than the window draws and the text is its first part. */
-    truncated: boolean;
-    error: string;
-    loading: boolean;
-};
-
-const NO_LISTING: Listing = { entries: [], error: '', loading: true };
-
-const NO_WORKSPACES: WorkspacesState = {
-    current: '',
-    workspaces: [],
-    dropped: [],
-    error: '',
-    loading: true
-};
-
-const NO_TEXT: FileText = { text: '', truncated: false, error: '', loading: true };
-
-const NO_BOOKMARKS: BookmarksState = { entries: [], schema: [], error: '', loading: true };
-
-const NO_NOTES: NotesState = { notes: [], error: '', loading: true };
-
-const NO_NOTE: NoteState = { id: '', title: '', body: '', modified: 0, error: '', loading: true };
-
 /** The keys the three whole-file answers are held and rounded under; a root key is never one. */
 const WORKSPACES = ':workspaces';
 
@@ -174,21 +145,23 @@ const NOTES = ':notes';
 
 /** The file browser's fetched state, one per client. */
 export type FsStore = {
-    listing: (root: string, path: string) => Listing;
-    entries: (root: string, path: string) => FsEntry[];
+    listing: (root: string, path: string, shown?: ListingShown) => Listing;
+    entries: (root: string, path: string, shown?: ListingShown) => FsEntry[];
     /**
      * The entries of one folder as far as they have been read, and null for a folder never read. It
      * asks the server for nothing, which is what lets a filter look through every folder already
      * read without reading the rest of the root.
      */
-    heldEntries: (root: string, path: string) => FsEntry[] | null;
+    heldEntries: (root: string, path: string, shown?: ListingShown) => FsEntry[] | null;
     /**
      * One directory once it is answered: what is held for the round without a request, or the
      * answer of the one request the round makes for it, shared with every other caller asking
      * meanwhile. It is what a caller that has to know what a folder holds before its next step
      * awaits.
      */
-    readListing: (root: string, path: string) => Promise<Listing>;
+    readListing: (root: string, path: string, shown?: ListingShown) => Promise<Listing>;
+    /** Ask again, on the next read of each, for every folder held under one pair of toggles. */
+    relist: (shown: ListingShown) => void;
     workspaces: () => WorkspacesState;
     fileText: (root: string, path: string) => FileText;
     /**
@@ -421,24 +394,45 @@ export function createFs(
 
     /**
      * One directory. The first call for a folder asks the server; later calls read what is held.
+     * A folder not yet answered under this pair of toggles draws another pair's answer meanwhile.
      */
-    function listing(root: string, path: string): Listing {
+    function listing(root: string, path: string, shown = SHOWN_DEFAULT): Listing {
         if (root === '') return { entries: [], error: '', loading: false };
-        const key = treeKey(root, path);
+        const key = listingKey(treeKey(root, path), shown);
         const found = listings[key];
         const at = roundOf(root);
         if (found === undefined || rounds[key] !== at) {
-            schedule(key, at, () => askListing(root, path, at).then(() => undefined));
+            schedule(key, at, () => askListing(root, path, at, shown).then(() => undefined));
         }
-        return found ?? NO_LISTING;
+        return found ?? otherForm(treeKey(root, path)) ?? NO_LISTING;
+    }
+
+    /** What any pair of toggles holds of one folder, for a pair whose answer has not landed. */
+    function otherForm(folder: string): Listing | undefined {
+        for (const form of LISTING_FORMS) {
+            const held = listings[`${form}${folder}`];
+            if (held !== undefined) return held;
+        }
+        return undefined;
+    }
+
+    function relist(shown: ListingShown): void {
+        const form = listingForm(shown);
+        // No round is ever negative, so the next read of each of them is a request.
+        for (const key of Object.keys(listings)) if (key.startsWith(form)) rounds[key] = -1;
     }
 
     /** The one request of a round for one folder, started or joined. */
-    function askListing(root: string, path: string, at: number): Promise<Listing> {
-        const ticket = `${at}:${treeKey(root, path)}`;
+    function askListing(
+        root: string,
+        path: string,
+        at: number,
+        shown: ListingShown
+    ): Promise<Listing> {
+        const ticket = `${at}:${listingKey(treeKey(root, path), shown)}`;
         const pending = reading.get(ticket);
         if (pending !== undefined) return pending;
-        const request = loadListing(root, path, at).finally(() => reading.delete(ticket));
+        const request = loadListing(root, path, at, shown).finally(() => reading.delete(ticket));
         reading.set(ticket, request);
         return request;
     }
@@ -449,49 +443,41 @@ export function createFs(
      * has begun meanwhile and the store did not keep it. Where there is no page nothing is asked,
      * and the answer says so.
      */
-    async function readListing(root: string, path: string): Promise<Listing> {
+    async function readListing(
+        root: string,
+        path: string,
+        shown = SHOWN_DEFAULT
+    ): Promise<Listing> {
         if (root === '') return { entries: [], error: '', loading: false };
-        const key = treeKey(root, path);
+        const key = listingKey(treeKey(root, path), shown);
         const at = roundOf(root);
         const found = listings[key];
         if (found !== undefined && rounds[key] === at) return found;
         if (!online()) return { entries: [], error: t('files.read_offline'), loading: false };
-        return askListing(root, path, at);
+        return askListing(root, path, at, shown);
     }
 
     /** The entries of one folder, which is what the tree walks. */
-    function entries(root: string, path: string): FsEntry[] {
-        return listing(root, path).entries;
+    function entries(root: string, path: string, shown = SHOWN_DEFAULT): FsEntry[] {
+        return listing(root, path, shown).entries;
     }
 
-    function heldEntries(root: string, path: string): FsEntry[] | null {
-        return listings[treeKey(root, path)]?.entries ?? null;
+    function heldEntries(root: string, path: string, shown = SHOWN_DEFAULT): FsEntry[] | null {
+        return listings[listingKey(treeKey(root, path), shown)]?.entries ?? null;
     }
 
     /**
      * Ask for one directory and hold the answer when its round is still current; return it either
      * way.
      */
-    async function loadListing(root: string, path: string, at: number): Promise<Listing> {
-        const key = treeKey(root, path);
-        let answer: Listing;
-        try {
-            const response = await fetch(listingUrl(root, path));
-            const body = (await response.json()) as { entries?: unknown; error?: unknown };
-            answer = response.ok
-                ? {
-                      entries: Array.isArray(body.entries) ? (body.entries as FsEntry[]) : [],
-                      error: '',
-                      loading: false
-                  }
-                : {
-                      entries: [],
-                      error: typeof body.error === 'string' ? body.error : String(response.status),
-                      loading: false
-                  };
-        } catch (error) {
-            answer = { entries: [], error: reasonOf(error), loading: false };
-        }
+    async function loadListing(
+        root: string,
+        path: string,
+        at: number,
+        shown: ListingShown
+    ): Promise<Listing> {
+        const key = listingKey(treeKey(root, path), shown);
+        const answer = await listingAnswer(listingUrl(root, path, shown));
         if (current(at, root)) {
             rounds[key] = at;
             listings[key] = answer;
@@ -867,6 +853,7 @@ export function createFs(
         entries,
         heldEntries,
         readListing,
+        relist,
         workspaces,
         fileText,
         readFileKind,

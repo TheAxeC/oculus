@@ -14,8 +14,8 @@
     // where they are changed, since a form has nowhere to go in a rail of 34-pixel controls.
 
     import Failed from '../tree/Failed.svelte';
+    import Section from './Section.svelte';
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
-    import TreeSection from '$lib/ui/tree/TreeSection.svelte';
     import TreeView from '$lib/ui/tree/TreeView.svelte';
     import type { TreeNav } from '$lib/ui/tree/tree-keys';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
@@ -59,25 +59,21 @@
 <div class="marks" data-fs-bookmarks>
     <TreeView label={t('files.bookmarks')} rows={keyRows} {ontoggle}>
         {#snippet children(nav: TreeNav)}
-            <TreeSection
+            <Section
                 label={t('files.bookmarks')}
-                id="head"
                 {nav}
                 count={rows.length}
                 {open}
                 {ontoggle}
+                add={{
+                    label: t('files.add_bookmark'),
+                    title: t('files.add_bookmark_title'),
+                    glyph: t('files.bookmark_glyph')
+                }}
+                {adding}
+                {onadd}
+                showActions
             >
-                {#snippet actions(reach: number)}
-                    <ToolButton
-                        label={t('files.add_bookmark')}
-                        title={t('files.add_bookmark_title')}
-                        glyph={t('files.bookmark_glyph')}
-                        compact
-                        tabindex={reach}
-                        expanded={adding}
-                        onclick={onadd}
-                    />
-                {/snippet}
                 {#if error !== ''}
                     <li role="none">
                         <Failed
@@ -120,7 +116,7 @@
                         </TreeItem>
                     </li>
                 {/each}
-            </TreeSection>
+            </Section>
         {/snippet}
     </TreeView>
 </div>

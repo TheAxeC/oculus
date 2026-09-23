@@ -51,6 +51,7 @@ const VIEWS: Record<string, string> = {
     'sources/files/sections/Notes.svelte': '',
     'sources/files/sections/RootForm.svelte': '',
     'sources/files/sections/Sections.svelte': '',
+    'sources/files/sections/Section.svelte': '',
     'sources/files/tree/ShowPath.svelte': '.said=fs-sm',
     'sources/files/tree/Tree.svelte': '',
     'sources/files/sections/Workspaces.svelte': '',
@@ -88,7 +89,7 @@ const VIEWS: Record<string, string> = {
     'sources/search/Query.svelte': '',
     'sources/search/Results.svelte': '.count=fs-sm | .line=fs-xs | .text=fs-xs',
     'academic/slides/Slides.svelte': '.intro=fs-md | .at=fs-xs | .said=fs-md',
-    'sources/source/Source.svelte': '.locked=fs-sm',
+    'sources/source/Source.svelte': '.message=fs-sm | .locked=fs-sm',
     'system/status/Status.svelte': '.view=fs-md',
     'sources/venues/Venues.svelte': '.said=fs-md | .empty=fs-md',
     'boards/collection/Coverage.svelte': '.label=fs-xxs',
@@ -199,7 +200,7 @@ const VIEWS: Record<string, string> = {
     'shared/links/SourceButton.svelte': '',
     'shared/forms/Subtasks.svelte': '.label=fs-xs | .count, .box=fs-xs | .do=fs-md',
     'sources/source/Code.svelte': '.gutter, .text=fs-sm',
-    'sources/source/Editor.svelte': '.message=fs-sm | .mirror=fs-sm | .input :global(.area)=fs-sm',
+    'sources/source/Editor.svelte': '.mirror=fs-sm | .input :global(.area)=fs-sm',
     'sources/source/Preview.svelte': '',
     'system/status/Hooks.svelte': 'h3=fs-md | pre=fs-xs | .said=fs-sm',
     'sources/venues/Facets.svelte': '.label=fs-xxs',
@@ -260,7 +261,7 @@ describe('the view type scale', () => {
         ).toEqual(Object.keys(VIEWS).sort());
     });
 
-    // revert: tests/views/whole/type-scale.test.ts:249 => delete
+    // revert: tests/views/whole/type-scale.test.ts:250 => delete
     it('audits that every ui component is listed in the pass-through audit', () => {
         const ui = 'src/lib/ui';
         expect(files(ui).sort()).toEqual(

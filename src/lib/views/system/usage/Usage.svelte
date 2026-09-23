@@ -13,6 +13,10 @@
 <script lang="ts">
     // Layer 3, view. Show each configured Claude or Codex subscription, its current windows, live
     // Claude sessions and seven-day token totals.
+    //
+    // A healthy refresher's line names its last refresh and its next one. The next is the last plus
+    // `usage_refresh_min` of config/behavior.yml, read off the config channel the page already
+    // holds, so the refresher's payload carries no time it can be computed from.
 
     import Card from '$lib/ui/frame/Card.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
@@ -30,13 +34,18 @@
     import { useState } from '$lib/state/client/use';
 
     const {
-        entities: { usage },
+        entities: { config, usage },
         usageRefresh: { refreshRefusal, refreshUsageAccount }
     } = useState();
 
     let { instance }: ViewProps = $props();
     const data = $derived(usage());
     const cursor = $derived(cardCursor(instance.state));
+    /** Minutes between two refreshes, and 0 until the config channel has delivered the cadence. */
+    const cadence = $derived.by(() => {
+        const held = config()?.config.usage_refresh_min;
+        return typeof held === 'number' && Number.isFinite(held) && held > 0 ? held : 0;
+    });
 
     const columns: Column[] = [
         { key: 'day', label: t('usage.col_day') },
@@ -152,8 +161,20 @@
             'usage.refresher',
             stale
                 ? t('usage.refresher_stale', clock(account.fetchedAt ?? ''))
-                : t('usage.refresher_running')
+                : healthyText(refresher.lastRefresh)
         );
+    }
+
+    /**
+     * A healthy refresher's words: the last refresh and the next one, the last alone while the
+     * cadence is not known yet, and the bare word before the first refresh has a time.
+     */
+    function healthyText(lastRefresh: string): string {
+        const last = clock(lastRefresh);
+        if (last === '') return t('usage.refresher_ok_bare');
+        if (cadence === 0) return t('usage.refresher_ok_last', last);
+        const next = new Date(Date.parse(lastRefresh) + cadence * 60_000).toISOString();
+        return t('usage.refresher_ok', last, clock(next));
     }
 </script>
 

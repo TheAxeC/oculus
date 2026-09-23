@@ -1,13 +1,13 @@
 // Layer 2, client state. What a reader has typed into an entry form and not saved, kept per view
 // instance so it survives the tab being switched away from and the page being reloaded.
 //
-// A pane mounts only its active tab, so a form's own component state is gone on every tab switch;
-// the typed values live here instead, in the ui store's per-instance record, which is what the
-// browser saves. They are not written into the host view's own record, since that record is the
-// host's: most hosts write it whole from a parse that keeps only their own keys, which would drop a
-// draft kept there at the next filter the reader typed. Each instance's drafts therefore sit in an
-// entry of their own, under the instance id with FORMS_SUFFIX appended, which the layout's ids
-// never end in (a new instance's id is a UUID).
+// A pane keeps a tab's view mounted while the tab is open, but a form's own component state is gone
+// on a reload and when the form is drawn anew; the typed values live here instead, in the ui
+// store's per-instance record, which is what the browser saves. They are not written into the host
+// view's own record, since that record is the host's: most hosts write it whole from a parse that
+// keeps only their own keys, which would drop a draft kept there at the next filter the reader
+// typed. Each instance's drafts therefore sit in an entry of their own, under the instance id with
+// FORMS_SUFFIX appended, which the layout's ids never end in (a new instance's id is a UUID).
 //
 // One instance may hold several forms (the add form and a card's edit form), so the drafts are
 // keyed by the form as well: the collection and the entry's id, or null for the form that adds one,
@@ -241,9 +241,9 @@ export type FormDraftsStore = {
 export function createFormDrafts(ui: UiStore, entryOf: EntryLookup): FormDraftsStore {
     // Which forms have a save out, by instance and by form key. A save takes its instance and its
     // form before the request goes and says so here, so a rule reading a form nobody is looking at
-    // knows a request is still on its way for it: the component that drew the form is gone the
-    // moment its tab is switched, and the request is not. It is not saved with the drafts: a page
-    // that has just loaded has no request out.
+    // knows a request is still on its way for it: the form may be in a tab never shown on this
+    // page, on a page not drawn, or drawn anew since the save went, and the request is out all the
+    // same. It is not saved with the drafts: a page that has just loaded has no request out.
     const sending: { forms: Record<string, string[]> } = $state({ forms: {} });
 
     function drafts(instance: string): Drafts {

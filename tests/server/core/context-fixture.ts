@@ -8,7 +8,7 @@ import type { ServerContext } from '../../../src/lib/server/core/context.ts';
 import { RateLimiter, notifyConfig } from '../../../src/lib/server/core/hooks.ts';
 import { Terminals, type TerminalDriver } from '../../../src/lib/server/machine/pty/channel.ts';
 import { HookStore, sessionRecord } from '../../../src/lib/server/sessions/stores/hooks.ts';
-import { fsWrites } from '../../../src/lib/server/files/fs.ts';
+import { fsWrites, ignoredCache } from '../../../src/lib/server/files/fs.ts';
 import { wallpaperMemory } from '../../../src/lib/server/content/wallpaper.ts';
 import { noop } from '../../fixtures/doubles.ts';
 
@@ -75,6 +75,7 @@ export function contextFixture(overrides: Partial<ServerContext> = {}): ServerCo
         config,
         engine: overrides.engine ?? '/fixture/engine',
         fsWrites: overrides.fsWrites ?? fsWrites(),
+        ignoredCache: overrides.ignoredCache ?? ignoredCache(),
         hpcLogPaths: new Map(),
         calendarConnects: new ConnectStates(),
         calendarDir: overrides.calendarDir ?? '/fixture/calendar',

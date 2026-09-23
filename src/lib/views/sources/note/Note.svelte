@@ -117,9 +117,10 @@
     }
 
     /**
-     * Put the draft back to nothing, for the note this component is about to draw. A pane draws
-     * only its active tab, and a switch from one note's tab to another's reuses this one component,
-     * so the note it drew is left through leave() below and the draft starts again for the new one.
+     * Put the draft back to nothing, for the note this component is about to draw. A pane keeps
+     * each tab's view for as long as the tab is open, so this runs before the first draw and again
+     * only when the instance is pointed at another note, whose predecessor is left through leave()
+     * below.
      */
     function reset(): void {
         seeded = '';

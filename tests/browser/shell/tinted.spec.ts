@@ -4,13 +4,13 @@
 // source can read: the source only says the box takes `--wall-panel` of `--panel`.
 
 import { expect, test } from '@playwright/test';
-import { boot, openView } from '../helpers/rail.ts';
+import { SHOWN_VIEW, boot, openView } from '../helpers/rail.ts';
 import { alphaOf } from '../helpers/style.ts';
 import { t } from '../helpers/words.ts';
 
 /** The alpha the box of one open view is painted at. */
 async function boxAlpha(page: import('@playwright/test').Page, view: string): Promise<number> {
-    const box = page.locator(`[data-pane][data-pane-view="${view}"] .pane`).first();
+    const box = page.locator(`[data-pane][data-pane-view="${view}"] ${SHOWN_VIEW} .pane`).first();
     return alphaOf(await box.evaluate((el) => getComputedStyle(el).backgroundColor));
 }
 

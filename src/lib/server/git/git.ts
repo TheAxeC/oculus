@@ -15,12 +15,16 @@
 //     git -C <root> log -<n> --format=...
 //     git -C <root> branch --format=...
 //     git -C <root> worktree list --porcelain
+//     git -C <root> check-ignore --stdin -z
+//
+// The last is the file browser's: which entries of one listed folder the repository ignores, the
+// names handed on its standard input, so the tree can leave them out (ignoredIn below).
 //
 // Nothing here may ever change a repository. Every writing subcommand belongs to Axel alone, and a
 // dashboard watcher must never be the thing that runs one. tests/server/git/git.test.ts holds two
 // gates over that: the source names no writing subcommand, and the suite records every argument
 // vector the process runs and asserts the whole suite ran only the commands above, `branch`,
-// `worktree` and `symbolic-ref` only as the vectors written here.
+// `worktree`, `symbolic-ref` and `check-ignore` only as the vectors written here.
 //
 // A repository on a slow mount must not stall a watcher, so the one call site takes a list argument
 // (never a shell string), carries a timeout, and collapses any failure into the empty shape with a
@@ -119,6 +123,29 @@ export function statusFor(roots: string[], timeout: number = TIMEOUT_MS): Record
         }
     }
     return out;
+}
+
+/**
+ * The names among `names` that git ignores in the folder, for the file browser's tree. git answers
+ * 0 when it named at least one, 1 when it named none and 128 when the folder is in no repository;
+ * only 0 carries names, so a folder in no repository, a git that is missing, a run that timed out
+ * and one that failed all answer that nothing is ignored. A name is asked for bare: git reads for
+ * itself whether it is a folder, so a pattern naming folders alone (`build/`) matches one, and a
+ * trailing slash would make git refuse the whole run over a link to a folder. A tracked file is
+ * never named, since git does not ignore what it already tracks.
+ */
+export function ignoredIn(
+    root: string,
+    names: string[],
+    timeout: number = TIMEOUT_MS
+): Set<string> {
+    const none = new Set<string>();
+    if (names.length === 0) return none;
+    const input = names.map((name) => `${name}\0`).join('');
+    const done = run(root, ['check-ignore', '--stdin', '-z'], milliseconds(timeout), input);
+    if (!done.ok) return none;
+    const said = new Set(done.text.split('\0').filter((one) => one !== ''));
+    return new Set(names.filter((name) => said.has(name)));
 }
 
 // ---------------------------------------------------------------- one root
@@ -369,12 +396,12 @@ function numstat(root: string, timeout: number): Counts {
  * slow to answer all come back as not ok with a short reason, and only the non-zero exit as
  * answered. This is the module's one call site.
  */
-function run(root: string, args: string[], timeout: number): Outcome {
+function run(root: string, args: string[], timeout: number, input?: string): Outcome {
     // Every read runs without optional locks, so a status refresh never writes .git/index.lock and
     // never collides with a commit the owner is making in the same repository.
     const argv = ['-C', root, '--no-optional-locks', ...args];
     // A list, never a shell, and a timeout: a hung git must not hang a watcher.
-    const done = spawnSync(GIT, argv, { encoding: 'utf8', timeout });
+    const done = spawnSync(GIT, argv, { encoding: 'utf8', timeout, input });
     if (done.error !== undefined) {
         const failure = done.error as NodeJS.ErrnoException;
         const text = failure.code === 'ETIMEDOUT' ? 'git timed out' : short(failure);
