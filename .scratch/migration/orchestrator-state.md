@@ -37,9 +37,10 @@ dispatch:
     worktree: .agents/worktrees/L3
     base: 138afb83
     launched: 2026-09-23
-    report: tools/oculus/.scratch/migration/agents/reviews/L3-report.md
+    report: tools/oculus/.scratch/migration/agents/reviews/L3-report.md (saved; builder 184,256 tokens, 481 tool uses, 13,974 s)
+    review: agents/reviews/L3-refuter.md (saved; reviewer claude:opus, 214,495 tokens, 53 tool uses, 1,809 s)
     landing: not-started
-    round: 0
+    round: 1                 # sent 2026-09-23 from the worktree's wip 67ad42f3: the tracked layout.yml never rewritten by the server, a fresh browser on the first rail page, the ruled status words, one rail parser with the glyph check, the Confirm block folded, CRT and glyph toggles pressed in a browser, the status bar under the shell, every false comment and string, the full Doc text
 ```
 
 ## The standing demands (from Axel, in force)
@@ -78,6 +79,8 @@ dispatch:
 None. Axel lifted it on 2026-09-23 with `/plan-orchestration oculus/migration` and no stop time: the loop runs until nothing unblocked is left or a decision is his. The earlier pauses (after Q58, after Q59) are over; both steps are landed.
 
 ## Open items (only what Axel must rule on; every report opens with this list verbatim and repeats it until he has ruled)
+- L3, the rail buttons' badges (raised 2026-09-23 by L3's review, `agents/reviews/L3-refuter.md`, Spec 4). The rail used to draw each view's live count (Projects 52, Coauthor 16, Archive 25, the sessions waiting count); now a rail button is a page and draws none, and the counts show only on the pane's tabs and in the Views catalogue. Options: (a) a page button draws the badges of the views its page holds, in the order of its tabs, the way a tab draws its own; (b) the rail stays plain and the counts live on the tabs and in the catalogue. Recommended (a): the rail is the one surface always on screen, and a waiting session or a new lead is what it was there to show. (b) is the lazy option.
+- L3, where the Views catalogue opens a view (raised 2026-09-23 by L3's review, Spec 6). Your ruling reads "a catalogue of every view, opened into the current page from there". As built, a press opens the view into the Views and Settings page itself, next to the catalogue. Options: (a) into the page the reader was on before switching to Views and Settings, and that page is shown; (b) into the Views and Settings page, as built. Recommended (a): a view opened beside the catalogue has to be moved by hand to where it is wanted, and the catalogue exists to fill the reader's own pages. (b) is the lazy option.
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is booked as its own step in `plan.md` and carried in the Booked section below, since it needs no ruling from him.
 
