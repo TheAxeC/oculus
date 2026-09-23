@@ -37,9 +37,10 @@ dispatch:
     worktree: .agents/worktrees/U1
     base: a7769781
     launched: 2026-09-23
-    report: tools/oculus/.scratch/migration/agents/reviews/U1-report.md
+    report: tools/oculus/.scratch/migration/agents/reviews/U1-report.md (saved; builder 501,467 tokens, 261 tool uses, 6,829 s)
+    review: agents/reviews/U1-refuter.md (saved; reviewer claude:opus, 190,369 tokens, 54 tool uses, 1,127 s)
     landing: not-started
-    round: 0
+    round: 1                 # sent 2026-09-24: the sparkline in the text colour, config-named glyphs and badge marks validated instead of throwing, the radar keys as words, the icon-mode rename finished, stand-ins of three characters at most, the venue indexing marks drawn as icons, cases and doc text
 ```
 
 ## The standing demands (from Axel, in force)
