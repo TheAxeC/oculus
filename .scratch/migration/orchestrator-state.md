@@ -36,9 +36,10 @@ dispatch:
     worktree: .agents/worktrees/R18
     base: 6e76876f
     launched: 2026-09-23
-    report: tools/oculus/.scratch/migration/agents/reviews/R18-report.md
+    report: tools/oculus/.scratch/migration/agents/reviews/R18-report.md (saved; builder 403,478 tokens, 157 tool uses, 4,217 s; it ran one read-only `git diff --stat`, against its brief, self-reported)
+    review: agents/reviews/R18-refuter.md (saved; reviewer claude:opus, 173,894 tokens, 47 tool uses, 882 s)
     landing: not-started
-    round: 0
+    round: 1                 # sent 2026-09-23 from the worktree's wip d8ddb366: the write diagram's cut modules and the readers' silent misses named, the Diagram after-close and superseded cases, the manual gate on the real renderer, a linked docs folder refused, every stale file named, one SVG profile builder, the edge names on hover, a standalone colour for the files, the report's counts
 ```
 
 ## The standing demands (from Axel, in force)
