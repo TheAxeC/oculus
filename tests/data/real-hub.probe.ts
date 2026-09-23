@@ -12,6 +12,7 @@ import { PROJECT_DOCS, projectDocs } from '../../src/lib/data/sources/docs.ts';
 import { buildPortfolio, portfolioConfigFrom } from '../../src/lib/data/index.ts';
 import { ENTITY_KINDS } from '../../src/lib/data/snapshot/normalise.ts';
 import { sessions } from '../../src/lib/server/sessions/index.ts';
+import { sessionFolders } from '../../src/lib/server/sessions/folders.ts';
 import { statusFor } from '../../src/lib/server/git/git.ts';
 import type { Finding, RegistryName } from '../../src/lib/data/model.ts';
 import { join } from 'node:path';
@@ -25,7 +26,8 @@ function report(label: string, findings: Finding[]): void {
 }
 
 const engine = engineDir();
-const hub = loadLocal(engine).hub;
+const local = loadLocal(engine);
+const hub = local.hub;
 console.log(`hub: ${hub}`);
 
 // The hub's layout as the copied config/ describes it. Nothing is typed by hand here any more.
@@ -96,6 +98,7 @@ report('snapshot', snapshot.findings);
 process.on('exit', sweepScratch);
 const scratch = scratchDir('oculus-probe-');
 const options = {
+    ...sessionFolders(local.accounts),
     hub,
     snapshot,
     cachePath: join(scratch, 'transcript-cache.json'),

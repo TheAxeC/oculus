@@ -1,17 +1,17 @@
 // Layer 2, server. The Codex CLI rollout fold, into the same record the Claude transcripts make.
 //
-// A rollout is ~/.codex/sessions/YYYY/MM/DD/rollout-<stamp>-<uuid>.jsonl, a line of JSON per
-// record shaped `{timestamp, type, payload}`. Four record types carry anything: `session_meta`
-// opens the session, `turn_context` says which model and mode the turn ran under, `event_msg`
-// carries the turn boundaries, the token counts and every completed item, and `response_item`
-// carries the raw model calls, of which the tool calls and the inter-agent messages are read.
+// A rollout is `<dir>/sessions/YYYY/MM/DD/rollout-<stamp>-<uuid>.jsonl` under every `tool: codex`
+// account in config/local.yml's `accounts`, a line of JSON per record shaped
+// `{timestamp, type, payload}`. Four record types carry anything: `session_meta` opens the session,
+// `turn_context` says which model and mode the turn ran under, `event_msg` carries the turn
+// boundaries, the token counts and every completed item, and `response_item` carries the raw model
+// calls, of which the tool calls and the inter-agent messages are read.
 //
 // Codex keeps no registry of running sessions, so liveness is the pair of facts available: a
 // `codex` process is running, and the rollout was written in the last two minutes. That is
 // coarser than the Claude registry, which names the pid of each session.
 
-import { homedir } from 'node:os';
-import { basename, join } from 'node:path';
+import { basename } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import type { LiveEntry } from '../../../data/model.ts';
 import { codexUsage, type UsageEvent, type UsageTotals } from '../../transcripts/usage.ts';
@@ -34,11 +34,6 @@ export const PS_TIMEOUT_SEC = 3;
 export const ROOT_AGENT = '/root';
 /** Item types that are a tool call, counted under their own type name. */
 export const CODEX_TOOL_ITEMS = ['CommandExecution', 'McpToolCall', 'Extension', 'ImageView'];
-
-/** ~/.codex/sessions, resolved at the call rather than at import. */
-export function defaultCodexStore(): string {
-    return join(homedir(), '.codex', 'sessions');
-}
 
 /**
  * The id a rollout's filename carries, which is the uuid after the timestamp. It is a fallback:

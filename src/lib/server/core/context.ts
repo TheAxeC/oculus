@@ -46,6 +46,7 @@ import { Terminals } from '../machine/pty/channel.ts';
 import { projectFolders } from '../sessions/index.ts';
 import { HookStore, sessionRecord } from '../sessions/stores/hooks.ts';
 import type { ProjectFolder } from '../sessions/group.ts';
+import { sessionFolders } from '../sessions/folders.ts';
 import { watchUsageRefresh, type UsageRefreshWatcher } from '../machine/usage/refresh.ts';
 import { watchUsage, type UsageWatcher } from '../machine/usage/watch.ts';
 import { watchBookmarks, type BookmarksWatchOptions } from '../watch/bookmarks.ts';
@@ -202,7 +203,10 @@ export function createServerContext(
         const message = hub.latest('portfolio');
         return message === undefined ? [] : projectFolders(local.hub, message.payload as Snapshot);
     };
+    // The stores are every account's folders, so a session of a second Claude account is read from
+    // that account's registry and transcripts as the first one's are.
     const sessions = make.watchSessions(hub, {
+        ...sessionFolders(local.accounts),
         cache: local.sessionsCache,
         overrides: local.sessionsOverrides,
         projectFolders: folders,

@@ -133,3 +133,103 @@ Replace the two paths with "`<dir>/projects` of every Claude account" and "`<dir
 `DESIGN.md`, a new bullet after 110: "- Launched builders: `~/.oculus/dispatches.json`, one record per launch (`id`, `launcher`, `label`, `harness`, `model`, `parent`, `cwd`, `transcript`, `startedAt`, `endedAt`), written by `bin/dispatch-note.mjs` under a lock with an atomic replace; each record whose `parent` is a scanned session joins that session's `agents` as `dispatch:<id>`, and its transcript is folded when it lies inside an account store."
 
 `README.md:36` is not made false; it says the Usage view reads both folders. Optionally add "and the session views" after "The Usage view".
+
+# Repair round 1
+
+All seven findings are fixed as ruled. Three things in this round need your eye:
+- Finding 1: the stress case's named revert puts back the old rename-aside clearer through a range directive (`bin/dispatch-note.mjs:121-137`). The one-line revert of the re-check alone (`:134` to an unconditional remove) stayed GREEN over 150 rounds, so the stress case proves the old design is gone but does not prove the re-check on its own.
+- One whole-suite run had a timing case fail under load; it passed alone and in two more whole-suite runs.
+- Browser revert run 2 of 3 did not run while Q65 held port 8792.
+
+No git command was run this round.
+
+## Findings
+
+**1. Lock loses records under concurrency.**
+- The clearer no longer renames a lock aside or links it back. `breakStale` (`bin/dispatch-note.mjs:120-138`) takes `dispatches.json.lock.break` with `wx`. Under it, it re-reads the lock and removes it only when the content still equals the content it judged dead, then removes the breaker. A breaker older than `BREAK_STALE_MS` (3000) by mtime is removed by age.
+- New case: "lands every record of many writers started at once against a lock a dead writer left" (24 writers, 150 rounds, fresh note and dead-pid lock each round). It asserts every writer exits 0 and 24 of 24 records land in every round.
+- Scratchpad stress run, 24 writers, 150 rounds:
+  - With a stale lock: `rounds with lost records: 0 of 150; rounds with a failed writer: 0`.
+  - Without one: `0 of 150; 0`.
+- `revert-check`: `red ... lands every record of many writers ... (revert bin/dispatch-note.mjs:121)`.
+- Remaining residual, not fixed: if a clearer dies holding the breaker, two clearers can each remove that stale breaker by age at once and both hold one. Both then act only on a lock whose content they both judged dead.
+
+**2. Lock whose pid a live process reuses.**
+- `stale()` (`:109-112`) is now `!alive(holderOf(content)) || age > LOCK_WAIT_MS`.
+- The wait deadline is `LOCK_WAIT_MS + 2000`, so a lock that was already there when the wait began turns stale by age before the deadline.
+- New case: "clears a lock older than any write holds one, whatever process its pid now names". The lock names the test's own live pid, with its mtime set 60 s back. It asserts exit 0 and under 5 s.
+- `red ... (revert bin/dispatch-note.mjs:111)`.
+
+**3. "running" for good.**
+- `dispatchedAgent` (`src/lib/server/sessions/stores/dispatches.ts:83-84`): `done = endedAt !== '' || (child !== null && !child.live)`. When the builder's session reads not live, `ended` falls back to that session's `lastActivity`. A launch with no builder session in the scan keeps the old behaviour, and no field was added.
+- New case: "reads a launch with no end stamp by its builder's own session: running while live, done after". It is running with a live registry entry and done once the pid is gone, with `ended` equal to the transcript's last stamp.
+- `red ... (revert src/lib/server/sessions/stores/dispatches.ts:83)`.
+- Not verified: whether a running `claude -p` appears in the Claude registry, and whether a Codex worker that writes nothing to its rollout for over 120 s reads live. If either reads not live, a row reads "done" while the builder still runs.
+
+**4. Out-of-window fold removed.**
+- `builder()`, `foundAt()` and `holdingFolder()` are gone, along with the `holdingFolder` case in `folders.test.ts` and the two cases that depended on it.
+- The scan joins every note to the scanned records. A builder's session is named only when the scan already found its transcript, so the session list is the window's alone.
+- New case: "names the builder's own session when the scan found its transcript", `red ... (revert src/lib/server/sessions/stores/transcripts.ts:281)`.
+- New audit: "audits that a builder older than the window is not listed and its row opens nothing".
+- What a reader sees now for a builder older than the window: the launched row stays in the orchestrator's Agents view, with its label, harness and model, but with no "Open its transcript" control and no token count. It reads "running" until `end` is stamped, then "done". No row for the builder appears in the session list.
+- Knock-on in the browser spec's first case: its builder session is in the scan but not live, so it now reads `ag_done` (a comment in the spec says why).
+
+**5. Litter.**
+- `takeLock` first calls `sweepLitter`. It removes every `dispatches.json.lock.<pid>-<hex>` and `dispatches.json.<pid>-<hex>.tmp` beside the note whose pid is not alive.
+- New case: "removes what a killed writer left beside the note, and keeps a live writer's files". A dead pid's lock copy and temporary note go; the test's own live-pid file stays.
+- `red ... (revert bin/dispatch-note.mjs:166)`.
+
+**6. Revert counts, with real output.**
+- Node files. Command: `node bin/revert-check.mjs` over dispatch-note, folders, dispatches, agents view, context, codex, transcripts, watch/sessions and duplication. Output: `44 reverts, 1 unproven, 67 unchecked`.
+  - There were no unproven lines. The 1 counted was one GREEN: the stress case under its first directive `:134 => rmSync(lock, { force: true });`, which I then replaced.
+  - I re-ran the dispatch-note file alone with the range directive: `9 reverts, 0 unproven, 0 unchecked`, the stress case `red`.
+  - Of the 67 unchecked, 65 are pre-existing directive-less cases in codex, transcripts, watch/sessions and context. The other two are my audits: "audits that nothing is read when no account is named" and "audits that a builder older than the window is not listed and its row opens nothing".
+- Browser spec alone, each run started after waiting on `lsof -iTCP:8792 -sTCP:LISTEN`:
+  - Run 1: `2 reverts, 0 unproven, 0 unchecked`, both red.
+  - Run 2: `2 reverts, 2 unproven` ("the case did not run"). Right after it, `lsof` showed pid 21966, `.agents/worktrees/Q65/tools/oculus/src/server.ts`, holding 8792.
+  - Run 3 (port free at start and at end): `2 reverts, 0 unproven, 0 unchecked`, both red.
+
+**7. Before and after for a machine whose `local.yml` names `accounts`.**
+- Before: the stores always read `~/.claude/projects`, `~/.claude/sessions` and `~/.codex/sessions`, whatever `accounts` said.
+- After: they read only the folders of the accounts named. A `local.yml` whose `accounts` has no `tool: codex` entry shows no Codex sessions, and one with no `tool: claude` entry shows no Claude sessions.
+- A machine with no `accounts` key still gets the defaults `~/.claude` and `~/.codex` (`src/lib/data/sources/config/local.ts:111-114`).
+- This is kept, as the brief asks.
+
+## Verification list, re-run
+
+| Item | Command | Output |
+|---|---|---|
+| 1 | `npx vitest run --reporter=dot` | See below |
+| 2 | `npm run check` | `COMPLETED 1291 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS` |
+| 3 | `npm run build` | exit 0 |
+| 4 | `npm run format:check` | `All matched files use Prettier code style!` |
+| 5 | `npm run lint` | exit 0 |
+| 6 | ASCII perl gate | printed nothing, exit 0 |
+| 7 | `sh bin/size-check.sh`; `sh bin/folder-check.sh` | both exit 0 |
+| 10 | `npm run build`, then `npx playwright test tests/browser/sessions/agents.spec.ts` | `2 passed (6.5s)` |
+| 11 | `node bin/revert-check.mjs` | as in finding 6 |
+| 12 | temp folder count | See below |
+
+Item 1 took three whole-suite runs:
+- First run: `1 failed | 4484 passed (4485)`. The failure was `tests/checks/bin/revert-check.test.ts > removes its copy of the tree when it is stopped by a signal`, a timing case, while the 150-round stress case was loading the machine.
+- Rerun alone: `Tests 18 passed (18)`.
+- Two more whole-suite runs: `Test Files 278 passed (278)`, `Tests 4485 passed (4485)` each.
+- The stress case adds about 60 s to `tests/checks/bin/dispatch-note.test.ts`: that file took `1:08.02 total` alone.
+
+Item 12: `ls -d $TMPDIR/oculus-* | wc -l` read 7016 before and 7016 after items 1 to 7, and this step's own prefixes (`oculus-accounts-`, `oculus-dispatches-`, `oculus-dispatch-note-`) were 0 before and after.
+
+## Files changed this round (line counts now)
+
+| File | Lines |
+|---|---|
+| `bin/dispatch-note.mjs` | 340 |
+| `src/lib/server/sessions/folders.ts` | 60 |
+| `src/lib/server/sessions/stores/dispatches.ts` | 122 |
+| `src/lib/server/sessions/stores/transcripts.ts` | 302 |
+| `src/lib/data/model/model-sessions.ts` | 545 |
+| `tests/checks/bin/dispatch-note.test.ts` | 246 |
+| `tests/server/sessions/stores/dispatches.test.ts` | 321 |
+| `tests/server/sessions/folders.test.ts` | 192 |
+| `tests/browser/sessions/agents.spec.ts` | 164 |
+
+Doc text: my earlier `DESIGN.md` note-bullet proposal said "its transcript is folded when it lies inside an account store". That is now false; the replacement is "its row names the builder's session when the scan found that transcript". The other proposed lines stand.

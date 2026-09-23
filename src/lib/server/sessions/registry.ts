@@ -1,18 +1,19 @@
 // Layer 2, server. Which sessions are actually running, from Claude Code's own registry.
 //
-// A transcript cannot answer that: it records what happened, not what is happening. The registry
-// at ~/.claude/sessions holds one <pid>.json per session with the pid and a status of `busy` or
-// `idle`, so liveness is that file plus the kernel: the process must exist, and its start time
-// must match the one the registry wrote, because a pid is reused by unrelated processes.
+// A transcript cannot answer that: it records what happened, not what is happening. Every Claude
+// account's registry, `<dir>/sessions` of each `tool: claude` account in config/local.yml's
+// `accounts` (sessions/folders.ts), holds one <pid>.json per session with the pid and a status of
+// `busy` or `idle`, so liveness is that file plus the kernel: the process must exist, and its start
+// time must match the one the registry wrote, because a pid is reused by unrelated processes.
 //
 // The only thing sent to any pid here is signal 0, which asks the kernel whether the process
 // exists and delivers nothing. No pid found in the registry is ever signalled for real.
 
 import { readdirSync } from 'node:fs';
-import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import type { LiveEntry, SessionRecord } from '../../data/model.ts';
+import { distinctFolders } from './folders.ts';
 import { isMap, readJson, text, whole } from './stores/json.ts';
 
 /** Seconds of disagreement allowed between the registry's stamp and what `ps` reports. */
@@ -24,11 +25,6 @@ export const PS_TIMEOUT_SEC = 3;
  * Anything else it reports passes through untouched rather than being flattened to `unknown`.
  */
 export const REGISTRY_STATES: Record<string, string> = { busy: 'working', idle: 'idle' };
-
-/** ~/.claude/sessions, resolved at the call so a test never depends on the real home directory. */
-export function defaultRegistry(): string {
-    return join(homedir(), '.claude', 'sessions');
-}
 
 /**
  * What the liveness check asks of the system. It is injected so a test can answer for it: the real
@@ -156,26 +152,28 @@ function sameProcess(claimed: string, actual: number | undefined): boolean {
 }
 
 /**
- * Session id to live entry, for the sessions whose process is really running. Never throws: a
- * malformed, vanished or unreadable file drops that one entry. The `.key` files beside the
- * registry entries hold credentials and are never opened.
+ * Session id to live entry, for the sessions whose process is really running, read from every
+ * registry folder given; two folders that resolve to one real path are read once. Never throws: a
+ * missing folder reads as empty, and a malformed, vanished or unreadable file drops that one entry.
+ * The `.key` files beside the registry entries hold credentials and are never opened.
  */
 export function liveSessions(
-    registry?: string,
+    registries: readonly string[],
     probe: Probe = systemProbe
 ): Map<string, LiveEntry> {
-    const folder = registry ?? defaultRegistry();
-    let names: string[];
-    try {
-        names = readdirSync(folder);
-    } catch {
-        return new Map();
-    }
     const candidates: Candidate[] = [];
-    for (const name of names) {
-        if (!name.endsWith('.json')) continue;
-        const entry = candidate(join(folder, name));
-        if (entry !== null && probe.running(entry.pid)) candidates.push(entry);
+    for (const folder of distinctFolders(registries)) {
+        let names: string[];
+        try {
+            names = readdirSync(folder);
+        } catch {
+            continue;
+        }
+        for (const name of names) {
+            if (!name.endsWith('.json')) continue;
+            const entry = candidate(join(folder, name));
+            if (entry !== null && probe.running(entry.pid)) candidates.push(entry);
+        }
     }
     const starts = probe.starts(candidates.map((entry) => entry.pid));
     const live = new Map<string, LiveEntry>();

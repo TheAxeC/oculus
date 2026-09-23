@@ -228,11 +228,12 @@ class Fixture {
 
     scan(options: ScanOptions = {}): SessionRecord[] {
         return scan({
-            store: this.store,
-            codexStore: this.codexStore,
+            stores: [this.store],
+            codexStores: [this.codexStore],
             cachePath: this.cache,
-            registry: this.registry,
+            registries: [this.registry],
             overridesPath: this.overrides,
+            dispatchesPath: join(this.root, 'dispatches.json'),
             probe: this.probe(),
             ...options
         });
@@ -677,7 +678,7 @@ describe('the incremental read', () => {
 
     it('returns nothing for a store that is not there', () => {
         const f = make();
-        expect(f.scan({ store: join(f.root, 'gone') })).toEqual([]);
+        expect(f.scan({ stores: [join(f.root, 'gone')] })).toEqual([]);
     });
 });
 
@@ -743,7 +744,7 @@ describe('the live registry', () => {
         midTurn(f);
         f.enrol({ pid: 9191 });
         f.alive.delete(9191);
-        expect(liveSessions(f.registry, f.probe()).size).toBe(0);
+        expect(liveSessions([f.registry], f.probe()).size).toBe(0);
         expect(f.only().state).toBe('ended');
     });
 
@@ -753,13 +754,13 @@ describe('the live registry', () => {
         f.starts.set(PID, actual);
         // Written in UTC, the way the registry does.
         f.enrol({ procStart: formatStamp(actual) });
-        expect(liveSessions(f.registry, f.probe()).has(SID)).toBe(true);
+        expect(liveSessions([f.registry], f.probe()).has(SID)).toBe(true);
         // The same pid, a different process.
         f.enrol({ procStart: formatStamp(actual - 3 * 86400) });
-        expect(liveSessions(f.registry, f.probe()).size).toBe(0);
+        expect(liveSessions([f.registry], f.probe()).size).toBe(0);
         // Unreadable: the pid check stands alone.
         f.enrol({ procStart: 'not a date at all' });
-        expect(liveSessions(f.registry, f.probe()).has(SID)).toBe(true);
+        expect(liveSessions([f.registry], f.probe()).has(SID)).toBe(true);
     });
 
     it('accepts a stamp the registry wrote in local time', () => {
@@ -769,7 +770,7 @@ describe('the live registry', () => {
         const actual = Math.floor(Date.now() / 1000) - 500;
         f.starts.set(PID, actual);
         f.enrol({ procStart: formatStamp(actual, false) });
-        expect(liveSessions(f.registry, f.probe()).has(SID)).toBe(true);
+        expect(liveSessions([f.registry], f.probe()).has(SID)).toBe(true);
     });
 
     it('skips broken registry files and the key files beside them', () => {
@@ -784,12 +785,12 @@ describe('the live registry', () => {
         f.alive.add(3);
         f.alive.add(4);
         f.enrol();
-        expect([...liveSessions(f.registry, f.probe()).keys()]).toEqual([SID]);
+        expect([...liveSessions([f.registry], f.probe()).keys()]).toEqual([SID]);
     });
 
     it('finds no live session when the registry folder is missing', () => {
         const f = make();
-        expect(liveSessions(join(f.root, 'gone'), f.probe()).size).toBe(0);
+        expect(liveSessions([join(f.root, 'gone')], f.probe()).size).toBe(0);
     });
 });
 

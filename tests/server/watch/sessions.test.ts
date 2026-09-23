@@ -89,6 +89,9 @@ class Fixture {
     registry: string;
     cache: string;
     overrides: string;
+    dispatches: string;
+    /** Every account's registry the watcher is given; the first one alone unless a case adds. */
+    registries: string[];
     path: string;
     alive = new Set<number>();
 
@@ -103,6 +106,8 @@ class Fixture {
         mkdirSync(this.registry, { recursive: true });
         this.cache = join(this.root, 'cache', 'transcript-cache.json');
         this.overrides = join(this.root, 'sessions.json');
+        this.dispatches = join(this.root, 'dispatches.json');
+        this.registries = [this.registry];
         this.path = join(this.store, SLUG, `${SID}.jsonl`);
     }
 
@@ -243,11 +248,12 @@ function start(
     const client = recording();
     hub.subscribe(client.sink, ['sessions']);
     const watcher = watchSessions(hub, {
-        store: fixture.store,
-        codexStore: fixture.codexStore,
-        registry: fixture.registry,
+        stores: [fixture.store],
+        codexStores: [fixture.codexStore],
+        registries: fixture.registries,
         cache: fixture.cache,
         overrides: fixture.overrides,
+        dispatches: fixture.dispatches,
         roots: [fixture.root],
         projectFolders: () => [],
         debounce: 100,
@@ -419,6 +425,57 @@ describe('watchSessions', () => {
         writeFileSync(fixture.cache, JSON.stringify({ version: 99, entries: {} }));
         await sleep(600);
         expect(started.got.length).toBe(before);
+    });
+
+    it('rescans when the launch note changes, and joins the launch to its parent', async () => {
+        const fixture = new Fixture();
+        fixture.cache = join(fixture.root, 'transcript-cache.json');
+        fixture.transcript([prompt('2026-09-10T10:00:00.000Z', 'first question')]);
+        const started = start(fixture);
+        await until(() => started.got.length >= 1, WAIT);
+        expect(latest(started.got).records[0].agents).toEqual([]);
+        // revert: src/lib/server/watch/sessions.ts:279 => delete
+        await armed(fixture.root, 'dispatches.json', started.got);
+
+        // One launch, as bin/dispatch-note.mjs writes it.
+        const launch = {
+            id: 'launch-one',
+            launcher: 'plan-orchestration',
+            label: 'O99',
+            harness: 'codex',
+            model: 'gpt-test',
+            parent: SID,
+            cwd: '/tmp/fixture/worktree',
+            transcript: '',
+            startedAt: '2026-09-10T10:00:05.000Z',
+            endedAt: ''
+        };
+        writeFileSync(fixture.dispatches, JSON.stringify([launch]));
+        const joined = (): string[] =>
+            latest(started.got).records[0].agents.map((agent) => agent.id);
+        await until(() => joined().length > 0, WAIT);
+        expect(joined()).toEqual(['dispatch:launch-one']);
+    });
+
+    it("rescans when a second account's registry changes", async () => {
+        const fixture = new Fixture();
+        const second = join(fixture.root, 'second-registry');
+        mkdirSync(second, { recursive: true });
+        fixture.registries = [fixture.registry, second];
+        fixture.transcript([prompt('2026-09-10T10:00:00.000Z', 'first question')]);
+        const started = start(fixture);
+        await until(() => started.got.length >= 1, WAIT);
+        expect(latest(started.got).records[0].live).toBe(false);
+        // revert: src/lib/server/watch/sessions.ts:269 => delete
+        await armed(second, 'not-a-registry-entry.txt', started.got);
+
+        fixture.alive.add(PID);
+        fixture.write(
+            join('second-registry', `${PID}.json`),
+            JSON.stringify({ pid: PID, sessionId: SID, cwd: CONTEXT.cwd, status: 'idle' })
+        );
+        await until(() => latest(started.got).records[0].live, WAIT);
+        expect(latest(started.got).records[0].live).toBe(true);
     });
 
     it('rescans on the slow clock for a change no file event announced, and stops at close', async () => {

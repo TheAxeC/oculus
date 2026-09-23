@@ -16,7 +16,10 @@ export type SessionFile = {
 
 /** One subagent the session dispatched. */
 export type SessionAgent = {
-    /** The tool-use id on a Claude transcript, the agent's path on a Codex rollout. */
+    /**
+     * The tool-use id on a Claude transcript, the agent's path on a Codex rollout, and
+     * `dispatch:<id>` for a builder a launch note names, so the three never collide.
+     */
     id: string;
     description: string;
     subagentType: string;
@@ -27,6 +30,32 @@ export type SessionAgent = {
     status: string;
     /** Length of the result the agent came back with, in characters. */
     resultChars: number;
+    /**
+     * Present only on a builder started as a process of its own, which the launch note
+     * `~/.oculus/dispatches.json` names under the session that launched it; absent on a subagent
+     * the transcript names.
+     */
+    dispatch?: AgentDispatch;
+};
+
+/** What a launch note says of a builder started as a process of its own. */
+export type AgentDispatch = {
+    /** What launched it, such as `plan-orchestration`. */
+    launcher: string;
+    /** The harness the builder runs on: `claude` or `codex`. */
+    harness: string;
+    /** Where the builder works, a worktree for a plan step. */
+    cwd: string;
+    /** The builder's transcript or rollout path, empty until the launcher knows it. */
+    transcript: string;
+    /**
+     * The id of the builder's own session record when the payload holds it, which is what its row
+     * opens in the Transcript view; null when the transcript is unknown or the scan did not find it
+     * inside its window.
+     */
+    session: string | null;
+    /** A Codex builder's token totals, from its rollout's last usage event; null otherwise. */
+    tokens: SessionTokens | null;
 };
 
 /**

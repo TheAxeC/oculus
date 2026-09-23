@@ -23,7 +23,7 @@ const driver = (close: () => void = noop): TerminalDriver => ({
 });
 
 describe('ServerContext', () => {
-    // revert: src/lib/server/core/context.ts:314 => delete
+    // revert: src/lib/server/core/context.ts:318 => delete
     it('builds and closes each process-owned object once and carries its token', () => {
         const closes = Array.from({ length: 10 }, () => vi.fn());
         const hub = new Hub();
@@ -34,7 +34,10 @@ describe('ServerContext', () => {
         const watchPortfolio = vi.fn<ContextDependencies['watchPortfolio']>(() => ({
             close: closes[0]
         }));
-        const watchSessions = vi.fn(() => ({ onChange: vi.fn(() => noop), close: closes[1] }));
+        const watchSessions = vi.fn((_hub: Hub, _options: unknown) => ({
+            onChange: vi.fn(() => noop),
+            close: closes[1]
+        }));
         const watchGit = vi.fn((_hub: Hub, _options: unknown) => ({
             refresh: vi.fn(),
             close: closes[2]
@@ -96,7 +99,11 @@ describe('ServerContext', () => {
                 port: 8791,
                 claudeBin: 'claude',
                 bookmarks: '/machine/.oculus/bookmarks.yml',
-                accounts: [],
+                accounts: [
+                    { tool: 'claude' as const, dir: '/machine/.claude', label: 'claude' },
+                    { tool: 'claude' as const, dir: '/machine/.claude-work', label: 'work' },
+                    { tool: 'codex' as const, dir: '/machine/.codex', label: 'codex' }
+                ],
                 calendars: [],
                 mail: []
             })),
@@ -115,7 +122,7 @@ describe('ServerContext', () => {
             watchUsage
         });
 
-        // revert: src/lib/server/core/context.ts:177 => delete
+        // revert: src/lib/server/core/context.ts:178 => delete
         expect(merge).toHaveBeenCalledWith('files', expect.any(Function));
         expect(context.token).toBe('context-token');
         for (const built of [
@@ -133,6 +140,14 @@ describe('ServerContext', () => {
         ]) {
             expect(built).toHaveBeenCalledTimes(1);
         }
+        // The sessions watcher reads every account local.yml names, so a session of the second
+        // Claude account is read from that account's own registry and transcripts.
+        // revert: src/lib/server/core/context.ts:209 => delete
+        expect(watchSessions.mock.calls[0][1]).toMatchObject({
+            stores: ['/machine/.claude/projects', '/machine/.claude-work/projects'],
+            registries: ['/machine/.claude/sessions', '/machine/.claude-work/sessions'],
+            codexStores: ['/machine/.codex/sessions']
+        });
         // The bookmarks watcher is given the file this machine's own local.yml names, so a served
         // test run watches its own folder and never the reader's.
         expect(watchBookmarks.mock.calls[0][1]).toEqual({ file: '/machine/.oculus/bookmarks.yml' });
@@ -167,7 +182,7 @@ describe('ServerContext', () => {
         for (const close of closes) expect(close).toHaveBeenCalledTimes(1);
     });
 
-    // revert: src/lib/server/core/context.ts:225 => onSessionsChange: undefined
+    // revert: src/lib/server/core/context.ts:229 => onSessionsChange: undefined
     it('keeps session rescan signals inside their owning context', () => {
         const rescans: (() => void)[] = [];
         const refreshes = [vi.fn(noopAsync), vi.fn(noopAsync)];

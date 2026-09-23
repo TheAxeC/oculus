@@ -87,11 +87,12 @@ class Rollout {
 
     scan(probe: CodexProbe): SessionRecord[] {
         return scan({
-            store: this.claudeStore,
-            codexStore: this.store,
+            stores: [this.claudeStore],
+            codexStores: [this.store],
             cachePath: this.cache,
-            registry: this.registry,
+            registries: [this.registry],
             overridesPath: this.overrides,
+            dispatchesPath: join(this.root, 'dispatches.json'),
             probe: { running: () => false, starts: () => new Map() },
             codexProbe: probe
         });

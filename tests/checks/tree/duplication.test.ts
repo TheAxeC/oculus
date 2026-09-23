@@ -263,7 +263,7 @@ describe('a rule written twice', () => {
     });
 
     it('is not held anywhere under tests', () => {
-        // revert: tests/checks/tree/allow-duplication.txt:125 => delete
+        // revert: tests/checks/tree/allow-duplication.txt:124 => delete
         expect(findCopies(ROOT, 'tests')).toEqual([]);
     });
 

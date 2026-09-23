@@ -204,14 +204,13 @@ One line per package: the status mark, the id, the title, and where the rest is 
 - X2 second execution exercise of the plan-orchestration skill: a new orchestrator resumes this plan from the files alone and lands one package (Axel 2026-09-11; at a pause).
 - ✅ Q3 workbench and view polish (landed 2026-09-12; brief `agents/briefs/Q3.md`; review `agents/reviews/Q3.md`)
 - ✅ Q3b the terminal pane (landed 2026-09-12; brief `agents/briefs/Q3b.md`; review `agents/reviews/Q3b.md`)
-- O31 worker sessions: a worker on the other harness is drawn from the dispatch block, and the three hardcoded session stores read `config/local.yml`'s `accounts` (Axel 2026-09-11 and 2026-09-21; brief `agents/briefs/O31.md`, which holds this line whole and the premises)
-  - Step 0, ruled 2026-09-23 by Axel: a launch note in `~/.oculus/dispatches.json`, written by one script any skill's launcher calls, and the account folders built beside Q65.
+- ✅ O31 the session stores read the accounts `local.yml` names, and a builder started as a process is shown under its launcher from the launch note `~/.oculus/dispatches.json` (Axel 2026-09-23; brief `agents/briefs/O31.md`; one repair round; reviews `agents/reviews/O31-refuter.md`; seen on TEST; landing `agents/reviews/O31-landing.md`); landed 2026-09-23
 - O30 native window (I): Electron, Tauri or pywebview, chosen after O19 from how much the browser gets in the way with a terminal in it (1 commit)
 
 ## Could run in parallel
 
 - The feature stretch after R17, three in flight at all times, one dispatched at each landing (Axel 2026-09-14 17:50 and 2026-09-15 19:58; the steps that run alone and the order are in `orchestrator-state.md`, which holds this line whole)
-- The queue, in order: Q65 + O31; L3; L4; Q35 + R18; D11 + D13 + D14; D23 + D15 + D17; D18 + D20 + D24; M3 + E1; M4; then R2, O29, O30, X2 last.
+- The queue, in order: Q65; L3; L4; Q35 + R18; D11 + D13 + D14; D23 + D15 + D17; D18 + D20 + D24; M3 + E1; M4; then R2, O29, O30, X2 last.
 Independent of each other; two may run side by side under R9's rule when their briefs name disjoint paths and different views, else they run one at a time.
 - S1 with anything after R1.
 - O5 with O2 to O4.

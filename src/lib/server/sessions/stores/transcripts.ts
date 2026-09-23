@@ -1,10 +1,17 @@
 // Layer 2, server. Read appended session files and fold each one into a current session record.
 //
-// Two stores answer to the same shape: ~/.claude/projects/<slug>/<id>.jsonl, written by Claude
-// Code, and ~/.codex/sessions/YYYY/MM/DD/rollout-<stamp>-<uuid>.jsonl, written by the Codex CLI.
-// Both are line-delimited JSON, so both are read the same way: from the byte offset the cache
-// remembers, up to the last complete line, because a trailing line without a newline is a record
-// still being written and waits for the next pass.
+// Two stores answer to the same shape, each read from every account config/local.yml's `accounts`
+// names (sessions/folders.ts): `<dir>/projects/<slug>/<id>.jsonl` of every Claude account, written
+// by Claude Code, and `<dir>/sessions/YYYY/MM/DD/rollout-<stamp>-<uuid>.jsonl` of every Codex
+// account, written by the Codex CLI. Folders that resolve to one real path are read once. Both are
+// line-delimited JSON, so both are read the same way: from the byte offset the cache remembers, up
+// to the last complete line, because a trailing line without a newline is a record still being
+// written and waits for the next pass.
+//
+// The launch note (stores/dispatches.ts) is joined last: a builder a scanned session launched as a
+// process of its own becomes one of that session's agents, and when the scan found the builder's
+// own transcript as well, its row names that session so the row can open it. Nothing is folded for
+// the note alone, so the list the scan returns is the window's and no more.
 //
 // Nothing here throws. A file that cannot be read is left out and the rest come back.
 
@@ -25,7 +32,6 @@ import {
     codexLive,
     codexRunning,
     codexState,
-    defaultCodexStore,
     foldCodex,
     rolloutId,
     rolloutSlug,
@@ -35,17 +41,14 @@ import {
 import { claudeTranscripts, codexRollouts, isRollout } from '../../transcripts/stores.ts';
 import { claudeState, foldClaude } from '../fold.ts';
 import { whole } from './json.ts';
+import { defaultDispatchesPath, joinDispatches, readDispatches } from './dispatches.ts';
+import { distinctFolders, realFolder } from '../folders.ts';
 import { defaultOverridesPath, hiddenIds } from '../overrides.ts';
-import { defaultRegistry, liveSessions, mergeLive, systemProbe, type Probe } from '../registry.ts';
+import { liveSessions, mergeLive, systemProbe, type Probe } from '../registry.ts';
 import { finish, newAcc, prune, type Acc } from '../record.ts';
 
 export const DEFAULT_WINDOW_DAYS = 2;
 export const DEFAULT_MAX_SESSIONS = 40;
-
-/** ~/.claude/projects, resolved at the call rather than at import. */
-export function defaultStore(): string {
-    return join(homedir(), '.claude', 'projects');
-}
 
 /** ~/.oculus/transcript-cache.json, resolved at the call rather than at import. */
 export function defaultCachePath(): string {
@@ -53,16 +56,18 @@ export function defaultCachePath(): string {
 }
 
 export type ScanOptions = {
-    /** The Claude Code transcript store. */
-    store?: string;
-    /** The Codex CLI rollout store. */
-    codexStore?: string;
+    /** The Claude Code transcript folders, `<dir>/projects` of every Claude account. */
+    stores?: string[];
+    /** The Codex CLI rollout folders, `<dir>/sessions` of every Codex account. */
+    codexStores?: string[];
     windowDays?: number;
     maxSessions?: number;
     cachePath?: string;
-    /** Claude Code's session registry. */
-    registry?: string;
+    /** Claude Code's session registries, `<dir>/sessions` of every Claude account. */
+    registries?: string[];
     overridesPath?: string;
+    /** The launch note; `~/.oculus/dispatches.json` when absent. */
+    dispatchesPath?: string;
     /** What the liveness check asks of the system; stubbed by every test. */
     probe?: Probe;
     /** What the Codex liveness check asks of the system; stubbed by every test. */
@@ -203,14 +208,31 @@ function session(
     return { record: finish(acc, stateOf(acc, found.mtimeMs, now)), entry };
 }
 
+/** One transcript found in a store, with the store it was found in (a Codex slug needs it). */
+type Located = { file: Found; store: string };
+
+/** Every file of one kind across its folders, newest first, capped as one store is. */
+function gather(
+    folders: string[],
+    list: (store: string) => Found[],
+    maxSessions: number
+): Located[] {
+    const found: Located[] = [];
+    for (const store of folders) for (const file of list(store)) found.push({ file, store });
+    found.sort((a, b) => b.file.mtimeMs - a.file.mtimeMs);
+    return maxSessions ? found.slice(0, maxSessions) : found;
+}
+
 /**
- * Both stores, folded into one list of records, newest activity first. The registry is read once
- * per scan rather than once per record, and so is the Codex process probe; the cache is read once
- * at the start and written once at the end, holding both kinds keyed by path.
+ * Every store of every account, folded into one list of records, newest activity first. The
+ * registries are read once per scan rather than once per record, and so is the Codex process probe;
+ * the cache is read once at the start and written once at the end, holding both kinds keyed by
+ * path. With no folders given nothing is read: the folders come from the accounts, never from a
+ * home path held here.
  */
 export function scan(options: ScanOptions = {}): SessionRecord[] {
-    const store = options.store ?? defaultStore();
-    const codexStore = options.codexStore ?? defaultCodexStore();
+    const stores = distinctFolders(options.stores ?? []);
+    const codexStores = distinctFolders(options.codexStores ?? []);
     const windowDays = options.windowDays ?? DEFAULT_WINDOW_DAYS;
     const maxSessions = options.maxSessions ?? DEFAULT_MAX_SESSIONS;
     const cachePath = options.cachePath ?? defaultCachePath();
@@ -218,34 +240,46 @@ export function scan(options: ScanOptions = {}): SessionRecord[] {
     const now = options.now ?? Date.now();
 
     const previous = loadCache(cachePath);
-    const live = liveSessions(options.registry ?? defaultRegistry(), options.probe ?? systemProbe);
+    const live = liveSessions(options.registries ?? [], options.probe ?? systemProbe);
     const dismissed = hiddenIds(options.overridesPath ?? defaultOverridesPath());
     const fresh: Record<string, CacheEntry> = {};
     const found: { record: SessionRecord; mtimeMs: number }[] = [];
-
-    for (const file of claudeTranscripts(store, windowDays, maxSessions)) {
-        const folded = fold(file, null, previous[file.path], limit, now);
-        if (folded === null) continue;
-        mergeLive(folded.record, live.get(folded.record.id), dismissed);
-        if (folded.entry !== null) fresh[file.path] = folded.entry;
-        found.push({ record: folded.record, mtimeMs: file.mtimeMs });
-    }
-
+    const byPath = new Map<string, SessionRecord>();
     let running: boolean | null = null;
-    for (const file of codexRollouts(codexStore, windowDays, maxSessions)) {
-        const folded = fold(file, codexStore, previous[file.path], limit, now);
-        if (folded === null) continue;
-        running ??= codexRunning(options.codexProbe ?? systemCodexProbe);
-        const entry: LiveEntry | undefined = codexLive(
-            folded.record.state,
-            file.mtimeMs / 1000,
-            running,
-            now
-        );
+
+    /** Fold one file, merge its liveness, and keep it. */
+    const take = (file: Found, store: string, tool: SessionTool): void => {
+        const folded = fold(file, tool === 'codex' ? store : null, previous[file.path], limit, now);
+        if (folded === null) return;
+        let entry: LiveEntry | undefined;
+        if (tool === 'codex') {
+            running ??= codexRunning(options.codexProbe ?? systemCodexProbe);
+            entry = codexLive(folded.record.state, file.mtimeMs / 1000, running, now);
+        } else {
+            entry = live.get(folded.record.id);
+        }
         mergeLive(folded.record, entry, dismissed);
         if (folded.entry !== null) fresh[file.path] = folded.entry;
         found.push({ record: folded.record, mtimeMs: file.mtimeMs });
+        byPath.set(file.path, folded.record);
+    };
+
+    const claude = (store: string): Found[] => claudeTranscripts(store, windowDays, maxSessions);
+    for (const { file, store } of gather(stores, claude, maxSessions)) take(file, store, 'claude');
+    const codex = (store: string): Found[] => codexRollouts(store, windowDays, maxSessions);
+    for (const { file, store } of gather(codexStores, codex, maxSessions)) {
+        take(file, store, 'codex');
     }
+
+    const notes = readDispatches(options.dispatchesPath ?? defaultDispatchesPath());
+    // Every folded file by its real path, since a note may name a transcript through a symlink.
+    const byReal = new Map<string, SessionRecord>();
+    if (notes.length > 0) for (const [path, record] of byPath) byReal.set(realFolder(path), record);
+    joinDispatches(
+        found.map((item) => item.record),
+        notes,
+        (note) => (note.transcript ? (byReal.get(realFolder(note.transcript)) ?? null) : null)
+    );
 
     saveCache(cachePath, previous, fresh);
     found.sort((a, b) => b.mtimeMs - a.mtimeMs);

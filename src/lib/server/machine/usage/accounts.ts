@@ -61,7 +61,6 @@ function tierLabel(tier: string, tiers: UsageTiers): string {
     return tiers[tier] ?? tier;
 }
 
-/** The account file is beside ~/.claude, and inside every other Claude config folder. */
 /**
  * Whether a folder is Claude Code's default one, whose account file sits beside it in the home
  * folder.
