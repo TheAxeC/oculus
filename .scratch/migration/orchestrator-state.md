@@ -42,7 +42,9 @@ dispatch:
     review: agents/reviews/Q69-refuter.md (dispatched 2026-09-24 by the /refute skill; reviewer claude:opus, agent a402c2546d7fbd3b4)
     brief_amended: 2026-09-24 while the builder runs, items 6 to 9 from the orchestrator's check of the landed steps (`agents/reviews/Q69-checks.md`), sent to the builder by message
     landing: not-started
-    round: 0
+    round: 1                 # sent 2026-09-24: killed read as stopped and the notice matched by its tool-use id; the cross-module pass followed (the brief's decision 2 revised); the reused-pid mark kept in the launch note itself, the cache comments made true; cases for the launch without run_in_background, the four other pick controls and the project board's code; a condition in place of the 300 ms wait; the report's before and after and the re-fold time measured
+    round_base: 007c637b (the worktree's wip commit when the round was sent)
+    review_usage: claude:opus read-only, 197,250 tokens, 55 tool uses, 2,246 s
 ```
 
 ## The standing demands (from Axel, in force)
