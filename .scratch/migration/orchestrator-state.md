@@ -40,6 +40,15 @@ dispatch:
     report: tools/oculus/.scratch/migration/agents/reviews/L6-report.md
     landing: not-started
     round: 0
+  - step: Q68
+    executor: agent
+    worker: claude:opus, a native background agent; its id is this session's agent a721845fea7dd09c1
+    worktree: .agents/worktrees/Q68
+    base: d0232795
+    launched: 2026-09-24
+    report: tools/oculus/.scratch/migration/agents/reviews/Q68-report.md
+    landing: not-started
+    round: 0
 ```
 
 ## The standing demands (from Axel, in force)
