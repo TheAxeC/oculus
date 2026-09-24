@@ -22,6 +22,7 @@
 
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
+    import PickSession from '$lib/views/shared/sessions/PickSession.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Toolbar from '$lib/ui/frame/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
@@ -141,7 +142,7 @@
 <Pane title={t('sessions.view_timeline')} toolbar={tools} tinted>
     <div class="timeline" bind:this={column} data-instance={instance.id}>
         {#if record === null}
-            <Empty message={t('sessions.detail_empty')} glyph={t('sessions.empty_glyph')} />
+            <PickSession message={t('sessions.detail_empty')} glyph={t('sessions.empty_glyph')} />
         {:else if events.length === 0}
             <Empty message={t('sessions.tl_empty')} glyph={t('sessions.empty_glyph')} />
         {:else}

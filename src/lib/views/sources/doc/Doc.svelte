@@ -21,7 +21,9 @@
     // The document is fetched rather than selected, as a project's README is: the wire model keeps
     // documents out of the snapshot, so state/system/docs.svelte.ts asks api/docs for this path and
     // the shared Markdown partial draws what comes back. A figure beside the document is addressed
-    // under the hub root by the server, so it is drawn through the file route.
+    // under the hub root by the server, so it is drawn through the file route. The prose is drawn
+    // straight into the box, so over a wallpaper the box asks for the tint and is the one surface
+    // the document is read off.
 
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
@@ -48,7 +50,7 @@
     }
 </script>
 
-<Pane {title}>
+<Pane {title} tinted>
     <div class="view" data-instance={instance.id} data-path={path}>
         {#if shown === null}
             <Empty message={t('doc.none')} glyph={t('doc.none_glyph')} />

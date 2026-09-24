@@ -5,7 +5,7 @@
 // first, and the liveness probes are stubs, so no process is signalled and `ps` is never run. Every
 // watcher a test opens is closed when the test ends.
 
-import { appendFileSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { appendFileSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve, sep } from 'node:path';
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
@@ -18,7 +18,7 @@ import {
 } from '../../../src/lib/server/watch/sessions.ts';
 import type { Watcher } from '../../../src/lib/server/watch/portfolio.ts';
 import type { Message, SessionsPayload, Terminal } from '../../../src/lib/data/model.ts';
-import type { Probe } from '../../../src/lib/server/sessions/registry.ts';
+import { formatStamp, type Probe } from '../../../src/lib/server/sessions/registry.ts';
 import type { CodexProbe } from '../../../src/lib/server/sessions/stores/codex.ts';
 import { recording } from './probe.ts';
 import { noop } from '../../fixtures/doubles.ts';
@@ -94,6 +94,8 @@ class Fixture {
     registries: string[];
     path: string;
     alive = new Set<number>();
+    /** The start time, in epoch seconds, the probe's `ps` answers for a pid; none by default. */
+    startOf = new Map<number, number>();
 
     constructor() {
         this.root = scratchDir('oculus-watch-sessions-');
@@ -152,7 +154,8 @@ class Fixture {
     probe(): Probe {
         return {
             running: (pid: number) => this.alive.has(pid),
-            starts: () => new Map<number, number>()
+            starts: (pids: number[]) =>
+                new Map([...this.startOf].filter(([pid]) => pids.includes(pid)))
         };
     }
 
@@ -450,7 +453,7 @@ describe('watchSessions', () => {
         const started = start(fixture);
         await until(() => started.got.length >= 1, WAIT);
         expect(latest(started.got).records[0].agents).toEqual([]);
-        // revert: src/lib/server/watch/sessions.ts:288 => delete
+        // revert: src/lib/server/watch/sessions.ts:292 => delete
         await armed(fixture.root, 'dispatches.json', started.got);
 
         // One launch, as bin/dispatch-note.mjs writes it.
@@ -503,9 +506,59 @@ describe('watchSessions', () => {
         await until(() => started.got.length >= 1, WAIT);
         expect(status()).toBe('running');
 
+        // A late event for the note written before the watch opened would rescan whatever the
+        // re-check compares, so the process exits only once the channel has gone quiet.
+        await quiet(started.got);
         // revert: src/lib/server/watch/sessions.ts:130 => if (false)
         fixture.alive.delete(9191);
         await until(() => status() === 'done', WAIT);
+        expect(status()).toBe('done');
+    });
+
+    it('publishes nothing when a launch seen under a reused pid meets a scan with no start time', async () => {
+        const fixture = new Fixture();
+        fixture.transcript([prompt('2026-09-10T10:00:00.000Z', 'first question')]);
+        const began = Math.floor(Date.now() / 1000) - 60;
+        // The recorded pid still answers signal 0, but `ps` gives it a start an hour after the
+        // builder's own: another process took the pid.
+        fixture.alive.add(9292);
+        fixture.startOf.set(9292, began + 3600);
+        writeFileSync(
+            fixture.dispatches,
+            JSON.stringify([
+                {
+                    id: 'launch-reused',
+                    launcher: 'plan-orchestration',
+                    label: 'O98',
+                    harness: 'codex',
+                    model: 'gpt-test',
+                    parent: SID,
+                    cwd: '/tmp/fixture/worktree',
+                    transcript: '',
+                    startedAt: new Date().toISOString(),
+                    endedAt: '',
+                    pid: 9292,
+                    pidStart: formatStamp(began, true)
+                }
+            ])
+        );
+        const started = start(fixture, 100);
+        const status = (): string | undefined => latest(started.got).records[0].agents[0]?.status;
+        await until(() => started.got.length >= 1, WAIT);
+        expect(status()).toBe('done');
+        // The scan stamped the launch ended in the note, whose watch rescans once more.
+        await until(() => latest(started.got).records[0].agents[0]?.ended !== null, WAIT);
+        const stamped = (JSON.parse(readFileSync(fixture.dispatches, 'utf8')) as Json[])[0];
+        expect(stamped.endedAt).not.toBe('');
+        expect(latest(started.got).records[0].agents[0]?.ended).toBe(stamped.endedAt);
+        const before = await quiet(started.got);
+
+        // revert: src/lib/server/sessions/stores/transcripts.ts:314 => delete
+        // `ps` fails from here on, so no scan has a start time for the pid; the re-check runs
+        // every 100 ms, and none of them may take the running pid for the builder again.
+        fixture.startOf.delete(9292);
+        await sleep(1000);
+        expect(started.got.length).toBe(before);
         expect(status()).toBe('done');
     });
 
@@ -518,7 +571,7 @@ describe('watchSessions', () => {
         const started = start(fixture);
         await until(() => started.got.length >= 1, WAIT);
         expect(latest(started.got).records[0].live).toBe(false);
-        // revert: src/lib/server/watch/sessions.ts:278 => delete
+        // revert: src/lib/server/watch/sessions.ts:282 => delete
         await armed(second, 'not-a-registry-entry.txt', started.got);
 
         fixture.alive.add(PID);

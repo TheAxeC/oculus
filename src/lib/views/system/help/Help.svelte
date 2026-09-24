@@ -19,10 +19,11 @@
     // api/docs, the one route that turns Markdown into HTML, which serves that one path of the
     // engine directory and nothing else around it.
     //
-    // The manual shows the diagrams bin/diagrams.mjs draws from the source. Each is an image of
-    // docs/diagrams/ in HELP.md, which manual.ts cuts out of the HTML so Diagram.svelte can draw it
-    // in the page's text colour; the prose between them is drawn by the Markdown partial, one run
-    // at a time.
+    // The manual shows the diagrams bin/diagrams/diagrams.mjs draws from the source. Each is an
+    // image of docs/diagrams/ in HELP.md, which manual.ts cuts out of the HTML so Diagram.svelte
+    // can draw it in the page's text colour; the prose between them is drawn by the Markdown
+    // partial, one run at a time. The prose is drawn straight into the box, so over a wallpaper the
+    // box asks for the tint and is the one surface the manual is read off.
 
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Markdown from '../../shared/prose/Markdown.svelte';
@@ -49,7 +50,7 @@
     }
 </script>
 
-<Pane title={t('views.help')}>
+<Pane title={t('views.help')} tinted>
     <div class="view" data-instance={instance.id}>
         {#if shown.loading || shown.error !== ''}
             <Markdown

@@ -1,6 +1,6 @@
-// Layer 2, server. The three diagrams bin/diagrams.mjs draws from the source, served read-only to
-// the Help view: one `.svg` file of the engine's docs/diagrams/ folder, by its file name, and
-// nothing else of that folder or around it.
+// Layer 2, server. The three diagrams bin/diagrams/diagrams.mjs draws from the source, served
+// read-only to the Help view: one `.svg` file of the engine's docs/diagrams/ folder, by its file
+// name, and nothing else of that folder or around it.
 //
 // routes/api/(docs)/diagrams/[name]/+server.ts is the endpoint and holds nothing but its GET, since
 // a route module may export only its verbs. The name is held to the shape the generator writes (a
@@ -20,7 +20,7 @@ import { readFileSync, realpathSync, statSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { sameOrigin } from './images.ts';
 
-/** The folder of the engine directory the diagrams are written to, as bin/diagrams.mjs names it. */
+/** The folder of the engine directory the diagrams are written to, as bin/diagrams/ names it. */
 export const DIAGRAM_DIR = join('docs', 'diagrams');
 
 /** The one shape of name this route serves: what the generator writes, and nothing else. */

@@ -20,10 +20,12 @@
     // harness, carries a Codex rollout's token totals, and opens its own transcript in the
     // Transcript view once the payload holds that transcript's session.
     //
-    // A finished agent reports what it took. A running one is counted from its start to now, which
-    // is the number that says whether to wait for it.
+    // A finished agent reports what it took, from its start to its end, and nothing when its end is
+    // not known. A running one is counted from its start to now, which is the number that says
+    // whether to wait for it, so the moment it counts to moves every second while a row runs.
 
     import Empty from '$lib/ui/frame/Empty.svelte';
+    import PickSession from '$lib/views/shared/sessions/PickSession.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Toolbar from '$lib/ui/frame/Toolbar.svelte';
@@ -42,10 +44,19 @@
 
     let { instance }: ViewProps = $props();
 
-    /** The hue of the status dot: at work, come back, or come back with nothing. */
-    const TONES: Record<string, string> = { running: 'green', error: 'red', done: 'slate' };
+    /** The hue of the status dot: at work, failed, stopped before it finished, or come back. */
+    const TONES: Record<string, string> = {
+        running: 'green',
+        error: 'red',
+        stopped: 'amber',
+        done: 'slate'
+    };
 
-    const now = Date.now();
+    /** How often a running row's count moves, in milliseconds. */
+    const SECOND = 1000;
+
+    /** The moment a running row counts to. */
+    let now = $state(Date.now());
 
     const record = $derived(sessionFor(instance.id));
     const panePin = $derived(pinnedSession(instanceLayoutState(instance.id)));
@@ -58,9 +69,22 @@
         [...(record?.agents ?? [])].sort((a, b) => (b.started ?? '').localeCompare(a.started ?? ''))
     );
 
+    /** Whether any row runs, which is what keeps the count moving. */
+    const running = $derived(agents.some((agent) => agent.status === 'running'));
+
+    $effect(() => {
+        if (!running) return;
+        now = Date.now();
+        const timer = setInterval(() => (now = Date.now()), SECOND);
+        return () => {
+            clearInterval(timer);
+        };
+    });
+
     function statusLabel(status: string): string {
         if (status === 'running') return t('sessions.ag_running');
         if (status === 'error') return t('sessions.ag_error');
+        if (status === 'stopped') return t('sessions.ag_stopped');
         return t('sessions.ag_done');
     }
 
@@ -71,7 +95,12 @@
     /** The right-hand line: how it went, how long it took, and how much it came back with. */
     function meta(agent: SessionAgent): string {
         const parts: string[] = [statusLabel(agent.status)];
-        const took = seconds(agent.started, agent.ended, now);
+        const took =
+            agent.status === 'running'
+                ? seconds(agent.started, null, now)
+                : agent.ended === null
+                  ? null
+                  : seconds(agent.started, agent.ended, now);
         if (took !== null) parts.push(span(took));
         if (agent.resultChars > 0) {
             parts.push(t('sessions.ag_chars', compactCount(agent.resultChars)));
@@ -133,7 +162,7 @@
 <Pane title={t('sessions.view_agents')} toolbar={tools} tinted>
     <div class="agents" data-instance={instance.id}>
         {#if record === null}
-            <Empty message={t('sessions.detail_empty')} glyph={t('sessions.empty_glyph')} />
+            <PickSession message={t('sessions.detail_empty')} glyph={t('sessions.empty_glyph')} />
         {:else if agents.length === 0}
             <Empty message={t('sessions.ag_empty')} glyph={t('sessions.empty_glyph')} />
         {:else}

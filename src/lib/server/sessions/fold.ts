@@ -6,7 +6,9 @@
 // calls, the touched files, the subagents and the token usage inside their content blocks.
 //
 // A subagent is a `tool_use` block named `Agent`, paired to its `tool_result` by id; `isSidechain`
-// is false on every record of the store and says nothing, so nothing here reads it.
+// is false on every record of the store and says nothing, so nothing here reads it. A subagent
+// started in the background is not ended by that result, which is only its launch notice
+// (stores/background.ts).
 
 import type { Acc } from './record.ts';
 import { claudeUsage, type UsageEvent } from '../transcripts/usage.ts';
@@ -21,6 +23,7 @@ import {
     stampOf,
     touch
 } from './record.ts';
+import { isLaunch, takeLaunch, takeNotices } from './stores/background.ts';
 import { isMap, list, whole } from './stores/json.ts';
 
 /** The tools whose call is an edit rather than a read. */
@@ -53,6 +56,15 @@ export function foldClaude(acc: Acc, record: Record<string, unknown>): void {
             acc.seen += 1;
             acc.lastKind = 'turn';
             addEvent(acc, stampOf(record.timestamp), 'turn', String(whole(record.durationMs)));
+        }
+        return;
+    }
+    if (kind === 'attachment') {
+        // A completion notice that reached a busy session is queued, and the transcript carries it
+        // as an attachment of the queued command rather than as a user message.
+        const queued = isMap(record.attachment) ? record.attachment : {};
+        if (queued.commandMode === 'task-notification' && typeof queued.prompt === 'string') {
+            takeNotices(acc, queued.prompt, stampOf(record.timestamp));
         }
         return;
     }
@@ -96,10 +108,15 @@ function foldUser(
         if (ident) delete acc.pending[ident];
         const agent = ident ? acc.agents[ident] : undefined;
         if (agent === undefined) continue;
+        if (isLaunch(acc, ident, record)) {
+            takeLaunch(acc, ident, record, block.content);
+            continue;
+        }
         agent.ended = stamp;
         agent.status = block.is_error === true ? 'error' : 'done';
         agent.resultChars = length(block.content);
     }
+    takeNotices(acc, content, stamp);
 }
 
 function foldAssistant(
@@ -160,6 +177,7 @@ function foldToolUse(acc: Acc, block: Record<string, unknown>, stamp: string | n
         agent.description = typeof args.description === 'string' ? args.description : '';
         agent.subagentType = typeof args.subagent_type === 'string' ? args.subagent_type : '';
         agent.model = typeof args.model === 'string' && args.model ? args.model : null;
+        if (args.run_in_background === true) acc.background[block.id] = '';
     }
     const kind = EDIT_TOOLS.includes(name) ? 'edit' : 'tool';
     const path = args.file_path ?? args.notebook_path;

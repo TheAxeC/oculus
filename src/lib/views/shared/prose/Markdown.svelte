@@ -91,11 +91,6 @@
         padding: 0 3px;
     }
 
-    :global(body.wall) .doc :global(code) {
-        background: color-mix(in srgb, var(--chip) var(--wall-panel), transparent);
-        backdrop-filter: blur(var(--wall-blur));
-    }
-
     .doc :global(pre) {
         overflow-x: auto;
         padding: 8px;
@@ -103,9 +98,17 @@
         border-radius: var(--radius-sm);
     }
 
+    /* Over a wallpaper the document is drawn on a translucent surface already: the box of a view
+       that draws it asks for the tint, and the source preview frames it in one. A code span or
+       block inside it paints nothing in turn, since a second layer reads as a nearly solid one,
+       and a blur behind a span that wraps covers the whole box around both of its halves, which
+       blurs the prose between them. */
+    :global(body.wall) .doc :global(code) {
+        background: transparent;
+    }
+
     :global(body.wall) .doc :global(pre) {
-        background: color-mix(in srgb, var(--chip) var(--wall-panel), transparent);
-        backdrop-filter: blur(var(--wall-blur));
+        background: transparent;
     }
 
     .doc :global(pre code) {

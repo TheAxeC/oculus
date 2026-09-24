@@ -62,6 +62,12 @@ export type Acc = {
     tools: Record<string, number>;
     files: Record<string, SessionFile>;
     agents: Record<string, SessionAgent>;
+    /**
+     * The subagents started in the background, by tool-use id, each with the agent id its launch
+     * answer named ('' until it names one). A launch answers at once while the subagent works on,
+     * so such an agent stays running until its completion notice or its own transcript says more.
+     */
+    background: Record<string, string>;
     timeline: SessionEvent[];
     /** Tool-use ids with no result yet, which is what makes a Claude session look busy. */
     pending: Record<string, number>;
@@ -105,6 +111,7 @@ export function newAcc(id: string, path: string, slug: string, tool: SessionTool
         tools: {},
         files: {},
         agents: {},
+        background: {},
         timeline: [],
         pending: {},
         lastKind: null,
@@ -188,6 +195,11 @@ export function prune(acc: Acc): void {
         const agents: Record<string, SessionAgent> = {};
         for (const id of keep) agents[id] = acc.agents[id];
         acc.agents = agents;
+    }
+    // A background launch is kept only while its agent is.
+    for (const id of Object.keys(acc.background)) {
+        // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- the accumulator is plain JSON the cache stores
+        if (!(id in acc.agents)) delete acc.background[id];
     }
     if (acc.timeline.length > MAX_TIMELINE) acc.timeline = acc.timeline.slice(-MAX_TIMELINE);
 }

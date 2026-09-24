@@ -250,12 +250,12 @@ export function sanitiseSvg(svg: string): string {
 }
 
 /**
- * The elements a graph drawn by bin/diagrams.mjs is made of: what Graphviz writes for a group, a
- * box, an ellipse, a cylinder, an edge and its arrowhead, the text of each label, and the `title`
- * of a node or an edge, which the browser shows on hover and which carries the functions a write
- * edge calls. There is no `a`, no `style` and nothing that loads, runs or embeds, so a diagram file
- * carries a drawing and nothing else, and the grey its own `style` sets for a viewer outside oculus
- * is dropped here, which leaves the drawing in the page's text colour.
+ * The elements a graph drawn by bin/diagrams/diagrams.mjs is made of: what Graphviz writes for a
+ * group, a box, an ellipse, a cylinder, an edge and its arrowhead, the text of each label, and the
+ * `title` of a node or an edge, which the browser shows on hover and which carries the functions a
+ * write edge calls. There is no `a`, no `style` and nothing that loads, runs or embeds, so a
+ * diagram file carries a drawing and nothing else, and the grey its own `style` sets for a viewer
+ * outside oculus is dropped here, which leaves the drawing in the page's text colour.
  */
 export const GRAPH_TAGS = ['svg', 'g', 'title', 'polygon', 'polyline', 'path', 'ellipse', 'text'];
 

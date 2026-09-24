@@ -9,8 +9,9 @@
 // it in UTC, so a launch whose launcher never stamps the end still reads done once that process is
 // gone, and a pid a later process has taken is never read as the builder. The note is
 // `~/.oculus/dispatches.json`, resolved at the call, a JSON list of records with the fields below;
-// server/sessions/stores/dispatches.ts reads it. Any skill that starts an agent process may write
-// it, so nothing here knows about plans.
+// server/sessions/stores/dispatches.ts reads it, and through update() stamps a launch ended once
+// its pid runs another process. Any skill that starts an agent process may write it, so nothing
+// here knows about plans.
 //
 // Several launchers may write at one moment, so every write holds a lock beside the note: the lock
 // file is created exclusively, a busy one is retried, and one whose holder is gone, or that is
@@ -77,19 +78,19 @@ export function notePath() {
 }
 
 /** Wait without a timer, since every write here is synchronous. */
-function pause(ms) {
+function pause(/** @type {number} */ ms) {
     Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
 }
 
 /** Whether a process with this pid exists. Signal 0 asks the kernel and delivers nothing. */
-function alive(pid) {
+function alive(/** @type {number} */ pid) {
     if (!Number.isInteger(pid) || pid <= 0) return false;
     try {
         process.kill(pid, 0);
         return true;
     } catch (error) {
         // EPERM is a live process owned by another user.
-        return error.code === 'EPERM';
+        return /** @type {NodeJS.ErrnoException} */ (error).code === 'EPERM';
     }
 }
 
@@ -105,7 +106,7 @@ const LSTART = /^[A-Z][a-z]{2} [A-Z][a-z]{2} +\d{1,2} \d{2}:\d{2}:\d{2} \d{4}$/;
  * with a timeout, and in UTC, so the stamp names one moment whatever zone the launcher and the
  * server run in; the reader parses it with that module's parseStamp and takes its UTC reading.
  */
-export function startOf(pid) {
+export function startOf(/** @type {number} */ pid) {
     const done = spawnSync('ps', ['-o', 'lstart=', '-p', String(pid)], {
         encoding: 'utf8',
         timeout: PS_TIMEOUT_MS,
@@ -117,7 +118,7 @@ export function startOf(pid) {
 }
 
 /** The pid `--pid` names, which must be a whole number above zero written in digits alone. */
-function pidOf(value) {
+function pidOf(/** @type {string} */ value) {
     const pid = Number(value);
     if (!/^[1-9][0-9]*$/.test(value) || !Number.isSafeInteger(pid)) {
         throw new Error(`--pid must be a process id: ${value}`);
@@ -126,12 +127,13 @@ function pidOf(value) {
 }
 
 /** The pid a lock's content names, or 0 when it names none. */
-function holderOf(content) {
+function holderOf(/** @type {string} */ content) {
     const pid = Number.parseInt(String(content).split(' ')[0] ?? '', 10);
     return Number.isInteger(pid) ? pid : 0;
 }
 
-function readText(path) {
+/** A file's text, or null when it cannot be read. */
+function readText(/** @type {string} */ path) {
     try {
         return readFileSync(path, 'utf8');
     } catch {
@@ -143,7 +145,7 @@ function readText(path) {
 export const BREAK_STALE_MS = 3000;
 
 /** The lock's content and its age in milliseconds by mtime, or null when there is no lock. */
-function lockState(lock) {
+function lockState(/** @type {string} */ lock) {
     const content = readText(lock);
     if (content === null) return null;
     try {
@@ -157,7 +159,10 @@ function lockState(lock) {
  * Whether a lock is stale: its holder is gone, or it is older than any write holds one, which is
  * also what clears a lock whose pid a later, unrelated process has taken.
  */
-function stale(state, waitMs) {
+function stale(
+    /** @type {{ content: string, age: number }} */ state,
+    /** @type {number} */ waitMs
+) {
     return !alive(holderOf(state.content)) || state.age > waitMs;
 }
 
@@ -170,12 +175,12 @@ function stale(state, waitMs) {
  * it needs a clearer killed in the moment it holds the breaker, and each clearer still removes
  * only a lock it re-read as the one judged.
  */
-export function breakStale(lock, judged) {
+export function breakStale(/** @type {string} */ lock, /** @type {string} */ judged) {
     const breaker = `${lock}.break`;
     try {
         writeFileSync(breaker, String(process.pid), { mode: 0o600, flag: 'wx' });
     } catch (error) {
-        if (error.code !== 'EEXIST') throw error;
+        if (/** @type {NodeJS.ErrnoException} */ (error).code !== 'EEXIST') throw error;
         try {
             if (Date.now() - statSync(breaker).mtimeMs > BREAK_STALE_MS) rmSync(breaker);
         } catch {
@@ -197,7 +202,7 @@ const LITTER = /^dispatches\.json\.(?:lock\.)?(\d+)-[0-9a-f]+(?:\.tmp)?$/;
  * Remove what a writer killed mid-write left beside the note: its own copy of the lock and its
  * temporary note, each named by its pid, removed only when that pid is not running.
  */
-export function sweepLitter(folder) {
+export function sweepLitter(/** @type {string} */ folder) {
     let names;
     try {
         names = readdirSync(folder);
@@ -211,11 +216,12 @@ export function sweepLitter(folder) {
 }
 
 /**
- * Take the lock beside the note, or throw once the wait has passed with it held. The lock is
- * written whole under a name of this writer's own and then linked into place, which fails when a
- * lock is there: no other writer ever reads a lock that does not yet name its holder.
+ * Take the lock beside the note, or throw once the wait has passed with it held, or at the first
+ * try with `once`. The lock is written whole under a name of this writer's own and then linked into
+ * place, which fails when a lock is there: no other writer ever reads a lock that does not yet name
+ * its holder.
  */
-export function takeLock(lock, waitMs = LOCK_WAIT_MS) {
+export function takeLock(/** @type {string} */ lock, waitMs = LOCK_WAIT_MS, once = false) {
     sweepLitter(dirname(lock));
     const content = `${process.pid} ${randomBytes(6).toString('hex')}`;
     const own = `${lock}.${process.pid}-${randomBytes(4).toString('hex')}`;
@@ -233,7 +239,8 @@ export function takeLock(lock, waitMs = LOCK_WAIT_MS) {
                 linkSync(own, lock);
                 return content;
             } catch (error) {
-                if (error.code !== 'EEXIST') throw error;
+                if (/** @type {NodeJS.ErrnoException} */ (error).code !== 'EEXIST') throw error;
+                if (once) throw new Error('the note is locked by another writer', { cause: error });
             }
             wait(lock, deadline, waitMs);
         }
@@ -243,7 +250,11 @@ export function takeLock(lock, waitMs = LOCK_WAIT_MS) {
 }
 
 /** One turn at a busy lock: clear it if it is stale, else pause, or throw past the deadline. */
-function wait(lock, deadline, waitMs) {
+function wait(
+    /** @type {string} */ lock,
+    /** @type {number} */ deadline,
+    /** @type {number} */ waitMs
+) {
     const state = lockState(lock);
     if (state !== null && stale(state, waitMs)) {
         breakStale(lock, state.content);
@@ -257,12 +268,16 @@ function wait(lock, deadline, waitMs) {
 }
 
 /** Let the lock go, if it is still the one this writer took. */
-function releaseLock(lock, content) {
+function releaseLock(/** @type {string} */ lock, /** @type {string} */ content) {
     if (readText(lock) === content) rmSync(lock, { force: true });
 }
 
-/** The note's records, or a new list when the file is missing, unreadable or not a list. */
-export function readNote(path) {
+/**
+ * The note's records, or a new list when the file is missing, unreadable or not a list.
+ *
+ * @returns {Record<string, unknown>[]}
+ */
+export function readNote(/** @type {string} */ path) {
     const text = readText(path);
     if (text === null) return [];
     try {
@@ -276,7 +291,7 @@ export function readNote(path) {
 }
 
 /** Replace the note whole: a temporary copy beside it, then a rename, which is atomic. */
-function writeNote(path, records) {
+function writeNote(/** @type {string} */ path, /** @type {unknown[]} */ records) {
     const temporary = `${path}.${process.pid}-${randomBytes(6).toString('hex')}.tmp`;
     try {
         writeFileSync(temporary, `${JSON.stringify(records, null, 4)}\n`, { mode: 0o600 });
@@ -287,11 +302,21 @@ function writeNote(path, records) {
     }
 }
 
-/** Read, change and write the note under its lock; `change` returns what the command prints. */
-export function update(path, change) {
+/**
+ * Read, change and write the note under its lock; `change` returns what the command prints. With
+ * `once`, a lock another writer holds is not waited for: the call throws at once, for a caller that
+ * must not stop to wait and tries again later.
+ *
+ * @template T
+ * @param {string} path
+ * @param {(records: Record<string, unknown>[]) => T} change
+ * @param {{ once?: boolean }} [options]
+ * @returns {T}
+ */
+export function update(path, change, options = {}) {
     mkdirSync(dirname(path), { recursive: true, mode: 0o700 });
     const lock = `${path}.lock`;
-    const content = takeLock(lock);
+    const content = takeLock(lock, LOCK_WAIT_MS, options.once === true);
     try {
         const records = readNote(path);
         const printed = change(records);
@@ -302,8 +327,13 @@ export function update(path, change) {
     }
 }
 
-/** `--name value` pairs into a map, refusing a flag `start` does not take and a bare word. */
-export function readFlags(argv) {
+/**
+ * `--name value` pairs into a map, refusing a flag `start` does not take and a bare word.
+ *
+ * @returns {Record<string, string>}
+ */
+export function readFlags(/** @type {string[]} */ argv) {
+    /** @type {Record<string, string>} */
     const flags = {};
     for (let at = 0; at < argv.length; at += 2) {
         const flag = argv[at];
@@ -323,7 +353,7 @@ export function readFlags(argv) {
  * a start time `ps` could not give is left empty, which the reader takes as the running pid being
  * the only witness. Without `--pid`, `pid` is 0 and `pidStart` empty: no process to watch.
  */
-export function newRecord(flags, now = new Date()) {
+export function newRecord(/** @type {Record<string, string>} */ flags, now = new Date()) {
     for (const name of REQUIRED) {
         if (!flags[name]) throw new Error(`start needs --${name}`);
     }
@@ -350,14 +380,14 @@ export function newRecord(flags, now = new Date()) {
 }
 
 /** The record with this id, or a thrown error naming it. */
-function recordOf(records, id) {
+function recordOf(/** @type {Record<string, unknown>[]} */ records, /** @type {string} */ id) {
     const found = records.find((record) => record.id === id);
     if (found === undefined) throw new Error(`no launch with the id ${id}`);
     return found;
 }
 
 /** Run one command against the note at `path`, and return what it prints. */
-export function run(argv, path = notePath()) {
+export function run(/** @type {string[]} */ argv, path = notePath()) {
     const [command, ...rest] = argv;
     if (command === 'start') {
         const record = newRecord(readFlags(rest));

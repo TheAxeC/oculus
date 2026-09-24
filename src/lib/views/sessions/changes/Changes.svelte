@@ -16,7 +16,7 @@
     // because touched-file and git markup change independently.
 
     import Confirm from '$lib/ui/controls/Confirm.svelte';
-    import Empty from '$lib/ui/frame/Empty.svelte';
+    import PickSession from '$lib/views/shared/sessions/PickSession.svelte';
     import type { MenuItem } from '$lib/ui/menu/menu-items';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
@@ -204,7 +204,7 @@
 <Pane title={t('sessions.view_changes')} toolbar={tools} tinted>
     <div class="changes" data-instance={instance.id}>
         {#if record === null}
-            <Empty message={t('sessions.detail_empty')} glyph={t('sessions.empty_glyph')} />
+            <PickSession message={t('sessions.detail_empty')} glyph={t('sessions.empty_glyph')} />
         {:else}
             <ChangesTouched recordId={record.id} {files} {workspace} />
             {#if shape === 'unplaced'}

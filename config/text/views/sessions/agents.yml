@@ -13,6 +13,7 @@ text:
         ag_open: Open its transcript
         ag_running: running
         ag_secs: '{0} s'
+        ag_stopped: stopped
         ag_tokens: '{0} tokens'
         ag_type: agent
         agents_glyph: agents

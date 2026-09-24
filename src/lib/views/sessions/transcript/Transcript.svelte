@@ -25,6 +25,7 @@
 
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
+    import PickSession from '$lib/views/shared/sessions/PickSession.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Toolbar from '$lib/ui/frame/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
@@ -164,7 +165,7 @@
         data-scroll
     >
         {#if record === null}
-            <Empty message={t('sessions.detail_empty')} glyph={t('sessions.empty_glyph')} />
+            <PickSession message={t('sessions.detail_empty')} glyph={t('sessions.empty_glyph')} />
         {:else if held.error !== ''}
             <p class="failed">{held.error}</p>
         {:else if turns.length === 0}

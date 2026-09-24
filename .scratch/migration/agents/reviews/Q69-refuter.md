@@ -61,3 +61,101 @@ Report's evidence:
 - Item 7 beyond one real session log. I did not check a subagent that is resumed after its notice, whose notice fires again (the real note says "fires each time this agent stops").
 
 Reviewer usage: about 190k tokens, 45 tool uses, 37 minutes.
+
+## Repair round 1, refuted
+
+```
+ls -d $TMPDIR/oculus-* | wc -l                -> 7015 before, 7015 after every run below
+1. npx vitest run --reporter=dot              -> run 1: Test Files 1 failed | 297 passed (298), Tests 1 failed | 4742 passed (4743), the failing case not captured
+                                                 run 2: FAIL tests/server/edit/entry-edit.test.ts > every collection entry of the real hub, read only > ... Error: Test timed out in 5000ms.
+                                                 run 3: Test Files 298 passed (298) / Tests 4743 passed (4743)
+   npx vitest run tests/server/edit/entry-edit.test.ts -> Tests 52 passed (52)
+2. npm run check                              -> COMPLETED 1369 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+3. npm run build                              -> build=0
+4. npm run format:check                       -> All matched files use Prettier code style!
+5. npm run lint                               -> lint=0
+6. LC_ALL=C grep -rna '[^ -~]' src tests | wc -l -> 0; the spec's perl gate over src tests bin config -> 0 lines
+7. sh bin/size-check.sh; sh bin/folder-check.sh -> size=0, folder=0
+8. npm run build; npx playwright test         -> 385 passed (11.9m); lsof -iTCP:8792 rc=1 before the run
+9. node bin/revert-check.mjs over the 12 test files the round changed:
+   diagrams, dispatch-note, dispatch-note-race, dev-server, background, dispatches, watch/sessions, views/agents
+                                              -> 102 reverts, 0 unproven, 11 unchecked (10 existing cases in watch/sessions.test.ts, 1 existing audit in dispatches.test.ts)
+   tinted.spec, session-tabs.spec             -> 16 reverts, 0 unproven, 1 unchecked (existing case)
+   system.spec, agents.spec                   -> 11 reverts, 0 unproven, 5 unchecked (existing system.spec cases)
+10. npm run diagrams; git status --short docs -> the files written; git status prints nothing
+    npx vitest run tests/checks/diagrams/diagrams.test.ts tests/server/core/dev-server.test.ts -> Test Files 2 passed, Tests 34 passed
+11. tmp count                                 -> 7015 = 7015
+```
+
+```
+Report's evidence:
+  Verification lines 1-8, 10, 11          -> reproduced as above (the node suite green on 1 of 3 full runs; the two failures were a real-hub read timeout and one case whose name the dot reporter did not print, neither in a file the round touched)
+  revert-check, the round's new cases     -> each red as the report names: writes.mjs:326 and :237; background.ts:52, :79, :35, :86; transcripts.ts:301 (dispatches.test and watch/sessions.test); dispatches.ts:199; Agents.svelte:87; session-tabs Transcript:168, Changes:207, Timeline:145, SessionDetail:275; tinted Project.svelte:336; system.spec Diagram.svelte:58
+  Refold time, scan() over ~/.claude-work/projects and ~/.claude/projects, cache and note in the scratchpad, probe stubbed (node --experimental-strip-types), load average 13-19:
+                                          -> empty cache 1599, 1618, 1186, 782, 914, 1131 ms; warm 47, 43, 28, 138, 127, 19 ms; 11 sessions. The report gave 735-821 ms and 7-8 ms. My runs were under load, so the order of magnitude is reproduced but the "about 0.8 s" figure is not.
+  Stale-lock wait: update() from bin/dispatch-note.mjs against a fresh lock naming a live `sleep` pid, scratch dir
+                                          -> "wrote 2029 ms": a synchronous 2 s block before the lock is broken
+  Build output: grep -rl "dispatch-note: " build -> build/server/chunks/chunks/transcripts.js-*.js (the writer is bundled into a chunk, not the entry, so its isMain() guard stays false in the built server)
+```
+
+### Spec
+- src/lib/server/sessions/stores/background.ts:14-16, 100-120: ruling 3 asked for a resumed subagent to be handled. A resumed subagent now takes its status from the latest notice, but between the resume and its next notice the row keeps the earlier notice's `done` or `stopped` while the agent is running. The report says so only inside ruling 3, not under Limitations. Item 7 asks that a background agent's state be read from what it still does, including its transcript's growth. `settleBackground` skips every row that is not `running` (:114), so a transcript `subagents/agent-<id>.jsonl` that grows after the notice's stamp never sets the row back to running. That growth can be read from the file's mtime, which the module already reads, with no need to know the resume shape. Item 7's defect ("reads done while it runs") is therefore still there for a resumed agent.
+- src/lib/server/sessions/stores/dispatches.ts:633-647 and transcripts.ts:300-302: item 4 asks for a launch that "reads done for good, whatever a later scan's `ps` answers". If the stamp cannot take the lock, it is only logged, and the next try happens only on a scan that sees the reuse again. A later scan whose `ps` fails does not see the reuse, so it reads the running pid as the builder and flips the row back. The window is narrow (lock held for 2 s or more), but it is the flip the item forbids. It appears in the report as judgment call 3, not as a limitation.
+
+### Proof
+- src/lib/server/sessions/stores/dispatches.ts:638 (`&& !record.endedAt`) and transcripts.ts:302 (`note.endedAt ||= stamp`): the report says the stamp "keeps any stamp already there" and that "the same scan's row carries the stamp at once". I found no case red under either revert. The dispatches.test case at :466 checks the row only after a second scan. The watcher case waits for a rescan that the note's own watch triggers. Found by reading; I did not run these reverts, since that needs a directive added to a file.
+- tests/browser/workbench/system.spec.ts:203: `expect.poll(() => finished.length).toBe(1)` passes on the first reading of 1. A held answer that finished after that reading would still pass, so this assertion does not prove what its comment (:196-197) says. The case's red under the revert comes from the `failed` poll at :192. The fixed wait is gone, which closes the ruling as written.
+- The stamp that fails on the lock (dispatches.ts:643-646) has no case.
+
+### Standards
+- bin/dispatch-note.mjs:311-318, :293-295, :325-327: `update`, `readNote` and `readFlags` each now carry two JSDoc blocks in a row, the old description and a new block with only the types. Editors and TypeScript attach only the last block, so the description of each function is detached from it. Each should be one block.
+- src/lib/server/sessions/stores/dispatches.ts:24: the import of `../../../../../bin/dispatch-note.mjs`, judged:
+  - It breaks none of the boundary rules the spec names, and `boundaries.test.ts` passes.
+  - The file now falls under `npm run check` (tsconfig `allowJs`/`checkJs`), which reports 0 errors.
+  - `bin/size-check.sh` and the ASCII gate already covered `bin/`.
+  - The file keeps main's `LOCK_WAIT_MS = 2000` and mode 755 (`git diff 007c637b` shows `old mode 100644 new mode 100755`). Apart from the JSDoc annotations, it differs from main at 409de414 only in the head comment's new sentence.
+  - The dev-server test's copy of `bin/dispatch-note.mjs` (dev-server.test.ts:35-47) is needed because `src` now imports it. It hides nothing: the built server bundles the file, as the build grep above shows.
+- The `stopped` status is carried to every place that reads an agent status:
+  - the payload comment (model-sessions.ts:29-31);
+  - the only view that reads it (Agents.svelte:47-52 for the tone, :87 for the words);
+  - the catalog key `sessions.ag_stopped`, which Agents.svelte reads;
+  - `--c-amber`, which is defined in tokens.css and themes.css;
+  - the watcher's signature (watch/sessions.ts:131), which takes the status as a string.
+  No other client file reads `agent.status` (`grep -rn` over src).
+
+### Behaviour
+- src/lib/server/sessions/stores/transcripts.ts:301 with bin/dispatch-note.mjs `takeLock`: the stamp runs inside `scan()`, which is synchronous on the server's main thread (watch/sessions.ts:184-231). The lock wait uses `Atomics.wait`, so a lock held by a live process blocks the whole server, sockets and terminals included, for 2029 ms (measured above) on any scan that sees a reused pid. The report names "up to about 4 s" as a limitation and leaves it unfixed.
+- The server now writes the real `~/.oculus/dispatches.json`, which before this round only launchers wrote. It also runs `sweepLitter` there on every stamp, removing left-behind lock and temporary files of dead pids. The Doc text for DESIGN.md:115 covers the stamp but not the sweep.
+- The resumed subagent that reads done or stopped while it runs (see Spec) is a behaviour a reader sees. It is not listed under "Changes a reader sees".
+
+### Not checked
+- The look on the TEST page (the orchestrator's).
+- The real transcript shape of a resumed subagent (how a resume is recorded), beyond reading the code.
+- Whether the first full node run's failing case was in a file the round touched: the dot reporter did not name it, and the next two full runs did not reproduce it.
+
+Reviewer usage: about 120k tokens, 42 tool uses, 50 minutes.
+
+## Closed
+
+The first run's findings, closed in repair round 1 (`agents/reviews/Q69-report.md`, "# Repair round 1"):
+
+- Spec 1, `killed` read as error: read as stopped, with its words and an amber dot; `done` and `success` dropped.
+- Spec 2, a notice matched by the agent id alone: matched by its `<tool-use-id>` first.
+- Spec 3, the brief's item 3 against its decision 2: decision 2 revised by the orchestrator; a function passed across modules is followed, and the audit asserting the limit replaced by a case proving it.
+- Spec 4, the reused mark lost with the cache: kept in the launch note itself by a stamp; the cache comments true again.
+- Proof 1 to 4: the real launch shape proven; the four other pick controls and the project board's code each with a case; the fixed 300 ms wait replaced by a condition.
+- Standards and Behaviour: the report's before and after completed, the refold time measured (0.8 s once, 7 to 8 ms warm, 11 sessions).
+
+The run over repair round 1, closed at landing on 2026-09-25:
+
+- Behaviour, the stamp blocking the server: `update()` of `bin/dispatch-note.mjs` takes a `once` option and `takeLock` a matching argument that throws at the first try instead of waiting; `stampEnded` uses it and answers whether it wrote; the sessions watcher holds the launches whose stamp the lock put off (`reused` in `ScanOptions`, one map across scans), reads them ended meanwhile and tries the stamp again each scan. A case holds the lock with a live pid: the scan returns in under a second, the row reads done, a scan with no start time still reads done, and the stamp is written at the first-seen moment once the lock goes; red under `bin/dispatch-note.mjs:243` and under `transcripts.ts:317`.
+- Spec, the flip when a stamp cannot take the lock: closed by the same memory.
+- Spec, a resumed subagent read done while it ran: a row a notice ended whose own transcript is written more than 5 s after that notice reads running again, until its next notice; a case, red under `background.ts:128`.
+- Found in the landing's look, not by the review: a notice that reaches a busy session is recorded as the attachment of a queued command (`type: 'attachment'`, `attachment.commandMode: 'task-notification'`, the notice in `attachment.prompt`), which the fold did not read, so a stopped builder read done and the round's own reviewer read running after its second notice. The fold reads those attachments now, and the cache version is 4 so every transcript is folded again once; a case, red under its revert. Run over the real store (`scan()` read-only, cache in the scratchpad), the rows read right: "Refute Q69 repair round" done at 20:57:45, "Build L6 status bar" stopped.
+- Proof, no case for `!record.endedAt`: "keeps a stamp another writer put in the note before this one", red under `dispatches.ts:224`. "The same scan's row carries the stamp": the stamp case's first scan asserts done with the note still unstamped behind a held lock.
+- Proof, the weak poll in `system.spec.ts`: the case keeps the held request and asserts it is the one that failed and not among the finished.
+- Proof, a failed stamp with no case: the held-lock case above.
+- Standards, the doubled JSDoc blocks in `bin/dispatch-note.mjs`: one block each for `update`, `readNote` and `readFlags`.
+- Behaviour, the server writing the note and sweeping stale lock litter: stated in the landing report and DESIGN.md's launched-builders line.
+- Behaviour, the report's missing lines: carried into the landing report.
+- Not a finding kept: the reviewer ran background shells, which its brief forbade; recorded in the dispatch block.

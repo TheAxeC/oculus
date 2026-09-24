@@ -26,7 +26,9 @@ export type SessionAgent = {
     model: string | null;
     started: string | null;
     ended: string | null;
-    /** `running`, `done` or `error`. */
+    /**
+     * `running`, `done`, `stopped` (a background subagent killed before it finished) or `error`.
+     */
     status: string;
     /** Length of the result the agent came back with, in characters. */
     resultChars: number;

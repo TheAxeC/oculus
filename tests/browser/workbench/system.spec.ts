@@ -9,18 +9,18 @@
 //
 // The manual shows the three diagrams of docs/diagrams/, each drawn in the prose's own colour from
 // the diagram route under a light theme and a dark one; a diagram file that carries a script is
-// drawn as its drawing alone; and the route refuses a name that is not one of that folder's `.svg`
-// files.
+// drawn as its drawing alone; a diagram whose view closes while its answer is held back aborts its
+// fetch; and the route refuses a name that is not one of that folder's `.svg` files.
 //
 // What this does NOT cover: saving a configuration edit, which is the source tab's own write and is
 // covered by tests/browser/sources/source.spec.ts.
 
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page, type Request, type Route } from '@playwright/test';
 import { SHOWN_VIEW, boot, openView, pickTheme, showRailPage } from '../helpers/rail.ts';
 import { removeFromHub, writeHubFile } from '../helpers/hub.ts';
 import { t, tabNamed } from '../helpers/words.ts';
 import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
-import { NAMES } from '../../../bin/diagrams.mjs';
+import { NAMES } from '../../../bin/diagrams/diagrams.mjs';
 
 const merged = loadConfig(engineDir()).config;
 
@@ -71,7 +71,7 @@ async function paint(
 test('the manual draws the three diagrams in the colour of its prose, light and dark', async ({
     page
 }) => {
-    // revert: src/lib/views/system/help/Diagram.svelte:74 => color: black;
+    // revert: src/lib/views/system/help/Diagram.svelte:78 => color: black;
     await boot(page);
     const colours: string[] = [];
     for (const theme of ['light', 'dark']) {
@@ -95,7 +95,7 @@ test('the manual draws the three diagrams in the colour of its prose, light and 
 test('a diagram file carrying a script and a handler is drawn as a drawing alone', async ({
     page
 }) => {
-    // revert: src/lib/views/system/help/Diagram.svelte:65 => {@html shown.svg}
+    // revert: src/lib/views/system/help/Diagram.svelte:69 => {@html shown.svg}
     const seen: string[] = [];
     page.on('dialog', (dialog) => {
         seen.push(dialog.message());
@@ -137,10 +137,84 @@ test('a write edge names the functions it calls on hover, and no style of the fi
     await expect(figure.locator('svg style')).toHaveCount(0);
 });
 
+/**
+ * Let a held request go on to the server. A request the page aborted while it was held has no
+ * route left to continue, which is what a stopped fetch looks like here, so a refusal is kept.
+ */
+async function passOn(route: Route): Promise<void> {
+    try {
+        await route.continue();
+    } catch {
+        // The page aborted the request while it was held.
+    }
+}
+
+/** Close the Help tab by its own close control. */
+async function closeHelp(page: Page): Promise<void> {
+    await page
+        .locator('.tab', { has: page.getByRole('tab', { name: tabNamed(t('views.help')) }) })
+        .getByRole('button', { name: t('ui.close_tab') })
+        .click();
+}
+
+test('a diagram whose view closes with its answer held back stops its fetch, and nothing lands', async ({
+    page
+}) => {
+    // revert: src/lib/views/system/help/Diagram.svelte:58 => void ask((signal) => load(asked, signal));
+    const errors: string[] = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+    const failed: Request[] = [];
+    const finished: Request[] = [];
+    const layers = (url: string): boolean => url.endsWith('/api/diagrams/layers.svg');
+    page.on('requestfailed', (request) => {
+        if (layers(request.url())) failed.push(request);
+    });
+    page.on('requestfinished', (request) => {
+        if (layers(request.url())) finished.push(request);
+    });
+    // The first ask of the file is the one the route holds back.
+    let first: Request | null = null;
+    let release: () => void = () => undefined;
+    const held = new Promise<void>((resolve) => {
+        release = resolve;
+    });
+    let passed: Promise<void> = Promise.resolve();
+    await page.route('**/api/diagrams/layers.svg', async (route) => {
+        first ??= route.request();
+        await held;
+        passed = passOn(route);
+        await passed;
+    });
+    await boot(page);
+    await openView(page, 'help', t('views.help'));
+    await expect(page.getByText(t('help.diagram_loading', 'layers'))).toBeVisible();
+
+    await closeHelp(page);
+    // The closed Help tab took its figures with it, so nothing is left for the answer to fill.
+    await expect(page.locator('[data-diagram]')).toHaveCount(0);
+    // The cleanup aborted the fetch as the view closed, before any answer was let through.
+    await expect.poll(() => failed.length).toBe(1);
+    release();
+    await passed;
+    // A second ask of the same file after the release passes the route at once. The one request
+    // that finishes is that second ask; the held one is the request that failed, and a request
+    // that failed never finishes.
+    const again = await page.evaluate(
+        async (url) => (await fetch(url)).status,
+        '/api/diagrams/layers.svg'
+    );
+    expect(again).toBe(200);
+    await expect.poll(() => finished.length).toBe(1);
+    expect(failed).toEqual([first]);
+    // The held request was aborted by the view's cleanup before its answer was let through.
+    expect(finished).not.toContain(first);
+    expect(errors).toEqual([]);
+});
+
 test('a diagram says it is drawing while its answer is out, and a view closed then opens whole', async ({
     page
 }) => {
-    // revert: src/lib/views/system/help/Diagram.svelte:60 => delete
+    // revert: src/lib/views/system/help/Diagram.svelte:64 => delete
     const errors: string[] = [];
     page.on('pageerror', (error) => errors.push(error.message));
     let release: () => void = () => undefined;
@@ -149,17 +223,14 @@ test('a diagram says it is drawing while its answer is out, and a view closed th
     });
     await page.route('**/api/diagrams/layers.svg', async (route) => {
         await held;
-        await route.continue();
+        await passOn(route);
     });
     await boot(page);
     await openView(page, 'help', t('views.help'));
     await expect(page.getByText(t('help.diagram_loading', 'layers'))).toBeVisible();
 
     // The view closes with the answer still out; the answer then lands on nothing.
-    await page
-        .locator('.tab', { has: page.getByRole('tab', { name: tabNamed(t('views.help')) }) })
-        .getByRole('button', { name: t('ui.close_tab') })
-        .click();
+    await closeHelp(page);
     // Closing the Help tab takes its figures with it, so there is none left for the answer to fill.
     await expect(page.locator('[data-diagram]')).toHaveCount(0);
     release();

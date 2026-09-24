@@ -5,10 +5,12 @@
 // Two sessions reach the page as transcripts this spec writes into the served run's own session
 // store, under the home directory tests/browser/helpers/serve.ts makes; every path is asserted to
 // be inside the temporary directory before it is written, and the transcripts go when the case
-// ends. What this does NOT cover: a terminal started from the form, since the served run's tmux
-// starts nothing; the node suite presses Start over a stubbed answer instead.
+// ends. A session view with nothing picked, and a Terminal tab with no terminal, name the Sessions
+// view as where one is picked and offer the control that opens it. What this does NOT cover: a
+// terminal started from the form, since the served run's tmux starts nothing; the node suite
+// presses Start over a stubbed answer instead.
 
-import { expect, test } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 import { existsSync, readdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
@@ -114,6 +116,73 @@ test('a start from a new Terminal tab makes the terminal that tab its own, and l
     await page.getByRole('tab', { name: tabNamed(t('sessions.view_terminal')) }).click();
     // the first tab started nothing of its own, and nothing it follows is selected
     await expect(shown.getByText(t('sessions.no_terminal'))).toBeVisible();
+});
+
+/** The Sessions view's tab, which the rail no longer lists and the pick control opens. */
+function sessionsTab(page: Page): Locator {
+    return page.getByRole('tab', { name: tabNamed(t('sessions.rail_title')) });
+}
+
+test('a session view with no session picked names the Sessions view and opens it', async ({
+    page
+}) => {
+    // revert: src/lib/views/shared/sessions/PickSession.svelte:31 => onclick={() => undefined}
+    // revert: config/text/views/sessions/session-list.yml:10 => detail_empty: Pick a session in the rail.
+    await boot(page);
+    await openView(page, 'agents', t('sessions.view_agents'));
+    const shown = page.locator(SHOWN_VIEW);
+    const words = shown.getByText(t('sessions.detail_empty'));
+    await expect(words).toBeVisible();
+    expect(await words.textContent()).toContain(t('sessions.rail_title'));
+    // boot() starts on a page holding the Status tab alone, so only the press opens the list.
+    await expect(sessionsTab(page)).toHaveCount(0);
+    await shown.getByRole('button', { name: t('sessions.open_sessions'), exact: true }).click();
+    await expect(sessionsTab(page)).toHaveCount(1);
+});
+
+/** Open a session view with no session picked, and press the control its sentence offers. */
+async function pickFrom(page: Page, view: string, label: string): Promise<void> {
+    await boot(page);
+    await openView(page, view, label);
+    const shown = page.locator(SHOWN_VIEW);
+    const words = shown.getByText(t('sessions.detail_empty'));
+    await expect(words).toBeVisible();
+    expect(await words.textContent()).toContain(t('sessions.rail_title'));
+    await shown.getByRole('button', { name: t('sessions.open_sessions'), exact: true }).click();
+    await expect(sessionsTab(page)).toHaveCount(1);
+}
+
+test('the Transcript view with no session picked offers the Sessions view', async ({ page }) => {
+    // revert: src/lib/views/sessions/transcript/Transcript.svelte:168 => <Empty message={t('sessions.detail_empty')} glyph={t('sessions.empty_glyph')} />
+    await pickFrom(page, 'transcript', t('sessions.view_transcript'));
+});
+
+test('the Changes view with no session picked offers the Sessions view', async ({ page }) => {
+    // revert: src/lib/views/sessions/changes/Changes.svelte:207 => <p>{t('sessions.detail_empty')}</p>
+    await pickFrom(page, 'changes', t('sessions.view_changes'));
+});
+
+test('the Timeline view with no session picked offers the Sessions view', async ({ page }) => {
+    // revert: src/lib/views/sessions/timeline/Timeline.svelte:145 => <Empty message={t('sessions.detail_empty')} glyph={t('sessions.empty_glyph')} />
+    await pickFrom(page, 'timeline', t('sessions.view_timeline'));
+});
+
+test('the Session view with no session picked offers the Sessions view', async ({ page }) => {
+    // revert: src/lib/views/sessions/session-detail/SessionDetail.svelte:275 => <p>{t('sessions.detail_empty')}</p>
+    await pickFrom(page, 'session-detail', t('sessions.detail_title'));
+});
+
+test('a Terminal tab with no terminal names the Sessions view and opens it', async ({ page }) => {
+    // revert: config/text/views/sessions/terminal.yml:16 => no_terminal: No terminal is selected. Start one, or pick one in the rail.
+    // revert: src/lib/views/shared/sessions/PickSession.svelte:31 => onclick={() => undefined}
+    await boot(page);
+    await openView(page, 'terminal', t('sessions.view_terminal'));
+    const shown = page.locator(SHOWN_VIEW);
+    const words = shown.getByText(t('sessions.no_terminal'));
+    await expect(words).toBeVisible();
+    expect(await words.textContent()).toContain(t('sessions.rail_title'));
+    await shown.getByRole('button', { name: t('sessions.open_sessions'), exact: true }).click();
+    await expect(sessionsTab(page)).toHaveCount(1);
 });
 
 // revert: src/lib/views/sessions/session-detail/SessionDetail.svelte:182 => openView('transcript');

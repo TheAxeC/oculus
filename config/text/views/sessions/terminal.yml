@@ -13,7 +13,7 @@ text:
         kind_shell_glyph: terminal_shell
         new_terminal: new terminal
         new_terminal_title: Open another terminal tab, which starts a terminal of its own
-        no_terminal: No terminal is selected. Start one, or pick one in the rail.
+        no_terminal: No terminal is selected. Start one, or pick one in the Sessions view.
         start_terminal: Start a terminal
         stop_terminal: Stop this terminal
         terminal_glyph: terminal

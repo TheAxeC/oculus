@@ -40,13 +40,15 @@ import {
 } from './codex.ts';
 import { claudeTranscripts, codexRollouts, isRollout } from '../../transcripts/stores.ts';
 import { claudeState, foldClaude } from '../fold.ts';
+import { settleBackground } from './background.ts';
 import { whole } from './json.ts';
 import {
     builderProcesses,
     defaultDispatchesPath,
     joinDispatches,
     pendingBuilders,
-    readDispatches
+    readDispatches,
+    stampEnded
 } from './dispatches.ts';
 import { distinctFolders, realFolder } from '../folders.ts';
 import { defaultOverridesPath, hiddenIds } from '../overrides.ts';
@@ -74,6 +76,12 @@ export type ScanOptions = {
     overridesPath?: string;
     /** The launch note; `~/.oculus/dispatches.json` when absent. */
     dispatchesPath?: string;
+    /**
+     * The launches seen under a reused pid whose stamp is not written yet, by id, each with the
+     * moment it was first seen; held by the watcher across scans, so a stamp the note's lock put
+     * off is tried again and the launch reads ended meanwhile, whatever a later `ps` answers.
+     */
+    reused?: Map<string, string>;
     /** What the liveness check asks of the system; stubbed by every test. */
     probe?: Probe;
     /** What the Codex liveness check asks of the system; stubbed by every test. */
@@ -175,7 +183,10 @@ export function readSession(path: string, store: string | null = null): SessionR
     } catch {
         mtimeMs = null;
     }
-    return finish(acc, stateOf(acc, mtimeMs, Date.now()));
+    const now = Date.now();
+    const record = finish(acc, stateOf(acc, mtimeMs, now));
+    settleBackground(acc, record, mtimeMs, now);
+    return record;
 }
 
 /** Fold one file, reusing the cache entry when it still describes the same file. */
@@ -211,7 +222,9 @@ function session(
         offset: offset + consumed,
         acc
     };
-    return { record: finish(acc, stateOf(acc, found.mtimeMs, now)), entry };
+    const record = finish(acc, stateOf(acc, found.mtimeMs, now));
+    settleBackground(acc, record, found.mtimeMs, now);
+    return { record, entry };
 }
 
 /** One transcript found in a store, with the store it was found in (a Codex slug needs it). */
@@ -287,11 +300,27 @@ export function scan(options: ScanOptions = {}): SessionRecord[] {
     // Every folded file by its real path, since a note may name a transcript through a symlink.
     const byReal = new Map<string, SessionRecord>();
     if (notes.length > 0) for (const [path, record] of byPath) byReal.set(realFolder(path), record);
+    const builders = builderProcesses(pending, answered, starts);
+    // A launch whose pid now runs another process is stamped ended in the note itself, so it reads
+    // done for good whatever a later `ps` answers, and this scan's row carries the stamp already.
+    // One the lock put off stays in `reused` and reads ended until its stamp is written.
+    const reused = options.reused ?? new Map<string, string>();
+    const stamp = new Date(now).toISOString();
+    for (const id of builders.reused) if (!reused.has(id)) reused.set(id, stamp);
+    for (const id of [...reused.keys()]) {
+        if (!notes.some((note) => note.id === id && !note.endedAt)) reused.delete(id);
+    }
+    const ended = new Map(reused);
+    if (stampEnded(options.dispatchesPath ?? defaultDispatchesPath(), reused)) reused.clear();
+    for (const note of notes) {
+        const at = ended.get(note.id);
+        if (at !== undefined) note.endedAt ||= at;
+    }
     joinDispatches(
         found.map((item) => item.record),
         notes,
         (note) => (note.transcript ? (byReal.get(realFolder(note.transcript)) ?? null) : null),
-        builderProcesses(pending, answered, starts)
+        builders.live
     );
 
     saveCache(cachePath, previous, fresh);

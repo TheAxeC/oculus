@@ -13,7 +13,7 @@ import { render } from 'svelte/server';
 import Help from '../../../src/lib/views/system/help/Help.svelte';
 import { splitManual } from '../../../src/lib/views/system/help/manual.ts';
 import { newestAnswer } from '../../../src/lib/views/system/help/newest.ts';
-import { NAMES, OUT } from '../../../bin/diagrams.mjs';
+import { NAMES, OUT } from '../../../bin/diagrams/diagrams.mjs';
 import { renderManual, renderMarkdown } from '../../../src/lib/server/content/docs.ts';
 import { portfolioConfigFrom } from '../../../src/lib/data/index.ts';
 import { descriptionKey } from '../../../src/lib/views/system/config/files.ts';
@@ -91,7 +91,7 @@ describe('the diagrams in the manual', () => {
     ].join('\n');
 
     it('draws a diagram of docs/diagrams from the route, with the prose around it', () => {
-        // revert: src/lib/views/system/help/Help.svelte:62 => {#if false}
+        // revert: src/lib/views/system/help/Help.svelte:63 => {#if false}
         const body = drawn({ html, frontmatter: null, error: '', loading: false });
         expect(body).toContain('data-diagram="layers"');
         expect(body).toContain('aria-label="The layers &amp; imports"');
@@ -136,7 +136,7 @@ describe('the diagrams in the manual', () => {
     });
 
     it('audits that the manual shows every diagram the generator writes, each one committed', async () => {
-        // revert: bin/diagrams.mjs:31 => export const NAMES = ['layers', 'channels', 'writes', 'calls'];
+        // revert: bin/diagrams/diagrams.mjs:38 => export const NAMES = ['layers', 'channels', 'writes', 'calls'];
         const answer = renderManual({
             hub: engineDir(),
             engine: engineDir(),
@@ -150,13 +150,25 @@ describe('the diagrams in the manual', () => {
     });
 });
 
-/** A question still out, and the function that answers it. */
-function deferred(): { work: Promise<string>; settle: (answer: string) => void } {
+/**
+ * A question still out: the work newestAnswer starts, the function that answers it, and the signal
+ * the work was handed once it started.
+ */
+function deferred(): {
+    work: (signal: AbortSignal) => Promise<string>;
+    settle: (answer: string) => void;
+    signal: () => AbortSignal | null;
+} {
     let settle: (answer: string) => void = () => undefined;
-    const work = new Promise<string>((resolve) => {
+    let handed: AbortSignal | null = null;
+    const answer = new Promise<string>((resolve) => {
         settle = resolve;
     });
-    return { work, settle };
+    const work = (signal: AbortSignal): Promise<string> => {
+        handed = signal;
+        return answer;
+    };
+    return { work, settle, signal: () => handed };
 }
 
 /** Every answer already settled has been handed on once this resolves. */
@@ -166,7 +178,7 @@ function landed(): Promise<void> {
 
 describe('the newest answer a diagram takes', () => {
     it('audits that an answer for a name a later one replaced is dropped', async () => {
-        // revert: src/lib/views/system/help/newest.ts:17 => take(answer);
+        // revert: src/lib/views/system/help/newest.ts:22 => take(answer);
         const taken: string[] = [];
         const ask = newestAnswer<string>((answer) => taken.push(answer));
         const earlier = deferred();
@@ -182,7 +194,7 @@ describe('the newest answer a diagram takes', () => {
     });
 
     it('audits that an answer landing after the view closed is dropped', async () => {
-        // revert: src/lib/views/system/help/newest.ts:17 => take(answer);
+        // revert: src/lib/views/system/help/newest.ts:22 => take(answer);
         const taken: string[] = [];
         const ask = newestAnswer<string>((answer) => taken.push(answer));
         const out = deferred();
@@ -191,6 +203,19 @@ describe('the newest answer a diagram takes', () => {
         out.settle('layers');
         await landed();
         expect(taken).toEqual([]);
+    });
+
+    it('audits that a stop aborts the signal its work was handed, and only that one', () => {
+        // revert: src/lib/views/system/help/newest.ts:25 => delete
+        const ask = newestAnswer<string>(() => undefined);
+        const first = deferred();
+        const second = deferred();
+        const stopFirst = ask(first.work);
+        ask(second.work);
+        expect(first.signal()?.aborted).toBe(false);
+        stopFirst();
+        expect(first.signal()?.aborted).toBe(true);
+        expect(second.signal()?.aborted).toBe(false);
     });
 });
 

@@ -196,6 +196,7 @@ const VIEWS: Record<string, string> = {
     'shared/card/CardDocs.svelte': '.label=fs-xxs | .frow=fs-md | .capped=fs-xs',
     'shared/card/CardLinks.svelte': '.kind=fs-xxs',
     'shared/card/CardSessions.svelte': '.session=fs-sm',
+    'shared/sessions/PickSession.svelte': '',
     'shared/forms/EntryForm.svelte': '.label=fs-xs | .said=fs-md',
     'shared/prose/Intro.svelte': '.intro=fs-md',
     'shared/prose/Markdown.svelte':

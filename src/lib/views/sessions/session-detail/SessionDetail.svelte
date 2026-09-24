@@ -20,7 +20,7 @@
     // The window itself is `context_window` in config/behavior.yml, or the transcript's own when it
     // states one, which Codex does and Claude does not.
 
-    import Empty from '$lib/ui/frame/Empty.svelte';
+    import PickSession from '$lib/views/shared/sessions/PickSession.svelte';
     import Meter from '$lib/ui/display/Meter.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Select from '$lib/ui/forms/Select.svelte';
@@ -272,7 +272,7 @@
 <Pane title={t('sessions.detail_title')} toolbar={tools} tinted>
     <div class="detail" data-instance={instance.id}>
         {#if record === null}
-            <Empty message={t('sessions.detail_empty')} glyph={t('sessions.empty_glyph')} />
+            <PickSession message={t('sessions.detail_empty')} glyph={t('sessions.empty_glyph')} />
         {:else}
             <dl class="kv">
                 <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->

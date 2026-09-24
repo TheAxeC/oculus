@@ -158,8 +158,12 @@ export function watchSessions(hub: Hub, options: SessionsWatchOptions = {}): Ses
     let signature: string | null = null;
     let closed = false;
 
+    // The launches seen under a reused pid whose stamp the note's lock has put off, kept across
+    // scans so each scan tries the stamp again and reads the launch ended meanwhile.
+    const reused = new Map<string, string>();
     const read = (): SessionsPayload =>
         sessions({
+            reused,
             stores: options.stores,
             codexStores: options.codexStores,
             registries: options.registries,

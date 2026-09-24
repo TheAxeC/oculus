@@ -101,7 +101,7 @@ describe('the agents view over launched builders', () => {
             subagent('toolu_1', '2026-09-23T10:00:00.000Z', 'first subagent'),
             launched('one', '2026-09-23T10:01:00.000Z')
         ]);
-        // revert: src/lib/views/sessions/agents/Agents.svelte:58 => [...(record?.agents ?? [])].reverse()
+        // revert: src/lib/views/sessions/agents/Agents.svelte:69 => [...(record?.agents ?? [])].reverse()
         const body = html();
         const at = (text: string): number => body.indexOf(text);
         expect(at('second subagent')).toBeGreaterThan(-1);
@@ -115,7 +115,7 @@ describe('the agents view over launched builders', () => {
                 tokens: { input: 12000, output: 3000, cacheRead: 0, cacheCreation: 0, thinking: 0 }
             })
         ]);
-        // revert: src/lib/views/sessions/agents/Agents.svelte:90 => if (harness === 'codex') return agent.subagentType;
+        // revert: src/lib/views/sessions/agents/Agents.svelte:119 => if (harness === 'codex') return agent.subagentType;
         const body = html();
         expect(body).toContain('data-launched="true"');
         expect(body).toContain(catalog['sessions.ag_launched']);
@@ -127,7 +127,7 @@ describe('the agents view over launched builders', () => {
 
     it('draws no launched mark and no open control on a subagent', () => {
         holding([subagent('toolu_1', '2026-09-23T10:00:00.000Z', 'a subagent')]);
-        // revert: src/lib/views/sessions/agents/Agents.svelte:147 => {#if true}
+        // revert: src/lib/views/sessions/agents/Agents.svelte:176 => {#if true}
         const body = html();
         // A subagent carries no launch record, so nothing marks it as a process of its own.
         expect(body).not.toContain('data-launched');
@@ -142,7 +142,7 @@ describe('the agents view over launched builders', () => {
             launched('known', '2026-09-23T10:01:00.000Z', { session: 'builder-session' }),
             launched('unknown', '2026-09-23T10:00:00.000Z', {}, '2026-09-23T10:05:00.000Z')
         ]);
-        // revert: src/lib/views/sessions/agents/Agents.svelte:154 => {#if true}
+        // revert: src/lib/views/sessions/agents/Agents.svelte:183 => {#if true}
         const body = html();
         const known = body.slice(body.indexOf('data-agent="dispatch:known"'));
         const unknown = body.slice(body.indexOf('data-agent="dispatch:unknown"'));
@@ -152,5 +152,54 @@ describe('the agents view over launched builders', () => {
         // That launch names no transcript, so the payload holds no session for it to open.
         expect(unknown).not.toContain(catalog['sessions.ag_open']);
         expect(unknown).toContain(catalog['sessions.ag_done']);
+    });
+
+    /** The status line of one row of the rendered view. */
+    function line(body: string, id: string): string {
+        const row = body.slice(body.indexOf(`data-agent="dispatch:${id}"`));
+        const found = /<span class="st[^"]*">([^<]*)<\/span>/.exec(row);
+        return found === null ? '' : found[1];
+    }
+
+    it('counts a stamped launch from its start to its end', () => {
+        holding([launched('ran', '2026-09-23T16:12:23.433Z', {}, '2026-09-23T16:13:53.869Z')]);
+        // revert: src/lib/views/sessions/agents/Agents.svelte:103 => : seconds(agent.started, null, now);
+        expect(line(html(), 'ran')).toBe(
+            [catalog['sessions.ag_done'], '1m 30s'].join(` ${catalog['sessions.meta_sep']} `)
+        );
+    });
+
+    it('counts a running launch from its start to now', () => {
+        const started = new Date(Date.now() - 45_000).toISOString();
+        holding([launched('runs', started)]);
+        // revert: src/lib/views/sessions/agents/Agents.svelte:100 => ? null
+        const said = line(html(), 'runs');
+        expect(
+            said.startsWith(`${catalog['sessions.ag_running']} ${catalog['sessions.meta_sep']} `)
+        ).toBe(true);
+        // Rendering takes well under a second, so the count is 45 s or the second after it.
+        expect(['45 s', '46 s']).toContain(said.split(` ${catalog['sessions.meta_sep']} `)[1]);
+    });
+
+    it('draws no count for a finished launch whose end is not known', () => {
+        const gone = { ...launched('gone', '2026-09-23T10:00:00.000Z'), status: 'done' as const };
+        holding([gone]);
+        // revert: src/lib/views/sessions/agents/Agents.svelte:101 => : false
+        expect(line(html(), 'gone')).toBe(catalog['sessions.ag_done']);
+    });
+
+    it('says a subagent stopped before it finished is stopped, apart from one that failed', () => {
+        const stopped = {
+            ...subagent('toolu_s', '2026-09-23T10:00:00.000Z', 'a stopped subagent'),
+            status: 'stopped',
+            ended: '2026-09-23T10:01:00.000Z'
+        };
+        holding([stopped]);
+        // revert: src/lib/views/sessions/agents/Agents.svelte:87 => delete
+        const body = html();
+        expect(body).toContain(
+            `>${catalog['sessions.ag_stopped']} ${catalog['sessions.meta_sep']} 1m 00s<`
+        );
+        expect(body).toContain('--tone: var(--c-amber)');
     });
 });

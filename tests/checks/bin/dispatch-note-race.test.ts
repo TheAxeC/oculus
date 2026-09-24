@@ -50,7 +50,7 @@ describe('a clearer against a lock a live writer took since it was judged', () =
             breakStale: (lock: string, judged: string) => void;
         };
         try {
-            // revert: bin/dispatch-note.mjs:171-187 => const aside = `${lock}.aside-${process.pid}-${Math.random()}`; try { renameSync(lock, aside); } catch { return; } if (readText(aside) !== judged) { try { linkSync(aside, lock); } catch { /* taken */ } } rmSync(aside, { force: true });
+            // revert: bin/dispatch-note.mjs:179-195 => const aside = `${lock}.aside-${process.pid}-${Math.random()}`; try { renameSync(lock, aside); } catch { return; } if (readText(aside) !== judged) { try { linkSync(aside, lock); } catch { /* taken */ } } rmSync(aside, { force: true });
             breakStale(lock, '1 judged-dead');
         } finally {
             hook.afterRename = null;

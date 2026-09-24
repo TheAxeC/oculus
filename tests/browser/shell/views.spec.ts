@@ -200,7 +200,7 @@ function cataloguePane(page: Page): Locator {
 test("a catalogue entry's right-click menu opens it on this page clear of the catalogue, or beside it", async ({
     page
 }) => {
-    // revert: src/lib/state/workbench/layout/open/away.ts:67 => if (false) {
+    // revert: src/lib/state/workbench/layout/open/away.ts:75 => if (false) {
     // revert: src/lib/views/system/workbench/Catalogue.svelte:130 => if (pick === BESIDE) openAway(view, state, page, instance.id);
     await boot(page);
     await showRailPage(page, 'projects');
@@ -237,7 +237,7 @@ test("a catalogue entry's right-click menu opens it on this page clear of the ca
 test('Open beside on this page leaves a view already open in another pane of the page where it is', async ({
     page
 }) => {
-    // revert: src/lib/state/workbench/layout/open/away.ts:46 => if (false) return id;
+    // revert: src/lib/state/workbench/layout/open/away.ts:53 => if (false) return id;
     await boot(page);
     await showRailPage(page, 'views');
     const settings = page.locator('[data-pane]', {
@@ -269,7 +269,7 @@ test('Open beside on this page leaves a view already open in another pane of the
 test('Open on this page opens beside a catalogue whose pane is the page only one', async ({
     page
 }) => {
-    // revert: src/lib/state/workbench/layout/open/away.ts:60 => if (other === undefined) return openView(view, state, page);
+    // revert: src/lib/state/workbench/layout/open/away.ts:68 => if (other === undefined) return openView(view, state, page);
     await boot(page);
     await openView(page, 'catalogue', t('views.catalogue'));
     await expect(page.locator('[data-pane]')).toHaveCount(1);
@@ -282,6 +282,69 @@ test('Open on this page opens beside a catalogue whose pane is the page only one
         .click();
     await expect(page.locator('[data-pane]')).toHaveCount(2);
     await expect(page.getByRole('tab', { name: t('views.help') })).toBeVisible();
+    await expect(cataloguePane(page)).toHaveAttribute('data-pane-view', 'catalogue');
+});
+
+/**
+ * One pane holding Status, the catalogue, Help and Config in that order, the catalogue shown: Help
+ * is a tab of the catalogue's pane with another tab after it, which is the tab the pane would show
+ * once Help moved out.
+ */
+async function catalogueBesideHelp(page: Page): Promise<void> {
+    await boot(page);
+    await openView(page, 'catalogue', t('views.catalogue'));
+    await openView(page, 'help', t('views.help'));
+    await openView(page, 'config', t('views.config'));
+    await page.getByRole('tab', { name: t('views.catalogue') }).click();
+    await expect(cataloguePane(page)).toHaveAttribute('data-pane-view', 'catalogue');
+}
+
+/** Pick one item of a catalogue entry's right-click menu. */
+async function openFromMenu(page: Page, view: string, label: string, item: string): Promise<void> {
+    await page
+        .locator(`${SHOWN_VIEW} [data-catalogue] button[data-view="${view}"]`)
+        .click({ button: 'right' });
+    await page.getByRole('menu', { name: label }).getByRole('menuitem', { name: item }).click();
+}
+
+test("Open on this page moves a view out of the catalogue's only pane and leaves the catalogue shown", async ({
+    page
+}) => {
+    // revert: src/lib/state/workbench/layout/open/away.ts:55 => delete
+    await catalogueBesideHelp(page);
+    await expect(page.locator('[data-pane]')).toHaveCount(1);
+    await openFromMenu(page, 'help', t('views.help'), t('workbench.catalogue_open_here'));
+    await expect(page.locator('[data-pane]')).toHaveCount(2);
+    const help = page.locator('[data-pane]', {
+        has: page.getByRole('tab', { name: t('views.help') })
+    });
+    await expect(help).toHaveAttribute('data-pane-view', 'help');
+    // Help moved out of the catalogue's pane into the new one, so that pane keeps no tab of it.
+    await expect(cataloguePane(page).getByRole('tab', { name: t('views.help') })).toHaveCount(0);
+    // Config, the tab after Help, is still a tab of the pane, and the pane shows the catalogue.
+    await expect(cataloguePane(page).getByRole('tab', { name: t('views.config') })).toHaveCount(1);
+    await expect(cataloguePane(page)).toHaveAttribute('data-pane-view', 'catalogue');
+});
+
+test("Open on this page moves a view out of the catalogue's pane into the pane beside it and leaves the catalogue shown", async ({
+    page
+}) => {
+    // revert: src/lib/state/workbench/layout/open/away.ts:77 => delete
+    await catalogueBesideHelp(page);
+    await openFromMenu(page, 'usage', t('views.usage'), t('workbench.catalogue_open_beside'));
+    await expect(page.locator('[data-pane]')).toHaveCount(2);
+    const usage = page.locator('[data-pane]', {
+        has: page.getByRole('tab', { name: t('views.usage') })
+    });
+    await expect(usage).toHaveAttribute('data-pane-view', 'usage');
+    // The catalogue's pane is where the reader is when its entry is pressed.
+    await page.getByRole('tab', { name: t('views.catalogue') }).click();
+    await openFromMenu(page, 'help', t('views.help'), t('workbench.catalogue_open_here'));
+    await expect(page.locator('[data-pane]')).toHaveCount(2);
+    await expect(usage).toHaveAttribute('data-pane-view', 'help');
+    // Help went to the end of the other pane's strip, so the catalogue's pane keeps no tab of it.
+    await expect(cataloguePane(page).getByRole('tab', { name: t('views.help') })).toHaveCount(0);
+    await expect(cataloguePane(page).getByRole('tab', { name: t('views.config') })).toHaveCount(1);
     await expect(cataloguePane(page)).toHaveAttribute('data-pane-view', 'catalogue');
 });
 

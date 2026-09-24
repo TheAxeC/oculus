@@ -31,7 +31,7 @@
     // cannot be CSS: xterm paints the glyphs itself and takes its palette as strings through its
     // own API. This is the one file in the application that reads a computed token.
 
-    import Empty from '$lib/ui/frame/Empty.svelte';
+    import PickSession from '$lib/views/shared/sessions/PickSession.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Segment from '$lib/ui/controls/Segment.svelte';
     import Select from '$lib/ui/forms/Select.svelte';
@@ -382,7 +382,10 @@
     <div class="terminal" data-instance={instance.id}>
         {#if id === null}
             <div class="start">
-                <Empty message={t('sessions.no_terminal')} glyph={t('sessions.terminal_glyph')} />
+                <PickSession
+                    message={t('sessions.no_terminal')}
+                    glyph={t('sessions.terminal_glyph')}
+                />
                 <Segment
                     items={kinds}
                     value={kind}

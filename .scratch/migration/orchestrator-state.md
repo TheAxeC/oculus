@@ -30,22 +30,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:
-  - step: Q69
-    executor: agent for the four code defects; the orchestrator inline for the looks and the check of the landed steps against their briefs
-    worker: claude:opus, a native background agent; its id is this session's agent aafecfad4942c74a6
-    worktree: .agents/worktrees/Q69
-    base: 695861af
-    launched: 2026-09-24
-    report: tools/oculus/.scratch/migration/agents/reviews/Q69-report.md
-    report_saved: Q69-report.md; builder 518,005 tokens, 238 tool uses, 6,706 s; stopped with TaskStop after its reply; item 7's shapes checked by the orchestrator against this session's log (Q69-checks.md)
-    review: agents/reviews/Q69-refuter.md (dispatched 2026-09-24 by the /refute skill; reviewer claude:opus, agent a402c2546d7fbd3b4)
-    brief_amended: 2026-09-24 while the builder runs, items 6 to 9 from the orchestrator's check of the landed steps (`agents/reviews/Q69-checks.md`), sent to the builder by message
-    landing: not-started
-    round: 1                 # sent 2026-09-24: killed read as stopped and the notice matched by its tool-use id; the cross-module pass followed (the brief's decision 2 revised); the reused-pid mark kept in the launch note itself, the cache comments made true; cases for the launch without run_in_background, the four other pick controls and the project board's code; a condition in place of the 300 ms wait; the report's before and after and the re-fold time measured
-    round_base: 007c637b (the worktree's wip commit when the round was sent)
-    round_1_reply: saved under "# Repair round 1" in Q69-report.md; builder stopped with TaskStop after its reply; the run over the round dispatched through /refute (claude:opus, agent a6d57ffc878c14b41); builder 619,512 tokens, 96 tool uses, 5,416 s for the round
-    review_usage: claude:opus read-only, 197,250 tokens, 55 tool uses, 2,246 s
+dispatch: []   # nothing in flight; Q70 is next
 ```
 
 ## The standing demands (from Axel, in force)
@@ -99,8 +84,7 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)
 
 - Q71, the architecture made sound and kept sound (booked 2026-09-24, widened on Axel's word the same day): the two import cycles and a cycle check, an order for the folders inside each layer held by the boundary test, what views compute that belongs in state, and the diagrams as ruled. Before S2. Q72 re-reads it all before the release.
-- Q70, watchers under file-event load (booked 2026-09-24 at Q68's landing): the mail poller's folder watch that loses an early write, three git watcher cases that failed only while fseventsd was saturated (cause not found), and a bookmark added by hand that does not reach an open page. In the queue after Q69.
-- Q69, what earlier landings left (booked 2026-09-24): the catalogue covered when Open on this page moves a view out of its own pane (found in L5's owed look on TEST), the light-theme looks of L3 and U1, and five items named in the landing reports of R18, O32, Q52 and Q54 and booked nowhere; and, on Axel's yes, the landed steps Q65, R18, O31, O32, L3, U1 and L5 checked item by item against their briefs in the running app on TEST. In the queue after Q68. Found at L6's look: the Help view's lines around inline code draw blurred under a wallpaper theme.
+- Q70, watchers under file-event load (booked 2026-09-24 at Q68's landing): the mail poller's folder watch that loses an early write, three git watcher cases that failed only while fseventsd was saturated (cause not found), and a bookmark added by hand that does not reach an open page. In the queue after Q69. Also a browser case whose boot waits on the server item timing out under load (`unsaved-forms.spec.ts:425`, then `:406` once before).
 - O32's launch recipes in the Ordo plan skills (booked 2026-09-23 at O32's landing): Ordo's plan 2.B, not plan 1. Blocked by something in flight: the Ordo session's release. O32 closes only after Axel pins the Ordo release that carries 2.B, and is ticked when the installed plan-orchestration skill runs `launch_note` and a step launched from a shell (`claude -p` or `codex exec`) has written its note; a builder dispatched as a native agent is never recorded. The hub's side is ready (2026-09-24, from Ordo's review): the writer's execute bit committed, `launch_note` the absolute path of `tools/oculus/bin/dispatch-note.mjs` in `.agents/plan.yaml`, and its lock wait 2 s, inside the 3 s Ordo bounds each note call at.
 
 ## Closed items (kept as the log of what was raised and how it ended)
@@ -288,6 +272,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-09-25. Q69 landed through /spec, /refute and /land, built by an Opus agent with four items added while it ran, one repair round, the run over the round refuted again and its findings fixed at landing: the server's stamp of a reused launch no longer waits on the note's lock (it froze the server for 2 s), a resumed subagent reads running again, and notices queued while the session was busy are read (found in the landing's look on real data; the cache version is 4). On main: `npx vitest run` 4,747 passed in 298 files; `npm run check` 1,369 files 0 errors 0 warnings; build; `format:check`; `lint`; the ASCII gate prints nothing; size and folder checks exit 0; `npx playwright test` 384 passed and 1 failed (`unsaved-forms.spec.ts:425` at boot under load, 3 of 3 alone; booked in Q70). `ListAgents` lists no subagent. Next: Q70.
 - 2026-09-24. L6 landed through /spec, /refute and /land, built by an Opus continuation builder over a first run stopped by Axel's order, one repair round, the run over the round refuted again and its findings closed at landing: the status bar drawn as VS Code's, 22 px under the rail with 12 px icon items in two groups, the source tab's items, the branch picker and push behind a confirm, right-click hiding, and the notification bell, centre and toasts with five sources. On main: `npx vitest run` 4,718 passed in 297 files; `npm run check` 1,361 files 0 errors 0 warnings; build; `format:check`; `lint`; the ASCII gate prints nothing; size and folder checks exit 0; `npx playwright test` 373 passed (7.9m). The look on TEST under five themes. `ListAgents` lists no subagent. Next: Q69 through /spec.
 - 2026-09-24. Q68 landed through `/refute` and `/land`, built by an Opus agent, one repair round, the run over the round refuted again and its findings closed at landing or booked as Q70: the git watcher polls the saved workspaces file every 500 ms on its own clock, so a root added in the page is read under any load; a watcher closed during a tick schedules no next one. On main: `npx vitest run` 4,657 passed in 293 files; `npm run check` 1,341 files 0 errors 0 warnings; build; `format:check`; `lint`; the ASCII gate prints nothing; size and folder checks exit 0; `npx playwright test` 354 passed (8.0m); `node bin/revert-check.mjs tests/server/watch/git-workspaces.test.ts` 11 reverts, 0 unproven. `ListAgents` lists none of Q68's agents. Next: L6's review, then its repair round.
 - L6's first dispatch, stopped 2026-09-24 by Axel's order and restarted through `/spec` on his yes the same day: the builder's partial work (60 files, +3,504 -1,886, 21 new) is committed as `ac83de33` on the branch `L6-stopped` in `.agents/worktrees/L6-stopped`, for the continuation builder to take over; its base was 94745613, cut before its brief was committed.
@@ -574,6 +559,9 @@ No night log is running. Nothing has been left for Axel to read here.
 
 ## Usage
 
+- Q69, builder claude:opus, a native background agent: first run 518,005 tokens, 238 tool uses, 6,706 s (items 6 to 9 added while it ran); repair round 619,512 tokens, 96 tool uses, 5,416 s; one repair round; first report did not pass its bar (killed read as error, a notice matched by one id, the real launch shape unproven, the brief's clash on cross-module passes, the reused mark lost with the cache, five proof gaps); fixes at landing 9 (the stamp that never waits and the watcher's memory of it, the resumed subagent, notices in queued commands with the cache at 4, the kept-stamp case, the weak poll in system.spec, one JSDoc block each, an absence's reason, a comment's width, the Doc text); +2,751 -1,143 over 50 files at the cherry-pick, +290 -107 over 15 files at landing.
+- Q69, reviewers claude:opus read-only: the review through /refute 197,250 tokens, 55 tool uses, 2,246 s; the run over round 1 175,748 tokens, 53 tool uses, 2,919 s (it ran background shells its brief forbade).
+- Q69 landing, orchestrator claude:opus (this session), `land/templates/usage.py` from L6's landing (2026-09-24T18:03:27) to the booking: 208 messages, 137,619 output tokens, 260,862 cache-write tokens, 148,709,065 cache-read tokens, 426 fresh input tokens, 364 minutes; the window also holds the architecture read, Q71's widening, the bookmarks, and Ordo's launch-note fixes.
 - L6, builders claude:opus, native background agents: a first run stopped by Axel's order mid-run (its work kept and applied onto the new base); the continuation builder 436,296 tokens, 161 tool uses, 8,080 s; repair round 461,350 tokens, 35 tool uses, 1,459 s; one repair round; first report did not pass its bar (the findings item on the audit, where the orchestrator's brief had cited the audit's count; the brief's narrowing of the waiting source; a stand-in read as a separator); fixes at landing 0 in code, the Doc text applied; +6,593 -1,955 over 83 files at the cherry-pick (with Q68 on main), +6 -5 over 2 doc files at landing.
 - L6, reviewers claude:opus read-only: the review through /refute 228,462 tokens, 85 tool uses, 3,427 s; the run over round 1 132,483 tokens, 31 tool uses, 1,136 s.
 - L6 landing, orchestrator claude:opus (this session), `land/templates/usage.py` from Q68's landing (2026-09-24T16:29:23) to the booking: 43 messages, 24,419 output tokens, 57,840 cache-write tokens, 23,735,074 cache-read tokens, 92 fresh input tokens, 93 minutes.

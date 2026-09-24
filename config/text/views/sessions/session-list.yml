@@ -7,7 +7,7 @@ text:
         card_n: '{0} sessions'
         card_one: 1 session
         close_tip: dismiss this ended session
-        detail_empty: Pick a session in the rail.
+        detail_empty: No session is picked. Pick one in the Sessions view.
         dismiss_failed: could not save that dismissal
         dismiss_glyph: dismiss
         empty_glyph: circle_empty
@@ -22,12 +22,14 @@ text:
         n_thousands: '{0}k'
         open_pinned: Open in its own pane
         open_pinned_tip: keep it in a pane of its own
+        open_sessions: Open the Sessions view
+        open_sessions_tip: the Sessions view lists every session and terminal, and a row picks one
         pin_glyph: pin
         pin_pane: Pin this pane
         rail_glyph: list
         rail_title: Sessions
         restore_glyph: note_back
-        restore_tip: bring this session back to the rail
+        restore_tip: bring this session back to the list
         select_tip: show this session in the other session views
         show_dismissed: Show dismissed ({0})
         stamp_day: '{0} {1}'

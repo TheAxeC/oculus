@@ -1,13 +1,15 @@
 // Layer 2, client state. Opening a view on a page without covering one instance of it: the view
 // the Views catalogue opens on its own page lands in a pane other than the catalogue's, so the
 // catalogue is never hidden behind the tab it opened. It is built over openView and the two moves
-// a dragged tab takes, so a view opened here is the same tab it would be anywhere else.
+// a dragged tab takes, so a view opened here is the same tab it would be anywhere else. A view that
+// was already a tab of the catalogue's pane is activated there by openView before it moves out, and
+// the pane would then show the tab beside it, so the catalogue is made that pane's tab again.
 
 import { activePath, findInstance, panes } from '../../../client/instance.ts';
 import type { LayoutAccess } from '../access.ts';
 import type { Attention } from './attention.ts';
 import { samePath, type Edge, type ViewId } from '../model.ts';
-import { paneAt } from '../tree.ts';
+import { activate, paneAt } from '../tree.ts';
 
 export type Away = {
     /**
@@ -32,6 +34,11 @@ export function createAway(
     transfer: (id: string, path: number[], index: number, page?: string) => void,
     split: (id: string, path: number[], edge: Edge, page?: string) => void
 ): Away {
+    /** Make `keep` the tab its pane shows again, after a view moved out of that pane. */
+    function uncover(keep: string, page: string): void {
+        access.change((tree) => activate(tree, keep), page);
+    }
+
     function openNextTo(view: ViewId, state: unknown, page: string, beside: string): string {
         const own = findInstance(access.layout(page), beside);
         const open = new Set(
@@ -45,6 +52,7 @@ export function createAway(
         const at = findInstance(access.layout(page), id);
         if (open.has(id) && at !== null && !samePath(at.path, own.path)) return id;
         split(id, own.path, 'right', page);
+        uncover(beside, page);
         return id;
     }
 
@@ -66,6 +74,7 @@ export function createAway(
         const at = findInstance(now, id);
         if (at !== null && samePath(at.path, own.path)) {
             transfer(id, other, paneAt(now, other)?.tabs.length ?? 0, page);
+            uncover(avoid, page);
         }
         return id;
     }

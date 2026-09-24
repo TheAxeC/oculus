@@ -9,7 +9,12 @@
 // A record may carry the builder's pid and the start time `ps` printed for it in UTC. A pid is
 // reused by unrelated processes, so the builder counts as running only while that pid runs with
 // that start time, asked through the registry's probe (signal 0 and `ps`), the one way oculus asks
-// the system about a process; no other signal is ever sent to a recorded pid.
+// the system about a process; no other signal is ever sent to a recorded pid. A launch whose pid a
+// scan sees running another process is stamped ended in the note itself (stampEnded), through the
+// note writer's own lock and rename, so it reads done for good: no later scan asks about it again.
+// The stamp tries the lock once and never waits for it, since a scan runs on the server's one
+// thread; until a stamp is written the watcher remembers the launch as ended, and each scan tries
+// the stamp again.
 //
 // The writer replaces the file by a rename, so a read never meets half a write; a hand edit can
 // leave anything in it, though, so a missing, empty or garbled file reads as no records and a
@@ -19,6 +24,7 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 import type { SessionAgent, SessionRecord } from '../../../data/model.ts';
 import { PROC_START_SLACK, parseStamp } from '../registry.ts';
+import { update } from '../../../../../bin/dispatch-note.mjs';
 import { isMap, list, readJson, text } from './json.ts';
 
 /** The harnesses a launch may name, which are the two session stores oculus reads. */
@@ -104,6 +110,9 @@ export function readDispatches(path: string): DispatchNote[] {
  * session is not live, a builder whose own session the scan holds is running while that session is
  * live and done once it is not, which keeps a row from reading running for good after its launcher
  * died before stamping the end; a builder the scan does not hold reads running until the stamp.
+ *
+ * The row's end is the launcher's stamp. Without one it is the builder's own session's last
+ * activity when that session is what read it done, and unknown when its process is.
  */
 export function dispatchedAgent(
     note: DispatchNote,
@@ -113,7 +122,11 @@ export function dispatchedAgent(
 ): SessionAgent {
     const unwitnessed = !launcherLive && child !== null && !child.live;
     const done = note.endedAt !== '' || (builderLive === null ? unwitnessed : !builderLive);
-    const ended = note.endedAt !== '' ? note.endedAt : done ? (child?.lastActivity ?? null) : null;
+    // Unstamped, a builder read done by its own session ended at that session's last activity; one
+    // read done by its process leaves no time of its own, since a rollout can fall silent long
+    // before the process exits, so its end stays unknown until the launcher stamps it.
+    const byChild = done && builderLive === null ? (child?.lastActivity ?? null) : null;
+    const ended = note.endedAt !== '' ? note.endedAt : byChild;
     return {
         id: `${DISPATCH_PREFIX}${note.id}`,
         description: note.label,
@@ -135,17 +148,21 @@ export function dispatchedAgent(
 }
 
 /**
- * Whether the recorded process still runs as the builder: the probe found the pid running, and the
- * start time `ps` gives it now is the recorded one. As in the registry, a start time `ps` did not
- * give, or a recorded one that does not parse, leaves the running pid as the only witness.
+ * What the probe says of the recorded process: it runs as the builder, it is gone, or its pid runs
+ * another process, which is a reuse. As in the registry, a start time `ps` did not give, or a
+ * recorded one that does not parse, leaves the running pid as the only witness.
  */
-function sameBuilder(note: DispatchNote, running: boolean, actual: number | undefined): boolean {
-    if (!running) return false;
+function builderState(
+    note: DispatchNote,
+    running: boolean,
+    actual: number | undefined
+): 'running' | 'gone' | 'reused' {
+    if (!running) return 'gone';
     const recorded = parseStamp(note.pidStart);
-    if (actual === undefined || recorded === null) return true;
+    if (actual === undefined || recorded === null) return 'running';
     // The writer asks `ps` in UTC, so the stamp's UTC reading is the moment, whatever zone the
     // launcher and the server run in; `actual` is the probe's epoch seconds.
-    return Math.abs(recorded.utc - actual) <= PROC_START_SLACK;
+    return Math.abs(recorded.utc - actual) <= PROC_START_SLACK ? 'running' : 'reused';
 }
 
 /**
@@ -159,21 +176,62 @@ export function pendingBuilders(notes: readonly DispatchNote[], since = 0): Disp
     );
 }
 
+/** builderProcesses's answer: the process witness of each pending launch, and the reused ones. */
+export type Builders = {
+    /** Note id to whether its builder's process still runs; a note left out has no witness. */
+    live: Map<string, boolean>;
+    /** The pending launches whose pid runs another process now, sorted. */
+    reused: string[];
+};
+
 /**
- * Note id to whether its builder's process still runs, for every pending launch; a note left out
- * has no process witness. `running` holds the pids that answered the probe's signal 0 and `starts`
- * the probe's start times, one answer a scan shares with the registry so `ps` runs once.
+ * Note id to whether its builder's process still runs, for every pending launch. `running` holds
+ * the pids that answered the probe's signal 0 and `starts` the probe's start times, one answer a
+ * scan shares with the registry so `ps` runs once. The launches whose pid runs another process are
+ * named as well, for stampEnded.
  */
 export function builderProcesses(
     pending: readonly DispatchNote[],
     running: ReadonlySet<number>,
     starts: ReadonlyMap<number, number>
-): Map<string, boolean> {
+): Builders {
     const live = new Map<string, boolean>();
+    const reused: string[] = [];
     for (const note of pending) {
-        live.set(note.id, sameBuilder(note, running.has(note.pid), starts.get(note.pid)));
+        const state = builderState(note, running.has(note.pid), starts.get(note.pid));
+        if (state === 'reused') reused.push(note.id);
+        live.set(note.id, state === 'running');
     }
-    return live;
+    return { live, reused: reused.sort() };
+}
+
+/**
+ * Stamp each launch ended in the note at `path`, each at its own moment from `stamps`, through
+ * bin/dispatch-note.mjs's own locked read-change-write, keeping a stamp already there, and answer
+ * whether the write went through. A launch whose pid runs another process has no builder left and
+ * cannot get one back under that record, and a later scan whose `ps` gives no start time would
+ * otherwise take the running pid for the builder again. The lock is tried once and never waited
+ * for: a lock another writer holds leaves the stamp to the caller's next try.
+ */
+export function stampEnded(path: string, stamps: ReadonlyMap<string, string>): boolean {
+    if (stamps.size === 0) return true;
+    try {
+        update(
+            path,
+            (records: Record<string, unknown>[]) => {
+                for (const record of records) {
+                    const stamp = typeof record.id === 'string' ? stamps.get(record.id) : undefined;
+                    if (stamp !== undefined && !record.endedAt) record.endedAt = stamp;
+                }
+            },
+            { once: true }
+        );
+        return true;
+    } catch (error) {
+        const reason = error instanceof Error ? error.message : String(error);
+        console.error(`sessions: could not stamp a reused launch ended yet: ${reason}`);
+        return false;
+    }
 }
 
 /**

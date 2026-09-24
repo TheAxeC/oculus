@@ -1,15 +1,16 @@
 <script lang="ts">
     // Layer 3, view partial. One diagram of the manual, drawn in the page's own text colour.
     //
-    // The drawing is the diagram route's SVG, which bin/diagrams.mjs writes with no background and
-    // every line and letter in `currentColor`. Drawn by an `img` it would keep black under every
-    // theme, since an image is a document of its own, so the file is fetched as text, passed
-    // through ui/html.ts's graph filter and put into the page, where `currentColor` is the colour
-    // of the figure around it: the prose colour of the theme in force.
+    // The drawing is the diagram route's SVG, which bin/diagrams/diagrams.mjs writes with no
+    // background and every line and letter in `currentColor`. Drawn by an `img` it would keep black
+    // under every theme, since an image is a document of its own, so the file is fetched as text,
+    // passed through ui/html.ts's graph filter and put into the page, where `currentColor` is the
+    // colour of the figure around it: the prose colour of the theme in force.
     //
-    // A later name supersedes an answer still on its way, and a closed view drops one: newest.ts
-    // hands on an answer only while its fetch is the current one. A file the route refuses, or a
-    // fetch that fails, draws a line saying which diagram and why, instead of an empty box.
+    // A later name supersedes a fetch still on its way, and a closed view stops one: newest.ts
+    // aborts the fetch its stop is called for and hands on an answer only while its fetch is the
+    // current one. A file the route refuses, or a fetch that fails, draws a line saying which
+    // diagram and why, instead of an empty box.
 
     import { t } from '$lib/state/words/text';
     import { sanitiseGraph } from '$lib/ui/html';
@@ -33,10 +34,10 @@
     /** The answer for the name shown now; one for an earlier name is not drawn. */
     const shown = $derived(drawn !== null && drawn.name === name ? drawn : null);
 
-    /** Fetch one diagram, or say why there is none. */
-    async function load(asked: string): Promise<Drawn> {
+    /** Fetch one diagram, or say why there is none; the signal stops the fetch. */
+    async function load(asked: string, signal: AbortSignal): Promise<Drawn> {
         try {
-            const response = await fetch(diagramUrl(asked));
+            const response = await fetch(diagramUrl(asked), { signal });
             if (!response.ok) return { name: asked, svg: '', error: String(response.status) };
             return { name: asked, svg: await response.text(), error: '' };
         } catch (error) {
@@ -50,9 +51,12 @@
         drawn = answer;
     });
 
-    // The effect's cleanup is what marks a fetch stale: it runs when the name changes and when the
-    // view closes.
-    $effect(() => ask(load(name)));
+    // The stop the effect returns is its cleanup, which is what aborts a fetch: it runs when the
+    // name changes and when the view closes.
+    $effect(() => {
+        const asked = name;
+        return ask((signal) => load(asked, signal));
+    });
 </script>
 
 <figure class="diagram" data-diagram={name} role="img" aria-label={alt}>
