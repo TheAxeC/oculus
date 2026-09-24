@@ -8,23 +8,18 @@
 // What was run is read by recording the process module's calls, which is how "only the root that
 // changed is re-read" is checked by the thing that would fail if it were false.
 
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { dirname, join, resolve, sep } from 'node:path';
-import { spawnSync } from 'node:child_process';
+import { join, resolve, sep } from 'node:path';
 import { byKey } from '../../../src/lib/data/helpers/guards.ts';
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Hub } from '../../../src/lib/server/core/channels.ts';
 import { IGNORED, relevant, rootsOf, watchGit } from '../../../src/lib/server/watch/git.ts';
-import type { Clock } from '../../../src/lib/server/watch/git.ts';
 import type { Watcher } from '../../../src/lib/server/watch/portfolio.ts';
-import type {
-    FilesPayload,
-    GitPayload,
-    Message,
-    SessionsPayload
-} from '../../../src/lib/data/model.ts';
+import type { FilesPayload, Message, SessionsPayload } from '../../../src/lib/data/model.ts';
 import { recording } from './probe.ts';
+import { announce, latest, manual, put, repositoryIn } from './repos.ts';
+import type { Manual } from './repos.ts';
 import { noop } from '../../fixtures/doubles.ts';
 import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
 
@@ -67,60 +62,14 @@ afterEach(() => {
     while (watchers.length > 0) watchers.pop()?.close();
 });
 
-/** A git command inside the throwaway directory, and nowhere else. */
-function git(root: string, ...args: string[]): void {
-    expect(resolve(root).startsWith(resolve(tmpdir()) + sep)).toBe(true);
-    const done = spawnSync(
-        'git',
-        [
-            '-c',
-            'user.email=nobody@example.invalid',
-            '-c',
-            'user.name=Oculus Test',
-            '-c',
-            'commit.gpgsign=false',
-            '-C',
-            root,
-            ...args
-        ],
-        { encoding: 'utf8', timeout: 30000 }
-    );
-    expect(done.status).toBe(0);
-}
-
-function put(root: string, rel: string, body: string): void {
-    const full = join(root, rel);
-    expect(resolve(full).startsWith(resolve(root) + sep)).toBe(true);
-    mkdirSync(dirname(full), { recursive: true });
-    writeFileSync(full, body);
-}
-
-/** One repository with a single commit on branch `work`. */
+/** One repository with a single commit on branch `work`, inside this case's directory. */
 function repository(name: string): string {
-    const root = join(dir, name);
-    mkdirSync(root);
-    git(root, 'init', '--initial-branch=work');
-    put(root, 'kept.txt', 'one\n');
-    git(root, 'add', '.');
-    git(root, 'commit', '-m', 'first');
-    return root;
+    return repositoryIn(dir, name);
 }
 
 /** How many commands the module ran against one root. */
 function reads(root: string): number {
     return ran.filter((args) => args[0] === '-C' && args[1] === root).length;
-}
-
-function payloads(got: Message[]): GitPayload[] {
-    return got
-        .filter((message) => message.channel === 'git')
-        .map((message) => message.payload as GitPayload);
-}
-
-function latest(got: Message[]): GitPayload {
-    const found = payloads(got);
-    expect(found.length).toBeGreaterThan(0);
-    return found[found.length - 1];
 }
 
 function sleep(ms: number): Promise<void> {
@@ -168,41 +117,6 @@ async function armed(root: string, got: Message[]): Promise<void> {
 }
 
 /**
- * A clock whose window the test closes: nothing the watcher scheduled runs until fire() runs it.
- */
-type Manual = { clock: Clock; fire(): void; pending(): number };
-
-/**
- * The timer pair a watcher is handed instead of the globals. A read scheduled on it waits for the
- * test rather than for the wall clock, so a machine under load cannot end a throttle window between
- * two writes the case makes inside it.
- */
-function manual(): Manual {
-    const scheduled = new Map<number, () => void>();
-    let next = 0;
-    return {
-        clock: {
-            setTimeout: (run: () => void): number => {
-                next += 1;
-                scheduled.set(next, run);
-                return next;
-            },
-            clearTimeout: (timer) => {
-                scheduled.delete(timer as number);
-            }
-        },
-        fire(): void {
-            const held = [...scheduled.values()];
-            scheduled.clear();
-            for (const run of held) run();
-        },
-        pending(): number {
-            return scheduled.size;
-        }
-    };
-}
-
-/**
  * The manual clock's arming: write an untracked file until the watcher schedules a read, which is
  * what says the FSEvents stream of armed() above is registered and delivering.
  */
@@ -213,21 +127,6 @@ async function arming(root: string, clock: Manual): Promise<void> {
         await until(() => clock.pending() > 0, 2500);
     }
     expect(clock.pending()).toBeGreaterThan(0);
-}
-
-/** A sessions payload naming the given roots, which is all of one this watcher reads. */
-function announce(hub: Hub, roots: string[]): void {
-    const payload: SessionsPayload = {
-        records: [],
-        terminals: [],
-        workspaces: roots.map((root) => ({
-            key: root,
-            name: root.split(sep).pop() ?? root,
-            lastActivity: null,
-            areas: []
-        }))
-    };
-    hub.publish('sessions', payload);
 }
 
 describe('relevant', () => {
@@ -650,33 +549,6 @@ describe('watchGit', () => {
         hub.publish('config', { config: {}, text: {}, findings: [] });
         await until(() => client.got.length > before, WAIT);
         expect(Object.keys(latest(client.got))).toEqual([always, second, first]);
-    });
-
-    it('reads a root added to the workspaces file while it is running', async () => {
-        const always = repository('hub');
-        const added = repository('added');
-        const file = join(dir, 'workspaces.json');
-        writeFileSync(file, JSON.stringify({ current: '', workspaces: [] }));
-        const hub = new Hub();
-        const client = recording();
-        hub.subscribe(client.sink, ['git']);
-        announce(hub, []);
-        let roots = [always];
-        watchers.push(
-            watchGit(hub, { always, throttle: 300, roots: () => roots, workspacesFile: file })
-        );
-        await until(() => byKey(latest(client.got), always) !== undefined, WAIT);
-        expect(byKey(latest(client.got), added)).toBe(undefined);
-
-        // The page's write is what the watcher is waiting for: the file changes, the list is asked
-        // for again, and the root it now names is watched from that moment.
-        roots = [always, added];
-        writeFileSync(
-            file,
-            JSON.stringify({ current: '', workspaces: [{ name: 'a', roots: [] }] })
-        );
-        await until(() => byKey(latest(client.got), added) !== undefined, WAIT);
-        expect(latest(client.got)[added].branch).toBe('work');
     });
 
     it('reads nothing more once it is closed', async () => {

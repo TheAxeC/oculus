@@ -9,9 +9,17 @@
 // the configured roots moved, and again whenever the saved workspaces file changes, which is the
 // other way a root is added while the server runs.
 //
-// The same watch answers a second question, on the `files` channel: which root a write just landed
-// under. It is this watcher's because it already watches every root recursively and already
-// throttles the burst a save makes, so no second watcher and no second throttle are needed.
+// The workspaces file is polled rather than watched. A darwin fs.watch over a directory is an
+// FSEvents stream that registers asynchronously, and under a load of file events a write landing
+// while it registers is never delivered: a root the page adds just as the server starts would then
+// stay off the channel until something else moved the roots. A stat taken on every roots read is
+// compared on a timer, so a write at any moment is read at the next tick, and the one small file
+// costs a stat per tick and no native handle.
+//
+// The recursive watch over each root answers a second question, on the `files` channel: which root
+// a write just landed under. It is this watcher's because it already watches every root
+// recursively and already throttles the burst a save makes, so no second watcher and no second
+// throttle are needed.
 //
 // Which workspaces those are is the sessions payload's answer, and this watcher takes it from the
 // hub rather than from the sessions watcher: it subscribes a sink of its own to the `sessions` and
@@ -30,9 +38,9 @@
 // one of the ignored folders, and .git/objects is dropped with them: a pack being written is a
 // second event for the index change that is already coming.
 
-import { existsSync, watch } from 'node:fs';
+import { existsSync, statSync, watch } from 'node:fs';
 import type { FSWatcher } from 'node:fs';
-import { basename, dirname, join } from 'node:path';
+import { join } from 'node:path';
 import { byKey } from '../../data/helpers/guards.ts';
 import type { FilesPayload, GitPayload, Message, SessionsPayload } from '../../data/model.ts';
 import type { Hub, Sink } from '../core/channels.ts';
@@ -42,6 +50,9 @@ import type { Watcher } from './portfolio.ts';
 /** Milliseconds one root is re-read at most once in. */
 export const THROTTLE = 2000;
 
+/** Milliseconds between two stats of the saved workspaces file. */
+export const POLL = 500;
+
 /** Path segments whose writes never change what git reports about the working tree. */
 export const IGNORED = ['node_modules', '.svelte-kit', 'build', '__pycache__'];
 
@@ -49,8 +60,8 @@ export const IGNORED = ['node_modules', '.svelte-kit', 'build', '__pycache__'];
 export type Timer = ReturnType<typeof setTimeout> | number;
 
 /**
- * The timer pair the throttle runs on. The window is wall-clock time, so a caller that has to know
- * when it closes passes its own pair and closes it itself.
+ * The timer pair the throttle and the workspaces poll run on. Both are wall-clock time, so a caller
+ * that has to know when a window closes or a tick comes passes its own pair and runs it itself.
  */
 export type Clock = {
     setTimeout(run: () => void, ms: number): Timer;
@@ -66,7 +77,7 @@ export const systemClock: Clock = {
 export type GitWatchOptions = {
     /** Milliseconds one root is re-read at most once in. */
     throttle?: number;
-    /** The timer pair the throttle runs on; the globals when absent. */
+    /** The timer pair the throttle and the workspaces poll run on; the globals when absent. */
     clock?: Clock;
     /** Milliseconds one git command is given; server/git/git.ts's default when absent. */
     timeout?: number;
@@ -84,9 +95,11 @@ export type GitWatchOptions = {
      */
     roots?: () => string[];
     /**
-     * The saved workspaces file, watched so a root added in the page is watched from that moment.
+     * The saved workspaces file, polled so a root added in the page is watched from the next tick.
      */
     workspacesFile?: string;
+    /** Milliseconds between two stats of the workspaces file. */
+    poll?: number;
 };
 
 /**
@@ -123,6 +136,21 @@ function reason(error: unknown): string {
 }
 
 /**
+ * What a stat says of a file's content: its inode, size and both times, which an atomic replace, an
+ * append and an in-place write each move. A missing file and one the stat refuses are values too,
+ * so the file appearing, going and coming back are changes like any other.
+ */
+function signature(file: string): string {
+    try {
+        const stat = statSync(file, { throwIfNoEntry: false });
+        if (stat === undefined) return 'absent';
+        return `${stat.ino}:${stat.size}:${stat.mtimeMs}:${stat.ctimeMs}`;
+    } catch (error) {
+        return `unreadable:${reason(error)}`;
+    }
+}
+
+/**
  * Watch the workspaces the `sessions` channel names and publish on the `git` channel. A root that
  * stops being named is unwatched and drops out of the payload; a root that cannot be watched still
  * gets its state read once, since server/git/git.ts answers for a directory that is not a
@@ -140,6 +168,8 @@ export function watchGit(hub: Hub, options: GitWatchOptions = {}): GitWatcher {
     const timeout = options.timeout ?? TIMEOUT_MS;
     const always = options.always ?? '';
     const configured = options.roots ?? ((): string[] => []);
+    const poll = options.poll ?? POLL;
+    const workspacesFile = options.workspacesFile;
     /** The roots the newest sessions payload named, kept so a rescan can compose the whole list. */
     let named: string[] = [];
     /**
@@ -148,7 +178,12 @@ export function watchGit(hub: Hub, options: GitWatchOptions = {}): GitWatcher {
      * composes its list from this copy.
      */
     let browser: string[] = [];
-    let workspacesWatch: FSWatcher | null = null;
+    /**
+     * The workspaces file's signature as of the newest roots read, empty until the first one, so a
+     * tick that sees another signature knows the roots on hand predate the file.
+     */
+    let seen = '';
+    let polling: Timer | null = null;
     const handles = new Map<string, FSWatcher[]>();
     const timers = new Map<string, Timer>();
     const last = new Map<string, number>();
@@ -254,6 +289,9 @@ export function watchGit(hub: Hub, options: GitWatchOptions = {}): GitWatcher {
      * file browser's, then the sessions' workspaces, each named once.
      */
     const readRoots = (): void => {
+        // The signature is taken before the read, so a write between the two is a change the next
+        // tick sees rather than one the read already covers.
+        if (workspacesFile !== undefined) seen = signature(workspacesFile);
         // The file browser's roots are read off config and a file the reader edits, so a broken one
         // leaves the channel with the roots it can name rather than stopping the watcher.
         try {
@@ -315,22 +353,26 @@ export function watchGit(hub: Hub, options: GitWatchOptions = {}): GitWatcher {
     };
 
     /**
-     * Watch the saved workspaces file. Its directory is what is watched rather than the file, since
-     * a machine that has saved no workspace has no file yet and a write replaces the one there is.
+     * Stat the saved workspaces file once a tick and read the roots again when its signature moved.
+     * A machine that has saved no workspace has no file and perhaps no folder yet, which is a
+     * signature like any other, so the first save is seen without anything opened at the folder.
+     *
+     * The tick is this module's own timer on the injected clock rather than node's watchFile, which
+     * bookmarks.ts polls through: a clock the caller holds cannot drive watchFile, and the clock is
+     * what lets a case say exactly when a tick runs. A tick that closed the watcher through the
+     * roots it read schedules no next one.
      */
-    const watchWorkspaces = (file: string): void => {
-        const folder = dirname(file);
-        const name = basename(file);
-        if (!existsSync(folder)) return;
-        try {
-            workspacesWatch = watch(folder, (_event, filename) => {
-                if (typeof filename === 'string' && filename !== name) return;
+    const pollWorkspaces = (file: string): void => {
+        if (closed) return;
+        polling = clock.setTimeout(() => {
+            polling = null;
+            if (closed) return;
+            if (signature(file) !== seen) {
                 readRoots();
                 follow();
-            });
-        } catch (error) {
-            console.error(`git watch: cannot watch ${file}: ${reason(error)}`);
-        }
+            }
+            pollWorkspaces(file);
+        }, poll);
     };
 
     // The sink is this watcher's own end of the `sessions` channel. It sends nothing back and is
@@ -365,7 +407,7 @@ export function watchGit(hub: Hub, options: GitWatchOptions = {}): GitWatcher {
         readRoots();
         follow();
     }
-    if (options.workspacesFile !== undefined) watchWorkspaces(options.workspacesFile);
+    if (workspacesFile !== undefined) pollWorkspaces(workspacesFile);
     hub.subscribe(sink, ['sessions', 'config']);
 
     return {
@@ -375,8 +417,8 @@ export function watchGit(hub: Hub, options: GitWatchOptions = {}): GitWatcher {
         close(): void {
             closed = true;
             hub.remove(sink);
-            workspacesWatch?.close();
-            workspacesWatch = null;
+            if (polling !== null) clock.clearTimeout(polling);
+            polling = null;
             for (const root of [...handles.keys()]) drop(root);
             state = {};
         }

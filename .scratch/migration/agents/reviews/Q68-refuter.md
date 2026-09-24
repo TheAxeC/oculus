@@ -63,3 +63,90 @@ Quoted in the report as evidence:
 - The mail/poll.test.ts failures were not reproduced: 0 of 5 alone under churn. The defect shape at poll.ts:303 (a folder fs.watch armed right before the first write, with no fallback) was confirmed by reading the code.
 
 Reviewer usage: about 125k tokens, 27 tool uses, about 30 minutes.
+
+## Repair round 1, refuted
+
+```
+Run from .agents/worktrees/Q68/tools/oculus over the repaired tree:
+ls -d $TMPDIR/oculus-* | wc -l (before):  7016
+1. npx vitest run --reporter=dot (natural load, load avg ~10-15):  Test Files 293 passed (293); Tests 4657 passed (4657)
+2. npm run check:  COMPLETED 1341 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+3. npm run build:  build exit 0
+4. npm run format:check:  All matched files use Prettier code style!
+5. npm run lint:  lint exit 0
+6. LC_ALL=C grep -rna '[^ -~]' src tests | wc -l:  0
+7. sh bin/size-check.sh: exit 0;  sh bin/folder-check.sh: exit 0
+8. node bin/revert-check.mjs tests/server/watch/git-workspaces.test.ts tests/server/watch/git.test.ts:
+   10 reverts, 0 unproven, 21 unchecked; all 10 red (git.ts:410 x3, :294 x2, :370, :149, :420, :369, :366)
+9. Load runs (own churn.mjs: write, rename, remove in a loop, 8 processes; stopped after, pgrep -f churn.mjs | wc -l = 0):
+   whole verbose runs beside 8 churn, x3:
+     run 1: Test Files 293 passed (293); Tests 4657 passed (4657)
+     run 2: Tests 1 failed | 4656 passed, the one: mail/poll.test.ts "makes the mail folder when it is not there, so the first write from outside is seen" 2275ms
+     run 3: Tests 1 failed | 4656 passed, same mail case 2318ms
+     no git watcher case failed in any of the three.
+10. ls -d $TMPDIR/oculus-* | wc -l (after):  7015 (one fewer; not grown)
+
+Commands the round's report quotes, rerun or replaced:
+- Ruling 1, paired alternating runs of git.test.ts alone, base (scratch copy of the worktree with git diff d0232795 reversed; 22 cases) against Q68 (21 cases):
+    natural load (load avg 10-12, fseventsd at 0.1% CPU), 8 per side: base 22/22 x8; Q68 21/21 x8.
+    beside 8 churn (load avg 13-29), 6 per side: base 22/22 x5, 1 failed x1 ("reads a root added to the workspaces file while it is running", 7509ms); Q68 21/21 x6.
+  The three cases ("re-reads only the root that changed...", "publishes one files message...", "drops a root the sessions payload no longer names") failed 0 times on either side in 28 file runs and 4 whole runs.
+- Added: round-0 tree (scratch copy with git diff 3506ea9a reversed, the file the first reviewer saw fail) against round 1 (git.test.ts + git-workspaces.test.ts), alternating at natural load, 6 each: round 0 26/26 x6; round 1 31/31 x6.
+- grep -rn "export function signature\|watchWorkspaces\|workspacesWatch" src tests config HELP.md DESIGN.md README.md: prints nothing.
+- grep -n "watch(options.dir" src/lib/server/accounts/mail/poll.ts (worktree and main): 304:            notesWatch = watch(options.dir, (_event, name) => {
+  sed -n 303p: mkdirSync(options.dir, { recursive: true, mode: DIR_MODE });
+- wc -l: git.ts 426, git.test.ts 575, git-workspaces.test.ts 319, repos.ts 118. Matches the report's table.
+- ls tests/server/watch: 7 entries (5 tracked + 2 untracked), under ten.
+- The throw-on-entry probe, the stale.mjs probe and the builder's paired.sh / loadruns2.sh outputs were not rerun (their paths are the builder's scratchpad, not named); replaced by the paired runs above.
+```
+
+### Spec
+- Ruling 1 (git.test.ts, the three cases): not closed by a cause. Neither the builder nor this rerun has a failing run: 0 failures in 28 paired file runs, 4 whole runs, and 6 runs of the round-0 file itself. The first reviewer's 4-of-5 failures came with fseventsd at 100% CPU; today it sits at 0.1%, and that condition could not be recreated. The builder's own probe (`signature` and `pollWorkspaces` throwing, the three cases still green) proves only that these cases pass no `workspacesFile`, which the diff already shows. The watcher code these cases run is unchanged from base, so the round has no fix for them. They stay an unexplained finding and have to be booked, not counted as closed.
+- Ruling 7, the report's "Repair round 1" item 7 and its open-items line: the report says the mail poller's `watch(options.dir, ...)` call is at `poll.ts:303`. It is at :304 in the worktree and on main (grep above); :303 is `mkdirSync`. The ruling carried a wrong correction, and round 0's :304 was right.
+- src/lib/server/watch/git.ts:366, `if (closed) return;`: a real fix. Without it, a tick whose roots read closes the watcher schedules one more timer after `close` has already cleared `polling`. The case "schedules no next tick when the watcher is closed during one" (git-workspaces.test.ts:298) goes red under the revert of :366 (revert-check). No caller in `src` closes from inside `roots`, which the report says.
+- The test split and the allow-list edit are sound. The helpers moved unchanged into repos.ts. The allow-duplication.txt entry keeps its mark `c81eea90e56f` and only renames the pair to the file the `git()` clone moved to. The entry count is the same. The whole suite, which includes duplication.test.ts and fails on a stale entry, is green. No check was loosened.
+
+### Proof
+- git-workspaces.test.ts:224, the EACCES case: under its revert (`git.ts:149 => throw error;`) it goes red because `watchGit` throws at construction. The later "keeps polling through the refusal" part (`pending() === 1`, then a read after repair) has no revert of its own. It is red for the construction throw, not for the polling claim.
+- git-workspaces.test.ts:102, "reads a write no file event announced, at the next tick": revert `git.ts:410` delete, red. The watcher no longer listens for any file event on the workspaces file, so "no file event announced" holds by construction. The case proves the same as :126 and :175: a changed signature is read at a fired tick. The comment says so, which satisfies ruling 2.
+
+### Standards
+- tests/server/watch/git-workspaces.test.ts:201: a new revert directive is 101 columns (`awk 'length>100'`), over the brief's hundredth-column rule. :174 (157 columns) is carried from round 0 and is disclosed.
+- tests/server/watch/git-workspaces.test.ts:1: the new file's head comment names no layer. The spec says every added module opens with "its layer ... A file without one is a defect". repos.ts:1 does it ("Layer 4, test helper."). git.test.ts, which the new file copies, lacks it as well: 27 of the 38 files under tests/server/*/ lack it.
+- DESIGN.md:106 still does not say the git watcher polls the workspaces file. It is reported under "Doc text", as the brief asks.
+
+### Behaviour
+- A root added through the page's workspaces save is now read at the next 500 ms tick (`POLL`, git.ts:54, no config key), where before it was read on the fs.watch event. The server stats `~/.oculus/workspaces.json` every 500 ms on the main thread. Both are stated in the report's before and after.
+- Not caused by this step, and seen in 2 of 3 whole runs under churn: mail/poll.test.ts "makes the mail folder when it is not there, so the first write from outside is seen" fails. This is the same folder fs.watch arming defect, at poll.ts:304. The report lists it as outside the step. It needs its own booked step.
+
+### Not checked
+- The browser suite beside the node runs (ports 8790 and 8792 were not touched); file churn was used instead.
+- Ten whole runs under load: three were run.
+- The natural-load condition the first reviewer saw (fseventsd at 100%) was not present and could not be recreated, so the three git.test.ts cases were not tested under it.
+- The builder's stale.mjs probe and its throw-on-entry probe were not rerun.
+
+Reviewer usage: about 120k tokens, 26 tool uses, about 40 minutes (not measured).
+
+## Closed
+
+The first run's findings, closed in repair round 1 (`agents/reviews/Q68-report.md`, "# Repair round 1"):
+
+- Spec 1, the test of the cause: the case is named and commented for what it proves, a write no file event announced read at the next tick; the churn reproduction is the report's evidence of the cause, since no case can make FSEvents drop an event.
+- Spec 2, the own poll beside `watchFile`: kept for the injected clock, and said beside it (`git.ts:356-363`).
+- Proof 1, the three other git.test.ts cases failing at natural load: not closed by a cause. Booked as Q70 (below).
+- Proof 2, the signature's branches and the ticks in flight, after close and superseded: six cases, each red under its revert; the in-flight case found a real defect, a tick that closed the watcher scheduling one more timer, fixed at `git.ts:366`.
+- Proof 3, the mail poller's line: the watch call is at `poll.ts:304`, as the first report said; the orchestrator's ruling that it was :303 was wrong (`grep -n "watch(options.dir"` prints 304).
+- Standards 1, the 157-column directive: no change; `tests/checks/source/comment-width.test.ts` exempts revert directives.
+- Standards 2, `signature` exported: unexported.
+- Standards 3, the head comment's "the same watch": rewritten to name the recursive watch over each root.
+- Standards 4 and Behaviour: DESIGN.md:106 applied at landing; the before and after stated in the round's report.
+
+The run over repair round 1, closed at landing on 2026-09-24:
+
+- Spec, ruling 1 not closed by a cause: booked as Q70 with the mail poller, the same folder `fs.watch` shape.
+- Spec, ruling 7's wrong correction: a record; the right line is `poll.ts:304`.
+- Proof, the EACCES case's polling claim with no revert of its own: a directive added at landing, `git.ts:374 => delete` (the tick's rescheduling), red under revert-check.
+- Proof, the no-event case proving the same as two others: stated in its comment, as ruled; no change.
+- Standards, the 101-column directive: no change; directives are exempt.
+- Standards, the new test file's head comment without its layer: added at landing.
+- Behaviour, the mail poller case failing in 2 of 3 whole runs under churn: booked as Q70.

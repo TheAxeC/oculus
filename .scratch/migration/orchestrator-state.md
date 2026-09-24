@@ -37,23 +37,12 @@ dispatch:
     worktree: .agents/worktrees/L6
     base: 7319fa60
     launched: 2026-09-24
-    report: tools/oculus/.scratch/migration/agents/reviews/L6-report.md
+    report: tools/oculus/.scratch/migration/agents/reviews/L6-report.md (saved; builder 436,296 tokens, 161 tool uses, 8,080 s)
+    review: agents/reviews/L6-refuter.md (dispatched 2026-09-24 by the /refute skill; reviewer claude:opus, agent a4bdf7e3201e36d9b)
+    brief_corrected: 2026-09-24 after the report, the findings item: the Findings view's own count opening Findings, the brief having cited the audit's count; goes into the repair round
     landing: not-started
     round: 0
     first_run: the stopped builder's work, `ac83de33` on `L6-stopped`, applied onto the base as the worktree's first wip commit
-  - step: Q68
-    executor: agent
-    worker: claude:opus, a native background agent; its id is this session's agent a721845fea7dd09c1
-    worktree: .agents/worktrees/Q68
-    base: d0232795
-    launched: 2026-09-24
-    report: tools/oculus/.scratch/migration/agents/reviews/Q68-report.md (saved; builder 147,520 tokens, 56 tool uses, 3,622 s)
-    review: agents/reviews/Q68-refuter.md (dispatched; reviewer claude:opus, agent a34f9f6e36be618eb; stopped 2026-09-24 by Axel's order before it reported)
-    review_2: agents/reviews/Q68-refuter.md (dispatched 2026-09-24 by the /refute skill; reviewer claude:opus, agent a6883348a658407de)
-    landing: not-started
-    round: 1                 # sent 2026-09-24: the three other git.test.ts cases failing at natural load traced to a cause and fixed or shown on the base, cases for every branch of the signature and for a tick in flight, after close and superseded, the case's claim stated exactly, the clock as the reason for the own poll, `signature` unexported, the head comment's "same watch", the report's before and after, the mail poller's line
-    round_base: 3506ea9a (the worktree's wip commit when the round was sent)
-    review_2_usage: claude:opus read-only, 132,151 tokens, 35 tool uses, 1,923 s
 ```
 
 ## The standing demands (from Axel, in force)
@@ -105,8 +94,8 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)
 
+- Q70, watchers under file-event load (booked 2026-09-24 at Q68's landing): the mail poller's folder watch that loses an early write, and three git watcher cases that failed only while fseventsd was saturated, cause not found. In the queue after Q69.
 - Q69, what earlier landings left (booked 2026-09-24): the catalogue covered when Open on this page moves a view out of its own pane (found in L5's owed look on TEST), the light-theme looks of L3 and U1, and five items named in the landing reports of R18, O32, Q52 and Q54 and booked nowhere; and, on Axel's yes, the landed steps Q65, R18, O31, O32, L3, U1 and L5 checked item by item against their briefs in the running app on TEST. In the queue after Q68.
-- Q68, the git watcher case "reads a root added to the workspaces file while it is running" (`tests/server/watch/git.test.ts:679`) failing under load (booked 2026-09-24 at L5's landing, a different concern from L5): it failed once in the round reviewer's whole run and once in a node run beside the browser suite, and passes alone; the cause is not found. In the queue after L6.
 - O32's launch recipes in the Ordo plan skills (booked 2026-09-23 at O32's landing): the optional `launch_note:` key in `/plan`'s key list and its three templates, and the two shell recipes of plan-orchestration's "Launching a builder" running `start`, `transcript` and `end` around the builder with the builder's own pid. Blocked by something in flight: another session is running a plan in the Ordo repository (`.scratch/1-one-layout-for-every-skill`), so Axel hands the change to that session with the prompt given to him on 2026-09-23; the hub's `.agents/plan.yaml` carries the key already. Closed when Axel names the Ordo commit. Found 2026-09-24: the Ordo repository carries the recipes since its commit 7d1f90e (2026-09-24 01:23, "Close plan 2.A, launch notes for builders run as their own process"): `launch_note` in `/plan`'s keys and templates, `templates/launch.sh` passing `--pid`. The installed copy the skills are read from, `~/.local/share/ordo-stable` (linked from `~/.claude-work/skills`), is dated 2026-09-23 13:42 and does not carry them (`grep -c launch_note` on its plan-orchestration SKILL.md prints 0).
 
 ## Closed items (kept as the log of what was raised and how it ended)
@@ -292,6 +281,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-09-24. Q68 landed through `/refute` and `/land`, built by an Opus agent, one repair round, the run over the round refuted again and its findings closed at landing or booked as Q70: the git watcher polls the saved workspaces file every 500 ms on its own clock, so a root added in the page is read under any load; a watcher closed during a tick schedules no next one. On main: `npx vitest run` 4,657 passed in 293 files; `npm run check` 1,341 files 0 errors 0 warnings; build; `format:check`; `lint`; the ASCII gate prints nothing; size and folder checks exit 0; `npx playwright test` 354 passed (8.0m); `node bin/revert-check.mjs tests/server/watch/git-workspaces.test.ts` 11 reverts, 0 unproven. `ListAgents` lists none of Q68's agents. Next: L6's review, then its repair round.
 - L6's first dispatch, stopped 2026-09-24 by Axel's order and restarted through `/spec` on his yes the same day: the builder's partial work (60 files, +3,504 -1,886, 21 new) is committed as `ac83de33` on the branch `L6-stopped` in `.agents/worktrees/L6-stopped`, for the continuation builder to take over; its base was 94745613, cut before its brief was committed.
 - 2026-09-24. L5 landed, built by an Opus agent, one repair round, the run over the round refuted again and its findings closed at landing: the rail is VS Code's activity bar, 48 px wide in the ground's colour with a 1 px border (exactly `#181818` / `#2b2b2b` and `#f8f8f8` / `#e5e5e5` under the two VS Code themes, as VS Code's own theme files set them), icon-only 48 px items with the 2 px accent bar on the page on screen, one 16 px badge inside each item in the accent, the name and digit as a tooltip with an arrow, drag to reorder and Hide from a right-click, a Bookmarks menu at the foot that rises from the star; the Views catalogue opens a view on its own page by drag or its menu without covering itself. The revert tool's signal race is closed. On main: `npm test` 4,648 passed in 292 files; `npm run check` 1,339 files 0 errors 0 warnings; build; `format:check`; `lint`; the ASCII gate prints nothing; size and folder checks exit 0; `npm run test:browser` 354 passed (11.2m). Next: L6.
 - 2026-09-24. U1 landed, built by an Opus agent, one repair round, the run over the round refuted again and its findings closed at landing: every glyph is drawn as its line icon, `glyphs.yml` is ASCII (each name with a stand-in of one to three characters), the 28 text tokens are gone, the venue indexing marks and the sparkline are icons and SVG, the toggle reads Icons. On main: `npm test` 4,633 passed in 292 files; `npm run check` 1,333 files 0 errors 0 warnings; build; `format:check`; `lint`; the ASCII gate, now without a `glyphs.yml` exemption, prints nothing; size and folder checks exit 0; `npm run test:browser` 334 passed (6.8m). Next: L5.
@@ -576,6 +566,9 @@ No night log is running. Nothing has been left for Axel to read here.
 
 ## Usage
 
+- Q68, builder claude:opus, a native background agent: first run 147,520 tokens, 56 tool uses, 3,622 s; repair round 254,058 tokens, 68 tool uses, 4,592 s; one repair round; first report did not pass its bar (three other watcher cases failed under the first reviewer's load, the signature's branches had no case, a head comment was made unclear); fixes at landing 3 (a revert directive on the unreadable-stat case's polling claim, the new test file's layer line, DESIGN.md's watchers paragraph); +513 -162 over 5 files at the cherry-pick, +4 -3 over 2 files at landing.
+- Q68, reviewers claude:opus read-only: a first review stopped by Axel's order before it reported; the review through /refute 132,151 tokens, 35 tool uses, 1,923 s; the run over round 1 126,344 tokens, 26 tool uses, 1,962 s.
+- Q68 landing, orchestrator claude:opus (this session), `land/templates/usage.py` from L5's landing (2026-09-24T09:15:17) to the booking: 191 messages, 129,253 output tokens, 1,053,635 cache-write tokens, 71,973,401 cache-read tokens, 388 fresh input tokens, 434 minutes; the window also holds the O32 correction, the audit of the ticked steps, L5's owed look, L6's /spec and its continuation builder.
 - L5, builder claude:opus, a native background agent: first run 542,452 tokens, 241 tool uses, 6,630 s; repair round 729,467 tokens, 118 tool uses, 5,845 s; one repair round; first report did not pass its bar (the first review raised files outside the paths, badges in three colours, missing proofs, an orphaned token and eight visible differences from VS Code); fixes at landing 9 (the rail back on the ground colour with its border and the derived rail surface removed, `openNextTo` leaving an open view where it is, the rising menu capped and scrolling, the badge size directive, the duplicate contrast pair, the theme test's name and directive, two comments reflowed, the edge-drop case, the revert tool's signal race); +4,032 -2,189 over 62 files at the cherry-pick, +211 -168 over 16 files at landing.
 - L5, reviewers claude:opus read-only: the first review 202,775 tokens, 57 tool uses, 2,566 s (read from its transcript); the run over round 1 211,334 tokens, 60 tool uses, 2,642 s.
 - L5 landing, orchestrator claude:opus (this session), `land/templates/usage.py` from U1's landing (2026-09-24T03:10:37) to the booking: 130 messages, 78,593 output tokens, 2,097,939 cache-write tokens, 34,886,518 cache-read tokens, 266 fresh input tokens, 363 minutes; the window also holds the waits on L5's builder and both reviewers.
