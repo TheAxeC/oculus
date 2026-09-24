@@ -13,6 +13,7 @@ import {
     type RailProblem,
     type RailRead
 } from '../../../data/sources/config/rail.ts';
+import { t } from '../../words/text.ts';
 
 export { arrangementKeys, glyphNames, readRail };
 export type { RailEntry, RailProblem, RailRead };
@@ -106,4 +107,14 @@ export function moveRailEntry(rail: readonly RailEntry[], at: number, by: -1 | 1
  */
 export function configRail(config: Record<string, unknown> | undefined): RailEntry[] {
     return railRows(config?.rail) ?? [];
+}
+
+/**
+ * The sentence for a rail write the server refused, from the error it answered: the file could not
+ * be written, or the list was not one the rule keeps. The Settings view and the rail say the same.
+ */
+export function railRefusal(error: string | undefined): string {
+    const reason =
+        error === 'unwritable' ? t('workbench.rail_unwritable') : t('workbench.rail_invalid');
+    return t('workbench.rail_refused', reason);
 }

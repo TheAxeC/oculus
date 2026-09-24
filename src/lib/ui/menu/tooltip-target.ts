@@ -1,6 +1,8 @@
 // Layer 3, primitive. Which element a tooltip's words describe and by which id. A screen reader
 // reads a description off the control being used, so the wrapper hands it to the control it holds;
-// apart from the component so both choices can be read without a DOM.
+// apart from the component so both choices can be read without a DOM. And the one way a primitive
+// gives the focus back to a control without its tooltip opening, since that focus is the page's and
+// not a move of the reader's.
 
 /** What the description is put on: the element's own attributes, and what it holds. */
 type Described = {
@@ -29,4 +31,18 @@ export function describedControl(box: Described, focusable: boolean): Described 
  */
 export function describedBy(id: string, text: string, presentational: boolean): string {
     return presentational || text === '' ? '' : id;
+}
+
+/** The attribute a control carries for the length of a focus the page gives it back. */
+export const QUIET_FOCUS = 'data-tip-quiet';
+
+/**
+ * Give the focus back to a control, as a menu does to its opener when it closes, without the
+ * tooltip that keyboard focus would open: the control is marked while the focus lands on it, and
+ * the tooltip reads the mark.
+ */
+export function focusQuietly(control: HTMLElement): void {
+    control.setAttribute(QUIET_FOCUS, '');
+    control.focus();
+    control.removeAttribute(QUIET_FOCUS);
 }

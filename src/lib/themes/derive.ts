@@ -10,9 +10,9 @@
 // from the theme's own chrome so a dark theme never draws the browser's light bar: the track is the
 // panel a scrolling view sits on, and the thumb starts halfway between the muted text and the
 // hairline and is nudged in lightness until it clears 3:1 on the track, so it reads as a control
-// without competing with the text beside it. And `--accent-bg`, the surface a pressed toggle fills
-// with: a fifth of the accent in the page's colour, so the pressed state reads as a filled box in
-// the accent's hue under every theme without the solid accent block. And for every hue
+// without competing with the text beside it. And `--accent-bg`, the surface a selected tree row
+// fills with: a fifth of the accent in the page's colour, so the selection reads as a filled line
+// in the accent's hue under every theme without the solid accent block. And for every hue
 // `--c-<hue>-lane`, half the hue in the panel, the surface the header of a Focus lane fills with,
 // beside `--c-<hue>-lane-txt`, the hue's text colour made readable on that surface, which the
 // header's name and count are drawn in, so every other hue text is left as it is.
@@ -195,10 +195,9 @@ export function readable(fg: string, bg: string, minimum = 4.5): string {
  * (`-bg`), a derived value (`-txt`, `-on`), a lane surface (`-lane`) or the on-chip ink (`--c-on`)
  * are skipped, since nothing places text on them. The two scrollbar colours, `--scroll-thumb` and
  * `--scroll-track`, come with them, and so does `--accent-bg`, the accent mixed into the page, with
- * its `--on-accent-bg` and `--accent-bg-txt`, the accent made readable on that surface before the
- * others. Every hue also gets its lane header surface, `--c-<hue>-lane`, the hue mixed into the
- * panel, and `--c-<hue>-lane-txt`, the hue's own `-txt` nudged until it clears on that surface; a
- * theme with no panel and no page gets neither.
+ * its `--on-accent-bg`. Every hue also gets its lane header surface, `--c-<hue>-lane`, the hue
+ * mixed into the panel, and `--c-<hue>-lane-txt`, the hue's own `-txt` nudged until it clears on
+ * that surface; a theme with no panel and no page gets neither.
  *
  * The input is the whole token map; anything that is not a colour token with a hex value is
  * ignored, so the caller can hand over the theme exactly as parse.ts read it.
@@ -228,15 +227,12 @@ export function deriveTokens(theme: Record<string, string>): Record<string, stri
     if (effective['--muted'] && chip) derived['--muted-txt'] = everywhere(effective['--muted']);
     if (effective['--accent'] && chip) derived['--accent-txt'] = everywhere(effective['--accent']);
 
-    // The surface the rail button of the page on screen fills with: the accent mixed into the page
-    // the rail is drawn on. Its glyph and name take a text colour of their own, readable on that
-    // surface first, as a hue's is on its own tint, so the accent text everywhere else is left as
-    // it is.
+    // The surface a selected tree row fills with: the accent mixed into the page, with the black or
+    // white its line is drawn in.
     if (effective['--accent'] && page && chip) {
         const tint = mix(effective['--accent'], page, ACCENT_SHARE);
         derived['--accent-bg'] = tint;
         derived['--on-accent-bg'] = contrastOn(tint);
-        derived['--accent-bg-txt'] = everywhere(effective['--accent'], tint);
     }
     if (effective['--ink'] && chip) derived['--ink-txt'] = everywhere(effective['--ink']);
 

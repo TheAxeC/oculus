@@ -147,7 +147,7 @@ describe('the findings of a hand edit', () => {
 
 describe('the rail pages the page hands the shell', () => {
     it('pairs each kept entry with the arrangement its page names', () => {
-        // revert: src/lib/state/workbench/navigation/rail.ts:39 => node: null
+        // revert: src/lib/state/workbench/navigation/rail.ts:40 => node: null
         const node = { root: { kind: 'pane', view: 'focus' } };
         expect(
             railPages({ arrangements: { focus: node }, rail: [FOCUS, { ...FOCUS, page: 'x' }] })
@@ -156,7 +156,7 @@ describe('the rail pages the page hands the shell', () => {
     });
 
     it('leaves out an entry whose glyph the vocabulary does not hold, as its finding says', () => {
-        // revert: src/lib/state/workbench/navigation/rail.ts:36 => const read = readRail(config.rail, arrangementKeys(arrangements));
+        // revert: src/lib/state/workbench/navigation/rail.ts:37 => const read = readRail(config.rail, arrangementKeys(arrangements));
         const node = { root: { kind: 'pane', view: 'focus' } };
         const held = {
             arrangements: { focus: node, views: node },
@@ -206,14 +206,14 @@ describe('the rail list a Settings tab is editing', () => {
     });
 
     it('sets the list beside what else the tab holds, and takes it away on null', () => {
-        // revert: src/lib/state/workbench/navigation/rail.ts:62 => if (rail === null) held.rail = [];
+        // revert: src/lib/state/workbench/navigation/rail.ts:63 => if (rail === null) held.rail = [];
         const set = withRailDraft({ keep: true }, [FOCUS]);
         expect(set).toEqual({ keep: true, rail: [FOCUS] });
         expect(withRailDraft(set, null)).toEqual({ keep: true });
     });
 
     it('holds unsaved text only in a Settings tab whose list differs from the file', () => {
-        // revert: src/lib/state/workbench/navigation/rail.ts:91 => return draft !== null;
+        // revert: src/lib/state/workbench/navigation/rail.ts:92 => return draft !== null;
         const state = { rail: [FOCUS] };
         expect(railTyped(SETTINGS_VIEW, state, [FOCUS])).toBe(false);
         expect(railTyped(SETTINGS_VIEW, state, [VIEWS])).toBe(true);
@@ -223,14 +223,14 @@ describe('the rail list a Settings tab is editing', () => {
     });
 
     it('moves a row one place and leaves the list as it is at either end', () => {
-        // revert: src/lib/state/workbench/navigation/rail.ts:97 => if (at < 0 || at >= rail.length) return [...rail];
+        // revert: src/lib/state/workbench/navigation/rail.ts:98 => if (at < 0 || at >= rail.length) return [...rail];
         expect(moveRailEntry([FOCUS, VIEWS], 1, -1)).toEqual([VIEWS, FOCUS]);
         expect(moveRailEntry([FOCUS, VIEWS], 0, -1)).toEqual([FOCUS, VIEWS]);
         expect(moveRailEntry([FOCUS, VIEWS], 1, 1)).toEqual([FOCUS, VIEWS]);
     });
 
     it('reads the file list whole, a broken entry included, for the reader to mend', () => {
-        // revert: src/lib/state/workbench/navigation/rail.ts:108 => return railDraft({ rail: [] }) ?? [];
+        // revert: src/lib/state/workbench/navigation/rail.ts:109 => return railDraft({ rail: [] }) ?? [];
         expect(configRail({ rail: [FOCUS, { label: 'Broken' }] })).toEqual([
             FOCUS,
             { label: 'Broken', glyph: '', page: '' }

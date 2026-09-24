@@ -32,7 +32,7 @@
         type DocEntry,
         type NavGroup
     } from '$lib/state/workbench/navigation/catalogue';
-    import type { RailPage } from '$lib/state/workbench/navigation/rail';
+    import type { RailEntry, RailPage } from '$lib/state/workbench/navigation/rail';
     import type { StatusWords } from '$lib/state/workbench/navigation/status';
     import StatusBar from './status/StatusBar.svelte';
     import { setGlyphMode, t } from '$lib/state/words/text';
@@ -65,10 +65,15 @@
          */
         configured?: boolean;
         /**
-         * The reader's own bookmarks, for the rail's BOOKMARKS group. The page reads them off the
+         * The reader's own bookmarks, for the rail's Bookmarks menu. The page reads them off the
          * fs store and hands them on, since the shell may not read that store itself.
          */
         saved?: Bookmark[];
+        /**
+         * Rewrite the rail's list with an edit, a page button moved or hidden, answering why the
+         * write was refused or the empty string. The page owns it, since the shell may not write.
+         */
+        editRail?: (edit: (rail: RailEntry[]) => RailEntry[]) => Promise<string>;
         /**
          * The `direct_chord` of the merged config: the letter a digit after it counts into the
          * catalogue's small groups.
@@ -92,6 +97,7 @@
         pages = [],
         configured = true,
         saved = [],
+        editRail,
         directChord,
         status = { socket: '', usage: '', hpc: '', live: 0 },
         waiting = 0
@@ -239,7 +245,13 @@
              negative depth paints over the page's own background and under every panel. -->
         <div class="wallpaper" style={image}></div>
     {/if}
-    <ActivityRail {pages} {saved} onsearch={() => openPalette('')} onupdate={openUpdate} />
+    <ActivityRail
+        {pages}
+        {saved}
+        {editRail}
+        onsearch={() => openPalette('')}
+        onupdate={openUpdate}
+    />
     <div class="column">
         <div class="area">
             <!-- Keyed by the page, so a switch unmounts the hidden page's views and mounts the

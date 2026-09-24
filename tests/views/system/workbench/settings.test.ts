@@ -99,14 +99,14 @@ describe('the appearance half', () => {
 
 describe('the rail half', () => {
     it('draws one row per button of the file, holding its label', () => {
-        // revert: src/lib/views/system/workbench/RailEditor.svelte:44 => const rows = $derived(draft ?? []);
+        // revert: src/lib/views/system/workbench/RailEditor.svelte:49 => const rows = $derived(draft ?? []);
         const body = draw();
         expect([...body.matchAll(/data-rail-row="/g)]).toHaveLength(13);
         expect(body).toContain('value="Views and Settings"');
     });
 
     it('draws the list being typed rather than the file, and Save offered for it', () => {
-        // revert: src/lib/views/system/workbench/RailEditor.svelte:181 => disabled={true}
+        // revert: src/lib/views/system/workbench/RailEditor.svelte:199 => disabled={true}
         client.ui.setInstanceState(
             instance.id,
             withRailDraft({}, [{ label: 'Only', glyph: 'compass', page: 'focus' }])
@@ -118,7 +118,7 @@ describe('the rail half', () => {
     });
 
     it('names a row the rule refuses and holds Save back for it', () => {
-        // revert: src/lib/views/system/workbench/RailEditor.svelte:165 => {#if false}
+        // revert: src/lib/views/system/workbench/RailEditor.svelte:183 => {#if false}
         client.ui.setInstanceState(
             instance.id,
             withRailDraft({}, [
@@ -134,14 +134,14 @@ describe('the rail half', () => {
     });
 
     it('holds Save and Revert back while nothing is being typed', () => {
-        // revert: src/lib/views/system/workbench/RailEditor.svelte:187 => disabled={sending}
+        // revert: src/lib/views/system/workbench/RailEditor.svelte:205 => disabled={sending}
         const body = draw();
         expect(buttonNamed(body, catalog['workbench.rail_save'])).toMatch(/\sdisabled/);
         expect(buttonNamed(body, catalog['workbench.rail_revert'])).toMatch(/\sdisabled/);
     });
 
     it('names each control of a row by the place of its button', () => {
-        // revert: src/lib/views/system/workbench/RailEditor.svelte:158 => label={t('workbench.rail_remove', 1)}
+        // revert: src/lib/views/system/workbench/RailEditor.svelte:176 => label={t('workbench.rail_remove', 1)}
         const body = draw();
         expect(buttonNamed(body, why('workbench.rail_remove', 13))).not.toBe('');
         expect(buttonNamed(body, why('workbench.rail_up', 1))).toMatch(/\sdisabled/);

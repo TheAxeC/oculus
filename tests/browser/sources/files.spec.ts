@@ -19,7 +19,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { join, sep } from 'node:path';
 import { expect, test, type Page } from '@playwright/test';
 import { keepServedFiles, nestedRoot, row, scratch } from '../helpers/files.ts';
-import { boot, openView, pickTheme } from '../helpers/rail.ts';
+import { bookmarkFiles, boot, openBookmark, openView, pickTheme } from '../helpers/rail.ts';
 import { alphaOf } from '../helpers/style.ts';
 import { t } from '../helpers/words.ts';
 
@@ -235,9 +235,10 @@ test('a root added in the page serves its own files, each in the view its name a
     ).toHaveCount(0);
 });
 
-test("a file is bookmarked from its own tab, and the rail draws the reader's own bookmark", async ({
+test("a file is bookmarked from its own tab, and the rail's Bookmarks menu lists the reader's own bookmark", async ({
     page
 }) => {
+    // revert: src/lib/shell/rail/rail.ts:41 => title: mark.label
     await boot(page);
     await openView(page, 'files', t('views.files'));
     await row(page, 'hub').click();
@@ -249,15 +250,13 @@ test("a file is bookmarked from its own tab, and the rail draws the reader's own
         page.getByRole('button', { name: t('file.unbookmark'), exact: true })
     ).toBeVisible();
 
-    // The rail draws it after the configured documents, and it opens the file as its own tab. It
-    // opens the file view, which hands a text file to the source tab and takes its own tab with it,
-    // so a bookmark and the tree reach one file in one place. The identity is on the button itself,
-    // which is what shell/rail/ActivityRail.svelte hands ToolButton.
-    const mark = page.locator('nav button[data-bookmark="hub/README.md"]');
-    await expect(mark).toBeVisible();
+    // The Bookmarks menu lists it, and it opens the file as its own tab. It opens the file view,
+    // which hands a text file to the source tab and takes its own tab with it, so a bookmark and
+    // the tree reach one file in one place. The identity is the file its choice names.
+    await expect.poll(() => bookmarkFiles(page)).toContain('hub/README.md');
     await page.getByRole('tab', { name: t('views.files') }).click();
     await expect(page.locator('[data-source-editor="README.md"]')).toBeHidden();
-    await mark.click();
+    await openBookmark(page, 'hub/README.md');
     await expect(page.locator('[data-source-editor="README.md"]')).toBeVisible();
 
     // The Files view lists it too, which is where it is renamed.
@@ -267,8 +266,8 @@ test("a file is bookmarked from its own tab, and the rail draws the reader's own
     // Taking it out again empties both.
     await page.getByRole('tab', { name: 'README.md' }).click();
     await page.getByRole('button', { name: t('file.unbookmark'), exact: true }).click();
-    // the second press took the bookmark away, so the rail draws none for that file
-    await expect(page.locator('nav button[data-bookmark="hub/README.md"]')).toHaveCount(0);
+    // the second press took the bookmark away, so the menu lists none for that file
+    await expect.poll(() => bookmarkFiles(page)).not.toContain('hub/README.md');
 });
 
 test('the file browser tints its box over a wallpaper and its form paints nothing', async ({
@@ -295,6 +294,7 @@ test('the file browser tints its box over a wallpaper and its form paints nothin
 test('the first bookmark is made from the form, and an HTML one is one tab from either place', async ({
     page
 }) => {
+    // revert: src/lib/shell/rail/rail.ts:41 => title: mark.label
     const dir = scratch();
     const key = dir.split(sep).at(-1) ?? '';
 
@@ -316,13 +316,13 @@ test('the first bookmark is made from the form, and an HTML one is one tab from 
     await form.getByRole('textbox', { name: 'Path' }).fill('page.html');
     await form.getByRole('button', { name: t('collection.form_save'), exact: true }).click();
 
-    // The rail draws it and the Files view lists it, both off the file the save made.
-    await expect(page.locator(`nav button[data-bookmark="${key}/page.html"]`)).toBeVisible();
+    // The Bookmarks menu and the Files view list it, both off the file the save made.
+    await expect.poll(() => bookmarkFiles(page)).toContain(`${key}/page.html`);
     await expect(page.locator('[data-fs-bookmark="the spec page"]')).toBeVisible();
 
-    // The tree opens the page as a document, and the rail's bookmark on the same file activates
-    // that tab rather than opening a second one. What it is called then is the bookmark's own
-    // label, which is the state the activation carries.
+    // The tree opens the page as a document, and the Bookmarks menu's choice of the same file
+    // activates that tab rather than opening a second one. What it is called then is the
+    // bookmark's own label, which is the state the activation carries.
     await row(page, key).click();
     await row(page, key, 'page.html').click();
     const frame = page.locator(`iframe[src="/api/file/${key}/page.html"]`);
@@ -330,7 +330,7 @@ test('the first bookmark is made from the form, and an HTML one is one tab from 
     await expect(page.getByRole('tab', { name: 'page.html' })).toBeVisible();
 
     await page.getByRole('tab', { name: t('views.files') }).click();
-    await page.locator(`nav button[data-bookmark="${key}/page.html"]`).click();
+    await openBookmark(page, `${key}/page.html`);
     await expect(frame).toHaveCount(1);
     await expect(page.getByRole('tab', { name: 'the spec page' })).toBeVisible();
     // the bookmark opens the same file in the same tab, which now carries the bookmark's own label
@@ -577,6 +577,7 @@ test('the tree is one stop from the filter box, and the focused row hands Tab to
 test("a row's controls appear on hover, and bookmark the file and open it in a kept tab", async ({
     page
 }) => {
+    // revert: src/lib/shell/rail/rail.ts:41 => title: mark.label
     await boot(page);
     await openView(page, 'files', t('views.files'));
     const { key } = await nestedRoot(page);
@@ -590,14 +591,13 @@ test("a row's controls appear on hover, and bookmark the file and open it in a k
     await line.hover();
     await expect.poll(() => controls.evaluate((el) => getComputedStyle(el).opacity)).toBe('1');
 
-    // The star writes a bookmark the rail draws, and a second press takes it away.
+    // The star writes a bookmark the Bookmarks menu lists, and a second press takes it away.
     await line.getByRole('button', { name: t('files.row_bookmark'), exact: true }).click();
-    const mark = page.locator(`nav button[data-bookmark="${key}/tool.py"]`);
-    await expect(mark).toBeVisible();
+    await expect.poll(() => bookmarkFiles(page)).toContain(`${key}/tool.py`);
     await line.hover();
     await line.getByRole('button', { name: t('files.row_bookmark'), exact: true }).click();
     // the second press took the bookmark away
-    await expect(mark).toHaveCount(0);
+    await expect.poll(() => bookmarkFiles(page)).not.toContain(`${key}/tool.py`);
 
     // The other control opens the file in a tab that stays rather than in the preview.
     await line.hover();
@@ -824,20 +824,19 @@ test('a bookmark written by one page reaches a second page that wrote nothing', 
 }) => {
     const watching = await page.context().newPage();
     await boot(watching);
-    const mark = watching.locator('nav button[data-bookmark="hub/README.md"]');
     // the second page has not seen a bookmark write yet
-    await expect(mark).toHaveCount(0);
+    await expect.poll(() => bookmarkFiles(watching)).not.toContain('hub/README.md');
 
     await boot(page);
     await openView(page, 'files', t('views.files'));
     await row(page, 'hub').click();
     await row(page, 'hub', 'README.md').click();
     await page.getByRole('button', { name: t('file.bookmark'), exact: true }).click();
-    await expect(page.locator('nav button[data-bookmark="hub/README.md"]')).toBeVisible();
-    await expect(mark).toBeVisible();
+    await expect.poll(() => bookmarkFiles(page)).toContain('hub/README.md');
+    await expect.poll(() => bookmarkFiles(watching)).toContain('hub/README.md');
 
     await page.getByRole('button', { name: t('file.unbookmark'), exact: true }).click();
     // the removal is delivered to the second open page
-    await expect(mark).toHaveCount(0);
+    await expect.poll(() => bookmarkFiles(watching)).not.toContain('hub/README.md');
     await watching.close();
 });

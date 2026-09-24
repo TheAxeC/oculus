@@ -28,10 +28,12 @@ let move: ClientState['drag']['move'];
 let setDragSink: ClientState['drag']['setDragSink'];
 let start: ClientState['drag']['start'];
 let startPage: ClientState['drag']['startPage'];
+let startView: ClientState['drag']['startView'];
 
 beforeEach(() => {
     client = createClientState();
-    ({ cancel, dragging, end, hover, move, setDragSink, start, startPage } = client.drag);
+    ({ cancel, dragging, end, hover, move, setDragSink, start, startPage, startView } =
+        client.drag);
 });
 
 /** A sink that writes down what it was asked to perform, one line per call. */
@@ -39,6 +41,15 @@ function recorder(): DragSink & { calls: string[] } {
     const calls: string[] = [];
     return {
         calls,
+        open: (view, state, page) => {
+            calls.push(`open ${view} ${JSON.stringify(state ?? null)} on ${page ?? 'screen'}`);
+            return `${view}-tab`;
+        },
+        holds: (path, id) => path.join(',') === '9' && id === 'catalogue-tab',
+        away: (view, state, avoid, page) =>
+            calls.push(
+                `away ${view} ${JSON.stringify(state ?? null)} from ${avoid} on ${page ?? 'screen'}`
+            ),
         transfer: (id, path, index) =>
             calls.push(`transfer ${id} to [${path.join(',')}] at ${index}`),
         split: (id, path, edge) => calls.push(`split ${id} to [${path.join(',')}] on ${edge}`),
@@ -184,6 +195,52 @@ describe('a page carried out of the strip', () => {
         expect(dragging()?.drop).toBe(null);
         hover({ kind: 'centre', path: [], page: 'page-1' });
         expect(dragging()?.drop).toBe(null);
+        end();
+        expect(sink.calls).toEqual([]);
+    });
+});
+
+describe('a view carried out of the catalogue', () => {
+    /** A view's drag past the threshold. */
+    function carry(view: string, state?: unknown): void {
+        startView(view, state, 'Help', { x: 100, y: 100 });
+        move({ x: 100 + THRESHOLD, y: 100 });
+    }
+
+    it('opens the view on the page it was dropped on, then moves that tab into the strip', () => {
+        // revert: src/lib/state/workbench/drag.svelte.ts:290 => const id = held.id;
+        carry('help');
+        expect(dragging()?.kind).toBe('view');
+        hover({ kind: 'strip', path: [1], index: 2, page: 'views' });
+        end();
+        expect(sink.calls).toEqual(['open help null on views', 'transfer help-tab to [1] at 2']);
+    });
+
+    it('opens a document with its state and splits the pane for a drop on an edge', () => {
+        // revert: src/lib/state/workbench/drag.svelte.ts:290 => const id = held.kind === 'view' ? sink.open(held.id, undefined, drop.page) : held.id;
+        carry('doc', { path: 'a.md' });
+        hover({ kind: 'edge', path: [0], edge: 'bottom' });
+        end();
+        expect(sink.calls).toEqual([
+            'open doc {"path":"a.md"} on screen',
+            'split doc-tab to [0] on bottom'
+        ]);
+    });
+
+    it('performs nothing before the threshold, so the press stays a click', () => {
+        // revert: src/lib/state/workbench/drag.svelte.ts:240 => armed: true
+        startView('help', undefined, 'Help', { x: 100, y: 100 });
+        expect(dragging()).toBe(null);
+        hover({ kind: 'centre', path: [] });
+        end();
+        expect(sink.calls).toEqual([]);
+    });
+
+    it('opens nothing when the page it was dropped on is gone', () => {
+        // revert: src/lib/state/workbench/drag.svelte.ts:291 => delete
+        setDragSink({ ...sink, open: () => '' });
+        carry('help');
+        hover({ kind: 'centre', path: [] });
         end();
         expect(sink.calls).toEqual([]);
     });

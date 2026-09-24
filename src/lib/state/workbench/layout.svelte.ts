@@ -13,14 +13,16 @@
 // What the factory keeps is the reactive page list and the write path over it. Everything a caller
 // does to the instances in that list is built beside the factory, one module per concern under
 // state/workbench/layout, and is handed the access object below: the tabs on a page, what the
-// reader last acted in, where a view asked for lands, the file browser's ask, and the storage. None
-// of them holds a rune, so none of them is a second place an arrangement can change.
+// reader last acted in, where a view asked for lands, a view opened clear of one instance, the file
+// browser's ask, and the storage. None of them holds a rune, so none of them is a second place an
+// arrangement can change.
 
 import { item } from '../../data/helpers/guards.ts';
 import type { UiStore } from './ui.svelte.ts';
 import {
     clearPage,
     createAttention,
+    createAway,
     createInstances,
     createOpening,
     createShowInFiles,
@@ -132,6 +134,15 @@ export type LayoutStore = {
     openView: (view: ViewId, state?: unknown, page?: string, options?: OpenOptions) => string;
     openBeside: (view: ViewId, state?: unknown, page?: string) => string;
     /**
+     * Open a view on a page in a pane that does not hold one instance, which is how the Views
+     * catalogue opens a view on its own page without covering itself.
+     */
+    openAway: (view: ViewId, state: unknown, page: string, avoid: string) => string;
+    /** Open a view on a page in a new pane beside the pane holding one instance. */
+    openNextTo: (view: ViewId, state: unknown, page: string, beside: string) => string;
+    /** Whether the pane at a path of a page holds one instance. */
+    paneHolds: (path: number[], id: string, page: string) => boolean;
+    /**
      * Show one path in the file browser: the Files tab of the page the reader is in is activated
      * (the panes are restored first when it sits behind a maximised pane), or one is opened there
      * when the page has none, and it is asked to open the folders on the way, select the path and
@@ -241,6 +252,13 @@ export function createLayout(ui: UiStore): LayoutStore {
     const instances = createInstances(access, attention);
     const opening = createOpening(access, attention, instances.keepPreview);
     const files = createShowInFiles(access, attention, opening.openView);
+    const away = createAway(
+        access,
+        attention,
+        opening.openView,
+        instances.transferInstance,
+        instances.splitInstance
+    );
 
     /**
      * Read the saved arrangement and make it current, falling back to the default when there is
@@ -526,6 +544,9 @@ export function createLayout(ui: UiStore): LayoutStore {
         focused,
         openView: opening.openView,
         openBeside: opening.openBeside,
+        openAway: away.openAway,
+        openNextTo: away.openNextTo,
+        paneHolds: away.paneHolds,
         showInFiles: files.showInFiles
     };
 }

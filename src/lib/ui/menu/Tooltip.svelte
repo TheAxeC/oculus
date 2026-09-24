@@ -21,9 +21,10 @@
     // containing block of a fixed element inside it, which reads those window coordinates from its
     // own corner and cuts the bubble at its edge, and on the body there is no such ancestor.
 
-    import { describedBy, describedControl } from '$lib/ui/menu/tooltip-target';
+    import { QUIET_FOCUS, describedBy, describedControl } from '$lib/ui/menu/tooltip-target';
     import { useTipIds } from '$lib/ui/menu/tip-ids';
-    import type { Snippet } from 'svelte';
+    import { onBody } from '$lib/ui/frame/on-body';
+    import { tick, type Snippet } from 'svelte';
 
     type Props = {
         /** The words, already translated by the caller. The empty string draws no bubble at all. */
@@ -81,6 +82,7 @@
     const id = useTipIds().nextTipId();
 
     let box: HTMLElement | undefined = $state();
+    let bubble: HTMLElement | undefined = $state();
     let open = $state(false);
     let left = $state(0);
     let top = $state(0);
@@ -101,10 +103,26 @@
         if (text === '') return;
         place();
         open = true;
+        if (placement === 'beside') void tick().then(centre);
     }
 
-    function later(): void {
-        if (text === '') return;
+    /**
+     * A bubble beside its control is centred on the control's height, as VS Code's hover beside an
+     * activity bar item is. Its own height is known only once it is drawn, so this runs after the
+     * update that showed it.
+     */
+    function centre(): void {
+        if (!open || box === undefined || !bubble) return;
+        const rect = box.getBoundingClientRect();
+        top = Math.max(0, rect.top + (rect.height - bubble.offsetHeight) / 2);
+    }
+
+    /**
+     * The pointer came to rest on the control. A pointer that arrives with a button held is a drag
+     * passing over it, which opens no words, as no hover opens during a drag in VS Code.
+     */
+    function later(event: PointerEvent): void {
+        if (text === '' || event.buttons !== 0) return;
         stop();
         timer = setTimeout(show, DELAY);
     }
@@ -125,11 +143,14 @@
     }
 
     /**
-     * Focus shows the words only when it came from the keyboard, which `:focus-visible` answers.
+     * Focus shows the words only when it came from the keyboard, which `:focus-visible` answers,
+     * and only when the reader moved it: a focus a menu gives back to its opener on closing is
+     * marked through `focusQuietly` of ui/menu/tooltip-target.ts and opens none.
      */
     function focused(event: FocusEvent): void {
         const target = event.target;
-        if (target instanceof Element && target.matches(':focus-visible')) show();
+        if (!(target instanceof Element) || target.closest(`[${QUIET_FOCUS}]`) !== null) return;
+        if (target.matches(':focus-visible')) show();
     }
 
     /**
@@ -177,14 +198,6 @@
         node.setAttribute('aria-describedby', wanted);
         return () => node.removeAttribute('aria-describedby');
     });
-
-    /**
-     * Move the bubble out of the wrapper's ancestors and onto the body, and take it away with it.
-     */
-    function onBody(node: HTMLElement): { destroy: () => void } {
-        document.body.append(node);
-        return { destroy: () => node.remove() };
-    }
 </script>
 
 <!-- The wrapper normally takes no focus because the control inside it is focused and described; the
@@ -209,8 +222,10 @@
         <span
             {id}
             class="bubble"
+            class:beside={placement === 'beside'}
             role="tooltip"
             hidden={!open}
+            bind:this={bubble}
             style="left: {left}px; top: {top}px"
             use:onBody>{text}</span
         >
@@ -250,6 +265,30 @@
         line-height: 1.3;
         white-space: normal;
         pointer-events: none;
+    }
+
+    /* A bubble beside its control points at it, as VS Code's hover beside an activity item does:
+       a triangle across the gap, its outline in the bubble's border and its inside in the
+       bubble's fill, one pixel in so the border between them does not show. */
+    .bubble.beside::before,
+    .bubble.beside::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        width: 0;
+        height: 0;
+        border: 6px solid transparent;
+        transform: translateY(-50%);
+    }
+
+    .bubble.beside::before {
+        right: 100%;
+        border-right-color: var(--line);
+    }
+
+    .bubble.beside::after {
+        right: calc(100% - 1px);
+        border-right-color: var(--panel);
     }
 
     /* The bubble floats over whatever it explains, so it keeps more of its colour than the pane

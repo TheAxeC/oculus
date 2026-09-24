@@ -1,8 +1,8 @@
 <script lang="ts">
     // Layer 3, shared view support. The star over one open file: it is set when a bookmark of the
     // reader's own names this root and this path, and pressing it adds one under the file's own
-    // name or takes that one out again. The rail draws the bookmarks, and the Files view is where
-    // one is renamed.
+    // name or takes that one out again. The rail's Bookmarks menu lists the bookmarks, and the
+    // Files view is where one is renamed.
     //
     // It is shared because a file is read in two tabs, the source tab for text and the file view
     // for a picture, a PDF or a download, and a reader bookmarks the file they are looking at in

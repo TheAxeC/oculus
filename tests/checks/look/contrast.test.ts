@@ -5,12 +5,11 @@
 // nothing else, since a Focus lane or column header is where it is painted. That every word of
 // those headers sits on its own lane surface is proved in the page by
 // tests/browser/boards/focus-look.spec.ts; the src/ reading case below only reports a lane text
-// token referenced outside the one shape the header uses; `--accent-bg-txt` on the pressed-toggle
-// surface `--accent-bg`, and `--on-accent-bg` on it for a selected tree row; and the on-chip ink on
-// its filled chip. A pair below the threshold is printed with its ratio and fails. It is never
-// fixed by loosening the threshold or by editing a colour here: a colour is an authored value in
-// tokens.css or themes.css, and a failure is a finding about that value or about derive.ts, not
-// something this file repairs.
+// token referenced outside the one shape the header uses; `--on-accent-bg` on the selected tree
+// row's surface `--accent-bg`; and the on-chip ink on its filled chip. A pair below the threshold
+// is printed with its ratio and fails. It is never fixed by loosening the threshold or by editing a
+// colour here: a colour is an authored value in tokens.css or themes.css, and a failure is a
+// finding about that value or about derive.ts, not something this file repairs.
 
 import { readFileSync, readdirSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
@@ -51,8 +50,6 @@ function pairs(name: string): Pair[] {
         const lane = fg.slice(0, -'-txt'.length);
         if (fg.startsWith('--c-') && lane.endsWith('-lane') && all[lane]) measure(fg, lane);
     }
-    // The pressed-toggle surface's own text on that surface, the accent mixed into the page.
-    if (all['--accent-bg-txt'] && all['--accent-bg']) measure('--accent-bg-txt', '--accent-bg');
     // A selected tree row draws its whole line in `--on-accent-bg` on the tint.
     if (all['--on-accent-bg'] && all['--accent-bg']) measure('--on-accent-bg', '--accent-bg');
     for (const fg of Object.keys(derived)) {

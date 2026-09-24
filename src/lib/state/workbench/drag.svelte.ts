@@ -1,5 +1,6 @@
-// Layer 2, client state. The one drag in progress, of a pane's tab or of a page carried out of the
-// Pages view. A strip or a page row starts it, whatever the pointer is over reports where a drop
+// Layer 2, client state. The one drag in progress, of a pane's tab, of a page carried out of the
+// Pages view, or of a view carried out of the Views catalogue. A strip, a page row or a catalogue
+// entry starts it, whatever the pointer is over reports where a drop
 // would land, and the pointer coming up performs it. There is one drag at a time on the page, so
 // this is a module and not a component's state: the control that started the drag and the pane the
 // pointer ended over never meet.
@@ -36,22 +37,36 @@ export type Drop =
  * The operations a drop is performed through. The store's are the default; a test hands its own.
  */
 export type DragSink = {
+    /**
+     * Open a view on a page and answer the instance it opened or activated, or the empty string
+     * when there is no such page; a dropped view is that instance moved to where it was dropped.
+     */
+    open: (view: string, state: unknown, page?: string) => string;
+    /** Whether the pane at a path holds one instance, the one a view was carried out of. */
+    holds: (path: number[], id: string, page?: string) => boolean;
+    /** Open a view on a page in a pane other than the one holding `avoid`. */
+    away: (view: string, state: unknown, avoid: string, page?: string) => void;
     transfer: (id: string, path: number[], index: number, page?: string) => void;
     split: (id: string, path: number[], edge: Edge, page?: string) => void;
     embed: (nested: string, path: number[], edge: Edge, page?: string) => void;
 };
 
 /**
- * What is being dragged: a tab of a pane, which lands in a strip, a body or an edge, or a page from
- * the Pages view, which lands on an edge alone, since a page has no tab to put among a pane's.
+ * What is being dragged: a tab of a pane, which lands in a strip, a body or an edge; a page from
+ * the Pages view, which lands on an edge alone, since a page has no tab to put among a pane's; or a
+ * view from the catalogue, which lands wherever a tab does, as the tab it opens as.
  */
-export type DragKind = 'tab' | 'page';
+export type DragKind = 'tab' | 'page' | 'view';
 
 /** The drag as anything drawing it sees it. */
 export type Dragging = {
-    /** Whether the id is an instance or a page, which is what says where it may land. */
+    /** Whether the id is an instance, a page or a view, which is what says where it may land. */
     kind: DragKind;
     id: string;
+    /** What a dragged view is opened with: a document's path, or nothing for a view. */
+    state?: unknown;
+    /** The instance a dragged view was carried out of, which its drop never covers. */
+    from?: string;
     label: string;
     point: Point;
     drop: Drop | null;
@@ -120,6 +135,7 @@ export type DragStore = {
     dragging: () => Dragging | null;
     start: (id: string, label: string, point: Point) => void;
     startPage: (id: string, label: string, point: Point) => void;
+    startView: (view: string, state: unknown, label: string, point: Point, from?: string) => void;
     move: (point: Point) => void;
     hover: (drop: Drop | null, rect?: Rect | null, refused?: boolean) => void;
     end: () => void;
@@ -130,6 +146,11 @@ export function createDrag(layout: LayoutStore): DragStore {
     const store: { current: Held | null } = $state({ current: null });
 
     const storeSink: DragSink = {
+        open: (view, state, page) => layout.openView(view, state, page ?? layout.currentPage().id),
+        holds: (path, id, page) => layout.paneHolds(path, id, page ?? layout.currentPage().id),
+        away: (view, state, avoid, page) => {
+            layout.openAway(view, state, page ?? layout.currentPage().id, avoid);
+        },
         transfer: (id, path, index, page) => layout.transferInstance(id, path, index, page),
         split: (id, path, edge, page) => layout.splitInstance(id, path, edge, page),
         embed: (nested, path, edge, page) => layout.embedPage(nested, path, edge, page)
@@ -150,8 +171,8 @@ export function createDrag(layout: LayoutStore): DragStore {
     function dragging(): Dragging | null {
         const held = store.current;
         if (!held?.armed) return null;
-        const { kind, id, label, point, drop, rect, refused } = held;
-        return { kind, id, label, point, drop, rect, refused };
+        const { kind, id, state, from, label, point, drop, rect, refused } = held;
+        return { kind, id, state, from, label, point, drop, rect, refused };
     }
 
     /**
@@ -194,6 +215,33 @@ export function createDrag(layout: LayoutStore): DragStore {
         listen(true);
     }
 
+    /**
+     * A view is being carried out of the catalogue. Like a tab it is armed only past the
+     * threshold, so the press that starts it is still the click that opens the view.
+     */
+    function startView(
+        view: string,
+        state: unknown,
+        label: string,
+        point: Point,
+        from?: string
+    ): void {
+        store.current = {
+            id: view,
+            state,
+            from,
+            label,
+            point,
+            drop: null,
+            rect: null,
+            refused: false,
+            kind: 'view',
+            origin: point,
+            armed: false
+        };
+        listen(true);
+    }
+
     /** The pointer moved. Past the threshold the drag is armed and stays armed. */
     function move(point: Point): void {
         const held = store.current;
@@ -230,9 +278,20 @@ export function createDrag(layout: LayoutStore): DragStore {
             if (drop.kind === 'edge') sink.embed(held.id, drop.path, drop.edge, drop.page);
             return;
         }
-        if (drop.kind === 'strip') sink.transfer(held.id, drop.path, drop.index, drop.page);
-        else if (drop.kind === 'centre') sink.transfer(held.id, drop.path, AT_END, drop.page);
-        else sink.split(held.id, drop.path, drop.edge, drop.page);
+        // A view dropped into the middle or the strip of the pane it was carried out of opens clear
+        // of that pane, so the catalogue is never covered by the view it opened.
+        const from = held.kind === 'view' ? held.from : undefined;
+        if (from !== undefined && drop.kind !== 'edge' && sink.holds(drop.path, from, drop.page)) {
+            sink.away(held.id, held.state, from, drop.page);
+            return;
+        }
+        // A view lands as the tab it opens as: opened on the page it was dropped on, then moved
+        // there exactly as a tab dragged there would be.
+        const id = held.kind === 'view' ? sink.open(held.id, held.state, drop.page) : held.id;
+        if (id === '') return;
+        if (drop.kind === 'strip') sink.transfer(id, drop.path, drop.index, drop.page);
+        else if (drop.kind === 'centre') sink.transfer(id, drop.path, AT_END, drop.page);
+        else sink.split(id, drop.path, drop.edge, drop.page);
     }
 
     /** Escape, or anything else that calls the drag off. Nothing is performed. */
@@ -277,5 +336,5 @@ export function createDrag(layout: LayoutStore): DragStore {
         document.body.style.userSelect = '';
     }
 
-    return { setDragSink, dragging, start, startPage, move, hover, end, cancel };
+    return { setDragSink, dragging, start, startPage, startView, move, hover, end, cancel };
 }

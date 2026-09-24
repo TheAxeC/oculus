@@ -1,6 +1,9 @@
 # Oculus text owned by the UI primitives.
 text:
     ui:
+        bookmarks_glyph: star
+        bookmarks_none: No bookmarks
+        bookmarks_none_tip: The star on a file in the Files view adds one.
         close_glyph: dismiss
         close_tab: Close tab
         confirm_cancel: Cancel
@@ -11,6 +14,7 @@ text:
         dirty_glyph: bullet
         docs: Bookmarks
         drag_hint: Moving {0}
+        drag_open: Opening {0}
         embed_page: 'Show {0} here'
         embed_page_list: Show a page here...
         embed_refused: '{0} cannot be shown here'
@@ -20,6 +24,7 @@ text:
         menu_back: Back
         move_to_page: 'Move tab to {0}'
         move_to_page_list: Move tab to page...
+        page_badge_tip: '{0} ({1})'
         page_close_confirm: Close the page {0} and the {1} tabs on it?
         page_default: Page {0}
         page_leaf_close: Stop showing this page here
@@ -39,6 +44,8 @@ text:
         pane_restore: Restore panes
         preview_tab: 'The next single click replaces this tab; double-click to keep it.'
         rail: Pages
+        rail_hide: Hide
+        rail_settings: Settings
         row_menu: Row actions
         sash: Resize
         split_down: Split tab downwards

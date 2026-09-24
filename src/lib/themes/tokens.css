@@ -16,11 +16,10 @@
     --chip: #f1f5f9;
     --shadow: 0 1px 3px rgba(15, 23, 42, 0.08), 0 1px 2px rgba(15, 23, 42, 0.04);
     --accent: #bd5d38;
-    /* Four colours derive.ts computes for every theme and ui/theme.ts sets on the root element: the
-       pressed-toggle surface and its text, and the scrollbar's thumb and track. These are the
-       default theme's values, so the first paint, before a theme is applied, draws them as well. */
+    /* Three colours derive.ts computes for every theme and ui/theme.ts sets on the root element:
+       the selected-row surface and the scrollbar's thumb and track. These are the default theme's
+       values, so the first paint, before a theme is applied, draws them as well. */
     --accent-bg: #e6d6d2;
-    --accent-bg-txt: #95492c;
     --scroll-thumb: #8593a7;
     --scroll-track: #fff;
     /* palette */
@@ -74,8 +73,13 @@
     --radius: 10px;
     --radius-sm: 6px;
     --radius-pill: 999px;
-    /* The activity rail's width, the one place it is set. */
-    --rail-width: 98px;
+    /* The activity rail's width, the one place it is set, and the side of each of its square
+       items: VS Code's activity bar width (activitybarpart.css). */
+    --rail-width: 48px;
+    /* The rail's icon and its badge's count, fixed as the item that holds them is, so a larger text
+       scale leaves the icon clear of the badge and the count inside its pill. */
+    --rail-icon: 24px;
+    --rail-badge-text: 9px;
     --font-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
     --font-num: var(--font-mono); /* counts, dates, ids - mono in every theme */

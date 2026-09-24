@@ -213,11 +213,12 @@ describe('terminalFontPx', () => {
     });
 });
 
-describe('the scrollbar tokens', () => {
+describe('the derived chrome tokens', () => {
     it('are given on :root the values the default theme derives, for the first paint', () => {
+        // revert: src/lib/themes/tokens.css:22 => --accent-bg: #000000;
         const root = parseBlocks(TOKENS)[':root'];
         const derived = apply('light').set;
-        for (const name of ['--scroll-thumb', '--scroll-track', '--accent-bg', '--accent-bg-txt']) {
+        for (const name of ['--scroll-thumb', '--scroll-track', '--accent-bg']) {
             expect(root[name], name).toBe(derived[name]);
         }
     });

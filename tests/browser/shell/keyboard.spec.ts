@@ -9,16 +9,16 @@
 // Nothing here writes to the hub. The layout lives in the browser's own storage.
 
 import { expect, test, type Page } from '@playwright/test';
-import { SHOWN_VIEW, boot, openView } from '../helpers/rail.ts';
+import { GROUND, SHOWN_VIEW, boot, openView } from '../helpers/rail.ts';
 import { readEngineFile, writeEngineFile } from '../helpers/hub.ts';
 import { t } from '../helpers/words.ts';
 
 /** The engine's layout file, whose rail list one case edits and puts back. */
 const LAYOUT = 'config/layout.yml';
 
-/** Press a key with nothing focused in a field: the strip's ground takes the focus first. */
+/** Press a key with nothing focused in a field: a press on the window's ground takes it first. */
 async function press(page: Page, key: string): Promise<void> {
-    await page.locator('body').click({ position: { x: 5, y: 5 } });
+    await page.locator('body').click({ position: GROUND });
     await page.keyboard.press(key);
 }
 
@@ -269,7 +269,7 @@ test('Delete closes the focused tab and the keyboard lands on the tab that takes
 test('a rail page taken out of the list under the focus hands the stop to its neighbour', async ({
     page
 }) => {
-    // revert: src/lib/shell/rail/ActivityRail.svelte:138 => delete
+    // revert: src/lib/shell/rail/ActivityRail.svelte:168 => delete
     await boot(page);
     const rail = page.locator('[data-rail]');
     const inbox = rail.locator('[data-stop="page:inbox"]');

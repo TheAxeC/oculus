@@ -251,16 +251,22 @@ function real(path) {
     }
 }
 
-/** A copy of the tree with the dependencies linked rather than copied, so a run costs seconds. */
-function copyTree(root) {
-    const dir = mkdtempSync(join(tmpdir(), 'oculus-revert-'));
+/** A new folder for a copy of the tree. */
+function copyFolder() {
+    return mkdtempSync(join(tmpdir(), 'oculus-revert-'));
+}
+
+/**
+ * A copy of the tree in that folder, with the dependencies linked rather than copied, so a run
+ * costs seconds.
+ */
+function copyTree(root, dir) {
     cpSync(root, dir, {
         recursive: true,
         filter: (from) => !SKIPPED.includes(relative(root, from).split('/')[0])
     });
     const modules = join(root, 'node_modules');
     if (existsSync(modules)) symlinkSync(modules, join(dir, 'node_modules'), 'dir');
-    return dir;
 }
 
 /** Whether the built application has to be rebuilt for this case: the browser layer serves it. */
@@ -411,14 +417,19 @@ export function checkOne(root, directive) {
             line: `unproven  ${directive.file}:${directive.line} names ${directive.target}, which a copy of the tree leaves behind`
         };
     }
-    const dir = copyTree(root);
-    // A run stopped by a signal removes the copy on its way out rather than leaving it behind.
+    // A run stopped by a signal removes the copy on its way out rather than leaving it behind. The
+    // handlers are in place before the folder exists: a signal that lands while the synchronous
+    // copy runs then waits for it to end and is handled, where with no handler it would end the
+    // process at once and leave the folder.
+    let dir = '';
     const stopped = (signal) => {
-        removeCopy(dir);
+        if (dir !== '') removeCopy(dir);
         process.exit(128 + (os.constants.signals[signal] ?? 0));
     };
     for (const signal of SIGNALS) process.once(signal, stopped);
+    dir = copyFolder();
     try {
+        copyTree(root, dir);
         const edit = applied(
             readFileSync(target, 'utf8'),
             directive.first,

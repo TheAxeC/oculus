@@ -187,7 +187,7 @@ describe('the store: a rail page', () => {
     const LABEL = 'Sessions';
 
     it('makes the page from its arrangement the first time, tied to the key, and shows it', () => {
-        // revert: src/lib/state/workbench/layout.svelte.ts:304 => addPage(newPage(label, next));
+        // revert: src/lib/state/workbench/layout.svelte.ts:322 => addPage(newPage(label, next));
         loadLayout(fakeStorage(saveOwn()));
         expect(openRailPage(KEY, LABEL, ARRANGEMENT)).toBe(true);
         expect(pages().map((page) => page.label)).toEqual(['Page 1', LABEL]);
@@ -196,14 +196,14 @@ describe('the store: a rail page', () => {
     });
 
     it('leaves the workbench that was on screen on the page it was on', () => {
-        // revert: src/lib/state/workbench/layout.svelte.ts:304 => savePages({ pages: [newPage(label, next, key)], current: '' });
+        // revert: src/lib/state/workbench/layout.svelte.ts:322 => savePages({ pages: [newPage(label, next, key)], current: '' });
         loadLayout(fakeStorage(saveOwn()));
         openRailPage(KEY, LABEL, ARRANGEMENT);
         expect(pages()[0].workbench).toEqual(own());
     });
 
     it('shows the page the reader rearranged on the next press, rather than the arrangement', () => {
-        // revert: src/lib/state/workbench/layout.svelte.ts:287 => const found = undefined;
+        // revert: src/lib/state/workbench/layout.svelte.ts:305 => const found = undefined;
         loadLayout(fakeStorage(saveOwn()));
         openRailPage(KEY, LABEL, ARRANGEMENT);
         const made = currentPage().id;
@@ -216,7 +216,7 @@ describe('the store: a rail page', () => {
     });
 
     it('keeps the page when the button is renamed, since the key ties them', () => {
-        // revert: src/lib/state/workbench/layout.svelte.ts:287 => const found = held.find((page) => page.label === label);
+        // revert: src/lib/state/workbench/layout.svelte.ts:305 => const found = held.find((page) => page.label === label);
         loadLayout(fakeStorage(saveOwn()));
         openRailPage(KEY, LABEL, ARRANGEMENT);
         const made = currentPage().id;
@@ -227,7 +227,7 @@ describe('the store: a rail page', () => {
     });
 
     it('takes a page no button holds whose name is the label, and not one a button holds', () => {
-        // revert: src/lib/state/workbench/layout.svelte.ts:292 => const named = undefined;
+        // revert: src/lib/state/workbench/layout.svelte.ts:310 => const named = undefined;
         loadLayout(fakeStorage(saveOwn()));
         openPage(LABEL);
         const mine = currentPage().id;
@@ -242,14 +242,14 @@ describe('the store: a rail page', () => {
     });
 
     it('changes nothing for an empty key', () => {
-        // revert: src/lib/state/workbench/layout.svelte.ts:285 => delete
+        // revert: src/lib/state/workbench/layout.svelte.ts:303 => delete
         loadLayout(fakeStorage(saveOwn()));
         expect(openRailPage('', LABEL, ARRANGEMENT)).toBe(false);
         expect(pages()).toHaveLength(1);
     });
 
     it('changes nothing on an arrangement that does not parse', () => {
-        // revert: src/lib/state/workbench/layout.svelte.ts:302 => delete
+        // revert: src/lib/state/workbench/layout.svelte.ts:320 => delete
         loadLayout(fakeStorage(saveOwn()));
         expect(openRailPage('broken', 'Broken', { root: { kind: 'box' } })).toBe(false);
         expect(pages()).toHaveLength(1);
@@ -274,7 +274,7 @@ describe('the store: a rail page', () => {
     });
 
     it('renames the page without untying it from its button', () => {
-        // revert: src/lib/state/workbench/layout.svelte.ts:287 => const found = held.find((page) => page.label === label && page.rail === key);
+        // revert: src/lib/state/workbench/layout.svelte.ts:305 => const found = held.find((page) => page.label === label && page.rail === key);
         loadLayout(fakeStorage(saveOwn()));
         openRailPage(KEY, LABEL, ARRANGEMENT);
         const made = currentPage().id;

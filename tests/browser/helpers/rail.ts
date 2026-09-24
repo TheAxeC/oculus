@@ -13,7 +13,8 @@
 // catalogue does the same from its own page, and a spec that is not about the catalogue should not
 // have to switch to that page and back. pickTheme() puts a theme on through the palette's `:theme`
 // command for the same reason, and inSettings() is the way to the other appearance controls, which
-// the Settings view holds alone.
+// the Settings view holds alone. bookmarkFiles() and openBookmark() read and open the rail's
+// Bookmarks menu, whose choices are drawn only while it is open.
 
 import { expect, type Locator, type Page } from '@playwright/test';
 import { t } from './words.ts';
@@ -24,6 +25,13 @@ import { t } from './words.ts';
  * the one on screen.
  */
 export const SHOWN_VIEW = '[data-tab-view]:not([hidden])';
+
+/**
+ * A point on the window's own ground, outside the rail, every pane and every control: the work
+ * area's 4 px margin just right of the 48 px rail, at the top edge. A press there takes the focus
+ * off whatever holds it and leaves it in no pane.
+ */
+export const GROUND = { x: 50, y: 2 };
 
 /** The browser storage key the layout is saved under, state/workbench/layout/saved/storage.ts's. */
 const LAYOUT_KEY = 'oculus.layout.v1';
@@ -193,4 +201,34 @@ export async function twoPages(page: Page): Promise<void> {
         .getByRole('button', { name: t('ui.close_tab') })
         .click();
     await expect(first.getByRole('tab')).toHaveCount(1);
+}
+
+/** The rail's Bookmarks menu opener. */
+function bookmarksOpener(page: Page): Locator {
+    return page.locator('nav').getByRole('button', { name: t('ui.docs'), exact: true });
+}
+
+/**
+ * The files the rail's Bookmarks menu lists, each as the `root/path` its choice names, read by
+ * opening the menu and closing it again. The choice that says there is none names no file.
+ */
+export async function bookmarkFiles(page: Page): Promise<string[]> {
+    await bookmarksOpener(page).click();
+    const menu = page.getByRole('menu', { name: t('ui.docs') });
+    await expect(menu).toBeVisible();
+    const titles = await menu
+        .getByRole('menuitem')
+        .evaluateAll((items) => items.map((one) => one.getAttribute('title') ?? ''));
+    await page.keyboard.press('Escape');
+    await expect(menu).toHaveCount(0);
+    return titles.filter((title) => title !== t('ui.bookmarks_none_tip'));
+}
+
+/** Open one bookmark from the rail's Bookmarks menu, by the `root/path` its choice names. */
+export async function openBookmark(page: Page, file: string): Promise<void> {
+    await bookmarksOpener(page).click();
+    await page
+        .getByRole('menu', { name: t('ui.docs') })
+        .locator(`[role="menuitem"][title="${file}"]`)
+        .click();
 }

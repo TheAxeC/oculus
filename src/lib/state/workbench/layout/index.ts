@@ -82,6 +82,7 @@ export type { Instances } from './instances.ts';
 export { createOpening } from './open/opening.ts';
 export type { OpenOptions, Opening } from './open/opening.ts';
 export { createShowInFiles } from './open/show-in-files.ts';
+export { createAway } from './open/away.ts';
 export type { ShowInFiles } from './open/show-in-files.ts';
 export {
     activePath,

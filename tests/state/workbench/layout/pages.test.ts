@@ -400,7 +400,7 @@ describe('the first rail page on a browser with no saved layout', () => {
     const FOCUS = { root: { kind: 'pane', view: 'focus' } };
 
     it('replaces the default page with the first rail page while nothing has changed', () => {
-        // revert: src/lib/state/workbench/layout.svelte.ts:314 => delete
+        // revert: src/lib/state/workbench/layout.svelte.ts:332 => delete
         loadLayout(fakeStorage());
         client.layout.startOnRailPage('focus', 'Focus', FOCUS);
         expect(pages().map((page) => [page.label, page.rail])).toEqual([['Focus', 'focus']]);
@@ -422,7 +422,7 @@ describe('the first rail page on a browser with no saved layout', () => {
     });
 
     it('waits for the rail list on a fresh browser, and stops waiting when it names no page', () => {
-        // revert: src/lib/state/workbench/layout.svelte.ts:318 => delete
+        // revert: src/lib/state/workbench/layout.svelte.ts:336 => delete
         loadLayout(fakeStorage());
         expect(client.layout.startingFresh()).toBe(true);
         client.layout.startOnRailPage('broken', 'Broken', { root: 'not a node' });
@@ -444,7 +444,7 @@ describe('the first rail page on a browser with no saved layout', () => {
 
 describe('the page shown before the one on screen', () => {
     it('is the page switched away from, and none on a fresh load or once it was closed', () => {
-        // revert: src/lib/state/workbench/layout.svelte.ts:402 => delete
+        // revert: src/lib/state/workbench/layout.svelte.ts:420 => delete
         loadLayout(fakeStorage());
         const first = currentPage().id;
         expect(client.layout.previousPage()).toBe(null);

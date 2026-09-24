@@ -150,11 +150,11 @@ describe('the glyph slot', () => {
 });
 
 describe('the terminal palette brackets', () => {
-    it('are drawn around a row and never around a stacked control or a rail control', () => {
+    it('are drawn around a row and never around a rail control', () => {
+        // revert: src/lib/ui/controls/ToolButton.svelte:272 => :global(body.rice) .tool:not(.bare)::before {
         const brackets = rules(TOOL).filter((rule) => /content:\s*'[[\]]'/.test(rule.body));
         expect(brackets.length).toBe(2);
         for (const rule of brackets) {
-            expect(rule.selector, rule.selector).toMatch(/:not\(\.stacked\)/);
             expect(rule.selector, rule.selector).toMatch(/:not\(\.rail-control\)/);
         }
     });

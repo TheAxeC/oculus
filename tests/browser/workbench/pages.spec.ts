@@ -1,6 +1,6 @@
 // The pages of the workbench: a browser with no saved layout starts on the first rail page; a rail
 // button shows its page, made from its arrangement the first time and kept as the reader arranged
-// it after that, across a reload too, and draws the badges of the views its page holds; no strip
+// it after that, across a reload too, and draws one badge, the first count its page holds; no strip
 // of pages is drawn over the panes; and the Pages view on the Views and Settings page makes a
 // page, renames one, shows another and closes one, asking first when the page holds more than one
 // tab.
@@ -10,7 +10,15 @@
 // view, and the one case that boots fresh starts on the first rail page.
 
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { SHOWN_VIEW, boot, bootFresh, openView, pagesRow, showRailPage } from '../helpers/rail.ts';
+import {
+    GROUND,
+    SHOWN_VIEW,
+    boot,
+    bootFresh,
+    openView,
+    pagesRow,
+    showRailPage
+} from '../helpers/rail.ts';
 import { t } from '../helpers/words.ts';
 
 /** The rail button of one page, by its arrangement key. */
@@ -21,14 +29,14 @@ function railButton(page: Page, key: string): Locator {
 test('a browser with no saved layout opens on the first rail page, and digit 1 shows it again', async ({
     page
 }) => {
-    // revert: src/lib/shell/Workbench.svelte:155 => if (false) client.layout.startOnRailPage(first.page, first.label, first.node);
+    // revert: src/lib/shell/Workbench.svelte:161 => if (false) client.layout.startOnRailPage(first.page, first.label, first.node);
     await bootFresh(page);
     await expect(railButton(page, 'focus')).toHaveClass(/\bactive\b/);
     await expect(page.getByRole('tab', { name: t('views.focus') })).toBeVisible();
     // The first rail page is the one page there was: no page no button owns was made.
     await showRailPage(page, 'views');
     await expect(page.locator(`${SHOWN_VIEW} [data-pages] [data-page-row]`)).toHaveCount(2);
-    await page.locator('body').click({ position: { x: 5, y: 5 } });
+    await page.locator('body').click({ position: GROUND });
     await page.keyboard.press('1');
     await expect(railButton(page, 'focus')).toHaveClass(/\bactive\b/);
 });
@@ -36,7 +44,7 @@ test('a browser with no saved layout opens on the first rail page, and digit 1 s
 test('a browser with no saved layout draws no page before its first rail page', async ({
     page
 }) => {
-    // revert: src/lib/shell/Workbench.svelte:248 => {#if false}
+    // revert: src/lib/shell/Workbench.svelte:260 => {#if false}
     // Every tab name drawn from the first paint on, so a page drawn and replaced is seen too.
     await page.addInitScript(() => {
         const seen: string[] = [];
@@ -54,75 +62,34 @@ test('a browser with no saved layout draws no page before its first rail page', 
     expect(seen.some((name) => name.startsWith(t('views.status')))).toBe(false);
 });
 
-test('a rail page button draws the badges of the views its page holds', async ({ page }) => {
-    // revert: src/lib/shell/rail/ActivityRail.svelte:253 => {#if false}
-    // revert: src/lib/shell/rail/ActivityRail.svelte:376 => position: absolute; bottom: 0;
+test('a rail page button draws one badge, the count of the first view of its page that counts anything', async ({
+    page
+}) => {
+    // revert: src/lib/shell/rail/RailPages.svelte:70 => return badges.at(-1) ?? null;
     await boot(page);
     await showRailPage(page, 'views');
-    // Each view here sits in the arrangement of the rail page named beside it; the demo hub gives
-    // the first of them that counts anything a number, which the catalogue draws beside the view.
-    const held: [string, string][] = [
-        ['projects', 'projects'],
-        ['leads', 'feeds'],
-        ['repositories', 'explorer'],
-        ['audit', 'info'],
-        ['inbox', 'inbox']
-    ];
-    const counted: [string, string][] = [];
-    for (const [view, key] of held) {
-        const listed = page
-            .locator(`${SHOWN_VIEW} [data-catalogue] .entry`, {
-                has: page.locator(`button[data-view="${view}"]`)
-            })
-            .locator('.badge');
-        if ((await listed.count()) === 0) continue;
-        const text = ((await listed.textContent()) ?? '').trim();
-        if (/^\d/.test(text)) counted.push([key, text]);
-    }
-    expect(counted.map(([key]) => key)).toContain('projects');
-    // The Projects page holds Projects, Coauthor and Archive in that tab order, and its button
-    // draws their counts in the same order.
-    const order: string[] = [];
+    // The Projects page holds Projects, Coauthor and Archive in that tab order; the catalogue draws
+    // each view's badge beside it, and the first of the three that has one is the button's.
+    const drawn: string[] = [];
     for (const view of ['projects', 'coauthor', 'archive']) {
         const badge = page
             .locator(`${SHOWN_VIEW} [data-catalogue] .entry`, {
                 has: page.locator(`button[data-view="${view}"]`)
             })
             .locator('.badge');
-        order.push(((await badge.textContent()) ?? '').trim());
+        if ((await badge.count()) > 0) drawn.push(((await badge.textContent()) ?? '').trim());
     }
-    const drawn = (
-        await page
-            .locator('nav [data-rail-page="projects"] [data-rail-badges] .badge')
-            .allTextContents()
-    ).map((text) => text.trim());
-    const at = order.map((text) => drawn.indexOf(text));
-    expect(at.every((index) => index >= 0)).toBe(true);
-    expect([...at].sort((a, b) => a - b)).toEqual(at);
-    // The badges sit under the button, clear of its name.
-    const button = await page.locator('nav [data-rail-page="projects"] button').boundingBox();
-    const row = await page
-        .locator('nav [data-rail-page="projects"] [data-rail-badges]')
-        .boundingBox();
-    expect(button).not.toBeNull();
-    expect(row).not.toBeNull();
-    if (button !== null && row !== null)
-        expect(row.y).toBeGreaterThanOrEqual(button.y + button.height - 1);
-    for (const [key, text] of counted) {
-        await expect(
-            page
-                .locator(`nav [data-rail-page="${key}"] [data-rail-badges] .badge`, {
-                    hasText: text
-                })
-                .first()
-        ).toBeVisible();
-    }
+    // The demo hub counts on more than one of them, which is what makes the choice visible.
+    expect(drawn.length).toBeGreaterThan(1);
+    const badges = page.locator('nav [data-rail-page="projects"] [data-rail-badge]');
+    await expect(badges).toHaveCount(1);
+    await expect(badges).toHaveText(drawn[0]);
 });
 
 test('a rail button shows its page, and a second press shows it as it was left', async ({
     page
 }) => {
-    // revert: src/lib/state/workbench/layout.svelte.ts:287 => const found = undefined;
+    // revert: src/lib/state/workbench/layout.svelte.ts:305 => const found = undefined;
     await boot(page);
     await showRailPage(page, 'projects');
     for (const view of ['views.projects', 'views.coauthor', 'views.archive']) {
@@ -165,7 +132,7 @@ test('a rail page the reader rearranged is the same page after a reload', async 
 });
 
 test('no strip of pages is drawn over the panes', async ({ page }) => {
-    // revert: src/lib/shell/Workbench.svelte:244 => <div class="area"><div role="tablist" aria-label="Pages"></div>
+    // revert: src/lib/shell/Workbench.svelte:256 => <div class="area"><div role="tablist" aria-label="Pages"></div>
     await boot(page);
     // The page on screen is one pane, and its strip is the only list of tabs in the window.
     await expect(page.getByRole('tablist')).toHaveCount(1);

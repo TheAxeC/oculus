@@ -16,10 +16,10 @@
     // pane close over more than one tab; the question is asked of the instance id, so the pane
     // learns nothing about what any view keeps.
     //
-    // It is also where a drag begins and where most drops land. The strip reports a press and an
-    // insertion index; the body turns the pointer's place inside its own rect into an edge or a
-    // centre. Neither performs anything: the drag store holds what is hovered and the pointer
-    // coming up is what performs it.
+    // It is also where a drag begins and where most drops land, a tab's and a view's carried out of
+    // the catalogue alike. The strip reports a press and an insertion index; the body turns the
+    // pointer's place inside its own rect into an edge or a centre. Neither performs anything: the
+    // drag store holds what is hovered and the pointer coming up is what performs it.
     //
     // Every item of the pane menu is an operation the pointer has another path to, which is what
     // makes the menu the keyboard path: the opener takes focus and Menu already handles arrows and
@@ -165,9 +165,12 @@
 
     /**
      * The drag, and where in this pane's own tabs the tab being dragged sits, if it is one of them.
+     * A view carried out of the catalogue is no tab yet, so it sits nowhere in the strip.
      */
     const held = $derived(dragging());
-    const own = $derived(held === null ? -1 : instances.findIndex((one) => one.id === held.id));
+    const own = $derived(
+        held?.kind !== 'tab' ? -1 : instances.findIndex((one) => one.id === held.id)
+    );
 
     /**
      * The mark, when the drag is over this pane's strip: back in the indices the tabs are drawn in.

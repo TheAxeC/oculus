@@ -207,8 +207,8 @@ writeFileSync(
 );
 
 // The reader's own bookmarks file under this run's HOME, holding the two manuals a machine's file
-// carries, so the rail's BOOKMARKS group has entries to draw and one of them a label too long for
-// one line. It is the Files view's collection shape, which that view's bookmark form edits.
+// carries, so the rail's Bookmarks menu has choices to list. It is the Files view's collection
+// shape, which that view's bookmark form edits.
 const bookmarks = inside(join(home, '.oculus', 'bookmarks.yml'), tmpdir());
 mkdirSync(dirname(bookmarks), { recursive: true });
 writeFileSync(

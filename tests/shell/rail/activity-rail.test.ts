@@ -52,7 +52,7 @@ function stops(body: string): { name: string; tabindex: string }[] {
 
 describe('the rail as one stop of the focus order', () => {
     it('draws the ring as a vertical toolbar inside the navigation landmark', () => {
-        // revert: src/lib/shell/rail/ActivityRail.svelte:228 => role="group"
+        // revert: src/lib/shell/rail/ActivityRail.svelte:258 => role="group"
         const body = railHtml();
         expect(body).toContain('role="toolbar"');
         expect(body).toContain('aria-orientation="vertical"');
@@ -63,7 +63,7 @@ describe('the rail as one stop of the focus order', () => {
     });
 
     it('gives exactly one control tabindex 0 and every other one -1', () => {
-        // revert: src/lib/shell/rail/ActivityRail.svelte:146 => return 0;
+        // revert: src/lib/shell/rail/ActivityRail.svelte:176 => return 0;
         const found = stops(railHtml());
         expect(found.length).toBeGreaterThan(1);
         expect(found.filter((one) => one.tabindex === '0').map((one) => one.name)).toEqual([
@@ -72,13 +72,13 @@ describe('the rail as one stop of the focus order', () => {
         expect(found.slice(1).every((one) => one.tabindex === '-1')).toBe(true);
     });
 
-    it('rings the pages, then the bookmarks, then Search and Update, and nothing else', () => {
-        // revert: src/lib/shell/rail/ActivityRail.svelte:103 => delete
+    it('rings the pages, then Bookmarks, Search and Update at the foot, and nothing else', () => {
+        // revert: src/lib/shell/rail/ActivityRail.svelte:133 => delete
         const found = stops(railHtml());
         expect(found.map((one) => one.name)).toEqual([
             'page:focus',
             'page:inbox',
-            'mark:0',
+            'bookmarks',
             'search',
             'update'
         ]);
@@ -88,16 +88,16 @@ describe('the rail as one stop of the focus order', () => {
 });
 
 describe('the arrow keys along the rail', () => {
-    const ring = ['page:a', 'page:b', 'mark:0', 'search', 'update'];
+    const ring = ['page:a', 'page:b', 'bookmarks', 'search', 'update'];
 
     it('moves down and up the ring', () => {
-        // revert: src/lib/shell/rail/rail.ts:59 => const next = nextStop(key, ring.indexOf(current), ring.length, 'row');
+        // revert: src/lib/shell/rail/rail.ts:88 => const next = nextStop(key, ring.indexOf(current), ring.length, 'row');
         expect(railStop('ArrowDown', 'page:a', ring)).toBe('page:b');
-        expect(railStop('ArrowUp', 'search', ring)).toBe('mark:0');
+        expect(railStop('ArrowUp', 'search', ring)).toBe('bookmarks');
     });
 
     it('wraps at the ends and goes to either end on Home and End', () => {
-        // revert: src/lib/shell/rail/rail.ts:60 => return next === null || next === 0 ? null : ring[next];
+        // revert: src/lib/shell/rail/rail.ts:89 => return next === null || next === 0 ? null : ring[next];
         expect(railStop('ArrowDown', 'update', ring)).toBe('page:a');
         expect(railStop('ArrowUp', 'page:a', ring)).toBe('update');
         expect(railStop('Home', 'search', ring)).toBe('page:a');
@@ -105,7 +105,7 @@ describe('the arrow keys along the rail', () => {
     });
 
     it('answers no left or right and no other key, and nothing on an empty ring', () => {
-        // revert: src/lib/shell/rail/rail.ts:60 => return ring[next ?? 0] ?? null;
+        // revert: src/lib/shell/rail/rail.ts:89 => return ring[next ?? 0] ?? null;
         expect(railStop('ArrowLeft', 'page:a', ring)).toBeNull();
         expect(railStop('ArrowRight', 'page:a', ring)).toBeNull();
         expect(railStop('Enter', 'page:a', ring)).toBeNull();
@@ -113,7 +113,7 @@ describe('the arrow keys along the rail', () => {
     });
 
     it('starts at the first control for a stop that is nowhere', () => {
-        // revert: src/lib/shell/rail/rail.ts:59 => const next = nextStop(key, Math.max(ring.indexOf(current), 1), ring.length, 'column');
+        // revert: src/lib/shell/rail/rail.ts:88 => const next = nextStop(key, Math.max(ring.indexOf(current), 1), ring.length, 'column');
         expect(railStop('ArrowDown', 'gone', ring)).toBe('page:a');
     });
 });

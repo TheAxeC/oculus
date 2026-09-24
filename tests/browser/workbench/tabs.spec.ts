@@ -657,7 +657,7 @@ test.describe('the one accent line', () => {
 
     // Answer with the active instance of the page on screen and the accent never follows the
     // reader into the page drawn inside it.
-    // revert: src/lib/state/workbench/layout.svelte.ts:480 => return instances.activeInstance();
+    // revert: src/lib/state/workbench/layout.svelte.ts:498 => return instances.activeInstance();
     test('one shown tab carries it, and it follows the reader into a page drawn inside another', async ({
         page
     }) => {
@@ -693,7 +693,7 @@ test.describe('the one accent line', () => {
 
         // A press that activates no tab moves the reader all the same: the empty end of a strip
         // changes nothing about the arrangement, and the mark follows it.
-        // revert: src/lib/state/workbench/layout.svelte.ts:238 => const where: Touched = { page: null };
+        // revert: src/lib/state/workbench/layout.svelte.ts:249 => const where: Touched = { page: null };
         // Hold where the reader is outside a rune and a press that changes no tree redraws nothing,
         // so the mark stays on the pane the reader has left.
         await pressStrip(host);

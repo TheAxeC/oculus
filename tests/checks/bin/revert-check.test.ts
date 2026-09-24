@@ -98,7 +98,7 @@ describe('the revert check', () => {
         'calls a case red when its revert breaks it and GREEN when it does not',
         { timeout: 120000 },
         () => {
-            // revert: bin/revert-check.mjs:464 => if (run.green) return { ok: true, line: `red       ${where}` };
+            // revert: bin/revert-check.mjs:475 => if (run.green) return { ok: true, line: `red       ${where}` };
             const dir = fixture();
             const held = run(dir, ['tests/rule.test.js']);
             expect(held.out).toContain(
@@ -113,7 +113,7 @@ describe('the revert check', () => {
     );
 
     it('lists a case with no machine-readable revert as unchecked, never as passed', () => {
-        // revert: bin/revert-check.mjs:499 => delete
+        // revert: bin/revert-check.mjs:510 => delete
         const dir = fixture();
         writeFileSync(
             join(dir, 'tests', 'rule.test.js'),
@@ -159,7 +159,7 @@ describe('the revert check', () => {
         'calls a case whose name holds a bracket by that name, and not by it as a pattern',
         { timeout: 120000 },
         () => {
-            // revert: bin/revert-check.mjs:275 => const escaped = caseName;
+            // revert: bin/revert-check.mjs:281 => const escaped = caseName;
             const dir = fixture();
             withFile(
                 dir,
@@ -185,7 +185,7 @@ describe('the revert check', () => {
     );
 
     it('calls a revert the build refused unproven, never red', { timeout: 60000 }, () => {
-        // revert: bin/revert-check.mjs:348 => if (built.status !== 0) return { ran: true, green: false };
+        // revert: bin/revert-check.mjs:354 => if (built.status !== 0) return { ran: true, green: false };
         const dir = fixture();
         writeFileSync(
             join(dir, 'package.json'),
@@ -218,7 +218,7 @@ describe('the revert check', () => {
         'calls a replacement that leaves the file unparsable unproven, never red',
         { timeout: 120000 },
         () => {
-            // revert: bin/revert-check.mjs:328 => if (held.length === 0) return { ran: true, green: false };
+            // revert: bin/revert-check.mjs:334 => if (held.length === 0) return { ran: true, green: false };
             // A TypeScript module, which node cannot parse on its own, so the run itself is what
             // finds it broken.
             const dir = withFile(
@@ -254,7 +254,7 @@ describe('the revert check', () => {
         'names a directive whose target a copy leaves behind, and runs the ones after it',
         { timeout: 120000 },
         () => {
-            // revert: bin/revert-check.mjs:408 => if (false) {
+            // revert: bin/revert-check.mjs:414 => if (false) {
             const dir = fixture();
             withFile(dir, '.scratch/plan.md', 'a plan the copy leaves behind\n');
             withFile(
@@ -287,7 +287,7 @@ describe('the revert check', () => {
     );
 
     it('calls a skipped case unproven, and one another case excludes', { timeout: 120000 }, () => {
-        // revert: bin/revert-check.mjs:331 => if (held[0] === 'skipped') return { ran: true, green: false };
+        // revert: bin/revert-check.mjs:337 => if (held[0] === 'skipped') return { ran: true, green: false };
         const dir = fixture();
         withFile(
             dir,
@@ -328,7 +328,7 @@ describe('the revert check', () => {
         'calls a title two cases share unproven, however the siblings ran',
         { timeout: 120000 },
         () => {
-            // revert: bin/revert-check.mjs:329 => if (held.length > 99)
+            // revert: bin/revert-check.mjs:335 => if (held.length > 99)
             const dir = fixture();
             withFile(
                 dir,
@@ -397,7 +397,7 @@ describe('the revert check', () => {
     });
 
     it('refuses a target that escapes the tree, and writes nothing outside the copy', () => {
-        // revert: bin/revert-check.mjs:396 => if (false) {
+        // revert: bin/revert-check.mjs:402 => if (false) {
         const dir = fixture();
         const outside = join(dir, '..', `escape-target-${basename(dir)}.txt`);
         writeFileSync(outside, 'the file a directive must not reach\n');
@@ -483,7 +483,7 @@ describe('the revert check', () => {
     });
 
     it('leaves nothing a case made in the temporary directory', { timeout: 120000 }, () => {
-        // revert: bin/revert-check.mjs:383 => const env = { ...process.env, CI: '1' };
+        // revert: bin/revert-check.mjs:389 => const env = { ...process.env, CI: '1' };
         const dir = fixture();
         const probe = `oculus-leak-probe-${basename(dir)}-`;
         withFile(
@@ -517,7 +517,7 @@ describe('the revert check', () => {
         'removes its copy of the tree when it is stopped by a signal',
         { timeout: 120000 },
         async () => {
-            // revert: bin/revert-check.mjs:420 => delete
+            // revert: bin/revert-check.mjs:429 => delete
             const dir = fixture();
             const temp = scratchDir('oculus-revert-signal-');
             expect(resolve(temp).startsWith(resolve(tmpdir()) + sep)).toBe(true);
@@ -561,7 +561,7 @@ describe('the revert check', () => {
             timeout: 120000
         },
         () => {
-            // revert: bin/revert-check.mjs:452 => if (false) {
+            // revert: bin/revert-check.mjs:463 => if (false) {
             const dir = fixture();
             withFile(dir, 'src/tool.mjs', "console.log('ran');\n");
             withFile(
@@ -655,7 +655,7 @@ describe("a case's copy, on its way out", () => {
 
 describe('a case the check runs', () => {
     it('runs with the compile cache off, so no child writes into its copy as it exits', () => {
-        // revert: bin/revert-check.mjs:383 => const env = { ...process.env, CI: '1', TMPDIR: temp };
+        // revert: bin/revert-check.mjs:389 => const env = { ...process.env, CI: '1', TMPDIR: temp };
         const dir = fixture();
         const held = spawnSync(
             process.execPath,

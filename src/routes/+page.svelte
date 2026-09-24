@@ -3,13 +3,19 @@
     // workbench cannot do for itself: fill the view registry, open the socket, and read the two
     // saved stores. The rail's pages and the chords' groups come from the merged config the socket
     // delivers, and so do the words of the status bar's items, which the page makes from stores the
-    // shell may not read itself.
+    // shell may not read itself; the rail's own rewrite of its list is the page's for the same
+    // reason.
 
     import { onMount, untrack } from 'svelte';
     import Workbench from '$lib/shell/Workbench.svelte';
     import type { Bookmark } from '$lib/shell/rail/rail';
     import { readChord, readDocs, readGroups } from '$lib/state/workbench/navigation/catalogue';
-    import { railPages } from '$lib/state/workbench/navigation/rail';
+    import {
+        configRail,
+        railPages,
+        railRefusal,
+        type RailEntry
+    } from '$lib/state/workbench/navigation/rail';
     import { statusWords } from '$lib/state/workbench/navigation/status';
     import { configGeneration } from '$lib/state/client/generation.svelte';
     import { collectionKeys } from '$lib/data/snapshot/normalise';
@@ -34,7 +40,7 @@
         selectors: { waitingCount },
         socket: { connect, disconnect, status: socketStatus },
         ui: { loadUi },
-        writes: { setToken }
+        writes: { setToken, writeRail }
     } = client;
 
     // The views, and the collection views one per key of config/sources.yml's `collections:`, which
@@ -117,6 +123,17 @@
         })
     );
 
+    /**
+     * Rewrite the rail's `rail:` list as the rail asks, a page button moved or hidden, through the
+     * rail write the Settings view saves with. The edit is made to the list the file holds, every
+     * entry whether or not the rail draws it. It answers the sentence saying why the server refused
+     * the write, or the empty string when it was written; the shell may not reach the write itself.
+     */
+    async function editRail(edit: (rail: RailEntry[]) => RailEntry[]): Promise<string> {
+        const answer = await writeRail(edit(configRail(merged)));
+        return answer.ok ? '' : railRefusal(answer.error);
+    }
+
     onMount(() => {
         connect([
             'portfolio',
@@ -143,6 +160,7 @@
     {pages}
     configured={merged !== undefined}
     {saved}
+    {editRail}
     {directChord}
     {status}
     waiting={waitingCount()}

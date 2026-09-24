@@ -22,7 +22,7 @@ test('a feed view opened cold holds the entries the feeds channel delivered at b
     page
 }) => {
     await page.goto('/');
-    // revert: src/lib/shell/rail/ActivityRail.svelte:239 => <div class="control" data-rail-button={entry.page}>
+    // revert: src/lib/shell/rail/RailPages.svelte:194 => data-rail-button={entry.page}
     await expect(page.locator('nav [data-rail-page] button').first()).toBeVisible();
     await openView(page, 'leads', t('views.leads'));
     await expect(page.locator('[data-lead]').first()).toBeVisible();

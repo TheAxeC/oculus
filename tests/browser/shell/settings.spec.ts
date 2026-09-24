@@ -69,7 +69,7 @@ test('the Settings view keeps the icons on a terminal theme', async ({ page }) =
 test('the Settings view edits the rail list, its typing is unsaved, and the rail follows', async ({
     page
 }) => {
-    // revert: src/lib/views/system/workbench/RailEditor.svelte:89 => const answer = { ok: true, changed: [], refused: [] };
+    // revert: src/lib/views/system/workbench/RailEditor.svelte:111 => const answer = { ok: true, changed: [], refused: [] };
     const before = readEngineFile(LAYOUT);
     try {
         await boot(page);
@@ -84,7 +84,10 @@ test('the Settings view edits the rail list, its typing is unsaved, and the rail
             .getByRole('button', { name: t('workbench.rail_save'), exact: true })
             .click();
         await expect(settings(page).getByRole('status')).toHaveText(t('workbench.rail_saved'));
-        await expect(page.locator('nav [data-rail-page="focus"] .label')).toHaveText('Board');
+        await expect(page.locator('nav [data-rail-page="focus"] button')).toHaveAttribute(
+            'aria-label',
+            'Board'
+        );
         expect(readEngineFile(LAYOUT)).toContain(
             '  - { label: "Board", glyph: compass, page: focus }\n'
         );
@@ -92,14 +95,17 @@ test('the Settings view edits the rail list, its typing is unsaved, and the rail
         await expect(item(page, 'unsaved')).toHaveText(t('workbench.status_unsaved', 0));
     } finally {
         writeEngineFile(LAYOUT, before);
-        await expect(page.locator('nav [data-rail-page="focus"] .label')).toHaveText('Focus');
+        await expect(page.locator('nav [data-rail-page="focus"] button')).toHaveAttribute(
+            'aria-label',
+            'Focus'
+        );
     }
 });
 
 test('a rail entry hand-edited to a glyph the vocabulary does not hold draws no button', async ({
     page
 }) => {
-    // revert: src/lib/state/workbench/navigation/rail.ts:36 => const read = readRail(config.rail, arrangementKeys(arrangements));
+    // revert: src/lib/state/workbench/navigation/rail.ts:37 => const read = readRail(config.rail, arrangementKeys(arrangements));
     const before = readEngineFile(LAYOUT);
     const entry = '  - { label: "Projects", glyph: paper, page: projects }\n';
     expect(before).toContain(entry);

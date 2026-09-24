@@ -229,14 +229,16 @@ const PASS_THROUGH: Record<string, string> = {
     'src/lib/ui/display/Meter.svelte': '.text=fs-xs',
     'src/lib/ui/frame/Toolbar.svelte': '',
     'src/lib/ui/controls/ToolButton.svelte':
-        '.tool=fs-sm | .tool.rail-control=fs-xl | .tool.stacked :global(.label)=fs-3xs | .tool.bare, :global(body.rice) .tool.bare=fs-lg',
+        '.tool=fs-sm | .tool.bare, :global(body.rice) .tool.bare=fs-lg | :global(body.rice) .tool.rail-control :global(.glyph:not(:has(svg)))=fs-lg',
     'src/lib/ui/frame/Empty.svelte': '.empty=fs-md | :global(body.rice) .empty=fs-xs',
     'src/lib/ui/tabs/Tabs.svelte': '',
     'src/lib/ui/tabs/TabFace.svelte':
         '.tab-badge=fs-xs | .cells=fs-xxs | .face=fs-lg | .close=fs-lg',
-    'src/lib/ui/menu/Menu.svelte': '.heading=fs-xxs | .item=fs-sm | .item-badge=fs-3xs',
+    'src/lib/ui/menu/ContextMenu.svelte': '',
+    'src/lib/ui/menu/Menu.svelte': '',
+    'src/lib/ui/menu/MenuList.svelte': '.heading=fs-xxs | .item=fs-sm | .item-badge=fs-3xs',
     'src/lib/ui/menu/MenuOpener.svelte':
-        '.opener=fs-sm | .opener.compact=fs-lg | .opener.bare=fs-lg',
+        '.opener=fs-sm | .opener.compact=fs-lg | .opener.bare=fs-lg | :global(body.rice) .opener.rail :global(.glyph:not(:has(svg)))=fs-lg',
     'src/lib/ui/controls/Confirm.svelte': '.message=fs-sm | .detail=fs-xs | .row button=fs-sm',
     'src/lib/ui/controls/Glyph.svelte': '',
     'src/lib/ui/controls/Search.svelte': '.search=fs-sm',
@@ -257,7 +259,9 @@ const PASS_THROUGH: Record<string, string> = {
     'src/lib/ui/tree/TreeItem.svelte': '.detail, .count, .end=fs-sm',
     'src/lib/ui/tree/TreeSection.svelte': '',
     'src/lib/ui/tree/TreeView.svelte': '',
-    'src/lib/shell/rail/ActivityRail.svelte': '.group=fs-3xs | .badge=fs-3xs',
+    'src/lib/shell/rail/ActivityRail.svelte': '.refusal=fs-xs',
+    'src/lib/shell/rail/RailFoot.svelte': '',
+    'src/lib/shell/rail/RailPages.svelte': '',
     'src/lib/shell/status/StatusBar.svelte': '.bar=fs-xs',
     'src/lib/shell/Workbench.svelte': ''
 };
@@ -272,7 +276,7 @@ describe('the view type scale', () => {
         ).toEqual(Object.keys(VIEWS).sort());
     });
 
-    // revert: tests/views/whole/type-scale.test.ts:257 => delete
+    // revert: tests/views/whole/type-scale.test.ts:259 => delete
     it('audits that every ui component is listed in the pass-through audit', () => {
         const ui = 'src/lib/ui';
         expect(files(ui).sort()).toEqual(

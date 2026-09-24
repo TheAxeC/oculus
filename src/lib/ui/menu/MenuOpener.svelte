@@ -1,6 +1,7 @@
 <script lang="ts">
     // Layer 3, primitive. The button a Menu opens its list from, in the looks a menu takes: a word
-    // with an optional glyph, the glyph alone in a narrow strip, and a strip's bare icon box. It
+    // with an optional glyph, the glyph alone in a narrow strip, a strip's bare icon box, and an
+    // item of the activity rail, drawn as ToolButton.svelte draws its rail control. It
     // holds nothing: whether the list is open and what a press does are the menu's, and the menu
     // reads the button itself through `button` to give it the focus back.
 
@@ -18,6 +19,8 @@
         glyph?: string;
         compact?: boolean;
         bare?: boolean;
+        /** An item of the activity rail: the rail's square box, muted until hovered. */
+        rail?: boolean;
         tabindex?: number;
         stop?: string;
         onkeydown?: (event: KeyboardEvent) => void;
@@ -31,6 +34,7 @@
         glyph,
         compact = false,
         bare = false,
+        rail = false,
         tabindex,
         stop,
         onkeydown
@@ -39,12 +43,13 @@
 
 <!-- A compact menu is an icon in a narrow column, so its words go beside it; a menu that shows
      its label has room underneath. -->
-<Tooltip text={label} placement={compact ? 'beside' : 'below'} presentational>
+<Tooltip text={label} placement={compact || rail ? 'beside' : 'below'} presentational block={rail}>
     <button
         type="button"
         class="opener"
         class:compact
         class:bare
+        class:rail
         bind:this={button}
         aria-haspopup="menu"
         aria-expanded={open}
@@ -57,7 +62,7 @@
         {#if glyph !== undefined}
             <Glyph name={glyph} />
         {/if}
-        {#if !compact}
+        {#if !compact && !rail}
             <span class="label">{label}</span>
         {/if}
     </button>
@@ -113,5 +118,36 @@
     .opener:focus-visible {
         outline: 2px solid var(--accent);
         outline-offset: -2px;
+    }
+
+    /* The rail item's box, the same as ToolButton.svelte's rail control: square at the rail's
+       width, the icon at 24 px, no border and no fill, muted until the pointer or the keyboard is
+       on it, and VS Code's one pixel focus line inside the box. */
+    .opener.rail {
+        justify-content: center;
+        height: var(--rail-width);
+        box-sizing: border-box;
+        padding: 0;
+        border: 0;
+        border-radius: 0;
+        background: none;
+        color: var(--muted-txt, var(--muted));
+        font-size: var(--rail-icon);
+        line-height: 1;
+    }
+
+    .opener.rail:hover,
+    .opener.rail:focus-visible,
+    .opener.rail[aria-expanded='true'] {
+        color: var(--ink-txt, var(--ink));
+    }
+
+    .opener.rail:focus-visible {
+        outline-width: 1px;
+        outline-offset: -1px;
+    }
+
+    :global(body.rice) .opener.rail :global(.glyph:not(:has(svg))) {
+        font-size: var(--fs-lg);
     }
 </style>

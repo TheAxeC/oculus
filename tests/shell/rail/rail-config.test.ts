@@ -1,18 +1,23 @@
 // The rail over the application's own config: the `rail:` list of config/layout.yml drawn as its
-// buttons in its order, and the reader's own bookmarks under their heading, a bookmark opened as a
-// document tab.
+// buttons in its order, the Bookmarks menu's choices over the reader's own bookmarks, and a
+// bookmark opened as a document tab.
 //
 // What this does NOT cover: a button pressed, which is tests/browser/shell/rail.spec.ts.
 
 import { beforeEach, describe, expect, it } from 'vitest';
 import { render } from 'svelte/server';
 import ActivityRail from '../../../src/lib/shell/rail/ActivityRail.svelte';
-import { documentState, type Bookmark } from '../../../src/lib/shell/rail/rail.ts';
+import {
+    bookmarkChoices,
+    bookmarkPicked,
+    documentState,
+    type Bookmark
+} from '../../../src/lib/shell/rail/rail.ts';
 import { railPages } from '../../../src/lib/state/workbench/navigation/rail.ts';
 import { glyphCatalog } from '../../../src/lib/data/sources/config.ts';
 import { setGlyphMode } from '../../../src/lib/state/words/text.ts';
 import { clientContext, createClientState, type ClientState } from '../../fixtures/client.ts';
-import { config } from './rail-fixture.ts';
+import { catalog, config } from './rail-fixture.ts';
 
 let client: ClientState;
 
@@ -22,7 +27,7 @@ beforeEach(() => {
 
 describe('the rail of the real config', () => {
     it('draws the thirteen pages of layout.yml in their order, Views and Settings last', () => {
-        // revert: src/lib/shell/rail/ActivityRail.svelte:237 => {#each pages.slice(1) as entry, index (entry.page)}
+        // revert: src/lib/shell/rail/RailPages.svelte:181 => {#each pages.slice(1) as entry, index (entry.page)}
         const body = render(ActivityRail, {
             context: clientContext(client),
             props: { pages: railPages(config) }
@@ -45,7 +50,7 @@ describe('the rail of the real config', () => {
     });
 
     it("draws each page's glyph from the vocabulary", () => {
-        // revert: src/lib/shell/rail/ActivityRail.svelte:243 => glyph="compass"
+        // revert: src/lib/shell/rail/RailPages.svelte:200 => glyph="compass"
         // The glyph is named by its stand-in, the text the ASCII mode draws it as.
         const pages = railPages(config);
         setGlyphMode('ascii');
@@ -90,49 +95,38 @@ describe('a bookmark opened as a document tab', () => {
     });
 });
 
-describe("the reader's own bookmarks under their heading", () => {
-    /** The rail with the reader's own bookmarks. */
-    function drawn(saved: Bookmark[]): string {
-        return render(ActivityRail, {
-            context: clientContext(client),
-            props: { saved }
-        }).body;
-    }
+describe("the Bookmarks menu's choices", () => {
+    const manual: Bookmark = {
+        label: 'cathedra manual',
+        root: 'cathedra',
+        path: 'docs/user/manual.html',
+        view: 'document'
+    };
+    const script: Bookmark = { label: 'run.py', root: 'hub', path: 'code/run.py', view: 'file' };
 
-    /** The bookmark identities the heading's list drew, in the order it drew them. */
-    function order(body: string): string[] {
-        return [...body.matchAll(/data-bookmark="([^"]+)"/g)].map((found) => found[1]);
-    }
-
-    it('draws them in the order the file holds them, under the one heading', () => {
-        // revert: src/lib/shell/rail/ActivityRail.svelte:277 => {#each [...saved].reverse() as mark, at (at)}
-        const body = drawn([
-            {
-                label: 'cathedra manual',
-                root: 'cathedra',
-                path: 'docs/user/manual.html',
-                view: 'document'
-            },
-            { label: 'run.py', root: 'hub', path: 'code/run.py', view: 'file' }
+    it('are the bookmarks by label in the order the file holds them, each naming its file', () => {
+        // revert: src/lib/shell/rail/rail.ts:38 => return [...saved].reverse().map((mark, at) => ({
+        expect(bookmarkChoices([manual, script])).toEqual([
+            { id: 'mark:0', label: 'cathedra manual', title: 'cathedra/docs/user/manual.html' },
+            { id: 'mark:1', label: 'run.py', title: 'hub/code/run.py' }
         ]);
-        expect(order(body)).toEqual(['cathedra/docs/user/manual.html', 'hub/code/run.py']);
-        expect(body.match(/>Bookmarks</g)).toHaveLength(1);
-        expect(body).toContain('run.py');
     });
 
-    it('draws no heading at all when there is none', () => {
-        // revert: src/lib/shell/rail/ActivityRail.svelte:273 => {#if true}
-        expect(drawn([])).not.toContain('>Bookmarks<');
+    it('are two choices for two bookmarks on one file, under their two labels', () => {
+        // revert: src/lib/shell/rail/rail.ts:48 => return saved.at(0) ?? null;
+        const first = { ...script, label: 'first' };
+        const second = { ...script, label: 'second' };
+        const choices = bookmarkChoices([first, second]);
+        expect(choices.map((one) => one.label)).toEqual(['first', 'second']);
+        expect(bookmarkPicked([first, second], choices[1].id)).toEqual(second);
+        expect(bookmarkPicked([first, second], choices[0].id)).toEqual(first);
     });
 
-    it('draws two on one file as two buttons, under their two labels', () => {
-        // revert: src/lib/shell/rail/ActivityRail.svelte:277 => {#each saved.slice(0, 1) as mark, at (at)}
-        const body = drawn([
-            { label: 'first', root: 'hub', path: 'x.md', view: 'file' },
-            { label: 'second', root: 'hub', path: 'x.md', view: 'file' }
-        ]);
-        expect(order(body)).toEqual(['hub/x.md', 'hub/x.md']);
-        expect(body).toContain('first');
-        expect(body).toContain('second');
+    it('say there is none when there is none, and that choice opens nothing', () => {
+        // revert: src/lib/shell/rail/rail.ts:35 => if (saved.length < 0) {
+        const choices = bookmarkChoices([]);
+        expect(choices.map((one) => one.label)).toEqual([catalog['ui.bookmarks_none']]);
+        expect(bookmarkPicked([], choices[0].id)).toBeNull();
+        expect(bookmarkPicked([manual], 'mark:4')).toBeNull();
     });
 });

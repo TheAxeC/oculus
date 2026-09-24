@@ -242,6 +242,8 @@ digraph layers {
     "shell/rail" -> "state/words";
     "shell/rail" -> "state/workbench";
     "shell/rail" -> "ui/controls";
+    "shell/rail" -> "ui/frame";
+    "shell/rail" -> "ui/menu";
     "shell/rail" -> "ui/tree";
     "shell/rail" -> "views";
     "shell/status" -> "state/client";
@@ -337,6 +339,7 @@ digraph layers {
     "ui/frame" -> "ui/controls";
     "ui/menu" -> "state/words";
     "ui/menu" -> "ui/controls";
+    "ui/menu" -> "ui/frame";
     "ui/tabs" -> "state/words";
     "ui/tabs" -> "ui/controls";
     "ui/tabs" -> "ui/menu";

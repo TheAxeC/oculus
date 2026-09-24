@@ -18,11 +18,19 @@
     // page; a shift-press opens it in a pane beside, on that same page. With no page before this
     // one, which is a load straight onto it, the entry opens on the first rail page.
     //
+    // An entry is also opened on the page the catalogue is on. Dragged onto a pane there it opens
+    // where it was dropped, through the drag every tab takes, and each entry's right-click menu
+    // offers Open on this page and Open beside on this page, which is the keyboard's way to the
+    // same two places. None of them covers the catalogue: a view asked for in its own pane opens in
+    // another pane of the page, or beside the catalogue when its pane is the page's only one.
+    //
     // The sections and the keys are the fold of state/workbench/navigation/catalogue.ts, the same
     // one the shell's keyboard counts its chords over, so the key drawn beside an entry is the key
     // that opens it.
 
+    import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
     import Glyph from '$lib/ui/controls/Glyph.svelte';
+    import type { MenuItem } from '$lib/ui/menu/menu-items';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import {
@@ -35,24 +43,28 @@
         railOrder,
         readChord,
         readDocs,
-        readGroups,
-        type DocEntry
+        readGroups
     } from '$lib/state/workbench/navigation/catalogue';
     import { railPages } from '$lib/state/workbench/navigation/rail';
+    import { THRESHOLD, type Point } from '$lib/state/workbench/drag.svelte';
     import { t } from '$lib/state/words/text';
-    import {
-        badgeOf,
-        registrationGlyph,
-        registrationLabel,
-        type Registration,
-        type ViewProps
-    } from '../../registry';
+    import { badgeOf, registrationGlyph, registrationLabel, type ViewProps } from '../../registry';
     import { useState } from '$lib/state/client/use';
 
     const client = useState();
     const {
+        drag: { startView },
         entities: { config },
-        layout: { currentPage, openBeside, openRailPage, openView, previousPage, switchPage },
+        layout: {
+            currentPage,
+            openAway,
+            openBeside,
+            openNextTo,
+            openRailPage,
+            openView,
+            previousPage,
+            switchPage
+        },
         registry: { views }
     } = client;
 
@@ -92,19 +104,52 @@
 
     /**
      * A plain press opens the view where a view lands on the target page; a shift-press opens it in
-     * a pane beside there.
+     * a pane beside there. A press that ends a drag is the drop's, not a click.
      */
-    function open(view: Registration, event: MouseEvent): void {
+    function open(view: string, state: unknown, event: MouseEvent): void {
+        if (dragged(event)) return;
         showTarget();
-        if (event.shiftKey) openBeside(view.id);
-        else openView(view.id);
+        if (event.shiftKey) openBeside(view, state);
+        else openView(view, state);
     }
 
-    /** The same two paths for a document. */
-    function openDoc(entry: DocEntry, event: MouseEvent): void {
-        showTarget();
-        if (event.shiftKey) openBeside(DOC_VIEW, docState(entry));
-        else openView(DOC_VIEW, docState(entry));
+    /** The two items of an entry's right-click menu. */
+    const HERE = 'here';
+    const BESIDE = 'beside';
+    const hereItems: MenuItem[] = [
+        { id: HERE, label: t('workbench.catalogue_open_here') },
+        { id: BESIDE, label: t('workbench.catalogue_open_beside') }
+    ];
+
+    /**
+     * Open an entry on the page the catalogue is on: in a pane other than the catalogue's, or in a
+     * new pane beside the catalogue.
+     */
+    function openHere(view: string, state: unknown, pick: string): void {
+        const page = currentPage().id;
+        if (pick === BESIDE) openNextTo(view, state, page, instance.id);
+        else openAway(view, state, page, instance.id);
+    }
+
+    /** Where the last press on an entry went down, which tells a click from a drag's release. */
+    let pressedAt: Point | null = null;
+
+    /**
+     * A press on an entry may grow into a drag: the drag store arms it past the threshold, and a
+     * pane it is then dropped on opens the view there.
+     */
+    function press(view: string, state: unknown, label: string, event: PointerEvent): void {
+        if (event.button !== 0) return;
+        pressedAt = { x: event.clientX, y: event.clientY };
+        startView(view, state, label, pressedAt, instance.id);
+    }
+
+    /** Whether the click that follows a press was the end of a drag rather than a click. */
+    function dragged(event: MouseEvent): boolean {
+        const from = pressedAt;
+        pressedAt = null;
+        if (from === null || event.detail === 0) return false;
+        return Math.hypot(event.clientX - from.x, event.clientY - from.y) >= THRESHOLD;
     }
 
     /**
@@ -137,45 +182,69 @@
                     {#each section.items as view (view.id)}
                         {@const badge = badgeOf(view, client)}
                         {@const key = keyOf(order, view.id)}
-                        <div class="entry">
-                            <ToolButton
-                                label={registrationLabel(view)}
-                                title={hint(registrationLabel(view), view.id)}
-                                glyph={registrationGlyph(view)}
-                                dataView={view.id}
-                                onclick={(event: MouseEvent) => open(view, event)}
-                            />
-                            {#if key !== ''}
-                                <span class="key" aria-hidden="true">{key}</span>
-                            {/if}
-                            {#if badge.glyph !== '' || badge.text !== ''}
-                                <span
-                                    class="badge"
-                                    style={badgeStyle(badge.tone)}
-                                    title={badge.title}
-                                    aria-hidden="true"
-                                >
-                                    {#if badge.glyph !== ''}
-                                        <Glyph name={badge.glyph} />
-                                    {/if}{badge.text}
-                                </span>
-                            {/if}
-                        </div>
+                        {@const label = registrationLabel(view)}
+                        <ContextMenu
+                            {label}
+                            items={hereItems}
+                            onpick={(pick: string) => openHere(view.id, undefined, pick)}
+                        >
+                            <!-- A drag starts on the entry; its button is pressed as it is. -->
+                            <!-- svelte-ignore a11y_no_static_element_interactions -->
+                            <div
+                                class="entry"
+                                onpointerdown={(event) => press(view.id, undefined, label, event)}
+                            >
+                                <ToolButton
+                                    {label}
+                                    title={hint(label, view.id)}
+                                    glyph={registrationGlyph(view)}
+                                    dataView={view.id}
+                                    onclick={(event: MouseEvent) => open(view.id, undefined, event)}
+                                />
+                                {#if key !== ''}
+                                    <span class="key" aria-hidden="true">{key}</span>
+                                {/if}
+                                {#if badge.glyph !== '' || badge.text !== ''}
+                                    <span
+                                        class="badge"
+                                        style={badgeStyle(badge.tone)}
+                                        title={badge.title}
+                                        aria-hidden="true"
+                                    >
+                                        {#if badge.glyph !== ''}
+                                            <Glyph name={badge.glyph} />
+                                        {/if}{badge.text}
+                                    </span>
+                                {/if}
+                            </div>
+                        </ContextMenu>
                     {/each}
                     {#each section.docs as entry (entry.path)}
                         {@const key = keyOf(order, docPick(entry))}
-                        <div class="entry">
-                            <ToolButton
-                                label={entry.label}
-                                title={hint(entry.label, docPick(entry))}
-                                glyph={t('views.doc_glyph')}
-                                dataDoc={entry.path}
-                                onclick={(event: MouseEvent) => openDoc(entry, event)}
-                            />
-                            {#if key !== ''}
-                                <span class="key" aria-hidden="true">{key}</span>
-                            {/if}
-                        </div>
+                        {@const state = docState(entry)}
+                        <ContextMenu
+                            label={entry.label}
+                            items={hereItems}
+                            onpick={(pick: string) => openHere(DOC_VIEW, state, pick)}
+                        >
+                            <!-- svelte-ignore a11y_no_static_element_interactions -->
+                            <div
+                                class="entry"
+                                onpointerdown={(event) =>
+                                    press(DOC_VIEW, state, entry.label, event)}
+                            >
+                                <ToolButton
+                                    label={entry.label}
+                                    title={hint(entry.label, docPick(entry))}
+                                    glyph={t('views.doc_glyph')}
+                                    dataDoc={entry.path}
+                                    onclick={(event: MouseEvent) => open(DOC_VIEW, state, event)}
+                                />
+                                {#if key !== ''}
+                                    <span class="key" aria-hidden="true">{key}</span>
+                                {/if}
+                            </div>
+                        </ContextMenu>
                     {/each}
                 </div>
             </section>

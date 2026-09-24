@@ -1,9 +1,9 @@
 // The shell as a reader sees it on a served page: a tooltip a press leaves behind, the scrollbars'
 // colours, the rail's list against its foot and the fade that says the list goes on, the foot's
-// visible names and the arrow keys along the rail, the pane menu's length at seven pages, an
-// overflowing tab strip resting with a whole tab at its left edge, the palette's kind column, and
-// the colours of the rail button whose page is on screen. Every one of them is a computed style, a
-// box or a focus, which only a rendered page holds.
+// icons and the arrow keys along the rail, the pane menu's length at seven pages, an overflowing
+// tab strip resting with a whole tab at its left edge, the palette's kind column, and the colours
+// of the rail's buttons, muted, hovered and the one whose page is on screen. Every one of them is a
+// computed style, a box or a focus, which only a rendered page holds.
 //
 // Nothing here writes to the hub. The layout and the appearance live in the browser's own storage,
 // and Playwright gives every test a context of its own.
@@ -195,35 +195,35 @@ test.describe('the rail list', () => {
 test.describe('the rail foot', () => {
     test.use({ viewport: { width: 1280, height: 800 } });
 
-    test('Search and Update carry their visible names, each with a drawing of its own', async ({
+    test('Bookmarks, Search and Update are icons named by their words, each a drawing of its own', async ({
         page
     }) => {
-        // revert: src/lib/shell/rail/ActivityRail.svelte:317 => glyph="cmd"
+        // revert: src/lib/shell/rail/RailFoot.svelte:73 => glyph="refresh"
         await boot(page);
-        await theme(page, 'mocha');
         const foot = page.locator('nav [data-foot]');
-        for (const key of ['app.search', 'app.update']) {
-            await expect(foot.getByText(t(key), { exact: true })).toBeVisible();
+        for (const key of ['ui.docs', 'app.search', 'app.update']) {
+            await expect(foot.getByRole('button', { name: t(key), exact: true })).toBeVisible();
+            // The name is the button's and the tooltip's, not words drawn in the rail.
+            await expect(foot.getByText(t(key), { exact: true })).toHaveCount(0);
         }
-        await theme(page, 'light');
         const drawings = await foot
             .locator('button')
             .evaluateAll((buttons) =>
                 buttons.map((one) => one.querySelector('.glyph')?.innerHTML ?? '')
             );
-        expect(drawings).toHaveLength(2);
+        expect(drawings).toHaveLength(3);
         expect(drawings.every((one) => one !== '')).toBe(true);
-        expect(new Set(drawings).size).toBe(2);
+        expect(new Set(drawings).size).toBe(3);
     });
 });
 
 test.describe('the arrow keys along the rail', () => {
     test.use({ viewport: { width: 1280, height: 800 } });
 
-    test('up and down move along the pages, the bookmarks and the foot, wrapping at the ends', async ({
+    test('up and down move along the pages and the foot, wrapping at the ends', async ({
         page
     }) => {
-        // revert: src/lib/shell/rail/rail.ts:59 => const next = nextStop(key, ring.indexOf(current), ring.length, 'row');
+        // revert: src/lib/shell/rail/rail.ts:88 => const next = nextStop(key, ring.indexOf(current), ring.length, 'row');
         await boot(page);
         const rail = page.locator('nav.rail');
         const stop = (name: string): Locator => rail.locator(`[data-stop="${name}"]`);
@@ -233,6 +233,11 @@ test.describe('the arrow keys along the rail', () => {
         await page.keyboard.press('ArrowUp');
         await page.keyboard.press('ArrowUp');
         await expect(stop('update')).toBeFocused();
+        await page.keyboard.press('ArrowUp');
+        await page.keyboard.press('ArrowUp');
+        await expect(stop('bookmarks')).toBeFocused();
+        await page.keyboard.press('ArrowDown');
+        await page.keyboard.press('ArrowDown');
         await page.keyboard.press('ArrowDown');
         await expect(stop('page:focus')).toBeFocused();
         await page.keyboard.press('End');
@@ -332,8 +337,12 @@ test.describe('tabs', () => {
         }
         for (const name of ['map', 'memories']) await openView(page, name, t(`views.${name}`));
         await page
-            .locator('nav button[data-bookmark]')
-            .filter({ hasText: 'game-engine manual' })
+            .locator('nav')
+            .getByRole('button', { name: t('ui.docs'), exact: true })
+            .click();
+        await page
+            .getByRole('menu', { name: t('ui.docs') })
+            .getByRole('menuitem', { name: 'game-engine manual' })
             .click();
         const list = tablist(page);
         await expect(list.getByRole('tab')).toHaveCount(10);
@@ -541,60 +550,66 @@ test.describe('the palette', () => {
     });
 });
 
-test.describe('the rail button of the page on screen', () => {
+test.describe('the rail buttons', () => {
     test.use({ viewport: { width: 1280, height: 800 } });
 
-    /** One rail button's fill, border, glyph and name colours, and the three tokens resolved. */
+    /** One rail button's fill, glyph colour and left bar, and the tokens they are read against. */
     async function paint(page: Page, key: string): Promise<Record<string, string>> {
         return page.evaluate((name) => {
             const button = document.querySelector(`nav [data-rail-page="${name}"] button`);
-            const label = button?.querySelector('.label');
-            if (!button || !label) return {};
+            if (!button) return {};
             const probe = document.createElement('span');
             document.body.append(probe);
             const resolve = (token: string): string => {
-                probe.style.color = `var(${token})`;
+                probe.style.color = token;
                 return getComputedStyle(probe).color;
             };
             const tokens = {
-                tint: resolve('--accent-bg'),
-                text: resolve('--accent-bg-txt'),
-                accent: resolve('--accent')
+                muted: resolve('var(--muted-txt, var(--muted))'),
+                ink: resolve('var(--ink-txt, var(--ink))'),
+                accentText: resolve('var(--accent-txt, var(--accent))'),
+                accent: resolve('var(--accent)')
             };
             probe.remove();
             const style = getComputedStyle(button);
             return {
                 background: style.backgroundColor,
-                border: style.borderTopColor,
+                border: style.borderTopWidth,
                 glyph: style.color,
-                name: getComputedStyle(label).color,
+                bar: style.boxShadow,
                 ...tokens
             };
         }, key);
     }
 
-    test('under the light theme and a terminal theme it fills with the accent tint and names itself in the accent text', async ({
+    test('under a light, a dark and a terminal theme a button is muted, the hovered one and the one in force are bright, and only the one in force carries the accent bar', async ({
         page
     }) => {
-        // revert: src/lib/shell/rail/ActivityRail.svelte:244 => active={false}
+        // revert: src/lib/ui/controls/ToolButton.svelte:240 => box-shadow: none;
         await boot(page);
-        for (const pick of [null, 'mocha'] as const) {
-            if (pick !== null) await theme(page, pick);
+        for (const pick of ['light', 'dark', 'mocha'] as const) {
+            await theme(page, pick);
             await showRailPage(page, 'focus');
             await page.mouse.move(700, 400);
             const off = await paint(page, 'projects');
-            expect(off.background, `the button off, under ${pick ?? 'light'}`).toBe(
-                'rgba(0, 0, 0, 0)'
-            );
+            expect(off.background, pick).toBe('rgba(0, 0, 0, 0)');
+            expect(off.border, pick).toBe('0px');
+            expect(off.glyph, pick).toBe(off.muted);
+            expect(off.bar, pick).toBe('none');
+
+            // The pointer on a button brings its icon up to the text colour, as VS Code does.
+            await page.locator('nav [data-rail-page="projects"] button').hover();
+            expect((await paint(page, 'projects')).glyph, pick).toBe(off.ink);
 
             await showRailPage(page, 'projects');
             await page.mouse.move(700, 400);
             const on = await paint(page, 'projects');
-            expect(on.background).toBe(on.tint);
-            expect(on.border).toBe(on.accent);
-            expect(on.glyph).toBe(on.text);
-            expect(on.name).toBe(on.text);
-            expect((await paint(page, 'focus')).background).toBe('rgba(0, 0, 0, 0)');
+            expect(on.background, pick).toBe('rgba(0, 0, 0, 0)');
+            // A terminal palette draws the one in force in its accent text, every other theme in
+            // the text colour; the bar down the left edge is the accent in both.
+            expect(on.glyph, pick).toBe(pick === 'mocha' ? on.accentText : on.ink);
+            expect(on.bar, pick).toBe(`${on.accent} 2px 0px 0px 0px inset`);
+            expect((await paint(page, 'focus')).bar, pick).toBe('none');
         }
     });
 });

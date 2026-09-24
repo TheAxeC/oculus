@@ -78,7 +78,7 @@ const { config } = loadConfig(engineDir());
 const GLYPHS = glyphCatalog(config);
 
 describe('the catalog', () => {
-    // revert: config/text/ui.yml:6 => confirm_cancel: '{G.cross} Cancel'
+    // revert: config/text/ui.yml:9 => confirm_cancel: '{G.cross} Cancel'
     it('carries no glyph token in any line, since every glyph is drawn beside the words', () => {
         const lines = Object.entries(textCatalog(config));
         expect(lines.filter(([, line]) => line.includes('{G.')).map(([key]) => key)).toEqual([]);

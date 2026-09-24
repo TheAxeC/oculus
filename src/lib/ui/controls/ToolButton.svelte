@@ -43,19 +43,19 @@
          * with no glyph ignores this, since a button with nothing on it is not a control.
          */
         compact?: boolean;
-        /** Use the activity rail's one full-width, 34 px control box. */
+        /**
+         * One item of the activity rail: the glyph alone, at the icon size, in a square box the
+         * rail's width, with no border and no fill, muted until the pointer is over it; the one in
+         * force draws its glyph in the text colour with the accent bar on its left edge.
+         */
         rail?: boolean;
         /**
          * The glyph alone in a bare icon box, for a strip's own buttons: no border, no fill and no
          * terminal brackets until the pointer is over it, the same box a bare menu opener draws.
          */
         bare?: boolean;
-        /** Draw a compact rail glyph above its visible label instead of hiding the label. */
-        stacked?: boolean;
         /** A rail view id, rendered on the button for browser navigation. */
         dataView?: string;
-        /** A configured bookmark identity, rendered on the button for browser navigation. */
-        dataBookmark?: string;
         /** A configured hub document's path, rendered on the button for browser navigation. */
         dataDoc?: string;
         /** Marks the project-card control the keyboard cursor activates when its title is plain. */
@@ -93,9 +93,7 @@
         compact = false,
         rail = false,
         bare = false,
-        stacked = false,
         dataView,
-        dataBookmark,
         dataDoc,
         dataCardToggle = false,
         tabindex,
@@ -105,7 +103,7 @@
     }: Props = $props();
 
     const compactGlyph = $derived(compact && glyph !== undefined);
-    const iconOnly = $derived(compactGlyph && !stacked);
+    const iconOnly = $derived(compactGlyph);
     const tip = $derived(title ?? (compactGlyph ? label : ''));
 </script>
 
@@ -124,14 +122,12 @@
         class:compact={iconOnly}
         class:rail-control={rail}
         class:bare
-        class:stacked
         role={checked === undefined ? undefined : 'radio'}
         aria-checked={checked}
         aria-expanded={expanded}
         aria-pressed={pressed}
         aria-label={iconOnly || children !== undefined ? label : undefined}
         data-view={dataView}
-        data-bookmark={dataBookmark}
         data-doc={dataDoc}
         data-card-toggle={dataCardToggle || undefined}
         data-stop={stop}
@@ -174,41 +170,25 @@
         padding: 3px 5px;
     }
 
-    /* The rail's height is a floor, not a size: a stacked label that wraps makes its button
-       taller. */
+    /* An item of the activity rail, drawn as VS Code draws one (activityaction.css): a square box
+       the bar's width, a 24 px icon centred in it, no border and no fill, the icon muted until the
+       pointer or the keyboard is on it. */
     .tool.rail-control {
         justify-content: center;
         width: 100%;
-        min-height: 34px;
+        height: var(--rail-width);
         box-sizing: border-box;
+        border: 0;
+        border-radius: 0;
         background: none;
-        color: var(--ink-txt, var(--ink));
-        font-size: var(--fs-xl);
+        color: var(--muted-txt, var(--muted));
+        font-size: var(--rail-icon);
         padding: 0;
     }
 
-    .tool.stacked {
-        flex-direction: column;
-        gap: 1px;
-    }
-
-    /* A label the rail's width cannot hold on one line wraps to a second, and only a third is cut:
-       the rail stays its width and a long bookmark name is still read whole. */
-    .tool.stacked :global(.label) {
-        display: -webkit-box;
-        -webkit-box-orient: vertical;
-        -webkit-line-clamp: 2;
-        line-clamp: 2;
-        width: 100%;
-        min-width: 0;
-        max-width: 100%;
-        overflow: hidden;
-        overflow-wrap: anywhere;
-        color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-3xs);
-        line-height: 1.1;
-        text-overflow: ellipsis;
-        white-space: normal;
+    .tool.rail-control:hover:not(:disabled),
+    .tool.rail-control:focus-visible {
+        color: var(--ink-txt, var(--ink));
     }
 
     .tool:hover:not(:disabled) {
@@ -249,25 +229,27 @@
         color: var(--on-accent);
     }
 
-    /* A rail control that is on, the button of the page on screen, fills with the accent's tint
-       and draws its border in the accent and its glyph and name in the tint's own text colour,
-       which the contrast test measures on that tint. The solid accent block of a toolbar button is
-       too heavy in a column of bare glyphs, and a terminal theme that fills no other button still
-       fills this one. */
+    /* The rail item of the page on screen: its icon in the text colour and a 2 px bar in the accent
+       down its left edge, VS Code's active item indicator. The bar is an inset shadow so the icon
+       stays centred in the box, and it is drawn under a terminal palette as under every other. */
     .tool.rail-control.active,
     :global(body.rice) .tool.rail-control.active {
-        border: 1px solid var(--accent);
-        background: var(--accent-bg);
-        color: var(--accent-bg-txt, var(--accent));
-    }
-
-    .tool.rail-control.active :global(.label) {
-        color: var(--accent-bg-txt, var(--accent));
+        border: 0;
+        background: none;
+        color: var(--ink-txt, var(--ink));
+        box-shadow: inset 2px 0 0 var(--accent);
     }
 
     .tool:focus-visible {
         outline: 2px solid var(--accent);
         outline-offset: -2px;
+    }
+
+    /* The rail's focus is VS Code's focus border: a one pixel line inside the item's box, which the
+       active item's bar stays visible beside. */
+    .tool.rail-control:focus-visible {
+        outline-width: 1px;
+        outline-offset: -1px;
     }
 
     /* The terminal shape: a bracketed word, and the one in force is the only one in ink. */
@@ -283,24 +265,34 @@
         color: var(--accent-txt, var(--accent));
     }
 
-    /* The brackets are a row's shape, around a word with the glyph inside them. A stacked control
-       is a column of a glyph over a label, where the pair would be two lines of their own above and
-       below it, and a rail control is a glyph in a box the rail's width sets; in both the terminal
-       stand-in the glyph draws carries its own
-       brackets already. A bare button is a strip's icon and draws none, as a bare menu opener
-       beside it draws none. */
-    :global(body.rice) .tool:not(.stacked):not(.rail-control):not(.bare)::before {
+    /* The brackets are a row's shape, around a word with the glyph inside them. A rail control is
+       a glyph in a box the rail's width sets, where the terminal stand-in the glyph draws carries
+       its own brackets already. A bare button is a strip's icon and draws none, as a bare menu
+       opener beside it draws none. */
+    :global(body.rice) .tool:not(.rail-control):not(.bare)::before {
         content: '[';
         opacity: 0.5;
     }
 
-    :global(body.rice) .tool:not(.stacked):not(.rail-control):not(.bare)::after {
+    :global(body.rice) .tool:not(.rail-control):not(.bare)::after {
         content: ']';
         opacity: 0.5;
     }
 
+    /* A terminal palette keeps the rail's box, and draws the one in force in its accent text as
+       every terminal control in force is. A stand-in of three characters at the icon size would
+       fill the box, so a glyph drawn as text takes the size of the theme's controls; an icon, when
+       the reader asked for the icons, keeps the icon size. */
     :global(body.rice) .tool.rail-control {
-        min-height: 34px;
+        height: var(--rail-width);
         padding: 0;
+    }
+
+    :global(body.rice) .tool.rail-control.active {
+        color: var(--accent-txt, var(--accent));
+    }
+
+    :global(body.rice) .tool.rail-control :global(.glyph:not(:has(svg))) {
+        font-size: var(--fs-lg);
     }
 </style>

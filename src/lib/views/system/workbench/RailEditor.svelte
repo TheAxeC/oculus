@@ -9,6 +9,10 @@
     // away from and after a reload, and a tab holding a list that differs from the file's is one
     // holding unsaved text. A row the shared rule refuses is named under the list and Save waits
     // for it, so the server's own refusal is the answer to a race and never to a typo.
+    //
+    // The rail's Settings choice opens the Settings view with `reveal: 'rail'` in its instance
+    // state; the list is then scrolled into view and the ask is taken out of the state, so a later
+    // switch back to the tab leaves the view where the reader scrolled it.
 
     import Glyph from '$lib/ui/controls/Glyph.svelte';
     import Select from '$lib/ui/forms/Select.svelte';
@@ -20,6 +24,7 @@
         configRail,
         moveRailEntry,
         railDraft,
+        railRefusal,
         readRail,
         sameRail,
         withRailDraft,
@@ -31,7 +36,7 @@
 
     const {
         entities: { config },
-        layout: { instanceView },
+        layout: { instanceLayoutState, instanceView, restateInstance },
         ui: { instanceState, setInstanceState },
         writes: { writeRail }
     } = useState();
@@ -46,6 +51,23 @@
     const glyphs = $derived(glyphNames(merged) ?? []);
     const problems = $derived(readRail(rows, pages, glyphs).problems);
     const dirty = $derived(draft !== null && !sameRail(draft, saved));
+
+    let section: HTMLElement | undefined = $state();
+
+    /** Whether the tab was opened to show the rail list, which the rail's Settings choice asks. */
+    const revealing = $derived.by(() => {
+        const held = instanceLayoutState(id);
+        return typeof held === 'object' && held !== null && 'reveal' in held
+            ? held.reveal === 'rail'
+            : false;
+    });
+
+    $effect(() => {
+        if (!revealing || section === undefined) return;
+        section.scrollIntoView({ block: 'start' });
+        const { reveal: _asked, ...rest } = instanceLayoutState(id) as Record<string, unknown>;
+        restateInstance(id, rest);
+    });
 
     /** Whether a save is on its way, which is what keeps Save from being pressed twice. */
     let sending = $state(false);
@@ -90,11 +112,7 @@
         sending = false;
         if (instanceView(id) === undefined) return;
         if (!answer.ok) {
-            const reason =
-                answer.error === 'unwritable'
-                    ? t('workbench.rail_unwritable')
-                    : t('workbench.rail_invalid');
-            outcome = t('workbench.rail_refused', reason);
+            outcome = railRefusal(answer.error);
             return;
         }
         const now = railDraft(instanceState(id));
@@ -111,7 +129,7 @@
     }
 </script>
 
-<section class="rail" data-settings="rail">
+<section class="rail" data-settings="rail" bind:this={section}>
     <h3>{t('workbench.rail_title')}</h3>
     {#if rows.length === 0}
         <p class="empty">{t('workbench.rail_empty')}</p>

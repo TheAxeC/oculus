@@ -8,8 +8,10 @@ text:
         settings: Settings
         settings_glyph: sliders
     workbench:
-        catalogue_hint: A click opens the view on the page you came from and shows that page; a shift-click opens it in a pane beside, on that page.
+        catalogue_hint: A click opens the view on the page you came from and shows that page; a shift-click opens it in a pane beside, on that page. Drag a view onto a pane, or right-click it, to open it on this page.
         catalogue_key: '{0}, key {1}'
+        catalogue_open_beside: Open beside on this page
+        catalogue_open_here: Open on this page
         pages_close: Close
         pages_current: shown
         pages_drag: Drag onto the edge of a pane to show {0} there

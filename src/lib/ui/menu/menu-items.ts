@@ -32,6 +32,13 @@ export type MenuItem = {
 };
 
 /**
+ * One headed run of choices, for a list whose choices fall under several headings (the board's one
+ * filter control, a heading per facet). Two groups may hold choices of the same id, so a pick names
+ * the group it came from.
+ */
+export type MenuGroup = { id: string; heading: string; items: MenuItem[] };
+
+/**
  * The list a menu shows while the choice `opened` has its own list open: that choice's items, or
  * null for the menu's own list. A choice that is no longer there, or that holds no list, leaves the
  * menu on its own list, so a caller whose items change under an open menu never strands it.

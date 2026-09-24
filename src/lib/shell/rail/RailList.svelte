@@ -80,10 +80,10 @@
         display: none;
     }
 
+    /* The items sit flush one under the next, as VS Code's activity bar draws them. */
     .entries {
         display: flex;
         flex-direction: column;
-        gap: 4px;
     }
 
     /* The fade over an edge with more past it: the rail's own surface running out to nothing, so
