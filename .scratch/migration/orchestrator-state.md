@@ -37,9 +37,10 @@ dispatch:
     worktree: .agents/worktrees/L5
     base: 4b0a7ad5
     launched: 2026-09-24
-    report: tools/oculus/.scratch/migration/agents/reviews/L5-report.md
+    report: tools/oculus/.scratch/migration/agents/reviews/L5-report.md (saved; builder 542,452 tokens, 241 tool uses, 6,630 s)
+    review: agents/reviews/L5-refuter.md (saved; reviewer claude:opus, its side-by-side against VS Code under light, dark and mocha)
     landing: not-started
-    round: 0
+    round: 1                 # sent 2026-09-24: the eight visible differences from VS Code closed (one badge colour, the UI font, the bar's own surface, the tooltip pointer, the Bookmarks menu opening upward, no hover during a drag or on returned focus, a fixed icon size), Open on this page beside the catalogue, the missing proofs, the dead prop, the orphaned token
 ```
 
 ## The standing demands (from Axel, in force)
