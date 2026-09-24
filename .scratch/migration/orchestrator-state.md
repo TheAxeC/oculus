@@ -38,6 +38,7 @@ dispatch:
     base: 695861af
     launched: 2026-09-24
     report: tools/oculus/.scratch/migration/agents/reviews/Q69-report.md
+    brief_amended: 2026-09-24 while the builder runs, items 6 to 9 from the orchestrator's check of the landed steps (`agents/reviews/Q69-checks.md`), sent to the builder by message
     landing: not-started
     round: 0
 ```
