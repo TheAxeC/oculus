@@ -81,3 +81,14 @@ The cockpit was returned to the References page it was on.
 ## What is next
 
 L6, the status bar drawn like VS Code's, from the P1 inventory.
+
+## The look owed, done 2026-09-24 on the TEST page
+
+Themes switched through the palette's `:theme` on TEST, then put back to `vscode-dark-modern` and the References page.
+
+- light: rail `rgb(241, 245, 249)` with a `rgb(226, 232, 240)` border, the ground's colour; panes white; muted icons `rgb(95, 111, 133)` (`#5f6f85`, the value before the round's rail surface); the four badges `rgb(189, 93, 56)` with black, each inside its item; line icons.
+- dark: rail `rgb(11, 17, 32)` with a `rgb(36, 48, 73)` border, the ground's colour; panes `rgb(18, 26, 43)`; badges inside their items; line icons.
+- mocha: the rail translucent over the wallpaper (`color(srgb 0.118 0.118 0.180 / 0.76)`), the ASCII stand-ins, badges `rgb(245, 169, 127)` with black under the stand-in, inside the item.
+- vscode-light-modern: rail `rgb(248, 248, 248)` with a `rgb(229, 229, 229)` border, VS Code's own values; badges `rgb(0, 95, 184)` with white.
+- The catalogue opened on TEST (its pane the page's only one): right-click Help, Open on this page. Help opened in a new pane beside, but Help was already a tab of the catalogue's own pane, and that pane was left showing `settings.json` instead of the catalogue. The catalogue is covered in that case. Booked as Q69 with the other items of this audit.
+
