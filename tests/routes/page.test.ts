@@ -13,7 +13,7 @@ import { describe, expect, it } from 'vitest';
 import { load } from '../../src/routes/+page.ts';
 import { configGeneration } from '../../src/lib/state/client/generation.svelte.ts';
 import { defaultTheme } from '../../src/lib/state/words/appearance.ts';
-import { asciiOf, glyph, t } from '../../src/lib/state/words/text.ts';
+import { glyph, t } from '../../src/lib/state/words/text.ts';
 import { toneOf } from '../../src/lib/state/words/tones.ts';
 const ROUTES = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'src', 'routes');
 
@@ -25,7 +25,6 @@ function pageData() {
     return {
         text: { 'app.title': 'from the load' },
         glyphs: { dot: 'O' },
-        ascii: { O: 'o' },
         vocab: {
             palette: { [HEX]: 'c-violet' },
             themes: [{ name: 'dusk', class: '', label: 'dusk' }]
@@ -36,6 +35,7 @@ function pageData() {
 }
 
 describe('the page load', () => {
+    // revert: src/routes/+page.ts:23 => delete
     it('installs the catalogs the server shipped and raises the generation once', () => {
         const before = configGeneration();
         const result = load({ data: pageData() } as unknown as Parameters<typeof load>[0]);
@@ -45,7 +45,6 @@ describe('the page load', () => {
         expect(result).toEqual({ collections: ['funding'], token: 'a-token' });
         expect(t('app.title')).toBe('from the load');
         expect(glyph('dot')).toBe('O');
-        expect(asciiOf('O')).toBe('O');
         expect(toneOf(HEX)).toBe('violet');
         expect(defaultTheme()).toBe('dusk');
         expect(configGeneration()).toBe(before + 1);

@@ -4,6 +4,7 @@
     // Each writes the ui store, which saves the six values together, so what the page looks like
     // comes back whole after a reload whichever control set it.
 
+    import Glyph from '$lib/ui/controls/Glyph.svelte';
     import Menu from '$lib/ui/menu/Menu.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { t } from '$lib/state/words/text';
@@ -13,29 +14,33 @@
     const {
         ui: {
             crt,
+            icons,
             setCrt,
+            setIcons,
             setTextScale,
             setTheme,
-            setUnicode,
             setWallpaper,
             stepTextScale,
             textScale,
             theme,
-            unicode,
             wallpaper
         }
     } = useState();
 
+    /** Each theme, with the glyph its row names drawn before its words where it names one. */
     const themes = $derived(
         themeList().map((entry) => ({
             id: entry.name,
             label: entry.label,
+            glyph: entry.glyph === '' ? undefined : entry.glyph,
             active: entry.name === theme()
         }))
     );
 
-    /** The theme in force, by the words its list gives it. */
-    const current = $derived(themes.find((entry) => entry.active)?.label ?? theme());
+    /** The theme in force, by the glyph and the words its list gives it. */
+    const current = $derived(
+        themes.find((entry) => entry.active) ?? { label: theme(), glyph: undefined }
+    );
 
     /**
      * The wallpaper toggle is drawn only where there is one to switch: it is config and a theme.
@@ -58,7 +63,12 @@
             items={themes}
             onpick={(name: string) => setTheme(name)}
         />
-        <span class="value" data-theme-name>{current}</span>
+        <span class="value" data-theme-name>
+            {#if current.glyph !== undefined}
+                <Glyph name={current.glyph} />
+            {/if}
+            {current.label}
+        </span>
     </div>
     <div class="row" role="group" aria-label={t('app.text')}>
         <span class="caption">{t('app.text')}</span>
@@ -104,12 +114,12 @@
             />
         {/if}
         <ToolButton
-            label={t('ui.unicode')}
-            title={t('ui.unicode_title')}
-            glyph="unicode"
-            active={unicode()}
-            pressed={unicode()}
-            onclick={() => setUnicode(!unicode())}
+            label={t('ui.icons')}
+            title={t('ui.icons_title')}
+            glyph="icons"
+            active={icons()}
+            pressed={icons()}
+            onclick={() => setIcons(!icons())}
         />
     </div>
 </section>

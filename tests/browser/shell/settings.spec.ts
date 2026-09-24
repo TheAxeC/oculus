@@ -1,9 +1,9 @@
 // The Settings view on the Views and Settings page and the status bar along the foot of the window:
-// the view changes the theme, puts the CRT overlay on and off, keeps the real glyphs on a terminal
-// theme, and edits the rail list, which config/layout.yml is written with and the rail follows; a
-// rail entry hand-edited to a glyph the vocabulary lacks draws no button; each item of the status
-// bar opens the view that says more about it, the unsaved count the first tab it counts, on its
-// own page.
+// the view changes the theme, puts the CRT overlay on and off, keeps the icons on a terminal theme,
+// and edits the rail list, which config/layout.yml is written with and the rail follows; a rail
+// entry hand-edited to a glyph the vocabulary lacks draws no button; each item of the status bar
+// opens the view that says more about it, the unsaved count the first tab it counts, on its own
+// page.
 //
 // The rail case writes the served engine's own layout.yml, a copy under the system temporary
 // directory, and puts the file back as it found it.
@@ -26,19 +26,19 @@ function item(page: Page, name: string): ReturnType<Page['locator']> {
 }
 
 test('the Settings view changes the theme', async ({ page }) => {
-    // revert: src/lib/views/system/workbench/Appearance.svelte:59 => onpick={(name: string) => setTheme('light')}
+    // revert: src/lib/views/system/workbench/Appearance.svelte:64 => onpick={(name: string) => setTheme('light')}
     await boot(page);
     await showRailPage(page, 'views');
     await settings(page)
         .getByRole('button', { name: t('ui.theme') })
         .click();
-    await page.getByRole('menuitem', { name: /^\S+\s+mocha$/ }).click();
+    await page.getByRole('menuitem', { name: 'mocha', exact: true }).click();
     await expect(page.locator('body')).toHaveClass(/\bmocha\b/);
     await expect(settings(page).locator('[data-theme-name]')).toContainText('mocha');
 });
 
 test('the Settings view puts the CRT overlay on and takes it off', async ({ page }) => {
-    // revert: src/lib/views/system/workbench/Appearance.svelte:94 => onclick={() => setCrt(crt())}
+    // revert: src/lib/views/system/workbench/Appearance.svelte:104 => onclick={() => setCrt(crt())}
     await boot(page);
     await showRailPage(page, 'views');
     const toggle = settings(page).getByRole('button', { name: t('ui.crt_on'), exact: true });
@@ -50,8 +50,8 @@ test('the Settings view puts the CRT overlay on and takes it off', async ({ page
     await expect(page.locator('body')).not.toHaveClass(/\bcrt\b/);
 });
 
-test('the Settings view keeps the real glyphs on a terminal theme', async ({ page }) => {
-    // revert: src/lib/views/system/workbench/Appearance.svelte:112 => onclick={() => setUnicode(unicode())}
+test('the Settings view keeps the icons on a terminal theme', async ({ page }) => {
+    // revert: src/lib/views/system/workbench/Appearance.svelte:122 => onclick={() => setIcons(icons())}
     await boot(page);
     await pickTheme(page, 'mocha');
     const mark = page.locator('nav [data-rail-page="focus"] .glyph');
@@ -60,9 +60,9 @@ test('the Settings view keeps the real glyphs on a terminal theme', async ({ pag
     await showRailPage(page, 'views');
     // A terminal theme draws a control's name inside brackets, so the name is matched as a part.
     await settings(page)
-        .getByRole('button', { name: t('ui.unicode') })
+        .getByRole('button', { name: t('ui.icons') })
         .click();
-    // Asked for the real glyphs, the rail draws the icon the glyph name maps to.
+    // Asked for the icons, the rail draws the icon the glyph name maps to.
     await expect(mark.locator('svg')).toHaveCount(1);
 });
 

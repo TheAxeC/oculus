@@ -1,7 +1,7 @@
-// Layer 3, primitive test. What the glyph primitive draws in each of the two vocabularies, the
-// slot it draws into, and the terminal palette's brackets. The slot and the brackets are declared
-// under a body class, which no server render shows and no assertion over markup reaches: what a
-// rail of controls looks like under a terminal palette is those two rules.
+// Layer 3, primitive test. What the glyph primitive draws in each of the two modes, the icon and
+// the ASCII stand-in, the slot it draws into, and the terminal palette's brackets. The slot and the
+// brackets are declared under a body class, which no server render shows and no assertion over
+// markup reaches: what a rail of controls looks like under a terminal palette is those two rules.
 //
 // What this does NOT cover: DOMPurify's own filtering of an icon. The library needs a document to
 // parse into and this suite runs in node (vite.config.ts sets `environment: 'node'`), where its
@@ -16,23 +16,20 @@ import { render } from 'svelte/server';
 import Glyph from '../../../src/lib/ui/controls/Glyph.svelte';
 import { SVG_ATTR, SVG_PROFILE, SVG_TAGS } from '../../../src/lib/ui/html.ts';
 import {
-    asciiCatalog,
     engineDir,
     glyphCatalog,
     iconSet,
     loadConfig
 } from '../../../src/lib/data/sources/config.ts';
-import { setAscii, setGlyphMode, setGlyphs, setIcons } from '../../../src/lib/state/words/text.ts';
+import { setGlyphMode, setGlyphs, setIcons } from '../../../src/lib/state/words/text.ts';
 
 const GLYPH = 'src/lib/ui/controls/Glyph.svelte';
 const TOOL = 'src/lib/ui/controls/ToolButton.svelte';
 
 const { config } = loadConfig(engineDir());
 const GLYPHS = glyphCatalog(config);
-const ASCII = asciiCatalog(config);
 const ICONS = iconSet(config);
 setGlyphs(GLYPHS);
-setAscii(ASCII);
 setIcons(ICONS);
 
 /** One CSS rule of a component's style block: the selector as written, and its declarations. */
@@ -54,36 +51,51 @@ function drawn(name: string): string {
 }
 
 describe('what the glyph primitive draws', () => {
-    it('draws the icon of the name while the characters are in force', () => {
+    // revert: src/lib/ui/controls/Glyph.svelte:34 => : { text: standIn, svg: '' };
+    it('draws the icon of the name, and no text, while the icons are in force', () => {
         const body = drawn('pin');
         expect(body).toContain('<svg');
         expect(body).toContain('stroke="currentColor"');
         expect(body).not.toContain(GLYPHS.pin);
     });
 
+    // revert: src/lib/ui/controls/Glyph.svelte:33 => ? { text: '', svg: iconSvg(name) ?? '' }
     it('draws the ASCII stand-in, and no icon, under a terminal vocabulary', () => {
         setGlyphMode('ascii');
         try {
             const body = drawn('pin');
-            expect(body).toContain(`>${ASCII[GLYPHS.pin]}</span>`);
+            expect(GLYPHS.pin).toMatch(/^[\x20-\x7E]+$/);
+            expect(body).toContain(`>${GLYPHS.pin}</span>`);
             expect(body).not.toContain('<svg');
         } finally {
-            setGlyphMode('unicode');
+            setGlyphMode('icon');
         }
     });
 
-    it('falls back to the character for a name the icon map does not carry', () => {
+    // revert: src/lib/ui/controls/Glyph.svelte:39 => <span class="glyph">{name}</span>
+    it('draws an empty box, and no text, for a name the icon map does not carry', () => {
         setIcons({});
         try {
-            expect(drawn('pin')).toContain(`>${GLYPHS.pin}</span>`);
+            const body = drawn('pin');
+            expect(body).toMatch(
+                /<span class="glyph[^"]*" data-glyph="pin" aria-hidden="true"><\/span>/
+            );
+            expect(body).not.toContain(GLYPHS.pin);
+            expect(body.replace('data-glyph="pin"', '')).not.toContain('pin');
         } finally {
             setIcons(ICONS);
         }
     });
 
+    // revert: src/lib/ui/controls/Glyph.svelte:31 => const standIn = '';
+    it('throws on a name the vocabulary does not hold while the icons are in force', () => {
+        expect(() => drawn('nonesuch')).toThrow(/nonesuch/);
+    });
+
+    // revert: src/lib/ui/controls/Glyph.svelte:43 => {@html drawn.svg}
     it('puts every icon through the icon filter before it reaches the page', () => {
         const source = readFileSync(GLYPH, 'utf8');
-        expect(source).toContain('{@html sanitiseSvg(drawing)}');
+        expect(source).toContain('{@html sanitiseSvg(drawn.svg)}');
         expect(source.match(/\{@html/g)).toHaveLength(1);
     });
 });

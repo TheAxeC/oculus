@@ -135,7 +135,12 @@
             <ProgramButton {root} {path} />
         {/if}
         {#if editing && draft.message !== ''}
-            <span class="message" aria-live="polite">{draft.message}</span>
+            <span class="message" aria-live="polite">
+                {#if draft.failed}
+                    <Glyph name="cross" />
+                {/if}
+                {draft.message}
+            </span>
         {/if}
     </Toolbar>
 {/snippet}

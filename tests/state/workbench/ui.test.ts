@@ -29,13 +29,13 @@ let setInstanceState: ClientState['ui']['setInstanceState'];
 let setTextScale: ClientState['ui']['setTextScale'];
 let setTerminalFont: ClientState['ui']['setTerminalFont'];
 let setTheme: ClientState['ui']['setTheme'];
-let setUnicode: ClientState['ui']['setUnicode'];
+let setIcons: ClientState['ui']['setIcons'];
 let setWallpaper: ClientState['ui']['setWallpaper'];
 let stepTextScale: ClientState['ui']['stepTextScale'];
 let theme: ClientState['ui']['theme'];
 let textScale: ClientState['ui']['textScale'];
 let terminalFont: ClientState['ui']['terminalFont'];
-let unicode: ClientState['ui']['unicode'];
+let icons: ClientState['ui']['icons'];
 let cardMoveRequested: ClientState['ui']['cardMoveRequested'];
 let requestCardMove: ClientState['ui']['requestCardMove'];
 let updateTrayRequested: ClientState['ui']['updateTrayRequested'];
@@ -53,13 +53,13 @@ beforeEach(() => {
         setTextScale,
         setTerminalFont,
         setTheme,
-        setUnicode,
+        setIcons,
         setWallpaper,
         stepTextScale,
         theme,
         textScale,
         terminalFont,
-        unicode,
+        icons,
         cardMoveRequested,
         requestCardMove,
         updateTrayRequested,
@@ -102,7 +102,7 @@ describe('the appearance store', () => {
         expect(DEFAULT_THEME).toBe(themes()[0].name);
         expect(crt()).toBe(crtDefault());
         expect(wallpaper()).toBe(wallpaperOnTheme(DEFAULT_THEME));
-        expect(unicode()).toBe(false);
+        expect(icons()).toBe(false);
         expect(textScale()).toBe(null);
         expect(terminalFont()).toBe(null);
         expect(instanceState('a')).toBe(undefined);
@@ -114,7 +114,7 @@ describe('the appearance store', () => {
         setTheme('mocha');
         setCrt(true);
         setWallpaper(true);
-        setUnicode(true);
+        setIcons(true);
         setTextScale(1.3);
         setTerminalFont(14.5);
         setInstanceState('a', { filter: 'active' });
@@ -126,7 +126,7 @@ describe('the appearance store', () => {
             theme: 'mocha',
             crt: true,
             wallpaper: true,
-            unicode: true,
+            icons: true,
             textScale: 1.3,
             terminalFont: 14.5,
             instances: { a: { filter: 'active' }, b: 3 }
@@ -222,19 +222,57 @@ describe('the appearance store', () => {
         const first = fakeStorage();
         loadUi(first);
         setWallpaper(true);
-        setUnicode(false);
+        setIcons(false);
 
         const second = fakeStorage(saved(first));
         expect(loadUi(second)).toBe(true);
         expect(wallpaper()).toBe(true);
-        expect(unicode()).toBe(false);
+        expect(icons()).toBe(false);
 
         setWallpaper(false);
-        setUnicode(true);
+        setIcons(true);
         const third = fakeStorage(saved(second));
         expect(loadUi(third)).toBe(true);
         expect(wallpaper()).toBe(false);
-        expect(unicode()).toBe(true);
+        expect(icons()).toBe(true);
+    });
+
+    // revert: src/lib/state/workbench/ui.svelte.ts:235 => icons: held.icons === true,
+    it('reads a choice saved under the older field name when no icons field is saved', () => {
+        const older = fakeStorage({
+            version: UI_VERSION,
+            theme: 'mocha',
+            crt: false,
+            unicode: true,
+            instances: {}
+        });
+        expect(loadUi(older)).toBe(true);
+        expect(icons()).toBe(true);
+        const both = fakeStorage({
+            version: UI_VERSION,
+            theme: 'mocha',
+            crt: false,
+            unicode: true,
+            icons: false,
+            instances: {}
+        });
+        expect(loadUi(both)).toBe(true);
+        expect(icons()).toBe(false);
+    });
+
+    // revert: src/lib/state/workbench/ui.svelte.ts:248 => if (false)
+    it('writes a choice read under the older field name back under icons at once', () => {
+        const older = fakeStorage({
+            version: UI_VERSION,
+            theme: 'mocha',
+            crt: false,
+            unicode: false,
+            instances: {}
+        });
+        loadUi(older);
+        expect(saved(older)).toMatchObject({ theme: 'mocha', icons: false });
+        // the choice now lives under its own name, so the older field is not carried on
+        expect(saved(older)).not.toHaveProperty('unicode');
     });
 
     it('takes the two flags from the config when the saved appearance predates them', () => {
@@ -247,7 +285,7 @@ describe('the appearance store', () => {
         expect(loadUi(storage)).toBe(true);
         expect(theme()).toBe('mocha');
         expect(wallpaper()).toBe(wallpaperOnTheme('mocha'));
-        expect(unicode()).toBe(false);
+        expect(icons()).toBe(false);
     });
 
     it('reads a wallpaper saved by the earlier envelope as no choice at all', () => {

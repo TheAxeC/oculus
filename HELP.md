@@ -14,7 +14,7 @@ The rail draws one button per entry of the `rail:` list of `config/layout.yml`, 
 
 In the catalogue on the Views and Settings page a click shows the page the reader was on before that page and opens the view there, where views land, which is the pane whose tab was activated last; after a load straight onto the Views and Settings page it opens on the first rail page. A catalogue the reader has moved onto a page of their own opens the view on that page. A view already open is activated where it is rather than opened twice. A shift-click opens it in a new pane to the right, on that same page, and the next shift-click joins that pane as a tab while it is still open.
 
-Under the page buttons sit the bookmarks, the reader's own from `~/.oculus/bookmarks.yml`, which the Files view adds and takes away, each opened as a tab of its own. At the foot of the rail are Search, which opens the palette, and Update, which opens the update tray, each drawn with its name under its glyph. The button of the page on screen is filled with a tint of the accent. The list above the foot scrolls on its own, and a fade at its top or bottom edge says more entries are past it. The appearance controls (Theme, the Text row of smaller, reset and larger, CRT, Wallpaper where the theme has one, and Glyphs) are in the Settings view.
+Under the page buttons sit the bookmarks, the reader's own from `~/.oculus/bookmarks.yml`, which the Files view adds and takes away, each opened as a tab of its own. At the foot of the rail are Search, which opens the palette, and Update, which opens the update tray, each drawn with its name under its glyph. The button of the page on screen is filled with a tint of the accent. The list above the foot scrolls on its own, and a fade at its top or bottom edge says more entries are past it. The appearance controls (Theme, the Text row of smaller, reset and larger, CRT, Wallpaper where the theme has one, and Icons) are in the Settings view.
 
 Update, at the foot of the rail, opens the update tray: the four update tasks (Lit Watch, Scout, LinkedIn and Inbox), each with the date of its last run, and a Chat control that starts a portfolio-wide Claude session. A task runs the `/research-cockpit` skill as an ordinary Claude session in a terminal, so its permission prompts are answered by you in the terminal pane, which is where the tray puts you when the task starts. Setting `skip_permissions: true` under `tasks:` in `config/behavior.yml` starts them with `--dangerously-skip-permissions` instead, which lets a task run unattended and answer its own prompts; while it is on, a press asks for a confirmation first. The key under its old name, `chat.skip_permissions`, is not read, and a file still carrying it gets a finding on the Findings view naming the key that replaced it.
 
@@ -82,7 +82,7 @@ The status bar along the bottom reads the server connection (`server: up`, `down
 | `pillars` | Pillars | The research pillars and which projects sit under each. |
 | `domains` | Domains | The application domains and the projects in each. |
 | `map` | Map | The portfolio as a graph of projects and what links them, filtered by project type, by pillar and to the projects that still hold a pillar membership. A label that would cover another is hidden until its node is hovered or holds the keyboard, and an archived project's label is dimmed with its node. |
-| `venues` | Venues | The venue catalogue with its tiers, deadlines and concentration warning. A venue whose `link` is a path of the hub opens that file in a tab of its own and carries Show in Files. |
+| `venues` | Venues | The venue catalogue with its tiers, deadlines and concentration warning. A `wos:` or `scopus:` that opens with a check or a cross is drawn as the check or cross icon before its words, or as that icon's stand-in on a terminal theme. A venue whose `link` is a path of the hub opens that file in a tab of its own and carries Show in Files. |
 | `data` | Data | The dataset registry: where each set came from and how it is recovered. |
 | `code` | Code | The repositories registry, what the portfolio says about its own code, and the software projects of the `projects/software` tier with the papers each one names. |
 | `statements` | Statements | The reusable boilerplate paragraphs. |
@@ -119,7 +119,7 @@ The status bar along the bottom reads the server connection (`server: up`, `down
 | `calendar` | Calendar | The reader's own Google and Microsoft calendars, read-only: one row per configured account with its Connect control, and an agenda of the configured window grouped by day. A Google account reads the calendars ticked in Google's own calendar list, and no others. |
 | `history` | History | Every write oculus made on this machine, newest first, with what each field held before it and a control that puts it back. |
 | `catalogue` | Views | Every view and hub document by group, with its key and badge; a press opens it on the page the reader came from and a shift-press beside there. |
-| `settings` | Settings | The theme, text size, CRT, wallpaper and glyphs, and the rail list, edited and saved to `config/layout.yml`. |
+| `settings` | Settings | The theme, text size, CRT, wallpaper and icons, and the rail list, edited and saved to `config/layout.yml`. |
 | `pages` | Pages | Every page, with show, rename and close, and New page. |
 
 A view drawn from one file of the hub carries that file's own control, last in its toolbar, which opens the file in a source tab: the three feeds above, the collection views over the YAML their `collections:` entry names, the five registry views with panes of their own (Person, Venues, Data, Pillars and Domains) over the registry file each is drawn from, and each card of the Config view over the file it draws. The tooltip names the path, so the file the view is drawn from is read without finding it in the file browser first.
@@ -158,9 +158,9 @@ The files below sit in the `config/` folder of the engine, `tools/oculus/config/
 
 | File | What it holds |
 |---|---|
-| `appearance.yml` | The UI theme list, the wallpaper behind the panels, the Memories wall's folder, the CRT default and the terminal text size. |
+| `appearance.yml` | The UI theme list with the glyph each theme is offered under, the wallpaper behind the panels, the Memories wall's folder, the CRT default and the terminal text size. |
 | `behavior.yml` | Thresholds, horizons and cadences: read limits, stale days, the context window, the Live HPC settings, the audit's waiting statuses and mute list, the source editor's `editor.paint_limit_kb`, the update tasks' `tasks.skip_permissions`, the application `open.program_ext` names for each extension that may open, git and chat. |
-| `catalogs/glyphs.yml` | The glyph vocabulary, one character per name, and the ASCII stand-in a terminal theme draws instead. |
+| `catalogs/glyphs.yml` | The glyph vocabulary: each name with the ASCII stand-in, one to three characters, that a terminal theme draws in place of its icon. |
 | `catalogs/icons.yml` | The line icon each glyph name is drawn as, one row per name in the glyph vocabulary. |
 | `layout.yml` | How things are arranged: the rail's pages and the arrangements each starts as, the view catalogue's groups, the hub documents, the board chrome, the tab rollups and the live badges. |
 | `catalogs/manifest-schema.yml` | The project.yml edit form as data: its sections, its fields, the widget each field is edited by, and where a widget takes its choices from. |

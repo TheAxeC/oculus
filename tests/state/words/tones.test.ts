@@ -8,7 +8,6 @@
 
 import { describe, expect, it } from 'vitest';
 import {
-    asciiCatalog,
     engineDir,
     glyphCatalog,
     loadConfig,
@@ -16,7 +15,6 @@ import {
 } from '../../../src/lib/data/sources/config.ts';
 import {
     UNKNOWN_TONE,
-    chipGlyph,
     chipGlyphName,
     chipKeys,
     chipLabel,
@@ -28,11 +26,10 @@ import {
     paletteTone,
     typeTone
 } from '../../../src/lib/state/words/tones.ts';
-import { setAscii, setGlyphMode, setGlyphs } from '../../../src/lib/state/words/text.ts';
+import { setGlyphMode, setGlyphs } from '../../../src/lib/state/words/text.ts';
 
 const REAL_CONFIG = loadConfig(engineDir()).config;
 const GLYPHS = glyphCatalog(REAL_CONFIG);
-const ASCII = asciiCatalog(REAL_CONFIG);
 
 /** A vocabulary with one of everything, including the entries the lookups must refuse. */
 const SYNTHETIC = {
@@ -58,8 +55,7 @@ const SYNTHETIC = {
 
 function synthetic(): void {
     setGlyphs(GLYPHS);
-    setAscii(ASCII);
-    setGlyphMode('unicode');
+    setGlyphMode('icon');
     setVocab(SYNTHETIC);
 }
 
@@ -165,29 +161,23 @@ describe('the hue of a status mark', () => {
 });
 
 describe('the chip legend', () => {
+    // revert: src/lib/state/words/tones.ts:162 => return '';
     it('resolves a chip glyph name and gives the chip its words', () => {
         synthetic();
         expect(chipGlyphName('submitted')).toBe('check');
-        expect(chipGlyph('submitted')).toBe(GLYPHS.check);
         expect(chipLabel('submitted')).toBe('submitted / under review');
     });
 
-    it('resolves a chip through the ASCII vocabulary in ASCII mode', () => {
-        synthetic();
-        setGlyphMode('ascii');
-        expect(chipGlyph('submitted')).toBe(ASCII[GLYPHS.check]);
-    });
-
+    // revert: src/lib/state/words/tones.ts:162 => return legend[chip]?.icon || 'x';
     it('gives an unknown chip the chip word itself and no glyph', () => {
         synthetic();
-        expect(chipGlyph('nonesuch')).toBe('');
         expect(chipGlyphName('nonesuch')).toBe('');
         expect(chipLabel('nonesuch')).toBe('nonesuch');
     });
 
+    // revert: src/lib/state/words/tones.ts:162 => return legend[chip]?.icon || 'x';
     it('gives no glyph to a row that carries none', () => {
         synthetic();
-        expect(chipGlyph('bare')).toBe('');
         expect(chipGlyphName('bare')).toBe('');
         expect(chipLabel('bare')).toBe('no icon at all');
     });
@@ -246,15 +236,15 @@ describe('the real config/catalogs/vocab.yml', () => {
         expect(domainTone('heart')).toBe('crimson');
     });
 
-    it('gives every chip in the legend a label, and most of them a character', () => {
+    // revert: src/lib/state/words/tones.ts:162 => return '';
+    it('gives every chip in the legend a label and a glyph name', () => {
         setGlyphs(GLYPHS);
-        setAscii(ASCII);
-        setGlyphMode('unicode');
+        setGlyphMode('icon');
         setVocab(vocab);
         const keys = chipKeys();
         expect(keys.length).toBeGreaterThan(20);
         expect(keys.filter((key) => chipLabel(key) === '')).toEqual([]);
-        expect(keys.filter((key) => chipGlyph(key) === '')).toEqual([]);
+        expect(keys.filter((key) => chipGlyphName(key) === '')).toEqual([]);
     });
 
     it('names a glyph held by config/catalogs/glyphs.yml in every status legend row', () => {

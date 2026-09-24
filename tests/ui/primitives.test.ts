@@ -36,21 +36,13 @@ import Tooltip from '../../src/lib/ui/menu/Tooltip.svelte';
 import { describedBy, describedControl } from '../../src/lib/ui/menu/tooltip-target.ts';
 import Gallery from '../../src/lib/views/system/gallery/Gallery.svelte';
 import {
-    asciiCatalog,
     engineDir,
     glyphCatalog,
     loadConfig,
     textCatalog,
     vocabCatalog
 } from '../../src/lib/data/sources/config.ts';
-import {
-    glyph,
-    setAscii,
-    setCatalog,
-    setGlyphMode,
-    setGlyphs,
-    t
-} from '../../src/lib/state/words/text.ts';
+import { glyph, setCatalog, setGlyphMode, setGlyphs, t } from '../../src/lib/state/words/text.ts';
 import { setVocab } from '../../src/lib/state/words/tones.ts';
 import { noop } from '../fixtures/doubles.ts';
 import { clientContext, createClientState, type ClientState } from '../fixtures/client.ts';
@@ -64,7 +56,6 @@ beforeEach(() => {
 const { config } = loadConfig(engineDir());
 setCatalog(textCatalog(config));
 setGlyphs(glyphCatalog(config));
-setAscii(asciiCatalog(config));
 setVocab(vocabCatalog(config));
 
 /**
@@ -166,10 +157,11 @@ describe('Chip', () => {
         expect(html(Chip, { label: 'a', tone: 'teal', filled: true })).toContain('filled');
     });
 
+    // revert: src/lib/ui/controls/Chip.svelte:54 => delete
     it('draws a glyph by name', () => {
         const body = html(Chip, { label: 'a', glyph: 'pin' });
         expect(body).toContain('class="glyph');
-        expect(body).toContain(glyphCatalog(config).pin);
+        expect(body).not.toContain(glyphCatalog(config).pin);
     });
 
     it('draws no glyph when none is named', () => {
@@ -191,6 +183,7 @@ describe('Chip', () => {
         expect(source).toContain('max-width: 100%');
     });
 
+    // revert: src/lib/state/words/text.ts:113 => return false;
     it('marks a chip whose stand-in already reads as a bracketed tag, so it draws no second pair', () => {
         setGlyphMode('ascii');
         try {
@@ -199,7 +192,7 @@ describe('Chip', () => {
             expect(glyph('live').startsWith('[')).toBe(false);
             expect(html(Chip, { label: 'a', glyph: 'live' })).not.toContain('bracketed');
         } finally {
-            setGlyphMode('unicode');
+            setGlyphMode('icon');
         }
     });
 

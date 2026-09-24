@@ -28,7 +28,7 @@ function scratch(): string {
     return dir;
 }
 
-// revert: src/lib/state/workbench/ui.svelte.ts:252 => delete
+// revert: src/lib/state/workbench/ui.svelte.ts:257 => delete
 test('the toolbar control opens the feed file and an unsaved edit survives a reload', async ({
     page
 }) => {

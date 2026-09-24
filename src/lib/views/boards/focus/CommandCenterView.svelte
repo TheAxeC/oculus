@@ -111,7 +111,11 @@
             >
             {#if pillText()}
                 <span class="pill"
-                    ><ToolButton label={pillText()} onclick={() => openView('hpc')} /></span
+                    ><ToolButton
+                        label={pillText()}
+                        glyph="hpc"
+                        onclick={() => openView('hpc')}
+                    /></span
                 >
             {/if}
         </div>

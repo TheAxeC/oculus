@@ -10,7 +10,6 @@ import { parse } from 'yaml';
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
     LOCAL_NAME,
-    asciiCatalog,
     collectionKeys,
     engineDir,
     glyphCatalog,
@@ -143,7 +142,7 @@ describe("oculus's own config directory", () => {
             'search',
             'open'
         ],
-        'catalogs/glyphs.yml': ['glyphs', 'ascii'],
+        'catalogs/glyphs.yml': ['glyphs'],
         'catalogs/icons.yml': ['icons'],
         'layout.yml': [
             'rail',
@@ -466,10 +465,10 @@ describe("oculus's own config directory", () => {
         expect(config.wallpaper).toMatchObject({ dir: 'tools/oculus/assets/wallpaper' });
     });
 
-    it('uses glyph names with ASCII stand-ins for every configured icon', () => {
+    // revert: config/catalogs/vocab.yml:76 => - { key: submitted, icon: nonesuch, label: "submitted" }
+    it('uses glyph names for every configured icon', () => {
         const { config } = loadConfig(engineDir());
         const glyphs = glyphCatalog(config);
-        const ascii = asciiCatalog(config);
         const collections = config.collections as { key: string; icon?: string }[];
         const hosts = config.career_host_status as Record<string, { icon: string }>;
         const statuses = config.status_legend as { key: string; icon: string }[];
@@ -488,9 +487,10 @@ describe("oculus's own config directory", () => {
                 .filter(([, entry]) => !(entry.icon in glyphs))
                 .map(([key]) => key)
         ).toEqual([]);
-        expect(icons.filter((name) => !(glyphs[name] in ascii))).toEqual([]);
+        expect(icons.filter((name) => !(name in glyphs))).toEqual([]);
     });
 
+    // revert: config/catalogs/icons.yml:53 => delete
     it('names one icon for every glyph and for nothing but a glyph', () => {
         const { config } = loadConfig(engineDir());
         expect(Object.keys(iconCatalog(config))).toEqual(Object.keys(glyphCatalog(config)));
@@ -504,11 +504,40 @@ describe("oculus's own config directory", () => {
         expect(Object.keys(glyphCatalog(config)).filter((name) => !read.has(name))).toEqual([]);
     });
 
-    // revert: config/catalogs/glyphs.yml:161 => "~~": "[-]"
-    it('carries an ASCII stand-in only for a character a glyph name holds', () => {
+    // revert: config/catalogs/glyphs.yml:14 => crt: "\u259A"
+    it('gives every glyph name a stand-in of printable ASCII, and holds no other map', () => {
         const { config } = loadConfig(engineDir());
-        const held = new Set(Object.values(glyphCatalog(config)));
-        expect(Object.keys(asciiCatalog(config)).filter((mark) => !held.has(mark))).toEqual([]);
+        const raw = config.glyphs as Record<string, unknown>;
+        const loose = Object.entries(raw).filter(
+            ([, standIn]) => typeof standIn !== 'string' || !/^[\x20-\x7E]+$/.test(standIn)
+        );
+        expect(loose.map(([name]) => name)).toEqual([]);
+        expect(config.ascii).toBe(undefined);
+    });
+
+    // revert: config/catalogs/glyphs.yml:66 => changes: "[><]"
+    it('holds every stand-in to three characters, the box a terminal theme draws it in', () => {
+        const { config } = loadConfig(engineDir());
+        const wide = Object.entries(glyphCatalog(config)).filter(
+            ([, standIn]) => standIn.length > 3
+        );
+        expect(wide.map(([name, standIn]) => `${name}: ${standIn}`)).toEqual([]);
+    });
+
+    // revert: src/lib/data/sources/config/catalogs.ts:108 => continue;
+    it('reports a glyph whose stand-in is empty, not text, wider than three, or not ASCII', () => {
+        const drifted = {
+            glyphs: { pin: 'P', blank: '', count: 3, mark: '\u25C6', wide: '[><]' },
+            icons: { pin: 'pin', blank: 'pin', count: 'pin', mark: 'pin', wide: 'pin' },
+            text: loadConfig(engineDir()).config.text
+        };
+        const found = iconFindings(engineDir(), drifted);
+        expect(
+            found.filter((one) => one.file.endsWith('glyphs.yml')).map((one) => one.key)
+        ).toEqual(['blank', 'count', 'mark', 'wide']);
+        expect(found.map((one) => one.message)).toContain(
+            'glyph wide has no stand-in of one to three printable ASCII characters'
+        );
     });
 
     it('ships a drawing for every one of them', () => {
@@ -545,6 +574,21 @@ describe("oculus's own config directory", () => {
             'nothing is not a name in config/catalogs/glyphs.yml'
         ]);
         expect(iconSet(drifted)).toEqual({});
+    });
+
+    it('reads glyph and icon names as own keys, so a name like constructor is no name', () => {
+        // revert: src/lib/data/sources/config/catalogs.ts:117 => if (name in map) continue;
+        // revert: src/lib/data/sources/config/catalogs.ts:125 => if (!(name in glyphs)) {
+        const inherited = {
+            glyphs: { pin: 'P', toString: 'T' },
+            icons: { pin: 'pin', constructor: 'circle' },
+            text: loadConfig(engineDir()).config.text
+        };
+        expect(iconFindings(engineDir(), inherited).map((one) => one.message)).toEqual([
+            'glyph toString has no icon',
+            'constructor is not a name in config/catalogs/glyphs.yml'
+        ]);
+        expect(Object.keys(iconSet(inherited))).toEqual(['pin']);
     });
 
     it('configures one lowercase chord and a glyph on every group reached by a chord of its own', () => {

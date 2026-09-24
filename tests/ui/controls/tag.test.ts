@@ -8,18 +8,12 @@ import { render } from 'svelte/server';
 import Tag from '../../../src/lib/ui/controls/Tag.svelte';
 import Chip from '../../../src/lib/ui/controls/Chip.svelte';
 import {
-    asciiCatalog,
     engineDir,
     glyphCatalog,
     loadConfig,
     textCatalog
 } from '../../../src/lib/data/sources/config.ts';
-import {
-    setAscii,
-    setCatalog,
-    setGlyphMode,
-    setGlyphs
-} from '../../../src/lib/state/words/text.ts';
+import { setCatalog, setGlyphMode, setGlyphs } from '../../../src/lib/state/words/text.ts';
 
 const TAG = 'src/lib/ui/controls/Tag.svelte';
 
@@ -27,7 +21,6 @@ const { config } = loadConfig(engineDir());
 const GLYPHS = glyphCatalog(config);
 setCatalog(textCatalog(config));
 setGlyphs(GLYPHS);
-setAscii(asciiCatalog(config));
 
 /** One CSS rule of the component's style block: the selector as written, and its declarations. */
 type Rule = { selector: string; body: string };
@@ -62,10 +55,11 @@ describe('the tag primitive', () => {
         expect(body).toContain('>DATA-1</span>');
     });
 
+    // revert: src/lib/ui/controls/Tag.svelte:42 => delete
     it('draws the glyph it is given before them, and none when it is given none', () => {
         const withGlyph = render(Tag, { props: { label: 'DATA-1', glyph: 'data' } }).body;
-        expect(withGlyph).toContain(GLYPHS.data);
-        expect(withGlyph.indexOf(GLYPHS.data)).toBeLessThan(withGlyph.indexOf('DATA-1'));
+        expect(withGlyph).toContain('class="glyph');
+        expect(withGlyph.indexOf('class="glyph')).toBeLessThan(withGlyph.indexOf('DATA-1'));
         const without = render(Tag, { props: { label: 'DATA-1', glyph: '' } }).body;
         expect(without).not.toContain('class="glyph');
     });
@@ -94,6 +88,7 @@ describe('the tag primitive', () => {
         expect(plain).not.toContain('toned');
     });
 
+    // revert: src/lib/state/words/text.ts:113 => return false;
     it('is bracketed under a terminal palette, and not when its stand-in brackets itself', () => {
         const rice = rules(TAG).filter((rule) => rule.selector.includes('body.rice'));
         expect(rice.map((rule) => rule.selector)).toEqual([
@@ -113,7 +108,7 @@ describe('the tag primitive', () => {
                 'bracketed'
             );
         } finally {
-            setGlyphMode('unicode');
+            setGlyphMode('icon');
         }
     });
 

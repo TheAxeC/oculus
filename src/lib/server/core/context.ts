@@ -15,6 +15,7 @@ import {
     openSettings,
     slurmSettings,
     textCatalog,
+    themeFindings,
     usageTiers,
     type LocalConfig
 } from '../../data/sources/config.ts';
@@ -203,6 +204,7 @@ export function createServerContext(
     reportFindings([
         ...iconFindings(engine, config),
         ...behaviorFindings(engine, config),
+        ...themeFindings(engine, config),
         ...docFindings(config, local.hub, layoutFile(engine))
     ]);
     const portfolio = make.watchPortfolio(hub, { hub: local.hub, engine, icons });

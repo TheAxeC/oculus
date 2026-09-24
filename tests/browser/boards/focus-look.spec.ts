@@ -83,7 +83,8 @@ function laneHue(key: string): string {
  * Every header the board can draw, by the words its name shows, with the hue
  * config/catalogs/vocab.yml gives it: the lanes of `focus_lanes`, the Ideas lane in
  * `holding_color`, and the Funding, Jobs and Teaching columns in `focus_lane_tones`. A column's
- * words start with a glyph, so a column is found by the words its name ends with.
+ * words follow its glyph, which a terminal theme draws as its stand-in text, so a column is found
+ * by the words its name ends with.
  */
 function headerHues(): { matches: (name: string) => boolean; hue: string; label: string }[] {
     const { config } = loadConfig(engineDir());
@@ -99,7 +100,7 @@ function headerHues(): { matches: (name: string) => boolean; hue: string; label:
         label: t('focus.ideas')
     };
     const band = (['funding', 'jobs', 'teaching'] as const).map((key) => {
-        const words = t(`focus.${key}_lane`).replace(/^\{G\.[a-z_]+\}\s*/, '');
+        const words = t(`focus.${key}_lane`);
         return { matches: (name: string) => name.endsWith(words), hue: columns[key], label: words };
     });
     return [...lanes, holding, ...band];
@@ -278,6 +279,7 @@ test('a lane header paints its lane tokens at full opacity, in light and in a te
     }
 });
 
+// revert: src/lib/views/boards/focus/lanes/LaneHead.svelte:52 => color: var(--lane);
 test('every word of every lane and column header sits on its own lane surface, readable, with and without the wallpaper', async ({
     page
 }) => {

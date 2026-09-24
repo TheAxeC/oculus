@@ -1,12 +1,12 @@
-import { setAscii, setCatalog, setGlyphs, setIcons } from '$lib/state/words/text';
+import { setCatalog, setGlyphs, setIcons } from '$lib/state/words/text';
 import { setAppearance } from '$lib/state/words/appearance';
 import { setVocab } from '$lib/state/words/tones';
 import { configInstalled } from '$lib/state/client/generation.svelte';
 import type { PageLoad } from './$types';
 
-// The catalog, the glyphs and their ASCII stand-ins, the tone vocabulary and the appearance the
-// server read are installed before the page renders, so a component can call t(), glyph(), toneOf()
-// and themes() while it initialises. Every later change reaches the page as a push on the
+// The catalog, the glyph names with their ASCII stand-ins, the tone vocabulary and the appearance
+// the server read are installed before the page renders, so a component can call t(), glyph(),
+// toneOf() and themes() while it initialises. Every later change reaches the page as a push on the
 // `config` channel instead.
 //
 // The collection keys are not installed anywhere: they are handed to the page, which registers one
@@ -21,7 +21,6 @@ import type { PageLoad } from './$types';
 export const load: PageLoad = ({ data }) => {
     setCatalog(data.text);
     setGlyphs(data.glyphs);
-    setAscii(data.ascii);
     setIcons(data.icons);
     setVocab(data.vocab);
     setAppearance(data.vocab);

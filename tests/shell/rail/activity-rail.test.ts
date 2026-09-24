@@ -10,21 +10,19 @@ import { render } from 'svelte/server';
 import ActivityRail from '../../../src/lib/shell/rail/ActivityRail.svelte';
 import { railStop } from '../../../src/lib/shell/rail/rail.ts';
 import {
-    asciiCatalog,
     engineDir,
     glyphCatalog,
     loadConfig,
     textCatalog,
     vocabCatalog
 } from '../../../src/lib/data/sources/config.ts';
-import { setAscii, setCatalog, setGlyphs } from '../../../src/lib/state/words/text.ts';
+import { setCatalog, setGlyphs } from '../../../src/lib/state/words/text.ts';
 import { setVocab } from '../../../src/lib/state/words/tones.ts';
 import { clientContext, createClientState } from '../../fixtures/client.ts';
 
 const { config } = loadConfig(engineDir());
 setCatalog(textCatalog(config));
 setGlyphs(glyphCatalog(config));
-setAscii(asciiCatalog(config));
 setVocab(vocabCatalog(config));
 
 /** The rail's markup, with two pages, one bookmark and the foot. */

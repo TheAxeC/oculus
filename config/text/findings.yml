@@ -26,6 +26,10 @@ text:
             page: a rail button names no page; it is not drawn
             page_unknown: the rail button for {0} names a page arrangements does not hold; it is not drawn
             repeated: a second rail button names the page {0}; only the first is drawn
+        appearance:
+            glyph: the theme {0} names no glyph; it is offered with its words alone
+            glyph_unknown: the theme {0} names a glyph glyphs.yml does not hold; it is offered with its words alone
+            repeated: a second theme row names {0}; only the first is offered
         manifests:
             id_not_folder: id {0} is not the folder name {1}
             type_not_tier: "type {0} is not the tier's {1}"
@@ -47,6 +51,7 @@ text:
             defined_twice: key {0} is already defined in {1}; {2} wins
             text_not_a_map: 'text catalog: {0} is not a map'
             glyph_no_icon: glyph {0} has no icon
+            glyph_not_ascii: glyph {0} has no stand-in of one to three printable ASCII characters
             icon_not_glyph: '{0} is not a name in config/catalogs/glyphs.yml'
             icon_not_shipped: the icon package ships no {0}.svg
             skip_permissions_retired: 'chat.skip_permissions is not read; the key is tasks.skip_permissions'

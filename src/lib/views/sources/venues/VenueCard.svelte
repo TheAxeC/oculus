@@ -64,13 +64,37 @@
     const groups = $derived(groupProjects(projects, archiveDead()));
     /** The hub path the venue's `link` names, or undefined for an address or no link. */
     const linkPath = $derived(hubPathsOf({ link: venue.link }).at(0));
-    const metadata = $derived(
+    /** One item of the card's metadata line. */
+    type MetaItem = {
+        label: string;
+        glyph?: string;
+        bold?: boolean;
+        href?: string;
+        external?: boolean;
+    };
+
+    /**
+     * An indexing field as the card draws it: its words, with the check or cross glyph before them
+     * when the registry opened the field with a yes or a no mark, and nothing for an empty field.
+     */
+    function indexed(
+        words: string | undefined,
+        mark: 'yes' | 'no' | undefined,
+        named: (words: string) => string
+    ): MetaItem | null {
+        if (words === undefined && mark === undefined) return null;
+        const label = named(words ?? '').trim();
+        if (mark === undefined) return { label };
+        return { label, glyph: mark === 'yes' ? 'check' : 'cross' };
+    }
+
+    const metadata: MetaItem[] = $derived(
         [
             venue.jif && !['none', ' - '].includes(venue.jif.toLowerCase())
                 ? { label: t('venues.jif', venue.jif) }
                 : null,
-            venue.wos ? { label: t('venues.wos', venue.wos) } : null,
-            venue.scopus ? { label: t('venues.scopus', venue.scopus) } : null,
+            indexed(venue.wos, venue.wosMark, (words) => t('venues.wos', words)),
+            indexed(venue.scopus, venue.scopusMark, (words) => t('venues.scopus', words)),
             venue.format ? { label: venue.format, bold: true } : null,
             venue.timing ? { label: venue.timing, glyph: 'timing' } : null,
             venue.link

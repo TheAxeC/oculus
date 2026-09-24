@@ -33,7 +33,8 @@ type Ui = {
     crt: boolean;
     /** The toggle's own value, or null wherever a wallpaper shows, which is the theme's answer. */
     wallpaper: boolean | null;
-    unicode: boolean;
+    /** Whether a terminal theme keeps the icons rather than drawing the ASCII stand-ins. */
+    icons: boolean;
     textScale: number | null;
     terminalFont: number | null;
     /** One entry per view instance, by instance id. The shape of the value is the view's own. */
@@ -52,7 +53,7 @@ export type UiStore = {
     theme: () => string;
     crt: () => boolean;
     wallpaper: () => boolean;
-    unicode: () => boolean;
+    icons: () => boolean;
     textScale: () => number | null;
     terminalFont: () => number | null;
     instanceState: (id: string) => unknown;
@@ -66,7 +67,7 @@ export type UiStore = {
     setTheme: (name: string) => void;
     setCrt: (on: boolean) => void;
     setWallpaper: (on: boolean) => void;
-    setUnicode: (on: boolean) => void;
+    setIcons: (on: boolean) => void;
     setTextScale: (scale: number | null) => void;
     stepTextScale: (by: -1 | 1) => void;
     setTerminalFont: (size: number | null) => void;
@@ -81,7 +82,7 @@ export function createUi(): UiStore {
      * the overlay is its `crt.default`. The wallpaper starts on none, which wallpaper() answers
      * from the theme in force, so it shows wherever one is configured until the toggle says
      * otherwise. The glyphs start as the theme's own, which is the ASCII stand-ins on a terminal
-     * palette; `unicode` is what turns that off.
+     * palette; `icons` is what turns that off and keeps the icons.
      */
     function defaultUi(): Ui {
         const theme = defaultTheme();
@@ -89,7 +90,7 @@ export function createUi(): UiStore {
             theme,
             crt: crtDefault(),
             wallpaper: null,
-            unicode: false,
+            icons: false,
             textScale: null,
             terminalFont: null,
             instances: {}
@@ -131,9 +132,9 @@ export function createUi(): UiStore {
         return chosen ?? wallpaperOnTheme(store.current.theme);
     }
 
-    /** Whether the real glyphs are kept on a terminal theme instead of their ASCII stand-ins. */
-    function unicode(): boolean {
-        return store.current.unicode;
+    /** Whether the icons are kept on a terminal theme instead of their ASCII stand-ins. */
+    function icons(): boolean {
+        return store.current.icons;
     }
 
     /** The app-wide multiplier, or null when the default multiplier of one is in force. */
@@ -231,7 +232,7 @@ export function createUi(): UiStore {
                 held.version === UI_VERSION && typeof held.wallpaper === 'boolean'
                     ? held.wallpaper
                     : null,
-            unicode: held.unicode === true,
+            icons: typeof held.icons === 'boolean' ? held.icons : held.unicode === true,
             textScale: boundedTextScale(held.textScale),
             terminalFont:
                 typeof held.terminalFont === 'number' && Number.isFinite(held.terminalFont)
@@ -242,6 +243,10 @@ export function createUi(): UiStore {
                     ? { ...(instances as Record<string, unknown>) }
                     : {}
         };
+        // A value saved under the field's older name, `unicode`, and not under `icons` is read
+        // above and written back here under `icons`, so a browser keeps the choice it made.
+        if (typeof held.icons !== 'boolean' && typeof held.unicode === 'boolean')
+            save(store.current);
         return true;
     }
 
@@ -272,9 +277,9 @@ export function createUi(): UiStore {
         save({ ...store.current, wallpaper: on });
     }
 
-    /** Keep the real glyphs on a terminal theme, or let it use the ASCII stand-ins. */
-    function setUnicode(on: boolean): void {
-        save({ ...store.current, unicode: on });
+    /** Keep the icons on a terminal theme, or let it use the ASCII stand-ins. */
+    function setIcons(on: boolean): void {
+        save({ ...store.current, icons: on });
     }
 
     /** A tenth-step app-wide multiplier from 0.7 to 1.6, or the null default at one. */
@@ -321,7 +326,7 @@ export function createUi(): UiStore {
         theme,
         crt,
         wallpaper,
-        unicode,
+        icons,
         textScale,
         terminalFont,
         instanceState,
@@ -335,7 +340,7 @@ export function createUi(): UiStore {
         setTheme,
         setCrt,
         setWallpaper,
-        setUnicode,
+        setIcons,
         setTextScale,
         stepTextScale,
         setTerminalFont,

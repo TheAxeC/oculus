@@ -5,25 +5,25 @@
 # ===========================================================================
 
 
-# The UI themes in picker order. `name` is saved, `class` lands on <body>, and `label` is shown.
+# The UI themes in picker order. `name` is saved, `class` lands on <body>, `glyph` is the glyph name drawn before the words, and `label` is the words shown.
 themes:
-  - { name: light,        class: "",                   label: "{G.theme_base} light" }
-  - { name: dark,         class: "dark",               label: "{G.theme_base} dark" }
-  - { name: vscode-dark-modern,  class: "vscode-dark-modern",  label: "{G.theme_base} vscode dark modern" }
-  - { name: vscode-light-modern, class: "vscode-light-modern", label: "{G.theme_base} vscode light modern" }
-  - { name: mocha,        class: "rice mocha",         label: "{G.theme_rice} mocha" }
-  - { name: gruvbox,      class: "rice gruvbox",       label: "{G.theme_rice} gruvbox" }
-  - { name: nord,         class: "rice nord",          label: "{G.theme_rice} nord" }
-  - { name: synthwave,    class: "rice synthwave",     label: "{G.theme_rice} synthwave '84" }
-  - { name: tokyoneon,    class: "rice tokyoneon",     label: "{G.theme_rice} tokyo neon" }
-  - { name: tokyonight,   class: "rice tokyonight",    label: "{G.theme_rice} tokyo night" }
-  - { name: rosepine,     class: "rice rosepine",      label: "{G.theme_rice} rose pine" }
-  - { name: everforest,   class: "rice everforest",    label: "{G.theme_rice} everforest" }
-  - { name: dracula,      class: "rice dracula",       label: "{G.theme_rice} dracula" }
-  - { name: kanagawa,     class: "rice kanagawa",      label: "{G.theme_rice} kanagawa" }
-  - { name: solarized,    class: "rice solarized",     label: "{G.theme_rice} solarized" }
-  - { name: latte,        class: "rice latte",         label: "{G.theme_rice} latte (light)" }
-  - { name: gruvboxlight, class: "rice gruvboxlight",  label: "{G.theme_rice} gruvbox light" }
+  - { name: light,        class: "",                   glyph: theme_base, label: "light" }
+  - { name: dark,         class: "dark",               glyph: theme_base, label: "dark" }
+  - { name: vscode-dark-modern,  class: "vscode-dark-modern",  glyph: theme_base, label: "vscode dark modern" }
+  - { name: vscode-light-modern, class: "vscode-light-modern", glyph: theme_base, label: "vscode light modern" }
+  - { name: mocha,        class: "rice mocha",         glyph: theme_rice, label: "mocha" }
+  - { name: gruvbox,      class: "rice gruvbox",       glyph: theme_rice, label: "gruvbox" }
+  - { name: nord,         class: "rice nord",          glyph: theme_rice, label: "nord" }
+  - { name: synthwave,    class: "rice synthwave",     glyph: theme_rice, label: "synthwave '84" }
+  - { name: tokyoneon,    class: "rice tokyoneon",     glyph: theme_rice, label: "tokyo neon" }
+  - { name: tokyonight,   class: "rice tokyonight",    glyph: theme_rice, label: "tokyo night" }
+  - { name: rosepine,     class: "rice rosepine",      glyph: theme_rice, label: "rose pine" }
+  - { name: everforest,   class: "rice everforest",    glyph: theme_rice, label: "everforest" }
+  - { name: dracula,      class: "rice dracula",       glyph: theme_rice, label: "dracula" }
+  - { name: kanagawa,     class: "rice kanagawa",      glyph: theme_rice, label: "kanagawa" }
+  - { name: solarized,    class: "rice solarized",     glyph: theme_rice, label: "solarized" }
+  - { name: latte,        class: "rice latte",         glyph: theme_rice, label: "latte (light)" }
+  - { name: gruvboxlight, class: "rice gruvboxlight",  glyph: theme_rice, label: "gruvbox light" }
 
 
 # === Terminal ===============================================================

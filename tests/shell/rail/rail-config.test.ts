@@ -10,6 +10,7 @@ import ActivityRail from '../../../src/lib/shell/rail/ActivityRail.svelte';
 import { documentState, type Bookmark } from '../../../src/lib/shell/rail/rail.ts';
 import { railPages } from '../../../src/lib/state/workbench/navigation/rail.ts';
 import { glyphCatalog } from '../../../src/lib/data/sources/config.ts';
+import { setGlyphMode } from '../../../src/lib/state/words/text.ts';
 import { clientContext, createClientState, type ClientState } from '../../fixtures/client.ts';
 import { config } from './rail-fixture.ts';
 
@@ -45,17 +46,24 @@ describe('the rail of the real config', () => {
 
     it("draws each page's glyph from the vocabulary", () => {
         // revert: src/lib/shell/rail/ActivityRail.svelte:243 => glyph="compass"
+        // The glyph is named by its stand-in, the text the ASCII mode draws it as.
         const pages = railPages(config);
-        const body = render(ActivityRail, {
-            context: clientContext(client),
-            props: { pages }
-        }).body;
-        const glyphs = glyphCatalog(config);
-        for (const entry of pages) {
-            const button = new RegExp(`data-rail-page="${entry.page}"[\\s\\S]*?<\\/button>`).exec(
-                body
-            )?.[0];
-            expect(button).toContain(glyphs[entry.glyph]);
+        setGlyphMode('ascii');
+        try {
+            const body = render(ActivityRail, {
+                context: clientContext(client),
+                props: { pages }
+            }).body;
+            const glyphs = glyphCatalog(config);
+            for (const entry of pages) {
+                const button = new RegExp(
+                    `data-rail-page="${entry.page}"[\\s\\S]*?<\\/button>`
+                ).exec(body)?.[0];
+                const text = glyphs[entry.glyph].replaceAll('&', '&amp;').replaceAll('<', '&lt;');
+                expect(button).toContain(`>${text}</span>`);
+            }
+        } finally {
+            setGlyphMode('icon');
         }
     });
 });

@@ -111,16 +111,22 @@ export function timeline(venues: Venue[], todayMonth: number | string): VenueTim
     return { months, next, counts };
 }
 
-/** A twelve-character deadline density line over the configured glyph ramp. */
-export function sparkline(counts: number[], ramp: string): string {
-    if (ramp.length === 0) return '';
+/**
+ * The heights of the deadline density bars, in eighths of the line: seven steps from none to seven
+ * eighths, the heights of the block ramp the line is drawn after (no bar, then the one-, two-,
+ * three-, five-, six- and seven-eighths blocks). A month's step is its count over the busiest
+ * month's, so the busiest is the tallest bar and a month with none has no bar.
+ */
+export const SPARK_STEPS = [0, 1, 2, 3, 5, 6, 7];
+
+/** The height of the whole line, in the eighths SPARK_STEPS counts in. */
+export const SPARK_HEIGHT = 8;
+
+/** One bar height per count, in eighths of the line, as SPARK_STEPS gives them. */
+export function sparkBars(counts: number[]): number[] {
     const peak = Math.max(...counts, 1);
-    return counts
-        .map(
-            (count) =>
-                ramp[Math.min(ramp.length - 1, Math.round((count / peak) * (ramp.length - 1)))]
-        )
-        .join('');
+    const top = SPARK_STEPS.length - 1;
+    return counts.map((count) => SPARK_STEPS[Math.min(top, Math.round((count / peak) * top))]);
 }
 
 /** Search venue name, short name, scope and themes using every supplied word. */

@@ -286,6 +286,7 @@ describe('the Position Leads view', () => {
         expect(body).toContain('expired');
     });
 
+    // revert: src/lib/views/feeds/leads/LeadCard.svelte:101 => delete
     it('draws each card detail and only the actions allowed by that card status', () => {
         serve({
             ok: true,
@@ -312,7 +313,7 @@ describe('the Position Leads view', () => {
             catalog['leads.action.dismiss_tip']
         );
         expect(hasAction(open, catalog['project.action.del'])).toBe(true);
-        expect(open).toContain(glyphs.deadline);
+        expect(open).toContain('data-glyph="deadline"');
         expect(open).toContain('>Belgium</span>');
         expect(open).toContain('>postdoc</span>');
         expect(open).toContain('target="_blank"');

@@ -9,7 +9,7 @@ import {
     parseVenuesState,
     quartileTone,
     realProjects,
-    sparkline,
+    sparkBars,
     timeline,
     venueSearch,
     venueUsers,
@@ -192,9 +192,12 @@ describe('conference timing', () => {
         ]);
     });
 
-    it('renders the count density over the configured ramp', () => {
-        expect(sparkline([0, 1, 2], ' .#')).toBe(' .#');
-        expect(sparkline([1], '')).toBe('');
+    // revert: src/lib/state/sources/venues.ts:120 => export const SPARK_STEPS = [0,1,2,3,4,5,6];
+    it('gives each count the height in eighths the block ramp drew it at', () => {
+        expect(sparkBars([0, 1, 2, 3, 4, 5, 6])).toEqual([0, 1, 2, 3, 5, 6, 7]);
+        expect(sparkBars([0, 2, 1])).toEqual([0, 7, 3]);
+        expect(sparkBars([0, 0])).toEqual([0, 0]);
+        expect(sparkBars([])).toEqual([]);
     });
 });
 

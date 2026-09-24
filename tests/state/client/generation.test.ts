@@ -153,9 +153,10 @@ describe('the readers of the three plain stores', () => {
     const all = functions();
     const covered = dependent(all);
 
+    // revert: src/lib/state/words/text.ts:110 => function bracketedGlyph(name: string): boolean {
     it('are all found by the parse', () => {
         const names = all.filter((fn) => fn.exported).map((fn) => fn.name);
-        for (const reader of ['t', 'lookup', 'glyph', 'asciiOf', 'resolveGlyphTokens', 'toneOf']) {
+        for (const reader of ['t', 'lookup', 'glyph', 'iconSvg', 'bracketedGlyph', 'toneOf']) {
             expect(names).toContain(reader);
         }
     });

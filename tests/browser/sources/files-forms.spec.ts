@@ -126,7 +126,7 @@ async function twoMarks(page: Page): Promise<{
 
 // Revert: in shift() of views/sources/files/Files.svelte, hold the forms in a component `$state`
 // instead of patch(next); or drop its toggleAdd call, which leaves the draft behind.
-// revert: src/lib/state/workbench/ui.svelte.ts:252 => delete
+// revert: src/lib/state/workbench/ui.svelte.ts:257 => delete
 test('the bookmark form is open with its typed label after a tab switch and a reload, and its own control closing it forgets the label', async ({
     page
 }) => {
@@ -154,7 +154,7 @@ test('the bookmark form is open with its typed label after a tab switch and a re
 
 // Revert: in views/sources/files/Files.svelte, hold the root form's `typed` in a component `$state`
 // instead of patch({ typed }).
-// revert: src/lib/state/workbench/ui.svelte.ts:252 => delete
+// revert: src/lib/state/workbench/ui.svelte.ts:257 => delete
 test('the root form is open with its typed folder after a reload, and cancel lets it go', async ({
     page
 }) => {

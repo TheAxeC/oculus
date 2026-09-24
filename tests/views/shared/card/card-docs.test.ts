@@ -147,12 +147,13 @@ function rows(holder: ClientState = client): Record<string, string> {
 }
 
 describe('the file list of a project card', () => {
+    // revert: src/lib/views/shared/links/ProgramButton.svelte:53 => glyph="copy"
     it('draws a .docx and an .xlsx as the ui/controls/ToolButton that opens them in their program', () => {
         const found = rows();
         for (const name of ['report.docx', 'budget.xlsx']) {
             expect(found[name]).toContain('<button type="button" class="tool');
             expect(found[name]).toContain(catalog['file.open_program']);
-            expect(found[name]).toContain(glyphs[catalog['file.open_program_glyph']]);
+            expect(found[name]).toContain(`data-glyph="${catalog['file.open_program_glyph']}"`);
             // the file opens in its program, so the row is a control rather than a link to the
             // bytes
             expect(found[name]).not.toContain('<a ');

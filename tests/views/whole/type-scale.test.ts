@@ -116,7 +116,7 @@ const VIEWS: Record<string, string> = {
     'boards/focus/lanes/Lanes.svelte': 'summary=fs-xs | .hint=fs-md | .lane-sub=fs-xs',
     'boards/focus/lanes/LaneCard.svelte':
         '.flames=fs-xxs | .chipicon=fs-xs | .name=fs-md | .wait, .next=fs-xs',
-    'boards/focus/lanes/LaneHead.svelte': '.lane-name=fs-md | .count=fs-xs',
+    'boards/focus/lanes/LaneHead.svelte': '.lane-title=fs-md | .count=fs-xs',
     'boards/focus/QuickAdd.svelte': '.lbl=fs-xs',
     'boards/focus/Tasks.svelte': '.head > b=fs-sm | .lbl=fs-xs',
     // The HPC view draws its tables, header, disk and capacity labels at sm, its log heading at
@@ -162,6 +162,7 @@ const VIEWS: Record<string, string> = {
     'boards/projects/Stats.svelte': '.st=fs-sm',
     'feeds/radar/Bucket.svelte': '',
     'feeds/radar/RadarCard.svelte': '.sub=fs-md | .date=fs-sm',
+    'feeds/radar/RadarIntro.svelte': '',
     'sources/repositories/Diff.svelte': '.text=fs-sm | .note, .failed=fs-sm',
     'sources/repositories/Branches.svelte': '',
     'sources/repositories/Changes.svelte': '',
@@ -212,7 +213,7 @@ const VIEWS: Record<string, string> = {
     'system/status/Hooks.svelte': 'h3=fs-md | pre=fs-xs | .said=fs-sm',
     'sources/venues/Facets.svelte': '.label=fs-xxs',
     'sources/venues/Ribbon.svelte':
-        '.next=fs-sm | .legend=fs-xs | .spark=fs-xs | .spark pre=fs-xl | .spark-label=fs-xxs | .spark-months=fs-3xs | .monthname=fs-xxs',
+        '.next=fs-sm | .legend=fs-xs | .spark=fs-xs | .spark .bars=fs-xl | .spark-label=fs-xxs | .spark-months=fs-3xs | .monthname=fs-xxs',
     'sources/venues/VenueCard.svelte': '.meta, .users=fs-sm | .wants=fs-md'
 };
 

@@ -385,6 +385,7 @@ describe('the form a root and a workspace are named in', () => {
 
 describe('the marks the tree draws', () => {
     // Revert: draw a folder row with the file glyph in Tree.svelte's glyphOf.
+    // revert: src/lib/views/sources/files/tree/Tree.svelte:75 => if (row.kind === 'dir') return t('files.file_glyph');
     it('gives a folder row and the empty state different marks', () => {
         const { body } = render(Tree, { context: clientContext(client), props: treeProps() });
         const empty = render(Files, {
@@ -392,12 +393,11 @@ describe('the marks the tree draws', () => {
             props: { instance: instance() }
         }).body;
         const { config } = loadConfig(engineDir());
-        const glyphs = glyphCatalog(config);
         const catalog = textCatalog(config);
 
         expect(catalog['files.folder_glyph']).not.toBe(catalog['files.none_glyph']);
-        expect(body).toContain(glyphs[catalog['files.folder_glyph']]);
-        expect(empty).toContain(glyphs[catalog['files.none_glyph']]);
+        expect(body).toContain(`data-glyph="${catalog['files.folder_glyph']}"`);
+        expect(empty).toContain(`data-glyph="${catalog['files.none_glyph']}"`);
     });
 
     it('reads every mark it draws out of its own catalog group', () => {

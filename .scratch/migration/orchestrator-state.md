@@ -30,17 +30,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:
-  - step: U1
-    executor: agent
-    worker: claude:opus, a native background agent; its id is this session's agent ae58fb308e765bc3e
-    worktree: .agents/worktrees/U1
-    base: a7769781
-    launched: 2026-09-23
-    report: tools/oculus/.scratch/migration/agents/reviews/U1-report.md (saved; builder 501,467 tokens, 261 tool uses, 6,829 s)
-    review: agents/reviews/U1-refuter.md (saved; reviewer claude:opus, 190,369 tokens, 54 tool uses, 1,127 s)
-    landing: not-started
-    round: 1                 # sent 2026-09-24: the sparkline in the text colour, config-named glyphs and badge marks validated instead of throwing, the radar keys as words, the icon-mode rename finished, stand-ins of three characters at most, the venue indexing marks drawn as icons, cases and doc text
+dispatch: none
 ```
 
 ## The standing demands (from Axel, in force)
@@ -81,6 +71,7 @@ dispatch:
 None. Axel lifted it on 2026-09-23 with `/plan-orchestration oculus/migration` and no stop time: the loop runs until nothing unblocked is left or a decision is his. The earlier pauses (after Q58, after Q59) are over; both steps are landed.
 
 ## Open items (only what Axel must rule on; every report opens with this list verbatim and repeats it until he has ruled)
+- U1, the `glyph:` key on each theme row of `config/appearance.yml` (raised 2026-09-24 at U1's review; asked in chat the same day). The key names the icon drawn beside a theme in the Settings theme menu; a missing or unknown one is a finding and the entry is drawn with its words alone. Options: (a) keep the key, one line per theme, so each theme can carry its own icon; (b) no key: one fixed icon for the ordinary themes and another for the terminal themes, as the old characters did. Recommended (a): an icon per theme is a choice of the reader's, and the findings already hold it. (b) is the lazy option only in that it adds nothing.
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is booked as its own step in `plan.md` and carried in the Booked section below, since it needs no ruling from him.
 
@@ -268,6 +259,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-09-24. U1 landed, built by an Opus agent, one repair round, the run over the round refuted again and its findings closed at landing: every glyph is drawn as its line icon, `glyphs.yml` is ASCII (each name with a stand-in of one to three characters), the 28 text tokens are gone, the venue indexing marks and the sparkline are icons and SVG, the toggle reads Icons. On main: `npm test` 4,633 passed in 292 files; `npm run check` 1,333 files 0 errors 0 warnings; build; `format:check`; `lint`; the ASCII gate, now without a `glyphs.yml` exemption, prints nothing; size and folder checks exit 0; `npm run test:browser` 334 passed (6.8m). Next: L5.
 - 2026-09-23. L3 landed, built by an Opus agent, one repair round carrying Axel's two rulings, the run over the round refuted again and its findings closed at landing: the rail is the thirteen pages of `rail:` with their views' badges on a row under each button, the page strip is gone, the Views and Settings page holds the catalogue, Settings and Pages, a catalogue press opens on the page the reader came from, a fresh browser draws nothing until it starts on Focus, the digits show rail pages, the status bar runs along the foot, and the bookmarks are the one file, the two manuals moved into it on this machine. On main: `npm test` 4,611 passed in 292 files; `npm run check` 1,330 files 0 errors 0 warnings; build; `format:check`; `lint`; the ASCII gate prints nothing; size and folder checks exit 0; `npm run test:browser` 331 passed (7.7m). The plan is paused, as Axel asked: L4 is not started.
 - 2026-09-23. O32 landed, built by an Opus agent, one repair round, the run over the round refuted again and its findings closed at landing: `bin/dispatch-note.mjs start --pid` records the builder's own process and its start time from `ps` in UTC, a launch with no end stamp follows that process, the sessions watcher's 15 s re-check publishes a launched builder's change, one `ps` per scan serves the registry and the builders, and only launches inside the scan's window are asked about. `.agents/plan.yaml` carries `launch_note:`; the Ordo recipes are booked. On main: `npm test` 4,573 passed in 284 files; `npm run check` 1,311 files 0 errors 0 warnings; build; `format:check`; `lint`; the ASCII gate prints nothing; size and folder checks exit 0; `npm run test:browser` 316 passed and 1 failed (`unsaved-forms.spec.ts:342`, a save-timeout case O32 does not touch, run beside L3's builder; alone 3 passed of 3). Next: L3's report, then its review and landing.
 - 2026-09-23. R18 landed, built by an Opus agent, one repair round, the run over the round refuted again and its findings closed at landing: `node bin/diagrams.mjs` draws the layer, channel and write diagrams from the source into `docs/diagrams/` as `.dot` and `.svg`, a test fails naming every stale file, the Help view draws them inline in the prose colour through `api/diagrams/<name>.svg`, and the two migration scripts moved to `bin/migrations/`. On main over the landed tree: `npm test` 4,552 passed in 282 files (a watcher timing case failed once right after the browser run and passed alone three times and in the next whole run); `npm run check` 1,309 files 0 errors 0 warnings; build; `format:check`; `lint`; the ASCII gate prints nothing; size and folder checks exit 0; `npm run test:browser` 317 passed (8.8m). Next: L3 and O32 side by side.
@@ -549,6 +541,9 @@ No night log is running. Nothing has been left for Axel to read here.
 
 ## Usage
 
+- U1, builder claude:opus, a native background agent: first run 501,467 tokens, 261 tool uses, 6,829 s; repair round 640,858 tokens, 114 tool uses, 5,956 s; one repair round; first report did not pass its bar (the first review raised a sparkline colour against the brief, unvalidated config names that threw, a half-done rename, stand-ins wider than their box, and venue emoji still drawn); fixes at landing 5 (the radar separators in markup hidden from a screen reader, the sparkline case named as an audit, own-key lookups in the icon findings with a case, the HELP venue sentence, the Config view descriptions matched to HELP); +1,552 -817 over 86 files at the cherry-pick, before the landing fixes.
+- U1, reviewers claude:opus read-only: the first review 201,828 tokens, 58 tool uses, 1,843 s; the run over round 1 190,115 tokens, 52 tool uses, 1,911 s.
+- U1 landing, orchestrator claude:opus (this session), `land/templates/usage.py` from L3's landing (2026-09-23T21:34:20) to the booking: 115 messages, 104,420 output tokens, 1,026,232 cache-write tokens, 92,437,492 cache-read tokens, 238 fresh input tokens, 335 minutes; the window also holds P1's parity inventory, the rulings on L5, Q67, A1 to A3 and the Views page, and L5's brief.
 - L3, builder claude:opus, a native background agent: first run 184,256 tokens, 481 tool uses, 13,974 s; repair round 543,082 tokens, 228 tool uses, 8,733 s; one repair round, Axel's two rulings added to it; first report did not pass its bar (the first review raised findings over all four headings, among them the server rewriting the tracked layout.yml and status words chosen for the tests); fixes at landing 10 (the two manuals moved, the catalogue's page rule with node and browser cases, the fresh browser drawing no page before Focus, the badge row under the button found in the look, the badge case's order check, the document and shift-fallback cases, six stale comments and names, the look line of plan.yaml, the directives the landing moved, a lint error); +7,985 -5,659 over 174 files at the cherry-pick, before the landing fixes.
 - L3, reviewers claude:opus read-only: the first review 214,495 tokens, 53 tool uses, 1,809 s; the run over round 1 205,566 tokens, 56 tool uses, 1,642 s.
 - L3 landing, orchestrator claude:opus (this session), `land/templates/usage.py` from O32's landing (2026-09-23T16:11:57) to the booking: 97 messages, 69,869 output tokens, 140,541 cache-write tokens, 62,705,948 cache-read tokens, 224 fresh input tokens, 321 minutes; the window also holds the waits on L3's builder and Axel's rulings.

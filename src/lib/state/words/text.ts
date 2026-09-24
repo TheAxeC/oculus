@@ -1,9 +1,11 @@
-// Layer 2, client state. The text catalog, glyph vocabulary, ASCII stand-ins and icon drawings
-// received from the server, with the lookups components use. Nothing here touches the filesystem.
-// Glyph tokens are resolved when a string renders, so changing display mode updates catalog and
-// configuration text.
+// Layer 2, client state. The text catalog, glyph vocabulary and icon drawings received from the
+// server, with the lookups components use. Nothing here touches the filesystem.
 //
-// The four maps are plain module variables, so every reader below first reads the configuration's
+// A glyph is drawn by ui/controls/Glyph.svelte and nowhere else: as its line icon, or as its ASCII
+// stand-in while the mode is `ascii`. No string of the catalog carries a glyph, so text is words
+// and nothing here fills a glyph into it.
+//
+// The three maps are plain module variables, so every reader below first reads the configuration's
 // generation, state/client/generation.svelte.ts: that is what a template's own effect depends on,
 // and what makes a string drawn before a push redraw with the string the push installed.
 
@@ -11,11 +13,10 @@ import { fillPlaceholders } from '../../data/helpers/finding-text.ts';
 import { configGeneration } from '../client/generation.svelte.ts';
 import { glyphMode } from './glyphmode.svelte.ts';
 
-export { setGlyphMode, type GlyphMode } from './glyphmode.svelte.ts';
+export { glyphMode, setGlyphMode, type GlyphMode } from './glyphmode.svelte.ts';
 
 let catalog: Record<string, string | undefined> = {};
 let glyphs: Record<string, string | undefined> = {};
-let ascii: Record<string, string | undefined> = {};
 let icons: Record<string, string | undefined> = {};
 
 /** Install the catalog the page was given. Called once per load, again on every push. */
@@ -24,19 +25,11 @@ export function setCatalog(next: Record<string, string>): void {
 }
 
 /**
- * Install the glyph vocabulary the page was given, the `glyphs:` map of config/catalogs/glyphs.yml.
+ * Install the glyph vocabulary the page was given, the `glyphs:` map of config/catalogs/glyphs.yml:
+ * each name with its ASCII stand-in.
  */
 export function setGlyphs(next: Record<string, string>): void {
     glyphs = next;
-}
-
-/**
- * Install the ASCII stand-ins, the `ascii:` map of config/catalogs/glyphs.yml. It is keyed by the
- * character rather than by the glyph's name, so one character shared by several names has one
- * stand-in.
- */
-export function setAscii(next: Record<string, string>): void {
-    ascii = next;
 }
 
 /**
@@ -59,19 +52,11 @@ function catalogEntry(key: string): string {
     if (value === undefined) {
         throw new Error(`text key not in the text catalog (config/text/): ${key}`);
     }
-    return resolveGlyphTokens(value);
+    return value;
 }
 
 export function lookup(key: string): string {
     return catalogEntry(key);
-}
-
-/** Resolve every known {G.name} token through the active glyph mode and preserve unknown tokens. */
-export function resolveGlyphTokens(value: string): string {
-    configGeneration();
-    return value.replace(/\{G\.([a-zA-Z0-9_-]+)\}/g, (placeholder, name: string) => {
-        return glyphs[name] === undefined ? placeholder : glyph(name);
-    });
 }
 
 /**
@@ -83,32 +68,33 @@ export function t(key: string, ...args: (string | number)[]): string {
 }
 
 /**
- * The glyph character a name stands for, or its ASCII stand-in while the mode is `ascii`. A missing
- * name throws like a missing text key: a glyph that silently renders as nothing is a hole in a rail
- * or a tab strip that nobody notices. A character with no stand-in is drawn as it is.
+ * The ASCII stand-in a glyph name has in config/catalogs/glyphs.yml, whatever the mode: what
+ * ui/controls/Glyph.svelte draws while the mode is `ascii`, and the only form of a glyph that may
+ * go into text. A missing name throws like a missing text key: a glyph that silently renders as
+ * nothing is a hole in a rail or a tab strip that nobody notices.
  */
 export function glyph(name: string): string {
     configGeneration();
-    const character = glyphs[name];
-    if (character === undefined)
-        throw new Error(`glyph not in config/catalogs/glyphs.yml: ${name}`);
-    return asciiOf(character);
+    // An own key only, so a name such as `constructor` is not answered by the object's prototype.
+    const standIn = Object.hasOwn(glyphs, name) ? glyphs[name] : undefined;
+    if (standIn === undefined) throw new Error(`glyph not in config/catalogs/glyphs.yml: ${name}`);
+    return standIn;
 }
 
 /**
- * The same swap for a character already resolved by a caller. Unknown characters and every
- * character while the mode is `unicode` come back unchanged, so this is safe on any string.
+ * Whether the vocabulary holds a glyph name, for a caller handed a name by data it cannot trust to
+ * be one: such a caller draws its words alone for a name this refuses, rather than a Glyph that
+ * would throw.
  */
-export function asciiOf(character: string): string {
+export function hasGlyph(name: string): boolean {
     configGeneration();
-    if (glyphMode() !== 'ascii') return character;
-    return ascii[character] ?? character;
+    return Object.hasOwn(glyphs, name) && glyphs[name] !== undefined;
 }
 
 /**
  * The icon a glyph name is drawn as, or nothing: while the mode is `ascii` there is no icon at all,
- * since a terminal theme draws the stand-in text, and a name the icon map does not carry has none.
- * A caller with nothing draws the character glyph() gives it.
+ * since a terminal theme draws the stand-in text, and a name the icon map does not carry has none,
+ * which the server reports as a finding.
  */
 export function iconSvg(name: string): string | undefined {
     configGeneration();
@@ -117,11 +103,12 @@ export function iconSvg(name: string): string | undefined {
 }
 
 /**
- * Whether the vocabulary in force draws this name as a bracketed tag, which the ASCII stand-ins of
- * a terminal theme do and the characters never do. A caller that puts brackets of its own around a
- * glyph leaves them off such a one, so the reader is given one pair rather than two.
+ * Whether the vocabulary in force draws this name as a bracketed tag, which some ASCII stand-ins of
+ * a terminal theme are and an icon never is. A caller that puts brackets of its own around a glyph
+ * leaves them off such a one, so the reader is given one pair rather than two.
  */
 export function bracketedGlyph(name: string): boolean {
     const drawn = glyph(name);
+    if (glyphMode() !== 'ascii') return false;
     return drawn.startsWith('[') && drawn.endsWith(']');
 }

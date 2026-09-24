@@ -258,12 +258,13 @@ describe('the Inbox view', () => {
         expect(body).not.toContain(catalog['inbox.sec_reply']);
     });
 
+    // revert: src/lib/views/feeds/inbox/InboxCard.svelte:151 => glyph="dismiss"
     it('opens the triaged section with restore, and filters every section by the search', () => {
         serve();
         const open = draw('inbox-open', true);
         const done = card(open, 'done');
         expect(hasAction(done, catalog['inbox.restore'])).toBe(true);
-        expect(done).toContain(glyphs.refresh);
+        expect(done).toContain('data-glyph="refresh"');
         expect(done).toContain(catalog['inbox.restore_tip']);
 
         const searched = draw('inbox-search', true, 'upload bob');

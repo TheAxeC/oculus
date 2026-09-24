@@ -7,18 +7,12 @@ import Palette from '../../../src/lib/shell/keys/Palette.svelte';
 import UpdateTray from '../../../src/lib/shell/rail/UpdateTray.svelte';
 import Status from '../../../src/lib/views/system/status/Status.svelte';
 import {
-    asciiCatalog,
     engineDir,
     glyphCatalog,
     loadConfig,
     textCatalog
 } from '../../../src/lib/data/sources/config.ts';
-import {
-    setAscii,
-    setCatalog,
-    setGlyphMode,
-    setGlyphs
-} from '../../../src/lib/state/words/text.ts';
+import { setCatalog, setGlyphMode, setGlyphs } from '../../../src/lib/state/words/text.ts';
 import { noop } from '../../fixtures/doubles.ts';
 import { clientContext, createClientState, type ClientState } from '../../fixtures/client.ts';
 
@@ -153,9 +147,27 @@ describe('UpdateTray', () => {
         expect(body).toContain(`>${catalog['app.chat']}</span>`);
     });
 
+    // revert: src/lib/shell/rail/UpdateTray.svelte:147 => delete
+    it('draws the inbox note with the info glyph beside its words and no character in them', () => {
+        const body = render(UpdateTray, {
+            context: clientContext(client),
+            props: { open: true, onclose: noop }
+        }).body;
+        const row = body.slice(body.indexOf('data-task="inbox"'));
+        const from = row.indexOf('class="note');
+        const note = row.slice(
+            from,
+            row.indexOf('</span>', row.indexOf(catalog['app.tasks.inbox_note'], from))
+        );
+        expect(note).toContain('data-glyph="info"');
+        expect(note.indexOf('data-glyph="info"')).toBeLessThan(
+            note.indexOf(catalog['app.tasks.inbox_note'])
+        );
+        expect(note).not.toMatch(/[^\t\n\r\x20-\x7E]/);
+    });
+
+    // revert: src/lib/shell/rail/UpdateTray.svelte:156 => glyph="info"
     it('renders the Chat glyph through ASCII mode', () => {
-        const ascii = asciiCatalog(config);
-        setAscii(ascii);
         setGlyphMode('ascii');
         try {
             const body = render(UpdateTray, {
@@ -163,11 +175,11 @@ describe('UpdateTray', () => {
                 props: { open: true, onclose: noop }
             }).body;
             const row = body.slice(body.indexOf('data-task="chat"'));
-            expect(row).toContain(`>${ascii[glyphCatalog(config).chat]}</span>`);
-            expect(row).not.toContain(glyphCatalog(config).chat);
+            expect(row).toContain(`>${glyphCatalog(config).chat}</span>`);
+            expect(row).not.toContain('<svg');
             expect(row).toContain(`>${catalog['app.chat']}</span>`);
         } finally {
-            setGlyphMode('unicode');
+            setGlyphMode('icon');
         }
     });
 

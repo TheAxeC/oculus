@@ -43,23 +43,14 @@ export function vocabCatalog(config: Record<string, unknown>): Record<string, un
 }
 
 /**
- * The glyph vocabulary held in the merged config's `glyphs` key: one character per name, flat. It
- * ships with the catalog as the page's data and is pushed on the `config` channel afterwards, so a
- * glyph is edited in config/catalogs/glyphs.yml and nowhere else. A value that is not a string is
- * dropped rather than thrown on: the map is a vocabulary and one bad entry is not worth losing the
- * rest.
+ * The glyph vocabulary held in the merged config's `glyphs` key: each glyph name with the ASCII
+ * stand-in a terminal theme draws for it, flat. It ships with the catalog as the page's data and is
+ * pushed on the `config` channel afterwards, so a glyph is edited in config/catalogs/glyphs.yml and
+ * nowhere else. A value that is not a string is dropped rather than thrown on: the map is a
+ * vocabulary and one bad entry is not worth losing the rest, and iconFindings reports it.
  */
 export function glyphCatalog(config: Record<string, unknown>): Record<string, string> {
     return stringMap(config.glyphs);
-}
-
-/**
- * The ASCII stand-ins held in the merged config's `ascii` key: one short string per character,
- * flat. It rides with the glyphs, since it is the other half of the same vocabulary and lives in
- * the same file. It is keyed by character so glyph names that share a character share one stand-in.
- */
-export function asciiCatalog(config: Record<string, unknown>): Record<string, string> {
-    return stringMap(config.ascii);
 }
 
 /**
@@ -90,12 +81,20 @@ function iconFile(icon: string): string | null {
 }
 
 /**
- * Every way the icon map and the glyph vocabulary can drift apart, as findings: a glyph name with
- * no row, a row naming something that is not a glyph name, and a row naming an icon the package
- * does not ship. The package is a fact about this machine's install rather than about the merged
- * files, which is why this is separate from loadConfig and takes the engine directory. Like
- * loadConfig's own findings, these are worded from the merged catalog, and a key it lacks is
- * written as the key and its arguments.
+ * A stand-in: one to three printable ASCII characters, which a terminal font is sure to hold and
+ * the three-character box of ui/controls/Glyph.svelte is sure to fit.
+ */
+const STAND_IN = /^[\x20-\x7E]{1,3}$/;
+
+/**
+ * Every way the icon map and the glyph vocabulary can drift apart, as findings: a glyph name whose
+ * stand-in is not one to three printable ASCII characters, a glyph name with no row, a row naming
+ * something that is not a glyph name, and a row naming an icon the package does not ship. A name
+ * with no row has no drawing, and ui/controls/Glyph.svelte draws it as an empty box rather than as
+ * text. The package is a fact about this machine's install rather than about the merged files,
+ * which is why this is separate from loadConfig and takes the engine directory. Like loadConfig's
+ * own findings, these are worded from the merged catalog, and a key it lacks is written as the key
+ * and its arguments.
  */
 export function iconFindings(engine: string, config: Record<string, unknown>): Finding[] {
     const file = join(configDir(engine), CATALOGS_DIR, 'icons.yml');
@@ -103,8 +102,19 @@ export function iconFindings(engine: string, config: Record<string, unknown>): F
     const glyphs = glyphCatalog(config);
     const catalog = textCatalog(config);
     const findings: Finding[] = [];
+    const vocabulary = config.glyphs;
+    if (typeof vocabulary === 'object' && vocabulary !== null && !Array.isArray(vocabulary)) {
+        for (const [name, standIn] of Object.entries(vocabulary as Record<string, unknown>)) {
+            if (typeof standIn === 'string' && STAND_IN.test(standIn)) continue;
+            findings.push({
+                file: join(configDir(engine), CATALOGS_DIR, 'glyphs.yml'),
+                key: name,
+                message: findingText(catalog, 'findings.config.glyph_not_ascii', name)
+            });
+        }
+    }
     for (const name of Object.keys(glyphs)) {
-        if (name in map) continue;
+        if (Object.hasOwn(map, name)) continue;
         findings.push({
             file,
             key: name,
@@ -112,7 +122,7 @@ export function iconFindings(engine: string, config: Record<string, unknown>): F
         });
     }
     for (const [name, icon] of Object.entries(map)) {
-        if (!(name in glyphs)) {
+        if (!Object.hasOwn(glyphs, name)) {
             findings.push({
                 file,
                 key: name,
@@ -167,13 +177,13 @@ export type IconMemory = { set: Record<string, string> };
 /**
  * The drawing of every mapped icon, by glyph name, read once per config load and shipped with the
  * glyph vocabulary so the page never fetches an icon file of its own. A row the findings above
- * report is left out, and the primitive draws the glyph character for a name that is not here.
+ * report is left out, and the primitive draws an empty box for a name that is not here.
  */
 export function iconSet(config: Record<string, unknown>): Record<string, string> {
     const glyphs = glyphCatalog(config);
     const icons: Record<string, string> = {};
     for (const [name, icon] of Object.entries(iconCatalog(config))) {
-        if (!(name in glyphs)) continue;
+        if (!Object.hasOwn(glyphs, name)) continue;
         const file = iconFile(icon);
         if (file === null) continue;
         icons[name] = readFileSync(file, 'utf8').trim();

@@ -9,8 +9,15 @@ text:
         feed_error: 'Could not read {0}: {1}'
         idea: idea
         idea_tip: scaffold an idea from this spark
-        intro_head: '{G.litwatch} <b>New-paper radar</b> across active &amp; manuscript projects - {G.red} pre-emption | {G.green} cite/baseline | {G.white} adjacent - plus cross-pollination {G.purple} <b>idea sparks</b> tied to the ideas folder.'
-        intro_tail: '{0} tracked | last sweep <b>{1}</b>  | refresh with <code>/research-cockpit litwatch</code>.'
+        intro_adjacent: adjacent
+        intro_cite: cite/baseline
+        intro_cross: plus cross-pollination
+        intro_lead: <b>New-paper radar</b> across active &amp; manuscript projects
+        intro_preempt: pre-emption
+        intro_refresh: refresh with <code>/research-cockpit litwatch</code>.
+        intro_sparks: <b>idea sparks</b> tied to the ideas folder.
+        intro_sweep: last sweep <b>{0}</b>
+        intro_tracked: '{0} tracked'
         new: NEW
         new_idea_candidate: new idea candidate
         no_date: '-'

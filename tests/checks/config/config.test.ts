@@ -15,7 +15,8 @@ import {
     engineDir,
     loadConfig,
     loadLocal,
-    textCatalog
+    textCatalog,
+    themeFindings
 } from '../../../src/lib/data/sources/config.ts';
 import { portfolioConfigFrom } from '../../../src/lib/data/index.ts';
 import { ENGINE_ROOT, engineRoot, rootsFile } from '../../../src/lib/server/files/files.ts';
@@ -616,6 +617,61 @@ describe('behaviorFindings', () => {
         expect(behaviorFindings(engine, { ...SOUND, chat: { model: 'opus' } })).toEqual([]);
         expect(behaviorFindings(engine, { ...SOUND, chat: 'opus' })).toEqual([]);
         expect(behaviorFindings(engine, loadConfig(engineDir()).config)).toEqual([]);
+    });
+});
+
+describe('themeFindings', () => {
+    /** The merged catalog the findings are worded from, and a vocabulary of two glyph names. */
+    const BASE = { text: loadConfig(engineDir()).config.text, glyphs: { sun: '(o)', box: '<>' } };
+
+    /** The findings over these theme rows, each as its key and its sentence. */
+    function said(themes: unknown): string[] {
+        return themeFindings(scratch(), { ...BASE, themes }).map(
+            (one) => `${one.key}: ${one.message}`
+        );
+    }
+
+    // revert: src/lib/data/sources/config/themes.ts:49 => if (typeof glyph !== 'string') {
+    it('names a theme row whose glyph is empty or missing, and draws it with its words alone', () => {
+        expect(said([{ name: 'a', glyph: '' }, { name: 'b' }, { name: 'c', glyph: 3 }])).toEqual([
+            'themes[0]: the theme a names no glyph; it is offered with its words alone',
+            'themes[1]: the theme b names no glyph; it is offered with its words alone',
+            'themes[2]: the theme c names no glyph; it is offered with its words alone'
+        ]);
+    });
+
+    // revert: src/lib/data/sources/config/themes.ts:55 => } else if (false) {
+    it('names a glyph the vocabulary does not hold, a prototype key among them', () => {
+        expect(
+            said([
+                { name: 'a', glyph: 'nonesuch' },
+                { name: 'b', glyph: 'constructor' }
+            ])
+        ).toEqual([
+            'themes[0]: the theme a names a glyph glyphs.yml does not hold; it is offered with its words alone',
+            'themes[1]: the theme b names a glyph glyphs.yml does not hold; it is offered with its words alone'
+        ]);
+    });
+
+    // revert: src/lib/data/sources/config/themes.ts:39 => if (false) {
+    it('names a second row repeating a theme, and nothing for two rows sharing a glyph', () => {
+        expect(
+            said([
+                { name: 'a', glyph: 'sun' },
+                { name: 'b', glyph: 'sun' },
+                { name: 'a', glyph: 'box' }
+            ])
+        ).toEqual(['themes[2]: a second theme row names a; only the first is offered']);
+    });
+
+    // revert: src/lib/data/sources/config/themes.ts:29 => const file = 'appearance.yml';
+    it('says nothing about the shipped list, a row with no name, or a config with no list', () => {
+        expect(themeFindings(scratch(), loadConfig(engineDir()).config)).toEqual([]);
+        expect(said([{ glyph: 'sun' }, 'light'])).toEqual([]);
+        expect(themeFindings(scratch(), BASE)).toEqual([]);
+        expect(themeFindings(scratch(), { ...BASE, themes: [{ name: 'a' }] })[0].file).toMatch(
+            /config[/\\]appearance\.yml$/
+        );
     });
 });
 

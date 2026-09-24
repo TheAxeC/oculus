@@ -17,19 +17,17 @@ import TreeSection from '../../../src/lib/ui/tree/TreeSection.svelte';
 import TreeView from '../../../src/lib/ui/tree/TreeView.svelte';
 import type { TreeNav } from '../../../src/lib/ui/tree/tree-keys.ts';
 import {
-    asciiCatalog,
     engineDir,
     glyphCatalog,
     iconSet,
     loadConfig
 } from '../../../src/lib/data/sources/config.ts';
-import { setAscii, setGlyphs, setIcons } from '../../../src/lib/state/words/text.ts';
+import { setGlyphs, setIcons } from '../../../src/lib/state/words/text.ts';
 import { noop } from '../../fixtures/doubles.ts';
 import { clientContext, createClientState } from '../../fixtures/client.ts';
 
 const { config } = loadConfig(engineDir());
 setGlyphs(glyphCatalog(config));
-setAscii(asciiCatalog(config));
 setIcons(iconSet(config));
 
 /** The context a rendering is given, which is where the tooltip inside a row draws its ids from. */

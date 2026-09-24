@@ -188,6 +188,7 @@ describe('the control that opens a file in its program', () => {
         return body.split(`<span class="label">${catalog['file.open_program']}</span>`).length - 1;
     }
 
+    // revert: src/lib/views/shared/links/ProgramButton.svelte:53 => glyph="copy"
     it('draws it in the toolbar and beside the download for a .docx, as ui/controls/ToolButton', async () => {
         const body = await held('drafts/report.docx', false);
 
@@ -198,7 +199,7 @@ describe('the control that opens a file in its program', () => {
         for (const at of body.split(catalog['file.open_program']).slice(0, -1)) {
             expect(at.lastIndexOf('<button type="button" class="tool')).toBeGreaterThan(-1);
         }
-        expect(body).toContain(glyphs[catalog['file.open_program_glyph']]);
+        expect(body).toContain(`data-glyph="${catalog['file.open_program_glyph']}"`);
     });
 
     it('draws none for a picture and a PDF, whose extensions the checked-in list does not name', () => {

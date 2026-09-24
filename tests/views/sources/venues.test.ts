@@ -392,7 +392,56 @@ describe('the journal section and venue card', () => {
     });
 });
 
+describe('the indexing marks of a venue card', () => {
+    // revert: src/lib/views/sources/venues/VenueCard.svelte:88 => return { label };
+    it('draws a yes as the check glyph and a no as the cross glyph beside the words', () => {
+        const indexed: Venue = {
+            id: 'indexed',
+            name: 'Indexed Journal',
+            category: 'journal',
+            wos: 'SCIE',
+            wosMark: 'yes',
+            scopusMark: 'no',
+            themes: []
+        };
+        const body = html([indexed]);
+        const card = body.slice(body.indexOf('data-venue="indexed"'));
+        // The card's second meta line is the one that holds the indexing words.
+        const meta = card.slice(card.indexOf('class="meta', card.indexOf('class="meta') + 1));
+        const wos = catalog['venues.wos'].replace('{0}', 'SCIE');
+        const scopus = catalog['venues.scopus'].replace('{0}', '').trim();
+        expect(meta.indexOf('data-glyph="check"')).toBeGreaterThan(-1);
+        expect(meta.indexOf('data-glyph="check"')).toBeLessThan(meta.indexOf(wos));
+        expect(meta.indexOf('data-glyph="cross"')).toBeGreaterThan(meta.indexOf(wos));
+        expect(meta.indexOf('data-glyph="cross"')).toBeLessThan(meta.lastIndexOf(scopus));
+        expect(card).not.toMatch(/[^\t\n\r\x20-\x7E]/);
+    });
+});
+
 describe('the conference section and ribbon', () => {
+    // revert: src/lib/views/sources/venues/Ribbon.svelte:73 => delete
+    it('draws the deadline density line as one SVG bar per month and no character', () => {
+        const body = html();
+        const spark = body.slice(body.indexOf('class="spark'), body.indexOf('class="legend'));
+        expect(spark).toContain('<svg class="bars');
+        const heights = [...spark.matchAll(/<rect [^>]*height="(\d+)"/g)].map((one) => one[1]);
+        expect(heights).toHaveLength(12);
+        expect(heights.every((one) => ['0', '1', '2', '3', '5', '6', '7'].includes(one))).toBe(
+            true
+        );
+        expect(heights).toContain('7');
+        expect(spark).toContain('fill="currentColor"');
+        expect(spark).not.toMatch(/[^\t\n\r\x20-\x7E]/);
+    });
+
+    // revert: src/lib/views/sources/venues/Ribbon.svelte:167 => color: var(--accent-txt, var(--accent));
+    it('audits that the density bars are painted in the text colour, which they take through currentColor', () => {
+        expect(html()).toContain('<svg class="bars');
+        // The bars fill with currentColor, so the rule on the line is the colour they are drawn in.
+        const source = readFileSync('src/lib/views/sources/venues/Ribbon.svelte', 'utf8');
+        expect(source).toMatch(/\.spark \.bars \{[^}]*color: var\(--ink-txt, var\(--ink\)\);/);
+    });
+
     it('draws next deadlines, legend, all months, timed chips and biennial caveats', () => {
         const body = html();
         expect(body).toContain(catalog['venues.conferences'].replace('{0}', '3'));

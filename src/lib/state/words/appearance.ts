@@ -1,9 +1,9 @@
 // Layer 2, client state. config/appearance.yml as the page reads it: the picker's order, the class
-// string each theme puts on the body, the words it is offered under, the wallpaper's numbers and
-// what the CRT overlay and terminal text size start as. It is installed the way the tone vocabulary
-// is - the server ships the `themes` key as the page's data at first load, and every later edit of
-// config/appearance.yml arrives on the `config` channel - so a theme is added by editing YAML and
-// nothing else.
+// string each theme puts on the body, the words it is offered under and the glyph drawn before
+// them, the wallpaper's numbers and what the CRT overlay and terminal text size start as. It is
+// installed the way the tone vocabulary is - the server ships the `themes` key as the page's data
+// at first load, and every later edit of config/appearance.yml arrives on the `config` channel - so
+// a theme is added by editing YAML and nothing else.
 //
 // This holds no runes of its own: every lookup is pure over what was last installed and reads the
 // configuration's generation, state/client/generation.svelte.ts, so a component calling one during
@@ -11,10 +11,13 @@
 // picked out of this list is state/workbench/ui.svelte.ts's, which is the store that persists.
 
 import { configGeneration } from '../client/generation.svelte.ts';
-import { resolveGlyphTokens } from './text.ts';
+import { hasGlyph } from './text.ts';
 
-/** One theme of the picker: the name the store saves, the body class, and the words shown. */
-export type Theme = { name: string; class: string; label: string };
+/**
+ * One theme of the picker: the name the store saves, the body class, the glyph name drawn before
+ * the words (empty for a row that names none), and the words shown.
+ */
+export type Theme = { name: string; class: string; glyph: string; label: string };
 
 /**
  * The wallpaper as config/appearance.yml describes it, with every number already resolved: the
@@ -103,10 +106,12 @@ function readWallpaper(config: Record<string, unknown>): Wallpaper | null {
 }
 
 /**
- * Install the theme list from the merged config's `themes` key. A row with no `name` is dropped; a
- * row with no `class` is the empty class, which is what the light theme carries. A key the config
- * does not hold installs as an empty list, so the lookups answer with their own fallbacks rather
- * than throwing and a half-read config still renders a page.
+ * Install the theme list from the merged config's `themes` key. A row with no `name` is dropped,
+ * and so is a row repeating a name an earlier row gave, since the picker keys its entries by the
+ * name; a row with no `class` is the empty class, which is what the light theme carries. A key the
+ * config does not hold installs as an empty list, so the lookups answer with their own fallbacks
+ * rather than throwing and a half-read config still renders a page. data/sources/config/themes.ts
+ * reports the rows this drops or draws without a glyph.
  */
 export function setAppearance(config: Record<string, unknown>): void {
     list = [];
@@ -118,10 +123,11 @@ export function setAppearance(config: Record<string, unknown>): void {
     if (!Array.isArray(rows)) return;
     for (const row of rows) {
         const name = stringAt(row, 'name');
-        if (name === undefined || name.length === 0) continue;
+        if (name === undefined || name.length === 0 || Object.hasOwn(byName, name)) continue;
         const theme: Theme = {
             name,
             class: stringAt(row, 'class') ?? '',
+            glyph: stringAt(row, 'glyph') ?? '',
             label: stringAt(row, 'label') ?? name
         };
         list.push(theme);
@@ -131,10 +137,12 @@ export function setAppearance(config: Record<string, unknown>): void {
 
 /**
  * Every theme the picker offers, in the config's order. A copy, so a caller cannot edit the list.
+ * A glyph the vocabulary does not hold, or none, is the empty name: the row is drawn with its
+ * words alone rather than as a Glyph that throws.
  */
 export function themes(): Theme[] {
     configGeneration();
-    return list.map((theme) => ({ ...theme, label: resolveGlyphTokens(theme.label) }));
+    return list.map((theme) => ({ ...theme, glyph: hasGlyph(theme.glyph) ? theme.glyph : '' }));
 }
 
 /** The body class string a theme lands on the document as. The light theme's is empty. */
@@ -146,8 +154,7 @@ export function themeClass(name: string): string {
 /** A theme's words in the picker, and the theme's own name for one the config does not list. */
 export function themeLabel(name: string): string {
     configGeneration();
-    const label = byName[name]?.label;
-    return label === undefined ? name : resolveGlyphTokens(label);
+    return byName[name]?.label ?? name;
 }
 
 /** The theme a browser that has saved none starts on: the first the config lists. */
@@ -189,7 +196,8 @@ export function wallpaperOnTheme(name: string): boolean {
 /**
  * Whether a theme is one of the terminal palettes, which is what its class string carrying `rice`
  * says. It is the condition for two things: the wallpaper under `themes: rice`, and the ASCII
- * stand-ins, since an emoji in the corner of a terminal screenshot is what they exist to remove.
+ * stand-ins, since a drawn icon in the corner of a terminal screenshot is what they exist to
+ * remove.
  */
 export function terminalTheme(name: string): boolean {
     return themeClass(name).split(/\s+/).includes(RICE);

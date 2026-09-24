@@ -11,7 +11,8 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import Settings from '../../../../src/lib/views/system/workbench/Settings.svelte';
 import { withRailDraft } from '../../../../src/lib/state/workbench/navigation/rail.ts';
 import { clientContext, type ClientState } from '../../../fixtures/client.ts';
-import { catalog, configured, words } from './workbench-fixture.ts';
+import { setAppearance } from '../../../../src/lib/state/words/appearance.ts';
+import { catalog, config, configured, words } from './workbench-fixture.ts';
 
 let client: ClientState;
 
@@ -42,16 +43,44 @@ function why(key: string, place: number): string {
 
 describe('the appearance half', () => {
     it('draws the theme menu, the text steps and the three toggles by their names', () => {
-        // revert: src/lib/views/system/workbench/Appearance.svelte:107 => label={t('ui.crt_on')}
+        // revert: src/lib/views/system/workbench/Appearance.svelte:117 => label={t('ui.crt_on')}
         const body = draw();
         for (const key of ['ui.theme', 'app.text_smaller', 'app.text_larger', 'ui.crt_on']) {
             expect(buttonNamed(body, catalog[key])).not.toBe('');
         }
-        expect(buttonNamed(body, catalog['ui.unicode'])).toContain('aria-pressed="false"');
+        expect(buttonNamed(body, catalog['ui.icons'])).toContain('aria-pressed="false"');
+    });
+
+    // revert: src/lib/views/system/workbench/Appearance.svelte:68 => delete
+    it('draws the theme in force with its glyph beside plain words', () => {
+        const body = draw();
+        const from = body.indexOf('data-theme-name');
+        const shown = body.slice(from, body.indexOf('</span>', body.indexOf('light', from)) + 7);
+        expect(shown).toContain('data-glyph="theme_base"');
+        expect(shown.indexOf('data-glyph="theme_base"')).toBeLessThan(shown.indexOf('light'));
+        expect(shown).not.toMatch(/[^\t\n\r\x20-\x7E]/);
+    });
+
+    // revert: src/lib/views/system/workbench/Appearance.svelte:35 => glyph: entry.glyph,
+    it('draws a theme whose glyph the vocabulary lacks with its words alone, and does not throw', () => {
+        setAppearance({
+            ...config,
+            themes: [{ name: 'light', class: '', glyph: 'nonesuch', label: 'light' }]
+        });
+        try {
+            const body = draw();
+            const from = body.indexOf('data-theme-name');
+            const shown = body.slice(from, body.indexOf('</span>', from));
+            expect(shown).toContain('light');
+            // a glyph the vocabulary lacks is no Glyph at all, so the words stand alone
+            expect(shown).not.toContain('data-glyph');
+        } finally {
+            setAppearance(config);
+        }
     });
 
     it('offers the reset only once the text size was changed, and no step past its end', () => {
-        // revert: src/lib/views/system/workbench/Appearance.svelte:48 => const canReset = $derived(true);
+        // revert: src/lib/views/system/workbench/Appearance.svelte:53 => const canReset = $derived(true);
         expect(buttonNamed(draw(), catalog['app.text_reset'])).toMatch(/\sdisabled/);
         client.ui.setTextScale(1.6);
         const grown = draw();
@@ -60,7 +89,7 @@ describe('the appearance half', () => {
     });
 
     it('offers the wallpaper toggle under a theme that has one and not under another', () => {
-        // revert: src/lib/views/system/workbench/Appearance.svelte:96 => {#if true}
+        // revert: src/lib/views/system/workbench/Appearance.svelte:106 => {#if true}
         client.ui.setTheme('light');
         expect(buttonNamed(draw(), catalog['ui.wallpaper'])).toBe('');
         client.ui.setTheme('mocha');

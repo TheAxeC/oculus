@@ -31,7 +31,7 @@ async function tabSize(page: import('@playwright/test').Page): Promise<number> {
 }
 
 test('larger text grows a tab and reset restores it', async ({ page }) => {
-    // revert: src/lib/views/system/workbench/Appearance.svelte:84 => onclick={() => stepTextScale(-1)}
+    // revert: src/lib/views/system/workbench/Appearance.svelte:94 => onclick={() => stepTextScale(-1)}
     await boot(page);
     await showRailPage(page, 'views');
     const settings = page.locator(`${SHOWN_VIEW} [data-settings-view]`);
@@ -46,7 +46,7 @@ test('larger text grows a tab and reset restores it', async ({ page }) => {
 test('a wallpaper theme paints the cards through and the toggle takes it away', async ({
     page
 }) => {
-    // revert: src/lib/views/system/workbench/Appearance.svelte:103 => onclick={() => setWallpaper(wallpaper())}
+    // revert: src/lib/views/system/workbench/Appearance.svelte:113 => onclick={() => setWallpaper(wallpaper())}
     await boot(page);
     await pickTheme(page, 'mocha');
     await openView(page, 'projects', t('views.projects'));

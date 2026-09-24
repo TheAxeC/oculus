@@ -3,8 +3,6 @@ text:
     ui:
         close_glyph: dismiss
         close_tab: Close tab
-        common:
-            x_prefix: '{G.cross} {0}'
         confirm_cancel: Cancel
         confirm_ok: Confirm
         confirm_stop: Confirm
@@ -17,6 +15,8 @@ text:
         embed_page_list: Show a page here...
         embed_refused: '{0} cannot be shown here'
         embed_refused_glyph: dismiss
+        icons: Icons
+        icons_title: Keep the icons on a terminal theme instead of their ASCII stand-ins.
         menu_back: Back
         move_to_page: 'Move tab to {0}'
         move_to_page_list: Move tab to page...
@@ -50,8 +50,6 @@ text:
         tabs_scroll_right: Scroll tabs right
         theme: Theme
         theme_glyph: darkmode
-        unicode: Glyphs
-        unicode_title: Keep the real glyphs on a terminal theme instead of their ASCII stand-ins.
         unknown_view: 'Unknown view: {0}'
         wallpaper: Wallpaper
         wallpaper_title: Wallpaper behind the panels - and the slight transparency that goes with it

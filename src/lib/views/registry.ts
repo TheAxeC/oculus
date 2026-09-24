@@ -2,17 +2,18 @@
 // the route loader registers them, so no shell module imports a view by name and no view knows
 // where it is mounted. It is the one module the shell and the views share.
 //
-// A registration's label and glyph are catalog keys rather than words: the label reads through t()
-// at the call site that draws it, and the glyph key's value is a name in
-// config/catalogs/glyphs.yml. A view is therefore renamed or re-iconed in config, and
-// tests/views/whole/registry.test.ts checks that both keys resolve, which is the gate
-// tests/checks/source/keys.test.ts cannot give a key that comes from data.
+// A registration's label, glyph and badge mark words are catalog keys rather than words: the label
+// reads through t() at the call site that draws it, the glyph key's value is a name in
+// config/catalogs/glyphs.yml, and the mark words are what a badge that is a mark says on hover. A
+// view is therefore renamed or re-iconed in config, and tests/views/whole/registry.test.ts checks
+// that the keys resolve, which is the gate tests/checks/source/keys.test.ts cannot give a key that
+// comes from data.
 
 import type { Component } from 'svelte';
 import type { Instance, ViewId } from '$lib/state/workbench/layout';
 import type { LayoutStore } from '$lib/state/workbench/layout.svelte';
 import type { ClientState } from '$lib/state/client/context';
-import { glyph, lookup, t } from '$lib/state/words/text';
+import { lookup, t } from '$lib/state/words/text';
 
 /** A split cell carries a theme hue, its count and its configured label. */
 export type BadgeCell = { count: number; color: string; label: string };
@@ -60,6 +61,13 @@ export type Registration = {
     badge?: (state: ClientState) => string;
     /** A glyph name drawn in the badge before its text, for a badge that is a mark, not a count. */
     badgeGlyph?: (state: ClientState) => string;
+    /**
+     * A text-catalog key whose value says in words what the badge's mark means, which is the
+     * badge's hover words when it is a mark and no count. A registration with `badgeGlyph` names
+     * one; a mark drawn without it is hovered by the view's name alone, and
+     * tests/state/workbench/rail-badges.test.ts fails on a registration that lacks it.
+     */
+    badgeMark?: string;
     /** A hue name from state/words/tones.ts; absent keeps the accent badge. */
     badgeTone?: (state: ClientState) => string;
     /** The badge's hover words, supplied by the registration's state selectors. */
@@ -93,9 +101,12 @@ export function registrationGlyph(registration: Pick<Registration, 'glyph'>): st
 export function badgeOf(registration: Registration, client: ClientState): RegistrationBadge {
     const text = registration.badge?.(client) ?? '';
     const mark = registration.badgeGlyph?.(client) ?? '';
-    // The hover words are text, so a badge that is a mark rather than a count says it with the
-    // glyph's character: an icon cannot be read out of a title attribute.
-    const said = text === '' && mark !== '' ? glyph(mark) : text;
+    // The hover words are text, so a badge that is a mark rather than a count says what the mark
+    // means in the words its registration names: an icon cannot be read out of a title attribute.
+    const marked = text === '' && mark !== '';
+    const means = registration.badgeMark;
+    const words = marked && means !== undefined ? lookup(means) : text;
+    const label = registrationLabel(registration);
     return {
         text,
         glyph: mark,
@@ -103,7 +114,7 @@ export function badgeOf(registration: Registration, client: ClientState): Regist
         tone: registration.badgeTone?.(client),
         title:
             registration.badgeTitle?.(client) ??
-            t('views.badge_title', registrationLabel(registration), said),
+            (marked && means === undefined ? label : t('views.badge_title', label, words)),
         cells: registration.badgeCells?.(client)
     };
 }

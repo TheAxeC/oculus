@@ -51,7 +51,7 @@ text:
         none: '-'
         percent: '{0}%'
         pill_pending: ' | {0} pending'
-        pill_running: '{G.hpc} {0} HPC job{1} running'
+        pill_running: '{0} HPC job{1} running'
         polling: polling cluster...
         queue_empty: queue empty
         queue_summary: '{0} running | {1} pending | {2} total'

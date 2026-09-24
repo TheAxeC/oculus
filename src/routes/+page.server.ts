@@ -1,5 +1,4 @@
 import {
-    asciiCatalog,
     collectionKeys,
     glyphCatalog,
     loadConfig,
@@ -8,9 +7,9 @@ import {
 } from '$lib/data/sources/config';
 import type { PageServerLoad } from './$types';
 
-// The catalog, the glyph vocabulary with its ASCII stand-ins, and the tone vocabulary are read per
-// request and shipped as page data, which is what the first frame draws from; every later change
-// reaches the page on the `config` channel server/watch/portfolio.ts publishes.
+// The catalog, the glyph vocabulary of names and ASCII stand-ins, and the tone vocabulary are read
+// per request and shipped as page data, which is what the first frame draws from; every later
+// change reaches the page on the `config` channel server/watch/portfolio.ts publishes.
 // A finding from the same read is reported in hooks.server.ts, which runs for every request, so it
 // is said once and not once per load function.
 //
@@ -32,7 +31,6 @@ export const load: PageServerLoad = ({ locals }) => {
         text: textCatalog(config),
         glyphs: glyphCatalog(config),
         icons: locals.server.icons.set,
-        ascii: asciiCatalog(config),
         vocab: vocabCatalog(config),
         collections: collectionKeys(config),
         token: locals.token

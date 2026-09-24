@@ -101,7 +101,7 @@
 {#snippet column(label: string, glyph: string, sub: string, tone: string, rows: BandItem[])}
     {#if rows.length > 0}
         <div class="lane" style={`--tone: var(--c-${tone})`}>
-            <LaneHead {label} count={rows.length} {tone} />
+            <LaneHead {label} {glyph} count={rows.length} {tone} />
             <p class="lane-sub">{sub}</p>
             <div class="lane-body">
                 {#each rows as item, at (`${at}:${item.title}`)}
@@ -121,6 +121,7 @@
                 <div class="lane" style={`--tone: var(--c-${tones.funding})`}>
                     <LaneHead
                         label={t('focus.funding_lane')}
+                        glyph={t('focus.funding_glyph')}
                         count={cards.funding.reduce((n, stage) => n + stage.items.length, 0)}
                         tone={tones.funding}
                     />

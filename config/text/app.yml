@@ -40,7 +40,6 @@ text:
             linkedin_note: draft a post from _linkedin/
             lit_label: Lit Watch
             lit_note: new-paper radar (web | minutes)
-            note_prefix: '{G.info} {0}'
             scout_label: Scout
             scout_note: academic openings (web | minutes)
             skip_confirm: 'Start {0} unattended? Its permission prompts are turned off, so it answers them itself.'

@@ -151,6 +151,49 @@ describe('the source editor', () => {
         expect(body).not.toContain('readonly');
     });
 
+    // revert: src/lib/views/sources/source/Source.svelte:140 => delete
+    it('draws a refused save with the cross glyph beside its words, and a later word without it', async () => {
+        let refuse = true;
+        vi.stubGlobal('fetch', (_url: string, init?: RequestInit) =>
+            Promise.resolve(
+                init === undefined
+                    ? new Response('# notes')
+                    : new Response(JSON.stringify(refuse ? { error: 'disk full' } : { ok: true }), {
+                          status: refuse ? 500 : 200
+                      })
+            )
+        );
+        setToken('source-token');
+        const instance = {
+            id: 'source-refused',
+            view: 'source',
+            state: sourceTabState('hub', 'notes.md')
+        };
+        const message = (): string => {
+            const body = render(Source, {
+                context: clientContext(client),
+                props: { instance }
+            }).body;
+            // The message is the last thing on the pane's bar, so it runs to the bar's end.
+            const from = body.indexOf('class="message');
+            return from === -1 ? '' : body.slice(from, body.indexOf('</div>', from));
+        };
+        await loadSourceDraft(instance.id, 'hub', 'notes.md');
+        editSourceDraft(instance.id, '# notes, typed');
+        await saveSourceDraft(instance.id, 'hub', 'notes.md');
+        const refused = message();
+        expect(refused).toContain('data-glyph="cross"');
+        expect(refused.indexOf('data-glyph="cross"')).toBeLessThan(refused.indexOf('disk full'));
+        expect(refused).not.toMatch(/[^\t\n\r\x20-\x7E]/);
+
+        refuse = false;
+        await saveSourceDraft(instance.id, 'hub', 'notes.md');
+        const saved = message();
+        expect(saved).toContain(catalog['source.saved']);
+        // a save that went through is said as a plain word, so the refusal's mark goes with it
+        expect(saved).not.toContain('data-glyph="cross"');
+    });
+
     // revert: src/lib/views/sources/source/Source.svelte:117 => {#if false}
     it('draws Save, Revert, Preview and the star on the pane bar in that order, the saved word after', async () => {
         vi.stubGlobal('fetch', (_url: string, init?: RequestInit) =>
@@ -174,7 +217,7 @@ describe('the source editor', () => {
         expect(at(catalog['source.preview'])).toBeGreaterThan(at(catalog['editor.revert']));
         const star = bar.indexOf(catalog['file.bookmark']);
         expect(star).toBeGreaterThan(at(catalog['source.preview']));
-        expect(bar).toContain(glyphCatalog(config)[catalog['editor.revert_glyph']]);
+        expect(bar).toContain(`data-glyph="${catalog['editor.revert_glyph']}"`);
         expect(bar.indexOf(catalog['source.saved'])).toBeGreaterThan(star);
         // the bar is the one row of controls: the body under it holds none
         expect(body.split('role="toolbar"').length - 1).toBe(1);

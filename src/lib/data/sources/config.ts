@@ -52,7 +52,6 @@ export {
 export {
     type IconMemory,
     VOCAB_KEYS,
-    asciiCatalog,
     behaviorFindings,
     glyphCatalog,
     iconCatalog,
@@ -74,3 +73,4 @@ export {
     slurmSettings,
     usageTiers
 } from './config/settings.ts';
+export { themeFindings } from './config/themes.ts';

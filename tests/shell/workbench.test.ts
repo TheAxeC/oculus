@@ -32,7 +32,14 @@ import {
     loadConfig,
     textCatalog
 } from '../../src/lib/data/sources/config.ts';
-import { glyph, setCatalog, setGlyphs, setIcons, t } from '../../src/lib/state/words/text.ts';
+import {
+    glyph,
+    setCatalog,
+    setGlyphMode,
+    setGlyphs,
+    setIcons,
+    t
+} from '../../src/lib/state/words/text.ts';
 import { installBadges } from '../state/workbench/rail-badges-fixture.ts';
 import { setVocab } from '../../src/lib/state/words/tones.ts';
 import type { Layout, Workbench as Bench } from '../../src/lib/state/workbench/layout/index.ts';
@@ -303,14 +310,22 @@ describe('the workbench', () => {
     });
 
     // Revert: point PaneView.svelte's menu at `ui.pane_menu_glyph`, or its button at another glyph.
+    // revert: src/lib/shell/panes/PaneView.svelte:384 => glyph={t('ui.pane_more_glyph')}
     it('draws the split button with the split glyph and the pane menu opener with the more glyph', () => {
-        const button = (label: string): string => {
-            const at = whole.indexOf(`aria-label="${label}"`);
-            return whole.slice(at, whole.indexOf('</button>', at));
-        };
-        expect(button('Split tab to the right')).toContain(glyph('split_right'));
-        expect(button('Pane')).toContain(glyph('more'));
-        expect(button('Pane')).not.toContain(glyph('list'));
+        // The stand-ins are the text a glyph is drawn as, so the ASCII mode names the glyph drawn.
+        setGlyphMode('ascii');
+        try {
+            const body = html();
+            const button = (label: string): string => {
+                const at = body.indexOf(`aria-label="${label}"`);
+                return body.slice(at, body.indexOf('</button>', at));
+            };
+            expect(button('Split tab to the right')).toContain(`>${glyph('split_right')}</span>`);
+            expect(button('Pane')).toContain(`>${glyph('more')}</span>`);
+            expect(button('Pane')).not.toContain(`>${glyph('list')}</span>`);
+        } finally {
+            setGlyphMode('icon');
+        }
     });
 
     // Revert: drop `dirty: unsaved(instance.id)` from PaneView.svelte's tabs.

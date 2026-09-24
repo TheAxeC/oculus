@@ -8,6 +8,7 @@
 // left out of both the entity that held it and the relation table, and validate has already named
 // it in a finding, so a view never joins against something that is not there.
 
+import { indexing } from './indexing.ts';
 import type {
     Career,
     CodeAvailability,
@@ -317,6 +318,8 @@ function project(
 }
 
 function venue(entry: RawRegistryEntry): Venue {
+    const wos = indexing(str(entry.wos) ?? '');
+    const scopus = indexing(str(entry.scopus) ?? '');
     return compact({
         id: entry.key,
         name: str(entry.name) ?? '',
@@ -325,8 +328,10 @@ function venue(entry: RawRegistryEntry): Venue {
         category: str(entry.category),
         jif: str(entry.jif),
         quartile: str(entry.quartile),
-        wos: str(entry.wos),
-        scopus: str(entry.scopus),
+        wos: wos.words === '' ? undefined : wos.words,
+        wosMark: wos.mark,
+        scopus: scopus.words === '' ? undefined : scopus.words,
+        scopusMark: scopus.mark,
         free: str(entry.free),
         format: str(entry.format),
         wants: str(entry.wants),

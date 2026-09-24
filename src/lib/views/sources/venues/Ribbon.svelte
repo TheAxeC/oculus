@@ -1,20 +1,27 @@
 <script lang="ts">
     // Layer 3, Venues view partial. The next conference deadlines and the twelve-month ribbon.
     // Timing and density are prepared by state/sources/venues.ts; this file only assigns the
-    // catalog words.
+    // catalog words and draws the density line as one SVG bar per month, in the colour of the text
+    // it sits in, so no character stands for a height.
 
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Glyph from '$lib/ui/controls/Glyph.svelte';
     import Tooltip from '$lib/ui/menu/Tooltip.svelte';
-    import { glyph, t } from '$lib/state/words/text';
-    import { sparkline, timeline, type TimelineChip, type Venue } from '$lib/state/sources/venues';
+    import { t } from '$lib/state/words/text';
+    import {
+        SPARK_HEIGHT,
+        sparkBars,
+        timeline,
+        type TimelineChip,
+        type Venue
+    } from '$lib/state/sources/venues';
 
     type Props = { venues: Venue[]; todayMonth: number };
 
     let { venues, todayMonth }: Props = $props();
 
     const data = $derived(timeline(venues, todayMonth));
-    const spark = $derived(sparkline(data.counts, glyph('spark_blocks')));
+    const bars = $derived(sparkBars(data.counts));
     const monthLabels = $derived(t('venues.months').split(','));
 
     function short(venue: Venue): string {
@@ -55,7 +62,17 @@
 
 <div class="spark" title={t('venues.spark_tip', Math.max(...data.counts, 0))}>
     <span class="spark-label">{t('venues.spark_lbl')}</span>
-    <pre>{spark}</pre>
+    <svg
+        class="bars"
+        viewBox={`0 0 ${bars.length} ${SPARK_HEIGHT}`}
+        preserveAspectRatio="none"
+        style={`width: ${bars.length * 0.6}em`}
+        aria-hidden="true"
+    >
+        {#each bars as height, at (at)}
+            <rect x={at + 0.1} y={SPARK_HEIGHT - height} width="0.8" {height} fill="currentColor" />
+        {/each}
+    </svg>
     <span class="spark-months"
         >{data.months.map((month) => monthLabel(month.index)[0]).join('')}</span
     >
@@ -143,9 +160,11 @@
         font-size: var(--fs-xs);
     }
 
-    .spark pre {
-        margin: 0;
-        color: var(--accent-txt, var(--accent));
+    /* Each bar is 0.6em wide and the line 1em high, the box a character of the same size takes,
+       and the bars are drawn in the text colour. */
+    .spark .bars {
+        height: 1em;
+        color: var(--ink-txt, var(--ink));
         font-size: var(--fs-xl);
     }
 

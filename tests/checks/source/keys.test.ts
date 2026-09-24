@@ -178,7 +178,8 @@ const COMPUTED_PREFIXES = [
 /** Registration metadata is a configured catalog-key value rather than a computed prefix. */
 const REGISTRATION_LOOKUPS = [
     { file: 'lib/views/registry.ts', start: 'lookup(registration.label)' },
-    { file: 'lib/views/registry.ts', start: 'lookup(registration.glyph)' }
+    { file: 'lib/views/registry.ts', start: 'lookup(registration.glyph)' },
+    { file: 'lib/views/registry.ts', start: 'lookup(means)' }
 ] as const;
 
 /** Remove comments so prose about a reader is not mistaken for a call. */
@@ -306,11 +307,13 @@ describe('text keys', () => {
         expect(missing).toEqual([]);
     });
 
+    // revert: tests/checks/source/keys.test.ts:316 => delete
     it('has a reader for every catalog key', () => {
         const allowed = new Set(found.flatMap((call) => (call.key === null ? [] : [call.key])));
         for (const registration of views()) {
             allowed.add(registration.label);
             allowed.add(registration.glyph);
+            if (registration.badgeMark !== undefined) allowed.add(registration.badgeMark);
         }
         for (const entry of COMPUTED_PREFIXES) {
             for (const key of entry.keys()) allowed.add(key);

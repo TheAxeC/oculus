@@ -12,6 +12,7 @@
     // setting.
 
     import Confirm from '$lib/ui/controls/Confirm.svelte';
+    import Glyph from '$lib/ui/controls/Glyph.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { findView } from '$lib/state/workbench/layout';
     import type { TaskKind } from '$lib/state/sessions/terminals.svelte';
@@ -142,7 +143,10 @@
                         />
                         <span class="last">{task.last ?? t('app.palette_unavailable')}</span>
                         {#if task.kind === 'inbox'}
-                            <span class="note">{t('app.tasks.note_prefix', task.note)}</span>
+                            <span class="note">
+                                <Glyph name="info" />
+                                {task.note}
+                            </span>
                         {/if}
                     </div>
                 {/each}

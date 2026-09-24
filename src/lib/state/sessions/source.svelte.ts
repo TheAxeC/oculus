@@ -34,6 +34,8 @@ export type SourceDraft = {
     readIn?: string;
     error: string;
     message: string;
+    /** Whether `message` says a save failed, which the bar draws with the cross glyph before it. */
+    failed: boolean;
     /** Whether the rendered half is drawn beside the editor, for a file that has one. */
     rendered: boolean;
     /**
@@ -154,6 +156,7 @@ export function createSource(writes: WritesStore, ui: UiStore): SourceStore {
             readIn: typeof held.readIn === 'string' ? held.readIn : undefined,
             error: typeof held.error === 'string' ? held.error : '',
             message: typeof held.message === 'string' ? held.message : '',
+            failed: held.failed === true,
             // A tab that has never been told otherwise shows the rendered half, so opening a
             // Markdown file reads as the document it is without a control being found first.
             rendered: held.rendered !== false,
@@ -174,7 +177,9 @@ export function createSource(writes: WritesStore, ui: UiStore): SourceStore {
     }
 
     function updateDraft(id: string, changes: Partial<SourceDraft>): void {
-        ui.setInstanceState(id, { ...sourceDraft(id), ...changes });
+        // A message is a failure only where it says so, so a later word never keeps the cross.
+        const failed = changes.message === undefined ? {} : { failed: changes.failed === true };
+        ui.setInstanceState(id, { ...sourceDraft(id), ...changes, ...failed });
     }
 
     /**
@@ -282,7 +287,8 @@ export function createSource(writes: WritesStore, ui: UiStore): SourceStore {
         }
         updateDraft(id, {
             // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- an empty string takes the fallback here, which ?? would not
-            message: t('ui.common.x_prefix', answer.error || t('source.failed'))
+            message: answer.error || t('source.failed'),
+            failed: true
         });
     }
 

@@ -8,6 +8,7 @@
         group: 'feeds',
         order: 3,
         badgeGlyph: (client) => client.railBadges.linkedinBadgeGlyph(),
+        badgeMark: 'views.linkedin_badge_mark',
         badgeTone: () => 'red'
     };
 </script>

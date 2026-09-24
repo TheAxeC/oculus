@@ -12,7 +12,6 @@
 
 import { scalar } from '../../data/helpers/guards.ts';
 import { configGeneration } from '../client/generation.svelte.ts';
-import { glyph } from './text.ts';
 
 /** The tone anything unknown gets: a hue every theme defines and nothing means. */
 export const UNKNOWN_TONE = 'grey';
@@ -191,12 +190,6 @@ export function statusMarkTone(chip: string): string {
     configGeneration();
     if (statusPalette[chip.toLowerCase()] !== undefined) return statusTone(chip);
     return ICON_HUES[legend[chip]?.icon ?? ''] ?? UNKNOWN_TONE;
-}
-
-/** The active glyph character for a status chip, and nothing for an unlisted chip. */
-export function chipGlyph(chip: string): string {
-    const name = chipGlyphName(chip);
-    return name === '' ? '' : glyph(name);
 }
 
 /** A status chip's words, and the chip's own key for one the legend does not list. */

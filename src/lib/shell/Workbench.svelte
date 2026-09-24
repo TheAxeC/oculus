@@ -48,7 +48,7 @@
 
     const {
         layout: { change, activeInstance, currentPage, expandChild, focused, layout },
-        ui: { crt, textScale, theme, unicode, updateTrayRequested, wallpaper },
+        ui: { crt, icons, textScale, theme, updateTrayRequested, wallpaper },
         registry: { views }
     } = client;
 
@@ -201,9 +201,9 @@
         document.documentElement.style.setProperty('--text-scale', String(textScale() ?? 1));
         applyTheme(document, [themeClass(theme()), wall ? WALL_CLASS : ''].join(' '), crt());
         applyWallpaper(document, paper, wall);
-        // The terminal palettes draw the ASCII stand-ins unless the viewer asked for the real
-        // glyphs; every other theme draws what config/catalogs/glyphs.yml names.
-        setGlyphMode(terminalTheme(theme()) && !unicode() ? 'ascii' : 'unicode');
+        // The terminal palettes draw the ASCII stand-ins unless the viewer asked for the icons;
+        // every other theme draws the icon config/catalogs/icons.yml maps each glyph name to.
+        setGlyphMode(terminalTheme(theme()) && !icons() ? 'ascii' : 'icon');
     });
 
     /**

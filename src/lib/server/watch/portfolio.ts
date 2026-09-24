@@ -31,6 +31,7 @@ import {
     iconSet,
     loadConfig,
     textCatalog,
+    themeFindings,
     type IconMemory
 } from '../../data/sources/config.ts';
 import { MANIFEST } from '../../data/sources/manifests.ts';
@@ -295,6 +296,7 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
                         ...findings,
                         ...iconFindings(paths.engine, config),
                         ...behaviorFindings(paths.engine, config),
+                        ...themeFindings(paths.engine, config),
                         ...readRoots(config, rootsFile(paths.engine)).findings,
                         ...docFindings(config, paths.hub, layoutFile(paths.engine)),
                         ...railFindings(config, layoutFile(paths.engine), textCatalog(config))

@@ -515,9 +515,15 @@ export type Venue = {
     /** Text, not a number: the registry writes "5.9" and "~1.8" alike. */
     jif?: string;
     quartile?: string;
-    /** Indexing and cost are prose in the registry ("free (subscription)"), never flags. */
+    /**
+     * Indexing and cost are prose in the registry ("free (subscription)"), never flags. An indexing
+     * field that opens with a check or a cross mark carries the rest of its words here and the mark
+     * as `wosMark` or `scopusMark`, read by data/snapshot/indexing.ts.
+     */
     wos?: string;
+    wosMark?: 'yes' | 'no';
     scopus?: string;
+    scopusMark?: 'yes' | 'no';
     free?: string;
     format?: string;
     wants?: string;

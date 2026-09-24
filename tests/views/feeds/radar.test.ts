@@ -152,6 +152,79 @@ describe('the Lit Watch view', () => {
         expect(body).not.toContain('Dismissed paper');
     });
 
+    // revert: src/lib/views/feeds/radar/RadarIntro.svelte:59 => delete
+    it('draws the intro legend as bucket glyphs in their hues beside the catalog words', () => {
+        receive({
+            channel: 'portfolio',
+            version: 303,
+            payload: { version: 303, entities: {} }
+        });
+        serve({
+            ok: true,
+            kind: 'radar',
+            file: 'feeds/literature-radar.yml',
+            meta: { last_run: '2026-09-11' },
+            entries
+        });
+        const body = render(Radar, {
+            context: clientContext(client),
+            props: { instance: instance('radar-intro') }
+        }).body;
+        const from = body.indexOf('data-radar-intro');
+        const intro = body.slice(from, body.indexOf('</p>', from));
+        const names = [...intro.matchAll(/data-glyph="([a-z_]+)"/g)].map((found) => found[1]);
+        expect(names).toEqual([catalog['views.radar_glyph'], 'red', 'green', 'white', 'purple']);
+        const buckets = config.radar_buckets as { glyph: string; color: string }[];
+        for (const name of ['red', 'green', 'white', 'purple']) {
+            const hue = toneOf(buckets.find((bucket) => bucket.glyph === name)?.color ?? '');
+            expect(intro, name).toMatch(
+                new RegExp(
+                    `style="color: var\\(--c-${hue}-txt\\)">(?:<!--[^>]*-->)*<span class="glyph[^"]*" data-glyph="${name}"`
+                )
+            );
+        }
+        for (const key of ['intro_preempt', 'intro_cite', 'intro_adjacent', 'intro_cross']) {
+            expect(intro, key).toContain(catalog[`radar.${key}`]);
+        }
+        expect(intro).toContain('4 tracked');
+        expect(intro).toContain('<b>New-paper radar</b>');
+        expect(intro).toContain('<b>idea sparks</b>');
+        expect(intro).toContain('<b>2026-09-11</b>');
+        // the catalog lines are words alone, so no token is left to fill
+        expect(intro).not.toContain('{G.');
+        expect(intro).not.toMatch(/[^\t\n\r\x20-\x7E]/);
+    });
+
+    // revert: config/text/views/feeds/radar.yml:16 => intro_preempt: pre-emption |
+    // revert: src/lib/views/feeds/radar/RadarIntro.svelte:63 => delete
+    it('draws the intro separators from its markup, so every intro line holds words alone', () => {
+        receive({ channel: 'portfolio', version: 304, payload: { version: 304, entities: {} } });
+        serve({
+            ok: true,
+            kind: 'radar',
+            file: 'feeds/literature-radar.yml',
+            meta: { last_run: '2026-09-11' },
+            entries
+        });
+        const body = render(Radar, {
+            context: clientContext(client),
+            props: { instance: instance('radar-words') }
+        }).body;
+        expect(body).toMatch(/class="legend[^"]*"/);
+        expect([...body.matchAll(/class="item[ "]/g)]).toHaveLength(6);
+        // The markup draws the separators, hidden from a screen reader: the legend's brackets and
+        // a bar between two items.
+        const seps = [
+            ...body.matchAll(/<span class="sep[^"]*" aria-hidden="true">([^<]*)<\/span>/g)
+        ];
+        expect(seps.map((one) => one[1])).toEqual(['(', '|', '|', ')', '|', '|']);
+        const lines = Object.entries(catalog).filter(([key]) => key.startsWith('radar.intro_'));
+        expect(lines.length).toBeGreaterThanOrEqual(9);
+        // a separator stored in a line would be drawn twice beside the markup's own
+        const loose = lines.filter(([, line]) => /\||^\s*-|-\s*$/.test(line));
+        expect(loose.map(([key]) => key)).toEqual([]);
+    });
+
     // The bucket glyphs are colour names in the vocabulary, and a line icon carries no colour, so
     // each heading's mark is drawn in the bucket's own hue instead.
     it('draws each bucket heading mark in the bucket colour, one hue per bucket', () => {

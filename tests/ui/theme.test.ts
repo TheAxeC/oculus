@@ -20,12 +20,7 @@ import {
     applyWallpaper,
     type Themeable
 } from '../../src/lib/ui/theme.ts';
-import {
-    asciiCatalog,
-    engineDir,
-    glyphCatalog,
-    loadConfig
-} from '../../src/lib/data/sources/config.ts';
+import { engineDir, glyphCatalog, loadConfig } from '../../src/lib/data/sources/config.ts';
 import {
     setAppearance,
     terminalFontPx,
@@ -34,7 +29,7 @@ import {
     themes,
     wallpaperSettings
 } from '../../src/lib/state/words/appearance.ts';
-import { setAscii, setGlyphMode, setGlyphs } from '../../src/lib/state/words/text.ts';
+import { setGlyphMode, setGlyphs } from '../../src/lib/state/words/text.ts';
 import { parseBlocks } from '../../src/lib/themes/parse.ts';
 
 const THEMES_DIR = resolve(
@@ -49,14 +44,12 @@ const TOKENS = readFileSync(join(THEMES_DIR, 'tokens.css'), 'utf8');
 const THEMES = readFileSync(join(THEMES_DIR, 'themes.css'), 'utf8');
 const APPEARANCE = loadConfig(engineDir()).config;
 const GLYPHS = glyphCatalog(APPEARANCE);
-const ASCII = asciiCatalog(APPEARANCE);
 setGlyphs(GLYPHS);
-setAscii(ASCII);
-setGlyphMode('unicode');
+setGlyphMode('icon');
 setAppearance(APPEARANCE);
 
 afterEach(() => {
-    setGlyphMode('unicode');
+    setGlyphMode('icon');
     setAppearance(APPEARANCE);
 });
 
@@ -83,15 +76,56 @@ function apply(name: string, crt = false) {
 }
 
 describe('applyTheme', () => {
-    it('resolves base and terminal-palette marks through the active glyph mode', () => {
-        expect(ASCII[GLYPHS.theme_base]).toBeTypeOf('string');
-        expect(ASCII[GLYPHS.theme_rice]).toBeTypeOf('string');
-        expect(themeLabel('light')).toBe(`${GLYPHS.theme_base} light`);
-        expect(themeLabel('mocha')).toBe(`${GLYPHS.theme_rice} mocha`);
+    // revert: src/lib/state/words/appearance.ts:130 => glyph: '',
+    it('gives each theme its glyph name apart from words that carry none, in either mode', () => {
+        const light = themes().find((entry) => entry.name === 'light');
+        const mocha = themes().find((entry) => entry.name === 'mocha');
+        expect(light).toMatchObject({ glyph: 'theme_base', label: 'light' });
+        expect(mocha).toMatchObject({ glyph: 'theme_rice', label: 'mocha' });
+        for (const entry of themes()) {
+            expect(entry.glyph in GLYPHS, entry.name).toBe(true);
+            expect(entry.label, entry.name).toMatch(/^[a-z0-9 '()-]+$/);
+        }
         setGlyphMode('ascii');
-        expect(themeLabel('light')).toBe(`${ASCII[GLYPHS.theme_base]} light`);
-        expect(themeLabel('mocha')).toBe(`${ASCII[GLYPHS.theme_rice]} mocha`);
-        expect(themes()[0].label).toBe(`${ASCII[GLYPHS.theme_base]} light`);
+        expect(themeLabel('light')).toBe('light');
+        expect(themeLabel('mocha')).toBe('mocha');
+    });
+
+    // revert: src/lib/state/words/appearance.ts:145 => return list.map((theme) => ({ ...theme }));
+    it('offers a row whose glyph is empty, missing or unknown with its words alone', () => {
+        setAppearance({
+            themes: [
+                { name: 'a', glyph: '', label: 'A' },
+                { name: 'b', label: 'B' },
+                { name: 'c', glyph: 'nonesuch', label: 'C' },
+                { name: 'd', glyph: 'constructor', label: 'D' },
+                { name: 'e', glyph: 'theme_base', label: 'E' }
+            ]
+        });
+        expect(themes().map((entry) => `${entry.name}:${entry.glyph}`)).toEqual([
+            'a:',
+            'b:',
+            'c:',
+            'd:',
+            'e:theme_base'
+        ]);
+    });
+
+    // revert: src/lib/state/words/appearance.ts:126 => if (name === undefined || name.length === 0) continue;
+    it('offers a theme named twice once, as its first row gives it', () => {
+        setAppearance({
+            themes: [
+                { name: 'a', class: 'one', glyph: 'theme_base', label: 'first' },
+                { name: 'constructor', class: '', glyph: 'theme_rice', label: 'odd' },
+                { name: 'a', class: 'two', glyph: 'theme_rice', label: 'second' }
+            ]
+        });
+        expect(themes().map((entry) => `${entry.name}:${entry.label}`)).toEqual([
+            'a:first',
+            'constructor:odd'
+        ]);
+        expect(themeClass('a')).toBe('one');
+        expect(themeLabel('a')).toBe('first');
     });
 
     it('puts the theme class string on the body', () => {

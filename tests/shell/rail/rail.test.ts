@@ -14,6 +14,7 @@ import ActivityRail from '../../../src/lib/shell/rail/ActivityRail.svelte';
 import { listFade } from '../../../src/lib/shell/rail/rail.ts';
 import type { RailPage } from '../../../src/lib/state/workbench/navigation/rail.ts';
 import { glyphCatalog } from '../../../src/lib/data/sources/config.ts';
+import { setGlyphMode } from '../../../src/lib/state/words/text.ts';
 import { fakeStorage } from '../../state/workbench/layout/layout-fixture.ts';
 import { clientContext, createClientState, type ClientState } from '../../fixtures/client.ts';
 import { buttonWith, catalog, config, count, probe } from './rail-fixture.ts';
@@ -67,12 +68,18 @@ describe('the fades of the rail list', () => {
 describe('the rail, drawn', () => {
     it('draws one button per page, keyed by its page, with its label under its glyph', () => {
         // revert: src/lib/shell/rail/ActivityRail.svelte:241 => label={entry.page}
-        const body = drawn();
-        expect(count(body, 'data-rail-page=')).toBe(PAGES.length);
-        const first = /data-rail-page="a"[\s\S]*?<\/button>/.exec(body)?.[0] ?? '';
-        expect(first).toMatch(/class="[^"]*rail-control[^"]*stacked/);
-        expect(first).toContain(glyphCatalog(config).compass);
-        expect(first).toMatch(/class="label[^"]*">Page a</);
+        // The glyph is named by its stand-in, the text the ASCII mode draws it as.
+        setGlyphMode('ascii');
+        try {
+            const body = drawn();
+            expect(count(body, 'data-rail-page=')).toBe(PAGES.length);
+            const first = /data-rail-page="a"[\s\S]*?<\/button>/.exec(body)?.[0] ?? '';
+            expect(first).toMatch(/class="[^"]*rail-control[^"]*stacked/);
+            expect(first).toContain(`>${glyphCatalog(config).compass}</span>`);
+            expect(first).toMatch(/class="label[^"]*">Page a</);
+        } finally {
+            setGlyphMode('icon');
+        }
     });
 
     it('puts the digit that reaches a page in its hover words, for the first nine alone', () => {

@@ -19,10 +19,10 @@
     import Search from '$lib/ui/controls/Search.svelte';
     import Toolbar from '$lib/ui/frame/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import Intro from '../../shared/prose/Intro.svelte';
     import SourceButton from '../../shared/links/SourceButton.svelte';
     import Bucket from './Bucket.svelte';
     import RadarCard from './RadarCard.svelte';
+    import RadarIntro from './RadarIntro.svelte';
     import Reveal from '../../shared/card/Reveal.svelte';
     import {
         bucketsOf,
@@ -98,13 +98,7 @@
         {:else if data.error !== undefined}
             <Empty message={t('radar.feed_error', data.file, data.error)} glyph="warn" />
         {:else}
-            <Intro
-                html={`${t('radar.intro_head')} ${t(
-                    'radar.intro_tail',
-                    live.length,
-                    asText(lastRun) || t('radar.no_date')
-                )}`}
-            />
+            <RadarIntro {buckets} tracked={live.length} lastRun={asText(lastRun)} />
 
             {#if said !== ''}
                 <p class="said">{said}</p>

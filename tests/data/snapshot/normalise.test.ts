@@ -151,7 +151,9 @@ function portfolio(): RawPortfolio {
                     timing: 'deadline Sep, held Jan',
                     call: 'https://example.invalid/call',
                     email: 'chair@example.invalid'
-                }
+                },
+                { key: 'indexed', name: 'Indexed', wos: '\u2705 SCIE', scopus: '\u274C' },
+                { key: 'prose', name: 'Prose', wos: 'CPCI (likely)', scopus: '\u2705\uFE0F' }
             ]),
             datasets: entries('datasets', [
                 {
@@ -371,6 +373,25 @@ describe('normalise, the field mapping', () => {
         expect(snapshot.entities.venues.bspc.timing).toBe('deadline Sep, held Jan');
         expect(snapshot.entities.venues.bspc.call).toBe('https://example.invalid/call');
         expect(snapshot.entities.venues.bspc.email).toBe('chair@example.invalid');
+    });
+
+    // revert: src/lib/data/snapshot/normalise.ts:331 => wos: str(entry.wos),
+    it('reads a leading check or cross of an indexing field as its mark, and keeps the words', () => {
+        const { indexed, prose } = snapshot.entities.venues;
+        expect([indexed.wos, indexed.wosMark, indexed.scopus, indexed.scopusMark]).toEqual([
+            'SCIE',
+            'yes',
+            undefined,
+            'no'
+        ]);
+        expect([prose.wos, prose.wosMark, prose.scopus, prose.scopusMark]).toEqual([
+            'CPCI (likely)',
+            undefined,
+            undefined,
+            'yes'
+        ]);
+        const drawn = JSON.stringify(snapshot.entities.venues);
+        expect(drawn).not.toMatch(/[^\t\n\r\x20-\x7E]/);
     });
 
     it('fills the registry entities, hpc_path and retrieval included', () => {

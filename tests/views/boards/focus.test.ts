@@ -69,7 +69,8 @@ describe('the Live HPC pill', () => {
         expect(body).not.toContain('HPC job');
     });
 
-    it('is present with counts from the shared HPC state', () => {
+    // revert: src/lib/views/boards/focus/CommandCenterView.svelte:116 => delete
+    it('is present with counts from the shared HPC state, its glyph beside the words', () => {
         receive({
             channel: 'hpc',
             version: 1,
@@ -87,8 +88,15 @@ describe('the Live HPC pill', () => {
                 host: 'fixture'
             }
         });
-        expect(html(client)).toContain('1 HPC job running');
-        expect(html(client)).toContain('2 pending');
+        const drawn = html(client);
+        const pill = drawn.slice(
+            drawn.indexOf('class="pill'),
+            drawn.indexOf('</button>', drawn.indexOf('class="pill'))
+        );
+        expect(pill).toContain('data-glyph="hpc"');
+        expect(pill.indexOf('data-glyph="hpc"')).toBeLessThan(pill.indexOf('1 HPC job running'));
+        expect(pill).toContain('2 pending');
+        expect(pill).not.toMatch(/[^\t\n\r\x20-\x7E]/);
     });
 });
 
@@ -127,7 +135,7 @@ describe('the board', () => {
     });
 
     it('draws a column whose tone the palette lacks, or that names none, and its header in the unknown tone', () => {
-        // revert: src/lib/state/words/tones.ts:109 => return tone;
+        // revert: src/lib/state/words/tones.ts:108 => return tone;
         receive({
             channel: 'config',
             version: 2,
@@ -152,6 +160,7 @@ describe('the board', () => {
         expect(drawn.split(grey).length - 1).toBeGreaterThanOrEqual(2);
     });
 
+    // revert: src/lib/views/boards/focus/lanes/LaneHead.svelte:40 => <span class="count">{count + 1}</span>
     it('counts what sits on a lane', () => {
         const run = body.slice(body.indexOf('>Run<'));
         expect(run.slice(0, 200)).toContain('>3<');
@@ -169,12 +178,13 @@ describe('the board', () => {
 });
 
 describe('a card', () => {
+    // revert: src/lib/views/boards/focus/lanes/LaneCard.svelte:89 => delete
     it('draws the short handle, the priority flames and the first sentence of next', () => {
         expect(body).toContain('Alpha');
         expect(body).toContain('Run the sweep.');
         // the card draws the first sentence of next and stops there
         expect(body).not.toContain('Then write it up.');
-        const flames = body.split((config.glyphs as Record<string, string>).fire).length - 1;
+        const flames = body.split('data-glyph="fire"').length - 1;
         expect(flames).toBeGreaterThanOrEqual(3);
     });
 
@@ -349,12 +359,26 @@ describe('the strip and the band', () => {
         expect(body).toContain(catalog['focus.wait_hosts']);
     });
 
+    // revert: src/lib/views/boards/focus/Band.svelte:155 => t('focus.jobs_lane'),
     it('stacks the grants by stage and names the teaching column', () => {
         expect(body).toContain(catalog['focus.cards_group']);
         expect(body).toContain('A grant in prep');
-        expect(body).toContain(escaped('focus.teaching_lane').replace('{G.teaching} ', ''));
+        expect(body).toContain(escaped('focus.teaching_lane'));
         expect(body).toContain('A live position');
         expect(body).toContain('A course');
+    });
+
+    // revert: src/lib/views/boards/focus/Band.svelte:124 => delete
+    it('draws each column glyph before the column words, and no character in the words', () => {
+        const heads = [...body.matchAll(/<div class="lane-h[\s\S]*?<\/div>/g)].map((one) => one[0]);
+        for (const key of ['funding', 'jobs', 'teaching']) {
+            const words = escaped(`focus.${key}_lane`);
+            const head = heads.find((one) => one.includes(`>${words}</span>`)) ?? '';
+            const glyph = `data-glyph="${catalog[`focus.${key}_glyph`]}"`;
+            expect(head, key).toContain(glyph);
+            expect(head.indexOf(glyph), key).toBeLessThan(head.indexOf(words));
+            expect(head, key).not.toMatch(/[^\t\n\r\x20-\x7E]/);
+        }
     });
 
     it('draws the first sentence of a band card note and not the rest of it', () => {

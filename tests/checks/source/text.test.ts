@@ -1,10 +1,10 @@
 // The catalog: flattening on the server, lookup and interpolation on the client. Then the glyph
-// vocabulary and the ASCII stand-ins beside it, which are the same shape of thing: read from
-// config/catalogs/glyphs.yml on the server, installed on the client, looked up where they render.
+// vocabulary, each name with its ASCII stand-in: read from config/catalogs/glyphs.yml on the
+// server, installed on the client, and answered by glyph() as the stand-in whatever the mode, since
+// the stand-in is the only form of a glyph that may go into text.
 
 import { describe, expect, it } from 'vitest';
 import {
-    asciiCatalog,
     engineDir,
     flattenText,
     glyphCatalog,
@@ -12,10 +12,9 @@ import {
     textCatalog
 } from '../../../src/lib/data/sources/config.ts';
 import {
-    asciiOf,
+    bracketedGlyph,
     glyph,
     lookup,
-    setAscii,
     setCatalog,
     setGlyphMode,
     setGlyphs,
@@ -64,108 +63,65 @@ describe('t', () => {
         expect(() => t('app.missing')).toThrow(/app\.missing/);
     });
 
-    it('resolves known glyph placeholders in lookup and t and preserves unknown names', () => {
-        setCatalog({
-            'radar.head': '{G.litwatch} watch {G.red}',
-            'radar.tail': '{0} {G.nonesuch}'
-        });
+    // revert: src/lib/state/words/text.ts:55 => return value.replace(/\{G\.\w+\}/g, 'X');
+    it('draws a catalog line as written, with nothing filled into a glyph-shaped token', () => {
+        setCatalog({ 'radar.head': '{G.litwatch} watch' });
         setGlyphs(GLYPHS);
-        setAscii(ASCII);
-        setGlyphMode('unicode');
-        expect(lookup('radar.head')).toBe(`${GLYPHS.litwatch} watch ${GLYPHS.red}`);
-        expect(t('radar.tail', 4)).toBe('4 {G.nonesuch}');
+        setGlyphMode('icon');
+        expect(lookup('radar.head')).toBe('{G.litwatch} watch');
         setGlyphMode('ascii');
-        expect(lookup('radar.head')).toBe(`${ASCII[GLYPHS.litwatch]} watch ${ASCII[GLYPHS.red]}`);
+        expect(t('radar.head')).toBe('{G.litwatch} watch');
     });
 });
 
-// The characters themselves are config, so they are read from config/catalogs/glyphs.yml rather
-// than written here: this file is ASCII like every other authored file, and the stand-ins are the
-// only half of the pair that can be spelled in it.
 const { config } = loadConfig(engineDir());
 const GLYPHS = glyphCatalog(config);
-const ASCII = asciiCatalog(config);
 
-describe('catalog glyph tokens', () => {
-    it('resolves the task note, error prefix and running-job mark in both modes', () => {
-        setCatalog(textCatalog(config));
-        setGlyphs(GLYPHS);
-        setAscii(ASCII);
-        setGlyphMode('unicode');
-        expect(t('app.tasks.note_prefix', 'note')).toBe(`${GLYPHS.info} note`);
-        expect(t('ui.common.x_prefix', 'failed')).toBe(`${GLYPHS.cross} failed`);
-        expect(t('hpc.pill_running', 2, 's')).toBe(`${GLYPHS.hpc} 2 HPC jobs running`);
-        setGlyphMode('ascii');
-        expect(t('app.tasks.note_prefix', 'note')).toBe(`${ASCII[GLYPHS.info]} note`);
-        expect(t('ui.common.x_prefix', 'failed')).toBe(`${ASCII[GLYPHS.cross]} failed`);
-        expect(t('hpc.pill_running', 2, 's')).toBe(`${ASCII[GLYPHS.hpc]} 2 HPC jobs running`);
+describe('the catalog', () => {
+    // revert: config/text/ui.yml:6 => confirm_cancel: '{G.cross} Cancel'
+    it('carries no glyph token in any line, since every glyph is drawn beside the words', () => {
+        const lines = Object.entries(textCatalog(config));
+        expect(lines.filter(([, line]) => line.includes('{G.')).map(([key]) => key)).toEqual([]);
     });
 });
 
 describe('glyph', () => {
-    it('draws the character config/catalogs/glyphs.yml names while the mode is unicode', () => {
+    // revert: src/lib/state/words/text.ts:81 => return glyphMode() === 'ascii' ? standIn : name;
+    it('answers the stand-in config/catalogs/glyphs.yml gives a name, in either mode', () => {
         setGlyphs(GLYPHS);
-        setAscii(ASCII);
-        setGlyphMode('unicode');
-        expect(glyph('refresh')).toBe(GLYPHS.refresh);
-        expect(glyph('check')).toBe(GLYPHS.check);
-    });
-
-    it('draws the ASCII stand-in while the mode is ascii', () => {
-        setGlyphs(GLYPHS);
-        setAscii(ASCII);
+        setGlyphMode('icon');
+        expect(glyph('refresh')).toBe('(r)');
+        expect(glyph('check')).toBe('+');
         setGlyphMode('ascii');
         expect(glyph('refresh')).toBe('(r)');
         expect(glyph('check')).toBe('+');
     });
 
-    it('holds dedicated glyphs and ASCII stand-ins for the three rail toggles', () => {
-        setGlyphs(GLYPHS);
-        setAscii(ASCII);
-        for (const name of ['crt', 'wallpaper', 'unicode']) {
-            expect(GLYPHS[name]).toBeTypeOf('string');
-            expect(ASCII[GLYPHS[name]]).toBeTypeOf('string');
+    // revert: config/catalogs/glyphs.yml:14 => crt: ""
+    it('holds a dedicated glyph with a stand-in for the three appearance toggles', () => {
+        for (const name of ['crt', 'wallpaper', 'icons']) {
+            expect(GLYPHS[name]).toMatch(/^[\x20-\x7E]+$/);
         }
     });
 
-    it('draws a character the stand-ins do not hold as it is', () => {
-        setGlyphs(GLYPHS);
-        setAscii(ASCII);
-        setGlyphMode('ascii');
-        // The deadline sparkline's ramp is a string of characters rather than one, and `ascii:`
-        // holds no entry for it.
-        expect(ASCII[GLYPHS.spark_blocks]).toBe(undefined);
-        expect(glyph('spark_blocks')).toBe(GLYPHS.spark_blocks);
-    });
-
+    // revert: src/lib/state/words/text.ts:80 => delete
     it('throws on a name config/catalogs/glyphs.yml does not hold, in either mode', () => {
         setGlyphs(GLYPHS);
         setGlyphMode('ascii');
         expect(() => glyph('nonesuch')).toThrow(/nonesuch/);
-        setGlyphMode('unicode');
+        setGlyphMode('icon');
         expect(() => glyph('nonesuch')).toThrow(/nonesuch/);
     });
 });
 
-describe('asciiOf', () => {
-    it('swaps a character that came from data rather than from a name', () => {
-        setAscii(ASCII);
+describe('bracketedGlyph', () => {
+    // revert: src/lib/state/words/text.ts:112 => delete
+    it('reads a bracketed stand-in as a tag only while the stand-ins are drawn', () => {
+        setGlyphs(GLYPHS);
         setGlyphMode('ascii');
-        expect(asciiOf(GLYPHS.venue)).toBe('<>');
-        expect(asciiOf(GLYPHS.funding)).toBe('<*>');
-    });
-
-    it('leaves a character the stand-ins do not hold, and leaves an empty string', () => {
-        setAscii(ASCII);
-        setGlyphMode('ascii');
-        expect(asciiOf('Z')).toBe('Z');
-        expect(asciiOf('')).toBe('');
-    });
-
-    it('leaves every character while the mode is unicode', () => {
-        setAscii(ASCII);
-        setGlyphMode('unicode');
-        expect(asciiOf(GLYPHS.venue)).toBe(GLYPHS.venue);
-        expect(asciiOf(GLYPHS.funding)).toBe(GLYPHS.funding);
+        expect(bracketedGlyph('expand')).toBe(true);
+        expect(bracketedGlyph('refresh')).toBe(false);
+        setGlyphMode('icon');
+        expect(bracketedGlyph('expand')).toBe(false);
     });
 });

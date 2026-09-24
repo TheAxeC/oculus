@@ -84,7 +84,7 @@ text:
         empty_glyph: circle_empty
         fire_glyph: fire
         funding_glyph: coin
-        funding_lane: '{G.coin} Funding'
+        funding_lane: Funding
         funding_sub: grant applications
         hint_count: '{0} active/manuscript'
         hint_link: open the first one
@@ -97,7 +97,7 @@ text:
         in_days: in {0}d
         in_flight: '- {0} in flight'
         jobs_glyph: scout
-        jobs_lane: '{G.scout} Job applications'
+        jobs_lane: Job applications
         jobs_sub: positions - awaiting outcome
         move_to: Move to
         next: Next
@@ -118,7 +118,7 @@ text:
             heading: Tasks
             heading_glyph: tasks
         teaching_glyph: teaching
-        teaching_lane: '{G.teaching} Teaching & supervision'
+        teaching_lane: Teaching & supervision
         teaching_sub: this academic year
         venue_unset: (venue unset)
         wait_apps: Applications

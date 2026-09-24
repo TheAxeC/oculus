@@ -570,6 +570,7 @@ describe('the terminal view with nothing selected', () => {
 describe('the terminal toolbar pin', () => {
     // The label follows the pinned terminal's name through an $effect, which no server render runs;
     // the write it makes is read off the source and the browser suite presses the rename itself.
+    // revert: src/lib/views/sessions/terminal/Terminal.svelte:354 => glyph="dismiss"
     it('is a glyph button among the glyph buttons, not a word among them', () => {
         select(null);
         const body = html(Terminal, { session: 'abc123-shell' });
@@ -579,7 +580,7 @@ describe('the terminal toolbar pin', () => {
         );
         expect(found).toHaveLength(1);
         expect(found[0]).toContain('compact');
-        expect(found[0]).toContain(glyphs[catalog['sessions.pin_glyph']]);
+        expect(found[0]).toContain(`data-glyph="${catalog['sessions.pin_glyph']}"`);
         // it is drawn as a glyph among the glyph buttons, so it carries no label span
         expect(found[0]).not.toContain('<span class="label">');
     });
