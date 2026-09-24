@@ -29,7 +29,7 @@ function railButton(page: Page, key: string): Locator {
 test('a browser with no saved layout opens on the first rail page, and digit 1 shows it again', async ({
     page
 }) => {
-    // revert: src/lib/shell/Workbench.svelte:161 => if (false) client.layout.startOnRailPage(first.page, first.label, first.node);
+    // revert: src/lib/shell/Workbench.svelte:174 => if (false) client.layout.startOnRailPage(first.page, first.label, first.node);
     await bootFresh(page);
     await expect(railButton(page, 'focus')).toHaveClass(/\bactive\b/);
     await expect(page.getByRole('tab', { name: t('views.focus') })).toBeVisible();
@@ -44,7 +44,7 @@ test('a browser with no saved layout opens on the first rail page, and digit 1 s
 test('a browser with no saved layout draws no page before its first rail page', async ({
     page
 }) => {
-    // revert: src/lib/shell/Workbench.svelte:260 => {#if false}
+    // revert: src/lib/shell/Workbench.svelte:275 => {#if false}
     // Every tab name drawn from the first paint on, so a page drawn and replaced is seen too.
     await page.addInitScript(() => {
         const seen: string[] = [];
@@ -132,7 +132,7 @@ test('a rail page the reader rearranged is the same page after a reload', async 
 });
 
 test('no strip of pages is drawn over the panes', async ({ page }) => {
-    // revert: src/lib/shell/Workbench.svelte:256 => <div class="area"><div role="tablist" aria-label="Pages"></div>
+    // revert: src/lib/shell/Workbench.svelte:270 => <div class="area"><div role="tablist" aria-label="Pages"></div>
     await boot(page);
     // The page on screen is one pane, and its strip is the only list of tabs in the window.
     await expect(page.getByRole('tablist')).toHaveCount(1);

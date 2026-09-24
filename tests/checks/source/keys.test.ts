@@ -5,6 +5,7 @@
 // literal, whatever expression the formatter is handed the catalog through.
 
 import { statusWordKey } from '../../../src/lib/state/sources/repositories.ts';
+import { registered } from '../../../src/lib/state/words/languages.ts';
 import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve, sep } from 'node:path';
@@ -167,6 +168,13 @@ const COMPUTED_PREFIXES = [
         keys: () => recordedKinds().map((kind) => `history.kind_${kind.replaceAll('-', '_')}`)
     },
     {
+        // A language is named by the highlighter's own name for it, so a language registered in
+        // state/words/languages.ts without a name in config/text/statusbar.yml fails here.
+        file: 'lib/state/workbench/navigation/status.ts',
+        start: 't(`statusbar.language_${known}`',
+        keys: () => registered().map((name) => `statusbar.language_${name}`)
+    },
+    {
         // A change row is named by its path and the word its git status letter stands for; a letter
         // git adds later reads as `changed`.
         file: 'lib/views/sources/repositories/Changes.svelte',
@@ -307,7 +315,7 @@ describe('text keys', () => {
         expect(missing).toEqual([]);
     });
 
-    // revert: tests/checks/source/keys.test.ts:316 => delete
+    // revert: tests/checks/source/keys.test.ts:324 => delete
     it('has a reader for every catalog key', () => {
         const allowed = new Set(found.flatMap((call) => (call.key === null ? [] : [call.key])));
         for (const registration of views()) {

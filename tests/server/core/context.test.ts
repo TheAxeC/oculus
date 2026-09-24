@@ -1,6 +1,7 @@
 // Layer 2, server tests. ServerContext constructs each dependency once, closes each owner once,
 // carries its token, and reports a missing raw-request carrier clearly.
 
+import { hostname } from 'node:os';
 import { describe, expect, it, vi } from 'vitest';
 import { Hub } from '../../../src/lib/server/core/channels.ts';
 import {
@@ -23,7 +24,7 @@ const driver = (close: () => void = noop): TerminalDriver => ({
 });
 
 describe('ServerContext', () => {
-    // revert: src/lib/server/core/context.ts:320 => delete
+    // revert: src/lib/server/core/context.ts:334 => delete
     it('builds and closes each process-owned object once and carries its token', () => {
         const closes = Array.from({ length: 10 }, () => vi.fn());
         const hub = new Hub();
@@ -122,7 +123,7 @@ describe('ServerContext', () => {
             watchUsage
         });
 
-        // revert: src/lib/server/core/context.ts:179 => delete
+        // revert: src/lib/server/core/context.ts:188 => delete
         expect(merge).toHaveBeenCalledWith('files', expect.any(Function));
         expect(context.token).toBe('context-token');
         for (const built of [
@@ -142,7 +143,7 @@ describe('ServerContext', () => {
         }
         // The sessions watcher reads every account local.yml names, so a session of the second
         // Claude account is read from that account's own registry and transcripts.
-        // revert: src/lib/server/core/context.ts:219 => delete
+        // revert: src/lib/server/core/context.ts:233 => delete
         expect(watchSessions.mock.calls[0][1]).toMatchObject({
             stores: ['/machine/.claude/projects', '/machine/.claude-work/projects'],
             registries: ['/machine/.claude/sessions', '/machine/.claude-work/sessions'],
@@ -176,13 +177,18 @@ describe('ServerContext', () => {
         expect(Object.keys(context.icons.set)).toEqual(['pin']);
         expect(context.icons.set.pin).toContain('<svg');
         expect(watchPortfolio.mock.calls[0][1].icons).toBe(context.icons);
+        // The machine every config push carries: its own name, and the address it listens at.
+        expect(watchPortfolio.mock.calls[0][1].host).toEqual({
+            name: hostname(),
+            address: `http://127.0.0.1:${context.local.port}`
+        });
 
         context.close();
         context.close();
         for (const close of closes) expect(close).toHaveBeenCalledTimes(1);
     });
 
-    // revert: src/lib/server/core/context.ts:239 => onSessionsChange: undefined
+    // revert: src/lib/server/core/context.ts:253 => onSessionsChange: undefined
     it('keeps session rescan signals inside their owning context', () => {
         const rescans: (() => void)[] = [];
         const refreshes = [vi.fn(noopAsync), vi.fn(noopAsync)];

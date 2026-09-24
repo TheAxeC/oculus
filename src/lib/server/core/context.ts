@@ -3,6 +3,7 @@
 // same Hub, watchers, terminals, token and configuration as the socket serving that request.
 
 import type { IncomingMessage } from 'node:http';
+import { hostname } from 'node:os';
 import {
     behaviorFindings,
     calendarSettings,
@@ -20,7 +21,7 @@ import {
     type LocalConfig
 } from '../../data/sources/config.ts';
 import { requirePaintLimit } from '../../data/helpers/editor.ts';
-import type { Finding, Snapshot } from '../../data/model.ts';
+import type { Finding, HostInfo, Snapshot } from '../../data/model.ts';
 import { mintToken } from './auth.ts';
 import { ConnectStates } from '../accounts/connect/oauth.ts';
 import { defaultConnectDir } from '../accounts/connect/store.ts';
@@ -60,6 +61,14 @@ import { watchBookmarks, type BookmarksWatchOptions } from '../watch/bookmarks.t
 import { watchGit, type GitWatcher, type GitWatchOptions } from '../watch/git.ts';
 import { watchPortfolio, type Watcher } from '../watch/portfolio.ts';
 import { watchSessions } from '../watch/sessions.ts';
+
+/** The interface the server listens on: the loopback alone, so no other machine reaches it. */
+export const LISTEN_HOST = '127.0.0.1';
+
+/** The machine the server runs on, and the address a page on it reaches the server at. */
+export function hostInfo(port: number): HostInfo {
+    return { name: hostname(), address: `http://${LISTEN_HOST}:${port}` };
+}
 
 export type ServerContext = {
     hub: Hub;
@@ -137,7 +146,7 @@ export type ContextDependencies = {
     createTerminals: (hub: Hub) => Terminals;
     watchPortfolio: (
         hub: Hub,
-        paths: { hub: string; engine: string; icons: IconMemory }
+        paths: { hub: string; engine: string; icons: IconMemory; host: HostInfo }
     ) => Watcher;
     watchSessions: typeof watchSessions;
     watchGit: (hub: Hub, options: GitWatchOptions) => GitWatcher;
@@ -207,7 +216,12 @@ export function createServerContext(
         ...themeFindings(engine, config),
         ...docFindings(config, local.hub, layoutFile(engine))
     ]);
-    const portfolio = make.watchPortfolio(hub, { hub: local.hub, engine, icons });
+    const portfolio = make.watchPortfolio(hub, {
+        hub: local.hub,
+        engine,
+        icons,
+        host: hostInfo(local.port)
+    });
 
     const folders = (): ProjectFolder[] => {
         const message = hub.latest('portfolio');

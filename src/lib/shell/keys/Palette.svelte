@@ -3,6 +3,12 @@
     // it opens, then either matches every query word or lists the colon commands; choosing a result
     // changes layout or appearance state and never mounts a view of its own. Every row is one grid
     // line: what it is in words, then the control that opens it filling the rest.
+    //
+    // It is also the quick input of the source tab on screen, as VS Code's is of the active editor:
+    // a colon and a number goes to that line, a colon alone says which line the caret is on and how
+    // many there are, and `:language` lists every language the highlighter paints, the words after
+    // it narrowing the list. Both are asked of the tab through the editor status store, and with no
+    // source tab on screen the palette says there is none.
 
     import Search from '$lib/ui/controls/Search.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
@@ -11,11 +17,14 @@
         buildIndex,
         commands,
         kindWord,
+        lineQuery,
         match,
         parseCommand,
         type PaletteCommand,
         type PaletteItem
     } from '$lib/state/workbench/palette';
+    import { languageChoices, type LanguageChoice } from '$lib/state/workbench/navigation/status';
+    import { sourceOnScreen } from '$lib/state/workbench/navigation/editor-status.svelte';
     import { t } from '$lib/state/words/text';
     import { registrationLabel } from '$lib/views/registry';
     import { untrack } from 'svelte';
@@ -24,7 +33,8 @@
     const client = useState();
 
     const {
-        layout: { openView },
+        editorStatus: { ask, statusOf },
+        layout: { activeInstance, openView },
         paletteSource: { paletteSource },
         ui: { setCrt, setTheme, crt },
         registry: { views }
@@ -49,13 +59,38 @@
     );
     const index = $derived(open ? buildIndex(current.snapshot, current.feeds, knownViews) : []);
     const parsed = $derived(parseCommand(query));
+
+    /** The source tab on screen and what it last said, or null when the tab on screen is none. */
+    const source = $derived(sourceOnScreen(activeInstance(), statusOf));
+    /** The source tab's caret, which a go-to-line needs: a tab drawing no editor has none. */
+    const caret = $derived(source?.status.caret ?? null);
+
+    /** The line a go-to-line query names, or null for another query. */
+    const line = $derived(lineQuery(parsed));
+    /** Whether the query is the language list. */
+    const languageMode = $derived(parsed !== null && parsed.name === 'language');
+    const languages = $derived<LanguageChoice[]>(
+        languageMode && source !== null ? languageChoices(parsed?.argument ?? '') : []
+    );
     const commandList = $derived(
-        parsed === null
+        parsed === null || line !== null || languageMode
             ? []
-            : commands(current.config).filter((command) => command.name.startsWith(parsed.name))
+            : commands(current.config, source !== null).filter((command) =>
+                  command.name.startsWith(parsed.name)
+              )
     );
     const matches = $derived(parsed === null ? match(index, query).slice(0, 30) : []);
-    const count = $derived(parsed === null ? matches.length : commandList.length);
+    const count = $derived(
+        parsed === null
+            ? matches.length
+            : line !== null
+              ? caret === null
+                  ? 0
+                  : 1
+              : languageMode
+                ? languages.length
+                : commandList.length
+    );
 
     $effect(() => {
         if (!open || ground === undefined) return;
@@ -79,9 +114,29 @@
         openPaletteItem(client.layout, client.ui, item);
     }
 
+    /** Send the source tab on screen to a line. */
+    function goLine(wanted: number): void {
+        if (source === null || caret === null) return;
+        ask(source.instance, { kind: 'goto', line: wanted });
+        onclose();
+    }
+
+    /** Paint the source tab on screen in another language. */
+    function chooseLanguage(choice: LanguageChoice): void {
+        if (source === null) return;
+        ask(source.instance, { kind: 'language', language: choice.name });
+        onclose();
+    }
+
     function run(command: PaletteCommand): void {
         if (!command.available || parsed === null) return;
         const argument = parsed.argument;
+        // The language list is a mode of its own: choosing the command opens it.
+        if (command.name === 'language') {
+            query = ':language ';
+            selected = 0;
+            return;
+        }
         if (command.name === 'theme') {
             const configured = Array.isArray(current.config.themes)
                 ? current.config.themes.flatMap((row) => {
@@ -121,6 +176,11 @@
             if (parsed === null) {
                 const item = matches.at(selected);
                 if (item !== undefined) choose(item);
+            } else if (line !== null) {
+                goLine(line);
+            } else if (languageMode) {
+                const choice = languages.at(selected);
+                if (choice !== undefined) chooseLanguage(choice);
             } else {
                 const command = commandList.at(selected);
                 if (command !== undefined) run(command);
@@ -161,7 +221,49 @@
                             <ToolButton label={item.label} onclick={() => choose(item)} />
                         </div>
                     {/each}
+                {:else if line !== null}
+                    {#if caret !== null}
+                        <div class="result selected" role="option" aria-selected="true">
+                            <span class="kind">{t('statusbar.palette_kind_line')}</span>
+                            <ToolButton
+                                label={t('statusbar.palette_line', line)}
+                                onclick={() => goLine(line)}
+                            />
+                        </div>
+                    {:else}
+                        <p class="empty">{t('statusbar.palette_line_none')}</p>
+                    {/if}
+                {:else if languageMode}
+                    {#if source === null}
+                        <p class="empty">{t('statusbar.palette_language_none')}</p>
+                    {/if}
+                    {#each languages as choice, at (choice.name)}
+                        <div
+                            class="result"
+                            class:selected={selected === at}
+                            role="option"
+                            aria-selected={selected === at}
+                            data-language={choice.name}
+                        >
+                            <span class="kind">{t('statusbar.palette_kind_language')}</span>
+                            <ToolButton
+                                label={choice.label}
+                                active={source?.status.language === choice.name}
+                                onclick={() => chooseLanguage(choice)}
+                            />
+                        </div>
+                    {/each}
                 {:else}
+                    {#if parsed.name === '' && caret !== null && source !== null}
+                        <p class="empty" data-line-hint>
+                            {t(
+                                'statusbar.palette_line_hint',
+                                caret.line,
+                                caret.column,
+                                source.status.lines
+                            )}
+                        </p>
+                    {/if}
                     {#each commandList as command, at (command.name)}
                         <div
                             class="result"
@@ -184,7 +286,7 @@
                         </div>
                     {/each}
                 {/if}
-                {#if count === 0}
+                {#if count === 0 && line === null && !languageMode}
                     <p class="empty">
                         {parsed === null ? t('app.palette_empty') : t('app.palette.cmd_unknown')}
                     </p>

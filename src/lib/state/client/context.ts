@@ -22,6 +22,10 @@ import { createClock, type ClockStore } from './clock.svelte.ts';
 import { createDeposit, type DepositStore } from '../system/deposit.svelte.ts';
 import { createDocs, type DocsStore } from '../system/docs.svelte.ts';
 import { createDrag, type DragStore } from '../workbench/drag.svelte.ts';
+import {
+    createEditorStatus,
+    type EditorStatusStore
+} from '../workbench/navigation/editor-status.svelte.ts';
 import { createEntities, type EntitiesStore } from './entities.svelte.ts';
 import { createFeeds, type FeedsStore } from '../feeds/feeds.svelte.ts';
 import { createFiles, type FilesStore } from '../sources/files.svelte.ts';
@@ -49,6 +53,8 @@ import { createLatex, type LatexStore } from '../sessions/latex.svelte.ts';
 import { createLayout, type LayoutStore } from '../workbench/layout.svelte.ts';
 import { createManifestDraft, type ManifestDraftStore } from '../forms/manifest-draft.ts';
 import { createMemories, type MemoriesStore } from '../life/memories.svelte.ts';
+import { createNotices, type NoticesStore } from '../workbench/navigation/notices.svelte.ts';
+import { createNoticeSources } from '../workbench/navigation/notice-sources.ts';
 import {
     createPaletteSource,
     type PaletteSourceStore
@@ -102,6 +108,10 @@ export type ClientState = {
     selectors: SelectorsStore;
     railBadges: RailBadgesStore;
     paletteSource: PaletteSourceStore;
+    /** What each source tab says of its text, for the status bar, and what the bar asks of it. */
+    editorStatus: EditorStatusStore;
+    /** The notifications the status bar's bell counts and its centre lists. */
+    notices: NoticesStore;
     registry: RegistryStore;
     /** The tooltip ids of the page, which `ui/` reads through its own context. */
     tipIds: TipIds;
@@ -202,6 +212,21 @@ export function createClientState(): ClientState {
     );
     const railBadges = createRailBadges(entities, feeds, hpc, calendar, inbox, audit, selectors);
     const paletteSource = createPaletteSource(entities, feeds);
+    const editorStatus = createEditorStatus();
+    const notices = createNotices(ui);
+    // The notifications the channels and the writes post: a session that starts waiting, a job
+    // that ends, an update task whose results land, each heard once per message the entities store
+    // keeps, and a write that does not land, heard from the writes store.
+    const sources = createNoticeSources(notices, {
+        openSession: (id, title) => {
+            layout.openView('session-detail', { session: id, label: title });
+        },
+        openView: (view) => {
+            layout.openView(view);
+        }
+    });
+    entities.afterReceive(sources.heard);
+    writes.onUnwritten(sources.unwritten);
     const registry = createRegistry(layout);
     const tipIds = createTipIds();
     return {
@@ -237,6 +262,8 @@ export function createClientState(): ClientState {
         selectors,
         railBadges,
         paletteSource,
+        editorStatus,
+        notices,
         registry,
         tipIds
     };

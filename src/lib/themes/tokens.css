@@ -80,6 +80,13 @@
        scale leaves the icon clear of the badge and the count inside its pill. */
     --rail-icon: 24px;
     --rail-badge-text: 9px;
+    /* The status bar's height and its items' text: VS Code's status bar (statusbarpart.css), 22 px
+       with 12 px words, fixed as the rail is, so a larger text scale leaves the bar's height alone
+       and its words inside it. */
+    --status-height: 22px;
+    --status-text: 12px;
+    /* The status bar's icon, the size VS Code draws a codicon in its status bar at. */
+    --status-icon: 14px;
     --font-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
     --font-num: var(--font-mono); /* counts, dates, ids - mono in every theme */

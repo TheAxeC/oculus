@@ -29,8 +29,11 @@
     type Props = {
         /** The words, already translated by the caller. The empty string draws no bubble at all. */
         text: string;
-        /** Under the control, or beside it: the rail is narrow and has no room underneath. */
-        placement?: 'below' | 'beside';
+        /**
+         * Under the control, beside it, or over it: the rail is narrow and has no room underneath,
+         * and the status bar is the window's foot, with nothing under it.
+         */
+        placement?: 'below' | 'beside' | 'above';
         /**
          * Make the wrapper presentational, for a control whose parent owns it by role: a tab inside
          * a tablist is not a tab any more once a generic element sits between them. Such a wrapper
@@ -93,7 +96,12 @@
         if (box === undefined) return;
         const rect = box.getBoundingClientRect();
         const x = placement === 'beside' ? rect.right + GAP : rect.left;
-        const y = placement === 'beside' ? rect.top : rect.bottom + GAP;
+        const y =
+            placement === 'beside'
+                ? rect.top
+                : placement === 'above'
+                  ? rect.top - GAP
+                  : rect.bottom + GAP;
         const width = typeof window === 'undefined' ? 0 : window.innerWidth;
         left = width === 0 ? x : Math.max(0, Math.min(x, width - MARGIN));
         top = y;
@@ -104,6 +112,19 @@
         place();
         open = true;
         if (placement === 'beside') void tick().then(centre);
+        if (placement === 'above') void tick().then(lift);
+    }
+
+    /**
+     * A bubble over its control stands on the control's top edge, and keeps inside the window's
+     * right edge, since the status bar's last items sit against it. Both need the bubble's own
+     * size, which is known only once it is drawn.
+     */
+    function lift(): void {
+        if (!open || box === undefined || !bubble) return;
+        const rect = box.getBoundingClientRect();
+        top = Math.max(0, rect.top - GAP - bubble.offsetHeight);
+        left = Math.max(0, Math.min(rect.left, window.innerWidth - MARGIN - bubble.offsetWidth));
     }
 
     /**

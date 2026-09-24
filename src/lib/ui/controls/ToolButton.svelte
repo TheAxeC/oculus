@@ -54,6 +54,12 @@
          * terminal brackets until the pointer is over it, the same box a bare menu opener draws.
          */
         bare?: boolean;
+        /**
+         * One item of the status bar, drawn as VS Code draws one: the bar's height, the bar's own
+         * text size and colour, no border and no fill until the pointer is over it, and its
+         * tooltip over it rather than under, since the bar is the window's foot.
+         */
+        status?: boolean;
         /** A rail view id, rendered on the button for browser navigation. */
         dataView?: string;
         /** A configured hub document's path, rendered on the button for browser navigation. */
@@ -93,6 +99,7 @@
         compact = false,
         rail = false,
         bare = false,
+        status = false,
         dataView,
         dataDoc,
         dataCardToggle = false,
@@ -111,7 +118,7 @@
      wrapper with semantics of its own between them would leave the group with no radios in it. -->
 <Tooltip
     text={tip}
-    placement={rail ? 'beside' : 'below'}
+    placement={rail ? 'beside' : status ? 'above' : 'below'}
     presentational={checked !== undefined}
     block={rail}
 >
@@ -122,6 +129,7 @@
         class:compact={iconOnly}
         class:rail-control={rail}
         class:bare
+        class:status
         role={checked === undefined ? undefined : 'radio'}
         aria-checked={checked}
         aria-expanded={expanded}
@@ -217,6 +225,39 @@
         line-height: 1;
     }
 
+    /* An item of the status bar (statusbarpart.css): the bar's height, flush with the next item,
+       8 px either side, the bar's 12 px words in the bar's own colour, and a fill over it while
+       the pointer is on it. The size is fixed as the rail's is, under every theme, a terminal
+       palette included. */
+    .tool.status,
+    :global(body.rice) .tool.status {
+        box-sizing: border-box;
+        height: var(--status-height);
+        gap: 4px;
+        padding: 0 8px;
+        border: 0;
+        border-radius: 0;
+        background: none;
+        color: inherit;
+        font-size: var(--status-text);
+        line-height: 1;
+    }
+
+    .tool.status:hover:not(:disabled),
+    .tool.status[aria-expanded='true'] {
+        background: var(--chip);
+    }
+
+    /* Its icon at the size VS Code draws a status bar icon, and a stand-in at the words' size. */
+    .tool.status :global(.glyph) {
+        font-size: var(--status-icon);
+    }
+
+    :global(body.rice) .tool.status :global(.glyph:not(:has(svg))) {
+        font-size: var(--status-text);
+        width: auto;
+    }
+
     .tool.bare:hover:not(:disabled) {
         border-color: transparent;
         background: var(--chip);
@@ -268,13 +309,13 @@
     /* The brackets are a row's shape, around a word with the glyph inside them. A rail control is
        a glyph in a box the rail's width sets, where the terminal stand-in the glyph draws carries
        its own brackets already. A bare button is a strip's icon and draws none, as a bare menu
-       opener beside it draws none. */
-    :global(body.rice) .tool:not(.rail-control):not(.bare)::before {
+       opener beside it draws none, and a status bar item is a word in a bar of words. */
+    :global(body.rice) .tool:not(.rail-control):not(.bare):not(.status)::before {
         content: '[';
         opacity: 0.5;
     }
 
-    :global(body.rice) .tool:not(.rail-control):not(.bare)::after {
+    :global(body.rice) .tool:not(.rail-control):not(.bare):not(.status)::after {
         content: ']';
         opacity: 0.5;
     }

@@ -27,6 +27,7 @@ import { programApps, type ProgramApps } from '../../data/helpers/opens-in-progr
 import type { LayoutStore } from '../workbench/layout.svelte.ts';
 import { choicesFor, formFields, formSections } from '../forms/schema.ts';
 import { pinnedSession } from '../workbench/selection.svelte.ts';
+import { waitsOnReader } from '../workbench/navigation/notice-sources.ts';
 import type { SelectionStore } from '../workbench/selection.svelte.ts';
 import type { BoardItem, BoardPreset, BoardStats, Dissemination } from '../boards/board/index.ts';
 import type { Choice, FormField } from '../forms/schema.ts';
@@ -324,12 +325,7 @@ export function createSelectors(
     function waitingCount(): number {
         let count = 0;
         for (const session of grouped()) {
-            if (
-                session.hook?.event === 'notification' &&
-                session.hook.kind === 'permission_prompt'
-            ) {
-                count += 1;
-            }
+            if (waitsOnReader(session.hook)) count += 1;
         }
         return count;
     }

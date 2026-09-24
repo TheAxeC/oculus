@@ -1,9 +1,10 @@
 <script lang="ts">
     // Layer 3, shell. The window: the rail, the one tree the page on screen is, and the status bar
-    // along the foot. It reads the arrangement from the store and every change goes back through
-    // the store, so the whole of what is on screen is the saved workbench and a reload puts it back
-    // as it was. Four of the status bar's items read stores the shell may not, so the page hands in
-    // their words and the shell draws the bar.
+    // along the foot under both. It reads the arrangement from the store and every change goes back
+    // through the store, so the whole of what is on screen is the saved workbench and a reload puts
+    // it back as it was. Several of the status bar's items read stores the shell may not, so the
+    // page hands in their words, and the git writes two of them ask for, and the shell draws the
+    // bar.
     //
     // A page is one tree, so every split is the same kind of split and every child of one can be
     // collapsed to its edge and shown again through the same control.
@@ -33,7 +34,12 @@
         type NavGroup
     } from '$lib/state/workbench/navigation/catalogue';
     import type { RailEntry, RailPage } from '$lib/state/workbench/navigation/rail';
-    import type { StatusWords } from '$lib/state/workbench/navigation/status';
+    import {
+        NO_GIT,
+        NO_STATUS,
+        type StatusGit,
+        type StatusWords
+    } from '$lib/state/workbench/navigation/status';
     import StatusBar from './status/StatusBar.svelte';
     import { setGlyphMode, t } from '$lib/state/words/text';
     import {
@@ -80,10 +86,16 @@
          */
         directChord?: string;
         /**
-         * The words of the status bar's socket, usage, HPC and live-session items. The page makes
-         * them from the stores the shell may not read and hands them on.
+         * The words of the status bar's items whose stores the shell may not read: the machine,
+         * the repository, the findings, the HPC poll, the usage, the server and the live sessions.
+         * The page makes them and hands them on.
          */
         status?: StatusWords;
+        /**
+         * The git writes the status bar's branch and sync items ask for. The page owns them, since
+         * the shell may not write.
+         */
+        git?: StatusGit;
         /**
          * How many sessions wait on a permission, for the document title. The page reads it from
          * the sessions channel and hands it on, since the shell may not read entities itself.
@@ -99,7 +111,8 @@
         saved = [],
         editRail,
         directChord,
-        status = { socket: '', usage: '', hpc: '', live: 0 },
+        status = NO_STATUS,
+        git = NO_GIT,
         waiting = 0
     }: Props = $props();
 
@@ -245,42 +258,47 @@
              negative depth paints over the page's own background and under every panel. -->
         <div class="wallpaper" style={image}></div>
     {/if}
-    <ActivityRail
-        {pages}
-        {saved}
-        {editRail}
-        onsearch={() => openPalette('')}
-        onupdate={openUpdate}
-    />
-    <div class="column">
-        <div class="area">
-            <!-- Keyed by the page, so a switch unmounts the hidden page's views and mounts the
-                 shown page's: nothing is drawn twice, and every view rebuilds from the stores. -->
-            {#key page.id}
-                {#if client.layout.startingFresh()}
-                    <!-- No page until the rail list chose the first, so no view mounts twice. -->
-                {:else if zoomed !== null && focus !== null}
-                    <div class="tree" style="flex: 1 1 0">
-                        <PaneView node={zoomed} path={focus.path} page={page.id} />
-                    </div>
-                {:else}
-                    <div class="tree" style="flex: 1 1 0">
-                        <SplitView
-                            layout={layout()}
-                            page={page.id}
-                            pane={paneOf}
-                            fold={foldOf}
-                            leaf={leafOf}
-                            onresize={(path: number[], sizes: number[]) =>
-                                change((tree) => resize(tree, path, sizes))}
-                            onexpand={(path: number[], index: number) => expandChild(path, index)}
-                        />
-                    </div>
-                {/if}
-            {/key}
+    <div class="body">
+        <ActivityRail
+            {pages}
+            {saved}
+            {editRail}
+            onsearch={() => openPalette('')}
+            onupdate={openUpdate}
+        />
+        <div class="column">
+            <div class="area">
+                <!-- Keyed by the page, so a switch unmounts the hidden page's views and mounts
+                     the shown page's: nothing is drawn twice, and every view rebuilds from the
+                     stores. -->
+                {#key page.id}
+                    {#if client.layout.startingFresh()}
+                        <!-- No page until the rail list chose the first, so no view mounts
+                             twice. -->
+                    {:else if zoomed !== null && focus !== null}
+                        <div class="tree" style="flex: 1 1 0">
+                            <PaneView node={zoomed} path={focus.path} page={page.id} />
+                        </div>
+                    {:else}
+                        <div class="tree" style="flex: 1 1 0">
+                            <SplitView
+                                layout={layout()}
+                                page={page.id}
+                                pane={paneOf}
+                                fold={foldOf}
+                                leaf={leafOf}
+                                onresize={(path: number[], sizes: number[]) =>
+                                    change((tree) => resize(tree, path, sizes))}
+                                onexpand={(path: number[], index: number) =>
+                                    expandChild(path, index)}
+                            />
+                        </div>
+                    {/if}
+                {/key}
+            </div>
         </div>
-        <StatusBar {status} />
     </div>
+    <StatusBar {status} {git} onpalette={openPalette} />
 </div>
 <DropLayer />
 <Palette
@@ -300,12 +318,22 @@
 {/if}
 
 <style>
+    /* The rail and the column beside it over the status bar, which runs the window's whole width
+       under both, as VS Code's status bar runs under its activity bar. */
     .workbench {
         display: flex;
-        flex-direction: row;
+        flex-direction: column;
         width: 100%;
         height: 100vh;
         overflow: hidden;
+    }
+
+    .body {
+        display: flex;
+        flex-direction: row;
+        flex: 1 1 auto;
+        min-width: 0;
+        min-height: 0;
     }
 
     .wallpaper {
@@ -320,7 +348,7 @@
         pointer-events: none;
     }
 
-    /* The column right of the rail: the area the page's tree fills over the status bar. */
+    /* The column right of the rail: the area the page's tree fills. */
     .column {
         display: flex;
         flex-direction: column;

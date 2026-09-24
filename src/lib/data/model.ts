@@ -209,14 +209,23 @@ export type Subscription = {
 };
 
 /**
+ * The machine the server runs on: its name, as the operating system gives it, and the address the
+ * server listens at. The status bar's first item draws the one and says the other.
+ */
+export type HostInfo = { name: string; address: string };
+
+/**
  * The payload of the `config` channel: the merged map, the flat catalog, the drawing of every glyph
- * the icon map names, and what was wrong. The icons ride here rather than being fetched by the page
- * because they are read from the config the same way every other vocabulary is.
+ * the icon map names, the machine the server runs on, and what was wrong. The icons ride here
+ * rather than being fetched by the page because they are read from the config the same way every
+ * other vocabulary is; the machine rides here because this is the channel every page has from its
+ * first message.
  */
 export type ConfigPayload = {
     config: Record<string, unknown>;
     text: Record<string, string>;
     icons: Record<string, string>;
+    host: HostInfo;
     findings: Finding[];
 };
 

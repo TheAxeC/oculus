@@ -2,8 +2,7 @@
 // the view changes the theme, puts the CRT overlay on and off, keeps the icons on a terminal theme,
 // and edits the rail list, which config/layout.yml is written with and the rail follows; a rail
 // entry hand-edited to a glyph the vocabulary lacks draws no button; each item of the status bar
-// opens the view that says more about it, the unsaved count the first tab it counts, on its own
-// page.
+// that names a view opens it, the unsaved count the first tab it counts, on its own page.
 //
 // The rail case writes the served engine's own layout.yml, a copy under the system temporary
 // directory, and puts the file back as it found it.
@@ -79,7 +78,7 @@ test('the Settings view edits the rail list, its typing is unsaved, and the rail
             exact: true
         });
         await label.fill('Board');
-        await expect(item(page, 'unsaved')).toHaveText(t('workbench.status_unsaved', 1));
+        await expect(item(page, 'unsaved')).toHaveAccessibleName(t('statusbar.unsaved_name', 1));
         await settings(page)
             .getByRole('button', { name: t('workbench.rail_save'), exact: true })
             .click();
@@ -92,7 +91,7 @@ test('the Settings view edits the rail list, its typing is unsaved, and the rail
             '  - { label: "Board", glyph: compass, page: focus }\n'
         );
         // The file now holds what was typed, so the tab holds no text a save has not taken.
-        await expect(item(page, 'unsaved')).toHaveText(t('workbench.status_unsaved', 0));
+        await expect(item(page, 'unsaved')).toHaveAccessibleName(t('statusbar.unsaved_name', 0));
     } finally {
         writeEngineFile(LAYOUT, before);
         await expect(page.locator('nav [data-rail-page="focus"] button')).toHaveAttribute(
@@ -123,13 +122,12 @@ test('a rail entry hand-edited to a glyph the vocabulary does not hold draws no 
 });
 
 test('each status bar item opens its view', async ({ page }) => {
-    // revert: src/lib/shell/status/StatusBar.svelte:48 => onclick={() => openView('status')}
+    // revert: src/lib/shell/status/StatusBar.svelte:145 => onclick={() => openView('help')}
+    // revert: src/lib/shell/status/StatusBar.svelte:110 => onclick={() => openView('audit')}
     await boot(page);
-    await expect(item(page, 'socket')).toHaveText(
-        t('workbench.status_socket', t('workbench.status_socket_open'))
-    );
+    await expect(item(page, 'server')).toHaveText(t('statusbar.server_open'));
     await openView(page, 'help', t('views.help'));
-    await item(page, 'socket').click();
+    await item(page, 'server').click();
     await expect(page.getByRole('tab', { name: t('views.status') })).toHaveAttribute(
         'aria-selected',
         'true'
@@ -149,10 +147,36 @@ test('each status bar item opens its view', async ({ page }) => {
         'aria-selected',
         'true'
     );
+    await item(page, 'findings').click();
+    await expect(page.getByRole('tab', { name: t('views.findings') })).toHaveAttribute(
+        'aria-selected',
+        'true'
+    );
+    await item(page, 'host').click();
+    await expect(page.getByRole('tab', { name: t('views.status') })).toHaveAttribute(
+        'aria-selected',
+        'true'
+    );
+});
+
+// revert: src/routes/+page.svelte:119 => findings: 0,
+// revert: src/lib/state/workbench/navigation/status.ts:199 => return snapshot?.findings?.length ?? 0;
+test("the findings item counts the Findings view's list, the hub's and the configuration's", async ({
+    page
+}) => {
+    await boot(page);
+    await item(page, 'findings').click();
+    const rows = page.locator(`${SHOWN_VIEW} .view li`);
+    // The served demo hub names documents it does not hold, so the configuration has findings.
+    await expect(rows.first()).toBeVisible();
+    const listed = await rows.count();
+    expect(listed).toBeGreaterThan(0);
+    await expect(item(page, 'findings')).toHaveText(String(listed));
+    await expect(item(page, 'findings')).toHaveAccessibleName(t('statusbar.findings_name', listed));
 });
 
 test('the unsaved count opens the first unsaved tab on its own page', async ({ page }) => {
-    // revert: src/lib/shell/status/StatusBar.svelte:31 => delete
+    // revert: src/lib/shell/status/StatusBar.svelte:79 => delete
     await boot(page);
     await expect(item(page, 'unsaved')).toBeDisabled();
     await showRailPage(page, 'views');

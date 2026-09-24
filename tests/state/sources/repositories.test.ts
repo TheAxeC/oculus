@@ -427,6 +427,26 @@ describe('what a press leaves behind', () => {
         expect(store.busy(ROOT)).toBe(false);
     });
 
+    it('pushes the branch behind the confirm and answers whether git did, as a switch does', async () => {
+        // revert: src/lib/state/sources/repositories.svelte.ts:127 => return act(root, 'push', {}, false);
+        const { store, sent } = harness((action) =>
+            Promise.resolve(
+                action === 'switchBranch'
+                    ? { ok: false, changed: [], refused: [], error: 'the working tree is dirty' }
+                    : { ok: true, changed: [], refused: [], output: '' }
+            )
+        );
+        await expect(store.push(ROOT)).resolves.toBe(true);
+        expect(sent[0]).toEqual({ action: 'push', root: ROOT, fields: { confirm: true } });
+        await expect(store.switchBranch(ROOT, 'draft')).resolves.toBe(false);
+        expect(sent[1]).toEqual({
+            action: 'switchBranch',
+            root: ROOT,
+            fields: { name: 'draft', confirm: true }
+        });
+        expect(store.outcome(ROOT)).toBe('the working tree is dirty');
+    });
+
     it('asks for a shell in the worktree it just made, and opens the terminal', async () => {
         const { store, shells, opened, sent } = harness();
         await store.createWorktree(ROOT, 'package-one');

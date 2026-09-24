@@ -1,0 +1,112 @@
+# Oculus text owned by the status bar along the foot of the window: its items, their tooltips, the menus they open, the go-to-line and language lists of the palette, and the notifications the bell counts.
+text:
+    statusbar:
+        label: Status bar
+        hide_menu: Status bar items
+        item_host: Machine
+        item_branch: Branch
+        item_sync: Sync
+        item_findings: Findings
+        item_hpc: HPC
+        item_usage: Usage
+        item_server: Server
+        item_caret: Line and column
+        item_indent: Indentation
+        item_encoding: Encoding
+        item_line_ending: End of line sequence
+        item_language: Language mode
+        item_sessions: Live sessions
+        item_unsaved: Unsaved tabs
+        item_bell: Notifications
+        host_waiting: waiting
+        host_tip: oculus runs on {0} and is served at {1}. Open Status.
+        host_waiting_tip: The server has not said which machine it runs on yet. Open Status.
+        branch_tip: Branch {0} of {1}. Switch branch.
+        branch_detached_tip: No branch is checked out in {1}; HEAD is at {0}. Switch branch.
+        branch_menu: Branches of {0}
+        sync_name: '{0} to pull, {1} to push'
+        sync_tip_push: '{0} commits to push to {1}. Push.'
+        sync_tip_open: '{0} to pull and {1} to push against {2}. Open Repositories.'
+        sync_upstream: the upstream
+        findings_name: '{0} findings'
+        findings_tip: '{0} findings in the hub and the configuration. Open Findings.'
+        hpc_polling: polling
+        hpc_live: '{0} running, {1} pending'
+        hpc_tip: '{0}. Open Live HPC.'
+        usage_ok: ok
+        usage_down: down
+        usage_refreshing: refreshing
+        usage_none: no refresher
+        usage_tip: 'Usage refreshers: {0}. Open Usage.'
+        server_open: up
+        server_closed: down
+        server_connecting: waiting
+        server_tip: 'Connection to the server: {0}. Open Status.'
+        sessions_name: '{0} live sessions'
+        sessions_tip: '{0} live sessions. Open the session list.'
+        unsaved_name: '{0} unsaved tabs'
+        unsaved_tip: '{0} tabs hold text no save has taken. Show the first.'
+        unsaved_none: No tab holds text no save has taken.
+        caret: Ln {0}, Col {1}
+        caret_selected: '{0} ({1} selected)'
+        caret_tip: Go to line
+        indent_spaces: 'Spaces: {0}'
+        indent_tabs: 'Tab Size: {0}'
+        indent_tip: Select indentation
+        indent_using_spaces: Indent Using Spaces
+        indent_using_tabs: Indent Using Tabs
+        indent_width: 'Width {0}'
+        indent_to_spaces: Convert Indentation to Spaces
+        indent_to_tabs: Convert Indentation to Tabs
+        indent_readonly: This file is read only, so its indentation is not changed here.
+        encoding: UTF-8
+        encoding_tip: oculus reads and writes every file as UTF-8, and offers no other encoding.
+        line_ending_lf: LF
+        line_ending_crlf: CRLF
+        line_ending_tip: Select end of line sequence
+        line_ending_readonly: This file is read only, so its line endings are not changed here.
+        language_tip: Select language mode
+        language_bash: Shell Script
+        language_css: CSS
+        language_diff: Diff
+        language_ini: INI
+        language_javascript: JavaScript
+        language_json: JSON
+        language_julia: Julia
+        language_latex: LaTeX
+        language_lisp: Lisp
+        language_makefile: Makefile
+        language_markdown: Markdown
+        language_matlab: MATLAB
+        language_ocaml: OCaml
+        language_plaintext: Plain Text
+        language_python: Python
+        language_r: R
+        language_typescript: TypeScript
+        language_xml: XML
+        language_yaml: YAML
+        bell_tip: No new notifications
+        bell_unread: '{0} new notifications'
+        bell_quiet: Do Not Disturb is on
+        centre: Notifications
+        centre_empty: No new notifications
+        centre_clear: Clear notification
+        centre_clear_all: Clear All Notifications
+        centre_quiet: Do Not Disturb
+        centre_hide: Hide Notifications
+        toast_close: Close notification
+        palette_kind_line: line
+        palette_kind_language: language
+        palette_line: Go to line {0}
+        palette_line_hint: Current line {0}, column {1}. Type a line number from 1 to {2} to go to it.
+        palette_line_none: No source tab is on screen, so there is no line to go to.
+        palette_language_none: No source tab is on screen, so there is no language to change.
+        rail_settings: Open Settings
+        notice_open: Open
+        notice_permission: '{0} is waiting for you to answer a permission prompt.'
+        notice_idle: '{0} finished its turn and is waiting for your input.'
+        notice_job_finished: 'Job {0} ({1}) finished.'
+        notice_job_failed: 'Job {0} ({1}) failed: {2}, exit code {3}.'
+        notice_update: '{0} ran and has new results.'
+        notice_write_refused: 'A write was refused: {0}'
+        notice_write_failed: 'A write got no answer: {0}'

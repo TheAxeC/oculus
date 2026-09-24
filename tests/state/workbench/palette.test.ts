@@ -9,6 +9,7 @@ import {
     feedIdentity,
     kindWord,
     match,
+    lineQuery,
     parseCommand,
     uniqueIdents
 } from '../../../src/lib/state/workbench/palette.ts';
@@ -190,20 +191,42 @@ describe('the kind a result row draws', () => {
 describe('commands', () => {
     const list = commands({ themes: [{ name: 'light' }, { name: 'nord' }] });
 
-    it('lists the seven commands, theme names and the two unavailable commands', () => {
+    it('lists the eight commands, theme names and the three unavailable with no source tab', () => {
+        // revert: src/lib/state/workbench/palette.ts:238 => delete
         expect(list.map((command) => command.name)).toEqual([
             'theme',
             'crt',
             'accent',
             'tab',
             'goto',
+            'language',
             'help',
             'update'
         ]);
         expect(list[0].hint).toContain('light | nord');
         expect(list.filter((command) => !command.available).map((command) => command.name)).toEqual(
-            ['accent', 'help']
+            ['accent', 'language', 'help']
         );
+    });
+
+    it('offers the language list only while a source tab is on screen', () => {
+        // revert: src/lib/state/workbench/palette.ts:238 => { name: 'language', hint: '<language>', available: true },
+        const language = (source: boolean) =>
+            commands({}, source).find((command) => command.name === 'language');
+        expect(language(true)?.available).toBe(true);
+        expect(language(false)?.available).toBe(false);
+    });
+
+    it('reads a colon and a whole number as a line to go to, and nothing else as one', () => {
+        // revert: src/lib/state/workbench/palette.ts:215 => if (parsed === null) return null;
+        expect(lineQuery(parseCommand(':12'))).toBe(12);
+        expect(lineQuery(parseCommand(': 7'))).toBe(7);
+        expect(lineQuery(parseCommand(':0'))).toBe(null);
+        expect(lineQuery(parseCommand(':12 more'))).toBe(null);
+        expect(lineQuery(parseCommand(':1e3'))).toBe(null);
+        expect(lineQuery(parseCommand(':theme'))).toBe(null);
+        expect(lineQuery(parseCommand(':'))).toBe(null);
+        expect(lineQuery(parseCommand('12'))).toBe(null);
     });
 
     it('parses a command prefix and its argument', () => {

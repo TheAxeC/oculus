@@ -40,7 +40,7 @@ import { docFindings, layoutFile } from '../content/docs.ts';
 import { railFindings } from '../../data/sources/config/rail.ts';
 import { readRoots, rootsFile } from '../files/files.ts';
 import { buildFeeds, isLinkedinFile } from '../content/feeds.ts';
-import type { AuditPayload, ConfigPayload, PortfolioConfig } from '../../data/model.ts';
+import type { AuditPayload, ConfigPayload, HostInfo, PortfolioConfig } from '../../data/model.ts';
 import type { Hub } from '../core/channels.ts';
 
 export type WatchPaths = {
@@ -50,6 +50,8 @@ export type WatchPaths = {
     engine: string;
     /** The icon drawings the server holds, replaced by every config push published here. */
     icons: IconMemory;
+    /** The machine the server runs on, carried by every config push. */
+    host: HostInfo;
 };
 
 export type WatchOptions = {
@@ -292,6 +294,7 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
                     config,
                     text: textCatalog(config),
                     icons: paths.icons.set,
+                    host: paths.host,
                     findings: [
                         ...findings,
                         ...iconFindings(paths.engine, config),

@@ -52,7 +52,7 @@ function stops(body: string): { name: string; tabindex: string }[] {
 
 describe('the rail as one stop of the focus order', () => {
     it('draws the ring as a vertical toolbar inside the navigation landmark', () => {
-        // revert: src/lib/shell/rail/ActivityRail.svelte:258 => role="group"
+        // revert: src/lib/shell/rail/ActivityRail.svelte:251 => role="group"
         const body = railHtml();
         expect(body).toContain('role="toolbar"');
         expect(body).toContain('aria-orientation="vertical"');
@@ -63,7 +63,7 @@ describe('the rail as one stop of the focus order', () => {
     });
 
     it('gives exactly one control tabindex 0 and every other one -1', () => {
-        // revert: src/lib/shell/rail/ActivityRail.svelte:176 => return 0;
+        // revert: src/lib/shell/rail/ActivityRail.svelte:169 => return 0;
         const found = stops(railHtml());
         expect(found.length).toBeGreaterThan(1);
         expect(found.filter((one) => one.tabindex === '0').map((one) => one.name)).toEqual([
@@ -73,7 +73,7 @@ describe('the rail as one stop of the focus order', () => {
     });
 
     it('rings the pages, then Bookmarks, Search and Update at the foot, and nothing else', () => {
-        // revert: src/lib/shell/rail/ActivityRail.svelte:133 => delete
+        // revert: src/lib/shell/rail/ActivityRail.svelte:126 => delete
         const found = stops(railHtml());
         expect(found.map((one) => one.name)).toEqual([
             'page:focus',

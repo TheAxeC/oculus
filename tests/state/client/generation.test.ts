@@ -41,6 +41,7 @@ function push(title: string, token: string, theme: string): ConfigPayload {
         },
         text: { 'app.title': title },
         icons: {},
+        host: { name: 'test-machine', address: 'http://127.0.0.1:8799' },
         findings: []
     };
 }
@@ -72,6 +73,7 @@ describe('a config push', () => {
                 seen.push(configGeneration());
                 return {};
             },
+            host: { name: 'test-machine', address: 'http://127.0.0.1:8799' },
             findings: []
         };
 

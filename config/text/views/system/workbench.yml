@@ -1,4 +1,4 @@
-# Oculus text owned by the workbench views: the Views catalogue, the Settings view, the Pages view and the status bar.
+# Oculus text owned by the workbench views: the Views catalogue, the Settings view and the Pages view.
 text:
     views:
         catalogue: Views
@@ -46,17 +46,3 @@ text:
         rail_why_repeated: 'button {0} names a page an earlier button already shows'
         rail_why_shape: 'button {0} is not a label, a glyph and a page'
         settings_appearance: Appearance
-        status_bar: Status bar
-        status_hpc: 'HPC: {0}'
-        status_live: 'live sessions: {0}'
-        status_socket: 'server: {0}'
-        status_socket_closed: down
-        status_socket_connecting: waiting
-        status_socket_open: up
-        status_unsaved: 'unsaved tabs: {0}'
-        status_unsaved_none: No tab holds text no save has taken.
-        status_usage: 'usage: {0}'
-        status_usage_down: down
-        status_usage_none: no refresher
-        status_usage_ok: ok
-        status_usage_refreshing: refreshing

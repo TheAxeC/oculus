@@ -176,7 +176,7 @@ test('a page button is its icon alone, named by its page, with its name and digi
 test('a rail tooltip opens beside its button, centred on the button as VS Code centres its hover', async ({
     page
 }) => {
-    // revert: src/lib/ui/menu/Tooltip.svelte:106 => delete
+    // revert: src/lib/ui/menu/Tooltip.svelte:114 => delete
     await boot(page);
     const button = railButton(page, 'projects');
     await page.mouse.move(700, 400);
@@ -192,7 +192,7 @@ test('a rail tooltip opens beside its button, centred on the button as VS Code c
 test('a rail button tooltip and the Settings theme list paint over what is beside them', async ({
     page
 }) => {
-    // revert: src/lib/ui/frame/on-body.ts:13 => void node;
+    // revert: src/lib/ui/frame/on-body.ts:14 => void node;
     await board(page);
 
     await railButton(page, 'projects').hover();
@@ -212,7 +212,7 @@ test('a rail button tooltip and the Settings theme list paint over what is besid
 test('a rail button under a terminal palette is its stand-in whole inside the square, clear of its badge, with no brackets', async ({
     page
 }) => {
-    // revert: src/lib/ui/controls/ToolButton.svelte:296 => font-size: var(--fs-3xl);
+    // revert: src/lib/ui/controls/ToolButton.svelte:337 => font-size: var(--fs-3xl);
     // revert: src/lib/shell/rail/RailPages.svelte:281 => top: 24px;
     await board(page);
 
@@ -408,7 +408,7 @@ test('a page button dragged above another moves its entry there in layout.yml, t
 test('Hide in a page button right-click menu takes its entry out of layout.yml, and History puts it back', async ({
     page
 }) => {
-    // revert: src/lib/shell/rail/ActivityRail.svelte:117 => void write((rail) => rail);
+    // revert: src/lib/shell/rail/ActivityRail.svelte:102 => void write((rail) => rail);
     // revert: src/lib/server/edit/writes/undo.ts:225 => const outcome = writeRail(into.layoutFile, railRows(change.after) ?? [], into.glyphs);
     const before = readEngineFile(LAYOUT);
     const order = fileOrder();
@@ -471,7 +471,7 @@ test.describe('Settings from a page button menu', () => {
 test('the rail draws no BOOKMARKS group: the bookmarks are the choices of the menu at its foot', async ({
     page
 }) => {
-    // revert: src/lib/shell/rail/ActivityRail.svelte:266 => <RailPages {pages} {stopIndex} {ringKeys} onmove={moved} onmenu={menuPick} /><p class="group">{t('ui.docs')}</p>
+    // revert: src/lib/shell/rail/ActivityRail.svelte:259 => <RailPages {pages} {stopIndex} {ringKeys} onmove={moved} onmenu={menuPick} /><p class="group">{t('ui.docs')}</p>
     await boot(page);
     // No button of the list draws a bookmark: they are menu choices, drawn when it opens.
     await expect(page.locator('nav button[data-bookmark]')).toHaveCount(0);
@@ -537,8 +537,8 @@ test('every rail badge is one colour, the accent with its own ink, in the UI fac
 test("the rail is drawn in the ground's colour with a border on its right, as VS Code's Modern themes draw their activity bar", async ({
     page
 }) => {
-    // revert: src/lib/shell/rail/ActivityRail.svelte:287 => background: var(--panel);
-    // revert: src/lib/shell/rail/ActivityRail.svelte:288 => box-shadow: none;
+    // revert: src/lib/shell/rail/ActivityRail.svelte:277 => background: var(--panel);
+    // revert: src/lib/shell/rail/ActivityRail.svelte:278 => box-shadow: none;
     await boot(page);
     // VS Code's own theme files: activityBar.background and activityBar.border.
     const vscode = {
@@ -560,9 +560,9 @@ test("the rail is drawn in the ground's colour with a border on its right, as VS
 test('a rail tooltip points at its item, and none opens during a drag or on a focus a closing menu gives back', async ({
     page
 }) => {
-    // revert: src/lib/ui/menu/Tooltip.svelte:225 => delete
-    // revert: src/lib/ui/menu/Tooltip.svelte:125 => if (text === '') return;
-    // revert: src/lib/ui/menu/Tooltip.svelte:152 => if (!(target instanceof Element)) return;
+    // revert: src/lib/ui/menu/Tooltip.svelte:246 => delete
+    // revert: src/lib/ui/menu/Tooltip.svelte:146 => if (text === '') return;
+    // revert: src/lib/ui/menu/Tooltip.svelte:173 => if (!(target instanceof Element)) return;
     await boot(page);
     const bubble = page.locator('[role="tooltip"]:not([hidden])');
     await page.mouse.move(700, 400);
@@ -607,7 +607,7 @@ test('a rail tooltip points at its item, and none opens during a drag or on a fo
 });
 
 test('the Bookmarks menu opens upward from the star, inside the window', async ({ page }) => {
-    // revert: src/lib/ui/menu/Menu.svelte:158 => delete
+    // revert: src/lib/ui/menu/Menu.svelte:181 => delete
     await boot(page);
     const star = page.locator('nav').getByRole('button', { name: t('ui.docs'), exact: true });
     await star.click();

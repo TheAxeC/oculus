@@ -259,10 +259,16 @@ const PASS_THROUGH: Record<string, string> = {
     'src/lib/ui/tree/TreeItem.svelte': '.detail, .count, .end=fs-sm',
     'src/lib/ui/tree/TreeSection.svelte': '',
     'src/lib/ui/tree/TreeView.svelte': '',
-    'src/lib/shell/rail/ActivityRail.svelte': '.refusal=fs-xs',
+    'src/lib/shell/rail/ActivityRail.svelte': '',
     'src/lib/shell/rail/RailFoot.svelte': '',
     'src/lib/shell/rail/RailPages.svelte': '',
-    'src/lib/shell/status/StatusBar.svelte': '.bar=fs-xs',
+    'src/lib/shell/status/StatusBar.svelte': '',
+    'src/lib/shell/status/RepoItems.svelte': '',
+    'src/lib/shell/status/SourceItems.svelte': '',
+    'src/lib/shell/status/Bell.svelte': '',
+    'src/lib/shell/status/NoticeCentre.svelte': '',
+    'src/lib/shell/status/NoticeEntry.svelte': '',
+    'src/lib/shell/status/Toast.svelte': '',
     'src/lib/shell/Workbench.svelte': ''
 };
 

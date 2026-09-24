@@ -8,6 +8,11 @@
 //
 // The messages belong to one client rather than to the module: createEntities() is called once by
 // state/client/context.ts, so two pages, or two test cases, share nothing.
+//
+// A store that acts on a change of a channel, rather than drawing what it holds, registers to hear
+// every message this keeps, after it is kept: the notifications posted for a session that starts
+// waiting, a job that leaves the queue and an update that lands are told apart from the message
+// before on the same channel, so they are heard here once per message and not once per redraw.
 
 import type {
     AuditPayload,
@@ -26,6 +31,8 @@ import type {
 /** What every channel of the wire reads as, one instance per client. */
 export type EntitiesStore = {
     receive: (message: Message) => void;
+    /** Hear every message kept, after it is kept. */
+    afterReceive: (listener: (message: Message) => void) => void;
     message: (channel: string) => Message | null;
     portfolio: () => Snapshot | null;
     config: () => ConfigPayload | null;
@@ -42,11 +49,19 @@ export type EntitiesStore = {
 export function createEntities(): EntitiesStore {
     const messages: Record<string, Message | undefined> = $state({});
 
-    /** Store a message unless the channel already holds a newer one. */
+    /** What registered to hear every message kept. */
+    const listeners: ((message: Message) => void)[] = [];
+
+    /** Store a message unless the channel already holds a newer one, and tell every listener. */
     function receive(message: Message): void {
         const held = messages[message.channel];
         if (held !== undefined && message.version < held.version) return;
         messages[message.channel] = message;
+        for (const listener of listeners) listener(message);
+    }
+
+    function afterReceive(listener: (message: Message) => void): void {
+        listeners.push(listener);
     }
 
     /** The current message of a channel, or null when none has arrived. */
@@ -61,6 +76,7 @@ export function createEntities(): EntitiesStore {
 
     return {
         receive,
+        afterReceive,
         message,
         /** The portfolio snapshot, or null before the first one arrives. */
         portfolio: () => (payload('portfolio') as Snapshot | undefined) ?? null,

@@ -2,7 +2,8 @@
 // A surface that filters or clips what it holds (the rail and the panes over a wallpaper, a strip
 // that scrolls) is the containing block of a fixed element inside it, which then reads window
 // coordinates from that surface's corner and is cut at its edge; on the body there is no such
-// ancestor. A tooltip's bubble, a menu's list opened at a point and the rail's refusal line use it.
+// ancestor. A tooltip's bubble, a menu's list opened at a point, and the status bar's confirm,
+// notification centre and toasts use it.
 
 /**
  * Move the element onto the body, and take it away with its component. `wanted` false leaves the

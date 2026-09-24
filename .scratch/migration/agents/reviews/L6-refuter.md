@@ -50,3 +50,75 @@ Report's quoted evidence, compared:
 - Whether the builder's early scratchpad files overwrote orchestrator files of the same names (named in the report's Limitations).
 
 Reviewer usage: not measured by a command (about 60k tokens in context), 75 tool uses, 56 minutes.
+
+## Repair round 1, refuted
+
+```
+ls -d $TMPDIR/oculus-* | wc -l   (before)                         7015
+npx vitest run --reporter=dot                                      Test Files  296 passed (296) / Tests  4709 passed (4709)
+npm run check                                                      COMPLETED 1359 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+npm run build                                                      build=0
+npm run format:check                                               All matched files use Prettier code style!
+npm run lint                                                       lint=0
+LC_ALL=C grep -rna '[^ -~]' src tests | wc -l                      0
+spec.md perl ASCII gate over src tests bin config | wc -l          0
+sh bin/size-check.sh ; sh bin/folder-check.sh                      size=0 ; folder=0
+npx playwright test (whole suite, 8792 free)                       373 passed (7.3m); the one "✘" line is files-forms.spec.ts:631, a test.fail() case counted as passed
+node bin/revert-check.mjs status.test.ts notice-sources.test.ts status-bar.test.ts
+                                                                   41 reverts, 0 unproven, 0 unchecked (status.test 14 red, notice-sources 15 red incl. the idle case's :46 and :189, status-bar 12 red incl. glyphs.yml:157 and :40)
+node bin/revert-check.mjs tests/browser/shell/settings.spec.ts     10 reverts, 0 unproven, 0 unchecked (StatusBar.svelte:110, +page.svelte:119, status.ts:199 all red)
+Own Playwright look (scratch config, 1400x700, mocha, source tab over a CRLF+tab .py):
+  ITEMS host "[h] YQ530VVFGK", branch "[Y] main", findings "/!\ 5", hpc "[:] 1 running, 1 pending", usage "(%) down", server "(s) up" | caret "[I] Ln 1, Col 1", indent ">> Tab Size: 4", encoding "[u] UTF-8", line_ending "<- CRLF", language "{} Python", sessions "[R] 0", unsaved "[s] 0", bell "(n)"
+  FINDINGS item 5, Findings view rows 5, aria-label "5 findings"; the click opens the Findings tab (screenshot findings-mocha.png)
+ls -d $TMPDIR/oculus-* | wc -l   (after)                          7015
+
+Report's quoted evidence, compared:
+  "Tests 4709 passed (4709)"                         reproduced
+  "COMPLETED 1359 FILES 0 ERRORS 0 WARNINGS"         reproduced
+  "373 passed (7.7m)"                                373 passed (7.3m), reproduced
+  "settings.spec 10 reverts, 0 unproven, 0 unchecked" reproduced
+  "status.test 14 reverts, 0 unproven, 0 unchecked"  reproduced (14 status.test lines inside the 41 batch)
+  "41-revert batch" over notice-sources, status-bar, status.test   reproduced, now with no non-red line
+  "7015 before, 7015 after"                          reproduced
+  "status.ts 252 to 265 lines"                       wc -l prints 264
+  "notice-sources.ts 233 to 252 lines"               wc -l prints 252
+```
+
+### Spec
+- None. Ruling 1: `findingsCount` (status.ts:195-200) wired at +page.svelte:119, StatusBar.svelte:110 opens `findings`, words `'{0} findings'` / `'... Open Findings.'`, `item_findings: Findings`; no "audit" left in `src/lib/shell/status`, `state/workbench/navigation` or statusbar.yml (grep). Ruling 2: `waitOf` (notice-sources.ts:44-47) posts both hooks with `notice_permission` / `notice_idle`; `waitsOnReader` is unchanged, and `waitingCount` still counts 1 of a permission+idle pair (the case asserts it). Ruling 3: caret `[I]`, and every new stand-in carries no `|`. Ruling 4: the report's "Before and after" now names the findings item, Do Not Disturb across reloads, the confirm and `:language`.
+- config/catalogs/glyphs.yml:40 (`branch: "|-"` to `"[Y]"`): the change reaches past the bar. The only other users are `Branches.svelte:72` (each branch row of the Repositories view) and `:95` (the new-branch row), found by grep. The reach is needed: `status-bar RepoItems.svelte:36` uses the same `branch` glyph, and icon mode draws `git-branch` for both (icons.yml:39). A bar-only glyph would give one concept two stand-ins. The Repositories rows change from `|-` to `[Y]` only under terminal themes, and nothing in tests asserts `|-` (grep). The report states the change as judgment call 7.
+
+### Proof
+- None. No check was removed. settings.spec swaps the Audit tab assertion for the Findings tab and adds a directive, and the waiting-predicate case keeps the `auth_success`/null rows and the count assertion. The new browser case compares the item to the row count and is red under the wiring revert. In the served demo all 5 findings come from the config channel (screenshot), so the browser case cannot see the snapshot half. The node case `findingsCount({ findings: [1, 2] }, { findings: [3] }) === 3` covers that half.
+
+### Standards
+- None. The round's lines over 100 columns are revert directives and test-name strings that Prettier keeps; no src or comment line exceeds 100. `notice_input` has no remaining reader or key (grep). The new test resets `setGlyphMode('icon')` in `finally`, as tests/ui/theme.test.ts and tests/ui/controls/glyph.test.ts do.
+
+### Behaviour
+- tools/oculus/.scratch/migration/agents/reviews/L6-report.md, round "Before and after": the branch stand-in's reach into the Repositories view (branch rows and the new-branch row show `[Y]` instead of `|-` under mocha and the other terminal themes) is stated in item 3 and judgment call 7 but not in the before-and-after list the TEST-page look is read against. That list names only the bar's `[Y]`.
+- Mocha bar screenshot (bar-mocha.png): no item reads as a separator. `[I] Ln 1, Col 1` and `[Y] main` are bracketed like `[h]`, `[u]` and `[R]`.
+- Pre-existing from the first run, not changed by this round, noted only: `server: "(s)"` duplicates `timing: "(s)"`, `behind: "v"` duplicates `disclosure`, `indent: ">>"` duplicates `goto`, and `clear_all: "[c]"` duplicates `copy` in glyphs.yml.
+
+### Not checked
+- The Repositories view under a terminal theme on screen (read from Branches.svelte:72/:95 only).
+- The screenshots under vscode-dark-modern and light, and with the centre open (only mocha with a source tab was taken this run).
+- The look on the TEST page in Axel's Chrome (the orchestrator's).
+- The claim that tests/checks/diagrams failed before `bin/diagrams.mjs` was rerun. The regenerated channels.dot adds a solid `"ch portfolio" -> "routes/+page"` beside the dashed one. That is the generator's output, and the diagrams check passes in the vitest run above.
+
+Reviewer usage: not measured by a command (about 75k tokens in context), 25 tool uses, 19 minutes.
+
+## Closed
+
+The first run's findings, closed in repair round 1 (`agents/reviews/L6-report.md`, "# Repair round 1"):
+
+- Spec 1, Proof 1 and Behaviour 1, the findings item counting the audit and opening Audit: it counts the Findings view's own list and opens Findings (`findingsCount`, status.ts:195-200), with a node case and a browser case red under the wiring's revert; the brief's premise, which cited the audit's count, was corrected before the round.
+- Spec, the full-width bar: kept; it follows the plan line's "drawn like VS Code's", and the landing report puts it to Axel.
+- Spec, idle prompts not posted: the brief had narrowed Axel's ruling; the brief now asks for both hooks, and both post, each in its own words (`waitOf`, notice-sources.ts:44-47), `waitingCount` and the title unchanged.
+- Spec, `:language`, and Behaviour, Do Not Disturb across reloads and the confirm before a branch switch or push: stated as judgment calls and in the before and after.
+- Behaviour, the caret's `|` under mocha: `[I]`, and the branch `[Y]`; a case fails on any status stand-in holding `|` or made of strokes only.
+
+The run over repair round 1, closed at landing on 2026-09-24:
+
+- Spec, the branch stand-in reaching the Repositories view's branch rows: needed, since the bar and the view draw one glyph for one concept; stated here and in the landing report's before and after.
+- Behaviour, that reach missing from the round's before-and-after list: carried into the landing report.
+- Behaviour, four new stand-ins that repeat older ones (`server` and `timing` `(s)`, `behind` and `disclosure` `v`, `indent` and `goto` `>>`, `clear_all` and `copy` `[c]`): no change; the vocabulary already holds 32 such repeated groups, and no rule or check asks a stand-in to be unique.

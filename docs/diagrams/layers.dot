@@ -115,6 +115,7 @@ digraph layers {
     "routes" -> "data/sources";
     "routes" -> "shell";
     "routes" -> "shell/rail";
+    "routes" -> "state/boards";
     "routes" -> "state/client";
     "routes" -> "state/sources";
     "routes" -> "state/words";
@@ -242,7 +243,6 @@ digraph layers {
     "shell/rail" -> "state/words";
     "shell/rail" -> "state/workbench";
     "shell/rail" -> "ui/controls";
-    "shell/rail" -> "ui/frame";
     "shell/rail" -> "ui/menu";
     "shell/rail" -> "ui/tree";
     "shell/rail" -> "views";
@@ -250,6 +250,8 @@ digraph layers {
     "shell/status" -> "state/words";
     "shell/status" -> "state/workbench";
     "shell/status" -> "ui/controls";
+    "shell/status" -> "ui/frame";
+    "shell/status" -> "ui/menu";
     "src" -> "? src/server.ts:40" [style=dashed];
     "src" -> "data/helpers";
     "src" -> "data/sources";

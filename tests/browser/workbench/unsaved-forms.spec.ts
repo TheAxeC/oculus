@@ -94,7 +94,7 @@ async function typeManifest(page: Page): Promise<Locator> {
     return tab;
 }
 
-// revert: src/lib/state/workbench/ui.svelte.ts:257 => delete
+// revert: src/lib/state/workbench/ui.svelte.ts:288 => delete
 test('text typed into an add form is there, in the open form, after a tab switch and a reload', async ({
     page
 }) => {
@@ -113,7 +113,7 @@ test('text typed into an add form is there, in the open form, after a tab switch
     expect(readHubFile(TASKS)).toBe(before);
 });
 
-// revert: src/lib/state/workbench/ui.svelte.ts:257 => delete
+// revert: src/lib/state/workbench/ui.svelte.ts:288 => delete
 test("text typed into a card's edit form is there, in the open form, after a reload", async ({
     page
 }) => {
@@ -295,7 +295,7 @@ test('a delete from the edit form takes its draft away', async ({ page }) => {
     }
 });
 
-// revert: src/lib/state/workbench/ui.svelte.ts:257 => delete
+// revert: src/lib/state/workbench/ui.svelte.ts:288 => delete
 test('an edit typed into the manifest editor is there after a reload', async ({ page }) => {
     await boot(page);
     const tab = await typeManifest(page);
@@ -342,7 +342,7 @@ test('a manifest editor with an edit asks before it closes, and a save clears th
 test('a save no answer reaches is given up after the configured time, said on its form, and Save is pressable again', async ({
     page
 }) => {
-    // revert: src/lib/state/client/writes.svelte.ts:423 => const wait = null;
+    // revert: src/lib/state/client/writes.svelte.ts:480 => const wait = null;
     const behavior = 'config/behavior.yml';
     const held = readEngineFile(behavior);
     const short = held.replace('timeout_seconds: 30', 'timeout_seconds: 1');
@@ -623,7 +623,7 @@ test('an add form typed away from the entry it added adds another, it does not r
     }
 });
 
-// revert: src/lib/state/workbench/ui.svelte.ts:257 => delete
+// revert: src/lib/state/workbench/ui.svelte.ts:288 => delete
 test("the Venues add form is kept across a reload, and its Add and a card's Edit toggles forget what was typed", async ({
     page
 }) => {

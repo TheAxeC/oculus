@@ -10,8 +10,8 @@
     // through the rail write the Settings view saves with, which the page reaches for the rail
     // since the shell may not write: the change is logged and undone as a save there is, and the
     // rail redraws from the config the watcher pushes back. A write the server refuses leaves the
-    // rail as it was and says why beside it. Settings in the same menu shows the Settings view with
-    // its rail list in view.
+    // rail as it was and says why in a notification, whose action is the Settings view with its
+    // rail list in view, which is also what Settings in the same menu shows.
 
     import RailFoot from './RailFoot.svelte';
     import RailList from './RailList.svelte';
@@ -23,7 +23,6 @@
         railStop,
         type Bookmark
     } from '$lib/shell/rail/rail';
-    import { onBody } from '$lib/ui/frame/on-body';
     import { railPageViews } from '$lib/state/workbench/navigation/pages';
     import {
         SETTINGS_VIEW,
@@ -35,7 +34,8 @@
     import { useState } from '$lib/state/client/use';
 
     const {
-        layout: { currentPage, openRailPage, openView, pages: allPages }
+        layout: { currentPage, openRailPage, openView, pages: allPages },
+        notices: { post }
     } = useState();
 
     type Props = {
@@ -75,32 +75,18 @@
         onupdate = ignore
     }: Props = $props();
 
-    /** How long the line saying why a rail write was refused stays beside the rail. */
-    const REFUSAL_MS = 6000;
-
-    /** Why the last rail write was refused, or the empty string when none is being said. */
-    let refusal = $state('');
-    let refusalTimer: ReturnType<typeof setTimeout> | null = null;
-
     /**
-     * Write the rail's list as a drag or a Hide changed it, and say beside the rail why the server
-     * refused it when it did.
+     * Write the rail's list as a drag or a Hide changed it, and say in a notification why the
+     * server refused it when it did.
      */
     async function write(edit: (rail: RailEntry[]) => RailEntry[]): Promise<void> {
-        say('');
-        say(await editRail(edit));
+        const refused = await editRail(edit);
+        if (refused === '') return;
+        post(refused, {
+            tone: 'error',
+            actions: [{ label: t('statusbar.rail_settings'), run: openSettings }]
+        });
     }
-
-    function say(words: string): void {
-        if (refusalTimer !== null) clearTimeout(refusalTimer);
-        refusalTimer = null;
-        refusal = words;
-        if (words !== '') refusalTimer = setTimeout(() => (refusal = ''), REFUSAL_MS);
-    }
-
-    $effect(() => () => {
-        if (refusalTimer !== null) clearTimeout(refusalTimer);
-    });
 
     /** A page button let go at a new place. */
     function moved(page: string, before: string | null): void {
@@ -109,14 +95,21 @@
 
     /**
      * A choice of a page button's right-click menu: Hide takes its entry out of `rail:`, and
-     * Settings shows the Settings view with its rail list in view, on the rail page that holds
-     * one, or on the page on screen when none does.
+     * Settings shows the Settings view with its rail list in view.
      */
     function menuPick(page: string, pick: string): void {
         if (pick === RAIL_HIDE) {
             void write((rail) => railHidden(rail, page));
             return;
         }
+        openSettings();
+    }
+
+    /**
+     * Show the Settings view with its rail list in view, on the rail page that holds one, or on the
+     * page on screen when none does.
+     */
+    function openSettings(): void {
         const holder = pages.find((entry) =>
             railPageViews(allPages(), entry.page, entry.node).includes(SETTINGS_VIEW)
         );
@@ -267,9 +260,6 @@
         </RailList>
         <RailFoot {saved} {stopIndex} {ringKeys} {onsearch} {onupdate} />
     </div>
-    {#if refusal !== ''}
-        <p class="refusal" role="alert" use:onBody>{refusal}</p>
-    {/if}
 </nav>
 
 <style>
@@ -301,35 +291,12 @@
         overflow: visible;
     }
 
-    /* The line saying why a rail write was refused, beside the rail's foot, drawn on the body as a
-       tooltip's bubble is so the panes beside the rail do not paint over it; it stands until
-       notifications take its place. */
-    .refusal {
-        position: fixed;
-        left: calc(var(--rail-width) + 6px);
-        bottom: 8px;
-        z-index: 80;
-        max-width: 320px;
-        margin: 0;
-        padding: 4px 8px;
-        border: 1px solid var(--c-red);
-        border-radius: var(--radius-sm);
-        background: var(--panel);
-        color: var(--ink-txt, var(--ink));
-        font-size: var(--fs-xs);
-    }
-
     /* Over a wallpaper the rail goes translucent with the panes, and takes the pane's colour while
        it does: the two are one surface to the eye once the picture shows through them. The rail
        holds nothing drawn past its own box, since a tooltip's bubble and a menu opened from it are
        drawn on the body, so it needs no depth over the panes beside it. */
     :global(body.wall) .rail {
         background: color-mix(in srgb, var(--panel) var(--wall-panel), transparent);
-        backdrop-filter: blur(var(--wall-blur));
-    }
-
-    :global(body.wall) .refusal {
-        background: color-mix(in srgb, var(--panel) var(--wall-popover), transparent);
         backdrop-filter: blur(var(--wall-blur));
     }
 </style>

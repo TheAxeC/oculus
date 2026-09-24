@@ -41,9 +41,11 @@
         /**
          * Which way the list opens. `up` is the default, for a menu at the foot of the window; a
          * menu in a header opens `down`, or its list is drawn above the top of what holds it and
-         * is clipped away; `beside` opens it upward to the right of the button, on the body.
+         * is clipped away; `beside` opens it upward to the right of the button, on the body, and
+         * `above` upward from the button's top left corner, on the body, for a menu in a bar that
+         * filters what it holds.
          */
-        placement?: 'up' | 'down' | 'beside';
+        placement?: 'up' | 'down' | 'beside' | 'above';
         /**
          * Which edge of the button the list lines up with. `left` is the default; a menu at the
          * right edge of the window lines up `right`, or its list runs off the screen.
@@ -57,6 +59,15 @@
         bare?: boolean;
         /** The opener as one item of the activity rail, the box a rail ToolButton draws. */
         rail?: boolean;
+        /**
+         * The opener as one item of the status bar, the box a status ToolButton draws, with its
+         * own few words and its tooltip; its list rises from the item on the body.
+         */
+        status?: boolean;
+        /** The status item's own few words. */
+        words?: string;
+        /** The status item's tooltip. */
+        title?: string;
         /**
          * The opener's place in the browser's focus order, for a strip that is one stop: 0 for the
          * control at the stop and -1 for the rest. An opener with none is an ordinary stop.
@@ -81,6 +92,9 @@
         align = 'left',
         bare = false,
         rail = false,
+        status = false,
+        words,
+        title,
         tabindex,
         stop,
         onkeydown
@@ -110,10 +124,16 @@
         return () => document.removeEventListener('pointerdown', outside, true);
     });
 
+    /** Whether the list is drawn on the body at a point rather than against the button. */
+    const onBody = $derived(placement === 'beside' || placement === 'above');
+
     function toggle(): void {
-        if (!open && placement === 'beside' && button !== undefined) {
+        if (!open && onBody && button !== undefined) {
             const rect = button.getBoundingClientRect();
-            at = { x: rect.right + GAP, y: rect.bottom };
+            at =
+                placement === 'beside'
+                    ? { x: rect.right + GAP, y: rect.bottom }
+                    : { x: rect.left, y: rect.top - GAP };
         }
         open = !open;
     }
@@ -141,6 +161,9 @@
         {compact}
         {bare}
         {rail}
+        {status}
+        {words}
+        {title}
         {tabindex}
         {stop}
         {onkeydown}
@@ -154,8 +177,8 @@
             onescape={escape}
             placement={placement === 'down' ? 'down' : 'up'}
             {align}
-            at={placement === 'beside' ? at : undefined}
-            rise={placement === 'beside'}
+            at={onBody ? at : undefined}
+            rise={onBody}
             bind:element={list}
         />
     {/if}

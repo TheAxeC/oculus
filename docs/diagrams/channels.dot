@@ -57,6 +57,7 @@ digraph channels {
         "state/system/docs";
         "state/system/hpc";
         "state/system/usage-refresh";
+        "state/workbench/navigation/notice-sources";
         "state/workbench/palette-source";
         "state/workbench/rail-badges";
     }
@@ -107,18 +108,23 @@ digraph channels {
     "ch files" -> "state/sources/fs";
     "ch files" -> "state/system/docs";
     "ch git" -> "routes/+page" [style=dashed];
+    "ch git" -> "routes/+page";
     "ch git" -> "state/client/selectors";
     "ch git" -> "views/system/status";
     "ch hpc" -> "routes/+page" [style=dashed];
     "ch hpc" -> "routes/+page";
     "ch hpc" -> "state/system/hpc";
+    "ch hpc" -> "state/workbench/navigation/notice-sources";
     "ch inbox" -> "routes/+page" [style=dashed];
     "ch inbox" -> "state/feeds/inbox";
+    "ch inbox" -> "state/workbench/navigation/notice-sources";
     "ch inbox" -> "state/workbench/palette-source";
     "ch portfolio" -> "routes/+page" [style=dashed];
+    "ch portfolio" -> "routes/+page";
     "ch portfolio" -> "state/client/context";
     "ch portfolio" -> "state/client/selectors";
     "ch portfolio" -> "state/life/present";
+    "ch portfolio" -> "state/workbench/navigation/notice-sources";
     "ch portfolio" -> "state/workbench/palette-source";
     "ch portfolio" -> "state/workbench/rail-badges";
     "ch portfolio" -> "views/boards/collection";
@@ -137,6 +143,7 @@ digraph channels {
     "ch sessions" -> "state/client/selectors";
     "ch sessions" -> "state/sessions/latex";
     "ch sessions" -> "state/sessions/terminals";
+    "ch sessions" -> "state/workbench/navigation/notice-sources";
     "ch sessions" -> "views/system/status";
     "ch usage" -> "routes/+page" [style=dashed];
     "ch usage" -> "routes/+page";

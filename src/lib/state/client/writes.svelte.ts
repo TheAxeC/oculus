@@ -6,6 +6,11 @@
 // A 403 without a field refusal can mean the server minted a new token while the page kept the old
 // one. It reloads the page data and retries once. A field refusal, such as an open path outside the
 // configured roots, is reported without retrying.
+//
+// Every write that does not land, refused by the server or given no answer, is also said to
+// whatever registered through onUnwritten, which is the notification the status bar's bell counts,
+// beside the line the view that sent it draws. It is said once per write, after the one retry a
+// stale token gets, and a caller that says it in a notification of its own sends with `said`.
 
 import { tick } from 'svelte';
 import { t } from '../words/text.ts';
@@ -100,7 +105,11 @@ export type WritesStore = {
     markPosted: (file: string) => Promise<WriteAnswer>;
     newEntry: (collection: string, fields: Record<string, unknown>) => Promise<WriteAnswer>;
     writeDeck: (selection: string[], order: string[]) => Promise<WriteAnswer>;
-    writeRail: (rail: { label: string; glyph: string; page: string }[]) => Promise<WriteAnswer>;
+    /** Rewrite the rail list; `said` when the caller posts the refusal's notification itself. */
+    writeRail: (
+        rail: { label: string; glyph: string; page: string }[],
+        said?: boolean
+    ) => Promise<WriteAnswer>;
     muteFinding: (signature: string, muted: boolean) => Promise<WriteAnswer>;
     addMemory: (name: string, data: string) => Promise<WriteAnswer>;
     newIdea: (fields: {
@@ -122,8 +131,19 @@ export type WritesStore = {
         id: string,
         fields?: Record<string, unknown>
     ) => Promise<WriteAnswer>;
-    send: (request: unknown, path?: string) => Promise<WriteAnswer>;
+    send: (request: unknown, path?: string, options?: SendOptions) => Promise<WriteAnswer>;
+    /**
+     * Hear every write that does not land, unless its caller says it: the words the server gave,
+     * or the error of a write that got no answer, with whether the server answered.
+     */
+    onUnwritten: (listener: (reason: string, refused: boolean) => void) => void;
 };
+
+/** One write's answer, and whether the server gave it or the write got none. */
+type Exchange = { answer: WriteAnswer; answered: boolean };
+
+/** What a caller says about one write it sends: `said` when it words a failure itself. */
+export type SendOptions = { said?: boolean };
 
 /**
  * How long a write waits for its answer before it is given up, in milliseconds, from
@@ -149,6 +169,33 @@ export function createWrites(
     const state: { pending: number; error: string | null } = $state({ pending: 0, error: null });
 
     let token = '';
+
+    /** What registered to hear a write that did not land. */
+    const unwrittenListeners: ((reason: string, refused: boolean) => void)[] = [];
+
+    function onUnwritten(listener: (reason: string, refused: boolean) => void): void {
+        unwrittenListeners.push(listener);
+    }
+
+    /**
+     * Say a write that did not land to every listener: one the server refused, in whole or a field
+     * of it, or one that got no answer. A listener that fails leaves the caller the answer it
+     * already has, which is what the caller acts on.
+     */
+    function tell(sent: Exchange, options: SendOptions): WriteAnswer {
+        const { answer, answered } = sent;
+        if (options.said === true || (answer.ok && answer.refused.length === 0)) return answer;
+        const fields = answer.refused.map((one) => one.reason).filter((one) => one !== '');
+        const reason = fields.length > 0 ? fields.join('; ') : (answer.error ?? '');
+        for (const listener of unwrittenListeners) {
+            try {
+                listener(reason, answered);
+            } catch {
+                continue;
+            }
+        }
+        return answer;
+    }
 
     /** Install the token the page was given. Called from the page's load, on every load. */
     function setToken(next: string): void {
@@ -339,9 +386,10 @@ export function createWrites(
      * watcher pushes the config, which is what redraws the rail.
      */
     async function writeRail(
-        rail: { label: string; glyph: string; page: string }[]
+        rail: { label: string; glyph: string; page: string }[],
+        said = false
     ): Promise<WriteAnswer> {
-        return send({ kind: 'rail', rail });
+        return send({ kind: 'rail', rail }, '/api/write', { said });
     }
 
     /**
@@ -411,12 +459,21 @@ export function createWrites(
         return send({ action, id, ...fields }, DEPOSIT_PATH);
     }
 
+    /** One write, said to the listeners when it does not land. */
+    async function send(
+        request: unknown,
+        path = '/api/write',
+        options: SendOptions = {}
+    ): Promise<WriteAnswer> {
+        return tell(await exchange(request, path), options);
+    }
+
     /**
      * One write, with the one retry a stale token gets. The whole of it, the retry and the reading
      * of each answer included, is given up once the configured time has passed with no answer, so a
      * request that never answers leaves no form waiting on it.
      */
-    async function send(request: unknown, path = '/api/write'): Promise<WriteAnswer> {
+    async function exchange(request: unknown, path: string): Promise<Exchange> {
         state.pending += 1;
         state.error = null;
         const gate = new AbortController();
@@ -444,30 +501,33 @@ export function createWrites(
                 const error =
                     typeof body.error === 'string' ? body.error : `HTTP ${response.status}`;
                 state.error = error;
-                return {
-                    ok: false,
-                    changed: [],
-                    refused: Array.isArray(body.refused) ? body.refused : [],
-                    error
-                };
+                const refused = Array.isArray(body.refused) ? body.refused : [];
+                return { answered: true, answer: { ok: false, changed: [], refused, error } };
             }
             return {
-                ok: true,
-                changed: Array.isArray(body.changed) ? body.changed : [],
-                refused: Array.isArray(body.refused) ? body.refused : [],
-                output: typeof body.output === 'string' ? body.output : undefined,
-                branches: Array.isArray(body.branches) ? body.branches : undefined,
-                id: typeof body.id === 'string' ? body.id : undefined
+                answered: true,
+                answer: {
+                    ok: true,
+                    changed: Array.isArray(body.changed) ? body.changed : [],
+                    refused: Array.isArray(body.refused) ? body.refused : [],
+                    output: typeof body.output === 'string' ? body.output : undefined,
+                    branches: Array.isArray(body.branches) ? body.branches : undefined,
+                    id: typeof body.id === 'string' ? body.id : undefined
+                }
             };
         } catch (error) {
             if (gate.signal.aborted) {
                 const words = t('app.write_timed_out');
                 state.error = words;
-                return { ok: false, changed: [], refused: [], error: words };
+                return {
+                    answered: false,
+                    answer: { ok: false, changed: [], refused: [], error: words }
+                };
             }
             const message = error instanceof Error ? error.message : String(error);
             state.error = message;
-            return { ok: false, changed: [], refused: [], error: message, network: true };
+            const answer = { ok: false, changed: [], refused: [], error: message, network: true };
+            return { answered: false, answer };
         } finally {
             if (timer !== null) clearTimeout(timer);
             state.pending -= 1;
@@ -503,6 +563,7 @@ export function createWrites(
         undoWrite,
         writeGit,
         writeDeposit,
-        send
+        send,
+        onUnwritten
     };
 }

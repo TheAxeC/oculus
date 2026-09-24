@@ -60,8 +60,8 @@ const STATUS_PAGE = JSON.stringify({
 
 /** Wait until the socket is up and the rail's page buttons are drawn from the pushed config. */
 async function settled(page: Page): Promise<void> {
-    await expect(page.locator('[data-status-bar] [data-status="socket"] button')).toHaveText(
-        t('workbench.status_socket', t('workbench.status_socket_open'))
+    await expect(page.locator('[data-status-bar] [data-status="server"] button')).toHaveText(
+        t('statusbar.server_open')
     );
     await expect(page.locator('nav [data-rail-page] button').first()).toBeVisible();
 }

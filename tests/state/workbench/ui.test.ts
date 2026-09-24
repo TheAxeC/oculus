@@ -109,6 +109,7 @@ describe('the appearance store', () => {
     });
 
     it('saves the six appearance values and one blob per instance under the one key', () => {
+        // revert: src/lib/state/workbench/ui.svelte.ts:105 => delete
         const storage = fakeStorage();
         loadUi(storage);
         setTheme('mocha');
@@ -129,8 +130,49 @@ describe('the appearance store', () => {
             icons: true,
             textScale: 1.3,
             terminalFont: 14.5,
+            statusHidden: [],
+            statusQuiet: false,
             instances: { a: { filter: 'active' }, b: 3 }
         });
+    });
+
+    it('keeps the status bar items the reader hid and Do Not Disturb, and reads them back', () => {
+        // revert: src/lib/state/workbench/ui.svelte.ts:344 => save({ ...store.current });
+        const storage = fakeStorage();
+        loadUi(storage);
+        expect(client.ui.statusHidden()).toEqual([]);
+        expect(client.ui.statusQuiet()).toBe(false);
+        client.ui.setStatusHidden('branch', true);
+        client.ui.setStatusHidden('bell', true);
+        // hiding one twice keeps it once, and showing it takes it out
+        client.ui.setStatusHidden('branch', true);
+        client.ui.setStatusHidden('bell', false);
+        client.ui.setStatusQuiet(true);
+        expect(saved(storage)).toMatchObject({ statusHidden: ['branch'], statusQuiet: true });
+
+        const again = createClientState();
+        again.ui.loadUi(storage);
+        expect(again.ui.statusHidden()).toEqual(['branch']);
+        expect(again.ui.statusQuiet()).toBe(true);
+    });
+
+    it('reads a hidden list saved wrongly as the entries it can use, and one saved before it as none', () => {
+        // revert: src/lib/state/workbench/ui.svelte.ts:266 => (item): item is string => typeof item === 'string'
+        const odd = createClientState();
+        odd.ui.loadUi(
+            fakeStorage({
+                version: UI_VERSION,
+                theme: DEFAULT_THEME,
+                statusHidden: ['sync', 3, '', 'sync', null, 'host'],
+                statusQuiet: 'yes'
+            })
+        );
+        expect(odd.ui.statusHidden()).toEqual(['sync', 'host']);
+        expect(odd.ui.statusQuiet()).toBe(false);
+        const before = createClientState();
+        before.ui.loadUi(fakeStorage({ version: UI_VERSION, theme: DEFAULT_THEME }));
+        expect(before.ui.statusHidden()).toEqual([]);
+        expect(before.ui.statusQuiet()).toBe(false);
     });
 
     it('loads an envelope that still carries dismissed lead ids without keeping the field', () => {
@@ -237,7 +279,7 @@ describe('the appearance store', () => {
         expect(icons()).toBe(true);
     });
 
-    // revert: src/lib/state/workbench/ui.svelte.ts:235 => icons: held.icons === true,
+    // revert: src/lib/state/workbench/ui.svelte.ts:256 => icons: held.icons === true,
     it('reads a choice saved under the older field name when no icons field is saved', () => {
         const older = fakeStorage({
             version: UI_VERSION,
@@ -260,7 +302,7 @@ describe('the appearance store', () => {
         expect(icons()).toBe(false);
     });
 
-    // revert: src/lib/state/workbench/ui.svelte.ts:248 => if (false)
+    // revert: src/lib/state/workbench/ui.svelte.ts:279 => if (false)
     it('writes a choice read under the older field name back under icons at once', () => {
         const older = fakeStorage({
             version: UI_VERSION,

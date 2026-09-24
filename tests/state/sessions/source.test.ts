@@ -270,6 +270,31 @@ describe('source tab state', () => {
         expect(sourceDraft('one').rendered).toBe(true);
     });
 
+    it('keeps the language and the indentation chosen from the status bar per instance, and drops them for another file', async () => {
+        // revert: src/lib/state/sessions/source.svelte.ts:228 => updateDraft(id, { file });
+        vi.stubGlobal('fetch', () => Promise.resolve(new Response('text\n')));
+        expect(sourceDraft('one')).toMatchObject({ language: '', indent: null });
+        client.source.setSourceLanguage('one', 'python');
+        client.source.setSourceIndent('one', { tabs: true, size: 8 });
+        expect(sourceDraft('one')).toMatchObject({
+            language: 'python',
+            indent: { tabs: true, size: 8 }
+        });
+        expect(sourceDraft('two')).toMatchObject({ language: '', indent: null });
+        await loadSourceDraft('one', 'hub', 'a.txt');
+        client.source.setSourceLanguage('one', 'yaml');
+        // The same file asked for again keeps the choice; a tab pointed at another file drops it.
+        await loadSourceDraft('one', 'hub', 'a.txt');
+        expect(sourceDraft('one').language).toBe('yaml');
+        await loadSourceDraft('one', 'hub', 'b.txt');
+        expect(sourceDraft('one')).toMatchObject({ language: '', indent: null });
+        // An indentation kept wrongly in storage is read as none.
+        client.ui.setInstanceState('three', { indent: { tabs: 'no', size: 4 } });
+        expect(sourceDraft('three').indent).toBe(null);
+        client.ui.setInstanceState('three', { indent: { tabs: false, size: 99 } });
+        expect(sourceDraft('three').indent).toBe(null);
+    });
+
     it('loads complete text through the existing file route', async () => {
         vi.stubGlobal(
             'fetch',

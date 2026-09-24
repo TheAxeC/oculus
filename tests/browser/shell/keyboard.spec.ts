@@ -269,7 +269,7 @@ test('Delete closes the focused tab and the keyboard lands on the tab that takes
 test('a rail page taken out of the list under the focus hands the stop to its neighbour', async ({
     page
 }) => {
-    // revert: src/lib/shell/rail/ActivityRail.svelte:168 => delete
+    // revert: src/lib/shell/rail/ActivityRail.svelte:161 => delete
     await boot(page);
     const rail = page.locator('[data-rail]');
     const inbox = rail.locator('[data-stop="page:inbox"]');

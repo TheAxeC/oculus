@@ -147,3 +147,18 @@ icons:
     catalogue: layout-grid
     sliders: sliders-horizontal
     pages: layers
+    # the status bar's items and its notifications
+    host: monitor
+    server: plug
+    usage: gauge
+    ahead: arrow-up
+    behind: arrow-down
+    caret: text-cursor
+    indent: indent-increase
+    encoding: file-type
+    line_ending: corner-down-left
+    language: braces
+    bell: bell
+    bell_unread: bell-dot
+    bell_quiet: bell-off
+    clear_all: list-x

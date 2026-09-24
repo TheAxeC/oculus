@@ -72,6 +72,9 @@ const MANIFEST = 'id: loewner\ntype: active\ntitle: Loewner layers\n';
 
 const watchers: Watcher[] = [];
 
+/** The machine a watcher under test is told it runs on. */
+const HOST = { name: 'test-machine', address: 'http://127.0.0.1:8799' };
+
 afterEach(() => {
     while (watchers.length > 0) watchers.pop()?.close();
 });
@@ -179,7 +182,7 @@ function start(
     const channels = new Hub();
     const client = recording();
     channels.subscribe(client.sink, ['portfolio', 'config', 'feeds', 'audit']);
-    watchers.push(watchPortfolio(channels, { hub, engine, icons }));
+    watchers.push(watchPortfolio(channels, { hub, engine, icons, host: HOST }));
     return { hub, engine, got: client.got, icons };
 }
 
@@ -507,6 +510,7 @@ describe('watchPortfolio', () => {
     });
 
     it('publishes portfolio, config, and feeds at start, each at version 1', async () => {
+        // revert: src/lib/server/watch/portfolio.ts:297 => delete
         const started = start();
         await until(() => started.got.length >= 3, 2000);
 
@@ -523,6 +527,7 @@ describe('watchPortfolio', () => {
 
         const payload = config[0].payload as ConfigPayload;
         expect(payload.text['app.title']).toBe('oculus');
+        expect(payload.host).toEqual(HOST);
         expect(payload.findings).toEqual([]);
         expect(payload.config.venues_file).toBe('registries/venues.yml');
         expect((feeds[0].payload as FeedsPayload).linkedin.entries[0].title).toBe('Start');
@@ -640,7 +645,7 @@ describe('watchPortfolio', () => {
     });
 
     it('reports a rail button naming a page no arrangement holds, in the catalog words', async () => {
-        // revert: src/lib/server/watch/portfolio.ts:302 => delete
+        // revert: src/lib/server/watch/portfolio.ts:305 => delete
         const started = start((_hub, engine) => {
             write(
                 engine,

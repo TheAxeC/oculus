@@ -42,6 +42,8 @@ const STORES: (keyof ClientState)[] = [
     'selectors',
     'railBadges',
     'paletteSource',
+    'editorStatus',
+    'notices',
     'registry',
     'tipIds'
 ];

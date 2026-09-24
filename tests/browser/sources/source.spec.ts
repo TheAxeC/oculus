@@ -28,7 +28,7 @@ function scratch(): string {
     return dir;
 }
 
-// revert: src/lib/state/workbench/ui.svelte.ts:257 => delete
+// revert: src/lib/state/workbench/ui.svelte.ts:288 => delete
 test('the toolbar control opens the feed file and an unsaved edit survives a reload', async ({
     page
 }) => {
@@ -295,7 +295,7 @@ test('a page holding one tab with an unsaved edit asks before it closes', async 
     // Nothing is saved: the demo hub's feed file stays as it was.
 });
 
-// revert: src/lib/views/sources/source/Source.svelte:117 => {#if false}
+// revert: src/lib/views/sources/source/Source.svelte:200 => {#if false}
 test('Save, Revert, Preview and the star sit on the pane bar in one row, and the editor draws no bar', async ({
     page
 }) => {

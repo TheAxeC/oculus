@@ -7,7 +7,7 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 import { join } from 'node:path';
 import { engineDir } from './lib/data/sources/config.ts';
 import { parseEngineArgs } from './lib/server/core/args.ts';
-import { carryingHandler, createServerContext } from './lib/server/core/context.ts';
+import { LISTEN_HOST, carryingHandler, createServerContext } from './lib/server/core/context.ts';
 import { BODY_LIMIT_BYTES } from './lib/server/content/memories.ts';
 import { onShutdown } from './lib/server/core/shutdown.ts';
 import { attachSocket } from './lib/server/core/socket.ts';
@@ -65,6 +65,8 @@ onShutdown(
     }
 );
 
-server.listen(context.local.port, '127.0.0.1', () => {
-    console.log(`oculus on http://127.0.0.1:${context.local.port} over hub ${context.local.hub}`);
+server.listen(context.local.port, LISTEN_HOST, () => {
+    console.log(
+        `oculus on http://${LISTEN_HOST}:${context.local.port} over hub ${context.local.hub}`
+    );
 });

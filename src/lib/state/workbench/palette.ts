@@ -21,7 +21,7 @@ export type PaletteItem = {
 };
 
 export type PaletteCommand = {
-    name: 'theme' | 'crt' | 'accent' | 'tab' | 'goto' | 'help' | 'update';
+    name: 'theme' | 'crt' | 'accent' | 'tab' | 'goto' | 'language' | 'help' | 'update';
     hint: string;
     available: boolean;
 };
@@ -207,8 +207,21 @@ export function parseCommand(query: string): ParsedCommand | null {
     };
 }
 
-/** The command vocabulary and its argument hints, over the current theme and view configuration. */
-export function commands(config: Record<string, unknown>): PaletteCommand[] {
+/**
+ * The line a go-to-line query names: a colon and a whole number, as VS Code's quick input reads
+ * one, or null for any other query.
+ */
+export function lineQuery(parsed: ParsedCommand | null): number | null {
+    if (parsed?.argument !== '' || !/^\d+$/.test(parsed.name)) return null;
+    const line = Number(parsed.name);
+    return Number.isSafeInteger(line) && line > 0 ? line : null;
+}
+
+/**
+ * The command vocabulary and its argument hints, over the current theme and view configuration and
+ * whether a source tab is on screen, which is what `language` changes.
+ */
+export function commands(config: Record<string, unknown>, source = false): PaletteCommand[] {
     const themes = Array.isArray(config.themes)
         ? config.themes.flatMap((row) => {
               if (typeof row !== 'object' || row === null || Array.isArray(row)) return [];
@@ -222,6 +235,7 @@ export function commands(config: Record<string, unknown>): PaletteCommand[] {
         { name: 'accent', hint: '<name | #hex | reset>', available: false },
         { name: 'tab', hint: '<view id>', available: true },
         { name: 'goto', hint: '<project id>', available: true },
+        { name: 'language', hint: '<language>', available: source },
         { name: 'help', hint: '', available: false },
         { name: 'update', hint: '', available: true }
     ];

@@ -284,6 +284,8 @@ const SHELL_STORES = [
     'selection',
     'terminals',
     'paletteSource',
+    'editorStatus',
+    'notices',
     'registry'
 ];
 
@@ -421,7 +423,7 @@ describe('layer boundaries', () => {
     });
 
     it('catches a shell file reading a store the shell may not read', () => {
-        // revert: tests/checks/tree/boundaries.test.ts:305 => delete
+        // revert: tests/checks/tree/boundaries.test.ts:307 => delete
         const dir = scratch('oculus-shell-stores-');
         mkdirSync(join(dir, 'shell'), { recursive: true });
         writeFileSync(
@@ -534,7 +536,7 @@ describe('layer boundaries', () => {
 
     // revert: tests/checks/tree/allow-styling.ts:72 => line: 'views/sources/search/Results.svelte styles .label of ui/controls/Chip.svelte, ui/tabs/Tabs.svelte, ui/controls/Tag.svelte through .hit :global(.label)',
     it('lets no view or shell component style a primitive own class', () => {
-        // revert: tests/checks/tree/boundaries.test.ts:369 => delete
+        // revert: tests/checks/tree/boundaries.test.ts:371 => delete
         expect(
             findPrimitiveStyling(
                 LIB,
@@ -544,7 +546,7 @@ describe('layer boundaries', () => {
     });
 
     it('catches a view reaching into a primitive, and passes the theme class and its own', () => {
-        // revert: tests/checks/tree/boundaries.test.ts:365 => const owned = undefined;
+        // revert: tests/checks/tree/boundaries.test.ts:367 => const owned = undefined;
         const dir = scratch('oculus-primitive-styling-');
         const write = (rel: string, body: string) => {
             const full = join(dir, rel);
@@ -587,7 +589,7 @@ describe('layer boundaries', () => {
     });
 
     it('holds the styling lists to rules the tree still has', () => {
-        // revert: tests/checks/tree/boundaries.test.ts:370 => delete
+        // revert: tests/checks/tree/boundaries.test.ts:372 => delete
         const held = findPrimitiveStyling(LIB);
         expect(
             [...DELIBERATE, ...HELD]

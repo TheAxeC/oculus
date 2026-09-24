@@ -4,8 +4,9 @@
 // therefore remember different things.
 //
 // The six appearance values save together under the one key, so what a browser was left looking
-// like comes back whole. What they start as is config/appearance.yml's, read through
-// state/words/appearance.ts, and never a literal here.
+// like comes back whole, and so do the status bar's own two: the items the reader hid from it and
+// whether its notifications are kept quiet. What the six start as is config/appearance.yml's, read
+// through state/words/appearance.ts, and never a literal here.
 //
 // It saves the same way the layout store does, under its own key and through the same small slice
 // of Storage, so a test hands it a plain object and no test touches localStorage.
@@ -37,6 +38,10 @@ type Ui = {
     icons: boolean;
     textScale: number | null;
     terminalFont: number | null;
+    /** The status bar items the reader hid, by the id the bar gives each. */
+    statusHidden: string[];
+    /** Whether Do Not Disturb is on: a notification goes into the list and shows no toast. */
+    statusQuiet: boolean;
     /** One entry per view instance, by instance id. The shape of the value is the view's own. */
     instances: Record<string, unknown>;
 };
@@ -56,6 +61,8 @@ export type UiStore = {
     icons: () => boolean;
     textScale: () => number | null;
     terminalFont: () => number | null;
+    statusHidden: () => string[];
+    statusQuiet: () => boolean;
     instanceState: (id: string) => unknown;
     registerUnsaved: (reports: (id: string) => boolean) => void;
     unsaved: (id: string) => boolean;
@@ -71,6 +78,8 @@ export type UiStore = {
     setTextScale: (scale: number | null) => void;
     stepTextScale: (by: -1 | 1) => void;
     setTerminalFont: (size: number | null) => void;
+    setStatusHidden: (item: string, hidden: boolean) => void;
+    setStatusQuiet: (on: boolean) => void;
     setInstanceState: (id: string, state: unknown) => void;
     clearInstanceState: (id: string) => void;
 };
@@ -93,6 +102,8 @@ export function createUi(): UiStore {
             icons: false,
             textScale: null,
             terminalFont: null,
+            statusHidden: [],
+            statusQuiet: false,
             instances: {}
         };
     }
@@ -145,6 +156,16 @@ export function createUi(): UiStore {
     /** The terminal grid size chosen by the viewer, or null when the config default is in force. */
     function terminalFont(): number | null {
         return store.current.terminalFont;
+    }
+
+    /** The status bar items the reader hid. */
+    function statusHidden(): string[] {
+        return store.current.statusHidden;
+    }
+
+    /** Whether Do Not Disturb is on. */
+    function statusQuiet(): boolean {
+        return store.current.statusQuiet;
     }
 
     /** What a view instance saved, or undefined when it has saved nothing yet. */
@@ -238,6 +259,16 @@ export function createUi(): UiStore {
                 typeof held.terminalFont === 'number' && Number.isFinite(held.terminalFont)
                     ? Math.min(40, Math.max(6, held.terminalFont))
                     : null,
+            statusHidden: Array.isArray(held.statusHidden)
+                ? [
+                      ...new Set(
+                          held.statusHidden.filter(
+                              (item): item is string => typeof item === 'string' && item !== ''
+                          )
+                      )
+                  ]
+                : [],
+            statusQuiet: held.statusQuiet === true,
             instances:
                 typeof instances === 'object' && instances !== null && !Array.isArray(instances)
                     ? { ...(instances as Record<string, unknown>) }
@@ -306,6 +337,18 @@ export function createUi(): UiStore {
         save({ ...store.current, terminalFont: bounded });
     }
 
+    /** Hide one status bar item, or show it again. */
+    function setStatusHidden(item: string, hidden: boolean): void {
+        if (item === '') return;
+        const others = store.current.statusHidden.filter((one) => one !== item);
+        save({ ...store.current, statusHidden: hidden ? [...others, item] : others });
+    }
+
+    /** Turn Do Not Disturb on or off. */
+    function setStatusQuiet(on: boolean): void {
+        save({ ...store.current, statusQuiet: on });
+    }
+
     /** What a view instance wants remembered. */
     function setInstanceState(id: string, state: unknown): void {
         save({ ...store.current, instances: { ...store.current.instances, [id]: state } });
@@ -329,6 +372,8 @@ export function createUi(): UiStore {
         icons,
         textScale,
         terminalFont,
+        statusHidden,
+        statusQuiet,
         instanceState,
         registerUnsaved,
         unsaved,
@@ -344,6 +389,8 @@ export function createUi(): UiStore {
         setTextScale,
         stepTextScale,
         setTerminalFont,
+        setStatusHidden,
+        setStatusQuiet,
         setInstanceState,
         clearInstanceState
     };

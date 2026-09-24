@@ -1,5 +1,6 @@
-// Layer 2, client state. What the Repositories view does when a control is pressed: the git writes
-// over one root, the shell a new worktree opens with, and the pane a diff opens in.
+// Layer 2, client state. What the Repositories view and the status bar's branch and sync items do
+// when a control is pressed: the git writes over one root, the shell a new worktree opens with, and
+// the pane a diff opens in.
 //
 // It is a store rather than handlers inside the component because what a press leaves behind is
 // state a reader sees: which roots have a write in flight and what the last one on each answered.
@@ -27,7 +28,10 @@ export type RepositoriesStore = {
     unstage: (root: string, path: string) => Promise<void>;
     discard: (root: string, path: string) => Promise<void>;
     createBranch: (root: string, name: string) => Promise<void>;
-    switchBranch: (root: string, name: string) => Promise<void>;
+    /** Check a branch out, answering whether git did. */
+    switchBranch: (root: string, name: string) => Promise<boolean>;
+    /** Push the checked-out branch to its upstream, answering whether git did. */
+    push: (root: string) => Promise<boolean>;
     /** Make the worktree and open a shell in it; the path is the view's own rule. */
     createWorktree: (root: string, name: string) => Promise<void>;
     removeWorktree: (root: string, path: string) => Promise<void>;
@@ -116,8 +120,11 @@ export function createRepositories(
         async createBranch(root: string, name: string): Promise<void> {
             await act(root, 'createBranch', { name }, true);
         },
-        async switchBranch(root: string, name: string): Promise<void> {
-            await act(root, 'switchBranch', { name }, true);
+        switchBranch(root: string, name: string): Promise<boolean> {
+            return act(root, 'switchBranch', { name }, true);
+        },
+        push(root: string): Promise<boolean> {
+            return act(root, 'push', {}, true);
         },
         async createWorktree(root: string, name: string): Promise<void> {
             const path = plannedPath(root, name);

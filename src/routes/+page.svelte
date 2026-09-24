@@ -3,8 +3,8 @@
     // workbench cannot do for itself: fill the view registry, open the socket, and read the two
     // saved stores. The rail's pages and the chords' groups come from the merged config the socket
     // delivers, and so do the words of the status bar's items, which the page makes from stores the
-    // shell may not read itself; the rail's own rewrite of its list is the page's for the same
-    // reason.
+    // shell may not read itself; the rail's own rewrite of its list and the git writes of the
+    // status bar's branch and sync items are the page's for the same reason.
 
     import { onMount, untrack } from 'svelte';
     import Workbench from '$lib/shell/Workbench.svelte';
@@ -16,10 +16,18 @@
         railRefusal,
         type RailEntry
     } from '$lib/state/workbench/navigation/rail';
-    import { statusWords } from '$lib/state/workbench/navigation/status';
+    import {
+        findingsCount,
+        repoStatus,
+        statusWords,
+        tabFile,
+        type StatusGit
+    } from '$lib/state/workbench/navigation/status';
+    import { repositoriesViewOf } from '$lib/state/sources/repositories';
     import { configGeneration } from '$lib/state/client/generation.svelte';
     import { collectionKeys } from '$lib/data/snapshot/normalise';
     import { typeOfFile } from '$lib/state/sources/fs';
+    import { HUB_ROOT } from '$lib/state/boards/collection';
     import { createClientState } from '$lib/state/client/context';
     import { provideState } from '$lib/state/client/use';
     import { provideTipIds } from '$lib/ui/menu/tip-ids';
@@ -34,12 +42,13 @@
     provideState(client);
     provideTipIds(client.tipIds);
     const {
-        entities: { config, hpc, sessions, usage },
-        fs: { bookmarks: savedBookmarks },
-        layout: { loadLayout },
+        entities: { config, git: gitPayload, hpc, portfolio, sessions, usage },
+        fs: { bookmarks: savedBookmarks, workspaces },
+        layout: { activeInstance, loadLayout, openView },
+        repositories,
         selectors: { waitingCount },
         socket: { connect, disconnect, status: socketStatus },
-        ui: { loadUi },
+        ui: { instanceState, loadUi, setInstanceState },
         writes: { setToken, writeRail }
     } = client;
 
@@ -89,8 +98,48 @@
     const docs = $derived(readDocs(merged?.docs));
     const pages = $derived(railPages(merged));
 
-    /** The words of the status bar's socket, usage, HPC and live-session items. */
-    const status = $derived(statusWords(socketStatus(), usage(), hpc(), sessions()));
+    /**
+     * The roots the file routes serve, the current workspace's first and then every other's, which
+     * is what a tab's root key is read against to find the folder its file is in.
+     */
+    const served = $derived.by(() => {
+        const held = workspaces();
+        const current = held.workspaces.filter((workspace) => workspace.name === held.current);
+        const others = held.workspaces.filter((workspace) => workspace.name !== held.current);
+        return [...current, ...others].flatMap((workspace) => workspace.roots);
+    });
+
+    /**
+     * The words of the status bar's items whose stores the shell may not read, the repository
+     * being the one holding the file of the tab on screen.
+     */
+    const status = $derived(
+        statusWords(socketStatus(), usage(), hpc(), sessions(), {
+            host: config()?.host ?? null,
+            findings: findingsCount(portfolio(), config()),
+            repo: repoStatus(tabFile(activeInstance()?.state), served, gitPayload(), HUB_ROOT)
+        })
+    );
+
+    /** Show one repository in the Repositories view, where a refused git write says why. */
+    function showRepository(root: string): void {
+        const id = openView('repositories');
+        setInstanceState(id, { ...repositoriesViewOf(instanceState(id)), root });
+    }
+
+    /**
+     * The git writes of the status bar's branch and sync items, through the Repositories view's own
+     * store. A write git refuses shows the repository, whose line says why.
+     */
+    const git: StatusGit = {
+        switchBranch: async (root, name) => {
+            if (!(await repositories.switchBranch(root, name))) showRepository(root);
+        },
+        push: async (root) => {
+            if (!(await repositories.push(root))) showRepository(root);
+        },
+        show: showRepository
+    };
 
     /**
      * The reader's own bookmarks, from ~/.oculus/bookmarks.yml through the fs store. They are read
@@ -130,7 +179,7 @@
      * the write, or the empty string when it was written; the shell may not reach the write itself.
      */
     async function editRail(edit: (rail: RailEntry[]) => RailEntry[]): Promise<string> {
-        const answer = await writeRail(edit(configRail(merged)));
+        const answer = await writeRail(edit(configRail(merged)), true);
         return answer.ok ? '' : railRefusal(answer.error);
     }
 
@@ -163,5 +212,6 @@
     {editRail}
     {directChord}
     {status}
+    {git}
     waiting={waitingCount()}
 />

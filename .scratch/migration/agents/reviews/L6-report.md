@@ -109,3 +109,87 @@ Append: "A colon starts a command: `:` and a line number moves the source tab on
 
 HELP.md:72 now: "The status bar along the bottom reads the server connection (`server: up`, `down` or `waiting`), ... and is not pressable at 0."
 Replace with: "The status bar runs along the bottom under the rail. On the left: the machine oculus runs on (opens Status), the branch of the repository holding the active tab's file (a list of its branches to switch to), how far it is behind and ahead of its upstream (pushes when only ahead, otherwise opens Repositories), the audit findings, the Live HPC poll, the usage refreshers and the server connection. On the right, for a source tab: the line and column (opens the palette on `:`), the indentation (switch spaces or tabs and width, or convert the text), UTF-8, the line ending (convert it), and the language (a searchable list). Then the live sessions, the unsaved tabs (shows the first; not pressable at 0) and the bell. A right-click on the bar hides or shows any item. The bell counts unread notifications and opens the notification centre, with Clear, Clear All and Do Not Disturb; a new notification shows as a toast for eight seconds. Notifications come from a refused rail change, a session waiting on a permission, an update task that ran, a Live HPC job that ended, and a write that was refused or got no answer."
+
+# Repair round 1
+
+Everything in the brief is done. For Axel at landing: the full-width bar (your ruling: it goes to him) and the branch stand-in change, which reaches beyond the bar (ruling 3).
+
+1. Findings item. The item now counts the Findings view's own list and opens Findings.
+   - `findingsCount(portfolio(), config())` in status.ts:189-200, wired at +page.svelte:119. StatusBar.svelte:110 opens `findings`.
+   - Words changed: `findings_name: '{0} findings'`, `findings_tip: '{0} findings in the hub and the configuration. Open Findings.'`. Comments in status.ts and StatusBar updated.
+   - settings.spec now asserts the Findings tab, with a new directive at StatusBar.svelte:110 (`openView('audit')`).
+   - New browser case: the bar's number equals the Findings view's row count, and that count is above 0. It is red when the page's wiring is reverted (+page.svelte:119 `findings: 0,`) and when the config half is dropped (status.ts:199).
+   - New node case in status.test for the count.
+   - Proof: `node bin/revert-check.mjs tests/browser/shell/settings.spec.ts` gives `10 reverts, 0 unproven, 0 unchecked`. `node bin/revert-check.mjs tests/state/workbench/navigation/status.test.ts` gives `14 reverts, 0 unproven, 0 unchecked`.
+2. Waiting source. Both hooks now post, each worded as what it waits for.
+   - `waitOf(hook)` returns `'permission'` or `'idle'` (notice-sources.ts:44-47). The words are `notice_permission: '{0} is waiting for you to answer a permission prompt.'` and `notice_idle: '{0} finished its turn and is waiting for your input.'`.
+   - `waitingCount` and the window title still use `waitsOnReader`, which is permission only.
+   - New cases:
+     - an idle session is told once, told again after a later turn, and Open shows it; red under notice-sources.ts:46 `return null;` and :189 (wording).
+     - the kinds are read correctly and the count is still 1; red under :33.
+   - Proof: the revert-check batch over notice-sources.test, status-bar.test and status.test gave 41 reverts. Its only non-red lines were status.test's stale directives, since repointed and proven above (14/0/0). Every notice-sources case, the new idle one included, was red.
+3. Terminal stand-ins.
+   - `caret: "|"` is now `"[I]"`.
+   - `branch: "|-"` is now `"[Y]"`. The branch glyph is not new, but the reviewer saw it read as a divider in the bar too. This changes its stand-in everywhere under terminal themes, the Repositories view included.
+   - The other new stand-ins contain no `|` and are not made of strokes only: `[h] (s) (%) ^ v >> [u] <- {} (n) (N) (z) [c]`.
+   - New case in status-bar.test: renders the bar in ascii mode and asserts no drawn stand-in contains `|` or is only strokes (`[-_:./\\]+`). It is red under glyphs.yml:157 (`caret: "|"`) and :40 (`branch: "|-"`); it was in the 41-revert batch with no non-red line for this file.
+4. The report is updated below.
+
+Other fixes this round:
+- `node bin/diagrams.mjs` was rerun, since the page's channel imports changed. Without it, tests/checks/diagrams failed once in the run before.
+- The status.ts directives were shifted by the new function and are repointed: 216, 224, 229-231, 236, 258-263.
+
+## Verification, after the round
+- `ls -d $TMPDIR/oculus-* | wc -l`: 7015 before, 7015 after.
+- `npx vitest run --reporter=dot`: `Test Files  296 passed (296)` / `Tests  4709 passed (4709)`.
+- `npm run check`: `COMPLETED 1359 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS`.
+- `npm run build`: exit 0. `npm run format:check`: `All matched files use Prettier code style!`. `npm run lint`: exit 0.
+- `LC_ALL=C grep -rna '[^ -~]' src tests`: 0 lines. The spec's perl gate over src tests bin config: 0 lines.
+- `sh bin/size-check.sh`, `sh bin/folder-check.sh`: both exit 0.
+- `npx playwright test` (whole suite): `373 passed (7.7m)`. The one `✘` line, files-forms.spec.ts:631, is a `test.fail()` case and is counted in the passes.
+- revert-check over every test file changed this round: settings.spec gave 10/0/0 and status.test 14/0/0. notice-sources.test and status-bar.test were in the 41-revert batch, whose only non-red lines were the status.test ones fixed above.
+- revert-check over all earlier files: the numbers in the first report, which the reviewer reproduced (129 node / 98 browser, 0 unproven).
+
+## DONE / NOT DONE
+Every row of the first report stands. These rows changed:
+- Findings: DONE. It counts the Findings view's list and opens Findings. Proof: settings.spec cases and status.test above.
+- Source 2, waiting session: DONE. Permission prompts and idle prompts post, each once per event.
+- Terminal stand-ins: DONE.
+
+## Files changed this round
+- src/routes/+page.svelte, src/lib/state/workbench/navigation/status.ts (252 to 265 lines), src/lib/shell/status/StatusBar.svelte
+- src/lib/state/workbench/navigation/notice-sources.ts (233 to 252 lines)
+- config/text/statusbar.yml, config/catalogs/glyphs.yml, docs/diagrams/*
+- tests/browser/shell/settings.spec.ts, tests/state/workbench/navigation/{status,notice-sources}.test.ts, tests/shell/status/status-bar.test.ts
+
+## Judgment calls (reversible)
+1. The bar spans the whole window under the rail. It goes to Axel.
+2. HPC "finished" means COMPLETED with exit `0:0` or empty; anything else is reported as failed.
+3. A write that got no answer is worded apart from a refused one.
+4. Do Not Disturb is kept across reloads in the UI store (`oculus.ui.v1`, `statusQuiet`), beside the hidden items. The ruling covered per-browser persistence for the hidden items only.
+5. A branch switch or a push from the bar goes through the same Confirm dialog the Repositories view asks before git runs.
+6. Go to line and the language list are the palette. `:language` is a new palette command, offered only while a source tab is on screen. Encoding is a one-choice list.
+7. The branch stand-in is now `[Y]` everywhere under terminal themes (ruling 3).
+
+## Before and after (for the look on the TEST page)
+- **Any page, the bar.** Before: one run of words at 13.5 px, right of the rail. After: 22 px across the whole width, with icon items in two groups and the bell at the right.
+- **Findings item.** Before the round: it showed the audit's open count and opened Audit. After: it shows the number of rows in the Findings view (the snapshot's and the config's findings) and opens the Findings view. Press it and the number should match the rows listed.
+- **Do Not Disturb.** Turn it on in the centre and reload: the bell keeps its quiet face and new notifications show no toast. They are still listed in the centre.
+- **Branch and sync.** Pick another branch from the branch item, or press sync when only ahead: a confirm dialog asks before git switches or pushes.
+- **`:language` in the palette.** With a source tab on screen, the language item or `:language` lists every language; typing narrows the list and Enter repaints the tab. Without a source tab it says there is none.
+- **A source tab.** The Ln/Col, Tab Size, UTF-8, CRLF and language items appear. Under mocha the caret draws `[I]` and the branch `[Y]`, neither reading as a divider.
+- **A refused rail Hide.** No fixed red line; a toast appears and the bell counts it.
+- **A session going idle after its turn.** A notification: "<title> finished its turn and is waiting for your input."
+
+## Doc text
+- DESIGN.md:149, DESIGN.md:267, HELP.md:66 and HELP.md:68: as in the first report.
+- DESIGN.md new bullet: as in the first report, with two corrections:
+  - "the findings" becomes "the findings item, the count of the Findings view's list (the snapshot's findings and the config channel's), opening the Findings view as VS Code's Problems count opens Problems".
+  - the waiting source becomes "a session that starts waiting on a permission prompt or goes idle after its turn (`permission_prompt`, `idle_prompt`), each worded as what it waits for".
+- HELP.md:72: as in the first report, with two corrections:
+  - "the audit findings" becomes "the findings the Findings view lists (opens it)".
+  - the last sentence becomes "Notifications come from a refused rail change, a session waiting on a permission prompt or waiting for input after its turn, an update task that ran, a Live HPC job that ended, and a write that was refused or got no answer."
+
+## Limitations
+- `waitingCount` and the window title still count permission prompts only, as ruled. An idle session posts a notification but does not count in the title.
+- Scratchpad files from the first run's early commands may have overwritten orchestrator files of the same names; all later files are in `l6b/`.

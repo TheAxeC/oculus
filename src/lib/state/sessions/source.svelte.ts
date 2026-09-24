@@ -9,6 +9,7 @@
 // copy that stops at two megabytes would take the rest of the file off the disk.
 
 import { TEXT_LIMIT } from '../sources/fs.ts';
+import type { Indent } from '../workbench/navigation/editor-text.ts';
 import { readCapped } from '../sources/fs.svelte.ts';
 import type { WriteAnswer, WritesStore } from '../client/writes.svelte.ts';
 import type { UiStore } from '../workbench/ui.svelte.ts';
@@ -52,7 +53,26 @@ export type SourceDraft = {
      * pointed at another file is thrown away.
      */
     file: string;
+    /**
+     * The language the reader chose for the tab from the status bar, by the highlighter's name,
+     * or the empty string for the one the file's own name gives.
+     */
+    language: string;
+    /**
+     * The indentation the reader chose for the tab from the status bar, or null for the one the
+     * file's own lines give.
+     */
+    indent: Indent | null;
 };
+
+/** An indentation kept in storage, or null for anything that is not one. */
+function indentOf(value: unknown): Indent | null {
+    if (typeof value !== 'object' || value === null) return null;
+    const held = value as Record<string, unknown>;
+    const size = held.size;
+    if (typeof held.tabs !== 'boolean' || typeof size !== 'number') return null;
+    return Number.isInteger(size) && size >= 1 && size <= 8 ? { tabs: held.tabs, size } : null;
+}
 
 /** One token per page lifetime: a draft carrying it was read from disk since the page loaded. */
 const LIFETIME = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
@@ -137,6 +157,8 @@ export type SourceStore = {
     revertSourceDraft: (id: string) => void;
     saveSourceDraft: (id: string, root: string, path: string) => Promise<void>;
     toggleSourceRendered: (id: string) => void;
+    setSourceLanguage: (id: string, language: string) => void;
+    setSourceIndent: (id: string, indent: Indent | null) => void;
     saveSource: (root: string, path: string, content: string) => Promise<WriteAnswer>;
 };
 
@@ -162,7 +184,9 @@ export function createSource(writes: WritesStore, ui: UiStore): SourceStore {
             rendered: held.rendered !== false,
             readonly: held.readonly === true,
             truncated: held.truncated === true,
-            file: typeof held.file === 'string' ? held.file : ''
+            file: typeof held.file === 'string' ? held.file : '',
+            language: typeof held.language === 'string' ? held.language : '',
+            indent: indentOf(held.indent)
         };
     }
 
@@ -199,7 +223,9 @@ export function createSource(writes: WritesStore, ui: UiStore): SourceStore {
         if (held.readIn === LIFETIME && held.file === file) return;
         const pending = reading.get(id);
         if (pending?.file === file) return pending.request;
-        updateDraft(id, { file });
+        // A tab pointed at another file drops the language and the indentation chosen for the
+        // last, since the choice was about that file's text.
+        updateDraft(id, held.file === file ? { file } : { file, language: '', indent: null });
         const request = Promise.all([loadSource(root, path), loadSourceReadonly(root, path)]).then(
             ([answer, readonly]) => {
                 if (sourceDraft(id).file !== file) return;
@@ -242,6 +268,19 @@ export function createSource(writes: WritesStore, ui: UiStore): SourceStore {
     /** Show or hide the rendered half. It belongs to the instance, as the working copy does. */
     function toggleSourceRendered(id: string): void {
         updateDraft(id, { rendered: !sourceDraft(id).rendered });
+    }
+
+    /**
+     * The language the tab paints in, chosen from the status bar and kept with the draft, so the
+     * choice comes back after a tab switch and a reload. The empty string goes back to the name's.
+     */
+    function setSourceLanguage(id: string, language: string): void {
+        updateDraft(id, { language });
+    }
+
+    /** The indentation Tab inserts, chosen from the status bar and kept with the draft. */
+    function setSourceIndent(id: string, indent: Indent | null): void {
+        updateDraft(id, { indent });
     }
 
     /**
@@ -305,6 +344,8 @@ export function createSource(writes: WritesStore, ui: UiStore): SourceStore {
         revertSourceDraft,
         saveSourceDraft,
         toggleSourceRendered,
+        setSourceLanguage,
+        setSourceIndent,
         saveSource
     };
 }

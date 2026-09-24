@@ -210,6 +210,7 @@ describe("oculus's own config directory", () => {
         'app.yml',
         'findings.yml',
         'server.yml',
+        'statusbar.yml',
         'ui.yml',
         'views/academic/present.yml',
         'views/academic/slides.yml',
