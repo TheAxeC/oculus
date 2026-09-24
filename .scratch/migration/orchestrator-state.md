@@ -30,7 +30,16 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch: []   # nothing in flight; Q70 is next
+dispatch:
+  - step: Q70
+    executor: agent
+    worker: claude:opus, a native background agent; its id is this session's agent ae71256d4b6560d81
+    worktree: .agents/worktrees/Q70
+    base: 62eced10
+    launched: 2026-09-25
+    report: tools/oculus/.scratch/migration/agents/reviews/Q70-report.md
+    landing: not-started
+    round: 0
 ```
 
 ## The standing demands (from Axel, in force)
