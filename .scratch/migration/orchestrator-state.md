@@ -41,7 +41,9 @@ dispatch:
     review: agents/reviews/L6-refuter.md (dispatched 2026-09-24 by the /refute skill; reviewer claude:opus, agent a4bdf7e3201e36d9b)
     brief_corrected: 2026-09-24 after the report, the findings item: the Findings view's own count opening Findings, the brief having cited the audit's count; goes into the repair round
     landing: not-started
-    round: 0
+    round: 1                 # sent 2026-09-24: the findings item to the Findings view's list and view, its test and wiring case; the waiting source to both the permission and the idle prompt, the brief having narrowed Axel's ruling; the caret's stand-in under the terminal themes; the report's before and after for the findings item, Do Not Disturb kept across reloads, and the confirm before a branch switch or push
+    round_base: c52bdce1 (the worktree's wip commit when the round was sent)
+    review_usage: claude:opus read-only, 228,462 tokens, 85 tool uses, 3,427 s
     first_run: the stopped builder's work, `ac83de33` on `L6-stopped`, applied onto the base as the worktree's first wip commit
 ```
 
