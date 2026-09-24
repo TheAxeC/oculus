@@ -30,7 +30,16 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch: none
+dispatch:
+  - step: L5
+    executor: agent
+    worker: claude:opus, a native background agent; its id is this session's agent a0f4eb0a83d3f6010
+    worktree: .agents/worktrees/L5
+    base: 4b0a7ad5
+    launched: 2026-09-24
+    report: tools/oculus/.scratch/migration/agents/reviews/L5-report.md
+    landing: not-started
+    round: 0
 ```
 
 ## The standing demands (from Axel, in force)
