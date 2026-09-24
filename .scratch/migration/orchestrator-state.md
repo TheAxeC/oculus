@@ -38,6 +38,8 @@ dispatch:
     base: 695861af
     launched: 2026-09-24
     report: tools/oculus/.scratch/migration/agents/reviews/Q69-report.md
+    report_saved: Q69-report.md; builder 518,005 tokens, 238 tool uses, 6,706 s; stopped with TaskStop after its reply; item 7's shapes checked by the orchestrator against this session's log (Q69-checks.md)
+    review: agents/reviews/Q69-refuter.md (dispatched 2026-09-24 by the /refute skill; reviewer claude:opus, agent a402c2546d7fbd3b4)
     brief_amended: 2026-09-24 while the builder runs, items 6 to 9 from the orchestrator's check of the landed steps (`agents/reviews/Q69-checks.md`), sent to the builder by message
     landing: not-started
     round: 0
