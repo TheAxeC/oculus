@@ -51,7 +51,9 @@ dispatch:
     review: agents/reviews/Q68-refuter.md (dispatched; reviewer claude:opus, agent a34f9f6e36be618eb; stopped 2026-09-24 by Axel's order before it reported)
     review_2: agents/reviews/Q68-refuter.md (dispatched 2026-09-24 by the /refute skill; reviewer claude:opus, agent a6883348a658407de)
     landing: not-started
-    round: 0
+    round: 1                 # sent 2026-09-24: the three other git.test.ts cases failing at natural load traced to a cause and fixed or shown on the base, cases for every branch of the signature and for a tick in flight, after close and superseded, the case's claim stated exactly, the clock as the reason for the own poll, `signature` unexported, the head comment's "same watch", the report's before and after, the mail poller's line
+    round_base: 3506ea9a (the worktree's wip commit when the round was sent)
+    review_2_usage: claude:opus read-only, 132,151 tokens, 35 tool uses, 1,923 s
 ```
 
 ## The standing demands (from Axel, in force)
