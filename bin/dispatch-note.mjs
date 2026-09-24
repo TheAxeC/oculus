@@ -64,9 +64,12 @@ export const START_FLAGS = [
 /** The flags `start` refuses to go without. */
 export const REQUIRED = ['launcher', 'label', 'harness', 'parent', 'cwd'];
 
-/** Milliseconds between two tries at a busy lock, and how long to keep trying. */
+/**
+ * Milliseconds between two tries at a busy lock, and how long to keep trying: short enough that a
+ * launcher bounding each note call at about three seconds gets an answer inside it.
+ */
 export const LOCK_RETRY_MS = 20;
-export const LOCK_WAIT_MS = 10000;
+export const LOCK_WAIT_MS = 2000;
 
 /** ~/.oculus/dispatches.json, resolved at the call so a test's HOME is the one read. */
 export function notePath() {
