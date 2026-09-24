@@ -30,7 +30,16 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch: []   # nothing in flight; L6 is next
+dispatch:
+  - step: L6
+    executor: agent
+    worker: claude:opus, a native background agent; its id is this session's agent a2a1c2a678bbb6423
+    worktree: .agents/worktrees/L6
+    base: 94745613
+    launched: 2026-09-24
+    report: tools/oculus/.scratch/migration/agents/reviews/L6-report.md
+    landing: not-started
+    round: 0
 ```
 
 ## The standing demands (from Axel, in force)
@@ -72,6 +81,7 @@ None. Axel lifted it on 2026-09-23 with `/plan-orchestration oculus/migration` a
 
 ## Open items (only what Axel must rule on; every report opens with this list verbatim and repeats it until he has ruled)
 - U1, the `glyph:` key on each theme row of `config/appearance.yml` (raised 2026-09-24 at U1's review; asked in chat the same day). The key names the icon drawn beside a theme in the Settings theme menu; a missing or unknown one is a finding and the entry is drawn with its words alone. Options: (a) keep the key, one line per theme, so each theme can carry its own icon; (b) no key: one fixed icon for the ordinary themes and another for the terminal themes, as the old characters did. Recommended (a): an icon per theme is a choice of the reader's, and the findings already hold it. (b) is the lazy option only in that it adds nothing.
+- L6, which events post a notification (raised 2026-09-24 by L6's brief). L6 builds the bell, the notification centre, the toasts and Do Not Disturb as VS Code draws them, and moves the rail's refusal line into a notification; nothing else in oculus posts one yet. Options: (a) also post (1) a session that starts waiting for input, with an Open action, (2) an update ready in the update tray, with Open, (3) a Live HPC job that leaves the queue, finished or failed, with Open, and (4) a write the server refuses, beside the line the view already draws; (b) the refusal alone, each further source ruled one at a time later. Recommended (a): these are the four events oculus already knows of that happen while the reader looks elsewhere, which is what a notification is for in VS Code, and each is one post through the store L6 builds. (b) is the lazy option. Ruled before L6's repair round, the sources go into that round; otherwise they are a step of their own.
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is booked as its own step in `plan.md` and carried in the Booked section below, since it needs no ruling from him.
 
