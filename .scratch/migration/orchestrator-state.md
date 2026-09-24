@@ -55,6 +55,7 @@ dispatch:
 ```
 
 ## The standing demands (from Axel, in force)
+- Landed work is finished forward, never reverted (Axel, 2026-09-24): a landed step found short of its brief, or wrong, gets a new step that fixes, rebuilds or finishes it on top of what landed; no landed commit is reverted to redo it.
 - Every step runs through the skills themselves (Axel, 2026-09-24, after the steps from Q65's landing to L6 were done by hand from the skills' remembered text): `/spec`, `/refute` and `/land` are called as skills for every step, every time, including after a compaction, never carried out from a copy of their text; and on top of them:
   - each report opens with the state file's open items, verbatim, then the count of the booked list with the steps that carry it;
   - each look covers every theme the step changes, on the TEST page;
