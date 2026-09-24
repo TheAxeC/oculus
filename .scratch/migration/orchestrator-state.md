@@ -44,6 +44,7 @@ dispatch:
     landing: not-started
     round: 1                 # sent 2026-09-24: killed read as stopped and the notice matched by its tool-use id; the cross-module pass followed (the brief's decision 2 revised); the reused-pid mark kept in the launch note itself, the cache comments made true; cases for the launch without run_in_background, the four other pick controls and the project board's code; a condition in place of the 300 ms wait; the report's before and after and the re-fold time measured
     round_base: 007c637b (the worktree's wip commit when the round was sent)
+    round_1_reply: saved under "# Repair round 1" in Q69-report.md; builder stopped with TaskStop after its reply; the run over the round dispatched through /refute (claude:opus, agent a6d57ffc878c14b41); builder 619,512 tokens, 96 tool uses, 5,416 s for the round
     review_usage: claude:opus read-only, 197,250 tokens, 55 tool uses, 2,246 s
 ```
 
