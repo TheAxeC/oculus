@@ -38,8 +38,11 @@ dispatch:
   base: 28a63283
   launched: 2026-09-25 (after the preparation commit 28a63283)
   report: agents/reviews/Q71-report.md
+  reviewer: claude:opus, native agent a950c952b09897f8d; report agents/reviews/Q71-refuter.md (242,864 tokens, 92 tool uses, 66 min)
+  builder_usage: 816,275 tokens, 350 tool uses, 154 min
   landing: not-started
-  round: 0
+  round: 1
+  round_1_from: 66e11387 (the worktree's wip commit of the tree the round was sent over)
 ```
 
 ## The standing demands (from Axel, in force)
