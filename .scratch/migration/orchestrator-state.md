@@ -30,7 +30,16 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch: []   # nothing in flight; Q74 is next
+dispatch:
+- step: Q74
+  executor: agent
+  worker: claude:opus, native agent a1bc9cb13a3607a93 (session_id)
+  worktree: .agents/worktrees/Q74
+  base: f90268dc
+  launched: 2026-09-25 (after the preparation commit f90268dc)
+  report: agents/reviews/Q74-report.md
+  landing: not-started
+  round: 0
 ```
 
 ## The standing demands (from Axel, in force)
