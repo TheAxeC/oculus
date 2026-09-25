@@ -38,8 +38,11 @@ dispatch:
   base: f90268dc
   launched: 2026-09-25 (after the preparation commit f90268dc)
   report: agents/reviews/Q74-report.md
+  reviewer: claude:opus, native agent a62004c25fd37a682; report agents/reviews/Q74-refuter.md
+  builder_usage: 297,608 tokens, 109 tool uses, 36 min
   landing: not-started
-  round: 0
+  round: 1
+  round_1_from: 9b366a25 (the worktree's wip commit before round 1)
 ```
 
 ## The standing demands (from Axel, in force)
@@ -94,6 +97,7 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 
 - Q72, the architecture re-read before the release (booked 2026-09-24 with Q71, on Axel's ruling that one package fixes the architecture and a re-read checks it at the end): the diagrams regenerated and read, Q71's import measures run again, and what moved since fixed as its own step; queued after M4, before R2 (`plan.md:176`).
 - Q74, the layer diagrams readable with every count clear, and `uncomment()` on the parsers (booked 2026-09-25 at Q73's landing, next after Q73, before S2).
+- Q75, the channels diagram readable (booked 2026-09-25 at Q74's review, after Q74, before S2).
 - O33, oculus extracted into its own GitHub repository (Axel, 2026-09-25), last in the queue after X2; Axel pushes.
 - O32's launch recipes in the Ordo plan skills (booked 2026-09-23 at O32's landing): Ordo's plan 2.B, not plan 1. Blocked by something in flight: the Ordo session's release. O32 closes only after Axel pins the Ordo release that carries 2.B, and is ticked when the installed plan-orchestration skill runs `launch_note` and a step launched from a shell (`claude -p` or `codex exec`) has written its note; a builder dispatched as a native agent is never recorded. The hub's side is ready (2026-09-24, from Ordo's review): the writer's execute bit committed, `launch_note` the absolute path of `tools/oculus/bin/dispatch-note.mjs` in `.agents/plan.yaml`, and its lock wait 2 s, inside the 3 s Ordo bounds each note call at.
 
@@ -282,6 +286,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-09-25, outside the queue, on Axel's yes: the hub's three documents moved to `docs/` and `CAREER.yml` to `registries/career.yml` (commit 63f60f18), which changed oculus's `config/layout.yml` `docs:` paths, `config/sources.yml` `career_file:`, the defaults in `career.ts` and `subtasks.ts`, the tests that read those paths and the browser hub helper; checked on main with `npm test` (4884 passed), `npm run check`, lint, format, the browser suite (385 passed, the one failure a helper that made no folder, fixed and its 15 specs rerun: 140 passed).
 - 2026-09-25. Q73 landed through /spec, /refute and /land, built by an Opus agent, one repair round, the run over the round refuted again, its small findings fixed at landing and the layer diagrams' readability booked as Q74: `life` its own state folder again and `words` and the store shapes under `state/shared` with an inner order, one import reader on the TypeScript and Svelte parsers for the checks and the diagram tool (agreeing with TypeScript's own on 3,015 of 3,016 imports, the one the built handler read on purpose), `declare module` and reference directives to the tree refused, `BadgeClient` from the stores' Picks, the overview's entry and assets arrows, every count and call list drawn as a word node with an exact test that no label sits on another arrow, and `npm run diagrams` needing no type stripping. Next: Q74, then S2.
 - 2026-09-25. Q71 landed through /spec, /refute and /land, built by an Opus agent, one repair round and the round beyond the cap for acceptance item 2, each round refuted again, the last run's small findings fixed at landing and the rest booked as Q73: no runtime import cycle under `src` (a check names one), each layer's folders in a declared order checked over runtime and type imports and `declare module` blocks, the server's and the state's composition roots at the top of their layers and the shared modules at the foot (`server/core`, `state/stores`, `state/words`, `data/model/index.ts`), the view registry in state, what views computed over store data moved to state with tests, the host info on `locals.server`, and the diagrams an overview plus one per layer. Found at landing: main's `dispatches.test.ts` red from 2026-09-25 on fixed launch dates (7 of 27), fixed by the step. Next: Q73, then S2.
 - 2026-09-25. Q70 landed through /spec, /refute and /land, built by an Opus agent, one repair round, the run over the round refuted again and its findings fixed at landing (the seed's bound lifted on a reconnect, and with it a defect on main: after a server restart a page ignored every channel's new messages; the seed's 88 KB cut to the one case it is needed). On main: `npx vitest run` 4,768 passed in 301 files; `npm run check` 1,374 files 0 errors 0 warnings; build; `format:check`; `lint`; the ASCII gate prints nothing; size and folder checks exit 0; `npx playwright test` 386 passed (6.2m); page data 181,340 bytes on the served build. A bookmark written by hand reached the open page on the dev server in under 20 s without a reload. `ListAgents` lists no subagent. Next: Q71.
