@@ -148,3 +148,104 @@ Paths beyond the brief's list:
 - DESIGN.md:274: "watched so a write from outside republishes (the folder is made at start when the machine has none, so the first write is seen)" becomes "polled every 500 ms so a write from outside republishes (the folder is made at start when the machine has none)".
 - HELP.md:193: "the server watches the file" becomes "the server polls the file".
 - DESIGN.md, the socket or request section: add "A request reads the configuration at most once, and only if it asks: the page's title and its load share one read, and an API route reads none."
+
+# Repair round 1
+
+Everything in the brief and in the five rulings is done. Two things from the first round still stand, as ruled: item 2 has no load run that fails base and passes the fix (the probe and the recorder cases are the evidence), and item 4's >5 s boot was not reproduced in 60 loaded boots.
+
+1. Symlinks: `statOf` in `git.ts` now uses `lstatSync` (git.ts:45 import, :136), so a link is dated by its own change time. Two new cases in `tests/server/watch/git.test.ts` run on a real `fs.watch` over a real repository:
+   - "reads a symbolic link made after the watch opened to a file older than the read" (new untracked link);
+   - "reads a tracked symbolic link pointed at another old file after the watch opened" (retargeted link shows in `unstaged`).
+   Both are red under `revert: src/lib/server/watch/git.ts:45 => import { existsSync, statSync as lstatSync, watch } from 'node:fs';`. revert-check prints `red ... reads a symbolic link made after ... (revert src/lib/server/watch/git.ts:45)` and `red ... reads a tracked symbolic link pointed at another old file ... (revert src/lib/server/watch/git.ts:45)`.
+2. A failed read is not a read: `answered(root, began, read)` (git.ts:215-218) moves `readFrom` on only when the read's `error` is null. It is called after the read in `reread` (:200) and in `follow` for a new root (:372, from the open time held in `opening`). New case in `git-events.test.ts`, "keeps a late event after a read that failed, since that read saw nothing": the read fails because `.git/HEAD` is overwritten with junk. It is red under `git.ts:216 => delete`: `red ... keeps a late event after a read that failed ... (revert src/lib/server/watch/git.ts:216)`.
+3. Stale config on boot. What orders the two is the hub's `config` version.
+   - New `src/lib/server/core/config-seed.ts`, `configSeed(hub, read, parts)`. It gives the page its own read as a `ConfigPayload`, plus `through`, the newest hub version that read is at least as new as. `through` is the held version when the held push is another configuration, one below it when it is the same one (so the push is still taken for its findings and host), and 0 when the hub holds none.
+   - `+page.server.ts` returns `seed`, `+page.ts` hands it on, and `+page.svelte` calls `socket.seedConfig(payload, through)` in its untracked setup.
+   - `socket.svelte.ts:251` drops a `config` push with `version <= seededThrough`.
+   - Cases in `tests/state/client/config-seed.test.ts`: red under `config-seed.ts:34` (both directions) and `socket.svelte.ts:251 => delete`.
+   - `tests/browser/workbench/unsaved-forms.spec.ts` is byte-identical to main again: `diff -q` against main prints "same-as-main". It passed `21 passed` in 3 of 3 file runs and in the whole suite.
+4. Channels diagram: the read in `fs.svelte.ts:368` is now `const named = message.channel === 'files' && (...).bookmarks;`, which the generator matches. After `npm run diagrams`, `diff -q` of `channels.dot` against main prints nothing, and `grep '"ch files" -> "state/sources/fs"' docs/diagrams/channels.dot` gives `108: "ch files" -> "state/sources/fs";`. `layers.dot` gains two edges: `"routes" -> "server/core"` and `"server/accounts" -> "server/watch"`.
+5. Report: see "Host-visible changes" and "Doc text" below.
+
+Open items of the state file, verbatim: the list holds no entries. Its text is: "An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is booked as its own step in `plan.md` and carried in the Booked section below, since it needs no ruling from him."
+
+## Causes (unchanged from round 0 except where noted)
+- **Item 1:** the notes file was watched with a darwin `fs.watch`, which loses a write made while the stream registers. It is now polled every 500 ms on an injected clock through `watch/file-poll.ts`.
+- **Item 2:** fseventsd, when behind, delivers events for writes made before a root's watch opened. Probe `late.mjs` (reviewer's rerun): "rounds 10, rounds with an event after opening 6, events with ctime before opening 7". Each such event scheduled a read nobody asked for. The fix drops events whose path, or the nearest folder still there, changed before the newest successful read began. That path is now lstat'd, and a failed read does not count. No load run fails base and passes the fix: at loads where fseventsd delivers, both sides pass 6 of 6; where it delivers nothing ("w500=lost w2000=lost w5000=lost"), both fail every run.
+- **Item 3:** the page read the bookmarks round off the one message the `files` channel holds, and a later root message replaced it. Fixed by hearing every message (`afterReceive`).
+- **Item 4:**
+  - Every request re-read all the config YAML synchronously. The loaded profile showed 6551 of 10551 busy ms in `loadConfig`, and the socket upgrade waited behind it. The read is now once per request that asks, and none for API routes.
+  - This round: after a config edit, the booting page installed the hub's older replayed config. It now keeps its own until a newer push.
+
+## DONE / NOT DONE
+| # | Check | Output |
+|---|---|---|
+| 1 | `npx vitest run --reporter=dot` | `Test Files 300 passed (300)` `Tests 4766 passed (4766)` |
+| 2 | `npm run check` | `COMPLETED 1373 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS` |
+| 3 | `npm run build` | `build=0` |
+| 4 | `npm run format:check` | `All matched files use Prettier code style!` |
+| 5 | `npm run lint` | `lint=0` |
+| 6 | `LC_ALL=C grep -rna '[^ -~]' src tests bin \| wc -l` | `0` |
+| 7 | `sh bin/size-check.sh`; `sh bin/folder-check.sh` | `size=0` `folder=0` |
+| 8 | `npx playwright test` (8792 free first) | `386 passed (6.2m)` |
+| 9 | `node bin/revert-check.mjs` over poll, git-events, git-workspaces, git.test, repos, hooks-server, fs-channel, config-seed | `34 reverts, 0 unproven, 33 unchecked`; no line other than `red` |
+| 9 | `node bin/revert-check.mjs tests/browser/shell/rail.spec.ts` | `27 reverts, 0 unproven, 3 unchecked`, including `red ... a bookmark written into the file from outside joins the open menu without a reload (revert src/lib/state/sources/fs.svelte.ts:369)` |
+| 10 | Load runs | Round 0's, quoted in its report and not rerun this round: ten whole node runs under 8 paced churn workers, all `Tests 4758 passed (4758)`; git pairs and boot pairs as above. `pgrep -f "churn.mjs\|paced.mjs\|helpers/serve.ts"` prints nothing |
+| 11 | `ls -d $TMPDIR/oculus-* \| wc -l` | 7015 at the start of the step, 7015 now |
+
+## Files (lines now, +added/-removed against main)
+- `src/app.d.ts`: 32 (+6/-0)
+- `src/hooks.server.ts`: 41 (+14/-4)
+- `src/routes/+page.server.ts`: 46 (+21/-13)
+- `src/routes/+page.ts`: 30 (+3/-2)
+- `src/routes/+page.svelte`: 219 (+6/-4)
+- `src/lib/server/core/config-seed.ts`: new, 35
+- `src/lib/server/watch/file-poll.ts`: new, 102
+- `src/lib/server/watch/git.ts`: 442 (+93/-77)
+- `src/lib/server/accounts/mail/poll.ts`: 340 (+31/-24)
+- `src/lib/state/client/socket.svelte.ts`: 272 (+32/-1)
+- `src/lib/state/sources/fs.svelte.ts`: 882 (+11/-14)
+- `tests/server/watch/git-events.test.ts`: new, 190
+- `tests/server/watch/git.test.ts`: 622 (+49/-2)
+- `tests/server/watch/git-workspaces.test.ts`: 320 (+11/-11)
+- `tests/server/watch/repos.ts`: 125 (+9/-2)
+- `tests/server/accounts/mail/poll.test.ts`: 468 (+85/-10)
+- `tests/server/core/hooks-server.test.ts`: 94 (+51/-1)
+- `tests/state/sources/fs-channel.test.ts`: 115 (+41/-5)
+- `tests/state/client/config-seed.test.ts`: new, 114
+- `tests/browser/shell/rail.spec.ts`: 706 (+55/-3)
+- `tests/browser/workbench/unsaved-forms.spec.ts`: unchanged from main
+- `docs/diagrams/layers.dot`/`.svg`: +2 edges
+- `channels.*`, `writes.*`: identical to main
+
+Paths beyond the brief's list: `src/hooks.server.ts`, `src/app.d.ts`, `src/routes/+page.server.ts`, `src/routes/+page.ts`, `src/routes/+page.svelte` (the per-request read and the page seed live there), and `docs/diagrams` (regenerated).
+
+## Judgment calls (reversible)
+- The server computes the seed bound by comparing `JSON.stringify` of the held config with the page's read, once per page request.
+- The seed carries the read's own `loadConfig` findings only. The watcher's machine findings (icons, roots, rail, docs) reach the page with the next push when the hub was stale, and with the held push otherwise.
+- `seedConfig` is a new method on the socket store.
+- The page-data key `seed` is new. It is internal wire between the server load and the page.
+- `answered` uses `Math.max`, so a slower earlier read never moves `readFrom` backwards.
+
+## Host-visible changes, before and after
+- **Config findings on stderr.** Before: `config: <file> [<key>] <message>` was written on every request, API routes included. After: once per page request, and on the portfolio watcher's read at start and on each config change. An API request no longer reads the configuration at all.
+- **Page data grows.** `__data.json` (the page data the served build returns) goes from 181311 bytes to 269723 bytes, measured by `curl` on the served build of base and worktree. The page now ships its whole merged config as the seed.
+- **After a config edit and a reload:** the page draws and writes with the edited values from its first frame. Before, the older values came back for the watcher's debounce.
+- **Symlinks.** A symlink made or retargeted inside a watched root reaches the Repositories view on its own event, as on base.
+
+## Before and after for the look
+- Settings or behavior.yml: change `writes.timeout_seconds`, reload at once. Status bar and forms use the new value from the first frame. Before, the old value held for about 300 ms.
+- Rail Bookmarks menu: an entry added to `~/.oculus/bookmarks.yml` by hand appears on the next opening of the menu, without a reload.
+- Repositories view: `ln -s kept.txt newlink` inside a watched repository shows `newlink` untracked.
+
+## Limitations
+- The ctime rule assumes file times are not earlier than wall time. On darwin, 0 of 50000 writes broke that. Not verified off darwin. A backward step of the system clock after a read began would drop the writes of the stepped interval (not verified, from the reviewer's "Not checked").
+- A root that is not a repository always reads with `error` set, so no event is ever dropped for it. That is base's behaviour for such roots.
+- Two revert directives exceed 100 columns (`git-workspaces.test.ts:174`, `:201`); the width check exempts directives, as ruled.
+
+## Doc text
+- DESIGN.md:106 (git watcher): add "It drops an event whose path (the path itself, not a link's target), or the nearest folder above it that is still there, last changed before the newest successful read of that root began, since fseventsd can deliver the writes that made a root after its watch opened; a read that failed hides nothing."
+- DESIGN.md:127 and :274 (mail): "watched so a write from outside republishes" becomes "polled every 500 ms so a write from outside republishes". At :274, drop ", so the first write is seen" after the folder clause.
+- HELP.md:193: "the server watches the file" becomes "the server polls the file every half second".
+- DESIGN.md, the socket or config section: add "A request reads the configuration at most once and only if it asks: the page's title and its load share one read, and an API route reads none. The page starts from the configuration its own read gave, with the newest `config` version that read is at least as new as, and takes only a push above it, so the push the hub replays from before a config change does not replace it."
+- `channels.svg` needs no text change: it is identical to main. `layers.svg` gains the edges routes to server/core and server/accounts to server/watch.

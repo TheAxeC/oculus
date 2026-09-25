@@ -42,6 +42,7 @@ dispatch:
     landing: not-started
     round: 1                 # sent 2026-09-25: lstat for a symlink with a case on a real watch; a failed read not counted as having seen what came before it; the stale config a booting page installs over its own fixed in the page, the test's added wait then gone; the files channel read written so the diagram draws it; the host-visible changes stated
     round_base: 1da99336 (the worktree's wip commit when the round was sent)
+    round_1_reply: saved under "# Repair round 1" in Q70-report.md; the run over the round dispatched through /refute (claude:opus, agent a819462e921f5fd55); builder 411,822 tokens, 49 tool uses, 2,010 s for the round
     review_usage: claude:opus read-only, 162,292 tokens, 45 tool uses, 1,813 s
 ```
 
