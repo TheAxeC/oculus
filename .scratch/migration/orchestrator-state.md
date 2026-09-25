@@ -30,7 +30,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:      # S2, X3a and X3c stopped at their spec on the open items; X3b and Q67 in flight
+dispatch:      # X3a and X3c stopped at their spec on the open items; X3b, Q67 and S2 in flight
 - step: X3b
   executor: agent
   worker: claude:opus (native Agent, general-purpose)
@@ -49,6 +49,16 @@ dispatch:      # S2, X3a and X3c stopped at their spec on the open items; X3b an
   base: ef269f83
   launched: 2026-09-25
   report: tools/oculus/.scratch/migration/agents/reviews/Q67-report.md
+  landing: not-started
+  round: 0
+- step: S2
+  executor: agent
+  worker: claude:opus (native Agent, general-purpose)
+  session_id: a0d1d20bd4bdc8a6f
+  worktree: .agents/worktrees/S2
+  base: 0249f8f9
+  launched: 2026-09-25
+  report: tools/oculus/.scratch/migration/agents/reviews/S2-report.md
   landing: not-started
   round: 0
 ```
