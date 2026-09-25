@@ -37,7 +37,8 @@ dispatch:
     worktree: .agents/worktrees/Q70
     base: 62eced10
     launched: 2026-09-25
-    report: tools/oculus/.scratch/migration/agents/reviews/Q70-report.md
+    report: tools/oculus/.scratch/migration/agents/reviews/Q70-report.md (saved; builder 387,740 tokens, 204 tool uses, 10,675 s; no load process left, 8792 free)
+    review: agents/reviews/Q70-refuter.md (dispatched 2026-09-25 by the /refute skill; reviewer claude:opus, agent adea07d502dcdd3f3)
     landing: not-started
     round: 0
 ```
