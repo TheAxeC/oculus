@@ -40,7 +40,9 @@ dispatch:
     report: tools/oculus/.scratch/migration/agents/reviews/Q70-report.md (saved; builder 387,740 tokens, 204 tool uses, 10,675 s; no load process left, 8792 free)
     review: agents/reviews/Q70-refuter.md (dispatched 2026-09-25 by the /refute skill; reviewer claude:opus, agent adea07d502dcdd3f3)
     landing: not-started
-    round: 0
+    round: 1                 # sent 2026-09-25: lstat for a symlink with a case on a real watch; a failed read not counted as having seen what came before it; the stale config a booting page installs over its own fixed in the page, the test's added wait then gone; the files channel read written so the diagram draws it; the host-visible changes stated
+    round_base: 1da99336 (the worktree's wip commit when the round was sent)
+    review_usage: claude:opus read-only, 162,292 tokens, 45 tool uses, 1,813 s
 ```
 
 ## The standing demands (from Axel, in force)
