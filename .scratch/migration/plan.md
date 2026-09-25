@@ -161,7 +161,11 @@ One line per package: the status mark, the id, the title, and where the rest is 
   - Step 0, ruled 2026-09-24 by Axel: besides the rail's refusal, a notification is posted when a session starts waiting for input, when an update is ready in the update tray, when a Live HPC job leaves the queue finished or failed, and when the server refuses a write; each with an Open action where there is something to open.
 - S2 the sessions views rebuilt to VS Code's Agents window from P1's inventory: the sessions list, the composer's controls, the session's Changes and Files beside it (Axel 2026-09-23; folds Q35's session items; the full line in the state file's "Rulings in full")
   - Step 0, raised 2026-09-25 by its spec, open for Axel: where the composer's model, effort and permission choices live; the full text in the state file's open items.
-- X3 the Files view and the Repositories view brought to VS Code's Explorer and Source Control from P1's inventory: new file and folder, rename, delete, file-type icons and the rest the inventory lists (Axel 2026-09-23; brief after P1)
+- X3a the Files view brought to VS Code's Explorer, every row of P1's Explorer table, Reveal in Finder included (split from X3 on 2026-09-25 by surface, scope unchanged; the X3 line whole in the state file's "Rulings in full")
+  - Step 0, raised 2026-09-25 by its spec, open for Axel: the file icon set, the nesting patterns and the per-file local history; the full text in the state file's open items.
+- X3b the Repositories view and the diff brought to VS Code's Source Control, every row of P1's Source Control table (split from X3 on 2026-09-25; brief `agents/briefs/X3b.md`)
+- X3c the tab strip brought to VS Code's editor tabs, every row of P1's Editor tabs table (split from X3 on 2026-09-25)
+  - Step 0, raised 2026-09-25 by its spec, open for Axel: pinned tabs in the saved layout and where the wrapped-tabs choice is kept; the full text in the state file's open items.
 - Q67 assisted account setup for the Calendar and the Inbox: an account is added from the view itself and connected in a few presses, with the provider's one-time app setup guided step by step (Axel 2026-09-23: "These instructions are far too vague and require far too much manual work. This should be automated or assisted. Same for inbox."; brief at dispatch)
   - Step 0, ruled 2026-09-23 by Axel: an Add account control in the Calendar and Inbox views, and a guided one-time setup page per provider serving every account; in full in the state file's "Rulings in full".
 - O32 the launch note completed, NOT DONE: the oculus half landed 2026-09-23; the skill half (Ordo's plan 2.B) is not in the installed skills. Ticked when Axel has pinned the Ordo release carrying 2.B and a shell-launched step has written its note; nothing in Ordo is touched from this plan (Axel 2026-09-23; brief `agents/briefs/O32.md`, the full line there)
@@ -248,7 +252,7 @@ One line per package: the status mark, the id, the title, and where the rest is 
 ## Could run in parallel
 
 - The feature stretch after R17, three in flight at all times, one dispatched at each landing (Axel 2026-09-14 17:50 and 2026-09-15 19:58; the steps that run alone and the order are in `orchestrator-state.md`, which holds this line whole)
-- The queue, in order: S2; X3; Q67; L4; Q66; Q35; D11 + D13 + D14; D23 + D15 + D17; D18 + D20 + D24; A1 + A2 + A3; M3 + E1; M4; then Q72, R2, O29, O30, X2, then O33 last.
+- The queue, in order: S2; X3a + X3b + X3c; Q67; L4; Q66; Q35; D11 + D13 + D14; D23 + D15 + D17; D18 + D20 + D24; A1 + A2 + A3; M3 + E1; M4; then Q72, R2, O29, O30, X2, then O33 last.
 Independent of each other; two may run side by side under R9's rule when their briefs name disjoint paths and different views, else they run one at a time.
 - S1 with anything after R1.
 - O5 with O2 to O4.
