@@ -34,7 +34,6 @@ dispatch: []   # nothing in flight; S2 is next
 ```
 
 ## The standing demands (from Axel, in force)
-- A step the orchestrator creates from a review finding is never put at the head of the queue or dispatched on its own authority (Axel, 2026-09-25, stopping Q75): a finding outside the brief of the step that raised it is carried to Q72, the re-read before the release, or put to Axel as an open item; only a defect that breaks something Axel uses or asked for may go ahead of his queue, and then only with his yes.
 - When Axel says the Ordo release carrying plan 2.B is pinned: drop this file's demand that reports open with the open items (Ordo's skills then carry it, with a position line first), and close O32 by its tick condition (Axel, 2026-09-24, passing on Ordo's review).
 - Landed work is finished forward, never reverted (Axel, 2026-09-24): a landed step found short of its brief, or wrong, gets a new step that fixes, rebuilds or finishes it on top of what landed; no landed commit is reverted to redo it.
 - Every step runs through the skills themselves (Axel, 2026-09-24, after the steps from Q65's landing to L6 were done by hand from the skills' remembered text): `/spec`, `/refute` and `/land` are called as skills for every step, every time, including after a compaction, never carried out from a copy of their text; and on top of them:
