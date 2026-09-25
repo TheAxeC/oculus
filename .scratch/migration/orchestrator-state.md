@@ -30,7 +30,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch: []   # nothing in flight; S2 is next
+dispatch: []   # nothing in flight; S2 stopped at its spec on the open item; X3 and Q67 next
 ```
 
 ## The standing demands (from Axel, in force)
@@ -81,6 +81,8 @@ None. Axel lifted it on 2026-09-23 with `/plan-orchestration oculus/migration` a
 ## Open items (only what Axel must rule on; every report opens with this list verbatim and repeats it until he has ruled)
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is booked as its own step in `plan.md` and carried in the Booked section below, since it needs no ruling from him.
+
+- S2, where the composer's choices live (raised 2026-09-25 by S2's spec). S2 builds VS Code's composer for a new session: workspace, agent (Claude, Codex, shell), account, model, effort and permission mode, then a prompt. Today oculus starts a bare `claude` or `codex` with no flag (`server/machine/pty/sessions.ts:131-136`, `commandFor`), and no file names the choices: `grep -rn -- '--effort\|--permission-mode' src` finds nothing, and the only model key is `chat.model: "opus"` (`config/behavior.yml:86`). The CLIs take: Claude `--model <alias or name>`, `--effort low|medium|high|xhigh|max`, `--permission-mode acceptEdits|auto|bypassPermissions|manual|dontAsk|plan`; Codex `-m <model>`, `-c model_reasoning_effort=...`, `-s read-only|workspace-write|danger-full-access` and `-a <approval>` (`claude --help`, `codex --help`, Claude Code 2.1.282, codex-cli 0.155.1). Options: (a) a new catalog `config/catalogs/agents.yml`, one entry per agent listing its models, efforts and permission modes, each with the words the picker shows and the flag it passes, and a `default:` per list; the composer remembers the last choice per tab in instance state; a CLI release that adds a value is one line in that file; (b) no file: the lists read from each CLI's `--help` text at server start, the defaults the CLI's own. Recommended (a): the lists are what Axel picks from, so they are his to trim or reorder, and a parse of help text breaks silently on the next CLI release. The worktree toggle and the branch stay with A2 (its ruling puts the worktree under `.agents/worktrees/<name>`, which `claude -w` does not); S2 shows the workspace's branch read-only. Quick chats are left out, as P1's inventory says, the terminal being the chat.
 
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)
 
