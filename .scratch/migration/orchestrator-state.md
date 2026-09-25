@@ -30,16 +30,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:
-- step: Q75
-  executor: agent
-  worker: claude:opus, native agent ac90617ff0aaafe4f (session_id)
-  worktree: .agents/worktrees/Q75
-  base: a835b712
-  launched: 2026-09-25 (after the preparation commit a835b712)
-  report: agents/reviews/Q75-report.md
-  landing: not-started
-  round: 0
+dispatch: []   # nothing in flight; S2 is next
 ```
 
 ## The standing demands (from Axel, in force)
@@ -93,7 +84,6 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)
 
 - Q72, the architecture re-read before the release (booked 2026-09-24 with Q71, on Axel's ruling that one package fixes the architecture and a re-read checks it at the end): the diagrams regenerated and read, Q71's import measures run again, and what moved since fixed as its own step; queued after M4, before R2 (`plan.md:176`).
-- Q75, the channels diagram readable (booked 2026-09-25 at Q74's review, after Q74, before S2).
 - O33, oculus extracted into its own GitHub repository (Axel, 2026-09-25), last in the queue after X2; Axel pushes.
 - O32's launch recipes in the Ordo plan skills (booked 2026-09-23 at O32's landing): Ordo's plan 2.B, not plan 1. Blocked by something in flight: the Ordo session's release. O32 closes only after Axel pins the Ordo release that carries 2.B, and is ticked when the installed plan-orchestration skill runs `launch_note` and a step launched from a shell (`claude -p` or `codex exec`) has written its note; a builder dispatched as a native agent is never recorded. The hub's side is ready (2026-09-24, from Ordo's review): the writer's execute bit committed, `launch_note` the absolute path of `tools/oculus/bin/dispatch-note.mjs` in `.agents/plan.yaml`, and its lock wait 2 s, inside the 3 s Ordo bounds each note call at.
 
@@ -282,6 +272,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-09-25. Q75 (the channels diagram) stopped on Axel's order before its builder reported; its worktree and branch removed; the finding carried to Q72. Next: S2.
 - 2026-09-25. Q74 landed through /spec, /refute and /land, built by an Opus agent, one repair round, the run over the round refuted again and its small findings fixed at landing: each layer drawn as a column of its folders with every count inside the layer's box, halfway along its arrow, each folder's own dashed arrow into each other layer, no two arrows running along each other on any layer diagram, the overview or the writes diagram (`arrowsAlong()`, 40 pt within 1.5 pt, with a test), the write diagram parting a same-module pair by a tail port, and the channel and write readers blanking comments by the TypeScript and Svelte parsers. Next: Q75, the channels diagram, then S2.
 - 2026-09-25, outside the queue, on Axel's yes: the hub's three documents moved to `docs/` and `CAREER.yml` to `registries/career.yml` (commit 63f60f18), which changed oculus's `config/layout.yml` `docs:` paths, `config/sources.yml` `career_file:`, the defaults in `career.ts` and `subtasks.ts`, the tests that read those paths and the browser hub helper; checked on main with `npm test` (4884 passed), `npm run check`, lint, format, the browser suite (385 passed, the one failure a helper that made no folder, fixed and its 15 specs rerun: 140 passed).
 - 2026-09-25. Q73 landed through /spec, /refute and /land, built by an Opus agent, one repair round, the run over the round refuted again, its small findings fixed at landing and the layer diagrams' readability booked as Q74: `life` its own state folder again and `words` and the store shapes under `state/shared` with an inner order, one import reader on the TypeScript and Svelte parsers for the checks and the diagram tool (agreeing with TypeScript's own on 3,015 of 3,016 imports, the one the built handler read on purpose), `declare module` and reference directives to the tree refused, `BadgeClient` from the stores' Picks, the overview's entry and assets arrows, every count and call list drawn as a word node with an exact test that no label sits on another arrow, and `npm run diagrams` needing no type stripping. Next: Q74, then S2.
