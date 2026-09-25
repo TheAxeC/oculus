@@ -1,5 +1,6 @@
 // Layer 2, server types. Declares the request-scoped ServerContext that Kit carries to every route.
 import type { OculusRequest, ServerContext } from '$lib/server/core/context';
+import type { loadConfig } from '$lib/data/sources/config';
 
 declare global {
     namespace App {
@@ -13,6 +14,11 @@ declare global {
             token: string;
             /** The process-owned server objects carried by this raw request. */
             server: ServerContext;
+            /**
+             * The configuration as the disk holds it, read at the first call of this request and
+             * held for the rest of it; a request that never calls it reads nothing.
+             */
+            config: () => ReturnType<typeof loadConfig>;
         }
         // interface PageData {}
         // interface PageState {}

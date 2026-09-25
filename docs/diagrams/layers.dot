@@ -113,6 +113,7 @@ digraph layers {
     "routes" -> "assets";
     "routes" -> "data/snapshot";
     "routes" -> "data/sources";
+    "routes" -> "server/core";
     "routes" -> "shell";
     "routes" -> "shell/rail";
     "routes" -> "state/boards";
@@ -148,6 +149,7 @@ digraph layers {
     "server/accounts" -> "data/helpers";
     "server/accounts" -> "server/core";
     "server/accounts" -> "server/files";
+    "server/accounts" -> "server/watch";
     "server/content" -> "data";
     "server/content" -> "data/helpers";
     "server/content" -> "data/snapshot";

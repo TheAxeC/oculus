@@ -357,24 +357,21 @@ export function createFs(
     }
 
     /**
-     * How far the disk has moved the bookmarks on. The `files` channel carries one message at a
-     * time, and a message about a root must not take the round back, so the version of the last
-     * message naming the bookmarks file is remembered here rather than read off the channel each
-     * time. It is read inside the getter, so a message about the file redraws whoever asked.
+     * How far the disk has moved the bookmarks on: the version of the newest `files` message that
+     * named the bookmarks file. The channel holds one message, and on a busy hub the next write
+     * under a root replaces that one before anything reads the bookmarks, so every message is heard
+     * as it is kept rather than the channel read when the menu opens. It is state, so a message
+     * about the file redraws whoever asked.
      */
-    let onDisk = 0;
-    function diskRound(): number {
-        const message = entities.message('files');
-        const payload = message?.payload as FilesPayload | undefined;
-        if (message !== null && payload?.bookmarks === true && message.version > onDisk) {
-            onDisk = message.version;
-        }
-        return onDisk;
-    }
+    let onDisk = $state(0);
+    entities.afterReceive((message) => {
+        const named = message.channel === 'files' && (message.payload as FilesPayload).bookmarks;
+        if (named === true && message.version > onDisk) onDisk = message.version;
+    });
 
     /** The round the bookmarks belong to: the shared round, and what the disk has said since. */
     function bookmarksRound(): number {
-        return clock.round + diskRound();
+        return clock.round + onDisk;
     }
 
     /** Whether an answer from round `at` of the given clock may still be written in. */

@@ -1,21 +1,21 @@
-import {
-    collectionKeys,
-    glyphCatalog,
-    loadConfig,
-    textCatalog,
-    vocabCatalog
-} from '$lib/data/sources/config';
+import { collectionKeys, glyphCatalog, textCatalog, vocabCatalog } from '$lib/data/sources/config';
+import { configSeed } from '$lib/server/core/config-seed';
+import { hostInfo } from '$lib/server/core/context';
 import type { PageServerLoad } from './$types';
 
 // The catalog, the glyph vocabulary of names and ASCII stand-ins, and the tone vocabulary are read
 // per request and shipped as page data, which is what the first frame draws from; every later
-// change reaches the page on the `config` channel server/watch/portfolio.ts publishes.
-// A finding from the same read is reported in hooks.server.ts, which runs for every request, so it
-// is said once and not once per load function.
+// change reaches the page on the `config` channel server/watch/portfolio.ts publishes. The read is
+// the request's one read, which hooks.server.ts holds on `locals.config` for the page's title and
+// this alike, and which says its findings once.
 //
 // The icon drawings are the exception: they are files rather than config keys, so the server reads
 // them once when its context is built and again on every config push, and this hands the page what
 // is held rather than reading a hundred files per request.
+//
+// The whole configuration of the same read rides with them as the seed of the page's `config`
+// channel, with the newest push version the read is at least as new as (server/core/config-seed.ts
+// says why), so the push the hub replays from before a config change does not replace it.
 //
 // The collection keys ride with them for the same reason: the page registers the collection view
 // once per key before it renders, and the registry is filled in the page's script body rather than
@@ -26,13 +26,21 @@ import type { PageServerLoad } from './$types';
 // nowhere else. invalidateAll() runs this load again, which is how a page that met a 403 gets the
 // token a restarted server minted.
 export const load: PageServerLoad = ({ locals }) => {
-    const { config } = loadConfig(locals.server.engine);
+    const read = locals.config();
+    const { config } = read;
+    const text = textCatalog(config);
+    const icons = locals.server.icons.set;
     return {
-        text: textCatalog(config),
+        text,
         glyphs: glyphCatalog(config),
-        icons: locals.server.icons.set,
+        icons,
         vocab: vocabCatalog(config),
         collections: collectionKeys(config),
+        seed: configSeed(locals.server.hub, read, {
+            text,
+            icons,
+            host: hostInfo(locals.server.local.port)
+        }),
         token: locals.token
     };
 };

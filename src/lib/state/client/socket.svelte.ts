@@ -7,6 +7,11 @@
 // because state/words/text.ts holds it outside the reactive graph: the page's first render uses the
 // catalog the server shipped as page data, and every later edit of a text catalog comes this way.
 // Raising the configuration's generation once the push is installed is what draws the page again.
+//
+// The page starts from the configuration its own HTML was built from, seeded here with the newest
+// push version that read is at least as new as (server/core/config-seed.ts). A `config` push at or
+// below that version is dropped: it is the hub's replay of a read made before the page's, and
+// installing it would put the values from before a config change back for the watcher's debounce.
 
 import { isMap } from '../../data/helpers/guards.ts';
 import type { EntitiesStore } from './entities.svelte.ts';
@@ -33,6 +38,8 @@ export type SocketStore = {
     unsubscribe: (names: string[]) => void;
     listen: (channel: string, fn: (message: Message) => void) => () => void;
     installConfig: (payload: ConfigPayload | null) => void;
+    /** Hold the configuration the page was built from until a push above `through` arrives. */
+    seedConfig: (payload: ConfigPayload | undefined, through: number) => void;
 };
 
 export function createSocket(entities: EntitiesStore, writes: WritesStore): SocketStore {
@@ -53,6 +60,11 @@ export function createSocket(entities: EntitiesStore, writes: WritesStore): Sock
     let wanted = false;
 
     let backoff = FIRST;
+
+    /** The newest `config` push version the seeded configuration is at least as new as. */
+    let seededThrough = -1;
+    /** Whether a socket of this page has opened before, so the next open is a reconnect. */
+    let opened = false;
 
     let retry: ReturnType<typeof setTimeout> | null = null;
 
@@ -152,6 +164,14 @@ export function createSocket(entities: EntitiesStore, writes: WritesStore): Sock
         ws.addEventListener('open', () => {
             backoff = FIRST;
             socket.status = 'open';
+            // The seed's bound names a version of the hub the page was built against. A reconnect
+            // may reach a restarted server, whose hub numbers its pushes from the start again, so
+            // after the first open every push is taken.
+            if (opened) {
+                seededThrough = -1;
+                entities.reconnected();
+            }
+            opened = true;
             ws.send(JSON.stringify(subscription()));
         });
         ws.addEventListener('message', (event: MessageEvent) => {
@@ -215,6 +235,17 @@ export function createSocket(entities: EntitiesStore, writes: WritesStore): Sock
         configInstalled();
     }
 
+    /**
+     * Take no `config` push at or below `through`, and put the page's own configuration on the
+     * channel when the seed carries it. The stores the catalog lives in were filled from the same
+     * read before the first render, so nothing is installed again here.
+     */
+    function seedConfig(payload: ConfigPayload | undefined, through: number): void {
+        seededThrough = through;
+        if (payload !== undefined)
+            entities.receive({ channel: 'config', version: through, payload });
+    }
+
     function handle(data: string): void {
         let parsed: unknown;
         try {
@@ -228,6 +259,7 @@ export function createSocket(entities: EntitiesStore, writes: WritesStore): Sock
         // Every channel carries a map, so a frame whose payload is anything else is dropped here
         // and each channel's reader may take its own payload type as read.
         if (!isMap(message.payload)) return;
+        if (message.channel === 'config' && message.version <= seededThrough) return;
         const heard = listeners.get(message.channel);
         if (heard !== undefined && heard.size > 0) {
             for (const fn of [...heard]) fn(message);
@@ -237,5 +269,15 @@ export function createSocket(entities: EntitiesStore, writes: WritesStore): Sock
         if (message.channel === 'config') installConfig(message.payload as ConfigPayload);
     }
 
-    return { status, connect, disconnect, send, subscribe, unsubscribe, listen, installConfig };
+    return {
+        status,
+        connect,
+        disconnect,
+        send,
+        subscribe,
+        unsubscribe,
+        listen,
+        installConfig,
+        seedConfig
+    };
 }

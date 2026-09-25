@@ -47,7 +47,7 @@
         layout: { activeInstance, loadLayout, openView },
         repositories,
         selectors: { waitingCount },
-        socket: { connect, disconnect, status: socketStatus },
+        socket: { connect, disconnect, seedConfig, status: socketStatus },
         ui: { instanceState, loadUi, setInstanceState },
         writes: { setToken, writeRail }
     } = client;
@@ -56,13 +56,15 @@
     // the load function shipped with the catalog. It runs here in the script body rather than on
     // mount: the pane tabs and the catalogue draw what the registry holds on the first render, and
     // a collection registered after it would be missing from that frame. The write token goes in
-    // with them, so the first write and the socket's first subscription both carry it. The page
-    // data is read once and not tracked; untrack says so, and is what keeps the read out of any
-    // effect.
+    // with them, so the first write and the socket's first subscription both carry it, and so does
+    // the configuration this page was built from, which the socket keeps until a newer push. The
+    // page data is read once and not tracked; untrack says so, and is what keeps the read out of
+    // any effect.
     untrack(() => {
         registerAll(client.registry);
         registerCollections(client.registry, data.collections);
         setToken(data.token);
+        seedConfig(data.seed.payload, data.seed.through);
     });
 
     // A load that ran again with a token a restarted server minted replaces the one this client

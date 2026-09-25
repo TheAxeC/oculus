@@ -1,5 +1,7 @@
 // Layer 4, test. Files-channel backpressure keeps a bookmark change beside a later root change and
-// the combined message makes the page read its bookmarks again.
+// the combined message makes the page read its bookmarks again; and a bookmark change the page was
+// sent whole, then replaced by a root change before anything asked for the bookmarks, still makes
+// the next ask read them again.
 
 import { afterEach, expect, it, vi } from 'vitest';
 import type { FilesPayload, Message } from '../../../src/lib/data/model.ts';
@@ -16,8 +18,8 @@ function settle(): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, 0));
 }
 
-// revert: src/lib/server/files/files-channel.ts:18 => delete
-it('keeps a pending bookmark marker on the later root message and makes the page read again', async () => {
+/** Answer every bookmarks read with an empty file, and count the reads. */
+function countedReads(): () => number {
     vi.stubGlobal('window', {});
     let reads = 0;
     vi.stubGlobal('fetch', () => {
@@ -29,10 +31,16 @@ it('keeps a pending bookmark marker on the later root message and makes the page
             })
         );
     });
+    return () => reads;
+}
+
+// revert: src/lib/server/files/files-channel.ts:18 => delete
+it('keeps a pending bookmark marker on the later root message and makes the page read again', async () => {
+    const reads = countedReads();
     const client = createClientState();
     client.fs.bookmarks();
     await settle();
-    expect(reads).toBe(1);
+    expect(reads()).toBe(1);
 
     const hub = new Hub();
     registerFilesChannel(hub);
@@ -75,5 +83,33 @@ it('keeps a pending bookmark marker on the later root message and makes the page
 
     client.fs.bookmarks();
     await settle();
-    expect(reads).toBe(2);
+    expect(reads()).toBe(2);
+});
+
+it('reads the bookmarks again after a root message replaced the one that named them', async () => {
+    // revert: src/lib/state/sources/fs.svelte.ts:368 => const named = message.channel === 'files';
+    // revert: src/lib/state/sources/fs.svelte.ts:369 => delete
+    const reads = countedReads();
+    const client = createClientState();
+    client.fs.bookmarks();
+    await settle();
+    expect(reads()).toBe(1);
+
+    // Two whole messages, as a subscriber that keeps up is sent them: nothing asks in between.
+    const files = (version: number, payload: FilesPayload): Message => ({
+        channel: 'files',
+        version,
+        payload
+    });
+    client.entities.receive(files(1, { root: '', bookmarks: true }));
+    client.entities.receive(files(2, { root: '/hub' }));
+    client.fs.bookmarks();
+    await settle();
+    expect(reads()).toBe(2);
+
+    // A root message alone moves nothing.
+    client.entities.receive(files(3, { root: '/hub' }));
+    client.fs.bookmarks();
+    await settle();
+    expect(reads()).toBe(2);
 });

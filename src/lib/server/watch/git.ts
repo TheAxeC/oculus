@@ -9,12 +9,9 @@
 // the configured roots moved, and again whenever the saved workspaces file changes, which is the
 // other way a root is added while the server runs.
 //
-// The workspaces file is polled rather than watched. A darwin fs.watch over a directory is an
-// FSEvents stream that registers asynchronously, and under a load of file events a write landing
-// while it registers is never delivered: a root the page adds just as the server starts would then
-// stay off the channel until something else moved the roots. A stat taken on every roots read is
-// compared on a timer, so a write at any moment is read at the next tick, and the one small file
-// costs a stat per tick and no native handle.
+// The workspaces file is polled rather than watched (file-poll.ts says why): a root the page adds
+// just as the server starts would otherwise stay off the channel until something else moved the
+// roots.
 //
 // The recursive watch over each root answers a second question, on the `files` channel: which root
 // a write just landed under. It is this watcher's because it already watches every root
@@ -37,42 +34,36 @@
 // nothing about the working tree's state, so an event is dropped when any segment of its path is
 // one of the ignored folders, and .git/objects is dropped with them: a pack being written is a
 // second event for the index change that is already coming.
+//
+// An event is also dropped when the path it names last changed before the newest read of its root
+// that answered began; a read that failed, a git that timed out, saw nothing and moves nothing on.
+// An FSEvents stream is served by fseventsd, which stamps an event when it gets to it rather than
+// when the write happened; while it is behind, the writes that made a root just before its watch
+// opened reach the new stream as events, seconds after the first read already saw them. Each of
+// those would schedule a read that finds nothing new and name the root on the files channel for a
+// write that is not news.
 
-import { existsSync, statSync, watch } from 'node:fs';
-import type { FSWatcher } from 'node:fs';
-import { join } from 'node:path';
+import { existsSync, lstatSync, watch } from 'node:fs';
+import type { FSWatcher, Stats } from 'node:fs';
+import { dirname, join } from 'node:path';
 import { byKey } from '../../data/helpers/guards.ts';
-import type { FilesPayload, GitPayload, Message, SessionsPayload } from '../../data/model.ts';
+import type {
+    FilesPayload,
+    GitPayload,
+    GitState,
+    Message,
+    SessionsPayload
+} from '../../data/model.ts';
 import type { Hub, Sink } from '../core/channels.ts';
+import { POLL, pollFile, systemClock, type Clock, type FilePoll, type Timer } from './file-poll.ts';
 import { statusFor, TIMEOUT_MS } from '../git/git.ts';
 import type { Watcher } from './portfolio.ts';
 
 /** Milliseconds one root is re-read at most once in. */
 export const THROTTLE = 2000;
 
-/** Milliseconds between two stats of the saved workspaces file. */
-export const POLL = 500;
-
 /** Path segments whose writes never change what git reports about the working tree. */
 export const IGNORED = ['node_modules', '.svelte-kit', 'build', '__pycache__'];
-
-/** What a clock's `setTimeout` gives back: a handle its own `clearTimeout` understands. */
-export type Timer = ReturnType<typeof setTimeout> | number;
-
-/**
- * The timer pair the throttle and the workspaces poll run on. Both are wall-clock time, so a caller
- * that has to know when a window closes or a tick comes passes its own pair and runs it itself.
- */
-export type Clock = {
-    setTimeout(run: () => void, ms: number): Timer;
-    clearTimeout(timer: Timer): void;
-};
-
-/** The globals, which is what the server runs on. */
-export const systemClock: Clock = {
-    setTimeout: (run, ms) => setTimeout(run, ms),
-    clearTimeout: (timer) => clearTimeout(timer)
-};
 
 export type GitWatchOptions = {
     /** Milliseconds one root is re-read at most once in. */
@@ -136,17 +127,16 @@ function reason(error: unknown): string {
 }
 
 /**
- * What a stat says of a file's content: its inode, size and both times, which an atomic replace, an
- * append and an in-place write each move. A missing file and one the stat refuses are values too,
- * so the file appearing, going and coming back are changes like any other.
+ * What a stat says of a path itself, or nothing when there is no entry there to say it of: a path
+ * that is gone, and one under a file (a worktree's `.git` is one), which the stat refuses with
+ * ENOTDIR. A symbolic link is dated by its own change time, not its target's: a link made or
+ * pointed elsewhere now, at a file that is old, is a new entry git reports.
  */
-function signature(file: string): string {
+function statOf(path: string): Stats | undefined {
     try {
-        const stat = statSync(file, { throwIfNoEntry: false });
-        if (stat === undefined) return 'absent';
-        return `${stat.ino}:${stat.size}:${stat.mtimeMs}:${stat.ctimeMs}`;
-    } catch (error) {
-        return `unreadable:${reason(error)}`;
+        return lstatSync(path, { throwIfNoEntry: false });
+    } catch {
+        return undefined;
     }
 }
 
@@ -178,15 +168,16 @@ export function watchGit(hub: Hub, options: GitWatchOptions = {}): GitWatcher {
      * composes its list from this copy.
      */
     let browser: string[] = [];
-    /**
-     * The workspaces file's signature as of the newest roots read, empty until the first one, so a
-     * tick that sees another signature knows the roots on hand predate the file.
-     */
-    let seen = '';
-    let polling: Timer | null = null;
+    /** The poll of the saved workspaces file, when there is one. */
+    let workspaces: FilePoll | null = null;
     const handles = new Map<string, FSWatcher[]>();
     const timers = new Map<string, Timer>();
     const last = new Map<string, number>();
+    /**
+     * When the newest read of each root that answered began, which an event must postdate to be
+     * news.
+     */
+    const readFrom = new Map<string, number>();
     let state: GitPayload = {};
     let closed = false;
 
@@ -205,10 +196,12 @@ export function watchGit(hub: Hub, options: GitWatchOptions = {}): GitWatcher {
     // folder.
     const reread = (root: string): void => {
         if (closed || !handles.has(root)) return;
+        const began = Date.now();
         hub.publish('files', { root } satisfies FilesPayload);
         try {
             const next = byKey(statusFor([root], timeout), root);
             if (next === undefined) return;
+            answered(root, began, next);
             const held = byKey(state, root);
             if (held !== undefined && JSON.stringify(held) === JSON.stringify(next)) return;
             state[root] = next;
@@ -216,6 +209,16 @@ export function watchGit(hub: Hub, options: GitWatchOptions = {}): GitWatcher {
         } catch (error) {
             console.error(`git watch: reading ${root} failed: ${reason(error)}`);
         }
+    };
+
+    /**
+     * Move a root's newest read on to the moment one began, when that read answered. A read that
+     * came back with `error` set (a git that timed out under load, a root that is no repository)
+     * saw nothing, so the events it would otherwise hide are still read for.
+     */
+    const answered = (root: string, began: number, read: GitState): void => {
+        if (read.error !== null) return;
+        readFrom.set(root, Math.max(began, readFrom.get(root) ?? 0));
     };
 
     /**
@@ -236,8 +239,40 @@ export function watchGit(hub: Hub, options: GitWatchOptions = {}): GitWatcher {
         );
     };
 
+    /**
+     * Whether an event is for a change the newest answered read of its root already saw: the
+     * change time of the path, or of the nearest folder above it that is still there, is before
+     * that read began. Taking an entry out of a folder moves that folder's change time, so a path
+     * that is gone is dated by the folder it left. The watch over `.git` names the folder itself
+     * `.git`, and `.git/.git` is dated by `.git` the same way.
+     */
+    const seenBy = (root: string, path: string): boolean => {
+        const from = readFrom.get(root);
+        if (from === undefined) return false;
+        let at = join(root, path);
+        for (;;) {
+            const stat = statOf(at);
+            if (stat !== undefined) return stat.ctimeMs < from;
+            const up = dirname(at);
+            if (at === root || !up.startsWith(root)) return false;
+            at = up;
+        }
+    };
+
+    /** One event under a root: dropped when it is not ours or is already read, else a touch. */
+    const heard = (root: string, path: string | null): void => {
+        if (path === null || !relevant(path) || timers.has(root)) return;
+        if (seenBy(root, path)) return;
+        touch(root);
+    };
+
+    /** When each new root's watch was opened, which its first read begins after. */
+    const opening = new Map<string, number>();
+
     const open = (root: string): void => {
         const opened: FSWatcher[] = [];
+        // The first read of a new root follows its watch, so it sees every write made before now.
+        opening.set(root, Date.now());
         // A root nothing can be opened at is still a root the payload names: a workspace the reader
         // deleted, a link whose target was never made, a folder under a parent nothing may enter.
         // There is nothing to watch at any of them, so no watcher is made and no error is logged;
@@ -262,8 +297,7 @@ export function watchGit(hub: Hub, options: GitWatchOptions = {}): GitWatcher {
             try {
                 opened.push(
                     watch(target, { recursive }, (_event, filename) => {
-                        const name = typeof filename === 'string' ? filename : null;
-                        if (relevant(name === null ? null : prefix + name)) touch(root);
+                        heard(root, typeof filename === 'string' ? prefix + filename : null);
                     })
                 );
             } catch (error) {
@@ -280,6 +314,8 @@ export function watchGit(hub: Hub, options: GitWatchOptions = {}): GitWatcher {
         if (timer !== undefined) clock.clearTimeout(timer);
         timers.delete(root);
         last.delete(root);
+        readFrom.delete(root);
+        opening.delete(root);
         // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- a Map here would change the shape every reader of this record depends on
         delete state[root];
     };
@@ -289,9 +325,7 @@ export function watchGit(hub: Hub, options: GitWatchOptions = {}): GitWatcher {
      * file browser's, then the sessions' workspaces, each named once.
      */
     const readRoots = (): void => {
-        // The signature is taken before the read, so a write between the two is a change the next
-        // tick sees rather than one the read already covers.
-        if (workspacesFile !== undefined) seen = signature(workspacesFile);
+        workspaces?.reading();
         // The file browser's roots are read off config and a file the reader edits, so a broken one
         // leaves the channel with the roots it can name rather than stopping the watcher.
         try {
@@ -339,6 +373,7 @@ export function watchGit(hub: Hub, options: GitWatchOptions = {}): GitWatcher {
                 for (const root of fresh) {
                     const one = byKey(found, root);
                     if (one !== undefined) state[root] = one;
+                    if (one !== undefined) answered(root, opening.get(root) ?? 0, one);
                     last.set(root, Date.now());
                 }
             } catch (error) {
@@ -350,29 +385,6 @@ export function watchGit(hub: Hub, options: GitWatchOptions = {}): GitWatcher {
         if (before.length === after.length && before.every((root, at) => root === after[at]))
             return;
         publish();
-    };
-
-    /**
-     * Stat the saved workspaces file once a tick and read the roots again when its signature moved.
-     * A machine that has saved no workspace has no file and perhaps no folder yet, which is a
-     * signature like any other, so the first save is seen without anything opened at the folder.
-     *
-     * The tick is this module's own timer on the injected clock rather than node's watchFile, which
-     * bookmarks.ts polls through: a clock the caller holds cannot drive watchFile, and the clock is
-     * what lets a case say exactly when a tick runs. A tick that closed the watcher through the
-     * roots it read schedules no next one.
-     */
-    const pollWorkspaces = (file: string): void => {
-        if (closed) return;
-        polling = clock.setTimeout(() => {
-            polling = null;
-            if (closed) return;
-            if (signature(file) !== seen) {
-                readRoots();
-                follow();
-            }
-            pollWorkspaces(file);
-        }, poll);
     };
 
     // The sink is this watcher's own end of the `sessions` channel. It sends nothing back and is
@@ -401,13 +413,21 @@ export function watchGit(hub: Hub, options: GitWatchOptions = {}): GitWatcher {
             // The probe holds no handle, so closing it frees nothing.
         }
     };
+    // The saved workspaces file is read again when its signature moved. A machine that has saved no
+    // workspace has no file and perhaps no folder yet, which is a signature like any other, so the
+    // first save is seen without anything opened at the folder.
+    if (workspacesFile !== undefined) {
+        workspaces = pollFile(workspacesFile, { clock, every: poll }, () => {
+            readRoots();
+            follow();
+        });
+    }
     // The always-watched root and the file browser's are opened before the first sessions message,
     // so a hub nobody has a session in is on the channel from the start.
     if (always !== '' || options.roots !== undefined) {
         readRoots();
         follow();
     }
-    if (workspacesFile !== undefined) pollWorkspaces(workspacesFile);
     hub.subscribe(sink, ['sessions', 'config']);
 
     return {
@@ -417,8 +437,8 @@ export function watchGit(hub: Hub, options: GitWatchOptions = {}): GitWatcher {
         close(): void {
             closed = true;
             hub.remove(sink);
-            if (polling !== null) clock.clearTimeout(polling);
-            polling = null;
+            workspaces?.close();
+            workspaces = null;
             for (const root of [...handles.keys()]) drop(root);
             state = {};
         }

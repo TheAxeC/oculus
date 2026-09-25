@@ -30,19 +30,26 @@ function pageData() {
             themes: [{ name: 'dusk', class: '', label: 'dusk' }]
         },
         collections: ['funding'],
+        seed: { through: 3 },
         token: 'a-token'
     };
 }
 
 describe('the page load', () => {
     // revert: src/routes/+page.ts:23 => delete
+    // revert: src/routes/+page.ts:29 => return { collections: data.collections, token: data.token };
     it('installs the catalogs the server shipped and raises the generation once', () => {
         const before = configGeneration();
         const result = load({ data: pageData() } as unknown as Parameters<typeof load>[0]);
 
-        // The collection keys and the write token are handed to the page rather than installed:
-        // both belong to the client the page builds, and the catalogs are what is module-level.
-        expect(result).toEqual({ collections: ['funding'], token: 'a-token' });
+        // The collection keys, the config seed and the write token are handed to the page rather
+        // than installed: they belong to the client the page builds, and the catalogs are what is
+        // module-level.
+        expect(result).toEqual({
+            collections: ['funding'],
+            seed: { through: 3 },
+            token: 'a-token'
+        });
         expect(t('app.title')).toBe('from the load');
         expect(glyph('dot')).toBe('O');
         expect(toneOf(HEX)).toBe('violet');

@@ -31,6 +31,18 @@ function snapshot(version: number, projects: string[]): Snapshot {
 }
 
 describe('receive', () => {
+    it('takes the first message of a channel after a reconnect whatever its version, then orders again', () => {
+        // revert: src/lib/state/client/entities.svelte.ts:66 => const first = false;
+        receive({ channel: 'config', version: 7, payload: { config: { a: 1 } } });
+        // A restarted server numbers its channels from the start again.
+        client.entities.reconnected();
+        receive({ channel: 'config', version: 1, payload: { config: { a: 2 } } });
+        expect(message('config')?.payload).toEqual({ config: { a: 2 } });
+        // After that first message the versions order again on the new connection.
+        receive({ channel: 'config', version: 0, payload: { config: { a: 3 } } });
+        expect(message('config')?.payload).toEqual({ config: { a: 2 } });
+    });
+
     it('stores a message under its channel', () => {
         receive({ channel: 'sessions', version: 1, payload: { live: 2 } });
         expect(message('sessions')).toEqual({

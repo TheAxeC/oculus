@@ -27,6 +27,7 @@ import {
     writeAccount
 } from './fixture.ts';
 import { sweepScratch } from '../../../fixtures/scratch.ts';
+import { manual } from '../../watch/repos.ts';
 
 afterAll(sweepScratch);
 
@@ -46,8 +47,8 @@ async function until(held: () => boolean): Promise<void> {
 }
 
 /**
- * Wait on a real filesystem watch, which answers on the operating system's own schedule rather than
- * on a turn of the event loop, and give up after two seconds so a watch that never fires is a
+ * Wait on the notes poll's wall-clock tick, which answers on the timer's own schedule rather than
+ * on a turn of the event loop, and give up after two seconds so a tick that never publishes is a
  * failed assertion rather than a hung run.
  */
 async function watched(ready: () => boolean): Promise<void> {
@@ -110,7 +111,7 @@ describe('the mail poller', () => {
             pollMin: POLL_MIN,
             perSignal: 25,
             fetcher,
-            watchNotes: false
+            pollNotes: false
         });
         expect(held(hub).status).toBe('unconfigured');
         expect(held(hub).threads).toEqual([]);
@@ -129,7 +130,7 @@ describe('the mail poller', () => {
             pollMin: POLL_MIN,
             perSignal: 25,
             fetcher,
-            watchNotes: false
+            pollNotes: false
         });
         await until(() => published(hub));
         expect(held(hub).accounts[0]).toMatchObject({ status: 'not-connected', hint: file });
@@ -162,7 +163,7 @@ describe('the mail poller', () => {
             pollMin: POLL_MIN,
             perSignal: 25,
             fetcher: fake.fetcher,
-            watchNotes: false
+            pollNotes: false
         });
         await until(() => published(hub) && held(hub).threads.length === 1);
         const payload = held(hub);
@@ -194,7 +195,7 @@ describe('the mail poller', () => {
             pollMin: POLL_MIN,
             perSignal: 25,
             fetcher: fake.fetcher,
-            watchNotes: false
+            pollNotes: false
         });
         await until(() => published(hub) && held(hub).threads.length === 1);
         const written = JSON.stringify(held(hub));
@@ -228,7 +229,7 @@ describe('the mail poller', () => {
             pollMin: POLL_MIN,
             perSignal: 25,
             fetcher,
-            watchNotes: false
+            pollNotes: false
         });
         await until(() => published(hub) && held(hub).threads.length === 1);
         refusing = true;
@@ -265,7 +266,7 @@ describe('the mail poller', () => {
             pollMin: POLL_MIN,
             perSignal: 25,
             fetcher,
-            watchNotes: false
+            pollNotes: false
         });
         await vi.advanceTimersByTimeAsync(0);
         await until(() => published(hub) && held(hub).accounts.length === 2);
@@ -284,6 +285,7 @@ describe('the mail poller', () => {
     });
 
     it('republishes when the triage skill writes the notes file from outside', async () => {
+        // revert: src/lib/server/accounts/mail/poll.ts:309 => return;
         const hub = new Hub();
         const dir = scratch();
         writeAccount(dir, GOOGLE);
@@ -315,6 +317,8 @@ describe('the mail poller', () => {
     });
 
     it('makes the mail folder when it is not there, so the first write from outside is seen', async () => {
+        // revert: src/lib/server/accounts/mail/poll.ts:311 => delete
+        // revert: src/lib/server/accounts/mail/poll.ts:309 => return;
         const hub = new Hub();
         const parent = scratch();
         const dir = join(parent, 'not-made-yet');
@@ -336,6 +340,77 @@ describe('the mail poller', () => {
         watcher.close();
     });
 
+    it('reads a notes file written the moment the poller starts, at the next tick', () => {
+        // revert: src/lib/server/accounts/mail/poll.ts:309 => return;
+        const hub = new Hub();
+        const dir = scratch();
+        const clock = manual();
+        const watcher = watchMail(hub, {
+            accounts: [],
+            dir,
+            pollMin: POLL_MIN,
+            perSignal: 25,
+            fetcher: vi.fn(() => answer({})),
+            clock: clock.clock
+        });
+        // The write is the skill's, made before any watch of the folder could have been armed.
+        writeFileSync(triageFile(dir), JSON.stringify({ run: '2026-09-16', notes: {} }));
+        const before = hub.latest('inbox')?.version ?? 0;
+        expect(clock.pending()).toBe(1);
+        clock.fire();
+        expect(hub.latest('inbox')?.version ?? 0).toBeGreaterThan(before);
+        expect(held(hub).notesRun).toBe('2026-09-16');
+        // The tick after it finds the file as the publish read it, and publishes nothing more.
+        const after = hub.latest('inbox')?.version ?? 0;
+        clock.fire();
+        expect(hub.latest('inbox')?.version).toBe(after);
+        watcher.close();
+    });
+
+    it('does not publish a page write a second time when the tick after it comes', () => {
+        // revert: src/lib/server/accounts/mail/poll.ts:138 => delete
+        const hub = new Hub();
+        const dir = scratch();
+        const clock = manual();
+        const watcher = watchMail(hub, {
+            accounts: [],
+            dir,
+            pollMin: POLL_MIN,
+            perSignal: 25,
+            fetcher: vi.fn(() => answer({})),
+            clock: clock.clock
+        });
+        // The Inbox view writes the file and asks for the publish itself.
+        writeFileSync(triageFile(dir), JSON.stringify({ run: '2026-09-17', notes: {} }));
+        watcher.republish();
+        const after = hub.latest('inbox')?.version ?? 0;
+        expect(held(hub).notesRun).toBe('2026-09-17');
+        clock.fire();
+        expect(hub.latest('inbox')?.version).toBe(after);
+        watcher.close();
+    });
+
+    it('publishes nothing for a notes write after it closed, and leaves no tick behind', () => {
+        // revert: src/lib/server/accounts/mail/poll.ts:332 => delete
+        const hub = new Hub();
+        const dir = scratch();
+        const clock = manual();
+        const watcher = watchMail(hub, {
+            accounts: [],
+            dir,
+            pollMin: POLL_MIN,
+            perSignal: 25,
+            fetcher: vi.fn(() => answer({})),
+            clock: clock.clock
+        });
+        const before = hub.latest('inbox')?.version ?? 0;
+        watcher.close();
+        writeFileSync(triageFile(dir), JSON.stringify({ run: '2026-09-18', notes: {} }));
+        clock.fire();
+        expect(clock.pending()).toBe(0);
+        expect(hub.latest('inbox')?.version).toBe(before);
+    });
+
     it('says on the page why the triage notes could not be read, and keeps the plate', async () => {
         const hub = new Hub();
         const dir = scratch();
@@ -348,7 +423,7 @@ describe('the mail poller', () => {
             pollMin: POLL_MIN,
             perSignal: 25,
             fetcher: fake.fetcher,
-            watchNotes: false
+            pollNotes: false
         });
         await until(() => published(hub) && held(hub).threads.length === 1);
         expect(held(hub).notesError).toContain('is not JSON');
@@ -368,7 +443,7 @@ describe('the mail poller', () => {
             pollMin: POLL_MIN,
             perSignal: 25,
             fetcher: fake.fetcher,
-            watchNotes: false
+            pollNotes: false
         });
         await until(() => published(hub) && held(hub).threads.length === 1);
         const first = fake.calls.length;

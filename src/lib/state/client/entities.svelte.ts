@@ -4,7 +4,10 @@
 //
 // A message whose version is below the one held is dropped. Versions arrive in order on one
 // connection, but a reconnect subscribes again and the server sends the current message of every
-// channel, so the page can be handed a message it already has; the check makes that harmless.
+// channel, so the page can be handed a message it already has; the check makes that harmless. A
+// reconnect may also reach a restarted server, whose hub numbers every channel from the start
+// again, so after a reconnect the first message of each channel is taken whatever its version: it
+// is that server's current message.
 //
 // The messages belong to one client rather than to the module: createEntities() is called once by
 // state/client/context.ts, so two pages, or two test cases, share nothing.
@@ -31,6 +34,8 @@ import type {
 /** What every channel of the wire reads as, one instance per client. */
 export type EntitiesStore = {
     receive: (message: Message) => void;
+    /** A new connection opened: take the next message of every channel whatever its version. */
+    reconnected: () => void;
     /** Hear every message kept, after it is kept. */
     afterReceive: (listener: (message: Message) => void) => void;
     message: (channel: string) => Message | null;
@@ -52,10 +57,14 @@ export function createEntities(): EntitiesStore {
     /** What registered to hear every message kept. */
     const listeners: ((message: Message) => void)[] = [];
 
+    /** The channels whose next message is taken whatever its version, after a reconnect. */
+    let fresh = new Set<string>();
+
     /** Store a message unless the channel already holds a newer one, and tell every listener. */
     function receive(message: Message): void {
         const held = messages[message.channel];
-        if (held !== undefined && message.version < held.version) return;
+        const first = fresh.delete(message.channel);
+        if (!first && held !== undefined && message.version < held.version) return;
         messages[message.channel] = message;
         for (const listener of listeners) listener(message);
     }
@@ -74,8 +83,13 @@ export function createEntities(): EntitiesStore {
         return messages[channel]?.payload;
     }
 
+    function reconnected(): void {
+        fresh = new Set(Object.keys(messages));
+    }
+
     return {
         receive,
+        reconnected,
         afterReceive,
         message,
         /** The portfolio snapshot, or null before the first one arrives. */

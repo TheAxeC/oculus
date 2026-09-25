@@ -8,7 +8,7 @@
 // What was run is read by recording the process module's calls, which is how "only the root that
 // changed is re-read" is checked by the thing that would fail if it were false.
 
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, rmSync, symlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
 import { byKey } from '../../../src/lib/data/helpers/guards.ts';
@@ -18,7 +18,7 @@ import { IGNORED, relevant, rootsOf, watchGit } from '../../../src/lib/server/wa
 import type { Watcher } from '../../../src/lib/server/watch/portfolio.ts';
 import type { FilesPayload, Message, SessionsPayload } from '../../../src/lib/data/model.ts';
 import { recording } from './probe.ts';
-import { announce, latest, manual, put, repositoryIn } from './repos.ts';
+import { announce, commitAll, latest, manual, put, repositoryIn } from './repos.ts';
 import type { Manual } from './repos.ts';
 import { noop } from '../../fixtures/doubles.ts';
 import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
@@ -274,6 +274,53 @@ describe('watchGit', () => {
         // of one write under one watched root: eight git commands, none for the other root.
         expect(reads(first) - before.first).toBe(8);
         expect(reads(second) - before.second).toBe(0);
+    });
+
+    it('reads a symbolic link made after the watch opened to a file older than the read', async () => {
+        // revert: src/lib/server/watch/git.ts:46 => import { existsSync, statSync as lstatSync, watch } from 'node:fs';
+        const root = repository('one');
+        const hub = new Hub();
+        const client = recording();
+        const clock = manual();
+        hub.subscribe(client.sink, ['git']);
+        announce(hub, [root]);
+        watchers.push(watchGit(hub, { throttle: 300, clock: clock.clock }));
+        await until(() => client.got.length >= 1, WAIT);
+        await arming(root, clock);
+        clock.fire();
+
+        // The link is new and its target, the repository's first file, is not.
+        symlinkSync('kept.txt', join(root, 'newlink'));
+        await until(() => clock.pending() > 0, WAIT);
+        clock.fire();
+        const untracked = latest(client.got)[root].untracked.map((entry) => entry.path);
+        expect(untracked).toContain('newlink');
+    });
+
+    it('reads a tracked symbolic link pointed at another old file after the watch opened', async () => {
+        // revert: src/lib/server/watch/git.ts:46 => import { existsSync, statSync as lstatSync, watch } from 'node:fs';
+        const root = repository('one');
+        put(root, 'other.txt', 'two\n');
+        symlinkSync('kept.txt', join(root, 'link'));
+        commitAll(root, 'link');
+        const hub = new Hub();
+        const client = recording();
+        const clock = manual();
+        hub.subscribe(client.sink, ['git']);
+        announce(hub, [root]);
+        watchers.push(watchGit(hub, { throttle: 300, clock: clock.clock }));
+        await until(() => client.got.length >= 1, WAIT);
+        await arming(root, clock);
+        clock.fire();
+        expect(latest(client.got)[root].unstaged).toEqual([]);
+
+        // Pointed elsewhere, at a file that is as old as the commit.
+        rmSync(join(root, 'link'));
+        symlinkSync('other.txt', join(root, 'link'));
+        await until(() => clock.pending() > 0, WAIT);
+        clock.fire();
+        const unstaged = latest(client.got)[root].unstaged.map((entry) => entry.path);
+        expect(unstaged).toEqual(['link']);
     });
 
     it('publishes files for a write git reports nothing about, since a listing is stale either way', async () => {

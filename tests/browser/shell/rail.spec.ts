@@ -1,7 +1,8 @@
 // The rail as a reader meets it on a served page, drawn as VS Code's activity bar: its width and
 // its square items under a light, a dark and a terminal theme; an item named by its page with the
 // page's name and digit on hover; the one badge inside its item; the Bookmarks menu at the foot,
-// which the served run starts holding two manuals and a bookmark the Files view adds joins; a page
+// which the served run starts holding two manuals and a bookmark the Files view adds joins, and
+// which a bookmark written into the file from outside joins on the open page; a page
 // button dragged to a new place and one hidden from its right-click menu, each written to the
 // engine's layout.yml; and Settings in that menu. Also the facts only a rendered page holds: a
 // pseudo-element's content, the room a glyph's stand-in needs inside its box, and which element a
@@ -11,10 +12,23 @@
 // from it, so the specs after them find the rail the run started with.
 
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { SHOWN_VIEW, boot, openView, pickTheme, showRailPage } from '../helpers/rail.ts';
+import {
+    SHOWN_VIEW,
+    bookmarkFiles,
+    boot,
+    openView,
+    pickTheme,
+    showRailPage
+} from '../helpers/rail.ts';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { readEngineFile, servedHomeDir, writeEngineFile } from '../helpers/hub.ts';
+import {
+    readEngineFile,
+    removeFromHub,
+    servedHomeDir,
+    writeEngineFile,
+    writeHubFile
+} from '../helpers/hub.ts';
 import { t } from '../helpers/words.ts';
 
 /** The engine's layout file, whose rail list the drag and the Hide cases write. */
@@ -324,6 +338,44 @@ test('the Bookmarks menu lists the bookmarks by name over the panes, opens one, 
         await expect(opener).toBeFocused();
     } finally {
         writeFileSync(file, held);
+    }
+});
+
+test('a bookmark written into the file from outside joins the open menu without a reload', async ({
+    page
+}) => {
+    // revert: src/lib/state/sources/fs.svelte.ts:369 => delete
+    // What the socket carried on the `files` channel, in order, read off the wire.
+    const files: { root?: string; bookmarks?: boolean }[] = [];
+    page.on('websocket', (socket) => {
+        socket.on('framereceived', ({ payload }) => {
+            const message = JSON.parse(String(payload)) as { channel?: string; payload?: object };
+            if (message.channel === 'files') files.push(message.payload ?? {});
+        });
+    });
+    await boot(page);
+    // The menu has read the file once, so what it lists later is a second read or none.
+    expect(await bookmarkFiles(page)).not.toContain('hub/CAREER.yml');
+
+    const file = join(servedHomeDir(), '.oculus', 'bookmarks.yml');
+    const held = readFileSync(file, 'utf8');
+    const outside = 'outside-write.txt';
+    try {
+        writeFileSync(file, `${held}  - label: career\n    root: hub\n    path: CAREER.yml\n`);
+        await expect.poll(() => files.findIndex((one) => one.bookmarks === true)).not.toBe(-1);
+        // A write under a root is the next message on the channel, as a busy hub's writes are,
+        // and the page holds one message a channel: the word about the bookmarks is replaced.
+        writeHubFile(outside, 'x\n');
+        await expect
+            .poll(() => {
+                const said = files.findIndex((one) => one.bookmarks === true);
+                return files.slice(said + 1).some((one) => one.root !== '');
+            })
+            .toBe(true);
+        await expect.poll(() => bookmarkFiles(page)).toContain('hub/CAREER.yml');
+    } finally {
+        writeFileSync(file, held);
+        removeFromHub(outside);
     }
 });
 

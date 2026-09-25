@@ -69,7 +69,7 @@ async function named(got: Message[], root: string): Promise<void> {
 }
 
 describe('watchGit over the workspaces file', () => {
-    // revert: src/lib/server/watch/git.ts:410 => delete
+    // revert: src/lib/server/watch/git.ts:419-424 => delete
     it('reads a root added to the workspaces file while it is running', async () => {
         const always = repository('hub');
         const added = repository('added');
@@ -98,7 +98,7 @@ describe('watchGit over the workspaces file', () => {
     // one. The write lands right after the watcher starts, the tick is the case's, and the count is
     // taken in the same turn as the tick, so no file event can be what read the roots: a write made
     // while no file event is delivered is still read, at the next tick.
-    // revert: src/lib/server/watch/git.ts:410 => delete
+    // revert: src/lib/server/watch/git.ts:419-424 => delete
     it('reads a write no file event announced, at the next tick', async () => {
         const always = repository('hub');
         const added = repository('added');
@@ -122,7 +122,7 @@ describe('watchGit over the workspaces file', () => {
         expect(latest(client.got)[added].branch).toBe('work');
     });
 
-    // revert: src/lib/server/watch/git.ts:294 => delete
+    // revert: src/lib/server/watch/git.ts:328 => delete
     it('reads the roots once per change of the workspaces file, not once per tick', () => {
         const always = repository('hub');
         const file = join(dir, 'workspaces.json');
@@ -150,7 +150,7 @@ describe('watchGit over the workspaces file', () => {
 
     // A config push reads the roots, and the signature with them, so the tick after it finds the
     // file as that read left it and reads nothing more.
-    // revert: src/lib/server/watch/git.ts:294 => delete
+    // revert: src/lib/server/watch/git.ts:328 => delete
     it('reads nothing at a tick a config push has already read the file for', async () => {
         const always = repository('hub');
         const file = join(dir, 'workspaces.json');
@@ -171,7 +171,7 @@ describe('watchGit over the workspaces file', () => {
         expect(asking.asked()).toBe(2);
     });
 
-    // revert: src/lib/server/watch/git.ts:410 => if (workspacesFile !== undefined && existsSync(join(workspacesFile, '..'))) pollWorkspaces(workspacesFile);
+    // revert: src/lib/server/watch/git.ts:419 => if (workspacesFile !== undefined && existsSync(join(workspacesFile, '..'))) {
     it('sees the first save into a folder that did not exist when it started', async () => {
         const always = repository('hub');
         const added = repository('added');
@@ -198,7 +198,7 @@ describe('watchGit over the workspaces file', () => {
     });
 
     // Deleting the file takes the workspaces' own roots with it, so a file that went is a change.
-    // revert: src/lib/server/watch/git.ts:370 => if (existsSync(file) && signature(file) !== seen) {
+    // revert: src/lib/server/watch/file-poll.ts:87 => if (statSync(file, { throwIfNoEntry: false }) && signature(file) !== seen) changed();
     it('reads the roots again when the workspaces file is deleted', () => {
         const always = repository('hub');
         const file = join(dir, 'workspaces.json');
@@ -221,8 +221,8 @@ describe('watchGit over the workspaces file', () => {
     // A folder nothing may enter makes the stat throw EACCES, which is a signature and not a
     // failure: the watcher starts, a tick over the same refusal reads nothing, and the tick after
     // the folder is opened again reads the roots again.
-    // revert: src/lib/server/watch/git.ts:149 => throw error;
-    // revert: src/lib/server/watch/git.ts:374 => delete
+    // revert: src/lib/server/watch/file-poll.ts:53 => throw error;
+    // revert: src/lib/server/watch/file-poll.ts:88 => delete
     it('keeps polling through a stat that throws, and reads once the path is repaired', () => {
         const always = repository('hub');
         const folder = join(dir, 'machine');
@@ -247,7 +247,7 @@ describe('watchGit over the workspaces file', () => {
         expect(asking.asked()).toBe(2);
     });
 
-    // revert: src/lib/server/watch/git.ts:420 => delete
+    // revert: src/lib/server/watch/git.ts:440 => delete
     it('stops polling the workspaces file once it is closed', () => {
         const always = repository('hub');
         const file = join(dir, 'workspaces.json');
@@ -269,7 +269,7 @@ describe('watchGit over the workspaces file', () => {
 
     // A timer already taken off the queue runs although close cleared it, which a clock that
     // cannot cancel stands for here: that tick reads nothing and schedules nothing.
-    // revert: src/lib/server/watch/git.ts:369 => delete
+    // revert: src/lib/server/watch/file-poll.ts:86 => delete
     it('reads nothing at a tick that runs after close', () => {
         const always = repository('hub');
         const file = join(dir, 'workspaces.json');
@@ -295,7 +295,7 @@ describe('watchGit over the workspaces file', () => {
 
     // The roots option can close the watcher while a tick is reading them, as a caller shutting
     // down on what it read would: that tick schedules no next one.
-    // revert: src/lib/server/watch/git.ts:366 => delete
+    // revert: src/lib/server/watch/file-poll.ts:83 => delete
     it('schedules no next tick when the watcher is closed during one', () => {
         const always = repository('hub');
         const file = join(dir, 'workspaces.json');

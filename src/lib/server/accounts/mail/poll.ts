@@ -10,9 +10,10 @@
 // what a press asks for is the state now.
 //
 // The triage notes are the one thing published that no provider gave. They are read from the file
-// at every publish and the file is watched, so a note the skill writes from outside reaches the
-// page without a round of provider calls; a note whose thread has left the plate is dropped from
-// the payload and kept in the file for thirty days.
+// at every publish and the file is polled on a clock (watch/file-poll.ts says why it is not
+// watched), so a note the skill writes from outside reaches the page without a round of provider
+// calls, whenever it lands; a note whose thread has left the plate is dropped from the payload and
+// kept in the file for thirty days.
 //
 // A machine that names no account publishes `unconfigured` once and polls nothing, so an install
 // with no mailbox costs no timer and no request.
@@ -22,7 +23,7 @@
 // account's file at each poll and goes no further than the token call. No message body is read:
 // what a thread carries is the provider's own snippet.
 
-import { mkdirSync, watch, type FSWatcher } from 'node:fs';
+import { mkdirSync } from 'node:fs';
 import { mailKey } from '../../../data/accounts/mail.ts';
 import type {
     InboxPayload,
@@ -34,6 +35,7 @@ import type {
     TriageNote
 } from '../../../data/model.ts';
 import type { Hub } from '../../core/channels.ts';
+import { POLL, pollFile, systemClock, type Clock, type FilePoll } from '../../watch/file-poll.ts';
 import { accessToken, type Fetcher } from '../connect/oauth.ts';
 import { credentialFile, readCredentials } from '../connect/store.ts';
 import { readGoogleMail } from './google.ts';
@@ -53,8 +55,12 @@ export type MailOptions = {
     fetcher?: Fetcher;
     /** The moment the payload is stamped with, so a test can pin it. */
     now?: () => Date;
-    /** Whether the notes file is watched; a test that drives the poll itself turns it off. */
-    watchNotes?: boolean;
+    /** Whether the notes file is polled; a test that drives the poll itself turns it off. */
+    pollNotes?: boolean;
+    /** The timer pair the notes file is polled on; the globals when absent. */
+    clock?: Clock;
+    /** Milliseconds between two stats of the notes file. */
+    notesEvery?: number;
 };
 
 export type MailWatcher = {
@@ -104,6 +110,8 @@ export function watchMail(hub: Hub, options: MailOptions): MailWatcher {
     const kept = new Map<string, Kept>();
     let closed = false;
     const stopped = (): boolean => closed;
+    /** The poll of the notes file, once it has started. */
+    let notesPoll: FilePoll | null = null;
 
     const rowOf = (account: MailAccountConfig): MailAccount =>
         state.get(mailKey(account)) ?? {
@@ -127,6 +135,7 @@ export function watchMail(hub: Hub, options: MailOptions): MailWatcher {
         const onPlate = new Set(rows.map((row) => `${row.key}-${row.thread.id}`));
         let notes: TriageFile = { run: null, notes: {} };
         let notesError: string | undefined;
+        notesPoll?.reading();
         try {
             notes = pruneNotes(options.dir, onPlate, now().getTime());
         } catch (error) {
@@ -289,31 +298,29 @@ export function watchMail(hub: Hub, options: MailOptions): MailWatcher {
     };
 
     /**
-     * The notes file, watched so a write from the triage skill reaches the page. The folder is
-     * watched rather than the file, since the file is written whole and a watch on a path that is
-     * replaced stops seeing it, and the folder is made when it is not there yet: a machine whose
-     * mail folder the reader has not created would otherwise see a note only after a restart, and
-     * the folder is the one the credential files live in either way.
+     * The notes file, polled so a write from the triage skill reaches the page. The folder is made
+     * when it is not there yet, since it is the one the credential files live in either way and the
+     * skill writes into it. What the file says at the start is taken as read: the first publish
+     * reads it anyway, and a tick before the first round would otherwise publish every account as
+     * not connected. A publish reads the file too, so a page write published at once is not
+     * published a second time by the tick after it.
      */
-    let notesWatch: FSWatcher | null = null;
-    const startNotesWatch = (): void => {
-        if (options.watchNotes === false) return;
-        const wanted = triageFile(options.dir);
+    const startNotesPoll = (): void => {
+        if (options.pollNotes === false) return;
         try {
             mkdirSync(options.dir, { recursive: true, mode: DIR_MODE });
-            notesWatch = watch(options.dir, (_event, name) => {
-                if (stopped()) return;
-                if (name !== null && !wanted.endsWith(name)) return;
-                publish();
-            });
         } catch (error) {
-            console.error(`mail watch: the triage notes are not watched: ${reason(error)}`);
+            console.error(`mail watch: the mail folder cannot be made: ${reason(error)}`);
         }
+        const clock = options.clock ?? systemClock;
+        const every = options.notesEvery ?? POLL;
+        notesPoll = pollFile(triageFile(options.dir), { clock, every }, publish);
+        notesPoll.reading();
     };
 
+    startNotesPoll();
     if (options.accounts.length === 0) publish();
     else void run(true);
-    startNotesWatch();
 
     return {
         refresh: () => run(true),
@@ -322,8 +329,8 @@ export function watchMail(hub: Hub, options: MailOptions): MailWatcher {
             closed = true;
             if (timer !== null) clearTimeout(timer);
             timer = null;
-            notesWatch?.close();
-            notesWatch = null;
+            notesPoll?.close();
+            notesPoll = null;
         }
     };
 }

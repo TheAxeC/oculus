@@ -10,7 +10,8 @@ import type { PageLoad } from './$types';
 // `config` channel instead.
 //
 // The collection keys are not installed anywhere: they are handed to the page, which registers one
-// view per key in the registry of the client it builds.
+// view per key in the registry of the client it builds. The seed of the `config` channel is handed
+// on the same way, since the channel belongs to that client's socket.
 //
 // The write token is handed on rather than installed: it belongs to the client the page builds, and
 // the page puts it in that client's write store. This load runs again on invalidateAll(), so the
@@ -25,5 +26,5 @@ export const load: PageLoad = ({ data }) => {
     setVocab(data.vocab);
     setAppearance(data.vocab);
     configInstalled();
-    return { collections: data.collections, token: data.token };
+    return { collections: data.collections, seed: data.seed, token: data.token };
 };
