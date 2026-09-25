@@ -1,0 +1,74 @@
+# Step Q67 refuter report (on .agents/worktrees/Q67, base ef269f83)
+
+## Verification (rerun by the reviewer)
+All commands were run from `.agents/worktrees/Q67/tools/oculus`.
+- `npx vitest run --reporter=dot` printed `Test Files  1 failed | 318 passed (319)` and `Tests  4 failed | 4959 passed (4963)`. The 4 failures are all in `tests/views/system/help.test.ts`: account-setup view id, `p1-p9`, letter `p`, `open_bin`. This matches the report. Brief item 1 (every case passes) does not hold.
+- `npm run check` printed `COMPLETED 1420 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS`.
+- `npm run build` exited 0.
+- `npm run format:check` printed `All matched files use Prettier code style!`.
+- `npm run lint` exited 0.
+- The ASCII gate (spec.md form) printed nothing.
+- `sh bin/size-check.sh` and `sh bin/folder-check.sh` both exited 0.
+- `npm run diagrams` run twice: the sha of `git diff ef269f83 -- docs/diagrams` was `737f9f41...` before, after the first run and after the second. No difference.
+- `npx playwright test` (whole suite, after build, once 8792 and the lock were free) printed `391 passed (6.9m)`. This matches the report.
+- `node bin/revert-check.mjs` over the 25 changed or added unit test files printed `161 reverts, 0 unproven, 151 unchecked`. This matches the report's unit row.
+- `ls -d $TMPDIR/oculus-* | wc -l` was 3 before and 3 after. Other runs held entries throughout (`oculus-browser-*`, `oculus-browser.lock`, `oculus-revert-*`), so nothing leaked could be attributed to this step either way.
+- A probe of `rows.ts` through `npx tsx` on a scratchpad script (no repository file written) produced the rows.ts findings in section 1.
+
+## 1. Spec
+- **Data loss in the Remove edit.** `src/lib/server/accounts/connect/rows.ts:131-136`: removing the last row of a block list replaces everything from the key's end to the list's end with `: []`.
+  - This drops a comment on the key's own line and every comment line inside the list.
+  - Probe input: `calendars: # my calendars\n  # the work one\n  - { provider: google, label: work } # uni\nport: 8790\n`. Removing `google-work` yields `calendars: []\nport: 8790\n`.
+  - The brief item 5 asks for a comment-preserving removal, and the head comment at `rows.ts:5-7` says "everything else is copied through untouched". `verified()` compares only values, so it passes this.
+  - No test covers a comment beside the key or inside the list when the last row goes.
+- **New config key `open_bin` (a reserved decision, taken).** Code at `src/lib/data/sources/config/local.ts:59-64, 102, 256-261`, `src/lib/server/files/open.ts:275-288`, `src/lib/server/root/context.ts:352`.
+  - It is a user-visible key that no item names. The brief asked for "the opener stubbed, as the existing tests do"; the builder added a production key so the served test run can record addresses.
+  - The report lists it as judgment call 1, but it is baked into the code and causes one of the four red help.test cases. Axel's ruling is needed.
+- **Personal group gets its own chord (a reserved decision, taken).** `config/layout.yml:33` gives Personal chord `p` and glyph `memories`. Memories and Calendar move off `v` digits to `p1`/`p2`, and Personal's documents follow them. The sheet row is added in `config/text/app.yml:12`.
+  - The step is forced by the tree's rule: a group with more than four entries is reached only by its own chord (`config/layout.yml:25`).
+  - The letter, the glyph and the keyboard move are still a user-visible key chord that nothing names. It is reported (judgment 4) and causes two of the four red help.test cases. Axel's ruling is needed.
+- **Brief item 2 text is incomplete.** The admin sentence `accounts.microsoft_admin` in `config/text/views/personal/account-setup.yml:46` omits the brief's "and that the consent screen then says so".
+- **Paths written outside the brief's list:**
+  - `src/lib/server/core/auth.ts`, `src/lib/server/machine/hpc/routes.ts`, `src/lib/server/machine/usage/routes.ts` (the `gatedBody` fold).
+  - `src/lib/server/files/open.ts`, `src/lib/state/client/context.ts`, `src/lib/ui/forms/TextInput.svelte` (a new `secret` prop on a ui primitive), `src/lib/data/sources/config.ts`, `src/lib/data/model/index.ts`.
+  - `config/layout.yml`, `config/text/app.yml`, `docs/diagrams/*`.
+  - All of these are listed in the report. The `ui/` primitive change and the hpc/usage route refactor are items no brief line asks for.
+- **Premise check.** Premises 4 (`oauth.ts:217`, `store.ts:102-119`) and 7 (the HELP.md grep prints nothing at base) were checked and reproduce. No wrong premise was found.
+
+## 2. Proof
+- **The write chain is untested.** Brief items 1 and 3 require writing behind the write chain, but no case exercises it for the Add, the Remove or the Save.
+  - `grep -n chain tests/server/accounts/connect/*.ts tests/server/root/context.test.ts` prints nothing.
+  - The revert cited for "the Save goes through the write chain" is `setup.ts:76 => delete`, which deletes the write itself. Replacing `chained(target.writes, ...)` with a direct call at `actions.ts:192`, `actions.ts:228` or `setup.ts:76` leaves every case green (inference from the test list; not run).
+  - The spec requires an asynchronous path to be exercised in flight and superseded; two Adds in flight is not.
+- **`open_bin` is exercised by no unit case.** Not tested: the empty string, a non-string, the refusal message at `local.ts:258`, the context choosing `addressOpener` (`context.ts:352`), or `addressOpener` refusing a non-https address.
+  - The spec requires a new key to be exercised empty and colliding.
+  - `grep -rn "open_bin\|openBin\|addressOpener" tests` shows only the browser helpers.
+- **The setup-first Add flow is not proven in the browser suite.** Brief item 3's last sentence (Add with no half opens the setup page, and the account is added after Save) is covered only by the node store test with a stubbed `open`, not by any browser spec. The spec says a press or effect is proven in the browser suite.
+- **Browser case order dependence.** `tests/browser/views/accounts/accounts.spec.ts:94-100` first asserts `accounts.not_ready`. That fails if the Google half already exists: on a retry, or when another case ran first. The head comment at `accounts.spec.ts:6-7` claims "any one of them runs alone". It holds only for the first run in file order.
+- **Boundaries allowlist widened.** `tests/checks/tree/boundaries.test.ts:106` adds `data/accounts/connect` to the state row's allowed imports. It follows the precedent of `data/accounts/calendar`/`mail` and carries a reason. Reported as judgment 9.
+- **`allow-duplication.txt`** only had stale lines removed, which is a tightening. Nothing was added.
+- **Browser specs not revert-checked by the reviewer.** The report's browser row (`7 reverts, 0 unproven`) was not rerun.
+
+## 3. Standards
+- **DRY: a third copy of the write-chain idiom.** `src/lib/server/accounts/connect/actions.ts:129-136` (`chained`) copies what `src/lib/server/core/changes.ts:224-231` and `src/lib/server/files/fs.ts:561-569` already hold. It is placed in a connector module rather than in `core/`, and neither existing site reuses it.
+- **DRY: a third copy of the client POST.** `src/lib/state/life/accounts.svelte.ts:95-107` (`post`) is a third copy of the POST-with-token pattern in `calendar.svelte.ts` and `inbox.svelte.ts`.
+- **Hard-wrapped comment line.** `tests/checks/tree/boundaries.test.ts:34` is a single short line (`` // `data/helpers/dates`, ``) left by the edit.
+- **Catalog key misnamed.** `config/text/views/personal/calendar.yml:13` `calendar.no_accounts` now holds the head's state word `not configured`. It is read as `unconfigured` at `Calendar.svelte` `headWords()`, while the Inbox reads `inbox.unconfigured`. The key name no longer says what it holds.
+- **DESIGN.md:300 made false.** It says "the calendar and mail links go through `macOpenAddress`". With `open_bin` set they go through `addressOpener(open_bin)`. The report's Doc text gives no replacement for DESIGN.md:300.
+- **Selector change not reported.** The browser selector `data-mail-account` became `data-account` in the Inbox, and `tests/browser/views/accounts/inbox.spec.ts:23` was changed with it. The spec requires the report to say so, and it does not.
+- **Rules broken by the builder, both disclosed:** two read-only git commands (`git check-ignore`, `git status --porcelain`) against spec.md's "You never run a git command".
+
+## 4. Behaviour
+- **Remove deletes an account's own client half, unstated.** For a legacy account file that carries its own `client_id`/`client_secret`, Remove deletes that half with the token (`store.ts` `removeAccountFile`). The confirm text (`accounts.remove_confirm`: "Its token file is deleted; the provider stays set up") and the report do not say this.
+- **Provider naming differs between the Inbox and the setup page.** In the Inbox, a row needing setup reads "Outlook is not set up on this machine yet." / "Set up Outlook" (from `inbox.provider_microsoft`). The setup page it opens names the section "Microsoft (Outlook calendar and mail)" and says "Saved. Microsoft is set up." The report states only that the Inbox keeps Gmail/Outlook.
+- **Keyboard move without before and after.** Memories and Calendar are no longer reached by `v12`/`v13` but by `p1`/`p2`, with Account setup at `p3` and the two Personal documents at `p4`/`p5`. The report states the chord but not the old digits.
+- **`data-account` collision.** The Calendar and the Inbox now both carry `data-account="<provider>-<label>"`, so an account of the same key in both views has the same attribute on one page. Before, the Inbox used `data-mail-account`. This is not stated.
+- **Errors escape unhandled.** An Add/Remove/Connect/Save whose answer is not JSON, or whose fetch fails, rejects inside `post` (`accounts.svelte.ts:101`). The presses call it through `void`, so the reader sees no sentence and the rejection is unhandled. This is not stated.
+
+## Not checked
+- `node bin/revert-check.mjs` on the three browser specs.
+- Whether the Google and Entra console URLs in `account-setup.yml:27-31, 48` still resolve to the pages named.
+- A live Connect against a real provider.
+- Races between an Add and a whole-text save of `local.yml` from the source tab, which does not use the write chain (brief premise 2).
+
+Reviewer usage: tokens not measured; about 50 tool uses; about 75 minutes, mostly waiting for port 8792 and the revert-check run.

@@ -49,8 +49,9 @@ dispatch:      # X3b, Q67 and S2 in flight; X3a and X3c ruled, specced when a sl
   base: ef269f83
   launched: 2026-09-25
   report: tools/oculus/.scratch/migration/agents/reviews/Q67-report.md
+  refuter: agents/reviews/Q67-refuter.md (claude:opus, native Agent ae292619dd682d411)
   landing: not-started
-  round: 0
+  round: 1  # sent 2026-09-26 over the uncommitted worktree tree at ef269f83; the round's delta is read against the report's file list
 - step: S2
   executor: agent
   worker: claude:opus (native Agent, general-purpose)
@@ -111,6 +112,8 @@ None. Axel lifted it on 2026-09-23 with `/plan-orchestration oculus/migration` a
 ## Open items (only what Axel must rule on; every report opens with this list verbatim and repeats it until he has ruled)
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is booked as its own step in `plan.md` and carried in the Booked section below, since it needs no ruling from him.
+
+- Q67, the Personal group's keyboard letter (raised 2026-09-26 by Q67's review). Q67 adds the Account setup view to the Personal group, which then holds five entries (Memories, Calendar, Account setup and the group's two documents), and `config/layout.yml:25` rules that a group of more than four entries is reached only by its own chord. So Personal needs a letter: Memories and Calendar move from the direct chord's `v12` and `v13` to `p1` and `p2`, Account setup is `p3`, the two documents `p4` and `p5`. The letters in use are `m`, `c`, `s`, `y` and `v` (`grep -n "chord:" config/layout.yml`). Options: (a) `p` for Personal, as the builder chose, with the group glyph `memories`; (b) another free letter you name. Recommended (a): `p` is free and is the group's first letter, as `s` and `c` are for theirs.
 
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)
 
