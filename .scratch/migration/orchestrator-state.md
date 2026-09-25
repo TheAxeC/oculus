@@ -41,8 +41,11 @@ dispatch:
   reviewer: claude:opus, native agent a950c952b09897f8d; report agents/reviews/Q71-refuter.md (242,864 tokens, 92 tool uses, 66 min)
   builder_usage: 816,275 tokens, 350 tool uses, 154 min
   landing: not-started
-  round: 1
+  round: 2
   round_1_from: 66e11387 (the worktree's wip commit of the tree the round was sent over)
+  round_1_reviewer: claude:opus, native agent a10a8307527f8f3be; appended to agents/reviews/Q71-refuter.md (190,837 tokens, 69 tool uses, 52 min)
+  round_2_from: e04ee409 (the wip commit before round 2)
+  round_2_why: the one round beyond the cap (plan-orchestration step 8): acceptance item 2 of the brief (every folder imports only folders below it) is unbuilt in two places the round-1 refutation shows, the store shapes filed under state/words to satisfy the order and the BadgeClient declaration merge hiding an import of state/client, and the fix (a store-shapes folder at the foot of state, room made under the ten-item limit, declared shapes) is too large for landing; the run's other findings are not sent and are fixed at landing
 ```
 
 ## The standing demands (from Axel, in force)
@@ -96,6 +99,7 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)
 
 - Q71, the architecture made sound and kept sound (booked 2026-09-24, widened on Axel's word the same day): the two import cycles and a cycle check, an order for the folders inside each layer held by the boundary test, what views compute that belongs in state, and the diagrams as ruled. Before S2. Q72 re-reads it all before the release. Also the file-poll helper's folder and the page load's import of the server context, found at Q70's landing.
+- Q72, the architecture re-read before the release (booked 2026-09-24 with Q71, on Axel's ruling that one package fixes the architecture and a re-read checks it at the end): the diagrams regenerated and read, Q71's import measures run again, and what moved since fixed as its own step; queued after M4, before R2 (`plan.md:176`).
 - O32's launch recipes in the Ordo plan skills (booked 2026-09-23 at O32's landing): Ordo's plan 2.B, not plan 1. Blocked by something in flight: the Ordo session's release. O32 closes only after Axel pins the Ordo release that carries 2.B, and is ticked when the installed plan-orchestration skill runs `launch_note` and a step launched from a shell (`claude -p` or `codex exec`) has written its note; a builder dispatched as a native agent is never recorded. The hub's side is ready (2026-09-24, from Ordo's review): the writer's execute bit committed, `launch_note` the absolute path of `tools/oculus/bin/dispatch-note.mjs` in `.agents/plan.yaml`, and its lock wait 2 s, inside the 3 s Ordo bounds each note call at.
 
 ## Closed items (kept as the log of what was raised and how it ended)
