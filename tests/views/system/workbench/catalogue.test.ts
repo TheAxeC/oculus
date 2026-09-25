@@ -66,7 +66,7 @@ describe('the Views catalogue', () => {
         expect(focus).toMatch(/class="key[^"]*"[^>]*>v1</);
         const pages = body.slice(
             body.indexOf('data-view="pages"'),
-            body.indexOf('data-doc="HPC-UTwente-howto.md"')
+            body.indexOf('data-doc="docs/HPC-UTwente-howto.md"')
         );
         expect(pages).not.toMatch(/class="key/);
     });
@@ -74,9 +74,9 @@ describe('the Views catalogue', () => {
     it("lists a group's hub documents after its views, as buttons carrying their path", () => {
         // revert: src/lib/views/system/workbench/Catalogue.svelte:246 => dataDoc={entry.label}
         const body = draw();
-        expect(button(body, 'data-doc="HPC-UTwente-howto.md"')).toContain('HPC how-to');
+        expect(button(body, 'data-doc="docs/HPC-UTwente-howto.md"')).toContain('HPC how-to');
         expect(body.indexOf('data-view="history"')).toBeLessThan(
-            body.indexOf('data-doc="HPC-UTwente-howto.md"')
+            body.indexOf('data-doc="docs/HPC-UTwente-howto.md"')
         );
     });
 

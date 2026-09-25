@@ -32,7 +32,7 @@ function entry(path: string): { label: string; path: string; group: string } {
     return found;
 }
 
-const HPC = entry('HPC-UTwente-howto.md');
+const HPC = entry('docs/HPC-UTwente-howto.md');
 
 const HOWTO = '# The cluster\n\nSubmit every job with sbatch.\n';
 

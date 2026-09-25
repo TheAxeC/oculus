@@ -413,7 +413,7 @@ describe('the kinds the write endpoint learned in P1', () => {
             changed: [],
             refused: [{ field: 'status', reason: 'promoted is not a career host status' }]
         });
-        expect(readFileSync(join(into.hub, 'CAREER.yml'), 'utf8')).toBe(CAREER);
+        expect(readFileSync(join(into.hub, 'registries/career.yml'), 'utf8')).toBe(CAREER);
     });
 
     it('carries metalists through entry and new-entry writes', async () => {

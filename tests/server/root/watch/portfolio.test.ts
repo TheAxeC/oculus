@@ -235,7 +235,7 @@ describe('namedByConfig', () => {
             linkedin: 'site/_linkedin'
         },
         linkedinCadenceDays: 30,
-        career: 'CAREER.yml',
+        career: 'registries/career.yml',
         registries: {
             venues: 'registries/venues.yml',
             datasets: 'registries/data.yml',
@@ -292,7 +292,7 @@ describe('watchedDirectories', () => {
                 linkedin: 'theaxec.github.io/_linkedin'
             },
             linkedinCadenceDays: 30,
-            career: 'CAREER.yml',
+            career: 'registries/career.yml',
             registries: {
                 venues: 'registries/venues.yml',
                 datasets: 'registries/data.yml',
@@ -782,7 +782,7 @@ describe('watchPortfolio', () => {
         await quiet(started.got);
         // The file is watched on its own from the rebuild after it appears: a manifest change here
         // is what makes that rebuild, and the edit after it is what the watch has to see.
-        write(started.hub, 'CAREER.yml', 'title: Career strategy\nhosts: []\n');
+        write(started.hub, 'registries/career.yml', 'title: Career strategy\nhosts: []\n');
         const seen = started.got.length;
         write(
             started.hub,
@@ -792,7 +792,7 @@ describe('watchPortfolio', () => {
         await until(() => started.got.length > seen, 2000);
         const settled = await quiet(started.got);
 
-        write(started.hub, 'CAREER.yml', 'title: Career plan\nhosts: []\n');
+        write(started.hub, 'registries/career.yml', 'title: Career plan\nhosts: []\n');
         await until(() => started.got.length > settled, 2000);
         const portfolio = on(started.got, 'portfolio');
         const snapshot = portfolio[portfolio.length - 1].payload as Snapshot;

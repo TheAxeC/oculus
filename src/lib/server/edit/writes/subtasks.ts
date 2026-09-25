@@ -1,6 +1,6 @@
 // Layer 2, server. The subtask half of the write path, and the one career write beside it: a line
 // ticked, reopened, snoozed or taken out, a line added to a host that may have no block yet, and
-// one host of CAREER.yml moved along its pipeline.
+// one host of registries/career.yml moved along its pipeline.
 //
 // A subtask hangs under one of two hosts, which is the whole of the difference between the two
 // views that draw the block: one manifest by its id, or one entry of one collection. subtaskHost
@@ -159,7 +159,8 @@ export function writeSubtaskAdd(
 /** The career file and the host statuses, read out of the same merged config every reader reads. */
 export function careerRules(engine: string): { file: string; statuses: string[] } {
     const merged = loadConfig(engine).config;
-    const file = typeof merged.career_file === 'string' ? merged.career_file : 'CAREER.yml';
+    const file =
+        typeof merged.career_file === 'string' ? merged.career_file : 'registries/career.yml';
     const held = merged.career_host_status;
     return { file, statuses: isMap(held) ? Object.keys(held) : [] };
 }
@@ -177,7 +178,7 @@ export function subtaskValue(
     return { found: true, value: key in values ? values[key] : null };
 }
 
-/** The status one career host holds now, or nothing when CAREER.yml no longer names it. */
+/** The status one career host holds now, or nothing when registries/career.yml names it no more. */
 export function hostStatus(
     hub: string,
     name: string,
@@ -198,7 +199,8 @@ export function hostStatus(
 }
 
 /**
- * Set one host's status in CAREER.yml. A status outside the vocabulary is refused, never written.
+ * Set one host's status in registries/career.yml. A status outside the vocabulary is refused,
+ * never written.
  */
 export function writeHost(hub: string, name: string, status: string, engine: string): WriteOutcome {
     const rules = careerRules(engine);

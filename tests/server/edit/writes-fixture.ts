@@ -107,7 +107,7 @@ export function wider(): string {
     for (const [path, body] of [
         ['tasks/tasks.yml', TASKS],
         ['registries/venues.yml', VENUES],
-        ['CAREER.yml', CAREER]
+        ['registries/career.yml', CAREER]
     ]) {
         const file = join(root, path);
         expect(resolve(file).startsWith(resolve(root) + sep)).toBe(true);

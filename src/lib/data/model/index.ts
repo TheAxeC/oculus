@@ -40,7 +40,7 @@ export type RawPortfolio = {
     collections: Record<string, RawCollection>;
     /** What the four feed files hold, from sources/feeds.ts. */
     feeds: RawFeeds;
-    /** CAREER.yml as it was parsed, and null when the hub holds no such file. */
+    /** registries/career.yml as it was parsed, and null when the hub holds no such file. */
     career: Record<string, unknown> | null;
     /**
      * Which documents each project folder holds, by project id, from sources/docs.ts. It is here

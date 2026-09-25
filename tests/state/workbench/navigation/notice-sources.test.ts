@@ -338,7 +338,7 @@ describe('a write that does not land', () => {
     });
 
     it('is told once after the retry a stale token gets, not for the refusal that led to it', async () => {
-        // revert: src/lib/state/client/writes.svelte.ts:363 => const sent = await exchange(request, path); tell(sent, options); return tell(sent, options);
+        // revert: src/lib/state/client/writes.svelte.ts:364 => const sent = await exchange(request, path); tell(sent, options); return tell(sent, options);
         let calls = 0;
         vi.stubGlobal('fetch', () => {
             calls += 1;
@@ -353,7 +353,7 @@ describe('a write that does not land', () => {
         'is told as a write that got no answer when it is given up for want of one',
         { timeout: 5000 },
         async () => {
-            // revert: src/lib/state/client/writes.svelte.ts:418 => answered: true,
+            // revert: src/lib/state/client/writes.svelte.ts:419 => answered: true,
             vi.stubGlobal(
                 'fetch',
                 (_url: string, init: RequestInit) =>

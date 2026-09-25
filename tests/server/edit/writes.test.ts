@@ -270,9 +270,17 @@ describe('writing one career host', () => {
             found: true,
             changed: ['status'],
             refused: [],
-            records: [record(join(root, 'CAREER.yml'), 'Naesens', 'status', 'warm', 'candidate')]
+            records: [
+                record(
+                    join(root, 'registries/career.yml'),
+                    'Naesens',
+                    'status',
+                    'warm',
+                    'candidate'
+                )
+            ]
         });
-        expect(readFileSync(join(root, 'CAREER.yml'), 'utf8')).toBe(
+        expect(readFileSync(join(root, 'registries/career.yml'), 'utf8')).toBe(
             CAREER.replace('status: "warm"', 'status: "candidate"')
         );
         const bad = writeHost(root, 'Naesens', 'promoted', engineDir());

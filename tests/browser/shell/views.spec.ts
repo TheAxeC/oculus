@@ -136,7 +136,7 @@ test('a catalogue press on a hub document opens it on the page the reader came f
     await showRailPage(page, 'projects');
     await showRailPage(page, 'views');
     await page
-        .locator(`${SHOWN_VIEW} [data-catalogue] button[data-doc="RESEARCH-APPROACH.md"]`)
+        .locator(`${SHOWN_VIEW} [data-catalogue] button[data-doc="docs/RESEARCH-APPROACH.md"]`)
         .click();
     await expect(page.locator('nav [data-rail-page="projects"] button')).toHaveClass(/\bactive\b/);
     await expect(page.getByRole('tab', { name: 'Research approach' })).toBeVisible();

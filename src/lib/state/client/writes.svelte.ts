@@ -204,7 +204,8 @@ export function createWrites(
     }
 
     /**
-     * Move one host of CAREER.yml along the pipeline. A status outside the vocabulary is refused.
+     * Move one host of registries/career.yml along the pipeline. A status outside the vocabulary is
+     * refused.
      */
     async function writeHost(name: string, status: string): Promise<WriteAnswer> {
         return send({ kind: 'host', name, status });

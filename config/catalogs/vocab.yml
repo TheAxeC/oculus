@@ -192,7 +192,7 @@ career_host_status:
   dropped:   { icon: fail, label: "dropped",         color: "#9ca3af" }
 
 
-# Career score dimensions (Focus career card host chips): `field` = the CAREER.yml host key scored, `badge` = the terse chip letter, `label` = the hover tooltip. Author-specific (the host-scoring axes).
+# Career score dimensions (Focus career card host chips): `field` = the registries/career.yml host key scored, `badge` = the terse chip letter, `label` = the hover tooltip. Author-specific (the host-scoring axes).
 career_score_dims:
   - { field: proposal,     badge: "P",  label: "proposal" }
   - { field: ai_fl_clinic, badge: "AF", label: "AI+FL+clinic" }

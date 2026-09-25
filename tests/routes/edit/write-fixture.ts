@@ -63,7 +63,7 @@ export function target(): WriteTarget {
         ['tasks/tasks.yml', TASKS],
         ['registries/venues.yml', VENUES],
         ['registries/data.yml', DATA],
-        ['CAREER.yml', CAREER],
+        ['registries/career.yml', CAREER],
         ['feeds/literature-radar.yml', RADAR],
         ['feeds/position-leads.yml', LEADS]
     ]) {

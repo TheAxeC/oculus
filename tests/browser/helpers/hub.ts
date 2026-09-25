@@ -43,12 +43,14 @@ export function readHubYaml(relative: string): Record<string, unknown> {
 
 /**
  * Write a file into that hub, for a spec whose subject is a document no control of the page makes.
- * The path is resolved and asserted to be inside the temporary hub before anything is written.
+ * The path is resolved and asserted to be inside the temporary hub before anything is written,
+ * and a folder it names that the hub does not hold yet is made.
  */
 export function writeHubFile(relative: string, body: string): void {
     const root = hubDir();
     const full = resolve(join(root, relative));
     if (!full.startsWith(resolve(root) + sep)) throw new Error(`${full} is not inside ${root}`);
+    mkdirSync(dirname(full), { recursive: true });
     writeFileSync(full, body);
 }
 

@@ -154,6 +154,6 @@ map_label_mode: short        # Map tab nodes
 
 # Hub documents in the view catalogue: one entry inside its group, listed after the group's views, opening the `doc` view over api/docs. `path` is relative to the research hub, `group` is a key of `nav_groups` above, and `label` is the tab's words. A path with no file there draws the view's own missing line.
 docs:
-  - { label: "Research approach", path: RESEARCH-APPROACH.md, group: personal }
-  - { label: "Agent approach",    path: AGENT-APPROACH.md,    group: personal }
-  - { label: "HPC how-to",        path: HPC-UTwente-howto.md, group: system }
+  - { label: "Research approach", path: docs/RESEARCH-APPROACH.md, group: personal }
+  - { label: "Agent approach",    path: docs/AGENT-APPROACH.md,    group: personal }
+  - { label: "HPC how-to",        path: docs/HPC-UTwente-howto.md, group: system }

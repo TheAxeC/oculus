@@ -1,9 +1,9 @@
 // sources/career.ts and the career half of normalise and validate, over a synthetic hub written
 // under mkdtemp. Nothing here touches the real hub.
 
-import { writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join, resolve, sep } from 'node:path';
+import { dirname, join, resolve, sep } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
 import { CAREER_FILE, readCareer } from '../../../src/lib/data/sources/career.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
@@ -49,8 +49,9 @@ function hub(body: string | null): string {
     const dir = scratchDir('oculus-career-');
     expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     if (body !== null) {
-        const full = join(dir, 'CAREER.yml');
+        const full = join(dir, 'registries/career.yml');
         expect(resolve(full).startsWith(resolve(dir) + sep)).toBe(true);
+        mkdirSync(dirname(full), { recursive: true });
         writeFileSync(full, body);
     }
     return dir;
@@ -161,7 +162,7 @@ describe('validating a host status', () => {
             statuses: [],
             hostStatuses: ['awaiting', 'warm', 'candidate', 'drafted', 'dropped']
         },
-        careerFile: '/hub/CAREER.yml',
+        careerFile: '/hub/registries/career.yml',
         text: CATALOG
     };
 
@@ -172,7 +173,7 @@ describe('validating a host status', () => {
     });
 
     it('names the career file in the finding', () => {
-        expect(validate(portfolio(), rules)[0].file).toBe('/hub/CAREER.yml');
+        expect(validate(portfolio(), rules)[0].file).toBe('/hub/registries/career.yml');
     });
 
     it('leaves host statuses unchecked when the config holds no such vocabulary', () => {

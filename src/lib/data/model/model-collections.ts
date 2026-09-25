@@ -100,9 +100,9 @@ export type FeedData = {
 export type RawFeeds = Feeds;
 
 /**
- * One host of the CAREER.yml pipeline. `scores` holds the file's own scoring keys, every key of
- * the host that is not one of the five named above it, so that `career_score_dims` decides which
- * of them a chip is drawn for and this model names none of them.
+ * One host of the registries/career.yml pipeline. `scores` holds the file's own scoring keys,
+ * every key of the host that is not one of the five named above it, so that `career_score_dims`
+ * decides which of them a chip is drawn for and this model names none of them.
  */
 export type Host = {
     name: string;
@@ -116,7 +116,7 @@ export type Host = {
     note?: string;
 };
 
-/** The career strategy of CAREER.yml, as the panel at the foot of the Focus board reads it. */
+/** The career strategy of registries/career.yml, as the Focus board's foot panel reads it. */
 export type Career = {
     title: string;
     milestone?: string;

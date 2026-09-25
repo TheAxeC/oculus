@@ -60,7 +60,7 @@ function target(keep = 500): WriteTarget {
     for (const [path, body] of [
         ['tasks/tasks.yml', TASKS],
         ['registries/venues.yml', VENUES],
-        ['CAREER.yml', CAREER],
+        ['registries/career.yml', CAREER],
         ['feeds/literature-radar.yml', RADAR],
         ['feeds/position-leads.yml', LEADS]
     ]) {
@@ -290,7 +290,7 @@ describe('what each writer records', () => {
         const host = await written(into, { kind: 'host', name: 'Naesens', status: 'candidate' });
         expect(host[0]).toMatchObject({
             kind: 'host',
-            file: 'CAREER.yml',
+            file: 'registries/career.yml',
             key: 'Naesens',
             field: 'status',
             before: 'warm',

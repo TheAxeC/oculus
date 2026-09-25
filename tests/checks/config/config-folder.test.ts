@@ -414,9 +414,9 @@ describe("oculus's own config directory", () => {
         const groups = Object.keys(config.nav_groups as Record<string, unknown>);
         const docs = config.docs as { label: string; path: string; group: string }[];
         expect(docs.map((entry) => entry.path)).toEqual([
-            'RESEARCH-APPROACH.md',
-            'AGENT-APPROACH.md',
-            'HPC-UTwente-howto.md'
+            'docs/RESEARCH-APPROACH.md',
+            'docs/AGENT-APPROACH.md',
+            'docs/HPC-UTwente-howto.md'
         ]);
         for (const entry of docs) {
             expect(groups).toContain(entry.group);

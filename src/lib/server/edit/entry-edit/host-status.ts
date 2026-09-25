@@ -1,5 +1,5 @@
-// Layer 2, server. Host-status updates live here because the CAREER.yml host shape changes
-// independently of collection entries and subtasks.
+// Layer 2, server. Host-status updates live here because the registries/career.yml host shape
+// changes independently of collection entries and subtasks.
 
 import { isMap, isScalar, isSeq } from 'yaml';
 import type { Node, Pair, Scalar, YAMLMap } from 'yaml';
@@ -20,7 +20,8 @@ import {
 } from './lines.ts';
 
 /**
- * Set the `status` of one host of CAREER.yml, whose hosts are one-line flow maps under `hosts:`.
+ * Set the `status` of one host of registries/career.yml, whose hosts are one-line flow maps
+ * under `hosts:`.
  * The status is written in the bytes of the old one, or added to the flow map when the line has no
  * status yet; the vocabulary it is checked against is the caller's, not this module's.
  */

@@ -84,8 +84,8 @@ publications_file: theaxec.github.io/_data/publications.yml
 linkedin_dir: theaxec.github.io/_linkedin
 
 # Career tab: per-scheme `statement:` fields surface on the Funding tab; the strategy
-# (order of work | hosts | eligibility | dropped) lives in CAREER.yml and surfaces on the Focus "Career strategy" panel.
-career_file: CAREER.yml
+# (order of work | hosts | eligibility | dropped) lives in registries/career.yml and surfaces on the Focus "Career strategy" panel.
+career_file: registries/career.yml
 
 
 # Roots the server may serve local files from (api/file/<key>/<path>), one directory per key. A dir is

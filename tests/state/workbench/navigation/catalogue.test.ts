@@ -250,15 +250,15 @@ describe('the catalogue of the real config', () => {
     }
 
     it('lists Personal with the wall, the agenda and two documents, and the third in System', () => {
-        // revert: config/layout.yml:159 => - { label: "HPC how-to", path: HPC-UTwente-howto.md, group: personal }
+        // revert: config/layout.yml:159 => - { label: "HPC how-to", path: docs/HPC-UTwente-howto.md, group: personal }
         const personal = sections.find((found) => found.label === 'Personal');
         expect(personal?.items.map((view) => view.id)).toEqual(['memories', 'calendar']);
         expect(personal?.docs.map((entry) => entry.path)).toEqual([
-            'RESEARCH-APPROACH.md',
-            'AGENT-APPROACH.md'
+            'docs/RESEARCH-APPROACH.md',
+            'docs/AGENT-APPROACH.md'
         ]);
         const [system] = sections.filter((found) => found.label === 'System');
-        expect(system.docs.map((entry) => entry.path)).toEqual(['HPC-UTwente-howto.md']);
+        expect(system.docs.map((entry) => entry.path)).toEqual(['docs/HPC-UTwente-howto.md']);
         expect(system.items.map((view) => view.id)).toEqual([
             'status',
             'findings',
@@ -324,8 +324,8 @@ describe('the catalogue of the real config', () => {
         ]);
         expect(order.chords.v).toEqual([
             ...order.direct,
-            'doc:RESEARCH-APPROACH.md',
-            'doc:AGENT-APPROACH.md'
+            'doc:docs/RESEARCH-APPROACH.md',
+            'doc:docs/AGENT-APPROACH.md'
         ]);
         expect(order.chords.c).toEqual([
             'funding',
@@ -367,7 +367,7 @@ describe('the catalogue of the real config', () => {
             'catalogue',
             'settings',
             'pages',
-            'doc:HPC-UTwente-howto.md'
+            'doc:docs/HPC-UTwente-howto.md'
         ]);
         expect(Object.keys(order.chords).sort()).toEqual(['c', 'm', 's', 'v', 'y']);
     });

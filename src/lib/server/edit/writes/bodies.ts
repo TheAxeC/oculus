@@ -53,7 +53,7 @@ export type SubtaskAddWrite = {
     fields: Record<string, unknown>;
 };
 
-/** One host of CAREER.yml moved along the pipeline. */
+/** One host of registries/career.yml moved along the pipeline. */
 export type HostWrite = { kind: 'host'; name: string; status: string };
 
 /** One new entry of one collection, and one new idea folder. */

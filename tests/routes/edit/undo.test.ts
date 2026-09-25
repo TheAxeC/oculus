@@ -251,7 +251,7 @@ describe('taking a change back', () => {
     it('puts a career host and a subtask line back', async () => {
         const into = target();
         const host = await made(into, { kind: 'host', name: 'Naesens', status: 'candidate' });
-        const career = (): string => readFileSync(join(into.hub, 'CAREER.yml'), 'utf8');
+        const career = (): string => readFileSync(join(into.hub, 'registries/career.yml'), 'utf8');
         expect(career()).toContain('status: "candidate"');
         expect(
             (await handleWrite(request({ kind: 'undo', at: host.at }), TOKEN, into)).status
