@@ -2,12 +2,12 @@
 // bare name is written and the arguments it passes, the parameters a function declares, and the
 // aliases a text binds, a name given another name or one member of one.
 //
-// Everything here reads text that uncomment() already blanked, one function at a time, so a call
-// named in a comment is not a call and a name is looked up in the text it is written in. An alias
-// is only what the text itself says a name holds: a `const` given a name or a member of one, a
-// destructuring of a name, and a `let` or `var` given one and never assigned again. A name whose
-// value is decided by a branch, a later assignment or a call is no alias, since only a run says
-// which function it holds.
+// Everything here reads text whose comments code.mjs's codeOf() already blanked, one function at
+// a time, so a call named in a comment is not a call and a name is looked up in the text it is
+// written in. An alias is only what the text itself says a name holds: a `const` given a name or a
+// member of one, a destructuring of a name, and a `let` or `var` given one and never assigned
+// again. A name whose value is decided by a branch, a later assignment or a call is no alias, since
+// only a run says which function it holds.
 
 import { KEYWORDS } from './source.mjs';
 

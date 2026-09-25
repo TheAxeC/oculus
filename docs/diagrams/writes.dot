@@ -1,5 +1,5 @@
 digraph writes {
-    graph [bgcolor="transparent", rankdir=LR, fontname="Helvetica,Arial,sans-serif", fontsize=12, nodesep=0.2, ranksep=0.5];
+    graph [bgcolor="transparent", rankdir=LR, fontname="Helvetica,Arial,sans-serif", fontsize=12, nodesep=0.2, ranksep=0.8];
     node [shape=box, color="black", fontcolor="black", fontname="Helvetica,Arial,sans-serif", fontsize=10, height=0.3, margin="0.12,0.04"];
     edge [color="black", fontcolor="black", fontname="Helvetica,Arial,sans-serif", fontsize=8, arrowsize=0.6];
     subgraph "cluster_lib/server/core" {
@@ -68,7 +68,7 @@ markLinkedinPosted, writeFeedField"];
 writeEntry"];
     "lib/server/edit/writes.ts" -> "lib/server/edit/writes/manifest.ts" [tooltip="createIdea, writeManifest"];
     "lib/server/edit/writes.ts" -> "lib/server/edit/writes/rail.ts" [tooltip="writeRail"];
-    "lib/server/edit/writes.ts" -> "lib/server/edit/writes/subtasks.ts" [tooltip="writeHost, writeSubtask, writeSubtaskAdd"];
+    "lib/server/edit/writes.ts" -> "lib/server/edit/writes/subtasks.ts" [tailport=se, tooltip="writeHost, writeSubtask, writeSubtaskAdd"];
     "lib/server/edit/writes.ts" -> "lib/server/edit/writes/undo.ts" [tooltip="undoChange"];
     "lib/server/edit/writes.ts" -> "lib/server/files/fs/bookmarks.ts" [tooltip="defaultBookmarksPath"];
     "lib/server/edit/writes.ts" -> "lib/server/sessions/overrides.ts" [tooltip="setHidden, setOverride"];

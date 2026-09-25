@@ -1,8 +1,8 @@
 // Layer 4, tool. What the diagram readers of bin/diagrams/ share: the source tree read into memory,
-// the text with its comments blanked for the channel and write readers, the layer rows and folder
-// order the checks declare, an import specifier resolved to a module, and the pieces of Graphviz
-// text every diagram is written with (a quoted id, the header, a cluster, the node of something a
-// reader could not follow). A module's imports are read by imports.mjs, the reader the checks call.
+// the layer rows and folder order the checks declare, an import specifier resolved to a module,
+// and the pieces of Graphviz text every diagram is written with (a quoted id, the header, a
+// cluster, the node of something a reader could not follow). A module's imports are read by
+// imports.mjs, the reader the checks call, and its code apart from its comments by code.mjs.
 
 import { readFileSync, readdirSync } from 'node:fs';
 import { join, posix } from 'node:path';
@@ -91,17 +91,6 @@ export function readOrder(text) {
     return order;
 }
 
-/**
- * The text with its comments blanked, so a call named in prose is not read as a call. A `//` after
- * a colon or inside a quote is left, which keeps a URL in a string whole.
- */
-export function uncomment(/** @type {string} */ text) {
-    return text
-        .replace(/\/\*[\s\S]*?\*\//g, (block) => block.replace(/[^\n]/g, ' '))
-        .replace(/(^|[^:'"`\\])\/\/[^\n]*/g, '$1')
-        .replace(/<!--[\s\S]*?-->/g, (block) => block.replace(/[^\n]/g, ' '));
-}
-
 /** The src-relative path a specifier of a module under src names, or null for a package. */
 export function resolveSpec(/** @type {string} */ from, /** @type {string} */ spec) {
     if (spec.startsWith('$lib/')) return `lib/${spec.slice('$lib/'.length)}`;
@@ -118,7 +107,7 @@ export function moduleFile(/** @type {Sources} */ sources, /** @type {string} */
     return moduleAt(path, (one) => sources.has(one));
 }
 
-/** The line an index falls on, from 1; uncomment() keeps every line break of the source. */
+/** The line an index falls on, from 1; codeOf() keeps every line break of the source. */
 export function lineOf(/** @type {string} */ text, /** @type {number} */ index) {
     return text.slice(0, index).split('\n').length;
 }
@@ -156,11 +145,18 @@ export function quote(text) {
     return `"${text.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
 }
 
-/** The header every diagram shares, around its own layout: no background, one colour, one font. */
-export function header(/** @type {string} */ name, /** @type {string} */ layout) {
+/**
+ * The header every diagram shares, around its own layout and rank separation (in inches): no
+ * background, one colour, one font.
+ */
+export function header(
+    /** @type {string} */ name,
+    /** @type {string} */ layout,
+    /** @type {number} */ ranksep = 0.5
+) {
     return [
         `digraph ${name} {`,
-        `    graph [bgcolor="transparent", ${layout}, fontname="${FONT}", fontsize=12, nodesep=0.2, ranksep=0.5];`,
+        `    graph [bgcolor="transparent", ${layout}, fontname="${FONT}", fontsize=12, nodesep=0.2, ranksep=${ranksep}];`,
         `    node [shape=box, color="black", fontcolor="black", fontname="${FONT}", fontsize=10, height=0.3, margin="0.12,0.04"];`,
         `    edge [color="black", fontcolor="black", fontname="${FONT}", fontsize=8, arrowsize=0.6];`
     ];

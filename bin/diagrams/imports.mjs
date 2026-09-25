@@ -88,7 +88,7 @@ function kindOf(/** @type {string} */ name) {
 }
 
 /** A TypeScript parse of a script, with its parent links set so a node can be placed. */
-function parsed(/** @type {string} */ name, /** @type {string} */ code) {
+export function parsed(/** @type {string} */ name, /** @type {string} */ code) {
     return ts.createSourceFile(name, code, ts.ScriptTarget.Latest, true, kindOf(name));
 }
 
@@ -212,7 +212,7 @@ function scriptImports(name, code, text, offset) {
 }
 
 /** A component's parse, with the offsets of its two scripts' code. */
-function component(/** @type {string} */ text) {
+export function component(/** @type {string} */ text) {
     const tree = parse(text, { modern: true });
     const scripts = [tree.instance, tree.module].filter((one) => one !== null && one !== undefined);
     return { tree, scripts };

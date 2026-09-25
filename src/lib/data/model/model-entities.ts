@@ -669,11 +669,3 @@ export type Funding = {
     projectIds: Id[];
     pillarIds: Id[];
 };
-
-/**
- * One entry of one collection, as data/snapshot/normalise.ts fills it from a RawEntry. `id` is the
- * entry's `key` when the YAML had one and its `title` otherwise, so it is unique inside its
- * collection and nowhere wider. `fields` holds every key the YAML had, `title` and `key` included,
- * so a view can render a collection from its file's own `schema` without the model naming each
- * field.
- */

@@ -18,7 +18,7 @@
 
 import { posix } from 'node:path';
 import { importsOf as readImports } from './imports.mjs';
-import { labelledEdge } from './labels.mjs';
+import { arrowsAlong, labelledEdge } from './labels.mjs';
 import {
     BARE,
     aliasesIn,
@@ -29,6 +29,7 @@ import {
     parametersOf,
     unalias
 } from './calls.mjs';
+import { codeOf } from './code.mjs';
 import {
     UNPLACED,
     cluster,
@@ -37,7 +38,6 @@ import {
     quote,
     resolveSpec,
     sorted,
-    uncomment,
     unfollowed,
     unfollowedAt
 } from './source.mjs';
@@ -57,8 +57,8 @@ const FS_WRITE = /^(?:appendFile|copyFile|mkdir|rename|rm|unlink|writeFile)(?:Sy
  * @typedef {{ names: Map<string, Origin>, spaces: Map<string, string>, fs: Set<string> }} Imports
  *     A module's value imports by local name, its namespace imports, and its node:fs names.
  * @typedef {{ text: string, decls: Map<string, string>, aliases: Map<string, string>,
- *     imports: Imports }} Module One module as the trace reads it: its uncommented text, its
- *     top-level declarations, the ones of them that are aliases, and its imports.
+ *     imports: Imports }} Module One module as the trace reads it: its text as codeOf() gives
+ *     it, its top-level declarations, the ones of them that are aliases, and its imports.
  */
 
 // ---- The write chain ---------------------------------------------------------------------------
@@ -156,20 +156,22 @@ const METHOD = /(?<![\w$.])([\w$]+)\.([\w$]+)\s*\(/g;
  * refusal of one of them calls; a module the trace reaches that is none of these is left out, with
  * its edges. A call in a condition that answers 4xx is a refusal, drawn dashed; an edge to the disk
  * is labelled with its node:fs calls; every other edge's tooltip, which renderSvg() makes its
- * title, names the functions it calls.
+ * title, names the functions it calls. A plain arrow `ports` names (`from->to`) leaves its module
+ * by the tail port given, which writesDrawn() chooses.
  *
  * @param {Sources} sources
  * @param {string} [route]
+ * @param {Map<string, string>} [ports]
  * @returns {string}
  */
-export function writesDot(sources, route = WRITE_ROUTE) {
+export function writesDot(sources, route = WRITE_ROUTE, ports = new Map()) {
     if (!sources.has(route)) throw new Error(`the write route ${route} is not in the source`);
     /** @type {Map<string, Module>} */
     const modules = new Map();
     const read = (/** @type {string} */ path) => {
         let held = modules.get(path);
         if (held === undefined) {
-            const text = uncomment(sources.get(path) ?? '');
+            const text = codeOf(path, sources.get(path) ?? '');
             const decls = declarations(text);
             const aliases = new Map();
             for (const [name, declaration] of decls) {
@@ -401,7 +403,7 @@ export function writesDot(sources, route = WRITE_ROUTE) {
         const folder = posix.dirname(path);
         folders.set(folder, [...(folders.get(folder) ?? []), path]);
     }
-    const lines = header('writes', 'rankdir=LR');
+    const lines = header('writes', 'rankdir=LR', RANKSEP);
     for (const folder of sorted(folders.keys())) {
         const nodes = sorted(folders.get(folder) ?? []).map(
             (path) => `${quote(path)} [label=${quote(posix.basename(path))}];`
@@ -422,12 +424,60 @@ export function writesDot(sources, route = WRITE_ROUTE) {
         } else if (shown) {
             lines.push(...labelledEdge(from, to, names, style, kind));
         } else {
-            const attrs = [`tooltip=${quote(names)}`, style].filter((one) => one !== '');
+            const port = ports.get(`${from}->${to}`);
+            const tail = port === undefined ? '' : `tailport=${port}`;
+            const attrs = [tail, `tooltip=${quote(names)}`, style].filter((one) => one !== '');
             lines.push(`    ${quote(from)} -> ${quote(to)} [${attrs.join(', ')}];`);
         }
     }
     lines.push('}', '');
     return lines.join('\n');
+}
+
+/**
+ * The rank separation of the write diagram, in inches: wider than the other diagrams' 0.5, so the
+ * calls from one module into a folder several ranks on have room to part before they reach it.
+ */
+const RANKSEP = 0.8;
+
+/**
+ * The tail ports writesDrawn() tries, in order, for a plain arrow that runs along another arrow of
+ * its module: the sides beside the east side a left-to-right arrow leaves by.
+ */
+const PORTS = ['se', 's', 'ne', 'n'];
+
+/**
+ * The write diagram drawn, with no two plain arrows of one module running along each other where
+ * a tail port can part them: while arrowsAlong() names such a pair, the later arrow of the pair (by
+ * name) is given the next tail port of PORTS and the diagram is drawn again. It stops when no such
+ * pair is left or the arrow has tried every port, so what it cannot part stays for the check to
+ * name. Two arrows from one module leave it at one point, and when their heads lie in one
+ * direction the router lays them together for as long as they head that way.
+ *
+ * @param {Sources} sources
+ * @param {(dot: string) => string} draw The renderer, DOT to SVG.
+ * @param {string} [route]
+ * @returns {{ dot: string, svg: string }}
+ */
+export function writesDrawn(sources, draw, route = WRITE_ROUTE) {
+    /** @type {Map<string, string>} */
+    const ports = new Map();
+    for (;;) {
+        const dot = writesDot(sources, route, ports);
+        const svg = draw(dot);
+        const pair = arrowsAlong(svg)
+            .map((line) => /^(.*) along (.*) for \d+$/.exec(line)?.slice(1) ?? [])
+            .find(([one, other]) => {
+                const plain = [one, other].every(
+                    (arrow) => arrow !== undefined && !arrow.includes(' to ')
+                );
+                return plain && one.split('->')[0] === other.split('->')[0];
+            });
+        const next =
+            pair === undefined ? PORTS.length : PORTS.indexOf(ports.get(pair[1]) ?? '') + 1;
+        if (pair === undefined || next >= PORTS.length) return { dot, svg };
+        ports.set(pair[1], PORTS[next]);
+    }
 }
 
 /**

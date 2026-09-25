@@ -154,3 +154,104 @@ The channel diagram carries 178 pairs. The brief's test does not cover it, and I
 - **Taller drawings:** the layer diagrams are about 1.3 to 2.3 times as tall as before (views 1435 pt).
 - **Close but under the measure:** arrows converging on `views/shared` and `server/core` run close together without dropping under 1.5 pt, so the measure does not name them. At 3 pt, `layer-state` has 3 pairs.
 - **The red case has no revert:** it will need a revert directive once it passes.
+
+## Repair round 1, the builder's reply
+
+Everything in the round is done. The node suite is fully green and the write diagram now has no pair of arrows running along each other.
+
+## Per item
+
+**1. Write diagram: the pair is cleared by a rule in the write drawing.**
+- `writesDrawn(sources, draw, route)` at `bin/diagrams/writes.mjs:~437-500` draws the diagram and runs `arrowsAlong()` over it. While that names two plain arrows from one module, the later arrow of the pair (by name) gets the next tail port from `PORTS = ['se', 's', 'ne', 'n']` and the diagram is drawn again. It stops when no such pair is left or that arrow has tried every port, so anything it cannot part stays for the check to name.
+- `writesDot()` takes a `ports` map (`from->to`) and writes `tailport=` on those plain arrows (`writes.mjs:427-429`).
+- The write diagram is laid out at `RANKSEP = 0.8`. `header()` in `source.mjs:~150-162` has a new `ranksep` argument whose default of 0.5 keeps every other diagram's text as it was.
+- `generate()` draws the write diagram through `writesDrawn()` (`diagrams.mjs:~140-147`).
+- Graphviz writes the port into the edge title (`a:se->b`). `renderSvg()` now strips it (`diagrams.mjs:119`), so the hover title still names the two modules only.
+- Today the rule gives `tailport=se` to one arrow, `writes.ts -> writes/subtasks.ts` (`docs/diagrams/writes.dot:71`). The write diagram measures 0 pairs and 0 labels across, at 1216x512 pt; I looked at it rasterised.
+- **Cases:** the write case in `readable.test.ts` is green and now carries `// revert: bin/diagrams/writes.mjs:428 => const tail = '';`, which turns it red. A new case, "names the two modules alone", checks the port stripping and is red under `diagrams.mjs:119 => delete`.
+
+**2. A JSDoc that ends a script is now blanked.**
+- `code.mjs:~42-44` adds `isJSDoc()`. Line 51 skips JSDoc nodes, and line 53 treats a token as a leaf when every child it has is a JSDoc node (`children.every(isJSDoc)`). The end-of-file token is therefore a leaf, and its leading JSDoc is blanked.
+- The comment at `code.mjs:34-39` is corrected to say this.
+- The reviewer's probe, `"const a = 1;\n/** hub.publish('x', y) */\n"`, now comes back as the code line plus 26 spaces. It is the case "blank a JSDoc that ends a script", red under `code.mjs:53 => if (children.length === 0) {`.
+
+**3. Cases for the style-block blanking and the JSDoc skip.**
+- "blank the style block of a component" is red under `code.mjs:117 => delete`.
+- "read no trivia inside a JSDoc, so the code after it on its line is kept" uses the probe `/** @param x // */ hub.publish('a', 1);`. Without the skip, the trailing-comment scan from inside the JSDoc blanks the publish call. It is red under `code.mjs:51 => delete`.
+
+**4. Each piece of a curve is now at most 0.5 pt.**
+- `polyline()` at `labels.mjs:~302-318` now uses `ceil(3 * longest control leg / PIECE)` pieces, since the curve's speed is at most three times its longest leg. The comments there and in `arrowsAlong()`'s doc (`labels.mjs:~386-388`) say this.
+- **Check:** a scratch copy of `polyline()` run over every path of the nine drawings gives `pieces 263085 over 0.5: 0 longest 0.5000`.
+- **Measures:** the before drawings still count 28, 29, 7, 3 and 41 pairs for server, state, ui, shell and views, 178 for channels and 1 for writes, the same as with the old cut.
+
+**5.** The `wordNode` re-export is removed from `bin/diagrams/diagrams.mjs:47`. The line is now `export { arrowsAlong, halves, labelledEdge, labelsAcross } from './labels.mjs';`.
+
+**6. Layer diagram look, and the counts moved to the middle of their arrows.**
+- **Before this round:** each count between two folders stood one rank below its own folder. `server/root` and `state/client` had 7 and 9 counts in one row, and the arrows then ran long curves to their targets.
+- **Can a count sit nearer the middle without breaking the measures:** yes, and it is done. `layerDot()` works out each folder's start rank (`graphs.mjs:~243-262`). `drop()` puts the count on the free rank under the middle folder row of the rows the arrow spans; where two rows are equally near the middle, it takes the upper one. The first half of the arrow gets `minlen=drop, weight=10` (`graphs.mjs:~273`).
+- **What you see now** (`layer-server` and `layer-views` rasterised):
+  - The counts of long arrows stand partway down their arrows. In `layer-server`, the `server/root -> server/core` count "7" is beside `server/files`, and the "8" to `server/sessions` is at the height of `server/edit`. The top row no longer holds a bank of counts.
+  - Short arrows keep their count just under the folder.
+- **What stays the same:** the layer box of another layer is still repeated per folder ("data" 11 times in `layer-server`). The drawings stay tall and narrow, with a free rank under each folder and one rank per arrow out of the layer: views is 289x1412 pt, server 392x1027 pt. The strands into `views/shared` and `server/core` still converge; they stay outside the 1.5 pt measure.
+- **Case:** "stands halfway along its arrow, under the folder row between its ends" uses four folders, with a importing d, and the count lies between b and c. It is red under `graphs.mjs:262 => const below = from;`.
+- **Measures after the round:**
+
+| Drawing | Pairs / labels across | Size (pt) | Bytes |
+|---|---|---|---|
+| layers | 0/0 | 405x560 | 21962 |
+| layer-data | 0/0 | 160x603 | 12625 |
+| layer-server | 0/0 | 392x1027 | 50736 |
+| layer-state | 0/0 | 397x1027 | 53282 |
+| layer-ui | 0/0 | 252x827 | 30090 |
+| layer-shell | 0/0 | 224x769 | 22915 |
+| layer-views | 0/0 | 289x1412 | 42471 |
+| channels | 178/0 | 509x1336 | 59381 (unchanged) |
+| writes | 0/0 | 1216x512 | 40926 |
+
+**Documents:** `DESIGN.md` says the count stands halfway between its two folders and describes the write diagram's port rule (`writesDrawn()`). `HELP.md` says the same in plain words: the count sits halfway between the two folders, and two arrows that would leave one module together leave from different sides.
+
+**Revert lines:** the revert directives in `diagrams.test.ts` and `readable.test.ts` were moved to the lines' new numbers. `revert-check` below proves every one.
+
+## Verification (verbatim)
+
+1. `npx vitest run --reporter=dot`: `Test Files  312 passed (312)`, `Tests  4899 passed (4899)`
+2. `npm run check`: `COMPLETED 1398 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS`
+3. `npm run build`: `build exit 0`
+4. `npm run format:check`: `All matched files use Prettier code style!`
+5. `npm run lint`: exit 0
+6. `LC_ALL=C grep -rna '[^ -~]' src tests bin DESIGN.md HELP.md`: printed nothing (exit 1)
+7. `sh bin/size-check.sh`: exit 0. `sh bin/folder-check.sh`: exit 0.
+8. `npm run diagrams` twice: `two runs identical`. `node --no-experimental-strip-types bin/diagrams/diagrams.mjs`: `node exit 0`, files `unchanged after node run`.
+9. `lsof -iTCP:8792 -sTCP:LISTEN` before: exit 1 (free). `npm run build`: exit 0. `npx playwright test`: `386 passed (7.7m)`. Port free after (exit 1).
+10. `node bin/revert-check.mjs tests/checks/diagrams/readable.test.ts tests/checks/diagrams/diagrams.test.ts`: `67 reverts, 0 unproven, 0 unchecked`
+11. Measures: see the table above.
+12. `ls -d $TMPDIR/oculus-* | wc -l`: 7015 at the start of the round's runs, 7015 after.
+
+No process I started is still running.
+
+## Files changed in the round (line counts)
+
+| File | Lines |
+|---|---|
+| `bin/diagrams/writes.mjs` | 513 |
+| `bin/diagrams/source.mjs` | 183 |
+| `bin/diagrams/diagrams.mjs` | 189 |
+| `bin/diagrams/code.mjs` | 122 |
+| `bin/diagrams/labels.mjs` | 448 |
+| `bin/diagrams/graphs.mjs` | 511 |
+| `tests/checks/diagrams/readable.test.ts` | 301 |
+| `tests/checks/diagrams/diagrams.test.ts` | 865 (revert line numbers only) |
+| `DESIGN.md` | 317 |
+| `HELP.md` | 240 |
+
+Also regenerated: the `docs/diagrams/layer-*.dot` and `.svg` files and `writes.dot` / `writes.svg`.
+
+## Judgement calls (reversible)
+
+- **Which arrow gets the port:** the later arrow of a pair by name, not the earlier one. Both clear today's pair.
+- **Port order:** `se`, `s`, `ne`, `n`.
+- **Write spacing:** `ranksep=0.8` applies to the write diagram only.
+- **Middle count on an even split:** where two free ranks are equally near the middle, the count takes the upper one.
+- **Port in hover titles:** the tail port is stripped from every edge title, so hover text is unchanged.
+
+The channel diagram's 178 pairs are unchanged and outside the brief. The reviewer recommends booking it as its own step.

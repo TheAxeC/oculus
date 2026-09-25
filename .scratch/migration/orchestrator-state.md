@@ -30,19 +30,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:
-- step: Q74
-  executor: agent
-  worker: claude:opus, native agent a1bc9cb13a3607a93 (session_id)
-  worktree: .agents/worktrees/Q74
-  base: f90268dc
-  launched: 2026-09-25 (after the preparation commit f90268dc)
-  report: agents/reviews/Q74-report.md
-  reviewer: claude:opus, native agent a62004c25fd37a682; report agents/reviews/Q74-refuter.md
-  builder_usage: 297,608 tokens, 109 tool uses, 36 min
-  landing: not-started
-  round: 1
-  round_1_from: 9b366a25 (the worktree's wip commit before round 1)
+dispatch: []   # nothing in flight; Q75 is next
 ```
 
 ## The standing demands (from Axel, in force)
@@ -96,7 +84,6 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)
 
 - Q72, the architecture re-read before the release (booked 2026-09-24 with Q71, on Axel's ruling that one package fixes the architecture and a re-read checks it at the end): the diagrams regenerated and read, Q71's import measures run again, and what moved since fixed as its own step; queued after M4, before R2 (`plan.md:176`).
-- Q74, the layer diagrams readable with every count clear, and `uncomment()` on the parsers (booked 2026-09-25 at Q73's landing, next after Q73, before S2).
 - Q75, the channels diagram readable (booked 2026-09-25 at Q74's review, after Q74, before S2).
 - O33, oculus extracted into its own GitHub repository (Axel, 2026-09-25), last in the queue after X2; Axel pushes.
 - O32's launch recipes in the Ordo plan skills (booked 2026-09-23 at O32's landing): Ordo's plan 2.B, not plan 1. Blocked by something in flight: the Ordo session's release. O32 closes only after Axel pins the Ordo release that carries 2.B, and is ticked when the installed plan-orchestration skill runs `launch_note` and a step launched from a shell (`claude -p` or `codex exec`) has written its note; a builder dispatched as a native agent is never recorded. The hub's side is ready (2026-09-24, from Ordo's review): the writer's execute bit committed, `launch_note` the absolute path of `tools/oculus/bin/dispatch-note.mjs` in `.agents/plan.yaml`, and its lock wait 2 s, inside the 3 s Ordo bounds each note call at.
@@ -286,6 +273,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-09-25. Q74 landed through /spec, /refute and /land, built by an Opus agent, one repair round, the run over the round refuted again and its small findings fixed at landing: each layer drawn as a column of its folders with every count inside the layer's box, halfway along its arrow, each folder's own dashed arrow into each other layer, no two arrows running along each other on any layer diagram, the overview or the writes diagram (`arrowsAlong()`, 40 pt within 1.5 pt, with a test), the write diagram parting a same-module pair by a tail port, and the channel and write readers blanking comments by the TypeScript and Svelte parsers. Next: Q75, the channels diagram, then S2.
 - 2026-09-25, outside the queue, on Axel's yes: the hub's three documents moved to `docs/` and `CAREER.yml` to `registries/career.yml` (commit 63f60f18), which changed oculus's `config/layout.yml` `docs:` paths, `config/sources.yml` `career_file:`, the defaults in `career.ts` and `subtasks.ts`, the tests that read those paths and the browser hub helper; checked on main with `npm test` (4884 passed), `npm run check`, lint, format, the browser suite (385 passed, the one failure a helper that made no folder, fixed and its 15 specs rerun: 140 passed).
 - 2026-09-25. Q73 landed through /spec, /refute and /land, built by an Opus agent, one repair round, the run over the round refuted again, its small findings fixed at landing and the layer diagrams' readability booked as Q74: `life` its own state folder again and `words` and the store shapes under `state/shared` with an inner order, one import reader on the TypeScript and Svelte parsers for the checks and the diagram tool (agreeing with TypeScript's own on 3,015 of 3,016 imports, the one the built handler read on purpose), `declare module` and reference directives to the tree refused, `BadgeClient` from the stores' Picks, the overview's entry and assets arrows, every count and call list drawn as a word node with an exact test that no label sits on another arrow, and `npm run diagrams` needing no type stripping. Next: Q74, then S2.
 - 2026-09-25. Q71 landed through /spec, /refute and /land, built by an Opus agent, one repair round and the round beyond the cap for acceptance item 2, each round refuted again, the last run's small findings fixed at landing and the rest booked as Q73: no runtime import cycle under `src` (a check names one), each layer's folders in a declared order checked over runtime and type imports and `declare module` blocks, the server's and the state's composition roots at the top of their layers and the shared modules at the foot (`server/core`, `state/stores`, `state/words`, `data/model/index.ts`), the view registry in state, what views computed over store data moved to state with tests, the host info on `locals.server`, and the diagrams an overview plus one per layer. Found at landing: main's `dispatches.test.ts` red from 2026-09-25 on fixed launch dates (7 of 27), fixed by the step. Next: Q73, then S2.
@@ -592,6 +580,9 @@ The plan.md lines shortened on 2026-09-25 (P1 the parity audit, S2, and Q67's St
 - Q73, builder claude:opus, a native background agent: first run 407,186 tokens, 172 tool uses, 4,230 s; repair round 578,434 tokens, 100 tool uses, 4,079 s; first report did not pass its bar (a hand lexer that still read comments as code, a reference form let through, a sampled label test that missed two crossings, a layout search that could fail on an unrelated import); fixes at landing 3 (the restored string, template and pattern case, a colon in an arrow's name, an arrowhead holding a label), with the revert lines into `labels.mjs` repointed; +6,030 -2,659 over 404 files, then +67 -3 over 3 at landing.
 - Q73, reviewers claude:opus read-only: the review through /refute 241,109 tokens, 78 tool uses, 2,925 s; the run over round 1 219,055 tokens, 57 tool uses, 1,416 s.
 - Q73 landing, orchestrator claude:opus (this session), `land/templates/usage.py` from Q71's landing (2026-09-25T13:21:34) to the booking: 101 messages, 67,080 output tokens, 584,964 cache-write tokens, 47,027,374 cache-read tokens, 214 fresh input tokens, 242 minutes; shared with the engram fold, the side-projects and D24 answers, and Q73's premise checks.
+- Q74, builder claude:opus, a native background agent: first run 297,608 tokens, 109 tool uses, 2,144 s; repair round 360,891 tokens, 46 tool uses, 2,155 s; first report did not pass its bar (the writes case red, a JSDoc at the end of a file read as code, a piece bound stated and not held); fixes at landing 4 (two cases over a stubbed drawing for the port rule, the DESIGN sentence on it, `Entry`'s stranded comment moved, the re-export given its reader), with one comment shortened; +3,150 -2,042 over 26 files, then +252 -11 over 7 at landing.
+- Q74, reviewers claude:opus read-only: the review through /refute 166,671 tokens, 43 tool uses, 1,135 s; the run over round 1 155,773 tokens, 43 tool uses, 1,249 s.
+- Q74 landing, orchestrator claude:opus (this session), `land/templates/usage.py` from Q73's landing (2026-09-25T17:24:12) to the booking: 94 messages, 54,194 output tokens, 735,565 cache-write tokens, 57,043,353 cache-read tokens, 200 fresh input tokens, 138 minutes; shared with the documents move and Q74's premise checks.
 - Q69, builder claude:opus, a native background agent: first run 518,005 tokens, 238 tool uses, 6,706 s (items 6 to 9 added while it ran); repair round 619,512 tokens, 96 tool uses, 5,416 s; one repair round; first report did not pass its bar (killed read as error, a notice matched by one id, the real launch shape unproven, the brief's clash on cross-module passes, the reused mark lost with the cache, five proof gaps); fixes at landing 9 (the stamp that never waits and the watcher's memory of it, the resumed subagent, notices in queued commands with the cache at 4, the kept-stamp case, the weak poll in system.spec, one JSDoc block each, an absence's reason, a comment's width, the Doc text); +2,751 -1,143 over 50 files at the cherry-pick, +290 -107 over 15 files at landing.
 - Q69, reviewers claude:opus read-only: the review through /refute 197,250 tokens, 55 tool uses, 2,246 s; the run over round 1 175,748 tokens, 53 tool uses, 2,919 s (it ran background shells its brief forbade).
 - Q69 landing, orchestrator claude:opus (this session), `land/templates/usage.py` from L6's landing (2026-09-24T18:03:27) to the booking: 208 messages, 137,619 output tokens, 260,862 cache-write tokens, 148,709,065 cache-read tokens, 426 fresh input tokens, 364 minutes; the window also holds the architecture read, Q71's widening, the bookmarks, and Ordo's launch-note fixes.

@@ -174,7 +174,7 @@ One line per package: the status mark, the id, the title, and where the rest is 
   - The text as booked, in full in `agents/briefs/Q70.md`.
 - ✅ Q71 the architecture made sound: no import cycle, each layer's folders in a checked order (type imports and augmentations too), what views computed over store data moved to state, an overview diagram plus one per layer (Axel 2026-09-24; brief `agents/briefs/Q71.md`; two repair rounds; reviews `agents/reviews/Q71-refuter.md`; landing `agents/reviews/Q71-landing.md`); landed 2026-09-25
 - ✅ Q73 what Q71 left, closed: `state/life` and `state/shared` (words and store shapes, an inner order), imports read by the TypeScript and Svelte parsers, `declare module` and reference directives refused, `BadgeClient` from Picks, the entry and assets arrows, counts drawn as word nodes (brief `agents/briefs/Q73.md`; one repair round; landing `agents/reviews/Q73-landing.md`); landed 2026-09-25
-- Q74 the layer diagrams readable with every count clear: a count between two folders of a layer drawn inside that layer's box, the counts into another layer not stacked beside it, no halves drawn on top of each other; and the channel and write readers' comment blanking (`uncomment()`) on the parsers (booked 2026-09-25 at Q73's landing; next; `agents/reviews/Q73-refuter.md`, Closed)
+- ✅ Q74 the layer diagrams readable: each count inside its layer's box halfway along its arrow, each folder's own arrow into another layer, no two arrows along each other on any layer diagram, the overview or the writes diagram; the channel and write readers on the parsers (brief `agents/briefs/Q74.md`; one repair round; landing `agents/reviews/Q74-landing.md`); landed 2026-09-25
 - Q75 the channels diagram readable: no two arrows running along each other (178 pairs under `arrowsAlong()`, a trunk up the state cluster and a fan into views), held by the same test as the other drawings (booked 2026-09-25 at Q74's review; after Q74; `agents/reviews/Q74-refuter.md`)
 - Q72 the architecture re-read before the release: the diagrams regenerated and read, the import measures of Q71 run again (cycles, folder order, the largest files and folders, the imports from views into state), and what moved since booked as its own fix (Axel 2026-09-24, with Q71).
 - O33 oculus extracted into its own GitHub repository, after X2 and last: what moves, what the hub keeps (its config, the ledger), and how the hub then runs it; Axel pushes (Axel 2026-09-25; Step 0 at dispatch)
@@ -247,7 +247,7 @@ One line per package: the status mark, the id, the title, and where the rest is 
 ## Could run in parallel
 
 - The feature stretch after R17, three in flight at all times, one dispatched at each landing (Axel 2026-09-14 17:50 and 2026-09-15 19:58; the steps that run alone and the order are in `orchestrator-state.md`, which holds this line whole)
-- The queue, in order: Q74; Q75; S2; X3; Q67; L4; Q66; Q35; D11 + D13 + D14; D23 + D15 + D17; D18 + D20 + D24; A1 + A2 + A3; M3 + E1; M4; then Q72, R2, O29, O30, X2, then O33 last.
+- The queue, in order: Q75; S2; X3; Q67; L4; Q66; Q35; D11 + D13 + D14; D23 + D15 + D17; D18 + D20 + D24; A1 + A2 + A3; M3 + E1; M4; then Q72, R2, O29, O30, X2, then O33 last.
 Independent of each other; two may run side by side under R9's rule when their briefs name disjoint paths and different views, else they run one at a time.
 - S1 with anything after R1.
 - O5 with O2 to O4.

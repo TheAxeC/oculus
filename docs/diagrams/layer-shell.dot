@@ -9,53 +9,71 @@ digraph layer_shell {
         "folder shell/status" [label="shell/status"];
         "folder shell/panes" [label="shell/panes"];
         "folder shell/keys" [label="shell/keys"];
+        "folder shell to folder shell/keys" [label="2", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder shell to folder shell/panes" [label="6", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder shell to folder shell/rail" [label="2", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder shell to folder shell/status" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder shell to layer state" [label="6", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder shell to layer ui" [label="2", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder shell/rail to layer state" [label="16", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder shell/rail to layer ui" [label="10", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder shell/status to layer state" [label="17", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder shell/status to layer ui" [label="16", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder shell/panes to layer state" [label="21", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder shell/panes to layer ui" [label="9", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder shell/keys to layer state" [label="8", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder shell/keys to layer ui" [label="2", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     }
-    "layer state" [label="state", style=dashed];
-    "layer ui" [label="ui", style=dashed];
-    "folder shell" -> "folder shell/rail" [style=invis, weight=10];
-    "folder shell/rail" -> "folder shell/status" [style=invis, weight=10];
-    "folder shell/status" -> "folder shell/panes" [style=invis, weight=10];
-    "folder shell/panes" -> "folder shell/keys" [style=invis, weight=10];
-    "folder shell to folder shell/keys" [label="2", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-    "folder shell" -> "folder shell to folder shell/keys" [arrowhead=none];
+    "layer state from folder shell" [label="state", style=dashed];
+    "layer ui from folder shell" [label="ui", style=dashed];
+    "layer state from folder shell/rail" [label="state", style=dashed];
+    "layer ui from folder shell/rail" [label="ui", style=dashed];
+    "layer state from folder shell/status" [label="state", style=dashed];
+    "layer ui from folder shell/status" [label="ui", style=dashed];
+    "layer state from folder shell/panes" [label="state", style=dashed];
+    "layer ui from folder shell/panes" [label="ui", style=dashed];
+    "layer state from folder shell/keys" [label="state", style=dashed];
+    "layer ui from folder shell/keys" [label="ui", style=dashed];
+    "folder shell" -> "folder shell/rail" [style=invis, weight=10, minlen=3];
+    "folder shell/rail" -> "folder shell/status" [style=invis, weight=10, minlen=3];
+    "folder shell/status" -> "folder shell/panes" [style=invis, weight=10, minlen=3];
+    "folder shell/panes" -> "folder shell/keys" [style=invis, weight=10, minlen=3];
+    "folder shell" -> "folder shell to folder shell/keys" [arrowhead=none, minlen=5, weight=10];
     "folder shell to folder shell/keys" -> "folder shell/keys" [];
-    "folder shell to folder shell/panes" [label="6", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-    "folder shell" -> "folder shell to folder shell/panes" [arrowhead=none];
+    "folder shell" -> "folder shell to folder shell/panes" [arrowhead=none, minlen=5, weight=10];
     "folder shell to folder shell/panes" -> "folder shell/panes" [];
-    "folder shell to folder shell/rail" [label="2", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-    "folder shell" -> "folder shell to folder shell/rail" [arrowhead=none];
+    "folder shell" -> "folder shell to folder shell/rail" [arrowhead=none, minlen=2, weight=10];
     "folder shell to folder shell/rail" -> "folder shell/rail" [];
-    "folder shell to folder shell/status" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-    "folder shell" -> "folder shell to folder shell/status" [arrowhead=none];
+    "folder shell" -> "folder shell to folder shell/status" [arrowhead=none, minlen=2, weight=10];
     "folder shell to folder shell/status" -> "folder shell/status" [];
-    "folder shell to layer state" [label="6", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-    "folder shell" -> "folder shell to layer state" [arrowhead=none, style=dashed, constraint=false];
-    "folder shell to layer state" -> "layer state" [style=dashed, constraint=false];
-    "folder shell to layer ui" [label="2", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-    "folder shell" -> "folder shell to layer ui" [arrowhead=none, style=dashed, constraint=false];
-    "folder shell to layer ui" -> "layer ui" [style=dashed, constraint=false];
-    "folder shell/keys to layer state" [label="8", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-    "folder shell/keys" -> "folder shell/keys to layer state" [arrowhead=none, style=dashed, constraint=false];
-    "folder shell/keys to layer state" -> "layer state" [style=dashed, constraint=false];
-    "folder shell/keys to layer ui" [label="2", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-    "folder shell/keys" -> "folder shell/keys to layer ui" [arrowhead=none, style=dashed, constraint=false];
-    "folder shell/keys to layer ui" -> "layer ui" [style=dashed, constraint=false];
-    "folder shell/panes to layer state" [label="21", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-    "folder shell/panes" -> "folder shell/panes to layer state" [arrowhead=none, style=dashed, constraint=false];
-    "folder shell/panes to layer state" -> "layer state" [style=dashed, constraint=false];
-    "folder shell/panes to layer ui" [label="9", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-    "folder shell/panes" -> "folder shell/panes to layer ui" [arrowhead=none, style=dashed, constraint=false];
-    "folder shell/panes to layer ui" -> "layer ui" [style=dashed, constraint=false];
-    "folder shell/rail to layer state" [label="16", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-    "folder shell/rail" -> "folder shell/rail to layer state" [arrowhead=none, style=dashed, constraint=false];
-    "folder shell/rail to layer state" -> "layer state" [style=dashed, constraint=false];
-    "folder shell/rail to layer ui" [label="10", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-    "folder shell/rail" -> "folder shell/rail to layer ui" [arrowhead=none, style=dashed, constraint=false];
-    "folder shell/rail to layer ui" -> "layer ui" [style=dashed, constraint=false];
-    "folder shell/status to layer state" [label="17", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-    "folder shell/status" -> "folder shell/status to layer state" [arrowhead=none, style=dashed, constraint=false];
-    "folder shell/status to layer state" -> "layer state" [style=dashed, constraint=false];
-    "folder shell/status to layer ui" [label="16", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-    "folder shell/status" -> "folder shell/status to layer ui" [arrowhead=none, style=dashed, constraint=false];
-    "folder shell/status to layer ui" -> "layer ui" [style=dashed, constraint=false];
+    "folder shell" -> "folder shell to layer state" [arrowhead=none, style=dashed];
+    "folder shell to layer state" -> "layer state from folder shell" [style=dashed];
+    { rank=same; "folder shell"; "folder shell to layer state"; "layer state from folder shell"; }
+    "folder shell" -> "folder shell to layer ui" [arrowhead=none, style=dashed, minlen=1, weight=10];
+    "folder shell to layer ui" -> "layer ui from folder shell" [style=dashed];
+    { rank=same; "folder shell to layer ui"; "layer ui from folder shell"; }
+    "folder shell/rail" -> "folder shell/rail to layer state" [arrowhead=none, style=dashed];
+    "folder shell/rail to layer state" -> "layer state from folder shell/rail" [style=dashed];
+    { rank=same; "folder shell/rail"; "folder shell/rail to layer state"; "layer state from folder shell/rail"; }
+    "folder shell/rail" -> "folder shell/rail to layer ui" [arrowhead=none, style=dashed, minlen=1, weight=10];
+    "folder shell/rail to layer ui" -> "layer ui from folder shell/rail" [style=dashed];
+    { rank=same; "folder shell/rail to layer ui"; "layer ui from folder shell/rail"; }
+    "folder shell/status" -> "folder shell/status to layer state" [arrowhead=none, style=dashed];
+    "folder shell/status to layer state" -> "layer state from folder shell/status" [style=dashed];
+    { rank=same; "folder shell/status"; "folder shell/status to layer state"; "layer state from folder shell/status"; }
+    "folder shell/status" -> "folder shell/status to layer ui" [arrowhead=none, style=dashed, minlen=1, weight=10];
+    "folder shell/status to layer ui" -> "layer ui from folder shell/status" [style=dashed];
+    { rank=same; "folder shell/status to layer ui"; "layer ui from folder shell/status"; }
+    "folder shell/panes" -> "folder shell/panes to layer state" [arrowhead=none, style=dashed];
+    "folder shell/panes to layer state" -> "layer state from folder shell/panes" [style=dashed];
+    { rank=same; "folder shell/panes"; "folder shell/panes to layer state"; "layer state from folder shell/panes"; }
+    "folder shell/panes" -> "folder shell/panes to layer ui" [arrowhead=none, style=dashed, minlen=1, weight=10];
+    "folder shell/panes to layer ui" -> "layer ui from folder shell/panes" [style=dashed];
+    { rank=same; "folder shell/panes to layer ui"; "layer ui from folder shell/panes"; }
+    "folder shell/keys" -> "folder shell/keys to layer state" [arrowhead=none, style=dashed];
+    "folder shell/keys to layer state" -> "layer state from folder shell/keys" [style=dashed];
+    { rank=same; "folder shell/keys"; "folder shell/keys to layer state"; "layer state from folder shell/keys"; }
+    "folder shell/keys" -> "folder shell/keys to layer ui" [arrowhead=none, style=dashed, minlen=1, weight=10];
+    "folder shell/keys to layer ui" -> "layer ui from folder shell/keys" [style=dashed];
+    { rank=same; "folder shell/keys to layer ui"; "layer ui from folder shell/keys"; }
 }

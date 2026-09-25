@@ -32,7 +32,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { channelsDot, layerDot, layersDot } from './graphs.mjs';
 import { BOUNDARIES, ORDERING, readLayers, readOrder, readSources } from './source.mjs';
-import { writesDot } from './writes.mjs';
+import { writesDrawn } from './writes.mjs';
 
 export { channelsDot, folderOf, layerDot, layersDot, placeOf } from './graphs.mjs';
 export {
@@ -41,12 +41,12 @@ export {
     readLayers,
     readOrder,
     readSources,
-    resolveSpec,
-    uncomment
+    resolveSpec
 } from './source.mjs';
-export { labelledEdge, labelsAcross } from './labels.mjs';
+export { codeOf } from './code.mjs';
+export { arrowsAlong, halves, labelledEdge, labelsAcross } from './labels.mjs';
 export { augmentationsOf, importsOf, moduleAt } from './imports.mjs';
-export { WRITE_ROUTE, declarations, writesDot } from './writes.mjs';
+export { WRITE_ROUTE, declarations, writesDot, writesDrawn } from './writes.mjs';
 
 /** The layers the folder order names, each drawn as its own diagram after the overview. */
 export const LAYER_NAMES = ['data', 'server', 'state', 'ui', 'shell', 'views'];
@@ -77,6 +77,8 @@ const STANDALONE =
  * there is no colour of its own anywhere and nothing opaque behind it. What Graphviz writes before
  * the `svg` element (the XML declaration, the doctype and a comment carrying its build date) is
  * dropped, so the bytes change only with the drawing and the file is one element a page can hold.
+ * The tail port Graphviz writes into an edge's title (`a:se->b`) is dropped from it, so the title
+ * names the two modules alone.
  *
  * Two things are added for a reader who meets the file outside oculus or points at an edge:
  *
@@ -114,13 +116,15 @@ async function drawer() {
                 (_, ends, words, drawn) =>
                     `<title>${ends}: ${words.replace(/&#10;/g, ', ')}</title>\n${drawn}`
             )
+            .replace(/(<title>[^<]*?):(?:n|ne|e|se|s|sw|w|nw)(?=&#45;&gt;)/g, '$1')
             .replace(/(stroke|fill)="black"/g, '$1="currentColor"')
             .replace(/<text /g, '<text fill="currentColor" ');
 }
 
 /**
- * Every diagram as the source gives it now. A layer of LAYER_NAMES the order file does not list is
- * an error, since its diagram would have no folders to draw.
+ * Every diagram as the source gives it now, the write diagram drawn by writesDrawn(), which parts
+ * the arrows of one module that would run along each other. A layer of LAYER_NAMES the order file
+ * does not list is an error, since its diagram would have no folders to draw.
  *
  * @param {string} engine The engine directory.
  * @returns {Promise<Diagram[]>}
@@ -137,9 +141,10 @@ export async function generate(engine) {
         dots.set(`layer-${layer}`, layerDot(sources, layers, layer, folders));
     }
     dots.set('channels', channelsDot(sources));
-    dots.set('writes', writesDot(sources));
     const draw = await drawer();
+    const writes = writesDrawn(sources, draw);
     return NAMES.map((name) => {
+        if (name === 'writes') return { name, ...writes };
         const dot = dots.get(name) ?? '';
         return { name, dot, svg: draw(dot) };
     });

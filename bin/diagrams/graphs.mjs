@@ -4,8 +4,9 @@
 // from the server module that publishes each to the client modules that read it.
 
 import { posix } from 'node:path';
+import { codeOf } from './code.mjs';
 import { importsOf } from './imports.mjs';
-import { labelledEdge } from './labels.mjs';
+import { halves, labelledEdge, wordNode } from './labels.mjs';
 import {
     UNPLACED,
     cluster,
@@ -14,7 +15,6 @@ import {
     quote,
     resolveSpec,
     sorted,
-    uncomment,
     unfollowed,
     unfollowedAt
 } from './source.mjs';
@@ -205,8 +205,17 @@ export function layersDot(sources, layers) {
 /**
  * One layer's diagram: its folders in the order tests/checks/imports/order.ts declares, top to
  * bottom, the imports between them, and for each folder one arrow to every other layer it reaches,
- * each arrow labelled with how many runtime imports it carries. The other layers are drawn outside
- * the layer's group, dashed, and their arrows leave the ranks to the order.
+ * each arrow labelled with how many runtime imports it carries.
+ *
+ * The count of an arrow between two folders is declared inside the layer's cluster, so the arrow
+ * stays inside the layer's box, and stands on the free rank under the folder row halfway between
+ * its two ends, so it reads at the middle of its arrow. Each folder takes one rank per arrow it
+ * sends out of the layer (at least one), and a free rank below them that only counts use. An arrow
+ * into another layer ends at a dashed box of that layer drawn for its folder alone, in a column of
+ * that layer's boxes to the right of the layer: the first beside the folder on its rank, each
+ * further one a rank lower, its count inside the layer's box beside the folder. No two folders'
+ * arrows meet at one box, so no two run along each other into it, and each count stands on its own
+ * folder's row.
  *
  * @param {Sources} sources
  * @param {string[]} layers
@@ -223,28 +232,65 @@ export function layerDot(sources, layers, layer, order) {
         return row === UNPLACED ? null : `layer ${row.split('/')[0]}`;
     };
     const { edges } = runtimeImports(sources, end);
-    const lines = header(`layer_${layer}`, 'rankdir=TB, newrank=true');
+    const place = (/** @type {string} */ key) => order.indexOf(key.split('\n')[0].slice(7));
+    const keys = sorted(edges.keys())
+        .filter((key) => key.startsWith('folder '))
+        .sort((a, b) => place(a) - place(b));
+    /** @type {Map<string, string[]>} Each folder's arrows into other layers, in drawing order. */
+    const outs = new Map();
+    for (const key of keys.filter((one) => one.split('\n')[1].startsWith('layer '))) {
+        const [from] = key.split('\n');
+        outs.set(from, [...(outs.get(from) ?? []), key]);
+    }
+    const rows = (/** @type {string} */ folder) => Math.max(1, outs.get(folder)?.length ?? 0);
+    /** @type {Map<string, number>} The rank each folder's row starts on, from the top. */
+    const starts = new Map();
+    for (let at = 0, rank = 0; at < order.length; at += 1) {
+        const folder = `folder ${order[at]}`;
+        starts.set(folder, rank);
+        rank += rows(folder) + 1;
+    }
+    /**
+     * How many ranks below its folder the count of an arrow between two folders stands: on the
+     * free rank under the middle folder row of the rows the arrow spans, the upper of the two where
+     * two are as near the middle, so the count sits halfway along its arrow; an arrow the order
+     * does not run downward keeps it under its own folder.
+     */
+    const drop = (/** @type {string} */ from, /** @type {string} */ to) => {
+        const [first, last] = [from, to].map((one) => order.indexOf(one.slice('folder '.length)));
+        const middle = `folder ${order[first + Math.floor((last - 1 - first) / 2)]}`;
+        const below = last > first ? middle : from;
+        return (starts.get(below) ?? 0) + rows(below) - (starts.get(from) ?? 0);
+    };
     const inside = order.map((folder) => `${quote(`folder ${folder}`)} [label=${quote(folder)}];`);
-    lines.push(...cluster(layer, layer, inside));
-    const reached = new Set();
-    for (const key of edges.keys()) {
+    const boxes = [];
+    const arrows = [];
+    for (const key of keys) {
         const [from, to] = key.split('\n');
-        if (from.startsWith('folder ') && to.startsWith('layer ')) reached.add(to);
+        const node = wordNode(from, to, String(edges.get(key)));
+        inside.push(node.line);
+        if (!to.startsWith('layer ')) {
+            arrows.push(...halves(from, node.id, to, '', `minlen=${drop(from, to)}, weight=10`));
+            continue;
+        }
+        const row = (outs.get(from) ?? []).indexOf(key);
+        const box = `${to} from ${from}`;
+        boxes.push(`    ${quote(box)} [label=${quote(to.slice('layer '.length))}, style=dashed];`);
+        const first = row === 0 ? '' : `minlen=${row}, weight=10`;
+        arrows.push(...halves(from, node.id, box, 'style=dashed', first));
+        const same = row === 0 ? [from, node.id, box] : [node.id, box];
+        arrows.push(`    { rank=same; ${same.map(quote).join('; ')}; }`);
     }
-    for (const node of sorted(reached)) {
-        lines.push(`    ${quote(node)} [label=${quote(node.slice(6))}, style=dashed];`);
-    }
+    const lines = header(`layer_${layer}`, 'rankdir=TB, newrank=true');
+    lines.push(...cluster(layer, layer, inside), ...boxes);
     for (let at = 1; at < order.length; at += 1) {
-        const [above, below] = [order[at - 1], order[at]].map((one) => quote(`folder ${one}`));
-        lines.push(`    ${above} -> ${below} [style=invis, weight=10];`);
+        const [above, below] = [order[at - 1], order[at]].map((one) => `folder ${one}`);
+        const gap = rows(above) + 1;
+        lines.push(
+            `    ${quote(above)} -> ${quote(below)} [style=invis, weight=10, minlen=${gap}];`
+        );
     }
-    for (const key of sorted(edges.keys())) {
-        const [from, to] = key.split('\n');
-        if (!from.startsWith('folder ')) continue;
-        const across = to.startsWith('layer ') ? 'style=dashed, constraint=false' : '';
-        lines.push(...labelledEdge(from, to, String(edges.get(key)), across));
-    }
-    lines.push('}', '');
+    lines.push(...arrows, '}', '');
     return lines.join('\n');
 }
 
@@ -403,7 +449,7 @@ export function channelsDot(sources) {
     /** @type {string[]} */
     const lost = [];
     for (const [path, raw] of sources) {
-        const text = uncomment(raw);
+        const text = codeOf(path, raw);
         if (path.startsWith('lib/server/')) {
             const named = namers(text);
             for (const match of text.matchAll(/\.publish\(\s*('[^']*'|\w+\([^)]*\)|[^,)]+)/g)) {
