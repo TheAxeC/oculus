@@ -8,7 +8,7 @@ Booked: 4 (Q72, Q73, O33, O32).
 
 ## NOT DONE
 
-Nothing of Q71's brief. The last review's findings that were too large for a fix at landing are booked as Q73, next in the queue: the `state/life` folder folded into `state/feeds`, the import reader's pattern crossing a comment, the `declare module` check blind to a lower module's empty interface filled from above and to augmentations across layers, `BadgeClient` restating its signatures, the overview's lost-import box and dropped `routes -> assets` arrow, one view fold left, the `/index` and `.js` rules of the checks untested, and the writes diagram drawn cut off at the Help view's width.
+Nothing of Q71's brief. The last review's findings that were too large for a fix at landing are booked as Q73, next in the queue: the `state/life` folder folded into `state/feeds`, the import reader's pattern crossing a comment, the `declare module` check blind to a lower module's empty interface filled from above and to augmentations across layers, `BadgeClient` restating its signatures, the overview's lost-import box and dropped `routes -> assets` arrow, one view fold left, the `/index` and `.js` rules of the checks untested, and the overview's `views -> ui` label crossed by an arrow.
 
 ## What landed
 
@@ -36,7 +36,7 @@ Verification on main after the fixes at landing, from `tools/oculus`:
 
 ## The look
 
-On the TEST page of the dev server on 8790, under vscode-dark-modern (Q71 changes no theme), the Help view: the manual renders with its nine diagrams (`[data-diagram]` count 9: layers, the six layer diagrams, channels, writes). Seen: the overview reads at the pane's width with its counts, the entry node and the dashed lost-import box (booked in Q73), and the `views -> ui` label crossed by an arrow (booked in Q73); `layer-state` reads with its folders top down and the dashed arrows to data; the writes diagram is wider than the pane and cut off at its right edge, a defect before this step too (booked in Q73). The page was put back on References.
+On the TEST page of the dev server on 8790, under vscode-dark-modern (Q71 changes no theme), the Help view: the manual renders with its nine diagrams (`[data-diagram]` count 9: layers, the six layer diagrams, channels, writes). Seen: the overview reads at the pane's width with its counts, the entry node and the dashed lost-import box (booked in Q73), and the `views -> ui` label crossed by an arrow (booked in Q73); `layer-state` reads with its folders top down and the dashed arrows to data; the writes diagram is wider than the pane and scrolls sideways (`overflow-x: auto` on `.diagram`). The page was put back on References.
 
 ## What was found
 
