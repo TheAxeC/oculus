@@ -5,7 +5,7 @@
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { t } from '$lib/state/words/text';
     import { clock } from '$lib/state/words/format';
-    import type { CalendarPayload } from '$lib/state/life/calendar';
+    import type { CalendarPayload } from '$lib/state/feeds/life/calendar';
     import { useState } from '$lib/state/client/use';
 
     /**

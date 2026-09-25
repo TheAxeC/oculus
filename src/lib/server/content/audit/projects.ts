@@ -8,7 +8,7 @@ import { join } from 'node:path';
 import { stringify } from 'yaml';
 import { localDate } from '../../../data/helpers/dates.ts';
 import { byKey } from '../../../data/helpers/guards.ts';
-import type { Project } from '../../../data/model.ts';
+import type { Project } from '../../../data/model/index.ts';
 import {
     printed,
     type AuditInput,

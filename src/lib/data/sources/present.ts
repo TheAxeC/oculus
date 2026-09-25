@@ -27,7 +27,7 @@ import type {
     PresentSlide,
     PresentSpec,
     PresentTag
-} from '../model.ts';
+} from '../model/index.ts';
 
 export { PRESENT_DOC };
 

@@ -1,6 +1,6 @@
 <script module lang="ts">
     // Layer 3, view registration. One board component owns the three portfolio board registrations.
-    import type { ViewRegistration } from '../../registry';
+    import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
 
     const boardRegistration = (id: string, order: number): ViewRegistration => ({
         id,
@@ -36,7 +36,7 @@
     // the same one.
 
     import Empty from '$lib/ui/frame/Empty.svelte';
-    import Glyph from '$lib/ui/controls/Glyph.svelte';
+    import Glyph from '$lib/ui/display/Glyph.svelte';
     import Menu from '$lib/ui/menu/Menu.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Search from '$lib/ui/controls/Search.svelte';
@@ -60,10 +60,10 @@
         type BoardItem,
         type BoardState
     } from '$lib/state/boards/board';
-    import { cardCursor } from '$lib/state/client/instance';
+    import { cardCursor } from '$lib/state/workbench/layout/instance';
     import { lookup, t } from '$lib/state/words/text';
     import { chipGlyphName, chipLabel, statusMarkTone } from '$lib/state/words/tones';
-    import type { ViewProps } from '../../registry';
+    import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 
     const {

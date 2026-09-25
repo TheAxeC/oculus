@@ -9,15 +9,19 @@
 // The three catalogs are not here. state/words/text.ts, state/words/tones.ts and
 // state/words/appearance.ts hold what the server last sent in module variables, are never written
 // after a push installs them, and are read by t(), toneOf() and themes() from every layer including
-// `ui/`, where there is no client object to read them from; state/client/generation.svelte.ts and
+// `ui/`, where there is no client object to read them from; state/words/generation.svelte.ts and
 // state/words/glyphmode.svelte.ts are the two runes that make those reads reactive and belong with
 // them for the same reason.
+//
+// This is the state layer's composition root: it imports every other state folder and no state
+// module imports it, which is why state/client heads the state layer's folder order. It names
+// nothing of `ui/` or `views/`: the view registry is a state module (state/workbench/navigation/
+// registry.ts), and the primitives' tooltip counter is made by the page root beside this object.
 
-import { createRegistry, type RegistryStore } from '../../views/registry.ts';
-import { createTipIds, type TipIds } from '../../ui/menu/tip-ids.ts';
+import { createRegistry, type RegistryStore } from '../workbench/navigation/registry.ts';
 import { createChanges, type ChangesStore } from '../sessions/changes.svelte.ts';
 import { createAudit, type AuditStore } from '../system/audit.svelte.ts';
-import { createCalendar, type CalendarStore } from '../life/calendar.svelte.ts';
+import { createCalendar, type CalendarStore } from '../feeds/life/calendar.svelte.ts';
 import { createClock, type ClockStore } from './clock.svelte.ts';
 import { createDeposit, type DepositStore } from '../system/deposit.svelte.ts';
 import { createDocs, type DocsStore } from '../system/docs.svelte.ts';
@@ -48,18 +52,18 @@ import {
 } from '../sources/fs.ts';
 import { createHpc, type HpcStore } from '../system/hpc.svelte.ts';
 import { createInbox, type InboxStore } from '../feeds/inbox.svelte.ts';
-import { tabsOf } from './instance.ts';
+import { tabsOf } from '../workbench/layout/instance.ts';
 import { createLatex, type LatexStore } from '../sessions/latex.svelte.ts';
 import { createLayout, type LayoutStore } from '../workbench/layout.svelte.ts';
 import { createManifestDraft, type ManifestDraftStore } from '../forms/manifest-draft.ts';
-import { createMemories, type MemoriesStore } from '../life/memories.svelte.ts';
+import { createMemories, type MemoriesStore } from '../feeds/life/memories.svelte.ts';
 import { createNotices, type NoticesStore } from '../workbench/navigation/notices.svelte.ts';
 import { createNoticeSources } from '../workbench/navigation/notice-sources.ts';
 import {
     createPaletteSource,
     type PaletteSourceStore
 } from '../workbench/palette-source.svelte.ts';
-import { createPresent, type PresentStore } from '../life/present.svelte.ts';
+import { createPresent, type PresentStore } from '../feeds/life/present.svelte.ts';
 import { configRail, railTyped } from '../workbench/navigation/rail.ts';
 import { createRailBadges, type RailBadgesStore } from '../workbench/rail-badges.svelte.ts';
 import { createRepositories, type RepositoriesStore } from '../sources/repositories.svelte.ts';
@@ -113,8 +117,6 @@ export type ClientState = {
     /** The notifications the status bar's bell counts and its centre lists. */
     notices: NoticesStore;
     registry: RegistryStore;
-    /** The tooltip ids of the page, which `ui/` reads through its own context. */
-    tipIds: TipIds;
 };
 
 /**
@@ -228,7 +230,6 @@ export function createClientState(): ClientState {
     entities.afterReceive(sources.heard);
     writes.onUnwritten(sources.unwritten);
     const registry = createRegistry(layout);
-    const tipIds = createTipIds();
     return {
         entities,
         writes,
@@ -264,7 +265,6 @@ export function createClientState(): ClientState {
         paletteSource,
         editorStatus,
         notices,
-        registry,
-        tipIds
+        registry
     };
 }

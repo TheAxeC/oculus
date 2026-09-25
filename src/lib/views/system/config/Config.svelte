@@ -1,6 +1,6 @@
 <script module lang="ts">
     // Layer 3, view registration. Config closes the System group.
-    import type { ViewRegistration } from '../../registry';
+    import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
 
     export const registration: ViewRegistration = {
         id: 'config',
@@ -34,11 +34,17 @@
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import { CATALOGS, configFiles, descriptionKey, isLocalFile, lineCount } from './files';
+    import {
+        CATALOGS,
+        configFiles,
+        fileLineCount,
+        isLocalFile
+    } from '$lib/state/system/config-files';
+    import { descriptionKey } from './files';
     import { ENGINE_ROOT } from '$lib/state/sources/fs';
     import { sourceTabState } from '$lib/state/sessions/source.svelte';
     import { lookup, t } from '$lib/state/words/text';
-    import type { ViewProps } from '../../registry';
+    import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 
     const {
@@ -98,7 +104,7 @@
                 {@const held = fileText(ENGINE_ROOT, name)}
                 <!-- The count is of the text the window holds: a file cut at the limit says so on
                      the line under the control, and what is drawn is its first part. -->
-                {@const lines = lineCount(held.text)}
+                {@const lines = fileLineCount(held.text)}
                 <Card id={name} cursor={false} title={name} level={3}>
                     {#snippet meta()}
                         {#if isLocalFile(name)}

@@ -59,7 +59,7 @@ export function twoAddForms(root: string): string[] {
 
 describe('an add form', () => {
     it('audits that no view draws a second one, which would type into its draft', () => {
-        // revert: src/lib/views/boards/collection/Collection.svelte:267 => <EntryForm {schema} onclose={() => {}} /><EntryForm
+        // revert: src/lib/views/boards/collection/Collection.svelte:256 => <EntryForm {schema} onclose={() => {}} /><EntryForm
         expect(twoAddForms(join(ENGINE, 'src', 'lib', 'views'))).toEqual([]);
         expect(twoAddForms(join(ENGINE, 'src', 'lib', 'shell'))).toEqual([]);
     });

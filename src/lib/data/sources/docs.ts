@@ -13,7 +13,7 @@ import { readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { parse } from 'yaml';
 import { findingText, type TextCatalog } from '../helpers/finding-text.ts';
-import type { DocPresence, Finding } from '../model.ts';
+import type { DocPresence, Finding } from '../model/index.ts';
 
 /** One Markdown document: its body, and the leading YAML block when it had one. */
 export type Doc = {

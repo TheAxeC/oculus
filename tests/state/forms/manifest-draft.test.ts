@@ -7,7 +7,7 @@
 // tests/browser/workbench/unsaved-forms.spec.ts.
 
 import { beforeEach, describe, expect, it } from 'vitest';
-import type { Project } from '../../../src/lib/data/model.ts';
+import type { Project } from '../../../src/lib/data/model/index.ts';
 import {
     createManifestDraft,
     editDiffers,

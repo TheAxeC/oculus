@@ -6,10 +6,10 @@
     // drawn dead.
 
     import { fileUrl } from '$lib/views/shared/links/file-url';
-    import { HUB_ROOT } from '$lib/state/boards/collection';
+    import { HUB_ROOT } from '$lib/state/sources/fs';
     import { t } from '$lib/state/words/text';
     import { tex } from '../markup';
-    import type { PresentSlide } from '$lib/state/life/present';
+    import type { PresentSlide } from '$lib/state/feeds/life/present';
 
     type Props = { slide: PresentSlide };
 

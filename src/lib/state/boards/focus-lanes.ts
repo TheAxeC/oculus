@@ -2,9 +2,8 @@
 // are derived from the supplied snapshot and config; the view resolves configured colours through
 // toneOf.
 
-import type { Entry, Id, Project, Snapshot } from '../../data/model.ts';
-import { isMap, byKey, text as str } from '../../data/helpers/guards.ts';
-import { numericSetting } from '../workbench/rail-badges.ts';
+import type { Entry, Id, Project, Snapshot } from '../../data/model/index.ts';
+import { isMap, byKey, numericSetting, text as str } from '../../data/helpers/guards.ts';
 
 /**
  * The manifest-lag attention line, with the four project links it draws and the remainder count.
@@ -182,4 +181,14 @@ function metaDeadline(entry: Entry): string {
         if (date !== '') return date;
     }
     return '';
+}
+
+/** How many items the band's stages hold together, which is what a lane's head counts. */
+export function stageItemCount(stages: BandStage[]): number {
+    return stages.reduce((sum, stage) => sum + stage.items.length, 0);
+}
+
+/** Whether the band holds any card at all: a grant at some stage, an application or a course. */
+export function bandHasCards(band: Band): boolean {
+    return band.funding.length + band.applications.length + band.education.length > 0;
 }

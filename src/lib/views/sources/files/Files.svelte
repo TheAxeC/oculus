@@ -1,7 +1,7 @@
 <script module lang="ts">
     // Layer 3, view registration. The file browser sits in the catalogue's Sources group, after the
     // collections the configuration names.
-    import type { ViewRegistration } from '../../registry';
+    import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
 
     export const registration: ViewRegistration = {
         id: 'files',
@@ -102,9 +102,17 @@
         type RowRef,
         type TreeRow
     } from '$lib/state/sources/fs';
-    import { noteId } from '$lib/state/life/notes';
+    import {
+        bookmarkAt,
+        bookmarkById,
+        currentWorkspace,
+        fixedRootKeys,
+        matchedNothing,
+        openFailures
+    } from '$lib/state/sources/fs-transport';
+    import { noteId } from '$lib/state/feeds/life/notes';
     import { t } from '$lib/state/words/text';
-    import type { ViewProps } from '../../registry';
+    import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 
     const {
@@ -142,9 +150,7 @@
     // Named `saved` rather than `state`: a variable called `state` in a component is read as the
     // store prefix of `$state`, which svelte-check refuses.
     const saved = $derived(workspaces());
-    const current = $derived(
-        saved.workspaces.find((one) => one.name === saved.current) ?? { name: '', roots: [] }
-    );
+    const current = $derived(currentWorkspace(saved));
     const view = $derived(filesViewOf(instanceState(instance.id)));
     /** What this tab's listings show beside the default: its two toggles. */
     const listed = $derived(shownOf(view));
@@ -162,14 +168,14 @@
             : rows
     );
     const crumbs = $derived(crumbsOf(view.selected));
-    const fixed = $derived(current.roots.filter((one) => one.fixed).map((one) => one.key));
+    const fixed = $derived(fixedRootKeys(current.roots));
     /** The root keys an ask to show a path is answered against, and null until they are read. */
     const rootKeys = $derived(
         saved.loading || saved.error !== '' ? null : current.roots.map((one) => one.key)
     );
 
     const marks = $derived(bookmarks());
-    const editedMark = $derived(marks.entries.find((one) => one.id === view.editing) ?? null);
+    const editedMark = $derived(bookmarkById(marks.entries, view.editing));
     /**
      * Whether the bookmark form is drawn. A form open over a bookmark waits for the bookmarks to be
      * read, which after a reload arrive after the record saying the form is open. Drawn before them
@@ -193,14 +199,7 @@
      * workspace no longer has, is neither fetched nor named.
      */
     const failures = $derived(
-        rows
-            .filter((row) => row.open)
-            .map((row) => ({
-                root: row.root,
-                path: row.path,
-                error: listing(row.root, row.path, listed).error
-            }))
-            .filter((one) => one.error !== '')
+        openFailures(rows, (root, path) => listing(root, path, listed).error)
     );
 
     /** Write part of what one instance remembers, keeping the rest of it as it was. */
@@ -257,15 +256,13 @@
      */
     async function bookmark(row: TreeRow): Promise<void> {
         const owner = instance.id;
-        const found = marks.entries.find(
-            (one) => one.fields.root === row.root && one.fields.path === row.path
-        );
+        const found = bookmarkAt(marks.entries, row.root, row.path);
         const label = markLabel(
             row,
             marks.entries.map((one) => one.title)
         );
         const answer =
-            found === undefined
+            found === null
                 ? await addBookmark({ label, root: row.root, path: row.path })
                 : await removeBookmark(found.id);
         const reason = answer.ok
@@ -480,7 +477,7 @@
                 oncollapse={(root: string) =>
                     patch({ expanded: collapseRoot(view.expanded, root) })}
             />
-            {#if filtering && shown.every((row) => row.depth === 0)}
+            {#if filtering && matchedNothing(shown)}
                 <p class="said">{t('files.filter_none')}</p>
             {/if}
         {/if}

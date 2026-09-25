@@ -7,11 +7,11 @@
 // The maps are installed the way the text catalog and the glyph vocabulary are: the server ships
 // them as the page's data at first load, and every later edit of config/catalogs/vocab.yml arrives
 // on the `config` channel. Every lookup is pure over what was last installed and reads the
-// configuration's generation, state/client/generation.svelte.ts, so a component calling one during
+// configuration's generation, state/words/generation.svelte.ts, so a component calling one during
 // its first render gets the page's data and draws again when a push replaces it.
 
 import { scalar } from '../../data/helpers/guards.ts';
-import { configGeneration } from '../client/generation.svelte.ts';
+import { configGeneration } from './generation.svelte.ts';
 
 /** The tone anything unknown gets: a hue every theme defines and nothing means. */
 export const UNKNOWN_TONE = 'grey';
@@ -202,4 +202,31 @@ export function chipLabel(chip: string): string {
 export function chipKeys(): string[] {
     configGeneration();
     return Object.keys(legend);
+}
+
+/**
+ * The hue a chip of the vocabulary wears: its project type's, and its status's where no type has
+ * one. The two maps cover different halves of the vocabulary, and taking both is what gives the
+ * gallery's row its spread of hues instead of a wall of grey.
+ */
+export function chipTone(key: string): string {
+    const type = typeTone(key);
+    return type === UNKNOWN_TONE ? statusTone(key) : type;
+}
+
+/**
+ * One row per hue the given chips wear, in the order the hues first occur: the hue, the first chip
+ * that wears it, and how many do.
+ */
+export function chipsByTone(
+    keys: readonly string[]
+): { tone: string; key: string; count: number }[] {
+    const byTone = new Map<string, { tone: string; key: string; count: number }>();
+    for (const key of keys) {
+        const tone = chipTone(key);
+        const held = byTone.get(tone);
+        if (held === undefined) byTone.set(tone, { tone, key, count: 1 });
+        else held.count += 1;
+    }
+    return [...byTone.values()];
 }

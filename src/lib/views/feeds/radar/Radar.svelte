@@ -1,6 +1,6 @@
 <script module lang="ts">
     // Layer 3, view registration. Lit Watch opens the feeds group.
-    import type { ViewRegistration } from '../../registry';
+    import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     export const registration: ViewRegistration = {
         id: 'radar',
         label: 'views.radar',
@@ -25,8 +25,8 @@
     import RadarIntro from './RadarIntro.svelte';
     import Reveal from '../../shared/card/Reveal.svelte';
     import {
-        bucketsOf,
-        isDismissed,
+        dismissedSplit,
+        filledBuckets,
         parseRadarState,
         radarBuckets,
         radarSearch,
@@ -35,10 +35,10 @@
     } from '$lib/state/feeds/radar';
     import { asText } from '$lib/state/forms/schema';
     import { t } from '$lib/state/words/text';
-    import { cardCursor } from '$lib/state/client/instance';
-    import { feedIdents } from '$lib/state/workbench/palette';
+    import { cardCursor } from '$lib/state/workbench/layout/instance';
+    import { feedIdents } from '$lib/state/feeds/idents';
     import { viewSourceFile } from '$lib/state/sessions/view-source';
-    import type { ViewProps } from '../../registry';
+    import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 
     const {
@@ -56,13 +56,12 @@
     const buckets = $derived(radarBuckets(config()?.config.radar_buckets));
     const projects = $derived(portfolio()?.entities.projects ?? {});
     const all = $derived(data?.entries ?? []);
-    const live = $derived(all.filter((entry) => !isDismissed(entry)));
-    const dismissed = $derived(all.filter(isDismissed));
+    const split = $derived(dismissedSplit(all));
+    const live = $derived(split.live);
+    const dismissed = $derived(split.dismissed);
     const searchedLive = $derived(radarSearch(live, held.search));
     const searchedDismissed = $derived(sortBucket(radarSearch(dismissed, held.search)));
-    const groups = $derived(
-        bucketsOf(searchedLive, buckets).filter((group) => group.entries.length > 0)
-    );
+    const groups = $derived(filledBuckets(searchedLive, buckets));
     const lastRun = $derived(data?.meta.last_run ?? '');
     const identOf = $derived(feedIdents('radar', data?.entries ?? []));
     /** The feed file this view is drawn from, offered once the feed says the file is there. */

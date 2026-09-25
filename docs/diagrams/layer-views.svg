@@ -1,0 +1,261 @@
+<svg width="555pt" height="689pt"
+ viewBox="0.00 0.00 555.00 689.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<style>svg { color: #333333; } @media (prefers-color-scheme: dark) { svg { color: #cccccc; background: #1e1e1e; } }</style>
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 685.4)">
+<title>layer_views</title>
+<g id="clust1" class="cluster">
+<title>cluster_views</title>
+<polygon fill="none" stroke="currentColor" points="8,-8 8,-619.4 212,-619.4 212,-8 8,-8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="110" y="-604.6" font-family="Helvetica,Arial,sans-serif" font-size="12.00">views</text>
+</g>
+<!-- folder views/academic -->
+<g id="node1" class="node">
+<title>folder views/academic</title>
+<polygon fill="none" stroke="currentColor" points="97.57,-566.6 16.43,-566.6 16.43,-545 97.57,-545 97.57,-566.6"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="57" y="-552.8" font-family="Helvetica,Arial,sans-serif" font-size="10.00">views/academic</text>
+</g>
+<!-- folder views/boards -->
+<g id="node2" class="node">
+<title>folder views/boards</title>
+<polygon fill="none" stroke="currentColor" points="92.02,-499.4 21.98,-499.4 21.98,-477.8 92.02,-477.8 92.02,-499.4"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="57" y="-485.6" font-family="Helvetica,Arial,sans-serif" font-size="10.00">views/boards</text>
+</g>
+<!-- folder views/academic&#45;&gt;folder views/boards -->
+<!-- folder views/shared -->
+<g id="node9" class="node">
+<title>folder views/shared</title>
+<polygon fill="none" stroke="currentColor" points="86.74,-37.6 17.26,-37.6 17.26,-16 86.74,-16 86.74,-37.6"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="52" y="-23.8" font-family="Helvetica,Arial,sans-serif" font-size="10.00">views/shared</text>
+</g>
+<!-- folder views/academic&#45;&gt;folder views/shared -->
+<g id="edge9" class="edge">
+<title>folder views/academic&#45;&gt;folder views/shared</title>
+<path fill="none" stroke="currentColor" d="M97.98,-553.05C140.23,-548.78 200,-534.76 200,-489.6 200,-489.6 200,-489.6 200,-319.6 200,-262.43 203,-248.17 203,-191 203,-191 203,-191 203,-93 203,-45.39 138.96,-32.14 94.29,-28.69"/>
+<polygon fill="currentColor" stroke="currentColor" points="94.66,-26.61 88.53,-28.3 94.38,-30.8 94.66,-26.61"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="202.65" y="-284.6" font-family="Helvetica,Arial,sans-serif" font-size="8.00">2</text>
+</g>
+<!-- layer state -->
+<g id="node10" class="node">
+<title>layer state</title>
+<polygon fill="none" stroke="currentColor" stroke-dasharray="5,2" points="446,-566.6 392,-566.6 392,-545 446,-545 446,-566.6"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="419" y="-552.8" font-family="Helvetica,Arial,sans-serif" font-size="10.00">state</text>
+</g>
+<!-- folder views/academic&#45;&gt;layer state -->
+<g id="edge10" class="edge">
+<title>folder views/academic&#45;&gt;layer state</title>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M97.82,-555.8C169.57,-555.8 317.05,-555.8 384.26,-555.8"/>
+<polygon fill="currentColor" stroke="currentColor" points="384.15,-557.9 390.15,-555.8 384.15,-553.7 384.15,-557.9"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="244.78" y="-561.2" font-family="Helvetica,Arial,sans-serif" font-size="8.00">18</text>
+</g>
+<!-- layer ui -->
+<g id="node11" class="node">
+<title>layer ui</title>
+<polygon fill="none" stroke="currentColor" stroke-dasharray="5,2" points="547,-566.6 493,-566.6 493,-545 547,-545 547,-566.6"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="520" y="-552.8" font-family="Helvetica,Arial,sans-serif" font-size="10.00">ui</text>
+</g>
+<!-- folder views/academic&#45;&gt;layer ui -->
+<g id="edge11" class="edge">
+<title>folder views/academic&#45;&gt;layer ui</title>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M79.74,-566.94C141.75,-595.72 318.17,-666.8 453,-615.47 475.29,-606.98 494.89,-587.3 507.04,-572.85"/>
+<polygon fill="currentColor" stroke="currentColor" points="508.66,-574.18 510.82,-568.2 505.4,-571.53 508.66,-574.18"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="274" y="-629.8" font-family="Helvetica,Arial,sans-serif" font-size="8.00">18</text>
+</g>
+<!-- folder views/feeds -->
+<g id="node3" class="node">
+<title>folder views/feeds</title>
+<polygon fill="none" stroke="currentColor" points="89.24,-432.2 24.76,-432.2 24.76,-410.6 89.24,-410.6 89.24,-432.2"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="57" y="-418.4" font-family="Helvetica,Arial,sans-serif" font-size="10.00">views/feeds</text>
+</g>
+<!-- folder views/boards&#45;&gt;folder views/feeds -->
+<!-- folder views/boards&#45;&gt;folder views/shared -->
+<g id="edge12" class="edge">
+<title>folder views/boards&#45;&gt;folder views/shared</title>
+<path fill="none" stroke="currentColor" d="M92.45,-482.49C125.91,-475.43 171,-459.11 171,-422.4 171,-422.4 171,-422.4 171,-319.6 171,-262 187,-248.6 187,-191 187,-191 187,-191 187,-93 187,-51.22 133.93,-36.2 94.34,-30.81"/>
+<polygon fill="currentColor" stroke="currentColor" points="94.83,-28.75 88.62,-30.1 94.31,-32.92 94.83,-28.75"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="184.33" y="-251" font-family="Helvetica,Arial,sans-serif" font-size="8.00">16</text>
+</g>
+<!-- folder views/boards&#45;&gt;layer state -->
+<g id="edge13" class="edge">
+<title>folder views/boards&#45;&gt;layer state</title>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M92.45,-498.26C126.54,-506.39 179.59,-518.53 226,-527 281.11,-537.05 345.61,-545.72 384.34,-550.6"/>
+<polygon fill="currentColor" stroke="currentColor" points="384.01,-552.68 390.23,-551.34 384.53,-548.51 384.01,-552.68"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="230" y="-519.8" font-family="Helvetica,Arial,sans-serif" font-size="8.00">87</text>
+</g>
+<!-- folder views/boards&#45;&gt;layer ui -->
+<g id="edge14" class="edge">
+<title>folder views/boards&#45;&gt;layer ui</title>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M92.51,-494.49C161.83,-504.06 320.03,-525.97 453,-545 463.49,-546.5 474.9,-548.16 485.27,-549.68"/>
+<polygon fill="currentColor" stroke="currentColor" points="484.88,-551.74 491.13,-550.54 485.49,-547.59 484.88,-551.74"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="326.36" y="-519.8" font-family="Helvetica,Arial,sans-serif" font-size="8.00">85</text>
+</g>
+<!-- folder views/personal -->
+<g id="node4" class="node">
+<title>folder views/personal</title>
+<polygon fill="none" stroke="currentColor" points="95.63,-365 18.37,-365 18.37,-343.4 95.63,-343.4 95.63,-365"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="57" y="-351.2" font-family="Helvetica,Arial,sans-serif" font-size="10.00">views/personal</text>
+</g>
+<!-- folder views/feeds&#45;&gt;folder views/personal -->
+<!-- folder views/feeds&#45;&gt;folder views/shared -->
+<g id="edge15" class="edge">
+<title>folder views/feeds&#45;&gt;folder views/shared</title>
+<path fill="none" stroke="currentColor" d="M68.41,-410.14C79.12,-399.83 94.7,-382.92 103,-365 143.58,-277.37 143.94,-246.72 137,-150.4 133.81,-106.19 139.63,-84.48 106,-55.6 99.5,-50.02 91.69,-45.18 84.05,-41.17"/>
+<polygon fill="currentColor" stroke="currentColor" points="85.37,-39.48 79.06,-38.68 83.49,-43.24 85.37,-39.48"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="144.39" y="-217.4" font-family="Helvetica,Arial,sans-serif" font-size="8.00">17</text>
+</g>
+<!-- folder views/feeds&#45;&gt;layer state -->
+<g id="edge16" class="edge">
+<title>folder views/feeds&#45;&gt;layer state</title>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M74.63,-432.53C116.15,-456.24 219.41,-514.3 257,-527 299.6,-541.4 351.14,-548.6 384.47,-552.02"/>
+<polygon fill="currentColor" stroke="currentColor" points="384.02,-554.08 390.2,-552.58 384.43,-549.9 384.02,-554.08"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="199.75" y="-486.2" font-family="Helvetica,Arial,sans-serif" font-size="8.00">50</text>
+</g>
+<!-- folder views/feeds&#45;&gt;layer ui -->
+<g id="edge17" class="edge">
+<title>folder views/feeds&#45;&gt;layer ui</title>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M89.64,-423.96C131.9,-426.59 207.52,-433.38 270,-450.2 314.11,-462.08 435.16,-516.13 491.03,-541.53"/>
+<polygon fill="currentColor" stroke="currentColor" points="490.13,-543.42 496.46,-544 491.87,-539.6 490.13,-543.42"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="398.42" y="-486.2" font-family="Helvetica,Arial,sans-serif" font-size="8.00">49</text>
+</g>
+<!-- folder views/sessions -->
+<g id="node5" class="node">
+<title>folder views/sessions</title>
+<polygon fill="none" stroke="currentColor" points="95.09,-297.8 18.91,-297.8 18.91,-276.2 95.09,-276.2 95.09,-297.8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="57" y="-284" font-family="Helvetica,Arial,sans-serif" font-size="10.00">views/sessions</text>
+</g>
+<!-- folder views/personal&#45;&gt;folder views/sessions -->
+<!-- folder views/personal&#45;&gt;layer state -->
+<g id="edge18" class="edge">
+<title>folder views/personal&#45;&gt;layer state</title>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M69.51,-365.43C112.81,-400.75 254.99,-516.07 279,-527 312.89,-542.43 355.23,-549.33 384.42,-552.39"/>
+<polygon fill="currentColor" stroke="currentColor" points="383.87,-554.44 390.04,-552.94 384.28,-550.26 383.87,-554.44"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="190.21" y="-452.6" font-family="Helvetica,Arial,sans-serif" font-size="8.00">14</text>
+</g>
+<!-- folder views/personal&#45;&gt;layer ui -->
+<g id="edge19" class="edge">
+<title>folder views/personal&#45;&gt;layer ui</title>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M95.93,-354.44C141.2,-354.82 217.46,-359.43 278,-383 327.5,-402.27 454.24,-501.94 501.7,-540"/>
+<polygon fill="currentColor" stroke="currentColor" points="500.17,-541.47 506.16,-543.59 502.8,-538.19 500.17,-541.47"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="401.26" y="-452.6" font-family="Helvetica,Arial,sans-serif" font-size="8.00">11</text>
+</g>
+<!-- folder views/sources -->
+<g id="node6" class="node">
+<title>folder views/sources</title>
+<polygon fill="none" stroke="currentColor" points="93.69,-230.6 20.31,-230.6 20.31,-209 93.69,-209 93.69,-230.6"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="57" y="-216.8" font-family="Helvetica,Arial,sans-serif" font-size="10.00">views/sources</text>
+</g>
+<!-- folder views/sessions&#45;&gt;folder views/sources -->
+<!-- folder views/sessions&#45;&gt;folder views/shared -->
+<g id="edge20" class="edge">
+<title>folder views/sessions&#45;&gt;folder views/shared</title>
+<path fill="none" stroke="currentColor" d="M67.17,-275.86C77.14,-265.38 92.1,-248.12 101,-230.6 123.36,-186.56 135.8,-171.57 128,-122.8 122.83,-90.5 121.23,-78.63 98,-55.6 92.73,-50.38 86.3,-45.72 79.93,-41.77"/>
+<polygon fill="currentColor" stroke="currentColor" points="81.18,-40.07 74.94,-38.84 79.05,-43.69 81.18,-40.07"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="132.32" y="-158.8" font-family="Helvetica,Arial,sans-serif" font-size="8.00">8</text>
+</g>
+<!-- folder views/sessions&#45;&gt;layer state -->
+<g id="edge21" class="edge">
+<title>folder views/sessions&#45;&gt;layer state</title>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M66.05,-298.12C103.26,-339.51 245.22,-495.2 303,-527 328.32,-540.93 360.51,-547.94 384.55,-551.43"/>
+<polygon fill="currentColor" stroke="currentColor" points="384.01,-553.47 390.24,-552.2 384.57,-549.31 384.01,-553.47"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="195.45" y="-419" font-family="Helvetica,Arial,sans-serif" font-size="8.00">49</text>
+</g>
+<!-- folder views/sessions&#45;&gt;layer ui -->
+<g id="edge22" class="edge">
+<title>folder views/sessions&#45;&gt;layer ui</title>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M95.51,-291.05C158.31,-296.24 277.59,-307.08 295,-315.8 349.24,-342.97 468.87,-490.24 507.62,-539.06"/>
+<polygon fill="currentColor" stroke="currentColor" points="505.83,-540.18 511.2,-543.58 509.12,-537.58 505.83,-540.18"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="422.19" y="-419" font-family="Helvetica,Arial,sans-serif" font-size="8.00">46</text>
+</g>
+<!-- folder views/structure -->
+<g id="node7" class="node">
+<title>folder views/structure</title>
+<polygon fill="none" stroke="currentColor" points="96.19,-172 17.81,-172 17.81,-150.4 96.19,-150.4 96.19,-172"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="57" y="-158.2" font-family="Helvetica,Arial,sans-serif" font-size="10.00">views/structure</text>
+</g>
+<!-- folder views/sources&#45;&gt;folder views/structure -->
+<!-- folder views/sources&#45;&gt;folder views/shared -->
+<g id="edge25" class="edge">
+<title>folder views/sources&#45;&gt;folder views/shared</title>
+<path fill="none" stroke="currentColor" d="M71.38,-208.69C82.14,-200.24 96.13,-187.15 103,-172 119.32,-136 121.05,-120.51 108,-83.2 102.05,-66.18 87.38,-52 74.55,-42.25"/>
+<polygon fill="currentColor" stroke="currentColor" points="76.13,-40.81 70.04,-38.98 73.66,-44.2 76.13,-40.81"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="120.66" y="-125.2" font-family="Helvetica,Arial,sans-serif" font-size="8.00">26</text>
+</g>
+<!-- folder views/sources&#45;&gt;layer state -->
+<g id="edge26" class="edge">
+<title>folder views/sources&#45;&gt;layer state</title>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M94.03,-224.37C129.96,-228.49 181.28,-236.33 197,-248.6 252.79,-292.15 234.29,-328.83 265,-392.6 293.88,-452.56 280.54,-483.61 331,-527 345.88,-539.8 366.67,-546.71 384.31,-550.44"/>
+<polygon fill="currentColor" stroke="currentColor" points="383.87,-552.5 390.16,-551.57 384.66,-548.37 383.87,-552.5"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="271" y="-385.4" font-family="Helvetica,Arial,sans-serif" font-size="8.00">103</text>
+</g>
+<!-- folder views/sources&#45;&gt;layer ui -->
+<g id="edge27" class="edge">
+<title>folder views/sources&#45;&gt;layer ui</title>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M94.06,-226.36C165.62,-237.35 317.49,-262.01 337,-276.2 357.53,-291.13 352.06,-304.19 366,-325.4 386.3,-356.29 392.76,-363.07 415,-392.6 421.1,-400.7 422.94,-402.47 429,-410.6 450.94,-440.03 455.74,-447.88 477,-477.8 489.49,-495.37 494.7,-498.47 505,-517.4 508.54,-523.9 511.71,-531.41 514.22,-537.99"/>
+<polygon fill="currentColor" stroke="currentColor" points="512.11,-538.33 516.14,-543.25 516.05,-536.89 512.11,-538.33"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="421" y="-385.4" font-family="Helvetica,Arial,sans-serif" font-size="8.00">109</text>
+</g>
+<!-- folder views/system -->
+<g id="node8" class="node">
+<title>folder views/system</title>
+<polygon fill="none" stroke="currentColor" points="87.58,-104.8 16.42,-104.8 16.42,-83.2 87.58,-83.2 87.58,-104.8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="52" y="-91" font-family="Helvetica,Arial,sans-serif" font-size="10.00">views/system</text>
+</g>
+<!-- folder views/structure&#45;&gt;folder views/system -->
+<!-- folder views/structure&#45;&gt;folder views/shared -->
+<g id="edge28" class="edge">
+<title>folder views/structure&#45;&gt;folder views/shared</title>
+<path fill="none" stroke="currentColor" d="M67.83,-150.1C81.87,-135.72 103.6,-108.3 95,-83.2 89.74,-67.84 78.3,-53.46 68.54,-43.2"/>
+<polygon fill="currentColor" stroke="currentColor" points="70.12,-41.8 64.4,-39.02 67.13,-44.76 70.12,-41.8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="100.95" y="-91.6" font-family="Helvetica,Arial,sans-serif" font-size="8.00">13</text>
+</g>
+<!-- folder views/structure&#45;&gt;layer state -->
+<g id="edge29" class="edge">
+<title>folder views/structure&#45;&gt;layer state</title>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M80.97,-172.41C112.97,-186.69 170.52,-214.72 213,-248.6 226.66,-259.5 230.92,-261.92 241,-276.2 276.46,-326.45 314.32,-483.71 358,-527 365.45,-534.38 375.21,-540.01 384.74,-544.21"/>
+<polygon fill="currentColor" stroke="currentColor" points="383.85,-546.11 390.2,-546.44 385.44,-542.23 383.85,-546.11"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="285.29" y="-351.8" font-family="Helvetica,Arial,sans-serif" font-size="8.00">32</text>
+</g>
+<!-- folder views/structure&#45;&gt;layer ui -->
+<g id="edge30" class="edge">
+<title>folder views/structure&#45;&gt;layer ui</title>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M96.58,-169.4C157.63,-182.11 276.07,-213.37 356,-276.2 358.68,-278.31 494.2,-474.91 496,-477.8 506.64,-494.89 512.43,-498.05 518,-517.4 519.82,-523.73 520.51,-530.9 520.69,-537.26"/>
+<polygon fill="currentColor" stroke="currentColor" points="518.59,-537.24 520.68,-543.24 522.79,-537.25 518.59,-537.24"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="422.08" y="-351.8" font-family="Helvetica,Arial,sans-serif" font-size="8.00">29</text>
+</g>
+<!-- folder views/system&#45;&gt;folder views/shared -->
+<!-- folder views/system&#45;&gt;folder views/shared -->
+<g id="edge31" class="edge">
+<title>folder views/system&#45;&gt;folder views/shared</title>
+<path fill="none" stroke="currentColor" d="M52.92,-82.71C53.34,-77.47 53.79,-71 54,-65.2 54.23,-58.71 53.98,-51.6 53.58,-45.33"/>
+<polygon fill="currentColor" stroke="currentColor" points="55.69,-45.29 53.15,-39.46 51.5,-45.6 55.69,-45.29"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="56.09" y="-58" font-family="Helvetica,Arial,sans-serif" font-size="8.00">1</text>
+</g>
+<!-- folder views/system&#45;&gt;layer state -->
+<g id="edge32" class="edge">
+<title>folder views/system&#45;&gt;layer state</title>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M87.89,-103.92C101.23,-108.28 116.02,-114.44 128,-122.8 201.29,-173.94 208.6,-201.73 258,-276.2 326.74,-379.82 302.74,-431.19 382,-527 386.05,-531.89 391.13,-536.42 396.21,-540.33"/>
+<polygon fill="currentColor" stroke="currentColor" points="394.81,-541.91 400.9,-543.74 397.28,-538.51 394.81,-541.91"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="289.85" y="-318.2" font-family="Helvetica,Arial,sans-serif" font-size="8.00">65</text>
+</g>
+<!-- folder views/system&#45;&gt;layer ui -->
+<g id="edge33" class="edge">
+<title>folder views/system&#45;&gt;layer ui</title>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M87.79,-104.52C109.4,-110.5 134.7,-117.97 145,-122.8 340.2,-214.43 337.96,-242.16 375,-276.2 415.07,-313.02 489.16,-429.38 514,-477.8 524.49,-498.26 533.95,-504.35 530,-527 529.37,-530.6 528.32,-534.35 527.13,-537.89"/>
+<polygon fill="currentColor" stroke="currentColor" points="525.23,-536.96 525.1,-543.31 529.17,-538.43 525.23,-536.96"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="420.9" y="-318.2" font-family="Helvetica,Arial,sans-serif" font-size="8.00">75</text>
+</g>
+<!-- folder views/shared&#45;&gt;layer state -->
+<g id="edge23" class="edge">
+<title>folder views/shared&#45;&gt;layer state</title>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M87.21,-31.05C123.72,-35.04 177.7,-42.9 194,-55.6 284.53,-126.15 355.79,-423.31 405,-527 406.69,-530.57 408.56,-534.37 410.37,-537.97"/>
+<polygon fill="currentColor" stroke="currentColor" points="408.43,-538.8 413.02,-543.21 412.18,-536.91 408.43,-538.8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="325.35" y="-284.6" font-family="Helvetica,Arial,sans-serif" font-size="8.00">59</text>
+</g>
+<!-- folder views/shared&#45;&gt;layer ui -->
+<g id="edge24" class="edge">
+<title>folder views/shared&#45;&gt;layer ui</title>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M87.1,-28.22C120.38,-29.91 170.96,-35.9 210,-55.6 225.88,-63.62 226.92,-70.14 239,-83.2 364.06,-218.39 396.37,-253.82 493,-410.6 520.31,-454.9 534.58,-465.76 541,-517.4 541.53,-521.63 542.36,-522.95 541,-527 539.6,-531.19 537.28,-535.25 534.7,-538.92"/>
+<polygon fill="currentColor" stroke="currentColor" points="533.17,-537.45 531.13,-543.47 536.48,-540.04 533.17,-537.45"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="423.82" y="-284.6" font-family="Helvetica,Arial,sans-serif" font-size="8.00">45</text>
+</g>
+</g>
+</svg>

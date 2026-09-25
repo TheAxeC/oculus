@@ -1,6 +1,6 @@
 <script module lang="ts">
     // Layer 3, view registration. Present closes the Academic life group, after the collections.
-    import type { ViewRegistration } from '../../registry';
+    import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
 
     export const registration: ViewRegistration = {
         id: 'present',
@@ -35,11 +35,11 @@
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Overview from './Overview.svelte';
     import Slide from './Slide.svelte';
-    import { cardCursor } from '$lib/state/client/instance';
-    import { parsePresentState, type PresentState } from '$lib/state/life/present';
+    import { cardCursor } from '$lib/state/workbench/layout/instance';
+    import { parsePresentState, type PresentState } from '$lib/state/feeds/life/present';
     import { t } from '$lib/state/words/text';
     import { useState } from '$lib/state/client/use';
-    import type { ViewProps } from '../../registry';
+    import type { ViewProps } from '$lib/state/workbench/navigation/registry';
 
     const {
         layout: { openBeside },

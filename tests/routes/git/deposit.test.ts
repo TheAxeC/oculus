@@ -12,7 +12,7 @@ import { describe, expect, it } from 'vitest';
 import { handleDeposit, handleDepositState } from '../../../src/lib/server/git/deposit-routes.ts';
 import type { DepositOptions } from '../../../src/lib/server/git/deposit-routes.ts';
 import { mintToken } from '../../../src/lib/server/core/auth.ts';
-import { contextFixture } from '../../server/core/context-fixture.ts';
+import { contextFixture } from '../../server/root/context-fixture.ts';
 
 const SERVER = contextFixture({ token: mintToken() });
 const TOKEN = SERVER.token;

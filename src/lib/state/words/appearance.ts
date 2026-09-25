@@ -6,11 +6,11 @@
 // a theme is added by editing YAML and nothing else.
 //
 // This holds no runes of its own: every lookup is pure over what was last installed and reads the
-// configuration's generation, state/client/generation.svelte.ts, so a component calling one during
+// configuration's generation, state/words/generation.svelte.ts, so a component calling one during
 // its first render gets the page's data and draws again when a push replaces it. What the viewer
 // picked out of this list is state/workbench/ui.svelte.ts's, which is the store that persists.
 
-import { configGeneration } from '../client/generation.svelte.ts';
+import { configGeneration } from './generation.svelte.ts';
 import { hasGlyph } from './text.ts';
 
 /**

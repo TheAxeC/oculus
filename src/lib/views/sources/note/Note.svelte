@@ -1,7 +1,7 @@
 <script module lang="ts">
     // Layer 3, view registration. A note opens from the file browser and is not listed: opened bare
     // it names no note and can only say so.
-    import type { ViewRegistration } from '../../registry';
+    import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
 
     export const registration: ViewRegistration = {
         id: 'note',
@@ -20,8 +20,8 @@
     // The note the reader is typing lives here and the file on disk is what it is saved to, so an
     // answer landing from the server never writes over a keystroke: the draft is seeded from the
     // file once per note and is the reader's from then on. The save is a wait that starts again on
-    // every keystroke (state/life/notes.ts), so typing a paragraph is one write and not one per
-    // letter, and the toolbar says when the last one landed.
+    // every keystroke (state/feeds/life/notes.ts), so typing a paragraph is one write and not one
+    // per letter, and the toolbar says when the last one landed.
     //
     // A note's file is made by its first keystroke and not by the control that opened the tab, so a
     // tab left with nothing typed into it leaves nothing on the disk and nothing has to be cleaned
@@ -43,10 +43,10 @@
         stamp,
         titleOf,
         writesNow
-    } from '$lib/state/life/notes';
+    } from '$lib/state/feeds/life/notes';
     import { NOTE_GONE, type NoteState } from '$lib/state/sources/fs.svelte';
     import { t } from '$lib/state/words/text';
-    import type { ViewProps } from '../../registry';
+    import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 
     const {

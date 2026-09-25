@@ -20,9 +20,9 @@
 
 import { statSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import type { SessionRecord } from '../../../data/model.ts';
+import type { SessionRecord } from '../../../data/model/index.ts';
 import { IDLE_AFTER_SECONDS, type Acc } from '../record.ts';
-import { isMap, list } from './json.ts';
+import { isMap, list } from '../../core/json.ts';
 
 /** How a launch notice names the subagent, when the answer carries no structured field for it. */
 const AGENT_ID = /agentId:\s*([A-Za-z0-9_-]+)/;

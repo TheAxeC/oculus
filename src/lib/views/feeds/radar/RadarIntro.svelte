@@ -11,7 +11,7 @@
     // the muted text colour. The sweep's date is a value from the radar file, so the line that
     // carries it is sanitised.
 
-    import Glyph from '$lib/ui/controls/Glyph.svelte';
+    import Glyph from '$lib/ui/display/Glyph.svelte';
     import Intro from '../../shared/prose/Intro.svelte';
     import { sanitise } from '$lib/ui/html';
     import type { RadarBucket } from '$lib/state/feeds/radar';

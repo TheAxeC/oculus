@@ -4,7 +4,7 @@
 // The instruction is the catalog's `git.message_prompt`, so the shape of a hub commit message (a
 // capitalised imperative subject, a blank line, `- Verb ...` bullets, no attribution of any kind)
 // is config rather than a string in a module. The model is `git.message_model` of
-// config/behavior.yml, read the way server/core/hooks.ts reads `notify:`: defensively, with a
+// config/behavior.yml, read the way server/root/hooks.ts reads `notify:`: defensively, with a
 // default when the key is missing or malformed. Empty means the CLI's own default model, so nothing
 // is passed.
 //

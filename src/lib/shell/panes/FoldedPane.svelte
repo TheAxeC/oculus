@@ -9,7 +9,7 @@
     // where a view will land.
 
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import { activeLabel } from '$lib/shell/workbench-title';
+    import { activeLabel } from '$lib/shell/panes/workbench-title';
     import { pageNameOf } from '$lib/state/workbench/navigation/pages';
     import { t } from '$lib/state/words/text';
     import type { Layout } from '$lib/state/workbench/layout';

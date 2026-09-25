@@ -12,9 +12,9 @@ import {
     handleTranscript
 } from '../../../src/lib/server/sessions/transcript-routes.ts';
 import { record } from '../../fixtures/sessions-fixture.ts';
-import type { SessionRecord } from '../../../src/lib/data/model.ts';
+import type { SessionRecord } from '../../../src/lib/data/model/index.ts';
 import { sessionRecord } from '../../../src/lib/server/sessions/stores/hooks.ts';
-import { contextFixture } from '../../server/core/context-fixture.ts';
+import { contextFixture } from '../../server/root/context-fixture.ts';
 import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
 
 afterAll(sweepScratch);

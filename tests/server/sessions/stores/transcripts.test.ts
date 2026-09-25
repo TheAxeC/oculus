@@ -29,7 +29,7 @@ import {
 } from '../../../../src/lib/server/sessions/registry.ts';
 import { hiddenIds, setHidden } from '../../../../src/lib/server/sessions/overrides.ts';
 import { CACHE_VERSION } from '../../../../src/lib/server/sessions/cache.ts';
-import type { LiveEntry, SessionRecord } from '../../../../src/lib/data/model.ts';
+import type { LiveEntry, SessionRecord } from '../../../../src/lib/data/model/index.ts';
 import { scratchDir, sweepScratch } from '../../../fixtures/scratch.ts';
 
 /** The registry's live sessions alone: signal 0 per entry, then one `ps` for the ones that ran. */

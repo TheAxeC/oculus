@@ -1,7 +1,7 @@
 // Layer 2, client state. Deadline, follow-up, subtask and venue-load arithmetic lives here because
 // ticker timing changes independently of the Focus board lanes.
 
-import type { Collection, Followup, Id, Project, Snapshot, Venue } from '../../data/model.ts';
+import type { Collection, Followup, Id, Project, Snapshot, Venue } from '../../data/model/index.ts';
 import { isMap, text as str } from '../../data/helpers/guards.ts';
 import { isLeadClosed } from '../../data/accounts/leads.ts';
 import { DEADLINE_SOON, daysUntil } from './board/index.ts';
@@ -548,4 +548,51 @@ export function daysTone(days: number | null): string | undefined {
     if (days === null) return undefined;
     if (days < 0) return 'red';
     return days <= DEADLINE_SOON ? 'amber' : undefined;
+}
+
+/** The lines in runs of one kind each, in the order given: a kind met again opens a new run. */
+export function runsByKind(lines: TickerItem[]): { kind: string; lines: TickerItem[] }[] {
+    const runs: { kind: string; lines: TickerItem[] }[] = [];
+    for (const line of lines) {
+        const held = runs.at(-1);
+        if (held?.kind !== line.kind) runs.push({ kind: line.kind, lines: [line] });
+        else held.lines.push(line);
+    }
+    return runs;
+}
+
+/** The deadlines under each category, in the categories' order, a category with none left out. */
+export function deadlinesByCategory<C extends string>(
+    deadlines: TickerItem[],
+    categories: readonly C[]
+): { category: C; lines: TickerItem[] }[] {
+    return categories
+        .map((category) => ({
+            category,
+            lines: deadlines.filter((line) => line.kind === category)
+        }))
+        .filter((one) => one.lines.length > 0);
+}
+
+/** The three groups of the tasks section, each holding its lines in the order given. */
+export type TaskGroups = { followups: TickerItem[]; subtasks: TickerItem[]; tasks: TickerItem[] };
+
+/**
+ * The tasks section's lines by group: a subtask carries the key of its own line, and a follow-up
+ * says so in its kind, which is what a scheme's note has instead of a target; every other line is
+ * a task.
+ */
+export function taskGroups(lines: readonly TickerItem[]): TaskGroups {
+    const groups: TaskGroups = { followups: [], subtasks: [], tasks: [] };
+    for (const line of lines) {
+        if (line.target?.subtask !== undefined) groups.subtasks.push(line);
+        else if (line.kind === 'followup') groups.followups.push(line);
+        else groups.tasks.push(line);
+    }
+    return groups;
+}
+
+/** Whether any group of the tasks section holds a line. */
+export function hasTasks(groups: TaskGroups): boolean {
+    return groups.followups.length + groups.subtasks.length + groups.tasks.length > 0;
 }

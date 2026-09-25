@@ -4,7 +4,7 @@
     // Each writes the ui store, which saves the six values together, so what the page looks like
     // comes back whole after a reload whichever control set it.
 
-    import Glyph from '$lib/ui/controls/Glyph.svelte';
+    import Glyph from '$lib/ui/display/Glyph.svelte';
     import Menu from '$lib/ui/menu/Menu.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { t } from '$lib/state/words/text';

@@ -1,6 +1,6 @@
 <script module lang="ts">
     // Layer 3, view registration. Gallery follows Findings in the system group.
-    import type { ViewRegistration } from '../../registry';
+    import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     export const registration: ViewRegistration = {
         id: 'gallery',
         label: 'views.gallery',
@@ -34,16 +34,15 @@
     import Toolbar from '$lib/ui/frame/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { t } from '$lib/state/words/text';
-    import { cardCursor } from '$lib/state/client/instance';
+    import { cardCursor } from '$lib/state/workbench/layout/instance';
     import {
-        UNKNOWN_TONE,
         chipGlyphName,
         chipKeys,
         chipLabel,
-        statusTone,
-        typeTone
+        chipsByTone,
+        chipTone
     } from '$lib/state/words/tones';
-    import type { ViewProps } from '../../registry';
+    import type { ViewProps } from '$lib/state/workbench/navigation/registry';
 
     let { instance }: ViewProps = $props();
     const cursor = $derived(cardCursor(instance.state));
@@ -52,16 +51,6 @@
     const CHIPS = 12;
     const ROWS = 8;
 
-    /**
-     * A chip's tone: the type palette when it names the chip, the status palette otherwise. The two
-     * maps cover different halves of the vocabulary, and taking both is what gives the row its
-     * spread of hues instead of a wall of grey.
-     */
-    function toneFor(key: string): string {
-        const type = typeTone(key);
-        return type === UNKNOWN_TONE ? statusTone(key) : type;
-    }
-
     const chips = $derived(
         chipKeys()
             .slice(0, CHIPS)
@@ -69,22 +58,16 @@
                 key,
                 label: chipLabel(key),
                 glyph: chipGlyphName(key),
-                tone: toneFor(key)
+                tone: chipTone(key)
             }))
     );
 
     /** One row per hue the chips use: the hue, the first chip wearing it, and how many wear it. */
-    const rows = $derived.by(() => {
-        // eslint-disable-next-line svelte/prefer-svelte-reactivity -- the map is built and dropped inside one derivation, and nothing renders from it
-        const byTone = new Map<string, { tone: string; chip: string; count: number }>();
-        for (const key of chipKeys()) {
-            const tone = toneFor(key);
-            const held = byTone.get(tone);
-            if (held === undefined) byTone.set(tone, { tone, chip: chipLabel(key), count: 1 });
-            else held.count += 1;
-        }
-        return [...byTone.values()].slice(0, ROWS);
-    });
+    const rows = $derived(
+        chipsByTone(chipKeys())
+            .slice(0, ROWS)
+            .map((row) => ({ tone: row.tone, chip: chipLabel(row.key), count: row.count }))
+    );
 
     const columns: Column[] = [
         { key: 'tone', label: t('gallery.col_tone') },

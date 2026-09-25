@@ -8,7 +8,7 @@
 import { existsSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
-import type { InboxPayload } from '../../../../src/lib/data/model.ts';
+import type { InboxPayload } from '../../../../src/lib/data/model/index.ts';
 import { Hub } from '../../../../src/lib/server/core/channels.ts';
 import { RETRY_MIN, watchMail } from '../../../../src/lib/server/accounts/mail/poll.ts';
 import { triageFile } from '../../../../src/lib/server/accounts/mail/triage.ts';
@@ -27,7 +27,7 @@ import {
     writeAccount
 } from './fixture.ts';
 import { sweepScratch } from '../../../fixtures/scratch.ts';
-import { manual } from '../../watch/repos.ts';
+import { manual } from '../../root/watch/repos.ts';
 
 afterAll(sweepScratch);
 

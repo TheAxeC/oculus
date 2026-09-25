@@ -16,7 +16,8 @@ import {
     localDate,
     parseLeadsState,
     splitLeads,
-    visibleLeads
+    visibleLeads,
+    runLog
 } from '../../../src/lib/state/feeds/leads.ts';
 
 const { config } = loadConfig(engineDir());
@@ -167,5 +168,14 @@ describe('the id one lead card carries', () => {
         expect(identOf(entries[0])).not.toBe(identOf(entries[1]));
         expect(identOf(entries[2])).not.toBe('');
         expect(new Set(entries.map(identOf)).size).toBe(3);
+    });
+});
+
+describe('the run log of the leads feed', () => {
+    // revert: src/lib/state/feeds/leads.ts:178 => (line): line is string | number => typeof line === 'string'
+    it('is every line the meta carries as text, a line that is not text or a number left out', () => {
+        expect(runLog({ log: ['one', 2, null, { a: 1 }] })).toEqual(['one', '2']);
+        expect(runLog({ log: 'not a list' })).toEqual([]);
+        expect(runLog(undefined)).toEqual([]);
     });
 });

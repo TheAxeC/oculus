@@ -11,12 +11,12 @@
 // from the offset the last read returned. A tool call whose result arrives in that tail is patched
 // in place, since the call's own turn was read before the result existed.
 
-import type { Turn } from '../../data/model.ts';
+import type { Turn } from '../../data/model/index.ts';
 
 // The views read a turn's shape through this module, as they read a session's through
 // state/client/selectors.svelte.ts: the boundary table of DESIGN.md gives `views/` no import of
 // `data/`.
-export type { Turn, TurnTool } from '../../data/model.ts';
+export type { Turn, TurnTool } from '../../data/model/index.ts';
 
 /** One session's turns as the view reads them. */
 export type TurnsState = {

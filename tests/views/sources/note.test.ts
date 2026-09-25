@@ -4,7 +4,8 @@
 // The catalog and the glyphs are the real config; the note's own text comes from the fs store,
 // whose `fetch` is a stub. The typing itself is a DOM event no server render fires, so what one
 // keystroke does is read off the view's own source at the foot of this file; the wait it starts is
-// tests/state/life/notes.test.ts and the typing end to end is tests/browser/sources/files.spec.ts.
+// tests/state/feeds/life/notes.test.ts and the typing end to end is
+// tests/browser/sources/files.spec.ts.
 
 import { readFileSync } from 'node:fs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';

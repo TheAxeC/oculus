@@ -13,14 +13,14 @@
     // its key handler.
 
     import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
-    import Glyph from '$lib/ui/controls/Glyph.svelte';
+    import Glyph from '$lib/ui/display/Glyph.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import type { MenuItem } from '$lib/ui/menu/menu-items';
     import { firstBadge, railInsertAt, RAIL_HIDE, RAIL_SETTINGS } from '$lib/shell/rail/rail';
     import { THRESHOLD, type Point } from '$lib/state/workbench/drag.svelte';
     import { railPageViews } from '$lib/state/workbench/navigation/pages';
     import type { RailPage } from '$lib/state/workbench/navigation/rail';
-    import { badgeOf, type RegistrationBadge } from '$lib/views/registry';
+    import { badgeOf, type RegistrationBadge } from '$lib/state/workbench/navigation/registry';
     import { t } from '$lib/state/words/text';
     import { useState } from '$lib/state/client/use';
 

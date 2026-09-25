@@ -16,7 +16,7 @@ import {
     presetFor,
     type BoardPreset
 } from '../../../../src/lib/state/boards/board/index.ts';
-import type { Id, Project, Relations, Snapshot } from '../../../../src/lib/data/model.ts';
+import type { Id, Project, Relations, Snapshot } from '../../../../src/lib/data/model/index.ts';
 
 const NO_RELATIONS: Relations = {
     projectVenue: [],

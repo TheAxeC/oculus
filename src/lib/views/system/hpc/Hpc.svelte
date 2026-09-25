@@ -1,6 +1,6 @@
 <script module lang="ts">
     // Layer 3, view registration. Live HPC follows Gallery in the system group.
-    import type { ViewRegistration } from '../../registry';
+    import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     export const registration: ViewRegistration = {
         id: 'hpc',
         label: 'views.hpc',
@@ -25,7 +25,7 @@
     import Quota from './Quota.svelte';
     import Recent from './Recent.svelte';
     import { t } from '$lib/state/words/text';
-    import type { ViewProps } from '../../registry';
+    import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 
     const {

@@ -631,7 +631,7 @@ describe('themeFindings', () => {
         );
     }
 
-    // revert: src/lib/data/sources/config/themes.ts:49 => if (typeof glyph !== 'string') {
+    // revert: src/lib/data/sources/config/themes.ts:50 => if (typeof glyph !== 'string') {
     it('names a theme row whose glyph is empty or missing, and draws it with its words alone', () => {
         expect(said([{ name: 'a', glyph: '' }, { name: 'b' }, { name: 'c', glyph: 3 }])).toEqual([
             'themes[0]: the theme a names no glyph; it is offered with its words alone',
@@ -640,7 +640,7 @@ describe('themeFindings', () => {
         ]);
     });
 
-    // revert: src/lib/data/sources/config/themes.ts:55 => } else if (false) {
+    // revert: src/lib/data/sources/config/themes.ts:56 => } else if (false) {
     it('names a glyph the vocabulary does not hold, a prototype key among them', () => {
         expect(
             said([
@@ -653,7 +653,7 @@ describe('themeFindings', () => {
         ]);
     });
 
-    // revert: src/lib/data/sources/config/themes.ts:39 => if (false) {
+    // revert: src/lib/data/sources/config/themes.ts:40 => if (false) {
     it('names a second row repeating a theme, and nothing for two rows sharing a glyph', () => {
         expect(
             said([
@@ -664,7 +664,7 @@ describe('themeFindings', () => {
         ).toEqual(['themes[2]: a second theme row names a; only the first is offered']);
     });
 
-    // revert: src/lib/data/sources/config/themes.ts:29 => const file = 'appearance.yml';
+    // revert: src/lib/data/sources/config/themes.ts:30 => const file = 'appearance.yml';
     it('says nothing about the shipped list, a row with no name, or a config with no list', () => {
         expect(themeFindings(scratch(), loadConfig(engineDir()).config)).toEqual([]);
         expect(said([{ glyph: 'sun' }, 'light'])).toEqual([]);

@@ -1,7 +1,7 @@
 // Layer 2, client state. Board statistics, waiting lines, type counts, sizes and dissemination live
 // here because they describe board content rather than its saved controls.
 
-import type { Id, Project, Snapshot, Venue } from '../../../data/model.ts';
+import type { Id, Project, Snapshot, Venue } from '../../../data/model/index.ts';
 import { byKey, strings, text as str } from '../../../data/helpers/guards.ts';
 import { t } from '../../words/text.ts';
 import { waitingLabel } from '../waiting.ts';

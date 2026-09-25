@@ -3,7 +3,7 @@
 // hold(), the module's test-only door, and reads them back through turnsFor().
 
 import { beforeEach, describe, expect, it } from 'vitest';
-import type { Turn } from '../../../src/lib/data/model.ts';
+import type { Turn } from '../../../src/lib/data/model/index.ts';
 import { createClientState, type ClientState } from '../../fixtures/client.ts';
 
 let client: ClientState;

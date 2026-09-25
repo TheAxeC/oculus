@@ -6,11 +6,11 @@ import { createServer } from 'node:http';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { join } from 'node:path';
 import { engineDir } from './lib/data/sources/config.ts';
-import { parseEngineArgs } from './lib/server/core/args.ts';
-import { LISTEN_HOST, carryingHandler, createServerContext } from './lib/server/core/context.ts';
+import { parseEngineArgs } from './lib/server/root/args.ts';
+import { LISTEN_HOST, carryingHandler, createServerContext } from './lib/server/root/context.ts';
 import { BODY_LIMIT_BYTES } from './lib/server/content/memories.ts';
-import { onShutdown } from './lib/server/core/shutdown.ts';
-import { attachSocket } from './lib/server/core/socket.ts';
+import { onShutdown } from './lib/server/root/shutdown.ts';
+import { attachSocket } from './lib/server/root/socket.ts';
 
 type Handler = (req: IncomingMessage, res: ServerResponse) => void;
 

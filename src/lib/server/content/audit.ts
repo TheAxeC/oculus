@@ -19,7 +19,7 @@
 // path, the projects and collections of the snapshot, the rules read out of the configuration, and
 // the text catalog the messages are written in.
 
-import type { AuditFinding, AuditKind } from '../../data/model.ts';
+import type { AuditFinding, AuditKind } from '../../data/model/index.ts';
 import {
     markers,
     gaps,

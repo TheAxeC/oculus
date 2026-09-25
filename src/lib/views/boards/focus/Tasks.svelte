@@ -8,10 +8,15 @@
     // views/boards/focus/rows.ts, which the command center draws its own rows with. A group with no
     // line draws nothing, and a section with no group at all draws nothing either.
 
-    import Glyph from '$lib/ui/controls/Glyph.svelte';
+    import Glyph from '$lib/ui/display/Glyph.svelte';
     import Ticker from '$lib/ui/display/Ticker.svelte';
     import type { TickerRow } from '$lib/ui/display/ticker-rows';
-    import type { Ticker as FocusTicker, TickerItem } from '$lib/state/boards/ticker';
+    import {
+        hasTasks,
+        taskGroups,
+        type Ticker as FocusTicker,
+        type TickerItem
+    } from '$lib/state/boards/ticker';
     import { t } from '$lib/state/words/text';
     import { act, openLine, rowMaker } from './rows';
     import { useState } from '$lib/state/client/use';
@@ -31,28 +36,23 @@
 
     let { week, now, onproject, onsaid }: Props = $props();
 
-    /** The rows of each group, in the order the section draws them. */
-    type Groups = { followups: TickerRow[]; subtasks: TickerRow[]; tasks: TickerRow[] };
-
-    /**
-     * Which of the three groups one line belongs to: a subtask carries the key of its own line, and
-     * a follow-up says so in its kind, which is what a scheme's note has instead of a target.
-     */
-    function groupOf(line: TickerItem): keyof Groups {
-        if (line.target?.subtask !== undefined) return 'subtasks';
-        if (line.kind === 'followup') return 'followups';
-        return 'tasks';
-    }
+    /** The lines of each group, which state/boards/ticker.ts sorts into them. */
+    const lines = $derived(taskGroups(week?.tasks ?? []));
 
     /** The three groups of rows, and the line each row came from, by the row's own id. */
     const view = $derived.by(() => {
         const { index, row, kept } = rowMaker('t');
-        const groups: Groups = { followups: [], subtasks: [], tasks: [] };
-        for (const line of week?.tasks ?? []) groups[groupOf(line)].push(row(line, ''));
-        return { index, kept, ...groups };
+        const rows = (group: TickerItem[]): TickerRow[] => group.map((line) => row(line, ''));
+        return {
+            index,
+            kept,
+            followups: rows(lines.followups),
+            subtasks: rows(lines.subtasks),
+            tasks: rows(lines.tasks)
+        };
     });
 
-    const anything = $derived(view.followups.length + view.subtasks.length + view.tasks.length > 0);
+    const anything = $derived(hasTasks(lines));
 
     function pick(id: string): void {
         const line = view.index[id];

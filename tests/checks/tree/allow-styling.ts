@@ -57,7 +57,7 @@ export const HELD: Styling[] = [
         why: 'the rule at src/lib/views/boards/focus/lanes/Lanes.svelte:319 reaches into the primitive rather than asking it for the difference'
     },
     {
-        line: 'views/feeds/radar/Bucket.svelte styles .glyph of ui/controls/Glyph.svelte through section > :global(.tip .tool .glyph)',
+        line: 'views/feeds/radar/Bucket.svelte styles .glyph of ui/display/Glyph.svelte through section > :global(.tip .tool .glyph)',
         why: 'the rule at src/lib/views/feeds/radar/Bucket.svelte:78 reaches into the primitive rather than asking it for the difference'
     },
     {
@@ -129,11 +129,11 @@ export const HELD: Styling[] = [
         why: 'the rule at src/lib/views/sources/source/Editor.svelte:267 reaches into the primitive rather than asking it for the difference'
     },
     {
-        line: 'views/sources/venues/Ribbon.svelte styles .glyph of ui/controls/Glyph.svelte through .deadline :global(.tag .glyph)',
+        line: 'views/sources/venues/Ribbon.svelte styles .glyph of ui/display/Glyph.svelte through .deadline :global(.tag .glyph)',
         why: 'the rule at src/lib/views/sources/venues/Ribbon.svelte:210 reaches into the primitive rather than asking it for the difference'
     },
     {
-        line: 'views/sources/venues/Ribbon.svelte styles .glyph of ui/controls/Glyph.svelte through .held :global(.tag .glyph)',
+        line: 'views/sources/venues/Ribbon.svelte styles .glyph of ui/display/Glyph.svelte through .held :global(.tag .glyph)',
         why: 'the rule at src/lib/views/sources/venues/Ribbon.svelte:214 reaches into the primitive rather than asking it for the difference'
     },
     {

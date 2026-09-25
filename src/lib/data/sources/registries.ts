@@ -14,10 +14,10 @@ import type {
     RegistryFiles,
     RegistryMeta,
     RegistryName
-} from '../model.ts';
+} from '../model/index.ts';
 
-/** The seven hub-relative paths, one per registry; declared with the other types in model.ts. */
-export type { RegistryFiles } from '../model.ts';
+/** The seven hub-relative paths, one per registry; declared with the other types in data/model/. */
+export type { RegistryFiles } from '../model/index.ts';
 
 /** The paths on the hub today, which the config falls back to for a key it does not hold. */
 export const REGISTRY_FILES: RegistryFiles = {

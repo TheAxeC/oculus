@@ -1,6 +1,7 @@
 <script module lang="ts">
     // Layer 3, view registration. Map closes the structure group.
-    import type { ViewRegistration } from '../../registry';
+    import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
+    import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     export const registration: ViewRegistration = {
         id: 'map',
         label: 'views.map',
@@ -15,22 +16,23 @@
     // built from the current portfolio snapshot.
 
     import Pane from '$lib/ui/frame/Pane.svelte';
-    import Glyph from '$lib/ui/controls/Glyph.svelte';
+    import Glyph from '$lib/ui/display/Glyph.svelte';
     import Controls from '$lib/views/structure/map/Controls.svelte';
     import Graph from '$lib/views/structure/map/Graph.svelte';
     import {
+        archiveStatuses,
         buildGraph,
         filterGraph,
+        hasRelationships as relationshipsOf,
         layoutKey,
-        lineCounts,
+        lineFilters as lineChips,
         presentFilter,
         toggleFilter,
         tunedFor,
-        typeCounts
-    } from '$lib/state/boards/graph';
+        typeFilters as typeChips
+    } from '$lib/state/boards/structure/graph';
     import { t } from '$lib/state/words/text';
-    import { parseMapState, type MapState, type Physics } from '$lib/state/boards/graph';
-    import type { ViewProps } from '../../registry';
+    import { parseMapState, type MapState, type Physics } from '$lib/state/boards/structure/graph';
     import { useState } from '$lib/state/client/use';
 
     const {
@@ -52,24 +54,7 @@
         setInstanceState(instance.id, { ...held, ...next });
     }
     const snapshot = $derived(portfolio());
-    const statuses = $derived.by(() => {
-        // eslint-disable-next-line svelte/prefer-svelte-reactivity -- the set is built and dropped inside one derivation, and nothing renders from it
-        const found = new Set<string>();
-        for (const project of Object.values(snapshot?.entities.projects ?? {})) {
-            if ((project.tier === 'archive' || project.tier === 'coauthor') && project.type) {
-                found.add(project.type);
-            }
-        }
-        const colors = configMap().arch_color;
-        const map =
-            typeof colors === 'object' && colors !== null && !Array.isArray(colors)
-                ? (colors as Record<string, unknown>)
-                : {};
-        return [...found].map((status) => {
-            const color = map[status];
-            return { status, ...(typeof color === 'string' ? { color } : {}) };
-        });
-    });
+    const statuses = $derived(archiveStatuses(snapshot, configMap().arch_color));
     /**
      * The graph the filters narrow, which is what the chips are drawn from: a type or a line stays
      * on the row while nothing of it is drawn, so a reader can press it back.
@@ -94,44 +79,9 @@
     /** The parameters this pane tuned for the set of nodes it is drawing, where it has them. */
     const tuned = $derived(tunedFor(held, graph.nodes));
 
-    const typeFilters = $derived.by(() => {
-        const order = configMap().type_order;
-        const ordered = (Array.isArray(order) ? order : []).filter(
-            (one): one is string => typeof one === 'string'
-        );
-        const present = typeCounts(base);
-        const counted = typeCounts(graph);
-        const names = Object.keys(present);
-        const rest = names.filter((type) => !ordered.includes(type)).sort();
-        return [...ordered.filter((type) => names.includes(type)), ...rest].map((type) => ({
-            type,
-            count: counted[type] ?? 0,
-            shown: types.length === 0 || types.includes(type)
-        }));
-    });
-
-    const lineFilters = $derived.by(() => {
-        const counted = lineCounts(graph);
-        const present = base.nodes.filter((node) => node.kind === 'line');
-        const order = Object.keys(snapshot?.entities.pillars ?? {});
-        const ids = present.map((node) => node.entityId);
-        const listed = [
-            ...order.filter((id) => ids.includes(id)),
-            ...ids.filter((id) => !order.includes(id))
-        ];
-        return listed.map((id) => ({
-            id,
-            title: present.find((node) => node.entityId === id)?.label ?? id,
-            count: counted[id] ?? 0,
-            shown: lines.length === 0 || lines.includes(id)
-        }));
-    });
-
-    const hasRelationships = $derived(
-        Object.values(snapshot?.entities.projects ?? {}).some(
-            (project) => project.pillarIds.length > 0 || project.relatedIds.length > 0
-        )
-    );
+    const typeFilters = $derived(typeChips(base, graph, configMap().type_order, types));
+    const lineFilters = $derived(lineChips(base, graph, snapshot, lines));
+    const hasRelationships = $derived(relationshipsOf(snapshot));
 
     function toggleArchive(status: string, checked: boolean): void {
         write({

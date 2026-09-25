@@ -6,7 +6,7 @@
 // no opener at all, and another that a link whose scheme is not `https` reaches none either.
 
 import { describe, expect, it, vi } from 'vitest';
-import type { CalendarEvent } from '../../../../src/lib/data/model.ts';
+import type { CalendarEvent } from '../../../../src/lib/data/model/index.ts';
 import { ConnectStates, callbackUrl } from '../../../../src/lib/server/accounts/connect/oauth.ts';
 import { handleCalendar } from '../../../../src/lib/server/accounts/calendar/routes.ts';
 

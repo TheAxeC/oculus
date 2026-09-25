@@ -21,7 +21,7 @@ import type {
     Message,
     SessionsPayload,
     Snapshot
-} from '../../../data/model.ts';
+} from '../../../data/model/index.ts';
 import type { NoticeAction, NoticesStore } from './notices.svelte.ts';
 import { t } from '../../words/text.ts';
 

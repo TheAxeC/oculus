@@ -21,7 +21,7 @@
     import type { TreeNav } from '$lib/ui/tree/tree-keys';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { t } from '$lib/state/words/text';
-    import { stamp } from '$lib/state/life/notes';
+    import { stamp } from '$lib/state/feeds/life/notes';
 
     type Props = {
         rows: { id: string; title: string; modified: number }[];

@@ -3,7 +3,7 @@
     // change independently of transcript-backed session rows.
 
     import Tag from '$lib/ui/controls/Tag.svelte';
-    import Glyph from '$lib/ui/controls/Glyph.svelte';
+    import Glyph from '$lib/ui/display/Glyph.svelte';
     import Menu from '$lib/ui/menu/Menu.svelte';
     import { stamp } from '$lib/state/words/format';
     import type { Terminal, TerminalKind } from '$lib/state/sessions/terminals.svelte';

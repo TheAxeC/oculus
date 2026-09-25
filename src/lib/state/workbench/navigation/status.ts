@@ -12,7 +12,7 @@ import type {
     HpcPayload,
     SessionsPayload,
     UsagePayload
-} from '../../../data/model.ts';
+} from '../../../data/model/index.ts';
 import type { FsRoot } from '../../sources/fs.ts';
 import { PLAIN, registered } from '../../words/languages.ts';
 import { t } from '../../words/text.ts';
@@ -196,7 +196,18 @@ export function findingsCount(
     snapshot: { findings?: readonly unknown[] } | null,
     config: { findings?: readonly unknown[] } | null
 ): number {
-    return (snapshot?.findings?.length ?? 0) + (config?.findings?.length ?? 0);
+    return allFindings(snapshot, config).length;
+}
+
+/**
+ * Every finding the page knows of: the portfolio's, then the configuration's. The Findings view
+ * lists them and the status bar counts them, so both read one list.
+ */
+export function allFindings<T>(
+    snapshot: { findings?: readonly T[] } | null,
+    config: { findings?: readonly T[] } | null
+): T[] {
+    return [...(snapshot?.findings ?? []), ...(config?.findings ?? [])];
 }
 
 /** The words the page hands the status bar at once. */
@@ -261,4 +272,16 @@ export function languageChoices(query: string): LanguageChoice[] {
               (choice) =>
                   choice.label.toLowerCase().includes(wanted) || choice.name.includes(wanted)
           );
+}
+
+/** The kinds of entity the portfolio keeps as a map by id, which the Status view counts. */
+export type CountedKind =
+    'projects' | 'venues' | 'datasets' | 'pillars' | 'domains' | 'funding' | 'collections';
+
+/** How many entities of one kind the portfolio holds, and none before it arrives. */
+export function entityCount(
+    snapshot: { entities: Record<CountedKind, Record<string, unknown>> } | null,
+    kind: CountedKind
+): number {
+    return snapshot === null ? 0 : Object.keys(snapshot.entities[kind]).length;
 }

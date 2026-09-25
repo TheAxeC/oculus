@@ -4,7 +4,7 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { parse } from 'yaml';
-import type { Project } from '../../../data/model.ts';
+import type { Project } from '../../../data/model/index.ts';
 import { printed, type AuditInput, sentence, type Raised, slurp, scalar } from './rules.ts';
 
 /** Hub types that should have a public entry on the website. */

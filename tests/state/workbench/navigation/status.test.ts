@@ -27,10 +27,11 @@ import type {
     HpcPayload,
     SessionsPayload,
     UsagePayload
-} from '../../../../src/lib/data/model.ts';
+} from '../../../../src/lib/data/model/index.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sources/config.ts';
 import { registered } from '../../../../src/lib/state/words/languages.ts';
 import { setCatalog, t } from '../../../../src/lib/state/words/text.ts';
+import { allFindings, entityCount } from '../../../../src/lib/state/workbench/navigation/status.ts';
 
 setCatalog(textCatalog(loadConfig(engineDir()).config));
 
@@ -134,7 +135,7 @@ describe('the live sessions item', () => {
     });
 
     it('hands the page every item at once, the machine, findings and repository as it was given them', () => {
-        // revert: src/lib/state/workbench/navigation/status.ts:216 => findings: 0,
+        // revert: src/lib/state/workbench/navigation/status.ts:227 => findings: 0,
         const host = { name: 'desk', address: 'http://127.0.0.1:8790' };
         expect(
             statusWords('open', usage('down'), null, null, { host, findings: 4, repo: null })
@@ -245,26 +246,26 @@ describe('the repository of the tab on screen', () => {
 
 describe('the source items words', () => {
     it('puts the line and the column, and the selection when there is one', () => {
-        // revert: src/lib/state/workbench/navigation/status.ts:224 => return at;
+        // revert: src/lib/state/workbench/navigation/status.ts:235 => return at;
         expect(caretWords({ line: 12, column: 4, selected: 0 })).toBe('Ln 12, Col 4');
         expect(caretWords({ line: 3, column: 1, selected: 7 })).toBe('Ln 3, Col 1 (7 selected)');
     });
 
     it('says spaces or tabs and the width of one step', () => {
-        // revert: src/lib/state/workbench/navigation/status.ts:229-231 => return t('statusbar.indent_spaces', indent.size);
+        // revert: src/lib/state/workbench/navigation/status.ts:240-242 => return t('statusbar.indent_spaces', indent.size);
         expect(indentWords({ tabs: false, size: 2 })).toBe('Spaces: 2');
         expect(indentWords({ tabs: true, size: 4 })).toBe('Tab Size: 4');
     });
 
     it('names every language the highlighter paints, and a name it does not as Plain Text', () => {
-        // revert: src/lib/state/workbench/navigation/status.ts:236 => const known = name;
+        // revert: src/lib/state/workbench/navigation/status.ts:247 => const known = name;
         for (const name of registered()) expect(languageName(name)).not.toContain('statusbar.');
         expect(languageName('python')).toBe('Python');
         expect(languageName('cobol')).toBe(t('statusbar.language_plaintext'));
     });
 
     it('lists Plain Text first and the rest by name, and narrows the list to a query', () => {
-        // revert: src/lib/state/workbench/navigation/status.ts:258-263 => return all;
+        // revert: src/lib/state/workbench/navigation/status.ts:269-274 => return all;
         const all = languageChoices('');
         expect(all.map((choice) => choice.name).sort()).toEqual([...registered()].sort());
         expect(all[0].name).toBe('plaintext');
@@ -277,5 +278,24 @@ describe('the source items words', () => {
             'typescript'
         ]);
         expect(languageChoices('zzz')).toEqual([]);
+    });
+});
+
+describe('the findings and the entity counts the page reads', () => {
+    // revert: src/lib/state/workbench/navigation/status.ts:210 => return [...(snapshot?.findings ?? [])];
+    it('lists the portfolio findings, then the configuration ones', () => {
+        expect(allFindings({ findings: ['a', 'b'] }, { findings: ['c'] })).toEqual(['a', 'b', 'c']);
+        expect(allFindings(null, { findings: ['c'] })).toEqual(['c']);
+        expect(allFindings<string>(null, null)).toEqual([]);
+    });
+
+    // revert: src/lib/state/workbench/navigation/status.ts:286 => return snapshot === null ? 0 : 1;
+    it('counts the entities of one kind, and none before the portfolio arrives', () => {
+        const snapshot = {
+            entities: { venues: { a: {}, b: {}, c: {} }, projects: {} }
+        } as unknown as Parameters<typeof entityCount>[0];
+        expect(entityCount(snapshot, 'venues')).toBe(3);
+        expect(entityCount(snapshot, 'projects')).toBe(0);
+        expect(entityCount(null, 'venues')).toBe(0);
     });
 });

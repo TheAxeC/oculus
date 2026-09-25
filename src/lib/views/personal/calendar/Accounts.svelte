@@ -11,7 +11,7 @@
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { t } from '$lib/state/words/text';
     import { clock } from '$lib/state/words/format';
-    import { calendarKey, type CalendarAccount } from '$lib/state/life/calendar';
+    import { calendarKey, type CalendarAccount } from '$lib/state/feeds/life/calendar';
 
     let {
         rows,

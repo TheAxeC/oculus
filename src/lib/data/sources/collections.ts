@@ -13,10 +13,10 @@ import { join } from 'node:path';
 import { byKey } from '../helpers/guards.ts';
 import { findingText, type TextCatalog } from '../helpers/finding-text.ts';
 import { parse } from 'yaml';
-import type { CollectionFile, Finding, RawCollection, RawEntry } from '../model.ts';
+import type { CollectionFile, Finding, RawCollection, RawEntry } from '../model/index.ts';
 
 /** A key and a hub-relative path from the `collections:` list; declared with the other types. */
-export type { CollectionFile } from '../model.ts';
+export type { CollectionFile } from '../model/index.ts';
 
 /** The record-list key, including the dataset registry's established exception. */
 function listKey(key: string): string {

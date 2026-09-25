@@ -157,16 +157,15 @@ const STATEMENT = /(?:^|\n)\s*(?:import|export)\s[^;]*?\sfrom\s*'[^']*';?/g;
 const COMPUTED = /(?<![\w$.])([\w$]+(?:\.[\w$]+)*\[[^\]\n]*\])\s*\(/g;
 const METHOD = /(?<![\w$.])([\w$]+)\.([\w$]+)\s*\(/g;
 
-/** The group a module the trace reaches, and no path from which reaches the disk, is drawn in. */
-const IDLE = 'reached, writes nothing';
-
 /**
  * The write diagram: from the write route, every call that leaves a module, followed function by
  * function to the node:fs calls that change a file; a name referred to without a call (a dispatch
- * table, a callback) is followed too, drawn dotted. Modules on a path to the disk are grouped by
- * folder and every other module reached is in the dashed group IDLE. A call in a condition that
- * answers 4xx is a refusal, drawn dashed; an edge to the disk is labelled with its node:fs calls;
- * every other edge's tooltip, which renderSvg() makes its title, names the functions it calls.
+ * table, a callback) is followed too, drawn dotted. A module on a path to the disk, or to a call
+ * the reader cannot follow (which may write), is drawn, grouped by folder, and so is a module a
+ * refusal of one of them calls; a module the trace reaches that is none of these is left out, with
+ * its edges. A call in a condition that answers 4xx is a refusal, drawn dashed; an edge to the disk
+ * is labelled with its node:fs calls; every other edge's tooltip, which renderSvg() makes its
+ * title, names the functions it calls.
  *
  * @param {Sources} sources
  * @param {string} [route]
@@ -395,25 +394,32 @@ export function writesDot(sources, route = WRITE_ROUTE) {
         }
     }
     const writing = reachesDisk(edges);
+    // A check a refusal calls writes nothing and is drawn all the same: the refusals are how a
+    // write is turned away before it reaches the disk.
+    for (const key of edges.keys()) {
+        const [from, to, kind] = key.split('\n');
+        if (kind === 'refuses' && writing.has(from)) writing.add(to);
+    }
     /** @type {Map<string, string[]>} */
     const folders = new Map();
     for (const path of touched) {
-        if (path === DISK || path.startsWith('? ')) continue;
-        const folder = writing.has(path) ? posix.dirname(path) : IDLE;
+        if (path === DISK || path.startsWith('? ') || !writing.has(path)) continue;
+        const folder = posix.dirname(path);
         folders.set(folder, [...(folders.get(folder) ?? []), path]);
     }
     const lines = header('writes', 'rankdir=LR');
     for (const folder of sorted(folders.keys())) {
-        const nodes = sorted(folders.get(folder) ?? []).map((path) => {
-            const label = folder === IDLE ? path.replace(/^lib\//, '') : posix.basename(path);
-            return `${quote(path)} [label=${quote(label)}];`;
-        });
-        lines.push(...cluster(folder, folder, nodes, folder === IDLE ? 'dashed' : 'solid'));
+        const nodes = sorted(folders.get(folder) ?? []).map(
+            (path) => `${quote(path)} [label=${quote(posix.basename(path))}];`
+        );
+        lines.push(...cluster(folder, folder, nodes));
     }
-    if (lost.length > 0) lines.push(...cluster('lost', UNPLACED, sorted(lost), 'dashed'));
+    const kept = lost.filter((line) => writing.has(/^"((?:[^"\\]|\\.)*)"/.exec(line)?.[1] ?? ''));
+    if (kept.length > 0) lines.push(...cluster('lost', UNPLACED, sorted(kept), 'dashed'));
     lines.push(`    ${quote(DISK)} [shape=cylinder];`);
     for (const key of sorted(edges.keys())) {
         const [from, to, kind] = key.split('\n');
+        if (!writing.has(from) || !writing.has(to)) continue;
         const names = wrap(sorted(edges.get(key) ?? []));
         const shown = kind === 'refuses' || to === DISK;
         const attrs = shown ? `label=${quote(names)}` : `tooltip=${quote(names)}`;
@@ -426,14 +432,18 @@ export function writesDot(sources, route = WRITE_ROUTE) {
 }
 
 /**
- * Every module some chain of edges leads from to the disk.
+ * The disk, every call the reader could not follow, and every module some chain of edges leads from
+ * to either: a call that could not be followed may be a write, so the module making it is drawn.
  *
  * @param {Map<string, Set<string>>} edges Keyed `from\nto\nkind`.
  * @returns {Set<string>}
  */
 function reachesDisk(edges) {
-    const writing = new Set([DISK]);
     const pairs = [...edges.keys()].map((key) => key.split('\n'));
+    const writing = new Set([
+        DISK,
+        ...pairs.filter((pair) => pair[2] === 'lost').map((pair) => pair[1])
+    ]);
     for (let grew = true; grew;) {
         grew = false;
         for (const [from, to] of pairs) {

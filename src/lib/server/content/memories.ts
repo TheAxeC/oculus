@@ -21,9 +21,9 @@
 // file cannot be written under a picture's name into a folder the page then draws from.
 
 import { byKey } from '../../data/helpers/guards.ts';
-import type { Picture } from '../../data/model.ts';
+import type { Picture } from '../../data/model/index.ts';
 import { hasToken } from '../core/auth.ts';
-import { writeBytesAtomic } from '../sessions/stores/json.ts';
+import { writeBytesAtomic } from '../core/json.ts';
 import { configOf, folderOf, images, isName, sameOrigin, sizeOf, stream } from './images.ts';
 import { existsSync } from 'node:fs';
 import { basename, extname, join } from 'node:path';

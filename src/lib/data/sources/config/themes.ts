@@ -7,9 +7,10 @@
 
 import { join } from 'node:path';
 import { findingText } from '../../helpers/finding-text.ts';
-import type { Finding } from '../../model.ts';
+import type { Finding } from '../../model/index.ts';
 import { glyphCatalog } from './catalogs.ts';
-import { configDir, textCatalog } from './merge.ts';
+import { configDir } from './folder.ts';
+import { textCatalog } from './merge.ts';
 
 /** A row of `themes:` as a map, or null for anything else. */
 function rowOf(row: unknown): Record<string, unknown> | null {

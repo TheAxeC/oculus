@@ -2,12 +2,16 @@
     // Layer 3, shared view partial. Project cross-links grouped as work, published and ideas, each
     // group nesting its members under their own project type, and each member opening its tab.
 
-    import { byType } from './cross-links';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Disclosure from '$lib/ui/tree/Disclosure.svelte';
-    import Glyph from '$lib/ui/controls/Glyph.svelte';
+    import Glyph from '$lib/ui/display/Glyph.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import { groupProjects, type CrossGroup, type Project } from '$lib/state/boards/collection';
+    import {
+        groupProjects,
+        membersByType,
+        type CrossGroup,
+        type Project
+    } from '$lib/state/boards/collection';
     import { t } from '$lib/state/words/text';
     import { useState } from '$lib/state/client/use';
 
@@ -71,7 +75,7 @@
             </span>
             {#if isOpen(group.type)}
                 <div class="members">
-                    {#each byType(group) as kind (kind.type)}
+                    {#each membersByType(group) as kind (kind.type)}
                         <div class="kind" data-project-kind={kind.type}>
                             <Tag label={kind.type} />
                             {#each kind.members as member (member.id)}

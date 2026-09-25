@@ -10,7 +10,11 @@
 // which one a reader is looking at.
 
 import { isMap, str } from '../../../data/helpers/guards.ts';
-import type { CalendarEvent, CalendarEventStatus, CalendarListEntry } from '../../../data/model.ts';
+import type {
+    CalendarEvent,
+    CalendarEventStatus,
+    CalendarListEntry
+} from '../../../data/model/index.ts';
 import { getJson, httpsLink, PAGE_MAX, rowsOf, type ReadArgs, type Reading } from './api.ts';
 
 const BASE = 'https://www.googleapis.com/calendar/v3';

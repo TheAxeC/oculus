@@ -5,7 +5,7 @@
 import { createHash } from 'node:crypto';
 import { readFileSync, statSync } from 'node:fs';
 import { findingText } from '../../../data/helpers/finding-text.ts';
-import type { AuditFinding, Collection, Project } from '../../../data/model.ts';
+import type { AuditFinding, Collection, Project } from '../../../data/model/index.ts';
 
 /** The thresholds and vocabularies the rules read, out of the merged configuration. */
 export type AuditRules = {

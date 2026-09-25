@@ -1,16 +1,16 @@
 // Layer 2, client state. The text catalog, glyph vocabulary and icon drawings received from the
 // server, with the lookups components use. Nothing here touches the filesystem.
 //
-// A glyph is drawn by ui/controls/Glyph.svelte and nowhere else: as its line icon, or as its ASCII
+// A glyph is drawn by ui/display/Glyph.svelte and nowhere else: as its line icon, or as its ASCII
 // stand-in while the mode is `ascii`. No string of the catalog carries a glyph, so text is words
 // and nothing here fills a glyph into it.
 //
 // The three maps are plain module variables, so every reader below first reads the configuration's
-// generation, state/client/generation.svelte.ts: that is what a template's own effect depends on,
+// generation, state/words/generation.svelte.ts: that is what a template's own effect depends on,
 // and what makes a string drawn before a push redraw with the string the push installed.
 
 import { fillPlaceholders } from '../../data/helpers/finding-text.ts';
-import { configGeneration } from '../client/generation.svelte.ts';
+import { configGeneration } from './generation.svelte.ts';
 import { glyphMode } from './glyphmode.svelte.ts';
 
 export { glyphMode, setGlyphMode, type GlyphMode } from './glyphmode.svelte.ts';
@@ -44,7 +44,8 @@ export function setIcons(next: Record<string, string>): void {
  * The catalog entry for a dotted key, with no interpolation. It exists for the keys that are named
  * by data rather than by a call site: the label and glyph keys a view hands the registry.
  * tests/checks/source/keys.test.ts can only check a literal key, so that family is checked instead
- * by tests/views/whole/registry.test.ts, and this throws on a missing key exactly as t() does.
+ * by tests/state/workbench/navigation/registry.test.ts, and this throws on a missing key exactly as
+ * t() does.
  */
 function catalogEntry(key: string): string {
     configGeneration();
@@ -69,7 +70,7 @@ export function t(key: string, ...args: (string | number)[]): string {
 
 /**
  * The ASCII stand-in a glyph name has in config/catalogs/glyphs.yml, whatever the mode: what
- * ui/controls/Glyph.svelte draws while the mode is `ascii`, and the only form of a glyph that may
+ * ui/display/Glyph.svelte draws while the mode is `ascii`, and the only form of a glyph that may
  * go into text. A missing name throws like a missing text key: a glyph that silently renders as
  * nothing is a hole in a rail or a tab strip that nobody notices.
  */

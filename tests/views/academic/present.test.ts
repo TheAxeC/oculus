@@ -16,7 +16,7 @@ import {
 } from '../../../src/lib/data/sources/config.ts';
 import { setCatalog, setGlyphs } from '../../../src/lib/state/words/text.ts';
 import { setVocab } from '../../../src/lib/state/words/tones.ts';
-import type { PresentSlide, Project, Snapshot } from '../../../src/lib/data/model.ts';
+import type { PresentSlide, Project, Snapshot } from '../../../src/lib/data/model/index.ts';
 import type { Instance } from '../../../src/lib/state/workbench/layout/index.ts';
 import { clientContext, createClientState, type ClientState } from '../../fixtures/client.ts';
 

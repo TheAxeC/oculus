@@ -4,7 +4,7 @@
 
     import Card from '$lib/ui/frame/Card.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
-    import Glyph from '$lib/ui/controls/Glyph.svelte';
+    import Glyph from '$lib/ui/display/Glyph.svelte';
     import CrossLinks from '$lib/views/shared/links/CrossLinks.svelte';
     import { inlineMarkdown } from '$lib/ui/html';
     import type { Project } from '$lib/state/boards/collection';

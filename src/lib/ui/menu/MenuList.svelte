@@ -15,7 +15,7 @@
 
     import { onMount, tick } from 'svelte';
     import { type MenuGroup, type MenuItem, menuLevel } from '$lib/ui/menu/menu-items';
-    import Glyph from '../controls/Glyph.svelte';
+    import Glyph from '../display/Glyph.svelte';
     import { onBody } from '../frame/on-body';
     import { t } from '$lib/state/words/text';
 

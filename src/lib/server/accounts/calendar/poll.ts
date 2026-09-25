@@ -23,7 +23,7 @@ import type {
     CalendarEvent,
     CalendarListEntry,
     CalendarPayload
-} from '../../../data/model.ts';
+} from '../../../data/model/index.ts';
 import type { Hub } from '../../core/channels.ts';
 import type { Window } from './api.ts';
 import { readGoogle } from './google.ts';

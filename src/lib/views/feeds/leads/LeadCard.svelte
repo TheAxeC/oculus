@@ -11,7 +11,7 @@
     import Card from '$lib/ui/frame/Card.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Confirm from '$lib/ui/controls/Confirm.svelte';
-    import Glyph from '$lib/ui/controls/Glyph.svelte';
+    import Glyph from '$lib/ui/display/Glyph.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { inlineMarkdown } from '$lib/ui/html';
     import {

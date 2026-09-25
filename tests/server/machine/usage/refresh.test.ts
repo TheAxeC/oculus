@@ -5,7 +5,7 @@ import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve, sep } from 'node:path';
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { UsageAccountConfig, UsagePayload } from '../../../../src/lib/data/model.ts';
+import type { UsageAccountConfig, UsagePayload } from '../../../../src/lib/data/model/index.ts';
 import {
     paneReason,
     USAGE_POLL_MS,
@@ -28,7 +28,7 @@ import {
 } from '../../../../src/lib/server/machine/usage/accounts.ts';
 import { watchUsage } from '../../../../src/lib/server/machine/usage/watch.ts';
 import { Hub } from '../../../../src/lib/server/core/channels.ts';
-import { contextFixture } from '../../core/context-fixture.ts';
+import { contextFixture } from '../../root/context-fixture.ts';
 import { noop } from '../../../fixtures/doubles.ts';
 import { scratchDir, sweepScratch } from '../../../fixtures/scratch.ts';
 

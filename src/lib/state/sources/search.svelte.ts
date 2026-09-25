@@ -19,9 +19,7 @@ import {
     type SearchQuery,
     type SearchRefusal
 } from '../../data/helpers/search.ts';
-import type { EntitiesStore } from '../client/entities.svelte.ts';
-import type { UiStore } from '../workbench/ui.svelte.ts';
-import type { WritesStore } from '../client/writes.svelte.ts';
+import type { EntitiesStore, InstanceStates, WritesStore } from '../stores/shapes.ts';
 import { t } from '../words/text.ts';
 
 /** What each refusal is said with. The keys are literals, as every catalog read in the tree is. */
@@ -46,7 +44,7 @@ export type SearchStore = {
 export function createSearch(
     entities: EntitiesStore,
     writes: WritesStore,
-    ui: UiStore
+    ui: InstanceStates
 ): SearchStore {
     const state: { running: string[] } = $state({ running: [] });
 

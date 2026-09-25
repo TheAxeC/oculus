@@ -19,7 +19,7 @@ import type {
     UsageLiveSession,
     UsageRefresher,
     UsageWindow
-} from '../../../data/model.ts';
+} from '../../../data/model/index.ts';
 import { isMap } from '../../../data/helpers/guards.ts';
 import { codexRollouts } from '../../transcripts/stores.ts';
 import { USAGE_PREFIX } from '../pty/sessions.ts';

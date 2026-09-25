@@ -7,7 +7,7 @@
 // on a page or in a log.
 
 import { isMap, str } from '../../../data/helpers/guards.ts';
-import type { ConnectProvider } from '../../../data/model.ts';
+import type { ConnectProvider } from '../../../data/model/index.ts';
 import type { Fetcher } from './oauth.ts';
 
 /**

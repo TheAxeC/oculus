@@ -3,7 +3,7 @@
     // closing words and the contact line in place of the legend.
 
     import Words from './Words.svelte';
-    import type { DeckMeta } from '$lib/state/life/present';
+    import type { DeckMeta } from '$lib/state/feeds/life/present';
 
     type Props = { meta: DeckMeta };
 

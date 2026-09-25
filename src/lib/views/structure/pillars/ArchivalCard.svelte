@@ -4,9 +4,13 @@
 
     import Card from '$lib/ui/frame/Card.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
-    import Glyph from '$lib/ui/controls/Glyph.svelte';
+    import Glyph from '$lib/ui/display/Glyph.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import type { ArchiveGroup, Project } from '$lib/state/words/lines';
+    import {
+        archivedCount,
+        type ArchiveGroup,
+        type Project
+    } from '$lib/state/boards/structure/lines';
     import { inlineMarkdown } from '$lib/ui/html';
     import { t } from '$lib/state/words/text';
     import { useState } from '$lib/state/client/use';
@@ -18,7 +22,7 @@
     type Props = { id: string; cursor: boolean; groups: ArchiveGroup[] };
     let { id, cursor, groups }: Props = $props();
     let shown = $state('');
-    const count = $derived(groups.reduce((sum, group) => sum + group.count, 0));
+    const count = $derived(archivedCount(groups));
 
     /** The short name when the manifest gives one, else the title; an empty short is none. */
     function labelOf(project: Project): string {

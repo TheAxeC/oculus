@@ -6,6 +6,7 @@
     import type { BoardItem } from '$lib/state/boards/board';
     import { findView } from '$lib/state/workbench/layout';
     import { folderOf, type GroupedSession } from '$lib/state/client/selectors.svelte';
+    import { liveCount } from '$lib/state/sessions/folds';
     import { t } from '$lib/state/words/text';
     import { useState } from '$lib/state/client/use';
 
@@ -61,7 +62,7 @@
 </script>
 
 {#if working.length > 0}
-    {@const live = working.filter((entry) => entry.live).length}
+    {@const live = liveCount(working)}
     <div class="sessions">
         <Tag
             label={working.length === 1

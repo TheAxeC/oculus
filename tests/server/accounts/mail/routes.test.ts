@@ -8,7 +8,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
-import type { InboxThread } from '../../../../src/lib/data/model.ts';
+import type { InboxThread } from '../../../../src/lib/data/model/index.ts';
 import {
     SCOPE,
     ConnectStates,

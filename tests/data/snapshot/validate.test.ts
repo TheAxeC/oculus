@@ -13,7 +13,7 @@ import type {
     RawRegistry,
     RegistryName,
     ValidationRules
-} from '../../../src/lib/data/model.ts';
+} from '../../../src/lib/data/model/index.ts';
 
 /** The catalog the findings are worded from: the one oculus ships, read as the server reads it. */
 const CATALOG = textCatalog(loadConfig(engineDir()).config);

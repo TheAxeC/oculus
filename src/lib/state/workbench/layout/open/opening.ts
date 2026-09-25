@@ -6,13 +6,7 @@
 // new pane beside it when the caller asked for one, and a pane hidden inside a folded child is
 // expanded first, since opening a view into something invisible would look like nothing happening.
 
-import {
-    activePath,
-    findView,
-    isInstanceOf,
-    newInstance,
-    stateId
-} from '../../../client/instance.ts';
+import { activePath, findView, isInstanceOf, newInstance, stateId } from '../instance.ts';
 import type { LayoutAccess } from '../access.ts';
 import type { Attention } from './attention.ts';
 import type { Instance, Pane, ViewId } from '../model.ts';

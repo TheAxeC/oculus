@@ -13,13 +13,13 @@ import { join, resolve, sep } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
 import {
     addedRoots,
-    fsWrites,
     ignoredCache,
     handleFs,
     handleFsWrite,
     readSaved,
     type FsTarget
 } from '../../../src/lib/server/files/fs.ts';
+import { fsWrites } from '../../../src/lib/server/core/json.ts';
 import { ENGINE_ROOT, engineRoot } from '../../../src/lib/server/files/files.ts';
 import { BOOKMARKS } from '../../../src/lib/server/files/fs/bookmarks.ts';
 import { createEntry } from '../../../src/lib/server/edit/writes/entries.ts';

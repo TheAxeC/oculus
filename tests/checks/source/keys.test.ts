@@ -18,11 +18,8 @@ import {
     loadConfig,
     textCatalog
 } from '../../../src/lib/data/sources/config.ts';
-import {
-    CATALOGS,
-    LOCAL_NAME,
-    descriptionKey
-} from '../../../src/lib/views/system/config/files.ts';
+import { CATALOGS, LOCAL_NAME } from '../../../src/lib/state/system/config-files.ts';
+import { descriptionKey } from '../../../src/lib/views/system/config/files.ts';
 import { registerAll, registerCollections } from '../../../src/routes/views.ts';
 import { recordedKinds } from '../../fixtures/kinds.ts';
 import { createClientState, type ClientState } from '../../fixtures/client.ts';
@@ -185,9 +182,9 @@ const COMPUTED_PREFIXES = [
 
 /** Registration metadata is a configured catalog-key value rather than a computed prefix. */
 const REGISTRATION_LOOKUPS = [
-    { file: 'lib/views/registry.ts', start: 'lookup(registration.label)' },
-    { file: 'lib/views/registry.ts', start: 'lookup(registration.glyph)' },
-    { file: 'lib/views/registry.ts', start: 'lookup(means)' }
+    { file: 'lib/state/workbench/navigation/registry.ts', start: 'lookup(registration.label)' },
+    { file: 'lib/state/workbench/navigation/registry.ts', start: 'lookup(registration.glyph)' },
+    { file: 'lib/state/workbench/navigation/registry.ts', start: 'lookup(means)' }
 ] as const;
 
 /** Remove comments so prose about a reader is not mistaken for a call. */
@@ -315,7 +312,7 @@ describe('text keys', () => {
         expect(missing).toEqual([]);
     });
 
-    // revert: tests/checks/source/keys.test.ts:324 => delete
+    // revert: tests/checks/source/keys.test.ts:321 => delete
     it('has a reader for every catalog key', () => {
         const allowed = new Set(found.flatMap((call) => (call.key === null ? [] : [call.key])));
         for (const registration of views()) {

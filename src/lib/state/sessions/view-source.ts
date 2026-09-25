@@ -8,9 +8,9 @@
 // folder rather than a file is answered as it is written: whether a folder can be opened as one
 // file is the view's own question, not this rule's.
 
-import { HUB_ROOT } from '../boards/collection.ts';
+import { HUB_ROOT } from '../sources/fs.ts';
 import { isMap } from '../../data/helpers/guards.ts';
-import type { FeedKind } from '../../data/model.ts';
+import type { FeedKind } from '../../data/model/index.ts';
 
 /** One file of the hub, addressed the way the source tab addresses it. */
 export type ViewSource = { root: string; path: string };

@@ -16,7 +16,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { isMap, str } from '../../../data/helpers/guards.ts';
-import type { InboxKind, TriageFile, TriageNote } from '../../../data/model.ts';
+import type { InboxKind, TriageFile, TriageNote } from '../../../data/model/index.ts';
 
 /** The mode the notes file is created and kept at, as the credential files are. */
 const MODE = 0o600;

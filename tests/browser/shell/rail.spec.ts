@@ -344,7 +344,7 @@ test('the Bookmarks menu lists the bookmarks by name over the panes, opens one, 
 test('a bookmark written into the file from outside joins the open menu without a reload', async ({
     page
 }) => {
-    // revert: src/lib/state/sources/fs.svelte.ts:369 => delete
+    // revert: src/lib/state/sources/fs.svelte.ts:368 => delete
     // What the socket carried on the `files` channel, in order, read off the wire.
     const files: { root?: string; bookmarks?: boolean }[] = [];
     page.on('websocket', (socket) => {

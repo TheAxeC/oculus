@@ -1,6 +1,7 @@
 <script module lang="ts">
     // Layer 3, view registration. Usage closes the current system views.
-    import type { ViewRegistration } from '../../registry';
+    import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
+    import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     export const registration: ViewRegistration = {
         id: 'usage',
         label: 'views.usage',
@@ -27,10 +28,16 @@
     import type { Column } from '$lib/ui/display/table-rows';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { basename, clock } from '$lib/state/words/format';
-    import { cardCursor } from '$lib/state/client/instance';
+    import { cardCursor } from '$lib/state/workbench/layout/instance';
     import { t } from '$lib/state/words/text';
-    import type { UsageAccount, UsageDay, UsageWindow } from '$lib/state/system/usage';
-    import type { ViewProps } from '../../registry';
+    import {
+        hasUsageStatus,
+        orderedWindows,
+        usageTotals,
+        type UsageAccount,
+        type UsageDay,
+        type UsageWindow
+    } from '$lib/state/system/usage';
     import { useState } from '$lib/state/client/use';
 
     const {
@@ -93,17 +100,6 @@
         );
     }
 
-    function orderedWindows(windows: UsageWindow[]): UsageWindow[] {
-        const order: Record<UsageWindow['name'], number> = {
-            five_hour: 0,
-            seven_day: 1,
-            weekly_model: 2,
-            primary: 0,
-            secondary: 1
-        };
-        return [...windows].sort((left, right) => order[left.name] - order[right.name]);
-    }
-
     function historyRows(rows: UsageDay[]): Record<string, unknown>[] {
         const shown: Record<string, unknown>[] = rows.map((row) => ({
             ...row,
@@ -116,16 +112,13 @@
             tool: '',
             account: '',
             model: '',
-            input: rows.reduce((sum, row) => sum + row.input, 0),
-            output: rows.reduce((sum, row) => sum + row.output, 0),
-            cacheRead: rows.reduce((sum, row) => sum + row.cacheRead, 0),
-            cacheCreation: rows.reduce((sum, row) => sum + row.cacheCreation, 0)
+            ...usageTotals(rows)
         });
         return shown;
     }
 
     function hasStatus(account: UsageAccount): boolean {
-        return account.windows.length > 0 || account.live.length > 0;
+        return hasUsageStatus(account);
     }
 
     function accountId(account: UsageAccount): string {

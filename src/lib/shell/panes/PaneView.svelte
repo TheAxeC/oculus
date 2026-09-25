@@ -45,7 +45,11 @@
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { edgeAt, markAt, withoutOwn } from '$lib/state/workbench/drag.svelte';
     import { t } from '$lib/state/words/text';
-    import { badgeOf, registrationGlyph, registrationLabel } from '$lib/views/registry';
+    import {
+        badgeOf,
+        registrationGlyph,
+        registrationLabel
+    } from '$lib/state/workbench/navigation/registry';
     import TabView from './TabView.svelte';
     import { showable, type Instance, type Layout } from '$lib/state/workbench/layout';
     import { useState } from '$lib/state/client/use';

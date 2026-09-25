@@ -3,7 +3,7 @@
 import { describe, expect, it } from 'vitest';
 import { Hub } from '../../../src/lib/server/core/channels.ts';
 import type { Sink } from '../../../src/lib/server/core/channels.ts';
-import type { Message } from '../../../src/lib/data/model.ts';
+import type { Message } from '../../../src/lib/data/model/index.ts';
 import { noop } from '../../fixtures/doubles.ts';
 
 /** Let every pending microtask and one turn of the event loop run. */

@@ -1,6 +1,7 @@
 <script module lang="ts">
     // Layer 3, view registration. History closes the System group, after the configuration.
-    import type { ViewRegistration } from '../../registry';
+    import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
+    import type { ViewProps } from '$lib/state/workbench/navigation/registry';
 
     export const registration: ViewRegistration = {
         id: 'history',
@@ -37,10 +38,9 @@
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { stamp } from '$lib/state/words/format';
     import { t } from '$lib/state/words/text';
-    import { filterOf, matching, shown, undoSaid } from './rows';
+    import { filterOf, shown, undoSaid } from './rows';
     import type { Shown } from './rows';
-    import type { Change } from '$lib/state/sessions/changes.svelte';
-    import type { ViewProps } from '../../registry';
+    import { matching, type Change } from '$lib/state/sessions/changes.svelte';
     import { useState } from '$lib/state/client/use';
 
     const {

@@ -6,7 +6,7 @@
 // portfolio, and like validate it is pure and repairs nothing.
 
 import { findingText, type TextCatalog } from '../helpers/finding-text.ts';
-import type { Finding, RawPortfolio, ValidationRules } from '../model.ts';
+import type { Finding, RawPortfolio, ValidationRules } from '../model/index.ts';
 
 /**
  * The two registries whose entries carry `themes:`, the name of each file's entry list, the

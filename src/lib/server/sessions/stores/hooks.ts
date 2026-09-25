@@ -17,7 +17,7 @@ import type {
     SessionRecord,
     SessionsPayload,
     Workspace
-} from '../../../data/model.ts';
+} from '../../../data/model/index.ts';
 import { isMap } from '../../../data/helpers/guards.ts';
 
 /** How long a hook keeps showing on its session before it is treated as if it never arrived. */

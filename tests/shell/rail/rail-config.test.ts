@@ -75,7 +75,7 @@ describe('the rail of the real config', () => {
 
 describe('a bookmark opened as a document tab', () => {
     it('carries the bookmark label in the instance state, which is what the tab strip draws', () => {
-        // revert: src/lib/state/client/instance.ts:60 => label: mark.path
+        // revert: src/lib/state/workbench/layout/instance.ts:61 => label: mark.path
         const state = documentState({ label: 'cathedra manual', root: 'cathedra', path: 'a.html' });
         expect(state).toEqual({
             id: 'cathedra/a.html',
@@ -86,7 +86,7 @@ describe('a bookmark opened as a document tab', () => {
     });
 
     it('gives two manuals two identities, so each opens as its own tab', () => {
-        // revert: src/lib/state/client/instance.ts:57 => id: mark.root,
+        // revert: src/lib/state/workbench/layout/instance.ts:58 => id: mark.root,
         const one = documentState({ label: 'One', root: 'cathedra', path: 'a.html' });
         const two = documentState({ label: 'Two', root: 'cathedra', path: 'b.html' });
         expect(one.id).not.toBe(two.id);

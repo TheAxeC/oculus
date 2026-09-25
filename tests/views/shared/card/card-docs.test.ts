@@ -11,7 +11,7 @@ import { render } from 'svelte/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import CardDocs from '../../../../src/lib/views/shared/card/CardDocs.svelte';
 import type { BoardItem } from '../../../../src/lib/state/boards/board/index.ts';
-import type { Project } from '../../../../src/lib/data/model.ts';
+import type { Project } from '../../../../src/lib/data/model/index.ts';
 import {
     engineDir,
     glyphCatalog,

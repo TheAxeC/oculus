@@ -183,7 +183,7 @@ describe('Chip', () => {
         expect(source).toContain('max-width: 100%');
     });
 
-    // revert: src/lib/state/words/text.ts:113 => return false;
+    // revert: src/lib/state/words/text.ts:114 => return false;
     it('marks a chip whose stand-in already reads as a bracketed tag, so it draws no second pair', () => {
         setGlyphMode('ascii');
         try {

@@ -5,14 +5,13 @@
 // What this does NOT cover: the feed views themselves. This reads the counts and run dates the
 // command center needs, and the Inbox, Lit Watch and Position Leads views read the entries.
 
-import { mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { dirname, join, resolve, sep } from 'node:path';
+import { resolve, sep } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
 import { readFeeds } from '../../../src/lib/data/sources/feeds.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
-import type { FeedFiles } from '../../../src/lib/data/model.ts';
-import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
+import type { FeedFiles } from '../../../src/lib/data/model/index.ts';
+import { plantScratch, sweepScratch } from '../../fixtures/scratch.ts';
 
 afterAll(sweepScratch);
 
@@ -27,14 +26,8 @@ const FILES: FeedFiles = {
 
 /** A hub of its own, with the given files written into it. */
 function hub(files: Record<string, string>): string {
-    const dir = scratchDir('oculus-feeds-');
+    const dir = plantScratch('oculus-feeds-', files);
     expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
-    for (const [rel, body] of Object.entries(files)) {
-        const full = join(dir, rel);
-        expect(resolve(full).startsWith(resolve(dir) + sep)).toBe(true);
-        mkdirSync(dirname(full), { recursive: true });
-        writeFileSync(full, body);
-    }
     return dir;
 }
 

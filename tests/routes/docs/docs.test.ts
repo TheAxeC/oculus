@@ -27,7 +27,7 @@ import {
     textCatalog
 } from '../../../src/lib/data/sources/config.ts';
 import type { DocTarget } from '../../../src/lib/server/content/docs.ts';
-import type { Project } from '../../../src/lib/data/model.ts';
+import type { Project } from '../../../src/lib/data/model/index.ts';
 import { fields } from '../../../src/lib/data/helpers/guards.ts';
 import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
 

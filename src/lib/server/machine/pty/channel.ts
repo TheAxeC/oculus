@@ -19,7 +19,7 @@ import type {
     Terminal,
     TerminalInput,
     TerminalResize
-} from '../../../data/model.ts';
+} from '../../../data/model/index.ts';
 import type { Hub, Sink } from '../../core/channels.ts';
 import {
     captureArgs,

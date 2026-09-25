@@ -1,6 +1,6 @@
 <script lang="ts">
     // Layer 3, Map partial. The hand-drawn SVG graph and its drag, pan, zoom, open and related-edge
-    // interactions. Geometry comes from the pure seeded layout in state/boards/graph.ts.
+    // interactions. Geometry comes from the pure seeded layout in state/boards/structure/graph.ts.
     //
     // The labels are one layer drawn over every node, so a label is never covered by a node drawn
     // after it. A label that would overlap one already drawn is hidden, by the rule of
@@ -29,7 +29,7 @@
         type GraphNode,
         type Physics,
         type PointNode
-    } from '$lib/state/boards/graph';
+    } from '$lib/state/boards/structure/graph';
     import { t } from '$lib/state/words/text';
     import { toneOf, typeTone } from '$lib/state/words/tones';
     import { useState } from '$lib/state/client/use';

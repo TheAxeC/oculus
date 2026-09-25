@@ -32,7 +32,7 @@
     // the next arrow key goes to.
 
     import type { Snippet } from 'svelte';
-    import Glyph from '../controls/Glyph.svelte';
+    import Glyph from '../display/Glyph.svelte';
     import Tooltip from '../menu/Tooltip.svelte';
     import type { TreeNav } from './tree-keys.ts';
 

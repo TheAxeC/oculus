@@ -33,7 +33,6 @@
         extraRawFields,
         formFields,
         identityField,
-        parseRawField,
         refusedField,
         type Entry,
         type SchemaField
@@ -41,6 +40,7 @@
     import { draftTarget, formKey, localDrafts } from '$lib/state/forms/form-drafts.svelte';
     import {
         controlValue,
+        parseRawField,
         savedValue,
         type FormValue,
         type MetaRow

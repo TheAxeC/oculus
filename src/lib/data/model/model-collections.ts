@@ -1,5 +1,5 @@
 // Layer 1, data. Editable collections, generated feeds and the career record.
-// The portfolio aggregate imports these leaf types while model.ts remains the public facade.
+// The portfolio aggregate imports these leaf types while data/model/index.ts is the facade.
 
 import type { Id } from './model-entities.ts';
 

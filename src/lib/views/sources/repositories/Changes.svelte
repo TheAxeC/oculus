@@ -22,6 +22,7 @@
     import ChangeCounts from '$lib/views/shared/changes/ChangeCounts.svelte';
     import { nameOf } from '$lib/state/sources/fs';
     import {
+        changeCount,
         changeGroups,
         statusStyle,
         statusWordKey,
@@ -55,7 +56,7 @@
 
     const groups = $derived(changeGroups(git));
 
-    const total = $derived(git.staged.length + git.unstaged.length + git.untracked.length);
+    const total = $derived(changeCount(git));
 
     /** The folder a path sits in, which a row says after the file's own name. */
     function folderOf(path: string): string {

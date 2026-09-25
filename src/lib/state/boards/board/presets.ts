@@ -1,7 +1,7 @@
 // Layer 2, client state. Board presets, shared types and display helpers live here because board
 // configuration changes independently of items, filters and statistics.
 
-import type { Id, Project, Tier, Venue } from '../../../data/model.ts';
+import type { Id, Project, Tier, Venue } from '../../../data/model/index.ts';
 // `str` here is the shared `text`: a config value of the wrong type reads as the empty string.
 import { isMap, strings, text as str } from '../../../data/helpers/guards.ts';
 

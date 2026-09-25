@@ -14,7 +14,7 @@ import {
     terminalMessage,
     type TerminalDriver
 } from '../../../../src/lib/server/machine/pty/channel.ts';
-import type { Message } from '../../../../src/lib/data/model.ts';
+import type { Message } from '../../../../src/lib/data/model/index.ts';
 import { noop } from '../../../fixtures/doubles.ts';
 
 const ID = 'a1b2c3-shell';

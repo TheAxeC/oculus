@@ -1,6 +1,6 @@
 <script module lang="ts">
     // Layer 3, view registration. Timeline follows Transcript in the Sessions group.
-    import type { ViewRegistration } from '$lib/views/registry';
+    import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     export const registration: ViewRegistration = {
         id: 'timeline',
         label: 'sessions.view_timeline',
@@ -31,7 +31,7 @@
     import type { SessionEvent } from '$lib/state/client/selectors.svelte';
     import { asText } from '$lib/state/forms/schema';
     import { t } from '$lib/state/words/text';
-    import type { ViewProps } from '$lib/views/registry';
+    import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 
     const {

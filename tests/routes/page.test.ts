@@ -11,7 +11,9 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { load } from '../../src/routes/+page.ts';
-import { configGeneration } from '../../src/lib/state/client/generation.svelte.ts';
+import { load as serverLoad } from '../../src/routes/+page.server.ts';
+import { Hub } from '../../src/lib/server/core/channels.ts';
+import { configGeneration } from '../../src/lib/state/words/generation.svelte.ts';
 import { defaultTheme } from '../../src/lib/state/words/appearance.ts';
 import { glyph, t } from '../../src/lib/state/words/text.ts';
 import { toneOf } from '../../src/lib/state/words/tones.ts';
@@ -122,5 +124,25 @@ describe('the page effect that follows a config push', () => {
         const wired = effects(source).filter((body) => body.includes('setToken('));
         expect(wired).toHaveLength(1);
         expect(wired[0]).toContain('data.token');
+    });
+});
+
+describe('the page server load', () => {
+    // revert: src/routes/+page.server.ts:42 => host: { name: '', address: '' }
+    it('ships the host the server context holds on locals', () => {
+        const hub = new Hub();
+        // A held push of another configuration is what makes the seed carry the read and its host.
+        hub.publish('config', { config: { older: true }, findings: [] });
+        const host = { name: 'the-machine', address: 'http://127.0.0.1:4321' };
+        const read = { config: { newer: true }, findings: [] };
+        const locals = {
+            config: () => read,
+            server: { hub, host, icons: { set: {} } },
+            token: 't'
+        };
+        const data = serverLoad({ locals } as unknown as Parameters<typeof serverLoad>[0]) as {
+            seed: { payload?: { host: unknown } };
+        };
+        expect(data.seed.payload?.host).toBe(host);
     });
 });

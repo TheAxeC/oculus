@@ -1,0 +1,199 @@
+// Layer 2, client state. The registry is the vocabulary of ViewId: view modules describe themselves
+// and the route loader registers them, so no shell module imports a view by name and no view knows
+// where it is mounted. It is a state module like the rest of the navigation folder: the client
+// object builds one per page, the shell and the views both read it, and its one import is the
+// state layer's own text catalog, so the state layer names nothing of `views/` to hold it.
+//
+// A registration's label, glyph and badge mark words are catalog keys rather than words: the label
+// reads through t() at the call site that draws it, the glyph key's value is a name in
+// config/catalogs/glyphs.yml, and the mark words are what a badge that is a mark says on hover. A
+// view is therefore renamed or re-iconed in config, and
+// tests/state/workbench/navigation/registry.test.ts checks that the keys resolve, which is the gate
+// tests/checks/source/keys.test.ts cannot give a key that comes from data.
+
+import type { Component } from 'svelte';
+import type { Instance, ViewId } from '../layout/index.ts';
+import type { LayoutStore } from '../layout.svelte.ts';
+import { lookup, t } from '../../words/text.ts';
+
+/** A split cell carries a theme hue, its count and its configured label. */
+export type BadgeCell = { count: number; color: string; label: string };
+
+/**
+ * What a registration's badge hooks read of the client: the calendar's and the HPC queue's badge
+ * words, and the rail badges' counts, hues, hover words and cells. The client object
+ * (state/client/context.ts) holds these stores, so it is handed to badgeOf as it is.
+ */
+export type BadgeClient = {
+    calendar: { badgeText: () => string };
+    hpc: { badgeText: () => string };
+    railBadges: {
+        boardBadge: (view: string) => string;
+        boardBadgeTitle: (view: string) => string;
+        boardCells: (view: string) => BadgeCell[];
+        collectionBadge: (key: string) => string;
+        collectionBadgeTone: (key: string) => string;
+        collectionBadgeTitle: (key: string) => string;
+        applicationsBadge: () => string;
+        inboxBadge: () => string;
+        leadsBadge: () => string;
+        linkedinBadgeGlyph: () => string;
+        auditBadge: () => string;
+        queueBadgeTitle: () => string;
+        queueCells: () => BadgeCell[];
+        calendarBadgeTitle: () => string;
+        calendarCells: () => BadgeCell[];
+    };
+};
+
+/** The badge values shared by the view catalogue and pane tabs. */
+export type RegistrationBadge = {
+    text: string;
+    /** The glyph name drawn before the text, empty for a badge that is a count and nothing else. */
+    glyph: string;
+    /**
+     * The text a pane tab draws: the catalogue's, unless the registration says its cells carry it
+     * all.
+     */
+    tabText: string;
+    tone?: string;
+    title: string;
+    cells?: BadgeCell[];
+};
+
+/**
+ * Every view takes the instance it was mounted as, and reads its own state by that instance's id.
+ */
+export type ViewProps = { instance: Instance };
+
+export type Registration = {
+    id: ViewId;
+    /** A key in the text catalog holding the view's name. */
+    label: string;
+    /**
+     * A text-catalog key whose value is a name in the `glyphs:` map of config/catalogs/glyphs.yml.
+     */
+    glyph: string;
+    component: Component<ViewProps>;
+    /** The stable id of the `nav_groups` group of the view catalogue that owns this view. */
+    group: string;
+    /** Position inside the group; equal positions are resolved by id. */
+    order: number;
+    /**
+     * Whether the view catalogue lists the view. Every view is listed unless it says otherwise; one
+     * that is only ever opened for something (a project's editor, a project, a document) says
+     * `false`, since opened bare it can only report that it was opened for nothing.
+     */
+    listed?: boolean;
+    /** Live text drawn beside the view's glyph in the catalogue; an empty string draws no badge. */
+    badge?: (state: BadgeClient) => string;
+    /** A glyph name drawn in the badge before its text, for a badge that is a mark, not a count. */
+    badgeGlyph?: (state: BadgeClient) => string;
+    /**
+     * A text-catalog key whose value says in words what the badge's mark means, which is the
+     * badge's hover words when it is a mark and no count. A registration with `badgeGlyph` names
+     * one; a mark drawn without it is hovered by the view's name alone, and
+     * tests/state/workbench/rail-badges.test.ts fails on a registration that lacks it.
+     */
+    badgeMark?: string;
+    /** A hue name from state/words/tones.ts; absent keeps the accent badge. */
+    badgeTone?: (state: BadgeClient) => string;
+    /** The badge's hover words, supplied by the registration's state selectors. */
+    badgeTitle?: (state: BadgeClient) => string;
+    /** The split counts shown on a pane tab. */
+    badgeCells?: (state: BadgeClient) => BadgeCell[];
+    /**
+     * The text a pane tab draws when it differs from the catalogue's; empty when the cells say it
+     * all.
+     */
+    badgeTabText?: (state: BadgeClient) => string;
+};
+
+/** What a view module exports; the loader supplies the module's default component. */
+export type ViewRegistration = Omit<Registration, 'component'>;
+
+/** Resolve the catalog label key carried by registration metadata. */
+export function registrationLabel(registration: Pick<Registration, 'label'>): string {
+    return lookup(registration.label);
+}
+
+/** Resolve the catalog glyph key carried by registration metadata. */
+export function registrationGlyph(registration: Pick<Registration, 'glyph'>): string {
+    return lookup(registration.glyph);
+}
+
+/**
+ * Assemble a registration's hooks without depending on any particular view or state selector. The
+ * hooks read stores, so the client they read is handed to them rather than reached from a module.
+ */
+export function badgeOf(registration: Registration, client: BadgeClient): RegistrationBadge {
+    const text = registration.badge?.(client) ?? '';
+    const mark = registration.badgeGlyph?.(client) ?? '';
+    // The hover words are text, so a badge that is a mark rather than a count says what the mark
+    // means in the words its registration names: an icon cannot be read out of a title attribute.
+    const marked = text === '' && mark !== '';
+    const means = registration.badgeMark;
+    const words = marked && means !== undefined ? lookup(means) : text;
+    const label = registrationLabel(registration);
+    return {
+        text,
+        glyph: mark,
+        tabText: registration.badgeTabText?.(client) ?? text,
+        tone: registration.badgeTone?.(client),
+        title:
+            registration.badgeTitle?.(client) ??
+            (marked && means === undefined ? label : t('views.badge_title', label, words)),
+        cells: registration.badgeCells?.(client)
+    };
+}
+
+/** The views one client knows about, in registration order. */
+export type RegistryStore = {
+    registerView: (registration: Registration) => void;
+    registerComponent: (component: Component<ViewProps>, registrations: ViewRegistration[]) => void;
+    unregisterView: (id: ViewId) => void;
+    viewFor: (id: ViewId) => Registration | undefined;
+    views: () => Registration[];
+};
+
+export function createRegistry(layout: LayoutStore): RegistryStore {
+    /**
+     * Insertion order is registration order, and a re-registration keeps the id's first position.
+     */
+    const registry = new Map<ViewId, Registration>();
+
+    /** Register a view, replacing an earlier registration of the same id. */
+    function registerView(registration: Registration): void {
+        registry.set(registration.id, registration);
+    }
+
+    /** Supply one module component to each metadata record the module exports. */
+    function registerComponent(
+        component: Component<ViewProps>,
+        registrations: ViewRegistration[]
+    ): void {
+        for (const registration of registrations) registerView({ ...registration, component });
+    }
+
+    /**
+     * Drop a view's registration and close the tabs open on it; an id the registry does not hold is
+     * left alone. A tab whose view has gone has no body the shell can draw, so it goes with the
+     * key.
+     */
+    function unregisterView(id: ViewId): void {
+        if (!registry.delete(id)) return;
+        layout.closeInstancesOfView(id);
+    }
+
+    /** The registration of a view, or undefined when the id names none. */
+    function viewFor(id: ViewId): Registration | undefined {
+        return registry.get(id);
+    }
+
+    /** Every registration, in registration order. */
+    function views(): Registration[] {
+        return [...registry.values()];
+    }
+
+    return { registerView, registerComponent, unregisterView, viewFor, views };
+}

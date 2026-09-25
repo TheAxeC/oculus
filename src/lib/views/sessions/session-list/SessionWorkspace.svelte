@@ -3,11 +3,12 @@
     // selection, resume and dismissal controls change independently of the session-list frame.
 
     import Tag from '$lib/ui/controls/Tag.svelte';
-    import Glyph from '$lib/ui/controls/Glyph.svelte';
+    import Glyph from '$lib/ui/display/Glyph.svelte';
     import Menu from '$lib/ui/menu/Menu.svelte';
     import { clock, modelShort, stamp } from '$lib/state/words/format';
     import type { Area, GroupedSession, Workspace } from '$lib/state/client/selectors.svelte';
     import { asText } from '$lib/state/forms/schema';
+    import { sessionCount } from '$lib/state/sessions/folds';
     import { t } from '$lib/state/words/text';
     import { sessionRowItems } from './session-list';
     import { useState } from '$lib/state/client/use';
@@ -40,7 +41,7 @@
 
     /** How many session rows the workspace's areas hold. */
     function count(): number {
-        return workspace.areas.reduce((total, area) => total + area.sessions.length, 0);
+        return sessionCount(workspace);
     }
 
     /** The hue of one session state dot. */

@@ -1,7 +1,7 @@
 // Layer 2, test fixture. Complete socket feed payloads with empty states for unneeded kinds.
 // View tests override one feed while retaining the three-feed wire shape.
 
-import type { FeedKind, FeedsPayload } from '../../src/lib/data/model.ts';
+import type { FeedKind, FeedsPayload } from '../../src/lib/data/model/index.ts';
 
 export function feedsFixture(kind: FeedKind, body: Partial<FeedsPayload[FeedKind]>): FeedsPayload {
     const empty = (kind: FeedKind): FeedsPayload[FeedKind] => ({

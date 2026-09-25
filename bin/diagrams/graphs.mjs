@@ -1,12 +1,14 @@
-// Layer 4, tool. The two diagrams read from imports and channels: the layers and the imports that
-// join them, grouped by the layer rows tests/checks/tree/boundaries.test.ts names, and the channels
+// Layer 4, tool. The diagrams read from imports and channels: the layers and the runtime imports
+// that join them, the layers as tests/checks/tree/boundaries.test.ts names its rows; one diagram
+// per layer of its folders in the order tests/checks/imports/order.ts declares; and the channels
 // from the server module that publishes each to the client modules that read it.
 
 import {
-    IMPORT,
+    RUNTIME,
     UNPLACED,
     cluster,
     header,
+    moduleFile,
     quote,
     resolveSpec,
     sorted,
@@ -19,7 +21,7 @@ import {
  * @typedef {{ channel: string, subscribes: boolean }} Read One channel a client module reads.
  */
 
-// ---- The layer graph ---------------------------------------------------------------------------
+// ---- The layer graphs --------------------------------------------------------------------------
 
 /**
  * The layer row a module belongs to, the node it is drawn as, and whether a rule placed it.
@@ -54,58 +56,169 @@ export function placeOf(path, layers) {
 }
 
 /**
- * The layer diagram: one cluster per layer row (plus routes, src and what no row placed), one node
- * per folder, and one edge for each pair of folders some import joins.
+ * The folder a module sits in for the folder order of tests/checks/imports/order.ts: its layer and
+ * first sub-folder under lib, or the layer alone for a file that sits in it; null outside lib.
+ */
+export function folderOf(/** @type {string} */ path) {
+    const parts = path.split('/');
+    if (parts[0] !== 'lib' || parts.length < 3) return null;
+    return parts.length > 3 ? `${parts[1]}/${parts[2]}` : parts[1];
+}
+
+/**
+ * @typedef {{ id: string, line: string, from: string | null }} Lost An import no reader can
+ *     follow: its node id, its node line naming the file and line, and the end of the module that
+ *     makes it (null where `end` draws that module as nothing).
+ */
+
+/**
+ * @typedef {{ edges: Map<string, number>, lost: Lost[] }} Imports The runtime imports of the
+ *     source, counted per pair of ends (`from\nto`, each end what `end` makes of a module), and
+ *     every import it could not follow.
+ */
+
+/**
+ * Every runtime import of the source, one per importing module and module imported, as
+ * tests/checks/imports/graph.ts reads them (a statement opening `import type` or `export type` is
+ * no runtime import), counted per pair of ends. A glob counts as one import of the folder its
+ * pattern opens with. An import two ends that are one end joins is not counted, and an `import()`
+ * whose specifier is no literal is named with its file and line.
+ *
+ * @param {Sources} sources
+ * @param {(path: string) => string | null} end What a module is drawn as, or null for not at all.
+ * @returns {Imports}
+ */
+export function runtimeImports(sources, end) {
+    /** @type {Map<string, number>} */
+    const edges = new Map();
+    /** @type {Lost[]} */
+    const lost = [];
+    const pairs = new Set();
+    /** @param {string} from @param {string} to @param {string} path */
+    const count = (from, to, path) => {
+        const a = end(from);
+        const b = end(to);
+        if (a === null || b === null || a === b || pairs.has(`${from}\n${path}`)) return;
+        pairs.add(`${from}\n${path}`);
+        edges.set(`${a}\n${b}`, (edges.get(`${a}\n${b}`) ?? 0) + 1);
+    };
+    for (const [path, text] of sources) {
+        const plain = uncomment(text);
+        for (const match of plain.matchAll(/(?<![\w$.])import\s*\(\s*(?!['"])([^)]*)\)/g)) {
+            const one = unfollowed(`src/${path}`, plain, match.index, `import(${match[1]})`);
+            lost.push({ ...one, from: end(path) });
+        }
+        for (const match of text.matchAll(/import\.meta\.glob\(\s*['"]([^'"*]*)/g)) {
+            const folder = resolveSpec(path, match[1].replace(/\/[^/]*$/, ''));
+            if (folder !== null) count(path, folder, `glob ${folder}`);
+        }
+        for (const match of text.matchAll(RUNTIME)) {
+            if (/^(?:import|export)\s+type\s/.test(match[0])) continue;
+            const target = resolveSpec(path, match[3]);
+            if (target === null) continue;
+            const module = moduleFile(sources, target) ?? target;
+            count(path, module, module);
+        }
+    }
+    return { edges, lost };
+}
+
+/**
+ * The overview: one node per layer that imports or is imported (the server's transcripts row drawn
+ * with the server), routes as one node and the entry modules directly under src (the Node entry,
+ * the hooks) as one node named entry, and one arrow per ordered pair of them that imports,
+ * labelled with how many runtime imports it carries. A module no layer row places is drawn, only
+ * when an import joins it, in the dashed group of what is not placed. An import the reader cannot
+ * follow is a dashed node naming its file and line, with a dashed arrow from the node of the
+ * module that makes it. A file outside every layer that is no module (an image a page links to)
+ * is no node.
  *
  * @param {Sources} sources
  * @param {string[]} layers
  * @returns {string}
  */
 export function layersDot(sources, layers) {
-    /** @type {Map<string, Set<string>>} */
-    const members = new Map();
-    const edges = new Set();
-    /** @param {{ layer: string, node: string }} at */
-    const add = (at) => {
-        const held = members.get(at.layer) ?? new Set();
-        held.add(at.node);
-        members.set(at.layer, held);
+    const astrayPrefix = `${UNPLACED}: `;
+    /** @param {string} path */
+    const end = (path) => {
+        const { layer } = placeOf(path, layers);
+        if (layer !== UNPLACED) return layer.split('/')[0];
+        // A file outside every layer that is no module (the favicon under lib/assets) is an asset
+        // a page links to, not code a layer is made of, so it is no node.
+        if (!sources.has(path) && !/\.(ts|js|svelte)$/.test(path)) return null;
+        return `${astrayPrefix}${path.split('/')[1]}`;
     };
-    /** @type {string[]} */
-    const lost = [];
-    for (const [path, text] of sources) {
-        const from = placeOf(path, layers);
-        add(from);
-        const plain = uncomment(text);
-        for (const match of plain.matchAll(/(?<![\w$.])import\s*\(\s*(?!['"])([^)]*)\)/g)) {
-            const one = unfollowed(`src/${path}`, plain, match.index, `import(${match[1]})`);
-            lost.push(one.line);
-            edges.add(`${quote(from.node)} -> ${quote(one.id)} [style=dashed];`);
-        }
-        // A glob imports every module under the folder its pattern starts with.
-        for (const match of text.matchAll(/import\.meta\.glob\(\s*['"]([^'"*]*)/g)) {
-            const target = resolveSpec(path, match[1].replace(/\/[^/]*$/, ''));
-            const to = target === null ? null : placeOf(target, layers);
-            if (to !== null && to.node !== from.node)
-                edges.add(`${quote(from.node)} -> ${quote(to.node)};`);
-        }
-        for (const match of text.matchAll(IMPORT)) {
-            const target = resolveSpec(path, match[1]);
-            if (target === null) continue;
-            const to = placeOf(target, layers);
-            add(to);
-            if (to.node !== from.node) edges.add(`${quote(from.node)} -> ${quote(to.node)};`);
-        }
+    const { edges, lost: unread } = runtimeImports(sources, end);
+    const lost = unread.filter((one) => one.from !== null);
+    const joined = [...edges.keys()].flatMap((key) => key.split('\n'));
+    const nodes = new Set([...joined, ...lost.map((one) => String(one.from))]);
+    const lines = header('layers', 'rankdir=TB, newrank=true');
+    const order = [...new Set(layers.map((layer) => layer.split('/')[0])), 'routes'];
+    for (const node of order.filter((one) => nodes.has(one))) lines.push(`    ${quote(node)};`);
+    if (nodes.has('src')) lines.push(`    ${quote('src')} [label=${quote('entry')}];`);
+    const astray = sorted([...nodes].filter((node) => node.startsWith(astrayPrefix)));
+    if (astray.length > 0) {
+        const label = (/** @type {string} */ node) => quote(node.slice(astrayPrefix.length));
+        const held = astray.map((node) => `${quote(node)} [label=${label(node)}];`);
+        lines.push(...cluster(UNPLACED, UNPLACED, held, 'dashed'));
     }
-    if (lost.length > 0 && !members.has(UNPLACED)) members.set(UNPLACED, new Set());
-    const order = [...layers, 'routes', 'src', UNPLACED].filter((layer) => members.has(layer));
-    const lines = header('layers', 'rankdir=TB, concentrate=true, newrank=true');
-    for (const layer of order) {
-        const nodes = sorted(members.get(layer) ?? []).map((node) => `${quote(node)};`);
-        if (layer === UNPLACED) nodes.push(...sorted(lost));
-        lines.push(...cluster(layer, layer, nodes, layer === UNPLACED ? 'dashed' : 'solid'));
+    for (const one of sorted(lost.map((held) => held.line))) {
+        lines.push(`    ${one.replace(/\];$/, ', style=dashed];')}`);
     }
-    for (const edge of sorted(edges)) lines.push(`    ${edge}`);
+    for (const key of sorted(edges.keys())) {
+        const [from, to] = key.split('\n');
+        lines.push(`    ${quote(from)} -> ${quote(to)} [label=${quote(String(edges.get(key)))}];`);
+    }
+    for (const one of [...lost].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))) {
+        lines.push(`    ${quote(String(one.from))} -> ${quote(one.id)} [style=dashed];`);
+    }
+    lines.push('}', '');
+    return lines.join('\n');
+}
+
+/**
+ * One layer's diagram: its folders in the order tests/checks/imports/order.ts declares, top to
+ * bottom, the imports between them, and for each folder one arrow to every other layer it reaches,
+ * each arrow labelled with how many runtime imports it carries. The other layers are drawn outside
+ * the layer's group, dashed, and their arrows leave the ranks to the order.
+ *
+ * @param {Sources} sources
+ * @param {string[]} layers
+ * @param {string} layer
+ * @param {string[]} order The layer's folders from the top down.
+ * @returns {string}
+ */
+export function layerDot(sources, layers, layer, order) {
+    /** @param {string} path */
+    const end = (path) => {
+        const folder = folderOf(path);
+        if (folder !== null && folder.split('/')[0] === layer) return `folder ${folder}`;
+        const { layer: row } = placeOf(path, layers);
+        return row === UNPLACED ? null : `layer ${row.split('/')[0]}`;
+    };
+    const { edges } = runtimeImports(sources, end);
+    const lines = header(`layer_${layer}`, 'rankdir=TB, newrank=true');
+    const inside = order.map((folder) => `${quote(`folder ${folder}`)} [label=${quote(folder)}];`);
+    lines.push(...cluster(layer, layer, inside));
+    const reached = new Set();
+    for (const key of edges.keys()) {
+        const [from, to] = key.split('\n');
+        if (from.startsWith('folder ') && to.startsWith('layer ')) reached.add(to);
+    }
+    for (const node of sorted(reached)) {
+        lines.push(`    ${quote(node)} [label=${quote(node.slice(6))}, style=dashed];`);
+    }
+    for (let at = 1; at < order.length; at += 1) {
+        const [above, below] = [order[at - 1], order[at]].map((one) => quote(`folder ${one}`));
+        lines.push(`    ${above} -> ${below} [style=invis, weight=10];`);
+    }
+    for (const key of sorted(edges.keys())) {
+        const [from, to] = key.split('\n');
+        if (!from.startsWith('folder ')) continue;
+        const label = `label=${quote(String(edges.get(key)))}`;
+        const across = to.startsWith('layer ') ? ', style=dashed, constraint=false' : '';
+        lines.push(`    ${quote(from)} -> ${quote(to)} [${label}${across}];`);
+    }
     lines.push('}', '');
     return lines.join('\n');
 }

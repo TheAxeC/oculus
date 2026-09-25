@@ -2,7 +2,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { contextText } from '../../../src/lib/state/boards/project-context.ts';
-import type { Project, Snapshot } from '../../../src/lib/data/model.ts';
+import type { Project, Snapshot } from '../../../src/lib/data/model/index.ts';
 import { NO_FEEDS } from '../../fixtures/entities-fixture.ts';
 
 const project: Project = {

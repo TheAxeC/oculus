@@ -1,7 +1,7 @@
 // Layer 2, client state. Layout invariants and saved-form parsing live here because changes to the
 // persisted shape do not change workbench operations.
 
-import { tabsOf } from '../../../client/instance.ts';
+import { tabsOf } from '../instance.ts';
 import {
     LAYOUT_VERSION,
     MIN_SIZE,

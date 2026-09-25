@@ -27,7 +27,7 @@
     import Card from '$lib/ui/frame/Card.svelte';
     import Chip from '$lib/ui/controls/Chip.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
-    import Glyph from '$lib/ui/controls/Glyph.svelte';
+    import Glyph from '$lib/ui/display/Glyph.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import CardActions, { type CardAction } from '../../shared/card/CardActions.svelte';
     import Clamp from '../../shared/card/Clamp.svelte';
@@ -42,7 +42,6 @@
         entryStatus,
         entrySubtasks,
         hrefOf,
-        HUB_ROOT,
         hubPathsOf,
         isHubPath,
         isPinned,
@@ -51,7 +50,7 @@
         type Project,
         type SchemaField
     } from '$lib/state/boards/collection';
-    import { opensInProgram } from '$lib/state/sources/fs';
+    import { HUB_ROOT, opensInProgram } from '$lib/state/sources/fs';
     import { personName } from '$lib/state/boards/person';
     import { t } from '$lib/state/words/text';
     import { statusTone } from '$lib/state/words/tones';

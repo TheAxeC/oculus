@@ -22,8 +22,8 @@ import type {
     SessionFile,
     SessionRecord,
     Workspace
-} from '../../data/model.ts';
-import { isMap } from './stores/json.ts';
+} from '../../data/model/index.ts';
+import { isMap } from '../core/json.ts';
 import { overrides as readOverrides, type Override } from './overrides.ts';
 
 export const GENERAL = '(general)';

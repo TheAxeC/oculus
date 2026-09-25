@@ -41,7 +41,7 @@ import type {
     Project,
     Venue,
     Workspace
-} from '../../data/model.ts';
+} from '../../data/model/index.ts';
 
 // The boundary table lets `views/` import `state/` and nothing of `data/`, so the session types the
 // six views name reach them from here, beside the selectors that return them.
@@ -55,7 +55,7 @@ export type {
     SessionFile,
     Subtask,
     Workspace
-} from '../../data/model.ts';
+} from '../../data/model/index.ts';
 
 /**
  * The absolute folder of one project: the manifest's own path, less the file name. The snapshot

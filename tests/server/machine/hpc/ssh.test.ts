@@ -36,7 +36,7 @@ import { spawn } from 'node:child_process';
 import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterAll, afterEach, describe, expect, it } from 'vitest';
-import type { HpcPayload } from '../../../../src/lib/data/model.ts';
+import type { HpcPayload } from '../../../../src/lib/data/model/index.ts';
 import { Hub } from '../../../../src/lib/server/core/channels.ts';
 import { watchHpc } from '../../../../src/lib/server/machine/hpc/poll.ts';
 import { KILL_GRACE_MS, run } from '../../../../src/lib/server/machine/hpc/ssh.ts';

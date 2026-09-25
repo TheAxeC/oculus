@@ -9,7 +9,11 @@
 // tests/browser/status/notices.spec.ts presses in Chrome.
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { HpcPayload, SessionsPayload, Snapshot } from '../../../../src/lib/data/model.ts';
+import type {
+    HpcPayload,
+    SessionsPayload,
+    Snapshot
+} from '../../../../src/lib/data/model/index.ts';
 import {
     createNoticeSources,
     jobFinished,
@@ -282,7 +286,7 @@ describe('an update task whose results land', () => {
 
 describe('a write that does not land', () => {
     it('is told once in the words the server gave, and not when its caller words it', async () => {
-        // revert: src/lib/state/client/context.ts:229 => delete
+        // revert: src/lib/state/client/context.ts:231 => delete
         vi.stubGlobal('fetch', () =>
             Promise.resolve(
                 new Response(
@@ -310,7 +314,7 @@ describe('a write that does not land', () => {
     });
 
     it('is told when the server answers but refuses a field of it', async () => {
-        // revert: src/lib/state/client/writes.svelte.ts:187 => if (options.said === true || answer.ok) return answer;
+        // revert: src/lib/state/client/writes.svelte.ts:82 => if (options.said === true || answer.ok) return answer;
         vi.stubGlobal('fetch', () =>
             Promise.resolve(
                 new Response(
@@ -327,14 +331,14 @@ describe('a write that does not land', () => {
     });
 
     it('is told as a write that got no answer when the request never reached the server', async () => {
-        // revert: src/lib/state/client/writes.svelte.ts:192 => listener(reason, true);
+        // revert: src/lib/state/client/writes.svelte.ts:87 => listener(reason, true);
         vi.stubGlobal('fetch', () => Promise.reject(new Error('offline')));
         await client.writes.writeEntry('venues', 'x', { title: 'X' });
         expect(said()).toEqual([t('statusbar.notice_write_failed', 'offline')]);
     });
 
     it('is told once after the retry a stale token gets, not for the refusal that led to it', async () => {
-        // revert: src/lib/state/client/writes.svelte.ts:468 => const sent = await exchange(request, path); tell(sent, options); return tell(sent, options);
+        // revert: src/lib/state/client/writes.svelte.ts:363 => const sent = await exchange(request, path); tell(sent, options); return tell(sent, options);
         let calls = 0;
         vi.stubGlobal('fetch', () => {
             calls += 1;
@@ -349,7 +353,7 @@ describe('a write that does not land', () => {
         'is told as a write that got no answer when it is given up for want of one',
         { timeout: 5000 },
         async () => {
-            // revert: src/lib/state/client/writes.svelte.ts:523 => answered: true,
+            // revert: src/lib/state/client/writes.svelte.ts:418 => answered: true,
             vi.stubGlobal(
                 'fetch',
                 (_url: string, init: RequestInit) =>

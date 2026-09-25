@@ -1,7 +1,7 @@
 <script module lang="ts">
     // Layer 3, view registration. The generic collection component owns each configured
     // collection's rail placement.
-    import type { ViewRegistration } from '../../registry';
+    import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
 
     const placements: Record<string, { group: string; order: number }> = {
         funding: { group: 'academic', order: 0 },
@@ -71,19 +71,21 @@
         FUNDING,
         NO_FUNDING,
         applyCollectionFilters,
+        fileOrder,
         identityValue,
         movedOrder,
-        noFunding,
+        offeredStatuses,
         parseCollectionState,
         pinnedFirst,
         statusFacets,
+        unfundedBy,
         type CollectionState
     } from '$lib/state/boards/collection';
-    import { cardCursor } from '$lib/state/client/instance';
+    import { cardCursor } from '$lib/state/workbench/layout/instance';
     import { lookup, t } from '$lib/state/words/text';
     import { statusTone } from '$lib/state/words/tones';
     import { viewSourceFile } from '$lib/state/sessions/view-source';
-    import type { ViewProps } from '../../registry';
+    import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 
     const {
@@ -107,8 +109,7 @@
     const shown = $derived(applyCollectionFilters(entries, held));
     const facets = $derived(statusFacets(entries));
 
-    /** The statuses a file with no schema offers as buttons: the ones its own entries use. */
-    const lifecycle = $derived(schema === undefined ? facets.map((facet) => facet.value) : []);
+    const lifecycle = $derived(offeredStatuses(schema, facets));
 
     /** The collection file this view is drawn from, offered once the file has been read. */
     const source = $derived(
@@ -116,14 +117,7 @@
     );
 
     const all = $derived(projects());
-    const unfunded = $derived(
-        key === FUNDING
-            ? noFunding(
-                  all,
-                  (collection?.entries ?? []).map((one) => one.id)
-              )
-            : []
-    );
+    const unfunded = $derived(key === FUNDING ? unfundedBy(all, collection?.entries ?? []) : []);
 
     let said = $state('');
 
@@ -164,7 +158,7 @@
         const from = dragged;
         dragged = '';
         if (from === '' || from === onto) return;
-        const order = fileOrder();
+        const order = fileOrder(collection?.entries ?? [], schema);
         await writeOrder(order, order.indexOf(from), order.indexOf(onto));
     }
 
@@ -173,14 +167,9 @@
      * the file's order. It is the drag's other path, so a list is reorderable without a pointer.
      */
     async function carry(value: string, step: -1 | 1): Promise<void> {
-        const order = fileOrder();
+        const order = fileOrder(collection?.entries ?? [], schema);
         const at = order.indexOf(value);
         await writeOrder(order, at, at + step);
-    }
-
-    /** The identity of every entry the file holds, in the order the file holds them. */
-    function fileOrder(): string[] {
-        return (collection?.entries ?? []).map((entry) => identityValue(entry, schema));
     }
 
     /** Move one place of the order to another and write the whole new order to the file. */

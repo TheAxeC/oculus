@@ -3,12 +3,13 @@
 // checked against the row of the table its own folder sits in. Anything the row does not
 // allow is a violation: the table's "May import" column is the whole permission.
 
-import { mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { dirname, join, normalize, resolve, sep } from 'node:path';
+import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterAll, afterEach, describe, expect, it } from 'vitest';
 import { DELIBERATE, HELD } from './allow-styling.ts';
+import { sourceFiles, target } from '../imports/graph.ts';
 import { isReason } from '../../fixtures/reason.ts';
 import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
 
@@ -20,8 +21,9 @@ const SRC = resolve(LIB, '..');
 const LAYERS = ['data', 'server', 'server/transcripts', 'state', 'ui', 'shell', 'views', 'themes'];
 
 // One entry per row of the table. A pattern ending in /** matches the folder and everything
-// under it; any other pattern matches exactly. The view registry is the one module the shell
-// and the views share, so a view can register itself without importing another view.
+// under it; any other pattern matches exactly. The view registry is a state module under
+// `state/workbench/navigation/`, which the shell's row and the views' row both name, so a view
+// registers itself without importing another view and the shell draws a view it never imports.
 //
 // A block two views draw the same way lives under `views/shared/**` once instead of twice, and only
 // a view may import it. A file under `views/shared/` is in the views layer itself, so the row binds
@@ -67,8 +69,9 @@ const LAYERS = ['data', 'server', 'server/transcripts', 'state', 'ui', 'shell', 
 // take out of the object are SHELL_STORES below, and the second rule checks each destructuring
 // against that list.
 //
-// `state/client/context` is where the client's stores are wired together, so it is the one module
-// of the state layer that names the view registry and the primitives' tooltip counter.
+// `state/client/context` is where the client's stores are wired together, and it names nothing of
+// layer 3: the view registry is a state module, and the page root makes the primitives' tooltip
+// counter beside the client object, so the state row reaches no layer above it.
 const ALLOWED: Record<string, string[]> = {
     ui: ['ui/**', 'themes/**', 'state/words/text'],
     shell: [
@@ -86,10 +89,9 @@ const ALLOWED: Record<string, string[]> = {
         'state/workbench/palette-source',
         'state/workbench/selection',
         'state/workbench/navigation/**',
-        'state/sessions/terminals',
-        'views/registry'
+        'state/sessions/terminals'
     ],
-    views: ['ui/**', 'state/**', 'views/registry', 'views/shared/**'],
+    views: ['ui/**', 'state/**', 'views/shared/**'],
     state: [
         'state/**',
         'data/model',
@@ -106,9 +108,7 @@ const ALLOWED: Record<string, string[]> = {
         'data/helpers/editor',
         'data/helpers/search',
         'data/helpers/finding-text',
-        'data/sources/config/rail',
-        'views/registry',
-        'ui/menu/tip-ids'
+        'data/sources/config/rail'
     ],
     data: ['data/**'],
     server: ['server/**', 'data/**'],
@@ -127,7 +127,7 @@ function layerOf(id: string): string {
 // else may import them. It is the one way a view too large for one file is split without widening
 // the row that forbids a view importing another view: everything under `views/boards/focus/` may
 // import `views/boards/focus/**`, and nothing under `views/boards/projects/` may, although both sit
-// in the same group. `views/shared/**` and `views/registry` are the row's own, open to every view.
+// in the same group. `views/shared/**` is the row's own, open to every view.
 function ownPartials(fileRel: string): string[] {
     const parts = fileRel.split('/');
     if (parts[0] !== 'views' || parts[1] === 'shared' || parts.length < 4) return [];
@@ -138,37 +138,14 @@ function ownPartials(fileRel: string): string[] {
 // module in two places, the pure half in state/workbench/layout/ and the store in
 // state/workbench/layout.svelte.ts, and the row names the module. It covers that one name and no
 // other, so `state/client/entities.svelte` is still refused to the shell, which the synthetic case
-// below shows.
+// below shows. It covers the folder's index module too: `data/model` is data/model/index.ts, the
+// facade, and not the concern modules beside it.
 function matches(pattern: string, id: string): boolean {
     if (pattern.endsWith('/**')) {
         const folder = pattern.slice(0, -3);
         return id === folder || id.startsWith(`${folder}/`);
     }
-    return id === pattern || id === `${pattern}.svelte`;
-}
-
-function sourceFiles(root: string, prefix = ''): string[] {
-    const found: string[] = [];
-    for (const entry of readdirSync(join(root, prefix), { withFileTypes: true })) {
-        const rel = prefix === '' ? entry.name : `${prefix}/${entry.name}`;
-        if (entry.isDirectory()) found.push(...sourceFiles(root, rel));
-        else if (/\.(ts|svelte)$/.test(entry.name)) found.push(rel);
-    }
-    return found;
-}
-
-/** The lib-relative module a specifier names, or null when it names something outside lib. */
-function target(fileRel: string, spec: string): string | null {
-    let id: string | null = null;
-    if (spec.startsWith('$lib/')) id = spec.slice('$lib/'.length);
-    else if (spec.startsWith('.')) {
-        const joined = normalize(join(dirname(fileRel), spec))
-            .split(sep)
-            .join('/');
-        id = joined.startsWith('..') ? null : joined;
-    }
-    if (id === null) return null;
-    return id.replace(/\.(ts|js)$/, '');
+    return id === pattern || id === `${pattern}.svelte` || id === `${pattern}/index`;
 }
 
 export function findViolations(libRoot: string): string[] {
@@ -196,8 +173,7 @@ function holdsModuleState(fileRel: string): boolean {
         fileRel.startsWith('routes/') ||
         fileRel.startsWith('lib/state/') ||
         fileRel.startsWith('lib/shell/') ||
-        fileRel.startsWith('lib/ui/') ||
-        fileRel === 'lib/views/registry.ts'
+        fileRel.startsWith('lib/ui/')
     );
 }
 
@@ -248,7 +224,7 @@ export function findGlobalState(sourceRoot: string): string[] {
  * state/words/text.ts, state/words/tones.ts and state/words/appearance.ts hold what the server last
  * sent, are never written after a push installs them, and are read by t(), toneOf() and themes()
  * from every layer, `ui/` included, where there is no client object to read them from. The two
- * runes beside them, state/client/generation.svelte.ts and state/words/glyphmode.svelte.ts, are
+ * runes beside them, state/words/generation.svelte.ts and state/words/glyphmode.svelte.ts, are
  * what makes those reads redraw: a generation held per client would say a push had landed for one
  * client and not for another over the one set of maps they both read.
  */
@@ -272,7 +248,7 @@ const FROZEN = [
     'lib/state/words/appearance.ts:paper',
     'lib/state/words/appearance.ts:crt',
     'lib/state/words/appearance.ts:terminalFont',
-    'lib/state/client/generation.svelte.ts:held',
+    'lib/state/words/generation.svelte.ts:held',
     'lib/state/words/glyphmode.svelte.ts:held'
 ];
 
@@ -408,22 +384,24 @@ function scratch(name: string): string {
 
 describe('layer boundaries', () => {
     it('holds across src/lib', () => {
-        // revert: tests/checks/tree/boundaries.test.ts:92 => views: ['state/**', 'views/registry'],
+        // revert: tests/checks/tree/boundaries.test.ts:94 => views: ['state/**'],
+        // revert: src/lib/state/client/context.ts:21 => import { createRegistry, type RegistryStore } from '../../views/registry.ts';
+        // revert: src/lib/state/client/context.ts:21 => import { createTipIds } from '../../ui/menu/tip-ids.ts';
         expect(findViolations(LIB)).toEqual([]);
     });
 
     it('holds no process-wide state under src', () => {
-        // revert: tests/checks/tree/boundaries.test.ts:259 => delete
+        // revert: tests/checks/tree/boundaries.test.ts:235 => delete
         expect(findGlobalState(SRC)).toEqual([]);
     });
 
     it('keeps every shell file to the stores its row names', () => {
-        // revert: tests/checks/tree/boundaries.test.ts:281 => delete
+        // revert: tests/checks/tree/boundaries.test.ts:257 => delete
         expect(findShellStores(LIB)).toEqual([]);
     });
 
     it('catches a shell file reading a store the shell may not read', () => {
-        // revert: tests/checks/tree/boundaries.test.ts:307 => delete
+        // revert: tests/checks/tree/boundaries.test.ts:283 => delete
         const dir = scratch('oculus-shell-stores-');
         mkdirSync(join(dir, 'shell'), { recursive: true });
         writeFileSync(
@@ -437,7 +415,7 @@ describe('layer boundaries', () => {
     });
 
     it('catches process-wide state outside app.d.ts', () => {
-        // revert: tests/checks/tree/boundaries.test.ts:220 => delete
+        // revert: tests/checks/tree/boundaries.test.ts:196 => delete
         const dir = scratch('oculus-global-state-');
         mkdirSync(join(dir, 'lib', 'server'), { recursive: true });
         writeFileSync(join(dir, 'bad.ts'), 'declare global {}\nconst held = globalThis.value;\n');
@@ -461,7 +439,7 @@ describe('layer boundaries', () => {
     });
 
     it('catches a violation of every row it can be shown one of', () => {
-        // revert: tests/checks/tree/boundaries.test.ts:184 => if (false) {
+        // revert: tests/checks/tree/boundaries.test.ts:161 => if (false) {
         const dir = scratch('oculus-boundaries-');
 
         const write = (rel: string, body: string) => {
@@ -484,7 +462,7 @@ describe('layer boundaries', () => {
             'ui/Shared.svelte',
             "<script>\nimport Sub from '../views/shared/forms/Subtasks.svelte';\n</script>"
         );
-        write('shell/Bad.ts', "import { branch } from '$lib/server/git/git';");
+        write('shell/Bad.ts', "import { branch } from '$lib/server/core/git';");
         write('shell/Shared.ts', "import Sub from '$lib/views/shared/forms/Subtasks.svelte';");
         write('shell/Runes.ts', "import { portfolio } from '$lib/state/client/entities.svelte';");
         write('shell/Store.ts', "import { apply } from '$lib/state/workbench/layout.svelte';");
@@ -513,7 +491,7 @@ describe('layer boundaries', () => {
         write('views/boards/projects/Projects.svelte', '<span></span>');
         write('state/bad.svelte.ts', "import { read } from '$lib/data/sources/config';");
         write('state/good.ts', "import { isMap } from '$lib/data/helpers/guards';");
-        write('server/git/git.ts', "import type { Project } from '../../data/model.ts';");
+        write('server/core/git.ts', "import type { Project } from '../../data/model.ts';");
         write(
             'server/transcripts/bad.ts',
             "import { scan } from '../sessions/stores/transcripts.ts';"
@@ -521,7 +499,7 @@ describe('layer boundaries', () => {
 
         expect(findViolations(dir)).toEqual([
             'server/transcripts/bad.ts imports server/sessions/stores/transcripts',
-            'shell/Bad.ts imports server/git/git',
+            'shell/Bad.ts imports server/core/git',
             'shell/Runes.ts imports state/client/entities.svelte',
             'shell/Shared.ts imports views/shared/forms/Subtasks.svelte',
             'state/bad.svelte.ts imports data/sources/config',
@@ -536,7 +514,7 @@ describe('layer boundaries', () => {
 
     // revert: tests/checks/tree/allow-styling.ts:72 => line: 'views/sources/search/Results.svelte styles .label of ui/controls/Chip.svelte, ui/tabs/Tabs.svelte, ui/controls/Tag.svelte through .hit :global(.label)',
     it('lets no view or shell component style a primitive own class', () => {
-        // revert: tests/checks/tree/boundaries.test.ts:371 => delete
+        // revert: tests/checks/tree/boundaries.test.ts:347 => delete
         expect(
             findPrimitiveStyling(
                 LIB,
@@ -546,7 +524,7 @@ describe('layer boundaries', () => {
     });
 
     it('catches a view reaching into a primitive, and passes the theme class and its own', () => {
-        // revert: tests/checks/tree/boundaries.test.ts:367 => const owned = undefined;
+        // revert: tests/checks/tree/boundaries.test.ts:343 => const owned = undefined;
         const dir = scratch('oculus-primitive-styling-');
         const write = (rel: string, body: string) => {
             const full = join(dir, rel);
@@ -589,7 +567,7 @@ describe('layer boundaries', () => {
     });
 
     it('holds the styling lists to rules the tree still has', () => {
-        // revert: tests/checks/tree/boundaries.test.ts:372 => delete
+        // revert: tests/checks/tree/boundaries.test.ts:348 => delete
         const held = findPrimitiveStyling(LIB);
         expect(
             [...DELIBERATE, ...HELD]

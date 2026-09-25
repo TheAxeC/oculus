@@ -1,6 +1,6 @@
 <script module lang="ts">
     // Layer 3, view registration. Data is the second source registry in the view catalogue.
-    import type { ViewRegistration } from '../../registry';
+    import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     export const registration: ViewRegistration = {
         id: 'data',
         label: 'views.data',
@@ -17,10 +17,9 @@
 
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Search from '$lib/ui/controls/Search.svelte';
-    import Toolbar from '$lib/ui/frame/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Intro from '../../shared/prose/Intro.svelte';
-    import SourceButton from '$lib/views/shared/links/SourceButton.svelte';
+    import SourceToolbar from '$lib/views/shared/links/SourceToolbar.svelte';
     import EntryForm from '$lib/views/shared/forms/EntryForm.svelte';
     import Reveal from '$lib/views/shared/card/Reveal.svelte';
     import Facets from '$lib/views/sources/data/Facets.svelte';
@@ -28,15 +27,17 @@
     import {
         accessSummary,
         datasetSearch,
+        datasetUsers,
         parseDataState,
         type DataState
     } from '$lib/state/sources/datasets';
     import { applyThemeFacets, themeFacets, themeWordLabels } from '$lib/state/words/themes';
     import { inlineMarkdown } from '$lib/ui/html';
-    import { cardCursor } from '$lib/state/client/instance';
+    import { cardCursor } from '$lib/state/workbench/layout/instance';
+    import { entryById } from '$lib/state/boards/collection';
     import { t } from '$lib/state/words/text';
     import { viewSourceFile } from '$lib/state/sessions/view-source';
-    import type { ViewProps } from '../../registry';
+    import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 
     const {
@@ -75,22 +76,16 @@
     }
 
     function entryFor(id: string) {
-        return collection?.entries.find((entry) => entry.id === id) ?? null;
+        return entryById(collection, id);
     }
 
     function users(ids: string[]) {
-        return ids
-            .map((id) => allProjects.find((project) => project.id === id))
-            .filter((project) => project !== undefined);
+        return datasetUsers(ids, allProjects);
     }
 </script>
 
 {#snippet tools()}
-    <Toolbar label={t('collection.toolbar')}>
-        {#if source !== null}
-            <SourceButton file={source} />
-        {/if}
-    </Toolbar>
+    <SourceToolbar {source} />
 {/snippet}
 
 <Pane title={t('views.data')} toolbar={tools}>

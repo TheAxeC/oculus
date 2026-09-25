@@ -12,7 +12,7 @@ import { afterAll, describe, expect, it } from 'vitest';
 import { distinctFolders, sessionFolders } from '../../../src/lib/server/sessions/folders.ts';
 import { scan } from '../../../src/lib/server/sessions/stores/transcripts.ts';
 import type { Probe } from '../../../src/lib/server/sessions/registry.ts';
-import type { SessionRecord, UsageAccountConfig } from '../../../src/lib/data/model.ts';
+import type { SessionRecord, UsageAccountConfig } from '../../../src/lib/data/model/index.ts';
 import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
 
 afterAll(sweepScratch);

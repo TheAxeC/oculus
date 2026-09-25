@@ -8,7 +8,7 @@
 // which is the only way a regular-expression hit can be drawn at all.
 
 import { ALL_ROOTS, clampMax, type SearchQuery } from '../../data/helpers/search.ts';
-import type { SearchAnswer, SearchFailure, SearchFile, SearchHit } from '../../data/model.ts';
+import type { SearchAnswer, SearchFailure, SearchFile, SearchHit } from '../../data/model/index.ts';
 
 // The view layer reads the wire shapes and the all-roots key through this module: DESIGN.md's
 // boundary table lets a view import `state/` and not `data/`, so the one place that names both is

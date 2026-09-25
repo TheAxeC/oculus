@@ -10,7 +10,7 @@
 // has a file and a consent of its own even when it is the same mailbox as an account of the other:
 // a calendar token never gains send rights, and a mail token never gains calendar rights.
 //
-// The folder is resolved at the call and never at import, as server/git/changes.ts and
+// The folder is resolved at the call and never at import, as server/core/changes.ts and
 // server/machine/usage/accounts.ts resolve theirs, so a test points a connector at a directory of
 // its own and a served run at the directory the machine's own file names.
 //
@@ -22,7 +22,7 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { isMap } from '../../../data/helpers/guards.ts';
 import { connectKey } from '../../../data/accounts/connect.ts';
-import type { ConnectAccountConfig, ConnectKind } from '../../../data/model.ts';
+import type { ConnectAccountConfig, ConnectKind } from '../../../data/model/index.ts';
 
 /** The mode the credential file is created and kept at: it holds one account's own secrets. */
 const MODE = 0o600;

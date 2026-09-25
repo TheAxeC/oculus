@@ -5,7 +5,7 @@
 
     import Card from '$lib/ui/frame/Card.svelte';
     import { t } from '$lib/state/words/text';
-    import type { DeckSlide } from '$lib/state/life/present';
+    import type { DeckSlide } from '$lib/state/feeds/life/present';
 
     type Props = {
         rows: DeckSlide[];

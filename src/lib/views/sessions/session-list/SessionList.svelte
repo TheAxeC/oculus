@@ -1,7 +1,7 @@
 <script module lang="ts">
     // Layer 3, view registration. Session-list registration stays on the component because the
     // registry discovers this file directly.
-    import type { ViewRegistration } from '$lib/views/registry';
+    import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
 
     export const registration: ViewRegistration = {
         id: 'session-list',
@@ -17,15 +17,16 @@
     // workspace rows and terminal rows render and change independently.
 
     import Empty from '$lib/ui/frame/Empty.svelte';
-    import Glyph from '$lib/ui/controls/Glyph.svelte';
+    import Glyph from '$lib/ui/display/Glyph.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Toolbar from '$lib/ui/frame/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { findView } from '$lib/state/workbench/layout';
-    import type { Area, GroupedSession, Workspace } from '$lib/state/client/selectors.svelte';
+    import type { GroupedSession } from '$lib/state/client/selectors.svelte';
+    import { hiddenCounts, pruneTree, sessionRows } from '$lib/state/sessions/folds';
     import { resumeRefusal, type Terminal } from '$lib/state/sessions/terminals.svelte';
     import { t } from '$lib/state/words/text';
-    import type { ViewProps } from '$lib/views/registry';
+    import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import SessionWorkspace from './SessionWorkspace.svelte';
     import TerminalRows from './TerminalRows.svelte';
     import { useState } from '$lib/state/client/use';
@@ -50,12 +51,15 @@
 
     const opened = $derived(readState(instanceState(instance.id)));
     const tree = $derived(sessionsByWorkspace(true));
-    const rows = $derived(tree.flatMap((workspace) => workspace.areas.flatMap((a) => a.sessions)));
-    const dismissed = $derived(rows.filter((row) => hidden(row)).length);
-    const endedCount = $derived(rows.filter((row) => !row.live && !hidden(row)).length);
-    const live = $derived(prune(tree, (row) => row.live));
+    const rows = $derived(sessionRows(tree));
+    const counts = $derived(hiddenCounts(rows, hidden));
+    const dismissed = $derived(counts.dismissed);
+    const endedCount = $derived(counts.ended);
+    const live = $derived(pruneTree(tree, (row) => row.live));
     const panes = $derived(terminals());
-    const ended = $derived(prune(tree, (row) => !row.live && (opened.dismissed || !hidden(row))));
+    const ended = $derived(
+        pruneTree(tree, (row) => !row.live && (opened.dismissed || !hidden(row)))
+    );
 
     function readState(saved: unknown): ListState {
         if (typeof saved !== 'object' || saved === null || Array.isArray(saved))
@@ -70,19 +74,6 @@
 
     function hidden(row: GroupedSession): boolean {
         return flipped[row.id] ?? row.hidden;
-    }
-
-    function prune(workspaces: Workspace[], keep: (row: GroupedSession) => boolean): Workspace[] {
-        const found: Workspace[] = [];
-        for (const workspace of workspaces) {
-            const areas: Area[] = [];
-            for (const area of workspace.areas) {
-                const sessions = area.sessions.filter(keep);
-                if (sessions.length > 0) areas.push({ ...area, sessions });
-            }
-            if (areas.length > 0) found.push({ ...workspace, areas });
-        }
-        return found;
     }
 
     async function stop(entry: Terminal): Promise<void> {

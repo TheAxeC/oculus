@@ -97,4 +97,4 @@ export {
     stateId,
     tabsOf,
     withCardCursor
-} from '../../client/instance.ts';
+} from './instance.ts';

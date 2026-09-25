@@ -6,13 +6,13 @@
 // label and glyph name out of config/catalogs/vocab.yml, and every other panel string comes from
 // the catalog.
 
-import type { Career, Host } from '../../data/model.ts';
+import type { Career, Host } from '../../data/model/index.ts';
 // `str` here is the shared `text`: a config value of the wrong type reads as the empty string.
 import { isMap, scalar, text as str } from '../../data/helpers/guards.ts';
 
 // The boundary table lets `views/` import `state/` and nothing of `data/`, so the two model types
 // the career panel names reach it from here.
-export type { Career, Host } from '../../data/model.ts';
+export type { Career, Host } from '../../data/model/index.ts';
 import { UNKNOWN_TONE, toneOf } from '../words/tones.ts';
 
 /** The statuses that count as outreach in progress: sent and waiting, or already in dialogue. */

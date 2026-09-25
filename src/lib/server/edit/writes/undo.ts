@@ -12,7 +12,7 @@
 
 import { isAbsolute, join, resolve } from 'node:path';
 import { fields, scalar } from '../../../data/helpers/guards.ts';
-import { same } from '../../git/changes.ts';
+import { same } from '../../core/changes.ts';
 import {
     FEED_RULES,
     deleteFeedEntry,
@@ -20,7 +20,7 @@ import {
     readFeedFile,
     restoreFeedEntry,
     writeFeedField
-} from '../../content/feeds.ts';
+} from '../feeds.ts';
 import { overrides, setHidden, setOverride } from '../../sessions/overrides.ts';
 import { deckNow, writeDeck } from './deck.ts';
 import { railNow, writeRail } from './rail.ts';
@@ -45,8 +45,8 @@ import {
     writeSubtaskAdd
 } from './subtasks.ts';
 import type { Collection } from './entries.ts';
-import type { FeedKind } from '../../../data/model.ts';
-import type { Change } from '../../git/changes.ts';
+import type { FeedKind } from '../../../data/model/index.ts';
+import type { Change } from '../../core/changes.ts';
 import type { SubtaskTarget } from './subtasks.ts';
 import type { WriteOutcome, WriteTarget } from '../writes.ts';
 

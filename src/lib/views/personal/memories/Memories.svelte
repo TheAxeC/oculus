@@ -1,7 +1,7 @@
 <script module lang="ts">
     // Layer 3, view registration. The photo wall sits in the Personal group with the two documents
     // of the hub that are drawn there.
-    import type { ViewRegistration } from '../../registry';
+    import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
 
     export const registration: ViewRegistration = {
         id: 'memories',
@@ -21,11 +21,11 @@
     // pane's width, and every tile is a box of its picture's own proportions, taken from the width
     // and height the folder's answer carries with each name, so the box has its final shape before
     // the picture arrives and nothing on the wall moves when it does. A picture far wider or taller
-    // than a square stops at `TILE_BOUND` of state/life/memories.svelte.ts and is fitted whole
-    // inside, and a picture whose header the server could not read keeps a 4:3 box it is fitted
-    // into whole; no picture is cropped. Until it arrives the tile is a muted surface of that same
-    // box, and a picture that fails draws its alternative words in the box instead, until the
-    // folder answers again and the picture is asked for anew.
+    // than a square stops at `TILE_BOUND` of state/feeds/life/memories.svelte.ts and is fitted
+    // whole inside, and a picture whose header the server could not read keeps a 4:3 box it is
+    // fitted into whole; no picture is cropped. Until it arrives the tile is a muted surface of
+    // that same box, and a picture that fails draws its alternative words in the box instead, until
+    // the folder answers again and the picture is asked for anew.
     //
     // The enlarged picture is this view's own overlay rather than a primitive, since it is the one
     // place in oculus where a picture is shown over the pane and `ui/` would gain a component with
@@ -38,10 +38,10 @@
     import Toolbar from '$lib/ui/frame/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { t } from '$lib/state/words/text';
-    import { readMessage, tooLarge, uploadMessage } from '$lib/state/life/memories';
-    import { tileRatio } from '$lib/state/life/memories.svelte';
+    import { readMessage, tooLarge, uploadMessage } from '$lib/state/feeds/life/memories';
+    import { tileRatio } from '$lib/state/feeds/life/memories.svelte';
     import { useState } from '$lib/state/client/use';
-    import type { ViewProps } from '../../registry';
+    import type { ViewProps } from '$lib/state/workbench/navigation/registry';
 
     const {
         memories: { wall, reload },

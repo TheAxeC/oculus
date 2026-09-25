@@ -44,7 +44,7 @@ test.afterEach(() => {
     }
 });
 
-// revert: src/lib/views/sessions/session-list/SessionList.svelte:102 => openView('transcript');
+// revert: src/lib/views/sessions/session-list/SessionList.svelte:93 => openView('transcript');
 test('the Transcript item of two sessions opens two Transcript tabs, one per session', async ({
     page
 }) => {
@@ -70,7 +70,7 @@ test('the Transcript item of two sessions opens two Transcript tabs, one per ses
     }
 });
 
-// revert: src/lib/views/sessions/terminal/Terminal.svelte:234 => openView('terminal');
+// revert: src/lib/views/sessions/terminal/Terminal.svelte:231 => openView('terminal');
 test('the new terminal control opens another Terminal tab showing the start form', async ({
     page
 }) => {
@@ -90,7 +90,7 @@ test('the new terminal control opens another Terminal tab showing the start form
 
 // The served run's tmux starts nothing, so the start is answered here, as the endpoint answers a
 // start that worked; the terminal named is one no pane holds, and what is checked is the tab.
-// revert: src/lib/views/sessions/terminal/Terminal.svelte:224 => delete
+// revert: src/lib/views/sessions/terminal/Terminal.svelte:221 => delete
 test('a start from a new Terminal tab makes the terminal that tab its own, and leaves the other tab', async ({
     page
 }) => {
@@ -206,7 +206,7 @@ test("a session's detail tab opens that session's own Transcript tab", async ({ 
     await expect(named).toHaveCount(2);
 });
 
-// revert: src/lib/views/shared/card/CardSessions.svelte:59 => openBeside('session-detail');
+// revert: src/lib/views/shared/card/CardSessions.svelte:60 => openBeside('session-detail');
 test('a session pressed on a project card opens that session in a detail tab of its own', async ({
     page
 }) => {

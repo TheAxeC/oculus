@@ -17,6 +17,8 @@
     import type { TickerRow } from '$lib/ui/display/ticker-rows';
     import {
         CATEGORIES,
+        deadlinesByCategory,
+        runsByKind,
         type Ticker as FocusTicker,
         type TickerItem
     } from '$lib/state/boards/ticker';
@@ -120,24 +122,15 @@
     /** Everything the strip draws, and the line each row came from, by the row's own id. */
     const view = $derived.by(() => {
         const { index, row, kept } = rowMaker('r');
-        const byKind = (lines: TickerItem[]): { kind: string; rows: TickerRow[] }[] => {
-            const groups: { kind: string; rows: TickerRow[] }[] = [];
-            for (const line of lines) {
-                const held = groups.at(-1);
-                if (held?.kind !== line.kind) {
-                    groups.push({ kind: line.kind, rows: [row(line, dateTail(line))] });
-                } else {
-                    held.rows.push(row(line, dateTail(line)));
-                }
-            }
-            return groups;
-        };
-        const categories = CATEGORIES.map((category) => ({
-            category,
-            rows: (week?.deadlines ?? [])
-                .filter((line) => line.kind === category)
-                .map((line) => row(line, deadlineTail(line)))
-        })).filter((one) => one.rows.length > 0);
+        const byKind = (lines: TickerItem[]): { kind: string; rows: TickerRow[] }[] =>
+            runsByKind(lines).map((run) => ({
+                kind: run.kind,
+                rows: run.lines.map((line) => row(line, dateTail(line)))
+            }));
+        const categories = deadlinesByCategory(week?.deadlines ?? [], CATEGORIES).map((one) => ({
+            category: one.category,
+            rows: one.lines.map((line) => row(line, deadlineTail(line)))
+        }));
         return {
             index,
             kept,

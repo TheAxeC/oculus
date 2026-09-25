@@ -16,8 +16,8 @@ export type {
     InboxThread,
     InboxTriage,
     MailAccount
-} from '../../data/model.ts';
-import type { InboxKind, InboxThread, MailAccount } from '../../data/model.ts';
+} from '../../data/model/index.ts';
+import type { InboxKind, InboxThread, MailAccount } from '../../data/model/index.ts';
 
 /** The four lists the view draws, in the order it draws them. */
 export type SplitInbox = {
@@ -138,4 +138,9 @@ export function parseInboxState(raw: unknown): InboxState {
     };
     if (typeof held?.reveal === 'string' && held.reveal !== '') state.reveal = held.reveal;
     return state;
+}
+
+/** How many threads are on the plate still to be triaged or answered: every section but triaged. */
+export function plateCount(split: SplitInbox): number {
+    return split.unsorted.length + split.replies.length + split.actions.length + split.info.length;
 }

@@ -1,7 +1,7 @@
 // Layer 2, client-state test fixture. Synthetic board and collection records exercise badge hooks
 // without reading or writing hub data.
 
-import type { Project, Snapshot, Tier } from '../../../src/lib/data/model.ts';
+import type { Project, Snapshot, Tier } from '../../../src/lib/data/model/index.ts';
 import type { ClientState } from '../../fixtures/client.ts';
 import { textCatalog } from '../../../src/lib/data/sources/config.ts';
 import { NO_FEEDS } from '../../fixtures/entities-fixture.ts';

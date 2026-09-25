@@ -11,7 +11,7 @@ import type {
     SessionsPayload,
     Terminal,
     Workspace
-} from '../../src/lib/data/model.ts';
+} from '../../src/lib/data/model/index.ts';
 
 /** One session, everything at its quiet default and the case's own fields written over it. */
 export function record(id: string, over: Partial<GroupedSession> = {}): GroupedSession {

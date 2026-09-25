@@ -11,8 +11,8 @@ import type {
     ConnectAccountConfig,
     MailAccountConfig,
     UsageAccountConfig
-} from '../../model.ts';
-import { configDir } from './merge.ts';
+} from '../../model/index.ts';
+import { configDir } from './folder.ts';
 
 export type LocalConfig = {
     /** Absolute path of the research hub whose YAML the portfolio is built from. */

@@ -1,6 +1,6 @@
 <script module lang="ts">
     // Layer 3, view registration. Venues opens the sources group.
-    import type { ViewRegistration } from '../../registry';
+    import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     export const registration: ViewRegistration = {
         id: 'venues',
         label: 'views.venues',
@@ -32,13 +32,15 @@
         realProjects,
         venueSearch,
         venueUsers,
+        venuesByCategory,
         type VenuesState
     } from '$lib/state/sources/venues';
-    import { cardCursor } from '$lib/state/client/instance';
+    import { cardCursor } from '$lib/state/workbench/layout/instance';
     import { applyThemeFacets, themeFacets, themeWordLabels } from '$lib/state/words/themes';
+    import { entryById } from '$lib/state/boards/collection';
     import { t } from '$lib/state/words/text';
     import { viewSourceFile } from '$lib/state/sessions/view-source';
-    import type { ViewProps } from '../../registry';
+    import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 
     const {
@@ -61,8 +63,9 @@
     const labels = $derived(themeWordLabels(configMap().venue_themes));
     const facets = $derived(themeFacets(allVenues, labels));
     const shown = $derived(applyThemeFacets(venueSearch(allVenues, held.search), held.off));
-    const journals = $derived(shown.filter((venue) => venue.category === 'journal'));
-    const conferences = $derived(shown.filter((venue) => venue.category === 'conference'));
+    const byCategory = $derived(venuesByCategory(shown));
+    const journals = $derived(byCategory.journals);
+    const conferences = $derived(byCategory.conferences);
     const todayMonth = new Date().getMonth() + 1;
 
     let said = $state('');
@@ -80,7 +83,7 @@
     }
 
     function entryFor(id: string) {
-        return collection?.entries.find((entry) => entry.id === id) ?? null;
+        return entryById(collection, id);
     }
 </script>
 

@@ -31,12 +31,12 @@ import {
     setEntryFields,
     startEntries
 } from '../entry-edit/index.ts';
-import { plain } from '../../git/changes.ts';
+import { plain } from '../../core/changes.ts';
 import { BOOKMARKS, ensureBookmarksFile } from '../../files/fs/bookmarks.ts';
 import { NOT_A_FIELD_VALUE, asFieldValue } from '../yaml-edit.ts';
-import type { ChangeRecord } from '../../git/changes.ts';
+import type { ChangeRecord } from '../../core/changes.ts';
 import type { EditResult, FieldValue, Refusal } from '../yaml-edit.ts';
-import type { PortfolioConfig, SchemaField } from '../../../data/model.ts';
+import type { PortfolioConfig, SchemaField } from '../../../data/model/index.ts';
 import type { WriteOutcome } from '../writes.ts';
 
 /** Registries whose entry key is not the first field of their collection schema. */

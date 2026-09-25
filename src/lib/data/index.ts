@@ -32,7 +32,7 @@ import type {
     ScanRule,
     Snapshot,
     Vocabulary
-} from './model.ts';
+} from './model/index.ts';
 
 /** The one config file the public deck lives in, inside the engine's config directory. */
 export const DECK_FILE = 'present.yml';

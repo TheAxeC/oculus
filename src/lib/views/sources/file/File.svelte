@@ -1,6 +1,6 @@
 <script module lang="ts">
     // Layer 3, view registration. A file opens from the file browser and is not listed.
-    import type { ViewRegistration } from '../../registry';
+    import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
 
     export const registration: ViewRegistration = {
         id: 'file',
@@ -63,7 +63,7 @@
     import { extensionOf, nameOf, opensInProgram, typeOfFile } from '$lib/state/sources/fs';
     import { sourceTabState } from '$lib/state/sessions/source.svelte';
     import { t } from '$lib/state/words/text';
-    import type { ViewProps } from '../../registry';
+    import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 
     const client = useState();

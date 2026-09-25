@@ -3,8 +3,7 @@
 
 import { fields, text as textOf } from '../../data/helpers/guards.ts';
 import { t } from '../words/text.ts';
-import type { EntitiesStore } from '../client/entities.svelte.ts';
-import type { WritesStore } from '../client/writes.svelte.ts';
+import type { EntitiesStore, WritesStore } from '../stores/shapes.ts';
 
 /** One client's reader of the Live HPC queue, and its one command. */
 export type HpcStore = {

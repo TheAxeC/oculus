@@ -4,7 +4,7 @@
 
     import Legend from './Legend.svelte';
     import Words from './Words.svelte';
-    import type { DeckMeta } from '$lib/state/life/present';
+    import type { DeckMeta } from '$lib/state/feeds/life/present';
 
     type Props = { meta: DeckMeta };
 

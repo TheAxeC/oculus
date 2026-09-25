@@ -11,6 +11,7 @@
 
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { nameOf } from '$lib/state/sources/fs';
+    import { bookmarkAt } from '$lib/state/sources/fs-transport';
     import { t } from '$lib/state/words/text';
     import { useState } from '$lib/state/client/use';
 
@@ -26,10 +27,7 @@
     } = useState();
 
     /** The bookmark over this very file, or null when the reader has not made one. */
-    const marked = $derived(
-        bookmarks().entries.find((one) => one.fields.root === root && one.fields.path === path) ??
-            null
-    );
+    const marked = $derived(bookmarkAt(bookmarks().entries, root, path));
 
     /** What the last bookmark write failed with, in the endpoint's own words. */
     let failed = $state('');

@@ -1,6 +1,6 @@
 <script module lang="ts">
     // Layer 3, view registration. Settings follows the Views catalogue in the system group.
-    import type { ViewRegistration } from '../../registry';
+    import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     export const registration: ViewRegistration = {
         id: 'settings',
         label: 'views.settings',
@@ -20,7 +20,7 @@
     import Appearance from './Appearance.svelte';
     import RailEditor from './RailEditor.svelte';
     import { t } from '$lib/state/words/text';
-    import type { ViewProps } from '../../registry';
+    import type { ViewProps } from '$lib/state/workbench/navigation/registry';
 
     let { instance }: ViewProps = $props();
 </script>

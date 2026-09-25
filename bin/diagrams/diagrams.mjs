@@ -1,18 +1,20 @@
 #!/usr/bin/env node
-// Layer 4, tool. Draw oculus's three diagrams from its source: the layers and the imports that join
-// them, the channels from the server module that publishes each to the client modules that read
-// it, and the write chain from the route to the file on disk. Each is written to docs/diagrams/ as
-// a Graphviz `.dot` file and the `.svg` rendered from it.
+// Layer 4, tool. Draw oculus's diagrams from its source: the layers and the runtime imports that
+// join them, one diagram per layer of its folders in their declared order and the imports among
+// them and out of the layer, the channels from the server module that publishes each to the client
+// modules that read it, and the write chain from the route to the file on disk. Each is written to
+// docs/diagrams/ as a Graphviz `.dot` file and the `.svg` rendered from it.
 //
-// Everything drawn is read from the source text, never from a list kept here: the import
-// specifiers and globs (with the pattern tests/checks/tree/boundaries.test.ts reads them with,
-// grouped by the layer rows that test names), the `publish(` calls and the reads of each channel on
+// Everything drawn is read from the source text, never from a list kept here: the runtime imports
+// and globs (with the pattern tests/checks/imports/graph.ts reads them with, grouped by the layer
+// rows tests/checks/tree/boundaries.test.ts names and the folder order
+// tests/checks/imports/order.ts declares), the `publish(` calls and the reads of each channel on
 // the page, and the calls made inside the functions the write route reaches. graphs.mjs reads the
-// first two, writes.mjs the third, and source.mjs holds what the three share. A module no layer row
-// places is drawn in a dashed group named "not placed"; so is, with its file and line, an import,
-// a publish, a channel read or comparison, a re-export of a whole module, or a call the write
-// reader cannot follow (writes.mjs says which). A module the write trace reaches that writes
-// nothing is drawn in a dashed group of its own.
+// imports and the channels, writes.mjs the write chain, and source.mjs holds what they share. A
+// module no layer row places is drawn in a dashed group named "not placed"; so is, with its file
+// and line, an import, a publish, a channel read or comparison, a re-export of a whole module, or a
+// call the write reader cannot follow (writes.mjs says which). The write diagram draws only the
+// modules on a path to the disk or to a call it cannot follow.
 //
 // The render is @viz-js/viz, Graphviz compiled to WebAssembly, so no system install is needed and
 // one input gives the same bytes on every machine. The drawing has no background and every line
@@ -26,16 +28,33 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { channelsDot, layersDot } from './graphs.mjs';
-import { BOUNDARIES, readLayers, readSources } from './source.mjs';
+import { channelsDot, layerDot, layersDot } from './graphs.mjs';
+import { BOUNDARIES, ORDERING, readLayers, readOrder, readSources } from './source.mjs';
 import { writesDot } from './writes.mjs';
 
-export { channelsDot, layersDot, placeOf } from './graphs.mjs';
-export { BOUNDARIES, readLayers, readSources, resolveSpec, uncomment } from './source.mjs';
+export { channelsDot, folderOf, layerDot, layersDot, placeOf } from './graphs.mjs';
+export {
+    BOUNDARIES,
+    ORDERING,
+    RUNTIME,
+    readLayers,
+    readOrder,
+    readSources,
+    resolveSpec,
+    uncomment
+} from './source.mjs';
 export { WRITE_ROUTE, declarations, writesDot } from './writes.mjs';
 
-/** The three diagrams, in the order the Help view and DESIGN.md name them. */
-export const NAMES = ['layers', 'channels', 'writes'];
+/** The layers the folder order names, each drawn as its own diagram after the overview. */
+export const LAYER_NAMES = ['data', 'server', 'state', 'ui', 'shell', 'views'];
+
+/** Every diagram, in the order the Help view and DESIGN.md name them. */
+export const NAMES = [
+    'layers',
+    ...LAYER_NAMES.map((layer) => `layer-${layer}`),
+    'channels',
+    'writes'
+];
 
 /** Where the diagrams are written, relative to the engine directory. */
 export const OUT = 'docs/diagrams';
@@ -86,7 +105,8 @@ export async function renderSvg(dot) {
 }
 
 /**
- * The three diagrams as the source gives them now.
+ * Every diagram as the source gives it now. A layer of LAYER_NAMES the order file does not list is
+ * an error, since its diagram would have no folders to draw.
  *
  * @param {string} engine The engine directory.
  * @returns {Promise<Diagram[]>}
@@ -94,14 +114,19 @@ export async function renderSvg(dot) {
 export async function generate(engine) {
     const sources = readSources(engine);
     const layers = readLayers(readFileSync(join(engine, BOUNDARIES), 'utf8'));
-    const dots = {
-        layers: layersDot(sources, layers),
-        channels: channelsDot(sources),
-        writes: writesDot(sources)
-    };
+    const order = readOrder(readFileSync(join(engine, ORDERING), 'utf8'));
+    /** @type {Map<string, string>} */
+    const dots = new Map([['layers', layersDot(sources, layers)]]);
+    for (const layer of LAYER_NAMES) {
+        const folders = order.get(layer);
+        if (folders === undefined) throw new Error(`${ORDERING} gives no order for ${layer}`);
+        dots.set(`layer-${layer}`, layerDot(sources, layers, layer, folders));
+    }
+    dots.set('channels', channelsDot(sources));
+    dots.set('writes', writesDot(sources));
     const out = [];
     for (const name of NAMES) {
-        const dot = dots[/** @type {keyof typeof dots} */ (name)];
+        const dot = dots.get(name) ?? '';
         out.push({ name, dot, svg: await renderSvg(dot) });
     }
     return out;
@@ -129,7 +154,7 @@ export async function staleFiles(engine) {
     return stale;
 }
 
-/** Write the three diagrams under the engine's docs/diagrams/. */
+/** Write every diagram under the engine's docs/diagrams/. */
 async function main() {
     const engine = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
     const folder = join(engine, OUT);

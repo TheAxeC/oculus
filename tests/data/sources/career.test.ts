@@ -10,7 +10,7 @@ import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/source
 import { career } from '../../../src/lib/data/snapshot/normalise.ts';
 import { validate } from '../../../src/lib/data/snapshot/validate.ts';
 import { NO_FEEDS } from '../../fixtures/entities-fixture.ts';
-import type { RawPortfolio, ValidationRules } from '../../../src/lib/data/model.ts';
+import type { RawPortfolio, ValidationRules } from '../../../src/lib/data/model/index.ts';
 import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
 
 afterAll(sweepScratch);

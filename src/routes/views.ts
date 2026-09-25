@@ -2,7 +2,11 @@
 // default component. The route layer owns discovery so the view boundary does not import views.
 
 import type { Component } from 'svelte';
-import type { RegistryStore, ViewProps, ViewRegistration } from '$lib/views/registry';
+import type {
+    RegistryStore,
+    ViewProps,
+    ViewRegistration
+} from '$lib/state/workbench/navigation/registry';
 
 type RegistrationSource =
     ViewRegistration | ViewRegistration[] | ((keys: string[]) => ViewRegistration[]);

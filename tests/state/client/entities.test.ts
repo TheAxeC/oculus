@@ -1,7 +1,7 @@
 // The client's store of what the socket delivered: one message per channel, the latest.
 
 import { beforeEach, describe, expect, it } from 'vitest';
-import type { Snapshot } from '../../../src/lib/data/model.ts';
+import type { Snapshot } from '../../../src/lib/data/model/index.ts';
 import { createClientState, type ClientState } from '../../fixtures/client.ts';
 
 let client: ClientState;
@@ -32,7 +32,7 @@ function snapshot(version: number, projects: string[]): Snapshot {
 
 describe('receive', () => {
     it('takes the first message of a channel after a reconnect whatever its version, then orders again', () => {
-        // revert: src/lib/state/client/entities.svelte.ts:66 => const first = false;
+        // revert: src/lib/state/client/entities.svelte.ts:49 => const first = false;
         receive({ channel: 'config', version: 7, payload: { config: { a: 1 } } });
         // A restarted server numbers its channels from the start again.
         client.entities.reconnected();

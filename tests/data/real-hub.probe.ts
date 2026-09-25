@@ -13,8 +13,8 @@ import { buildPortfolio, portfolioConfigFrom } from '../../src/lib/data/index.ts
 import { ENTITY_KINDS } from '../../src/lib/data/snapshot/normalise.ts';
 import { sessions } from '../../src/lib/server/sessions/index.ts';
 import { sessionFolders } from '../../src/lib/server/sessions/folders.ts';
-import { statusFor } from '../../src/lib/server/git/git.ts';
-import type { Finding, RegistryName } from '../../src/lib/data/model.ts';
+import { statusFor } from '../../src/lib/server/core/git.ts';
+import type { Finding, RegistryName } from '../../src/lib/data/model/index.ts';
 import { join } from 'node:path';
 import { scratchDir, sweepScratch } from '../fixtures/scratch.ts';
 
@@ -123,8 +123,8 @@ for (const workspace of first.workspaces) {
     console.log(`  ${workspace.name || '(unknown)'}: ${areas}`);
 }
 
-// The hub's own git state, through server/git/git.ts's four read-only commands and nothing else. It
-// reads the repository and changes nothing in it, like everything else in this file.
+// The hub's own git state, through server/core/git.ts's four read-only commands and nothing else.
+// It reads the repository and changes nothing in it, like everything else in this file.
 const state = statusFor([hub])[hub];
 console.log(
     `git ${hub}: branch ${state.branch || '(none)'}, ahead ${state.ahead}, behind ${state.behind}, ` +

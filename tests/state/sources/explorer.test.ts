@@ -185,7 +185,7 @@ describe('the explorer over the rows', () => {
         expect(collapseRoot([...open, 'hubby:x'], 'hub')).toEqual(['hub:', 'notes:', 'hubby:x']);
     });
 
-    // revert: src/lib/state/sources/fs.ts:296 => hidden: false,
+    // revert: src/lib/state/sources/fs.ts:316 => hidden: false,
     it('reads the two toggles an instance keeps, and false for anything that is not true', () => {
         expect(filesViewOf({ hidden: true, ignored: true })).toMatchObject({
             hidden: true,
@@ -370,7 +370,7 @@ describe('the forms of the file browser', () => {
         expect(editedGone(NO_FORM, loaded, false)).toBe(false);
     });
 
-    // revert: src/lib/state/sources/fs.ts:498 => return { ...part };
+    // revert: src/lib/state/sources/fs.ts:518 => return { ...part };
     // Revert: in patchedFilesView of state/sources/fs.ts, write the part over nothing.
     it('writes part of a file browser over whatever else its record holds', () => {
         expect(patchedFilesView({ filter: 'x', form: 'root' }, { form: 'bookmark' })).toEqual({
@@ -383,7 +383,7 @@ describe('the forms of the file browser', () => {
         expect(patchedFilesView('a word', { editing: 'one' })).toEqual({ editing: 'one' });
     });
 
-    // revert: src/lib/state/sources/fs.ts:484 => if (marks.loading || marks.error !== '') return false;
+    // revert: src/lib/state/sources/fs.ts:504 => if (marks.loading || marks.error !== '') return false;
     // Revert: in editedGone of state/sources/fs.ts, drop `saving` from the line that answers false.
     it('leaves the form a save of its own is out from until that answer lands', () => {
         const loaded = { entries: [{ id: 'the manual renamed' }], loading: false, error: '' };

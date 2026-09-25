@@ -41,14 +41,8 @@ export {
     localDefaults,
     usageAccountLabel
 } from './config/local.ts';
-export {
-    CATALOGS_DIR,
-    TEXT_KEY,
-    configDir,
-    flattenText,
-    loadConfig,
-    textCatalog
-} from './config/merge.ts';
+export { configDir } from './config/folder.ts';
+export { CATALOGS_DIR, TEXT_KEY, flattenText, loadConfig, textCatalog } from './config/merge.ts';
 export {
     type IconMemory,
     VOCAB_KEYS,

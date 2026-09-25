@@ -16,11 +16,25 @@
 
 import { createReadStream, realpathSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { dirname, extname, isAbsolute, join, resolve, sep } from 'node:path';
+import { dirname, extname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { Readable } from 'node:stream';
 import { configDir, loadConfig, loadLocalOrDefaults } from '../../data/sources/config.ts';
 import { sameOrigin } from '../core/auth.ts';
-import type { Finding } from '../../data/model.ts';
+import type { Finding } from '../../data/model/index.ts';
+
+/**
+ * A project folder from the snapshot, resolved beneath the configured hub root. Every action that
+ * starts a terminal in a project's own folder, and the LaTeX reader of its manuscript folder,
+ * resolves it here, so the check that it did not leave the hub exists once.
+ */
+export function projectDirectory(hub: string, folder: string): string {
+    const cwd = resolve(hub, folder);
+    const within = relative(hub, cwd);
+    if (within.startsWith('..') || isAbsolute(within)) {
+        throw new Error('the project folder is outside the configured hub');
+    }
+    return cwd;
+}
 
 /** One directory the server may serve files from: the key a URL names it by, and where it is. */
 export type Root = { key: string; dir: string };

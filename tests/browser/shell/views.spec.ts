@@ -50,7 +50,7 @@ async function projectCard(page: Page): Promise<Locator> {
 test('the catalogue opens a view on the page the reader came from, and a chord and a digit on the page on screen', async ({
     page
 }) => {
-    // revert: src/lib/views/system/workbench/Catalogue.svelte:111 => delete
+    // revert: src/lib/views/system/workbench/Catalogue.svelte:117 => delete
     await boot(page);
     await showRailPage(page, 'projects');
     await showRailPage(page, 'views');
@@ -98,7 +98,7 @@ test('the catalogue opens a view on the page the reader came from, and a chord a
     await expect(page.locator('nav [data-rail-page="views"] button')).toHaveClass(/\bactive\b/);
 });
 
-// revert: src/lib/views/system/workbench/Catalogue.svelte:95 => delete
+// revert: src/lib/views/system/workbench/Catalogue.svelte:101 => delete
 test("a catalogue moved onto a page of the reader's own opens a view on that page", async ({
     page
 }) => {
@@ -116,7 +116,7 @@ test("a catalogue moved onto a page of the reader's own opens a view on that pag
 test('a catalogue press after a load straight onto its page opens the view on the first rail page', async ({
     page
 }) => {
-    // revert: src/lib/views/system/workbench/Catalogue.svelte:102 => delete
+    // revert: src/lib/views/system/workbench/Catalogue.svelte:108 => delete
     await boot(page);
     await showRailPage(page, 'views');
     // The reload puts the Views and Settings page on screen with no page shown before it.
@@ -131,7 +131,7 @@ test('a catalogue press after a load straight onto its page opens the view on th
 test('a catalogue press on a hub document opens it on the page the reader came from', async ({
     page
 }) => {
-    // revert: src/lib/views/system/workbench/Catalogue.svelte:111 => delete
+    // revert: src/lib/views/system/workbench/Catalogue.svelte:117 => delete
     await boot(page);
     await showRailPage(page, 'projects');
     await showRailPage(page, 'views');
@@ -145,7 +145,7 @@ test('a catalogue press on a hub document opens it on the page the reader came f
 test('a shift-press after a load straight onto the catalogue opens beside on the first rail page', async ({
     page
 }) => {
-    // revert: src/lib/views/system/workbench/Catalogue.svelte:112 => if (event.shiftKey) openView(view, state);
+    // revert: src/lib/views/system/workbench/Catalogue.svelte:118 => if (event.shiftKey) openView(view, state);
     await boot(page);
     await showRailPage(page, 'views');
     await page.reload();
@@ -201,7 +201,7 @@ test("a catalogue entry's right-click menu opens it on this page clear of the ca
     page
 }) => {
     // revert: src/lib/state/workbench/layout/open/away.ts:75 => if (false) {
-    // revert: src/lib/views/system/workbench/Catalogue.svelte:130 => if (pick === BESIDE) openAway(view, state, page, instance.id);
+    // revert: src/lib/views/system/workbench/Catalogue.svelte:136 => if (pick === BESIDE) openAway(view, state, page, instance.id);
     await boot(page);
     await showRailPage(page, 'projects');
     await showRailPage(page, 'views');

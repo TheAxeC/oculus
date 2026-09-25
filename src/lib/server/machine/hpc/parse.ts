@@ -1,6 +1,6 @@
 // Layer 2, server. Pure SLURM text parsers, the section markers they read and the accounting window
 // date the queries are built with, so every one of them is exercised without ssh.
-import type { HpcJob, HpcPartition, HpcQuotaItem, HpcRecent } from '../../../data/model.ts';
+import type { HpcJob, HpcPartition, HpcQuotaItem, HpcRecent } from '../../../data/model/index.ts';
 
 export const SEC_SACCT = '@@oculus:sacct@@';
 export const SEC_SINFO = '@@oculus:sinfo@@';

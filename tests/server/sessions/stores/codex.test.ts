@@ -15,7 +15,7 @@ import {
     rolloutId,
     type CodexProbe
 } from '../../../../src/lib/server/sessions/stores/codex.ts';
-import type { SessionRecord } from '../../../../src/lib/data/model.ts';
+import type { SessionRecord } from '../../../../src/lib/data/model/index.ts';
 import { scratchDir, sweepScratch } from '../../../fixtures/scratch.ts';
 
 afterAll(sweepScratch);

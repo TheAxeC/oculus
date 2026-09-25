@@ -16,7 +16,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join, normalize, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterAll, describe, expect, it } from 'vitest';
-import { scratchDir, scratchMade, sweepScratch } from '../../fixtures/scratch.ts';
+import { plantScratch, scratchDir, scratchMade, sweepScratch } from '../../fixtures/scratch.ts';
 import { code } from '../source/code.ts';
 
 afterAll(sweepScratch);
@@ -226,13 +226,25 @@ export function findOwnScratch(allow: string[] = OWN, root = TESTS): string[] {
 
 describe('a scratch directory', () => {
     it('is made inside the temporary directory and swept away again', () => {
-        // revert: tests/fixtures/scratch.ts:31 => return;
+        // revert: tests/fixtures/scratch.ts:48 => return;
         const dir = scratchDir('oculus-scratch-case-');
         expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
         expect(scratchMade()).toContain(dir);
         sweepScratch();
         expect(existsSync(dir)).toBe(false);
         expect(scratchMade()).toEqual([]);
+    });
+
+    // revert: tests/fixtures/scratch.ts:37 => if (false) {
+    it('is planted with the files given, and refuses one whose path leaves it', () => {
+        const dir = plantScratch('oculus-scratch-plant-', { 'a/b.txt': 'held' });
+        expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
+        expect(readFileSync(join(dir, 'a', 'b.txt'), 'utf8')).toBe('held');
+        expect(() => plantScratch('oculus-scratch-plant-', { '../out.txt': 'x' })).toThrow(
+            /outside its scratch directory/
+        );
+        expect(existsSync(join(dir, '..', 'out.txt'))).toBe(false);
+        sweepScratch();
     });
 
     it('is the only way a test file makes one', () => {

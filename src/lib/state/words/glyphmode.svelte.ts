@@ -8,7 +8,7 @@
 // when the mode changes. state/words/text.ts reads this inside iconSvg() and bracketedGlyph(),
 // which is what makes the read part of the component's own effect.
 //
-// It is module-level for the same reason state/client/generation.svelte.ts is: it is read inside
+// It is module-level for the same reason state/words/generation.svelte.ts is: it is read inside
 // iconSvg() from every layer, `ui/` included, where there is no client object to read it from.
 
 /** The line icons, or the ASCII stand-ins. */

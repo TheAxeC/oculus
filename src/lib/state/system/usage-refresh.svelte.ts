@@ -1,11 +1,10 @@
 // Layer 2, client state. Refresh refusals belong to the usage payload current when the response
 // arrives. A newer payload clears the visible refusal in every Usage view without an effect.
 
-import type { UsagePayload } from '../../data/model.ts';
+import type { UsagePayload } from '../../data/model/index.ts';
 import { byKey } from '../../data/helpers/guards.ts';
-import type { EntitiesStore } from '../client/entities.svelte.ts';
+import type { EntitiesStore, WritesStore } from '../stores/shapes.ts';
 import { t } from '../words/text.ts';
-import type { WritesStore } from '../client/writes.svelte.ts';
 
 /**
  * The route's error words, each answered by a catalog string; anything else is the request failing.

@@ -9,7 +9,7 @@
     // threshold for too much of one board on one venue.
 
     import Tag from '$lib/ui/controls/Tag.svelte';
-    import Glyph from '$lib/ui/controls/Glyph.svelte';
+    import Glyph from '$lib/ui/display/Glyph.svelte';
     import { t } from '$lib/state/words/text';
     import type { BoardStats } from '$lib/state/boards/board';
 

@@ -1,7 +1,7 @@
 // Layer 2, client state. Layout types, constants, defaults and page operations live here because
 // changes to the model should not involve tree or workbench algorithms.
 
-import { newInstance } from '../../client/instance.ts';
+import { newInstance } from './instance.ts';
 
 /**
  * The view a pane's tab mounts. The view registry is its vocabulary. A saved layout may name a

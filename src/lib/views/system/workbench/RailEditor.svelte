@@ -14,7 +14,7 @@
     // state; the list is then scrolled into view and the ask is taken out of the state, so a later
     // switch back to the tab leaves the view where the reader scrolled it.
 
-    import Glyph from '$lib/ui/controls/Glyph.svelte';
+    import Glyph from '$lib/ui/display/Glyph.svelte';
     import Select from '$lib/ui/forms/Select.svelte';
     import TextInput from '$lib/ui/forms/TextInput.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';

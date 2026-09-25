@@ -6,7 +6,7 @@
     // holds nothing: whether the list is open and what a press does are the menu's, and the menu
     // reads the button itself through `button` to give it the focus back.
 
-    import Glyph from '../controls/Glyph.svelte';
+    import Glyph from '../display/Glyph.svelte';
     import Tooltip from './Tooltip.svelte';
 
     type Props = {

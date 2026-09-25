@@ -32,21 +32,15 @@ tests/views/shared/card/card-layout.test.ts :: takes a line of its own when the 
 tests/views/shared/card/card.test.ts :: derives overdue, near, submitted and absent deadlines | the case draws nothing and asserts over deadline(project(), [], now, translate)
 tests/views/shared/card/card.test.ts :: encodes every path segment for api/file | the case draws nothing and asserts over urlOf('projects/one space', 'a#b/file.md')
 tests/views/shared/card/card.test.ts :: maps every code state through the catalog | the case draws nothing and asserts over codeLabel('deposited', translate)
-tests/views/shared/card/card.test.ts :: matches paths and splits their visible parts | the case draws nothing and asserts over matching(rows, ' MAIN ')
 tests/views/shared/card/card.test.ts :: opens at nothing for a project with no slide, which is what hides the control | the case draws nothing and asserts over deckSlideOf(project())
 tests/views/shared/card/card.test.ts :: opens at the project own first slide, whatever else its PRESENT.md declares | the case draws nothing and asserts over deckSlideOf(one)
 tests/views/shared/card/cardlinks.test.ts :: holds a kind back to SHOWN entries until it is expanded | the case draws nothing and asserts over shownTags(five, false)
 tests/views/shared/card/cardlinks.test.ts :: leaves a kind no longer than SHOWN whole either way | the case draws nothing and asserts over shownTags(two, false)
 tests/views/shared/card/cardlinks.test.ts :: opens a cross-link entry by its label in the view of its own kind | the case draws nothing and asserts over source
 tests/views/boards/collection/collection-form.test.ts :: sends the empty string for a control the reader cleared on an entry that exists | the case draws nothing and asserts over source
-tests/views/system/config.test.ts :: counts the lines of a file, whether or not it ends in a newline | the case draws nothing and asserts over lineCount('')
 tests/views/system/config.test.ts :: hands that version to the file browser store, for the engine root and no other | the case draws nothing and asserts over source
 tests/views/system/config.test.ts :: keys a description by the file name, with a hyphen written as an underscore | the case draws nothing and asserts over descriptionKey('layout.yml')
-tests/views/system/config.test.ts :: names the machine own file as the server module does, which it cannot import | the case draws nothing and asserts over LOCAL_NAME
-tests/views/system/config.test.ts :: puts the machine own file last, after the tracked ones | the case draws nothing and asserts over configFiles([file('local.yml'), file('vocab.yml'), file('app
 tests/views/shared/links/crosslinks.test.ts :: cuts a long project title inside the card and keeps the whole title in its tooltip | the case draws nothing and asserts over source
-tests/views/shared/links/crosslinks.test.ts :: is one row for a group whose members are all of one type | the case draws nothing and asserts over byType(groups[0]
-tests/views/shared/links/crosslinks.test.ts :: nest under their own project type, one row per type, in the members own order | the case draws nothing and asserts over byType({ type: 'work', count: 3, members: [ { id: 'a', label
 tests/views/sources/doc.test.ts :: is the path, so one entry is one tab and another entry is another | the case draws nothing and asserts over docState(ENTRY)
 tests/views/sources/document.test.ts :: escapes each segment on its own, so a separator stays a separator | the case draws nothing and asserts over fileUrl('game-engine', 'docs/a b/read me.html')
 tests/views/sources/document.test.ts :: is the root and the path under api/file | the case draws nothing and asserts over fileUrl('cathedra', 'docs/user/manual.html')
@@ -61,7 +55,6 @@ tests/views/system/help.test.ts :: names every view the catalogue lists, by its 
 tests/views/system/help.test.ts :: names the machine-local file, the checks and where the hub comes from | the case draws nothing and asserts over MANUAL
 tests/views/system/help.test.ts :: writes down every letter a catalogue group is reached by | the case draws nothing and asserts over missing
 tests/views/system/history.test.ts :: has a sentence of its own for every word the endpoint answers, and never the word | the case draws nothing and asserts over outcome
-tests/views/system/history.test.ts :: matches a filter against the file, the key and the field, and nothing else | the case draws nothing and asserts over matching(rows, ''
 tests/views/system/history.test.ts :: reads the filter out of whatever the instance state is | the case draws nothing and asserts over filterOf({ filter: 'tasks' })
 tests/views/system/history.test.ts :: says a value is back in part when the writer wrote it but refused a field | the case draws nothing and asserts over partly
 tests/views/system/history.test.ts :: says nothing happened for an answer that named no field, whatever its status | the case draws nothing and asserts over undoSaid({ ok: false, changed: [], error: 'refused' }, 'x')
@@ -106,33 +99,6 @@ tests/views/academic/present-markup.test.ts :: typesets a display formula standi
 tests/views/academic/present-markup.test.ts :: typesets a formula in each of the four delimiter pairs | the case draws nothing and asserts over formulas(words('before $x + 1$ after'))
 tests/views/academic/present-markup.test.ts :: typesets every formula of a string, not only the first | the case draws nothing and asserts over formulas(words('$a$ and $b$ and $c$'))
 tests/views/feeds/radar.test.ts :: opens its own feed file as a source tab and reuses the same file instance | the case draws nothing and asserts over findInstance(layout(), id)?.instance
-tests/views/whole/registry.test.ts :: closes the tabs open on a collection it drops, so no tab is left with no body | the case draws nothing and asserts over tabs.kind === 'pane' ? tabs.tabs.map((tab
-tests/views/whole/registry.test.ts :: discovers a registered module at any nesting depth | the case draws nothing and asserts over viewFor('probe-nested')?.component
-tests/views/whole/registry.test.ts :: drops the collections whose keys a later call no longer lists | the case draws nothing and asserts over viewFor(kept)
-tests/views/whole/registry.test.ts :: gives every view its exact group and order | the case draws nothing and asserts over a value it built itself
-tests/views/whole/registry.test.ts :: has nothing for an id nobody registered | the case draws nothing and asserts over viewFor('probe-nothing')
-tests/views/whole/registry.test.ts :: ignores a partial without registration metadata | the case draws nothing and asserts over (
-tests/views/whole/registry.test.ts :: keeps a collection in its first position when it is registered again | the case draws nothing and asserts over real(
-tests/views/whole/registry.test.ts :: lists registrations in registration order | the case draws nothing and asserts over probes(
-tests/views/whole/registry.test.ts :: names a glyph key whose value is a name config/catalogs/glyphs.yml holds | the case draws nothing and asserts over missing.map((view
-tests/views/whole/registry.test.ts :: names a label key the text catalog holds | the case draws nothing and asserts over missing.map((view
-tests/views/whole/registry.test.ts :: registers Data directly and excludes it from generic collections | the case draws nothing and asserts over viewFor('data')
-tests/views/whole/registry.test.ts :: registers Inbox directly with its catalog label and glyph | the case draws nothing and asserts over viewFor('inbox')
-tests/views/whole/registry.test.ts :: registers LinkedIn directly with its catalog label and glyph | the case draws nothing and asserts over viewFor('linkedin')
-tests/views/whole/registry.test.ts :: registers Lit Watch directly with its catalog label and glyph | the case draws nothing and asserts over viewFor('radar')
-tests/views/whole/registry.test.ts :: registers Pillars, Domains and Map directly with their catalog keys | the case draws nothing and asserts over viewFor('pillars')
-tests/views/whole/registry.test.ts :: registers Position Leads directly with its catalog label and glyph | the case draws nothing and asserts over viewFor('leads')
-tests/views/whole/registry.test.ts :: registers Venues directly with its catalog label and venue glyph | the case draws nothing and asserts over viewFor('venues')
-tests/views/whole/registry.test.ts :: registers a view and looks it up by id | the case draws nothing and asserts over viewFor('probe-one')?.label
-tests/views/whole/registry.test.ts :: registers every configured rail count and its urgency tone | the case draws nothing and asserts over typeof viewFor(id)?.badge
-tests/views/whole/registry.test.ts :: registers every view id the application has | the case draws nothing and asserts over real(
-tests/views/whole/registry.test.ts :: registers the Pillars view under that id alone, so a layout saved under the old one is an unknown view | the case draws nothing and asserts over viewFor('programs')
-tests/views/whole/registry.test.ts :: registers the manual, the configuration and a hub document with their catalog keys | the case draws nothing and asserts over viewFor('help')
-tests/views/whole/registry.test.ts :: registers the one board component under all three of its ids | the case draws nothing and asserts over new Set(board.map((view
-tests/views/whole/registry.test.ts :: registers the one collection component under every collection key of sources.yml | the case draws nothing and asserts over COLLECTIONS
-tests/views/whole/registry.test.ts :: registers the slide catalog as an unlisted view opened from the deck | the case draws nothing and asserts over viewFor('slides')
-tests/views/whole/registry.test.ts :: registers the source editor as an unlisted file view | the case draws nothing and asserts over viewFor('source')
-tests/views/whole/registry.test.ts :: replaces an earlier registration of the same id, in its place | the case draws nothing and asserts over probes(
 tests/views/whole/sanitise.test.ts :: is built with inlineMarkdown by every card that draws one | the case draws nothing and asserts over built.length
 tests/views/whole/sanitise.test.ts :: is drawn through the sanitiser in the project tab | the case draws nothing and asserts over source
 tests/views/whole/sanitise.test.ts :: is drawn through the sanitiser in the transcript | the case draws nothing and asserts over source

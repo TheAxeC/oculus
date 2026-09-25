@@ -1,6 +1,6 @@
 <script module lang="ts">
     // Layer 3, view registration. Findings follows Status in the system group.
-    import type { ViewRegistration } from '../../registry';
+    import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     export const registration: ViewRegistration = {
         id: 'findings',
         label: 'views.findings',
@@ -16,8 +16,9 @@
     // config/. A finding is reported and never repaired, so this view is where a bad manifest edit
     // shows up within a second of being saved.
 
+    import { allFindings } from '$lib/state/workbench/navigation/status';
     import { t } from '$lib/state/words/text';
-    import type { ViewProps } from '../../registry';
+    import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 
     const {
@@ -26,9 +27,7 @@
 
     let { instance }: ViewProps = $props();
 
-    // The two lists carry the same Finding shape; taking the type from the data rather than
-    // importing it is what keeps a view off data/, which the boundary table forbids it.
-    const found = $derived([...(portfolio()?.findings ?? []), ...(config()?.findings ?? [])]);
+    const found = $derived(allFindings(portfolio(), config()));
 </script>
 
 <div class="view" data-instance={instance.id}>

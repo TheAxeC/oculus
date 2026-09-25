@@ -25,8 +25,8 @@ import { join } from 'node:path';
 import { parse } from 'yaml';
 import { isMap } from '../../../data/helpers/guards.ts';
 import { collectionSchema } from '../../../data/snapshot/normalise.ts';
-import type { Entry, SchemaField } from '../../../data/model.ts';
-import { writeTextAtomic } from '../../sessions/stores/json.ts';
+import type { Entry, SchemaField } from '../../../data/model/index.ts';
+import { writeTextAtomic } from '../../core/json.ts';
 
 /** The collection key the write path resolves to the reader's own file. */
 export const BOOKMARKS = 'bookmarks';

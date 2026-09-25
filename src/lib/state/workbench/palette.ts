@@ -2,7 +2,8 @@
 // source store adapter is beside this file; this module accepts plain values so every search and
 // command rule is tested without a browser or a live socket.
 
-import type { FeedEntry, FeedKind, Snapshot } from '../../data/model.ts';
+import type { FeedEntry, FeedKind, Snapshot } from '../../data/model/index.ts';
+import { feedIdents, nestedStrings } from '../feeds/idents.ts';
 
 export type PaletteView = { id: string; label: string };
 
@@ -27,53 +28,6 @@ export type PaletteCommand = {
 };
 
 export type ParsedCommand = { name: string; argument: string };
-
-/** Every string nested in a value, in property order. */
-function strings(value: unknown): string[] {
-    if (typeof value === 'string') return value === '' ? [] : [value];
-    if (Array.isArray(value)) return value.flatMap(strings);
-    if (typeof value !== 'object' || value === null) return [];
-    return Object.values(value as Record<string, unknown>).flatMap(strings);
-}
-
-/** The identity one entry carries on its own, before the feed is asked whether it is unique. */
-export function feedIdentity(kind: FeedKind, entry: object): string {
-    const key = kind === 'linkedin' ? 'file' : 'title';
-    const value = (entry as Record<string, unknown>)[key];
-    if (typeof value === 'string' && value !== '') return value;
-    return strings(entry)[0] ?? kind;
-}
-
-/** What a caller asks for the identity of one entry of the list it was built over. */
-export type FeedIdent = (entry: object) => string;
-
-/**
- * One distinct non-empty id per entry of a list. An entry whose own fields give an empty id, and
- * each of two entries whose fields give the same id, carries its position in the list as a suffix;
- * every other entry keeps the id its own fields give, so the ids stay readable and stable.
- */
-export function uniqueIdents<T extends object>(
-    entries: readonly T[],
-    base: (entry: T) => string,
-    fallback: string
-): (entry: T) => string {
-    const seen = new Map<string, number>();
-    for (const entry of entries) seen.set(base(entry), (seen.get(base(entry)) ?? 0) + 1);
-    const ids = new Map<T, string>();
-    entries.forEach((entry, at) => {
-        const own = base(entry);
-        const shared = (seen.get(own) ?? 0) > 1;
-        ids.set(entry, own === '' || own === fallback || shared ? `${own || fallback}#${at}` : own);
-    });
-    return (entry) => ids.get(entry) ?? base(entry);
-}
-
-/**
- * The stable identity the feed view and the palette use for the same entry, over the whole feed.
- */
-export function feedIdents(kind: FeedKind, entries: readonly object[]): FeedIdent {
-    return uniqueIdents(entries, (entry) => feedIdentity(kind, entry), kind);
-}
 
 /**
  * The state a feed view is given to reveal one entry: the id, and the disclosure the entry may sit
@@ -121,7 +75,7 @@ export function buildIndex(
                 kind: 'project',
                 label: project.title,
                 title: project.title,
-                text: strings(fields).join(' '),
+                text: nestedStrings(fields).join(' '),
                 view: 'project',
                 state: { id: project.id, label: project.short ?? project.title }
             });
@@ -133,7 +87,7 @@ export function buildIndex(
                     kind: 'collection',
                     label: entry.title || entry.id,
                     title: entry.title || entry.id,
-                    text: strings(entry.fields).join(' '),
+                    text: nestedStrings(entry.fields).join(' '),
                     view: collection.id,
                     state: { reveal: entry.id }
                 });
@@ -156,7 +110,7 @@ export function buildIndex(
                 kind: 'feed',
                 label,
                 title: label,
-                text: strings(entry).join(' '),
+                text: nestedStrings(entry).join(' '),
                 view: kind,
                 state: revealState(kind, id)
             });

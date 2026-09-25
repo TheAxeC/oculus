@@ -10,7 +10,12 @@
     import Tag from '$lib/ui/controls/Tag.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { daysUntil, firstSentence } from '$lib/state/boards/board';
-    import { collectionLanes, type BandItem } from '$lib/state/boards/focus-lanes';
+    import {
+        bandHasCards,
+        collectionLanes,
+        stageItemCount,
+        type BandItem
+    } from '$lib/state/boards/focus-lanes';
     import { daysTone } from '$lib/state/boards/ticker';
     import { namedTone, toneOf } from '$lib/state/words/tones';
     import { t } from '$lib/state/words/text';
@@ -54,9 +59,7 @@
         teaching: namedTone(cards.tones.teaching)
     });
 
-    const anything = $derived(
-        cards.funding.length + cards.applications.length + cards.education.length > 0
-    );
+    const anything = $derived(bandHasCards(cards));
 
     /** A card's countdown, and nothing for one with no date. */
     function remaining(item: BandItem): number | null {
@@ -122,7 +125,7 @@
                     <LaneHead
                         label={t('focus.funding_lane')}
                         glyph={t('focus.funding_glyph')}
-                        count={cards.funding.reduce((n, stage) => n + stage.items.length, 0)}
+                        count={stageItemCount(cards.funding)}
                         tone={tones.funding}
                     />
                     <p class="lane-sub">{t('focus.funding_sub')}</p>

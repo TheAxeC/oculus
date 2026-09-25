@@ -11,7 +11,7 @@ import { render } from 'svelte/server';
 import { beforeEach, describe, expect, it } from 'vitest';
 import ProjectCard from '../../../src/lib/views/shared/card/ProjectCard.svelte';
 import type { BoardItem } from '../../../src/lib/state/boards/board/index.ts';
-import type { Project } from '../../../src/lib/data/model.ts';
+import type { Project } from '../../../src/lib/data/model/index.ts';
 import {
     engineDir,
     glyphCatalog,
@@ -128,9 +128,10 @@ const CHIP_TONES = ['statusTone(', 'typeTone(', 'item.tone'];
 
 /**
  * The one helper a file may tone its chips through instead: the gallery hands each chip a tone it
- * derived from the chip vocabulary, and toneFor() is typeTone() falling back to statusTone().
+ * derived from the chip vocabulary, and state/words/tones.ts chipTone() is typeTone() falling back
+ * to statusTone().
  */
-const TONE_HELPER = 'function toneFor(';
+const TONE_HELPER = 'chipTone(';
 
 function svelteFiles(at: string, prefix = ''): string[] {
     const found: string[] = [];

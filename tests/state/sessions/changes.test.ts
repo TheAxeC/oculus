@@ -5,7 +5,7 @@
 // endpoint answers and asserts what the store holds after it.
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createChanges } from '../../../src/lib/state/sessions/changes.svelte.ts';
+import { createChanges, matching } from '../../../src/lib/state/sessions/changes.svelte.ts';
 import type { Change, ChangesStore } from '../../../src/lib/state/sessions/changes.svelte.ts';
 
 /** One change, with whatever the case cares about over the rest. */
@@ -146,5 +146,21 @@ describe('the change store', () => {
         expect(store.loading()).toBe(false);
         expect(store.more()).toBe(true);
         expect(asked).toEqual([]);
+    });
+});
+
+describe('the rows a filter keeps', () => {
+    // revert: src/lib/state/sessions/changes.svelte.ts:52 => return `${row.file} ${row.key} ${row.field} ${String(row.after)}`.toLowerCase();
+    it('are matched against the file, the key and the field, and nothing else', () => {
+        const rows = [
+            change('a', { after: 'a new line' }),
+            change('b', { file: 'tasks/tasks.yml', key: 'Review the draft', field: 'status' })
+        ];
+        expect(matching(rows, '').map((one) => one.at)).toEqual(['a', 'b']);
+        expect(matching(rows, 'TASKS').map((one) => one.at)).toEqual(['b']);
+        expect(matching(rows, 'status.line').map((one) => one.at)).toEqual(['a']);
+        // The values are not matched: a filter over them would hide a row for a word it never shows
+        // in the column the reader typed into.
+        expect(matching(rows, 'a new line')).toEqual([]);
     });
 });

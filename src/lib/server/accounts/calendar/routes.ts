@@ -13,9 +13,9 @@
 // No answer of this module carries a token, a secret, an authorization code or an event's contents.
 
 import { calendarKey } from '../../../data/accounts/calendar.ts';
-import type { CalendarAccountConfig } from '../../../data/model.ts';
+import type { CalendarAccountConfig } from '../../../data/model/index.ts';
 import { hasToken, sameOrigin } from '../../core/auth.ts';
-import type { Opener } from '../../files/open.ts';
+import type { Opener } from '../connect/oauth.ts';
 import { httpsLink } from '../connect/api.ts';
 import { consentUrl, exchangeCode, type ConnectStates, type Fetcher } from '../connect/oauth.ts';
 import { readCredentials, writeRefreshToken } from '../connect/store.ts';

@@ -22,10 +22,10 @@
 
 import { homedir } from 'node:os';
 import { join } from 'node:path';
-import type { SessionAgent, SessionRecord } from '../../../data/model.ts';
+import type { SessionAgent, SessionRecord } from '../../../data/model/index.ts';
 import { PROC_START_SLACK, parseStamp } from '../registry.ts';
 import { update } from '../../../../../bin/dispatch-note.mjs';
-import { isMap, list, readJson, text } from './json.ts';
+import { isMap, list, readJson, text } from '../../core/json.ts';
 
 /** The harnesses a launch may name, which are the two session stores oculus reads. */
 export const HARNESSES = ['claude', 'codex'];

@@ -4,7 +4,7 @@
 // the next ask read them again.
 
 import { afterEach, expect, it, vi } from 'vitest';
-import type { FilesPayload, Message } from '../../../src/lib/data/model.ts';
+import type { FilesPayload, Message } from '../../../src/lib/data/model/index.ts';
 import { Hub, type Sink } from '../../../src/lib/server/core/channels.ts';
 import { registerFilesChannel } from '../../../src/lib/server/files/files-channel.ts';
 import { createClientState } from '../../fixtures/client.ts';
@@ -87,8 +87,8 @@ it('keeps a pending bookmark marker on the later root message and makes the page
 });
 
 it('reads the bookmarks again after a root message replaced the one that named them', async () => {
-    // revert: src/lib/state/sources/fs.svelte.ts:368 => const named = message.channel === 'files';
-    // revert: src/lib/state/sources/fs.svelte.ts:369 => delete
+    // revert: src/lib/state/sources/fs.svelte.ts:367 => const named = message.channel === 'files';
+    // revert: src/lib/state/sources/fs.svelte.ts:368 => delete
     const reads = countedReads();
     const client = createClientState();
     client.fs.bookmarks();

@@ -17,7 +17,7 @@ import {
     ptyChannel,
     titleStripper
 } from '../../../src/lib/state/sessions/terminals.svelte.ts';
-import type { Terminal } from '../../../src/lib/data/model.ts';
+import type { Terminal } from '../../../src/lib/data/model/index.ts';
 import { createClientState, type ClientState } from '../../fixtures/client.ts';
 
 let client: ClientState;

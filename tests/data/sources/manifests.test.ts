@@ -7,7 +7,7 @@ import { dirname, join, resolve, sep } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
 import { readManifests } from '../../../src/lib/data/sources/manifests.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
-import type { RawManifest, ScanRule } from '../../../src/lib/data/model.ts';
+import type { RawManifest, ScanRule } from '../../../src/lib/data/model/index.ts';
 import { present } from '../../fixtures/present.ts';
 import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
 

@@ -12,9 +12,9 @@
 import { readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
-import type { LiveEntry, SessionRecord } from '../../data/model.ts';
+import type { LiveEntry, SessionRecord } from '../../data/model/index.ts';
 import { distinctFolders } from './folders.ts';
-import { isMap, readJson, text, whole } from './stores/json.ts';
+import { isMap, readJson, text, whole } from '../core/json.ts';
 
 /** Seconds of disagreement allowed between the registry's stamp and what `ps` reports. */
 export const PROC_START_SLACK = 2;

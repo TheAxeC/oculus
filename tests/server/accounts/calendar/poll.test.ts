@@ -9,7 +9,10 @@ import { rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { resolve, sep } from 'node:path';
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
-import type { CalendarAccountConfig, CalendarPayload } from '../../../../src/lib/data/model.ts';
+import type {
+    CalendarAccountConfig,
+    CalendarPayload
+} from '../../../../src/lib/data/model/index.ts';
 import { Hub } from '../../../../src/lib/server/core/channels.ts';
 import { RETRY_MIN, watchCalendar } from '../../../../src/lib/server/accounts/calendar/poll.ts';
 import { credentialFile } from '../../../../src/lib/server/accounts/connect/store.ts';

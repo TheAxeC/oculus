@@ -17,8 +17,9 @@ import {
     formSections
 } from '../../../src/lib/state/forms/schema.ts';
 import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
-import type { Id, Project, Snapshot } from '../../../src/lib/data/model.ts';
+import type { Id, Project, Snapshot } from '../../../src/lib/data/model/index.ts';
 import { present } from '../../fixtures/present.ts';
+import { fieldsOfSection } from '../../../src/lib/state/forms/schema.ts';
 
 const { config } = loadConfig(engineDir());
 const fields = formFields(config);
@@ -251,5 +252,17 @@ describe('the values a form opens with', () => {
         expect(asList(['one'])).toEqual(['one']);
         expect(asList('one')).toEqual(['one']);
         expect(asText(undefined)).toBe('');
+    });
+});
+
+describe('the fields of one section of the manifest form', () => {
+    // revert: src/lib/state/forms/schema.ts:219 => return fields;
+    it('are the fields that name it, in file order', () => {
+        const fields = [
+            { field: 'a', section: 'one' },
+            { field: 'b', section: 'two' },
+            { field: 'c', section: 'one' }
+        ] as unknown as Parameters<typeof fieldsOfSection>[0];
+        expect(fieldsOfSection(fields, 'one').map((one) => one.field)).toEqual(['a', 'c']);
     });
 });

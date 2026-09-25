@@ -14,44 +14,16 @@
 
 import { tick } from 'svelte';
 import { t } from '../words/text.ts';
+import type {
+    SendOptions,
+    SessionFields,
+    SubtaskAction,
+    SubtaskTarget,
+    WriteAnswer,
+    WritesStore
+} from '../stores/shapes.ts';
 
-/** What the endpoint answers with when it wrote, or refused what it was asked to write. */
-export type WriteAnswer = {
-    ok: boolean;
-    changed: string[];
-    refused: { field: string; reason: string }[];
-    /**
-     * Set when the request itself was refused, rather than a field of it, and when the write was
-     * given up for want of an answer, which says so in the words of `app.write_timed_out`.
-     */
-    error?: string;
-    /** True when the request never reached the server: the fetch itself threw. */
-    network?: boolean;
-    /** What the endpoint had to say: git's own output, or the suggested commit message. */
-    output?: string;
-    /** The branch rows of a deposit `branches` action. Absent on every other write. */
-    branches?: { name: string; upstream: string; current: boolean }[];
-    /**
-     * The id the file gives the entry an entry write made or edited. Absent on every other write.
-     */
-    id?: string;
-};
-
-/** What one session write may set. A field left out is left as the overrides file has it. */
-export type SessionFields = {
-    /** True dismisses the session from the rail, false brings it back. */
-    hidden?: boolean;
-    /** An absolute directory to pin the session to, or the empty string to unpin it. */
-    area?: string;
-    /** A title to show instead of the transcript's own, or the empty string to clear it. */
-    title?: string;
-};
-
-/** What a subtask write hangs under: one project by its id, or one entry of one collection. */
-export type SubtaskTarget = { id: string; collection?: string };
-
-/** What one subtask button does to its line. */
-export type SubtaskAction = 'done' | 'reopen' | 'snooze' | 'delete';
+export type { SendOptions, SessionFields, SubtaskAction, SubtaskTarget, WriteAnswer, WritesStore };
 
 /** The endpoint that opens a file in its application or reveals a folder, behind the same token. */
 export const OPEN_PATH = '/api/open';
@@ -65,85 +37,8 @@ export const DEPOSIT_PATH = '/api/deposit';
 /** The endpoint of the Memories wall: one picture added to the folder, behind the same token. */
 export const MEMORIES_PATH = '/api/memories';
 
-/** The page's end of the write endpoint, one per client. */
-export type WritesStore = {
-    setToken: (next: string) => void;
-    writeToken: () => string;
-    pending: () => boolean;
-    lastError: () => string | null;
-    writeManifest: (id: string, fields: Record<string, unknown>) => Promise<WriteAnswer>;
-    openFolder: (path: string) => Promise<WriteAnswer>;
-    openFile: (root: string, path: string) => Promise<WriteAnswer>;
-    writeSession: (id: string, fields: SessionFields) => Promise<WriteAnswer>;
-    writeEntry: (
-        collection: string,
-        id: string,
-        fields: Record<string, unknown>
-    ) => Promise<WriteAnswer>;
-    writeSubtask: (
-        target: SubtaskTarget,
-        key: string,
-        action: SubtaskAction,
-        value?: string
-    ) => Promise<WriteAnswer>;
-    addSubtask: (
-        target: SubtaskTarget,
-        fields: { do: string; deadline?: string }
-    ) => Promise<WriteAnswer>;
-    writeHost: (name: string, status: string) => Promise<WriteAnswer>;
-    reorderEntries: (collection: string, order: string[]) => Promise<WriteAnswer>;
-    deleteEntry: (collection: string, id: string) => Promise<WriteAnswer>;
-    writeFeedField: (
-        feed: string,
-        id: string,
-        field: string,
-        value: string | number | boolean | null
-    ) => Promise<WriteAnswer>;
-    deleteFeedEntry: (feed: string, id: string) => Promise<WriteAnswer>;
-    addLead: (fields: Record<string, unknown>) => Promise<WriteAnswer>;
-    addLinkedinIdea: (fields: Record<string, unknown>) => Promise<WriteAnswer>;
-    markPosted: (file: string) => Promise<WriteAnswer>;
-    newEntry: (collection: string, fields: Record<string, unknown>) => Promise<WriteAnswer>;
-    writeDeck: (selection: string[], order: string[]) => Promise<WriteAnswer>;
-    /** Rewrite the rail list; `said` when the caller posts the refusal's notification itself. */
-    writeRail: (
-        rail: { label: string; glyph: string; page: string }[],
-        said?: boolean
-    ) => Promise<WriteAnswer>;
-    muteFinding: (signature: string, muted: boolean) => Promise<WriteAnswer>;
-    addMemory: (name: string, data: string) => Promise<WriteAnswer>;
-    newIdea: (fields: {
-        id: string;
-        title?: string;
-        short?: string;
-        domain?: string;
-        eli5?: string;
-    }) => Promise<WriteAnswer>;
-    /** Take one recorded change back, by the moment the change log stamped it. */
-    undoWrite: (at: string) => Promise<WriteAnswer>;
-    writeGit: (
-        action: string,
-        root: string,
-        fields?: Record<string, unknown>
-    ) => Promise<WriteAnswer>;
-    writeDeposit: (
-        action: string,
-        id: string,
-        fields?: Record<string, unknown>
-    ) => Promise<WriteAnswer>;
-    send: (request: unknown, path?: string, options?: SendOptions) => Promise<WriteAnswer>;
-    /**
-     * Hear every write that does not land, unless its caller says it: the words the server gave,
-     * or the error of a write that got no answer, with whether the server answered.
-     */
-    onUnwritten: (listener: (reason: string, refused: boolean) => void) => void;
-};
-
 /** One write's answer, and whether the server gave it or the write got none. */
 type Exchange = { answer: WriteAnswer; answered: boolean };
-
-/** What a caller says about one write it sends: `said` when it words a failure itself. */
-export type SendOptions = { said?: boolean };
 
 /**
  * How long a write waits for its answer before it is given up, in milliseconds, from

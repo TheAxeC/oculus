@@ -19,8 +19,8 @@
 import { closeSync, openSync, readFileSync, readdirSync, readSync, statSync } from 'node:fs';
 import { join, relative, resolve, sep } from 'node:path';
 import { sameOrigin } from '../core/auth.ts';
-import { projectDirectory } from '../machine/pty/chat.ts';
-import type { Project } from '../../data/model.ts';
+import { projectDirectory } from '../files/files.ts';
+import type { Project } from '../../data/model/index.ts';
 
 /** The folder a project's main files sit directly under. */
 export const MANUSCRIPT = 'manuscript';

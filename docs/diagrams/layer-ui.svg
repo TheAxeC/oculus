@@ -1,0 +1,226 @@
+<svg width="328pt" height="631pt"
+ viewBox="0.00 0.00 328.00 631.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<style>svg { color: #333333; } @media (prefers-color-scheme: dark) { svg { color: #cccccc; background: #1e1e1e; } }</style>
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 626.8)">
+<title>layer_ui</title>
+<g id="clust1" class="cluster">
+<title>cluster_ui</title>
+<polygon fill="none" stroke="currentColor" points="8,-8 8,-560.8 190,-560.8 190,-8 8,-8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="99" y="-546" font-family="Helvetica,Arial,sans-serif" font-size="12.00">ui</text>
+</g>
+<!-- folder ui/tabs -->
+<g id="node1" class="node">
+<title>folder ui/tabs</title>
+<polygon fill="none" stroke="currentColor" points="118,-508 64,-508 64,-486.4 118,-486.4 118,-508"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="91" y="-494.2" font-family="Helvetica,Arial,sans-serif" font-size="10.00">ui/tabs</text>
+</g>
+<!-- folder ui/tree -->
+<g id="node2" class="node">
+<title>folder ui/tree</title>
+<polygon fill="none" stroke="currentColor" points="118,-440.8 64,-440.8 64,-419.2 118,-419.2 118,-440.8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="91" y="-427" font-family="Helvetica,Arial,sans-serif" font-size="10.00">ui/tree</text>
+</g>
+<!-- folder ui/tabs&#45;&gt;folder ui/tree -->
+<!-- folder ui/tabs&#45;&gt;folder ui/tree -->
+<g id="edge25" class="edge">
+<title>folder ui/tabs&#45;&gt;folder ui/tree</title>
+<path fill="none" stroke="currentColor" d="M88.93,-486.06C87.64,-478.54 86.34,-468.05 87,-458.8 87.23,-455.52 87.62,-452.03 88.07,-448.68"/>
+<polygon fill="currentColor" stroke="currentColor" points="90.15,-449 88.95,-442.76 85.99,-448.39 90.15,-449"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="89" y="-461.2" font-family="Helvetica,Arial,sans-serif" font-size="8.00">1</text>
+</g>
+<!-- folder ui/controls -->
+<g id="node4" class="node">
+<title>folder ui/controls</title>
+<polygon fill="none" stroke="currentColor" points="121.03,-306.4 60.97,-306.4 60.97,-284.8 121.03,-284.8 121.03,-306.4"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="91" y="-292.6" font-family="Helvetica,Arial,sans-serif" font-size="10.00">ui/controls</text>
+</g>
+<!-- folder ui/tabs&#45;&gt;folder ui/controls -->
+<g id="edge22" class="edge">
+<title>folder ui/tabs&#45;&gt;folder ui/controls</title>
+<path fill="none" stroke="currentColor" d="M99.69,-486C108.04,-475.47 120.09,-458.18 125,-440.8 135.73,-402.82 135.73,-389.98 125,-352 120.9,-337.47 111.8,-323 104.05,-312.5"/>
+<polygon fill="currentColor" stroke="currentColor" points="105.92,-311.49 100.61,-308 102.59,-314.04 105.92,-311.49"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="135.04" y="-394" font-family="Helvetica,Arial,sans-serif" font-size="8.00">1</text>
+</g>
+<!-- folder ui/menu -->
+<g id="node5" class="node">
+<title>folder ui/menu</title>
+<polygon fill="none" stroke="currentColor" points="80,-239.2 26,-239.2 26,-217.6 80,-217.6 80,-239.2"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="53" y="-225.4" font-family="Helvetica,Arial,sans-serif" font-size="10.00">ui/menu</text>
+</g>
+<!-- folder ui/tabs&#45;&gt;folder ui/menu -->
+<g id="edge24" class="edge">
+<title>folder ui/tabs&#45;&gt;folder ui/menu</title>
+<path fill="none" stroke="currentColor" d="M83.24,-486.19C75.39,-475.53 63.5,-457.89 57,-440.8 32.26,-375.77 41.48,-354.33 44,-284.8 44.44,-272.51 44.05,-269.34 46,-257.2 46.55,-253.79 47.31,-250.19 48.14,-246.75"/>
+<polygon fill="currentColor" stroke="currentColor" points="50.14,-247.41 49.6,-241.07 46.07,-246.36 50.14,-247.41"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="42.64" y="-360.4" font-family="Helvetica,Arial,sans-serif" font-size="8.00">1</text>
+</g>
+<!-- folder ui/display -->
+<g id="node7" class="node">
+<title>folder ui/display</title>
+<polygon fill="none" stroke="currentColor" points="104.36,-104.8 47.64,-104.8 47.64,-83.2 104.36,-83.2 104.36,-104.8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="76" y="-91" font-family="Helvetica,Arial,sans-serif" font-size="10.00">ui/display</text>
+</g>
+<!-- folder ui/tabs&#45;&gt;folder ui/display -->
+<g id="edge23" class="edge">
+<title>folder ui/tabs&#45;&gt;folder ui/display</title>
+<path fill="none" stroke="currentColor" d="M118.05,-488.48C143.59,-479.34 178,-461.39 178,-431 178,-431 178,-431 178,-328.2 178,-248.86 199.65,-220.24 162,-150.4 154.42,-136.35 151.75,-132.41 139,-122.8 130.78,-116.6 120.96,-111.43 111.55,-107.3"/>
+<polygon fill="currentColor" stroke="currentColor" points="112.54,-105.43 106.2,-105.05 110.92,-109.31 112.54,-105.43"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="181.95" y="-293.2" font-family="Helvetica,Arial,sans-serif" font-size="8.00">2</text>
+</g>
+<!-- layer state -->
+<g id="node9" class="node">
+<title>layer state</title>
+<polygon fill="none" stroke="currentColor" stroke-dasharray="5,2" points="320,-508 266,-508 266,-486.4 320,-486.4 320,-508"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="293" y="-494.2" font-family="Helvetica,Arial,sans-serif" font-size="10.00">state</text>
+</g>
+<!-- folder ui/tabs&#45;&gt;layer state -->
+<g id="edge26" class="edge">
+<title>folder ui/tabs&#45;&gt;layer state</title>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M104.14,-508.27C122.3,-522.75 156.7,-547.41 191,-556.87 220.14,-564.9 232.87,-572.05 259,-556.87 274.27,-547.99 283.26,-529.4 288.11,-515.32"/>
+<polygon fill="currentColor" stroke="currentColor" points="290.03,-516.23 289.83,-509.88 286.02,-514.97 290.03,-516.23"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="192" y="-571.2" font-family="Helvetica,Arial,sans-serif" font-size="8.00">2</text>
+</g>
+<!-- folder ui/forms -->
+<g id="node3" class="node">
+<title>folder ui/forms</title>
+<polygon fill="none" stroke="currentColor" points="118,-373.6 64,-373.6 64,-352 118,-352 118,-373.6"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="91" y="-359.8" font-family="Helvetica,Arial,sans-serif" font-size="10.00">ui/forms</text>
+</g>
+<!-- folder ui/tree&#45;&gt;folder ui/forms -->
+<!-- folder ui/tree&#45;&gt;folder ui/menu -->
+<g id="edge28" class="edge">
+<title>folder ui/tree&#45;&gt;folder ui/menu</title>
+<path fill="none" stroke="currentColor" d="M82.48,-418.75C74.25,-408.19 62.29,-390.86 57,-373.6 43.5,-329.58 47.33,-274.41 50.56,-246.82"/>
+<polygon fill="currentColor" stroke="currentColor" points="52.63,-247.2 51.29,-240.99 48.46,-246.68 52.63,-247.2"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="51.2" y="-326.8" font-family="Helvetica,Arial,sans-serif" font-size="8.00">1</text>
+</g>
+<!-- folder ui/tree&#45;&gt;folder ui/display -->
+<g id="edge27" class="edge">
+<title>folder ui/tree&#45;&gt;folder ui/display</title>
+<path fill="none" stroke="currentColor" d="M98.87,-419.03C106.82,-408.41 118.79,-390.79 125,-373.6 158.96,-279.57 198.6,-239.38 153,-150.4 143.39,-131.64 124.13,-117.79 107.29,-108.63"/>
+<polygon fill="currentColor" stroke="currentColor" points="108.37,-106.82 102.08,-105.93 106.44,-110.55 108.37,-106.82"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="171.53" y="-259.6" font-family="Helvetica,Arial,sans-serif" font-size="8.00">2</text>
+</g>
+<!-- folder ui/forms&#45;&gt;folder ui/controls -->
+<!-- folder ui/forms&#45;&gt;folder ui/controls -->
+<g id="edge15" class="edge">
+<title>folder ui/forms&#45;&gt;folder ui/controls</title>
+<path fill="none" stroke="currentColor" d="M91.92,-351.51C92.34,-346.27 92.79,-339.8 93,-334 93.23,-327.51 92.98,-320.4 92.58,-314.13"/>
+<polygon fill="currentColor" stroke="currentColor" points="94.69,-314.09 92.15,-308.26 90.5,-314.4 94.69,-314.09"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="95.09" y="-326.8" font-family="Helvetica,Arial,sans-serif" font-size="8.00">2</text>
+</g>
+<!-- folder ui/controls&#45;&gt;folder ui/menu -->
+<!-- folder ui/controls&#45;&gt;folder ui/menu -->
+<g id="edge11" class="edge">
+<title>folder ui/controls&#45;&gt;folder ui/menu</title>
+<path fill="none" stroke="currentColor" d="M85.06,-284.41C79,-274.02 69.51,-257.73 62.42,-245.57"/>
+<polygon fill="currentColor" stroke="currentColor" points="64.37,-244.74 59.53,-240.61 60.74,-246.85 64.37,-244.74"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="76.28" y="-259.6" font-family="Helvetica,Arial,sans-serif" font-size="8.00">1</text>
+</g>
+<!-- folder ui/controls&#45;&gt;folder ui/display -->
+<g id="edge10" class="edge">
+<title>folder ui/controls&#45;&gt;folder ui/display</title>
+<path fill="none" stroke="currentColor" d="M91.12,-284.44C91.32,-260.85 91.32,-200.55 87,-150.4 85.94,-138.05 85.41,-134.96 83,-122.8 82.33,-119.41 81.51,-115.82 80.67,-112.38"/>
+<polygon fill="currentColor" stroke="currentColor" points="82.74,-112 79.22,-106.71 78.67,-113.04 82.74,-112"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="91.91" y="-192.4" font-family="Helvetica,Arial,sans-serif" font-size="8.00">3</text>
+</g>
+<!-- folder ui -->
+<g id="node8" class="node">
+<title>folder ui</title>
+<polygon fill="none" stroke="currentColor" points="103,-37.6 49,-37.6 49,-16 103,-16 103,-37.6"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="76" y="-23.8" font-family="Helvetica,Arial,sans-serif" font-size="10.00">ui</text>
+</g>
+<!-- folder ui/controls&#45;&gt;folder ui -->
+<g id="edge9" class="edge">
+<title>folder ui/controls&#45;&gt;folder ui</title>
+<path fill="none" stroke="currentColor" d="M101.35,-284.4C117.28,-267.54 146,-232.12 146,-195.8 146,-195.8 146,-195.8 146,-93 146,-69.72 125.02,-52.39 106.03,-41.47"/>
+<polygon fill="currentColor" stroke="currentColor" points="107.3,-39.77 101.03,-38.74 105.29,-43.46 107.3,-39.77"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="148" y="-158.8" font-family="Helvetica,Arial,sans-serif" font-size="8.00">1</text>
+</g>
+<!-- folder ui/controls&#45;&gt;layer state -->
+<g id="edge12" class="edge">
+<title>folder ui/controls&#45;&gt;layer state</title>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M108.37,-306.68C133.42,-322.04 179.67,-353.54 207,-391.6 228.28,-421.23 211.42,-441.43 236,-468.4 242.32,-475.34 250.76,-480.74 259.2,-484.86"/>
+<polygon fill="currentColor" stroke="currentColor" points="257.9,-486.58 264.23,-487.14 259.63,-482.75 257.9,-486.58"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="214.65" y="-394" font-family="Helvetica,Arial,sans-serif" font-size="8.00">3</text>
+</g>
+<!-- folder ui/frame -->
+<g id="node6" class="node">
+<title>folder ui/frame</title>
+<polygon fill="none" stroke="currentColor" points="70,-172 16,-172 16,-150.4 70,-150.4 70,-172"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="43" y="-158.2" font-family="Helvetica,Arial,sans-serif" font-size="10.00">ui/frame</text>
+</g>
+<!-- folder ui/menu&#45;&gt;folder ui/frame -->
+<!-- folder ui/menu&#45;&gt;folder ui/frame -->
+<g id="edge20" class="edge">
+<title>folder ui/menu&#45;&gt;folder ui/frame</title>
+<path fill="none" stroke="currentColor" d="M51.44,-217.21C49.89,-207.11 47.48,-191.43 45.64,-179.39"/>
+<polygon fill="currentColor" stroke="currentColor" points="47.73,-179.21 44.75,-173.6 43.58,-179.85 47.73,-179.21"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="50.6" y="-192.4" font-family="Helvetica,Arial,sans-serif" font-size="8.00">2</text>
+</g>
+<!-- folder ui/menu&#45;&gt;folder ui/display -->
+<g id="edge19" class="edge">
+<title>folder ui/menu&#45;&gt;folder ui/display</title>
+<path fill="none" stroke="currentColor" d="M58.94,-217.2C64.86,-206.4 73.55,-188.63 77,-172 81.16,-151.93 79.98,-128.29 78.36,-112.55"/>
+<polygon fill="currentColor" stroke="currentColor" points="80.45,-112.32 77.68,-106.6 76.28,-112.8 80.45,-112.32"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="81.56" y="-158.8" font-family="Helvetica,Arial,sans-serif" font-size="8.00">2</text>
+</g>
+<!-- folder ui/menu&#45;&gt;layer state -->
+<g id="edge21" class="edge">
+<title>folder ui/menu&#45;&gt;layer state</title>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M80.34,-230.74C120.03,-233.24 190.86,-240.05 209,-257.2 279.09,-323.47 207.85,-386.62 259,-468.4 262.07,-473.31 266.31,-477.75 270.76,-481.57"/>
+<polygon fill="currentColor" stroke="currentColor" points="269.23,-483.05 275.24,-485.13 271.84,-479.75 269.23,-483.05"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="243.46" y="-360.4" font-family="Helvetica,Arial,sans-serif" font-size="8.00">1</text>
+</g>
+<!-- folder ui/frame&#45;&gt;folder ui/display -->
+<!-- folder ui/frame&#45;&gt;folder ui/display -->
+<g id="edge17" class="edge">
+<title>folder ui/frame&#45;&gt;folder ui/display</title>
+<path fill="none" stroke="currentColor" d="M48.16,-150.01C53.37,-139.71 61.51,-123.63 67.64,-111.51"/>
+<polygon fill="currentColor" stroke="currentColor" points="69.47,-112.55 70.3,-106.25 65.72,-110.66 69.47,-112.55"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="63.48" y="-125.2" font-family="Helvetica,Arial,sans-serif" font-size="8.00">1</text>
+</g>
+<!-- folder ui/frame&#45;&gt;folder ui -->
+<g id="edge16" class="edge">
+<title>folder ui/frame&#45;&gt;folder ui</title>
+<path fill="none" stroke="currentColor" d="M39.8,-149.95C35.64,-134.93 29.71,-106.21 37,-83.2 41.79,-68.06 52.38,-53.48 61.31,-43.08"/>
+<polygon fill="currentColor" stroke="currentColor" points="62.63,-44.77 65.05,-38.89 59.49,-41.97 62.63,-44.77"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="39" y="-91.6" font-family="Helvetica,Arial,sans-serif" font-size="8.00">1</text>
+</g>
+<!-- folder ui/frame&#45;&gt;layer state -->
+<g id="edge18" class="edge">
+<title>folder ui/frame&#45;&gt;layer state</title>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M63.03,-172.44C73.22,-177.67 85.78,-184.15 97,-190 166.58,-226.32 213.05,-213.56 246,-284.8 280.91,-360.27 258.6,-388.61 282,-468.4 283.04,-471.95 284.35,-475.68 285.71,-479.21"/>
+<polygon fill="currentColor" stroke="currentColor" points="283.71,-479.87 287.9,-484.66 287.61,-478.31 283.71,-479.87"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="264.97" y="-326.8" font-family="Helvetica,Arial,sans-serif" font-size="8.00">1</text>
+</g>
+<!-- folder ui/display&#45;&gt;folder ui -->
+<!-- folder ui/display&#45;&gt;folder ui -->
+<g id="edge13" class="edge">
+<title>folder ui/display&#45;&gt;folder ui</title>
+<path fill="none" stroke="currentColor" d="M74.17,-82.74C73.32,-77.51 72.42,-71.04 72,-65.2 71.53,-58.7 72.04,-51.58 72.83,-45.31"/>
+<polygon fill="currentColor" stroke="currentColor" points="74.9,-45.68 73.71,-39.44 70.74,-45.06 74.9,-45.68"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="74" y="-58" font-family="Helvetica,Arial,sans-serif" font-size="8.00">1</text>
+</g>
+<!-- folder ui/display&#45;&gt;layer state -->
+<g id="edge14" class="edge">
+<title>folder ui/display&#45;&gt;layer state</title>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M104.79,-102.07C119,-106.49 135.86,-113.2 149,-122.8 219.68,-174.43 226.92,-204.18 261,-284.8 289.6,-352.47 293.11,-441.87 293.22,-478.94"/>
+<polygon fill="currentColor" stroke="currentColor" points="291.12,-478.52 293.21,-484.52 295.32,-478.53 291.12,-478.52"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="270.73" y="-293.2" font-family="Helvetica,Arial,sans-serif" font-size="8.00">1</text>
+</g>
+<!-- layer themes -->
+<g id="node10" class="node">
+<title>layer themes</title>
+<polygon fill="none" stroke="currentColor" stroke-dasharray="5,2" points="252,-508 198,-508 198,-486.4 252,-486.4 252,-508"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="225" y="-494.2" font-family="Helvetica,Arial,sans-serif" font-size="10.00">themes</text>
+</g>
+<!-- folder ui&#45;&gt;layer themes -->
+<g id="edge8" class="edge">
+<title>folder ui&#45;&gt;layer themes</title>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M103.44,-36.51C114.22,-40.95 126.11,-47.2 135,-55.6 145.15,-65.18 144.52,-70.36 150,-83.2 206.34,-215.35 187.56,-259 208,-401.2 211.9,-428.34 217.76,-459.59 221.48,-478.62"/>
+<polygon fill="currentColor" stroke="currentColor" points="219.42,-479.01 222.64,-484.49 223.54,-478.2 219.42,-479.01"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="196.98" y="-259.6" font-family="Helvetica,Arial,sans-serif" font-size="8.00">4</text>
+</g>
+</g>
+</svg>

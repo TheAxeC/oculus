@@ -14,7 +14,7 @@ import {
     isInstanceOf,
     panes as panesIn,
     tabsOf
-} from '../../client/instance.ts';
+} from './instance.ts';
 import type { LayoutAccess } from './access.ts';
 import type { Attention } from './open/attention.ts';
 import {

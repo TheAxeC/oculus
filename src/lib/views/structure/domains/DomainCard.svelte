@@ -9,7 +9,7 @@
     import EntryForm from '$lib/views/shared/forms/EntryForm.svelte';
     import { inlineMarkdown } from '$lib/ui/html';
     import type { Entry, SchemaField } from '$lib/state/boards/collection';
-    import { isDormant, type Domain, type Project } from '$lib/state/words/lines';
+    import { isDormant, type Domain, type Project } from '$lib/state/boards/structure/lines';
     import { t } from '$lib/state/words/text';
     import { domainTone } from '$lib/state/words/tones';
 

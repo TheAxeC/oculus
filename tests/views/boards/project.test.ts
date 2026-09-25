@@ -26,7 +26,7 @@ import type {
     Project as Record_,
     Relations,
     Snapshot
-} from '../../../src/lib/data/model.ts';
+} from '../../../src/lib/data/model/index.ts';
 import type { Instance } from '../../../src/lib/state/workbench/layout/index.ts';
 import { clientContext, createClientState, type ClientState } from '../../fixtures/client.ts';
 
@@ -219,7 +219,7 @@ describe('a project as its own tab', () => {
     });
 
     it('draws a known document the project has not got as the tag the card draws for it', () => {
-        // revert: src/lib/views/boards/project/Project.svelte:142 => const absent = $derived([]);
+        // revert: src/lib/views/boards/project/Project.svelte:129 => const absent = $derived([]);
         const section = body.slice(body.indexOf(`>${catalog['project.documents']}</`));
         expect(section).toContain('data-absent-docs');
         expect(body.split('>TEX</span>').length - 1).toBe(1);

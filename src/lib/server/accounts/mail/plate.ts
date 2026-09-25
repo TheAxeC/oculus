@@ -12,7 +12,7 @@
 // change to the plate changes both.
 
 import { isChainSubject } from '../../../data/accounts/mail.ts';
-import type { MailProvider } from '../../../data/model.ts';
+import type { MailProvider } from '../../../data/model/index.ts';
 
 /** The three signals, in the order they are read. */
 export type Signal = 'unread' | 'todo' | 'unlabeled';

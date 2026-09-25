@@ -359,7 +359,7 @@ describe('the strip and the band', () => {
         expect(body).toContain(catalog['focus.wait_hosts']);
     });
 
-    // revert: src/lib/views/boards/focus/Band.svelte:155 => t('focus.jobs_lane'),
+    // revert: src/lib/views/boards/focus/Band.svelte:158 => t('focus.jobs_lane'),
     it('stacks the grants by stage and names the teaching column', () => {
         expect(body).toContain(catalog['focus.cards_group']);
         expect(body).toContain('A grant in prep');
@@ -368,7 +368,7 @@ describe('the strip and the band', () => {
         expect(body).toContain('A course');
     });
 
-    // revert: src/lib/views/boards/focus/Band.svelte:124 => delete
+    // revert: src/lib/views/boards/focus/Band.svelte:127 => delete
     it('draws each column glyph before the column words, and no character in the words', () => {
         const heads = [...body.matchAll(/<div class="lane-h[\s\S]*?<\/div>/g)].map((one) => one[0]);
         for (const key of ['funding', 'jobs', 'teaching']) {

@@ -12,7 +12,7 @@
     import { t } from '$lib/state/words/text';
     import Dot from './Dot.svelte';
     import Words from './Words.svelte';
-    import type { DeckSummary } from '$lib/state/life/present';
+    import type { DeckSummary } from '$lib/state/feeds/life/present';
 
     type Props = { summary: DeckSummary };
 

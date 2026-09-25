@@ -13,7 +13,7 @@
     // its derived tokens, the wallpaper's layer and the properties its translucent surfaces read,
     // and which of the two glyph vocabularies renders.
 
-    import { activeLabel, windowTitle } from '$lib/shell/workbench-title';
+    import { activeLabel, windowTitle } from '$lib/shell/panes/workbench-title';
     import ActivityRail from './rail/ActivityRail.svelte';
     import type { Bookmark } from './rail/rail';
     import DropLayer from './panes/DropLayer.svelte';

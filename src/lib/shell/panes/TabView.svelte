@@ -14,7 +14,7 @@
 
     import { provideInstance } from '$lib/state/client/instance-context';
     import type { Instance } from '$lib/state/workbench/layout';
-    import type { Registration } from '$lib/views/registry';
+    import type { Registration } from '$lib/state/workbench/navigation/registry';
 
     type Props = {
         instance: Instance;

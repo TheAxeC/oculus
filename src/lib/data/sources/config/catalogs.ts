@@ -7,8 +7,9 @@ import { join } from 'node:path';
 import { createRequire } from 'node:module';
 import { paintLimit } from '../../helpers/editor.ts';
 import { findingText } from '../../helpers/finding-text.ts';
-import type { Finding } from '../../model.ts';
-import { CATALOGS_DIR, configDir, textCatalog } from './merge.ts';
+import type { Finding } from '../../model/index.ts';
+import { configDir } from './folder.ts';
+import { CATALOGS_DIR, textCatalog } from './merge.ts';
 
 /**
  * The keys of the merged config the client state installs before the page renders: the colours and
@@ -82,7 +83,7 @@ function iconFile(icon: string): string | null {
 
 /**
  * A stand-in: one to three printable ASCII characters, which a terminal font is sure to hold and
- * the three-character box of ui/controls/Glyph.svelte is sure to fit.
+ * the three-character box of ui/display/Glyph.svelte is sure to fit.
  */
 const STAND_IN = /^[\x20-\x7E]{1,3}$/;
 
@@ -90,7 +91,7 @@ const STAND_IN = /^[\x20-\x7E]{1,3}$/;
  * Every way the icon map and the glyph vocabulary can drift apart, as findings: a glyph name whose
  * stand-in is not one to three printable ASCII characters, a glyph name with no row, a row naming
  * something that is not a glyph name, and a row naming an icon the package does not ship. A name
- * with no row has no drawing, and ui/controls/Glyph.svelte draws it as an empty box rather than as
+ * with no row has no drawing, and ui/display/Glyph.svelte draws it as an empty box rather than as
  * text. The package is a fact about this machine's install rather than about the merged files,
  * which is why this is separate from loadConfig and takes the engine directory. Like loadConfig's
  * own findings, these are worded from the merged catalog, and a key it lacks is written as the key

@@ -1,6 +1,6 @@
 <script module lang="ts">
     // Layer 3, view registration. Pages follows Settings in the system group.
-    import type { ViewRegistration } from '../../registry';
+    import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     export const registration: ViewRegistration = {
         id: 'pages',
         label: 'views.pages',
@@ -29,10 +29,11 @@
     import {
         closeQuestion,
         pageInstanceIds,
-        pageName
+        pageName,
+        pageUnsaved
     } from '$lib/state/workbench/navigation/pages';
     import { t } from '$lib/state/words/text';
-    import type { ViewProps } from '../../registry';
+    import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 
     const {
@@ -185,7 +186,7 @@
                     {/if}
                     <!-- Closing a page holding text no save has taken loses that text, so the row
                          says so before the close is pressed. -->
-                    {#if pageInstanceIds(page).some(unsaved)}
+                    {#if pageUnsaved(page, unsaved)}
                         <Tag label={t('workbench.pages_unsaved')} glyph={t('ui.dirty_glyph')} />
                     {/if}
                     {#if renaming !== null && renaming.id === page.id}

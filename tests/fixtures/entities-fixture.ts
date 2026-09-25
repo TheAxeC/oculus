@@ -2,7 +2,7 @@
 // than maps keyed by id. A fixture tree has none of the three generated feeds on it and no career
 // file, so both are the empty answer; a test that is about them says so by overriding these.
 
-import type { Career, Feeds } from '../../src/lib/data/model.ts';
+import type { Career, Feeds } from '../../src/lib/data/model/index.ts';
 
 /** No feed file on this hub, which is not the same answer as a feed with nothing in it. */
 export const NO_FEEDS: Feeds = {

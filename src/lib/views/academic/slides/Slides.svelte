@@ -1,7 +1,7 @@
 <script module lang="ts">
     // Layer 3, view registration. The slide catalog is opened from the deck's toolbar, never from
     // the view catalogue: it is about one deck and says nothing on its own.
-    import type { ViewRegistration } from '../../registry';
+    import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
 
     export const registration: ViewRegistration = {
         id: 'slides',
@@ -32,7 +32,7 @@
 
     import { tick } from 'svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
-    import Glyph from '$lib/ui/controls/Glyph.svelte';
+    import Glyph from '$lib/ui/display/Glyph.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Checkbox from '$lib/ui/forms/Checkbox.svelte';
@@ -43,13 +43,14 @@
         fileState,
         parseSlidesState,
         savedState,
+        slidesInOrder,
         withMove,
         withTick,
         type SlidePicks
-    } from '$lib/state/life/slides';
+    } from '$lib/state/feeds/life/slides';
     import { t } from '$lib/state/words/text';
     import { useState } from '$lib/state/client/use';
-    import type { ViewProps } from '../../registry';
+    import type { ViewProps } from '$lib/state/workbench/navigation/registry';
 
     const {
         present: { catalog, deck, defaults },
@@ -60,7 +61,6 @@
     let { instance }: ViewProps = $props();
 
     const rows = $derived(catalog());
-    const byKey = $derived(new Map(rows.map((row) => [row.key, row])));
 
     /** The catalog the reader's unsaved work was made over; a different one drops it. */
     const signature = $derived(catalogSignature(rows.map((row) => row.key)));
@@ -83,12 +83,7 @@
                   defaults()
               )
     );
-    const shown = $derived(
-        picks.order.flatMap((key) => {
-            const row = byKey.get(key);
-            return row === undefined ? [] : [row];
-        })
-    );
+    const shown = $derived(slidesInOrder(rows, picks.order));
 
     /** What the status region shows: the last line, or the note that a push dropped the work. */
     const said = $derived(dropped ? t('slides.dropped') : held.said);
@@ -107,7 +102,7 @@
 
     /** The words a slide is named by, for the line that says where a move left it. */
     function titleOf(key: string): string {
-        const row = byKey.get(key);
+        const row = rows.find((one) => one.key === key);
         return row === undefined || row.title === '' ? key : row.title;
     }
 

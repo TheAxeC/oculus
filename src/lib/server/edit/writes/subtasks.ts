@@ -22,13 +22,13 @@ import {
     setSubtask,
     subtaskValues
 } from '../entry-edit/index.ts';
-import { plain } from '../../git/changes.ts';
+import { plain } from '../../core/changes.ts';
 import { insideHub } from './manifest.ts';
 import { identityOf, readCollection, saved } from './entries.ts';
-import type { ChangeRecord } from '../../git/changes.ts';
+import type { ChangeRecord } from '../../core/changes.ts';
 import type { EditResult } from '../yaml-edit.ts';
 import type { LineRange } from '../entry-edit/index.ts';
-import type { PortfolioConfig } from '../../../data/model.ts';
+import type { PortfolioConfig } from '../../../data/model/index.ts';
 import type { WriteOutcome } from '../writes.ts';
 
 /** What a subtask write hangs under: one manifest, or one entry of one collection. */

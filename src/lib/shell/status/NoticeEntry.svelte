@@ -3,7 +3,7 @@
     // glyph, its words, the time it came, the actions it offers and the control that puts it away.
     // The two differ only in what that control does, which the caller says.
 
-    import Glyph from '$lib/ui/controls/Glyph.svelte';
+    import Glyph from '$lib/ui/display/Glyph.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import type { Notice } from '$lib/state/workbench/navigation/notices.svelte';
     import { clockOf } from './status-items';

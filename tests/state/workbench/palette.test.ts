@@ -5,15 +5,12 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import {
     buildIndex,
     commands,
-    feedIdents,
-    feedIdentity,
     kindWord,
     match,
     lineQuery,
-    parseCommand,
-    uniqueIdents
+    parseCommand
 } from '../../../src/lib/state/workbench/palette.ts';
-import type { Snapshot } from '../../../src/lib/data/model.ts';
+import type { Snapshot } from '../../../src/lib/data/model/index.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
 import { setCatalog, t } from '../../../src/lib/state/words/text.ts';
 import { createClientState, type ClientState } from '../../fixtures/client.ts';
@@ -192,7 +189,7 @@ describe('commands', () => {
     const list = commands({ themes: [{ name: 'light' }, { name: 'nord' }] });
 
     it('lists the eight commands, theme names and the three unavailable with no source tab', () => {
-        // revert: src/lib/state/workbench/palette.ts:238 => delete
+        // revert: src/lib/state/workbench/palette.ts:192 => delete
         expect(list.map((command) => command.name)).toEqual([
             'theme',
             'crt',
@@ -210,7 +207,7 @@ describe('commands', () => {
     });
 
     it('offers the language list only while a source tab is on screen', () => {
-        // revert: src/lib/state/workbench/palette.ts:238 => { name: 'language', hint: '<language>', available: true },
+        // revert: src/lib/state/workbench/palette.ts:192 => { name: 'language', hint: '<language>', available: true },
         const language = (source: boolean) =>
             commands({}, source).find((command) => command.name === 'language');
         expect(language(true)?.available).toBe(true);
@@ -218,7 +215,7 @@ describe('commands', () => {
     });
 
     it('reads a colon and a whole number as a line to go to, and nothing else as one', () => {
-        // revert: src/lib/state/workbench/palette.ts:215 => if (parsed === null) return null;
+        // revert: src/lib/state/workbench/palette.ts:169 => if (parsed === null) return null;
         expect(lineQuery(parseCommand(':12'))).toBe(12);
         expect(lineQuery(parseCommand(': 7'))).toBe(7);
         expect(lineQuery(parseCommand(':0'))).toBe(null);
@@ -251,41 +248,5 @@ describe('commands', () => {
         }
         expect(names(':zz')).toEqual([]);
         expect(names(':')).toEqual(list.map((command) => command.name));
-    });
-});
-
-describe('a feed entry identity over the whole feed', () => {
-    it('keeps the entry own id where it is unique and not empty', () => {
-        const entries = [{ title: 'One' }, { title: 'Two' }];
-        const identOf = feedIdents('radar', entries);
-        expect(identOf(entries[0])).toBe('One');
-        expect(identOf(entries[1])).toBe('Two');
-    });
-
-    it('tells two entries with one title apart by their place in the feed', () => {
-        const entries = [{ title: 'Same' }, { title: 'Same' }];
-        const identOf = feedIdents('radar', entries);
-        expect(feedIdentity('radar', entries[0])).toBe(feedIdentity('radar', entries[1]));
-        expect(identOf(entries[0])).toBe('Same#0');
-        expect(identOf(entries[1])).toBe('Same#1');
-        expect(identOf(entries[0])).not.toBe(identOf(entries[1]));
-    });
-
-    it('gives an entry whose every field is empty an id the cursor can hold', () => {
-        const entries = [{ title: '', inst: '', url: '' }, { title: 'Real' }];
-        const identOf = feedIdents('radar', entries);
-        expect(identOf(entries[0])).toBe('radar#0');
-        expect(identOf(entries[0])).not.toBe('');
-        expect(identOf(entries[1])).toBe('Real');
-    });
-
-    it('numbers by the list it was built over, whatever the base gives', () => {
-        const entries = [{ id: 'a' }, { id: 'a' }, { id: 'b' }];
-        const identOf = uniqueIdents(entries, (entry) => entry.id, 'lead');
-        expect([identOf(entries[0]), identOf(entries[1]), identOf(entries[2])]).toEqual([
-            'a#0',
-            'a#1',
-            'b'
-        ]);
     });
 });

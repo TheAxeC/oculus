@@ -16,7 +16,7 @@
 // behind sees every byte, late, rather than a hole. The `files` channel also registers a merge: its
 // newest root and its bookmark-change marker are independent facts in one payload.
 
-import type { Message } from '../../data/model.ts';
+import type { Message } from '../../data/model/index.ts';
 
 /** How a channel's held message and its next one combine when a sink is behind. */
 export type Merge = (held: Message, next: Message) => Message;

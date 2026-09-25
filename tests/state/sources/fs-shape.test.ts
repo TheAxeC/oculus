@@ -20,6 +20,16 @@ import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/source
 import { registered } from '../../../src/lib/state/words/languages.ts';
 import { setCatalog } from '../../../src/lib/state/words/text.ts';
 import { createClientState } from '../../fixtures/client.ts';
+import {
+    bookmarkAt,
+    bookmarkById,
+    currentWorkspace,
+    fileEntries,
+    fixedRootKeys,
+    matchedNothing,
+    openFailures
+} from '../../../src/lib/state/sources/fs-transport.ts';
+import type { Entry } from '../../../src/lib/data/model/index.ts';
 
 setCatalog(textCatalog(loadConfig(engineDir()).config));
 
@@ -121,7 +131,7 @@ describe('the addresses the store reads', () => {
         expect(fileBytesUrl('hub', 'a/paper.pdf', 2)).toBe('/api/file/hub/a/paper.pdf?v=2');
     });
 
-    // revert: src/lib/state/sources/fs-transport.ts:101 => return at;
+    // revert: src/lib/state/sources/fs-transport.ts:146 => return at;
     it('asks for hidden and ignored files on the query only while their toggle is on', () => {
         expect(listingUrl('hub', 'a', { hidden: false, ignored: false })).toBe(
             '/api/fs?root=hub&path=a'
@@ -230,5 +240,63 @@ describe('the rows of the tree', () => {
     it('carries a file its size, and a folder none', () => {
         const rows = treeRows([root('hub')], entriesOf, ['hub:']);
         expect(rows.map((row) => row.size)).toEqual([0, 0, 10]);
+    });
+});
+
+describe('the file browser lookups over what its store holds', () => {
+    const roots = [
+        { key: 'hub', dir: '/hub', fixed: true },
+        { key: 'code', dir: '/code', fixed: false }
+    ];
+    const saved = {
+        current: 'work',
+        workspaces: [
+            { name: 'home', roots: [] },
+            { name: 'work', roots }
+        ],
+        dropped: [],
+        error: '',
+        loading: false
+    };
+
+    // revert: src/lib/state/sources/fs-transport.ts:59 => return saved.workspaces[0] ?? { name: '', roots: [] };
+    it('find the current workspace, and an empty one for a name the state does not hold', () => {
+        expect(currentWorkspace(saved).name).toBe('work');
+        expect(currentWorkspace({ ...saved, current: 'gone' })).toEqual({ name: '', roots: [] });
+        expect(fixedRootKeys(roots)).toEqual(['hub']);
+    });
+
+    // revert: src/lib/state/sources/fs-transport.ts:74 => return entries.find((one) => one.fields.path === path) ?? null;
+    it('find a bookmark by its id and by the file it is over', () => {
+        const marks = [
+            { id: 'm1', title: 'One', fields: { root: 'hub', path: 'a.md' } },
+            { id: 'm2', title: 'Two', fields: { root: 'code', path: 'a.md' } }
+        ] as unknown as Entry[];
+        expect(bookmarkAt(marks, 'code', 'a.md')?.id).toBe('m2');
+        expect(bookmarkAt(marks, 'code', 'b.md')).toBeNull();
+        expect(bookmarkById(marks, 'm1')?.title).toBe('One');
+        expect(bookmarkById(marks, 'm3')).toBeNull();
+    });
+
+    // revert: src/lib/state/sources/fs-transport.ts:79 => return entries;
+    it('keep the files of a listing and leave its folders out', () => {
+        const entries = [
+            { name: 'a.md', kind: 'file' as const, size: 1, mtime: 0 },
+            { name: 'sub', kind: 'dir' as const, size: 0, mtime: 0 }
+        ];
+        expect(fileEntries(entries).map((one) => one.name)).toEqual(['a.md']);
+    });
+
+    // revert: src/lib/state/sources/fs-transport.ts:91 => .filter(() => true)
+    it('name the open folders whose listing failed, and say when a filter matched nothing', () => {
+        const row = (path: string, open: boolean, depth: number) =>
+            ({ root: 'hub', path, name: path, kind: 'dir', depth, open }) as unknown as Parameters<
+                typeof openFailures
+            >[0][number];
+        const rows = [row('', true, 0), row('a', true, 1), row('b', false, 1)];
+        const error = (_root: string, path: string) => (path === '' ? '' : 'gone');
+        expect(openFailures(rows, error)).toEqual([{ root: 'hub', path: 'a', error: 'gone' }]);
+        expect(matchedNothing([rows[0]])).toBe(true);
+        expect(matchedNothing(rows)).toBe(false);
     });
 });

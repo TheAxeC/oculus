@@ -4,14 +4,17 @@
 
 import { createClientState, type ClientState } from '../../src/lib/state/client/context.ts';
 import { STATE_KEY } from '../../src/lib/state/client/use.ts';
-import { TIP_KEY } from '../../src/lib/ui/menu/tip-ids.ts';
+import { TIP_KEY, createTipIds } from '../../src/lib/ui/menu/tip-ids.ts';
 
 export { createClientState, type ClientState };
 
-/** What render() and mount() are handed so the component under test reads this case's stores. */
+/**
+ * What render() and mount() are handed so the component under test reads this case's stores, with
+ * a tooltip counter of its own, as the page root provides one beside the client.
+ */
 export function clientContext(client: ClientState): Map<unknown, unknown> {
     return new Map<unknown, unknown>([
         [STATE_KEY, client],
-        [TIP_KEY, client.tipIds]
+        [TIP_KEY, createTipIds()]
     ]);
 }

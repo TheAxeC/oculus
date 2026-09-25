@@ -1,20 +1,20 @@
 import { collectionKeys, glyphCatalog, textCatalog, vocabCatalog } from '$lib/data/sources/config';
-import { configSeed } from '$lib/server/core/config-seed';
-import { hostInfo } from '$lib/server/core/context';
+import { configSeed } from '$lib/server/root/config-seed';
 import type { PageServerLoad } from './$types';
 
 // The catalog, the glyph vocabulary of names and ASCII stand-ins, and the tone vocabulary are read
 // per request and shipped as page data, which is what the first frame draws from; every later
-// change reaches the page on the `config` channel server/watch/portfolio.ts publishes. The read is
-// the request's one read, which hooks.server.ts holds on `locals.config` for the page's title and
-// this alike, and which says its findings once.
+// change reaches the page on the `config` channel server/root/watch/portfolio.ts publishes. The
+// read is the request's one read, which hooks.server.ts holds on `locals.config` for the page's
+// title and this alike, and which says its findings once.
 //
 // The icon drawings are the exception: they are files rather than config keys, so the server reads
 // them once when its context is built and again on every config push, and this hands the page what
-// is held rather than reading a hundred files per request.
+// is held rather than reading a hundred files per request. The host the status bar names is held
+// the same way: the server context builds it once, and this reads it off `locals.server`.
 //
 // The whole configuration of the same read rides with them as the seed of the page's `config`
-// channel, with the newest push version the read is at least as new as (server/core/config-seed.ts
+// channel, with the newest push version the read is at least as new as (server/root/config-seed.ts
 // says why), so the push the hub replays from before a config change does not replace it.
 //
 // The collection keys ride with them for the same reason: the page registers the collection view
@@ -39,7 +39,7 @@ export const load: PageServerLoad = ({ locals }) => {
         seed: configSeed(locals.server.hub, read, {
             text,
             icons,
-            host: hostInfo(locals.server.local.port)
+            host: locals.server.host
         }),
         token: locals.token
     };

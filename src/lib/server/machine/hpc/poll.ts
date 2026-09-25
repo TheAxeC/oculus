@@ -1,6 +1,6 @@
 // Layer 2, server. The Live HPC watcher publishes one complete state message, with quota refreshed
 // on its slower independent cadence.
-import type { HpcPayload } from '../../../data/model.ts';
+import type { HpcPayload } from '../../../data/model/index.ts';
 import type { Hub } from '../../core/channels.ts';
 import type { LogPaths } from './actions.ts';
 import {

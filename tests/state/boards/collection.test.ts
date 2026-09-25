@@ -22,20 +22,22 @@ import {
     identityValue,
     isPinned,
     kindOf,
+    membersByType,
     noFunding,
     parseCollectionState,
     movedOrder,
     pinnedFirst,
-    parseRawField,
-    rawFieldText,
     refusedField,
     softwareRows,
     statusFacets,
     statusValues,
     type Entry,
     type Project,
-    type SchemaField
+    type SchemaField,
+    entryById,
+    openSubtaskCount
 } from '../../../src/lib/state/boards/collection.ts';
+import { parseRawField, rawFieldText } from '../../../src/lib/state/forms/form-values.ts';
 
 const FILE = '/hub/network/events.yml';
 
@@ -840,5 +842,59 @@ describe('the fields a form offers and what it refuses', () => {
         expect(refusedField(fields, () => 'anything at all')).toBe(null);
         expect(refusedField(fields, (field) => (field === 'done' ? true : ''))).toBe(null);
         expect(refusedField(fields, (field) => (field === 'done' ? null : ''))).toBe(null);
+    });
+});
+
+describe('the members of one cross-link group', () => {
+    // revert: src/lib/state/boards/collection.ts:811 => if (found === undefined || found !== undefined) held.set(member.type, [member]);
+    it('nest under their own project type, one row per type, in the members own order', () => {
+        expect(
+            membersByType({
+                type: 'work',
+                count: 3,
+                members: [
+                    { id: 'a', label: 'A', type: 'active' },
+                    { id: 'b', label: 'B', type: 'manuscript' },
+                    { id: 'c', label: 'C', type: 'active' }
+                ],
+                warn: false
+            })
+        ).toEqual([
+            {
+                type: 'active',
+                members: [
+                    { id: 'a', label: 'A', type: 'active' },
+                    { id: 'c', label: 'C', type: 'active' }
+                ]
+            },
+            { type: 'manuscript', members: [{ id: 'b', label: 'B', type: 'manuscript' }] }
+        ]);
+    });
+
+    // revert: src/lib/state/boards/collection.ts:811 => if (found === undefined) held.set(`${member.type}${held.size}`, [member]);
+    it('is one row for a group whose members are all of one type', () => {
+        const group = {
+            type: 'work' as const,
+            count: 1,
+            members: [{ id: 'alpha', label: 'ALPHA', type: 'active' }],
+            warn: true
+        };
+        expect(membersByType(group).map((kind) => kind.type)).toEqual(['active']);
+    });
+});
+
+describe('an entry and the subtasks of a collection', () => {
+    // revert: src/lib/state/boards/collection.ts:25 => return collection?.entries[0] ?? null;
+    it('find an entry by its id, and nothing for an id or a collection that is not there', () => {
+        const entries = [{ id: 'a' }, { id: 'b' }] as Entry[];
+        expect(entryById({ entries }, 'b')).toBe(entries[1]);
+        expect(entryById({ entries }, 'c')).toBeNull();
+        expect(entryById(null, 'a')).toBeNull();
+    });
+
+    // revert: src/lib/state/boards/collection.ts:801 => return subtasks.length;
+    it('count the subtasks not done yet', () => {
+        expect(openSubtaskCount([{ done: true }, { done: false }, { done: false }])).toBe(2);
+        expect(openSubtaskCount([])).toBe(0);
     });
 });

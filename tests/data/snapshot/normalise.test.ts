@@ -13,7 +13,7 @@ import type {
     RawRegistry,
     RawRegistryEntry,
     RegistryName
-} from '../../../src/lib/data/model.ts';
+} from '../../../src/lib/data/model/index.ts';
 
 /** What sources/docs.ts hands the build for one folder: the fixed names, with a path and a flag. */
 function documents(id: string, present: string[], mtime = 0): DocPresence[] {

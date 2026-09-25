@@ -7,7 +7,7 @@
 // saved envelope is also what lets two browsers hold the same arrangement and be in different
 // places in it.
 
-import { findInstance } from '../../../client/instance.ts';
+import { findInstance } from '../instance.ts';
 import type { LayoutAccess } from '../access.ts';
 import { samePath, type Layout, type Page } from '../model.ts';
 import { showsPage } from '../nested.ts';

@@ -2,7 +2,7 @@
 // the short cadence after a failure, the last good rows a failed poll keeps, one poll at a time and
 // timer closure are all reached without ssh.
 import { describe, expect, it, vi, type Mock } from 'vitest';
-import type { HpcPayload } from '../../../../src/lib/data/model.ts';
+import type { HpcPayload } from '../../../../src/lib/data/model/index.ts';
 import { Hub } from '../../../../src/lib/server/core/channels.ts';
 import { SEC_RC, SEC_SACCT, SEC_SINFO } from '../../../../src/lib/server/machine/hpc/parse.ts';
 import { RETRY_MIN, watchHpc } from '../../../../src/lib/server/machine/hpc/poll.ts';

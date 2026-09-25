@@ -9,9 +9,9 @@ import {
     handleHookRequest,
     type ExecFile,
     type HookTarget
-} from '../../../src/lib/server/core/hooks.ts';
+} from '../../../src/lib/server/root/hooks.ts';
 import { HookStore } from '../../../src/lib/server/sessions/stores/hooks.ts';
-import { contextFixture } from '../../server/core/context-fixture.ts';
+import { contextFixture } from '../../server/root/context-fixture.ts';
 
 const HOST = '127.0.0.1:8791';
 

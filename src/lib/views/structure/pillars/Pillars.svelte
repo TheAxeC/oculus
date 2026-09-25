@@ -1,6 +1,6 @@
 <script module lang="ts">
     // Layer 3, view registration. Pillars opens the structure group.
-    import type { ViewRegistration } from '../../registry';
+    import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     export const registration: ViewRegistration = {
         id: 'pillars',
         label: 'views.pillars',
@@ -15,29 +15,30 @@
     // provisional lines, off-pillar lines and archival provenance.
 
     import Pane from '$lib/ui/frame/Pane.svelte';
-    import Toolbar from '$lib/ui/frame/Toolbar.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import EntryForm from '$lib/views/shared/forms/EntryForm.svelte';
-    import SourceButton from '$lib/views/shared/links/SourceButton.svelte';
+    import RegistryHead from '$lib/views/shared/forms/RegistryHead.svelte';
     import Intro from '$lib/views/shared/prose/Intro.svelte';
+    import type { Snippet } from 'svelte';
+    import SourceToolbar from '$lib/views/shared/links/SourceToolbar.svelte';
     import Reveal from '$lib/views/shared/card/Reveal.svelte';
     import ArchivalCard from '$lib/views/structure/pillars/ArchivalCard.svelte';
     import LineCard from '$lib/views/structure/pillars/LineCard.svelte';
     import OrphansCard from '$lib/views/structure/pillars/OrphansCard.svelte';
     import { inlineMarkdown } from '$lib/ui/html';
-    import { cardCursor } from '$lib/state/client/instance';
+    import { cardCursor } from '$lib/state/workbench/layout/instance';
     import {
         archival,
+        registryLines,
+        lineKinds,
         lineMembers,
         orphans,
         parsePillarsState,
-        type PillarsState,
-        type TierRow
-    } from '$lib/state/words/lines';
-    import { asText } from '$lib/state/forms/schema';
+        venueTiers,
+        type PillarsState
+    } from '$lib/state/boards/structure/lines';
+    import { entryById } from '$lib/state/boards/collection';
     import { t } from '$lib/state/words/text';
     import { viewSourceFile } from '$lib/state/sessions/view-source';
-    import type { ViewProps } from '../../registry';
+    import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 
     const {
@@ -57,85 +58,45 @@
      * The registry file this view is drawn from, which the control at the end of the toolbar opens.
      */
     const source = $derived(viewSourceFile('pillars', configMap()));
-    const lines = $derived.by(() => {
-        const entities = Object.values(portfolio()?.entities.pillars ?? {});
-        const byId = new Map(entities.map((line) => [line.id, line]));
-        const ordered = (collection?.entries ?? [])
-            .map((entry) => byId.get(entry.id))
-            .filter((line) => line !== undefined);
-        const seen = new Set(ordered.map((line) => line.id));
-        return [...ordered, ...entities.filter((line) => !seen.has(line.id))];
-    });
+    const lines = $derived(registryLines(portfolio(), 'pillars', collection?.entries ?? []));
     const allProjects = $derived(projects());
     const dead = $derived(archiveDead());
     const allVenues = $derived(venues());
-    const pillars = $derived(
-        lines.filter((line) => !['provisional', 'offpillar'].includes(line.kind ?? ''))
-    );
-    const provisional = $derived(lines.filter((line) => line.kind === 'provisional'));
-    const offpillar = $derived(lines.filter((line) => line.kind === 'offpillar'));
+    const kinds = $derived(lineKinds(lines));
+    const pillars = $derived(kinds.pillars);
+    const provisional = $derived(kinds.provisional);
+    const offpillar = $derived(kinds.offpillar);
     const unmatched = $derived(orphans(lines, allProjects, dead));
     const archived = $derived(archival(allProjects, dead));
-    const tiers = $derived.by((): TierRow[] => {
-        const value = configMap().venue_tiers;
-        if (!Array.isArray(value)) return [];
-        return value
-            .filter(
-                (row): row is Record<string, unknown> => typeof row === 'object' && row !== null
-            )
-            .map((row) => ({
-                key: typeof row.key === 'string' ? row.key : '',
-                label: typeof row.label === 'string' ? row.label : asText(row.key),
-                ...(typeof row.color === 'string' ? { color: row.color } : {})
-            }))
-            .filter((row) => row.key !== '');
-    });
+    const tiers = $derived(venueTiers(configMap().venue_tiers));
 
     let said = $state('');
 
     function write(next: Partial<PillarsState>): void {
         setInstanceState(instance.id, { ...held, ...next });
     }
-
-    function entryFor(id: string) {
-        return collection?.entries.find((entry) => entry.id === id) ?? null;
-    }
 </script>
 
-{#snippet introActions()}
-    {#if collection?.schema !== undefined}
-        <ToolButton
-            label={t('collection.add')}
-            title={t('collection.add_tip')}
-            active={held.adding}
-            onclick={() => write({ adding: toggleAdd(instance.id, 'pillars', held.adding) })}
-        />
-    {/if}
-{/snippet}
-
 {#snippet tools()}
-    <Toolbar label={t('collection.toolbar')}>
-        {#if source !== null}
-            <SourceButton file={source} />
-        {/if}
-    </Toolbar>
+    <SourceToolbar {source} />
 {/snippet}
 
 <Pane title={t('views.pillars')} toolbar={tools}>
     <div class="pillars-view" data-instance={instance.id}>
-        <Intro html={inlineMarkdown(t('pillars.intro'))} trusted actions={introActions} />
-        {#if held.adding && collection?.schema !== undefined}
-            <EntryForm
-                collection="pillars"
-                schema={collection.schema}
-                entry={null}
-                onclose={() => write({ adding: false })}
-                onsaid={(words: string) => (said = words)}
-            />
-        {/if}
-        {#if said !== ''}
-            <p class="said">{said}</p>
-        {/if}
+        <RegistryHead
+            collection="pillars"
+            schema={collection?.schema}
+            adding={held.adding}
+            {said}
+            ontoggle={() => write({ adding: toggleAdd(instance.id, 'pillars', held.adding) })}
+            onclose={() => write({ adding: false })}
+            onsaid={(words: string) => (said = words)}
+            spaced
+        >
+            {#snippet intro(actions: Snippet)}
+                <Intro html={inlineMarkdown(t('pillars.intro'))} trusted {actions} />
+            {/snippet}
+        </RegistryHead>
 
         <div class="cards">
             {#each pillars as line (line.id)}
@@ -146,7 +107,7 @@
                         projects={lineMembers(line, allProjects, dead)}
                         venues={allVenues}
                         {tiers}
-                        entry={entryFor(line.id)}
+                        entry={entryById(collection, line.id)}
                         schema={collection?.schema}
                         editing={held.editing === line.id}
                         onedit={() =>
@@ -178,7 +139,7 @@
                                 projects={lineMembers(line, allProjects, dead)}
                                 venues={allVenues}
                                 {tiers}
-                                entry={entryFor(line.id)}
+                                entry={entryById(collection, line.id)}
                                 schema={collection?.schema}
                                 editing={held.editing === line.id}
                                 onedit={() =>
@@ -216,7 +177,7 @@
                                 projects={lineMembers(line, allProjects, dead)}
                                 venues={allVenues}
                                 {tiers}
-                                entry={entryFor(line.id)}
+                                entry={entryById(collection, line.id)}
                                 schema={collection?.schema}
                                 muted
                                 editing={held.editing === line.id}
@@ -267,8 +228,7 @@
         color: var(--ink-txt, var(--ink));
     }
 
-    .note,
-    .said {
+    .note {
         margin: 6px 0 0;
         color: var(--muted-txt, var(--muted));
         font-size: var(--fs-md);

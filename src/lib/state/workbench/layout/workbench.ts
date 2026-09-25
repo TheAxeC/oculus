@@ -1,7 +1,7 @@
 // Layer 2, client state. Workbench and focus operations live here because they change the active
 // arrangement rather than its saved representation.
 
-import { findInstance } from '../../client/instance.ts';
+import { findInstance } from './instance.ts';
 import { samePath, type Edge, type Focus, type Instance, type Workbench } from './model.ts';
 import { closeInstance, leafAt, paneAt, renameInstance, splitPane } from './tree.ts';
 

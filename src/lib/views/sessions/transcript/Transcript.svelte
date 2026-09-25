@@ -1,6 +1,6 @@
 <script module lang="ts">
     // Layer 3, view registration. Transcript follows Terminal in the Sessions group.
-    import type { ViewRegistration } from '$lib/views/registry';
+    import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     export const registration: ViewRegistration = {
         id: 'transcript',
         label: 'sessions.view_transcript',
@@ -34,7 +34,7 @@
     import { pinnedSession } from '$lib/state/workbench/selection.svelte';
     import { t } from '$lib/state/words/text';
     import type { Turn } from '$lib/state/sessions/transcript.svelte';
-    import type { ViewProps } from '$lib/views/registry';
+    import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 
     const {

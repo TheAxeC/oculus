@@ -1,15 +1,15 @@
-// Layer 2, server. The three diagrams bin/diagrams/diagrams.mjs draws from the source, served
+// Layer 2, server. The diagrams bin/diagrams/diagrams.mjs draws from the source, served
 // read-only to the Help view: one `.svg` file of the engine's docs/diagrams/ folder, by its file
 // name, and nothing else of that folder or around it.
 //
 // routes/api/(docs)/diagrams/[name]/+server.ts is the endpoint and holds nothing but its GET, since
 // a route module may export only its verbs. The name is held to the shape the generator writes (a
-// lower-case word, then `.svg`), so a `.dot` file, a dotfile, a path and an escaped separator are
-// refused before anything is opened. The folder must be the engine directory's own docs/diagrams/
-// once every link is resolved, and the file the name joins to is resolved again and refused unless
-// it is a regular file directly inside that folder, so a link out of the engine directory or out of
-// the folder serves nothing.
-// Every refusal is a 404 that says nothing about what is on disk.
+// lower-case name of letters, digits and hyphens, then `.svg`), so a `.dot` file, a dotfile, a path
+// and an escaped separator are refused before anything is opened. The folder must be the engine
+// directory's own docs/diagrams/ once every link is resolved, and the file the name joins to is
+// resolved again and refused unless it is a regular file directly inside that folder, so a link out
+// of the engine directory or out of the folder serves nothing. Every refusal is a 404 that says
+// nothing about what is on disk.
 //
 // The Help view passes what this answers through ui/html.ts's graph filter before it draws it. The
 // headers keep the file an image when its address is opened on its own: `nosniff` holds the type,

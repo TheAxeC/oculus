@@ -31,7 +31,7 @@ import {
     loadLocalOrDefaults
 } from '../../data/sources/config.ts';
 import { hasToken, sameOrigin } from '../core/auth.ts';
-import { changeAt, defaultChangesPath, logChanges, pathOf } from '../git/changes.ts';
+import { changeAt, defaultChangesPath, logChanges, pathOf } from '../core/changes.ts';
 import { undoChange } from './writes/undo.ts';
 import { defaultBookmarksPath } from '../files/fs/bookmarks.ts';
 import { setHidden, setOverride } from '../sessions/overrides.ts';
@@ -51,7 +51,7 @@ import {
     isFeedKind,
     markLinkedinPosted,
     writeFeedField
-} from '../content/feeds.ts';
+} from './feeds.ts';
 import {
     auditMuteWrite,
     deckWrite,
@@ -73,11 +73,11 @@ import {
     subtaskWrite,
     undoWrite
 } from './writes/bodies.ts';
-import type { ChangeLog, ChangeRecord } from '../git/changes.ts';
-import type { FsWrites } from '../files/fs.ts';
+import type { ChangeLog, ChangeRecord } from '../core/changes.ts';
+import type { FsWrites } from '../core/json.ts';
 import type { Refusal } from './yaml-edit.ts';
 import type { SubtaskTarget } from './writes/subtasks.ts';
-import type { PortfolioConfig, Project } from '../../data/model.ts';
+import type { PortfolioConfig, Project } from '../../data/model/index.ts';
 
 /**
  * What a write needs to know: which hub to write in, what its manifests are checked against, where

@@ -6,10 +6,10 @@
 // the two disagree, and a disagreement means a save the reader made is refused as invalid.
 //
 // Nothing here knows what a slide looks like. It answers over entries and keys; the titles, the
-// hues and the drawing are state/life/present.ts's, over the same entries.
+// hues and the drawing are state/feeds/life/present.ts's, over the same entries.
 
 import { isMap, str, strings } from './guards.ts';
-import type { DeckEntry, DeckKind, Project } from '../model.ts';
+import type { DeckEntry, DeckKind, Project } from '../model/index.ts';
 
 /** The one file a project's slides and its deck narrative are read from. */
 export const PRESENT_DOC = 'PRESENT.md';

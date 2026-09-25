@@ -12,7 +12,7 @@
     import Chip from '$lib/ui/controls/Chip.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Card from '$lib/ui/frame/Card.svelte';
-    import Glyph from '$lib/ui/controls/Glyph.svelte';
+    import Glyph from '$lib/ui/display/Glyph.svelte';
     import CardActions, { type CardAction } from './CardActions.svelte';
     import CardDetails from './CardDetails.svelte';
     import CardLinks from './CardLinks.svelte';
@@ -20,7 +20,14 @@
     import Clamp from './Clamp.svelte';
     import Subtasks from '../forms/Subtasks.svelte';
     import { codeLabel, deadline, deckSlideOf, openDocument } from './card';
-    import { firstSentence, isStale, waitingLine, type BoardItem } from '$lib/state/boards/board';
+    import {
+        firstSentence,
+        hasReadme,
+        isStale,
+        newestDocDate,
+        waitingLine,
+        type BoardItem
+    } from '$lib/state/boards/board';
     import { contextText } from '$lib/state/boards/project-context';
     import { findView } from '$lib/state/workbench/layout';
     import { personNames } from '$lib/state/boards/person';
@@ -210,11 +217,7 @@
     });
     /** The newest document date used in the stale warning tooltip. */
     function newestDoc(): string {
-        const newest = item.project.docs.reduce(
-            (top: number, doc) => Math.max(top, doc.mtime ?? 0),
-            0
-        );
-        return newest === 0 ? '' : new Date(newest).toISOString().slice(0, 10);
+        return newestDocDate(item.project);
     }
     /** Toggle the manifest's pinned state and report the write outcome. */
     async function pin(): Promise<void> {
@@ -228,7 +231,7 @@
     /** Open the project, or the readable README carried by a ghost project. */
     function openTitle(): void {
         if (item.project.ghost) {
-            if (item.project.docs.some((doc) => doc.name === 'README.md' && doc.present)) {
+            if (hasReadme(item.project)) {
                 openDocument(client, item.project.folder, 'README.md');
             }
             return;
@@ -238,9 +241,7 @@
     /** The title opener, omitted only when a ghost has no readable README. */
     function titleOpener(): (() => void) | undefined {
         if (!item.project.ghost) return openTitle;
-        return item.project.docs.some((doc) => doc.name === 'README.md' && doc.present)
-            ? openTitle
-            : undefined;
+        return hasReadme(item.project) ? openTitle : undefined;
     }
     /** Copy the project's generated context to the clipboard and expose failures. */
     async function copyContext(): Promise<void> {

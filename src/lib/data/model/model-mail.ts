@@ -1,7 +1,7 @@
 // Layer 1, data. The mail connector's types: what a machine configures, what the poller publishes
 // on the `inbox` channel, and the note a thread carries.
 //
-// It is a concern module of its own beside model-calendar.ts, reached through the model.ts facade
+// It is a concern module of its own beside model-calendar.ts, reached through the index.ts facade
 // alone, because mail changes for mail reasons: a plate signal, a triage field, a send.
 //
 // What the payload carries of a message is the provider's own snippet and nothing else. A body is

@@ -5,7 +5,7 @@ import { scalar } from '../../../src/lib/data/helpers/guards.ts';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import Linkedin from '../../../src/lib/views/feeds/linkedin/Linkedin.svelte';
 import { openLinkedinSource } from '../../../src/lib/views/feeds/linkedin/post-card.ts';
-import { findInstance } from '../../../src/lib/state/client/instance.ts';
+import { findInstance } from '../../../src/lib/state/workbench/layout/instance.ts';
 import { addFromForm } from '../../../src/lib/views/shared/forms/entry-form.ts';
 import {
     engineDir,

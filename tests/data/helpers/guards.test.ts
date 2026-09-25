@@ -14,6 +14,7 @@ import {
     fields,
     isMap,
     item,
+    numericSetting,
     scalar,
     str,
     strings,
@@ -153,5 +154,15 @@ describe('item', () => {
         expect(item(['a', 'b'], 2)).toBeUndefined();
         expect(item(['a', 'b'], -1)).toBeUndefined();
         expect(item<string>([], 0)).toBeUndefined();
+    });
+});
+
+describe('numericSetting', () => {
+    // revert: src/lib/data/helpers/guards.ts:78 => return typeof value === 'number' ? value : null;
+    it('is a finite number the config holds, and null for one it lacks or one that is not finite', () => {
+        expect(numericSetting({ leads_badge_days: 14 }, 'leads_badge_days')).toBe(14);
+        expect(numericSetting({}, 'leads_badge_days')).toBe(null);
+        expect(numericSetting({ leads_badge_days: '14' }, 'leads_badge_days')).toBe(null);
+        expect(numericSetting({ leads_badge_days: Number.NaN }, 'leads_badge_days')).toBe(null);
     });
 });

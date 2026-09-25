@@ -7,7 +7,7 @@
 // view shows before a worktree is made is the path the write makes. Nothing here fetches: the view
 // owns its own requests, and these are the strings they are made from.
 
-import type { GitEntry, GitState } from '../../data/model.ts';
+import type { GitEntry, GitState, GitWorktree } from '../../data/model/index.ts';
 import { worktreePath, worktreesDir } from '../../data/helpers/worktrees.ts';
 
 export { validName, worktreePath, worktreesDir } from '../../data/helpers/worktrees.ts';
@@ -234,4 +234,48 @@ export function statusWordKey(status: string): string {
 /** The inline style that colours one git status letter: its hue's text colour. */
 export function statusStyle(status: string): string {
     return `--tone-txt: var(--c-${STATUS_TONES[status] ?? 'grey'}-txt)`;
+}
+
+/** The worktrees of a repository other than its main checkout, in the order git lists them. */
+export function linkedWorktrees(git: GitState): GitWorktree[] {
+    return git.worktrees.filter((one) => !one.main);
+}
+
+/** How many workspaces the `git` channel's payload names. */
+export function workspaceCount(git: Record<string, GitState> | null | undefined): number {
+    return Object.keys(git ?? {}).length;
+}
+
+/** How many files a repository's state lists as staged, changed or untracked together. */
+export function changeCount(git: GitState): number {
+    return git.staged.length + git.unstaged.length + git.untracked.length;
+}
+
+/**
+ * The six things a root's git state comes to on screen, which both git views draw and the Changes
+ * panel's branch listing decides on. `readable` is the repository with its branch, its groups and
+ * its commit box, a repository with no commit yet among them; the other five are one sentence
+ * each. The branch listing is fetched for `readable` and for nothing else.
+ *
+ * `present`, `repository` and `error` are separate facts on the `git` channel. `present` is false
+ * for a folder that is not there and for nothing else, so a workspace whose folder has gone is told
+ * from one that is no repository, which both carry `repository` false for. A repository whose read
+ * failed carries `error` with `repository` true, so `error` alone does not say a root is no
+ * repository, and a workspace the channel has no state for yet says none of it. A session with no
+ * workspace names no folder for git to be asked about, which is a sixth thing to say.
+ */
+export type RepoShape = 'unplaced' | 'reading' | 'missing' | 'none' | 'failed' | 'readable';
+
+/** Which of the six a root and the state the channel carries for it come to. */
+export function repoShape(root: string, state: GitState | null): RepoShape {
+    if (root === '') return 'unplaced';
+    if (state === null) return 'reading';
+    if (!state.present) return 'missing';
+    if (!state.repository) return 'none';
+    return state.error === null ? 'readable' : 'failed';
+}
+
+/** The branch a listing marks as checked out, or null where none is (a detached head). */
+export function currentBranch<T extends { current: boolean }>(branches: readonly T[]): T | null {
+    return branches.find((one) => one.current) ?? null;
 }

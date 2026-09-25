@@ -20,7 +20,7 @@ import {
     scoreTier,
     summaryOf
 } from '../../../src/lib/state/boards/career.ts';
-import type { Career, Host } from '../../../src/lib/data/model.ts';
+import type { Career, Host } from '../../../src/lib/data/model/index.ts';
 
 const { config } = loadConfig(engineDir());
 setVocab(vocabCatalog(config));

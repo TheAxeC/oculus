@@ -6,7 +6,8 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { parse } from 'yaml';
 import { findingText, type TextCatalog } from '../../helpers/finding-text.ts';
-import type { Finding } from '../../model.ts';
+import type { Finding } from '../../model/index.ts';
+import { configDir } from './folder.ts';
 import { LOCAL_NAME } from './local.ts';
 
 /** The folder under config/ holding the vocabulary catalogs, merged like the top-level files. */
@@ -93,19 +94,6 @@ function configNames(dir: string): string[] {
     collect(join(dir, CATALOGS_DIR));
     collect(join(dir, 'text'));
     return names.map((file) => relative(dir, file)).sort();
-}
-
-/**
- * The directory the engine's YAML is read from and written to: `<engine>/config`, always. The
- * machine's own local.yml sits in it beside the tracked files.
- *
- * A run that must not write the checkout names another engine directory on the command line, which
- * is what the browser layer does: it stands a server up and presses controls that write, the Slides
- * view's Save among them, and the file that save edits is `config/present.yml` of the engine it was
- * given.
- */
-export function configDir(engine: string): string {
-    return join(engine, 'config');
 }
 
 /**

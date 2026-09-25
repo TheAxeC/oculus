@@ -1,0 +1,109 @@
+<svg width="192pt" height="411pt"
+ viewBox="0.00 0.00 192.00 411.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<style>svg { color: #333333; } @media (prefers-color-scheme: dark) { svg { color: #cccccc; background: #1e1e1e; } }</style>
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 407.4)">
+<title>layer_data</title>
+<g id="clust1" class="cluster">
+<title>cluster_data</title>
+<polygon fill="none" stroke="currentColor" points="8,-8 8,-395.4 176,-395.4 176,-8 8,-8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="92" y="-380.6" font-family="Helvetica,Arial,sans-serif" font-size="12.00">data</text>
+</g>
+<!-- folder data -->
+<g id="node1" class="node">
+<title>folder data</title>
+<polygon fill="none" stroke="currentColor" points="114,-365 60,-365 60,-343.4 114,-343.4 114,-365"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="87" y="-351.2" font-family="Helvetica,Arial,sans-serif" font-size="10.00">data</text>
+</g>
+<!-- folder data/sources -->
+<g id="node2" class="node">
+<title>folder data/sources</title>
+<polygon fill="none" stroke="currentColor" points="120.35,-297.8 53.65,-297.8 53.65,-276.2 120.35,-276.2 120.35,-297.8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="87" y="-284" font-family="Helvetica,Arial,sans-serif" font-size="10.00">data/sources</text>
+</g>
+<!-- folder data&#45;&gt;folder data/sources -->
+<!-- folder data&#45;&gt;folder data/sources -->
+<g id="edge8" class="edge">
+<title>folder data&#45;&gt;folder data/sources</title>
+<path fill="none" stroke="currentColor" d="M88.03,-343.05C88.68,-335.53 89.33,-325.03 89,-315.8 88.88,-312.54 88.69,-309.06 88.47,-305.71"/>
+<polygon fill="currentColor" stroke="currentColor" points="90.56,-305.63 88.03,-299.8 86.38,-305.94 90.56,-305.63"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="91.09" y="-318.2" font-family="Helvetica,Arial,sans-serif" font-size="8.00">8</text>
+</g>
+<!-- folder data/snapshot -->
+<g id="node3" class="node">
+<title>folder data/snapshot</title>
+<polygon fill="none" stroke="currentColor" points="135.86,-230.6 64.14,-230.6 64.14,-209 135.86,-209 135.86,-230.6"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="100" y="-216.8" font-family="Helvetica,Arial,sans-serif" font-size="10.00">data/snapshot</text>
+</g>
+<!-- folder data&#45;&gt;folder data/snapshot -->
+<g id="edge7" class="edge">
+<title>folder data&#45;&gt;folder data/snapshot</title>
+<path fill="none" stroke="currentColor" d="M97.56,-342.9C107.35,-332.56 121.23,-315.63 127,-297.8 133.86,-276.57 122.06,-252.32 111.96,-236.8"/>
+<polygon fill="currentColor" stroke="currentColor" points="113.78,-235.73 108.65,-231.96 110.31,-238.1 113.78,-235.73"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="131.04" y="-284.6" font-family="Helvetica,Arial,sans-serif" font-size="8.00">2</text>
+</g>
+<!-- folder data/helpers -->
+<g id="node5" class="node">
+<title>folder data/helpers</title>
+<polygon fill="none" stroke="currentColor" points="116.8,-96.2 51.2,-96.2 51.2,-74.6 116.8,-74.6 116.8,-96.2"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="84" y="-82.4" font-family="Helvetica,Arial,sans-serif" font-size="10.00">data/helpers</text>
+</g>
+<!-- folder data&#45;&gt;folder data/helpers -->
+<g id="edge6" class="edge">
+<title>folder data&#45;&gt;folder data/helpers</title>
+<path fill="none" stroke="currentColor" d="M100.64,-343.12C112.76,-333.19 129.55,-316.76 136,-297.8 148.75,-260.32 145.05,-248.54 143,-209 140.74,-165.48 147.11,-146.62 118,-114.2 113.83,-109.55 108.84,-105.03 103.99,-101.03"/>
+<polygon fill="currentColor" stroke="currentColor" points="105.61,-99.63 99.6,-97.54 102.99,-102.92 105.61,-99.63"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="146.32" y="-217.4" font-family="Helvetica,Arial,sans-serif" font-size="8.00">1</text>
+</g>
+<!-- folder data/sources&#45;&gt;folder data/snapshot -->
+<!-- folder data/sources&#45;&gt;folder data/snapshot -->
+<g id="edge13" class="edge">
+<title>folder data/sources&#45;&gt;folder data/snapshot</title>
+<path fill="none" stroke="currentColor" d="M89.03,-275.81C91.05,-265.71 94.17,-250.03 96.57,-237.99"/>
+<polygon fill="currentColor" stroke="currentColor" points="98.62,-238.48 97.73,-232.19 94.5,-237.66 98.62,-238.48"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="96.28" y="-251" font-family="Helvetica,Arial,sans-serif" font-size="8.00">1</text>
+</g>
+<!-- folder data/accounts -->
+<g id="node4" class="node">
+<title>folder data/accounts</title>
+<polygon fill="none" stroke="currentColor" points="119.85,-163.4 48.15,-163.4 48.15,-141.8 119.85,-141.8 119.85,-163.4"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="84" y="-149.6" font-family="Helvetica,Arial,sans-serif" font-size="10.00">data/accounts</text>
+</g>
+<!-- folder data/sources&#45;&gt;folder data/accounts -->
+<g id="edge11" class="edge">
+<title>folder data/sources&#45;&gt;folder data/accounts</title>
+<path fill="none" stroke="currentColor" d="M78.31,-275.8C69.96,-265.27 57.91,-247.98 53,-230.6 46.85,-208.81 59.93,-184.76 70.95,-169.43"/>
+<polygon fill="currentColor" stroke="currentColor" points="72.34,-171.08 74.27,-165.02 68.98,-168.55 72.34,-171.08"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="55" y="-217.4" font-family="Helvetica,Arial,sans-serif" font-size="8.00">1</text>
+</g>
+<!-- folder data/sources&#45;&gt;folder data/helpers -->
+<g id="edge12" class="edge">
+<title>folder data/sources&#45;&gt;folder data/helpers</title>
+<path fill="none" stroke="currentColor" d="M73.27,-275.87C67.57,-271.06 61.29,-264.9 57,-258.2 28.85,-214.22 24.08,-191.2 41,-141.8 46.26,-126.44 57.7,-112.06 67.46,-101.8"/>
+<polygon fill="currentColor" stroke="currentColor" points="68.87,-103.36 71.6,-97.62 65.88,-100.4 68.87,-103.36"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="35.52" y="-183.8" font-family="Helvetica,Arial,sans-serif" font-size="8.00">17</text>
+</g>
+<!-- folder data/snapshot&#45;&gt;folder data/accounts -->
+<!-- folder data/snapshot&#45;&gt;folder data/helpers -->
+<g id="edge10" class="edge">
+<title>folder data/snapshot&#45;&gt;folder data/helpers</title>
+<path fill="none" stroke="currentColor" d="M107.91,-208.85C118.56,-194.19 135.26,-165.92 127,-141.8 121.74,-126.44 110.3,-112.06 100.54,-101.8"/>
+<polygon fill="currentColor" stroke="currentColor" points="102.12,-100.4 96.4,-97.62 99.13,-103.36 102.12,-100.4"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="131.22" y="-150.2" font-family="Helvetica,Arial,sans-serif" font-size="8.00">4</text>
+</g>
+<!-- folder data/accounts&#45;&gt;folder data/helpers -->
+<!-- folder data/accounts&#45;&gt;folder data/helpers -->
+<g id="edge9" class="edge">
+<title>folder data/accounts&#45;&gt;folder data/helpers</title>
+<path fill="none" stroke="currentColor" d="M81.93,-141.46C80.64,-133.94 79.34,-123.45 80,-114.2 80.23,-110.92 80.62,-107.43 81.07,-104.08"/>
+<polygon fill="currentColor" stroke="currentColor" points="83.15,-104.4 81.95,-98.16 78.99,-103.79 83.15,-104.4"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="82" y="-116.6" font-family="Helvetica,Arial,sans-serif" font-size="8.00">2</text>
+</g>
+<!-- folder data/model -->
+<g id="node6" class="node">
+<title>folder data/model</title>
+<polygon fill="none" stroke="currentColor" points="114.85,-37.6 53.15,-37.6 53.15,-16 114.85,-16 114.85,-37.6"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="84" y="-23.8" font-family="Helvetica,Arial,sans-serif" font-size="10.00">data/model</text>
+</g>
+<!-- folder data/helpers&#45;&gt;folder data/model -->
+</g>
+</svg>

@@ -8,13 +8,22 @@
 // is how it is drawn, and that is decided by the field's name first and its type second, since the
 // seven hub files agree on the names (`status`, `tags`, `meta`, `note`) and use only six types.
 
-import type { Entry, Project, SchemaField, Subtask } from '../../data/model.ts';
+import type { Entry, Project, SchemaField, Subtask } from '../../data/model/index.ts';
 import { parseOpenForms, type OpenForms } from '../forms/open-forms.ts';
+import { HUB_ROOT, normalisePath } from '../sources/fs.ts';
 import { realProjects } from '../sources/venues.ts';
 
 // The boundary table lets `views/` import `state/` and nothing of `data/`, so the types the view
 // names reach it from here, beside the functions that return them.
-export type { Collection, Entry, Project, SchemaField, Subtask } from '../../data/model.ts';
+export type { Collection, Entry, Project, SchemaField, Subtask } from '../../data/model/index.ts';
+
+/** The entry of a collection by its id; null when there is no collection or no such entry. */
+export function entryById(
+    collection: { entries: readonly Entry[] } | null | undefined,
+    id: string
+): Entry | null {
+    return collection?.entries.find((entry) => entry.id === id) ?? null;
+}
 
 /** The field that is the card's own heading; the Card draws it and no drawn field repeats it. */
 export const TITLE_FIELD = 'title';
@@ -238,9 +247,6 @@ export function drawnFields(entry: Entry, schema: SchemaField[] | undefined): Dr
     return drawn;
 }
 
-/** The root api/file serves the hub itself under, for a link that is a path inside the hub. */
-export const HUB_ROOT = 'hub';
-
 /**
  * A value that already names where it goes: a scheme, or an absolute path of the page's own. With
  * HOSTED below it this is the whole rule: an address is a value carrying a scheme, a leading slash,
@@ -284,24 +290,6 @@ export function hrefOf(value: string): string {
  */
 export function isHubPath(value: string): boolean {
     return value !== '' && !ADDRESSED.test(value) && !HOSTED.test(value);
-}
-
-/**
- * A path by its segments: the empty and the `.` ones dropped, and each `..` taking the segment
- * before it away, so `funding/x/`, `./funding//x` and `network/../funding/x` are one path. A `..`
- * with no segment before it is kept, which is how a path climbing above its root still says so.
- */
-export function normalisePath(path: string): string {
-    const kept: string[] = [];
-    for (const part of path.split('/')) {
-        if (part === '' || part === '.') continue;
-        if (part === '..' && kept.length > 0 && kept[kept.length - 1] !== '..') {
-            kept.pop();
-            continue;
-        }
-        kept.push(part);
-    }
-    return kept.join('/');
 }
 
 /** The fields of an entry that hold a path of the hub when their value is not an address. */
@@ -426,6 +414,11 @@ export function identityValue(entry: Entry, schema: SchemaField[] | undefined): 
     return entry.title === '' ? entry.id : entry.title;
 }
 
+/** The identity of every entry the file holds, in the order the file holds them. */
+export function fileOrder(entries: Entry[], schema: SchemaField[] | undefined): string[] {
+    return entries.map((entry) => identityValue(entry, schema));
+}
+
 /** Whether the file floats this entry to the top of its list: `pin: true` and nothing else. */
 export function isPinned(entry: Entry): boolean {
     return entry.fields.pin === true;
@@ -466,6 +459,17 @@ export function statusFacets(entries: Entry[]): StatusFacet[] {
         counts.set(status, (counts.get(status) ?? 0) + 1);
     }
     return [...counts].map(([value, count]) => ({ value, count }));
+}
+
+/**
+ * The statuses a file with no schema offers as buttons: the ones its own entries use. A file with a
+ * schema offers its schema's, so it gets none from here.
+ */
+export function offeredStatuses(
+    schema: SchemaField[] | undefined,
+    facets: StatusFacet[]
+): string[] {
+    return schema === undefined ? facets.map((facet) => facet.value) : [];
 }
 
 /**
@@ -680,48 +684,6 @@ export function refusedField(
     return null;
 }
 
-/** Anything YAML writes under a raw block: a scalar, a list of them, or a map of them. */
-export type RawFieldValue =
-    string | number | boolean | null | RawFieldValue[] | { [key: string]: RawFieldValue };
-
-export type RawFieldAnswer =
-    { ok: true; value: Record<string, RawFieldValue> | null } | { ok: false };
-
-/** A raw block as the one-line JSON text the textarea edits, nested lists and maps included. */
-export function rawFieldText(value: unknown): string {
-    if (typeof value !== 'object' || value === null || Array.isArray(value)) return '';
-    return JSON.stringify(value);
-}
-
-/** Whether a parsed JSON value is one YAML can write: a scalar, or a list or map of such. */
-function isRawValue(value: unknown): value is RawFieldValue {
-    if (value === null) return true;
-    const kind = typeof value;
-    if (kind === 'string' || kind === 'number' || kind === 'boolean') return true;
-    if (Array.isArray(value)) return value.every(isRawValue);
-    if (kind !== 'object') return false;
-    return Object.values(value as Record<string, unknown>).every(isRawValue);
-}
-
-/**
- * Parse raw JSON only when it is a map. A value inside it may be a scalar, a list or a nested map,
- * which is what a real block holds: a dataset's `retrieval:` carries a `priority_first:` list, and
- * a parser that took scalars alone left the whole block uneditable.
- */
-export function parseRawField(text: string): RawFieldAnswer {
-    if (text.trim() === '') return { ok: true, value: null };
-    let parsed: unknown;
-    try {
-        parsed = JSON.parse(text);
-    } catch {
-        return { ok: false };
-    }
-    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed))
-        return { ok: false };
-    if (!isRawValue(parsed)) return { ok: false };
-    return { ok: true, value: parsed as Record<string, RawFieldValue> };
-}
-
 /** Select choices read from one merged-config value: strings, or assignable keyed rows. */
 function optionsFrom(value: unknown): string[] {
     if (!Array.isArray(value)) return [];
@@ -751,6 +713,14 @@ export function noFunding(projects: Project[], schemes: string[]): Project[] {
         (project) =>
             LIVE_TYPES.includes(project.type ?? '') &&
             !project.fundingIds.some((id) => schemes.includes(id))
+    );
+}
+
+/** The live projects no entry of the funding file covers, the file's entries handed in whole. */
+export function unfundedBy(projects: Project[], entries: readonly Entry[]): Project[] {
+    return noFunding(
+        projects,
+        entries.map((entry) => entry.id)
     );
 }
 
@@ -824,4 +794,22 @@ export function coverage(projects: Project[], dead: string[] = []): CoverageGrou
         held.members.push({ id: project.id, label: project.short ?? project.title });
     }
     return groups;
+}
+
+/** How many of the subtasks are not done yet. */
+export function openSubtaskCount(subtasks: readonly { done: boolean }[]): number {
+    return subtasks.filter((one) => !one.done).length;
+}
+
+/** One cross-link group's members by their own project type, in the order the members are in. */
+export function membersByType(
+    group: CrossGroup
+): { type: string; members: CrossGroup['members'] }[] {
+    const held = new Map<string, CrossGroup['members']>();
+    for (const member of group.members) {
+        const found = held.get(member.type);
+        if (found === undefined) held.set(member.type, [member]);
+        else found.push(member);
+    }
+    return [...held].map(([type, members]) => ({ type, members }));
 }

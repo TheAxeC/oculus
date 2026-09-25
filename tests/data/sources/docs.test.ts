@@ -12,7 +12,7 @@ import {
     readDoc
 } from '../../../src/lib/data/sources/docs.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
-import type { DocPresence } from '../../../src/lib/data/model.ts';
+import type { DocPresence } from '../../../src/lib/data/model/index.ts';
 import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
 
 afterAll(sweepScratch);

@@ -1,7 +1,7 @@
 // Layer 2, server. The pending-message policy for the files channel preserves the two facts its
 // payload can carry while a subscriber is behind: the newest root and any bookmark-file change.
 
-import type { FilesPayload, Message } from '../../data/model.ts';
+import type { FilesPayload, Message } from '../../data/model/index.ts';
 import type { Hub } from '../core/channels.ts';
 
 /** Combine two pending files messages without dropping either kind of fact the payload can hold. */

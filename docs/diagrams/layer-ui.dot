@@ -1,0 +1,46 @@
+digraph layer_ui {
+    graph [bgcolor="transparent", rankdir=TB, newrank=true, fontname="Helvetica,Arial,sans-serif", fontsize=12, nodesep=0.2, ranksep=0.5];
+    node [shape=box, color="black", fontcolor="black", fontname="Helvetica,Arial,sans-serif", fontsize=10, height=0.3, margin="0.12,0.04"];
+    edge [color="black", fontcolor="black", fontname="Helvetica,Arial,sans-serif", fontsize=8, arrowsize=0.6];
+    subgraph "cluster_ui" {
+        label="ui"; style=solid;
+        "folder ui/tabs" [label="ui/tabs"];
+        "folder ui/tree" [label="ui/tree"];
+        "folder ui/forms" [label="ui/forms"];
+        "folder ui/controls" [label="ui/controls"];
+        "folder ui/menu" [label="ui/menu"];
+        "folder ui/frame" [label="ui/frame"];
+        "folder ui/display" [label="ui/display"];
+        "folder ui" [label="ui"];
+    }
+    "layer state" [label="state", style=dashed];
+    "layer themes" [label="themes", style=dashed];
+    "folder ui/tabs" -> "folder ui/tree" [style=invis, weight=10];
+    "folder ui/tree" -> "folder ui/forms" [style=invis, weight=10];
+    "folder ui/forms" -> "folder ui/controls" [style=invis, weight=10];
+    "folder ui/controls" -> "folder ui/menu" [style=invis, weight=10];
+    "folder ui/menu" -> "folder ui/frame" [style=invis, weight=10];
+    "folder ui/frame" -> "folder ui/display" [style=invis, weight=10];
+    "folder ui/display" -> "folder ui" [style=invis, weight=10];
+    "folder ui" -> "layer themes" [label="4", style=dashed, constraint=false];
+    "folder ui/controls" -> "folder ui" [label="1"];
+    "folder ui/controls" -> "folder ui/display" [label="3"];
+    "folder ui/controls" -> "folder ui/menu" [label="1"];
+    "folder ui/controls" -> "layer state" [label="3", style=dashed, constraint=false];
+    "folder ui/display" -> "folder ui" [label="1"];
+    "folder ui/display" -> "layer state" [label="1", style=dashed, constraint=false];
+    "folder ui/forms" -> "folder ui/controls" [label="2"];
+    "folder ui/frame" -> "folder ui" [label="1"];
+    "folder ui/frame" -> "folder ui/display" [label="1"];
+    "folder ui/frame" -> "layer state" [label="1", style=dashed, constraint=false];
+    "folder ui/menu" -> "folder ui/display" [label="2"];
+    "folder ui/menu" -> "folder ui/frame" [label="2"];
+    "folder ui/menu" -> "layer state" [label="1", style=dashed, constraint=false];
+    "folder ui/tabs" -> "folder ui/controls" [label="1"];
+    "folder ui/tabs" -> "folder ui/display" [label="2"];
+    "folder ui/tabs" -> "folder ui/menu" [label="1"];
+    "folder ui/tabs" -> "folder ui/tree" [label="1"];
+    "folder ui/tabs" -> "layer state" [label="2", style=dashed, constraint=false];
+    "folder ui/tree" -> "folder ui/display" [label="2"];
+    "folder ui/tree" -> "folder ui/menu" [label="1"];
+}

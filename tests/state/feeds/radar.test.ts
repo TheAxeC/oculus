@@ -11,9 +11,11 @@ import {
     relevanceTone,
     sortBucket,
     type RadarBucket,
-    type RadarEntry
+    type RadarEntry,
+    dismissedSplit,
+    filledBuckets
 } from '../../../src/lib/state/feeds/radar.ts';
-import type { Project } from '../../../src/lib/data/model.ts';
+import type { Project } from '../../../src/lib/data/model/index.ts';
 
 const BUCKETS: RadarBucket[] = ['preemption', 'idea', 'cite_baseline', 'adjacent'].map((key) => ({
     key,
@@ -95,5 +97,25 @@ describe('radar selectors', () => {
             dismissedOpen: true
         });
         expect(parseRadarState(null)).toEqual({ search: '', dismissedOpen: false });
+    });
+});
+
+describe('the radar entries split and bucketed', () => {
+    // revert: src/lib/state/feeds/radar.ts:136 => live: entries,
+    it('split into the live and the dismissed, each in the order given', () => {
+        const entries = [{ title: 'a' }, { title: 'b', dismissed: true }, { title: 'c' }];
+        const split = dismissedSplit(entries);
+        expect(split.live.map((one) => one.title)).toEqual(['a', 'c']);
+        expect(split.dismissed.map((one) => one.title)).toEqual(['b']);
+    });
+
+    // revert: src/lib/state/feeds/radar.ts:143 => return bucketsOf(entries, buckets);
+    it('fall into the buckets that hold any, an empty bucket left out', () => {
+        const buckets = [
+            { key: 'read', glyph: '', label: 'Read', color: '' },
+            { key: 'idea', glyph: '', label: 'Idea', color: '' }
+        ];
+        const groups = filledBuckets([{ title: 'a', bucket: 'read' }], buckets);
+        expect(groups.map((group) => group.bucket.key)).toEqual(['read']);
     });
 });

@@ -21,9 +21,10 @@ import {
     readChord,
     readDocs,
     readGroups,
-    sectionSize
+    sectionSize,
+    listedViews
 } from '../../../../src/lib/state/workbench/navigation/catalogue.ts';
-import type { Registration } from '../../../../src/lib/views/registry.ts';
+import type { Registration } from '../../../../src/lib/state/workbench/navigation/registry.ts';
 import { registerAll, registerCollections } from '../../../../src/routes/views.ts';
 import { createClientState, type ClientState } from '../../../fixtures/client.ts';
 import { COLLECTIONS, catalog, config, doc, probe } from '../../../shell/rail/rail-fixture.ts';
@@ -418,5 +419,17 @@ describe('the page a catalogue press opens on', () => {
         expect(onCataloguePage('views', pages, 'catalogue')).toBe(true);
         expect(onCataloguePage('focus', pages, 'catalogue')).toBe(false);
         expect(onCataloguePage(undefined, pages, 'catalogue')).toBe(false);
+    });
+});
+
+describe('the views the catalogue lists', () => {
+    // revert: src/lib/state/workbench/navigation/catalogue.ts:253 => return views;
+    it('are every registration that does not say it is unlisted', () => {
+        const views = [
+            { id: 'a' },
+            { id: 'b', listed: false },
+            { id: 'c', listed: true }
+        ] as unknown as Parameters<typeof listedViews>[0];
+        expect(listedViews(views).map((one) => one.id)).toEqual(['a', 'c']);
     });
 });

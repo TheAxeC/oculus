@@ -6,7 +6,7 @@
 // flag going away rather than a second field, since a tab is either the one that is replaced next
 // or it is not.
 
-import { findInstance } from '../../../client/instance.ts';
+import { findInstance } from '../instance.ts';
 import { rewrite } from '../tree.ts';
 import type { Instance, Layout, Pane, ViewId } from '../model.ts';
 

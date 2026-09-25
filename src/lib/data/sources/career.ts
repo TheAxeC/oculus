@@ -9,7 +9,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { parse } from 'yaml';
 import { findingText, type TextCatalog } from '../helpers/finding-text.ts';
-import type { Finding } from '../model.ts';
+import type { Finding } from '../model/index.ts';
 
 /** The path on the hub today, which the config falls back to when it names none. */
 export const CAREER_FILE = 'CAREER.yml';

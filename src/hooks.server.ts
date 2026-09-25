@@ -1,6 +1,6 @@
 import { loadConfig, textCatalog } from '$lib/data/sources/config';
 import { byKey } from '$lib/data/helpers/guards';
-import { reportFindings, serverContext } from '$lib/server/core/context';
+import { reportFindings, serverContext } from '$lib/server/root/context';
 import type { Handle } from '@sveltejs/kit';
 
 // The route renders in the browser, so the served HTML is a shell. The document title is the one

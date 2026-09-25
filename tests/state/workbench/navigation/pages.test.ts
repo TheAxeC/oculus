@@ -10,7 +10,8 @@ import {
     pageName,
     pageNameOf,
     railPageViews,
-    unsavedCount
+    unsavedCount,
+    pageUnsaved
 } from '../../../../src/lib/state/workbench/navigation/pages.ts';
 import type { Page } from '../../../../src/lib/state/workbench/layout/index.ts';
 import { bench, instance, pane, split } from '../layout/layout-fixture.ts';
@@ -122,5 +123,15 @@ describe('the views a rail button draws the badges of', () => {
         const node = { root: { kind: 'pane', view: ['status', 'audit'] } };
         expect(railPageViews([], 'info', node)).toEqual(['status', 'audit']);
         expect(railPageViews([], 'info', { root: 'nothing' })).toEqual([]);
+    });
+});
+
+describe('whether a page holds unsaved text', () => {
+    // revert: src/lib/state/workbench/navigation/pages.ts:87 => return false;
+    it('is whether any of its tabs does', () => {
+        const held = page('p', '', pane(['a', 'b']));
+        expect(pageUnsaved(held, (id) => id === 'b')).toBe(true);
+        expect(pageUnsaved(held, () => false)).toBe(false);
+        expect(pageUnsaved(page('q', ''), () => true)).toBe(false);
     });
 });

@@ -15,8 +15,8 @@
 // A PDF whose time moved is bumped in the fs store, which moves the address the file view draws it
 // at: an open PDF tab then fetches the new build instead of the bytes the browser cached.
 
-import { HUB_ROOT } from '../boards/collection.ts';
-import type { EntitiesStore } from '../client/entities.svelte.ts';
+import { HUB_ROOT } from '../sources/fs.ts';
+import type { EntitiesStore } from '../stores/shapes.ts';
 import type { FsStore } from '../sources/fs.svelte.ts';
 import type { TerminalsStore } from './terminals.svelte.ts';
 

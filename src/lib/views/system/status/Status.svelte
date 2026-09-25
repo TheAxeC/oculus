@@ -1,6 +1,6 @@
 <script module lang="ts">
     // Layer 3, view registration. Status opens the system group.
-    import type { ViewRegistration } from '../../registry';
+    import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     export const registration: ViewRegistration = {
         id: 'status',
         label: 'views.status',
@@ -16,9 +16,12 @@
     // it is the one that says whether the data layer underneath is alive.
 
     import Pane from '$lib/ui/frame/Pane.svelte';
+    import { liveCount } from '$lib/state/sessions/folds';
+    import { workspaceCount } from '$lib/state/sources/repositories';
+    import { entityCount, type CountedKind } from '$lib/state/workbench/navigation/status';
     import { t } from '$lib/state/words/text';
     import Hooks from './Hooks.svelte';
-    import type { ViewProps } from '../../registry';
+    import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 
     const {
@@ -31,8 +34,8 @@
     const snapshot = $derived(portfolio());
     // The two live channels are counted so the screen shows that both are arriving.
     const records = $derived(sessions()?.records ?? []);
-    const live = $derived(records.filter((record) => record.live).length);
-    const workspaces = $derived(Object.keys(git() ?? {}).length);
+    const live = $derived(liveCount(records));
+    const workspaces = $derived(workspaceCount(git()));
 
     function socketLabel(): string {
         const state = status();
@@ -45,11 +48,8 @@
      * The entity kinds the snapshot keys by id. `feeds` and `career` are summaries of one file
      * each rather than maps of entities, so they are not counted.
      */
-    type Counted =
-        'projects' | 'venues' | 'datasets' | 'pillars' | 'domains' | 'funding' | 'collections';
-
-    function count(kind: Counted): number {
-        return snapshot === null ? 0 : Object.keys(snapshot.entities[kind]).length;
+    function count(kind: CountedKind): number {
+        return entityCount(snapshot, kind);
     }
 
     /**

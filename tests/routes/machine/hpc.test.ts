@@ -2,7 +2,7 @@
 // injected actions.
 import { describe, expect, it, vi } from 'vitest';
 import { handleHpc, type HpcTarget } from '../../../src/lib/server/machine/hpc/routes.ts';
-import { contextFixture } from '../../server/core/context-fixture.ts';
+import { contextFixture } from '../../server/root/context-fixture.ts';
 const target = (): HpcTarget => {
     const server = contextFixture({ token: 'token' });
     return {

@@ -17,10 +17,10 @@
 // each and in one place.
 
 import { marked } from 'marked';
-import { isMap, list, text } from './json.ts';
+import { isMap, list, text } from '../../core/json.ts';
 import { stampOf } from '../record.ts';
 import { foldFrom } from './transcripts.ts';
-import type { SessionTool, Turn, TurnTool } from '../../../data/model.ts';
+import type { SessionTool, Turn, TurnTool } from '../../../data/model/index.ts';
 
 /** The longest text one turn carries. A longer one is cut and says so. */
 export const TURN_CHARS = 20000;

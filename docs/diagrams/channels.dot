@@ -7,22 +7,19 @@ digraph channels {
         "server/accounts/calendar/poll";
         "server/accounts/mail/poll";
     }
-    subgraph "cluster_publish server/core" {
-        label="server/core"; style=solid;
-        "server/core/hooks";
-    }
     subgraph "cluster_publish server/machine" {
         label="server/machine"; style=solid;
         "server/machine/hpc/poll";
         "server/machine/pty/channel";
         "server/machine/usage/watch";
     }
-    subgraph "cluster_publish server/watch" {
-        label="server/watch"; style=solid;
-        "server/watch/bookmarks";
-        "server/watch/git";
-        "server/watch/portfolio";
-        "server/watch/sessions";
+    subgraph "cluster_publish server/root" {
+        label="server/root"; style=solid;
+        "server/root/hooks";
+        "server/root/watch/bookmarks";
+        "server/root/watch/git";
+        "server/root/watch/portfolio";
+        "server/root/watch/sessions";
     }
     subgraph "cluster_channels" {
         label="channels"; style=solid;
@@ -46,8 +43,8 @@ digraph channels {
         "state/client/socket";
         "state/feeds/feeds";
         "state/feeds/inbox";
-        "state/life/calendar";
-        "state/life/present";
+        "state/feeds/life/calendar";
+        "state/feeds/life/present";
         "state/sessions/latex";
         "state/sessions/terminals";
         "state/sources/files";
@@ -85,13 +82,13 @@ digraph channels {
     "ch audit" -> "routes/+page" [style=dashed];
     "ch audit" -> "state/system/audit";
     "ch calendar" -> "routes/+page" [style=dashed];
-    "ch calendar" -> "state/life/calendar";
+    "ch calendar" -> "state/feeds/life/calendar";
     "ch config" -> "routes/+page" [style=dashed];
     "ch config" -> "routes/+page";
     "ch config" -> "state/client/context";
     "ch config" -> "state/client/selectors";
     "ch config" -> "state/client/socket";
-    "ch config" -> "state/life/present";
+    "ch config" -> "state/feeds/life/present";
     "ch config" -> "state/sessions/terminals";
     "ch config" -> "state/sources/search";
     "ch config" -> "state/workbench/palette-source";
@@ -123,7 +120,7 @@ digraph channels {
     "ch portfolio" -> "routes/+page";
     "ch portfolio" -> "state/client/context";
     "ch portfolio" -> "state/client/selectors";
-    "ch portfolio" -> "state/life/present";
+    "ch portfolio" -> "state/feeds/life/present";
     "ch portfolio" -> "state/workbench/navigation/notice-sources";
     "ch portfolio" -> "state/workbench/palette-source";
     "ch portfolio" -> "state/workbench/rail-badges";
@@ -151,16 +148,16 @@ digraph channels {
     "ch usage" -> "views/system/usage";
     "server/accounts/calendar/poll" -> "ch calendar";
     "server/accounts/mail/poll" -> "ch inbox";
-    "server/core/hooks" -> "ch sessions";
     "server/machine/hpc/poll" -> "ch hpc";
     "server/machine/pty/channel" -> "ch pty:*";
     "server/machine/usage/watch" -> "ch usage";
-    "server/watch/bookmarks" -> "ch files";
-    "server/watch/git" -> "ch files";
-    "server/watch/git" -> "ch git";
-    "server/watch/portfolio" -> "ch audit";
-    "server/watch/portfolio" -> "ch config";
-    "server/watch/portfolio" -> "ch feeds";
-    "server/watch/portfolio" -> "ch portfolio";
-    "server/watch/sessions" -> "ch sessions";
+    "server/root/hooks" -> "ch sessions";
+    "server/root/watch/bookmarks" -> "ch files";
+    "server/root/watch/git" -> "ch files";
+    "server/root/watch/git" -> "ch git";
+    "server/root/watch/portfolio" -> "ch audit";
+    "server/root/watch/portfolio" -> "ch config";
+    "server/root/watch/portfolio" -> "ch feeds";
+    "server/root/watch/portfolio" -> "ch portfolio";
+    "server/root/watch/sessions" -> "ch sessions";
 }

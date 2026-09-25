@@ -3,7 +3,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { attention } from '../../../src/lib/state/feeds/feeds.ts';
 import { NO_FEEDS } from '../../fixtures/entities-fixture.ts';
-import type { FeedsPayload, Project, Snapshot } from '../../../src/lib/data/model.ts';
+import type { FeedsPayload, Project, Snapshot } from '../../../src/lib/data/model/index.ts';
 import { createClientState, type ClientState } from '../../fixtures/client.ts';
 
 let client: ClientState;

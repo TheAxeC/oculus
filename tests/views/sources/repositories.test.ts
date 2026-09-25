@@ -14,7 +14,7 @@ import Repositories from '../../../src/lib/views/sources/repositories/Repositori
 import Diff from '../../../src/lib/views/sources/repositories/Diff.svelte';
 import Repo from '../../../src/lib/views/sources/repositories/Repo.svelte';
 import { shapeBadgeTone } from '../../../src/lib/views/shared/changes/repo-shape.ts';
-import type { GitState } from '../../../src/lib/data/model.ts';
+import type { GitState } from '../../../src/lib/data/model/index.ts';
 import {
     engineDir,
     glyphCatalog,
@@ -151,7 +151,7 @@ function group(body: string, id: string): string {
 
 describe('the Repositories view', () => {
     it('audits that maps each repository picker status to its own tone and a readable repository to none', () => {
-        // revert: src/lib/views/shared/changes/repo-shape.ts:51 => if (shape === 'missing') return 'blue';
+        // revert: src/lib/views/shared/changes/repo-shape.ts:27 => if (shape === 'missing') return 'blue';
         expect([
             shapeBadgeTone('missing'),
             shapeBadgeTone('failed'),

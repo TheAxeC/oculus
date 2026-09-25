@@ -4,7 +4,7 @@
 
     import Legend from './Legend.svelte';
     import Words from './Words.svelte';
-    import type { DeckFraming } from '$lib/state/life/present';
+    import type { DeckFraming } from '$lib/state/feeds/life/present';
 
     type Props = { framing: DeckFraming };
 

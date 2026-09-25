@@ -1,7 +1,7 @@
 // Layer 2, client state. The plain-text project context copied from a card. It is pure over one
 // project and one snapshot, so the clipboard action and its tests share the exact same assembly.
 
-import type { Project, Snapshot } from '../../data/model.ts';
+import type { Project, Snapshot } from '../../data/model/index.ts';
 
 /** A venue's compact catalogue name, or nothing when the project names none the snapshot holds. */
 function venue(project: Project, snapshot: Snapshot): string {

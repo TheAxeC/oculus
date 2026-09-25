@@ -12,7 +12,7 @@
     // setting.
 
     import Confirm from '$lib/ui/controls/Confirm.svelte';
-    import Glyph from '$lib/ui/controls/Glyph.svelte';
+    import Glyph from '$lib/ui/display/Glyph.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { findView } from '$lib/state/workbench/layout';
     import type { TaskKind } from '$lib/state/sessions/terminals.svelte';

@@ -9,38 +9,25 @@
 // Raising the configuration's generation once the push is installed is what draws the page again.
 //
 // The page starts from the configuration its own HTML was built from, seeded here with the newest
-// push version that read is at least as new as (server/core/config-seed.ts). A `config` push at or
+// push version that read is at least as new as (server/root/config-seed.ts). A `config` push at or
 // below that version is dropped: it is the hub's replay of a read made before the page's, and
 // installing it would put the values from before a config change back for the watcher's debounce.
 
 import { isMap } from '../../data/helpers/guards.ts';
 import type { EntitiesStore } from './entities.svelte.ts';
-import { configInstalled } from './generation.svelte.ts';
+import { configInstalled } from '../words/generation.svelte.ts';
 import { setCatalog, setGlyphs, setIcons } from '../words/text.ts';
 import { setAppearance } from '../words/appearance.ts';
 import { setVocab } from '../words/tones.ts';
 import type { WritesStore } from './writes.svelte.ts';
-import type { ConfigPayload, Message, Subscription } from '../../data/model.ts';
+import type { ConfigPayload, Message, Subscription } from '../../data/model/index.ts';
+import type { SocketStore, Status } from '../stores/shapes.ts';
 
-export type Status = 'connecting' | 'open' | 'closed';
+export type { SocketStore, Status };
 
 /** The first wait after a drop, and the ceiling it doubles to. */
 const FIRST = 250;
 const LONGEST = 5000;
-
-/** One client's end of the one WebSocket. */
-export type SocketStore = {
-    status: () => Status;
-    connect: (names: string[]) => void;
-    disconnect: () => void;
-    send: (message: unknown) => boolean;
-    subscribe: (names: string[]) => void;
-    unsubscribe: (names: string[]) => void;
-    listen: (channel: string, fn: (message: Message) => void) => () => void;
-    installConfig: (payload: ConfigPayload | null) => void;
-    /** Hold the configuration the page was built from until a push above `through` arrives. */
-    seedConfig: (payload: ConfigPayload | undefined, through: number) => void;
-};
 
 export function createSocket(entities: EntitiesStore, writes: WritesStore): SocketStore {
     const socket: { status: Status } = $state({ status: 'closed' });

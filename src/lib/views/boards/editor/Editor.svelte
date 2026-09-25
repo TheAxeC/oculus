@@ -1,6 +1,6 @@
 <script module lang="ts">
     // Layer 3, view registration. A manifest editor opens from a project and is not listed.
-    import type { ViewRegistration } from '../../registry';
+    import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     export const registration: ViewRegistration = {
         id: 'editor',
         label: 'views.editor',
@@ -42,15 +42,16 @@
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { editDiffers } from '$lib/state/forms/manifest-draft';
     import {
-        NOT_IN_MODEL,
-        NOT_WRITTEN,
         asList,
         asText,
+        fieldsOfSection,
         fieldValues,
+        NOT_IN_MODEL,
+        NOT_WRITTEN,
         type FormField
     } from '$lib/state/forms/schema';
     import { t } from '$lib/state/words/text';
-    import type { ViewProps } from '../../registry';
+    import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 
     const {
@@ -242,7 +243,7 @@
             <Empty message={t('editor.unknown', id)} glyph={t('editor.none_glyph')} />
         {:else}
             {#each sections as section (section)}
-                {@const own = fields.filter((one) => one.section === section)}
+                {@const own = fieldsOfSection(fields, section)}
                 {#if own.length > 0}
                     <section class="group">
                         <h3 class="heading">{section}</h3>

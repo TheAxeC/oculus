@@ -1,9 +1,10 @@
-// Layer 2, client state. The file browser's request addresses, the shapes its answers are held in
-// and bounded response reads, kept apart from the store because they depend only on the wire and
-// the response stream.
+// Layer 2, client state. The file browser's request addresses, the shapes its answers are held in,
+// the lookups the views make over what those shapes hold (the current workspace, a bookmark, the
+// open folders that failed to list) and bounded response reads, kept apart from the store because
+// they depend only on the wire and the response stream.
 
-import type { Entry, SchemaField } from '../../data/model.ts';
-import { SHOWN_DEFAULT, type FsEntry, type FsRoot, type ListingShown } from './fs.ts';
+import type { Entry, SchemaField } from '../../data/model/index.ts';
+import { SHOWN_DEFAULT, type FsEntry, type FsRoot, type ListingShown, type TreeRow } from './fs.ts';
 
 /** One directory as the tree reads it. */
 export type Listing = {
@@ -52,6 +53,50 @@ export type FileText = {
 };
 
 export const NO_LISTING: Listing = { entries: [], error: '', loading: true };
+
+/** The workspace the saved state names as current; an empty one when it names none it holds. */
+export function currentWorkspace(saved: WorkspacesState): { name: string; roots: FsRoot[] } {
+    return saved.workspaces.find((one) => one.name === saved.current) ?? { name: '', roots: [] };
+}
+
+/** The keys of the roots the configuration fixes, which the reader cannot take off a workspace. */
+export function fixedRootKeys(roots: FsRoot[]): string[] {
+    return roots.filter((one) => one.fixed).map((one) => one.key);
+}
+
+/** The bookmark of the given id, or null when the reader has none of it. */
+export function bookmarkById(entries: Entry[], id: string): Entry | null {
+    return entries.find((one) => one.id === id) ?? null;
+}
+
+/** The bookmark over one file of one root, or null when the reader has not made one. */
+export function bookmarkAt(entries: Entry[], root: string, path: string): Entry | null {
+    return entries.find((one) => one.fields.root === root && one.fields.path === path) ?? null;
+}
+
+/** The files of a listing, a folder left out, which is what a tab can open. */
+export function fileEntries(entries: FsEntry[]): FsEntry[] {
+    return entries.filter((entry) => entry.kind === 'file');
+}
+
+/**
+ * Every open folder on screen whose listing failed, with the error it failed with, in the order
+ * the rows are drawn; `errorOf` answers the listing error of one folder.
+ */
+export function openFailures(
+    rows: TreeRow[],
+    errorOf: (root: string, path: string) => string
+): { root: string; path: string; error: string }[] {
+    return rows
+        .filter((row) => row.open)
+        .map((row) => ({ root: row.root, path: row.path, error: errorOf(row.root, row.path) }))
+        .filter((one) => one.error !== '');
+}
+
+/** Whether a filtered tree matched nothing, which is when it holds its roots and nothing else. */
+export function matchedNothing(rows: TreeRow[]): boolean {
+    return rows.every((row) => row.depth === 0);
+}
 
 export const NO_WORKSPACES: WorkspacesState = {
     current: '',

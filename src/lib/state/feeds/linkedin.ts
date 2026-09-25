@@ -4,7 +4,7 @@
 import { scalar } from '../../data/helpers/guards.ts';
 
 export { localDate } from '../../data/helpers/dates.ts';
-export type { SchemaField } from '../../data/model.ts';
+export type { SchemaField } from '../../data/model/index.ts';
 
 export type LinkedinEntry = {
     file: string;

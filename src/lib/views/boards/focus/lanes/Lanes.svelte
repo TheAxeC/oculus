@@ -11,20 +11,23 @@
     import { personNames } from '$lib/state/boards/person';
     import { waitingLabel } from '$lib/state/boards/waiting';
     import Empty from '$lib/ui/frame/Empty.svelte';
-    import Glyph from '$lib/ui/controls/Glyph.svelte';
+    import Glyph from '$lib/ui/display/Glyph.svelte';
     import LaneCard from './LaneCard.svelte';
     import LaneHead from './LaneHead.svelte';
     import type { MenuItem } from '$lib/ui/menu/menu-items';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import { DEADLINE_SOON, daysUntil } from '$lib/state/boards/board';
+    import { DEADLINE_SOON, daysUntil, hasReadme } from '$lib/state/boards/board';
     import {
-        CLUSTERS,
         backlog,
+        CLUSTERS,
         flamesOf,
         holdingTone,
         laneItems,
         lanes,
+        lanesIn,
         movable,
+        nextPriority,
+        portfolioProjects,
         priorities,
         unplaced,
         type Id,
@@ -54,7 +57,7 @@
 
     const config = $derived(configMap());
     const snapshot = $derived(portfolio());
-    const projects = $derived(Object.values(snapshot?.entities.projects ?? {}));
+    const projects = $derived(portfolioProjects(snapshot));
     const board = $derived(lanes(config));
     const items = $derived(laneItems(projects, board));
     const ideas = $derived(backlog(projects, board));
@@ -135,27 +138,15 @@
         said(await writeManifest(project.id, { [field]: choice.slice(choice.indexOf(':') + 1) }));
     }
 
-    /**
-     * The next priority in the cycle: unset, then every level of `priority_levels` in order, then
-     * unset again. The cycle is the config's list, so a level added there joins the cycle.
-     */
-    function nextPriority(project: Project): string {
-        // Fewest flames first, so one click on an unset card asks for the least rather than the
-        // most, and the order of the config's list (most first, for the menu) is not the cycle's.
-        const climbing = [...levels].sort((a, b) => a.flames - b.flames);
-        const cycle = ['', ...climbing.map((level) => level.key)];
-        const at = cycle.indexOf(project.priority ?? '');
-        return cycle[(at < 0 ? 0 : at + 1) % cycle.length];
-    }
-
+    /** Write the next priority of the cycle, which state/boards/focus.ts's nextPriority gives. */
     async function cyclePriority(project: Project): Promise<void> {
-        said(await writeManifest(project.id, { priority: nextPriority(project) }));
+        said(await writeManifest(project.id, { priority: nextPriority(levels, project.priority) }));
     }
 
     /** An unplaced ghost has no project tab; its README is the only title-like destination. */
     function openMissing(project: Project): void {
         if (project.ghost) {
-            if (project.docs.some((doc) => doc.name === 'README.md' && doc.present)) {
+            if (hasReadme(project)) {
                 openView('document', {
                     root: 'hub',
                     path: `${project.folder}/README.md`,
@@ -243,7 +234,7 @@
 {/snippet}
 
 {#each CLUSTERS as cluster (cluster)}
-    {@const inCluster = board.filter((one) => one.cluster === cluster)}
+    {@const inCluster = lanesIn(board, cluster)}
     {#if inCluster.length > 0}
         <details class="cluster" class:muted={cluster !== 'now'} open>
             <summary>

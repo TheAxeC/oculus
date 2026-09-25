@@ -1,6 +1,6 @@
 <script module lang="ts">
     // Layer 3, view registration. Help sits in the System group, after Live usage.
-    import type { ViewRegistration } from '../../registry';
+    import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
 
     export const registration: ViewRegistration = {
         id: 'help',
@@ -31,7 +31,7 @@
     import { splitManual, type ManualPart } from './manual';
     import type { DocState } from '$lib/state/system/docs.svelte';
     import { t } from '$lib/state/words/text';
-    import type { ViewProps } from '../../registry';
+    import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 
     const {

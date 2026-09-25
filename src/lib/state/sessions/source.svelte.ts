@@ -9,11 +9,16 @@
 // copy that stops at two megabytes would take the rest of the file off the disk.
 
 import { TEXT_LIMIT } from '../sources/fs.ts';
-import type { Indent } from '../workbench/navigation/editor-text.ts';
 import { readCapped } from '../sources/fs.svelte.ts';
-import type { WriteAnswer, WritesStore } from '../client/writes.svelte.ts';
-import type { UiStore } from '../workbench/ui.svelte.ts';
+import type { WriteAnswer, WritesStore, InstanceStates } from '../stores/shapes.ts';
 import { t } from '../words/text.ts';
+
+/**
+ * How a file indents: with tabs or with spaces, and how wide one step is. It is declared here, with
+ * the draft that holds it, and the editor's text rules in state/workbench/navigation read it from
+ * here.
+ */
+export type Indent = { tabs: boolean; size: number };
 
 export type SourceLoad =
     { ok: true; content: string; truncated: boolean } | { ok: false; error: string };
@@ -162,7 +167,7 @@ export type SourceStore = {
     saveSource: (root: string, path: string, content: string) => Promise<WriteAnswer>;
 };
 
-export function createSource(writes: WritesStore, ui: UiStore): SourceStore {
+export function createSource(writes: WritesStore, ui: InstanceStates): SourceStore {
     const reading = new Map<string, { file: string; request: Promise<void> }>();
 
     /** Working and saved copies belong to the instance, not its currently mounted component. */

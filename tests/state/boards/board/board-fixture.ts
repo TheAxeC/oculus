@@ -28,7 +28,7 @@ import type {
     Snapshot,
     Tier,
     Venue
-} from '../../../../src/lib/data/model.ts';
+} from '../../../../src/lib/data/model/index.ts';
 
 export const ENGINE_CONFIG = loadConfig(engineDir()).config;
 

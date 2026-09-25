@@ -13,7 +13,7 @@ import type {
     Project,
     Relations,
     Snapshot
-} from '../../../src/lib/data/model.ts';
+} from '../../../src/lib/data/model/index.ts';
 
 const NO_RELATIONS: Relations = {
     projectVenue: [],

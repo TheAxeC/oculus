@@ -6,7 +6,7 @@
 // The readers of the three `layout.yml` keys the fold is built from are here too, since the page
 // hands the shell what they read and the Views view reads them for itself.
 
-import { registrationGlyph, type Registration } from '../../../views/registry.ts';
+import { registrationGlyph, type Registration } from './registry.ts';
 import { t } from '../../words/text.ts';
 
 /** One configured group. View registrations name its stable id and their own order. */
@@ -246,4 +246,9 @@ export function onCataloguePage(
 ): boolean {
     const entry = pages.find((one) => one.page === rail);
     return entry !== undefined && nodeHolds(entry.node, catalogue);
+}
+
+/** The registrations the view catalogue lists: every one that does not say it is unlisted. */
+export function listedViews(views: Registration[]): Registration[] {
+    return views.filter((view) => view.listed !== false);
 }

@@ -5,7 +5,8 @@
 
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createClientState, type ClientState } from '../../fixtures/client.ts';
-import type { AuditFinding, AuditPayload } from '../../../src/lib/data/model.ts';
+import type { AuditFinding, AuditPayload } from '../../../src/lib/data/model/index.ts';
+import { auditSearch, findingsOfKind } from '../../../src/lib/state/system/audit.ts';
 
 let client: ClientState;
 let receive: ClientState['entities']['receive'];
@@ -84,5 +85,26 @@ describe('the audit store', () => {
         deliver({ findings: [finding()], muted: [] });
         expect(client.audit.openCount()).toBe(1);
         expect(other.audit.openCount()).toBe(0);
+    });
+});
+
+describe('the findings a search keeps and a section holds', () => {
+    const finding = (kind: string, scope: string, where: string, message: string) =>
+        ({ kind, scope, where, message }) as unknown as Parameters<typeof auditSearch>[0][number];
+    const findings = [
+        finding('todo', 'alpha', 'README.md', 'A TODO is left'),
+        finding('data', 'beta', 'project.yml', 'the dataset is unknown')
+    ];
+
+    // revert: src/lib/state/system/audit.ts:35 => `${finding.scope}`.toLowerCase().includes(wanted)
+    it('are the ones whose scope, place or message holds the search, case aside', () => {
+        expect(auditSearch(findings, 'readme').map((one) => one.scope)).toEqual(['alpha']);
+        expect(auditSearch(findings, 'UNKNOWN').map((one) => one.scope)).toEqual(['beta']);
+        expect(auditSearch(findings, '  ')).toBe(findings);
+    });
+
+    // revert: src/lib/state/system/audit.ts:41 => return findings;
+    it('are the ones of the section kind', () => {
+        expect(findingsOfKind(findings, 'data').map((one) => one.scope)).toEqual(['beta']);
     });
 });

@@ -20,9 +20,8 @@
 
     import Disclosure from '$lib/ui/tree/Disclosure.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import { HUB_ROOT } from '$lib/state/boards/collection';
+    import { HUB_ROOT, nameOf } from '$lib/state/sources/fs';
     import { stamp } from '$lib/state/words/format';
-    import { nameOf } from '$lib/state/sources/fs';
     import { findView } from '$lib/state/workbench/layout';
     import type { LatexIssue, LatexMain } from '$lib/state/sessions/latex.svelte';
     import type { LatexStep } from '$lib/state/sessions/terminals.svelte';

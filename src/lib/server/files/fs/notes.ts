@@ -18,7 +18,7 @@
 import { existsSync, readFileSync, readdirSync, realpathSync, rmSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
-import { writeTextAtomic } from '../../sessions/stores/json.ts';
+import { writeTextAtomic } from '../../core/json.ts';
 
 /** The extension every note is written under. */
 const NOTE_SUFFIX = '.md';

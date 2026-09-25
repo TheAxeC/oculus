@@ -12,7 +12,7 @@
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { parse } from 'yaml';
-import type { Feeds, FeedFiles, Finding, Lead, RawFeeds } from '../model.ts';
+import type { Feeds, FeedFiles, Finding, Lead, RawFeeds } from '../model/index.ts';
 // `str` here is the shared `text`: this file's reading of a missing or mistyped value has always
 // been the empty string rather than undefined, and the alias keeps that reading at every call it
 // makes. The lead's status is the one value it does not read for itself, since the rule that closes

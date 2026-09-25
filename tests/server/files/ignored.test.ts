@@ -1,6 +1,6 @@
-// Layer 4, server test. What server/git/git.ts's ignoredIn answers about the entries git ignores
+// Layer 4, server test. What server/core/git.ts's ignoredIn answers about the entries git ignores
 // in one folder, and what a listing request of server/files/fs.ts comes to with and without
-// `ignored=1`. The vector the run is held to is tests/server/git/git.test.ts's gate.
+// `ignored=1`. The vector the run is held to is tests/server/core/git.test.ts's gate.
 //
 // Every folder here is synthetic, under the system temporary directory, and is asserted to be
 // inside it before anything is written. The repository cases make their own repository there with
@@ -20,7 +20,7 @@ import {
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
 import { afterAll, afterEach, describe, expect, it } from 'vitest';
-import { ignoredIn } from '../../../src/lib/server/git/git.ts';
+import { ignoredIn } from '../../../src/lib/server/core/git.ts';
 import {
     cachedIgnored,
     ignoredCache,
@@ -100,7 +100,7 @@ function fakeGit(script: string): void {
 }
 
 describe('the entries git ignores in one folder', () => {
-    // revert: src/lib/server/git/git.ts:144 => const input = names.map((name) => `${name}/\0`).join('');
+    // revert: src/lib/server/core/git.ts:152 => const input = names.map((name) => `${name}/\0`).join('');
     it('names a folder a folder pattern matches and a file a file pattern matches, beside a linked folder', () => {
         const dir = repository();
         // A link to a folder is a file to git; a name asked with a trailing slash over it would
@@ -110,7 +110,7 @@ describe('the entries git ignores in one folder', () => {
         expect([...ignored].sort()).toEqual(['a.log', 'build']);
     });
 
-    // revert: src/lib/server/files/fs.ts:362 => return { entries: found.entries };
+    // revert: src/lib/server/files/fs.ts:350 => return { entries: found.entries };
     it('leaves what git ignores out of a listing unless ignored files are asked for', () => {
         const dir = repository();
         expect(listed(dir, { hidden: false, ignored: false })).toEqual([
@@ -147,7 +147,7 @@ describe('the entries git ignores in one folder', () => {
         expect(ignoredIn(dir, ['a.log']).size).toBe(0);
     });
 
-    // revert: src/lib/server/git/git.ts:145 => const done = run(root, ['check-ignore', '--stdin', '-z'], 60000, input);
+    // revert: src/lib/server/core/git.ts:153 => const done = run(root, ['check-ignore', '--stdin', '-z'], 60000, input);
     it('leaves out nothing when git does not answer in time, and answers at the timeout', () => {
         const dir = repository();
         fakeGit('exec sleep 6');
@@ -156,7 +156,7 @@ describe('the entries git ignores in one folder', () => {
         expect(Date.now() - started).toBeLessThan(3000);
     }, 15000);
 
-    // revert: src/lib/server/git/git.ts:146 => delete
+    // revert: src/lib/server/core/git.ts:154 => delete
     it('takes no name from a git that failed, whatever it printed', () => {
         const dir = repository();
         // a git that fails says why on its error output, which is what the run keeps of it
@@ -164,7 +164,7 @@ describe('the entries git ignores in one folder', () => {
         expect(ignoredIn(dir, ['a.log']).size).toBe(0);
     });
 
-    // revert: src/lib/server/git/git.ts:143 => delete
+    // revert: src/lib/server/core/git.ts:151 => delete
     it('asks git nothing for an empty folder', () => {
         const dir = folder({});
         const ran = join(dir, 'ran');
@@ -175,7 +175,7 @@ describe('the entries git ignores in one folder', () => {
 });
 
 describe('the two toggles on a listing request', () => {
-    // revert: src/lib/server/files/fs.ts:367 => return { hidden: query.has('hidden'), ignored: query.has('ignored') };
+    // revert: src/lib/server/files/fs.ts:355 => return { hidden: query.has('hidden'), ignored: query.has('ignored') };
     it('reads hidden=1 and ignored=1, each alone, and nothing else as asking', () => {
         expect(shownOf(new URLSearchParams('root=hub&path='))).toEqual({
             hidden: false,
@@ -198,7 +198,7 @@ describe('the ignored names a listing reuses', () => {
             asked += 1;
             return new Set(['tmp']);
         };
-        // revert: src/lib/server/files/fs.ts:136 => delete
+        // revert: src/lib/server/files/fs.ts:124 => delete
         expect(cachedIgnored(cache, '/hub', ['notes.md', 'tmp'], ask, 1000)).toEqual(
             new Set(['tmp'])
         );

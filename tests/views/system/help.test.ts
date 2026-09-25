@@ -136,7 +136,7 @@ describe('the diagrams in the manual', () => {
     });
 
     it('audits that the manual shows every diagram the generator writes, each one committed', async () => {
-        // revert: bin/diagrams/diagrams.mjs:38 => export const NAMES = ['layers', 'channels', 'writes', 'calls'];
+        // revert: bin/diagrams/diagrams.mjs:56 => 'writes', 'calls'
         const answer = renderManual({
             hub: engineDir(),
             engine: engineDir(),

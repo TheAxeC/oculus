@@ -2,7 +2,7 @@
     // Layer 3, view registration. A diff opens from the Repositories view and is not listed: opened
     // bare it could only report that it was opened for nothing.
     import { DIFF_VIEW } from '$lib/state/sources/repositories.svelte';
-    import type { ViewRegistration } from '../../registry';
+    import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
 
     export const registration: ViewRegistration = {
         id: DIFF_VIEW,
@@ -32,7 +32,7 @@
     import { codeHtml } from '$lib/state/words/languages';
     import { diffUrl, type DiffState } from '$lib/state/sources/repositories';
     import { t } from '$lib/state/words/text';
-    import type { ViewProps } from '../../registry';
+    import type { ViewProps } from '$lib/state/workbench/navigation/registry';
 
     let { instance }: ViewProps = $props();
 

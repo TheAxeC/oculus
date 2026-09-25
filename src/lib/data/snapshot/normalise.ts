@@ -3,10 +3,10 @@
 // over one raw portfolio produce byte-identical JSON, because every map is filled in sorted id
 // order and every relation table is sorted by its pair.
 //
-// Two rules decide what reaches the wire. An entity carries the fields model.ts declares for it and
-// no others, so the snapshot is the typed model rather than the YAML. An id that names nothing is
-// left out of both the entity that held it and the relation table, and validate has already named
-// it in a finding, so a view never joins against something that is not there.
+// Two rules decide what reaches the wire. An entity carries the fields data/model/ declares for it
+// and no others, so the snapshot is the typed model rather than the YAML. An id that names nothing
+// is left out of both the entity that held it and the relation table, and validate has already
+// named it in a finding, so a view never joins against something that is not there.
 
 import { indexing } from './indexing.ts';
 import type {
@@ -40,7 +40,7 @@ import type {
     Snapshot,
     Subtask,
     Venue
-} from '../model.ts';
+} from '../model/index.ts';
 import { isMap, str, strings } from '../helpers/guards.ts';
 
 /**

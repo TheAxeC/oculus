@@ -67,3 +67,13 @@ export function strings(value: unknown): string[] {
     if (!Array.isArray(value)) return [];
     return value.filter((item): item is string => typeof item === 'string');
 }
+
+/**
+ * A finite number from merged config, or null when that key is absent or invalid. The rail badges
+ * and the Focus lanes both read a threshold this way, so the rule sits here, below every state
+ * folder that reads one.
+ */
+export function numericSetting(config: Record<string, unknown>, key: string): number | null {
+    const value = config[key];
+    return typeof value === 'number' && Number.isFinite(value) ? value : null;
+}

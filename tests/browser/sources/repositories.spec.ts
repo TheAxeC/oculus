@@ -127,7 +127,7 @@ test.describe('the Repositories view', () => {
             timeout: 20_000
         });
 
-        // revert: src/lib/views/sources/repositories/Repositories.svelte:84 => badgeTone: undefined,
+        // revert: src/lib/views/sources/repositories/Repositories.svelte:85 => badgeTone: undefined,
         await expect(badge(labels.missing)).toHaveAttribute('style', /--badge-bg: var\(--c-red\)/);
         await expect(badge(labels.failed)).toHaveAttribute('style', /--badge-bg: var\(--c-amber\)/);
         await expect(badge(labels.none)).toHaveAttribute('style', /--badge-bg: var\(--c-blue\)/);
@@ -343,7 +343,7 @@ test.describe('the Repositories view', () => {
         }
     });
 
-    // Revert: drop the `symbolic-ref --short HEAD` read from state() in server/git/git.ts, so the
+    // Revert: drop the `symbolic-ref --short HEAD` read from state() in server/core/git.ts, so the
     // repository with no commit is drawn as its error row rather than its branch and its files.
     test('lists a repository with no commit yet and switches to it', async ({ page }) => {
         const fresh = scratchDir('oculus-repositories-fresh-');

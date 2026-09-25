@@ -92,7 +92,7 @@ test('a wrapped code span of the manual paints no layer of its own over a wallpa
 test('a code span of a project document paints no fill of its own over a wallpaper', async ({
     page
 }) => {
-    // revert: src/lib/views/boards/project/Project.svelte:336 => background: color-mix(in srgb, var(--chip) var(--wall-panel), transparent);
+    // revert: src/lib/views/boards/project/Project.svelte:323 => background: color-mix(in srgb, var(--chip) var(--wall-panel), transparent);
     await boot(page);
     await pickTheme(page, 'mocha');
     await expect(page.locator('.wallpaper')).toHaveCount(1);

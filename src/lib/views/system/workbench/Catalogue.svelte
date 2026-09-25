@@ -1,7 +1,7 @@
 <script module lang="ts">
     // Layer 3, view registration. The Views catalogue follows the system views, with the Settings
     // and Pages views after it on the Views and Settings page.
-    import type { ViewRegistration } from '../../registry';
+    import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     export const registration: ViewRegistration = {
         id: 'catalogue',
         label: 'views.catalogue',
@@ -29,7 +29,7 @@
     // that opens it.
 
     import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
-    import Glyph from '$lib/ui/controls/Glyph.svelte';
+    import Glyph from '$lib/ui/display/Glyph.svelte';
     import type { MenuItem } from '$lib/ui/menu/menu-items';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
@@ -42,13 +42,19 @@
         onCataloguePage,
         railOrder,
         readChord,
+        listedViews,
         readDocs,
         readGroups
     } from '$lib/state/workbench/navigation/catalogue';
     import { railPages } from '$lib/state/workbench/navigation/rail';
     import { THRESHOLD, type Point } from '$lib/state/workbench/drag.svelte';
     import { t } from '$lib/state/words/text';
-    import { badgeOf, registrationGlyph, registrationLabel, type ViewProps } from '../../registry';
+    import {
+        badgeOf,
+        registrationGlyph,
+        registrationLabel,
+        type ViewProps
+    } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 
     const client = useState();
@@ -76,7 +82,7 @@
     const merged = $derived(config()?.config);
     const groups = $derived(readGroups(merged?.nav_groups));
     const docs = $derived(readDocs(merged?.docs));
-    const listed = $derived(views().filter((view) => view.listed !== false));
+    const listed = $derived(listedViews(views()));
     const sections = $derived(arrange(listed, groups, docs));
     const order = $derived(railOrder(listed, groups, readChord(merged?.direct_chord), docs));
 

@@ -1,6 +1,6 @@
 <script module lang="ts">
     // Layer 3, view registration. Documents open from bookmarks and are not listed.
-    import type { ViewRegistration } from '../../registry';
+    import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
 
     export const registration: ViewRegistration = {
         id: 'document',
@@ -32,7 +32,7 @@
     import Toolbar from '$lib/ui/frame/Toolbar.svelte';
     import { t } from '$lib/state/words/text';
     import { fileUrl } from '../../shared/links/file-url';
-    import type { ViewProps } from '../../registry';
+    import type { ViewProps } from '$lib/state/workbench/navigation/registry';
 
     let { instance }: ViewProps = $props();
 

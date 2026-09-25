@@ -94,7 +94,7 @@ describe('the store reading the endpoints', () => {
         expect(asked).toEqual(['/api/fs?root=hub&path=']);
     });
 
-    // revert: src/lib/state/sources/fs-transport.ts:109 => return key;
+    // revert: src/lib/state/sources/fs-transport.ts:154 => return key;
     it('asks for a folder once per pair of toggles, each on its own query, and holds the answers apart', async () => {
         serving((url) => listingOf(url.includes('hidden=1') ? ['.env', 'a.txt'] : ['a.txt']));
         const hidden = { hidden: true, ignored: false };
@@ -112,7 +112,7 @@ describe('the store reading the endpoints', () => {
         expect(client.fs.heldEntries('hub', '', { hidden: false, ignored: true })).toBeNull();
     });
 
-    // revert: src/lib/state/sources/fs.svelte.ts:407 => return found ?? NO_LISTING;
+    // revert: src/lib/state/sources/fs.svelte.ts:403 => return found ?? NO_LISTING;
     it("draws another pair's answer for a folder while its own is on its way", async () => {
         serving(() => listingOf(['a.txt']));
         client.fs.listing('hub', '');
@@ -132,7 +132,7 @@ describe('the store reading the endpoints', () => {
         ]);
     });
 
-    // revert: src/lib/state/sources/fs.svelte.ts:422 => delete
+    // revert: src/lib/state/sources/fs.svelte.ts:418 => delete
     it('asks again for every folder held under one pair when it is relisted, and for no other pair', async () => {
         serving(() => listingOf(['a.txt']));
         const hidden = { hidden: true, ignored: false };
@@ -482,7 +482,7 @@ describe('the store reading the endpoints', () => {
 
     // Revert: in loadBookmarks of state/sources/fs.svelte.ts, sweep the forms on the branch that
     // answers a read the server refused, by putting the call back on the line above its return.
-    // revert: src/lib/state/sources/fs.svelte.ts:655 => closeGoneForms(held.bookmarks); return;
+    // revert: src/lib/state/sources/fs.svelte.ts:651 => closeGoneForms(held.bookmarks); return;
     it('closes no bookmark form over a read the server refused, whatever it said', async () => {
         client.layout.loadLayout(fakeStorage());
         const own = client.layout.openView('files');
@@ -507,7 +507,7 @@ describe('the store reading the endpoints', () => {
 
     // Revert: in loadBookmarks of state/sources/fs.svelte.ts, let the catch branch fall through to
     // the tail sweep by taking out its return.
-    // revert: src/lib/state/sources/fs.svelte.ts:668 => delete
+    // revert: src/lib/state/sources/fs.svelte.ts:664 => delete
     it('closes no bookmark form over a read that never answered at all', async () => {
         client.layout.loadLayout(fakeStorage());
         const own = client.layout.openView('files');
@@ -548,7 +548,7 @@ describe('the store reading the endpoints', () => {
     // A read that failed and a read that is asked again, for the three answers the view draws a
     // failure sentence for. Each case names the line of state/sources/fs.svelte.ts that turns it
     // red.
-    // revert: src/lib/state/sources/fs.svelte.ts:649 => answered(BOOKMARKS, at);
+    // revert: src/lib/state/sources/fs.svelte.ts:645 => answered(BOOKMARKS, at);
     it('asks the bookmarks again when the reader asks, without a write to move the round', async () => {
         serving(() => refusedRead('origin'));
         client.fs.bookmarks();
@@ -567,7 +567,7 @@ describe('the store reading the endpoints', () => {
         expect(client.fs.bookmarks()).toMatchObject({ error: '', loading: false });
     });
 
-    // revert: src/lib/state/sources/fs.svelte.ts:702 => answered(NOTES, at);
+    // revert: src/lib/state/sources/fs.svelte.ts:698 => answered(NOTES, at);
     it('asks the notes again when the reader asks, and the line goes when the read lands', async () => {
         serving(() => refusedRead('origin'));
         client.fs.notes();
@@ -583,7 +583,7 @@ describe('the store reading the endpoints', () => {
         expect(client.fs.notes().notes.map((one) => one.title)).toEqual(['a title']);
     });
 
-    // revert: src/lib/state/sources/fs.svelte.ts:508 => answered(WORKSPACES, at);
+    // revert: src/lib/state/sources/fs.svelte.ts:504 => answered(WORKSPACES, at);
     it('asks the workspaces again when the reader asks, and the line goes when the read lands', async () => {
         serving(() => refusedRead('origin'));
         client.fs.workspaces();
@@ -601,7 +601,7 @@ describe('the store reading the endpoints', () => {
         expect(client.fs.workspaces().workspaces.map((one) => one.name)).toEqual(['']);
     });
 
-    // revert: src/lib/state/sources/fs.svelte.ts:338 => delete
+    // revert: src/lib/state/sources/fs.svelte.ts:337 => delete
     it('asks once for the round a read failed in, however many times the view draws it', async () => {
         serving(() => refusedRead('origin'));
         client.fs.bookmarks();
@@ -615,7 +615,7 @@ describe('the store reading the endpoints', () => {
         expect(bookmarkReads()).toBe(1);
     });
 
-    // revert: src/lib/state/sources/fs.svelte.ts:377 => return clock.round;
+    // revert: src/lib/state/sources/fs.svelte.ts:373 => return clock.round;
     it('asks the bookmarks again when the watcher says the file changed, and for no other write', async () => {
         serving(() => answering({ entries: [], schema: [] }));
         client.fs.bookmarks();

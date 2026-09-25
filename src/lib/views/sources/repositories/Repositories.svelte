@@ -1,7 +1,7 @@
 <script module lang="ts">
     // Layer 3, view registration. Repositories sits in the catalogue's Sources group, after the
     // file browser: the same roots, read as repositories rather than as folders.
-    import type { ViewRegistration } from '../../registry';
+    import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
 
     export const registration: ViewRegistration = {
         id: 'repositories',
@@ -55,8 +55,9 @@
         type RepositoriesView
     } from '$lib/state/sources/repositories';
     import { t } from '$lib/state/words/text';
-    import { repoShape, shapeBadge, shapeBadgeTone } from '$lib/views/shared/changes/repo-shape';
-    import type { ViewProps } from '../../registry';
+    import { shapeBadge, shapeBadgeTone } from '$lib/views/shared/changes/repo-shape';
+    import { repoShape } from '$lib/state/sources/repositories';
+    import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 
     const {

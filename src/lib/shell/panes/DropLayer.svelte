@@ -12,7 +12,7 @@
     // drawn on the screen, or one that would draw the page it is over. Then no rectangle is drawn
     // and the ghost says so, which is the one place a refusal is put into words.
 
-    import Glyph from '$lib/ui/controls/Glyph.svelte';
+    import Glyph from '$lib/ui/display/Glyph.svelte';
     import type { Rect } from '$lib/state/workbench/drag.svelte';
     import { t } from '$lib/state/words/text';
     import { useState } from '$lib/state/client/use';

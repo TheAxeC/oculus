@@ -12,7 +12,7 @@
 // one readdir of whatever folder is on screen. Dotfiles and the three build folders are left out
 // unless the request carries `hidden=1`, because a tree that is mostly node_modules is a tree
 // nobody reads; every entry git ignores is left out unless it carries `ignored=1`, read by
-// server/git/git.ts's ignoredIn, the module of the read-only git forms this server runs. The two
+// server/core/git.ts's ignoredIn, the module of the read-only git forms this server runs. The two
 // are the reader's own toggles on the tab, so the same folder is listed either way on request. The
 // file route still serves what a listing leaves out, since what is served and what is offered are
 // different questions. A symbolic link is resolved and then listed as the kind its target is, under
@@ -38,9 +38,9 @@ import { basename, isAbsolute, join, sep } from 'node:path';
 import { hasToken, sameOrigin } from '../core/auth.ts';
 import { expandHome, HUB_ROOT, resolveRootPath, type Root } from './files.ts';
 import { readBookmarks } from './fs/bookmarks.ts';
-import { ignoredIn } from '../git/git.ts';
+import { ignoredIn } from '../core/git.ts';
 import { deleteNote, listNotes, readNote, saveNote } from './fs/notes.ts';
-import { isMap, readJson, writeJsonAtomic } from '../sessions/stores/json.ts';
+import { isMap, readJson, writeJsonAtomic, type FsWrites } from '../core/json.ts';
 
 /** One entry of one directory, as the tree draws it. */
 export type Entry = { name: string; kind: 'file' | 'dir'; size: number; mtime: number };
@@ -92,22 +92,10 @@ const DEFAULT_ROOT = { key: 'workspace', dir: '~/workspace' };
 export const DEFAULT_WORKSPACE = '';
 
 /**
- * The write chain of one process: each POST waits for the one before it, so a read, a change and a
- * write of the whole file cannot interleave with another's. It belongs to the ServerContext, which
- * is what owns everything a process holds.
- */
-export type FsWrites = { chain: Promise<unknown> };
-
-/** A fresh chain, for a ServerContext being built. */
-export function fsWrites(): FsWrites {
-    return { chain: Promise.resolve() };
-}
-
-/**
  * How long one folder's ignored names are reused. A write that moves the file browser's round has
  * every open folder of every Files tab, shown or hidden, listed again at once, and each listing
  * asks git; within this window the same folder with the same entries is asked once. It is the
- * cadence the git watcher reads a root at (watch/git.ts).
+ * cadence the git watcher reads a root at (root/watch/git.ts).
  */
 export const IGNORED_REUSE_MS = 2000;
 

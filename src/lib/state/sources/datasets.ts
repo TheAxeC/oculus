@@ -3,7 +3,7 @@
 // entry forms.
 
 import { dataAccessTone } from '../words/tones.ts';
-import type { Dataset } from '../../data/model.ts';
+import type { Dataset, Project } from '../../data/model/index.ts';
 import { parseOpenForms, type OpenForms } from '../forms/open-forms.ts';
 
 export type DataState = OpenForms & { search: string; off: string[]; reveal?: string };
@@ -73,4 +73,11 @@ export function parseDataState(raw: unknown): DataState {
     return state;
 }
 
-export type { Dataset } from '../../data/model.ts';
+/** The projects a dataset names as its users, in the order named, an unknown id left out. */
+export function datasetUsers(ids: string[], projects: Project[]): Project[] {
+    return ids
+        .map((id) => projects.find((project) => project.id === id))
+        .filter((project) => project !== undefined);
+}
+
+export type { Dataset } from '../../data/model/index.ts';

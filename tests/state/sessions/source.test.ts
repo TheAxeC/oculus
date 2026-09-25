@@ -8,7 +8,7 @@ import {
     lineStart,
     sourceTabState
 } from '../../../src/lib/state/sessions/source.svelte.ts';
-import { stateId } from '../../../src/lib/state/client/instance.ts';
+import { stateId } from '../../../src/lib/state/workbench/layout/instance.ts';
 import { TEXT_LIMIT } from '../../../src/lib/state/sources/fs.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
 import { setCatalog } from '../../../src/lib/state/words/text.ts';
@@ -271,7 +271,7 @@ describe('source tab state', () => {
     });
 
     it('keeps the language and the indentation chosen from the status bar per instance, and drops them for another file', async () => {
-        // revert: src/lib/state/sessions/source.svelte.ts:228 => updateDraft(id, { file });
+        // revert: src/lib/state/sessions/source.svelte.ts:233 => updateDraft(id, { file });
         vi.stubGlobal('fetch', () => Promise.resolve(new Response('text\n')));
         expect(sourceDraft('one')).toMatchObject({ language: '', indent: null });
         client.source.setSourceLanguage('one', 'python');

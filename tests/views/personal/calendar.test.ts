@@ -15,8 +15,11 @@ import {
     textCatalog
 } from '../../../src/lib/data/sources/config.ts';
 import { setCatalog, setGlyphs } from '../../../src/lib/state/words/text.ts';
-import type { CalendarPayload } from '../../../src/lib/data/model.ts';
-import { badgeOf, type Registration } from '../../../src/lib/views/registry.ts';
+import type { CalendarPayload } from '../../../src/lib/data/model/index.ts';
+import {
+    badgeOf,
+    type Registration
+} from '../../../src/lib/state/workbench/navigation/registry.ts';
 import { registration } from '../../../src/lib/views/personal/calendar/Calendar.svelte';
 import { setVocab } from '../../../src/lib/state/words/tones.ts';
 import { vocabCatalog } from '../../../src/lib/data/sources/config.ts';

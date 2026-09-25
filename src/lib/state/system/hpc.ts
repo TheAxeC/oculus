@@ -1,13 +1,13 @@
 // Layer 2, client state. Pure formatting and tone choices for the Live HPC view keep display policy
 // out of its components.
-import type { HpcJob, HpcPartition } from '../../data/model.ts';
+import type { HpcJob, HpcPartition } from '../../data/model/index.ts';
 export type {
     HpcJob,
     HpcPartition,
     HpcPayload,
     HpcQuotaItem,
     HpcRecent
-} from '../../data/model.ts';
+} from '../../data/model/index.ts';
 
 export function walltimeFraction(job: HpcJob): number | null {
     if (job.state !== 'RUNNING') return null;

@@ -563,7 +563,7 @@ test('a long unbroken title and folder stay inside the card', async ({ page }) =
     }
 });
 
-// revert: src/lib/views/boards/collection/EntryCard.svelte:425 => overflow-wrap: normal;
+// revert: src/lib/views/boards/collection/EntryCard.svelte:424 => overflow-wrap: normal;
 test('a long unbroken title stays inside a collection entry card', async ({ page }) => {
     const title = `An-Unbroken-Task-Title-${'Z'.repeat(80)}`;
     const before = readHubFile('tasks/tasks.yml');

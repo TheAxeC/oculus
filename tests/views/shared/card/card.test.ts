@@ -5,12 +5,11 @@ import {
     codeLabel,
     deadline,
     deckSlideOf,
-    matching,
     nameOf,
     subOf,
     urlOf
 } from '../../../../src/lib/views/shared/card/card.ts';
-import type { Project } from '../../../../src/lib/data/model.ts';
+import type { Project } from '../../../../src/lib/data/model/index.ts';
 
 const translate = (key: string, ...args: (string | number)[]): string => `${key}:${args.join(',')}`;
 
@@ -40,14 +39,8 @@ function project(deadlineValue?: string): Project {
 }
 
 describe('card file helpers', () => {
-    const rows = [
-        { path: 'manuscript/Main.tex', size: 10, mtime: 1 },
-        { path: 'code/run.py', size: 20, mtime: 2 }
-    ];
-
-    it('matches paths and splits their visible parts', () => {
-        expect(matching(rows, ' MAIN ')).toEqual([rows[0]]);
-        expect(matching(rows, '')).toBe(rows);
+    // revert: src/lib/views/shared/card/card.ts:31 => return path;
+    it('audits that a path splits into its visible parts', () => {
         expect(nameOf('code/run.py')).toBe('run.py');
         expect(subOf('code/run.py')).toBe('code');
         expect(nameOf('README.md')).toBe('README.md');

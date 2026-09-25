@@ -17,7 +17,7 @@ import {
     typeCounts,
     venueText
 } from '../../../../src/lib/state/boards/board/index.ts';
-import type { Id, Snapshot } from '../../../../src/lib/data/model.ts';
+import type { Id, Snapshot } from '../../../../src/lib/data/model/index.ts';
 import { present } from '../../../fixtures/present.ts';
 import {
     CONFIG,

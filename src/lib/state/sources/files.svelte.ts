@@ -1,4 +1,5 @@
-// Layer 2, client state. The files of one project folder, fetched when a card is opened and held.
+// Layer 2, client state. The files of one project folder, fetched when a card is opened and held,
+// and the rows of it a filter keeps.
 //
 // It is state/system/docs.svelte.ts's shape over a different endpoint, and for the same reason: the
 // wire model keeps a folder listing out of the snapshot, so a board of fifty projects carries none
@@ -12,10 +13,16 @@
 // a project folder is a new version and the next call for that id fetches again. The portfolio's
 // version cannot answer this: the snapshot is rebuilt only for a file the config names.
 
-import type { EntitiesStore } from '../client/entities.svelte.ts';
+import type { EntitiesStore } from '../stores/shapes.ts';
 
 /** One file of a project folder, as the finder draws it. */
 export type FileRow = { path: string; size: number; mtime: number };
+
+/** The file rows whose folder-relative path holds the query, case aside; every row for none. */
+export function matchingFiles(all: FileRow[], needle: string): FileRow[] {
+    const text = needle.trim().toLowerCase();
+    return text === '' ? all : all.filter((row) => row.path.toLowerCase().includes(text));
+}
 
 /** One project's files as the view reads them. */
 export type FilesState = {

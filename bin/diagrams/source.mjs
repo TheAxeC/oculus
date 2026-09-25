@@ -1,13 +1,17 @@
-// Layer 4, tool. What the three diagram readers of bin/diagrams/ share: the source tree read into
-// memory, the text with its comments blanked, an import specifier resolved to a module, and the
-// pieces of Graphviz text every diagram is written with (a quoted id, the header, a cluster, the
-// node of something a reader could not follow).
+// Layer 4, tool. What the diagram readers of bin/diagrams/ share: the source tree read into memory,
+// the text with its comments blanked, the runtime import pattern and the layer rows and folder
+// order the checks declare, an import specifier resolved to a module, and the pieces of Graphviz
+// text every diagram is written with (a quoted id, the header, a cluster, the node of something a
+// reader could not follow).
 
 import { readFileSync, readdirSync } from 'node:fs';
 import { join, posix } from 'node:path';
 
 /** The file whose `LAYERS` row list groups the layer diagram, relative to the engine directory. */
 export const BOUNDARIES = 'tests/checks/tree/boundaries.test.ts';
+
+/** The file whose `ORDER` lists each layer's folders from the top down, relative to the engine. */
+export const ORDERING = 'tests/checks/imports/order.ts';
 
 /** The font every label is set in; one family keeps the text widths Graphviz measures stable. */
 const FONT = 'Helvetica,Arial,sans-serif';
@@ -20,8 +24,14 @@ export const KEYWORDS = new Set(
     'if for while switch catch return function typeof await new import super'.split(' ')
 );
 
-/** The import pattern of tests/checks/tree/boundaries.test.ts, so both read the same edges. */
-export const IMPORT = /(?:^|[\s;])(?:from|import)\s*\(?\s*['"]([^'"]+)['"]/g;
+/**
+ * The import statement of tests/checks/imports/graph.ts, its STATEMENT, so the diagrams and the
+ * checks read the same runtime imports: the third group is the specifier, and a statement opening
+ * `import type` or `export type` is no runtime import. tests/checks/diagrams/diagrams.test.ts
+ * holds the two patterns to one text.
+ */
+export const RUNTIME =
+    /(?<![\w$.])(?:(import|export)\s+(type\s+)?(?:[^'"`;]*?\s+from\s+)?|import\s*\(\s*)['"]([^'"]+)['"]/g;
 
 /**
  * @typedef {Map<string, string>} Sources Every module's text, keyed by its path relative to src.
@@ -66,6 +76,27 @@ export function readLayers(text) {
     const found = /const LAYERS\s*=\s*\[([^\]]*)\]/.exec(text);
     if (found === null) throw new Error(`${BOUNDARIES} declares no LAYERS list`);
     return [...found[1].matchAll(/'([^']+)'/g)].map((one) => one[1]);
+}
+
+/**
+ * Each layer's folders from the top down, read from the `ORDER` constant of the order file: one
+ * `name: [...]` entry per layer, the folders quoted. A file that declares none is an error here
+ * rather than a set of diagrams with no folders.
+ *
+ * @param {string} text The order file's source.
+ * @returns {Map<string, string[]>}
+ */
+export function readOrder(text) {
+    const found = /const ORDER[^=]*=\s*\{([^}]*)\}/.exec(text);
+    if (found === null) throw new Error(`${ORDERING} declares no ORDER`);
+    const order = new Map();
+    for (const entry of found[1].matchAll(/(\w+):\s*\[([^\]]*)\]/g)) {
+        order.set(
+            entry[1],
+            [...entry[2].matchAll(/'([^']+)'/g)].map((one) => one[1])
+        );
+    }
+    return order;
 }
 
 /**

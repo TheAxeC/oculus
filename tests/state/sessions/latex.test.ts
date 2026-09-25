@@ -6,7 +6,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { terminal } from '../../fixtures/sessions-fixture.ts';
-import type { SessionsPayload } from '../../../src/lib/data/model.ts';
+import type { SessionsPayload } from '../../../src/lib/data/model/index.ts';
 import { createClientState, type ClientState } from '../../fixtures/client.ts';
 
 let client: ClientState;

@@ -11,8 +11,8 @@ import { expect } from 'vitest';
 import { scratchDir } from '../../fixtures/scratch.ts';
 import { type TerminalOptions } from '../../../src/lib/server/machine/pty/routes.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
-import type { SessionRecord } from '../../../src/lib/data/model.ts';
-import { contextFixture } from '../../server/core/context-fixture.ts';
+import type { SessionRecord } from '../../../src/lib/data/model/index.ts';
+import { contextFixture } from '../../server/root/context-fixture.ts';
 
 /** This file's own directory, for reading the route module beside the source it tests. */
 export const HERE_FILE = fileURLToPath(import.meta.url);

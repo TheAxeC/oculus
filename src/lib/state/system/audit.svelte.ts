@@ -4,8 +4,8 @@
 // The split is here rather than in the view because the view's badge needs the open count too, and
 // a count computed in two places is a count the two can disagree about.
 
-import type { AuditFinding, AuditKind } from '../../data/model.ts';
-import type { EntitiesStore } from '../client/entities.svelte.ts';
+import type { AuditFinding, AuditKind } from '../../data/model/index.ts';
+import type { EntitiesStore } from '../stores/shapes.ts';
 
 // The two wire shapes the view draws, re-exported so a view names them without importing `data/`.
 export type { AuditFinding, AuditKind };

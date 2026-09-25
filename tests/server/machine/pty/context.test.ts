@@ -7,7 +7,7 @@ import { dirname, join, resolve, sep } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
 import { portfolioContext } from '../../../../src/lib/server/machine/pty/context.ts';
 import { engineDir } from '../../../../src/lib/data/sources/config.ts';
-import { writeTextAtomic } from '../../../../src/lib/server/sessions/stores/json.ts';
+import { writeTextAtomic } from '../../../../src/lib/server/core/json.ts';
 import { scratchDir, sweepScratch } from '../../../fixtures/scratch.ts';
 
 afterAll(sweepScratch);

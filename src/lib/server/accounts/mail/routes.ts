@@ -15,9 +15,9 @@
 // No answer of this module carries a token, a secret, an authorization code or a message body.
 
 import { mailKey } from '../../../data/accounts/mail.ts';
-import type { InboxKind, InboxThread, MailAccountConfig } from '../../../data/model.ts';
+import type { InboxKind, InboxThread, MailAccountConfig } from '../../../data/model/index.ts';
 import { hasToken, sameOrigin } from '../../core/auth.ts';
-import type { Opener } from '../../files/open.ts';
+import type { Opener } from '../connect/oauth.ts';
 import {
     accessToken,
     consentUrl,

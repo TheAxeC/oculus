@@ -1,7 +1,7 @@
 // Layer 2, client state. Pure venue filtering, project joins, tones and conference timing.
 // The view receives ready-to-draw groups and month columns, so its markup contains no data rules.
 
-import type { Project, Venue } from '../../data/model.ts';
+import type { Project, Venue } from '../../data/model/index.ts';
 import { parseOpenForms, type OpenForms } from '../forms/open-forms.ts';
 
 export type VenueUse = { projects: Project[]; concentrated: boolean };
@@ -165,4 +165,12 @@ export function parseVenuesState(raw: unknown): VenuesState {
     return state;
 }
 
-export type { Project, Venue } from '../../data/model.ts';
+export type { Project, Venue } from '../../data/model/index.ts';
+
+/** The journals and the conferences among the venues given, each in the order given. */
+export function venuesByCategory(venues: Venue[]): { journals: Venue[]; conferences: Venue[] } {
+    return {
+        journals: venues.filter((venue) => venue.category === 'journal'),
+        conferences: venues.filter((venue) => venue.category === 'conference')
+    };
+}

@@ -1,6 +1,6 @@
 <script module lang="ts">
     // Layer 3, view registration. Position Leads follows Lit Watch in the feeds group.
-    import type { ViewRegistration } from '../../registry';
+    import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     export const registration: ViewRegistration = {
         id: 'leads',
         label: 'views.leads',
@@ -29,20 +29,21 @@
     import { inlineMarkdown } from '$lib/ui/html';
     import {
         dismissedCount,
-        leadsSearch,
         leadIdents,
+        leadsSearch,
         localDate,
         parseLeadsState,
+        runLog,
         splitLeads,
         visibleLeads,
         type LeadsState
     } from '$lib/state/feeds/leads';
     import { asText } from '$lib/state/forms/schema';
     import { t } from '$lib/state/words/text';
-    import { cardCursor } from '$lib/state/client/instance';
-    import { feedIdents } from '$lib/state/workbench/palette';
+    import { cardCursor } from '$lib/state/workbench/layout/instance';
+    import { feedIdents } from '$lib/state/feeds/idents';
     import { viewSourceFile } from '$lib/state/sessions/view-source';
-    import type { ViewProps } from '../../registry';
+    import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 
     const {
@@ -76,16 +77,7 @@
     /** How many run-log lines the section shows before the reader asks for the rest. */
     const LOG_LINES = 6;
 
-    const log = $derived(
-        Array.isArray(data?.meta.log)
-            ? data.meta.log
-                  .filter(
-                      (line): line is string | number =>
-                          typeof line === 'string' || typeof line === 'number'
-                  )
-                  .map(String)
-            : []
-    );
+    const log = $derived(runLog(data?.meta));
     const shownLog = $derived(held.logAll ? log : log.slice(0, LOG_LINES));
     /** The feed file this view is drawn from, offered once the feed says the file is there. */
     const source = $derived(

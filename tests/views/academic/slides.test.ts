@@ -8,8 +8,9 @@
 // press would have left and reads what the reader would then see.
 //
 // What this does NOT cover: pressing anything. The environment is node and the render is the
-// server's, so the answers behind each state are covered by tests/state/life/slides.test.ts as
-// plain calls, and the presses themselves by tests/browser/workbench/present.spec.ts in a browser.
+// server's, so the answers behind each state are covered by tests/state/feeds/life/slides.test.ts
+// as plain calls, and the presses themselves by tests/browser/workbench/present.spec.ts in a
+// browser.
 
 import { render } from 'svelte/server';
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -23,9 +24,9 @@ import {
 } from '../../../src/lib/data/sources/config.ts';
 import { setCatalog, setGlyphs } from '../../../src/lib/state/words/text.ts';
 import { setVocab } from '../../../src/lib/state/words/tones.ts';
-import { deckCatalogKeys, deckFrom } from '../../../src/lib/state/life/present.ts';
-import { catalogSignature } from '../../../src/lib/state/life/slides.ts';
-import type { Project, Snapshot } from '../../../src/lib/data/model.ts';
+import { deckCatalogKeys, deckFrom } from '../../../src/lib/state/feeds/life/present.ts';
+import { catalogSignature } from '../../../src/lib/state/feeds/life/slides.ts';
+import type { Project, Snapshot } from '../../../src/lib/data/model/index.ts';
 import type { Instance } from '../../../src/lib/state/workbench/layout/index.ts';
 import { clientContext, createClientState, type ClientState } from '../../fixtures/client.ts';
 

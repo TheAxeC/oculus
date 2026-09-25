@@ -12,7 +12,7 @@
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { t } from '$lib/state/words/text';
     import { clock } from '$lib/state/words/format';
-    import type { CalendarDay, CalendarEvent } from '$lib/state/life/calendar';
+    import type { CalendarDay, CalendarEvent } from '$lib/state/feeds/life/calendar';
 
     let { days, onopen }: { days: CalendarDay[]; onopen: (id: string) => void } = $props();
 

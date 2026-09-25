@@ -14,10 +14,8 @@
 // subscribe message, which is what lets that socket send input at all.
 
 import { taskSkipPermissions } from '../../data/helpers/tasks.ts';
-import type { EntitiesStore } from '../client/entities.svelte.ts';
-import type { SocketStore } from '../client/socket.svelte.ts';
+import type { EntitiesStore, SocketStore, WritesStore } from '../stores/shapes.ts';
 import { t } from '../words/text.ts';
-import type { WritesStore } from '../client/writes.svelte.ts';
 import type {
     SessionsPayload,
     PtyPayload,
@@ -26,12 +24,12 @@ import type {
     TerminalInput,
     TerminalResize,
     TerminalResume
-} from '../../data/model.ts';
+} from '../../data/model/index.ts';
 
 // The three model types a view needs of a terminal. The boundary table lets `state/` import
 // `data/model` and lets a view import `state/`, so they reach a view from here, the way
 // state/client/selectors.svelte.ts re-exports the ones the session views read.
-export type { Terminal, TerminalKind, TerminalResume } from '../../data/model.ts';
+export type { Terminal, TerminalKind, TerminalResume } from '../../data/model/index.ts';
 
 /** The prefix of a terminal's channel, the server's `ptyChannel` seen from the page. */
 const PREFIX = 'pty:';

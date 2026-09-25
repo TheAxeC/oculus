@@ -20,7 +20,7 @@ import type {
     Project,
     Snapshot,
     Venue
-} from '../../../src/lib/data/model.ts';
+} from '../../../src/lib/data/model/index.ts';
 
 const loaded = loadConfig(engineDir());
 export const config = loaded.config;

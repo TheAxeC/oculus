@@ -8,7 +8,7 @@
 
 import { sameOrigin } from '../core/auth.ts';
 import { readTurns } from './stores/turns.ts';
-import type { SessionRecord } from '../../data/model.ts';
+import type { SessionRecord } from '../../data/model/index.ts';
 
 /**
  * How many turns a first read answers with. A session that has run all day holds thousands, and the

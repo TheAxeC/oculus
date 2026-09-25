@@ -9,9 +9,9 @@
 // rule the form marks a changed field by, so whether the tab holds unsaved work and what the form
 // says is waiting to be saved are one answer.
 
-import type { Project } from '../../data/model.ts';
+import type { Project } from '../../data/model/index.ts';
 import { asText, fieldValues } from './schema.ts';
-import type { UiStore } from '../workbench/ui.svelte.ts';
+import type { InstanceStates } from '../stores/shapes.ts';
 
 /** What one editor instance keeps: the project it was typed for, and the edits by field name. */
 export type ManifestDraft = { project: string; edits: Record<string, unknown> };
@@ -45,7 +45,7 @@ export type ManifestDraftStore = {
 };
 
 export function createManifestDraft(
-    ui: UiStore,
+    ui: InstanceStates,
     projectOf: (id: string) => Project | null
 ): ManifestDraftStore {
     function draft(instance: string): ManifestDraft | null {

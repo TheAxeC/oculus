@@ -4,7 +4,7 @@ import { render } from 'svelte/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import Radar from '../../../src/lib/views/feeds/radar/Radar.svelte';
 import { openSourceFile } from '../../../src/lib/views/shared/links/source-file.ts';
-import { findInstance } from '../../../src/lib/state/client/instance.ts';
+import { findInstance } from '../../../src/lib/state/workbench/layout/instance.ts';
 import {
     engineDir,
     glyphCatalog,
@@ -15,7 +15,7 @@ import {
 import { feedsFixture } from '../../fixtures/feeds-fixture.ts';
 import { setCatalog, setGlyphs } from '../../../src/lib/state/words/text.ts';
 import { setVocab, toneOf } from '../../../src/lib/state/words/tones.ts';
-import type { Snapshot } from '../../../src/lib/data/model.ts';
+import type { Snapshot } from '../../../src/lib/data/model/index.ts';
 import type { Instance } from '../../../src/lib/state/workbench/layout/index.ts';
 import { noop } from '../../fixtures/doubles.ts';
 import { clientContext, createClientState, type ClientState } from '../../fixtures/client.ts';

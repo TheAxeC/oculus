@@ -21,7 +21,7 @@ import type {
     Project,
     Relations,
     Snapshot
-} from '../../../src/lib/data/model.ts';
+} from '../../../src/lib/data/model/index.ts';
 import type { Instance } from '../../../src/lib/state/workbench/layout/index.ts';
 import { clientContext, createClientState, type ClientState } from '../../fixtures/client.ts';
 

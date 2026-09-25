@@ -10,7 +10,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
 import { scan } from '../../../../src/lib/server/sessions/stores/transcripts.ts';
-import type { SessionRecord } from '../../../../src/lib/data/model.ts';
+import type { SessionRecord } from '../../../../src/lib/data/model/index.ts';
 import { scratchDir, sweepScratch } from '../../../fixtures/scratch.ts';
 
 afterAll(sweepScratch);

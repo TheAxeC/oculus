@@ -1,3 +1,6 @@
+import type { ClockStore } from '../stores/shapes.ts';
+
+export type { ClockStore };
 // Layer 2, client state. The minute the page is in, as one rune.
 //
 // A board that counts days reads a moment. Reading it once when the view opens is what leaves a
@@ -10,12 +13,6 @@
 
 /** How often the held moment moves. */
 const MINUTE = 60000;
-
-/** The minute clock of one client. */
-export type ClockStore = {
-    minuteNow: () => number;
-    startMinuteClock: () => () => void;
-};
 
 export function createClock(): ClockStore {
     const held: { now: number } = $state({ now: Date.now() });

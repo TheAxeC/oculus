@@ -5,7 +5,7 @@ import { render } from 'svelte/server';
 import { beforeEach, describe, expect, it } from 'vitest';
 import SourceButton from '../../../../src/lib/views/shared/links/SourceButton.svelte';
 import { openSourceFile } from '../../../../src/lib/views/shared/links/source-file.ts';
-import { findInstance } from '../../../../src/lib/state/client/instance.ts';
+import { findInstance } from '../../../../src/lib/state/workbench/layout/instance.ts';
 import {
     engineDir,
     glyphCatalog,

@@ -12,7 +12,7 @@
 
 import { realpathSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import type { UsageAccountConfig } from '../../data/model.ts';
+import type { UsageAccountConfig } from '../../data/model/index.ts';
 
 /** The folders each store reads, every list already reduced to one folder per real path. */
 export type SessionFolders = {

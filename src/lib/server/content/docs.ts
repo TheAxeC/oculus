@@ -34,7 +34,7 @@ import { PROJECT_DOCS, isFinding, readDoc } from '../../data/sources/docs.ts';
 import { PRESENT_DOC } from '../../data/sources/present.ts';
 import { sameOrigin } from '../core/auth.ts';
 import { HUB_ROOT } from '../files/files.ts';
-import type { Finding, PortfolioConfig, Project } from '../../data/model.ts';
+import type { Finding, PortfolioConfig, Project } from '../../data/model/index.ts';
 
 /**
  * What a document read needs to know: which hub it is in, what its scan rules are, and how to reach

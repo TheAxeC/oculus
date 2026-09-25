@@ -8,7 +8,7 @@ import { rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { resolve, sep } from 'node:path';
 import { expect } from 'vitest';
-import type { MailAccountConfig } from '../../../../src/lib/data/model.ts';
+import type { MailAccountConfig } from '../../../../src/lib/data/model/index.ts';
 import { credentialFile } from '../../../../src/lib/server/accounts/connect/store.ts';
 import type { Fetcher } from '../../../../src/lib/server/accounts/connect/oauth.ts';
 import { scratchDir } from '../../../fixtures/scratch.ts';

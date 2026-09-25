@@ -11,7 +11,7 @@ import {
     isLeadDismissed,
     isLeadOpen
 } from '../../data/accounts/leads.ts';
-import { uniqueIdents } from '../workbench/palette.ts';
+import { uniqueIdents } from './idents.ts';
 
 export type LeadEntry = Record<string, unknown>;
 export type FitKey = 'strong' | 'moderate' | 'reach';
@@ -167,4 +167,15 @@ export function parseLeadsState(raw: unknown): LeadsState {
     };
     if (typeof held?.reveal === 'string' && held.reveal !== '') state.reveal = held.reveal;
     return state;
+}
+
+/** The run log the leads feed's `meta.log` carries, each line as text, newest first as written. */
+export function runLog(meta: Record<string, unknown> | undefined): string[] {
+    const log = meta?.log;
+    if (!Array.isArray(log)) return [];
+    return log
+        .filter(
+            (line): line is string | number => typeof line === 'string' || typeof line === 'number'
+        )
+        .map(String);
 }

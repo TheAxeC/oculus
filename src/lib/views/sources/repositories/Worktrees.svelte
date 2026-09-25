@@ -20,7 +20,12 @@
     import type { TreeNav } from '$lib/ui/tree/tree-keys';
     import TextInput from '$lib/ui/forms/TextInput.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import { plannedPath, worktreeLabel, type DiffSubject } from '$lib/state/sources/repositories';
+    import {
+        linkedWorktrees,
+        plannedPath,
+        worktreeLabel,
+        type DiffSubject
+    } from '$lib/state/sources/repositories';
     import type { GitState } from '$lib/state/client/selectors.svelte';
     import { t } from '$lib/state/words/text';
 
@@ -55,7 +60,7 @@
     let name = $state('');
 
     const planned = $derived(name.trim() === '' ? '' : plannedPath(root, name));
-    const others = $derived(git.worktrees.filter((one) => !one.main));
+    const others = $derived(linkedWorktrees(git));
 
     function made(): void {
         const wanted = name.trim();

@@ -1,10 +1,11 @@
-// Layer 2, client state. What the History view knows about the change log.
+// Layer 2, client state. What the History view knows about the change log, and which of its rows a
+// filter keeps.
 //
 // The log is a machine-local file and is not in the snapshot, so it is fetched from GET
 // /api/changes: one page on the first read, an older page each time the reader asks for one, and
 // the whole list again after an undo. The wire shape is declared here rather than imported, since
 // the boundary table of DESIGN.md lets `state/` import `data/model` and nothing of `server/`;
-// server/git/changes.ts holds the same shape on its own side.
+// server/core/changes.ts holds the same shape on its own side.
 //
 // The fetch is scheduled on a microtask rather than run inside the call, so reading this from a
 // $derived never writes state while a derived is running, and it is only ever made in the browser:
@@ -45,6 +46,18 @@ export type ChangesStore = {
      */
     hold: (rows: Change[], more?: boolean) => void;
 };
+
+/** The words one row is matched against: the file it wrote, what it addressed, and the field. */
+export function haystack(row: Change): string {
+    return `${row.file} ${row.key} ${row.field}`.toLowerCase();
+}
+
+/** The rows a filter leaves, in the order they were given. An empty filter leaves every row. */
+export function matching(rows: Change[], filter: string): Change[] {
+    const wanted = filter.trim().toLowerCase();
+    if (wanted === '') return rows;
+    return rows.filter((row) => haystack(row).includes(wanted));
+}
 
 /** One answer of the endpoint. */
 type Answer = { changes?: Change[]; page?: number; error?: string };

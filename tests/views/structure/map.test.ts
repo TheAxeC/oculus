@@ -15,8 +15,11 @@ import {
     mapLayout,
     parseMapState,
     tunedFor
-} from '../../../src/lib/state/boards/graph.ts';
-import type { Graph as BuiltGraph, Physics } from '../../../src/lib/state/boards/graph.ts';
+} from '../../../src/lib/state/boards/structure/graph.ts';
+import type {
+    Graph as BuiltGraph,
+    Physics
+} from '../../../src/lib/state/boards/structure/graph.ts';
 import type { Instance } from '../../../src/lib/state/workbench/layout/index.ts';
 import { catalog, fixture, install } from './lines-fixture.ts';
 import { clientContext, createClientState, type ClientState } from '../../fixtures/client.ts';

@@ -9,7 +9,7 @@ import { join } from 'node:path';
 import { afterAll, expect, describe, it } from 'vitest';
 import { parse } from 'yaml';
 import { handleWrite } from '../../../src/lib/server/edit/writes.ts';
-import type { Change } from '../../../src/lib/server/git/changes.ts';
+import type { Change } from '../../../src/lib/server/core/changes.ts';
 import type { WriteTarget } from '../../../src/lib/server/edit/writes.ts';
 import {
     AREA,

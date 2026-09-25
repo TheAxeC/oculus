@@ -2,7 +2,7 @@
     // Layer 3, focus view partial. Command-center groups and their actions live here because visual
     // grouping changes independently of ticker calculation and writes.
 
-    import Glyph from '$lib/ui/controls/Glyph.svelte';
+    import Glyph from '$lib/ui/display/Glyph.svelte';
     import Ticker from '$lib/ui/display/Ticker.svelte';
     import type { TickerRow } from '$lib/ui/display/ticker-rows';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';

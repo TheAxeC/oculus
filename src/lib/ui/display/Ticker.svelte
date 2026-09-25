@@ -35,7 +35,7 @@
     // without pressing, so it opens a row as a mouse does.
 
     import type { TickerRow } from '$lib/ui/display/ticker-rows';
-    import Glyph from '../controls/Glyph.svelte';
+    import Glyph from './Glyph.svelte';
 
     type Props = {
         rows: TickerRow[];

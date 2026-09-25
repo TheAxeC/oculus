@@ -181,7 +181,7 @@ test.describe('the Changes panel', () => {
     });
 
     // Revert: return 'none' for a root that is not there in views/shared/changes/repo-shape.ts, or
-    // set `gone.present = true` in state() of server/git/git.ts where nothing is at the path. This
+    // set `gone.present = true` in state() of server/core/git.ts where nothing is at the path. This
     // case is over the server and the view together, so either turns it red.
     test('says the workspace folder of a session whose folder has gone is not there', async ({
         page

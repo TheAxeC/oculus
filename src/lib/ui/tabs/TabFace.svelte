@@ -17,7 +17,7 @@
     // screen reader.
 
     import { type Tab } from '$lib/ui/tabs/tab-strip';
-    import Glyph from '../controls/Glyph.svelte';
+    import Glyph from '../display/Glyph.svelte';
     import Tooltip from '../menu/Tooltip.svelte';
     import { t } from '$lib/state/words/text';
 

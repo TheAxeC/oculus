@@ -4,7 +4,7 @@
 // `rg` searches all the same, and which version answers is the lockfile's rather than whatever the
 // account happens to have installed.
 //
-// This module has one subprocess call site, as server/git/git.ts does: one list argument vector,
+// This module has one subprocess call site, as server/core/git.ts does: one list argument vector,
 // never a shell string, a timeout, and a bounded read, so a pattern the reader typed can never be
 // read as syntax and a slow mount cannot hold a request open. The arguments and every refusal come
 // from data/helpers/search.ts, which the page runs too, so the two sides cannot disagree about what
@@ -28,7 +28,7 @@ import {
     type SearchQuery,
     type SearchRefusal
 } from '../../data/helpers/search.ts';
-import type { SearchAnswer, SearchFailure, SearchFile, SearchHit } from '../../data/model.ts';
+import type { SearchAnswer, SearchFailure, SearchFile, SearchHit } from '../../data/model/index.ts';
 import type { Root } from './files.ts';
 
 /**

@@ -24,23 +24,24 @@
         type StatusGit
     } from '$lib/state/workbench/navigation/status';
     import { repositoriesViewOf } from '$lib/state/sources/repositories';
-    import { configGeneration } from '$lib/state/client/generation.svelte';
+    import { configGeneration } from '$lib/state/words/generation.svelte';
     import { collectionKeys } from '$lib/data/snapshot/normalise';
-    import { typeOfFile } from '$lib/state/sources/fs';
-    import { HUB_ROOT } from '$lib/state/boards/collection';
+    import { typeOfFile, HUB_ROOT } from '$lib/state/sources/fs';
     import { createClientState } from '$lib/state/client/context';
     import { provideState } from '$lib/state/client/use';
-    import { provideTipIds } from '$lib/ui/menu/tip-ids';
+    import { createTipIds, provideTipIds } from '$lib/ui/menu/tip-ids';
     import { registerAll, registerCollections } from './views.ts';
     import type { PageData } from './$types';
 
     let { data }: { data: PageData } = $props();
 
     // The one client the page holds: every store, built here and provided to everything below, so
-    // nothing under this component reaches a store through a module.
+    // nothing under this component reaches a store through a module. The tooltip counter the
+    // primitives number their bubbles with is made here beside it, since it is `ui/`'s own and the
+    // state layer imports nothing of `ui/`.
     const client = createClientState();
     provideState(client);
-    provideTipIds(client.tipIds);
+    provideTipIds(createTipIds());
     const {
         entities: { config, git: gitPayload, hpc, portfolio, sessions, usage },
         fs: { bookmarks: savedBookmarks, workspaces },

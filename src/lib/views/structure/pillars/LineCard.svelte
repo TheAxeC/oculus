@@ -4,7 +4,7 @@
 
     import Card from '$lib/ui/frame/Card.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
-    import Glyph from '$lib/ui/controls/Glyph.svelte';
+    import Glyph from '$lib/ui/display/Glyph.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import EntryForm from '$lib/views/shared/forms/EntryForm.svelte';
     import CrossLinks from '$lib/views/shared/links/CrossLinks.svelte';
@@ -18,7 +18,7 @@
         type Project,
         type TierRow,
         type Venue
-    } from '$lib/state/words/lines';
+    } from '$lib/state/boards/structure/lines';
     import { paletteTone, toneOf } from '$lib/state/words/tones';
     import { t } from '$lib/state/words/text';
 

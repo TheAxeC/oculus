@@ -7,7 +7,7 @@
     // holds no career file, which is the ordinary case for a hub that keeps no career plan.
 
     import Tag from '$lib/ui/controls/Tag.svelte';
-    import Glyph from '$lib/ui/controls/Glyph.svelte';
+    import Glyph from '$lib/ui/display/Glyph.svelte';
     import {
         hostStatuses,
         inFlight,

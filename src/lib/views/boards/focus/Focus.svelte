@@ -1,6 +1,6 @@
 <script module lang="ts">
     // Layer 3, view registration. Focus is the first board and the landing view.
-    import type { ViewRegistration } from '../../registry';
+    import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     export const registration: ViewRegistration = {
         id: 'focus',
         label: 'views.focus',
@@ -24,7 +24,7 @@
 
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
-    import Glyph from '$lib/ui/controls/Glyph.svelte';
+    import Glyph from '$lib/ui/display/Glyph.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Band from './Band.svelte';
     import CareerPanel from './CareerPanel.svelte';
@@ -32,12 +32,20 @@
     import Lanes from './lanes/Lanes.svelte';
     import QuickAdd from './QuickAdd.svelte';
     import Tasks from './Tasks.svelte';
-    import { cardCursor } from '$lib/state/client/instance';
-    import { labelOf, lanes, waiting, type Id, type Project } from '$lib/state/boards/focus';
+    import { cardCursor } from '$lib/state/workbench/layout/instance';
+    import {
+        labelOf,
+        lanes,
+        liveProjects,
+        portfolioProjects,
+        waiting,
+        waitingTotal,
+        type Id
+    } from '$lib/state/boards/focus';
     import { personNames } from '$lib/state/boards/person';
     import { ticker } from '$lib/state/boards/ticker';
     import { t } from '$lib/state/words/text';
-    import type { ViewProps } from '../../registry';
+    import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 
     const {
@@ -61,7 +69,7 @@
 
     const config = $derived(configMap());
     const snapshot = $derived(portfolio());
-    const projects = $derived(Object.values(snapshot?.entities.projects ?? {}));
+    const projects = $derived(portfolioProjects(snapshot));
     const board = $derived(lanes(config));
 
     /**
@@ -75,9 +83,7 @@
      * The awaiting strip's people and venue tallies read them and every project of another tier
      * drawn on a lane, since a lane draws a project of any tier whose `focus:` names it.
      */
-    const live = $derived(
-        projects.filter((one: Project) => ['ideas', 'active', 'manuscripts'].includes(one.tier))
-    );
+    const live = $derived(liveProjects(projects));
 
     const strip = $derived(
         snapshot === null ? null : waiting(snapshot, config, personNames(snapshot))
@@ -92,16 +98,7 @@
         openView('project', { id, label: project === undefined ? id : labelOf(project) });
     }
 
-    const waited = $derived(
-        strip === null
-            ? 0
-            : strip.people.length +
-                  strip.venues.length +
-                  strip.blocked +
-                  strip.grants.length +
-                  strip.applications.length +
-                  strip.hosts.length
-    );
+    const waited = $derived(waitingTotal(strip));
 </script>
 
 {#snippet segment(label: string, names: string[])}

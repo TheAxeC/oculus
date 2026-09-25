@@ -26,7 +26,7 @@ import { scalar } from '../../data/helpers/guards.ts';
 import { execFile } from 'node:child_process';
 import { homedir } from 'node:os';
 import { isAbsolute, join, resolve, sep } from 'node:path';
-import { GIT } from './git.ts';
+import { GIT } from '../core/git.ts';
 
 /** Milliseconds one command that stays on this machine is given. */
 export const TIMEOUT_MS = 10000;

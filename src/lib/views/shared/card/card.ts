@@ -4,7 +4,6 @@
 import { DEADLINE_SOON, daysUntil, type BoardItem, type BoardTag } from '$lib/state/boards/board';
 import type { ClientState } from '$lib/state/client/context';
 
-export type FileRow = { path: string; size: number; mtime: number };
 export type Translate = (key: string, ...args: (string | number)[]) => string;
 
 /** How many entries of one tag kind a collapsed card draws before the rest need its own control. */
@@ -24,12 +23,6 @@ export function linkView(kind: string): string {
     if (kind === 'funding') return 'funding';
     if (kind === 'collaborators') return 'person';
     return '';
-}
-
-/** The file rows whose folder-relative path contains the case-insensitive query. */
-export function matching(all: FileRow[], needle: string): FileRow[] {
-    const text = needle.trim().toLowerCase();
-    return text === '' ? all : all.filter((row) => row.path.toLowerCase().includes(text));
 }
 
 /** The last segment of a path. */

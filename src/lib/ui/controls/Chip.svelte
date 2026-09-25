@@ -9,7 +9,7 @@
     // filled form paints `--on-c-<tone>` on `--c-<tone>`, which are the pairs
     // tests/checks/look/contrast.test.ts measures under every theme.
 
-    import Glyph from './Glyph.svelte';
+    import Glyph from '../display/Glyph.svelte';
     import { bracketedGlyph } from '$lib/state/words/text';
 
     type Props = {

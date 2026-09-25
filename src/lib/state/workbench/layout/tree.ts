@@ -2,7 +2,7 @@
 // change independently of workbench focus and persistence.
 
 import { item } from '../../../data/helpers/guards.ts';
-import { findInstance } from '../../client/instance.ts';
+import { findInstance } from './instance.ts';
 import {
     MAX_CHILDREN,
     MIN_SIZE,

@@ -1,0 +1,27 @@
+digraph layer_data {
+    graph [bgcolor="transparent", rankdir=TB, newrank=true, fontname="Helvetica,Arial,sans-serif", fontsize=12, nodesep=0.2, ranksep=0.5];
+    node [shape=box, color="black", fontcolor="black", fontname="Helvetica,Arial,sans-serif", fontsize=10, height=0.3, margin="0.12,0.04"];
+    edge [color="black", fontcolor="black", fontname="Helvetica,Arial,sans-serif", fontsize=8, arrowsize=0.6];
+    subgraph "cluster_data" {
+        label="data"; style=solid;
+        "folder data" [label="data"];
+        "folder data/sources" [label="data/sources"];
+        "folder data/snapshot" [label="data/snapshot"];
+        "folder data/accounts" [label="data/accounts"];
+        "folder data/helpers" [label="data/helpers"];
+        "folder data/model" [label="data/model"];
+    }
+    "folder data" -> "folder data/sources" [style=invis, weight=10];
+    "folder data/sources" -> "folder data/snapshot" [style=invis, weight=10];
+    "folder data/snapshot" -> "folder data/accounts" [style=invis, weight=10];
+    "folder data/accounts" -> "folder data/helpers" [style=invis, weight=10];
+    "folder data/helpers" -> "folder data/model" [style=invis, weight=10];
+    "folder data" -> "folder data/helpers" [label="1"];
+    "folder data" -> "folder data/snapshot" [label="2"];
+    "folder data" -> "folder data/sources" [label="8"];
+    "folder data/accounts" -> "folder data/helpers" [label="2"];
+    "folder data/snapshot" -> "folder data/helpers" [label="4"];
+    "folder data/sources" -> "folder data/accounts" [label="1"];
+    "folder data/sources" -> "folder data/helpers" [label="17"];
+    "folder data/sources" -> "folder data/snapshot" [label="1"];
+}

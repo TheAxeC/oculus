@@ -196,17 +196,33 @@ Every write through the write endpoint that changed something is recorded in the
 
 ## How the code fits together
 
-Three diagrams are drawn from the source by `npm run diagrams`, which writes each to `docs/diagrams/` as a Graphviz `.dot` file and the `.svg` drawn from it. `npm test` fails while a committed diagram differs from what the source gives now and names every such file, so a change that moves an import, a channel or a write is committed with the diagrams it redraws. A module no layer row places is drawn in a dashed group named "not placed"; so is, with its file and line, an import, a publish, a channel read or comparison, a re-export of a whole module, or a call through a computed member or a method of an imported value, whose target is not written out. A call through a local alias, and a function passed by name to a function that calls it, in the same module or another, are followed; a name that holds a function only by a branch, a second assignment or the answer of a call is not.
+The diagrams are drawn from the source by `npm run diagrams`, which writes each to `docs/diagrams/` as a Graphviz `.dot` file and the `.svg` drawn from it. `npm test` fails while a committed diagram differs from what the source gives now and names every such file, so a change that moves an import, a channel or a write is committed with the diagrams it redraws. A module no layer row places is drawn in a dashed group named "not placed". In the layers overview, an import whose target is not written out is a dashed box naming its file and line, with a dashed arrow from the box of the module that makes it; in the channel and write diagrams, the dashed "not placed" group names with its file and line a publish, a channel read or comparison, a re-export of a whole module, or a call through a computed member or a method of an imported value, whose target is not written out. A call through a local alias, and a function passed by name to a function that calls it, in the same module or another, are followed; a name that holds a function only by a branch, a second assignment or the answer of a call is not.
 
-The layers: one box per folder of `src/lib` and `src/routes`, grouped by the layer rows `tests/checks/tree/boundaries.test.ts` enforces, and an arrow for each pair of folders some import or glob joins.
+The diagrams count the imports that run: an `import type` leaves nothing behind in the built code. No module imports itself through a chain of runtime imports (`tests/checks/imports/cycles.test.ts` fails on one and names its modules in order), and inside each layer the folders have an order from the top down, declared in `tests/checks/imports/order.ts`: a module imports its own folder or one below it and never one above, a type as much as a value, and augments no module above it with a `declare module` block, and `tests/checks/imports/order.test.ts` fails on an import that climbs. The composition roots head their layers (`server/root`, which builds the server's objects and starts the watchers; `state/client`, which builds the page's stores; the shell's own `Workbench.svelte`), and what a whole layer shares sits at its foot (`server/core`, `state/stores` with the shapes of the stores other stores are handed, types only, so a store that is handed one does not depend on the module that builds it, `state/words` with the catalogs, `data/model` with the facade of every type, the files of `ui` itself).
 
-![The layers of oculus and the imports between their folders](docs/diagrams/layers.svg)
+The layers: one box per layer that an import joins, `src/routes` as one box, the Node entry and the hooks under `src` as one box named entry, and one arrow per pair that imports, labelled with how many runtime imports it carries. A file outside every layer that is no module, such as the favicon, is no box; the dashed "not placed" group holds only a module no layer places that an import joins. An import the reader cannot follow is a dashed box with its file and line and a dashed arrow from the box that makes it, which today is the Node entry's load of the built handler.
+
+![The layers of oculus and how many imports join each pair](docs/diagrams/layers.svg)
+
+Each layer on its own: its folders top to bottom in their declared order, the imports between them, and a dashed arrow from a folder to every other layer it reaches, each labelled with how many imports it carries.
+
+![The data layer's folders in their order](docs/diagrams/layer-data.svg)
+
+![The server layer's folders in their order](docs/diagrams/layer-server.svg)
+
+![The client state layer's folders in their order](docs/diagrams/layer-state.svg)
+
+![The primitives' folders in their order](docs/diagrams/layer-ui.svg)
+
+![The shell's folders in their order](docs/diagrams/layer-shell.svg)
+
+![The views' folders in their order](docs/diagrams/layer-views.svg)
 
 The channels: each server module that publishes, the channels it publishes on, and the stores and views that read each one. A dashed arrow is the page's subscription.
 
 ![The channels, from the modules that publish them to the stores and views that read them](docs/diagrams/channels.svg)
 
-The write chain: from the write route through the refusals, drawn dashed and labelled with the check that refuses, the edit modules and the change log, to the file on disk, each arrow into it labelled with the call that writes. A dotted arrow is a function or a value referred to without being called, such as an entry of a dispatch table. Every module the trace reaches from which no path leads to the disk is drawn in a dashed group named "reached, writes nothing". Pointing at any other arrow shows the functions it calls.
+The write chain: from the write route through the refusals, drawn dashed and labelled with the check that refuses, the edit modules and the change log, to the file on disk, each arrow into it labelled with the call that writes. A dotted arrow is a function or a value referred to without being called, such as an entry of a dispatch table. A module is drawn when a path from it reaches the disk or a call the trace cannot follow, or when a refusal calls it; a module the trace reaches that is none of these is left out. Pointing at any other arrow shows the functions it calls.
 
 ![The write chain, from the route to the file on disk](docs/diagrams/writes.svg)
 

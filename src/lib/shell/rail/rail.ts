@@ -49,9 +49,9 @@ export function bookmarkPicked(saved: readonly Bookmark[], id: string): Bookmark
 }
 
 /**
- * What openView is handed for a bookmark. It is state/client/instance.ts's, since the file browser
- * opens a bookmark as well and the same document opened from the two places is one tab; the rail
- * re-exports it under the name its own readers know it by.
+ * What openView is handed for a bookmark. It is state/workbench/layout/instance.ts's, since the
+ * file browser opens a bookmark as well and the same document opened from the two places is one
+ * tab; the rail re-exports it under the name its own readers know it by.
  */
 export { documentState } from '$lib/state/workbench/layout';
 

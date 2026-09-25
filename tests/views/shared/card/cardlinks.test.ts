@@ -8,7 +8,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import CardLinks from '../../../../src/lib/views/shared/card/CardLinks.svelte';
 import { SHOWN, linkView, shownTags } from '../../../../src/lib/views/shared/card/card.ts';
 import type { BoardItem, BoardTag } from '../../../../src/lib/state/boards/board/index.ts';
-import type { Project } from '../../../../src/lib/data/model.ts';
+import type { Project } from '../../../../src/lib/data/model/index.ts';
 import {
     engineDir,
     glyphCatalog,

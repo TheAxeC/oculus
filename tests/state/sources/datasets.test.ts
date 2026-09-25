@@ -8,7 +8,8 @@ import {
     datasetSearch,
     parseDataState,
     recoveryCommand,
-    type Dataset
+    type Dataset,
+    datasetUsers
 } from '../../../src/lib/state/sources/datasets.ts';
 import {
     applyThemeFacets,
@@ -140,5 +141,15 @@ describe('dataset instance state and recovery command', () => {
     it('quotes the dataset key as one shell word', () => {
         expect(recoveryCommand('mimic-iv')).toBe("python3 tools/data/redownload.py 'mimic-iv'");
         expect(recoveryCommand("one'key")).toBe("python3 tools/data/redownload.py 'one'\"'\"'key'");
+    });
+});
+
+describe('the projects a dataset names as its users', () => {
+    // revert: src/lib/state/sources/datasets.ts:80 => ;
+    it('are joined in the order named, an unknown id left out', () => {
+        const projects = [{ id: 'a' }, { id: 'b' }] as unknown as Parameters<
+            typeof datasetUsers
+        >[1];
+        expect(datasetUsers(['b', 'gone', 'a'], projects).map((one) => one.id)).toEqual(['b', 'a']);
     });
 });

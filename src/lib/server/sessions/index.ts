@@ -2,7 +2,7 @@
 // Composition only, so the order of the two steps is the whole content of this file.
 
 import { join } from 'node:path';
-import type { SessionsPayload, Snapshot, Terminal } from '../../data/model.ts';
+import type { SessionsPayload, Snapshot, Terminal } from '../../data/model/index.ts';
 import { group, type ProjectFolder } from './group.ts';
 import { HookStore, mergeHooks } from './stores/hooks.ts';
 import { defaultOverridesPath } from './overrides.ts';
@@ -24,8 +24,8 @@ export type SessionsOptions = ScanOptions & {
     terminals?: Terminal[];
 };
 
-// The payload's own shape lives in data/model.ts with the rest of the wire, since the `sessions`
-// channel carries it and the client state reads it there.
+// The payload's own shape lives in data/model/index.ts with the rest of the wire, since the
+// `sessions` channel carries it and the client state reads it there.
 export type { SessionsPayload };
 
 /** Every project's absolute folder with its title, which is what the area scoring is given. */

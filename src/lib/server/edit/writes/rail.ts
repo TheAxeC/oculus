@@ -20,7 +20,7 @@ import {
     type RailEntry
 } from '../../../data/sources/config/rail.ts';
 import { entryText, othersThan, readBack, setItems } from '../list-edit.ts';
-import type { ChangeRecord } from '../../git/changes.ts';
+import type { ChangeRecord } from '../../core/changes.ts';
 
 /** The top-level key of config/layout.yml the rail's list lives under. */
 export const RAIL = 'rail';

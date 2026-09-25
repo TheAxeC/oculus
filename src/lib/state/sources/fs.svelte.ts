@@ -55,9 +55,9 @@
 // byte it tells a cut by, and the answer is held for the round, so the tree, the tab it opens and a
 // second click on the same row ask the server once.
 
-import type { Entry, FilesPayload, SchemaField } from '../../data/model.ts';
+import type { Entry, FilesPayload, SchemaField } from '../../data/model/index.ts';
 import { TEXT_SNIFF_READ } from '../../data/helpers/text-kind.ts';
-import type { EntitiesStore } from '../client/entities.svelte.ts';
+import type { EntitiesStore, WriteAnswer, WritesStore } from '../stores/shapes.ts';
 import {
     LISTING_FORMS,
     NO_BOOKMARKS,
@@ -97,7 +97,6 @@ import {
     type ListingShown
 } from './fs.ts';
 import { t } from '../words/text.ts';
-import type { WriteAnswer, WritesStore } from '../client/writes.svelte.ts';
 
 export { fileBytesUrl, FS_PATH, listingUrl, readCapped } from './fs-transport.ts';
 export type {

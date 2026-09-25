@@ -6,14 +6,14 @@
 // tone through tones.ts, never a hex. That is what keeps the vocabulary in config and this file
 // free of both.
 
-import type { Collection, Entry, Id, Project, Snapshot, Venue } from '../../data/model.ts';
+import type { Collection, Entry, Id, Project, Snapshot, Venue } from '../../data/model/index.ts';
 // `str` here is the shared `text`: a config or entry value of the wrong type reads as the empty
 // string. The alias also keeps the name off the several `const text` locals in this file.
 import { isMap, byKey, text as str } from '../../data/helpers/guards.ts';
 
 // The boundary table lets `views/` import `state/` and nothing of `data/`, so the three model types
 // the Focus view names reach it from here, beside the functions that take and return them.
-export type { Id, Project, Venue } from '../../data/model.ts';
+export type { Id, Project, Venue } from '../../data/model/index.ts';
 import { daysUntil } from './board/index.ts';
 import { UNKNOWN_TONE, toneOf } from '../words/tones.ts';
 import { waitingLabel } from './waiting.ts';
@@ -314,4 +314,44 @@ export function entriesOf(collections: Record<Id, Collection>, key: string): Ent
 export function labelOf(project: Project): string {
     const short = project.short ?? '';
     return short === '' ? project.title : short;
+}
+
+/** The projects quick add may write to: those of the three live tiers, in the order given. */
+export function liveProjects(projects: Project[]): Project[] {
+    return projects.filter((one) => ['ideas', 'active', 'manuscripts'].includes(one.tier));
+}
+
+/**
+ * The next priority in the cycle: unset, then every level of `priority_levels` from the fewest
+ * flames to the most, then unset again, so one click on an unset card asks for the least. A value
+ * the levels do not hold starts the cycle over.
+ */
+export function nextPriority(levels: Priority[], current: string | undefined): string {
+    const climbing = [...levels].sort((a, b) => a.flames - b.flames);
+    const cycle = ['', ...climbing.map((level) => level.key)];
+    const at = cycle.indexOf(current ?? '');
+    return cycle[(at < 0 ? 0 : at + 1) % cycle.length];
+}
+
+/** The lanes of one cluster, in the board's order. */
+export function lanesIn(board: Lane[], cluster: string): Lane[] {
+    return board.filter((one) => one.cluster === cluster);
+}
+
+/** Every project of the portfolio, in the order the snapshot holds them; none before it arrives. */
+export function portfolioProjects(snapshot: Snapshot | null): Project[] {
+    return Object.values(snapshot?.entities.projects ?? {});
+}
+
+/** How many things the awaiting strip waits on: people, venues, blocked cards and the rest. */
+export function waitingTotal(strip: Waiting | null): number {
+    if (strip === null) return 0;
+    return (
+        strip.people.length +
+        strip.venues.length +
+        strip.blocked +
+        strip.grants.length +
+        strip.applications.length +
+        strip.hosts.length
+    );
 }

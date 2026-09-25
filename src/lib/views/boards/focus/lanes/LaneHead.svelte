@@ -12,7 +12,7 @@
     // Lanes.svelte fades a muted lane's body and sub-line rather than the lane, so the header keeps
     // full opacity.
 
-    import Glyph from '$lib/ui/controls/Glyph.svelte';
+    import Glyph from '$lib/ui/display/Glyph.svelte';
 
     type Props = {
         /** The lane's words, already translated by the view. */

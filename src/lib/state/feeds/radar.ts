@@ -1,7 +1,7 @@
 // Layer 2, client state. Pure Lit Watch grouping, searching, ordering, joins, and saved view state.
 // The view receives ready-to-draw groups and seeds while this module names no component.
 
-import type { Project } from '../../data/model.ts';
+import type { Project } from '../../data/model/index.ts';
 import { byKey } from '../../data/helpers/guards.ts';
 
 export type { Project };
@@ -125,4 +125,20 @@ export function parseRadarState(raw: unknown): RadarState {
     };
     if (typeof held.reveal === 'string' && held.reveal !== '') state.reveal = held.reveal;
     return state;
+}
+
+/** The live entries and the dismissed ones of the feed, each in the order given. */
+export function dismissedSplit(entries: RadarEntry[]): {
+    live: RadarEntry[];
+    dismissed: RadarEntry[];
+} {
+    return {
+        live: entries.filter((entry) => !isDismissed(entry)),
+        dismissed: entries.filter(isDismissed)
+    };
+}
+
+/** The buckets the entries fall into, a bucket that holds none of them left out. */
+export function filledBuckets(entries: RadarEntry[], buckets: RadarBucket[]): RadarGroup[] {
+    return bucketsOf(entries, buckets).filter((group) => group.entries.length > 0);
 }

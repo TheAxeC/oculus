@@ -1,6 +1,6 @@
 <script module lang="ts">
     // Layer 3, view registration. LinkedIn closes the feeds group.
-    import type { ViewRegistration } from '../../registry';
+    import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     export const registration: ViewRegistration = {
         id: 'linkedin',
         label: 'views.linkedin',
@@ -23,7 +23,7 @@
     // is the way into the text from here.
 
     import Empty from '$lib/ui/frame/Empty.svelte';
-    import Glyph from '$lib/ui/controls/Glyph.svelte';
+    import Glyph from '$lib/ui/display/Glyph.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Search from '$lib/ui/controls/Search.svelte';
     import Toolbar from '$lib/ui/frame/Toolbar.svelte';
@@ -44,10 +44,10 @@
         type SchemaField
     } from '$lib/state/feeds/linkedin';
     import { t } from '$lib/state/words/text';
-    import { cardCursor } from '$lib/state/client/instance';
-    import { feedIdents } from '$lib/state/workbench/palette';
+    import { cardCursor } from '$lib/state/workbench/layout/instance';
+    import { feedIdents } from '$lib/state/feeds/idents';
     import type { WriteAnswer } from '$lib/state/client/writes.svelte';
-    import type { ViewProps } from '../../registry';
+    import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 
     const {

@@ -8,7 +8,7 @@
 // is tests/browser/workbench/unsaved-forms.spec.ts.
 
 import { beforeEach, describe, expect, it } from 'vitest';
-import type { Entry, Snapshot } from '../../../src/lib/data/model.ts';
+import type { Entry, Snapshot } from '../../../src/lib/data/model/index.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
 import {
     ADDED_SUFFIX,

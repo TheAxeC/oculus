@@ -26,9 +26,9 @@
 // target (localDrafts) with the same shape, and draftTarget() is the one place a form is given one
 // or the other.
 
-import type { Collection, Entry, Snapshot } from '../../data/model.ts';
+import type { Collection, Entry, Snapshot } from '../../data/model/index.ts';
 import { controlValue, sameSaved, type FormValue } from './form-values.ts';
-import type { UiStore } from '../workbench/ui.svelte.ts';
+import type { InstanceStates } from '../stores/shapes.ts';
 
 /**
  * One typed field: what the control holds, its kind, and what the control held when it was typed.
@@ -238,7 +238,7 @@ export type FormDraftsStore = {
     toggleEdit: (instance: string, collection: string, open: string, id: string) => string;
 };
 
-export function createFormDrafts(ui: UiStore, entryOf: EntryLookup): FormDraftsStore {
+export function createFormDrafts(ui: InstanceStates, entryOf: EntryLookup): FormDraftsStore {
     // Which forms have a save out, by instance and by form key. A save takes its instance and its
     // form before the request goes and says so here, so a rule reading a form nobody is looking at
     // knows a request is still on its way for it: the form may be in a tab never shown on this

@@ -76,12 +76,6 @@ export function linkedinOverdue(
     return days !== null && days > cadenceDays;
 }
 
-/** A finite number from merged config, or null when that key is absent or invalid. */
-export function numericSetting(config: Record<string, unknown>, key: string): number | null {
-    const value = config[key];
-    return typeof value === 'number' && Number.isFinite(value) ? value : null;
-}
-
 /** Count project types in the supplied order, including a zero cell for an absent type. */
 export function typeSplit(projects: BadgeProject[], order: string[]): SplitCount[] {
     return order.map((label) => ({

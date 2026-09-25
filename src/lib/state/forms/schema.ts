@@ -11,7 +11,7 @@
 // more. Eleven of the schema's fields are not in the model (NOT_IN_MODEL below), so the form opens
 // them empty; the write itself handles them like any other, since it reads the manifest from disk.
 
-import type { Id, Project, Snapshot } from '../../data/model.ts';
+import type { Id, Project, Snapshot } from '../../data/model/index.ts';
 import { isMap, scalar } from '../../data/helpers/guards.ts';
 
 /** One field of the form, in the order config/catalogs/manifest-schema.yml lists it. */
@@ -212,4 +212,9 @@ export function asText(value: unknown): string {
     if (value === undefined || value === null) return '';
     if (Array.isArray(value)) return value.map((one) => scalar(one)).join('\n');
     return scalar(value);
+}
+
+/** The fields of one section of the manifest form, in file order. */
+export function fieldsOfSection(fields: FormField[], section: string): FormField[] {
+    return fields.filter((one) => one.section === section);
 }

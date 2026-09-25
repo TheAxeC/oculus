@@ -5,7 +5,7 @@
 // readers make the same authenticated GET and answer a refusal with the same line; what is here is
 // the calendar's own half of that pairing.
 
-import type { CalendarEvent, CalendarListEntry } from '../../../data/model.ts';
+import type { CalendarEvent, CalendarListEntry } from '../../../data/model/index.ts';
 import type { Fetcher } from '../connect/oauth.ts';
 
 export { getJson, httpsLink, PAGE_MAX, rowsOf } from '../connect/api.ts';

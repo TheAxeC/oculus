@@ -6,7 +6,7 @@ import { readFileSync } from 'node:fs';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { render } from 'svelte/server';
 import EntryForm from '../../../../src/lib/views/shared/forms/EntryForm.svelte';
-import type { Entry } from '../../../../src/lib/data/model.ts';
+import type { Entry } from '../../../../src/lib/data/model/index.ts';
 import { formKey } from '../../../../src/lib/state/forms/form-drafts.svelte.ts';
 import { INSTANCE_KEY } from '../../../../src/lib/state/client/instance-context.ts';
 import { noop } from '../../../fixtures/doubles.ts';
@@ -199,21 +199,17 @@ describe('what a reorder and a cleared control send', () => {
     // The drop and the save are DOM events no server render fires, so the two rules are read off
     // the source: the order the drag writes, and the value an emptied control saves as. The pure
     // halves, movedOrder and clearedValue, are tested in tests/state/boards/collection.test.ts.
-    it('writes the file own order, never the pinned-first order the cards are drawn in', () => {
+    // revert: src/lib/views/boards/collection/Collection.svelte:161 => const order = fileOrder(entries, schema);
+    it('audits that a reorder writes the file own order, never the pinned-first one', () => {
         const source = readFileSync('src/lib/views/boards/collection/Collection.svelte', 'utf8');
-        const order = source.slice(source.indexOf('function fileOrder()'));
-        const body = order.slice(0, order.indexOf('\n    }'));
-        expect(body).toContain('(collection?.entries ?? [])');
-        // the order written is the file's own, so the reader that draws the pinned card first is
-        // not in it
-        expect(body).not.toContain('pinnedFirst');
-        // nor a map over any other list of entries
-        expect(body).not.toContain('entries.map');
-        // nor the shown list, which the filter and the pinned-first order have already changed
-        expect(body).not.toContain('shown');
-        // Both callers take their order from that one reader and from nothing else.
-        expect(source).toContain('const order = fileOrder();');
-        expect(source.match(/fileOrder\(\)/g)).toHaveLength(3);
+        // Both callers, the drop and the keyboard carry, take their order from state's fileOrder
+        // over the file's own entries, never over `entries` (pinned first) or `shown` (filtered),
+        // which the cards are drawn from.
+        const calls = [...source.matchAll(/fileOrder\(([^)]*)\)/g)].map((one) => one[1]);
+        expect(calls).toEqual([
+            'collection?.entries ?? [], schema',
+            'collection?.entries ?? [], schema'
+        ]);
     });
 
     it('sends the empty string for a control the reader cleared on an entry that exists', () => {

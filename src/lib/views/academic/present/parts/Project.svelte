@@ -9,10 +9,10 @@
     import Equation from './Equation.svelte';
     import Panel from '../Panel.svelte';
     import Words from './Words.svelte';
-    import { hasSlideContent } from '$lib/state/life/present';
+    import { hasSlideContent } from '$lib/state/feeds/life/present';
     import { typeTone } from '$lib/state/words/tones';
     import { t } from '$lib/state/words/text';
-    import type { DeckTheme, PresentSlide, Project } from '$lib/state/life/present';
+    import type { DeckTheme, PresentSlide, Project } from '$lib/state/feeds/life/present';
 
     type Props = {
         slide: PresentSlide;

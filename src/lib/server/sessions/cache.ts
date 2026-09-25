@@ -7,9 +7,9 @@
 // away whole. Both stores live in the one file, keyed by path.
 
 import { existsSync } from 'node:fs';
-import type { SessionTool } from '../../data/model.ts';
+import type { SessionTool } from '../../data/model/index.ts';
 import type { TranscriptFile } from '../transcripts/stores.ts';
-import { isMap, readJson, whole, writeJsonAtomic } from './stores/json.ts';
+import { isMap, readJson, whole, writeJsonAtomic } from '../core/json.ts';
 import { newAcc, type Acc } from './record.ts';
 
 /**

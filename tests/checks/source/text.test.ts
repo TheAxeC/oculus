@@ -63,7 +63,7 @@ describe('t', () => {
         expect(() => t('app.missing')).toThrow(/app\.missing/);
     });
 
-    // revert: src/lib/state/words/text.ts:55 => return value.replace(/\{G\.\w+\}/g, 'X');
+    // revert: src/lib/state/words/text.ts:56 => return value.replace(/\{G\.\w+\}/g, 'X');
     it('draws a catalog line as written, with nothing filled into a glyph-shaped token', () => {
         setCatalog({ 'radar.head': '{G.litwatch} watch' });
         setGlyphs(GLYPHS);
@@ -86,7 +86,7 @@ describe('the catalog', () => {
 });
 
 describe('glyph', () => {
-    // revert: src/lib/state/words/text.ts:81 => return glyphMode() === 'ascii' ? standIn : name;
+    // revert: src/lib/state/words/text.ts:82 => return glyphMode() === 'ascii' ? standIn : name;
     it('answers the stand-in config/catalogs/glyphs.yml gives a name, in either mode', () => {
         setGlyphs(GLYPHS);
         setGlyphMode('icon');
@@ -104,7 +104,7 @@ describe('glyph', () => {
         }
     });
 
-    // revert: src/lib/state/words/text.ts:80 => delete
+    // revert: src/lib/state/words/text.ts:81 => delete
     it('throws on a name config/catalogs/glyphs.yml does not hold, in either mode', () => {
         setGlyphs(GLYPHS);
         setGlyphMode('ascii');
@@ -115,7 +115,7 @@ describe('glyph', () => {
 });
 
 describe('bracketedGlyph', () => {
-    // revert: src/lib/state/words/text.ts:112 => delete
+    // revert: src/lib/state/words/text.ts:113 => delete
     it('reads a bracketed stand-in as a tag only while the stand-ins are drawn', () => {
         setGlyphs(GLYPHS);
         setGlyphMode('ascii');

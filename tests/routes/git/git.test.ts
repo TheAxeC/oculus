@@ -19,7 +19,7 @@ import {
 import { mintToken } from '../../../src/lib/server/core/auth.ts';
 import { engineDir } from '../../../src/lib/data/sources/config.ts';
 import type { GitOptions } from '../../../src/lib/server/git/git-routes.ts';
-import { contextFixture } from '../../server/core/context-fixture.ts';
+import { contextFixture } from '../../server/root/context-fixture.ts';
 
 const SERVER = contextFixture({ token: mintToken() });
 const TOKEN = SERVER.token;

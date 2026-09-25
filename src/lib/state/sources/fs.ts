@@ -13,9 +13,29 @@
 // extensions is wrong about every name nobody put on it.
 
 import { isTextBytes } from '../../data/helpers/text-kind.ts';
-import { HUB_ROOT, normalisePath } from '../boards/collection.ts';
 
 export { opensInProgram } from '../../data/helpers/opens-in-program.ts';
+
+/** The root api/file serves the hub itself under, for a link that is a path inside the hub. */
+export const HUB_ROOT = 'hub';
+
+/**
+ * A path by its segments: the empty and the `.` ones dropped, and each `..` taking the segment
+ * before it away, so `funding/x/`, `./funding//x` and `network/../funding/x` are one path. A `..`
+ * with no segment before it is kept, which is how a path climbing above its root still says so.
+ */
+export function normalisePath(path: string): string {
+    const kept: string[] = [];
+    for (const part of path.split('/')) {
+        if (part === '' || part === '.') continue;
+        if (part === '..' && kept.length > 0 && kept[kept.length - 1] !== '..') {
+            kept.pop();
+            continue;
+        }
+        kept.push(part);
+    }
+    return kept.join('/');
+}
 
 /**
  * The key the engine's own `config/` folder is served under, which is what the Config view lists

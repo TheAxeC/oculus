@@ -22,7 +22,8 @@ import { scalar } from '../../../data/helpers/guards.ts';
 import { hasToken, sameOrigin } from '../../core/auth.ts';
 import { loadConfig, loadLocalOrDefaults, textCatalog } from '../../../data/sources/config.ts';
 import { MANUSCRIPT, mains } from '../../content/latex.ts';
-import { projectDirectory, startChat, words, type ChatOptions } from './chat.ts';
+import { projectDirectory } from '../../files/files.ts';
+import { startChat, words, type ChatOptions } from './chat.ts';
 import {
     KINDS,
     RESUME_TOOLS,
@@ -34,7 +35,7 @@ import {
     stopTerminal,
     type StartOptions
 } from './sessions.ts';
-import type { SessionRecord, TerminalKind, TerminalResume } from '../../../data/model.ts';
+import type { SessionRecord, TerminalKind, TerminalResume } from '../../../data/model/index.ts';
 
 /** The catalog keys the page has words for; every other refusal is the server's own sentence. */
 const UNKNOWN = 'sessions.resume_unknown';

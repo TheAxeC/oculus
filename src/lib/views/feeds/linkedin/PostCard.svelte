@@ -7,7 +7,7 @@
     import Card from '$lib/ui/frame/Card.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import { HUB_ROOT } from '$lib/state/boards/collection';
+    import { HUB_ROOT } from '$lib/state/sources/fs';
     import { snippet, type LinkedinEntry } from '$lib/state/feeds/linkedin';
     import { t } from '$lib/state/words/text';
     import type { WriteAnswer } from '$lib/state/client/writes.svelte';

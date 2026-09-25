@@ -1,7 +1,7 @@
 <script module lang="ts">
     // Layer 3, view registration. A hub document opens from its group in the view catalogue and
     // is not listed as a view of its own.
-    import type { ViewRegistration } from '../../registry';
+    import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
 
     export const registration: ViewRegistration = {
         id: 'doc',
@@ -29,7 +29,7 @@
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Markdown from '../../shared/prose/Markdown.svelte';
     import { t } from '$lib/state/words/text';
-    import type { ViewProps } from '../../registry';
+    import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 
     const {

@@ -20,9 +20,10 @@ import {
     rootsUnread,
     type FsEntry,
     type RevealAsk,
-    type RevealOutcome
+    type RevealOutcome,
+    normalisePath
 } from '../../../../../src/lib/state/sources/fs.ts';
-import { hubPathsOf, normalisePath } from '../../../../../src/lib/state/boards/collection.ts';
+import { hubPathsOf } from '../../../../../src/lib/state/boards/collection.ts';
 import {
     findInstance,
     findView,

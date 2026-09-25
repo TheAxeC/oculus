@@ -1,6 +1,6 @@
 <script module lang="ts">
     // Layer 3, view registration. Search closes the Sources group, after Repositories.
-    import type { ViewRegistration } from '../../registry';
+    import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     export const registration: ViewRegistration = {
         id: 'search',
         label: 'views.search',
@@ -35,8 +35,9 @@
     import Results from './Results.svelte';
     import { openSourceFile } from '../../shared/links/source-file';
     import { ALL_ROOTS, type SearchFile } from '$lib/state/sources/search';
+    import { currentWorkspace } from '$lib/state/sources/fs-transport';
     import { t } from '$lib/state/words/text';
-    import type { ViewProps } from '../../registry';
+    import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 
     const client = useState();
@@ -50,9 +51,7 @@
     const held = $derived(searchState(instance.id));
     const running = $derived(searchRunning(instance.id));
     const saved = $derived(workspaces());
-    const current = $derived(
-        saved.workspaces.find((one) => one.name === saved.current) ?? { name: '', roots: [] }
-    );
+    const current = $derived(currentWorkspace(saved));
     const roots = $derived(current.roots.map((one) => one.key));
 
     function run(): void {

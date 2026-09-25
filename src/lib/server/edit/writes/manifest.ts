@@ -14,11 +14,11 @@ import { parse } from 'yaml';
 import { isMap } from '../../../data/helpers/guards.ts';
 import { readManifests } from '../../../data/sources/manifests.ts';
 import { fieldNames } from '../../../data/snapshot/validate.ts';
-import { plain } from '../../git/changes.ts';
+import { plain } from '../../core/changes.ts';
 import { renderScalar, setFields } from '../yaml-edit.ts';
-import type { ChangeRecord } from '../../git/changes.ts';
+import type { ChangeRecord } from '../../core/changes.ts';
 import type { FieldValue, Refusal } from '../yaml-edit.ts';
-import type { PortfolioConfig } from '../../../data/model.ts';
+import type { PortfolioConfig } from '../../../data/model/index.ts';
 import type { WriteOutcome } from '../writes.ts';
 
 /** The name of the manifest file, which is the only name this module ever writes. */

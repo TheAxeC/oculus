@@ -3,10 +3,10 @@
 // free of stores while exposing only the snapshot, socket feeds, merged config and triage-notes run
 // date the shell needs.
 
-import type { EntitiesStore } from '../client/entities.svelte.ts';
+import type { EntitiesStore } from '../stores/shapes.ts';
 import type { FeedsStore } from '../feeds/feeds.svelte.ts';
 import type { PaletteFeeds } from './palette.ts';
-import type { Snapshot } from '../../data/model.ts';
+import type { Snapshot } from '../../data/model/index.ts';
 
 export type PaletteSource = {
     snapshot: Snapshot | null;

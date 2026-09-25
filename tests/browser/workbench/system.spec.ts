@@ -7,7 +7,7 @@
 // into that hub, which is the run's own copy of demo/ under the system temporary directory, and
 // removed again at the end.
 //
-// The manual shows the three diagrams of docs/diagrams/, each drawn in the prose's own colour from
+// The manual shows every diagram of docs/diagrams/, each drawn in the prose's own colour from
 // the diagram route under a light theme and a dark one; a diagram file that carries a script is
 // drawn as its drawing alone; a diagram whose view closes while its answer is held back aborts its
 // fetch; and the route refuses a name that is not one of that folder's `.svg` files.
@@ -68,7 +68,7 @@ async function paint(
     });
 }
 
-test('the manual draws the three diagrams in the colour of its prose, light and dark', async ({
+test('the manual draws every diagram in the colour of its prose, light and dark', async ({
     page
 }) => {
     // revert: src/lib/views/system/help/Diagram.svelte:78 => color: black;
@@ -318,7 +318,7 @@ test('the machine own file is the last card and opens in a source tab', async ({
 test('every configuration card is as tall as what it holds, and the list scrolls', async ({
     page
 }) => {
-    // revert: src/lib/views/system/config/Config.svelte:144 => delete
+    // revert: src/lib/views/system/config/Config.svelte:150 => delete
     await boot(page);
     await openView(page, 'config', t('views.config'));
     await expect(card(page, 'local.yml').locator('button[aria-expanded]')).toBeVisible();

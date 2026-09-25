@@ -379,3 +379,95 @@ A finding about main:
   - `tests/views/shared/card/card.test.ts`
 - **Revert-line repairs:** 30 test files listed by `fix2.py`, plus `fs.test.ts`, `fs-channel.test.ts`, `tones.test.ts` and `collection.test.ts`.
 - **Docs:** `DESIGN.md`, `HELP.md`.
+
+## Repair round 2, the builder's reply
+
+Everything in the round is done.
+
+No git command was run in this round.
+
+## 1. The store shapes have a folder of their own
+- The shapes are now in `src/lib/state/stores/shapes.ts` (moved from `state/words/stores.ts`).
+  - Its head comment (lines 1-8) says what the module holds: the shapes of the shared stores, and that a store handed one names it from here rather than from the module that builds it. It makes no appeal to the order.
+- `tests/checks/imports/order.ts:51` places `state/stores` last in the state order, below `state/words`.
+- `ls src/lib/state/words` now lists only `appearance.ts format.ts generation.svelte.ts glyphmode.svelte.ts languages.ts text.ts themes.ts tones.ts`.
+- **Move that made room:** `state/life` is folded into `state/feeds` as `state/feeds/life/`. The 8 life modules and their 6 tests moved to `tests/state/feeds/life/`. `ls src/lib/state` now shows 10 folders: boards, client, feeds, forms, sessions, sources, stores, system, words, workbench.
+  - Why this fold: feeds and life are adjacent in the state order (feeds directly above life). Nothing in feeds imports life, and life is imported only by `state/client` and `state/workbench`, which sit above both. So one folder holds the pair with no import changing direction.
+  - Both folders hold the reader's own material outside the portfolio: mail, leads, posts and radar in feeds; calendar, memories, notes and the deck in life.
+  - Every other merge breaks the order or the ten-item limit:
+    - `forms` is imported by boards and sources, so it cannot go above them.
+    - `sources`, `boards` and `workbench` are full at 10 items.
+    - `life` merged into `sessions` or `system` would exceed ten items.
+  - Specifiers, comments, revert paths and `allow-duplication.txt` entries were rewritten from `state/life/` to `state/feeds/life/`. Five comments were reflowed to stay within column 100.
+- **Docs:**
+  - `DESIGN.md:173` names `state/stores` and says why the shapes live there: a types-only module every store folder reads, so no store depends on the module that builds another, and `state/words` holds words and nothing about stores.
+  - `DESIGN.md:57-60` is the updated LAYER 2 line.
+  - `HELP.md:201` says the same.
+  - The head of `order.ts` (lines 10-12) names `state/stores` at the foot.
+- **Proof:** order.test "holds the state folders" passes. `docs/diagrams/layer-state.dot:16` draws `state/stores` last (`"folder state/words" -> "folder state/stores"`).
+
+## 2. BadgeClient is a declared shape
+- `src/lib/state/workbench/navigation/registry.ts:22-48` declares `BadgeClient` as the stores the badge hooks read:
+  - `calendar.badgeText`
+  - `hpc.badgeText`
+  - `railBadges`: boardBadge, boardBadgeTitle, boardCells, collectionBadge, collectionBadgeTone, collectionBadgeTitle, applicationsBadge, inboxBadge, leadsBadge, linkedinBadgeGlyph, auditBadge, queueBadgeTitle, queueCells, calendarBadgeTitle, calendarCells
+- That is every hook registered in the views (Calendar, Hpc, Inbox, Leads, Linkedin, Audit, Projects, Collection).
+- The `declare module` block and both eslint exemptions are gone from `state/client/context.ts`. `grep -c eslint-disable` over `registry.ts` and `context.ts` gives 0.
+- The client satisfies the shape structurally: `npm run check` compiles `badgeOf(found, client)` in PaneView, RailPages and Catalogue with 0 errors.
+- **The route is closed:**
+  - `tests/checks/imports/graph.ts:65-86`: in `types` mode, `runtimeImports` also reads each `declare module '<spec>'` block that names a module of the tree, marked `augments`. A package augmentation such as `highlight-languages.d.ts` names no module of the tree and is skipped.
+  - `order.ts:127-128` names it as `file:line augments module (folder, above folder)`.
+  - Test at `tests/checks/imports/order.test.ts:92`:
+    - It plants a scratch tree with an upward augmentation (`state/words/merge.ts`), a downward one, and a package one.
+    - It expects exactly `state/words/merge.ts:2 augments state/client/context.ts (state/client, above state/words)`.
+    - Revert `graph.ts:86 => for (const match of text.matchAll(/(?!)/g)) {` is red.
+- **Docs:** `DESIGN.md:173` and `HELP.md:201` state the augmentation rule. The heads of `graph.ts` and `order.ts` do too.
+
+## A fix outside the two items
+- `tests/server/sessions/stores/dispatches.test.ts` went red in the first full run of this round: 7 cases in "a launch read by its builder's process".
+- Cause: fixed launch dates. `startedAt '2026-09-23T10:00:05Z'` and `BEGAN 2026-09-23T10:00:04Z` fell out of the scan's two-day window (`DEFAULT_WINDOW_DAYS = 2`, `transcripts.ts:58`) at 2026-09-25T10:00:04Z, today.
+- It does not come from this round's changes: main's copy carries the same fixed `BEGAN` (line 390 of main's file).
+- The fix: lines 35-41 now set `BEGAN` to an hour before the run and `STARTED_AT` a second after it, and the case at :264 expects `STARTED_AT`. `npx vitest run` on that file: 27 passed. Its cases went red on today's clock without the fix.
+- **Main still carries the fixed dates, so this suite is red there from today.**
+
+## Verification (verbatim)
+- `npx vitest run --reporter=dot`: `Test Files  310 passed (310)` / `Tests  4853 passed (4853)`
+- `npm run check`: `COMPLETED 1391 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS`
+- `npm run build`: exit 0
+- `npm run format:check`: `All matched files use Prettier code style!`
+- `npm run lint`: exit 0
+- `LC_ALL=C grep -rna '[^ -~]' src tests bin DESIGN.md HELP.md | wc -l`: `0`
+- `sh bin/size-check.sh`: exit 0. `sh bin/folder-check.sh`: exit 0.
+- `npm run diagrams` twice, then `diff -r`: `diagrams: second run identical`
+- `lsof -iTCP:8792 -sTCP:LISTEN`: exit 1, nothing listening. Then `npx playwright test`: `386 passed (6.1m)`
+- `node bin/revert-check.mjs` over the round's 15 test files:
+  - 14 unit files: `43 reverts, 0 unproven, 44 unchecked` and `19 reverts, 0 unproven, 115 unchecked`
+  - `tests/browser/status/notices.spec.ts`: `7 reverts, 0 unproven, 0 unchecked`
+  - Every one of the 69 lines is red, with 0 GREEN.
+- Measuring script: `modules 563 edges 2098` / `module cycles 0 []` / `folder rings []` / `views->state 477 files 155 targets 65`. Edges went from 2099 in round 1 to 2098. Not verified: which edge that is. It is not the registry or context edit; the regex gives the same imports for both versions.
+- `typeup.py` (upward imports, type ones included): `0`
+- Scratch count: 7015 before, 7015 after.
+- Every process I started is stopped: port 8792 is free, and `ps` shows no vitest, playwright, revert-check or server.
+
+## Files changed in the round
+- **Moved:**
+  - `src/lib/state/words/stores.ts` to `src/lib/state/stores/shapes.ts`
+  - `src/lib/state/life/*` (8) to `src/lib/state/feeds/life/`
+  - `tests/state/life/*` (6) to `tests/state/feeds/life/`
+- **Import specifiers rewritten by the move:** the 23 state modules that read the shapes; the importers of the life modules in state, views and tests.
+- **Comments naming the life paths:**
+  - `src/lib/data/helpers/deck.ts`
+  - `src/lib/views/personal/memories/Memories.svelte`
+  - `src/lib/views/sources/note/Note.svelte`
+  - `tests/views/academic/slides.test.ts`
+  - `tests/views/sources/note.test.ts`
+  - `tests/views/personal/memories.test.ts`
+- **State:** `src/lib/state/workbench/navigation/registry.ts`, `src/lib/state/client/context.ts`
+- **Checks:**
+  - `tests/checks/imports/graph.ts`, `order.ts`, `order.test.ts`, `cycles.test.ts`
+  - `tests/checks/tree/allow-duplication.txt`
+- **Other tests:**
+  - `tests/state/workbench/rail-badges.test.ts` and `tests/state/workbench/navigation/notice-sources.test.ts`: revert lines only
+  - `tests/browser/status/notices.spec.ts`: revert line only
+  - `tests/server/sessions/stores/dispatches.test.ts`
+- **Docs and diagrams:** `DESIGN.md`, `HELP.md`, `docs/diagrams/*`

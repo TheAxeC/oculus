@@ -13,7 +13,10 @@ import {
 import { setCatalog, setGlyphs } from '../../../src/lib/state/words/text.ts';
 import { setVocab } from '../../../src/lib/state/words/tones.ts';
 import { setAppearance } from '../../../src/lib/state/words/appearance.ts';
-import type { Registration, ViewProps } from '../../../src/lib/views/registry.ts';
+import type {
+    Registration,
+    ViewProps
+} from '../../../src/lib/state/workbench/navigation/registry.ts';
 import type { Component } from 'svelte';
 import { noop } from '../../fixtures/doubles.ts';
 

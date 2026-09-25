@@ -8,6 +8,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createClientState, type ClientState } from '../../fixtures/client.ts';
+import { matchingFiles } from '../../../src/lib/state/sources/files.svelte.ts';
 
 let client: ClientState;
 let files: ClientState['files']['files'];
@@ -139,5 +140,17 @@ describe('the files of a project', () => {
         expect(files('').loading).toBe(false);
         await settle();
         expect(asked).toEqual([]);
+    });
+});
+
+describe('the project files a filter keeps', () => {
+    // revert: src/lib/state/sources/files.svelte.ts:24 => return text === '' ? all : all.filter((row) => row.path.includes(text));
+    it('are the rows whose path holds the query, case and surrounding space aside', () => {
+        const rows = [
+            { path: 'manuscript/Main.tex', size: 10, mtime: 1 },
+            { path: 'code/run.py', size: 20, mtime: 2 }
+        ];
+        expect(matchingFiles(rows, ' MAIN ')).toEqual([rows[0]]);
+        expect(matchingFiles(rows, '')).toBe(rows);
     });
 });

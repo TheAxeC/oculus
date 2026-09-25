@@ -29,27 +29,10 @@ import type {
     SessionsPayload,
     Snapshot,
     UsagePayload
-} from '../../data/model.ts';
+} from '../../data/model/index.ts';
+import type { EntitiesStore } from '../stores/shapes.ts';
 
-/** What every channel of the wire reads as, one instance per client. */
-export type EntitiesStore = {
-    receive: (message: Message) => void;
-    /** A new connection opened: take the next message of every channel whatever its version. */
-    reconnected: () => void;
-    /** Hear every message kept, after it is kept. */
-    afterReceive: (listener: (message: Message) => void) => void;
-    message: (channel: string) => Message | null;
-    portfolio: () => Snapshot | null;
-    config: () => ConfigPayload | null;
-    sessions: () => SessionsPayload | null;
-    feeds: () => FeedsPayload | null;
-    git: () => GitPayload | null;
-    hpc: () => HpcPayload | null;
-    calendar: () => CalendarPayload | null;
-    inbox: () => InboxPayload | null;
-    usage: () => UsagePayload | null;
-    audit: () => AuditPayload | null;
-};
+export type { EntitiesStore };
 
 export function createEntities(): EntitiesStore {
     const messages: Record<string, Message | undefined> = $state({});

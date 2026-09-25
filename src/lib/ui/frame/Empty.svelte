@@ -2,7 +2,7 @@
     // Layer 3, primitive. One line saying there is nothing here. The words are the view's, since
     // only the view knows what is missing and why; this gives them the same shape everywhere.
 
-    import Glyph from '../controls/Glyph.svelte';
+    import Glyph from '../display/Glyph.svelte';
 
     type Props = {
         /** What is not here, already translated by the view. */

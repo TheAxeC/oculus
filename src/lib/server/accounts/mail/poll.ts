@@ -10,7 +10,7 @@
 // what a press asks for is the state now.
 //
 // The triage notes are the one thing published that no provider gave. They are read from the file
-// at every publish and the file is polled on a clock (watch/file-poll.ts says why it is not
+// at every publish and the file is polled on a clock (core/file-poll.ts says why it is not
 // watched), so a note the skill writes from outside reaches the page without a round of provider
 // calls, whenever it lands; a note whose thread has left the plate is dropped from the payload and
 // kept in the file for thirty days.
@@ -33,9 +33,9 @@ import type {
     MailAccountConfig,
     TriageFile,
     TriageNote
-} from '../../../data/model.ts';
+} from '../../../data/model/index.ts';
 import type { Hub } from '../../core/channels.ts';
-import { POLL, pollFile, systemClock, type Clock, type FilePoll } from '../../watch/file-poll.ts';
+import { POLL, pollFile, systemClock, type Clock, type FilePoll } from '../../core/file-poll.ts';
 import { accessToken, type Fetcher } from '../connect/oauth.ts';
 import { credentialFile, readCredentials } from '../connect/store.ts';
 import { readGoogleMail } from './google.ts';

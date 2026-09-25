@@ -27,6 +27,7 @@ import {
     typeTone
 } from '../../../src/lib/state/words/tones.ts';
 import { setGlyphMode, setGlyphs } from '../../../src/lib/state/words/text.ts';
+import { chipTone, chipsByTone } from '../../../src/lib/state/words/tones.ts';
 
 const REAL_CONFIG = loadConfig(engineDir()).config;
 const GLYPHS = glyphCatalog(REAL_CONFIG);
@@ -256,5 +257,25 @@ describe('the real config/catalogs/vocab.yml', () => {
         setVocab(vocab);
         const tones = chipKeys().map((key) => statusTone(key));
         expect(tones.filter((tone) => !/^[a-z][a-z0-9-]*$/.test(tone))).toEqual([]);
+    });
+});
+
+describe('the hues the chips of the vocabulary wear', () => {
+    // revert: src/lib/state/words/tones.ts:214 => return type;
+    it('is the project type hue, else the status hue', () => {
+        synthetic();
+        expect(chipTone('manuscript')).toBe('teal');
+        expect(chipTone('submitted')).toBe('violet');
+        expect(chipTone('nothing')).toBe('grey');
+    });
+
+    // revert: src/lib/state/words/tones.ts:229 => else held.count = 1;
+    it('groups the chips by hue in the order hues first occur, each with its first chip and count', () => {
+        synthetic();
+        expect(chipsByTone(['manuscript', 'idea', 'submitted', 'nothing'])).toEqual([
+            { tone: 'teal', key: 'manuscript', count: 1 },
+            { tone: 'violet', key: 'idea', count: 2 },
+            { tone: 'grey', key: 'nothing', count: 1 }
+        ]);
     });
 });

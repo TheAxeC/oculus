@@ -10,9 +10,9 @@
 // The path is checked to be inside the system temporary directory before it is handed back, which
 // is what keeps a case that joins a path onto it from writing into the checkout or the hub.
 
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join, resolve, sep } from 'node:path';
+import { dirname, join, resolve, sep } from 'node:path';
 
 const made: string[] = [];
 
@@ -23,6 +23,23 @@ export function scratchDir(prefix: string): string {
         throw new Error(`the scratch directory is outside the temporary directory: ${dir}`);
     }
     made.push(dir);
+    return dir;
+}
+
+/**
+ * A new scratch directory holding the given files, by their paths relative to it. Each path is
+ * checked to stay inside the directory before it is written, so a planted `../` writes nothing.
+ */
+export function plantScratch(prefix: string, files: Record<string, string>): string {
+    const dir = scratchDir(prefix);
+    for (const [rel, body] of Object.entries(files)) {
+        const full = join(dir, rel);
+        if (!resolve(full).startsWith(resolve(dir) + sep)) {
+            throw new Error(`the planted file is outside its scratch directory: ${rel}`);
+        }
+        mkdirSync(dirname(full), { recursive: true });
+        writeFileSync(full, body);
+    }
     return dir;
 }
 

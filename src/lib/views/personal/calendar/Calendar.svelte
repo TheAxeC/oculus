@@ -2,7 +2,7 @@
     // Layer 3, view registration. The agenda sits in the Personal group after the photo wall, since
     // what it holds is the reader's own days rather than a fact about the hub. The view's badge is
     // how many of today's events have not ended yet, and nothing when none are left.
-    import type { ViewRegistration } from '../../registry';
+    import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
 
     export const registration: ViewRegistration = {
         id: 'calendar',
@@ -30,7 +30,7 @@
     import Agenda from './Agenda.svelte';
     import Head from './Head.svelte';
     import { t } from '$lib/state/words/text';
-    import type { ViewProps } from '../../registry';
+    import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 
     const {

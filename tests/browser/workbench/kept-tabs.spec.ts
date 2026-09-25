@@ -22,7 +22,7 @@ async function openReadme(page: Page): Promise<void> {
     await expect(page.locator('[data-source-editor="README.md"]')).toBeVisible();
 }
 
-// revert: src/lib/shell/panes/PaneView.svelte:123 => const kept = $derived(instances.filter((one) => one.id === active));
+// revert: src/lib/shell/panes/PaneView.svelte:127 => const kept = $derived(instances.filter((one) => one.id === active));
 test('a tab switched away from and back keeps its view, built once, and reads its file once', async ({
     page
 }) => {
@@ -50,7 +50,7 @@ test('a tab switched away from and back keeps its view, built once, and reads it
     expect(reads).toHaveLength(before);
 });
 
-// revert: src/lib/shell/panes/PaneView.svelte:123 => const kept = $derived(instances);
+// revert: src/lib/shell/panes/PaneView.svelte:127 => const kept = $derived(instances);
 test('a tab never shown mounts no view, and a closed tab takes its view with it', async ({
     page
 }) => {

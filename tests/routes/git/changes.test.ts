@@ -7,9 +7,9 @@
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
-import { PAGE, handleChanges, logChanges } from '../../../src/lib/server/git/changes.ts';
-import { fsWrites } from '../../../src/lib/server/files/fs.ts';
-import type { Change, ChangeLog } from '../../../src/lib/server/git/changes.ts';
+import { PAGE, handleChanges, logChanges } from '../../../src/lib/server/core/changes.ts';
+import { fsWrites } from '../../../src/lib/server/core/json.ts';
+import type { Change, ChangeLog } from '../../../src/lib/server/core/changes.ts';
 import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
 
 afterAll(sweepScratch);

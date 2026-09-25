@@ -10,7 +10,7 @@
 
     import Card from '$lib/ui/frame/Card.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
-    import Glyph from '$lib/ui/controls/Glyph.svelte';
+    import Glyph from '$lib/ui/display/Glyph.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Tooltip from '$lib/ui/menu/Tooltip.svelte';
     import CrossLinks from '$lib/views/shared/links/CrossLinks.svelte';

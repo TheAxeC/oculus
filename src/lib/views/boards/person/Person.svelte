@@ -2,7 +2,7 @@
     // Layer 3, view registration. A person opens from a collaborator tag, a joint-work entry and
     // the Map's node, and is not listed in the view catalogue: opened bare it can only report that
     // it was opened for nobody.
-    import type { ViewRegistration } from '../../registry';
+    import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     export const registration: ViewRegistration = {
         id: 'person',
         label: 'views.person',
@@ -35,11 +35,13 @@
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import SourceButton from '../../shared/links/SourceButton.svelte';
     import { openSourceFile } from '../../shared/links/source-file';
-    import { HUB_ROOT, hubPathsOf } from '$lib/state/boards/collection';
+    import { hubPathsOf } from '$lib/state/boards/collection';
+    import { HUB_ROOT } from '$lib/state/sources/fs';
+    import { fileEntries } from '$lib/state/sources/fs-transport';
     import { personJoin, type PersonJoin } from '$lib/state/boards/person';
     import { t } from '$lib/state/words/text';
     import { viewSourceFile } from '$lib/state/sessions/view-source';
-    import type { ViewProps } from '../../registry';
+    import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 
     const client = useState();
@@ -66,7 +68,7 @@
     const files = $derived(folderPath === undefined ? null : listing(HUB_ROOT, folderPath));
     // The block offers what a source tab can hold, so a folder inside the supervision folder is not
     // a row: opening one would ask the file route for bytes a directory has none of.
-    const documents = $derived((files?.entries ?? []).filter((entry) => entry.kind === 'file'));
+    const documents = $derived(fileEntries(files?.entries ?? []));
     const source = $derived(viewSourceFile('people', configMap()));
 
     /** The rows of the fact strip: what the registry holds about this person beyond their name. */

@@ -13,7 +13,7 @@
 // tied to, so two entries on one key would be two buttons over one page; the second is dropped.
 
 import { findingText, type TextCatalog } from '../../helpers/finding-text.ts';
-import type { Finding } from '../../model.ts';
+import type { Finding } from '../../model/index.ts';
 
 /** One button of the rail: its words, its glyph name, and the arrangement key of its page. */
 export type RailEntry = { label: string; glyph: string; page: string };

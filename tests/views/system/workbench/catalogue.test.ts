@@ -34,7 +34,7 @@ function button(body: string, attribute: string): string {
 
 describe('the Views catalogue', () => {
     it('draws every listed view once as a button, and no unlisted one', () => {
-        // revert: src/lib/views/system/workbench/Catalogue.svelte:79 => const listed = $derived(views());
+        // revert: src/lib/views/system/workbench/Catalogue.svelte:85 => const listed = $derived(views());
         const body = draw();
         const drawn = [...body.matchAll(/data-view="([^"]+)"/g)].map((found) => found[1]);
         const listed = client.registry
@@ -50,7 +50,7 @@ describe('the Views catalogue', () => {
     });
 
     it('draws each group under its heading, with its chord letter where it has one', () => {
-        // revert: src/lib/views/system/workbench/Catalogue.svelte:177 => <span class="chord">x</span>
+        // revert: src/lib/views/system/workbench/Catalogue.svelte:183 => <span class="chord">x</span>
         const body = draw();
         for (const label of ['Boards', 'Pillars', 'Sessions', 'Academic life', 'System']) {
             expect(body).toContain(`data-group="${label}"`);
@@ -60,7 +60,7 @@ describe('the Views catalogue', () => {
     });
 
     it('draws the key that opens an entry beside it, and none past the ninth', () => {
-        // revert: src/lib/views/system/workbench/Catalogue.svelte:204 => {#if true}
+        // revert: src/lib/views/system/workbench/Catalogue.svelte:210 => {#if true}
         const body = draw();
         const focus = body.slice(body.indexOf('data-view="focus"'));
         expect(focus).toMatch(/class="key[^"]*"[^>]*>v1</);
@@ -72,7 +72,7 @@ describe('the Views catalogue', () => {
     });
 
     it("lists a group's hub documents after its views, as buttons carrying their path", () => {
-        // revert: src/lib/views/system/workbench/Catalogue.svelte:240 => dataDoc={entry.label}
+        // revert: src/lib/views/system/workbench/Catalogue.svelte:246 => dataDoc={entry.label}
         const body = draw();
         expect(button(body, 'data-doc="HPC-UTwente-howto.md"')).toContain('HPC how-to');
         expect(body.indexOf('data-view="history"')).toBeLessThan(
@@ -81,7 +81,7 @@ describe('the Views catalogue', () => {
     });
 
     it("draws a registration's toned badge beside its button, and nothing at zero", () => {
-        // revert: src/lib/views/system/workbench/Catalogue.svelte:207 => {#if false}
+        // revert: src/lib/views/system/workbench/Catalogue.svelte:213 => {#if false}
         const status = client.registry.viewFor('status');
         if (status === undefined) throw new Error('the status view is not registered');
         client.registry.registerView({
@@ -98,7 +98,7 @@ describe('the Views catalogue', () => {
     });
 
     it('names the key in the hover words of an entry a chord reaches', () => {
-        // revert: src/lib/views/system/workbench/Catalogue.svelte:86 => return label;
+        // revert: src/lib/views/system/workbench/Catalogue.svelte:92 => return label;
         const body = draw();
         expect(body).toContain(words('workbench.catalogue_key', catalog['views.focus'], 'v1'));
         expect(body).toContain(`${catalog['views.focus']}, key v1`);

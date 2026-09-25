@@ -9,7 +9,7 @@ import { readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { resolve, sep } from 'node:path';
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
-import type { CalendarAccountConfig } from '../../../../src/lib/data/model.ts';
+import type { CalendarAccountConfig } from '../../../../src/lib/data/model/index.ts';
 import {
     CONNECT_MS,
     ConnectStates,

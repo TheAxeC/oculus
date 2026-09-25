@@ -9,7 +9,6 @@ import {
     linkedinOverdue,
     liveEntries,
     liveRule,
-    numericSetting,
     rollup,
     typeSplit
 } from '../../../src/lib/state/workbench/rail-badges.ts';
@@ -22,7 +21,7 @@ import {
 } from '../../../src/lib/data/sources/config.ts';
 import { setCatalog, setGlyphs } from '../../../src/lib/state/words/text.ts';
 import { setVocab } from '../../../src/lib/state/words/tones.ts';
-import { badgeOf } from '../../../src/lib/views/registry.ts';
+import { badgeOf } from '../../../src/lib/state/workbench/navigation/registry.ts';
 import { installBadges } from './rail-badges-fixture.ts';
 import { registerAll, registerCollections } from '../../../src/routes/views.ts';
 import { present } from '../../fixtures/present.ts';
@@ -179,11 +178,6 @@ describe('view badge counts', () => {
         expect(linkedinOverdue('2026-08-13', 30, now)).toBe(false);
         expect(linkedinOverdue(null, 30, now)).toBe(false);
         expect(linkedinOverdue('2026-08-01', null, now)).toBe(false);
-    });
-
-    it('requires a finite configured threshold', () => {
-        expect(numericSetting({ leads_badge_days: 14 }, 'leads_badge_days')).toBe(14);
-        expect(numericSetting({}, 'leads_badge_days')).toBe(null);
     });
 
     it('uses snapshot summaries, good socket feeds, and summaries after feed errors', () => {
@@ -415,7 +409,7 @@ describe('registered board badge descriptors', () => {
 });
 
 describe('a badge that is a mark', () => {
-    // revert: src/lib/views/registry.ts:108 => const words = marked ? mark : text;
+    // revert: src/lib/state/workbench/navigation/registry.ts:136 => const words = marked ? mark : text;
     it('says on hover what the mark means, in words from the catalog, and never the mark', () => {
         const catalog = textCatalog(config);
         client.registry.registerView({
@@ -431,7 +425,7 @@ describe('a badge that is a mark', () => {
         expect(badge.title).not.toContain(glyphCatalog(config).bang);
     });
 
-    // revert: src/lib/views/registry.ts:108 => const words = marked ? lookup(means ?? '') : text;
+    // revert: src/lib/state/workbench/navigation/registry.ts:136 => const words = marked ? lookup(means ?? '') : text;
     it('hovers a mark whose registration names no words by the view name, and does not throw', () => {
         const catalog = textCatalog(config);
         const { badgeMark, ...unworded } = present(viewFor('linkedin'), 'linkedin view');

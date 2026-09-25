@@ -7,8 +7,9 @@
 // so the caret is read over that value and a file's own ending is put back by withEnding before
 // the text is kept.
 
-/** How a file indents: with tabs or with spaces, and how wide one step is. */
-export type Indent = { tabs: boolean; size: number };
+import type { Indent } from '../../sessions/source.svelte.ts';
+
+export type { Indent };
 
 /** The two line endings a text file is written with. */
 export type LineEnding = 'LF' | 'CRLF';

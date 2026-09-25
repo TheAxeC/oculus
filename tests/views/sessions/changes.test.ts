@@ -13,7 +13,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { render } from 'svelte/server';
 import Changes from '../../../src/lib/views/sessions/changes/Changes.svelte';
 import { branchState } from '../../../src/lib/views/shared/changes/branch-state.ts';
-import { repoShape } from '../../../src/lib/views/shared/changes/repo-shape.ts';
+import { repoShape } from '../../../src/lib/state/sources/repositories.ts';
 import {
     engineDir,
     glyphCatalog,
@@ -27,7 +27,7 @@ import { area, git, payload, record, workspace } from '../../fixtures/sessions-f
 import type { GitState } from '../../../src/lib/data/model/model-sessions.ts';
 import type { Component } from 'svelte';
 import type { Instance } from '../../../src/lib/state/workbench/layout/index.ts';
-import type { ViewProps } from '../../../src/lib/views/registry.ts';
+import type { ViewProps } from '../../../src/lib/state/workbench/navigation/registry.ts';
 import { clientContext, createClientState, type ClientState } from '../../fixtures/client.ts';
 
 let client: ClientState;

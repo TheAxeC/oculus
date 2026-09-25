@@ -24,9 +24,20 @@ import {
     lanes,
     priorities,
     unplaced,
-    waiting
+    waiting,
+    lanesIn,
+    liveProjects,
+    nextPriority,
+    type Lane,
+    type Priority
 } from '../../../src/lib/state/boards/focus.ts';
-import { ticker, venueLoad } from '../../../src/lib/state/boards/ticker.ts';
+import {
+    ticker,
+    venueLoad,
+    deadlinesByCategory,
+    runsByKind,
+    type TickerItem
+} from '../../../src/lib/state/boards/ticker.ts';
 import type {
     Collection,
     Entry,
@@ -37,7 +48,7 @@ import type {
     Snapshot,
     Tier,
     Venue
-} from '../../../src/lib/data/model.ts';
+} from '../../../src/lib/data/model/index.ts';
 
 const { config } = loadConfig(engineDir());
 setVocab(vocabCatalog(config));
@@ -803,5 +814,72 @@ describe('attention and refresh', () => {
         expect(staleAfter(config, 'litwatch')).toBe(14);
         expect(staleAfter(config, 'inbox')).toBe(2);
         expect(staleAfter(config, 'scout')).toBe(7);
+    });
+});
+
+describe('the Focus board folds', () => {
+    // revert: src/lib/state/boards/focus.ts:321 => return projects;
+    it('let quick add write to the projects of the three live tiers', () => {
+        const projects = ['ideas', 'active', 'manuscripts', 'archive'].map((tier) => ({
+            id: tier,
+            tier
+        })) as unknown as Parameters<typeof liveProjects>[0];
+        expect(liveProjects(projects).map((one) => one.id)).toEqual([
+            'ideas',
+            'active',
+            'manuscripts'
+        ]);
+    });
+
+    // revert: src/lib/state/boards/focus.ts:330 => const climbing = [...levels];
+    it('cycle a priority from unset through the fewest flames to the most and back', () => {
+        const levels: Priority[] = [
+            { key: 'high', label: 'High', flames: 3 },
+            { key: 'low', label: 'Low', flames: 1 }
+        ];
+        expect(nextPriority(levels, undefined)).toBe('low');
+        expect(nextPriority(levels, 'low')).toBe('high');
+        expect(nextPriority(levels, 'high')).toBe('');
+        // A value no level holds starts the cycle over, at unset.
+        expect(nextPriority(levels, 'unknown')).toBe('');
+    });
+
+    // revert: src/lib/state/boards/focus.ts:338 => return board;
+    it('draw the lanes of one cluster in the board order', () => {
+        const board = [
+            { key: 'a', cluster: 'now' },
+            { key: 'b', cluster: 'parked' },
+            { key: 'c', cluster: 'now' }
+        ] as Lane[];
+        expect(lanesIn(board, 'now').map((one) => one.key)).toEqual(['a', 'c']);
+    });
+});
+
+describe('the ticker lines the command center groups', () => {
+    const line = (kind: string, label: string) =>
+        ({ kind, label, glyph: '', days: null }) as TickerItem;
+
+    // revert: src/lib/state/boards/ticker.ts:558 => if (held !== null) runs.push({ kind: line.kind, lines: [line] });
+    it('run by kind in the order given, a kind met again opening a run of its own', () => {
+        const lines = [line('a', '1'), line('a', '2'), line('b', '3'), line('a', '4')];
+        expect(runsByKind(lines).map((run) => [run.kind, run.lines.length])).toEqual([
+            ['a', 2],
+            ['b', 1],
+            ['a', 1]
+        ]);
+    });
+
+    // revert: src/lib/state/boards/ticker.ts:574 => ;
+    it('group the deadlines by category in the categories order, an empty category left out', () => {
+        const lines = [line('funding', 'f'), line('paper', 'p'), line('funding', 'g')];
+        expect(
+            deadlinesByCategory(lines, ['paper', 'event', 'funding']).map((one) => [
+                one.category,
+                one.lines.map((held) => held.label)
+            ])
+        ).toEqual([
+            ['paper', ['p']],
+            ['funding', ['f', 'g']]
+        ]);
     });
 });

@@ -1,6 +1,6 @@
 <script module lang="ts">
     // Layer 3, view registration. Terminal follows session detail in the Sessions group.
-    import type { ViewRegistration } from '$lib/views/registry';
+    import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     export const registration: ViewRegistration = {
         id: 'terminal',
         label: 'sessions.view_terminal',
@@ -39,12 +39,13 @@
     import Toolbar from '$lib/ui/frame/Toolbar.svelte';
     import { terminalFontPx } from '$lib/state/words/appearance';
     import { pinnedTerminal } from '$lib/state/workbench/selection.svelte';
-    import { stateId } from '$lib/state/client/instance';
+    import { stateId } from '$lib/state/workbench/layout/instance';
     import { titleStripper, type TerminalKind } from '$lib/state/sessions/terminals.svelte';
+    import { terminalPlaces } from '$lib/state/sessions/folds';
     import { t } from '$lib/state/words/text';
     import { scheduleReflow } from './reflow';
     import { untrack } from 'svelte';
-    import type { ViewProps } from '$lib/views/registry';
+    import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import type { ITheme, Terminal as Grid } from '@xterm/xterm';
     import { useState } from '$lib/state/client/use';
 
@@ -112,7 +113,6 @@
     const fresh = $derived(pinned === null && stateId(instanceLayoutState(instance.id)) !== null);
     const id = $derived(pinned ?? (fresh ? null : selectedTerminal()));
     const terminal = $derived(terminalById(id));
-    const roots = $derived(sessionsByWorkspace(true).map((one) => one.key));
     const hub = $derived(hubRoot());
 
     /**
@@ -149,10 +149,7 @@
 
     /** Where a terminal may be started: the workspaces the payload knows, and the hub itself. */
     const places = $derived(
-        [...new Set([hub, ...roots])]
-            .filter((key) => key !== '')
-            .sort()
-            .map((key) => ({ id: key, label: key }))
+        terminalPlaces(hub, sessionsByWorkspace(true)).map((key) => ({ id: key, label: key }))
     );
 
     const kinds = $derived([

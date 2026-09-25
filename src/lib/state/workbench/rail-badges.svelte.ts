@@ -2,29 +2,27 @@
 // drawn in the view catalogue and on pane tabs.
 // The snapshot summary remains the starting and read-error fallback until a usable feed arrives.
 
-import { scalar } from '../../data/helpers/guards.ts';
-import type { EntitiesStore } from '../client/entities.svelte.ts';
-import type { FeedsStore } from '../feeds/feeds.svelte.ts';
+import { scalar, isMap, numericSetting } from '../../data/helpers/guards.ts';
+import type { EntitiesStore } from '../stores/shapes.ts';
+import type { FeedsStore, FeedState } from '../feeds/feeds.svelte.ts';
 import type { AuditStore } from '../system/audit.svelte.ts';
-import type { CalendarStore } from '../life/calendar.svelte.ts';
+import type { CalendarStore } from '../feeds/life/calendar.svelte.ts';
 import type { HpcStore } from '../system/hpc.svelte.ts';
 import type { InboxStore } from '../feeds/inbox.svelte.ts';
-import type { SelectorsStore } from '../client/selectors.svelte.ts';
 import { splitPosts } from '../feeds/linkedin.ts';
 import { t } from '../words/text.ts';
 import { statusTone, toneOf, UNKNOWN_TONE } from '../words/tones.ts';
-import { isMap } from '../../data/helpers/guards.ts';
 import {
     countText,
     leadsDue,
     linkedinOverdue,
     liveEntries,
     liveRule,
-    numericSetting,
     rollup,
     typeSplit
 } from './rail-badges.ts';
-import type { FeedState } from '../feeds/feeds.svelte.ts';
+import type { BoardItem, BoardPreset } from '../boards/board/index.ts';
+import type { Collection } from '../../data/model/index.ts';
 
 /** One coloured count drawn as a cell on a pane tab. `color` is a theme hue name. */
 export type BadgeCell = { count: number; color: string; label: string };
@@ -68,6 +66,17 @@ export type RailBadgesStore = {
     calendarBadgeTitle: () => string;
 };
 
+/**
+ * What the badges read of the selectors: the configuration, one board by its preset, and one
+ * collection. The selectors store in state/client, the folder above this one, satisfies it.
+ */
+export type BadgeSelectors = {
+    configMap: () => Record<string, unknown>;
+    boardPreset: (view: string) => BoardPreset;
+    board: (preset: BoardPreset) => BoardItem[];
+    collectionOf: (key: string) => Collection | null;
+};
+
 export function createRailBadges(
     entities: EntitiesStore,
     feeds: FeedsStore,
@@ -75,7 +84,7 @@ export function createRailBadges(
     calendar: CalendarStore,
     inbox: InboxStore,
     audit: AuditStore,
-    selectors: SelectorsStore
+    selectors: BadgeSelectors
 ): RailBadgesStore {
     /** The number of cards on one of the three project boards. */
     function boardBadge(view: string): string {

@@ -1,5 +1,5 @@
 // Layer 2, server types. Declares the request-scoped ServerContext that Kit carries to every route.
-import type { OculusRequest, ServerContext } from '$lib/server/core/context';
+import type { OculusRequest, ServerContext } from '$lib/server/root/context';
 import type { loadConfig } from '$lib/data/sources/config';
 
 declare global {

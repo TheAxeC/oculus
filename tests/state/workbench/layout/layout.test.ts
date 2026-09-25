@@ -27,7 +27,6 @@ import {
     type Layout
 } from '../../../../src/lib/state/workbench/layout/index.ts';
 import { bench, folded, instance, pane, split, three, viewsOf } from './layout-fixture.ts';
-
 import { foldedOf } from './layout-fixture.ts';
 
 describe('reading the tree', () => {

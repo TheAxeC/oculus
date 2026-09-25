@@ -5,7 +5,7 @@
 // was already a tab of the catalogue's pane is activated there by openView before it moves out, and
 // the pane would then show the tab beside it, so the catalogue is made that pane's tab again.
 
-import { activePath, findInstance, panes } from '../../../client/instance.ts';
+import { activePath, findInstance, panes } from '../instance.ts';
 import type { LayoutAccess } from '../access.ts';
 import type { Attention } from './attention.ts';
 import { samePath, type Edge, type ViewId } from '../model.ts';

@@ -6,11 +6,13 @@ import {
     collectionLanes,
     entryDate,
     entryDeadline,
-    manifestsBehind
+    manifestsBehind,
+    stageItemCount
 } from '../../../src/lib/state/boards/focus-lanes.ts';
 import { ticker } from '../../../src/lib/state/boards/ticker.ts';
-import type { Entry, Project, Snapshot } from '../../../src/lib/data/model.ts';
+import type { Entry, Project, Snapshot } from '../../../src/lib/data/model/index.ts';
 import { NO_FEEDS } from '../../fixtures/entities-fixture.ts';
+import { bandHasCards } from '../../../src/lib/state/boards/focus-lanes.ts';
 
 function project(id: string, days: number, type = 'active'): Project {
     return {
@@ -207,5 +209,31 @@ describe('manifestsBehind', () => {
     it('does not invent a grace when the required setting is absent or invalid', () => {
         expect(manifestsBehind([project('a', 10)], {})).toBeNull();
         expect(manifestsBehind([project('a', 10)], { stale_lag_days: 'bad' })).toBeNull();
+    });
+});
+
+describe('the items of the band stages', () => {
+    // revert: src/lib/state/boards/focus-lanes.ts:188 => return stages.length;
+    it('are counted over every stage together', () => {
+        const stages = [
+            { label: 'a', color: '', items: [{}, {}] },
+            { label: 'b', color: '', items: [{}] }
+        ] as unknown as Parameters<typeof stageItemCount>[0];
+        expect(stageItemCount(stages)).toBe(3);
+    });
+});
+
+describe('whether the band holds a card', () => {
+    // revert: src/lib/state/boards/focus-lanes.ts:193 => return band.funding.length > 0;
+    it('is whether any of its three rows holds one', () => {
+        const band = (funding: number, applications: number, education: number) =>
+            ({
+                tones: { funding: '', jobs: '', teaching: '' },
+                funding: Array.from({ length: funding }, () => ({})),
+                applications: Array.from({ length: applications }, () => ({})),
+                education: Array.from({ length: education }, () => ({}))
+            }) as unknown as Parameters<typeof bandHasCards>[0];
+        expect(bandHasCards(band(0, 0, 1))).toBe(true);
+        expect(bandHasCards(band(0, 0, 0))).toBe(false);
     });
 });

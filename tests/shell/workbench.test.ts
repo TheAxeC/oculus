@@ -16,7 +16,7 @@ import { render } from 'svelte/server';
 import DropLayer from '../../src/lib/shell/panes/DropLayer.svelte';
 import Workbench from '../../src/lib/shell/Workbench.svelte';
 import { NO_STATUS } from '../../src/lib/state/workbench/navigation/status.ts';
-import { activeLabel, windowTitle } from '../../src/lib/shell/workbench-title.ts';
+import { activeLabel, windowTitle } from '../../src/lib/shell/panes/workbench-title.ts';
 import Tabs from '../../src/lib/ui/tabs/Tabs.svelte';
 import {
     horizontalWheelDelta,
@@ -316,7 +316,7 @@ describe('the workbench', () => {
     });
 
     // Revert: point PaneView.svelte's menu at `ui.pane_menu_glyph`, or its button at another glyph.
-    // revert: src/lib/shell/panes/PaneView.svelte:387 => glyph={t('ui.pane_more_glyph')}
+    // revert: src/lib/shell/panes/PaneView.svelte:391 => glyph={t('ui.pane_more_glyph')}
     it('draws the split button with the split glyph and the pane menu opener with the more glyph', () => {
         // The stand-ins are the text a glyph is drawn as, so the ASCII mode names the glyph drawn.
         setGlyphMode('ascii');

@@ -25,7 +25,7 @@ import type {
     Project,
     Relations,
     Snapshot
-} from '../../../src/lib/data/model.ts';
+} from '../../../src/lib/data/model/index.ts';
 import { clientContext, createClientState, type ClientState } from '../../fixtures/client.ts';
 
 const { config } = loadConfig(engineDir());
@@ -300,7 +300,7 @@ describe('one person as their own tab', () => {
         expect(body).not.toContain(catalog['person.show_in_files']);
     });
 
-    // revert: src/lib/views/boards/person/Person.svelte:220 => <!-- nothing to draw -->
+    // revert: src/lib/views/boards/person/Person.svelte:222 => <!-- nothing to draw -->
     // Revert: in views/boards/person/Person.svelte, draw nothing where the folder is not one of the
     // hub, and the block is a heading over an empty space that says nothing about why.
     it('says so when the folder is not one of the hub, rather than drawing an empty block', () => {
@@ -310,7 +310,7 @@ describe('one person as their own tab', () => {
         expect(body).not.toContain(catalog['person.folder_loading']);
     });
 
-    // revert: src/lib/state/boards/collection.ts:315 => const HUB_ONLY_FIELDS: string[] = [];
+    // revert: src/lib/state/boards/collection.ts:303 => const HUB_ONLY_FIELDS: string[] = [];
     // Revert: in hubPathsOf of state/boards/collection.ts, read a `folder` through the address rule
     // like a link, and a folder of this hub whose name is host-shaped becomes a web address.
     it('reads a folder whose first segment is host-shaped as the folder of the hub it is', () => {

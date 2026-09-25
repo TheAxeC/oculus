@@ -37,7 +37,7 @@
     import type { GitState } from '$lib/state/client/selectors.svelte';
     import { t } from '$lib/state/words/text';
     import { branchState } from '$lib/views/shared/changes/branch-state';
-    import { repoShape, type RepoShape } from '$lib/views/shared/changes/repo-shape';
+    import { repoShape, type RepoShape } from '$lib/state/sources/repositories';
 
     type Props = {
         root: string;

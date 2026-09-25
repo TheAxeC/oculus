@@ -17,7 +17,7 @@ import type {
     SessionRecord,
     SessionTokens,
     SessionTool
-} from '../../data/model.ts';
+} from '../../data/model/index.ts';
 
 /** A file untouched for this long is idle, whatever its last record looks like. */
 export const IDLE_AFTER_SECONDS = 30 * 60;

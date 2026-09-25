@@ -19,7 +19,7 @@ import {
 } from '../../../../src/lib/server/sessions/stores/dispatches.ts';
 import { scan } from '../../../../src/lib/server/sessions/stores/transcripts.ts';
 import { formatStamp } from '../../../../src/lib/server/sessions/registry.ts';
-import type { SessionAgent, SessionRecord } from '../../../../src/lib/data/model.ts';
+import type { SessionAgent, SessionRecord } from '../../../../src/lib/data/model/index.ts';
 import { scratchDir, sweepScratch } from '../../../fixtures/scratch.ts';
 
 afterAll(sweepScratch);
@@ -30,6 +30,14 @@ const CHILD = 'bbbbbbbb-0000-0000-0000-00000000000c';
 const ROLLOUT = '01a07d03-c92a-7a91-8667-7f0520b8197f';
 
 type Json = Record<string, unknown>;
+
+/**
+ * When the builder process of a launch started, in epoch seconds, and when its launch was written,
+ * a second later: an hour before the run, so the launch is inside the scan's two-day window on
+ * whatever day the suite runs.
+ */
+const BEGAN = Math.floor(Date.now() / 1000) - 3600;
+const STARTED_AT = new Date((BEGAN + 1) * 1000).toISOString();
 
 /** A launch record as bin/dispatch-note.mjs writes it, with the fields a case changes. */
 function launch(fields: Partial<DispatchNote> = {}): DispatchNote {
@@ -42,7 +50,7 @@ function launch(fields: Partial<DispatchNote> = {}): DispatchNote {
         parent: PARENT,
         cwd: '/tmp/fixture/worktree',
         transcript: '',
-        startedAt: '2026-09-23T10:00:05.000Z',
+        startedAt: STARTED_AT,
         endedAt: '',
         pid: 0,
         pidStart: '',
@@ -261,7 +269,7 @@ describe('a launch joined to its parent', () => {
         expect(row.description).toBe('O99');
         expect(row.subagentType).toBe('plan-orchestration');
         expect(row.model).toBe('claude-opus-test');
-        expect(row.started).toBe('2026-09-23T10:00:05.000Z');
+        expect(row.started).toBe(STARTED_AT);
         expect(row.status).toBe('running');
         expect(row.dispatch).toEqual({
             launcher: 'plan-orchestration',
@@ -386,8 +394,6 @@ describe("a launch read by its builder's process", () => {
             'recent'
         ]);
     });
-
-    const BEGAN = Math.floor(Date.parse('2026-09-23T10:00:04.000Z') / 1000);
 
     it('reads running while the recorded process runs, though its launcher and session are gone', () => {
         const f = new Fixture();

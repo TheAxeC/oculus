@@ -6,7 +6,7 @@
 // Nothing here opens a socket: `WebSocket` is a stub that hands the page what a case delivers.
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { ConfigPayload } from '../../../src/lib/data/model.ts';
+import type { ConfigPayload } from '../../../src/lib/data/model/index.ts';
 import { createClientState } from '../../fixtures/client.ts';
 
 afterEach(() => {
@@ -62,7 +62,7 @@ function stubSocket(): {
 
 describe("the page's config channel", () => {
     it('keeps the configuration it was built from over a replayed push that is not newer', () => {
-        // revert: src/lib/state/client/socket.svelte.ts:262 => delete
+        // revert: src/lib/state/client/socket.svelte.ts:249 => delete
         const { deliver, open } = stubSocket();
         const client = createClientState();
         client.socket.seedConfig(payload(1), 2);
@@ -81,7 +81,7 @@ describe("the page's config channel", () => {
     });
 
     it('takes the held push when the seed says it is the same configuration', () => {
-        // revert: src/lib/state/client/socket.svelte.ts:262 => if (message.channel === 'config' && message.version <= seededThrough + 1) return;
+        // revert: src/lib/state/client/socket.svelte.ts:249 => if (message.channel === 'config' && message.version <= seededThrough + 1) return;
         const { deliver, open } = stubSocket();
         const client = createClientState();
         client.socket.seedConfig(undefined, 0);
@@ -93,8 +93,8 @@ describe("the page's config channel", () => {
     });
 
     it('takes every push after a reconnect, which may reach a restarted server numbering from 1', () => {
-        // revert: src/lib/state/client/socket.svelte.ts:171 => delete
-        // revert: src/lib/state/client/socket.svelte.ts:172 => delete
+        // revert: src/lib/state/client/socket.svelte.ts:158 => delete
+        // revert: src/lib/state/client/socket.svelte.ts:159 => delete
         const { deliver, open } = stubSocket();
         const client = createClientState();
         client.socket.seedConfig(payload(1), 4);

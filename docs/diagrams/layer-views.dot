@@ -1,0 +1,52 @@
+digraph layer_views {
+    graph [bgcolor="transparent", rankdir=TB, newrank=true, fontname="Helvetica,Arial,sans-serif", fontsize=12, nodesep=0.2, ranksep=0.5];
+    node [shape=box, color="black", fontcolor="black", fontname="Helvetica,Arial,sans-serif", fontsize=10, height=0.3, margin="0.12,0.04"];
+    edge [color="black", fontcolor="black", fontname="Helvetica,Arial,sans-serif", fontsize=8, arrowsize=0.6];
+    subgraph "cluster_views" {
+        label="views"; style=solid;
+        "folder views/academic" [label="views/academic"];
+        "folder views/boards" [label="views/boards"];
+        "folder views/feeds" [label="views/feeds"];
+        "folder views/personal" [label="views/personal"];
+        "folder views/sessions" [label="views/sessions"];
+        "folder views/sources" [label="views/sources"];
+        "folder views/structure" [label="views/structure"];
+        "folder views/system" [label="views/system"];
+        "folder views/shared" [label="views/shared"];
+    }
+    "layer state" [label="state", style=dashed];
+    "layer ui" [label="ui", style=dashed];
+    "folder views/academic" -> "folder views/boards" [style=invis, weight=10];
+    "folder views/boards" -> "folder views/feeds" [style=invis, weight=10];
+    "folder views/feeds" -> "folder views/personal" [style=invis, weight=10];
+    "folder views/personal" -> "folder views/sessions" [style=invis, weight=10];
+    "folder views/sessions" -> "folder views/sources" [style=invis, weight=10];
+    "folder views/sources" -> "folder views/structure" [style=invis, weight=10];
+    "folder views/structure" -> "folder views/system" [style=invis, weight=10];
+    "folder views/system" -> "folder views/shared" [style=invis, weight=10];
+    "folder views/academic" -> "folder views/shared" [label="2"];
+    "folder views/academic" -> "layer state" [label="18", style=dashed, constraint=false];
+    "folder views/academic" -> "layer ui" [label="18", style=dashed, constraint=false];
+    "folder views/boards" -> "folder views/shared" [label="16"];
+    "folder views/boards" -> "layer state" [label="87", style=dashed, constraint=false];
+    "folder views/boards" -> "layer ui" [label="85", style=dashed, constraint=false];
+    "folder views/feeds" -> "folder views/shared" [label="17"];
+    "folder views/feeds" -> "layer state" [label="50", style=dashed, constraint=false];
+    "folder views/feeds" -> "layer ui" [label="49", style=dashed, constraint=false];
+    "folder views/personal" -> "layer state" [label="14", style=dashed, constraint=false];
+    "folder views/personal" -> "layer ui" [label="11", style=dashed, constraint=false];
+    "folder views/sessions" -> "folder views/shared" [label="8"];
+    "folder views/sessions" -> "layer state" [label="49", style=dashed, constraint=false];
+    "folder views/sessions" -> "layer ui" [label="46", style=dashed, constraint=false];
+    "folder views/shared" -> "layer state" [label="59", style=dashed, constraint=false];
+    "folder views/shared" -> "layer ui" [label="45", style=dashed, constraint=false];
+    "folder views/sources" -> "folder views/shared" [label="26"];
+    "folder views/sources" -> "layer state" [label="103", style=dashed, constraint=false];
+    "folder views/sources" -> "layer ui" [label="109", style=dashed, constraint=false];
+    "folder views/structure" -> "folder views/shared" [label="13"];
+    "folder views/structure" -> "layer state" [label="32", style=dashed, constraint=false];
+    "folder views/structure" -> "layer ui" [label="29", style=dashed, constraint=false];
+    "folder views/system" -> "folder views/shared" [label="1"];
+    "folder views/system" -> "layer state" [label="65", style=dashed, constraint=false];
+    "folder views/system" -> "layer ui" [label="75", style=dashed, constraint=false];
+}

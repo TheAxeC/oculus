@@ -116,7 +116,7 @@ test('draws the launch under its orchestrator and opens its own transcript', asy
     // No end is stamped, and the builder's own session is not running, so the row reads done.
     await expect(launched).toContainText(t('sessions.ag_done'));
 
-    // revert: src/lib/views/sessions/agents/Agents.svelte:134 => if (session !== null) openView('transcript');
+    // revert: src/lib/views/sessions/agents/Agents.svelte:133 => if (session !== null) openView('transcript');
     await launched.getByRole('button', { name: t('sessions.ag_open') }).click();
     const chat = page.locator('.chat[data-instance]').filter({ hasText: 'Built the step' });
     await expect(chat).toBeVisible({ timeout: 15000 });
@@ -174,7 +174,7 @@ test('marks the launch ended once its note is stamped', async ({ page }) => {
 
     // A stamp that leaves every status as it was reaches the page only through the note's watch,
     // since the liveness re-check publishes only when a status moves.
-    // revert: src/lib/server/watch/sessions.ts:292 => delete
+    // revert: src/lib/server/root/watch/sessions.ts:292 => delete
     const gone = page.locator('.agents [data-agent="dispatch:agents-spec-exited"] .st');
     await expect(gone).toHaveText(t('sessions.ag_done'));
     const stamped = { ...exited, endedAt: new Date(started + 90_000).toISOString() };
@@ -190,7 +190,7 @@ test('marks the launch ended once its note is stamped', async ({ page }) => {
 test('counts a running launch on while the page is open, and a stamped one from start to end', async ({
     page
 }) => {
-    // revert: src/lib/views/sessions/agents/Agents.svelte:78 => const timer = 0;
+    // revert: src/lib/views/sessions/agents/Agents.svelte:77 => const timer = 0;
     const parent = randomUUID();
     session(parent, 'Agents spec counting orchestrator', 'Launched and counted.');
     mkdirSync(join(servedHomeDir(), '.oculus'), { recursive: true });

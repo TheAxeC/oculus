@@ -20,11 +20,18 @@
 
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import { isMap, str } from '../../../data/helpers/guards.ts';
-import type { ConnectKind, ConnectProvider } from '../../../data/model.ts';
+import type { ConnectKind, ConnectProvider } from '../../../data/model/index.ts';
 import type { Credentials } from './store.ts';
 
 /** How the providers are called, injected so no test opens a connection. */
 export type Fetcher = typeof fetch;
+
+/**
+ * How an `https` address reaches the operating system, for the calendar's and the mail's consent
+ * and event links. It is injectable so route tests open nothing. It is declared here, with the
+ * connect flow that opens a consent page, and server/files/open.ts's macOpenAddress satisfies it.
+ */
+export type Opener = (target: string) => Promise<void> | void;
 
 /** The path each connector's provider sends the reader's browser back to. */
 const CALLBACK_PATH: Record<ConnectKind, string> = {

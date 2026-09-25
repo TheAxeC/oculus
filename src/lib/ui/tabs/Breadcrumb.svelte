@@ -3,7 +3,7 @@
     // arrow between two segments. The segments and what picking one means are the caller's; this
     // draws them in order and names the last as the current one.
 
-    import Glyph from '../controls/Glyph.svelte';
+    import Glyph from '../display/Glyph.svelte';
 
     type Props = {
         /** The strip's accessible name, already translated. */

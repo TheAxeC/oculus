@@ -7,7 +7,7 @@
 // the store that opens a named view for another part of the app rather than for the reader.
 
 import { revealAsked } from '../../../sources/fs.ts';
-import { findView } from '../../../client/instance.ts';
+import { findView } from '../instance.ts';
 import type { LayoutAccess } from '../access.ts';
 import type { Attention } from './attention.ts';
 import type { ViewId } from '../model.ts';

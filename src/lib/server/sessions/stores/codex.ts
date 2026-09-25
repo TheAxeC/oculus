@@ -13,9 +13,9 @@
 
 import { basename } from 'node:path';
 import { spawnSync } from 'node:child_process';
-import type { LiveEntry } from '../../../data/model.ts';
+import type { LiveEntry } from '../../../data/model/index.ts';
 import { codexUsage, type UsageEvent, type UsageTotals } from '../../transcripts/usage.ts';
-import { isMap, list, text, whole } from './json.ts';
+import { isMap, list, text, whole } from '../../core/json.ts';
 import type { Acc } from '../record.ts';
 import {
     PROMPT_CHARS,

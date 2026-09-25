@@ -16,7 +16,7 @@ import {
     type ProjectFolder
 } from '../../../src/lib/server/sessions/group.ts';
 import { defaultOverridesPath } from '../../../src/lib/server/sessions/overrides.ts';
-import type { Area, SessionRecord, Workspace } from '../../../src/lib/data/model.ts';
+import type { Area, SessionRecord, Workspace } from '../../../src/lib/data/model/index.ts';
 import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
 
 afterAll(sweepScratch);

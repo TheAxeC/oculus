@@ -785,7 +785,7 @@ test('a second file of the same name is bookmarked under its path from the row s
     await expect(page.locator('[data-fs-bookmark="README.md"]')).toHaveCount(0);
 });
 
-// revert: src/lib/state/sources/fs.svelte.ts:649 => answered(BOOKMARKS, at);
+// revert: src/lib/state/sources/fs.svelte.ts:645 => answered(BOOKMARKS, at);
 test('a bookmarks read that failed is asked again by its own control, without a reload', async ({
     page
 }) => {
@@ -818,7 +818,7 @@ test('a bookmarks read that failed is asked again by its own control, without a 
     await expect(again).toHaveCount(0);
 });
 
-// revert: src/lib/server/watch/bookmarks.ts:83 => () => undefined
+// revert: src/lib/server/root/watch/bookmarks.ts:83 => () => undefined
 test('a bookmark written by one page reaches a second page that wrote nothing', async ({
     page
 }) => {

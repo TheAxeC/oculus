@@ -1,7 +1,7 @@
 <script module lang="ts">
     // Layer 3, view registration. A project opens from a board card and is not listed in the view
     // catalogue.
-    import type { ViewRegistration } from '../../registry';
+    import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     export const registration: ViewRegistration = {
         id: 'project',
         label: 'views.project',
@@ -43,13 +43,13 @@
     import { sanitise } from '$lib/ui/html';
     import Latex from './Latex.svelte';
     import ProjectCard from '../../shared/card/ProjectCard.svelte';
-    import type { BoardItem } from '$lib/state/boards/board';
-    import { cardCursor } from '$lib/state/client/instance';
+    import { absentDocs, markdownDocNames, type BoardItem } from '$lib/state/boards/board';
+    import { cardCursor } from '$lib/state/workbench/layout/instance';
     import { modelShort, stamp } from '$lib/state/words/format';
-    import { PRESENT_DOC } from '$lib/state/life/present';
+    import { PRESENT_DOC } from '$lib/state/feeds/life/present';
     import type { GroupedSession } from '$lib/state/client/selectors.svelte';
     import { t } from '$lib/state/words/text';
-    import type { ViewProps } from '../../registry';
+    import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 
     const {
@@ -67,7 +67,13 @@
     const item = $derived(id === '' ? null : boardItemOf(id));
     const folder = $derived(item === null ? '' : folderOf(item));
     const rows = $derived(folder === '' ? [] : sessionsForProject(folder));
-    const names = $derived(item === null ? [] : documentNames(item));
+    /**
+     * The Markdown this tab can draw: the fixed documents the folder holds, and the PRESENT.md when
+     * the project has one. A PRESENT.md is not one of the four a project is measured by, so the
+     * card's document row does not report on it; its narrative is still a document of the project,
+     * and api/docs answers with the body alone, the front matter split off.
+     */
+    const names = $derived(item === null ? [] : markdownDocNames(item.project, PRESENT_DOC));
     const chosen = $derived(pick(names, readDoc(instanceState(instance.id))));
     const shown = $derived(chosen === '' ? null : docFor(id, chosen));
     const lag = $derived(staleLag());
@@ -104,25 +110,6 @@
         return cut < 0 ? '' : file.slice(0, cut);
     }
 
-    function markdown(doc: { name: string; present: boolean }): boolean {
-        return doc.present && doc.name.endsWith('.md');
-    }
-
-    function nameOf(doc: { name: string }): string {
-        return doc.name;
-    }
-
-    /**
-     * The Markdown this tab can draw: the fixed documents the folder holds, and the PRESENT.md when
-     * the project has one. A PRESENT.md is not one of the four a project is measured by, so the
-     * card's document row does not report on it; its narrative is still a document of the project,
-     * and api/docs answers with the body alone, the front matter split off.
-     */
-    function documentNames(one: BoardItem): string[] {
-        const found = one.project.docs.filter(markdown).map(nameOf);
-        return (one.project.present ?? []).length > 0 ? [...found, PRESENT_DOC] : found;
-    }
-
     /** The document showing: the one the tab remembers while it is still there, else the first. */
     function pick(present: string[], held: string): string {
         if (present.includes(held)) return held;
@@ -139,7 +126,7 @@
      * The known documents the project has not got, drawn as the tags the project card draws for
      * them, since this tab lists the documents in the card's place.
      */
-    const absent = $derived(item === null ? [] : item.project.docs.filter((doc) => !doc.present));
+    const absent = $derived(item === null ? [] : absentDocs(item.project));
 
     function title(): string {
         return item === null ? t('views.project') : item.project.title;

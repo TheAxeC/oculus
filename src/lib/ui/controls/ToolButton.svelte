@@ -6,7 +6,7 @@
     // button reports itself as a radio and says whether it is the chosen one, which is what
     // Segment.svelte needs and a lone button does not.
 
-    import Glyph from './Glyph.svelte';
+    import Glyph from '../display/Glyph.svelte';
     import Tooltip from '../menu/Tooltip.svelte';
     import type { Snippet } from 'svelte';
 

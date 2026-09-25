@@ -5,7 +5,6 @@ import { render } from 'svelte/server';
 import { readFileSync } from 'node:fs';
 import { beforeEach, describe, expect, it } from 'vitest';
 import CrossLinks from '../../../../src/lib/views/shared/links/CrossLinks.svelte';
-import { byType } from '../../../../src/lib/views/shared/links/cross-links.ts';
 import type { CrossGroup } from '../../../../src/lib/state/boards/collection.ts';
 import {
     engineDir,
@@ -50,34 +49,6 @@ describe('CrossLinks', () => {
 });
 
 describe('the members of one group', () => {
-    it('nest under their own project type, one row per type, in the members own order', () => {
-        expect(
-            byType({
-                type: 'work',
-                count: 3,
-                members: [
-                    { id: 'a', label: 'A', type: 'active' },
-                    { id: 'b', label: 'B', type: 'manuscript' },
-                    { id: 'c', label: 'C', type: 'active' }
-                ],
-                warn: false
-            })
-        ).toEqual([
-            {
-                type: 'active',
-                members: [
-                    { id: 'a', label: 'A', type: 'active' },
-                    { id: 'c', label: 'C', type: 'active' }
-                ]
-            },
-            { type: 'manuscript', members: [{ id: 'b', label: 'B', type: 'manuscript' }] }
-        ]);
-    });
-
-    it('is one row for a group whose members are all of one type', () => {
-        expect(byType(groups[0]).map((kind) => kind.type)).toEqual(['active']);
-    });
-
     // The cut is a layout effect no server render measures; the rule and the tooltip are what a
     // reader is left with when a title is longer than the card.
     it('cuts a long project title inside the card and keeps the whole title in its tooltip', () => {

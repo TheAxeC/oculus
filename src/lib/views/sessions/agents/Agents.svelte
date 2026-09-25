@@ -1,6 +1,6 @@
 <script module lang="ts">
     // Layer 3, view registration. Agents closes the Sessions group.
-    import type { ViewRegistration } from '$lib/views/registry';
+    import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     export const registration: ViewRegistration = {
         id: 'agents',
         label: 'sessions.view_agents',
@@ -33,8 +33,9 @@
     import { compactCount, modelShort, seconds, span } from '$lib/state/words/format';
     import { pinnedSession } from '$lib/state/workbench/selection.svelte';
     import type { SessionAgent } from '$lib/state/client/selectors.svelte';
+    import { anyRunning, newestFirst } from '$lib/state/sessions/folds';
     import { t } from '$lib/state/words/text';
-    import type { ViewProps } from '$lib/views/registry';
+    import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 
     const {
@@ -65,12 +66,10 @@
      * launched builders in two runs, so the order is the stamps', not the list's; an agent with no
      * stamp goes last.
      */
-    const agents = $derived(
-        [...(record?.agents ?? [])].sort((a, b) => (b.started ?? '').localeCompare(a.started ?? ''))
-    );
+    const agents = $derived(newestFirst(record?.agents ?? []));
 
     /** Whether any row runs, which is what keeps the count moving. */
-    const running = $derived(agents.some((agent) => agent.status === 'running'));
+    const running = $derived(anyRunning(agents));
 
     $effect(() => {
         if (!running) return;

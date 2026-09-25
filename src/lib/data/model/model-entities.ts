@@ -1,5 +1,5 @@
 // Layer 1, data. Raw source records and portfolio entities, with relations held as ids. This
-// concern module keeps entity and source shapes together while model.ts remains the public facade.
+// concern module keeps entity and source shapes together while data/model/index.ts is the facade.
 
 export type Id = string;
 

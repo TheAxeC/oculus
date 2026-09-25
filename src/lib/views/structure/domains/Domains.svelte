@@ -1,6 +1,6 @@
 <script module lang="ts">
     // Layer 3, view registration. Domains follows Pillars in the structure group.
-    import type { ViewRegistration } from '../../registry';
+    import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     export const registration: ViewRegistration = {
         id: 'domains',
         label: 'views.domains',
@@ -15,19 +15,24 @@
     // membership, with the shared schema-driven add and edit forms.
 
     import Pane from '$lib/ui/frame/Pane.svelte';
-    import Toolbar from '$lib/ui/frame/Toolbar.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import DomainCard from '$lib/views/structure/domains/DomainCard.svelte';
-    import SourceButton from '$lib/views/shared/links/SourceButton.svelte';
-    import EntryForm from '$lib/views/shared/forms/EntryForm.svelte';
+    import SourceToolbar from '$lib/views/shared/links/SourceToolbar.svelte';
+    import RegistryHead from '$lib/views/shared/forms/RegistryHead.svelte';
     import Intro from '$lib/views/shared/prose/Intro.svelte';
+    import type { Snippet } from 'svelte';
     import Reveal from '$lib/views/shared/card/Reveal.svelte';
     import { inlineMarkdown } from '$lib/ui/html';
-    import { cardCursor } from '$lib/state/client/instance';
-    import { domainMembers, parseDomainsState, type DomainsState } from '$lib/state/words/lines';
+    import { cardCursor } from '$lib/state/workbench/layout/instance';
+    import {
+        domainsWithMembers,
+        registryLines,
+        parseDomainsState,
+        type DomainsState
+    } from '$lib/state/boards/structure/lines';
+    import { entryById } from '$lib/state/boards/collection';
     import { t } from '$lib/state/words/text';
     import { viewSourceFile } from '$lib/state/sessions/view-source';
-    import type { ViewProps } from '../../registry';
+    import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 
     const {
@@ -45,66 +50,34 @@
      * The registry file this view is drawn from, which the control at the end of the toolbar opens.
      */
     const source = $derived(viewSourceFile('domains', configMap()));
-    const domains = $derived.by(() => {
-        const entities = Object.values(portfolio()?.entities.domains ?? {});
-        const byId = new Map(entities.map((domain) => [domain.id, domain]));
-        const ordered = (collection?.entries ?? [])
-            .map((entry) => byId.get(entry.id))
-            .filter((domain) => domain !== undefined);
-        const seen = new Set(ordered.map((domain) => domain.id));
-        return [...ordered, ...entities.filter((domain) => !seen.has(domain.id))];
-    });
-    const allProjects = $derived(projects());
-    const dead = $derived(archiveDead());
-    const shown = $derived(
-        domains
-            .map((domain) => ({ domain, projects: domainMembers(domain, allProjects, dead) }))
-            .filter((item) => item.projects.length > 0)
-    );
+    const domains = $derived(registryLines(portfolio(), 'domains', collection?.entries ?? []));
+    const shown = $derived(domainsWithMembers(domains, projects(), archiveDead()));
     let said = $state('');
 
     function write(next: Partial<DomainsState>): void {
         setInstanceState(instance.id, { ...held, ...next });
     }
-    function entryFor(id: string) {
-        return collection?.entries.find((entry) => entry.id === id) ?? null;
-    }
 </script>
 
-{#snippet introActions()}
-    {#if collection?.schema !== undefined}
-        <ToolButton
-            label={t('collection.add')}
-            title={t('collection.add_tip')}
-            active={held.adding}
-            onclick={() => write({ adding: toggleAdd(instance.id, 'domains', held.adding) })}
-        />
-    {/if}
-{/snippet}
-
 {#snippet tools()}
-    <Toolbar label={t('collection.toolbar')}>
-        {#if source !== null}
-            <SourceButton file={source} />
-        {/if}
-    </Toolbar>
+    <SourceToolbar {source} />
 {/snippet}
 
 <Pane title={t('views.domains')} toolbar={tools}>
     <div class="domains-view" data-instance={instance.id}>
-        <Intro html={inlineMarkdown(t('domains.intro'))} trusted actions={introActions} />
-        {#if held.adding && collection?.schema !== undefined}
-            <EntryForm
-                collection="domains"
-                schema={collection.schema}
-                entry={null}
-                onclose={() => write({ adding: false })}
-                onsaid={(words: string) => (said = words)}
-            />
-        {/if}
-        {#if said !== ''}
-            <p class="said">{said}</p>
-        {/if}
+        <RegistryHead
+            collection="domains"
+            schema={collection?.schema}
+            adding={held.adding}
+            {said}
+            ontoggle={() => write({ adding: toggleAdd(instance.id, 'domains', held.adding) })}
+            onclose={() => write({ adding: false })}
+            onsaid={(words: string) => (said = words)}
+        >
+            {#snippet intro(actions: Snippet)}
+                <Intro html={inlineMarkdown(t('domains.intro'))} trusted {actions} />
+            {/snippet}
+        </RegistryHead>
         {#if shown.length === 0}
             <p class="empty">{t('domains.empty')}</p>
         {:else}
@@ -119,7 +92,7 @@
                             domain={item.domain}
                             cursor={cursor === item.domain.id}
                             projects={item.projects}
-                            entry={entryFor(item.domain.id)}
+                            entry={entryById(collection, item.domain.id)}
                             schema={collection?.schema}
                             editing={held.editing === item.domain.id}
                             onedit={() =>
@@ -152,8 +125,7 @@
         margin-top: 10px;
     }
 
-    .empty,
-    .said {
+    .empty {
         color: var(--muted-txt, var(--muted));
         font-size: var(--fs-md);
     }

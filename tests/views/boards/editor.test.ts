@@ -23,7 +23,7 @@ import {
 import { setCatalog, setGlyphs, t } from '../../../src/lib/state/words/text.ts';
 import { setVocab } from '../../../src/lib/state/words/tones.ts';
 import { formFields, formSections } from '../../../src/lib/state/forms/schema.ts';
-import type { Id, Project, Snapshot } from '../../../src/lib/data/model.ts';
+import type { Id, Project, Snapshot } from '../../../src/lib/data/model/index.ts';
 import type { Instance } from '../../../src/lib/state/workbench/layout/index.ts';
 import { clientContext, createClientState, type ClientState } from '../../fixtures/client.ts';
 

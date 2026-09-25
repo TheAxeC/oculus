@@ -2,7 +2,7 @@
 // publishes on the `calendar` channel, and the key an account is addressed by.
 //
 // It is a concern module of its own beside model-sessions.ts and model-collections.ts, reached
-// through the model.ts facade alone, because a calendar changes for calendar reasons: a provider
+// through the index.ts facade alone, because a calendar changes for calendar reasons: a provider
 // field, a window, an event state.
 //
 // A time is an ISO string exactly as the provider gave it. Google answers a timed event with its

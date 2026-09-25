@@ -14,12 +14,12 @@
 
 import { readdirSync, statSync } from 'node:fs';
 import { join, relative, resolve, sep } from 'node:path';
-import { loadConfig } from '../../data/sources/config.ts';
+import { portfolioConfigFrom } from '../../data/index.ts';
+import { loadConfig, loadLocalOrDefaults } from '../../data/sources/config.ts';
 import { isMap } from '../../data/helpers/guards.ts';
 import { readManifests } from '../../data/sources/manifests.ts';
 import { sameOrigin } from '../core/auth.ts';
-import { target } from '../edit/writes.ts';
-import type { PortfolioConfig } from '../../data/model.ts';
+import type { PortfolioConfig } from '../../data/model/index.ts';
 
 /**
  * What a file listing needs: the hub, its scan rules, and the merged config `file_index` sits in.
@@ -191,12 +191,17 @@ export function listFiles(into: FilesTarget, id: string): Response {
 
 /**
  * What the route reads: the hub every write lands in, and the merged config beside it. The hub and
- * the scan rules come from lib/server/edit/writes.ts rather than a second reader of local.yml,
- * exactly as the document route's do.
+ * the scan rules come from the readers target() in lib/server/edit/writes.ts takes them from,
+ * loadLocalOrDefaults and portfolioConfigFrom, rather than from a second reader of local.yml, and
+ * the configuration is read once for both.
  */
 export function filesTarget(engine: string): FilesTarget {
-    const { hub, config } = target(engine);
-    return { hub, config, settings: loadConfig(engine).config };
+    const settings = loadConfig(engine).config;
+    return {
+        hub: loadLocalOrDefaults(engine).hub,
+        config: portfolioConfigFrom(settings, engine),
+        settings
+    };
 }
 
 /** The whole endpoint: refuse a request from another origin, or list the project it names. */

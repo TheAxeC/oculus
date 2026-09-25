@@ -1,7 +1,7 @@
 <script module lang="ts">
     // Layer 3, view registration. Changes registration stays on the component because the registry
     // discovers this file directly.
-    import type { ViewRegistration } from '$lib/views/registry';
+    import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     export const registration: ViewRegistration = {
         id: 'changes',
         label: 'sessions.view_changes',
@@ -23,8 +23,8 @@
     import Toolbar from '$lib/ui/frame/Toolbar.svelte';
     import { pinnedSession } from '$lib/state/workbench/selection.svelte';
     import { t } from '$lib/state/words/text';
-    import type { ViewProps } from '$lib/views/registry';
-    import { repoShape } from '$lib/views/shared/changes/repo-shape';
+    import type { ViewProps } from '$lib/state/workbench/navigation/registry';
+    import { currentBranch, repoShape } from '$lib/state/sources/repositories';
     import ChangesRepo from './ChangesRepo.svelte';
     import ChangesTouched from './ChangesTouched.svelte';
     import { useState } from '$lib/state/client/use';
@@ -58,7 +58,7 @@
     // for a state the panel no longer draws.
     let asked = 0;
     const staged = $derived(repo?.staged ?? []);
-    const current = $derived(branches.find((one) => one.current) ?? null);
+    const current = $derived(currentBranch(branches));
     const upstream = $derived(current?.upstream ?? '');
     const canCommit = $derived(staged.length > 0 && message.trim() !== '' && !busy);
 

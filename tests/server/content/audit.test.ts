@@ -4,7 +4,7 @@
 //
 // The words are the engine's own catalog, read through loadConfig, so a case asserts the message
 // the reader sees rather than a copy of it typed here. What this does NOT cover: the watcher
-// publishing the scan, which is tests/server/watch/portfolio.test.ts, and the view drawing it,
+// publishing the scan, which is tests/server/root/watch/portfolio.test.ts, and the view drawing it,
 // which is tests/views/system/audit.test.ts.
 
 import { mkdirSync, writeFileSync } from 'node:fs';
@@ -22,7 +22,7 @@ import {
     titleWords
 } from '../../../src/lib/server/content/audit.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
-import type { AuditFinding, Collection, Project } from '../../../src/lib/data/model.ts';
+import type { AuditFinding, Collection, Project } from '../../../src/lib/data/model/index.ts';
 import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
 
 afterAll(sweepScratch);

@@ -16,7 +16,7 @@ import { LOCAL_NAME, checkLocal } from '../../data/sources/config.ts';
 import { TEXT_SNIFF_READ, isTextBytes } from '../../data/helpers/text-kind.ts';
 import { hasToken, sameOrigin } from '../core/auth.ts';
 import { ENGINE_ROOT, resolveRootFileResult, resolveRootPath, type Root } from './files.ts';
-import { writeTextAtomic } from '../sessions/stores/json.ts';
+import { writeTextAtomic } from '../core/json.ts';
 
 export type SourceBody = { root: string; path: string; content: string };
 

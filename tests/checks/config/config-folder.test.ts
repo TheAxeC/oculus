@@ -525,7 +525,7 @@ describe("oculus's own config directory", () => {
         expect(wide.map(([name, standIn]) => `${name}: ${standIn}`)).toEqual([]);
     });
 
-    // revert: src/lib/data/sources/config/catalogs.ts:108 => continue;
+    // revert: src/lib/data/sources/config/catalogs.ts:109 => continue;
     it('reports a glyph whose stand-in is empty, not text, wider than three, or not ASCII', () => {
         const drifted = {
             glyphs: { pin: 'P', blank: '', count: 3, mark: '\u25C6', wide: '[><]' },
@@ -578,8 +578,8 @@ describe("oculus's own config directory", () => {
     });
 
     it('reads glyph and icon names as own keys, so a name like constructor is no name', () => {
-        // revert: src/lib/data/sources/config/catalogs.ts:117 => if (name in map) continue;
-        // revert: src/lib/data/sources/config/catalogs.ts:125 => if (!(name in glyphs)) {
+        // revert: src/lib/data/sources/config/catalogs.ts:118 => if (name in map) continue;
+        // revert: src/lib/data/sources/config/catalogs.ts:126 => if (!(name in glyphs)) {
         const inherited = {
             glyphs: { pin: 'P', toString: 'T' },
             icons: { pin: 'pin', constructor: 'circle' },

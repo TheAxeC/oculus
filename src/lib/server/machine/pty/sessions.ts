@@ -10,7 +10,7 @@
 import { randomBytes } from 'node:crypto';
 import { statSync } from 'node:fs';
 import { isAbsolute } from 'node:path';
-import type { Terminal, TerminalKind, TerminalResume } from '../../../data/model.ts';
+import type { Terminal, TerminalKind, TerminalResume } from '../../../data/model/index.ts';
 import { run, type KeyChunk, type TmuxOptions } from './tmux.ts';
 
 /** Every tmux session oculus owns carries this prefix and nothing else does. */

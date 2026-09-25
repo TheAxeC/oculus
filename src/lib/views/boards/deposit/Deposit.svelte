@@ -1,7 +1,7 @@
 <script module lang="ts">
     // Layer 3, view registration. A deposit opens from a project and is not listed in the view
     // catalogue.
-    import type { ViewRegistration } from '../../registry';
+    import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     export const registration: ViewRegistration = {
         id: 'deposit',
         label: 'views.deposit',
@@ -43,7 +43,7 @@
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import type { Finding, MirrorState, Plan } from '$lib/state/system/deposit.svelte';
     import { t } from '$lib/state/words/text';
-    import type { ViewProps } from '../../registry';
+    import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 
     const {

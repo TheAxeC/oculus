@@ -19,8 +19,8 @@ import { parse } from 'yaml';
 import { catalogKeys, deckOrder, deckSources, savedKeys } from '../../../data/helpers/deck.ts';
 import { fields } from '../../../data/helpers/guards.ts';
 import { setDeckLists } from '../deck-edit.ts';
-import type { ChangeRecord } from '../../git/changes.ts';
-import type { PortfolioConfig, Project } from '../../../data/model.ts';
+import type { ChangeRecord } from '../../core/changes.ts';
+import type { PortfolioConfig, Project } from '../../../data/model/index.ts';
 
 /** What a deck write answers with: what it changed, or the one word saying what was wrong. */
 export type DeckOutcome =

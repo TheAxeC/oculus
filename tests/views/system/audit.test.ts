@@ -9,7 +9,7 @@ import { readFileSync } from 'node:fs';
 import { render } from 'svelte/server';
 import { beforeEach, describe, expect, it } from 'vitest';
 import Audit, { registration } from '../../../src/lib/views/system/audit/Audit.svelte';
-import type { ViewRegistration } from '../../../src/lib/views/registry.ts';
+import type { ViewRegistration } from '../../../src/lib/state/workbench/navigation/registry.ts';
 import {
     engineDir,
     glyphCatalog,
@@ -18,7 +18,7 @@ import {
 } from '../../../src/lib/data/sources/config.ts';
 import { setCatalog, setGlyphs } from '../../../src/lib/state/words/text.ts';
 import type { Instance } from '../../../src/lib/state/workbench/layout/index.ts';
-import type { AuditFinding } from '../../../src/lib/data/model.ts';
+import type { AuditFinding } from '../../../src/lib/data/model/index.ts';
 import { clientContext, createClientState, type ClientState } from '../../fixtures/client.ts';
 
 let client: ClientState;
@@ -225,7 +225,9 @@ describe('the view as it is written', () => {
     });
 
     it('draws a sentence of its own for a refusal, never the endpoint word', () => {
-        expect(source).toContain("import { muteMessage } from '$lib/state/system/audit'");
+        expect(source).toContain(
+            "import { auditSearch, findingsOfKind, muteMessage } from '$lib/state/system/audit'"
+        );
         expect(source).toContain('failed = muteMessage(answer);');
         // the refusal is worded from the catalog, so the endpoint's own word is not read
         expect(source).not.toContain('answer.error');

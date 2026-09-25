@@ -19,12 +19,12 @@
 
     import Tag from '$lib/ui/controls/Tag.svelte';
     import DateInput from '$lib/ui/forms/DateInput.svelte';
-    import Glyph from '$lib/ui/controls/Glyph.svelte';
+    import Glyph from '$lib/ui/display/Glyph.svelte';
     import TextInput from '$lib/ui/forms/TextInput.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { t } from '$lib/state/words/text';
     import type { SubtaskAction, SubtaskTarget } from '$lib/state/client/writes.svelte';
-    import type { Subtask } from '$lib/state/boards/collection';
+    import { openSubtaskCount, type Subtask } from '$lib/state/boards/collection';
     import { useState } from '$lib/state/client/use';
 
     const {
@@ -48,7 +48,7 @@
     let text = $state('');
     let due = $state('');
 
-    const open = $derived(subtasks.filter((one) => !one.done).length);
+    const open = $derived(openSubtaskCount(subtasks));
 
     /** One day, in milliseconds. */
     const DAY = 24 * 60 * 60 * 1000;

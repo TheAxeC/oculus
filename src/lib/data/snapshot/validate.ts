@@ -14,7 +14,7 @@ import type {
     RegistryName,
     ValidationRules,
     Vocabulary
-} from '../model.ts';
+} from '../model/index.ts';
 import { isMap, byKey, str } from '../helpers/guards.ts';
 import { findingText, type TextCatalog } from '../helpers/finding-text.ts';
 import { JOINT_WORK, PERSON_FIELD, collectionSchema } from './normalise.ts';

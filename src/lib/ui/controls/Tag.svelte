@@ -13,7 +13,7 @@
     // A tag that is pressed is this inside the caller's own button: the click, the title and the
     // hover belong to the control, and what it holds is the same tag as the ones beside it.
 
-    import Glyph from './Glyph.svelte';
+    import Glyph from '../display/Glyph.svelte';
     import { bracketedGlyph } from '$lib/state/words/text';
 
     type Props = {

@@ -4,7 +4,7 @@
 import { createReadStream, realpathSync } from 'node:fs';
 import { createInterface } from 'node:readline';
 import { join } from 'node:path';
-import type { UsageAccountConfig, UsageDay, UsageTool } from '../../../data/model.ts';
+import type { UsageAccountConfig, UsageDay, UsageTool } from '../../../data/model/index.ts';
 import { isMap } from '../../../data/helpers/guards.ts';
 import { claudeTranscripts, codexRollouts, type TranscriptFile } from '../../transcripts/stores.ts';
 import {

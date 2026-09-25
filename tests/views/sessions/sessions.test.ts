@@ -42,10 +42,10 @@ import {
     workspace
 } from '../../fixtures/sessions-fixture.ts';
 import { NO_FEEDS } from '../../fixtures/entities-fixture.ts';
-import type { Project, Snapshot } from '../../../src/lib/data/model.ts';
+import type { Project, Snapshot } from '../../../src/lib/data/model/index.ts';
 import type { Component } from 'svelte';
 import type { Instance } from '../../../src/lib/state/workbench/layout/index.ts';
-import type { ViewProps } from '../../../src/lib/views/registry.ts';
+import type { ViewProps } from '../../../src/lib/state/workbench/navigation/registry.ts';
 import { clientContext, createClientState, type ClientState } from '../../fixtures/client.ts';
 
 let client: ClientState;
@@ -570,7 +570,7 @@ describe('the terminal view with nothing selected', () => {
 describe('the terminal toolbar pin', () => {
     // The label follows the pinned terminal's name through an $effect, which no server render runs;
     // the write it makes is read off the source and the browser suite presses the rename itself.
-    // revert: src/lib/views/sessions/terminal/Terminal.svelte:354 => glyph="dismiss"
+    // revert: src/lib/views/sessions/terminal/Terminal.svelte:351 => glyph="dismiss"
     it('is a glyph button among the glyph buttons, not a word among them', () => {
         select(null);
         const body = html(Terminal, { session: 'abc123-shell' });
@@ -725,7 +725,7 @@ describe('a terminal in the payload', () => {
         select(null);
     });
 
-    // revert: src/lib/views/sessions/terminal/Terminal.svelte:112 => const fresh = false;
+    // revert: src/lib/views/sessions/terminal/Terminal.svelte:113 => const fresh = false;
     it('shows the start form in a tab opened for a terminal of its own, whatever the rail selected', () => {
         const body = withTerminals(() => {
             select(pane.id);

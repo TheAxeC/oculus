@@ -3,7 +3,7 @@
 // ticks. A serialized queue per account keeps a route request and a scheduled tick from
 // overlapping.
 
-import type { UsageAccountConfig, UsageRefresher } from '../../../data/model.ts';
+import type { UsageAccountConfig, UsageRefresher } from '../../../data/model/index.ts';
 import { usageAccountLabel } from '../../../data/sources/config.ts';
 import { sendKeysArgs, startArgs, USAGE_PREFIX, type Runner } from '../pty/sessions.ts';
 import { run } from '../pty/tmux.ts';

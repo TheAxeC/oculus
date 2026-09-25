@@ -13,7 +13,11 @@
 // alone, which is the form Google's all-day events arrive in as well.
 
 import { isMap, str } from '../../../data/helpers/guards.ts';
-import type { CalendarEvent, CalendarEventStatus, CalendarListEntry } from '../../../data/model.ts';
+import type {
+    CalendarEvent,
+    CalendarEventStatus,
+    CalendarListEntry
+} from '../../../data/model/index.ts';
 import { getJson, httpsLink, PAGE_MAX, rowsOf, type ReadArgs, type Reading } from './api.ts';
 
 const BASE = 'https://graph.microsoft.com/v1.0';

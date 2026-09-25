@@ -18,7 +18,7 @@
 import { closeSync, fstatSync, openSync, readSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { basename, join } from 'node:path';
-import type { LiveEntry, SessionRecord, SessionTool } from '../../../data/model.ts';
+import type { LiveEntry, SessionRecord, SessionTool } from '../../../data/model/index.ts';
 import {
     MAX_FIRST_READ_BYTES,
     loadCache,
@@ -41,7 +41,7 @@ import {
 import { claudeTranscripts, codexRollouts, isRollout } from '../../transcripts/stores.ts';
 import { claudeState, foldClaude } from '../fold.ts';
 import { settleBackground } from './background.ts';
-import { whole } from './json.ts';
+import { whole } from '../../core/json.ts';
 import {
     builderProcesses,
     defaultDispatchesPath,

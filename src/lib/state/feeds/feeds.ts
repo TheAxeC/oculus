@@ -9,7 +9,7 @@
 // No words live here. A line carries what it is and a number; the view turns that into a sentence
 // through the catalogs under config/text/.
 
-import type { Snapshot } from '../../data/model.ts';
+import type { Snapshot } from '../../data/model/index.ts';
 import { isMap } from '../../data/helpers/guards.ts';
 import { daysUntil } from '../boards/board/index.ts';
 import { venueLoad } from '../boards/ticker.ts';

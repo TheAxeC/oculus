@@ -15,17 +15,10 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { render } from 'svelte/server';
 import Config from '../../../src/lib/views/system/config/Config.svelte';
 import Source from '../../../src/lib/views/sources/source/Source.svelte';
-import {
-    LOCAL_NAME,
-    configFiles,
-    descriptionKey,
-    isLocalFile,
-    lineCount
-} from '../../../src/lib/views/system/config/files.ts';
+import { descriptionKey } from '../../../src/lib/views/system/config/files.ts';
 import { ENGINE_ROOT, type FsEntry } from '../../../src/lib/state/sources/fs.ts';
 import { sourceTabState } from '../../../src/lib/state/sessions/source.svelte.ts';
 import {
-    LOCAL_NAME as SERVER_LOCAL_NAME,
     engineDir,
     glyphCatalog,
     loadConfig,
@@ -82,41 +75,9 @@ function drawn(entries: FsEntry[], held: FileText = text(LAYOUT)): string {
 }
 
 describe('which files the view cards', () => {
-    it('audits that is the YAML of the folder itself, in name order', () => {
-        expect(
-            configFiles([
-                file('vocab.yml'),
-                file('appearance.yml'),
-                directory('text'),
-                file('notes.md'),
-                file('layout.yml')
-            ])
-        ).toEqual(['appearance.yml', 'layout.yml', 'vocab.yml']);
-    });
-
-    it('puts the machine own file last, after the tracked ones', () => {
-        expect(configFiles([file('local.yml'), file('vocab.yml'), file('appearance.yml')])).toEqual(
-            ['appearance.yml', 'vocab.yml', 'local.yml']
-        );
-        expect(configFiles([file('vocab.yml')])).toEqual(['vocab.yml']);
-        expect(isLocalFile('local.yml')).toBe(true);
-        expect(isLocalFile('layout.yml')).toBe(false);
-    });
-
-    it('names the machine own file as the server module does, which it cannot import', () => {
-        expect(LOCAL_NAME).toBe(SERVER_LOCAL_NAME);
-    });
-
     it('keys a description by the file name, with a hyphen written as an underscore', () => {
         expect(descriptionKey('layout.yml')).toBe('config.desc_layout');
         expect(descriptionKey('manifest-schema.yml')).toBe('config.desc_manifest_schema');
-    });
-
-    it('counts the lines of a file, whether or not it ends in a newline', () => {
-        expect(lineCount('')).toBe(0);
-        expect(lineCount('one\n')).toBe(1);
-        expect(lineCount('one\ntwo\n')).toBe(2);
-        expect(lineCount('one\ntwo')).toBe(2);
     });
 });
 

@@ -55,7 +55,7 @@ const VIEWS: Record<string, string> = {
     'sources/files/tree/ShowPath.svelte': '.said=fs-sm',
     'sources/files/tree/Tree.svelte': '',
     'sources/files/sections/Workspaces.svelte': '',
-    'structure/domains/Domains.svelte': '.empty, .said=fs-md',
+    'structure/domains/Domains.svelte': '.empty=fs-md',
     'boards/editor/Editor.svelte': '.heading=fs-sm | .result=fs-md',
     'system/audit/Audit.svelte':
         '.failed=fs-sm | h3=fs-sm | .where=fs-sm | .message=fs-md | .note=fs-sm',
@@ -80,7 +80,7 @@ const VIEWS: Record<string, string> = {
     'personal/memories/Memories.svelte': '.failed=fs-sm | .alt=fs-sm',
     'boards/person/Person.svelte': '.facts dt=fs-xxs | .block h3=fs-sm',
     'academic/present/Present.svelte': '.counter=fs-xs',
-    'structure/pillars/Pillars.svelte': '.note, .said=fs-md',
+    'structure/pillars/Pillars.svelte': '.note=fs-md',
     'boards/project/Project.svelte':
         '.heading=fs-xs | .said, .failed=fs-md | .doc=fs-md | .doc :global(h1)=fs-3xl | .doc :global(h2)=fs-2xl | .doc :global(h3)=fs-xl | .doc :global(h4)=fs-md | .doc :global(code)=fs-sm | .doc :global(table)=fs-md | .nm=fs-md | .meta=fs-sm',
     'boards/projects/Projects.svelte': '.said=fs-md',
@@ -207,6 +207,8 @@ const VIEWS: Record<string, string> = {
     'shared/links/ProgramButton.svelte': '.failed=fs-sm',
     'shared/card/Reveal.svelte': '',
     'shared/links/SourceButton.svelte': '',
+    'shared/links/SourceToolbar.svelte': '',
+    'shared/forms/RegistryHead.svelte': '.said=fs-md',
     'shared/forms/Subtasks.svelte': '.label=fs-xs | .count, .box=fs-xs | .do=fs-md',
     'sources/source/Code.svelte': '.gutter, .text=fs-sm',
     'sources/source/Editor.svelte': '.mirror=fs-sm | .input :global(.area)=fs-sm',
@@ -241,7 +243,7 @@ const PASS_THROUGH: Record<string, string> = {
     'src/lib/ui/menu/MenuOpener.svelte':
         '.opener=fs-sm | .opener.compact=fs-lg | .opener.bare=fs-lg | :global(body.rice) .opener.rail :global(.glyph:not(:has(svg)))=fs-lg',
     'src/lib/ui/controls/Confirm.svelte': '.message=fs-sm | .detail=fs-xs | .row button=fs-sm',
-    'src/lib/ui/controls/Glyph.svelte': '',
+    'src/lib/ui/display/Glyph.svelte': '',
     'src/lib/ui/controls/Search.svelte': '.search=fs-sm',
     'src/lib/ui/controls/Segment.svelte': '',
     'src/lib/ui/controls/Tag.svelte': '.tag=fs-sm',
@@ -283,7 +285,7 @@ describe('the view type scale', () => {
         ).toEqual(Object.keys(VIEWS).sort());
     });
 
-    // revert: tests/views/whole/type-scale.test.ts:259 => delete
+    // revert: tests/views/whole/type-scale.test.ts:261 => delete
     it('audits that every ui component is listed in the pass-through audit', () => {
         const ui = 'src/lib/ui';
         expect(files(ui).sort()).toEqual(

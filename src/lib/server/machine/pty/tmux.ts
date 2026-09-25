@@ -1,6 +1,6 @@
 // Layer 2, server. The one process boundary of DESIGN.md's "PTY": every tmux call this application
 // makes goes through run() or control(), as a list of arguments and never as a shell string, the
-// same rule server/git/git.ts holds for git.
+// same rule server/core/git.ts holds for git.
 //
 // There is no native pty module here and there will not be one. tmux is the terminal, and its
 // control mode is the bridge: `tmux -C attach-session -t <session>` with piped stdio prints

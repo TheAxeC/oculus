@@ -2,7 +2,7 @@
 // card helper line and the lane cards read one rule, so a project waited on is named the same way
 // on every surface.
 
-import type { Id, Project } from '../../data/model.ts';
+import type { Id, Project } from '../../data/model/index.ts';
 import { byKey } from '../../data/helpers/guards.ts';
 
 /**

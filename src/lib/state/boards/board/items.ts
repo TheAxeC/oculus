@@ -3,7 +3,7 @@
 
 import { byKey } from '../../../data/helpers/guards.ts';
 import { domainLabel, domainTone, typeTone } from '../../words/tones.ts';
-import type { Id, Project, Snapshot } from '../../../data/model.ts';
+import type { Id, Project, Snapshot } from '../../../data/model/index.ts';
 import { personNames } from '../person.ts';
 import {
     SESSIONS_NONE,
@@ -164,4 +164,31 @@ export function boardItems(
         .filter((project) => preset.tiers.includes(project.tier))
         .map((project) => itemOf(project, snapshot, preset, names, sessionsOf));
     return items.sort((left, right) => compare(left, right, preset.typeOrder));
+}
+
+/** Whether a project's README is there to open, which is all a ghost project's title can open. */
+export function hasReadme(project: Project): boolean {
+    return project.docs.some((doc) => doc.name === 'README.md' && doc.present);
+}
+
+/**
+ * The Markdown a project's tab can draw: the fixed documents the folder holds, then the narrative
+ * document `presentDoc` names when the project has a present narrative.
+ */
+export function markdownDocNames(project: Project, presentDoc: string): string[] {
+    const found = project.docs
+        .filter((doc) => doc.present && doc.name.endsWith('.md'))
+        .map((doc) => doc.name);
+    return (project.present ?? []).length > 0 ? [...found, presentDoc] : found;
+}
+
+/** The known documents a project has not got, in the order the project lists them. */
+export function absentDocs(project: Project): Project['docs'] {
+    return project.docs.filter((doc) => !doc.present);
+}
+
+/** The day the project's newest document was last written, and '' when none says when. */
+export function newestDocDate(project: Project): string {
+    const newest = project.docs.reduce((top, doc) => Math.max(top, doc.mtime ?? 0), 0);
+    return newest === 0 ? '' : new Date(newest).toISOString().slice(0, 10);
 }

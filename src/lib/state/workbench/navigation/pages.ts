@@ -81,3 +81,8 @@ export function railPageViews(pages: readonly Page[], key: string, node: unknown
     if (root === undefined) return [];
     return [...new Set(tabsOf(root).map((instance) => instance.view))];
 }
+
+/** Whether any tab of a page holds text no save has taken. */
+export function pageUnsaved(page: Page, unsaved: (id: string) => boolean): boolean {
+    return pageInstanceIds(page).some(unsaved);
+}

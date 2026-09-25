@@ -4,7 +4,11 @@
 
 import { mkdirSync, watch } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
-import type { UsageAccountConfig, UsagePayload, UsageRefresher } from '../../../data/model.ts';
+import type {
+    UsageAccountConfig,
+    UsagePayload,
+    UsageRefresher
+} from '../../../data/model/index.ts';
 import type { Hub } from '../../core/channels.ts';
 import { claudeAccountFile, defaultUsageRoot, usageAccounts, type UsageTiers } from './accounts.ts';
 import { UsageTranscriptFold } from './transcripts.ts';

@@ -9,9 +9,9 @@
     import Project from './parts/Project.svelte';
     import Summary from './parts/Summary.svelte';
     import Title from './parts/Title.svelte';
-    import { framingOf, summaryOf, tagToneOf, themeOf } from '$lib/state/life/present';
+    import { framingOf, summaryOf, tagToneOf, themeOf } from '$lib/state/feeds/life/present';
     import { useState } from '$lib/state/client/use';
-    import type { DeckSlide } from '$lib/state/life/present';
+    import type { DeckSlide } from '$lib/state/feeds/life/present';
 
     const {
         present: { deck, projectOf, slideOf }

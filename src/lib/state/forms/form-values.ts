@@ -7,7 +7,47 @@
 // empty metalist row, "a,b" over "a, b" in a tags field, a raw field's JSON spaced differently) is
 // never counted as unsaved.
 
-import { parseRawField, rawFieldText } from '../boards/collection.ts';
+/** Anything YAML writes under a raw block: a scalar, a list of them, or a map of them. */
+export type RawFieldValue =
+    string | number | boolean | null | RawFieldValue[] | { [key: string]: RawFieldValue };
+
+export type RawFieldAnswer =
+    { ok: true; value: Record<string, RawFieldValue> | null } | { ok: false };
+
+/** A raw block as the one-line JSON text the textarea edits, nested lists and maps included. */
+export function rawFieldText(value: unknown): string {
+    if (typeof value !== 'object' || value === null || Array.isArray(value)) return '';
+    return JSON.stringify(value);
+}
+
+/** Whether a parsed JSON value is one YAML can write: a scalar, or a list or map of such. */
+function isRawValue(value: unknown): value is RawFieldValue {
+    if (value === null) return true;
+    const kind = typeof value;
+    if (kind === 'string' || kind === 'number' || kind === 'boolean') return true;
+    if (Array.isArray(value)) return value.every(isRawValue);
+    if (kind !== 'object') return false;
+    return Object.values(value as Record<string, unknown>).every(isRawValue);
+}
+
+/**
+ * Parse raw JSON only when it is a map. A value inside it may be a scalar, a list or a nested map,
+ * which is what a real block holds: a dataset's `retrieval:` carries a `priority_first:` list, and
+ * a parser that took scalars alone left the whole block uneditable.
+ */
+export function parseRawField(text: string): RawFieldAnswer {
+    if (text.trim() === '') return { ok: true, value: null };
+    let parsed: unknown;
+    try {
+        parsed = JSON.parse(text);
+    } catch {
+        return { ok: false };
+    }
+    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed))
+        return { ok: false };
+    if (!isRawValue(parsed)) return { ok: false };
+    return { ok: true, value: parsed as Record<string, RawFieldValue> };
+}
 
 /** One row of a `metalist` control: a label and a value the file saves as one flat map. */
 export type MetaRow = { label: string; value: string };

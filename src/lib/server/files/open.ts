@@ -27,11 +27,11 @@ import { isBundleId, programFor, type ProgramApps } from '../../data/helpers/ope
 import { hasToken, sameOrigin } from '../core/auth.ts';
 import { HUB_ROOT, resolveRootPath, type Root } from './files.ts';
 
-/**
- * How an `https` address reaches the operating system, for the calendar's and the mail's consent
- * and event links. It is injectable so route tests open nothing.
- */
-export type Opener = (target: string) => Promise<void> | void;
+// The URL opener is declared beside the connect flow that is its other reader, and handed on here
+// with the path opener, so the composition root takes both from this module.
+import type { Opener } from '../accounts/connect/oauth.ts';
+
+export type { Opener };
 
 /**
  * What the open endpoint hands to the operating system: a file and its application, or a folder.

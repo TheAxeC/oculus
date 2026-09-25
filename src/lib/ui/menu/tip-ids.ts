@@ -2,7 +2,7 @@
 // at module level, so two pages in one process number their bubbles apart.
 //
 // It is the primitives' own context and names no store, which is what keeps `ui/` importing nothing
-// of the state layer. The root creates one counter with the rest of the client and provides it.
+// of the state layer. The page root creates one counter beside the client and provides it.
 
 import { getContext, setContext } from 'svelte';
 

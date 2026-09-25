@@ -6,7 +6,7 @@
 // is tests/routes/git/git.test.ts and tests/server/git/git-write.test.ts.
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { GitEntry, GitState } from '../../../src/lib/data/model.ts';
+import type { GitEntry, GitState } from '../../../src/lib/data/model/index.ts';
 import { git } from '../../fixtures/sessions-fixture.ts';
 import {
     diffState,
@@ -25,7 +25,9 @@ import {
     worktreeDiffUrl,
     worktreeLabel,
     worktreePath,
-    worktreesDir
+    worktreesDir,
+    linkedWorktrees,
+    workspaceCount
 } from '../../../src/lib/state/sources/repositories.ts';
 import {
     ignoresWorktrees,
@@ -39,6 +41,11 @@ import { setCatalog } from '../../../src/lib/state/words/text.ts';
 import type { LayoutStore } from '../../../src/lib/state/workbench/layout.svelte.ts';
 import type { TerminalsStore } from '../../../src/lib/state/sessions/terminals.svelte.ts';
 import type { WriteAnswer, WritesStore } from '../../../src/lib/state/client/writes.svelte.ts';
+import {
+    changeCount,
+    currentBranch,
+    repoShape
+} from '../../../src/lib/state/sources/repositories.ts';
 
 const ROOT = '/hub';
 
@@ -167,7 +174,7 @@ describe('the repository a view shows', () => {
 
     // Revert: keep the roots whose state has `error === null` in pickerRoots.
     it('offers a root whose repository check did not answer, and keeps showing it', () => {
-        // The shape server/git/git.ts gives a root whose `rev-parse --git-dir` timed out.
+        // The shape server/core/git.ts gives a root whose `rev-parse --git-dir` timed out.
         const states: Record<string, GitState> = {
             '/hub': git({ branch: 'main' }),
             '/slow': git({ branch: '', repository: true, error: 'git timed out' })
@@ -428,7 +435,7 @@ describe('what a press leaves behind', () => {
     });
 
     it('pushes the branch behind the confirm and answers whether git did, as a switch does', async () => {
-        // revert: src/lib/state/sources/repositories.svelte.ts:127 => return act(root, 'push', {}, false);
+        // revert: src/lib/state/sources/repositories.svelte.ts:145 => return act(root, 'push', {}, false);
         const { store, sent } = harness((action) =>
             Promise.resolve(
                 action === 'switchBranch'
@@ -514,5 +521,58 @@ describe('what a press leaves behind', () => {
             ['removeWorktree', true],
             ['merge', true]
         ]);
+    });
+});
+
+describe('the worktrees and workspaces a repository payload names', () => {
+    // revert: src/lib/state/sources/repositories.ts:241 => return git.worktrees;
+    it('are the worktrees other than the main checkout, and the workspaces counted', () => {
+        const git = {
+            worktrees: [
+                { path: '/r', branch: 'main', main: true },
+                { path: '/r/.worktrees/x', branch: 'x', main: false }
+            ]
+        } as unknown as Parameters<typeof linkedWorktrees>[0];
+        expect(linkedWorktrees(git).map((one) => one.path)).toEqual(['/r/.worktrees/x']);
+        expect(workspaceCount({ a: git, b: git })).toBe(2);
+        expect(workspaceCount(null)).toBe(0);
+    });
+});
+
+describe('what a repository state comes to', () => {
+    const state = (over: Record<string, unknown>) =>
+        ({
+            present: true,
+            repository: true,
+            error: null,
+            staged: [],
+            unstaged: [],
+            untracked: [],
+            ...over
+        }) as unknown as Parameters<typeof repoShape>[1] & object;
+
+    // revert: src/lib/state/sources/repositories.ts:273 => if (!state.present) return 'none';
+    it('is one of the six shapes, told apart by the facts the channel carries', () => {
+        expect(repoShape('', null)).toBe('unplaced');
+        expect(repoShape('/r', null)).toBe('reading');
+        expect(repoShape('/r', state({ present: false, repository: false }))).toBe('missing');
+        expect(repoShape('/r', state({ repository: false }))).toBe('none');
+        expect(repoShape('/r', state({ error: 'timeout' }))).toBe('failed');
+        expect(repoShape('/r', state({}))).toBe('readable');
+    });
+
+    // revert: src/lib/state/sources/repositories.ts:251 => return git.staged.length + git.unstaged.length;
+    it('counts the staged, changed and untracked files together', () => {
+        expect(changeCount(state({ staged: [{}], unstaged: [{}, {}], untracked: [{}] }))).toBe(4);
+    });
+
+    // revert: src/lib/state/sources/repositories.ts:280 => return branches[0] ?? null;
+    it('names the branch the listing marks as checked out, and none without one', () => {
+        const branches = [
+            { name: 'main', current: false },
+            { name: 'work', current: true }
+        ];
+        expect(currentBranch(branches)?.name).toBe('work');
+        expect(currentBranch([{ name: 'main', current: false }])).toBeNull();
     });
 });

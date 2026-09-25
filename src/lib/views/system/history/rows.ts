@@ -1,11 +1,11 @@
-// Layer 3, view partial. What the History view draws one recorded change as: the filter it is
-// matched against, and the two values shown beside it.
+// Layer 3, view partial. What the History view draws one recorded change as: the two values shown
+// beside it, the filter an instance holds, and the sentence an undo is said in. Which rows a filter
+// keeps is state/sessions/changes.svelte.ts's.
 //
 // It is a fold and reads nothing: the store holds the rows and this says what they look like, so a
 // case states a row and asserts a line without a fetch.
 
 import { t } from '$lib/state/words/text';
-import type { Change } from '$lib/state/sessions/changes.svelte';
 
 /**
  * One recorded value as the view shows it. A scalar is shown whole and carries no size; a list or a
@@ -45,18 +45,6 @@ export function shown(value: unknown): Shown {
     // Nothing a writer records is a symbol or a function; a value that is one says nothing rather
     // than being stringified into a word no reader could act on.
     return { text: '', size: 0, empty: true };
-}
-
-/** The words one row is matched against: the file it wrote, what it addressed, and the field. */
-export function haystack(row: Change): string {
-    return `${row.file} ${row.key} ${row.field}`.toLowerCase();
-}
-
-/** The rows a filter leaves, in the order they were given. An empty filter leaves every row. */
-export function matching(rows: Change[], filter: string): Change[] {
-    const wanted = filter.trim().toLowerCase();
-    if (wanted === '') return rows;
-    return rows.filter((row) => haystack(row).includes(wanted));
 }
 
 /** The filter one instance of the view is holding, out of whatever its saved state is. */

@@ -1,7 +1,8 @@
 <script module lang="ts">
     // Layer 3, view registration. Inbox follows Position Leads in the feeds group. The view's badge
     // is how many threads of the live plate are still waiting on an answer or an action.
-    import type { ViewRegistration } from '../../registry';
+    import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
+    import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     export const registration: ViewRegistration = {
         id: 'inbox',
         label: 'views.inbox',
@@ -35,13 +36,13 @@
         accountOf,
         inboxSearch,
         parseInboxState,
+        plateCount,
         type InboxState,
         type InboxThread,
         type MailAccount
     } from '$lib/state/feeds/inbox';
     import { t } from '$lib/state/words/text';
-    import { cardCursor } from '$lib/state/client/instance';
-    import type { ViewProps } from '../../registry';
+    import { cardCursor } from '$lib/state/workbench/layout/instance';
     import { useState } from '$lib/state/client/use';
 
     const {
@@ -64,12 +65,7 @@
     const actions = $derived(inboxSearch(sections.actions, held.search));
     const info = $derived(inboxSearch(sections.info, held.search));
     const triaged = $derived(inboxSearch(sections.triaged, held.search));
-    const liveCount = $derived(
-        sections.unsorted.length +
-            sections.replies.length +
-            sections.actions.length +
-            sections.info.length
-    );
+    const liveCount = $derived(plateCount(sections));
     let said: string = $state('');
 
     function write(next: Partial<InboxState>): void {

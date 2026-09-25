@@ -6,7 +6,10 @@
 import { describe, expect, it } from 'vitest';
 import { controlValue, sameSaved, savedValue } from '../../../src/lib/state/forms/form-values.ts';
 import { parseOpenForms } from '../../../src/lib/state/forms/open-forms.ts';
-import { parseDomainsState, parsePillarsState } from '../../../src/lib/state/words/lines.ts';
+import {
+    parseDomainsState,
+    parsePillarsState
+} from '../../../src/lib/state/boards/structure/lines.ts';
 
 describe('controlValue', () => {
     it('holds each kind the way its control draws it', () => {

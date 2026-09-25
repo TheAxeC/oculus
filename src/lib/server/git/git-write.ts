@@ -1,4 +1,4 @@
-// Layer 2, server. The writing half of git, kept apart from server/git/git.ts on purpose.
+// Layer 2, server. The writing half of git, kept apart from server/core/git.ts on purpose.
 //
 // DESIGN.md, "Git": the read-only module runs only its enumerated read-only commands and a test
 // asserts that its source names no writing subcommand at all. Every write therefore lives here, and
@@ -40,11 +40,11 @@ import { existsSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'no
 import { tmpdir } from 'node:os';
 import { basename, isAbsolute, join, resolve, sep } from 'node:path';
 import { scalar } from '../../data/helpers/guards.ts';
-import type { GitBranch } from '../../data/model.ts';
+import type { GitBranch } from '../../data/model/index.ts';
 import { isWorktreePath, validName, worktreePath } from '../../data/helpers/worktrees.ts';
 import { defaultMirrorsDir } from './deposit-git.ts';
-import { BRANCH_FORMAT, parseBranches } from './git-parse.ts';
-import { GIT } from './git.ts';
+import { BRANCH_FORMAT, parseBranches } from '../core/git-parse.ts';
+import { GIT } from '../core/git.ts';
 
 export { parseBranches };
 
@@ -483,7 +483,7 @@ function branch(root: string, args: string[]): Promise<Outcome> {
     return run(root, ['branch', ...args], TIMEOUT_MS);
 }
 
-/** The one `worktree` call site: the add and the remove. The list is server/git/git.ts's read. */
+/** The one `worktree` call site: the add and the remove. The list is server/core/git.ts's read. */
 function worktree(root: string, args: string[]): Promise<Outcome> {
     return run(root, ['worktree', ...args], TIMEOUT_MS);
 }

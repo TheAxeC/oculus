@@ -14,7 +14,8 @@ import {
     venueSearch,
     venueUsers,
     type Project,
-    type Venue
+    type Venue,
+    venuesByCategory
 } from '../../../src/lib/state/sources/venues.ts';
 import {
     applyThemeFacets,
@@ -228,5 +229,20 @@ describe('saved venue state', () => {
             adding: true,
             editing: 'bspc'
         });
+    });
+});
+
+describe('the venues by category', () => {
+    // revert: src/lib/state/sources/venues.ts:174 => conferences: []
+    it('are the journals and the conferences, each in the order given, anything else left out', () => {
+        const venues = [
+            { id: 'j1', category: 'journal' },
+            { id: 'c1', category: 'conference' },
+            { id: 'w1', category: 'workshop' },
+            { id: 'j2', category: 'journal' }
+        ] as unknown as Parameters<typeof venuesByCategory>[0];
+        const split = venuesByCategory(venues);
+        expect(split.journals.map((one) => one.id)).toEqual(['j1', 'j2']);
+        expect(split.conferences.map((one) => one.id)).toEqual(['c1']);
     });
 });

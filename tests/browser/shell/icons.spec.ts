@@ -33,7 +33,7 @@ async function outsideAscii(texts: Locator): Promise<string[]> {
     return all.flatMap((text) => text.replace(/[\n\t]/g, ' ').match(/[^\x20-\x7E]/g) ?? []);
 }
 
-// revert: src/lib/ui/controls/Glyph.svelte:34 => : { text: standIn, svg: '' };
+// revert: src/lib/ui/display/Glyph.svelte:35 => : { text: standIn, svg: '' };
 test('every glyph in the rail is a line icon and none of them carries anything that runs', async ({
     page
 }) => {
@@ -63,7 +63,7 @@ test('every glyph in the rail is a line icon and none of them carries anything t
     expect(handlers).toEqual([]);
 });
 
-// revert: src/lib/ui/controls/Glyph.svelte:43 => {@html drawn.svg.replace('currentColor', 'red')}
+// revert: src/lib/ui/display/Glyph.svelte:44 => {@html drawn.svg.replace('currentColor', 'red')}
 test('an icon is drawn in the colour of the control it sits in', async ({ page }) => {
     await boot(page);
     const icon = page.locator('nav .glyph svg').first();

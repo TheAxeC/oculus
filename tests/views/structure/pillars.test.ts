@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import Pillars from '../../../src/lib/views/structure/pillars/Pillars.svelte';
 import LineCard from '../../../src/lib/views/structure/pillars/LineCard.svelte';
 import type { Instance } from '../../../src/lib/state/workbench/layout/index.ts';
-import type { Snapshot } from '../../../src/lib/data/model.ts';
+import type { Snapshot } from '../../../src/lib/data/model/index.ts';
 import { catalog, fixture, install } from './lines-fixture.ts';
 import { noop } from '../../fixtures/doubles.ts';
 import { present } from '../../fixtures/present.ts';

@@ -11,9 +11,7 @@
 // and terminals and no component is mounted.
 
 import { diffState, plannedPath, type DiffSubject } from './repositories.ts';
-import type { LayoutStore } from '../workbench/layout.svelte.ts';
-import type { TerminalsStore } from '../sessions/terminals.svelte.ts';
-import type { WritesStore } from '../client/writes.svelte.ts';
+import type { WritesStore } from '../stores/shapes.ts';
 import { t } from '../words/text.ts';
 
 /** The view id of the pane one diff opens in. */
@@ -42,10 +40,30 @@ export type RepositoriesStore = {
     openDiff: (subject: DiffSubject, label: string) => void;
 };
 
+/**
+ * What the store needs of the terminals store: a shell started in a folder. The terminals store in
+ * state/sessions, a folder above this one, satisfies it.
+ */
+export type ShellStarter = {
+    startTerminal: (
+        kind: 'shell',
+        cwd: string
+    ) => Promise<{ ok: boolean; id: string; error: string }>;
+};
+
+/**
+ * What the store needs of the layout store: a view opened, and one opened beside the one being
+ * read. The layout store in state/workbench, a folder above this one, satisfies it.
+ */
+export type ViewOpener = {
+    openView: (view: string, state?: unknown) => string;
+    openBeside: (view: string, state?: unknown) => string;
+};
+
 export function createRepositories(
     writes: WritesStore,
-    terminals: TerminalsStore,
-    layout: LayoutStore
+    terminals: ShellStarter,
+    layout: ViewOpener
 ): RepositoriesStore {
     const state: { busy: string[]; outcomes: Record<string, string> } = $state({
         busy: [],

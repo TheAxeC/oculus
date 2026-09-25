@@ -44,8 +44,7 @@ const STORES: (keyof ClientState)[] = [
     'paletteSource',
     'editorStatus',
     'notices',
-    'registry',
-    'tipIds'
+    'registry'
 ];
 
 describe('the client object', () => {
@@ -96,14 +95,5 @@ describe('the client object', () => {
 
         expect(client.hpc.counts()).toEqual({ running: 2, pending: 1 });
         expect(createClientState().hpc.counts()).toEqual({ running: 0, pending: 0 });
-    });
-
-    it('numbers the tooltips of two clients apart', () => {
-        const one = createClientState();
-        const two = createClientState();
-
-        expect(one.tipIds.nextTipId()).toBe('tip-1');
-        expect(one.tipIds.nextTipId()).toBe('tip-2');
-        expect(two.tipIds.nextTipId()).toBe('tip-1');
     });
 });

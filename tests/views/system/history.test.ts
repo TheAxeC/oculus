@@ -9,7 +9,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { render } from 'svelte/server';
 import History from '../../../src/lib/views/system/history/History.svelte';
-import { filterOf, matching, shown, undoSaid } from '../../../src/lib/views/system/history/rows.ts';
+import { filterOf, shown, undoSaid } from '../../../src/lib/views/system/history/rows.ts';
 import {
     engineDir,
     glyphCatalog,
@@ -65,19 +65,6 @@ describe('the rows fold', () => {
         expect(shown({ do: 'read it', done: true })).toMatchObject({ size: 2, empty: false });
         expect(shown(JSON.parse('null'))).toEqual({ text: '', size: 0, empty: true });
         expect(shown('')).toEqual({ text: '', size: 0, empty: true });
-    });
-
-    it('matches a filter against the file, the key and the field, and nothing else', () => {
-        const rows = [
-            change('a'),
-            change('b', { file: 'tasks/tasks.yml', key: 'Review the draft', field: 'status' })
-        ];
-        expect(matching(rows, '').map((one) => one.at)).toEqual(['a', 'b']);
-        expect(matching(rows, 'TASKS').map((one) => one.at)).toEqual(['b']);
-        expect(matching(rows, 'status.line').map((one) => one.at)).toEqual(['a']);
-        // The values are not matched: a filter over them would hide a row for a word it never shows
-        // in the column the reader typed into.
-        expect(matching(rows, 'a new line')).toEqual([]);
     });
 
     it('reads the filter out of whatever the instance state is', () => {

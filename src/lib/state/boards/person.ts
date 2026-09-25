@@ -7,7 +7,7 @@
 // tables are what data/snapshot/normalise.ts already wrote from both sides and a second scan here
 // could disagree with them.
 
-import type { Entry, Id, Organisation, Person, Project, Snapshot } from '../../data/model.ts';
+import type { Entry, Id, Organisation, Person, Project, Snapshot } from '../../data/model/index.ts';
 import { byKey } from '../../data/helpers/guards.ts';
 import { JOINT_WORK } from './collection.ts';
 

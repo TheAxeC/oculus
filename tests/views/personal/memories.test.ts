@@ -11,13 +11,13 @@ import { readFileSync } from 'node:fs';
 import { render } from 'svelte/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import Memories, { registration } from '../../../src/lib/views/personal/memories/Memories.svelte';
-import type { ViewRegistration } from '../../../src/lib/views/registry.ts';
+import type { ViewRegistration } from '../../../src/lib/state/workbench/navigation/registry.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
 import { setCatalog, setGlyphs } from '../../../src/lib/state/words/text.ts';
 import { glyphCatalog } from '../../../src/lib/data/sources/config.ts';
 import type { Instance } from '../../../src/lib/state/workbench/layout/index.ts';
-import type { Picture } from '../../../src/lib/data/model.ts';
-import { TILE_BOUND, type Wall } from '../../../src/lib/state/life/memories.svelte.ts';
+import type { Picture } from '../../../src/lib/data/model/index.ts';
+import { TILE_BOUND, type Wall } from '../../../src/lib/state/feeds/life/memories.svelte.ts';
 import { clientContext, createClientState, type ClientState } from '../../fixtures/client.ts';
 
 let client: ClientState;
@@ -239,7 +239,7 @@ describe('the wall as it is written', () => {
 
     it('draws a sentence of its own per refusal and never the endpoint word', () => {
         expect(source).toContain(
-            "import { readMessage, tooLarge, uploadMessage } from '$lib/state/life/memories'"
+            "import { readMessage, tooLarge, uploadMessage } from '$lib/state/feeds/life/memories'"
         );
         expect(source).toContain('uploadMessage(answer)');
         // the refusal is worded from the catalog, so the endpoint's own word is not read

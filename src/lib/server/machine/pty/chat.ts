@@ -3,7 +3,7 @@
 // terminal receives only its path, the catalogued instruction and the catalogued initial prompt.
 
 import { rmSync } from 'node:fs';
-import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
+import { dirname, join } from 'node:path';
 import { chatModel } from '../../../data/accounts/chat.ts';
 import { fillPlaceholders } from '../../../data/helpers/finding-text.ts';
 import { byKey } from '../../../data/helpers/guards.ts';
@@ -13,9 +13,10 @@ import {
     textCatalog,
     type LocalConfig
 } from '../../../data/sources/config.ts';
-import type { Project } from '../../../data/model.ts';
+import type { Project } from '../../../data/model/index.ts';
 import { defaultOverridesPath } from '../../sessions/overrides.ts';
-import { writeTextAtomic } from '../../sessions/stores/json.ts';
+import { writeTextAtomic } from '../../core/json.ts';
+import { projectDirectory } from '../../files/files.ts';
 import { portfolioContext } from './context.ts';
 import { listTerminals, newId, startTerminal, type StartOptions } from './sessions.ts';
 
@@ -71,20 +72,6 @@ async function chatNumber(catalog: Record<string, string>, options: StartOptions
     let number = 1;
     while (held.has(words(catalog, 'server.chat.chat_name', number))) number += 1;
     return number;
-}
-
-/**
- * A project folder from the snapshot, resolved beneath the configured hub root. Every action that
- * starts a terminal in a project's own folder resolves it here, so the check that it did not leave
- * the hub exists once.
- */
-export function projectDirectory(hub: string, folder: string): string {
-    const cwd = resolve(hub, folder);
-    const within = relative(hub, cwd);
-    if (within.startsWith('..') || isAbsolute(within)) {
-        throw new Error('the project folder is outside the configured hub');
-    }
-    return cwd;
 }
 
 /** The exact interactive Claude command tmux receives as one shell command. */

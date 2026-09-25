@@ -4,7 +4,7 @@
 import { mkdirSync, rmSync, symlinkSync, utimesSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve, sep } from 'node:path';
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { UsageAccountConfig, UsagePayload } from '../../../../src/lib/data/model.ts';
+import type { UsageAccountConfig, UsagePayload } from '../../../../src/lib/data/model/index.ts';
 import { Hub } from '../../../../src/lib/server/core/channels.ts';
 import {
     claudeAccount,

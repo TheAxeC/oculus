@@ -1,6 +1,6 @@
 <script module lang="ts">
     // Layer 3, view registration. The audit follows the configuration in the System group.
-    import type { ViewRegistration } from '../../registry';
+    import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
 
     export const registration: ViewRegistration = {
         id: 'audit',
@@ -35,10 +35,10 @@
     import Toolbar from '$lib/ui/frame/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { t } from '$lib/state/words/text';
-    import { muteMessage } from '$lib/state/system/audit';
+    import { auditSearch, findingsOfKind, muteMessage } from '$lib/state/system/audit';
     import { useState } from '$lib/state/client/use';
     import type { AuditFinding } from '$lib/state/system/audit.svelte';
-    import type { ViewProps } from '../../registry';
+    import type { ViewProps } from '$lib/state/workbench/navigation/registry';
 
     const {
         audit: { open, parked },
@@ -65,16 +65,8 @@
     /** True while a mute is in flight, so a second press sends no second write. */
     let busy = $state(false);
 
-    function matches(finding: AuditFinding): boolean {
-        const wanted = search.trim().toLowerCase();
-        if (wanted === '') return true;
-        return `${finding.scope} ${finding.where} ${finding.message}`
-            .toLowerCase()
-            .includes(wanted);
-    }
-
-    const shown = $derived(open().filter(matches));
-    const hidden = $derived(parked().filter(matches));
+    const shown = $derived(auditSearch(open(), search));
+    const hidden = $derived(auditSearch(parked(), search));
 
     /** The six sections in the order the scan reports them, each with the findings it holds. */
     const sections = $derived(
@@ -87,7 +79,7 @@
             { kind: 'publink', label: t('audit.sec_publink') }
         ].map((section) => ({
             ...section,
-            items: shown.filter((finding) => finding.kind === section.kind)
+            items: findingsOfKind(shown, section.kind)
         }))
     );
 

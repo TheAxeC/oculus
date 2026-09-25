@@ -19,8 +19,9 @@
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { humanSize, type BoardItem } from '$lib/state/boards/board';
     import { opensInProgram } from '$lib/state/sources/fs';
+    import { matchingFiles } from '$lib/state/sources/files.svelte';
     import { t } from '$lib/state/words/text';
-    import { matching, nameOf, openDocument, subOf, urlOf } from './card';
+    import { nameOf, openDocument, subOf, urlOf } from './card';
     import ProgramButton from '../links/ProgramButton.svelte';
     import { useState } from '$lib/state/client/use';
 
@@ -48,7 +49,7 @@
     let filter = $state('');
     /** The file listing and its loading state for this project. */
     const held = $derived(files(item.id));
-    const rows = $derived(matching(held.rows, filter));
+    const rows = $derived(matchingFiles(held.rows, filter));
 
     /** Open a readable row from the file listing. */
     function openReadable(path: string): void {
