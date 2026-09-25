@@ -30,7 +30,17 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch: []   # nothing in flight; S2, X3a and X3c stopped at their spec on the open items; X3b and Q67 next
+dispatch:      # S2, X3a and X3c stopped at their spec on the open items; Q67 next beside X3b
+- step: X3b
+  executor: agent
+  worker: claude:opus (native Agent, general-purpose)
+  session_id: ad0b6c5a79cafa228
+  worktree: .agents/worktrees/X3b
+  base: a8848c49
+  launched: 2026-09-25
+  report: tools/oculus/.scratch/migration/agents/reviews/X3b-report.md
+  landing: not-started
+  round: 0
 ```
 
 ## The standing demands (from Axel, in force)
