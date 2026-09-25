@@ -6,7 +6,7 @@
     import Toolbar from '$lib/ui/frame/Toolbar.svelte';
     import SourceButton from './SourceButton.svelte';
     import type { SourceFile } from './source-file';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
 
     let { source }: { source: SourceFile | null } = $props();
 </script>

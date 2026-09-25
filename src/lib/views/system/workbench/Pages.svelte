@@ -28,11 +28,12 @@
     import { THRESHOLD, type Point } from '$lib/state/workbench/drag.svelte';
     import {
         closeQuestion,
+        pageAt,
         pageInstanceIds,
         pageName,
         pageUnsaved
     } from '$lib/state/workbench/navigation/pages';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 
@@ -66,9 +67,9 @@
      * tab sentence, since what would be lost is that text rather than the page.
      */
     function close(id: string): void {
-        const at = shown.findIndex((one) => one.id === id);
-        if (at < 0) return;
-        const ids = pageInstanceIds(shown[at]);
+        const found = pageAt(shown, id);
+        if (found === null) return;
+        const ids = pageInstanceIds(found.page);
         const asks = closeQuestion(ids, unsaved);
         if (asks === 'none') {
             closePage(id);
@@ -76,7 +77,7 @@
         }
         const message =
             asks === 'many'
-                ? t('ui.page_close_confirm', pageName(shown[at], at), ids.length)
+                ? t('ui.page_close_confirm', pageName(found.page, found.at), ids.length)
                 : t('ui.tab_close_dirty');
         confirming = { message, id };
     }
@@ -143,9 +144,10 @@
         const distance = Math.hypot(event.clientX - held.origin.x, event.clientY - held.origin.y);
         if (distance < THRESHOLD) return;
         release();
-        const at = shown.findIndex((one) => one.id === held.id);
-        if (at < 0) return;
-        startPage(held.id, pageName(shown[at], at), { x: event.clientX, y: event.clientY });
+        const found = pageAt(shown, held.id);
+        if (found === null) return;
+        const name = pageName(found.page, found.at);
+        startPage(held.id, name, { x: event.clientX, y: event.clientY });
     }
 
     function release(): void {

@@ -4,7 +4,7 @@
     // and the Repositories view's change rows both draw them, so the counts read the same in both.
 
     import type { GitEntry } from '$lib/state/client/selectors.svelte';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
 
     type Props = { entry: GitEntry };
 

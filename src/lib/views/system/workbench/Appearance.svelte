@@ -7,8 +7,8 @@
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import Menu from '$lib/ui/menu/Menu.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import { t } from '$lib/state/words/text';
-    import { themes as themeList, wallpaperOnTheme } from '$lib/state/words/appearance';
+    import { t } from '$lib/state/shared/words/text';
+    import { themes as themeList, wallpaperOnTheme } from '$lib/state/shared/words/appearance';
     import { useState } from '$lib/state/client/use';
 
     const {

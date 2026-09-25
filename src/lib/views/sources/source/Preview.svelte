@@ -14,7 +14,7 @@
 
     import Markdown from '$lib/views/shared/prose/Markdown.svelte';
     import { blockMarkdown } from '$lib/ui/html';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
 
     type Props = {
         /** The file the text belongs to, which names the pane for a reader. */

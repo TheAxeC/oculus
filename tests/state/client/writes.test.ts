@@ -7,7 +7,7 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
-import { setCatalog, t } from '../../../src/lib/state/words/text.ts';
+import { setCatalog, t } from '../../../src/lib/state/shared/words/text.ts';
 import { createWrites, writeTimeout } from '../../../src/lib/state/client/writes.svelte.ts';
 
 setCatalog(textCatalog(loadConfig(engineDir()).config));

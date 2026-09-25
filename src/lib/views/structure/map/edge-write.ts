@@ -1,7 +1,7 @@
 // Layer 3, Map support. The edge writer turns the endpoint answer into the map's status text,
 // apart from the partial so the refusal wording can be read without a rendering.
 
-import { t as catalogText } from '$lib/state/words/text';
+import { t as catalogText } from '$lib/state/shared/words/text';
 import type { WriteAnswer } from '$lib/state/client/writes.svelte';
 
 type ManifestWriter = (id: string, fields: Record<string, unknown>) => Promise<WriteAnswer>;

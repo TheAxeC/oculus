@@ -2,7 +2,7 @@
 // place, so every surface that writes tells the reader the same thing in the same words.
 
 import type { WriteAnswer } from '$lib/state/client/writes.svelte';
-import { t } from '$lib/state/words/text';
+import { t } from '$lib/state/shared/words/text';
 
 /** What a write's answer says: the error it carried, the fields it refused, or what it changed. */
 export function answerWords(answer: WriteAnswer): string {

@@ -12,7 +12,7 @@
 
     import type { Snippet } from 'svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
     import { CLAMP_LINES, clampControl, measureGate, overflowsClamp } from './card-layout';
 
     type Props = {

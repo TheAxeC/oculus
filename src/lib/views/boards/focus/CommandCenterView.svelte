@@ -6,8 +6,8 @@
     import Ticker from '$lib/ui/display/Ticker.svelte';
     import type { TickerRow } from '$lib/ui/display/ticker-rows';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import type { Ticker as FocusTicker } from '$lib/state/boards/ticker';
-    import { t } from '$lib/state/words/text';
+    import { hasCommandRows, type Ticker as FocusTicker } from '$lib/state/boards/ticker';
+    import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
 
     const {
@@ -51,15 +51,18 @@
 
     /** Whether the command center has at least one row or behind-project group to show. */
     const anything = $derived(
-        view.overdue.length +
-            view.categories.length +
-            view.subtaskDated.length +
-            view.followups.length +
-            view.snoozed.length +
-            attentionRows.length +
-            (week?.behind === null || week?.behind === undefined ? 0 : 1) +
-            refreshRows.length >
-            0
+        hasCommandRows(
+            {
+                overdue: view.overdue,
+                categories: view.categories,
+                subtaskDated: view.subtaskDated,
+                followups: view.followups,
+                snoozed: view.snoozed,
+                attention: attentionRows,
+                refresh: refreshRows
+            },
+            week
+        )
     );
 
     /** The singular or plural manifest noun for the behind-project line. */

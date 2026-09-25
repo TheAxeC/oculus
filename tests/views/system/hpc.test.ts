@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render } from 'svelte/server';
 import Hpc from '../../../src/lib/views/system/hpc/Hpc.svelte';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
-import { setCatalog } from '../../../src/lib/state/words/text.ts';
+import { setCatalog } from '../../../src/lib/state/shared/words/text.ts';
 import type { HpcPayload } from '../../../src/lib/data/model/index.ts';
 import { noop } from '../../fixtures/doubles.ts';
 import { clientContext, createClientState, type ClientState } from '../../fixtures/client.ts';

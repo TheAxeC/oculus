@@ -4,13 +4,17 @@
 // first, and a module whose value another reads during its own load then reads it before it is
 // set. graph.ts reads every module of src and every runtime import it makes; the first case holds
 // the tree to none, and the case after it plants a cycle in a scratch tree and shows the check
-// names its modules in the order the imports run.
+// names its modules in the order the imports run. The last cases show the reader parses a module
+// rather than matching its text: a comment that says "import", above a type-only import or after
+// a division a pattern reader would take for a regular expression, makes no import; a script
+// inside an HTML comment of a component is no script; and an `import()` in a component's markup
+// is read.
 
 import { tmpdir } from 'node:os';
 import { resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterAll, describe, expect, it } from 'vitest';
-import { findCycles, importGraph } from './graph.ts';
+import { findCycles, importGraph, runtimeImports } from './graph.ts';
 import { plantScratch, sweepScratch } from '../../fixtures/scratch.ts';
 
 afterAll(sweepScratch);
@@ -33,8 +37,8 @@ describe('the runtime import graph of src', () => {
         expect(findCycles(importGraph(SRC, 'lib/'))).toEqual([]);
     });
 
-    // revert: tests/checks/imports/graph.ts:80 => if (false) continue;
-    // revert: tests/checks/imports/graph.ts:184 => for (const to of [...next(module)].reverse()) {
+    // revert: tests/checks/imports/graph.ts:65 => if (one.spec === null || one.glob === true) continue;
+    // revert: tests/checks/imports/graph.ts:174 => for (const to of [...next(module)].reverse()) {
     it('names the modules of a planted cycle in order, and passes a type-only import back', () => {
         // A component importing itself draws itself recursively and is no cycle between modules.
         // The first module of the cycle imports two modules that both lead back to it, and the walk
@@ -51,6 +55,75 @@ describe('the runtime import graph of src', () => {
         });
         expect(findCycles(importGraph(dir, 'lib/'))).toEqual([
             'lib/a.ts -> lib/b.ts -> lib/c.ts -> lib/a.ts'
+        ]);
+    });
+});
+
+describe('the import reader', () => {
+    // revert: bin/diagrams/imports.mjs:146 => const source = parsed(name, code.replace(/\/\/ ?|\/\*|\*\//g, ''));
+    it('reads no runtime import out of a comment above a type-only import', () => {
+        const dir = plant({
+            'lib/p.ts':
+                "// the shape is read as an import is.\nimport type { Q } from './q.ts';\nexport const p = 1;\n",
+            'lib/q.ts':
+                "/* import { p } from './p.ts' */\nimport { p } from './p.ts';\nexport type Q = typeof p;\n",
+            'lib/r.svelte':
+                "<p>The import of './q.ts' is words.</p>\n<script>\n    // import { p } from './p.ts';\n</script>\n"
+        });
+        // p reads q's type alone, so q's import of p closes no cycle.
+        expect(findCycles(importGraph(dir, 'lib/'))).toEqual([]);
+        // p's one import is type-only, and the cycle check reads runtime imports alone.
+        expect(importGraph(dir, 'lib/').get('lib/p.ts')).toEqual([]);
+        // r's one import sits in a line comment of its script.
+        expect(importGraph(dir, 'lib/').get('lib/r.svelte')).toEqual([]);
+        expect(
+            importGraph(dir, 'lib/')
+                .get('lib/q.ts')
+                ?.map((one) => one.line)
+        ).toEqual([2]);
+    });
+
+    // revert: bin/diagrams/imports.mjs:146 => const source = parsed(name, code.replace(/\/\/ ?|\/\*|\*\//g, ''));
+    it('reads no import out of a comment after a division a pattern reader would take for a regex', () => {
+        const text = [
+            "let i = 0; i++ / 2; // import { z } from './zz.ts';",
+            "const o = { a: 1 }\n/ 2; // import './after-brace.ts';",
+            "import { a } from './a.ts';"
+        ].join('\n');
+        expect(runtimeImports('x.ts', text).map((one) => [one.spec, one.line])).toEqual([
+            ['./a.ts', 4]
+        ]);
+    });
+
+    // revert: bin/diagrams/imports.mjs:146 => const source = parsed(name, code.replace(/\/\/.*$/gm, ''));
+    it('reads the imports after a string, a template and a pattern that hold a quote or two slashes', () => {
+        const text = [
+            'const s = "it\'s // no comment";',
+            "const r = /[//'\"]/; const t = `a ${'b'} // c`;",
+            "import { a } from './a.ts';",
+            "import { b } from './b.ts';"
+        ].join('\n');
+        expect(runtimeImports('x.ts', text).map((one) => [one.spec, one.line])).toEqual([
+            ['./a.ts', 3],
+            ['./b.ts', 4]
+        ]);
+    });
+
+    // revert: bin/diagrams/imports.mjs:216 => const tree = parse(text.replace(/<!--|-->/g, (mark) => ' '.repeat(mark.length)), { modern: true });
+    it('reads no script out of an HTML comment of a component', () => {
+        const text =
+            "<!-- <script>import { h } from './html-comment.ts';</script> -->\n<p>words</p>\n";
+        // The only script there is sits inside an HTML comment, which is no script.
+        expect(runtimeImports('lib/A.svelte', text, '', true)).toEqual([]);
+    });
+
+    // revert: bin/diagrams/imports.mjs:275 => delete
+    it('reads an import() written in the markup of a component', () => {
+        const text =
+            "<script>\n    import { a } from './a.ts';\n</script>\n{#await import('./markup.svelte') then M}\n    <M.default />\n{/await}\n";
+        expect(runtimeImports('lib/A.svelte', text).map((one) => [one.spec, one.line])).toEqual([
+            ['./a.ts', 2],
+            ['./markup.svelte', 4]
         ]);
     });
 });

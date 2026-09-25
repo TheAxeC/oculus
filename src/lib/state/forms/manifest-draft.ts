@@ -11,7 +11,7 @@
 
 import type { Project } from '../../data/model/index.ts';
 import { asText, fieldValues } from './schema.ts';
-import type { InstanceStates } from '../stores/shapes.ts';
+import type { InstanceStates } from '../shared/stores/shapes.ts';
 
 /** What one editor instance keeps: the project it was typed for, and the edits by field name. */
 export type ManifestDraft = { project: string; edits: Record<string, unknown> };

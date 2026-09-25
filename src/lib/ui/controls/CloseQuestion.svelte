@@ -5,7 +5,7 @@
     // Confirm. Nothing is drawn while the message is null, which is while there is nothing to ask.
 
     import Confirm from './Confirm.svelte';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
 
     type Props = {
         /** What the close is about to take away, already translated, or null to ask nothing. */

@@ -27,12 +27,12 @@
     import TextInput from '$lib/ui/forms/TextInput.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Toolbar from '$lib/ui/frame/Toolbar.svelte';
-    import { clock, compactCount, modelShort, stamp } from '$lib/state/words/format';
+    import { clock, compactCount, modelShort, stamp } from '$lib/state/shared/words/format';
     import { findView } from '$lib/state/workbench/layout';
     import { pinnedSession } from '$lib/state/workbench/selection.svelte';
     import type { GroupedSession } from '$lib/state/client/selectors.svelte';
     import { resumeRefusal } from '$lib/state/sessions/terminals.svelte';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 

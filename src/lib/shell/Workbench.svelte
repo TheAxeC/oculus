@@ -41,13 +41,13 @@
         type StatusWords
     } from '$lib/state/workbench/navigation/status';
     import StatusBar from './status/StatusBar.svelte';
-    import { setGlyphMode, t } from '$lib/state/words/text';
+    import { setGlyphMode, t } from '$lib/state/shared/words/text';
     import {
         terminalTheme,
         themeClass,
         wallpaperOnTheme,
         wallpaperSettings
-    } from '$lib/state/words/appearance';
+    } from '$lib/state/shared/words/appearance';
     import { useState } from '$lib/state/client/use';
 
     const client = useState();

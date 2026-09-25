@@ -5,7 +5,8 @@
 
     type Props = {
         /**
-         * A hue name from state/words/tones.ts; a dot with none is drawn in the hairline colour.
+         * A hue name from state/shared/words/tones.ts; a dot with none is drawn in the hairline
+         * colour.
          */
         tone?: string;
     };

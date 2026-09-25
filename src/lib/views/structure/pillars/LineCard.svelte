@@ -19,8 +19,8 @@
         type TierRow,
         type Venue
     } from '$lib/state/boards/structure/lines';
-    import { paletteTone, toneOf } from '$lib/state/words/tones';
-    import { t } from '$lib/state/words/text';
+    import { paletteTone, toneOf } from '$lib/state/shared/words/tones';
+    import { t } from '$lib/state/shared/words/text';
 
     type Props = {
         line: Pillar;

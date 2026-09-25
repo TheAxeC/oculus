@@ -148,3 +148,100 @@ Commands I added:
 - An `rc_ad.txt` file with a revert-check summary (`73 reverts, 0 unproven, 586 unchecked`) appeared in my scratchpad without my creating it. I excluded it from every count above.
 
 Reviewer usage: about 75 tool uses and roughly 50 minutes, most of it the revert-check runs (about 20 minutes) and the playwright suite (6.4 minutes). I have no exact token count, only an estimate of about 230k tokens.
+
+## Repair round 1, refuted
+
+All commands were run from `.agents/worktrees/Q73/tools/oculus`.
+
+| # | Command | Output |
+|---|---|---|
+| 1 | `npx vitest run --reporter=dot` | `Test Files  311 passed (311)`, `Tests  4881 passed (4881)` |
+| 2 | `npm run check` | `COMPLETED 1396 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS` |
+| 3 | `npm run build` | exit 0 (run twice, both times 0) |
+| 4 | `npm run format:check` | `All matched files use Prettier code style!` |
+| 5 | `npm run lint` | exit 0 |
+| 6 | `LC_ALL=C grep -rna '[^ -~]' src tests bin DESIGN.md HELP.md \| wc -l` | `0`. The spec's perl form over `src tests bin config` also prints `0`. |
+| 7 | `sh bin/size-check.sh`, `sh bin/folder-check.sh` | `size=0`, `folder=0` |
+| 8 | `npm run diagrams` twice, each followed by `diff -r` against a copy taken first | `d1=0 SAME1`, `d2=0 SAME2` |
+| 8b | `node --no-experimental-strip-types bin/diagrams/diagrams.mjs` | `nostrip=0`, and `diff -r` gives `SAME3` |
+| 9 | `npm run build`, then `npx playwright test` | `386 passed (6.1m)`. `lsof -iTCP:8792 -sTCP:LISTEN` gave exit 1 before and after. |
+| 10 | `node bin/revert-check.mjs` over the eight changed test files other than diagrams (augments, cycles, order, fs-shape, state usage, pages, help, views usage) | `72 reverts, 0 unproven, 38 unchecked` |
+| 10b | `node bin/revert-check.mjs tests/checks/diagrams/diagrams.test.ts` | `48 reverts, 0 unproven, 0 unchecked` |
+| 11 | The Q71 measuring script, saved at `scratchpad/r1rev/measure.py` | `modules 563 edges 2099` / `module cycles 0 []` / `folder rings []` / `views->state 478 files 155 targets 65` |
+| 12 | `ls -d $TMPDIR/oculus-* \| wc -l` | `7015` before, `7015` after |
+
+The commands I added:
+- **The reader against ground truth.** I compared `importsOf` with `ts.preProcessFile(code, true, true)` over all 563 files of src, reading each component's scripts through `svelte/compiler` `parse` (`scratchpad/r1rev/truth.mjs`). The result was `{ files: 563, total: 3016, mism: 1 }`. The one mismatch is `src/server.ts`, where the reader adds `../build/handler.js`: the name bound to `new URL(...)`, by design.
+- **The claim that every `.dot` is unchanged.** I rebuilt the drawings as they stood at 8a1df440 with `git diff 8a1df440 -- docs/diagrams`, reverse-applied. I then compared every arrow in both versions: its ends, its words, its style, `constraint=false` and its tooltip. All nine files are the same (for example `layer-server.dot same 43`, `layer-state.dot same 45`, `writes.dot same 39`). So the counts and edges are unchanged. The `.dot` bytes themselves do change in this round, because of the label nodes.
+- **The probes of the first refutation, rerun on the new reader** (`scratchpad/r1rev/probes.mjs`):
+  - `i++ / 2; // import ...` gives `[]`, and `{ a: 1 }\n/ 2; // import ...` gives `[]`.
+  - The HTML-comment script gives `[]`.
+  - The markup `{#await import('./markup.svelte')}` is read at line 2, and so is an `import()` inside an `onclick` attribute.
+  - A reference directive with `preserve` or with `resolution-mode` before its path is found. A directive after code gives `[]`, as the compiler does, and so does a directive inside a block comment.
+  - A `declare module` named in a comment gives `[]`. `declare global` gives `[]`.
+- **The exact label test.** `labelsAcross` over the nine committed SVGs gives `0 []` for every one. Over the SVGs as they stood at 8a1df440 it gives: `layer-server` 1 (edit->files "2" across machine->core), `layer-views` 1 (boards->ui "85" across sources->state), and `writes` 4.
+
+### 1. Spec
+- **Finding 4 closes the test, but the Help view's layer drawings now read worse** (details under Behaviour). The round asked that every count be drawn "so Graphviz itself keeps it off other arrows". That holds by measurement. What it cost, where it cost it and how large the drawings became are not stated in the reply's before-and-after.
+- **Finding 6 holds.** `usageRows` is at `state/system/usage.ts:51-59` and `nextRefresh` at `:66-70`. The view calls them at `Usage.svelte:152` and `:260`. The kept-list lines map to the current file: 159, 192, 207 and 257 are `accounts.length`, `windows.length`, `live.length` and `days.length`. Slides 115, 179 and 187, and Files 438 and 452, read as the reply lists them.
+- **Finding 2 holds.** It is proven by the probes above and by the two new cases in `augments.test.ts`.
+- **Finding 5, the resolution order, holds.** `moduleAt` (`imports.mjs:326-351`) tries `''`, then Vite's seven endings, then the index files. `order.test.ts` has a case for it.
+- **The graph.ts to bin direction.** `tests/checks/imports/graph.ts:16` imports `bin/diagrams/imports.mjs`, as the round asked. Tests already import `bin/` tools (`diagrams.test.ts:38`, `help.test.ts:16`, `rename-pillar.test.ts:16`), so the direction matches the tree. `typescript` and `svelte` are devDependencies. The shared reader of the checks sits in the diagrams folder by its path; that is a naming point only.
+
+### 2. Proof
+- **The removed string/template/pattern case still guards a property, and the reply's reason for removing it does not hold.**
+  - The reply says "no one-line revert of the parser can turn it red". I copied `imports.mjs` to the scratchpad and replaced line 146 with `const source = parsed(name, code.replace(/\/\/.*$/gm, ''));`.
+  - Under that revert, the old case's text yields `[["./b.ts",3]]`: `./a.ts` is lost behind `/[//'"]/`, and the line is wrong. The old case expected `./a.ts` at line 3 and `./b.ts` at line 4, so it would be red.
+  - Under the same revert, the `++` case stays green: it yields `["./a.ts"]`.
+  - `imports.mjs:9-10` claims that "a string, a template or a regular expression holding a quote or a `//` hides nothing after it", and no remaining case covers that claim.
+- **The ownership rule in `labelsAcross` is wrong for any end whose name holds a colon.** `labels.mjs:214` does `title.split(':')[0]`. For `routes->routes to files: assets` that gives `routes->routes to files`, so `includes(label.node)` at `:233` never marks those halves as the label's own.
+  - It passes today only because Graphviz stops each half short of the box. In `layers.svg` the half ends at `255.6,-388.17` and the box's left edge is at `x0 256`, 0.4 pt away.
+  - The names this affects are `files: assets` in the overview, `not placed: ...` and `? src/...:<line>`.
+  - No case plants a colon in a name.
+- **The one-run revert totals in the reply cannot be reproduced as quoted.** The reply's `405 reverts, 0 unproven, 1454 unchecked` is its own sum of two runs over 108 files. I did not rerun all 108 files. Over the round's nine changed files I read 120 reverts and 0 unproven (rows 10 and 10b).
+- **The reply cites reason comments at `diagrams.test` 739 and 766.** They are at `:739` and `:768`.
+
+### 3. Standards
+- `labels.mjs:141`: the comment says a polygon meets the box when "an edge of it crosses, or it holds it". `polygonMeets` (`:142-147`) tests only the polygon's edges, so a box lying wholly inside an arrowhead is not detected. The comment claims more than the code does.
+- `imports.mjs:9-10` makes the string, template and regex claim with no case behind it (see Proof).
+- Clean:
+  - No history in the new comments (grep for "removed", "previous", "no longer" and "was" over `imports.mjs`, `labels.mjs` and `graph.ts`: no hit).
+  - `STATEMENT`, `codeOnly`, `SETTLED` and `SPACINGS` are gone from src, tests, bin, DESIGN.md, HELP.md and README.md. The `settle` hits that remain are unrelated promise names.
+  - The largest file is `diagrams.test.ts` at 809 lines.
+  - DESIGN.md and HELP.md match the new drawing mechanism and the exact test.
+
+### 4. Behaviour
+- **The layer drawings put intra-layer counts outside their layer box.** A label node is declared outside every cluster. My check (`scratchpad/r1rev/extra.mjs`) finds that every label of an arrow between two folders of one layer sits outside that layer's box: data 8/8, server 24/24, state 26/26, ui 15/15, views 7/7, shell 4/4, writes 1/1. So each such arrow leaves the layer box and comes back through its border. Rasterised with `rsvg-convert -z 3`, `layer-server` shows `root->content 5`, `root->files 6` and `root->machine 5` standing to the left of the server box, with dashed arrows looping out of the box and back across it.
+- **Counts of arrows that cross layers gather in one row beside their target, and the second halves are drawn on top of one another.**
+  - In `layer-server`, the counts `8 26 12 10 13 2 14 1 3` stand in one row beside `data`. In `layer-views`, `18 88 50 14 49 103 32 65` stand beside `state` and `85 49 11 46 109 29 75` beside `ui`.
+  - Their second halves run together over the top into the target's box, with the arrowheads stacked. A reader has to follow a long dashed first half across many others to learn which folder a count belongs to.
+  - Measured as pairs of arrows that share more than 40 pt of line within 1.5 pt of each other (`scratchpad/r1rev/overlap.mjs`), before and after the round: server 4 to 27, state 7 to 30, views 2 to 41, ui 0 to 7, shell 0 to 3. The overview stays at 0, and writes goes from 2 to 1.
+  - Each arrow still draws one arrowhead: the first half carries `arrowhead=none`. In the overview and the writes diagram, each word box reads as its own arrow's count or call list.
+- **The drawings changed size, and the reply does not state it.** The overview went from 401x366 pt to 405x560 pt. `layer-ui` went from 328x631 to 664x806, `layer-views` from 760x689 to 1011x621, and `layer-data` from 192x411 to 225x517. `layer-server` shrank from 1553x878 to 893x773 and `writes` from 1296x569 to 1062x513.
+- **The hover titles.** The Help view puts the SVG inline (`Diagram.svelte:69`), so the `<title>` elements show on hover. Each labelled arrow now shows three titles: `folder views/boards->folder views/boards to layer ui`, `folder views/boards to layer ui`, and `folder views/boards to layer ui->layer ui`. None of them reads `a->b`, and the first one repeats the source name. As words for a reader they are awkward but understandable. The reply states this change.
+- **Confirmed:** `npm run diagrams` runs with type stripping turned off (row 8b), and it no longer throws on layout (`settle` is gone).
+
+### Not checked
+- The drawings on the TEST page in Chrome. I only rasterised them with `rsvg-convert`.
+- A full rerun of `revert-check` over all 108 unit files of the step.
+- Node versions below 24.21.0.
+- Whether `uncomment()` (`source.mjs:98-103`), the regex comment blanking still used by the channel and write readers, has the same lexing faults. It is outside this round's finding 1.
+- The orchestrator's state file.
+
+Reviewer usage: about 45 tool uses. The clock read 22 minutes of wall time, the longest runs being playwright (6.1 min) and revert-check (3.5 min). I have no exact token count; my estimate is about 180k.
+
+## Closed
+
+The first run's findings, closed in repair round 1 (`agents/reviews/Q73-round1-sent.md`, the reply in `agents/reviews/Q73-report.md`): the hand lexer replaced by the TypeScript and Svelte parsers in `bin/diagrams/imports.mjs` (the `++`, `}`, HTML-comment and markup `import()` probes rerun clean); reference directives read from TypeScript whatever their attributes; the exact label test; every count and call list drawn as a word node, with no spacing search and no throw on layout; the standards findings; `usageRows` and `nextRefresh` in state with the kept list completed; the report's figures. Brief fact 3's example edge did not reproduce on the tree at 96786a24 (the reader defect did, on the probe); noted, no change.
+
+The run over round 1, fixed at landing on 2026-09-25 (small, inside the brief):
+- Proof, the string, template and regular-expression case removed: restored in `tests/checks/imports/cycles.test.ts`, red under the reviewer's revert of `imports.mjs` stripping `//` comments by pattern.
+- Proof, the ownership rule of `labelsAcross` cutting an end's name at its first colon (`labels.mjs:214`): an arrow's ends are its whole title, with a case whose end names hold a colon.
+- Standards, `polygonMeets` claiming a box held inside an arrowhead: it now tests containment both ways.
+- Proof and standards, the report's revert totals (the reviewer read 120 reverts, 0 unproven over the round's nine files) and the cited line of a reason comment (`diagrams.test.ts:768`): the landing note carries the read figures.
+
+Booked as Q74 (`plan.md`, next after Q73), too large for a fix at landing:
+- Behaviour, the layer diagrams read worse with the word nodes: a count between two folders of a layer stands outside the layer's box (data 8/8, server 24/24, state 26/26, ui 15/15, views 7/7, shell 4/4), the counts into another layer gather in one row beside it, and the halves into it are drawn over one another (pairs of arrows sharing more than 40 pt: server 4 to 27, state 7 to 30, views 2 to 41, ui 0 to 7, shell 0 to 3); the drawings' sizes changed (overview 401x366 to 405x560 pt, `layer-ui` 328x631 to 664x806, `layer-views` 760x689 to 1011x621). The overview and the writes diagram read well.
+- Not checked by the round's reviewer and in the same defect class: `uncomment()` in `bin/diagrams/source.mjs`, the regex comment blanking the channel and write readers still use.
+
+Noted, no change: the checks' reader sitting under `bin/diagrams/` by its path, a naming point; the hover titles of a split arrow (`a->a to b`), stated in the reply.

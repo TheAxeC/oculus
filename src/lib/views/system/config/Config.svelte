@@ -43,7 +43,7 @@
     import { descriptionKey } from './files';
     import { ENGINE_ROOT } from '$lib/state/sources/fs';
     import { sourceTabState } from '$lib/state/sessions/source.svelte';
-    import { lookup, t } from '$lib/state/words/text';
+    import { lookup, t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 

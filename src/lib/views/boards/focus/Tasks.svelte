@@ -17,7 +17,7 @@
         type Ticker as FocusTicker,
         type TickerItem
     } from '$lib/state/boards/ticker';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
     import { act, openLine, rowMaker } from './rows';
     import { useState } from '$lib/state/client/use';
 

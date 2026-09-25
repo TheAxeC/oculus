@@ -12,7 +12,7 @@
     // current one. A file the route refuses, or a fetch that fails, draws a line saying which
     // diagram and why, instead of an empty box.
 
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
     import { sanitiseGraph } from '$lib/ui/html';
     import { diagramUrl } from './manual';
     import { newestAnswer } from './newest';

@@ -14,7 +14,7 @@ import {
     textCatalog
 } from '../../../src/lib/data/sources/config.ts';
 import { feedsFixture } from '../../fixtures/feeds-fixture.ts';
-import { setCatalog, setGlyphs } from '../../../src/lib/state/words/text.ts';
+import { setCatalog, setGlyphs } from '../../../src/lib/state/shared/words/text.ts';
 import type { Instance } from '../../../src/lib/state/workbench/layout/index.ts';
 import { noop } from '../../fixtures/doubles.ts';
 import { clientContext, createClientState, type ClientState } from '../../fixtures/client.ts';

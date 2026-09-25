@@ -21,7 +21,7 @@ import type { EditorStatus } from '../../../src/lib/state/workbench/navigation/e
 import { fakeStorage } from '../../state/workbench/layout/layout-fixture.ts';
 import { clientContext, createClientState, type ClientState } from '../../fixtures/client.ts';
 import { words as t } from '../../views/system/workbench/workbench-fixture.ts';
-import { setGlyphMode } from '../../../src/lib/state/words/text.ts';
+import { setGlyphMode } from '../../../src/lib/state/shared/words/text.ts';
 
 const STATUS: StatusWords = {
     ...NO_STATUS,

@@ -43,7 +43,7 @@ import { deriveTokens, ratio } from '../../src/lib/themes/derive.ts';
 import { parseBlocks, resolveTheme } from '../../src/lib/themes/parse.ts';
 import { engineDir, loadConfig } from '../../src/lib/data/sources/config.ts';
 import { byKey } from '../../src/lib/data/helpers/guards.ts';
-import { setAppearance, themeClass, themes } from '../../src/lib/state/words/appearance.ts';
+import { setAppearance, themeClass, themes } from '../../src/lib/state/shared/words/appearance.ts';
 import { scratchDir, sweepScratch } from '../fixtures/scratch.ts';
 
 afterAll(sweepScratch);

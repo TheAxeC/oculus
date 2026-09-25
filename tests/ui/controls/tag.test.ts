@@ -13,7 +13,7 @@ import {
     loadConfig,
     textCatalog
 } from '../../../src/lib/data/sources/config.ts';
-import { setCatalog, setGlyphMode, setGlyphs } from '../../../src/lib/state/words/text.ts';
+import { setCatalog, setGlyphMode, setGlyphs } from '../../../src/lib/state/shared/words/text.ts';
 
 const TAG = 'src/lib/ui/controls/Tag.svelte';
 
@@ -88,7 +88,7 @@ describe('the tag primitive', () => {
         expect(plain).not.toContain('toned');
     });
 
-    // revert: src/lib/state/words/text.ts:114 => return false;
+    // revert: src/lib/state/shared/words/text.ts:114 => return false;
     it('is bracketed under a terminal palette, and not when its stand-in brackets itself', () => {
         const rice = rules(TAG).filter((rule) => rule.selector.includes('body.rice'));
         expect(rice.map((rule) => rule.selector)).toEqual([

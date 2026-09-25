@@ -21,7 +21,7 @@ import {
     iconSet,
     loadConfig
 } from '../../../src/lib/data/sources/config.ts';
-import { setGlyphMode, setGlyphs, setIcons } from '../../../src/lib/state/words/text.ts';
+import { setGlyphMode, setGlyphs, setIcons } from '../../../src/lib/state/shared/words/text.ts';
 
 const GLYPH = 'src/lib/ui/display/Glyph.svelte';
 const TOOL = 'src/lib/ui/controls/ToolButton.svelte';

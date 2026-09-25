@@ -44,7 +44,7 @@
     import type { Tab } from '$lib/ui/tabs/tab-strip';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { edgeAt, markAt, withoutOwn } from '$lib/state/workbench/drag.svelte';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
     import {
         badgeOf,
         registrationGlyph,

@@ -11,8 +11,8 @@
 // and terminals and no component is mounted.
 
 import { diffState, plannedPath, type DiffSubject } from './repositories.ts';
-import type { WritesStore } from '../stores/shapes.ts';
-import { t } from '../words/text.ts';
+import type { WritesStore } from '../shared/stores/shapes.ts';
+import { t } from '../shared/words/text.ts';
 
 /** The view id of the pane one diff opens in. */
 export const DIFF_VIEW = 'repositories-diff';

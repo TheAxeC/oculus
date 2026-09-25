@@ -43,12 +43,14 @@
         fileState,
         parseSlidesState,
         savedState,
+        slideKeys,
         slidesInOrder,
+        slideTitle,
         withMove,
         withTick,
         type SlidePicks
-    } from '$lib/state/feeds/life/slides';
-    import { t } from '$lib/state/words/text';
+    } from '$lib/state/life/slides';
+    import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
 
@@ -63,7 +65,7 @@
     const rows = $derived(catalog());
 
     /** The catalog the reader's unsaved work was made over; a different one drops it. */
-    const signature = $derived(catalogSignature(rows.map((row) => row.key)));
+    const signature = $derived(catalogSignature(slideKeys(rows)));
 
     const held = $derived(parseSlidesState(instanceState(instance.id)));
 
@@ -77,11 +79,7 @@
     const picks = $derived(
         current
             ? { order: held.order, picked: held.picked }
-            : fileState(
-                  rows.map((row) => row.key),
-                  deck().selection,
-                  defaults()
-              )
+            : fileState(slideKeys(rows), deck().selection, defaults())
     );
     const shown = $derived(slidesInOrder(rows, picks.order));
 
@@ -102,8 +100,7 @@
 
     /** The words a slide is named by, for the line that says where a move left it. */
     function titleOf(key: string): string {
-        const row = rows.find((one) => one.key === key);
-        return row === undefined || row.title === '' ? key : row.title;
+        return slideTitle(rows, key);
     }
 
     /** Put one slide on the deck or take it off, which is what a row's box says. */

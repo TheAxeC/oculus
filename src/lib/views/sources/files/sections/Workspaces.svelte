@@ -22,7 +22,7 @@
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
     import TreeView from '$lib/ui/tree/TreeView.svelte';
     import type { TreeNav } from '$lib/ui/tree/tree-keys';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
 
     type Props = {
         current: string;

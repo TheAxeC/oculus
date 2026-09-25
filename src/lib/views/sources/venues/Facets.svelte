@@ -5,8 +5,8 @@
 
     import type { Snippet } from 'svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import { t } from '$lib/state/words/text';
-    import type { ThemeFacet } from '$lib/state/words/themes';
+    import { t } from '$lib/state/shared/words/text';
+    import type { ThemeFacet } from '$lib/state/shared/words/themes';
 
     type Props = {
         facets: ThemeFacet[];

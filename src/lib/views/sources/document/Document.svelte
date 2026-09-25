@@ -30,7 +30,7 @@
     import Pane from '$lib/ui/frame/Pane.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Toolbar from '$lib/ui/frame/Toolbar.svelte';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
     import { fileUrl } from '../../shared/links/file-url';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
 

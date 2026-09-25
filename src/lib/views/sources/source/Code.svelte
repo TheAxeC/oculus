@@ -9,8 +9,8 @@
     // classes are coloured from the palette's own code hues, so the window follows the theme the
     // reader picked instead of carrying a stylesheet of its own.
 
-    import { codeHtml, lineNumbers } from '$lib/state/words/languages';
-    import { t } from '$lib/state/words/text';
+    import { codeHtml, lineNumbers } from '$lib/state/shared/words/languages';
+    import { t } from '$lib/state/shared/words/text';
 
     type Props = {
         /** The file's text, already cut at the read's limit by the store. */

@@ -10,7 +10,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sources/config.ts';
 import { formKey, formsKey } from '../../../../src/lib/state/forms/form-drafts.svelte.ts';
 import type { Layout } from '../../../../src/lib/state/workbench/layout/index.ts';
-import { setCatalog } from '../../../../src/lib/state/words/text.ts';
+import { setCatalog } from '../../../../src/lib/state/shared/words/text.ts';
 import { UI_KEY } from '../../../../src/lib/state/workbench/ui.svelte.ts';
 import { createClientState, type ClientState } from '../../../fixtures/client.ts';
 import { bench, fakeStorage, pane, split } from './layout-fixture.ts';

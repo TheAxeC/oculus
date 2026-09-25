@@ -10,9 +10,9 @@
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import { t } from '$lib/state/words/text';
-    import { clock } from '$lib/state/words/format';
-    import type { CalendarDay, CalendarEvent } from '$lib/state/feeds/life/calendar';
+    import { t } from '$lib/state/shared/words/text';
+    import { clock } from '$lib/state/shared/words/format';
+    import type { CalendarDay, CalendarEvent } from '$lib/state/life/calendar';
 
     let { days, onopen }: { days: CalendarDay[]; onopen: (id: string) => void } = $props();
 

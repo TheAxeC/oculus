@@ -4,8 +4,8 @@
     // shows that slide and closes the grid.
 
     import Card from '$lib/ui/frame/Card.svelte';
-    import { t } from '$lib/state/words/text';
-    import type { DeckSlide } from '$lib/state/feeds/life/present';
+    import { t } from '$lib/state/shared/words/text';
+    import type { DeckSlide } from '$lib/state/life/present';
 
     type Props = {
         rows: DeckSlide[];

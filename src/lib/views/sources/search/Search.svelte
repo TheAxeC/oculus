@@ -36,7 +36,7 @@
     import { openSourceFile } from '../../shared/links/source-file';
     import { ALL_ROOTS, type SearchFile } from '$lib/state/sources/search';
     import { currentWorkspace } from '$lib/state/sources/fs-transport';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 

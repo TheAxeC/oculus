@@ -16,7 +16,7 @@
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { findView } from '$lib/state/workbench/layout';
     import type { TaskKind } from '$lib/state/sessions/terminals.svelte';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
 
     const {

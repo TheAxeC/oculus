@@ -17,17 +17,20 @@ import {
 } from '../../../src/lib/state/sources/fs.ts';
 import { fileBytesUrl, listingUrl } from '../../../src/lib/state/sources/fs.svelte.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
-import { registered } from '../../../src/lib/state/words/languages.ts';
-import { setCatalog } from '../../../src/lib/state/words/text.ts';
+import { registered } from '../../../src/lib/state/shared/words/languages.ts';
+import { setCatalog } from '../../../src/lib/state/shared/words/text.ts';
 import { createClientState } from '../../fixtures/client.ts';
 import {
     bookmarkAt,
     bookmarkById,
+    bookmarkTitles,
     currentWorkspace,
     fileEntries,
     fixedRootKeys,
     matchedNothing,
-    openFailures
+    openFailures,
+    rootKeysOf,
+    workspaceNames
 } from '../../../src/lib/state/sources/fs-transport.ts';
 import type { Entry } from '../../../src/lib/data/model/index.ts';
 
@@ -298,5 +301,20 @@ describe('the file browser lookups over what its store holds', () => {
         expect(openFailures(rows, error)).toEqual([{ root: 'hub', path: 'a', error: 'gone' }]);
         expect(matchedNothing([rows[0]])).toBe(true);
         expect(matchedNothing(rows)).toBe(false);
+    });
+
+    // revert: src/lib/state/sources/fs-transport.ts:252 => if (saved.error !== '') return null;
+    // revert: src/lib/state/sources/fs-transport.ts:253 => return saved.workspaces[0]?.roots.map((one) => one.key) ?? [];
+    // revert: src/lib/state/sources/fs-transport.ts:258 => return entries.map((one) => one.id);
+    // revert: src/lib/state/sources/fs-transport.ts:244 => return saved.workspaces.map((one) => one.current);
+    it('name the workspaces, the current roots once they are read, and the bookmark titles', () => {
+        expect(workspaceNames(saved)).toEqual(['home', 'work']);
+        expect(rootKeysOf(saved)).toEqual(['hub', 'code']);
+        // Until the workspaces are read, or when they could not be, there are no roots to answer.
+        expect(rootKeysOf({ ...saved, loading: true })).toBeNull();
+        // A read that failed names no roots either.
+        expect(rootKeysOf({ ...saved, error: 'unreadable' })).toBeNull();
+        const marks = [{ id: 'm1', title: 'One', fields: {} }] as unknown as Entry[];
+        expect(bookmarkTitles(marks)).toEqual(['One']);
     });
 });

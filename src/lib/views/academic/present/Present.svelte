@@ -36,8 +36,8 @@
     import Overview from './Overview.svelte';
     import Slide from './Slide.svelte';
     import { cardCursor } from '$lib/state/workbench/layout/instance';
-    import { parsePresentState, type PresentState } from '$lib/state/feeds/life/present';
-    import { t } from '$lib/state/words/text';
+    import { parsePresentState, type PresentState } from '$lib/state/life/present';
+    import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
 

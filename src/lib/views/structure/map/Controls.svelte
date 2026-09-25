@@ -15,8 +15,8 @@
     import Chip from '$lib/ui/controls/Chip.svelte';
     import Toolbar from '$lib/ui/frame/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import { t } from '$lib/state/words/text';
-    import { toneOf, typeTone } from '$lib/state/words/tones';
+    import { t } from '$lib/state/shared/words/text';
+    import { toneOf, typeTone } from '$lib/state/shared/words/tones';
 
     type Status = { status: string; color?: string };
     type TypeFilter = { type: string; count: number; shown: boolean };

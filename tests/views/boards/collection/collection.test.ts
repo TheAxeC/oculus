@@ -9,7 +9,7 @@
 // it are tests/state/boards/collection.test.ts.
 
 import { beforeEach, describe, expect, it } from 'vitest';
-import { statusTone } from '../../../../src/lib/state/words/tones.ts';
+import { statusTone } from '../../../../src/lib/state/shared/words/tones.ts';
 import {
     receive,
     catalog,

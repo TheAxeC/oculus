@@ -2,9 +2,9 @@
     // Layer 3, sessions view partial. Files touched by one session live here because session-file
     // activity changes independently of repository status and controls.
 
-    import { elide, relativeTo } from '$lib/state/words/format';
+    import { elide, relativeTo } from '$lib/state/shared/words/format';
     import type { SessionFile } from '$lib/state/client/selectors.svelte';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
 
     const {

@@ -5,7 +5,7 @@
     import Table from '$lib/ui/display/Table.svelte';
     import type { Column } from '$lib/ui/display/table-rows';
     import { partitionMeters, type HpcPartition } from '$lib/state/system/hpc';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
     let { rows }: { rows: HpcPartition[] } = $props();
     const meters = $derived(partitionMeters(rows));
     // sinfo answers one row per partition and node state, so the partition name repeats and cannot

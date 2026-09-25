@@ -48,7 +48,7 @@
     } from '$lib/state/workbench/navigation/catalogue';
     import { railPages } from '$lib/state/workbench/navigation/rail';
     import { THRESHOLD, type Point } from '$lib/state/workbench/drag.svelte';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
     import {
         badgeOf,
         registrationGlyph,

@@ -21,7 +21,7 @@ import {
     applyThemeFacets,
     themeFacets,
     themeWordLabels
-} from '../../../src/lib/state/words/themes.ts';
+} from '../../../src/lib/state/shared/words/themes.ts';
 
 function project(id: string, over: Partial<Project> = {}): Project {
     return {

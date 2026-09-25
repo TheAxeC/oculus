@@ -43,8 +43,8 @@ digraph channels {
         "state/client/socket";
         "state/feeds/feeds";
         "state/feeds/inbox";
-        "state/feeds/life/calendar";
-        "state/feeds/life/present";
+        "state/life/calendar";
+        "state/life/present";
         "state/sessions/latex";
         "state/sessions/terminals";
         "state/sources/files";
@@ -82,13 +82,13 @@ digraph channels {
     "ch audit" -> "routes/+page" [style=dashed];
     "ch audit" -> "state/system/audit";
     "ch calendar" -> "routes/+page" [style=dashed];
-    "ch calendar" -> "state/feeds/life/calendar";
+    "ch calendar" -> "state/life/calendar";
     "ch config" -> "routes/+page" [style=dashed];
     "ch config" -> "routes/+page";
     "ch config" -> "state/client/context";
     "ch config" -> "state/client/selectors";
     "ch config" -> "state/client/socket";
-    "ch config" -> "state/feeds/life/present";
+    "ch config" -> "state/life/present";
     "ch config" -> "state/sessions/terminals";
     "ch config" -> "state/sources/search";
     "ch config" -> "state/workbench/palette-source";
@@ -120,7 +120,7 @@ digraph channels {
     "ch portfolio" -> "routes/+page";
     "ch portfolio" -> "state/client/context";
     "ch portfolio" -> "state/client/selectors";
-    "ch portfolio" -> "state/feeds/life/present";
+    "ch portfolio" -> "state/life/present";
     "ch portfolio" -> "state/workbench/navigation/notice-sources";
     "ch portfolio" -> "state/workbench/palette-source";
     "ch portfolio" -> "state/workbench/rail-badges";

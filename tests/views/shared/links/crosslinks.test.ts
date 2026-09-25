@@ -12,7 +12,7 @@ import {
     loadConfig,
     textCatalog
 } from '../../../../src/lib/data/sources/config.ts';
-import { setCatalog, setGlyphs } from '../../../../src/lib/state/words/text.ts';
+import { setCatalog, setGlyphs } from '../../../../src/lib/state/shared/words/text.ts';
 import { clientContext, createClientState, type ClientState } from '../../../fixtures/client.ts';
 
 let client: ClientState;

@@ -14,9 +14,9 @@
     import { fileUrl } from '$lib/views/shared/links/file-url';
     import { HUB_ROOT } from '$lib/state/sources/fs';
     import { sanitiseDiagram } from '$lib/ui/html';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
     import Words from './parts/Words.svelte';
-    import type { PresentPanel } from '$lib/state/feeds/life/present';
+    import type { PresentPanel } from '$lib/state/life/present';
 
     type Props = {
         panel: PresentPanel;

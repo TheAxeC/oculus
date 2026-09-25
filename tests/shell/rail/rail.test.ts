@@ -22,7 +22,7 @@ import {
 import type { RailEntry } from '../../../src/lib/state/workbench/navigation/rail.ts';
 import type { RailPage } from '../../../src/lib/state/workbench/navigation/rail.ts';
 import { glyphCatalog } from '../../../src/lib/data/sources/config.ts';
-import { setGlyphMode } from '../../../src/lib/state/words/text.ts';
+import { setGlyphMode } from '../../../src/lib/state/shared/words/text.ts';
 import { fakeStorage } from '../../state/workbench/layout/layout-fixture.ts';
 import { clientContext, createClientState, type ClientState } from '../../fixtures/client.ts';
 import { catalog, config, count, probe } from './rail-fixture.ts';

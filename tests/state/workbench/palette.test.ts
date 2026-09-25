@@ -12,7 +12,7 @@ import {
 } from '../../../src/lib/state/workbench/palette.ts';
 import type { Snapshot } from '../../../src/lib/data/model/index.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
-import { setCatalog, t } from '../../../src/lib/state/words/text.ts';
+import { setCatalog, t } from '../../../src/lib/state/shared/words/text.ts';
 import { createClientState, type ClientState } from '../../fixtures/client.ts';
 
 setCatalog(textCatalog(loadConfig(engineDir()).config));

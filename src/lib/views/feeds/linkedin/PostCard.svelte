@@ -9,7 +9,7 @@
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { HUB_ROOT } from '$lib/state/sources/fs';
     import { snippet, type LinkedinEntry } from '$lib/state/feeds/linkedin';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
     import type { WriteAnswer } from '$lib/state/client/writes.svelte';
     import { answerWords } from '$lib/views/shared/forms/answer-words';
     import { useState } from '$lib/state/client/use';

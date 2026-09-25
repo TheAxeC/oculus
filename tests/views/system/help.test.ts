@@ -25,7 +25,7 @@ import {
     loadConfig,
     textCatalog
 } from '../../../src/lib/data/sources/config.ts';
-import { setCatalog, setGlyphs } from '../../../src/lib/state/words/text.ts';
+import { setCatalog, setGlyphs } from '../../../src/lib/state/shared/words/text.ts';
 import type { DocState } from '../../../src/lib/state/system/docs.svelte.ts';
 import type { Instance } from '../../../src/lib/state/workbench/layout/index.ts';
 import { registerAll, registerCollections } from '../../../src/routes/views.ts';
@@ -136,7 +136,7 @@ describe('the diagrams in the manual', () => {
     });
 
     it('audits that the manual shows every diagram the generator writes, each one committed', async () => {
-        // revert: bin/diagrams/diagrams.mjs:56 => 'writes', 'calls'
+        // revert: bin/diagrams/diagrams.mjs:59 => 'writes', 'calls'
         const answer = renderManual({
             hub: engineDir(),
             engine: engineDir(),

@@ -5,7 +5,7 @@
 // It is a fold and reads nothing: the store holds the rows and this says what they look like, so a
 // case states a row and asserts a line without a fetch.
 
-import { t } from '$lib/state/words/text';
+import { t } from '$lib/state/shared/words/text';
 
 /**
  * One recorded value as the view shows it. A scalar is shown whole and carries no size; a list or a

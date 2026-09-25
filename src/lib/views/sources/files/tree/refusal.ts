@@ -5,7 +5,7 @@
 // four it refuses a request with before any action is read (`origin`, `token`, `not-json`,
 // `not-an-action`), and any code added later, are said with the code itself.
 
-import { t } from '$lib/state/words/text';
+import { t } from '$lib/state/shared/words/text';
 
 /** What one refusal code from the endpoint says to the reader. */
 export function refusal(code: string): string {

@@ -54,7 +54,7 @@
         shownRoot,
         type RepositoriesView
     } from '$lib/state/sources/repositories';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
     import { shapeBadge, shapeBadgeTone } from '$lib/views/shared/changes/repo-shape';
     import { repoShape } from '$lib/state/sources/repositories';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';

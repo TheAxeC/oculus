@@ -20,13 +20,13 @@ import {
     textCatalog,
     vocabCatalog
 } from '../../../src/lib/data/sources/config.ts';
-import { setCatalog, setGlyphs, setIcons } from '../../../src/lib/state/words/text.ts';
+import { setCatalog, setGlyphs, setIcons } from '../../../src/lib/state/shared/words/text.ts';
 import {
     chipGlyphName,
     chipLabel,
     setVocab,
     statusMarkTone
-} from '../../../src/lib/state/words/tones.ts';
+} from '../../../src/lib/state/shared/words/tones.ts';
 import { emptyBoardState, type BoardState } from '../../../src/lib/state/boards/board/index.ts';
 import { area, payload, record, workspace } from '../../fixtures/sessions-fixture.ts';
 import type {

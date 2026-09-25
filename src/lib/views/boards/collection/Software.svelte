@@ -16,7 +16,7 @@
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { codeLabel } from '$lib/views/shared/card/card';
     import { softwareRows, type Project } from '$lib/state/boards/collection';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
 
     const {

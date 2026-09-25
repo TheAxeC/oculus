@@ -7,7 +7,7 @@
 // nowhere to push is what tells the reader why.
 
 import type { GitState } from '$lib/state/client/selectors.svelte';
-import { t } from '$lib/state/words/text';
+import { t } from '$lib/state/shared/words/text';
 
 /** What the branch line says beside the name, its parts joined by the catalog's separator. */
 export function branchState(state: GitState): string {

@@ -16,7 +16,7 @@ import {
     loadConfig,
     textCatalog
 } from '../../../src/lib/data/sources/config.ts';
-import { setCatalog, setGlyphs } from '../../../src/lib/state/words/text.ts';
+import { setCatalog, setGlyphs } from '../../../src/lib/state/shared/words/text.ts';
 import { recordedKinds } from '../../fixtures/kinds.ts';
 import type { Change } from '../../../src/lib/state/sessions/changes.svelte.ts';
 import type { Instance } from '../../../src/lib/state/workbench/layout/index.ts';

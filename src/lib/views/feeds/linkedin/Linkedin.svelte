@@ -43,7 +43,7 @@
         type LinkedinState,
         type SchemaField
     } from '$lib/state/feeds/linkedin';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
     import { cardCursor } from '$lib/state/workbench/layout/instance';
     import { feedIdents } from '$lib/state/feeds/idents';
     import type { WriteAnswer } from '$lib/state/client/writes.svelte';

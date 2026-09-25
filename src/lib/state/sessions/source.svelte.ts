@@ -10,8 +10,8 @@
 
 import { TEXT_LIMIT } from '../sources/fs.ts';
 import { readCapped } from '../sources/fs.svelte.ts';
-import type { WriteAnswer, WritesStore, InstanceStates } from '../stores/shapes.ts';
-import { t } from '../words/text.ts';
+import type { WriteAnswer, WritesStore, InstanceStates } from '../shared/stores/shapes.ts';
+import { t } from '../shared/words/text.ts';
 
 /**
  * How a file indents: with tabs or with spaces, and how wide one step is. It is declared here, with

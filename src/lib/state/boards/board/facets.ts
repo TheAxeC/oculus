@@ -1,7 +1,7 @@
 // Layer 2, client state. Board facet values, labels, ordering and counts live here because facet
 // vocabulary changes independently of item construction and board state.
 
-import { chipKeys, chipLabel, domainLabel } from '../../words/tones.ts';
+import { chipKeys, chipLabel, domainLabel } from '../../shared/words/tones.ts';
 import {
     CODE_VALUES,
     COMPUTE_VALUES,

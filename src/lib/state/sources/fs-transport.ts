@@ -238,3 +238,22 @@ export async function readCappedBytes(
     }
     return { bytes: kept, truncated: taken > limit };
 }
+
+/** The names of the saved workspaces, in the order the file keeps them. */
+export function workspaceNames(saved: WorkspacesState): string[] {
+    return saved.workspaces.map((one) => one.name);
+}
+
+/**
+ * The keys of the current workspace's roots, and null while the workspaces are being read or could
+ * not be read, so an ask to show a path waits for them rather than being answered against none.
+ */
+export function rootKeysOf(saved: WorkspacesState): string[] | null {
+    if (saved.loading || saved.error !== '') return null;
+    return currentWorkspace(saved).roots.map((one) => one.key);
+}
+
+/** The titles the reader's bookmarks carry, which a new bookmark's label is kept apart from. */
+export function bookmarkTitles(entries: Entry[]): string[] {
+    return entries.map((one) => one.title);
+}

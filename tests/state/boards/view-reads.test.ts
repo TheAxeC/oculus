@@ -4,11 +4,18 @@
 // projects no funding entry covers (state/boards/collection.ts), each a plain function over a
 // hand-built input.
 //
+// Also whether the command center has anything to draw (state/boards/ticker.ts's hasCommandRows).
+//
 // What this does NOT cover: the views that draw them, which tests/views/boards/focus.test.ts and
 // tests/views/boards/collection/collection.test.ts mount.
 
 import { describe, expect, it } from 'vitest';
-import { hasTasks, taskGroups, type TickerItem } from '../../../src/lib/state/boards/ticker.ts';
+import {
+    hasCommandRows,
+    hasTasks,
+    taskGroups,
+    type TickerItem
+} from '../../../src/lib/state/boards/ticker.ts';
 import { portfolioProjects, waitingTotal } from '../../../src/lib/state/boards/focus.ts';
 import {
     fileOrder,
@@ -36,6 +43,25 @@ describe('the tasks section, the awaiting strip and the portfolio projects', () 
         expect(groups.tasks).toHaveLength(1);
         expect(hasTasks(groups)).toBe(true);
         expect(hasTasks(taskGroups([]))).toBe(false);
+    });
+
+    // revert: src/lib/state/boards/ticker.ts:615 => return rows > 0;
+    it('says the command center has something to draw for any row, and for the projects behind', () => {
+        const none = {
+            overdue: [],
+            categories: [],
+            subtaskDated: [],
+            followups: [],
+            snoozed: [],
+            attention: [],
+            refresh: []
+        };
+        const behind = { behind: { count: 2 } } as unknown as Parameters<typeof hasCommandRows>[1];
+        expect(hasCommandRows(none, null)).toBe(false);
+        expect(hasCommandRows(none, { behind: null })).toBe(false);
+        expect(hasCommandRows(none, behind)).toBe(true);
+        expect(hasCommandRows({ ...none, refresh: ['r'] }, null)).toBe(true);
+        expect(hasCommandRows({ ...none, overdue: ['o'] }, { behind: null })).toBe(true);
     });
 
     // revert: src/lib/state/boards/focus.ts:352 => 0 +

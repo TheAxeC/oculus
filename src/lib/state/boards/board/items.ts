@@ -2,7 +2,7 @@
 // independently of filters, facets and statistics.
 
 import { byKey } from '../../../data/helpers/guards.ts';
-import { domainLabel, domainTone, typeTone } from '../../words/tones.ts';
+import { domainLabel, domainTone, typeTone } from '../../shared/words/tones.ts';
 import type { Id, Project, Snapshot } from '../../../data/model/index.ts';
 import { personNames } from '../person.ts';
 import {

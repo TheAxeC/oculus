@@ -40,9 +40,9 @@ import {
     setGlyphs,
     setIcons,
     t
-} from '../../src/lib/state/words/text.ts';
+} from '../../src/lib/state/shared/words/text.ts';
 import { installBadges } from '../state/workbench/rail-badges-fixture.ts';
-import { setVocab } from '../../src/lib/state/words/tones.ts';
+import { setVocab } from '../../src/lib/state/shared/words/tones.ts';
 import type { Layout, Workbench as Bench } from '../../src/lib/state/workbench/layout/index.ts';
 import { noop } from '../fixtures/doubles.ts';
 import { present } from '../fixtures/present.ts';

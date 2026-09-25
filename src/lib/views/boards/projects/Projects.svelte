@@ -61,8 +61,8 @@
         type BoardState
     } from '$lib/state/boards/board';
     import { cardCursor } from '$lib/state/workbench/layout/instance';
-    import { lookup, t } from '$lib/state/words/text';
-    import { chipGlyphName, chipLabel, statusMarkTone } from '$lib/state/words/tones';
+    import { lookup, t } from '$lib/state/shared/words/text';
+    import { chipGlyphName, chipLabel, statusMarkTone } from '$lib/state/shared/words/tones';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 

@@ -22,7 +22,7 @@
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Toolbar from '$lib/ui/frame/Toolbar.svelte';
     import { pinnedSession } from '$lib/state/workbench/selection.svelte';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { currentBranch, repoShape } from '$lib/state/sources/repositories';
     import ChangesRepo from './ChangesRepo.svelte';

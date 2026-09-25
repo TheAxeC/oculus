@@ -4,9 +4,10 @@
 // error state; the backoff exists so a server that is down does not spin the page.
 //
 // The catalog arrives on the `config` channel and is installed here rather than in entities,
-// because state/words/text.ts holds it outside the reactive graph: the page's first render uses the
-// catalog the server shipped as page data, and every later edit of a text catalog comes this way.
-// Raising the configuration's generation once the push is installed is what draws the page again.
+// because state/shared/words/text.ts holds it outside the reactive graph: the page's first render
+// uses the catalog the server shipped as page data, and every later edit of a text catalog comes
+// this way. Raising the configuration's generation once the push is installed is what draws the
+// page again.
 //
 // The page starts from the configuration its own HTML was built from, seeded here with the newest
 // push version that read is at least as new as (server/root/config-seed.ts). A `config` push at or
@@ -15,13 +16,13 @@
 
 import { isMap } from '../../data/helpers/guards.ts';
 import type { EntitiesStore } from './entities.svelte.ts';
-import { configInstalled } from '../words/generation.svelte.ts';
-import { setCatalog, setGlyphs, setIcons } from '../words/text.ts';
-import { setAppearance } from '../words/appearance.ts';
-import { setVocab } from '../words/tones.ts';
+import { configInstalled } from '../shared/words/generation.svelte.ts';
+import { setCatalog, setGlyphs, setIcons } from '../shared/words/text.ts';
+import { setAppearance } from '../shared/words/appearance.ts';
+import { setVocab } from '../shared/words/tones.ts';
 import type { WritesStore } from './writes.svelte.ts';
 import type { ConfigPayload, Message, Subscription } from '../../data/model/index.ts';
-import type { SocketStore, Status } from '../stores/shapes.ts';
+import type { SocketStore, Status } from '../shared/stores/shapes.ts';
 
 export type { SocketStore, Status };
 

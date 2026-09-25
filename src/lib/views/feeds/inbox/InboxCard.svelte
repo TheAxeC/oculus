@@ -29,7 +29,7 @@
         type InboxThread
     } from '$lib/state/feeds/inbox';
     import type { MailAnswer, TriageFields } from '$lib/state/feeds/inbox.svelte';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
 
     const {

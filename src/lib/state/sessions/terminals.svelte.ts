@@ -14,8 +14,8 @@
 // subscribe message, which is what lets that socket send input at all.
 
 import { taskSkipPermissions } from '../../data/helpers/tasks.ts';
-import type { EntitiesStore, SocketStore, WritesStore } from '../stores/shapes.ts';
-import { t } from '../words/text.ts';
+import type { EntitiesStore, SocketStore, WritesStore } from '../shared/stores/shapes.ts';
+import { t } from '../shared/words/text.ts';
 import type {
     SessionsPayload,
     PtyPayload,

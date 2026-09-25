@@ -2,8 +2,8 @@
     // Layer 3, view partial. The Live HPC heading presents the four connection states and keeps
     // refresh as an explicit server action.
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import { t } from '$lib/state/words/text';
-    import { clock } from '$lib/state/words/format';
+    import { t } from '$lib/state/shared/words/text';
+    import { clock } from '$lib/state/shared/words/format';
     import type { HpcPayload } from '$lib/state/system/hpc';
     import { useState } from '$lib/state/client/use';
 

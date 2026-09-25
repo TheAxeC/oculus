@@ -27,7 +27,7 @@
 import { describe, expect, it } from 'vitest';
 import { engineDir, loadConfig, vocabCatalog } from '../../../src/lib/data/sources/config.ts';
 import { CLUSTERS, holdingTone, lanes } from '../../../src/lib/state/boards/focus.ts';
-import { setVocab } from '../../../src/lib/state/words/tones.ts';
+import { setVocab } from '../../../src/lib/state/shared/words/tones.ts';
 import { NAMES, themeTokens } from './themes.ts';
 
 const { config } = loadConfig(engineDir());

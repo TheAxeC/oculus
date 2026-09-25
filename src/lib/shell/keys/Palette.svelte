@@ -25,7 +25,7 @@
     } from '$lib/state/workbench/palette';
     import { languageChoices, type LanguageChoice } from '$lib/state/workbench/navigation/status';
     import { sourceOnScreen } from '$lib/state/workbench/navigation/editor-status.svelte';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
     import { registrationLabel } from '$lib/state/workbench/navigation/registry';
     import { untrack } from 'svelte';
     import { useState } from '$lib/state/client/use';

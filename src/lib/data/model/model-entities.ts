@@ -303,7 +303,7 @@ export type DeckEntry = {
 /** One chip of a legend row: the words and the palette hue behind them. */
 export type DeckChip = {
     label: string;
-    /** A hue name from state/words/tones.ts, resolved from the colour the deck wrote. */
+    /** A hue name from state/shared/words/tones.ts, resolved from the colour the deck wrote. */
     tone: string;
 };
 
@@ -322,7 +322,7 @@ export type DeckMeta = {
 
 /** A research domain's hue and the words a slide of that domain wears. */
 export type DeckTheme = {
-    /** A hue name from state/words/tones.ts, resolved from the colour the deck wrote. */
+    /** A hue name from state/shared/words/tones.ts, resolved from the colour the deck wrote. */
     tone: string;
     label: string;
 };
@@ -346,7 +346,7 @@ export type DeckFraming = {
 /** One row of a summary table. */
 export type DeckSummaryRow = {
     field?: string;
-    /** A hue name from state/words/tones.ts, for the dot beside the field. */
+    /** A hue name from state/shared/words/tones.ts, for the dot beside the field. */
     tone?: string;
     project?: string;
     mechanism?: string;
@@ -364,7 +364,7 @@ export type DeckSummary = {
 export type DeckIdea = {
     title?: string;
     desc?: string;
-    /** A hue name from state/words/tones.ts, for the dot on the head of the card. */
+    /** A hue name from state/shared/words/tones.ts, for the dot on the head of the card. */
     tone?: string;
     maturity?: string;
 };

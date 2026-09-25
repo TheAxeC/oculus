@@ -29,9 +29,9 @@ import {
     textCatalog,
     vocabCatalog
 } from '../../../src/lib/data/sources/config.ts';
-import { clock } from '../../../src/lib/state/words/format.ts';
-import { setCatalog, setGlyphs } from '../../../src/lib/state/words/text.ts';
-import { setVocab } from '../../../src/lib/state/words/tones.ts';
+import { clock } from '../../../src/lib/state/shared/words/format.ts';
+import { setCatalog, setGlyphs } from '../../../src/lib/state/shared/words/text.ts';
+import { setVocab } from '../../../src/lib/state/shared/words/tones.ts';
 import type { Turn } from '../../../src/lib/state/sessions/transcript.svelte.ts';
 import {
     area,

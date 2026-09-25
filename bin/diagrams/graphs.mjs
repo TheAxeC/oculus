@@ -3,8 +3,10 @@
 // per layer of its folders in the order tests/checks/imports/order.ts declares; and the channels
 // from the server module that publishes each to the client modules that read it.
 
+import { posix } from 'node:path';
+import { importsOf } from './imports.mjs';
+import { labelledEdge } from './labels.mjs';
 import {
-    RUNTIME,
     UNPLACED,
     cluster,
     header,
@@ -13,7 +15,8 @@ import {
     resolveSpec,
     sorted,
     uncomment,
-    unfollowed
+    unfollowed,
+    unfollowedAt
 } from './source.mjs';
 
 /**
@@ -78,11 +81,20 @@ export function folderOf(/** @type {string} */ path) {
  */
 
 /**
+ * The folder the Node adapter writes the built app to, as a path from src: the routes compiled into
+ * one handler, which the Node entry loads by a URL it builds rather than by a specifier.
+ */
+const BUILT = '../build/';
+
+/**
  * Every runtime import of the source, one per importing module and module imported, as
- * tests/checks/imports/graph.ts reads them (a statement opening `import type` or `export type` is
- * no runtime import), counted per pair of ends. A glob counts as one import of the folder its
- * pattern opens with. An import two ends that are one end joins is not counted, and an `import()`
- * whose specifier is no literal is named with its file and line.
+ * imports.mjs's importsOf() parses them, the reader the checks call, so a statement opening
+ * `import type` or `export type` is no runtime import and a comment holds none. They are counted
+ * per pair of ends. A glob counts as one import of the folder its pattern opens with. An
+ * `import()` of a name bound to a URL of a literal path is an import of that path, and one of the
+ * built app under BUILT an import of the routes it is built from. An import two ends that are one
+ * end joins is not counted, and an `import()` whose specifier could not be read is named with its
+ * file and line.
  *
  * @param {Sources} sources
  * @param {(path: string) => string | null} end What a module is drawn as, or null for not at all.
@@ -102,22 +114,32 @@ export function runtimeImports(sources, end) {
         pairs.add(`${from}\n${path}`);
         edges.set(`${a}\n${b}`, (edges.get(`${a}\n${b}`) ?? 0) + 1);
     };
-    for (const [path, text] of sources) {
-        const plain = uncomment(text);
-        for (const match of plain.matchAll(/(?<![\w$.])import\s*\(\s*(?!['"])([^)]*)\)/g)) {
-            const one = unfollowed(`src/${path}`, plain, match.index, `import(${match[1]})`);
-            lost.push({ ...one, from: end(path) });
-        }
-        for (const match of text.matchAll(/import\.meta\.glob\(\s*['"]([^'"*]*)/g)) {
-            const folder = resolveSpec(path, match[1].replace(/\/[^/]*$/, ''));
-            if (folder !== null) count(path, folder, `glob ${folder}`);
-        }
-        for (const match of text.matchAll(RUNTIME)) {
-            if (/^(?:import|export)\s+type\s/.test(match[0])) continue;
-            const target = resolveSpec(path, match[3]);
-            if (target === null) continue;
+    /** @param {string} path @param {string} spec */
+    const follow = (path, spec) => {
+        const target = resolveSpec(path, spec);
+        if (target !== null) {
             const module = moduleFile(sources, target) ?? target;
             count(path, module, module);
+            return true;
+        }
+        if (!spec.startsWith('.')) return false;
+        const joined = posix.normalize(posix.join(posix.dirname(path), spec));
+        if (!joined.startsWith(BUILT)) return false;
+        count(path, 'routes', joined);
+        return true;
+    };
+    for (const [path, text] of sources) {
+        for (const one of importsOf(path, text)) {
+            if (one.typeOnly) continue;
+            if (one.glob === true && one.spec !== null) {
+                const folder = resolveSpec(path, one.spec.replace(/\/[^/]*$/, ''));
+                if (folder !== null) count(path, folder, `glob ${folder}`);
+            } else if (one.spec !== null) {
+                follow(path, one.spec);
+            } else {
+                const lostOne = unfollowedAt(`src/${path}`, one.line, `import(${one.argument})`);
+                lost.push({ ...lostOne, from: end(path) });
+            }
         }
     }
     return { edges, lost };
@@ -127,11 +149,12 @@ export function runtimeImports(sources, end) {
  * The overview: one node per layer that imports or is imported (the server's transcripts row drawn
  * with the server), routes as one node and the entry modules directly under src (the Node entry,
  * the hooks) as one node named entry, and one arrow per ordered pair of them that imports,
- * labelled with how many runtime imports it carries. A module no layer row places is drawn, only
- * when an import joins it, in the dashed group of what is not placed. An import the reader cannot
- * follow is a dashed node naming its file and line, with a dashed arrow from the node of the
- * module that makes it. A file outside every layer that is no module (an image a page links to)
- * is no node.
+ * labelled with how many runtime imports it carries. The entry's load of the built app is its
+ * arrow to routes. A file outside every layer that is no module (the favicon a page links to) is
+ * drawn as a node named by its folder under lib, as `assets`. A module no layer row places is
+ * drawn, only when an import joins it, in the dashed group of what is not placed. An import the
+ * reader cannot follow is a dashed node naming its file and line, with a dashed arrow from the node
+ * of the module that makes it.
  *
  * @param {Sources} sources
  * @param {string[]} layers
@@ -139,14 +162,14 @@ export function runtimeImports(sources, end) {
  */
 export function layersDot(sources, layers) {
     const astrayPrefix = `${UNPLACED}: `;
+    const filePrefix = 'files: ';
     /** @param {string} path */
     const end = (path) => {
         const { layer } = placeOf(path, layers);
         if (layer !== UNPLACED) return layer.split('/')[0];
-        // A file outside every layer that is no module (the favicon under lib/assets) is an asset
-        // a page links to, not code a layer is made of, so it is no node.
-        if (!sources.has(path) && !/\.(ts|js|svelte)$/.test(path)) return null;
-        return `${astrayPrefix}${path.split('/')[1]}`;
+        const folder = path.split('/')[1];
+        if (!sources.has(path) && !/\.(ts|js|svelte)$/.test(path)) return `${filePrefix}${folder}`;
+        return `${astrayPrefix}${folder}`;
     };
     const { edges, lost: unread } = runtimeImports(sources, end);
     const lost = unread.filter((one) => one.from !== null);
@@ -156,6 +179,9 @@ export function layersDot(sources, layers) {
     const order = [...new Set(layers.map((layer) => layer.split('/')[0])), 'routes'];
     for (const node of order.filter((one) => nodes.has(one))) lines.push(`    ${quote(node)};`);
     if (nodes.has('src')) lines.push(`    ${quote('src')} [label=${quote('entry')}];`);
+    for (const node of sorted([...nodes].filter((one) => one.startsWith(filePrefix)))) {
+        lines.push(`    ${quote(node)} [label=${quote(node.slice(filePrefix.length))}];`);
+    }
     const astray = sorted([...nodes].filter((node) => node.startsWith(astrayPrefix)));
     if (astray.length > 0) {
         const label = (/** @type {string} */ node) => quote(node.slice(astrayPrefix.length));
@@ -167,7 +193,7 @@ export function layersDot(sources, layers) {
     }
     for (const key of sorted(edges.keys())) {
         const [from, to] = key.split('\n');
-        lines.push(`    ${quote(from)} -> ${quote(to)} [label=${quote(String(edges.get(key)))}];`);
+        lines.push(...labelledEdge(from, to, String(edges.get(key))));
     }
     for (const one of [...lost].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))) {
         lines.push(`    ${quote(String(one.from))} -> ${quote(one.id)} [style=dashed];`);
@@ -215,9 +241,8 @@ export function layerDot(sources, layers, layer, order) {
     for (const key of sorted(edges.keys())) {
         const [from, to] = key.split('\n');
         if (!from.startsWith('folder ')) continue;
-        const label = `label=${quote(String(edges.get(key)))}`;
-        const across = to.startsWith('layer ') ? ', style=dashed, constraint=false' : '';
-        lines.push(`    ${quote(from)} -> ${quote(to)} [${label}${across}];`);
+        const across = to.startsWith('layer ') ? 'style=dashed, constraint=false' : '';
+        lines.push(...labelledEdge(from, to, String(edges.get(key)), across));
     }
     lines.push('}', '');
     return lines.join('\n');

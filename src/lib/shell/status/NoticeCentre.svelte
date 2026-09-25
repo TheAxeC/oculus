@@ -10,7 +10,7 @@
     import NoticeEntry from './NoticeEntry.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { onBody } from '$lib/ui/frame/on-body';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
 
     const {

@@ -22,7 +22,7 @@
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import TextInput from '$lib/ui/forms/TextInput.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
     import type { SubtaskAction, SubtaskTarget } from '$lib/state/client/writes.svelte';
     import { openSubtaskCount, type Subtask } from '$lib/state/boards/collection';
     import { useState } from '$lib/state/client/use';

@@ -4,7 +4,7 @@
 // The catalog and the glyphs are the real config; the note's own text comes from the fs store,
 // whose `fetch` is a stub. The typing itself is a DOM event no server render fires, so what one
 // keystroke does is read off the view's own source at the foot of this file; the wait it starts is
-// tests/state/feeds/life/notes.test.ts and the typing end to end is
+// tests/state/life/notes.test.ts and the typing end to end is
 // tests/browser/sources/files.spec.ts.
 
 import { readFileSync } from 'node:fs';
@@ -17,7 +17,7 @@ import {
     loadConfig,
     textCatalog
 } from '../../../src/lib/data/sources/config.ts';
-import { setCatalog, setGlyphs } from '../../../src/lib/state/words/text.ts';
+import { setCatalog, setGlyphs } from '../../../src/lib/state/shared/words/text.ts';
 import { findView, type Instance } from '../../../src/lib/state/workbench/layout/index.ts';
 import { clientContext, createClientState, type ClientState } from '../../fixtures/client.ts';
 

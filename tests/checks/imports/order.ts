@@ -8,17 +8,24 @@
 // composition roots head their layers (`server/root`, `state/client`, `shell`, and `data` itself,
 // whose index.ts builds the portfolio out of every data folder) since they import every folder
 // beside them and none imports them; the modules every folder of a layer shares sit at its foot
-// (`server/core`, `state/stores` with the shapes of the shared stores, `state/words`, `data/model`
-// with the facade of every type, the files of `ui`).
+// (`server/core`, `state/shared` with the catalogs in `words/` and the shapes of the shared stores
+// in `stores/`, `data/model` with the facade of every type, the files of `ui`).
+//
+// A listed folder that holds folders of its own may carry an inner order in INNER, read the same
+// way one level down: a module of one of its sub-folders imports only its own sub-folder or one
+// below it. `state/shared` is the one folder that carries one, `words` above `stores`, since the
+// two are the foot of the state layer and nothing else would hold an import between them.
 //
 // Imports between layers are the boundary test's (tests/checks/tree/boundaries.test.ts); this reads
 // only imports inside one layer, the type-only ones with the runtime ones, since a type a folder
-// takes from a folder above it ties the two as an import does, and a `declare module` block that
-// augments a module of a folder above its own, which ties them the same way from the other end.
-// Every folder a layer holds is listed, so a new folder is placed before it is used, and a listed
-// folder the tree no longer holds is named too. bin/diagrams/ reads ORDER from this file to draw
-// each layer's folders top down, so the list keeps the one shape its reader parses: `name: [...]`
-// per layer, the folders quoted.
+// takes from a folder above it ties the two as an import does. A `declare module` block or a
+// `/// <reference path>` naming a module of the tree is refused wherever it sits, by augments.ts:
+// an augmentation adds to a module from outside it, which ties the two in whichever direction it
+// runs, so no order could hold it. Every folder a layer holds is listed, so a new
+// folder is placed before it is used, and a listed folder the tree no longer holds is named too;
+// the same holds for the sub-folders of a folder INNER names. bin/diagrams/ reads ORDER from this
+// file to draw each layer's folders top down, so the list keeps the one shape its reader parses:
+// `name: [...]` per layer, the folders quoted.
 
 import { existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
@@ -42,13 +49,13 @@ export const ORDER: Record<string, string[]> = {
         'state/client',
         'state/workbench',
         'state/feeds',
+        'state/life',
         'state/sessions',
         'state/system',
         'state/boards',
         'state/sources',
         'state/forms',
-        'state/words',
-        'state/stores'
+        'state/shared'
     ],
     ui: [
         'ui/tabs',
@@ -74,10 +81,27 @@ export const ORDER: Record<string, string[]> = {
     ]
 };
 
+/**
+ * The inner order of each listed folder that carries one, its sub-folders from the top down, read
+ * as ORDER is one level down.
+ */
+export const INNER: Record<string, string[]> = {
+    'state/shared': ['state/shared/words', 'state/shared/stores']
+};
+
 /** The folder a lib-relative module sits in: its layer and first sub-folder, or its layer alone. */
 export function folderOf(id: string): string {
     const parts = id.split('/');
     return parts.length > 2 ? `${parts[0]}/${parts[1]}` : parts[0];
+}
+
+/**
+ * The sub-folder of an inner order a lib-relative module sits in: the folder and its next
+ * sub-folder, or the folder alone for a file that sits in it.
+ */
+function innerOf(id: string): string {
+    const parts = id.split('/');
+    return parts.length > 3 ? parts.slice(0, 3).join('/') : parts.slice(0, 2).join('/');
 }
 
 /** Every folder of each layer under a lib root: its sub-folders, and itself when it holds files. */
@@ -95,36 +119,60 @@ export function foldersOf(libRoot: string, layers: string[]): Map<string, string
     return found;
 }
 
+/** Each line of a list of folders the tree holds against the list an order places. */
+function placement(held: string[], listed: string[], name: string): string[] {
+    return [
+        ...held
+            .filter((folder) => !listed.includes(folder))
+            .map((folder) => `${folder} is not placed in the ${name} order`),
+        ...listed
+            .filter((folder) => !held.includes(folder))
+            .map((folder) => `${folder} is placed but the tree holds none`)
+    ];
+}
+
 /**
- * Every import that runs against a layer's order, as `module:line imports module (its folder, above
- * the importer's)`, and every folder the order does not place or places without the tree holding
- * it.
+ * Whether an import climbs an order: the importer's folder and the imported module's both placed in
+ * the list, the imported one above the importer's.
  */
-export function findUpward(libRoot: string, order: Record<string, string[]> = ORDER): string[] {
+function climbs(listed: string[], from: string, to: string): boolean {
+    if (to === from || !listed.includes(to) || !listed.includes(from)) return false;
+    return listed.indexOf(to) < listed.indexOf(from);
+}
+
+/**
+ * Every import that runs against a layer's order or a folder's inner order, as `module:line imports
+ * module (its folder, above the importer's)`, and every folder an order does not place or places
+ * without the tree holding it.
+ */
+export function findUpward(
+    libRoot: string,
+    order: Record<string, string[]> = ORDER,
+    inner: Record<string, string[]> = INNER
+): string[] {
     const found: string[] = [];
-    const layers = Object.keys(order);
-    for (const [layer, folders] of foldersOf(libRoot, layers)) {
-        const listed = order[layer];
-        for (const folder of folders) {
-            if (!listed.includes(folder))
-                found.push(`${folder} is not placed in the ${layer} order`);
-        }
-        for (const folder of listed) {
-            if (!folders.includes(folder))
-                found.push(`${folder} is placed but the tree holds none`);
-        }
+    for (const [layer, folders] of foldersOf(libRoot, Object.keys(order))) {
+        found.push(...placement(folders, order[layer], layer));
+    }
+    for (const [folder, held] of foldersOf(libRoot, Object.keys(inner))) {
+        found.push(...placement(held, inner[folder], folder));
     }
     for (const [fileRel, imports] of importGraph(libRoot, '', true)) {
-        const from = folderOf(fileRel);
         const layer = fileRel.split('/')[0];
         if (!Object.hasOwn(order, layer)) continue;
-        const listed = order[layer];
+        const from = folderOf(fileRel);
         for (const one of imports) {
             const to = folderOf(one.id);
-            if (to === from || !listed.includes(to) || !listed.includes(from)) continue;
-            if (listed.indexOf(to) > listed.indexOf(from)) continue;
-            const verb = one.augments === true ? 'augments' : 'imports';
-            found.push(`${fileRel}:${one.line} ${verb} ${one.id} (${to}, above ${from})`);
+            if (climbs(order[layer], from, to)) {
+                found.push(`${fileRel}:${one.line} imports ${one.id} (${to}, above ${from})`);
+            }
+            if (to !== from || !Object.hasOwn(inner, from)) continue;
+            const [innerFrom, innerTo] = [innerOf(fileRel), innerOf(one.id)];
+            if (climbs(inner[from], innerFrom, innerTo)) {
+                found.push(
+                    `${fileRel}:${one.line} imports ${one.id} (${innerTo}, above ${innerFrom})`
+                );
+            }
         }
     }
     return found.sort();

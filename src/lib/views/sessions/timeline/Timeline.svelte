@@ -26,11 +26,11 @@
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Toolbar from '$lib/ui/frame/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import { basename, clock, compactCount } from '$lib/state/words/format';
+    import { basename, clock, compactCount } from '$lib/state/shared/words/format';
     import { pinnedSession } from '$lib/state/workbench/selection.svelte';
     import type { SessionEvent } from '$lib/state/client/selectors.svelte';
     import { asText } from '$lib/state/forms/schema';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 

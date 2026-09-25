@@ -30,7 +30,7 @@ import type {
     Snapshot,
     UsagePayload
 } from '../../data/model/index.ts';
-import type { EntitiesStore } from '../stores/shapes.ts';
+import type { EntitiesStore } from '../shared/stores/shapes.ts';
 
 export type { EntitiesStore };
 

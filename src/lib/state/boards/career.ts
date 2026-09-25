@@ -13,7 +13,7 @@ import { isMap, scalar, text as str } from '../../data/helpers/guards.ts';
 // The boundary table lets `views/` import `state/` and nothing of `data/`, so the two model types
 // the career panel names reach it from here.
 export type { Career, Host } from '../../data/model/index.ts';
-import { UNKNOWN_TONE, toneOf } from '../words/tones.ts';
+import { UNKNOWN_TONE, toneOf } from '../shared/words/tones.ts';
 
 /** The statuses that count as outreach in progress: sent and waiting, or already in dialogue. */
 export const IN_FLIGHT = ['awaiting', 'warm'];

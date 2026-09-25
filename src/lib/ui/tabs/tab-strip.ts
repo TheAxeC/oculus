@@ -16,7 +16,7 @@ export type Tab = {
     badge?: string;
     /** A glyph name drawn in the badge before its text. */
     badgeGlyph?: string;
-    /** A hue name from state/words/tones.ts; absent uses the accent pair. */
+    /** A hue name from state/shared/words/tones.ts; absent uses the accent pair. */
     badgeTone?: string;
     /** Hover text shared by the count badge and its split strip. */
     badgeTitle?: string;

@@ -2,8 +2,8 @@
 // picker cannot put right, as findings of that file. Each row names the glyph drawn before its
 // words; a row whose glyph is missing, empty or not a name of config/catalogs/glyphs.yml is still
 // offered, with its words alone, and a second row naming a theme already listed is not offered at
-// all, since the picker keys its entries by the name. state/words/appearance.ts draws by the same
-// rules, so a row the finding names is drawn as the finding says.
+// all, since the picker keys its entries by the name. state/shared/words/appearance.ts draws by the
+// same rules, so a row the finding names is drawn as the finding says.
 
 import { join } from 'node:path';
 import { findingText } from '../../helpers/finding-text.ts';

@@ -30,8 +30,8 @@
         type Physics,
         type PointNode
     } from '$lib/state/boards/structure/graph';
-    import { t } from '$lib/state/words/text';
-    import { toneOf, typeTone } from '$lib/state/words/tones';
+    import { t } from '$lib/state/shared/words/text';
+    import { toneOf, typeTone } from '$lib/state/shared/words/tones';
     import { useState } from '$lib/state/client/use';
 
     const {

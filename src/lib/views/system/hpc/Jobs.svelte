@@ -6,7 +6,7 @@
     import Meter from '$lib/ui/display/Meter.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { startLabel, stateTone, walltimeFraction, type HpcJob } from '$lib/state/system/hpc';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
     let {
         rows,
         live,

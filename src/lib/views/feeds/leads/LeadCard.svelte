@@ -27,7 +27,7 @@
         type LeadEntry
     } from '$lib/state/feeds/leads';
     import { posting } from '$lib/views/shared/forms/posting';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
     import type { WriteAnswer } from '$lib/state/client/writes.svelte';
     import { answerWords } from '$lib/views/shared/forms/answer-words';
     import { useState } from '$lib/state/client/use';

@@ -19,8 +19,8 @@ import {
     type SearchQuery,
     type SearchRefusal
 } from '../../data/helpers/search.ts';
-import type { EntitiesStore, InstanceStates, WritesStore } from '../stores/shapes.ts';
-import { t } from '../words/text.ts';
+import type { EntitiesStore, InstanceStates, WritesStore } from '../shared/stores/shapes.ts';
+import { t } from '../shared/words/text.ts';
 
 /** What each refusal is said with. The keys are literals, as every catalog read in the tree is. */
 function refusalWords(refused: SearchRefusal): string {

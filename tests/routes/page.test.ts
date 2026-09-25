@@ -13,10 +13,10 @@ import { describe, expect, it } from 'vitest';
 import { load } from '../../src/routes/+page.ts';
 import { load as serverLoad } from '../../src/routes/+page.server.ts';
 import { Hub } from '../../src/lib/server/core/channels.ts';
-import { configGeneration } from '../../src/lib/state/words/generation.svelte.ts';
-import { defaultTheme } from '../../src/lib/state/words/appearance.ts';
-import { glyph, t } from '../../src/lib/state/words/text.ts';
-import { toneOf } from '../../src/lib/state/words/tones.ts';
+import { configGeneration } from '../../src/lib/state/shared/words/generation.svelte.ts';
+import { defaultTheme } from '../../src/lib/state/shared/words/appearance.ts';
+import { glyph, t } from '../../src/lib/state/shared/words/text.ts';
+import { toneOf } from '../../src/lib/state/shared/words/tones.ts';
 const ROUTES = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'src', 'routes');
 
 /** The hex the palette below writes as a tone. */

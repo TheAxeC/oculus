@@ -11,7 +11,7 @@
     import Toolbar from '$lib/ui/frame/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { ALL_ROOTS } from '$lib/state/sources/search';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
 
     type Props = {
         q: string;

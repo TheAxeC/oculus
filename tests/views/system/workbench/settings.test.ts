@@ -11,7 +11,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import Settings from '../../../../src/lib/views/system/workbench/Settings.svelte';
 import { withRailDraft } from '../../../../src/lib/state/workbench/navigation/rail.ts';
 import { clientContext, type ClientState } from '../../../fixtures/client.ts';
-import { setAppearance } from '../../../../src/lib/state/words/appearance.ts';
+import { setAppearance } from '../../../../src/lib/state/shared/words/appearance.ts';
 import { catalog, config, configured, words } from './workbench-fixture.ts';
 
 let client: ClientState;

@@ -20,7 +20,7 @@
     import { pageNameOf } from '$lib/state/workbench/navigation/pages';
     import { edgeAt } from '$lib/state/workbench/drag.svelte';
     import { paneAt, resize, showable, type Layout } from '$lib/state/workbench/layout';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
 
     const {

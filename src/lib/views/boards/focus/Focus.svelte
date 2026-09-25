@@ -44,7 +44,7 @@
     } from '$lib/state/boards/focus';
     import { personNames } from '$lib/state/boards/person';
     import { ticker } from '$lib/state/boards/ticker';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 

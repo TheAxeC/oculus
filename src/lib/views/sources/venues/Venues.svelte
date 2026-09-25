@@ -36,9 +36,9 @@
         type VenuesState
     } from '$lib/state/sources/venues';
     import { cardCursor } from '$lib/state/workbench/layout/instance';
-    import { applyThemeFacets, themeFacets, themeWordLabels } from '$lib/state/words/themes';
+    import { applyThemeFacets, themeFacets, themeWordLabels } from '$lib/state/shared/words/themes';
     import { entryById } from '$lib/state/boards/collection';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
     import { viewSourceFile } from '$lib/state/sessions/view-source';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';

@@ -27,15 +27,15 @@
     import Table from '$lib/ui/display/Table.svelte';
     import type { Column } from '$lib/ui/display/table-rows';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import { basename, clock } from '$lib/state/words/format';
+    import { basename, clock } from '$lib/state/shared/words/format';
     import { cardCursor } from '$lib/state/workbench/layout/instance';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
     import {
         hasUsageStatus,
+        nextRefresh,
         orderedWindows,
-        usageTotals,
+        usageRows,
         type UsageAccount,
-        type UsageDay,
         type UsageWindow
     } from '$lib/state/system/usage';
     import { useState } from '$lib/state/client/use';
@@ -100,23 +100,6 @@
         );
     }
 
-    function historyRows(rows: UsageDay[]): Record<string, unknown>[] {
-        const shown: Record<string, unknown>[] = rows.map((row) => ({
-            ...row,
-            rowKey: [row.tool, row.account, row.day, row.model].join(':')
-        }));
-        if (rows.length === 0) return shown;
-        shown.push({
-            rowKey: 'total',
-            day: t('usage.total'),
-            tool: '',
-            account: '',
-            model: '',
-            ...usageTotals(rows)
-        });
-        return shown;
-    }
-
     function hasStatus(account: UsageAccount): boolean {
         return hasUsageStatus(account);
     }
@@ -165,8 +148,8 @@
     function healthyText(lastRefresh: string): string {
         const last = clock(lastRefresh);
         if (last === '') return t('usage.refresher_ok_bare');
-        if (cadence === 0) return t('usage.refresher_ok_last', last);
-        const next = new Date(Date.parse(lastRefresh) + cadence * 60_000).toISOString();
+        const next = nextRefresh(lastRefresh, cadence);
+        if (next === '') return t('usage.refresher_ok_last', last);
         return t('usage.refresher_ok', last, clock(next));
     }
 </script>
@@ -272,7 +255,11 @@
             <section class="history">
                 <h2>{t('usage.history')}</h2>
                 {#if data.days.length}
-                    <Table {columns} rows={historyRows(data.days)} rowKey="rowKey" />
+                    <Table
+                        {columns}
+                        rows={usageRows(data.days, t('usage.total'))}
+                        rowKey="rowKey"
+                    />
                 {:else}
                     <Empty message={t('usage.no_history')} glyph="circle_empty" />
                 {/if}

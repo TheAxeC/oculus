@@ -8,7 +8,11 @@ import { fileURLToPath } from 'node:url';
 import { deriveTokens } from '../../../src/lib/themes/derive.ts';
 import { parseBlocks, resolveTheme } from '../../../src/lib/themes/parse.ts';
 import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
-import { setAppearance, themeClass, themes } from '../../../src/lib/state/words/appearance.ts';
+import {
+    setAppearance,
+    themeClass,
+    themes
+} from '../../../src/lib/state/shared/words/appearance.ts';
 
 const THEMES_DIR = resolve(
     dirname(fileURLToPath(import.meta.url)),

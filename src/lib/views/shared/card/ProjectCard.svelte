@@ -31,8 +31,8 @@
     import { contextText } from '$lib/state/boards/project-context';
     import { findView } from '$lib/state/workbench/layout';
     import { personNames } from '$lib/state/boards/person';
-    import { t } from '$lib/state/words/text';
-    import { chipGlyphName, chipLabel, statusTone } from '$lib/state/words/tones';
+    import { t } from '$lib/state/shared/words/text';
+    import { chipGlyphName, chipLabel, statusTone } from '$lib/state/shared/words/tones';
     import { useState } from '$lib/state/client/use';
 
     const client = useState();

@@ -30,7 +30,7 @@
     import Diagram from './Diagram.svelte';
     import { splitManual, type ManualPart } from './manual';
     import type { DocState } from '$lib/state/system/docs.svelte';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 

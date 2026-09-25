@@ -18,7 +18,7 @@
     import type { TreeNav } from '$lib/ui/tree/tree-keys';
     import { noCommitYet } from '$lib/state/sources/repositories';
     import type { GitState } from '$lib/state/client/selectors.svelte';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
 
     type Props = {
         git: GitState;

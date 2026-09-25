@@ -30,11 +30,11 @@
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Toolbar from '$lib/ui/frame/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import { compactCount, modelShort, seconds, span } from '$lib/state/words/format';
+    import { compactCount, modelShort, seconds, span } from '$lib/state/shared/words/format';
     import { pinnedSession } from '$lib/state/workbench/selection.svelte';
     import type { SessionAgent } from '$lib/state/client/selectors.svelte';
     import { anyRunning, newestFirst } from '$lib/state/sessions/folds';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 

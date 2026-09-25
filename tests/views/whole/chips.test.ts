@@ -19,8 +19,13 @@ import {
     textCatalog,
     vocabCatalog
 } from '../../../src/lib/data/sources/config.ts';
-import { setCatalog, setGlyphs } from '../../../src/lib/state/words/text.ts';
-import { chipLabel, setVocab, statusTone, typeTone } from '../../../src/lib/state/words/tones.ts';
+import { setCatalog, setGlyphs } from '../../../src/lib/state/shared/words/text.ts';
+import {
+    chipLabel,
+    setVocab,
+    statusTone,
+    typeTone
+} from '../../../src/lib/state/shared/words/tones.ts';
 import { noop } from '../../fixtures/doubles.ts';
 import { clientContext, createClientState, type ClientState } from '../../fixtures/client.ts';
 
@@ -128,8 +133,8 @@ const CHIP_TONES = ['statusTone(', 'typeTone(', 'item.tone'];
 
 /**
  * The one helper a file may tone its chips through instead: the gallery hands each chip a tone it
- * derived from the chip vocabulary, and state/words/tones.ts chipTone() is typeTone() falling back
- * to statusTone().
+ * derived from the chip vocabulary, and state/shared/words/tones.ts chipTone() is typeTone()
+ * falling back to statusTone().
  */
 const TONE_HELPER = 'chipTone(';
 

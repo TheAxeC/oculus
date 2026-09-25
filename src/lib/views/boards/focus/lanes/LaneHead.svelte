@@ -21,7 +21,7 @@
         glyph?: string;
         /** How many cards the lane holds. */
         count: number;
-        /** A hue name from state/words/tones.ts. */
+        /** A hue name from state/shared/words/tones.ts. */
         tone: string;
     };
 

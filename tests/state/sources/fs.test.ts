@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ENGINE_ROOT, TEXT_LIMIT } from '../../../src/lib/state/sources/fs.ts';
 import { FS_PATH, NOTE_GONE } from '../../../src/lib/state/sources/fs.svelte.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
-import { setCatalog } from '../../../src/lib/state/words/text.ts';
+import { setCatalog } from '../../../src/lib/state/shared/words/text.ts';
 import { createClientState, type ClientState } from '../../fixtures/client.ts';
 import { fakeStorage } from '../workbench/layout/layout-fixture.ts';
 

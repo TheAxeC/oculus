@@ -28,8 +28,8 @@ import {
     themeLabel,
     themes,
     wallpaperSettings
-} from '../../src/lib/state/words/appearance.ts';
-import { setGlyphMode, setGlyphs } from '../../src/lib/state/words/text.ts';
+} from '../../src/lib/state/shared/words/appearance.ts';
+import { setGlyphMode, setGlyphs } from '../../src/lib/state/shared/words/text.ts';
 import { parseBlocks } from '../../src/lib/themes/parse.ts';
 
 const THEMES_DIR = resolve(
@@ -76,7 +76,7 @@ function apply(name: string, crt = false) {
 }
 
 describe('applyTheme', () => {
-    // revert: src/lib/state/words/appearance.ts:130 => glyph: '',
+    // revert: src/lib/state/shared/words/appearance.ts:131 => glyph: '',
     it('gives each theme its glyph name apart from words that carry none, in either mode', () => {
         const light = themes().find((entry) => entry.name === 'light');
         const mocha = themes().find((entry) => entry.name === 'mocha');
@@ -91,7 +91,7 @@ describe('applyTheme', () => {
         expect(themeLabel('mocha')).toBe('mocha');
     });
 
-    // revert: src/lib/state/words/appearance.ts:145 => return list.map((theme) => ({ ...theme }));
+    // revert: src/lib/state/shared/words/appearance.ts:146 => return list.map((theme) => ({ ...theme }));
     it('offers a row whose glyph is empty, missing or unknown with its words alone', () => {
         setAppearance({
             themes: [
@@ -111,7 +111,7 @@ describe('applyTheme', () => {
         ]);
     });
 
-    // revert: src/lib/state/words/appearance.ts:126 => if (name === undefined || name.length === 0) continue;
+    // revert: src/lib/state/shared/words/appearance.ts:127 => if (name === undefined || name.length === 0) continue;
     it('offers a theme named twice once, as its first row gives it', () => {
         setAppearance({
             themes: [
@@ -165,7 +165,8 @@ describe('applyTheme', () => {
 
 describe('applyWallpaper', () => {
     /**
-     * The three numbers a wallpaper is drawn through, as state/words/appearance.ts resolves them.
+     * The three numbers a wallpaper is drawn through, as state/shared/words/appearance.ts resolves
+     * them.
      */
     const CONFIG = { panel: 76, popover: 97, panelBlur: 2 };
 

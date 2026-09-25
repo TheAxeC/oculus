@@ -1,6 +1,6 @@
 // Layer 2, client state. Reads one kind from the complete feed payload delivered by the socket.
 
-import type { EntitiesStore } from '../stores/shapes.ts';
+import type { EntitiesStore } from '../shared/stores/shapes.ts';
 import type { FeedKind, FeedsPayload } from '../../data/model/index.ts';
 
 export type FeedState = FeedsPayload[FeedKind];

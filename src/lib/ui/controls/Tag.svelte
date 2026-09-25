@@ -14,14 +14,14 @@
     // hover belong to the control, and what it holds is the same tag as the ones beside it.
 
     import Glyph from '../display/Glyph.svelte';
-    import { bracketedGlyph } from '$lib/state/words/text';
+    import { bracketedGlyph } from '$lib/state/shared/words/text';
 
     type Props = {
         /** The tag's words, already translated by the view. */
         label: string;
         /** A name in `glyphs:`, drawn before the label. Empty draws none. */
         glyph?: string;
-        /** A hue name from state/words/tones.ts. A tag with none is muted. */
+        /** A hue name from state/shared/words/tones.ts. A tag with none is muted. */
         tone?: string;
     };
 

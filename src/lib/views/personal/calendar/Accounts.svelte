@@ -9,9 +9,9 @@
 
     import Tag from '$lib/ui/controls/Tag.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import { t } from '$lib/state/words/text';
-    import { clock } from '$lib/state/words/format';
-    import { calendarKey, type CalendarAccount } from '$lib/state/feeds/life/calendar';
+    import { t } from '$lib/state/shared/words/text';
+    import { clock } from '$lib/state/shared/words/format';
+    import { calendarKey, type CalendarAccount } from '$lib/state/life/calendar';
 
     let {
         rows,

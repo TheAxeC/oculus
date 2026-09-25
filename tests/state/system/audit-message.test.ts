@@ -7,7 +7,7 @@
 import { describe, expect, it } from 'vitest';
 import { muteMessage } from '../../../src/lib/state/system/audit.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
-import { setCatalog } from '../../../src/lib/state/words/text.ts';
+import { setCatalog } from '../../../src/lib/state/shared/words/text.ts';
 
 const catalog = textCatalog(loadConfig(engineDir()).config);
 setCatalog(catalog);

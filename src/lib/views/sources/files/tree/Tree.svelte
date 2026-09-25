@@ -32,7 +32,7 @@
         type RowRef,
         type TreeRow
     } from '$lib/state/sources/fs';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
 
     type Props = {
         rows: TreeRow[];

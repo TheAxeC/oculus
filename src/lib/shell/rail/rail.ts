@@ -6,7 +6,7 @@
 import { nextStop } from '$lib/ui/tree/roving';
 import type { MenuItem } from '$lib/ui/menu/menu-items';
 import type { RailEntry } from '$lib/state/workbench/navigation/rail';
-import { t } from '$lib/state/words/text';
+import { t } from '$lib/state/shared/words/text';
 
 /**
  * One choice of the rail's Bookmarks menu: a file under one of the roots of sources.yml, from the

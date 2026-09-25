@@ -45,10 +45,10 @@
     import ProjectCard from '../../shared/card/ProjectCard.svelte';
     import { absentDocs, markdownDocNames, type BoardItem } from '$lib/state/boards/board';
     import { cardCursor } from '$lib/state/workbench/layout/instance';
-    import { modelShort, stamp } from '$lib/state/words/format';
-    import { PRESENT_DOC } from '$lib/state/feeds/life/present';
+    import { modelShort, stamp } from '$lib/state/shared/words/format';
+    import { PRESENT_DOC } from '$lib/state/life/present';
     import type { GroupedSession } from '$lib/state/client/selectors.svelte';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 

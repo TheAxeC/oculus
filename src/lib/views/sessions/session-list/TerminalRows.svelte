@@ -5,9 +5,9 @@
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import Menu from '$lib/ui/menu/Menu.svelte';
-    import { stamp } from '$lib/state/words/format';
+    import { stamp } from '$lib/state/shared/words/format';
     import type { Terminal, TerminalKind } from '$lib/state/sessions/terminals.svelte';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
     import { terminalRowItems } from './session-list';
     import { useState } from '$lib/state/client/use';
 

@@ -24,7 +24,7 @@
     import Sash from '$lib/ui/frame/Sash.svelte';
     import TextArea from '$lib/ui/forms/TextArea.svelte';
     import { SASH_PX } from '$lib/ui/frame/sash-size';
-    import { PLAIN, codeHtml } from '$lib/state/words/languages';
+    import { PLAIN, codeHtml } from '$lib/state/shared/words/languages';
     import { lineStart } from '$lib/state/sessions/source.svelte';
     import { languageOf } from '$lib/state/sources/fs';
     import {

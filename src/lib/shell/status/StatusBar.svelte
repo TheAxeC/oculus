@@ -29,7 +29,7 @@
         type StatusGit,
         type StatusWords
     } from '$lib/state/workbench/navigation/status';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
 
     const {

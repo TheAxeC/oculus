@@ -8,10 +8,10 @@ import {
     loadConfig,
     textCatalog
 } from '../../../src/lib/data/sources/config.ts';
-import { setAppearance } from '../../../src/lib/state/words/appearance.ts';
+import { setAppearance } from '../../../src/lib/state/shared/words/appearance.ts';
 import { findView } from '../../../src/lib/state/workbench/layout/index.ts';
 import type { PaletteItem } from '../../../src/lib/state/workbench/palette.ts';
-import { setCatalog, setGlyphs } from '../../../src/lib/state/words/text.ts';
+import { setCatalog, setGlyphs } from '../../../src/lib/state/shared/words/text.ts';
 import { openPaletteItem } from '../../../src/lib/shell/keys/palette-open.ts';
 import { fakeStorage, viewsOf } from '../../state/workbench/layout/layout-fixture.ts';
 import { createClientState, type ClientState } from '../../fixtures/client.ts';

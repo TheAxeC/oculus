@@ -25,7 +25,7 @@
     import type { GroupedSession } from '$lib/state/client/selectors.svelte';
     import { hiddenCounts, pruneTree, sessionRows } from '$lib/state/sessions/folds';
     import { resumeRefusal, type Terminal } from '$lib/state/sessions/terminals.svelte';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import SessionWorkspace from './SessionWorkspace.svelte';
     import TerminalRows from './TerminalRows.svelte';

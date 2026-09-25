@@ -18,7 +18,7 @@
         title: string;
         /** The title as inline Markdown already rendered; the card sanitises it before drawing. */
         titleHtml?: string;
-        /** A hue name from state/words/tones.ts. A card with none has no bar. */
+        /** A hue name from state/shared/words/tones.ts. A card with none has no bar. */
         tone?: string;
         /** Draws an accent ring inside the border, for a card the view is holding on to. */
         pinned?: boolean;

@@ -17,7 +17,7 @@
     import { type MenuGroup, type MenuItem, menuLevel } from '$lib/ui/menu/menu-items';
     import Glyph from '../display/Glyph.svelte';
     import { onBody } from '../frame/on-body';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
 
     type Props = {
         /** The list's accessible name, which is its opener's words. */

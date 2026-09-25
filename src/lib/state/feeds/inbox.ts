@@ -7,7 +7,7 @@
 // whatever its kind.
 
 import { ageOf, mailKey } from '../../data/accounts/mail.ts';
-import { t } from '../words/text.ts';
+import { t } from '../shared/words/text.ts';
 export { ageOf, mailKey } from '../../data/accounts/mail.ts';
 export type { Age } from '../../data/accounts/mail.ts';
 export type {

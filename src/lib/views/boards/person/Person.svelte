@@ -39,7 +39,7 @@
     import { HUB_ROOT } from '$lib/state/sources/fs';
     import { fileEntries } from '$lib/state/sources/fs-transport';
     import { personJoin, type PersonJoin } from '$lib/state/boards/person';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
     import { viewSourceFile } from '$lib/state/sessions/view-source';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';

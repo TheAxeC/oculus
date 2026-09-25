@@ -11,7 +11,7 @@ import {
 import { stateId } from '../../../src/lib/state/workbench/layout/instance.ts';
 import { TEXT_LIMIT } from '../../../src/lib/state/sources/fs.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
-import { setCatalog } from '../../../src/lib/state/words/text.ts';
+import { setCatalog } from '../../../src/lib/state/shared/words/text.ts';
 import { noop } from '../../fixtures/doubles.ts';
 import { fields, scalar } from '../../../src/lib/data/helpers/guards.ts';
 import { createClientState, type ClientState } from '../../fixtures/client.ts';

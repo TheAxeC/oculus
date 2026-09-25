@@ -7,7 +7,7 @@
     import Select from '$lib/ui/forms/Select.svelte';
     import TextInput from '$lib/ui/forms/TextInput.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
     import { untrack } from 'svelte';
     import { useState } from '$lib/state/client/use';
 

@@ -17,8 +17,8 @@
     import type { MenuItem } from '$lib/ui/menu/menu-items';
     import { firstSentence } from '$lib/state/boards/board';
     import { labelOf, type Project } from '$lib/state/boards/focus';
-    import { t } from '$lib/state/words/text';
-    import { chipGlyphName, chipLabel, statusMarkTone } from '$lib/state/words/tones';
+    import { t } from '$lib/state/shared/words/text';
+    import { chipGlyphName, chipLabel, statusMarkTone } from '$lib/state/shared/words/tones';
 
     type Props = {
         project: Project;

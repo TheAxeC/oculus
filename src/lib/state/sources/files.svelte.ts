@@ -13,7 +13,7 @@
 // a project folder is a new version and the next call for that id fetches again. The portfolio's
 // version cannot answer this: the snapshot is rebuilt only for a file the config names.
 
-import type { EntitiesStore } from '../stores/shapes.ts';
+import type { EntitiesStore } from '../shared/stores/shapes.ts';
 
 /** One file of a project folder, as the finder draws it. */
 export type FileRow = { path: string; size: number; mtime: number };

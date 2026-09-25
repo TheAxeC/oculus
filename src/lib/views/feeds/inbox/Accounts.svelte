@@ -9,8 +9,8 @@
 
     import Tag from '$lib/ui/controls/Tag.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import { t } from '$lib/state/words/text';
-    import { clock } from '$lib/state/words/format';
+    import { t } from '$lib/state/shared/words/text';
+    import { clock } from '$lib/state/shared/words/format';
     import { mailKey, type MailAccount } from '$lib/state/feeds/inbox';
 
     let {

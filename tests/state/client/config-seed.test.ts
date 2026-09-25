@@ -62,7 +62,7 @@ function stubSocket(): {
 
 describe("the page's config channel", () => {
     it('keeps the configuration it was built from over a replayed push that is not newer', () => {
-        // revert: src/lib/state/client/socket.svelte.ts:249 => delete
+        // revert: src/lib/state/client/socket.svelte.ts:250 => delete
         const { deliver, open } = stubSocket();
         const client = createClientState();
         client.socket.seedConfig(payload(1), 2);
@@ -81,7 +81,7 @@ describe("the page's config channel", () => {
     });
 
     it('takes the held push when the seed says it is the same configuration', () => {
-        // revert: src/lib/state/client/socket.svelte.ts:249 => if (message.channel === 'config' && message.version <= seededThrough + 1) return;
+        // revert: src/lib/state/client/socket.svelte.ts:250 => if (message.channel === 'config' && message.version <= seededThrough + 1) return;
         const { deliver, open } = stubSocket();
         const client = createClientState();
         client.socket.seedConfig(undefined, 0);
@@ -93,8 +93,8 @@ describe("the page's config channel", () => {
     });
 
     it('takes every push after a reconnect, which may reach a restarted server numbering from 1', () => {
-        // revert: src/lib/state/client/socket.svelte.ts:158 => delete
         // revert: src/lib/state/client/socket.svelte.ts:159 => delete
+        // revert: src/lib/state/client/socket.svelte.ts:160 => delete
         const { deliver, open } = stubSocket();
         const client = createClientState();
         client.socket.seedConfig(payload(1), 4);

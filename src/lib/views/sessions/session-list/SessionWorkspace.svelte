@@ -5,11 +5,11 @@
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import Menu from '$lib/ui/menu/Menu.svelte';
-    import { clock, modelShort, stamp } from '$lib/state/words/format';
+    import { clock, modelShort, stamp } from '$lib/state/shared/words/format';
     import type { Area, GroupedSession, Workspace } from '$lib/state/client/selectors.svelte';
     import { asText } from '$lib/state/forms/schema';
     import { sessionCount } from '$lib/state/sessions/folds';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
     import { sessionRowItems } from './session-list';
     import { useState } from '$lib/state/client/use';
 

@@ -13,7 +13,7 @@
     // icon filter of ui/html.ts before it is put into the page. The box carries the name it draws,
     // so what a surface draws is read by name in either mode rather than off the drawing.
 
-    import { glyph, glyphMode, iconSvg } from '$lib/state/words/text';
+    import { glyph, glyphMode, iconSvg } from '$lib/state/shared/words/text';
     import { sanitiseSvg } from '../html.ts';
 
     type Props = {

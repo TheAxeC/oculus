@@ -7,8 +7,8 @@
 // one ui/menu/Menu.svelte's `groups` takes, written out here because the state layer imports no ui
 // file.
 
-import { t } from '../../words/text.ts';
-import { toneOf } from '../../words/tones.ts';
+import { t } from '../../shared/words/text.ts';
+import { toneOf } from '../../shared/words/tones.ts';
 import {
     NONE,
     SESSIONS_LIVE,

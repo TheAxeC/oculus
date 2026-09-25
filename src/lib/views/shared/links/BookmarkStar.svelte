@@ -12,7 +12,7 @@
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { nameOf } from '$lib/state/sources/fs';
     import { bookmarkAt } from '$lib/state/sources/fs-transport';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
 
     type Props = {

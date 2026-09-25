@@ -5,16 +5,18 @@
 // modules that read it, and the write chain from the route to the file on disk. Each is written to
 // docs/diagrams/ as a Graphviz `.dot` file and the `.svg` rendered from it.
 //
-// Everything drawn is read from the source text, never from a list kept here: the runtime imports
-// and globs (with the pattern tests/checks/imports/graph.ts reads them with, grouped by the layer
-// rows tests/checks/tree/boundaries.test.ts names and the folder order
-// tests/checks/imports/order.ts declares), the `publish(` calls and the reads of each channel on
-// the page, and the calls made inside the functions the write route reaches. graphs.mjs reads the
-// imports and the channels, writes.mjs the write chain, and source.mjs holds what they share. A
-// module no layer row places is drawn in a dashed group named "not placed"; so is, with its file
-// and line, an import, a publish, a channel read or comparison, a re-export of a whole module, or a
-// call the write reader cannot follow (writes.mjs says which). The write diagram draws only the
-// modules on a path to the disk or to a call it cannot follow.
+// Everything drawn is read from the source, never from a list kept here: the runtime imports and
+// globs (parsed by imports.mjs, the reader the import checks call, grouped by the layer rows
+// tests/checks/tree/boundaries.test.ts names and the folder order tests/checks/imports/order.ts
+// declares), the `publish(` calls and the reads of each channel on the page, and the calls made
+// inside the functions the write route reaches. graphs.mjs reads the imports and the channels,
+// writes.mjs the write chain, labels.mjs draws an arrow's words and checks where they land, and
+// source.mjs holds what they share. A module no layer row places is drawn in a dashed group
+// named "not placed"; so is, with its file and line, an import, a publish, a channel read or
+// comparison, a re-export of a whole module, or a call the write reader cannot follow (writes.mjs
+// says which). The write diagram draws only the modules on a path to the disk or to a call it
+// cannot follow. Every count and every call list is a small node of words standing on its arrow
+// (labels.mjs), which the router takes every other arrow around.
 //
 // The render is @viz-js/viz, Graphviz compiled to WebAssembly, so no system install is needed and
 // one input gives the same bytes on every machine. The drawing has no background and every line
@@ -36,13 +38,14 @@ export { channelsDot, folderOf, layerDot, layersDot, placeOf } from './graphs.mj
 export {
     BOUNDARIES,
     ORDERING,
-    RUNTIME,
     readLayers,
     readOrder,
     readSources,
     resolveSpec,
     uncomment
 } from './source.mjs';
+export { labelledEdge, labelsAcross } from './labels.mjs';
+export { augmentationsOf, importsOf, moduleAt } from './imports.mjs';
 export { WRITE_ROUTE, declarations, writesDot } from './writes.mjs';
 
 /** The layers the folder order names, each drawn as its own diagram after the overview. */
@@ -89,19 +92,30 @@ const STANDALONE =
  * @returns {Promise<string>}
  */
 export async function renderSvg(dot) {
+    return (await drawer())(dot);
+}
+
+/**
+ * The renderer renderSvg() draws with, as a function over one Graphviz instance, so a diagram laid
+ * out at several spacings loads the WebAssembly once.
+ *
+ * @returns {Promise<(dot: string) => string>}
+ */
+async function drawer() {
     const { instance } = await import('@viz-js/viz');
     const viz = await instance();
-    const svg = viz.renderString(dot, { format: 'svg' });
-    return svg
-        .replace(/^[\s\S]*?(?=<svg)/, '')
-        .replace(/^(<svg[^>]*>)/, `$1\n<style>${STANDALONE}</style>`)
-        .replace(
-            /<title>([^<]*)<\/title>\n<g id="a_[^"]*"><a xlink:title="([^"]*)">\n([\s\S]*?)<\/a>\n<\/g>\n/g,
-            (_, ends, words, drawn) =>
-                `<title>${ends}: ${words.replace(/&#10;/g, ', ')}</title>\n${drawn}`
-        )
-        .replace(/(stroke|fill)="black"/g, '$1="currentColor"')
-        .replace(/<text /g, '<text fill="currentColor" ');
+    return (dot) =>
+        viz
+            .renderString(dot, { format: 'svg' })
+            .replace(/^[\s\S]*?(?=<svg)/, '')
+            .replace(/^(<svg[^>]*>)/, `$1\n<style>${STANDALONE}</style>`)
+            .replace(
+                /<title>([^<]*)<\/title>\n<g id="a_[^"]*"><a xlink:title="([^"]*)">\n([\s\S]*?)<\/a>\n<\/g>\n/g,
+                (_, ends, words, drawn) =>
+                    `<title>${ends}: ${words.replace(/&#10;/g, ', ')}</title>\n${drawn}`
+            )
+            .replace(/(stroke|fill)="black"/g, '$1="currentColor"')
+            .replace(/<text /g, '<text fill="currentColor" ');
 }
 
 /**
@@ -124,12 +138,11 @@ export async function generate(engine) {
     }
     dots.set('channels', channelsDot(sources));
     dots.set('writes', writesDot(sources));
-    const out = [];
-    for (const name of NAMES) {
+    const draw = await drawer();
+    return NAMES.map((name) => {
         const dot = dots.get(name) ?? '';
-        out.push({ name, dot, svg: await renderSvg(dot) });
-    }
-    return out;
+        return { name, dot, svg: draw(dot) };
+    });
 }
 
 /**

@@ -17,6 +17,8 @@
 // one reached through a computed member.
 
 import { posix } from 'node:path';
+import { importsOf as readImports } from './imports.mjs';
+import { labelledEdge } from './labels.mjs';
 import {
     BARE,
     aliasesIn,
@@ -36,7 +38,8 @@ import {
     resolveSpec,
     sorted,
     uncomment,
-    unfollowed
+    unfollowed,
+    unfollowedAt
 } from './source.mjs';
 
 /** The route the write chain starts at, relative to src. */
@@ -74,35 +77,23 @@ function importsOf(
     const names = new Map();
     const spaces = new Map();
     const fs = new Set();
-    const pattern =
-        /(?:^|\n)\s*(import|export)\s+(type\s+)?(\{[^}]*\}|\*\s+as\s+\w+|\w+)\s+from\s+'([^']+)'/g;
-    for (const match of text.matchAll(pattern)) {
-        if (match[2] !== undefined) continue;
-        const spec = match[4];
+    for (const one of readImports(path, text)) {
+        if (one.typeOnly || one.bindings === undefined || one.spec === null) continue;
+        const { spec, bindings } = one;
         if (spec === 'node:fs' || spec === 'node:fs/promises') {
-            for (const part of match[3].replace(/[{}]/g, '').split(',')) {
-                const [name, alias] = part.trim().split(/\s+as\s+/);
-                if (name !== '' && !name.startsWith('type ')) fs.add(`${alias ?? name}=${name}`);
+            // A namespace or a default import of node:fs is the module itself, written `<name>=*`.
+            if (bindings.namespace !== null) fs.add(`${bindings.namespace}=*`);
+            for (const { local, imported } of bindings.names) {
+                fs.add(`${local}=${imported === 'default' ? '*' : imported}`);
             }
             continue;
         }
         const resolved = resolveSpec(path, spec);
         const file = resolved === null ? null : moduleFile(sources, resolved);
         if (file === null) continue;
-        const space = /^\*\s+as\s+(\w+)$/.exec(match[3]);
-        if (space !== null) {
-            spaces.set(space[1], file);
-            continue;
-        }
-        if (!match[3].startsWith('{')) {
-            names.set(match[3], { from: file, name: 'default' });
-            continue;
-        }
-        for (const part of match[3].slice(1, -1).split(',')) {
-            const trimmed = part.trim();
-            if (trimmed === '' || trimmed.startsWith('type ')) continue;
-            const [name, alias] = trimmed.split(/\s+as\s+/);
-            names.set(alias ?? name, { from: file, name });
+        if (bindings.namespace !== null) spaces.set(bindings.namespace, file);
+        for (const { local, imported } of bindings.names) {
+            names.set(local, { from: file, name: imported });
         }
     }
     return { names, spaces, fs };
@@ -185,10 +176,13 @@ export function writesDot(sources, route = WRITE_ROUTE) {
                 const target = moduleAlias(name, declaration);
                 if (target !== undefined) aliases.set(name, target);
             }
-            held = { text, decls, aliases, imports: importsOf(sources, path, text) };
+            const raw = sources.get(path) ?? '';
+            held = { text, decls, aliases, imports: importsOf(sources, path, raw) };
             modules.set(path, held);
-            for (const match of text.matchAll(/(?:^|\n)\s*export\s+\*\s+from\s+'[^']+'/g)) {
-                const one = unfollowed(`src/${path}`, text, match.index, match[0]);
+            for (const whole of readImports(path, raw)) {
+                if (whole.whole !== true || whole.typeOnly) continue;
+                const what = `export * from '${whole.spec ?? ''}'`;
+                const one = unfollowedAt(`src/${path}`, whole.line, what);
                 lost.push(one.line);
                 edges.set(`${path}\n${one.id}\nlost`, new Set());
             }
@@ -422,10 +416,15 @@ export function writesDot(sources, route = WRITE_ROUTE) {
         if (!writing.has(from) || !writing.has(to)) continue;
         const names = wrap(sorted(edges.get(key) ?? []));
         const shown = kind === 'refuses' || to === DISK;
-        const attrs = shown ? `label=${quote(names)}` : `tooltip=${quote(names)}`;
-        const style = { calls: '', refuses: ', style=dashed', refers: ', style=dotted' }[kind];
-        const line = kind === 'lost' ? '[style=dashed]' : `[${attrs}${style ?? ''}]`;
-        lines.push(`    ${quote(from)} -> ${quote(to)} ${line};`);
+        const style = { calls: '', refuses: 'style=dashed', refers: 'style=dotted' }[kind] ?? '';
+        if (kind === 'lost') {
+            lines.push(`    ${quote(from)} -> ${quote(to)} [style=dashed];`);
+        } else if (shown) {
+            lines.push(...labelledEdge(from, to, names, style, kind));
+        } else {
+            const attrs = [`tooltip=${quote(names)}`, style].filter((one) => one !== '');
+            lines.push(`    ${quote(from)} -> ${quote(to)} [${attrs.join(', ')}];`);
+        }
     }
     lines.push('}', '');
     return lines.join('\n');

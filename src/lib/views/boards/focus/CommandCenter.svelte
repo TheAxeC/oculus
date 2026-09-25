@@ -23,7 +23,7 @@
         type TickerItem
     } from '$lib/state/boards/ticker';
     import { attention, refresh } from '$lib/state/feeds/feeds';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
     import { act, dateTail, openLine, rowMaker } from './rows';
     import CommandCenterView from './CommandCenterView.svelte';
     import { useState } from '$lib/state/client/use';

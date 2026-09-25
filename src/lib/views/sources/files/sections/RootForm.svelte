@@ -9,7 +9,7 @@
     import TextInput from '$lib/ui/forms/TextInput.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Toolbar from '$lib/ui/frame/Toolbar.svelte';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
 
     type Props = {
         /** The box's own words, already translated by the view. */

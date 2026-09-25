@@ -18,7 +18,7 @@
     import type { EditorStatus } from '$lib/state/workbench/navigation/editor-status.svelte';
     import { INDENT_SIZES, type LineEnding } from '$lib/state/workbench/navigation/editor-text';
     import { caretWords, indentWords, languageName } from '$lib/state/workbench/navigation/status';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
 
     const {

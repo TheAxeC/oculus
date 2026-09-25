@@ -20,7 +20,7 @@
     // The note the reader is typing lives here and the file on disk is what it is saved to, so an
     // answer landing from the server never writes over a keystroke: the draft is seeded from the
     // file once per note and is the reader's from then on. The save is a wait that starts again on
-    // every keystroke (state/feeds/life/notes.ts), so typing a paragraph is one write and not one
+    // every keystroke (state/life/notes.ts), so typing a paragraph is one write and not one
     // per letter, and the toolbar says when the last one landed.
     //
     // A note's file is made by its first keystroke and not by the control that opened the tab, so a
@@ -43,9 +43,9 @@
         stamp,
         titleOf,
         writesNow
-    } from '$lib/state/feeds/life/notes';
+    } from '$lib/state/life/notes';
     import { NOTE_GONE, type NoteState } from '$lib/state/sources/fs.svelte';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 

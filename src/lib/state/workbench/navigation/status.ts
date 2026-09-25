@@ -14,8 +14,8 @@ import type {
     UsagePayload
 } from '../../../data/model/index.ts';
 import type { FsRoot } from '../../sources/fs.ts';
-import { PLAIN, registered } from '../../words/languages.ts';
-import { t } from '../../words/text.ts';
+import { PLAIN, registered } from '../../shared/words/languages.ts';
+import { t } from '../../shared/words/text.ts';
 import type { Caret, Indent } from './editor-text.ts';
 
 /** The socket's three states, as state/client/socket.svelte.ts names them. */

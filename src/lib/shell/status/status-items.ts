@@ -7,7 +7,7 @@
 // HPC poll, the usage refreshers, the server connection); on the right the editor's own items for
 // the source tab on screen, then the live sessions and the unsaved tabs, and the bell last.
 
-import { t } from '$lib/state/words/text';
+import { t } from '$lib/state/shared/words/text';
 
 /** The left group, in the order it is drawn. */
 export const LEFT_ITEMS = ['host', 'branch', 'sync', 'findings', 'hpc', 'usage', 'server'] as const;

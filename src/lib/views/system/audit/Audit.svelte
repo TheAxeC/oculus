@@ -34,7 +34,7 @@
     import Search from '$lib/ui/controls/Search.svelte';
     import Toolbar from '$lib/ui/frame/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
     import { auditSearch, findingsOfKind, muteMessage } from '$lib/state/system/audit';
     import { useState } from '$lib/state/client/use';
     import type { AuditFinding } from '$lib/state/system/audit.svelte';

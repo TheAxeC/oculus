@@ -52,8 +52,8 @@
     } from '$lib/state/boards/collection';
     import { HUB_ROOT, opensInProgram } from '$lib/state/sources/fs';
     import { personName } from '$lib/state/boards/person';
-    import { t } from '$lib/state/words/text';
-    import { statusTone } from '$lib/state/words/tones';
+    import { t } from '$lib/state/shared/words/text';
+    import { statusTone } from '$lib/state/shared/words/tones';
     import { useState } from '$lib/state/client/use';
 
     const {

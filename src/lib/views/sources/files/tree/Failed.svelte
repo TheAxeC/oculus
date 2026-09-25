@@ -9,7 +9,7 @@
 
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
 
     type Props = {
         /** The sentence saying what the read failed with, already translated. */

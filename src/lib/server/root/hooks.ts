@@ -154,8 +154,9 @@ const FALLBACK_STOP_MESSAGE = 'Session finished';
  * Push one macOS notification for the event, unless the machine has no osascript. Never throws: a
  * spawn failure or a non-zero exit is one stderr line, since a missed notification is not worth
  * failing the request that is answering the hook's own curl. `stopMessage` is the catalog's
- * notify.stop, read by the caller: notify() is server-only and never imports state/words/text.ts,
- * which is client-side, so the string reaches it as a parameter rather than through t().
+ * notify.stop, read by the caller: notify() is server-only and never imports
+ * state/shared/words/text.ts, which is client-side, so the string reaches it as a parameter rather
+ * than through t().
  */
 export function notify(
     event: HookEvent,

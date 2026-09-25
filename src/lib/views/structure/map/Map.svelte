@@ -31,7 +31,7 @@
         tunedFor,
         typeFilters as typeChips
     } from '$lib/state/boards/structure/graph';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
     import { parseMapState, type MapState, type Physics } from '$lib/state/boards/structure/graph';
     import { useState } from '$lib/state/client/use';
 

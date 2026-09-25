@@ -12,7 +12,7 @@ import {
     loadConfig,
     textCatalog
 } from '../../../src/lib/data/sources/config.ts';
-import { setCatalog, setGlyphMode, setGlyphs } from '../../../src/lib/state/words/text.ts';
+import { setCatalog, setGlyphMode, setGlyphs } from '../../../src/lib/state/shared/words/text.ts';
 import { noop } from '../../fixtures/doubles.ts';
 import { clientContext, createClientState, type ClientState } from '../../fixtures/client.ts';
 

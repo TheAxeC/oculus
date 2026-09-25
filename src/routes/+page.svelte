@@ -24,7 +24,7 @@
         type StatusGit
     } from '$lib/state/workbench/navigation/status';
     import { repositoriesViewOf } from '$lib/state/sources/repositories';
-    import { configGeneration } from '$lib/state/words/generation.svelte';
+    import { configGeneration } from '$lib/state/shared/words/generation.svelte';
     import { collectionKeys } from '$lib/data/snapshot/normalise';
     import { typeOfFile, HUB_ROOT } from '$lib/state/sources/fs';
     import { createClientState } from '$lib/state/client/context';

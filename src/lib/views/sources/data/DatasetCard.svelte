@@ -13,7 +13,7 @@
     import { inlineMarkdown } from '$lib/ui/html';
     import type { Entry, Project, SchemaField } from '$lib/state/boards/collection';
     import { findView } from '$lib/state/workbench/layout';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
 
     const {

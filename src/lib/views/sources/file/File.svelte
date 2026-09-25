@@ -62,7 +62,7 @@
     import { fileBytesUrl } from '$lib/state/sources/fs.svelte';
     import { extensionOf, nameOf, opensInProgram, typeOfFile } from '$lib/state/sources/fs';
     import { sourceTabState } from '$lib/state/sessions/source.svelte';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 

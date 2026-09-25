@@ -596,3 +596,21 @@ export function taskGroups(lines: readonly TickerItem[]): TaskGroups {
 export function hasTasks(groups: TaskGroups): boolean {
     return groups.followups.length + groups.subtasks.length + groups.tasks.length > 0;
 }
+
+/**
+ * The row lists of the command center, each read for how many rows it holds and nothing else, so
+ * whatever a view draws a row as is a list here.
+ */
+export type CommandGroups = Record<
+    'overdue' | 'categories' | 'subtaskDated' | 'followups' | 'snoozed' | 'attention' | 'refresh',
+    readonly unknown[]
+>;
+
+/** Whether the command center has a row, or the line naming the projects behind, to show. */
+export function hasCommandRows(
+    groups: CommandGroups,
+    week: Pick<Ticker, 'behind'> | null
+): boolean {
+    const rows = Object.values(groups).reduce((sum, rows) => sum + rows.length, 0);
+    return rows + (week?.behind === null || week?.behind === undefined ? 0 : 1) > 0;
+}

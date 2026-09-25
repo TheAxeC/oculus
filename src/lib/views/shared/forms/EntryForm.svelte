@@ -46,7 +46,7 @@
         type MetaRow
     } from '$lib/state/forms/form-values';
     import { useInstance } from '$lib/state/client/instance-context';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
     import type { WriteAnswer } from '$lib/state/client/writes.svelte';
     import { answerWords } from './answer-words';
     import { useState } from '$lib/state/client/use';

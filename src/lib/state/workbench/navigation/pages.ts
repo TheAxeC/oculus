@@ -7,7 +7,7 @@
 // the closes is edited for it.
 
 import { tabsOf, type Page } from '../layout/index.ts';
-import { t } from '../../words/text.ts';
+import { t } from '../../shared/words/text.ts';
 import { parseArrangement } from './arrangement.ts';
 
 /**
@@ -21,8 +21,8 @@ export function pageName(page: Page, index: number): string {
 
 /** What the page with this id is called, by its place in the page list. */
 export function pageNameOf(pages: readonly Page[], id: string): string {
-    const at = pages.findIndex((page) => page.id === id);
-    return at < 0 ? '' : pageName(pages[at], at);
+    const found = pageAt(pages, id);
+    return found === null ? '' : pageName(found.page, found.at);
 }
 
 /**
@@ -85,4 +85,10 @@ export function railPageViews(pages: readonly Page[], key: string, node: unknown
 /** Whether any tab of a page holds text no save has taken. */
 export function pageUnsaved(page: Page, unsaved: (id: string) => boolean): boolean {
     return pageInstanceIds(page).some(unsaved);
+}
+
+/** The page with this id and its place in the page list, or null when the list holds none. */
+export function pageAt(pages: readonly Page[], id: string): { page: Page; at: number } | null {
+    const at = pages.findIndex((page) => page.id === id);
+    return at < 0 ? null : { page: pages[at], at };
 }

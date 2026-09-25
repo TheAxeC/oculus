@@ -15,8 +15,8 @@
     import Intro from '../../shared/prose/Intro.svelte';
     import { sanitise } from '$lib/ui/html';
     import type { RadarBucket } from '$lib/state/feeds/radar';
-    import { t } from '$lib/state/words/text';
-    import { toneOf } from '$lib/state/words/tones';
+    import { t } from '$lib/state/shared/words/text';
+    import { toneOf } from '$lib/state/shared/words/tones';
 
     type Props = {
         /** The configured buckets, whose hues colour the legend marks. */

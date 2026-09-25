@@ -8,7 +8,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import Hooks from '../../../src/lib/views/system/status/Hooks.svelte';
 import { hooksSnippet } from '../../../src/lib/state/sessions/hooks.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
-import { setCatalog } from '../../../src/lib/state/words/text.ts';
+import { setCatalog } from '../../../src/lib/state/shared/words/text.ts';
 import { clientContext, createClientState, type ClientState } from '../../fixtures/client.ts';
 
 let client: ClientState;

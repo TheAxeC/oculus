@@ -28,7 +28,7 @@
 
 import type { Collection, Entry, Snapshot } from '../../data/model/index.ts';
 import { controlValue, sameSaved, type FormValue } from './form-values.ts';
-import type { InstanceStates } from '../stores/shapes.ts';
+import type { InstanceStates } from '../shared/stores/shapes.ts';
 
 /**
  * One typed field: what the control holds, its kind, and what the control held when it was typed.

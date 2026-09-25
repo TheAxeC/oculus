@@ -7,7 +7,7 @@
     import { findView } from '$lib/state/workbench/layout';
     import { folderOf, type GroupedSession } from '$lib/state/client/selectors.svelte';
     import { liveCount } from '$lib/state/sessions/folds';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
 
     const {

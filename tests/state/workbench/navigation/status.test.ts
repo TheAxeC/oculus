@@ -29,8 +29,8 @@ import type {
     UsagePayload
 } from '../../../../src/lib/data/model/index.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sources/config.ts';
-import { registered } from '../../../../src/lib/state/words/languages.ts';
-import { setCatalog, t } from '../../../../src/lib/state/words/text.ts';
+import { registered } from '../../../../src/lib/state/shared/words/languages.ts';
+import { setCatalog, t } from '../../../../src/lib/state/shared/words/text.ts';
 import { allFindings, entityCount } from '../../../../src/lib/state/workbench/navigation/status.ts';
 
 setCatalog(textCatalog(loadConfig(engineDir()).config));

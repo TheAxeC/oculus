@@ -2,8 +2,8 @@
 // shared by the Focus view and rail, and one command reaches the cluster endpoint.
 
 import { fields, text as textOf } from '../../data/helpers/guards.ts';
-import { t } from '../words/text.ts';
-import type { EntitiesStore, WritesStore } from '../stores/shapes.ts';
+import { t } from '../shared/words/text.ts';
+import type { EntitiesStore, WritesStore } from '../shared/stores/shapes.ts';
 
 /** One client's reader of the Live HPC queue, and its one command. */
 export type HpcStore = {

@@ -13,7 +13,7 @@
 // stale token gets, and a caller that says it in a notification of its own sends with `said`.
 
 import { tick } from 'svelte';
-import { t } from '../words/text.ts';
+import { t } from '../shared/words/text.ts';
 import type {
     SendOptions,
     SessionFields,
@@ -21,7 +21,7 @@ import type {
     SubtaskTarget,
     WriteAnswer,
     WritesStore
-} from '../stores/shapes.ts';
+} from '../shared/stores/shapes.ts';
 
 export type { SendOptions, SessionFields, SubtaskAction, SubtaskTarget, WriteAnswer, WritesStore };
 

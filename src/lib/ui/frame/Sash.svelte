@@ -12,7 +12,7 @@
     // a layer that takes no room, so the thickness a split lays out is still SASH_PX.
 
     import { SASH_PX, STEP } from '$lib/ui/frame/sash-size';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
 
     type Props = {
         /**

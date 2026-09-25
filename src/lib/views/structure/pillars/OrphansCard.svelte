@@ -8,7 +8,7 @@
     import CrossLinks from '$lib/views/shared/links/CrossLinks.svelte';
     import { inlineMarkdown } from '$lib/ui/html';
     import type { Project } from '$lib/state/boards/collection';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
 
     type Props = { id: string; cursor: boolean; projects: Project[] };
     let { id, cursor, projects }: Props = $props();

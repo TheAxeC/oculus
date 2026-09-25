@@ -39,7 +39,7 @@
         type LeadsState
     } from '$lib/state/feeds/leads';
     import { asText } from '$lib/state/forms/schema';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
     import { cardCursor } from '$lib/state/workbench/layout/instance';
     import { feedIdents } from '$lib/state/feeds/idents';
     import { viewSourceFile } from '$lib/state/sessions/view-source';

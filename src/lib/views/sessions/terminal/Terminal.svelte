@@ -37,12 +37,12 @@
     import Select from '$lib/ui/forms/Select.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Toolbar from '$lib/ui/frame/Toolbar.svelte';
-    import { terminalFontPx } from '$lib/state/words/appearance';
+    import { terminalFontPx } from '$lib/state/shared/words/appearance';
     import { pinnedTerminal } from '$lib/state/workbench/selection.svelte';
     import { stateId } from '$lib/state/workbench/layout/instance';
     import { titleStripper, type TerminalKind } from '$lib/state/sessions/terminals.svelte';
     import { terminalPlaces } from '$lib/state/sessions/folds';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
     import { scheduleReflow } from './reflow';
     import { untrack } from 'svelte';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';

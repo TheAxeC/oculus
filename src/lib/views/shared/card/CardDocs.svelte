@@ -20,7 +20,7 @@
     import { humanSize, type BoardItem } from '$lib/state/boards/board';
     import { opensInProgram } from '$lib/state/sources/fs';
     import { matchingFiles } from '$lib/state/sources/files.svelte';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
     import { nameOf, openDocument, subOf, urlOf } from './card';
     import ProgramButton from '../links/ProgramButton.svelte';
     import { useState } from '$lib/state/client/use';

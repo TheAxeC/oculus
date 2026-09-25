@@ -39,7 +39,7 @@ import {
     type FsEntry,
     type FsRoot
 } from '../../../src/lib/state/sources/fs.ts';
-import { setCatalog } from '../../../src/lib/state/words/text.ts';
+import { setCatalog } from '../../../src/lib/state/shared/words/text.ts';
 import { createClientState, type ClientState } from '../../fixtures/client.ts';
 import { fakeStorage } from '../workbench/layout/layout-fixture.ts';
 

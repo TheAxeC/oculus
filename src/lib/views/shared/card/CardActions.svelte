@@ -38,7 +38,7 @@
     import { tick } from 'svelte';
     import Menu from '$lib/ui/menu/Menu.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
     import { actionPlace, fitActions, leastStrip, measureGate } from './card-layout';
 
     type Props = { actions: CardAction[] };

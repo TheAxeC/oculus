@@ -12,7 +12,7 @@ import { createRawSnippet } from 'svelte';
 import { render } from 'svelte/server';
 import SplitView from '../../../src/lib/shell/panes/SplitView.svelte';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
-import { setCatalog } from '../../../src/lib/state/words/text.ts';
+import { setCatalog } from '../../../src/lib/state/shared/words/text.ts';
 import { FOLD_PX } from '../../../src/lib/ui/frame/sash-size.ts';
 import type { Layout } from '../../../src/lib/state/workbench/layout/index.ts';
 import { noop } from '../../fixtures/doubles.ts';

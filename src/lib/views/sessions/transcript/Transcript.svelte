@@ -30,9 +30,9 @@
     import Toolbar from '$lib/ui/frame/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { sanitise } from '$lib/ui/html';
-    import { clock } from '$lib/state/words/format';
+    import { clock } from '$lib/state/shared/words/format';
     import { pinnedSession } from '$lib/state/workbench/selection.svelte';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
     import type { Turn } from '$lib/state/sessions/transcript.svelte';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';

@@ -36,7 +36,7 @@ export const WALL_POPOVER = '--wall-popover';
 export const WALL_BLUR = '--wall-blur';
 
 /**
- * What applyWallpaper needs of the configuration: state/words/appearance.ts's Wallpaper,
+ * What applyWallpaper needs of the configuration: state/shared/words/appearance.ts's Wallpaper,
  * structurally.
  */
 export type WallpaperStyle = {

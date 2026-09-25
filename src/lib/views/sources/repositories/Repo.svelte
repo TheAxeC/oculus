@@ -32,10 +32,10 @@
     import Branches from './Branches.svelte';
     import Changes from './Changes.svelte';
     import Worktrees from './Worktrees.svelte';
-    import { elide, stamp } from '$lib/state/words/format';
+    import { elide, stamp } from '$lib/state/shared/words/format';
     import { repositoryKeyRows, type DiffSubject } from '$lib/state/sources/repositories';
     import type { GitState } from '$lib/state/client/selectors.svelte';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
     import { branchState } from '$lib/views/shared/changes/branch-state';
     import { repoShape, type RepoShape } from '$lib/state/sources/repositories';
 

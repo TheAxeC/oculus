@@ -17,8 +17,8 @@
         type BandItem
     } from '$lib/state/boards/focus-lanes';
     import { daysTone } from '$lib/state/boards/ticker';
-    import { namedTone, toneOf } from '$lib/state/words/tones';
-    import { t } from '$lib/state/words/text';
+    import { namedTone, toneOf } from '$lib/state/shared/words/tones';
+    import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
 
     const {

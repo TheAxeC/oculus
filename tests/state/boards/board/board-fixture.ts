@@ -2,7 +2,7 @@
 // the helpers that build a project, a venue and a board item. The vocabulary is synthetic rather
 // than the real config/catalogs/vocab.yml: what is checked is that the board reads the vocabulary
 // it is given; that the real one holds the keys these lookups need is
-// tests/state/words/tones.test.ts's half of the gate.
+// tests/state/shared/words/tones.test.ts's half of the gate.
 
 import { NO_FEEDS } from '../../../fixtures/entities-fixture.ts';
 import {
@@ -12,14 +12,14 @@ import {
     type BoardItem,
     type BoardPreset
 } from '../../../../src/lib/state/boards/board/index.ts';
-import { setVocab } from '../../../../src/lib/state/words/tones.ts';
+import { setVocab } from '../../../../src/lib/state/shared/words/tones.ts';
 import {
     engineDir,
     glyphCatalog,
     loadConfig,
     textCatalog
 } from '../../../../src/lib/data/sources/config.ts';
-import { setCatalog, setGlyphs } from '../../../../src/lib/state/words/text.ts';
+import { setCatalog, setGlyphs } from '../../../../src/lib/state/shared/words/text.ts';
 import type {
     Collection,
     Id,

@@ -15,7 +15,7 @@ import { NO_FEEDS } from '../../fixtures/entities-fixture.ts';
 import { attention, refresh, staleAfter } from '../../../src/lib/state/feeds/feeds.ts';
 import { engineDir, loadConfig, vocabCatalog } from '../../../src/lib/data/sources/config.ts';
 import { scalar } from '../../../src/lib/data/helpers/guards.ts';
-import { setVocab } from '../../../src/lib/state/words/tones.ts';
+import { setVocab } from '../../../src/lib/state/shared/words/tones.ts';
 import {
     backlog,
     holdingTone,

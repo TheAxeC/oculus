@@ -5,7 +5,7 @@
 // a count computed in two places is a count the two can disagree about.
 
 import type { AuditFinding, AuditKind } from '../../data/model/index.ts';
-import type { EntitiesStore } from '../stores/shapes.ts';
+import type { EntitiesStore } from '../shared/stores/shapes.ts';
 
 // The two wire shapes the view draws, re-exported so a view names them without importing `data/`.
 export type { AuditFinding, AuditKind };

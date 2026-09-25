@@ -58,7 +58,7 @@ import {
     type Workbench
 } from './layout/index.ts';
 import { parseArrangement } from './navigation/arrangement.ts';
-import { t } from '../words/text.ts';
+import { t } from '../shared/words/text.ts';
 
 export { LAYOUT_KEY, PREVIOUS_KEY };
 export type { OpenOptions };

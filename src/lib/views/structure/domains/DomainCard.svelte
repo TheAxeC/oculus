@@ -10,8 +10,8 @@
     import { inlineMarkdown } from '$lib/ui/html';
     import type { Entry, SchemaField } from '$lib/state/boards/collection';
     import { isDormant, type Domain, type Project } from '$lib/state/boards/structure/lines';
-    import { t } from '$lib/state/words/text';
-    import { domainTone } from '$lib/state/words/tones';
+    import { t } from '$lib/state/shared/words/text';
+    import { domainTone } from '$lib/state/shared/words/tones';
 
     type Props = {
         domain: Domain;

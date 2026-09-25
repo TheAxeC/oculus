@@ -17,7 +17,7 @@
     import Menu from '$lib/ui/menu/Menu.svelte';
     import { onBody } from '$lib/ui/frame/on-body';
     import type { RepoStatus, StatusGit } from '$lib/state/workbench/navigation/status';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
 
     type Props = {
         repo: RepoStatus;

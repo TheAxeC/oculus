@@ -15,7 +15,7 @@ import {
 } from '../../../src/lib/shell/rail/rail.ts';
 import { railPages } from '../../../src/lib/state/workbench/navigation/rail.ts';
 import { glyphCatalog } from '../../../src/lib/data/sources/config.ts';
-import { setGlyphMode } from '../../../src/lib/state/words/text.ts';
+import { setGlyphMode } from '../../../src/lib/state/shared/words/text.ts';
 import { clientContext, createClientState, type ClientState } from '../../fixtures/client.ts';
 import { catalog, config } from './rail-fixture.ts';
 

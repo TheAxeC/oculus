@@ -33,7 +33,7 @@
     import Ticker from '$lib/ui/display/Ticker.svelte';
     import Toolbar from '$lib/ui/frame/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
     import { cardCursor } from '$lib/state/workbench/layout/instance';
     import {
         chipGlyphName,
@@ -41,7 +41,7 @@
         chipLabel,
         chipsByTone,
         chipTone
-    } from '$lib/state/words/tones';
+    } from '$lib/state/shared/words/tones';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
 
     let { instance }: ViewProps = $props();

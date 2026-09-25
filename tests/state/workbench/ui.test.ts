@@ -15,7 +15,7 @@ import {
     setAppearance,
     themes,
     wallpaperOnTheme
-} from '../../../src/lib/state/words/appearance.ts';
+} from '../../../src/lib/state/shared/words/appearance.ts';
 import { UI_KEY, UI_VERSION } from '../../../src/lib/state/workbench/ui.svelte.ts';
 import { createClientState, type ClientState } from '../../fixtures/client.ts';
 

@@ -56,7 +56,7 @@ function ideas(page: Page): Locator {
     });
 }
 
-/** The hue a palette hex is drawn in, as state/words/tones.ts reads `palette:`. */
+/** The hue a palette hex is drawn in, as state/shared/words/tones.ts reads `palette:`. */
 function paletteHue(hex: string): string {
     const { config } = loadConfig(engineDir());
     const palette = config.palette as Record<string, string>;
@@ -68,8 +68,8 @@ function paletteHue(hex: string): string {
 }
 
 /**
- * The hue config/catalogs/vocab.yml gives a lane, through its `palette:`, as state/words/tones.ts
- * reads it.
+ * The hue config/catalogs/vocab.yml gives a lane, through its `palette:`, as
+ * state/shared/words/tones.ts reads it.
  */
 function laneHue(key: string): string {
     const { config } = loadConfig(engineDir());

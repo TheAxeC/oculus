@@ -10,7 +10,7 @@ import { describe, expect, it } from 'vitest';
 import { keptAction, rowMaker } from '../../../src/lib/views/boards/focus/rows.ts';
 import type { TickerItem } from '../../../src/lib/state/boards/ticker.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
-import { setCatalog } from '../../../src/lib/state/words/text.ts';
+import { setCatalog } from '../../../src/lib/state/shared/words/text.ts';
 
 const CONFIG = loadConfig(engineDir()).config;
 setCatalog(textCatalog(CONFIG));

@@ -4,7 +4,7 @@
     // app's own chip in one of the app's own hues.
 
     import Tag from '$lib/ui/controls/Tag.svelte';
-    import type { DeckChip } from '$lib/state/feeds/life/present';
+    import type { DeckChip } from '$lib/state/life/present';
 
     type Props = { chips: DeckChip[] };
 

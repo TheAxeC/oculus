@@ -2,7 +2,7 @@
 // The Data view receives records ready to draw and keeps its search words, disabled facets and open
 // entry forms.
 
-import { dataAccessTone } from '../words/tones.ts';
+import { dataAccessTone } from '../shared/words/tones.ts';
 import type { Dataset, Project } from '../../data/model/index.ts';
 import { parseOpenForms, type OpenForms } from '../forms/open-forms.ts';
 

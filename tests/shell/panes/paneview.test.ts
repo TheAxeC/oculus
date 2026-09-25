@@ -20,7 +20,7 @@ import {
 import { menuLevel, type MenuItem } from '../../../src/lib/ui/menu/menu-items.ts';
 import { pane, split } from '../../state/workbench/layout/layout-fixture.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
-import { setCatalog, t } from '../../../src/lib/state/words/text.ts';
+import { setCatalog, t } from '../../../src/lib/state/shared/words/text.ts';
 import {
     defaultWorkbench,
     pageLeaf,

@@ -1,7 +1,8 @@
 // The import graph respects the layers of DESIGN.md, section "Boundaries".
-// Every module under src/lib is read, its import specifiers are extracted, and each one is
-// checked against the row of the table its own folder sits in. Anything the row does not
-// allow is a violation: the table's "May import" column is the whole permission.
+// Every module under src/lib is read, its imports are read out of its code by the import checks'
+// own reader (tests/checks/imports/graph.ts, type-only ones included), and each one is checked
+// against the row of the table its own folder sits in. Anything the row does not allow is a
+// violation: the table's "May import" column is the whole permission.
 
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -9,7 +10,7 @@ import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterAll, afterEach, describe, expect, it } from 'vitest';
 import { DELIBERATE, HELD } from './allow-styling.ts';
-import { sourceFiles, target } from '../imports/graph.ts';
+import { runtimeImports, sourceFiles } from '../imports/graph.ts';
 import { isReason } from '../../fixtures/reason.ts';
 import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
 
@@ -73,7 +74,7 @@ const LAYERS = ['data', 'server', 'server/transcripts', 'state', 'ui', 'shell', 
 // layer 3: the view registry is a state module, and the page root makes the primitives' tooltip
 // counter beside the client object, so the state row reaches no layer above it.
 const ALLOWED: Record<string, string[]> = {
-    ui: ['ui/**', 'themes/**', 'state/words/text'],
+    ui: ['ui/**', 'themes/**', 'state/shared/words/text'],
     shell: [
         'shell/**',
         'ui/**',
@@ -83,8 +84,8 @@ const ALLOWED: Record<string, string[]> = {
         'state/workbench/layout',
         'state/workbench/drag',
         'state/workbench/ui',
-        'state/words/text',
-        'state/words/appearance',
+        'state/shared/words/text',
+        'state/shared/words/appearance',
         'state/workbench/palette',
         'state/workbench/palette-source',
         'state/workbench/selection',
@@ -115,8 +116,6 @@ const ALLOWED: Record<string, string[]> = {
     'server/transcripts': ['server/transcripts/**', 'data/**'],
     themes: ['themes/**']
 };
-
-const IMPORT = /(?:^|[\s;])(?:from|import)\s*\(?\s*['"]([^'"]+)['"]/g;
 
 function layerOf(id: string): string {
     if (id.startsWith('server/transcripts/')) return 'server/transcripts';
@@ -155,9 +154,7 @@ export function findViolations(libRoot: string): string[] {
         if (!LAYERS.includes(layer)) continue;
         const allowed = [...ALLOWED[layer], ...ownPartials(fileRel)];
         const text = readFileSync(join(libRoot, fileRel), 'utf8');
-        for (const match of text.matchAll(IMPORT)) {
-            const id = target(fileRel, match[1]);
-            if (id === null) continue;
+        for (const { id } of runtimeImports(fileRel, text, '', true)) {
             if (!allowed.some((pattern) => matches(pattern, id))) {
                 violations.push(`${fileRel} imports ${id}`);
             }
@@ -221,35 +218,36 @@ export function findGlobalState(sourceRoot: string): string[] {
  * Module-level bindings that are not a store, listed by name.
  *
  * The server's three are lookup tables written once at load. The client's are the four catalogs:
- * state/words/text.ts, state/words/tones.ts and state/words/appearance.ts hold what the server last
- * sent, are never written after a push installs them, and are read by t(), toneOf() and themes()
- * from every layer, `ui/` included, where there is no client object to read them from. The two
- * runes beside them, state/words/generation.svelte.ts and state/words/glyphmode.svelte.ts, are
- * what makes those reads redraw: a generation held per client would say a push had landed for one
- * client and not for another over the one set of maps they both read.
+ * state/shared/words/text.ts, state/shared/words/tones.ts and state/shared/words/appearance.ts hold
+ * what the server last sent, are never written after a push installs them, and are read by t(),
+ * toneOf() and themes() from every layer, `ui/` included, where there is no client object to read
+ * them from. The two runes beside them, state/shared/words/generation.svelte.ts and
+ * state/shared/words/glyphmode.svelte.ts, are what makes those reads redraw: a generation held per
+ * client would say a push had landed for one client and not for another over the one set of maps
+ * they both read.
  */
 const FROZEN = [
     'lib/server/content/audit/publications.ts:STOPWORDS',
     'lib/server/machine/pty/channel.ts:CHANGE_EVENTS',
     'lib/server/machine/pty/tmux.ts:SINGLES',
-    'lib/state/words/text.ts:catalog',
-    'lib/state/words/text.ts:glyphs',
-    'lib/state/words/text.ts:ascii',
-    'lib/state/words/text.ts:icons',
-    'lib/state/words/tones.ts:palette',
-    'lib/state/words/tones.ts:statusPalette',
-    'lib/state/words/tones.ts:typeColor',
-    'lib/state/words/tones.ts:legend',
-    'lib/state/words/tones.ts:domainColor',
-    'lib/state/words/tones.ts:domainText',
-    'lib/state/words/tones.ts:dataAccess',
-    'lib/state/words/appearance.ts:list',
-    'lib/state/words/appearance.ts:byName',
-    'lib/state/words/appearance.ts:paper',
-    'lib/state/words/appearance.ts:crt',
-    'lib/state/words/appearance.ts:terminalFont',
-    'lib/state/words/generation.svelte.ts:held',
-    'lib/state/words/glyphmode.svelte.ts:held'
+    'lib/state/shared/words/text.ts:catalog',
+    'lib/state/shared/words/text.ts:glyphs',
+    'lib/state/shared/words/text.ts:ascii',
+    'lib/state/shared/words/text.ts:icons',
+    'lib/state/shared/words/tones.ts:palette',
+    'lib/state/shared/words/tones.ts:statusPalette',
+    'lib/state/shared/words/tones.ts:typeColor',
+    'lib/state/shared/words/tones.ts:legend',
+    'lib/state/shared/words/tones.ts:domainColor',
+    'lib/state/shared/words/tones.ts:domainText',
+    'lib/state/shared/words/tones.ts:dataAccess',
+    'lib/state/shared/words/appearance.ts:list',
+    'lib/state/shared/words/appearance.ts:byName',
+    'lib/state/shared/words/appearance.ts:paper',
+    'lib/state/shared/words/appearance.ts:crt',
+    'lib/state/shared/words/appearance.ts:terminalFont',
+    'lib/state/shared/words/generation.svelte.ts:held',
+    'lib/state/shared/words/glyphmode.svelte.ts:held'
 ];
 
 /** The stores a shell file may take out of the client object: the shell's row, by store name. */
@@ -384,24 +382,24 @@ function scratch(name: string): string {
 
 describe('layer boundaries', () => {
     it('holds across src/lib', () => {
-        // revert: tests/checks/tree/boundaries.test.ts:94 => views: ['state/**'],
+        // revert: tests/checks/tree/boundaries.test.ts:95 => views: ['state/**'],
         // revert: src/lib/state/client/context.ts:21 => import { createRegistry, type RegistryStore } from '../../views/registry.ts';
         // revert: src/lib/state/client/context.ts:21 => import { createTipIds } from '../../ui/menu/tip-ids.ts';
         expect(findViolations(LIB)).toEqual([]);
     });
 
     it('holds no process-wide state under src', () => {
-        // revert: tests/checks/tree/boundaries.test.ts:235 => delete
+        // revert: tests/checks/tree/boundaries.test.ts:233 => delete
         expect(findGlobalState(SRC)).toEqual([]);
     });
 
     it('keeps every shell file to the stores its row names', () => {
-        // revert: tests/checks/tree/boundaries.test.ts:257 => delete
+        // revert: tests/checks/tree/boundaries.test.ts:255 => delete
         expect(findShellStores(LIB)).toEqual([]);
     });
 
     it('catches a shell file reading a store the shell may not read', () => {
-        // revert: tests/checks/tree/boundaries.test.ts:283 => delete
+        // revert: tests/checks/tree/boundaries.test.ts:281 => delete
         const dir = scratch('oculus-shell-stores-');
         mkdirSync(join(dir, 'shell'), { recursive: true });
         writeFileSync(
@@ -415,7 +413,7 @@ describe('layer boundaries', () => {
     });
 
     it('catches process-wide state outside app.d.ts', () => {
-        // revert: tests/checks/tree/boundaries.test.ts:196 => delete
+        // revert: tests/checks/tree/boundaries.test.ts:193 => delete
         const dir = scratch('oculus-global-state-');
         mkdirSync(join(dir, 'lib', 'server'), { recursive: true });
         writeFileSync(join(dir, 'bad.ts'), 'declare global {}\nconst held = globalThis.value;\n');
@@ -439,7 +437,7 @@ describe('layer boundaries', () => {
     });
 
     it('catches a violation of every row it can be shown one of', () => {
-        // revert: tests/checks/tree/boundaries.test.ts:161 => if (false) {
+        // revert: tests/checks/tree/boundaries.test.ts:158 => if (false) {
         const dir = scratch('oculus-boundaries-');
 
         const write = (rel: string, body: string) => {
@@ -451,7 +449,7 @@ describe('layer boundaries', () => {
 
         write(
             'ui/Good.svelte',
-            "<script>\nimport { t } from '$lib/state/words/text';\nimport './Card.svelte';\n</script>"
+            "<script>\nimport { t } from '$lib/state/shared/words/text';\nimport './Card.svelte';\n</script>"
         );
         write('ui/Card.svelte', '<span></span>');
         write(
@@ -482,7 +480,7 @@ describe('layer boundaries', () => {
         );
         // A sibling view of the same group is another view: the rule is the view's own folder,
         // never the group's.
-        // revert: tests/checks/tree/boundaries.test.ts:134 => return [`views/${parts[1]}/**`];
+        // revert: tests/checks/tree/boundaries.test.ts:133 => return [`views/${parts[1]}/**`];
         write(
             'views/boards/focus/CommandCenter.svelte',
             "<script>\nimport Row from './Row.svelte';\nimport Bad from '../projects/Projects.svelte';\n</script>"
@@ -512,9 +510,25 @@ describe('layer boundaries', () => {
         ]);
     });
 
+    // revert: tests/checks/tree/boundaries.test.ts:147 => return id === pattern || id === `${pattern}.svelte` || id.startsWith(`${pattern}/`);
+    it('admits the index module of a folder a row names exactly, and no other module in it', () => {
+        const dir = scratch('oculus-boundaries-index-');
+        const full = join(dir, 'state', 'reads.ts');
+        mkdirSync(dirname(full), { recursive: true });
+        writeFileSync(
+            full,
+            "import type { A } from '$lib/data/model/index';\nimport type { B } from '../data/model/index.ts';\nimport type { C } from '$lib/data/model/model-entities';\nimport type { D } from '$lib/data/model/indexes';\n"
+        );
+        // data/model is the facade, data/model/index.ts; its concern modules are not.
+        expect(findViolations(dir)).toEqual([
+            'state/reads.ts imports data/model/indexes',
+            'state/reads.ts imports data/model/model-entities'
+        ]);
+    });
+
     // revert: tests/checks/tree/allow-styling.ts:72 => line: 'views/sources/search/Results.svelte styles .label of ui/controls/Chip.svelte, ui/tabs/Tabs.svelte, ui/controls/Tag.svelte through .hit :global(.label)',
     it('lets no view or shell component style a primitive own class', () => {
-        // revert: tests/checks/tree/boundaries.test.ts:347 => delete
+        // revert: tests/checks/tree/boundaries.test.ts:345 => delete
         expect(
             findPrimitiveStyling(
                 LIB,
@@ -524,7 +538,7 @@ describe('layer boundaries', () => {
     });
 
     it('catches a view reaching into a primitive, and passes the theme class and its own', () => {
-        // revert: tests/checks/tree/boundaries.test.ts:343 => const owned = undefined;
+        // revert: tests/checks/tree/boundaries.test.ts:341 => const owned = undefined;
         const dir = scratch('oculus-primitive-styling-');
         const write = (rel: string, body: string) => {
             const full = join(dir, rel);
@@ -567,7 +581,7 @@ describe('layer boundaries', () => {
     });
 
     it('holds the styling lists to rules the tree still has', () => {
-        // revert: tests/checks/tree/boundaries.test.ts:348 => delete
+        // revert: tests/checks/tree/boundaries.test.ts:346 => delete
         const held = findPrimitiveStyling(LIB);
         expect(
             [...DELIBERATE, ...HELD]

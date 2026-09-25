@@ -20,7 +20,7 @@ import {
 } from '../../../../src/lib/state/workbench/layout/index.ts';
 import { LAYOUT_KEY, PREVIOUS_KEY } from '../../../../src/lib/state/workbench/layout.svelte.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sources/config.ts';
-import { setCatalog } from '../../../../src/lib/state/words/text.ts';
+import { setCatalog } from '../../../../src/lib/state/shared/words/text.ts';
 import { bench, docked, fakeStorage, pane, saveBench, three, viewsOf } from './layout-fixture.ts';
 import { fields } from '../../../../src/lib/data/helpers/guards.ts';
 import { present } from '../../../fixtures/present.ts';

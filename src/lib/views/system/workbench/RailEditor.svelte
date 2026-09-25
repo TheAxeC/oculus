@@ -31,7 +31,7 @@
         type RailEntry,
         type RailProblem
     } from '$lib/state/workbench/navigation/rail';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
 
     const {

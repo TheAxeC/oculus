@@ -23,9 +23,9 @@
         type Entry,
         type SchemaField
     } from '$lib/state/boards/collection';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
     import { freeTone, quartileTone, type Project, type Venue } from '$lib/state/sources/venues';
-    import { themeWordLabel, type ThemeWordLabels } from '$lib/state/words/themes';
+    import { themeWordLabel, type ThemeWordLabels } from '$lib/state/shared/words/themes';
     import { useState } from '$lib/state/client/use';
 
     const {

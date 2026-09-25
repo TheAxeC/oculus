@@ -3,7 +3,7 @@
 // It sits in shell/panes beside the folded pane that draws it, below Workbench.svelte, which reads
 // it too, so the shell's folders import downward only.
 
-import { t as catalogText } from '$lib/state/words/text';
+import { t as catalogText } from '$lib/state/shared/words/text';
 import { registrationLabel } from '$lib/state/workbench/navigation/registry';
 import type { RegistryStore } from '$lib/state/workbench/navigation/registry';
 import type { Instance } from '$lib/state/workbench/layout';

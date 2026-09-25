@@ -29,7 +29,7 @@ import {
 import { createClientState, type ClientState } from '../../../fixtures/client.ts';
 import { foldedOf } from './layout-fixture.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sources/config.ts';
-import { setCatalog } from '../../../../src/lib/state/words/text.ts';
+import { setCatalog } from '../../../../src/lib/state/shared/words/text.ts';
 
 // The trees, the workbenches and the fake Storage are
 // tests/state/workbench/layout/layout-fixture.ts, shared with the pages suite beside this one. The

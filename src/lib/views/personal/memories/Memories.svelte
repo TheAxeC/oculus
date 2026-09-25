@@ -21,7 +21,7 @@
     // pane's width, and every tile is a box of its picture's own proportions, taken from the width
     // and height the folder's answer carries with each name, so the box has its final shape before
     // the picture arrives and nothing on the wall moves when it does. A picture far wider or taller
-    // than a square stops at `TILE_BOUND` of state/feeds/life/memories.svelte.ts and is fitted
+    // than a square stops at `TILE_BOUND` of state/life/memories.svelte.ts and is fitted
     // whole inside, and a picture whose header the server could not read keeps a 4:3 box it is
     // fitted into whole; no picture is cropped. Until it arrives the tile is a muted surface of
     // that same box, and a picture that fails draws its alternative words in the box instead, until
@@ -37,9 +37,9 @@
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Toolbar from '$lib/ui/frame/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import { t } from '$lib/state/words/text';
-    import { readMessage, tooLarge, uploadMessage } from '$lib/state/feeds/life/memories';
-    import { tileRatio } from '$lib/state/feeds/life/memories.svelte';
+    import { t } from '$lib/state/shared/words/text';
+    import { readMessage, tooLarge, uploadMessage } from '$lib/state/life/memories';
+    import { tileRatio } from '$lib/state/life/memories.svelte';
     import { useState } from '$lib/state/client/use';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
 

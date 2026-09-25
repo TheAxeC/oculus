@@ -9,7 +9,10 @@
     type Props = {
         /** The level, 0 to 1. Anything outside that, or not a number, is clamped into it. */
         value: number;
-        /** A hue name from state/words/tones.ts. A meter with none fills in the accent colour. */
+        /**
+         * A hue name from state/shared/words/tones.ts. A meter with none fills in the accent
+         * colour.
+         */
         tone?: string;
         /** The accessible name, already translated by the view. */
         label: string;

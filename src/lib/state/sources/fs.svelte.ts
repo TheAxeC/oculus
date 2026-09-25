@@ -57,7 +57,7 @@
 
 import type { Entry, FilesPayload, SchemaField } from '../../data/model/index.ts';
 import { TEXT_SNIFF_READ } from '../../data/helpers/text-kind.ts';
-import type { EntitiesStore, WriteAnswer, WritesStore } from '../stores/shapes.ts';
+import type { EntitiesStore, WriteAnswer, WritesStore } from '../shared/stores/shapes.ts';
 import {
     LISTING_FORMS,
     NO_BOOKMARKS,
@@ -96,7 +96,7 @@ import {
     type FsRoot,
     type ListingShown
 } from './fs.ts';
-import { t } from '../words/text.ts';
+import { t } from '../shared/words/text.ts';
 
 export { fileBytesUrl, FS_PATH, listingUrl, readCapped } from './fs-transport.ts';
 export type {

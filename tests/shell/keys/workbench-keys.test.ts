@@ -11,7 +11,7 @@ import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createWorkbenchKeys } from '../../../src/lib/shell/keys/workbench-keys.svelte.ts';
 import { paneAt } from '../../../src/lib/state/workbench/layout/index.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
-import { setCatalog } from '../../../src/lib/state/words/text.ts';
+import { setCatalog } from '../../../src/lib/state/shared/words/text.ts';
 import { noop } from '../../fixtures/doubles.ts';
 import { pageLeaf } from '../../../src/lib/state/workbench/layout/index.ts';
 import { fakeStorage, instance, pane, split } from '../../state/workbench/layout/layout-fixture.ts';

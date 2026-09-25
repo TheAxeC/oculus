@@ -14,7 +14,7 @@
 // cannot answer this, since the snapshot is rebuilt only for a file the config names. Nothing
 // re-fetches on its own; the next call for the pair does, which is the tab being shown again.
 
-import type { EntitiesStore } from '../stores/shapes.ts';
+import type { EntitiesStore } from '../shared/stores/shapes.ts';
 
 /** One document as the view reads it: the rendered HTML, its frontmatter, or what went wrong. */
 export type DocState = {

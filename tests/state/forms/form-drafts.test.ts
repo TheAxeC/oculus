@@ -28,7 +28,7 @@ import {
 } from '../../../src/lib/state/forms/form-drafts.svelte.ts';
 import type { FormValue } from '../../../src/lib/state/forms/form-values.ts';
 import { UI_KEY } from '../../../src/lib/state/workbench/ui.svelte.ts';
-import { setCatalog } from '../../../src/lib/state/words/text.ts';
+import { setCatalog } from '../../../src/lib/state/shared/words/text.ts';
 import { createClientState, type ClientState } from '../../fixtures/client.ts';
 import { fakeStorage } from '../workbench/layout/layout-fixture.ts';
 

@@ -4,14 +4,16 @@
 // A runtime import is every `import`, `export ... from` and `import('...')` whose statement does
 // not open with `import type` or `export type`, since those two leave nothing behind once the
 // TypeScript is compiled and so cannot join two modules at run time; the cycle check reads those
-// alone. The folder order reads the type-only ones too, and each `declare module` block that
-// augments a module of the tree, since an augmentation names the module it adds to as surely as an
-// import does and would otherwise carry a dependency past the order. The boundary test, the cycle
-// check and the folder order all read their modules through sourceFiles() and resolve a specifier
-// through target(), so the three agree on what a module is and which module an import names.
+// alone, and the folder order and the boundary test read the type-only ones too. A module is
+// parsed, never matched as text, by bin/diagrams/imports.mjs, the one reader the diagrams call
+// too, so a comment is never read as code. The boundary test, the cycle check, the folder order
+// and the augmentation check all read their modules through sourceFiles(), their imports through
+// runtimeImports() or augmentations(), and resolve a specifier through target(), so they agree on
+// what a module is and which module an import names.
 
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join, normalize, sep } from 'node:path';
+import { augmentationsOf, importsOf, moduleAt } from '../../../bin/diagrams/imports.mjs';
 
 /** Every .ts and .svelte file under a root, as paths relative to it with forward slashes. */
 export function sourceFiles(root: string, prefix = ''): string[] {
@@ -42,32 +44,15 @@ export function target(fileRel: string, spec: string, lib = ''): string | null {
     return id.replace(/\.(ts|js)$/, '');
 }
 
-/**
- * One runtime import: the specifier as written, the module it names, and its line; `augments` when
- * it is a `declare module` block adding to that module rather than an import of it.
- */
-export type RuntimeImport = { spec: string; id: string; line: number; augments?: boolean };
-
-/** A `declare module` block naming a module by a specifier, which augments that module. */
-const AUGMENT = /\bdeclare\s+module\s+['"]([^'"]+)['"]/g;
+/** One import: the specifier as written, the module it names, and its line. */
+export type RuntimeImport = { spec: string; id: string; line: number };
 
 /**
- * An import or re-export statement, or a dynamic import of a literal specifier. bin/diagrams/
- * source.mjs reads imports with the same pattern, its RUNTIME, which the diagrams test holds to it.
- */
-export const STATEMENT =
-    /(?<![\w$.])(?:(import|export)\s+(type\s+)?(?:[^'"`;]*?\s+from\s+)?|import\s*\(\s*)['"]([^'"]+)['"]/g;
-
-/** The line an index of a text falls on, from 1. */
-function lineAt(text: string, index: number): number {
-    return text.slice(0, index).split('\n').length;
-}
-
-/**
- * Every runtime import of one module's text, in the order it makes them; with `types`, every
- * type-only import and every `declare module` augmentation of a module of the tree as well, which
- * is what the folder order holds, since a type is a dependency of the design even when the built
- * code keeps nothing of it.
+ * Every import of one module's text that names a module of the tree, in the order its lines give,
+ * as bin/diagrams/imports.mjs's importsOf() parses them: the runtime ones alone, or with `types`
+ * the type-only ones as well, which is what the folder order holds, since a type is a dependency
+ * of the design even when the built code keeps nothing of it. An `import()` whose specifier could
+ * not be read names nothing here, and neither does an `import.meta.glob`, which names a pattern.
  */
 export function runtimeImports(
     fileRel: string,
@@ -76,36 +61,41 @@ export function runtimeImports(
     types = false
 ): RuntimeImport[] {
     const found: RuntimeImport[] = [];
-    for (const match of text.matchAll(STATEMENT)) {
-        if (!types && /^(?:import|export)\s+type\s/.test(match[0])) continue;
-        const id = target(fileRel, match[3], lib);
-        if (id === null) continue;
-        found.push({ spec: match[3], id, line: lineAt(text, match.index) });
+    for (const one of importsOf(fileRel, text)) {
+        if (one.spec === null || one.glob === true || (!types && one.typeOnly)) continue;
+        const id = target(fileRel, one.spec, lib);
+        if (id !== null) found.push({ spec: one.spec, id, line: one.line });
     }
-    if (!types) return found;
-    for (const match of text.matchAll(AUGMENT)) {
-        const id = target(fileRel, match[1], lib);
-        if (id === null) continue;
-        found.push({ spec: match[1], id, line: lineAt(text, match.index), augments: true });
-    }
-    return found.sort((a, b) => a.line - b.line);
+    return found;
 }
 
 /**
- * The file a module id is, trying the endings an import leaves off, in the order the bundler tries
- * them; the id itself where no file answers, so an import of a module that is not there still
- * names where it points. A specifier that writes its own `.ts` or `.js` ending names that file and
- * no other, as the bundler reads it, so `../model.ts` is never taken for `../model/index.ts`.
+ * Every `declare module` block and every `/// <reference path>` directive of one module's text
+ * that names a module of the tree, with its line, as augmentationsOf() in
+ * bin/diagrams/imports.mjs parses them. A package's own augmentation (`declare module
+ * 'some-package'`) names no module of the tree and is not one; a directive's path is read as a
+ * path beside the file, as the compiler reads it.
+ */
+export function augmentations(fileRel: string, text: string, lib = ''): RuntimeImport[] {
+    const found: RuntimeImport[] = [];
+    for (const one of augmentationsOf(fileRel, text)) {
+        const spec = one.reference && !one.spec.startsWith('.') ? `./${one.spec}` : one.spec;
+        const id = target(fileRel, spec, lib);
+        if (id !== null) found.push({ spec: one.spec, id, line: one.line });
+    }
+    return found;
+}
+
+/**
+ * The file a module id is, by moduleAt() of bin/diagrams/imports.mjs, which resolves an ending as
+ * Vite does; the id itself, with the ending the specifier wrote, where no file answers, so an
+ * import of a module that is not there still names where it points.
  */
 export function moduleOf(root: string, id: string, spec = ''): string {
-    const ending = /\.(ts|js)$/.exec(spec);
-    if (ending !== null) return `${id}${ending[0]}`;
-    for (const tail of ['', '.ts', '.js', '/index.ts']) {
-        if (existsSync(join(root, id + tail)) && /\.(ts|js|svelte)$/.test(id + tail)) {
-            return id + tail;
-        }
-    }
-    return id;
+    const ending = /\.(ts|js)$/.exec(spec)?.[0] ?? '';
+    const isFile = (path: string): boolean =>
+        existsSync(join(root, path)) && statSync(join(root, path)).isFile();
+    return moduleAt(`${id}${ending}`, isFile) ?? `${id}${ending}`;
 }
 
 /**

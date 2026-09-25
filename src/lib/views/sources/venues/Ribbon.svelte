@@ -7,7 +7,7 @@
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import Tooltip from '$lib/ui/menu/Tooltip.svelte';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
     import {
         SPARK_HEIGHT,
         sparkBars,

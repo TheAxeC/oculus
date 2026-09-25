@@ -29,7 +29,7 @@
         type DiffSubject
     } from '$lib/state/sources/repositories';
     import type { GitEntry, GitState } from '$lib/state/client/selectors.svelte';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
 
     type Props = {
         root: string;

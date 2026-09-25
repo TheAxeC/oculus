@@ -41,7 +41,7 @@
         type InboxThread,
         type MailAccount
     } from '$lib/state/feeds/inbox';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
     import { cardCursor } from '$lib/state/workbench/layout/instance';
     import { useState } from '$lib/state/client/use';
 

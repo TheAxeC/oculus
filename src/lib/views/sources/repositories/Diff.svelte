@@ -29,9 +29,9 @@
     import Pane from '$lib/ui/frame/Pane.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Toolbar from '$lib/ui/frame/Toolbar.svelte';
-    import { codeHtml } from '$lib/state/words/languages';
+    import { codeHtml } from '$lib/state/shared/words/languages';
     import { diffUrl, type DiffState } from '$lib/state/sources/repositories';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
 
     let { instance }: ViewProps = $props();

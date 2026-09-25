@@ -19,7 +19,7 @@
     import { liveCount } from '$lib/state/sessions/folds';
     import { workspaceCount } from '$lib/state/sources/repositories';
     import { entityCount, type CountedKind } from '$lib/state/workbench/navigation/status';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
     import Hooks from './Hooks.svelte';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';

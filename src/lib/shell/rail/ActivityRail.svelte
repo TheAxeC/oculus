@@ -30,7 +30,7 @@
         type RailPage
     } from '$lib/state/workbench/navigation/rail';
     import { heldStop } from '$lib/ui/tree/roving';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
 
     const {

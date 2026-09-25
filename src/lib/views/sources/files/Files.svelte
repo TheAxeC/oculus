@@ -105,13 +105,16 @@
     import {
         bookmarkAt,
         bookmarkById,
+        bookmarkTitles,
         currentWorkspace,
         fixedRootKeys,
         matchedNothing,
-        openFailures
+        openFailures,
+        rootKeysOf,
+        workspaceNames
     } from '$lib/state/sources/fs-transport';
-    import { noteId } from '$lib/state/feeds/life/notes';
-    import { t } from '$lib/state/words/text';
+    import { noteId } from '$lib/state/life/notes';
+    import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 
@@ -170,9 +173,7 @@
     const crumbs = $derived(crumbsOf(view.selected));
     const fixed = $derived(fixedRootKeys(current.roots));
     /** The root keys an ask to show a path is answered against, and null until they are read. */
-    const rootKeys = $derived(
-        saved.loading || saved.error !== '' ? null : current.roots.map((one) => one.key)
-    );
+    const rootKeys = $derived(rootKeysOf(saved));
 
     const marks = $derived(bookmarks());
     const editedMark = $derived(bookmarkById(marks.entries, view.editing));
@@ -257,10 +258,7 @@
     async function bookmark(row: TreeRow): Promise<void> {
         const owner = instance.id;
         const found = bookmarkAt(marks.entries, row.root, row.path);
-        const label = markLabel(
-            row,
-            marks.entries.map((one) => one.title)
-        );
+        const label = markLabel(row, bookmarkTitles(marks.entries));
         const answer =
             found === null
                 ? await addBookmark({ label, root: row.root, path: row.path })
@@ -374,7 +372,7 @@
 {#snippet tools()}
     <Controls
         current={saved.current}
-        names={saved.workspaces.map((one) => one.name)}
+        names={workspaceNames(saved)}
         adding={view.form === 'root'}
         shown={listed}
         onselect={(name: string) => void select(name)}

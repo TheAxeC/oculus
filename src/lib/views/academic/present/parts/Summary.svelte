@@ -9,10 +9,10 @@
 
     import Table from '$lib/ui/display/Table.svelte';
     import type { Column } from '$lib/ui/display/table-rows';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
     import Dot from './Dot.svelte';
     import Words from './Words.svelte';
-    import type { DeckSummary } from '$lib/state/feeds/life/present';
+    import type { DeckSummary } from '$lib/state/life/present';
 
     type Props = { summary: DeckSummary };
 

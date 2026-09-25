@@ -11,7 +11,7 @@
     // draw it, from `opensInProgram` over the configuration the page holds.
 
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
 
     type Props = {

@@ -7,7 +7,7 @@
 
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { hooksSnippet } from '$lib/state/sessions/hooks';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
 
     type Props = {
         /**

@@ -13,7 +13,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import Code from '../../../src/lib/views/sources/source/Code.svelte';
 import Editor from '../../../src/lib/views/sources/source/Editor.svelte';
 import Source from '../../../src/lib/views/sources/source/Source.svelte';
-import { codeHtml, lineNumbers, registered } from '../../../src/lib/state/words/languages.ts';
+import {
+    codeHtml,
+    lineNumbers,
+    registered
+} from '../../../src/lib/state/shared/words/languages.ts';
 import { paintLimit, requirePaintLimit } from '../../../src/lib/data/helpers/editor.ts';
 import { TEXT_LIMIT, languageOf } from '../../../src/lib/state/sources/fs.ts';
 import { lineStart, sourceTabState } from '../../../src/lib/state/sessions/source.svelte.ts';
@@ -23,7 +27,7 @@ import {
     loadConfig,
     textCatalog
 } from '../../../src/lib/data/sources/config.ts';
-import { setCatalog, setGlyphs } from '../../../src/lib/state/words/text.ts';
+import { setCatalog, setGlyphs } from '../../../src/lib/state/shared/words/text.ts';
 import { noop } from '../../fixtures/doubles.ts';
 import { clientContext, createClientState, type ClientState } from '../../fixtures/client.ts';
 

@@ -6,7 +6,7 @@
 
     import NoticeEntry from './NoticeEntry.svelte';
     import type { Notice } from '$lib/state/workbench/navigation/notices.svelte';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
 
     const {

@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 import {
     closeQuestion,
     firstUnsaved,
+    pageAt,
     pageInstanceIds,
     pageName,
     pageNameOf,
@@ -16,7 +17,7 @@ import {
 import type { Page } from '../../../../src/lib/state/workbench/layout/index.ts';
 import { bench, instance, pane, split } from '../layout/layout-fixture.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sources/config.ts';
-import { setCatalog, t } from '../../../../src/lib/state/words/text.ts';
+import { setCatalog, t } from '../../../../src/lib/state/shared/words/text.ts';
 
 setCatalog(textCatalog(loadConfig(engineDir()).config));
 
@@ -35,7 +36,7 @@ describe('what a page is called', () => {
     });
 
     it('is nothing for an id the list does not hold', () => {
-        // revert: src/lib/state/workbench/navigation/pages.ts:25 => return pageName(pages[at] ?? pages[0], at);
+        // revert: src/lib/state/workbench/navigation/pages.ts:25 => return found === null ? pageName(pages[0], 0) : pageName(found.page, found.at);
         expect(pageNameOf([page('one', 'Writing')], 'gone')).toBe('');
     });
 });
@@ -133,5 +134,16 @@ describe('whether a page holds unsaved text', () => {
         expect(pageUnsaved(held, (id) => id === 'b')).toBe(true);
         expect(pageUnsaved(held, () => false)).toBe(false);
         expect(pageUnsaved(page('q', ''), () => true)).toBe(false);
+    });
+});
+
+describe('where a page sits in the page list', () => {
+    // revert: src/lib/state/workbench/navigation/pages.ts:93 => return at < 0 ? null : { page: pages[0], at };
+    it('is the page of that id with its place, and nothing for an id the list lacks', () => {
+        const pages = [page('a', 'One'), page('b', '')];
+        expect(pageAt(pages, 'b')).toEqual({ page: pages[1], at: 1 });
+        // The list holds no page of that id, so it has no place in it.
+        expect(pageAt(pages, 'gone')).toBeNull();
+        expect(pageNameOf(pages, 'b')).toBe(t('ui.page_default', 2));
     });
 });

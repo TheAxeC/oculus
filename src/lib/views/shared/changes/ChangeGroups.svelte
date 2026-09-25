@@ -12,10 +12,10 @@
     import type { Snippet } from 'svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import ChangeCounts from './ChangeCounts.svelte';
-    import { elide } from '$lib/state/words/format';
+    import { elide } from '$lib/state/shared/words/format';
     import { statusStyle } from '$lib/state/sources/repositories';
     import type { GitEntry } from '$lib/state/client/selectors.svelte';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
 
     type Props = {
         staged: GitEntry[];

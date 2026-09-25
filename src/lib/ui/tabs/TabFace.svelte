@@ -19,7 +19,7 @@
     import { type Tab } from '$lib/ui/tabs/tab-strip';
     import Glyph from '../display/Glyph.svelte';
     import Tooltip from '../menu/Tooltip.svelte';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
 
     type Props = {
         tab: Tab;

@@ -203,3 +203,103 @@ Also changed:
 ## Limitations
 - **Writes diagram:** it sets 4 labels across other arrows, for example `feeds.ts -> file on disk` "renameSync, writeFileSync" across three `-> changes.ts` edges. No node or rank spacing up to 1.0/2.0, no xlabel/headlabel/taillabel variant and no ortho/polyline splines cleared it. `concentrate=true` does clear it, but it merges a dashed edge into solid ones, which misreads. The writes diagram is outside item 5 and is not in `SETTLED`. This needs a decision.
 - **Regex literal detection:** `codeOnly()` guesses a regex literal from the preceding token. A `/` after `)`, as in `if (x) /re/.test(y)`, is read as division. Nothing in src does this today.
+
+## Repair round 1, the builder's reply
+
+Everything in the round is done. I wrote nothing outside the worktree except files in this session's scratchpad (the measuring script, base copies and logs) and two throwaway files under `/tmp`, which I have deleted. No process I started is running, and port 8792 is free (`lsof -iTCP:8792 -sTCP:LISTEN` exit 1).
+
+**Open items of the state file:** none at the brief's writing (I have not read the state file).
+
+## 1. One parser-based import reader
+- **New `bin/diagrams/imports.mjs`** (plain JS, 351 lines):
+  - `importsOf()` (`:263`) parses `.ts`/`.js` with `ts.createSourceFile`, via `scriptImports()` (`:145`). It walks import and export declarations with `isTypeOnly`, `import x = require`, `import('…')` types, `import()` calls, `import.meta.glob`, and `new URL(literal, import.meta.url)` names passed to `import()` (`urlNames()`, `:108`).
+  - A component is read by `svelte/compiler` `parse`: both scripts go through the same walk, and `markupImports()` (`:229`) reads `import()` in the markup.
+  - It also returns binding names (`bindingsOf()`, `:49`), which the write reader uses.
+  - It holds `augmentationsOf()` (`:288`) and `moduleAt()`/`TAILS` (`:326-351`).
+- **Callers:** `graph.ts` `runtimeImports` (`:57`), `augmentations` (`:79`) and `moduleOf` (`:94`) call it. So do `graphs.mjs` `runtimeImports`, `writes.mjs` `importsOf` and the `export *` handling, and `source.mjs` `moduleFile`.
+- **Removed:** the hand lexer, `STATEMENT` and `codeOnly`. `source.mjs` no longer imports `tests/`.
+- **Edge sets unchanged:** I ran the new reader over `src` (`importGraph`, runtime and type edges, 4681 lines) and diffed it against the output of the reader this round replaced: no difference. Every `.dot` is byte-identical (`diff` of all nine before/after files: "same").
+- **Cases in `cycles.test.ts:58-110`**, each red under its revert:
+  - the comment above a type-only import;
+  - `i++ / 2; // import…` and `{ a: 1 }\n/ 2; // import…` (revert `imports.mjs:148`, which strips the comment markers);
+  - a script inside an HTML comment (revert `:218`);
+  - markup `import()` (revert `:275` delete).
+- **Removed case:** the string/template/pattern case. It tested lexer internals that no longer exist, and no one-line revert of the parser can turn it red.
+
+## 2. Reference directives
+`augmentationsOf` reads TypeScript's own `referencedFiles` (`imports.mjs:303`), whatever attributes come before `path`. Two new cases in `augments.test.ts`, one with `preserve` and one with `resolution-mode`, both red under the old "path first" filter (revert `:303`). The earlier forms were re-pointed at `imports.mjs:302/303/308` and `graph.ts:83`.
+
+## 3. Exact label test
+`labels.mjs` `labelsAcross()` (`:182`) tests each cubic segment by de Casteljau subdivision until it is flat within 0.01 pt, then clips the chord against the box (`curveMeets`, `:112`; `segmentMeets`, `:71`). Arrowheads are tested as polygons.
+- The case in `diagrams.test.ts` "names a count a curve runs through…" uses the four arrows exactly as the previous version of this step drew them.
+- It expects `edit->files label 2 across machine->core` and `boards->ui label 85 across sources->state`.
+- It goes red under a revert back to endpoint sampling (`labels.mjs:122`, 9 points per segment); `revert-check` gives 48 reverts, 0 unproven, 0 unchecked for this file.
+
+## 4. Words as nodes, no spacing search
+`labelledEdge()` (`labels.mjs:48`) draws every count and every call list as a box node drawn in no colour, standing on its arrow. The arrow is drawn in two halves through it, in its own style (dashed stays dashed on both halves, and nothing is merged). This applies in:
+- `graphs.mjs` (the overview and the six layer diagrams);
+- `writes.mjs` (the call lists into the disk and the refusals).
+
+The channels diagram carries no words, so it is unchanged.
+
+`settle`, `SPACINGS` and `SETTLED` are gone, so nothing throws on layout. `labelsAcross` reads a word node by the box Graphviz measured and drew for it.
+
+Measured with `labelsAcross` over all nine committed SVGs: `[]` for every one, including `writes.svg`. The case "are clear of every other arrow in every drawing the source gives" runs `generate()` in memory. It goes red when the writes diagram's labels go back to plain edge labels (revert `writes.mjs:423`). There are also cases for the node box and its own halves, and for the two-halves form.
+
+## 5. Standards
+- `DESIGN.md` now names which checks use the parser reader, and says the process-wide state check reads raw text. `DESIGN.md` and `HELP.md` describe the word nodes.
+- `moduleAt` follows Vite's default order (`.mjs`, `.js`, `.mts`, `.ts`, `.jsx`, `.tsx`, `.json`, then the index files). New case in `order.test.ts`, revert `imports.mjs:326`.
+- The 0.6 em width is explained at `labels.mjs:17-23`.
+- Reason comments now sit above the asserted absences: `cycles.test` 69-74, `diagrams.test` 739 and 766, `fs-shape.test.ts:313-315`, `pages.test.ts:145`.
+
+## 6. Usage
+- `usageRows(rows, totalWord)` and `nextRefresh(last, minutes)` are in `state/system/usage.ts:44-70`. The view uses them (`Usage.svelte:150-153` and its table), and `historyRows` is gone.
+- Tests in `tests/state/system/usage.test.ts`, reverts `usage.ts:54`, `:56` and `:69`.
+- The five directives in `tests/views/system/usage.test.ts` are re-pointed.
+
+Kept, with reasons:
+
+| Line | Reason |
+|---|---|
+| `Slides:115` `next.order.length` | words of the moved line |
+| `Slides:179` `rows.length === 0` | disables Save |
+| `Slides:187` `rows.length === 0` | picks the empty state |
+| `Usage:159` `data?.accounts.length` | picks the empty state |
+| `Usage:192` `windows.length` | draws the meters |
+| `Usage:207` `live.length` | draws the live section |
+| `Usage:257` `days.length` | draws the table |
+| `Files:438` `crumbs.length > 0` | draws the breadcrumb |
+| `Files:452` `rows.length === 0` | picks the empty tree line |
+
+## 7. Report corrections
+- **Previous unit revert totals:** the previous report's `392 / 0 / 1455` does not reproduce; the reviewer's count over the same files is 393 reverts, 0 unproven, 1454 unchecked. Its `graph.ts` line ranges are obsolete, since this round replaced those functions.
+- **This round's unit totals:** over 108 files, `404 reverts, 1 unproven, 1455 unchecked`. The unproven case was fixed and `diagrams.test.ts` re-run at `48, 0, 0`. That makes the combined total 405 reverts, 0 unproven, 1454 unchecked. This is my sum of the two runs, not one run.
+- **Browser specs:** `31 reverts, 0 unproven, 19 unchecked`.
+- **Host-visible changes:**
+  - `npm run diagrams` imports no `.ts` any more: `node --no-experimental-strip-types bin/diagrams/diagrams.mjs` exits 0 (it needed Node's type stripping before). It can no longer fail on layout, because there is no spacing search.
+  - It now loads `typescript` and `svelte/compiler`, both already dev dependencies.
+  - In the Help view, every count and every call list is now a small box of words standing on its arrow, where it was a floating edge label before.
+  - Hover titles of a labelled arrow now read `a->a to b` and `a to b->b`; they read `a->b` before. The `.dot` files lose the per-diagram spacings.
+
+## Verification (from `tools/oculus`)
+1. `Test Files 311 passed (311)`, `Tests 4881 passed (4881)`
+2. `COMPLETED 1396 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS`
+3. `npm run build`: exit 0
+4. `All matched files use Prettier code style!`
+5. `npm run lint`: exit 0
+6. The non-ASCII grep prints nothing (count 0)
+7. `size-check`: 0; `folder-check`: 0
+8. `npm run diagrams` twice, then `diff -r`: `SAME`
+9. `386 passed (6.6m)`
+10. `revert-check`: unit and browser totals as in item 7 above
+11. Measuring script, before (the base at `96786a24`): `modules 563 edges 2098`, `module cycles 0 []`, `folder rings []`, `views->state 477 files 155 targets 65`. After: `modules 563 edges 2099`, `module cycles 0 []`, `folder rings []`, `views->state 478 files 155 targets 65`.
+12. `$TMPDIR/oculus-*`: 7015 before and after
+
+## Files changed this round
+- **New:** `bin/diagrams/imports.mjs` (351 lines)
+- **Rewritten:** `bin/diagrams/labels.mjs` (242)
+- **Changed tools:** `graphs.mjs` (465), `writes.mjs` (463), `source.mjs` (187), `diagrams.mjs` (184)
+- **Changed checks:** `tests/checks/imports/graph.ts` (187), `cycles.test.ts` (115), `augments.test.ts` (140), `order.test.ts` (176), `tests/checks/diagrams/diagrams.test.ts` (808)
+- **Changed state and view:** `src/lib/state/system/usage.ts` (70), `Usage.svelte` (336)
+- **Changed tests:** `tests/state/system/usage.test.ts` (99), `tests/views/system/usage.test.ts` (396), `fs-shape.test.ts` (320), `pages.test.ts` (149)
+- **Docs and drawings:** `DESIGN.md` (317), `HELP.md` (240), every `docs/diagrams/*`

@@ -141,7 +141,7 @@ test('no strip of pages is drawn over the panes', async ({ page }) => {
 });
 
 test('the Pages view makes a page, renames it, shows another and closes one', async ({ page }) => {
-    // revert: src/lib/views/system/workbench/Pages.svelte:107 => if (typed !== '') renamePage(renaming.id, 'Other');
+    // revert: src/lib/views/system/workbench/Pages.svelte:108 => if (typed !== '') renamePage(renaming.id, 'Other');
     await boot(page);
     await showRailPage(page, 'views');
     const pages = page.locator(`${SHOWN_VIEW} [data-pages]`);
@@ -190,7 +190,7 @@ test('the Pages view makes a page, renames it, shows another and closes one', as
 test('closing a page of several tabs asks first: cancel keeps it, confirm removes it', async ({
     page
 }) => {
-    // revert: src/lib/views/system/workbench/Pages.svelte:72 => const asks = 'none';
+    // revert: src/lib/views/system/workbench/Pages.svelte:73 => const asks = 'none';
     await boot(page);
     await showRailPage(page, 'projects');
     await showRailPage(page, 'views');

@@ -15,7 +15,7 @@ import {
     loadConfig,
     textCatalog
 } from '../../../src/lib/data/sources/config.ts';
-import { setCatalog, setGlyphs } from '../../../src/lib/state/words/text.ts';
+import { setCatalog, setGlyphs } from '../../../src/lib/state/shared/words/text.ts';
 import { noop } from '../../fixtures/doubles.ts';
 import type { Instance } from '../../../src/lib/state/workbench/layout/index.ts';
 import { clientContext, createClientState, type ClientState } from '../../fixtures/client.ts';

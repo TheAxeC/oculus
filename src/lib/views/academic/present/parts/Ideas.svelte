@@ -4,7 +4,7 @@
 
     import Dot from './Dot.svelte';
     import Words from './Words.svelte';
-    import type { DeckIdeas } from '$lib/state/feeds/life/present';
+    import type { DeckIdeas } from '$lib/state/life/present';
 
     type Props = { ideas: DeckIdeas };
 

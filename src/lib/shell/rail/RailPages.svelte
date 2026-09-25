@@ -21,7 +21,7 @@
     import { railPageViews } from '$lib/state/workbench/navigation/pages';
     import type { RailPage } from '$lib/state/workbench/navigation/rail';
     import { badgeOf, type RegistrationBadge } from '$lib/state/workbench/navigation/registry';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
 
     const client = useState();

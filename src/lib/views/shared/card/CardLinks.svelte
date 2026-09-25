@@ -14,7 +14,7 @@
     import Tag from '$lib/ui/controls/Tag.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import type { BoardItem, BoardTag } from '$lib/state/boards/board';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
     import { goto, linkView, shownTags } from './card';
     import { useState } from '$lib/state/client/use';
 

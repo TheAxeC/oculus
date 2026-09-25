@@ -7,7 +7,7 @@
 // endpoint grows later reads as a refusal rather than as a word out of the wire.
 
 import type { AuditFinding } from '../../data/model/index.ts';
-import { t } from '../words/text.ts';
+import { t } from '../shared/words/text.ts';
 
 /** What the write endpoint answered, as much of it as the sentence depends on. */
 export type MuteAnswer = {

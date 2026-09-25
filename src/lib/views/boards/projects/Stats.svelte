@@ -10,7 +10,7 @@
 
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
     import type { BoardStats } from '$lib/state/boards/board';
 
     type Props = { stats: BoardStats };

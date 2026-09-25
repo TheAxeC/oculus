@@ -1,4 +1,4 @@
-import type { ClockStore } from '../stores/shapes.ts';
+import type { ClockStore } from '../shared/stores/shapes.ts';
 
 export type { ClockStore };
 // Layer 2, client state. The minute the page is in, as one rune.

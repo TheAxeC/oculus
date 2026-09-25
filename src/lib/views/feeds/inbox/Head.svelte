@@ -3,8 +3,8 @@
     // screen is, the cadence, and the one explicit refresh.
 
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import { t } from '$lib/state/words/text';
-    import { clock } from '$lib/state/words/format';
+    import { t } from '$lib/state/shared/words/text';
+    import { clock } from '$lib/state/shared/words/format';
     import type { InboxPayload } from '$lib/state/feeds/inbox';
     import { useState } from '$lib/state/client/use';
 

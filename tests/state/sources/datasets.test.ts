@@ -15,9 +15,9 @@ import {
     applyThemeFacets,
     themeFacets,
     themeWordLabels
-} from '../../../src/lib/state/words/themes.ts';
+} from '../../../src/lib/state/shared/words/themes.ts';
 import { engineDir, loadConfig, vocabCatalog } from '../../../src/lib/data/sources/config.ts';
-import { setVocab } from '../../../src/lib/state/words/tones.ts';
+import { setVocab } from '../../../src/lib/state/shared/words/tones.ts';
 
 function dataset(id: string, over: Partial<Dataset> = {}): Dataset {
     return {

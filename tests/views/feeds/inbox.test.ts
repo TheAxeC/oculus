@@ -13,7 +13,7 @@ import {
     loadConfig,
     textCatalog
 } from '../../../src/lib/data/sources/config.ts';
-import { setCatalog, setGlyphs } from '../../../src/lib/state/words/text.ts';
+import { setCatalog, setGlyphs } from '../../../src/lib/state/shared/words/text.ts';
 import { archiveConfirm, recipientOf, sendConfirm } from '../../../src/lib/state/feeds/inbox.ts';
 import type { InboxPayload, InboxThread } from '../../../src/lib/data/model/index.ts';
 import type { Instance } from '../../../src/lib/state/workbench/layout/index.ts';

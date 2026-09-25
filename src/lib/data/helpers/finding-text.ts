@@ -1,7 +1,7 @@
 // Layer 1, data. The words a finding is written in, read out of the text catalog by key. Pure, so
 // the readers under sources/, the rules of validate.ts and the audit scan of
-// server/content/audit.ts call it alike, and client-safe, because state/words/text.ts's t() fills a
-// catalog string with the same fillPlaceholders rather than a copy of it. `words` of
+// server/content/audit.ts call it alike, and client-safe, because state/shared/words/text.ts's t()
+// fills a catalog string with the same fillPlaceholders rather than a copy of it. `words` of
 // server/machine/pty/chat.ts fills the terminal text (the chat instruction, its notes, the chat and
 // LaTeX terminal names) with it too.
 //

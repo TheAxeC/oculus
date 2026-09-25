@@ -10,8 +10,8 @@ import {
     vocabCatalog
 } from '../../../src/lib/data/sources/config.ts';
 import type { ClientState } from '../../fixtures/client.ts';
-import { setCatalog, setGlyphs } from '../../../src/lib/state/words/text.ts';
-import { setVocab } from '../../../src/lib/state/words/tones.ts';
+import { setCatalog, setGlyphs } from '../../../src/lib/state/shared/words/text.ts';
+import { setVocab } from '../../../src/lib/state/shared/words/tones.ts';
 import type {
     Collection,
     Domain,

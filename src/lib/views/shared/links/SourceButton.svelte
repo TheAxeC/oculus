@@ -6,7 +6,7 @@
 
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { openSourceFile, type SourceFile } from './source-file';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
 
     const client = useState();

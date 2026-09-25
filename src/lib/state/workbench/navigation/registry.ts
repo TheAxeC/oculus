@@ -1,8 +1,10 @@
 // Layer 2, client state. The registry is the vocabulary of ViewId: view modules describe themselves
 // and the route loader registers them, so no shell module imports a view by name and no view knows
 // where it is mounted. It is a state module like the rest of the navigation folder: the client
-// object builds one per page, the shell and the views both read it, and its one import is the
-// state layer's own text catalog, so the state layer names nothing of `views/` to hold it.
+// object builds one per page, the shell and the views both read it, and its one runtime import is
+// the state layer's own text catalog, so the state layer names nothing of `views/` to hold it. Its
+// type imports are the stores a badge hook reads, each below the navigation folder in the state
+// order or beside it in state/workbench.
 //
 // A registration's label, glyph and badge mark words are catalog keys rather than words: the label
 // reads through t() at the call site that draws it, the glyph key's value is a name in
@@ -14,36 +16,38 @@
 import type { Component } from 'svelte';
 import type { Instance, ViewId } from '../layout/index.ts';
 import type { LayoutStore } from '../layout.svelte.ts';
-import { lookup, t } from '../../words/text.ts';
-
-/** A split cell carries a theme hue, its count and its configured label. */
-export type BadgeCell = { count: number; color: string; label: string };
+import type { BadgeCell, RailBadgesStore } from '../rail-badges.svelte.ts';
+import type { CalendarStore } from '../../life/calendar.svelte.ts';
+import type { HpcStore } from '../../system/hpc.svelte.ts';
+import { lookup, t } from '../../shared/words/text.ts';
 
 /**
  * What a registration's badge hooks read of the client: the calendar's and the HPC queue's badge
- * words, and the rail badges' counts, hues, hover words and cells. The client object
+ * words, and the rail badges' counts, hues, hover words and cells, each taken out of its store's
+ * own type, so a store that changes a member's shape changes it here too. The client object
  * (state/client/context.ts) holds these stores, so it is handed to badgeOf as it is.
  */
 export type BadgeClient = {
-    calendar: { badgeText: () => string };
-    hpc: { badgeText: () => string };
-    railBadges: {
-        boardBadge: (view: string) => string;
-        boardBadgeTitle: (view: string) => string;
-        boardCells: (view: string) => BadgeCell[];
-        collectionBadge: (key: string) => string;
-        collectionBadgeTone: (key: string) => string;
-        collectionBadgeTitle: (key: string) => string;
-        applicationsBadge: () => string;
-        inboxBadge: () => string;
-        leadsBadge: () => string;
-        linkedinBadgeGlyph: () => string;
-        auditBadge: () => string;
-        queueBadgeTitle: () => string;
-        queueCells: () => BadgeCell[];
-        calendarBadgeTitle: () => string;
-        calendarCells: () => BadgeCell[];
-    };
+    calendar: Pick<CalendarStore, 'badgeText'>;
+    hpc: Pick<HpcStore, 'badgeText'>;
+    railBadges: Pick<
+        RailBadgesStore,
+        | 'boardBadge'
+        | 'boardBadgeTitle'
+        | 'boardCells'
+        | 'collectionBadge'
+        | 'collectionBadgeTone'
+        | 'collectionBadgeTitle'
+        | 'applicationsBadge'
+        | 'inboxBadge'
+        | 'leadsBadge'
+        | 'linkedinBadgeGlyph'
+        | 'auditBadge'
+        | 'queueBadgeTitle'
+        | 'queueCells'
+        | 'calendarBadgeTitle'
+        | 'calendarCells'
+    >;
 };
 
 /** The badge values shared by the view catalogue and pane tabs. */
@@ -96,7 +100,7 @@ export type Registration = {
      * tests/state/workbench/rail-badges.test.ts fails on a registration that lacks it.
      */
     badgeMark?: string;
-    /** A hue name from state/words/tones.ts; absent keeps the accent badge. */
+    /** A hue name from state/shared/words/tones.ts; absent keeps the accent badge. */
     badgeTone?: (state: BadgeClient) => string;
     /** The badge's hover words, supplied by the registration's state selectors. */
     badgeTitle?: (state: BadgeClient) => string;

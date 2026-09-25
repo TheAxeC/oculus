@@ -12,7 +12,7 @@ import { fields } from '../../data/helpers/guards.ts';
 import { mailKey } from '../../data/accounts/mail.ts';
 import type { InboxKind, InboxPayload, InboxThread, MailAccount } from '../../data/model/index.ts';
 import { splitInbox, untriagedActionable, type SplitInbox } from './inbox.ts';
-import type { EntitiesStore, WritesStore } from '../stores/shapes.ts';
+import type { EntitiesStore, WritesStore } from '../shared/stores/shapes.ts';
 
 /** What one write of the page may set on a thread's note. */
 export type TriageFields = {

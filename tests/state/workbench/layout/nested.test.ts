@@ -31,7 +31,7 @@ import {
     type Pages
 } from '../../../../src/lib/state/workbench/layout/index.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sources/config.ts';
-import { setCatalog } from '../../../../src/lib/state/words/text.ts';
+import { setCatalog } from '../../../../src/lib/state/shared/words/text.ts';
 import {
     bench,
     fakeStorage,

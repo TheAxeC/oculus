@@ -82,8 +82,8 @@
         type CollectionState
     } from '$lib/state/boards/collection';
     import { cardCursor } from '$lib/state/workbench/layout/instance';
-    import { lookup, t } from '$lib/state/words/text';
-    import { statusTone } from '$lib/state/words/tones';
+    import { lookup, t } from '$lib/state/shared/words/text';
+    import { statusTone } from '$lib/state/shared/words/tones';
     import { viewSourceFile } from '$lib/state/sessions/view-source';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';

@@ -5,7 +5,7 @@
 // literal, whatever expression the formatter is handed the catalog through.
 
 import { statusWordKey } from '../../../src/lib/state/sources/repositories.ts';
-import { registered } from '../../../src/lib/state/words/languages.ts';
+import { registered } from '../../../src/lib/state/shared/words/languages.ts';
 import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve, sep } from 'node:path';
@@ -166,7 +166,7 @@ const COMPUTED_PREFIXES = [
     },
     {
         // A language is named by the highlighter's own name for it, so a language registered in
-        // state/words/languages.ts without a name in config/text/statusbar.yml fails here.
+        // state/shared/words/languages.ts without a name in config/text/statusbar.yml fails here.
         file: 'lib/state/workbench/navigation/status.ts',
         start: 't(`statusbar.language_${known}`',
         keys: () => registered().map((name) => `statusbar.language_${name}`)

@@ -16,7 +16,7 @@
 import type { TickerAction, TickerRow } from '$lib/ui/display/ticker-rows';
 import { daysTone, type TickerItem, type TickerTarget } from '$lib/state/boards/ticker';
 import type { LayoutStore } from '$lib/state/workbench/layout.svelte';
-import { t } from '$lib/state/words/text';
+import { t } from '$lib/state/shared/words/text';
 import type { WriteAnswer, WritesStore } from '$lib/state/client/writes.svelte';
 
 /** How a status button's id starts, the status following it. */

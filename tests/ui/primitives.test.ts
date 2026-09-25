@@ -42,8 +42,14 @@ import {
     textCatalog,
     vocabCatalog
 } from '../../src/lib/data/sources/config.ts';
-import { glyph, setCatalog, setGlyphMode, setGlyphs, t } from '../../src/lib/state/words/text.ts';
-import { setVocab } from '../../src/lib/state/words/tones.ts';
+import {
+    glyph,
+    setCatalog,
+    setGlyphMode,
+    setGlyphs,
+    t
+} from '../../src/lib/state/shared/words/text.ts';
+import { setVocab } from '../../src/lib/state/shared/words/tones.ts';
 import { noop } from '../fixtures/doubles.ts';
 import { clientContext, createClientState, type ClientState } from '../fixtures/client.ts';
 
@@ -183,7 +189,7 @@ describe('Chip', () => {
         expect(source).toContain('max-width: 100%');
     });
 
-    // revert: src/lib/state/words/text.ts:114 => return false;
+    // revert: src/lib/state/shared/words/text.ts:114 => return false;
     it('marks a chip whose stand-in already reads as a bracketed tag, so it draws no second pair', () => {
         setGlyphMode('ascii');
         try {

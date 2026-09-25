@@ -12,7 +12,7 @@
         type Project
     } from '$lib/state/boards/structure/lines';
     import { inlineMarkdown } from '$lib/ui/html';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
 
     const {

@@ -8,8 +8,8 @@ import {
     loadConfig,
     textCatalog
 } from '../../../../src/lib/data/sources/config.ts';
-import { setCatalog, setGlyphs } from '../../../../src/lib/state/words/text.ts';
-import { setAppearance } from '../../../../src/lib/state/words/appearance.ts';
+import { setCatalog, setGlyphs } from '../../../../src/lib/state/shared/words/text.ts';
+import { setAppearance } from '../../../../src/lib/state/shared/words/appearance.ts';
 import { createClientState, type ClientState } from '../../../fixtures/client.ts';
 
 export const config = loadConfig(engineDir()).config;

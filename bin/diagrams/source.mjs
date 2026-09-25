@@ -1,11 +1,12 @@
 // Layer 4, tool. What the diagram readers of bin/diagrams/ share: the source tree read into memory,
-// the text with its comments blanked, the runtime import pattern and the layer rows and folder
+// the text with its comments blanked for the channel and write readers, the layer rows and folder
 // order the checks declare, an import specifier resolved to a module, and the pieces of Graphviz
 // text every diagram is written with (a quoted id, the header, a cluster, the node of something a
-// reader could not follow).
+// reader could not follow). A module's imports are read by imports.mjs, the reader the checks call.
 
 import { readFileSync, readdirSync } from 'node:fs';
 import { join, posix } from 'node:path';
+import { moduleAt } from './imports.mjs';
 
 /** The file whose `LAYERS` row list groups the layer diagram, relative to the engine directory. */
 export const BOUNDARIES = 'tests/checks/tree/boundaries.test.ts';
@@ -23,15 +24,6 @@ export const UNPLACED = 'not placed';
 export const KEYWORDS = new Set(
     'if for while switch catch return function typeof await new import super'.split(' ')
 );
-
-/**
- * The import statement of tests/checks/imports/graph.ts, its STATEMENT, so the diagrams and the
- * checks read the same runtime imports: the third group is the specifier, and a statement opening
- * `import type` or `export type` is no runtime import. tests/checks/diagrams/diagrams.test.ts
- * holds the two patterns to one text.
- */
-export const RUNTIME =
-    /(?<![\w$.])(?:(import|export)\s+(type\s+)?(?:[^'"`;]*?\s+from\s+)?|import\s*\(\s*)['"]([^'"]+)['"]/g;
 
 /**
  * @typedef {Map<string, string>} Sources Every module's text, keyed by its path relative to src.
@@ -118,12 +110,12 @@ export function resolveSpec(/** @type {string} */ from, /** @type {string} */ sp
     return joined.startsWith('..') ? null : joined;
 }
 
-/** The module file a resolved path is, trying the extensions an import leaves off. */
+/**
+ * The module file a resolved path is, or null where the source holds none, resolved by
+ * imports.mjs's moduleAt() as the checks resolve it.
+ */
 export function moduleFile(/** @type {Sources} */ sources, /** @type {string} */ path) {
-    for (const tail of ['', '.ts', '.js', '.svelte', '.svelte.ts', '/index.ts']) {
-        if (sources.has(path + tail)) return path + tail;
-    }
-    return null;
+    return moduleAt(path, (one) => sources.has(one));
 }
 
 /** The line an index falls on, from 1; uncomment() keeps every line break of the source. */
@@ -142,7 +134,19 @@ export function lineOf(/** @type {string} */ text, /** @type {number} */ index) 
  * @returns {{ id: string, line: string }}
  */
 export function unfollowed(path, text, index, what) {
-    const where = `${path}:${lineOf(text, index)}`;
+    return unfollowedAt(path, lineOf(text, index), what);
+}
+
+/**
+ * The same node line for something whose line is already known.
+ *
+ * @param {string} path Relative to src.
+ * @param {number} line
+ * @param {string} what
+ * @returns {{ id: string, line: string }}
+ */
+export function unfollowedAt(path, line, what) {
+    const where = `${path}:${line}`;
     const id = `? ${where}`;
     return { id, line: `${quote(id)} [label=${quote(`${where} ${what.trim()}`)}];` };
 }

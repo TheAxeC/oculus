@@ -3,7 +3,7 @@
 // repoShape, since the Changes panel's branch listing decides on it too.
 
 import type { RepoShape } from '$lib/state/sources/repositories';
-import { t } from '$lib/state/words/text';
+import { t } from '$lib/state/shared/words/text';
 
 /**
  * The few words a root's row carries at its end in the repository picker, and the empty string for

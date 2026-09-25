@@ -7,7 +7,7 @@
 // hands the shell what they read and the Views view reads them for itself.
 
 import { registrationGlyph, type Registration } from './registry.ts';
-import { t } from '../../words/text.ts';
+import { t } from '../../shared/words/text.ts';
 
 /** One configured group. View registrations name its stable id and their own order. */
 export type NavGroup = { id: string; label: string; glyph?: string; chord?: string };

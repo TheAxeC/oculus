@@ -11,7 +11,7 @@
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import EntryForm from '$lib/views/shared/forms/EntryForm.svelte';
     import type { SchemaField } from '$lib/state/boards/collection';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
 
     type Props = {
         /** The collection key, which is what the add form's write names its file by. */

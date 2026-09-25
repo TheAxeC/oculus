@@ -15,7 +15,7 @@ import { isMap, byKey, text as str } from '../../data/helpers/guards.ts';
 // the Focus view names reach it from here, beside the functions that take and return them.
 export type { Id, Project, Venue } from '../../data/model/index.ts';
 import { daysUntil } from './board/index.ts';
-import { UNKNOWN_TONE, toneOf } from '../words/tones.ts';
+import { UNKNOWN_TONE, toneOf } from '../shared/words/tones.ts';
 import { waitingLabel } from './waiting.ts';
 
 /**

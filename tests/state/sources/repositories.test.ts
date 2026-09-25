@@ -37,7 +37,7 @@ import {
 import { createRepositories } from '../../../src/lib/state/sources/repositories.svelte.ts';
 import { createWrites } from '../../../src/lib/state/client/writes.svelte.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
-import { setCatalog } from '../../../src/lib/state/words/text.ts';
+import { setCatalog } from '../../../src/lib/state/shared/words/text.ts';
 import type { LayoutStore } from '../../../src/lib/state/workbench/layout.svelte.ts';
 import type { TerminalsStore } from '../../../src/lib/state/sessions/terminals.svelte.ts';
 import type { WriteAnswer, WritesStore } from '../../../src/lib/state/client/writes.svelte.ts';

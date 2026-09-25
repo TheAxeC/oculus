@@ -23,7 +23,7 @@ import type {
     Snapshot
 } from '../../../data/model/index.ts';
 import type { NoticeAction, NoticesStore } from './notices.svelte.ts';
-import { t } from '../../words/text.ts';
+import { t } from '../../shared/words/text.ts';
 
 /**
  * Whether a session's last hook leaves it waiting on a permission prompt, Claude Code's

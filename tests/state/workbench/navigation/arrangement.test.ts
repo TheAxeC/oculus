@@ -16,7 +16,7 @@ import { LAYOUT_KEY } from '../../../../src/lib/state/workbench/layout.svelte.ts
 import { parseArrangement } from '../../../../src/lib/state/workbench/navigation/arrangement.ts';
 import { railPages } from '../../../../src/lib/state/workbench/navigation/rail.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sources/config.ts';
-import { setCatalog } from '../../../../src/lib/state/words/text.ts';
+import { setCatalog } from '../../../../src/lib/state/shared/words/text.ts';
 import {
     bench,
     docked,

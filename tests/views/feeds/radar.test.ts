@@ -13,8 +13,8 @@ import {
     vocabCatalog
 } from '../../../src/lib/data/sources/config.ts';
 import { feedsFixture } from '../../fixtures/feeds-fixture.ts';
-import { setCatalog, setGlyphs } from '../../../src/lib/state/words/text.ts';
-import { setVocab, toneOf } from '../../../src/lib/state/words/tones.ts';
+import { setCatalog, setGlyphs } from '../../../src/lib/state/shared/words/text.ts';
+import { setVocab, toneOf } from '../../../src/lib/state/shared/words/tones.ts';
 import type { Snapshot } from '../../../src/lib/data/model/index.ts';
 import type { Instance } from '../../../src/lib/state/workbench/layout/index.ts';
 import { noop } from '../../fixtures/doubles.ts';

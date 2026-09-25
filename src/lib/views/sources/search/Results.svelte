@@ -10,7 +10,7 @@
     import Empty from '$lib/ui/frame/Empty.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { firstLine, hitParts } from '$lib/state/sources/search';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
     import type { SearchAnswer, SearchFile, SearchHit } from '$lib/state/sources/search';
 
     type Props = {

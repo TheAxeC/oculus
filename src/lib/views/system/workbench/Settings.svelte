@@ -19,7 +19,7 @@
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Appearance from './Appearance.svelte';
     import RailEditor from './RailEditor.svelte';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
 
     let { instance }: ViewProps = $props();

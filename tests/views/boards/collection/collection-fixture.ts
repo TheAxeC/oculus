@@ -11,8 +11,8 @@ import {
     textCatalog,
     vocabCatalog
 } from '../../../../src/lib/data/sources/config.ts';
-import { setCatalog, setGlyphs } from '../../../../src/lib/state/words/text.ts';
-import { setVocab } from '../../../../src/lib/state/words/tones.ts';
+import { setCatalog, setGlyphs } from '../../../../src/lib/state/shared/words/text.ts';
+import { setVocab } from '../../../../src/lib/state/shared/words/tones.ts';
 import type { CollectionState } from '../../../../src/lib/state/boards/collection.ts';
 import type {
     Entry,

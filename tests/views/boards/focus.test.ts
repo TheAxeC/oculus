@@ -23,7 +23,7 @@ import {
     statusMarkTone,
     statusTone,
     UNKNOWN_TONE
-} from '../../../src/lib/state/words/tones.ts';
+} from '../../../src/lib/state/shared/words/tones.ts';
 import type { Instance } from '../../../src/lib/state/workbench/layout/index.ts';
 import { noop } from '../../fixtures/doubles.ts';
 import { clientContext, createClientState, type ClientState } from '../../fixtures/client.ts';
@@ -69,7 +69,7 @@ describe('the Live HPC pill', () => {
         expect(body).not.toContain('HPC job');
     });
 
-    // revert: src/lib/views/boards/focus/CommandCenterView.svelte:116 => delete
+    // revert: src/lib/views/boards/focus/CommandCenterView.svelte:119 => delete
     it('is present with counts from the shared HPC state, its glyph beside the words', () => {
         receive({
             channel: 'hpc',
@@ -135,7 +135,7 @@ describe('the board', () => {
     });
 
     it('draws a column whose tone the palette lacks, or that names none, and its header in the unknown tone', () => {
-        // revert: src/lib/state/words/tones.ts:108 => return tone;
+        // revert: src/lib/state/shared/words/tones.ts:108 => return tone;
         receive({
             channel: 'config',
             version: 2,

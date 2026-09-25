@@ -13,8 +13,8 @@
         type RadarEntry
     } from '$lib/state/feeds/radar';
     import { asText } from '$lib/state/forms/schema';
-    import { t } from '$lib/state/words/text';
-    import { toneOf } from '$lib/state/words/tones';
+    import { t } from '$lib/state/shared/words/text';
+    import { toneOf } from '$lib/state/shared/words/tones';
 
     type Props = {
         bucket: RadarBucket;

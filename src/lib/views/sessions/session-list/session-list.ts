@@ -2,7 +2,7 @@
 // independently of the parent view and are unit-tested without a DOM.
 
 import type { MenuItem } from '$lib/ui/menu/menu-items';
-import { t } from '$lib/state/words/text';
+import { t } from '$lib/state/shared/words/text';
 
 export type SessionRow = { id: string; live: boolean; cwd: string | null };
 

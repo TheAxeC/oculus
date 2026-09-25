@@ -278,17 +278,17 @@
 <path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M244.9,-633C252.42,-629.84 260.92,-626.01 268.4,-622 277.74,-616.99 279.1,-614.1 288.4,-609 310.04,-597.13 335.31,-585.64 355.18,-577.11"/>
 <polygon fill="currentColor" stroke="currentColor" points="355.88,-579.1 360.58,-574.81 354.24,-575.23 355.88,-579.1"/>
 </g>
-<!-- state/feeds/life/calendar -->
+<!-- state/life/calendar -->
 <g id="node28" class="node">
-<title>state/feeds/life/calendar</title>
-<polygon fill="none" stroke="currentColor" points="446.68,-1253.8 334.45,-1253.8 334.45,-1232.2 446.68,-1232.2 446.68,-1253.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="390.56" y="-1240" font-family="Helvetica,Arial,sans-serif" font-size="10.00">state/feeds/life/calendar</text>
+<title>state/life/calendar</title>
+<polygon fill="none" stroke="currentColor" points="434.74,-1253.8 346.39,-1253.8 346.39,-1232.2 434.74,-1232.2 434.74,-1253.8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="390.56" y="-1240" font-family="Helvetica,Arial,sans-serif" font-size="10.00">state/life/calendar</text>
 </g>
-<!-- ch calendar&#45;&gt;state/feeds/life/calendar -->
+<!-- ch calendar&#45;&gt;state/life/calendar -->
 <g id="edge4" class="edge">
-<title>ch calendar&#45;&gt;state/feeds/life/calendar</title>
-<path fill="none" stroke="currentColor" d="M253.69,-882.3C259.42,-885.05 264.77,-888.83 268.4,-894 310.71,-954.33 239.39,-1169.97 288.4,-1225 298.23,-1236.05 312.32,-1241.83 326.86,-1244.59"/>
-<polygon fill="currentColor" stroke="currentColor" points="326.27,-1246.63 332.52,-1245.48 326.92,-1242.48 326.27,-1246.63"/>
+<title>ch calendar&#45;&gt;state/life/calendar</title>
+<path fill="none" stroke="currentColor" d="M253.69,-882.3C259.42,-885.05 264.77,-888.83 268.4,-894 310.71,-954.33 239.39,-1169.97 288.4,-1225 300.91,-1239.06 320.29,-1244.58 338.75,-1246.22"/>
+<polygon fill="currentColor" stroke="currentColor" points="338.41,-1248.31 344.53,-1246.59 338.67,-1244.12 338.41,-1248.31"/>
 </g>
 <!-- ch calendar&#45;&gt;routes/+page -->
 <g id="edge3" class="edge">
@@ -332,17 +332,17 @@
 <path fill="none" stroke="currentColor" d="M250.36,-568.97C257.25,-571.8 263.99,-575.95 268.4,-582 296.09,-620.09 256.48,-758.37 288.4,-793 301.04,-806.72 320.25,-812.24 338.54,-813.96"/>
 <polygon fill="currentColor" stroke="currentColor" points="338.12,-816.03 344.25,-814.35 338.4,-811.84 338.12,-816.03"/>
 </g>
-<!-- state/feeds/life/present -->
+<!-- state/life/present -->
 <g id="node29" class="node">
-<title>state/feeds/life/present</title>
-<polygon fill="none" stroke="currentColor" points="444.18,-713.8 336.94,-713.8 336.94,-692.2 444.18,-692.2 444.18,-713.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="390.56" y="-700" font-family="Helvetica,Arial,sans-serif" font-size="10.00">state/feeds/life/present</text>
+<title>state/life/present</title>
+<polygon fill="none" stroke="currentColor" points="432.25,-713.8 348.88,-713.8 348.88,-692.2 432.25,-692.2 432.25,-713.8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="390.56" y="-700" font-family="Helvetica,Arial,sans-serif" font-size="10.00">state/life/present</text>
 </g>
-<!-- ch config&#45;&gt;state/feeds/life/present -->
+<!-- ch config&#45;&gt;state/life/present -->
 <g id="edge10" class="edge">
-<title>ch config&#45;&gt;state/feeds/life/present</title>
-<path fill="none" stroke="currentColor" d="M250,-569.25C256.88,-572.09 263.71,-576.17 268.4,-582 297.62,-618.34 255.16,-652.29 288.4,-685 299.27,-695.7 314.16,-701.26 329.18,-703.92"/>
-<polygon fill="currentColor" stroke="currentColor" points="328.81,-705.99 335.05,-704.78 329.42,-701.83 328.81,-705.99"/>
+<title>ch config&#45;&gt;state/life/present</title>
+<path fill="none" stroke="currentColor" d="M250,-569.25C256.88,-572.09 263.71,-576.17 268.4,-582 297.62,-618.34 255.16,-652.29 288.4,-685 302.14,-698.53 322.33,-703.85 341.06,-705.47"/>
+<polygon fill="currentColor" stroke="currentColor" points="340.8,-707.55 346.92,-705.83 341.06,-703.36 340.8,-707.55"/>
 </g>
 <!-- state/sessions/terminals -->
 <g id="node31" class="node">
@@ -632,11 +632,11 @@
 <path fill="none" stroke="currentColor" d="M253.57,-492.38C259.3,-495.13 264.69,-498.88 268.4,-504 296.82,-543.2 255.62,-685.35 288.4,-721 299.96,-733.58 317.04,-739.27 333.89,-741.46"/>
 <polygon fill="currentColor" stroke="currentColor" points="333.39,-743.52 339.57,-742.04 333.82,-739.34 333.39,-743.52"/>
 </g>
-<!-- ch portfolio&#45;&gt;state/feeds/life/present -->
+<!-- ch portfolio&#45;&gt;state/life/present -->
 <g id="edge42" class="edge">
-<title>ch portfolio&#45;&gt;state/feeds/life/present</title>
-<path fill="none" stroke="currentColor" d="M253.5,-492.43C259.24,-495.18 264.64,-498.92 268.4,-504 316.5,-569.09 233.09,-625.91 288.4,-685 299.02,-696.35 314.14,-702.06 329.45,-704.65"/>
-<polygon fill="currentColor" stroke="currentColor" points="328.76,-706.67 334.99,-705.42 329.34,-702.52 328.76,-706.67"/>
+<title>ch portfolio&#45;&gt;state/life/present</title>
+<path fill="none" stroke="currentColor" d="M253.5,-492.43C259.24,-495.18 264.64,-498.92 268.4,-504 316.5,-569.09 233.09,-625.91 288.4,-685 301.69,-699.2 322.01,-704.57 340.96,-706.05"/>
+<polygon fill="currentColor" stroke="currentColor" points="340.8,-708.15 346.9,-706.37 341.02,-703.95 340.8,-708.15"/>
 </g>
 <!-- ch portfolio&#45;&gt;state/workbench/navigation/notice&#45;sources -->
 <g id="edge43" class="edge">

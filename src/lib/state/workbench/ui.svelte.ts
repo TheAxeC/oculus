@@ -6,12 +6,12 @@
 // The six appearance values save together under the one key, so what a browser was left looking
 // like comes back whole, and so do the status bar's own two: the items the reader hid from it and
 // whether its notifications are kept quiet. What the six start as is config/appearance.yml's, read
-// through state/words/appearance.ts, and never a literal here.
+// through state/shared/words/appearance.ts, and never a literal here.
 //
 // It saves the same way the layout store does, under its own key and through the same small slice
 // of Storage, so a test hands it a plain object and no test touches localStorage.
 
-import { crtDefault, defaultTheme, themes, wallpaperOnTheme } from '../words/appearance.ts';
+import { crtDefault, defaultTheme, themes, wallpaperOnTheme } from '../shared/words/appearance.ts';
 
 /** The key the appearance and the per-instance state are saved under. */
 export const UI_KEY = 'oculus.ui.v1';

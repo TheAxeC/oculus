@@ -23,7 +23,7 @@ import {
 import { createNotices } from '../../../../src/lib/state/workbench/navigation/notices.svelte.ts';
 import { createWrites } from '../../../../src/lib/state/client/writes.svelte.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sources/config.ts';
-import { setCatalog, t } from '../../../../src/lib/state/words/text.ts';
+import { setCatalog, t } from '../../../../src/lib/state/shared/words/text.ts';
 import { createClientState, type ClientState } from '../../../fixtures/client.ts';
 import { fakeStorage } from '../layout/layout-fixture.ts';
 

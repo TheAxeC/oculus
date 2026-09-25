@@ -13,7 +13,7 @@ import {
     type RailProblem,
     type RailRead
 } from '../../../data/sources/config/rail.ts';
-import { t } from '../../words/text.ts';
+import { t } from '../../shared/words/text.ts';
 
 export { arrangementKeys, glyphNames, readRail };
 export type { RailEntry, RailProblem, RailRead };

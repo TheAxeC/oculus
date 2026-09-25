@@ -19,7 +19,7 @@
         type RadarEntry
     } from '$lib/state/feeds/radar';
     import { posting } from '$lib/views/shared/forms/posting';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
 
     const {

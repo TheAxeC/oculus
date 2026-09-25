@@ -3,7 +3,7 @@
 
 import type { Id, Project, Snapshot, Venue } from '../../../data/model/index.ts';
 import { byKey, strings, text as str } from '../../../data/helpers/guards.ts';
-import { t } from '../../words/text.ts';
+import { t } from '../../shared/words/text.ts';
 import { waitingLabel } from '../waiting.ts';
 import type { BoardItem, BoardStats, TypeCount, VenueCount } from './presets.ts';
 

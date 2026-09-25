@@ -17,7 +17,7 @@
     // shows up within a second of being saved.
 
     import { allFindings } from '$lib/state/workbench/navigation/status';
-    import { t } from '$lib/state/words/text';
+    import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 

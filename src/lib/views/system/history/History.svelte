@@ -36,8 +36,8 @@
     import Search from '$lib/ui/controls/Search.svelte';
     import Toolbar from '$lib/ui/frame/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import { stamp } from '$lib/state/words/format';
-    import { t } from '$lib/state/words/text';
+    import { stamp } from '$lib/state/shared/words/format';
+    import { t } from '$lib/state/shared/words/text';
     import { filterOf, shown, undoSaid } from './rows';
     import type { Shown } from './rows';
     import { matching, type Change } from '$lib/state/sessions/changes.svelte';

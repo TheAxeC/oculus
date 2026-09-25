@@ -19,8 +19,8 @@ import {
     textCatalog,
     vocabCatalog
 } from '../../../src/lib/data/sources/config.ts';
-import { setCatalog, setGlyphs } from '../../../src/lib/state/words/text.ts';
-import { setVocab } from '../../../src/lib/state/words/tones.ts';
+import { setCatalog, setGlyphs } from '../../../src/lib/state/shared/words/text.ts';
+import { setVocab } from '../../../src/lib/state/shared/words/tones.ts';
 import { badgeOf } from '../../../src/lib/state/workbench/navigation/registry.ts';
 import { installBadges } from './rail-badges-fixture.ts';
 import { registerAll, registerCollections } from '../../../src/routes/views.ts';
@@ -409,7 +409,7 @@ describe('registered board badge descriptors', () => {
 });
 
 describe('a badge that is a mark', () => {
-    // revert: src/lib/state/workbench/navigation/registry.ts:136 => const words = marked ? mark : text;
+    // revert: src/lib/state/workbench/navigation/registry.ts:140 => const words = marked ? mark : text;
     it('says on hover what the mark means, in words from the catalog, and never the mark', () => {
         const catalog = textCatalog(config);
         client.registry.registerView({
@@ -425,7 +425,7 @@ describe('a badge that is a mark', () => {
         expect(badge.title).not.toContain(glyphCatalog(config).bang);
     });
 
-    // revert: src/lib/state/workbench/navigation/registry.ts:136 => const words = marked ? lookup(means ?? '') : text;
+    // revert: src/lib/state/workbench/navigation/registry.ts:140 => const words = marked ? lookup(means ?? '') : text;
     it('hovers a mark whose registration names no words by the view name, and does not throw', () => {
         const catalog = textCatalog(config);
         const { badgeMark, ...unworded } = present(viewFor('linkedin'), 'linkedin view');

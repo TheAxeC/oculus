@@ -3,8 +3,8 @@
 
 import type { UsagePayload } from '../../data/model/index.ts';
 import { byKey } from '../../data/helpers/guards.ts';
-import type { EntitiesStore, WritesStore } from '../stores/shapes.ts';
-import { t } from '../words/text.ts';
+import type { EntitiesStore, WritesStore } from '../shared/stores/shapes.ts';
+import { t } from '../shared/words/text.ts';
 
 /**
  * The route's error words, each answered by a catalog string; anything else is the request failing.

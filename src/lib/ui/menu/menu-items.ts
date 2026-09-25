@@ -14,13 +14,13 @@ export type MenuItem = {
     title?: string;
     active?: boolean;
     glyph?: string;
-    /** A hue name from state/words/tones.ts, drawn as a dot before the label. */
+    /** A hue name from state/shared/words/tones.ts, drawn as a dot before the label. */
     tone?: string;
     /** Live text drawn at the end of the item; an empty string draws no badge. */
     badge?: string;
     /** A glyph name drawn in the badge before its text. */
     badgeGlyph?: string;
-    /** A hue name from state/words/tones.ts; absent uses the accent pair. */
+    /** A hue name from state/shared/words/tones.ts; absent uses the accent pair. */
     badgeTone?: string;
     /** The badge's hover words. */
     badgeTitle?: string;

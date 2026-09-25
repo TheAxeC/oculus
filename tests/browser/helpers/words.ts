@@ -3,9 +3,10 @@
 // through the same flattening and never from an English string typed into a spec.
 //
 // The flattening is data/sources/config.ts's, the same call tests/checks/source/text.test.ts makes.
-// The lookup and the interpolation are repeated here rather than imported from state/words/text.ts,
-// because that module pulls in state/words/glyphmode.svelte.ts and a rune outside a Svelte build is
-// a ReferenceError; a Playwright spec runs under plain Node with no Svelte plugin.
+// The lookup and the interpolation are repeated here rather than imported from
+// state/shared/words/text.ts, because that module pulls in state/shared/words/glyphmode.svelte.ts
+// and a rune outside a Svelte build is a ReferenceError; a Playwright spec runs under plain Node
+// with no Svelte plugin.
 
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
 import { byKey } from '../../../src/lib/data/helpers/guards.ts';

@@ -22,7 +22,7 @@ import {
     iconSet,
     loadConfig
 } from '../../../src/lib/data/sources/config.ts';
-import { setGlyphs, setIcons } from '../../../src/lib/state/words/text.ts';
+import { setGlyphs, setIcons } from '../../../src/lib/state/shared/words/text.ts';
 import { noop } from '../../fixtures/doubles.ts';
 import { clientContext, createClientState } from '../../fixtures/client.ts';
 
