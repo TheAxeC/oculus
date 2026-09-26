@@ -117,3 +117,59 @@ All commands were run from the worktree's tools/oculus.
 - Unit-test coverage of the parser findings per line, beyond revert-check going red.
 
 Reviewer usage: about 90k tokens, 60 tool uses, 85 minutes.
+
+## Repair round 1, refuted
+
+Commands rerun from the worktree's tools/oculus, with summary lines verbatim:
+- c1 `npx vitest run --reporter=dot`: `Test Files  1 failed | 319 passed (320)`, `Tests  1 failed | 5042 passed (5043)`. The only failure is the expected one: `tests/views/system/help.test.ts > the manual itself > holds every key of the sheet in its table` (`expected [ 'n' ] to deeply equal []`).
+- c2 `npm run check`: `COMPLETED 1431 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS`
+- c3 `npm run build`: `build exit 0`
+- c4 `npm run format:check`: `All matched files use Prettier code style!`
+- c5 `npm run lint`: `lint exit 0`
+- c6 ASCII perl gate: printed nothing, `ascii exit 0`
+- c7: `size 0`, `folder 0`
+- c8 `npm run diagrams` twice: `first 34b1a9f44a31cfd9d9a15b74e05e2fc5e1d95c84`, `second 34b1a9f44a31cfd9d9a15b74e05e2fc5e1d95c84`. The hash before either run was the same.
+- c9 build, then `npx playwright test`: `399 passed (6.3m)`, `playwright exit 0`
+- Revert checks:
+  - Unit files (follow.test, session-list.test, compose.test, routes/sessions/transcript.test): `52 reverts, 0 unproven, 5 unchecked`. The 5 unchecked are base cases of transcript.test that this step did not change.
+  - Browser (sessions-page.spec, composer.spec): `16 reverts, 0 unproven, 0 unchecked`.
+  - Every revert the round report claims for items 2, 6, 7, 11, 13 and 16 came back red.
+- c11: `BEFORE tmp=0 tmux=0 sock=0` and `AFTER tmp=0 tmux=0 sock=0`, where sock is `ps -axo command | grep -c "[t]mux.*-S $TMPDIR/oculus-browser-"`. After the revert runs the counts were still 0/0/0. The worktree holds 112 modified and 34 untracked entries, and my runs did not change them.
+
+Closures checked and found to hold:
+- Item 2: `followView` makes the workspace folder the head row, and the rows above it are gone. The browser case asserts `hub:page-spec` as the head, no `hub:` row, the pin holding, and the unpin going back to the selection.
+- Item 13: the composer's start is always an array, and `vector()` puts `env` in front of a one-word command. The string commands that remain are the base's own (chat, task, latex, redownload).
+- Item 15: allow-duplication.txt only loses lines. wall.test.ts adds no SOLID key. The two `.pick:hover, .hide:hover` keys are renamed to `.row:hover` for the rewritten markup, with the same count and reason.
+- Item 16: `words()` exists once and throws on a missing key, and the route refuses an export when no catalog is handed to it.
+- Item 17: `endLeftoverTmux` only runs `tmux -S <dir>/tmux.sock kill-server`. It does so for a socket file inside a `$TMPDIR/oculus-browser-*` directory, and never without `-S`. The server's environment does not pass `TMUX`, so the user's default tmux server cannot be reached.
+- Items 11, 12, 18, 19 and 21 hold on read.
+
+Findings:
+- **Standards: HELP.md:89, :103 and :105 (the round report's Doc text, item 20).** Each of these three lines is a table row: `| files | Files | ... |`, `| session-list | Sessions | ... |` and `| terminal | Terminal | ... |`. The Doc text says "Replace :89 with", and likewise for :103 and :105, but each replacement is a bare prose sentence with no cells. Applied as written, it would delete the `files`, `session-list` and `terminal` rows of the view table, including the whole long description in the `files` row. The brief asks for "the current line as `grep -n` prints it and its replacement", and the Doc text quotes none of the current lines.
+- **Proof: sessions-page.spec.ts, item 6.**
+  - The contrast case turns the wallpaper off (`wallpaper(page, false)`) before it measures anything, and turns it back on at the end. The wallpaper is on by default.
+  - Item 15's closure makes the Composer `.box` and SteerBox `.box` `background: transparent` under `body.wall` (Composer.svelte:409-411, SteerBox.svelte:163-165). So the surface the composer's words actually sit on by default is never measured under any theme.
+  - `inked()` only measures elements that have their own text nodes. The prompt box's placeholder is therefore never measured, and neither is any SVG glyph.
+- **Proof: Menu.svelte and MenuOpener.svelte `inherit` (item 6's "the menu glyph through Menu `inherit`").**
+  - The fix is `.opener.bare.inherit { color: inherit; }`, set by `SessionWorkspace.svelte:170`.
+  - No case names a revert of it. The contrast case cannot see the glyph, because it is an SVG with no text node.
+  - The claimed defect fix to this new ui prop is therefore not proven.
+- **Behaviour: Tree.svelte `rootActions`, reached through item 2's head row.**
+  - In follow mode the head row is the workspace folder (named, for example, `page-spec`), but its actions are still the root's.
+  - Its Collapse-all collapses the whole enclosing root.
+  - Its Remove-root, drawn for any root that is not fixed, removes the whole enclosing root rather than anything named by the row it sits on. The control's title names the root key.
+  - This case is not reported and not tested.
+- **Proof: round report "Correction to the first report (item 12)".** It says "Files.svelte is 540 lines, the .svelte limit, which is the same count as the base". `git show 0249f8f9:tools/oculus/src/lib/views/sources/files/Files.svelte | wc -l` prints 531. The file now sits exactly at the 540 limit that `bin/size-check.sh:29` enforces.
+- **Standards: pty/sessions.ts:8-9, head comment (item 14).**
+  - It says a composer start carries "the account as one `-e NAME=folder` pair".
+  - For the default account no `-e` pair is passed. Instead `env -u CLAUDE_CONFIG_DIR` or `env -u CODEX_HOME` leads the argv (compose.ts:128-131).
+  - The sentence is false for the default case.
+- **Standards: overrides.ts `setFlag(sessionId, flag, hidden, path)`.** The parameter that now sets any flag, `top` included, is still named `hidden`.
+
+## Not checked
+- The on-screen look in Axel's Chrome.
+- Whether the real `claude` and `codex` CLIs accept `--` before the prompt, and the Codex `model_reasoning_effort` values.
+- The browser revert directives of the other specs this round changed (session-list.spec, session-tabs.spec, repositories.spec, files.spec and the remapped ones). Only sessions-page.spec and composer.spec were rerun.
+- The round-0 eslint-disable lines (the three `no-control-regex` in sessions.ts, compose.ts and agents.ts, and the one `no-dynamic-delete` in overrides.ts), weighed against the no-exemption rule. These predate this round.
+
+Reviewer usage: about 75k tokens, 45 tool uses, 40 minutes.

@@ -62,7 +62,15 @@ dispatch:      # X3b, Q67 and S2 in flight; X3a and X3c ruled, specced when a sl
   report: tools/oculus/.scratch/migration/agents/reviews/S2-report.md
   refuter: agents/reviews/S2-refuter.md (claude:opus, native Agent a90a5b0a448470e78)
   landing: not-started
-  round: 1  # sent 2026-09-26 over the uncommitted worktree tree at 0249f8f9; report back 2026-09-26, round refuter a646099ef1b407116 running
+  round: 1  # sent 2026-09-26 over the uncommitted worktree tree at 0249f8f9; report back 2026-09-26; refuted by a646099ef1b407116 (claude:opus, 189,405 tokens, 68 tool uses, 17 min), appended to S2-refuter.md
+  landing_fixes:  # the round refutation's findings, all inside the brief, fixed at landing
+  - HELP.md :89 :103 :105 Doc text rewritten as table rows keeping the files, session-list and terminal cells
+  - sessions-page.spec contrast case measured with the wallpaper on (the default), the prompt placeholder and the SVG glyphs included
+  - a browser case that fails with Menu/MenuOpener `inherit` reverted
+  - Tree.svelte rootActions: in follow mode the head row's Collapse-all and Remove act on the workspace folder or are not drawn, with a case
+  - Files.svelte back under the 540-line limit with room (base 531)
+  - pty/sessions.ts:8-9 head comment names the `env -u` form for the default account
+  - overrides.ts setFlag parameter `hidden` renamed to what it sets
 ```
 
 ## The standing demands (from Axel, in force)
