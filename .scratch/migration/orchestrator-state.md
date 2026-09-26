@@ -42,6 +42,8 @@ dispatch:      # X3b in flight (repair round 1); Q76 landed 2026-09-26. The libr
   refuter: agents/reviews/X3b-refuter.md (claude:opus, native Agent a8689ea922c90a936, 268,477 tokens, 101 tool uses, 57 min)
   landing: not-started
   round: 1  # sent 2026-09-26 over the uncommitted worktree tree at a8848c49: the refuter's 16 findings, each with its ruling, all inside the brief
+  round 1 report: back 2026-09-26 (311,129 tokens, 397 tool uses, 27,509 s for the whole session), appended to X3b-report.md
+  round 1 refuter: claude:opus native agent ac86b667fb134aca7, sampled under option (b); the round's tracked-file delta in the session scratchpad (x3b-round-delta.diff)
 ```
 
 ## The standing demands (from Axel, in force)
