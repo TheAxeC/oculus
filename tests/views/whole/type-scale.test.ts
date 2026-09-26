@@ -67,9 +67,9 @@ const VIEWS: Record<string, string> = {
     'system/history/History.svelte':
         '.when=fs-sm | .kind=fs-xs | .file, .lbl=fs-sm | .what, .value=fs-md | .empty, .said=fs-md | .raw=fs-sm',
     'personal/calendar/Calendar.svelte': 'footer=fs-sm',
-    'personal/calendar/Accounts.svelte': '.provider, .when=fs-sm | .hint=fs-sm',
+    'shared/accounts/AccountList.svelte': '.provider, .when, .hint=fs-sm | .said=fs-sm',
     'personal/calendar/Agenda.svelte': 'h3=fs-sm | .where=fs-sm',
-    'personal/calendar/Head.svelte': '.meta=fs-sm',
+    'shared/accounts/ConnectorHead.svelte': '.meta=fs-sm',
     'system/hpc/Hpc.svelte': 'footer=fs-sm',
     'system/usage/Usage.svelte':
         '.window-name, .live-row=fs-sm | .refresher=fs-xs | .live h3, .history h2=fs-sm | .session=fs-xs',
@@ -127,8 +127,15 @@ const VIEWS: Record<string, string> = {
     'system/hpc/Log.svelte': 'header=fs-sm | pre=fs-xs',
     'system/hpc/Quota.svelte': '.quota=fs-sm | h3=fs-sm',
     'system/hpc/Recent.svelte': 'summary=fs-sm | details :global(table)=fs-sm',
-    'feeds/inbox/Accounts.svelte': '.provider, .when=fs-sm | .hint=fs-sm',
-    'feeds/inbox/Head.svelte': '.meta=fs-sm',
+    'shared/accounts/AddAccount.svelte': '.said=fs-sm | .waiting=fs-sm',
+    'shared/accounts/NoAccounts.svelte': '',
+    'shared/accounts/RemoveAccount.svelte': '',
+    'personal/account-setup/AccountSetup.svelte':
+        '.intro, .waiting=fs-sm | .failed=fs-sm | h3=fs-lg',
+    'personal/account-setup/CopyValue.svelte': 'code=fs-sm',
+    'personal/account-setup/GoogleSteps.svelte': '.note=fs-sm',
+    'personal/account-setup/HalfForm.svelte': '.said=fs-sm',
+    'personal/account-setup/MicrosoftSteps.svelte': '.note=fs-sm',
     'feeds/inbox/InboxCard.svelte': '.age=fs-sm | .sub=fs-md | .snippet=fs-sm',
     'feeds/leads/LeadCard.svelte': '.deadline=fs-sm | .sub=fs-md',
     'feeds/linkedin/PostCard.svelte': '.date=fs-sm',
@@ -285,7 +292,7 @@ describe('the view type scale', () => {
         ).toEqual(Object.keys(VIEWS).sort());
     });
 
-    // revert: tests/views/whole/type-scale.test.ts:261 => delete
+    // revert: tests/views/whole/type-scale.test.ts:266 => delete
     it('audits that every ui component is listed in the pass-through audit', () => {
         const ui = 'src/lib/ui';
         expect(files(ui).sort()).toEqual(

@@ -20,3 +20,15 @@ export type ConnectAccountStatus = 'connected' | 'not-connected' | 'error';
 
 /** A connector as a whole: `unconfigured` when the machine names no account. */
 export type ConnectStatus = 'ok' | 'error' | 'unconfigured';
+
+/**
+ * What the account setup page reads from `GET /api/connect`: which providers this machine holds
+ * the client half of, and the redirect addresses and scopes the connect flow uses, which the page
+ * shows as they are so what the reader registers at a provider is what the server sends there.
+ * The client half itself is never in it.
+ */
+export type ConnectSetup = {
+    ready: Record<ConnectProvider, boolean>;
+    redirects: Record<ConnectKind, string>;
+    scopes: Record<ConnectKind, Record<ConnectProvider, string>>;
+};

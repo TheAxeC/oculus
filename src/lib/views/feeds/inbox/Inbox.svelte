@@ -16,8 +16,9 @@
 
 <script lang="ts">
     // Layer 3, view. The inbox plate read live from the reader's own mailboxes: the connector's
-    // head, one row per configured account with its Connect control, and the plate in four sections
-    // by what each thread wants.
+    // head with its account controls, the Add form while it is open, one row per configured
+    // account, and the plate in four sections by what each thread wants. A machine with no account
+    // says so and offers the Add form in its place.
     //
     // Everything drawn here comes from the `inbox` channel, so the view holds no copy of the plate
     // and a publish redraws it. Search and the triaged disclosure are this view instance's own
@@ -28,8 +29,10 @@
     import Search from '$lib/ui/controls/Search.svelte';
     import Toolbar from '$lib/ui/frame/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import Accounts from './Accounts.svelte';
-    import Head from './Head.svelte';
+    import AccountList from '../../shared/accounts/AccountList.svelte';
+    import AddAccount from '../../shared/accounts/AddAccount.svelte';
+    import ConnectorHead from '../../shared/accounts/ConnectorHead.svelte';
+    import NoAccounts from '../../shared/accounts/NoAccounts.svelte';
     import InboxCard from './InboxCard.svelte';
     import Reveal from '../../shared/card/Reveal.svelte';
     import {
@@ -38,16 +41,16 @@
         parseInboxState,
         plateCount,
         type InboxState,
-        type InboxThread,
-        type MailAccount
+        type InboxThread
     } from '$lib/state/feeds/inbox';
+    import type { HeadWords } from '$lib/state/life/accounts';
     import { t } from '$lib/state/shared/words/text';
     import { cardCursor } from '$lib/state/workbench/layout/instance';
     import { useState } from '$lib/state/client/use';
 
     const {
         clock: { startMinuteClock },
-        inbox: { archive, busy, connect, connecting, refresh, reply, split, state: plate, triage },
+        inbox: { archive, busy, refresh, reply, split, state: plate, triage },
         ui: { instanceState, setInstanceState }
     } = useState();
 
@@ -67,6 +70,23 @@
     const triaged = $derived(inboxSearch(sections.triaged, held.search));
     const liveCount = $derived(plateCount(sections));
     let said: string = $state('');
+    /** Whether the Add form is open, which is this view's own and no other's. */
+    let adding = $state(false);
+
+    /** The head's words, read from the catalog at each draw. */
+    function headWords(): HeadWords {
+        return {
+            polling: t('inbox.polling'),
+            unconfigured: t('inbox.unconfigured'),
+            error: t('inbox.error'),
+            live: t('inbox.live'),
+            asOf: (at) => t('inbox.as_of', at),
+            asOfLate: (at) => t('inbox.as_of_late', at),
+            retrying: (minutes) => t('inbox.retrying', minutes),
+            every: (minutes) => t('inbox.every', minutes),
+            refresh: t('inbox.refresh_now')
+        };
+    }
 
     function write(next: Partial<InboxState>): void {
         setInstanceState(instance.id, { ...held, ...next });
@@ -128,20 +148,33 @@
 
 <Pane title={t('views.inbox')} toolbar={tools}>
     <div class="inbox" data-instance={instance.id}>
-        <Head {data} onrefresh={() => void refresh()} />
+        <ConnectorHead
+            {data}
+            words={headWords()}
+            notice={data?.notesError ? t('inbox.notes_error', data.notesError) : ''}
+            onrefresh={() =>
+                void refresh().then((answer) => (said = answer.ok ? '' : (answer.error ?? '')))}
+            {adding}
+            onadd={() => (adding = !adding)}
+        />
+        {#if adding}
+            <AddAccount kind="mail" onclose={() => (adding = false)} />
+        {/if}
 
         {#if data && data.accounts.length > 0}
-            <Accounts
-                rows={data.accounts}
-                {connecting}
-                onconnect={(account: MailAccount) => void connect(account)}
-            />
+            <AccountList kind="mail" rows={data.accounts} />
         {/if}
 
         {#if data === null}
             <Empty message={t('app.waiting')} glyph="inbox" />
         {:else if data.status === 'unconfigured'}
-            <Empty message={t('inbox.no_accounts')} glyph="inbox" />
+            {#if !adding}
+                <NoAccounts
+                    message={t('accounts.empty_mail')}
+                    glyph={t('views.inbox_glyph')}
+                    onadd={() => (adding = true)}
+                />
+            {/if}
         {:else}
             {#if said !== ''}
                 <p class="said">{said}</p>

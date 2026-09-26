@@ -40,7 +40,7 @@ import { expandHome, HUB_ROOT, resolveRootPath, type Root } from './files.ts';
 import { readBookmarks } from './fs/bookmarks.ts';
 import { ignoredIn } from '../core/git.ts';
 import { deleteNote, listNotes, readNote, saveNote } from './fs/notes.ts';
-import { isMap, readJson, writeJsonAtomic, type FsWrites } from '../core/json.ts';
+import { chained, isMap, readJson, writeJsonAtomic, type FsWrites } from '../core/json.ts';
 
 /** One entry of one directory, as the tree draws it. */
 export type Entry = { name: string; kind: 'file' | 'dir'; size: number; mtime: number };
@@ -558,13 +558,5 @@ export async function handleFsWrite(
     const fields = body;
     // Whichever request got here first finishes its read, its change and its write before the next
     // one starts its read, so two adds in flight are two roots and never one.
-    const answer = into.writes.chain.then(
-        () => act(action, fields, into),
-        () => act(action, fields, into)
-    );
-    into.writes.chain = answer.then(
-        () => undefined,
-        () => undefined
-    );
-    return answer;
+    return chained(into.writes, () => act(action, fields, into));
 }

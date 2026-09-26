@@ -51,7 +51,6 @@ const payload: CalendarPayload = {
             provider: 'microsoft',
             label: 'uni',
             status: 'not-connected',
-            hint: '/fixture/calendar/microsoft-uni.json',
             calendars: []
         }
     ],
@@ -198,16 +197,38 @@ describe('the Calendar view', () => {
         expect(body).toMatch(/class="[^"]*cancelled[^"]*"[^>]*>\s*Called off/);
     });
 
+    // revert: src/lib/views/shared/accounts/AccountList.svelte:112 => {:else if true}
+    // revert: src/lib/views/shared/accounts/AccountList.svelte:94 => delete
     it('shows Connect on the account with no token and not on the connected one', () => {
         const body = draw(payload);
-        expect(body).toContain('data-account="google-work"');
-        expect(body).toContain('data-account="microsoft-uni"');
+        expect(body).toContain('data-calendar-account="google-work"');
+        expect(body).toContain('data-calendar-account="microsoft-uni"');
         expect(body).toContain('not connected');
         expect(body).toContain('connected');
         // One Connect control, for the one account that has no token.
         expect([...body.matchAll(/>Connect</g)]).toHaveLength(1);
-        // The path the reader creates is drawn for that account alone.
-        expect(body).toContain('/fixture/calendar/microsoft-uni.json');
+        // Every row carries its menu, which holds Remove.
+        expect([...body.matchAll(/aria-label="Row actions"/g)]).toHaveLength(2);
+    });
+
+    // revert: src/lib/views/shared/accounts/AccountList.svelte:106 => {#if false}
+    it('offers the setup page in place of Connect for an account whose provider is not set up', () => {
+        const body = draw({
+            ...payload,
+            accounts: [{ ...payload.accounts[1], needsSetup: true }]
+        });
+        expect(body).toContain('Microsoft is not set up on this machine yet.');
+        expect(body).toContain('Set up Microsoft');
+        // The account cannot be connected before its provider is set up, so no Connect is offered.
+        expect(body).not.toMatch(/>Connect</);
+    });
+
+    // revert: src/lib/views/personal/calendar/Calendar.svelte:86 => {:else if false}
+    it('offers Add account in the empty state and in the head', () => {
+        const body = draw({ ...payload, status: 'unconfigured', accounts: [], events: [] });
+        expect(body).toContain('No calendar account yet. Add one to read its agenda here.');
+        expect([...body.matchAll(/>Add account</g)]).toHaveLength(2);
+        expect(body).toContain('aria-label="Account actions"');
     });
 
     it('draws the connector head, its cadence and the window in the footer', () => {
@@ -232,9 +253,12 @@ describe('the Calendar view', () => {
         expect(body).toContain('No events in this window.');
     });
 
+    // revert: src/lib/views/personal/calendar/Calendar.svelte:86 => {:else if false}
+    // revert: src/lib/views/personal/calendar/Calendar.svelte:58 => unconfigured: t('calendar.polling'),
     it('says the machine names no account, and draws no agenda, when it is unconfigured', () => {
         const body = draw({ ...payload, status: 'unconfigured', accounts: [], events: [] });
-        expect(body).toContain('No calendar account is configured');
+        expect(body).toContain('No calendar account yet.');
+        expect(body).toContain('not configured');
         // no account is configured, so the sentence drawn is that one rather than the empty
         // agenda's
         expect(body).not.toContain('No events in this window.');
@@ -261,13 +285,14 @@ describe('the Calendar view', () => {
         expect(body).toContain('Standup');
     });
 
+    // revert: src/lib/views/shared/accounts/AccountList.svelte:117 => disabled={false}
     it('shows the Connect control as connecting and unpressable while a press is open', () => {
         // The press never answers, so the store holds it open for the render below.
         vi.stubGlobal('fetch', () => new Promise<Response>(() => undefined));
         try {
             const body = atFixtureMoment(() => {
                 client.entities.receive({ channel: 'calendar', version: 1, payload });
-                void client.calendar.connect(payload.accounts[1]);
+                void client.accounts.connect('calendar', payload.accounts[1]);
                 return render(Calendar, { context: clientContext(client), props: { instance } })
                     .body;
             });

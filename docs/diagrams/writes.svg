@@ -58,7 +58,7 @@
 </g>
 <!-- lib/server/core/changes.ts&#45;&gt;lib/server/core/json.ts -->
 <g id="edge3" class="edge">
-<title>lib/server/core/changes.ts&#45;&gt;lib/server/core/json.ts: writeTextAtomic</title>
+<title>lib/server/core/changes.ts&#45;&gt;lib/server/core/json.ts: chained, writeTextAtomic</title>
 <path fill="none" stroke="currentColor" d="M785.2,-319.24C805.7,-319.24 833.38,-319.24 854.95,-319.24"/>
 <polygon fill="currentColor" stroke="currentColor" points="854.79,-321.34 860.79,-319.24 854.79,-317.14 854.79,-321.34"/>
 </g>

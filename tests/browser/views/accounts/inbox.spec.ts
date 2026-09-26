@@ -10,20 +10,21 @@
 // channel.
 
 import { expect, test } from '@playwright/test';
-import { boot, openView } from '../helpers/rail.ts';
-import { t } from '../helpers/words.ts';
+import { boot, openView } from '../../helpers/rail.ts';
+import { t } from '../../helpers/words.ts';
 
 test('the configured mail account is drawn not connected, with its Connect control and no threads', async ({
     page
 }) => {
+    // revert: src/lib/views/shared/accounts/AccountList.svelte:112 => {:else if false}
     await boot(page);
     await openView(page, 'inbox', t('views.inbox'));
 
     const account = page.locator('[data-mail-account="google-work"]');
     await expect(account).toHaveCount(1, { timeout: 15000 });
-    await expect(account).toContainText(t('inbox.not_connected'));
+    await expect(account).toContainText(t('accounts.not_connected'));
     await expect(account).toContainText('work');
-    await expect(account.getByRole('button', { name: t('inbox.connect') })).toBeVisible();
+    await expect(account.getByRole('button', { name: t('accounts.connect') })).toBeVisible();
 
     // The plate holds nothing, since the account has no token and the poller called no provider.
     await expect(page.getByText(t('inbox.clear'))).toBeVisible();

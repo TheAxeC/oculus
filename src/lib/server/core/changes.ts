@@ -19,7 +19,7 @@ import { appendFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { sameOrigin } from './auth.ts';
-import { writeTextAtomic } from './json.ts';
+import { chained, writeTextAtomic } from './json.ts';
 import type { FsWrites } from './json.ts';
 
 /**
@@ -221,15 +221,7 @@ export async function logChanges(
     if (log === undefined || records === undefined || records.length === 0) return;
     // Whichever request got here first finishes its read, its stamp and its append before the next
     // one starts, so two writes in flight are two lines and never one interleaved with another.
-    const done = log.writes.chain.then(
-        () => append(log, kind, records, undoes),
-        () => append(log, kind, records, undoes)
-    );
-    log.writes.chain = done.then(
-        () => undefined,
-        () => undefined
-    );
-    await done;
+    await chained(log.writes, () => append(log, kind, records, undoes));
 }
 
 /**

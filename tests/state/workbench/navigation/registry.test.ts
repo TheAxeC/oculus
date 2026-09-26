@@ -160,6 +160,7 @@ describe('the real registrations', () => {
 
     it('registers every view id the application has', () => {
         // revert: src/lib/views/system/workbench/Pages.svelte:5 => id: 'page',
+        // revert: src/lib/views/personal/account-setup/AccountSetup.svelte:8 => id: 'accounts',
         expect(
             real()
                 .map((view) => view.id)
@@ -179,6 +180,7 @@ describe('the real registrations', () => {
                 'audit',
                 'memories',
                 'calendar',
+                'account-setup',
                 'history',
                 'doc',
                 'gallery',
@@ -229,11 +231,13 @@ describe('the real registrations', () => {
 
     it('gives every view its exact group and order', () => {
         // revert: src/lib/views/system/workbench/Catalogue.svelte:10 => order: 12
+        // revert: src/lib/views/personal/account-setup/AccountSetup.svelte:12 => order: 3
         const expected: Record<string, { group: string; order: number }> = {
             agents: { group: 'sessions', order: 6 },
             applications: { group: 'academic', order: 3 },
             audit: { group: 'system', order: 7 },
             calendar: { group: 'personal', order: 1 },
+            'account-setup': { group: 'personal', order: 2 },
             catalogue: { group: 'system', order: 9 },
             archive: { group: 'boards', order: 3 },
             changes: { group: 'sessions', order: 5 },

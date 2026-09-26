@@ -1,0 +1,87 @@
+# Oculus text owned by the account setup view and the account list the Calendar and the Inbox share.
+text:
+    views:
+        account_setup: Account setup
+        account_setup_glyph: lock
+    accounts:
+        account_error: error
+        add: Add account
+        add_glyph: expand
+        add_go: Add and connect
+        add_label: Label
+        add_label_hint: 'Lower-case letters, digits and hyphens, for example work'
+        add_provider: Provider
+        adding: adding...
+        cancel: Cancel
+        connect: Connect
+        connected: connected
+        connecting: connecting...
+        copied: Copied
+        copy: Copy
+        copy_glyph: copy
+        copy_value: 'Copy {0}'
+        empty_calendar: 'No calendar account yet. Add one to read its agenda here.'
+        empty_mail: 'No mail account yet. Add one to read its inbox here.'
+        google_client_id: Client ID
+        google_client_secret: Client secret
+        google_heading: Google (Calendar and Gmail)
+        google_link_api_calendar: 'https://console.cloud.google.com/apis/library/calendar-json.googleapis.com'
+        google_link_api_gmail: 'https://console.cloud.google.com/apis/library/gmail.googleapis.com'
+        google_link_console: 'https://console.cloud.google.com/'
+        google_link_consent: 'https://console.cloud.google.com/apis/credentials/consent'
+        google_link_credentials: 'https://console.cloud.google.com/apis/credentials'
+        google_no_redirect: 'A Desktop app client accepts any loopback port, so no redirect address is registered at Google.'
+        google_scopes: 'The scopes the connect asks for:'
+        google_step_api: 'Enable the Google Calendar API and the Gmail API for that project.'
+        google_step_api_calendar: Google Calendar API
+        google_step_api_gmail: Gmail API
+        google_step_client: 'Under Credentials, create an OAuth client ID of the application type Desktop app.'
+        google_step_consent: 'Set up the OAuth consent screen: user type External, an app name, and your own email as the support and developer contact. While the app is in Testing, add every account you connect as a test user.'
+        google_step_copy: 'Copy the client ID and the client secret into the fields below and save.'
+        google_step_project: 'Open the Google Cloud console and create a project, or pick one.'
+        last_ok: last read {0}
+        link_glyph: launch
+        menu: Account actions
+        menu_glyph: more
+        microsoft_admin: 'A university or company directory may need an administrator to approve this application before an account of it can connect; the consent screen then says so.'
+        microsoft_client_id: Application (client) ID
+        microsoft_heading: Microsoft (Outlook calendar and mail)
+        microsoft_link_entra: 'https://entra.microsoft.com/#view/Microsoft_AAD_RegisteredApps/ApplicationsListBlade'
+        microsoft_permissions: 'Delegated Microsoft Graph permissions:'
+        microsoft_redirects: 'Redirect URIs:'
+        microsoft_step_accounts: 'Under Supported account types, choose Accounts in any organizational directory and personal Microsoft accounts.'
+        microsoft_step_copy: 'On the Overview page, copy the Application (client) ID into the field below, and the Directory (tenant) ID only if your organisation requires it, then save.'
+        microsoft_step_permissions: 'Under API permissions, add these delegated Microsoft Graph permissions.'
+        microsoft_step_public: 'Under Authentication, set Allow public client flows to Yes.'
+        microsoft_step_redirect: 'Add a platform of the type Public client/native (mobile and desktop) with both of these redirect URIs.'
+        microsoft_step_register: 'Open the Microsoft Entra admin center, go to App registrations, and choose New registration.'
+        microsoft_tenant: Directory (tenant) ID, if required
+        needs_setup: '{0} is not set up on this machine yet.'
+        not_connected: not connected
+        not_ready: not set up
+        open_setup: 'Set up {0}'
+        provider_google: Google
+        provider_microsoft: Microsoft
+        ready: set up
+        refused: 'Refused: {0}'
+        refused_file: 'The machine file was not changed: {0}'
+        refused_google_id: 'A Google client ID ends with .apps.googleusercontent.com.'
+        refused_google_secret: 'The client secret is empty or holds a space.'
+        refused_label: 'A label is lower-case letters, digits and hyphens, and starts with a letter or a digit.'
+        refused_microsoft_id: 'An application ID is a GUID, like 0f0e0d0c-0b0a-0908-0706-050403020100.'
+        refused_provider: 'Pick Google or Microsoft.'
+        refused_taken: 'An account of that provider is already called {0}.'
+        refused_tenant: 'A directory ID is a GUID, or left empty.'
+        remove: Remove
+        remove_confirm: 'Remove the account {0}? Its token file is deleted; the provider stays set up for the other accounts.'
+        remove_confirm_own: 'Remove the account {0}? Its token file is deleted, and its own client id is deleted with it.'
+        remove_glyph: trash
+        reading: reading the setup...
+        save: Save
+        saved: 'Saved. {0} is set up.'
+        saving: saving...
+        set_up_provider: Set up provider
+        setup_intro: 'Each provider is set up once on this machine: the application you register there serves every account of it, in the Calendar and the Inbox. The values below are the ones this server uses.'
+        unreachable: 'The server did not answer. Try again once oculus is running.'
+        unreadable: "The server's answer could not be read. Open the view again to see what it holds now."
+        waiting: 'The account {0} is added once {1} is saved below.'

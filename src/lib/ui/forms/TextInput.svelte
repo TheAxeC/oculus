@@ -12,9 +12,11 @@
         /** Shown and not editable, for a field a write never touches. */
         readonly?: boolean;
         placeholder?: string;
+        /** Drawn as dots and never offered to the browser's autofill, for a secret. */
+        secret?: boolean;
     };
 
-    let { value, label, oninput, readonly = false, placeholder }: Props = $props();
+    let { value, label, oninput, readonly = false, placeholder, secret = false }: Props = $props();
 
     function typed(event: Event): void {
         const field = event.currentTarget;
@@ -24,7 +26,8 @@
 
 <input
     class="text"
-    type="text"
+    type={secret ? 'password' : 'text'}
+    autocomplete={secret ? 'off' : undefined}
     {value}
     {readonly}
     {placeholder}

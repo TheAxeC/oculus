@@ -1,7 +1,7 @@
 // The mail endpoint. A route module may export only its verbs, so everything it does lives in
 // lib/server/accounts/mail/routes.ts and this is the one POST that joins them. POST only: the page
-// reads the plate from the `inbox` channel, and this is the refresh, the Connect press, the triage
-// note, the reply and the archive.
+// reads the plate from the `inbox` channel, and this is the refresh, the Connect press, the Add and
+// the Remove of an account, the triage note, the reply and the archive.
 //
 // The page never sends a provider's id. Every action names a configured account or a thread of the
 // state the poller published, so the only mailbox this process ever writes to is one the machine's
@@ -18,6 +18,8 @@ export const POST: RequestHandler = ({ request, locals }) =>
         token: locals.server.token,
         accounts: locals.server.local.mail,
         dir: locals.server.mailDir,
+        providerDir: locals.server.providerDir,
+        book: locals.server.accounts,
         redirect: callbackUrl(locals.server.local.port, 'mail'),
         states: locals.server.mailConnects,
         perSignal: mailSettings(locals.server.config).perSignal,

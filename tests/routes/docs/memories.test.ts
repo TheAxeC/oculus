@@ -24,6 +24,7 @@ import {
     write
 } from '../../../src/lib/server/content/memories.ts';
 import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
+import { pagePost } from '../../fixtures/doubles.ts';
 
 afterAll(sweepScratch);
 
@@ -66,15 +67,7 @@ function local(): Headers {
 
 /** One POST of the wall's own page, carrying the process token. */
 function request(body: unknown, token = TOKEN): Request {
-    return new Request('http://127.0.0.1:8790/api/memories', {
-        method: 'POST',
-        headers: {
-            'content-type': 'application/json',
-            'sec-fetch-site': 'same-origin',
-            'x-oculus-token': token
-        },
-        body: JSON.stringify(body)
-    });
+    return pagePost('http://127.0.0.1:8790/api/memories', body, token);
 }
 
 const NAMES = ['b-second.png', 'a-first.jpg', 'c-third.webp', 'notes.txt', '.hidden.jpg'];

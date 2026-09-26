@@ -13,6 +13,7 @@ import { type TerminalOptions } from '../../../src/lib/server/machine/pty/routes
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
 import type { SessionRecord } from '../../../src/lib/data/model/index.ts';
 import { contextFixture } from '../../server/root/context-fixture.ts';
+import { pagePost } from '../../fixtures/doubles.ts';
 
 /** This file's own directory, for reading the route module beside the source it tests. */
 export const HERE_FILE = fileURLToPath(import.meta.url);
@@ -158,15 +159,7 @@ export function source(...records: SessionRecord[]): (id: string) => SessionReco
 }
 
 export function request(body: unknown, token: string = TOKEN): Request {
-    return new Request(`http://${HOST}/api/terminal`, {
-        method: 'POST',
-        headers: {
-            'content-type': 'application/json',
-            'sec-fetch-site': 'same-origin',
-            'x-oculus-token': token
-        },
-        body: JSON.stringify(body)
-    });
+    return pagePost(`http://${HOST}/api/terminal`, body, token);
 }
 
 /** Quote an expected CLI argument independently of the server's command builder. */

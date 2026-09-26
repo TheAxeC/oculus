@@ -13,6 +13,7 @@ export const GET: RequestHandler = ({ request, locals }) =>
     handleCalendarCallback(request, {
         accounts: locals.server.local.calendars,
         dir: locals.server.calendarDir,
+        providerDir: locals.server.providerDir,
         states: locals.server.calendarConnects,
         fetcher: fetch,
         refresh: () => locals.server.calendar.refresh(),

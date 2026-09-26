@@ -249,10 +249,15 @@ describe('the catalogue of the real config', () => {
         return sections.find((found) => found.label === label)?.items ?? [];
     }
 
-    it('lists Personal with the wall, the agenda and two documents, and the third in System', () => {
+    it('lists Personal with the wall, the agenda, the setup page and two documents, and the third in System', () => {
         // revert: config/layout.yml:159 => - { label: "HPC how-to", path: docs/HPC-UTwente-howto.md, group: personal }
+        // revert: src/lib/views/personal/account-setup/AccountSetup.svelte:11 => group: 'system',
         const personal = sections.find((found) => found.label === 'Personal');
-        expect(personal?.items.map((view) => view.id)).toEqual(['memories', 'calendar']);
+        expect(personal?.items.map((view) => view.id)).toEqual([
+            'memories',
+            'calendar',
+            'account-setup'
+        ]);
         expect(personal?.docs.map((entry) => entry.path)).toEqual([
             'docs/RESEARCH-APPROACH.md',
             'docs/AGENT-APPROACH.md'
@@ -285,6 +290,7 @@ describe('the catalogue of the real config', () => {
 
     it('gives every chorded group a letter and a glyph, and one letter to one list', () => {
         // revert: config/layout.yml:29 => sessions: { label: "Sessions", glyph: live }
+        // revert: config/layout.yml:33 => personal: { label: "Personal" }
         expect(
             sections
                 .filter(isChorded)
@@ -293,12 +299,14 @@ describe('the catalogue of the real config', () => {
             'Sessions:m:live',
             'Academic life:c:scout',
             'Sources:s:folder',
+            'Personal:p:memories',
             'System:y:audit'
         ]);
     });
 
-    it('counts the real keys: the direct views and the four chords', () => {
+    it('counts the real keys: the direct views and the five chords', () => {
         // revert: config/layout.yml:38 => direct_chord: w
+        // revert: config/layout.yml:33 => personal: { label: "Personal" }
         const order = railOrder(
             views().filter((view) => view.listed !== false),
             groups,
@@ -318,12 +326,13 @@ describe('the catalogue of the real config', () => {
             'radar',
             'leads',
             'inbox',
-            'linkedin',
-            'memories',
-            'calendar'
+            'linkedin'
         ]);
-        expect(order.chords.v).toEqual([
-            ...order.direct,
+        expect(order.chords.v).toEqual(order.direct);
+        expect(order.chords.p).toEqual([
+            'memories',
+            'calendar',
+            'account-setup',
             'doc:docs/RESEARCH-APPROACH.md',
             'doc:docs/AGENT-APPROACH.md'
         ]);
@@ -369,7 +378,7 @@ describe('the catalogue of the real config', () => {
             'pages',
             'doc:docs/HPC-UTwente-howto.md'
         ]);
-        expect(Object.keys(order.chords).sort()).toEqual(['c', 'm', 's', 'v', 'y']);
+        expect(Object.keys(order.chords).sort()).toEqual(['c', 'm', 'p', 's', 'v', 'y']);
     });
 
     it('keeps the boards, the pillars and the feeds each under their heading', () => {

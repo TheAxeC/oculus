@@ -13,6 +13,7 @@ export const GET: RequestHandler = ({ request, locals }) =>
     handleMailCallback(request, {
         accounts: locals.server.local.mail,
         dir: locals.server.mailDir,
+        providerDir: locals.server.providerDir,
         states: locals.server.mailConnects,
         fetcher: fetch,
         refresh: () => locals.server.mail.refresh(),

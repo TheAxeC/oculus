@@ -118,3 +118,16 @@ export type FsWrites = { chain: Promise<unknown> };
 export function fsWrites(): FsWrites {
     return { chain: Promise.resolve() };
 }
+
+/**
+ * Run one write after every write of the chain before it, whichever way that one ended, and hold
+ * the next one until this one has ended the same way.
+ */
+export function chained<T>(writes: FsWrites, work: () => T | Promise<T>): Promise<T> {
+    const answer = writes.chain.then(work, work);
+    writes.chain = answer.then(
+        () => undefined,
+        () => undefined
+    );
+    return answer;
+}

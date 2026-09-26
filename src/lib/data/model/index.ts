@@ -341,6 +341,7 @@ export type {
     ConnectAccountStatus,
     ConnectKind,
     ConnectProvider,
+    ConnectSetup,
     ConnectStatus
 } from './model-connect.ts';
 

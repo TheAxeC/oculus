@@ -248,12 +248,18 @@ export async function exchangeCode(
     return answer.refreshToken;
 }
 
-/** One access token from the account's refresh token, held by the caller in memory only. */
+/**
+ * One access token from the account's refresh token, held by the caller in memory only. A provider
+ * may answer with a new refresh token beside it, which Microsoft does on every refresh, and the one
+ * it replaces lasts only its own remaining lifetime; `keep` is handed the new token so the
+ * account's file holds it, and is not called when the answer carries none or the one it was sent.
+ */
 export async function accessToken(
     kind: ConnectKind,
     credentials: Credentials,
     refreshToken: string,
-    fetcher: Fetcher
+    fetcher: Fetcher,
+    keep?: (refreshToken: string) => void
 ): Promise<string> {
     const answer = await post(
         credentials,
@@ -266,6 +272,9 @@ export async function accessToken(
     );
     if (answer.accessToken === undefined) {
         throw new Error(`${credentials.provider} token endpoint: no access token`);
+    }
+    if (answer.refreshToken !== undefined && answer.refreshToken !== refreshToken) {
+        keep?.(answer.refreshToken);
     }
     return answer.accessToken;
 }

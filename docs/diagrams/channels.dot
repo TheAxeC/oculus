@@ -43,6 +43,7 @@ digraph channels {
         "state/client/socket";
         "state/feeds/feeds";
         "state/feeds/inbox";
+        "state/life/accounts";
         "state/life/calendar";
         "state/life/present";
         "state/sessions/latex";
@@ -82,6 +83,7 @@ digraph channels {
     "ch audit" -> "routes/+page" [style=dashed];
     "ch audit" -> "state/system/audit";
     "ch calendar" -> "routes/+page" [style=dashed];
+    "ch calendar" -> "state/life/accounts";
     "ch calendar" -> "state/life/calendar";
     "ch config" -> "routes/+page" [style=dashed];
     "ch config" -> "routes/+page";
@@ -114,6 +116,7 @@ digraph channels {
     "ch hpc" -> "state/workbench/navigation/notice-sources";
     "ch inbox" -> "routes/+page" [style=dashed];
     "ch inbox" -> "state/feeds/inbox";
+    "ch inbox" -> "state/life/accounts";
     "ch inbox" -> "state/workbench/navigation/notice-sources";
     "ch inbox" -> "state/workbench/palette-source";
     "ch portfolio" -> "routes/+page" [style=dashed];

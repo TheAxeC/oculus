@@ -17,10 +17,12 @@
 // process on the machine. `calendar_dir` and `mail_dir` in this run's local.yml are folders this
 // run made, each holding one account's client half and no refresh token, so the two pollers mark
 // those accounts not connected and call no provider, and the triage notes this run writes are its
-// own folder's. TMPDIR is passed through when the parent has one, since it is the operating
-// system's like the other two and os.tmpdir() in a child without it answers /tmp, which is not
-// where this machine puts a process's temporary files. The server reads no environment variable of
-// its own.
+// own folder's. A provider's client half the setup page saves lands in this run's HOME, and
+// `open_bin` names this run's own recorder, so a consent page is written to a file a spec reads
+// rather than opened in the owner's browser. TMPDIR is passed through when the parent has one,
+// since it is the operating system's like the other two and os.tmpdir() in a child without it
+// answers /tmp, which is not where this machine puts a process's temporary files. The server reads
+// no environment variable of its own.
 //
 // The server refuses to start over a stale build, since src/server.ts imports build/handler.js and
 // a spec would otherwise press yesterday's page. What the run made is removed when it exits.
@@ -108,8 +110,10 @@ const engineConfig = inside(join(runEngine, 'config'), tmpdir());
 const home = inside(layout.home, tmpdir());
 const bin = inside(join(temp, 'bin'), tmpdir());
 const local = inside(join(engineConfig, LOCAL_NAME), tmpdir());
-const calendarDir = inside(join(temp, 'calendar'), tmpdir());
-const mailDir = inside(join(temp, 'mail'), tmpdir());
+const calendarDir = inside(layout.calendar, tmpdir());
+const mailDir = inside(layout.mail, tmpdir());
+const opened = inside(layout.opened, tmpdir());
+const recorder = inside(join(bin, 'open-recorder'), tmpdir());
 const marker = inside(join(here, '.hub'), engine);
 
 cpSync(join(engine, 'demo'), hub, { recursive: true });
@@ -205,6 +209,18 @@ writeFileSync(
     ['#!/bin/sh', 'echo "browser layer: this run has no tmux" >&2', 'exit 1', ''].join('\n'),
     { mode: 0o755 }
 );
+// The opener the server hands an https address to, `open_bin` below: it appends the address to
+// this run's own file, which a spec reads the consent page from, and opens nothing.
+writeFileSync(
+    recorder,
+    [
+        '#!/bin/sh',
+        "# The browser layer's opener: the address is recorded, never opened.",
+        `printf '%s\\n' "$1" >> ${JSON.stringify(opened)}`,
+        ''
+    ].join('\n'),
+    { mode: 0o755 }
+);
 
 // The reader's own bookmarks file under this run's HOME, holding the two manuals a machine's file
 // carries, so the rail's Bookmarks menu has choices to list. It is the Files view's collection
@@ -261,6 +277,7 @@ writeFileSync(
         `hub: ${hub}`,
         `port: ${PORT}`,
         `hpc_host: ${CLUSTER}`,
+        `open_bin: ${recorder}`,
         `calendar_dir: ${calendarDir}`,
         'calendars:',
         `  - { provider: ${CALENDAR.provider}, label: ${CALENDAR.label} }`,

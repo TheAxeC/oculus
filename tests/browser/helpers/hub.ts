@@ -81,11 +81,60 @@ export function removeFromHub(relative: string): void {
 
 /**
  * Where `serve.ts` puts each part of a run inside the one temporary directory it makes: the hub
- * copy, the engine directory and the home directory. It is named here once, so the server that
- * makes the folders and a spec that reads one agree on where it is.
+ * copy, the engine directory, the home directory, the two connectors' credential folders, and the
+ * file this run's `open_bin` appends each address it is handed to. It is named here once, so the
+ * server that makes them and a spec that reads one agree on where it is.
  */
-export function runLayout(temp: string): { hub: string; engine: string; home: string } {
-    return { hub: join(temp, 'demo'), engine: join(temp, 'engine'), home: join(temp, 'home') };
+export function runLayout(temp: string): {
+    hub: string;
+    engine: string;
+    home: string;
+    calendar: string;
+    mail: string;
+    opened: string;
+} {
+    return {
+        hub: join(temp, 'demo'),
+        engine: join(temp, 'engine'),
+        home: join(temp, 'home'),
+        calendar: join(temp, 'calendar'),
+        mail: join(temp, 'mail'),
+        opened: join(temp, 'opened.txt')
+    };
+}
+
+/** One of this run's connector folders, where each account's credential file is. */
+export function servedConnectorDir(kind: 'calendar' | 'mail'): string {
+    return runLayout(dirname(hubDir()))[kind];
+}
+
+/**
+ * Write one file into one of this run's connector folders, for a spec whose subject is an account
+ * file no control of the page writes. The path is resolved and asserted to be inside that folder,
+ * and the folder inside the temporary directory, before anything is written.
+ */
+export function writeConnectorFile(kind: 'calendar' | 'mail', name: string, body: string): void {
+    const root = servedConnectorDir(kind);
+    const full = resolve(join(root, name));
+    if (
+        !resolve(root).startsWith(resolve(tmpdir()) + sep) ||
+        !full.startsWith(resolve(root) + sep)
+    ) {
+        throw new Error(`${full} is not inside ${root}`);
+    }
+    writeFileSync(full, body);
+}
+
+/**
+ * Every address the served server has handed to its opener, oldest first: a provider's consent
+ * page, which this run records in place of opening a browser.
+ */
+export function openedAddresses(): string[] {
+    const file = runLayout(dirname(hubDir())).opened;
+    if (!existsSync(file)) return [];
+    return readFileSync(file, 'utf8')
+        .split('\n')
+        .filter((line) => line !== '');
 }
 
 /**
@@ -107,6 +156,23 @@ export function servedHomeDir(): string {
     const dir = runLayout(dirname(hubDir())).home;
     if (!existsSync(dir)) throw new Error(`${dir} is not there`);
     return dir;
+}
+
+/**
+ * Delete one file of that home directory if it is there, for a spec that starts from a state no
+ * control of the page makes. The path is resolved and asserted to be inside it, and the home
+ * inside the temporary directory, before anything is deleted.
+ */
+export function removeServedHomeFile(relative: string): void {
+    const root = servedHomeDir();
+    const full = resolve(join(root, relative));
+    if (
+        !resolve(root).startsWith(resolve(tmpdir()) + sep) ||
+        !full.startsWith(resolve(root) + sep)
+    ) {
+        throw new Error(`${full} is not inside ${root}`);
+    }
+    rmSync(full, { force: true });
 }
 
 /**

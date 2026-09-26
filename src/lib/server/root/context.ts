@@ -14,6 +14,7 @@ import {
     type IconMemory,
     loadConfig,
     loadLocal,
+    localFile,
     mailSettings,
     openSettings,
     slurmSettings,
@@ -26,14 +27,21 @@ import { requirePaintLimit } from '../../data/helpers/editor.ts';
 import type { Finding, HostInfo, Snapshot } from '../../data/model/index.ts';
 import { mintToken } from '../core/auth.ts';
 import { ConnectStates } from '../accounts/connect/oauth.ts';
-import { defaultConnectDir } from '../accounts/connect/store.ts';
+import { defaultConnectDir, defaultProviderDir } from '../accounts/connect/store.ts';
+import type { AccountBook } from '../accounts/connect/actions.ts';
 import {
     watchCalendar,
     type CalendarOptions,
     type CalendarWatcher
 } from '../accounts/calendar/poll.ts';
 import { watchMail, type MailOptions, type MailWatcher } from '../accounts/mail/poll.ts';
-import { macOpenAddress, macOpenPath, type Opener, type PathOpener } from '../files/open.ts';
+import {
+    addressOpener,
+    macOpenAddress,
+    macOpenPath,
+    type Opener,
+    type PathOpener
+} from '../files/open.ts';
 import { docFindings, layoutFile } from '../content/docs.ts';
 import { Hub } from '../core/channels.ts';
 import { registerFilesChannel } from '../files/files-channel.ts';
@@ -56,6 +64,7 @@ import { watchUsageRefresh, type UsageRefreshWatcher } from '../machine/usage/re
 import { watchUsage, type UsageWatcher } from '../machine/usage/watch.ts';
 import { watchBookmarks, type BookmarksWatchOptions } from './watch/bookmarks.ts';
 import { watchGit, type GitWatcher, type GitWatchOptions } from './watch/git.ts';
+import { watchLocal, type LocalWatcher } from './watch/local.ts';
 import { watchPortfolio, type Watcher } from './watch/portfolio.ts';
 import { watchSessions } from './watch/sessions.ts';
 
@@ -103,6 +112,14 @@ export type ServerContext = {
     mailConnects: ConnectStates;
     /** The folder the mail credential files and the triage notes live in, resolved once. */
     mailDir: string;
+    /** The folder the one client half per provider lives in, resolved once. */
+    providerDir: string;
+    /**
+     * The machine's own file, the chain an account write waits on, and the re-read after one: the
+     * account lists and their folders are read again, the fields above and `local` take them, and
+     * the two pollers are handed them, so a row added or removed holds without a restart.
+     */
+    accounts: AccountBook;
     /**
      * How an `https` address reaches the operating system, so the one process that opens anything
      * is this one and a test is handed a context that opens nothing.
@@ -153,6 +170,7 @@ export type ContextDependencies = {
     watchHpc: (hub: Hub, options: HpcOptions) => HpcWatcher;
     watchCalendar: (hub: Hub, options: CalendarOptions) => CalendarWatcher;
     watchMail: (hub: Hub, options: MailOptions) => MailWatcher;
+    watchLocal: (engine: string, changed: () => void) => LocalWatcher;
     watchUsageRefresh: typeof watchUsageRefresh;
     watchUsage: typeof watchUsage;
 };
@@ -170,6 +188,7 @@ const dependencies: ContextDependencies = {
     watchHpc,
     watchCalendar,
     watchMail,
+    watchLocal: (engine, changed) => watchLocal(engine, changed),
     watchUsageRefresh,
     watchUsage
 };
@@ -280,11 +299,14 @@ export function createServerContext(
     });
 
     // The calendar poller reads the credential files of the folder the machine's own file names, so
-    // a served test run is pointed at a directory of its own and never at the reader's.
+    // a served test run is pointed at a directory of its own and never at the reader's. The client
+    // halves are the provider folder's under this process's HOME, which a served run makes its own.
     const calendarDir = local.calendarDir ?? defaultConnectDir('calendar');
+    const providerDir = defaultProviderDir();
     const calendar = make.watchCalendar(hub, {
         accounts: local.calendars,
         dir: calendarDir,
+        providerDir,
         pollMin: calendarConfig.pollMin,
         daysBack: calendarConfig.daysBack,
         daysAhead: calendarConfig.daysAhead
@@ -296,12 +318,14 @@ export function createServerContext(
     const mail = make.watchMail(hub, {
         accounts: local.mail,
         dir: mailDir,
+        providerDir,
         pollMin: mailConfig.pollMin,
         perSignal: mailConfig.perSignal
     });
 
     let closed = false;
-    return {
+    const writes = fsWrites();
+    const context: ServerContext = {
         hub,
         terminals,
         hooks,
@@ -316,14 +340,16 @@ export function createServerContext(
         local,
         config,
         engine,
-        fsWrites: fsWrites(),
+        fsWrites: writes,
         ignoredCache: ignoredCache(),
         hpcLogPaths,
         calendarConnects: new ConnectStates(),
         calendarDir,
         mailConnects: new ConnectStates(),
         mailDir,
-        opener: macOpenAddress,
+        providerDir,
+        accounts: { file: localFile(engine), writes, reload: () => reloadAccounts() },
+        opener: local.openBin === undefined ? macOpenAddress : addressOpener(local.openBin),
         openPath: macOpenPath,
         depositPlans: new Map(),
         wallpaper: wallpaperMemory(),
@@ -332,6 +358,7 @@ export function createServerContext(
         close(): void {
             if (closed) return;
             closed = true;
+            localWatch.close();
             usageRefresh.close();
             mail.close();
             calendar.close();
@@ -344,6 +371,36 @@ export function createServerContext(
             terminals.close();
         }
     };
+
+    /**
+     * Read the machine's own file again and hand its account lists and their folders to the routes
+     * and the pollers. A file that no longer reads keeps what is held, and says why once on stderr,
+     * as a start over it would; the pollers take a list equal to the one they hold as no change.
+     */
+    function reloadAccounts(): void {
+        if (closed) return;
+        let next: LocalConfig;
+        try {
+            next = make.loadLocal(engine);
+        } catch (error) {
+            const reason = error instanceof Error ? error.message : String(error);
+            console.error(`the machine's own configuration is not read again: ${reason}`);
+            return;
+        }
+        local.calendars = next.calendars;
+        local.calendarDir = next.calendarDir;
+        local.mail = next.mail;
+        local.mailDir = next.mailDir;
+        context.calendarDir = next.calendarDir ?? defaultConnectDir('calendar');
+        context.mailDir = next.mailDir ?? defaultConnectDir('mail');
+        calendar.setAccounts(local.calendars, context.calendarDir);
+        mail.setAccounts(local.mail, context.mailDir);
+    }
+
+    // The watch on local.yml, for a row written by hand; a row written from the page is read again
+    // by the route that wrote it, and the watch's call after it is then no change.
+    const localWatch = make.watchLocal(engine, reloadAccounts);
+    return context;
 }
 
 /** Put a context on the raw request before Kit handles it. */

@@ -43,7 +43,7 @@ digraph writes {
     "lib/server/core/changes.ts to file on disk (calls)" [label="appendFileSync, mkdirSync", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     "lib/server/core/changes.ts" -> "lib/server/core/changes.ts to file on disk (calls)" [arrowhead=none];
     "lib/server/core/changes.ts to file on disk (calls)" -> "file on disk" [];
-    "lib/server/core/changes.ts" -> "lib/server/core/json.ts" [tooltip="writeTextAtomic"];
+    "lib/server/core/changes.ts" -> "lib/server/core/json.ts" [tooltip="chained, writeTextAtomic"];
     "lib/server/core/json.ts to file on disk (calls)" [label="mkdirSync, renameSync, rmSync", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     "lib/server/core/json.ts" -> "lib/server/core/json.ts to file on disk (calls)" [arrowhead=none];
     "lib/server/core/json.ts to file on disk (calls)" -> "file on disk" [];

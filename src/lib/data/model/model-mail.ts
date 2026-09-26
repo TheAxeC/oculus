@@ -31,8 +31,18 @@ export type MailAccount = {
     provider: MailProvider;
     label: string;
     status: MailAccountStatus;
-    /** One line saying what is wrong, or the credential file a not-connected account waits for. */
+    /** One line saying what is wrong with the account, absent while nothing is. */
     hint?: string;
+    /**
+     * Set when this machine holds no client half for the account's provider, so Connect cannot
+     * start until the provider is set up on the account setup page.
+     */
+    needsSetup?: boolean;
+    /**
+     * Set when the account's own file names a client id, which a Remove deletes with the file; the
+     * provider's own half is a file of its own and stays.
+     */
+    ownHalf?: boolean;
     /** When the provider last answered for this account. */
     lastOk?: string;
 };

@@ -3,11 +3,10 @@
 // while a provider is not answering, the last good plate kept under the state word, one poll at a
 // time, and a refresh a control can press.
 //
-// The cadence is each account's own. An account that failed is due again after RETRY_MIN and one
-// that answered after poll_min, the one timer fires at the earliest of those times, and a round
-// reads only the accounts that are due; so one provider refusing does not make the other one be
-// called every two minutes. The Refresh control reads every account whatever its due time, since
-// what a press asks for is the state now.
+// The cadence and the account list are connect/loop.ts's, shared with the calendar watcher: each
+// account's own cadence, a Refresh that reads every account, and a list the machine's file can
+// change while the watcher runs, an account added being read at once and one removed leaving the
+// next publish.
 //
 // The triage notes are the one thing published that no provider gave. They are read from the file
 // at every publish and the file is polled on a clock (core/file-poll.ts says why it is not
@@ -15,8 +14,9 @@
 // calls, whenever it lands; a note whose thread has left the plate is dropped from the payload and
 // kept in the file for thirty days.
 //
-// A machine that names no account publishes `unconfigured` once and polls nothing, so an install
-// with no mailbox costs no timer and no request.
+// A machine that names no account publishes `unconfigured` and polls nothing, so an install with no
+// mailbox costs no timer and no request. When the machine's file names a new mail folder, the notes
+// file of that folder is the one polled from then on.
 //
 // The access token an account is polled with lives in a local variable for the length of that
 // account's read and is never held, logged or published. The refresh token is read from the
@@ -36,8 +36,9 @@ import type {
 } from '../../../data/model/index.ts';
 import type { Hub } from '../../core/channels.ts';
 import { POLL, pollFile, systemClock, type Clock, type FilePoll } from '../../core/file-poll.ts';
-import { accessToken, type Fetcher } from '../connect/oauth.ts';
-import { credentialFile, readCredentials } from '../connect/store.ts';
+import { accountLoop, signIn, type AccountLoop } from '../connect/loop.ts';
+import { hasOwnHalf } from '../connect/store.ts';
+import type { Fetcher } from '../connect/oauth.ts';
 import { readGoogleMail } from './google.ts';
 import { readMicrosoftMail } from './microsoft.ts';
 import { plate, type Candidate, type MailReadArgs, type PlateThread } from './plate.ts';
@@ -47,6 +48,8 @@ export type MailOptions = {
     accounts: MailAccountConfig[];
     /** The folder the credential files and the triage notes live in, already resolved. */
     dir: string;
+    /** The folder the providers' client halves live in, already resolved. */
+    providerDir: string;
     pollMin: number;
     perSignal: number;
     /**
@@ -67,6 +70,8 @@ export type MailWatcher = {
     refresh(): Promise<void>;
     /** Publish again over the notes as they now are, without calling any provider. */
     republish(): void;
+    /** Poll a new account list from a new folder, as config/local.yml now names them. */
+    setAccounts(accounts: MailAccountConfig[], dir: string): void;
     close(): void;
 };
 
@@ -104,12 +109,11 @@ function triageOf(held: TriageFile, id: string): InboxTriage {
 
 export function watchMail(hub: Hub, options: MailOptions): MailWatcher {
     const fetcher = options.fetcher ?? fetch;
+    const providerDir = options.providerDir;
     const now = options.now ?? ((): Date => new Date());
     /** Every account's state word and hint, and the plate its last good poll left. */
     const state = new Map<string, MailAccount>();
     const kept = new Map<string, Kept>();
-    let closed = false;
-    const stopped = (): boolean => closed;
     /** The poll of the notes file, once it has started. */
     let notesPoll: FilePoll | null = null;
 
@@ -124,9 +128,10 @@ export function watchMail(hub: Hub, options: MailOptions): MailWatcher {
      * One complete state out of what every account currently says and what the notes file holds.
      */
     const publish = (): void => {
-        const accounts = options.accounts.map(rowOf);
+        const held = loop.accounts();
+        const accounts = held.map(rowOf);
         const rows: { key: string; thread: PlateThread; account: MailAccountConfig }[] = [];
-        for (const account of options.accounts) {
+        for (const account of held) {
             const key = mailKey(account);
             for (const thread of kept.get(key)?.threads ?? []) {
                 rows.push({ key, thread, account });
@@ -137,7 +142,7 @@ export function watchMail(hub: Hub, options: MailOptions): MailWatcher {
         let notesError: string | undefined;
         notesPoll?.reading();
         try {
-            notes = pruneNotes(options.dir, onPlate, now().getTime());
+            notes = pruneNotes(loop.dir(), onPlate, now().getTime());
         } catch (error) {
             notesError = reason(error);
         }
@@ -158,7 +163,7 @@ export function watchMail(hub: Hub, options: MailOptions): MailWatcher {
             };
         });
         const status: InboxPayload['status'] =
-            options.accounts.length === 0
+            held.length === 0
                 ? 'unconfigured'
                 : accounts.some((account) => account.status === 'error')
                   ? 'error'
@@ -177,32 +182,34 @@ export function watchMail(hub: Hub, options: MailOptions): MailWatcher {
     };
 
     /**
-     * One account, read to the end or given the state word its failure earned. A file that is not
-     * there yet, or that holds no refresh token, is `not-connected` with the path the reader
-     * creates; that is not a failure and does not shorten the cadence.
+     * One account, read to the end or given the state word its failure earned. An account whose
+     * provider has no client half on this machine is `not-connected` and says the provider needs
+     * setting up; one with a half and no refresh token is `not-connected` and waits for Connect.
+     * Neither is a failure, and neither shortens the cadence. What a read of an account that has
+     * left, or of a folder that was replaced, comes back with is dropped.
      */
-    const pollAccount = async (account: MailAccountConfig): Promise<boolean> => {
+    const pollAccount = async (
+        account: MailAccountConfig,
+        dir: string,
+        live: () => boolean
+    ): Promise<boolean> => {
         const key = mailKey(account);
         const held = kept.get(key);
         const base = {
             provider: account.provider,
             label: account.label,
+            ...(hasOwnHalf(dir, account) ? { ownHalf: true } : {}),
             ...(held === undefined ? {} : { lastOk: held.lastOk })
         };
         try {
-            const credentials = readCredentials(options.dir, account);
-            if (credentials?.refreshToken === undefined) {
-                state.set(key, {
-                    ...base,
-                    status: 'not-connected',
-                    hint: credentialFile(options.dir, account)
-                });
+            const signed = await signIn('mail', account, { dir, providerDir }, fetcher);
+            if ('waiting' in signed) {
+                state.set(key, { ...base, ...signed.waiting });
                 return true;
             }
-            const token = await accessToken('mail', credentials, credentials.refreshToken, fetcher);
-            if (stopped()) return true;
+            if (!live()) return true;
             const args: MailReadArgs = {
-                token,
+                token: signed.token,
                 key,
                 perSignal: options.perSignal,
                 fetcher
@@ -211,7 +218,7 @@ export function watchMail(hub: Hub, options: MailOptions): MailWatcher {
                 account.provider === 'google'
                     ? await readGoogleMail(args)
                     : await readMicrosoftMail(args);
-            if (stopped()) return true;
+            if (!live()) return true;
             const lastOk = now().toISOString();
             kept.set(key, { threads: plate(candidates), lastOk });
             state.set(key, {
@@ -222,79 +229,10 @@ export function watchMail(hub: Hub, options: MailOptions): MailWatcher {
             });
             return true;
         } catch (error) {
+            if (!live()) return false;
             state.set(key, { ...base, status: 'error', hint: reason(error) });
             return false;
         }
-    };
-
-    /** When each account is next due, as an epoch time; an account with no entry is due now. */
-    const due = new Map<string, number>();
-    const dueAt = (account: MailAccountConfig): number => due.get(mailKey(account)) ?? 0;
-
-    /**
-     * One pending attempt at a time, fired at the earliest account's due time. One handle, which
-     * close() clears.
-     */
-    let timer: ReturnType<typeof setTimeout> | null = null;
-    const schedule = (): void => {
-        if (timer !== null) clearTimeout(timer);
-        if (stopped() || options.accounts.length === 0) {
-            timer = null;
-            return;
-        }
-        const wait = Math.min(...options.accounts.map(dueAt)) - now().getTime();
-        timer = setTimeout(() => void run(false), Math.max(0, wait));
-    };
-
-    /**
-     * One round: every account when a press asked for it, and the ones that are due otherwise. An
-     * account's next due time is set from its own outcome, so a refusing provider shortens its own
-     * cadence and nobody else's.
-     */
-    const poll = async (all: boolean): Promise<void> => {
-        const wanted = options.accounts.filter(
-            (account) => all || dueAt(account) <= now().getTime()
-        );
-        try {
-            for (const account of wanted) {
-                if (stopped()) return;
-                const good = await pollAccount(account);
-                const minutes = good ? options.pollMin : RETRY_MIN;
-                due.set(mailKey(account), now().getTime() + minutes * 60000);
-            }
-            if (stopped() || wanted.length === 0) return;
-            publish();
-        } finally {
-            if (!stopped()) schedule();
-        }
-    };
-
-    /**
-     * The round in flight, if there is one, and the one follow-up round every caller asked for
-     * meanwhile shares. A refresh never opens a second round of provider calls beside the round
-     * running, so the rows and the state words are always the newest round's; it does get a round
-     * that starts after the one in flight, since what asked for it wants the providers' state after
-     * its own action and not the answer of a round begun before it. A press that lands while a
-     * timed round runs makes that follow-up read every account, not only the due ones.
-     */
-    let running: Promise<void> | null = null;
-    let queued: Promise<void> | null = null;
-    let queuedAll = false;
-    const run = (all: boolean): Promise<void> => {
-        if (stopped() || options.accounts.length === 0) return Promise.resolve();
-        if (running === null) {
-            running = poll(all).finally(() => (running = null));
-            return running;
-        }
-        queuedAll ||= all;
-        queued ??= running
-            .then(() => {
-                const wanted = queuedAll;
-                queuedAll = false;
-                return run(wanted);
-            })
-            .finally(() => (queued = null));
-        return queued;
     };
 
     /**
@@ -303,32 +241,40 @@ export function watchMail(hub: Hub, options: MailOptions): MailWatcher {
      * skill writes into it. What the file says at the start is taken as read: the first publish
      * reads it anyway, and a tick before the first round would otherwise publish every account as
      * not connected. A publish reads the file too, so a page write published at once is not
-     * published a second time by the tick after it.
+     * published a second time by the tick after it. A new mail folder closes the poll of the old
+     * one and starts one of its own.
      */
-    const startNotesPoll = (): void => {
+    const startNotesPoll = (dir: string): void => {
         if (options.pollNotes === false) return;
+        notesPoll?.close();
         try {
-            mkdirSync(options.dir, { recursive: true, mode: DIR_MODE });
+            mkdirSync(dir, { recursive: true, mode: DIR_MODE });
         } catch (error) {
             console.error(`mail watch: the mail folder cannot be made: ${reason(error)}`);
         }
         const clock = options.clock ?? systemClock;
         const every = options.notesEvery ?? POLL;
-        notesPoll = pollFile(triageFile(options.dir), { clock, every }, publish);
+        notesPoll = pollFile(triageFile(dir), { clock, every }, publish);
         notesPoll.reading();
     };
 
-    startNotesPoll();
-    if (options.accounts.length === 0) publish();
-    else void run(true);
+    const loop: AccountLoop = accountLoop(options, {
+        retryMin: RETRY_MIN,
+        now,
+        read: pollAccount,
+        publish,
+        held: [state, kept],
+        moved: startNotesPoll
+    });
+    startNotesPoll(options.dir);
+    loop.start();
 
     return {
-        refresh: () => run(true),
+        refresh: () => loop.run(true),
         republish: publish,
+        setAccounts: loop.set,
         close(): void {
-            closed = true;
-            if (timer !== null) clearTimeout(timer);
-            timer = null;
+            loop.close();
             notesPoll?.close();
             notesPoll = null;
         }

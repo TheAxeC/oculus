@@ -32,6 +32,7 @@ const STORES: (keyof ClientState)[] = [
     'feeds',
     'hpc',
     'calendar',
+    'accounts',
     'inbox',
     'audit',
     'memories',
@@ -48,6 +49,7 @@ const STORES: (keyof ClientState)[] = [
 ];
 
 describe('the client object', () => {
+    // revert: src/lib/state/client/context.ts:261 => delete
     it('holds one instance of every store it names', () => {
         const client = createClientState();
         const missing = STORES.filter((name) => typeof client[name] !== 'object');

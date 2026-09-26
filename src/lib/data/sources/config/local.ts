@@ -12,6 +12,7 @@ import type {
     MailAccountConfig,
     UsageAccountConfig
 } from '../../model/index.ts';
+import { isAccountLabel, isProvider } from '../../accounts/connect.ts';
 import { configDir } from './folder.ts';
 
 export type LocalConfig = {
@@ -55,6 +56,12 @@ export type LocalConfig = {
      * Absolute or PATH-resolved Claude CLI the update tasks and the chat terminal are started with.
      */
     claudeBin: string;
+    /**
+     * The program an `https` address is handed to, `open_bin` in the file: a provider's consent
+     * page, an event or a thread at its provider. Absent unless the machine sets it, and the server
+     * then hands the address to macOS's /usr/bin/open.
+     */
+    openBin?: string;
     /** Claude and Codex config folders shown by the Usage view. */
     accounts: UsageAccountConfig[];
     /** The calendar accounts the Calendar view reads, empty unless the machine names any. */
@@ -92,6 +99,7 @@ const LOCAL_KEYS = [
     'notes',
     'changes',
     'claude_bin',
+    'open_bin',
     'accounts',
     'calendars',
     'calendar_dir',
@@ -160,13 +168,6 @@ function usageAccounts(value: unknown, file: string, base: string): UsageAccount
 }
 
 /**
- * What a connector account's label may hold. The label becomes part of the credential file's name,
- * so a label that could leave the connector's directory, or name a hidden file, is refused here
- * rather than joined into a path later.
- */
-const ACCOUNT_LABEL = /^[a-z0-9][a-z0-9-]*$/;
-
-/**
  * The rows of `calendars:` or `mail:`: one provider and one label each, the label unique per
  * provider inside its own list. A bad row throws the sentence naming the file, the list and the
  * row, as the accounts above do, so a machine whose own file is wrong is told at the start rather
@@ -181,10 +182,10 @@ function connectAccounts(value: unknown, file: string, list: string): ConnectAcc
         }
         const row = item as Record<string, unknown>;
         const provider = row.provider;
-        if (provider !== 'google' && provider !== 'microsoft') {
+        if (!isProvider(provider)) {
             throw new Error(`${file}: ${list}[${index}].provider must be google or microsoft`);
         }
-        if (typeof row.label !== 'string' || !ACCOUNT_LABEL.test(row.label)) {
+        if (!isAccountLabel(row.label)) {
             throw new Error(
                 `${file}: ${list}[${index}].label must be lowercase letters, digits and dashes`
             );
@@ -205,7 +206,7 @@ function connectAccounts(value: unknown, file: string, list: string): ConnectAcc
  * what the machine's own configuration is. A relative path inside it resolves against the engine
  * rather than the file's own folder, so a relative `hub` is read from the engine directory.
  */
-function localFile(engine: string): string {
+export function localFile(engine: string): string {
     return join(configDir(engine), LOCAL_NAME);
 }
 
@@ -251,6 +252,12 @@ function applyLocal(
             throw new Error(`${file}: claude_bin must be a non-empty string`);
         }
         config.claudeBin = record.claude_bin;
+    }
+    if (record.open_bin !== undefined) {
+        if (typeof record.open_bin !== 'string' || record.open_bin.length === 0) {
+            throw new Error(`${file}: open_bin must be a non-empty string`);
+        }
+        config.openBin = record.open_bin;
     }
     if (record.accounts !== undefined) config.accounts = usageAccounts(record.accounts, file, base);
     if (record.calendars !== undefined) {

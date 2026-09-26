@@ -5,9 +5,9 @@
 // Every credential file this file reads is in a directory it made under mkdtemp and asserted to be
 // inside the temporary directory first; nothing under the reader's own home is touched.
 
-import { rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { resolve, sep } from 'node:path';
+import { join, resolve, sep } from 'node:path';
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import type {
     CalendarAccountConfig,
@@ -124,7 +124,9 @@ function pollCalls(fetcher: ReturnType<typeof swingingFetcher>): number {
 
 /** The options one case runs its watcher under. */
 function options(dir: string, fetcher: Fetcher, accounts = [GOOGLE]) {
-    return { accounts, dir, pollMin: POLL_MIN, daysBack: 1, daysAhead: 14, fetcher };
+    // A provider folder the case never fills unless it says so, inside the case's own directory.
+    const providerDir = join(dir, 'connect');
+    return { accounts, dir, providerDir, pollMin: POLL_MIN, daysBack: 1, daysAhead: 14, fetcher };
 }
 
 describe('the calendar poller', () => {
@@ -148,9 +150,11 @@ describe('the calendar poller', () => {
         vi.useRealTimers();
     });
 
-    it('marks an account with no refresh token not connected, naming the file to create', async () => {
+    // revert: src/lib/server/accounts/connect/loop.ts:82 => delete
+    // revert: src/lib/server/accounts/calendar/poll.ts:167 => delete
+    it('marks an account with a client half and no refresh token not connected, with no hint', async () => {
         const dir = scratch();
-        const file = writeAccount(dir, GOOGLE, false);
+        writeAccount(dir, GOOGLE, false);
         const hub = new Hub();
         const fetcher = vi.fn<Fetcher>(() => {
             throw new Error('the poller called a provider');
@@ -163,8 +167,8 @@ describe('the calendar poller', () => {
             {
                 provider: 'google',
                 label: 'work',
+                ownHalf: true,
                 status: 'not-connected',
-                hint: file,
                 calendars: []
             }
         ]);
@@ -173,7 +177,8 @@ describe('the calendar poller', () => {
         watcher.close();
     });
 
-    it('marks an account whose file is not there at all not connected, naming the same path', async () => {
+    // revert: src/lib/server/accounts/connect/loop.ts:80 => if (credentials === null) return { waiting: { status: 'not-connected' } };
+    it('marks an account with no client half anywhere as waiting on its provider being set up', async () => {
         const dir = scratch();
         const hub = new Hub();
         const watcher = watchCalendar(
@@ -187,8 +192,39 @@ describe('the calendar poller', () => {
         );
         await watcher.refresh();
 
-        expect(held(hub).accounts[0].status).toBe('not-connected');
-        expect(held(hub).accounts[0].hint).toBe(credentialFile(dir, GOOGLE));
+        expect(held(hub).accounts[0]).toEqual({
+            provider: 'google',
+            label: 'work',
+            status: 'not-connected',
+            needsSetup: true,
+            calendars: []
+        });
+
+        watcher.close();
+    });
+
+    // revert: src/lib/server/accounts/connect/store.ts:169 => half = undefined;
+    it("reads an account through its provider's client half when its own file holds only a token", async () => {
+        const dir = scratch();
+        const file = credentialFile(dir, GOOGLE);
+        expect(resolve(file).startsWith(resolve(dir) + sep)).toBe(true);
+        writeFileSync(file, JSON.stringify({ refresh_token: REFRESH }));
+        const providers = join(dir, 'connect');
+        mkdirSync(providers);
+        writeFileSync(
+            join(providers, 'google.json'),
+            JSON.stringify({ client_id: 'the-shared-id', client_secret: 'the-shared-secret' })
+        );
+        const hub = new Hub();
+        const fetcher = swingingFetcher({ up: true, events: [] });
+        const watcher = watchCalendar(hub, options(dir, fetcher));
+        await watcher.refresh();
+
+        expect(held(hub).accounts[0].status).toBe('connected');
+        const body = fetcher.mock.calls[0][1]?.body;
+        const form = new URLSearchParams(typeof body === 'string' ? body : '');
+        expect(form.get('client_id')).toBe('the-shared-id');
+        expect(form.get('refresh_token')).toBe(REFRESH);
 
         watcher.close();
     });

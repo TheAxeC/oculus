@@ -39,6 +39,7 @@ export {
     loadLocal,
     loadLocalOrDefaults,
     localDefaults,
+    localFile,
     usageAccountLabel
 } from './config/local.ts';
 export { configDir } from './config/folder.ts';

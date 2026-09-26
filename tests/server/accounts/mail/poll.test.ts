@@ -10,9 +10,13 @@ import { join } from 'node:path';
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import type { InboxPayload } from '../../../../src/lib/data/model/index.ts';
 import { Hub } from '../../../../src/lib/server/core/channels.ts';
-import { RETRY_MIN, watchMail } from '../../../../src/lib/server/accounts/mail/poll.ts';
+import {
+    RETRY_MIN,
+    watchMail as watchMailOver,
+    type MailOptions,
+    type MailWatcher
+} from '../../../../src/lib/server/accounts/mail/poll.ts';
 import { triageFile } from '../../../../src/lib/server/accounts/mail/triage.ts';
-import { credentialFile } from '../../../../src/lib/server/accounts/connect/store.ts';
 import {
     ACCESS,
     GOOGLE,
@@ -38,6 +42,11 @@ afterEach(() => {
     vi.useRealTimers();
     cleanup();
 });
+
+/** The watcher over a provider folder no case fills, so every half is the account file's own. */
+function watchMail(hub: Hub, options: Omit<MailOptions, 'providerDir'>): MailWatcher {
+    return watchMailOver(hub, { ...options, providerDir: join(options.dir, 'connect') });
+}
 
 /** Give the event loop a turn until the condition holds, or give up. */
 async function until(held: () => boolean): Promise<void> {
@@ -119,13 +128,15 @@ describe('the mail poller', () => {
         watcher.close();
     });
 
-    it('marks an account with no refresh token not connected and names the file it waits for', async () => {
+    // revert: src/lib/server/accounts/mail/poll.ts:201 => delete
+    // revert: src/lib/server/accounts/connect/loop.ts:80 => if (credentials === null) return { waiting: { status: 'not-connected' } };
+    it('marks an account with no refresh token not connected, and one with no half as needing setup', async () => {
         const hub = new Hub();
         const dir = scratch();
-        const file = writeAccount(dir, GOOGLE, false);
+        writeAccount(dir, GOOGLE, false);
         const fetcher = vi.fn(() => answer({}));
         const watcher = watchMail(hub, {
-            accounts: [GOOGLE],
+            accounts: [GOOGLE, MICROSOFT],
             dir,
             pollMin: POLL_MIN,
             perSignal: 25,
@@ -133,9 +144,11 @@ describe('the mail poller', () => {
             pollNotes: false
         });
         await until(() => published(hub));
-        expect(held(hub).accounts[0]).toMatchObject({ status: 'not-connected', hint: file });
+        expect(held(hub).accounts).toEqual([
+            { provider: 'google', label: 'work', ownHalf: true, status: 'not-connected' },
+            { provider: 'microsoft', label: 'uni', status: 'not-connected', needsSetup: true }
+        ]);
         expect(fetcher).not.toHaveBeenCalled();
-        expect(file).toBe(credentialFile(dir, GOOGLE));
         watcher.close();
     });
 
@@ -285,7 +298,7 @@ describe('the mail poller', () => {
     });
 
     it('republishes when the triage skill writes the notes file from outside', async () => {
-        // revert: src/lib/server/accounts/mail/poll.ts:309 => return;
+        // revert: src/lib/server/accounts/mail/poll.ts:249 => return;
         const hub = new Hub();
         const dir = scratch();
         writeAccount(dir, GOOGLE);
@@ -317,8 +330,8 @@ describe('the mail poller', () => {
     });
 
     it('makes the mail folder when it is not there, so the first write from outside is seen', async () => {
-        // revert: src/lib/server/accounts/mail/poll.ts:311 => delete
-        // revert: src/lib/server/accounts/mail/poll.ts:309 => return;
+        // revert: src/lib/server/accounts/mail/poll.ts:251 => delete
+        // revert: src/lib/server/accounts/mail/poll.ts:249 => return;
         const hub = new Hub();
         const parent = scratch();
         const dir = join(parent, 'not-made-yet');
@@ -341,7 +354,7 @@ describe('the mail poller', () => {
     });
 
     it('reads a notes file written the moment the poller starts, at the next tick', () => {
-        // revert: src/lib/server/accounts/mail/poll.ts:309 => return;
+        // revert: src/lib/server/accounts/mail/poll.ts:249 => return;
         const hub = new Hub();
         const dir = scratch();
         const clock = manual();
@@ -368,7 +381,7 @@ describe('the mail poller', () => {
     });
 
     it('does not publish a page write a second time when the tick after it comes', () => {
-        // revert: src/lib/server/accounts/mail/poll.ts:138 => delete
+        // revert: src/lib/server/accounts/mail/poll.ts:143 => delete
         const hub = new Hub();
         const dir = scratch();
         const clock = manual();
@@ -391,7 +404,7 @@ describe('the mail poller', () => {
     });
 
     it('publishes nothing for a notes write after it closed, and leaves no tick behind', () => {
-        // revert: src/lib/server/accounts/mail/poll.ts:332 => delete
+        // revert: src/lib/server/accounts/mail/poll.ts:278 => delete
         const hub = new Hub();
         const dir = scratch();
         const clock = manual();

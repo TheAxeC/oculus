@@ -55,8 +55,8 @@ export function contextFixture(overrides: Partial<ServerContext> = {}): ServerCo
         hooks,
         git: { refresh: noop, close: noop },
         hpc: { refresh: () => Promise.resolve(), close: noop },
-        calendar: { refresh: () => Promise.resolve(), close: noop },
-        mail: { refresh: () => Promise.resolve(), republish: noop, close: noop },
+        calendar: { refresh: () => Promise.resolve(), setAccounts: noop, close: noop },
+        mail: { refresh: () => Promise.resolve(), republish: noop, setAccounts: noop, close: noop },
         usage: { refresh: () => Promise.resolve(), close: noop },
         usageRefresh: {
             ready: Promise.resolve(),
@@ -83,6 +83,12 @@ export function contextFixture(overrides: Partial<ServerContext> = {}): ServerCo
         calendarDir: overrides.calendarDir ?? '/fixture/calendar',
         mailConnects: new ConnectStates(),
         mailDir: overrides.mailDir ?? '/fixture/mail',
+        providerDir: overrides.providerDir ?? '/fixture/connect',
+        accounts: overrides.accounts ?? {
+            file: '/fixture/engine/config/local.yml',
+            writes: overrides.fsWrites ?? fsWrites(),
+            reload: noop
+        },
         opener: noop,
         openPath: noop,
         depositPlans: new Map(),

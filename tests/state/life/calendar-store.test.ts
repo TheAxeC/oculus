@@ -1,5 +1,5 @@
-// The calendar client store: the pending-Connect set, and the body each of its three commands sends
-// to the endpoint.
+// The calendar client store: the body each of its two commands sends to the endpoint, and what it
+// reads off the socket entity. Its accounts' commands are tested in accounts-store.test.ts.
 //
 // Nothing opens a socket: `fetch` is a stub that records the request and hands back the answer the
 // case wants, and nothing reads or writes outside it. The pure rules the store reads are
@@ -8,7 +8,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CalendarAccount, CalendarPayload } from '../../../src/lib/data/model/index.ts';
 import { TOKEN_HEADER } from '../../../src/lib/server/core/auth.ts';
+import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
+import { setCatalog, t } from '../../../src/lib/state/shared/words/text.ts';
 import { createClientState, type ClientState } from '../../fixtures/client.ts';
+
+setCatalog(textCatalog(loadConfig(engineDir()).config));
 
 const WRITE_TOKEN = 'the-write-token-of-this-case';
 
@@ -85,12 +89,6 @@ describe('the calendar store commands', () => {
         expect(sent()).toEqual({ action: 'refresh' });
     });
 
-    it('posts a connect naming the account by its key and nothing else', async () => {
-        answering();
-        await client.calendar.connect(GOOGLE);
-        expect(sent()).toEqual({ action: 'connect', account: 'google-work' });
-    });
-
     it('posts an open naming the event by its id, and never an address', async () => {
         answering();
         await client.calendar.openEvent('google-work-primary-one');
@@ -100,43 +98,33 @@ describe('the calendar store commands', () => {
     });
 });
 
-describe('the pending Connect press', () => {
-    it('is not pending before a press', () => {
-        expect(client.calendar.connecting(GOOGLE)).toBe(false);
+describe('what the calendar store commands say', () => {
+    it('says nothing when the endpoint took the command', async () => {
+        answering();
+        expect(await client.calendar.refresh()).toBe('');
+        answering();
+        expect(await client.calendar.openEvent('google-work-primary-one')).toBe('');
     });
 
-    it('is pending while the press is open and is not once it is answered', async () => {
-        let answer: (response: Response) => void = () => undefined;
-        const held = new Promise<Response>((resolve) => (answer = resolve));
-        vi.stubGlobal('fetch', () => held);
-
-        const press = client.calendar.connect(GOOGLE);
-        await Promise.resolve();
-        expect(client.calendar.connecting(GOOGLE)).toBe(true);
-
-        answer(
-            new Response(JSON.stringify({ ok: true }), {
-                status: 200,
-                headers: { 'content-type': 'application/json' }
-            })
+    it('says a refusal in the catalog sentence carrying its code', async () => {
+        // revert: src/lib/state/life/calendar.svelte.ts:49 => delete
+        vi.stubGlobal('fetch', () =>
+            Promise.resolve(
+                new Response(JSON.stringify({ error: 'no such event' }), { status: 400 })
+            )
         );
-        await press;
-        expect(client.calendar.connecting(GOOGLE)).toBe(false);
+        expect(await client.calendar.openEvent('gone')).toBe(
+            t('calendar.refused', 'no such event')
+        );
     });
 
-    it('stops being pending when the press is refused', async () => {
-        vi.stubGlobal('fetch', () => Promise.reject(new Error('the endpoint refused')));
-        await expect(client.calendar.connect(GOOGLE)).rejects.toThrow('the endpoint refused');
-        expect(client.calendar.connecting(GOOGLE)).toBe(false);
-    });
-
-    it('holds the press of one account and not of another', async () => {
-        const other: CalendarAccount = { ...GOOGLE, provider: 'microsoft', label: 'uni' };
-        vi.stubGlobal('fetch', () => new Promise<Response>(() => undefined));
-        void client.calendar.connect(GOOGLE);
-        await Promise.resolve();
-        expect(client.calendar.connecting(GOOGLE)).toBe(true);
-        expect(client.calendar.connecting(other)).toBe(false);
+    it('says a command no answer came back for, and one whose answer was not JSON', async () => {
+        // revert: src/lib/state/life/calendar.svelte.ts:50 => delete
+        // revert: src/lib/state/life/calendar.svelte.ts:51 => delete
+        vi.stubGlobal('fetch', () => Promise.reject(new TypeError('Failed to fetch')));
+        expect(await client.calendar.refresh()).toBe(t('accounts.unreachable'));
+        vi.stubGlobal('fetch', () => Promise.resolve(new Response('<html>', { status: 502 })));
+        expect(await client.calendar.refresh()).toBe(t('accounts.unreadable'));
     });
 });
 

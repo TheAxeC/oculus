@@ -3,14 +3,11 @@
 // cadence while a provider is not answering, the last good events kept under the state word, one
 // poll at a time, and a refresh a control can press.
 //
-// The cadence is each account's own. An account that failed is due again after RETRY_MIN and one
-// that answered after poll_min, the one timer fires at the earliest of those times, and a round
-// reads only the accounts that are due; so one provider refusing does not make the other one be
-// called every two minutes. The Refresh control reads every account whatever its due time, since
-// what a press asks for is the state now.
-//
-// A machine that names no account publishes `unconfigured` once and polls nothing, so an install
-// with no calendar costs no timer and no request.
+// The cadence and the account list are connect/loop.ts's, shared with the mail watcher: each
+// account's own cadence, a Refresh that reads every account, and a list the machine's file can
+// change while the watcher runs, an account added being read at once and one removed leaving the
+// next publish. A machine that names no account publishes `unconfigured` and polls nothing, so an
+// install with no calendar costs no timer and no request.
 //
 // The access token an account is polled with lives in a local variable for the length of that
 // account's read and is never held, logged or published. The refresh token is read from the
@@ -28,13 +25,16 @@ import type { Hub } from '../../core/channels.ts';
 import type { Window } from './api.ts';
 import { readGoogle } from './google.ts';
 import { readMicrosoft } from './microsoft.ts';
-import { accessToken, type Fetcher } from '../connect/oauth.ts';
-import { credentialFile, readCredentials } from '../connect/store.ts';
+import { accountLoop, signIn, type AccountLoop } from '../connect/loop.ts';
+import { hasOwnHalf } from '../connect/store.ts';
+import type { Fetcher } from '../connect/oauth.ts';
 
 export type CalendarOptions = {
     accounts: CalendarAccountConfig[];
     /** The folder the credential files live in, already resolved. */
     dir: string;
+    /** The folder the providers' client halves live in, already resolved. */
+    providerDir: string;
     pollMin: number;
     daysBack: number;
     daysAhead: number;
@@ -46,7 +46,12 @@ export type CalendarOptions = {
     now?: () => Date;
 };
 
-export type CalendarWatcher = { refresh(): Promise<void>; close(): void };
+export type CalendarWatcher = {
+    refresh(): Promise<void>;
+    /** Poll a new account list from a new folder, as config/local.yml now names them. */
+    setAccounts(accounts: CalendarAccountConfig[], dir: string): void;
+    close(): void;
+};
 
 /**
  * Minutes before the next attempt while a provider is not answering. The regular cadence is tuned
@@ -100,12 +105,11 @@ function byStart(one: CalendarEvent, two: CalendarEvent): number {
 
 export function watchCalendar(hub: Hub, options: CalendarOptions): CalendarWatcher {
     const fetcher = options.fetcher ?? fetch;
+    const providerDir = options.providerDir;
     const now = options.now ?? ((): Date => new Date());
     /** Every account's state word and hint, and the rows its last good poll left. */
     const state = new Map<string, CalendarAccount>();
     const kept = new Map<string, Kept>();
-    let closed = false;
-    const stopped = (): boolean => closed;
 
     const rowOf = (account: CalendarAccountConfig): CalendarAccount =>
         state.get(calendarKey(account)) ?? {
@@ -117,14 +121,15 @@ export function watchCalendar(hub: Hub, options: CalendarOptions): CalendarWatch
 
     /** One complete state out of what every account currently says. */
     const publish = (): void => {
-        const accounts = options.accounts.map(rowOf);
+        const held = loop.accounts();
+        const accounts = held.map(rowOf);
         const events: CalendarEvent[] = [];
-        for (const account of options.accounts) {
+        for (const account of held) {
             events.push(...(kept.get(calendarKey(account))?.events ?? []));
         }
         events.sort(byStart);
         const status: CalendarPayload['status'] =
-            options.accounts.length === 0
+            held.length === 0
                 ? 'unconfigured'
                 : accounts.some((account) => account.status === 'error')
                   ? 'error'
@@ -143,38 +148,35 @@ export function watchCalendar(hub: Hub, options: CalendarOptions): CalendarWatch
     };
 
     /**
-     * One account, read to the end or given the state word its failure earned. A file that is not
-     * there yet, or that holds no refresh token, is `not-connected` with the path the reader
-     * creates; that is not a failure and does not shorten the cadence.
+     * One account, read to the end or given the state word its failure earned. An account whose
+     * provider has no client half on this machine is `not-connected` and says the provider needs
+     * setting up; one with a half and no refresh token is `not-connected` and waits for Connect.
+     * Neither is a failure, and neither shortens the cadence. What a read of an account that has
+     * left, or of a folder that was replaced, comes back with is dropped.
      */
-    const pollAccount = async (account: CalendarAccountConfig): Promise<boolean> => {
+    const pollAccount = async (
+        account: CalendarAccountConfig,
+        dir: string,
+        live: () => boolean
+    ): Promise<boolean> => {
         const key = calendarKey(account);
         const held = kept.get(key);
         const base = {
             provider: account.provider,
             label: account.label,
+            ...(hasOwnHalf(dir, account) ? { ownHalf: true } : {}),
             calendars: held?.calendars ?? [],
             ...(held === undefined ? {} : { lastOk: held.lastOk })
         };
         try {
-            const credentials = readCredentials(options.dir, account);
-            if (credentials?.refreshToken === undefined) {
-                state.set(key, {
-                    ...base,
-                    status: 'not-connected',
-                    hint: credentialFile(options.dir, account)
-                });
+            const signed = await signIn('calendar', account, { dir, providerDir }, fetcher);
+            if ('waiting' in signed) {
+                state.set(key, { ...base, ...signed.waiting });
                 return true;
             }
-            const token = await accessToken(
-                'calendar',
-                credentials,
-                credentials.refreshToken,
-                fetcher
-            );
-            if (stopped()) return true;
+            if (!live()) return true;
             const args = {
-                token,
+                token: signed.token,
                 key,
                 label: account.label,
                 window: windowOf(now(), options.daysBack, options.daysAhead),
@@ -182,7 +184,7 @@ export function watchCalendar(hub: Hub, options: CalendarOptions): CalendarWatch
             };
             const reading =
                 account.provider === 'google' ? await readGoogle(args) : await readMicrosoft(args);
-            if (stopped()) return true;
+            if (!live()) return true;
             const lastOk = now().toISOString();
             kept.set(key, { calendars: reading.calendars, events: reading.events, lastOk });
             state.set(key, {
@@ -194,6 +196,7 @@ export function watchCalendar(hub: Hub, options: CalendarOptions): CalendarWatch
             });
             return true;
         } catch (error) {
+            if (!live()) return false;
             state.set(key, {
                 ...base,
                 status: 'error',
@@ -203,85 +206,18 @@ export function watchCalendar(hub: Hub, options: CalendarOptions): CalendarWatch
         }
     };
 
-    /** When each account is next due, as an epoch time; an account with no entry is due now. */
-    const due = new Map<string, number>();
-    const dueAt = (account: CalendarAccountConfig): number => due.get(calendarKey(account)) ?? 0;
-
-    /**
-     * One pending attempt at a time, fired at the earliest account's due time. One handle, which
-     * close() clears.
-     */
-    let timer: ReturnType<typeof setTimeout> | null = null;
-    const schedule = (): void => {
-        if (timer !== null) clearTimeout(timer);
-        if (stopped() || options.accounts.length === 0) {
-            timer = null;
-            return;
-        }
-        const wait = Math.min(...options.accounts.map(dueAt)) - now().getTime();
-        timer = setTimeout(() => void run(false), Math.max(0, wait));
-    };
-
-    /**
-     * One round: every account when a press asked for it, and the ones that are due otherwise. An
-     * account's next due time is set from its own outcome, so a refusing provider shortens its own
-     * cadence and nobody else's.
-     */
-    const poll = async (all: boolean): Promise<void> => {
-        const wanted = options.accounts.filter(
-            (account) => all || dueAt(account) <= now().getTime()
-        );
-        try {
-            for (const account of wanted) {
-                if (stopped()) return;
-                const good = await pollAccount(account);
-                const minutes = good ? options.pollMin : RETRY_MIN;
-                due.set(calendarKey(account), now().getTime() + minutes * 60000);
-            }
-            if (stopped() || wanted.length === 0) return;
-            publish();
-        } finally {
-            if (!stopped()) schedule();
-        }
-    };
-
-    /**
-     * The round in flight, if there is one, and the one follow-up round every caller asked for
-     * meanwhile shares. A refresh never opens a second round of provider calls beside the round
-     * running, so the rows and the state words are always the newest round's; it does get a round
-     * that starts after the one in flight, since what asked for it wants the providers' state after
-     * its own action and not the answer of a round begun before it. A press that lands while a
-     * timed round runs makes that follow-up read every account, not only the due ones.
-     */
-    let running: Promise<void> | null = null;
-    let queued: Promise<void> | null = null;
-    let queuedAll = false;
-    const run = (all: boolean): Promise<void> => {
-        if (stopped() || options.accounts.length === 0) return Promise.resolve();
-        if (running === null) {
-            running = poll(all).finally(() => (running = null));
-            return running;
-        }
-        queuedAll ||= all;
-        queued ??= running
-            .then(() => {
-                const wanted = queuedAll;
-                queuedAll = false;
-                return run(wanted);
-            })
-            .finally(() => (queued = null));
-        return queued;
-    };
-
-    if (options.accounts.length === 0) publish();
-    else void run(true);
+    const loop: AccountLoop = accountLoop(options, {
+        retryMin: RETRY_MIN,
+        now,
+        read: pollAccount,
+        publish,
+        held: [state, kept]
+    });
+    loop.start();
 
     return {
-        refresh: () => run(true),
-        close(): void {
-            closed = true;
-            if (timer !== null) clearTimeout(timer);
-            timer = null;
-        }
+        refresh: () => loop.run(true),
+        setAccounts: loop.set,
+        close: loop.close
     };
 }

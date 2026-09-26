@@ -9,6 +9,8 @@ import { describe, expect, it, vi } from 'vitest';
 import type { CalendarEvent } from '../../../../src/lib/data/model/index.ts';
 import { ConnectStates, callbackUrl } from '../../../../src/lib/server/accounts/connect/oauth.ts';
 import { handleCalendar } from '../../../../src/lib/server/accounts/calendar/routes.ts';
+import { fsWrites } from '../../../../src/lib/server/core/json.ts';
+import { noop } from '../../../fixtures/doubles.ts';
 
 const TOKEN = 'the-write-token-of-this-case';
 const LINK = 'https://www.google.com/calendar/event?eid=one';
@@ -45,6 +47,8 @@ function target(
         token: TOKEN,
         accounts: [{ provider: 'google' as const, label: 'work' }],
         dir: '/fixture/calendar',
+        providerDir: '/fixture/connect',
+        book: { file: '/fixture/engine/config/local.yml', writes: fsWrites(), reload: noop },
         redirect: callbackUrl(8791, 'calendar'),
         states: new ConnectStates(),
         refresh,

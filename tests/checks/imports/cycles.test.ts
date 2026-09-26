@@ -29,7 +29,7 @@ function plant(files: Record<string, string>): string {
 }
 
 describe('the runtime import graph of src', () => {
-    // revert: src/lib/data/sources/config/local.ts:15 => import { configDir } from './folder.ts'; import './merge.ts';
+    // revert: src/lib/data/sources/config/local.ts:16 => import { configDir } from './folder.ts'; import './merge.ts';
     // revert: src/lib/state/boards/focus-lanes.ts:6 => import { numericSetting } from '../workbench/rail-badges.ts';
     it('holds no cycle', () => {
         // Every cycle the tree had was broken by moving what its two sides shared to a module

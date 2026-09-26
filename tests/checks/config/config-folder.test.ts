@@ -225,6 +225,7 @@ describe("oculus's own config directory", () => {
         'views/feeds/leads.yml',
         'views/feeds/linkedin.yml',
         'views/feeds/radar.yml',
+        'views/personal/account-setup.yml',
         'views/personal/calendar.yml',
         'views/personal/memories.yml',
         'views/sessions/agents.yml',
@@ -594,6 +595,7 @@ describe("oculus's own config directory", () => {
 
     it('configures one lowercase chord and a glyph on every group reached by a chord of its own', () => {
         // revert: config/layout.yml:29 => sessions: { label: "Sessions", glyph: live }
+        // revert: config/layout.yml:33 => personal: { label: "Personal" }
         const { config } = loadConfig(engineDir());
         registerAll(client.registry);
         registerCollections(client.registry, collectionKeys(config));
@@ -612,10 +614,11 @@ describe("oculus's own config directory", () => {
             'Sessions',
             'Academic life',
             'Sources',
+            'Personal',
             'System'
         ]);
         expect(chorded.filter((section) => section.glyph === undefined)).toEqual([]);
-        expect(chorded.map((section) => section.chord)).toEqual(['m', 'c', 's', 'y']);
+        expect(chorded.map((section) => section.chord)).toEqual(['m', 'c', 's', 'p', 'y']);
         for (const group of groups) {
             if (group.chord !== undefined) expect(group.chord).toMatch(/^[a-z]$/);
         }

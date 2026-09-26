@@ -19,7 +19,12 @@ import {
     credentialFile,
     defaultConnectDir
 } from '../../../../src/lib/server/accounts/connect/store.ts';
-import { handleMail, handleMailCallback } from '../../../../src/lib/server/accounts/mail/routes.ts';
+import {
+    handleMail,
+    handleMailCallback as handleCallback,
+    type MailCallbackTarget
+} from '../../../../src/lib/server/accounts/mail/routes.ts';
+import { fsWrites } from '../../../../src/lib/server/core/json.ts';
 import { readTriage } from '../../../../src/lib/server/accounts/mail/triage.ts';
 import { ACCESS, GOOGLE, REFRESH, cleanup, fakeFetcher, scratch, writeAccount } from './fixture.ts';
 import { noop } from '../../../fixtures/doubles.ts';
@@ -28,6 +33,14 @@ import { sweepScratch } from '../../../fixtures/scratch.ts';
 afterAll(sweepScratch);
 
 afterEach(cleanup);
+
+/** The callback over a provider folder no case fills, so every half is the account file's own. */
+function handleMailCallback(
+    request: Request,
+    over: Omit<MailCallbackTarget, 'providerDir'>
+): Promise<Response> {
+    return handleCallback(request, { ...over, providerDir: join(over.dir, 'connect') });
+}
 
 const TOKEN = 'the-write-token-of-this-case';
 const WORDS = { ok: 'The account is connected.', bad: 'That link was not recognised.' };
@@ -92,6 +105,8 @@ function target(
         token: TOKEN,
         accounts: [GOOGLE],
         dir,
+        providerDir: join(dir, 'connect'),
+        book: { file: join(dir, 'local.yml'), writes: fsWrites(), reload: noop },
         redirect: callbackUrl(8791, 'mail'),
         states: over.states ?? new ConnectStates(),
         perSignal: 25,

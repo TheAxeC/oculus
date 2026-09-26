@@ -224,36 +224,43 @@ describe('the Inbox view', () => {
         expect(hasAction(closed, catalog['inbox.send'])).toBe(false);
     });
 
+    // revert: src/lib/views/feeds/inbox/Inbox.svelte:163 => {#if false}
+    // revert: src/lib/views/shared/accounts/AccountList.svelte:95 => delete
+    // revert: src/lib/views/shared/accounts/AccountList.svelte:108 => label={t('accounts.open_setup', provider(row))}
+    // revert: src/lib/views/shared/accounts/AccountList.svelte:139 => <li class="hint">{t('accounts.needs_setup', provider(row))}</li>
     it('draws the account rows with the Connect control while an account is not connected', () => {
         serve({
             status: 'ok',
             accounts: [
-                {
-                    provider: 'google',
-                    label: 'work',
-                    status: 'not-connected',
-                    hint: '/fixture/mail/google-work.json'
-                }
+                { provider: 'google', label: 'work', status: 'not-connected' },
+                { provider: 'microsoft', label: 'uni', status: 'not-connected', needsSetup: true }
             ],
             threads: []
         });
         const body = draw('inbox-accounts');
         expect(body).toContain('data-mail-account="google-work"');
-        expect(body).toContain(catalog['inbox.not_connected']);
-        expect(hasAction(body, catalog['inbox.connect'])).toBe(true);
-        expect(body).toContain(
-            catalog['inbox.needs_file'].replace('{0}', '/fixture/mail/google-work.json')
+        expect(body).toContain(catalog['accounts.not_connected']);
+        expect(hasAction(body, catalog['accounts.connect'])).toBe(true);
+        // The account whose provider has no client half points at the setup page instead, naming
+        // the provider as the setup page does, while its row keeps the mail word for it.
+        expect(body).toContain(catalog['accounts.needs_setup'].replace('{0}', 'Microsoft'));
+        expect(hasAction(body, catalog['accounts.open_setup'].replace('{0}', 'Microsoft'))).toBe(
+            true
         );
+        expect(body).toContain(catalog['inbox.provider_microsoft']);
         expect(body).toContain(catalog['inbox.clear']);
     });
 
-    it('says a machine with no mail account is unconfigured and draws no section', () => {
+    // revert: src/lib/views/feeds/inbox/Inbox.svelte:170 => {#if false}
+    it('says a machine with no mail account is unconfigured, offers Add and draws no section', () => {
         serve({ status: 'unconfigured', accounts: [], threads: [] });
         const body = draw('inbox-none');
-        expect(body).toContain(catalog['inbox.no_accounts']);
+        expect(body).toContain(catalog['accounts.empty_mail']);
         expect(body).toContain(catalog['inbox.unconfigured']);
         // The head carries the state word and the body the sentence, so the sentence is drawn once.
-        expect(body.split(catalog['inbox.no_accounts']).length).toBe(2);
+        expect(body.split(catalog['accounts.empty_mail']).length).toBe(2);
+        // Add account is in the head and in the empty state.
+        expect(body.split(`>${catalog['accounts.add']}<`).length).toBe(3);
         // no account is configured, so there is no thread to put in a section
         expect(body).not.toContain(catalog['inbox.sec_reply']);
     });

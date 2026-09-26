@@ -7,7 +7,7 @@
 import { createHash } from 'node:crypto';
 import { readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { resolve, sep } from 'node:path';
+import { join, resolve, sep } from 'node:path';
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import type { CalendarAccountConfig } from '../../../../src/lib/data/model/index.ts';
 import {
@@ -22,6 +22,7 @@ import {
     handleCalendarCallback
 } from '../../../../src/lib/server/accounts/calendar/routes.ts';
 import { credentialFile } from '../../../../src/lib/server/accounts/connect/store.ts';
+import { fsWrites } from '../../../../src/lib/server/core/json.ts';
 import { noop } from '../../../fixtures/doubles.ts';
 import { scratchDir, sweepScratch } from '../../../fixtures/scratch.ts';
 
@@ -103,6 +104,9 @@ function target(dir: string, states: ConnectStates, opened: string[]) {
         token: TOKEN,
         accounts: ACCOUNTS,
         dir,
+        // A provider folder this case never fills, so every half is the account file's own.
+        providerDir: join(dir, 'connect'),
+        book: { file: join(dir, 'local.yml'), writes: fsWrites(), reload: noop },
         redirect: callbackUrl(8791, 'calendar'),
         states,
         refresh: () => Promise.resolve(),
@@ -116,6 +120,7 @@ function callbackTarget(dir: string, states: ConnectStates, fetcher: Fetcher, re
     return {
         accounts: ACCOUNTS,
         dir,
+        providerDir: join(dir, 'connect'),
         states,
         fetcher,
         refresh: () => {

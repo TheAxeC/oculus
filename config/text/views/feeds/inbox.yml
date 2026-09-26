@@ -1,7 +1,6 @@
 # Oculus text owned by the inbox view.
 text:
     inbox:
-        account_error: error
         action: action
         age_days: '{0}d'
         age_hours: '{0}h'
@@ -15,19 +14,12 @@ text:
         callback_bad: That link was not recognised. Press Connect again in the Inbox view.
         callback_ok: The account is connected. This tab can be closed.
         clear: Nothing on the plate.
-        connect: Connect
-        connected: connected
-        connecting: connecting...
         draft_label: The answer to send
         error: error
         every: every {0}m
         info: info
-        last_ok: last read {0}
         live: live
         messages: '{0} messages'
-        needs_file: Put the client id in {0}, then press Connect.
-        no_accounts: No mail account is configured; local.yml has no mail rows.
-        not_connected: not connected
         notes_error: 'The triage notes were not read: {0}'
         open_provider: open at the provider
         polling: reading mailboxes...

@@ -65,7 +65,7 @@
 <g id="node10" class="node">
 <title>folder data/sources to folder data/accounts</title>
 <polygon fill="none" stroke="none" points="115.88,-392.84 106.12,-392.84 106.12,-380.36 115.88,-380.36 115.88,-392.84"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="111" y="-384.2" font-family="Helvetica,Arial,sans-serif" font-size="8.00">1</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="111" y="-384.2" font-family="Helvetica,Arial,sans-serif" font-size="8.00">2</text>
 </g>
 <!-- folder data/sources&#45;&gt;folder data/sources to folder data/accounts -->
 <g id="edge12" class="edge">

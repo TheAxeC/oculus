@@ -1,32 +1,31 @@
-// Layer 2, client state. What the Calendar view reads and the three commands it presses.
+// Layer 2, client state. What the Calendar view reads and the two commands it presses; its
+// accounts' Connect, Add and Remove are state/life/accounts.svelte.ts's, shared with the Inbox.
 //
 // The agenda is derived from the one socket entity, so the view holds no copy of it: a publish
-// replaces the payload and the day groups are computed again. The only state of this store's own is
-// which accounts have a Connect press in flight, which is what makes that control unpressable while
-// the consent page is opening.
+// replaces the payload and the day groups are computed again.
 //
 // The moment the day groups and today's count are measured from is the client's minute clock rather
 // than a reading taken here, so the agenda's today heading and the view's badge move across
 // midnight with every other countdown on the page. The rules themselves are the pure functions of
 // state/life/calendar.ts, which take that moment as an argument and are tested on their own.
+//
+// Each command answers the sentence the view says about it: the empty string when the endpoint took
+// it, and otherwise the endpoint's refusal or the reason no answer could be read.
 
-import { calendarKey } from '../../data/accounts/calendar.ts';
-import { fields } from '../../data/helpers/guards.ts';
-import type { CalendarAccount, CalendarPayload } from '../../data/model/index.ts';
+import type { CalendarPayload } from '../../data/model/index.ts';
 import { dayGroups, remainingToday, type CalendarDay } from './calendar.ts';
+import { postCommand } from '../shared/stores/post.ts';
+import { t } from '../shared/words/text.ts';
 import type { ClockStore, EntitiesStore, WritesStore } from '../shared/stores/shapes.ts';
 
-/** One client's reader of the calendar agenda, and its three commands. */
+/** One client's reader of the calendar agenda, and its two commands. */
 export type CalendarStore = {
     state: () => CalendarPayload | null;
     days: () => CalendarDay[];
     remaining: () => number;
     badgeText: () => string;
-    /** Whether a Connect press on this account has not been answered yet. */
-    connecting: (account: CalendarAccount) => boolean;
-    refresh: () => Promise<void>;
-    connect: (account: CalendarAccount) => Promise<void>;
-    openEvent: (id: string) => Promise<void>;
+    refresh: () => Promise<string>;
+    openEvent: (id: string) => Promise<string>;
 };
 
 export function createCalendar(
@@ -34,9 +33,6 @@ export function createCalendar(
     writes: WritesStore,
     clock: ClockStore
 ): CalendarStore {
-    /** The accounts whose Connect press is still open, by the key the endpoint is given. */
-    const pending = $state(new Set<string>());
-
     function state(): CalendarPayload | null {
         return entities.calendar();
     }
@@ -45,14 +41,15 @@ export function createCalendar(
         return entities.calendar()?.events ?? [];
     }
 
-    /** Post one command to the calendar endpoint and read its answer. */
-    async function command(body: Record<string, string>): Promise<Record<string, unknown>> {
-        const response = await fetch('/api/calendar', {
-            method: 'POST',
-            headers: { 'content-type': 'application/json', 'x-oculus-token': writes.writeToken() },
-            body: JSON.stringify(body)
-        });
-        return fields(await response.json());
+    /** Post one command to the calendar endpoint, and say what went wrong, or nothing. */
+    async function command(body: Record<string, string>): Promise<string> {
+        const answer = await postCommand('/api/calendar', body, writes.writeToken());
+        if (answer.ok) return '';
+        const code = answer.body.error;
+        if (typeof code === 'string') return t('calendar.refused', code);
+        if (answer.failed === 'unreachable') return t('accounts.unreachable');
+        if (answer.failed === 'unreadable') return t('accounts.unreadable');
+        return t('calendar.refused', '');
     }
 
     /** The minute the page is in, which every count below is measured from. */
@@ -68,21 +65,7 @@ export function createCalendar(
             const count = remaining();
             return count === 0 ? '' : String(count);
         },
-        connecting: (account) => pending.has(calendarKey(account)),
-        refresh: async () => {
-            await command({ action: 'refresh' });
-        },
-        connect: async (account) => {
-            const key = calendarKey(account);
-            pending.add(key);
-            try {
-                await command({ action: 'connect', account: key });
-            } finally {
-                pending.delete(key);
-            }
-        },
-        openEvent: async (id) => {
-            await command({ action: 'open', event: id });
-        }
+        refresh: () => command({ action: 'refresh' }),
+        openEvent: (id) => command({ action: 'open', event: id })
     };
 }

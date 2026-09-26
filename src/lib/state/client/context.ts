@@ -21,6 +21,7 @@
 import { createRegistry, type RegistryStore } from '../workbench/navigation/registry.ts';
 import { createChanges, type ChangesStore } from '../sessions/changes.svelte.ts';
 import { createAudit, type AuditStore } from '../system/audit.svelte.ts';
+import { createAccounts, type AccountsStore } from '../life/accounts.svelte.ts';
 import { createCalendar, type CalendarStore } from '../life/calendar.svelte.ts';
 import { createClock, type ClockStore } from './clock.svelte.ts';
 import { createDeposit, type DepositStore } from '../system/deposit.svelte.ts';
@@ -103,6 +104,8 @@ export type ClientState = {
     hpc: HpcStore;
     calendar: CalendarStore;
     inbox: InboxStore;
+    /** The Calendar's and the Inbox's accounts, and the account setup page. */
+    accounts: AccountsStore;
     audit: AuditStore;
     memories: MemoriesStore;
     present: PresentStore;
@@ -191,6 +194,7 @@ export function createClientState(): ClientState {
     const hpc = createHpc(entities, writes);
     const calendar = createCalendar(entities, writes, clock);
     const inbox = createInbox(entities, writes);
+    const accounts = createAccounts(entities, writes, (view) => void layout.openView(view));
     const audit = createAudit(entities);
     const memories = createMemories();
     const present = createPresent(entities);
@@ -254,6 +258,7 @@ export function createClientState(): ClientState {
         hpc,
         calendar,
         inbox,
+        accounts,
         audit,
         memories,
         present,

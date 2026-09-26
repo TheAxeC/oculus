@@ -272,11 +272,20 @@ export function openableAddress(target: string): boolean {
     }
 }
 
-/** Hand one `https` address to macOS, refusing anything else unopened. */
-export async function macOpenAddress(target: string): Promise<void> {
-    if (!openableAddress(target)) throw new Error('open refused');
-    await run(OPEN, [target]);
+/**
+ * An opener that hands one `https` address to a program as its one argument, refusing anything
+ * else unopened. The program is macOS's `open` unless the machine's own file names another in
+ * `open_bin`, which is how a served test run is given one that records the address instead.
+ */
+export function addressOpener(program: string): Opener {
+    return async (target: string): Promise<void> => {
+        if (!openableAddress(target)) throw new Error('open refused');
+        await run(program, [target]);
+    };
 }
+
+/** Hand one `https` address to macOS, refusing anything else unopened. */
+export const macOpenAddress: Opener = addressOpener(OPEN);
 
 /** The real path a body names that `open` may be given, or the refusal to answer with. */
 async function target(

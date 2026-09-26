@@ -1,8 +1,11 @@
 // Layer 2, server tests. ServerContext constructs each dependency once, closes each owner once,
 // carries its token, and reports a missing raw-request carrier clearly.
 
-import { hostname } from 'node:os';
-import { describe, expect, it, vi } from 'vitest';
+import { readFileSync, writeFileSync } from 'node:fs';
+import { hostname, tmpdir } from 'node:os';
+import { join, resolve, sep } from 'node:path';
+import { afterAll, describe, expect, it, vi } from 'vitest';
+import type { LocalConfig } from '../../../src/lib/data/sources/config.ts';
 import { Hub } from '../../../src/lib/server/core/channels.ts';
 import {
     carryServerContext,
@@ -12,7 +15,11 @@ import {
     type OculusRequest
 } from '../../../src/lib/server/root/context.ts';
 import { Terminals, type TerminalDriver } from '../../../src/lib/server/machine/pty/channel.ts';
+import { macOpenAddress } from '../../../src/lib/server/files/open.ts';
 import { noop, noopAsync } from '../../fixtures/doubles.ts';
+import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
+
+afterAll(sweepScratch);
 
 const driver = (close: () => void = noop): TerminalDriver => ({
     run: () => Promise.resolve(''),
@@ -23,10 +30,71 @@ const driver = (close: () => void = noop): TerminalDriver => ({
     close
 });
 
+/**
+ * Every dependency of a context as an inert double, so a case builds a whole context without a
+ * watcher, a terminal or a file of the machine; a case replaces the ones it watches.
+ */
+function inertDependencies(): Partial<ContextDependencies> {
+    return {
+        loadLocal: () => ({
+            hub: '/hub',
+            port: 8791,
+            claudeBin: 'claude',
+            accounts: [],
+            calendars: [],
+            mail: []
+        }),
+        loadConfig: () => ({
+            config: {
+                slurm: {
+                    host: 'cluster',
+                    days: 2,
+                    poll_min: 1,
+                    quota_min: 5,
+                    prewarm: false
+                },
+                calendar: { poll_min: 15, days_back: 1, days_ahead: 14 },
+                editor: { paint_limit_kb: 64 },
+                open: { program_ext: { '.docx': 'com.microsoft.Word' } },
+                mail: { poll_min: 10, per_signal: 25 },
+                usage_tiers: {},
+                usage_refresh_min: 5,
+                usage_refresh_model: 'model'
+            },
+            findings: []
+        }),
+        mintToken: () => 'context-token',
+        createHub: () => new Hub(),
+        createTerminals: (hub) => new Terminals(hub, { driver: driver(), poll: 0 }),
+        watchPortfolio: () => ({ close: noop }),
+        watchCalendar: () => ({ refresh: noopAsync, setAccounts: noop, close: noop }),
+        watchMail: () => ({ refresh: noopAsync, republish: noop, setAccounts: noop, close: noop }),
+        watchLocal: () => ({ close: noop }),
+        watchGit: () => ({ refresh: noopAsync, close: noop }),
+        watchBookmarks: () => ({ close: noop }),
+        watchHpc: () => ({ refresh: noopAsync, close: noop }),
+        watchUsageRefresh: () => ({
+            ready: Promise.resolve(),
+            refresh: () => Promise.resolve(true),
+            refreshAll: noopAsync,
+            state: () => ({
+                state: 'running',
+                since: '',
+                reason: '',
+                lastRefresh: '',
+                renewed: true
+            }),
+            close: noop
+        }),
+        watchSessions: () => ({ onChange: () => noop, close: noop }),
+        watchUsage: () => ({ refresh: noopAsync, close: noop })
+    };
+}
+
 describe('ServerContext', () => {
-    // revert: src/lib/server/root/context.ts:335 => delete
+    // revert: src/lib/server/root/context.ts:362 => delete
     it('builds and closes each process-owned object once and carries its token', () => {
-        const closes = Array.from({ length: 10 }, () => vi.fn());
+        const closes = Array.from({ length: 11 }, () => vi.fn());
         const hub = new Hub();
         const merge = vi.spyOn(hub, 'merge');
         const terminals = new Terminals(hub, { driver: driver(closes[6]), poll: 0 });
@@ -66,13 +134,16 @@ describe('ServerContext', () => {
         const watchUsage = vi.fn(() => ({ refresh: vi.fn(noopAsync), close: closes[5] }));
         const watchCalendar = vi.fn<ContextDependencies['watchCalendar']>(() => ({
             refresh: vi.fn(noopAsync),
+            setAccounts: noop,
             close: closes[7]
         }));
         const watchMail = vi.fn<ContextDependencies['watchMail']>(() => ({
             refresh: vi.fn(noopAsync),
             republish: noop,
+            setAccounts: noop,
             close: closes[8]
         }));
+        const watchLocal = vi.fn<ContextDependencies['watchLocal']>(() => ({ close: closes[10] }));
         const loadConfig = vi.fn(() => ({
             config: {
                 slurm: {
@@ -119,11 +190,12 @@ describe('ServerContext', () => {
             watchHpc,
             watchCalendar,
             watchMail,
+            watchLocal,
             watchUsageRefresh,
             watchUsage
         });
 
-        // revert: src/lib/server/root/context.ts:187 => delete
+        // revert: src/lib/server/root/context.ts:214 => delete
         expect(merge).toHaveBeenCalledWith('files', expect.any(Function));
         expect(context.token).toBe('context-token');
         for (const built of [
@@ -136,6 +208,7 @@ describe('ServerContext', () => {
             watchHpc,
             watchCalendar,
             watchMail,
+            watchLocal,
             watchUsageRefresh,
             watchUsage
         ]) {
@@ -143,7 +216,7 @@ describe('ServerContext', () => {
         }
         // The sessions watcher reads every account local.yml names, so a session of the second
         // Claude account is read from that account's own registry and transcripts.
-        // revert: src/lib/server/root/context.ts:233 => delete
+        // revert: src/lib/server/root/context.ts:252 => delete
         expect(watchSessions.mock.calls[0][1]).toMatchObject({
             stores: ['/machine/.claude/projects', '/machine/.claude-work/projects'],
             registries: ['/machine/.claude/sessions', '/machine/.claude-work/sessions'],
@@ -190,45 +263,13 @@ describe('ServerContext', () => {
         for (const close of closes) expect(close).toHaveBeenCalledTimes(1);
     });
 
-    // revert: src/lib/server/root/context.ts:253 => onSessionsChange: undefined
+    // revert: src/lib/server/root/context.ts:272 => onSessionsChange: undefined
     it('keeps session rescan signals inside their owning context', () => {
         const rescans: (() => void)[] = [];
         const refreshes = [vi.fn(noopAsync), vi.fn(noopAsync)];
         let usageIndex = 0;
         const replacements: Partial<ContextDependencies> = {
-            loadLocal: () => ({
-                hub: '/hub',
-                port: 8791,
-                claudeBin: 'claude',
-                accounts: [],
-                calendars: [],
-                mail: []
-            }),
-            loadConfig: () => ({
-                config: {
-                    slurm: {
-                        host: 'cluster',
-                        days: 2,
-                        poll_min: 1,
-                        quota_min: 5,
-                        prewarm: false
-                    },
-                    calendar: { poll_min: 15, days_back: 1, days_ahead: 14 },
-                    editor: { paint_limit_kb: 64 },
-                    open: { program_ext: { '.docx': 'com.microsoft.Word' } },
-                    mail: { poll_min: 10, per_signal: 25 },
-                    usage_tiers: {},
-                    usage_refresh_min: 5,
-                    usage_refresh_model: 'model'
-                },
-                findings: []
-            }),
-            mintToken: () => 'context-token',
-            createHub: () => new Hub(),
-            createTerminals: (hub) => new Terminals(hub, { driver: driver(), poll: 0 }),
-            watchPortfolio: () => ({ close: noop }),
-            watchCalendar: () => ({ refresh: noopAsync, close: noop }),
-            watchMail: () => ({ refresh: noopAsync, republish: noop, close: noop }),
+            ...inertDependencies(),
             watchSessions: () => {
                 const listeners = new Set<() => void>();
                 rescans.push(() => {
@@ -246,22 +287,6 @@ describe('ServerContext', () => {
                     }
                 };
             },
-            watchGit: () => ({ refresh: noopAsync, close: noop }),
-            watchBookmarks: () => ({ close: noop }),
-            watchHpc: () => ({ refresh: noopAsync, close: noop }),
-            watchUsageRefresh: () => ({
-                ready: Promise.resolve(),
-                refresh: () => Promise.resolve(true),
-                refreshAll: noopAsync,
-                state: () => ({
-                    state: 'running',
-                    since: '',
-                    reason: '',
-                    lastRefresh: '',
-                    renewed: true
-                }),
-                close: noop
-            }),
             watchUsage: (_hub, options) => {
                 const refresh = refreshes[usageIndex++];
                 const off = options.onSessionsChange?.(() => void refresh()) ?? noop;
@@ -281,6 +306,84 @@ describe('ServerContext', () => {
 
         first.close();
         second.close();
+    });
+
+    // revert: src/lib/server/root/context.ts:390 => delete
+    it('hands the account lists of a local.yml written again to both pollers and the routes', () => {
+        let rows: LocalConfig['calendars'] = [];
+        const changed: (() => void)[] = [];
+        const calendarSet = vi.fn();
+        const mailSet = vi.fn();
+        const context = createServerContext('/engine', {
+            ...inertDependencies(),
+            loadLocal: () => ({
+                hub: '/hub',
+                port: 8791,
+                claudeBin: 'claude',
+                accounts: [],
+                calendars: rows,
+                mail: rows,
+                mailDir: '/machine/mail'
+            }),
+            watchCalendar: () => ({ refresh: noopAsync, setAccounts: calendarSet, close: noop }),
+            watchMail: () => ({
+                refresh: noopAsync,
+                republish: noop,
+                setAccounts: mailSet,
+                close: noop
+            }),
+            watchLocal: (_engine, onChange) => {
+                changed.push(onChange);
+                return { close: noop };
+            }
+        });
+
+        rows = [{ provider: 'google', label: 'work' }];
+        changed[0]();
+
+        expect(context.local.calendars).toEqual(rows);
+        expect(context.local.mail).toEqual(rows);
+        expect(calendarSet).toHaveBeenCalledWith(rows, context.calendarDir);
+        expect(mailSet).toHaveBeenCalledWith(rows, '/machine/mail');
+        expect(context.mailDir).toBe('/machine/mail');
+        context.close();
+    });
+
+    // revert: src/lib/server/root/context.ts:352 => opener: macOpenAddress,
+    it('hands an address to the program open_bin names, and to macOS open when it names none', async () => {
+        const dir = scratchDir('oculus-open-bin-');
+        expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
+        const recorded = join(dir, 'opened.txt');
+        const recorder = join(dir, 'recorder');
+        writeFileSync(recorder, `#!/bin/sh\nprintf '%s' "$1" > ${JSON.stringify(recorded)}\n`, {
+            mode: 0o755
+        });
+        const machine = (openBin?: string): LocalConfig => ({
+            hub: '/hub',
+            port: 8791,
+            claudeBin: 'claude',
+            accounts: [],
+            calendars: [],
+            mail: [],
+            ...(openBin === undefined ? {} : { openBin })
+        });
+
+        const plain = createServerContext('/engine', {
+            ...inertDependencies(),
+            loadLocal: () => machine()
+        });
+        expect(plain.opener).toBe(macOpenAddress);
+        plain.close();
+
+        const named = createServerContext('/engine', {
+            ...inertDependencies(),
+            loadLocal: () => machine(recorder)
+        });
+        await named.opener('https://accounts.example.invalid/consent?state=one');
+        expect(readFileSync(recorded, 'utf8')).toBe(
+            'https://accounts.example.invalid/consent?state=one'
+        );
+        named.close();
     });
 
     it('stops before building anything when open.program_ext is missing, naming the key', () => {

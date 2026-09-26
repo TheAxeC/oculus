@@ -96,7 +96,7 @@
 
     /** One command's outcome as the one sentence the view says about it. */
     function say(answer: MailAnswer, done: string): void {
-        onsaid(answer.ok ? done : t('inbox.refused', answer.error ?? ''));
+        onsaid(answer.ok ? done : (answer.error ?? ''));
     }
 
     async function mark(triaged: boolean): Promise<void> {

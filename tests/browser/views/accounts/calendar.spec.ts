@@ -9,20 +9,21 @@
 // real connector.
 
 import { expect, test } from '@playwright/test';
-import { boot, openView } from '../helpers/rail.ts';
-import { t } from '../helpers/words.ts';
+import { boot, openView } from '../../helpers/rail.ts';
+import { t } from '../../helpers/words.ts';
 
 test('the configured account is drawn not connected, with its Connect control and no events', async ({
     page
 }) => {
+    // revert: src/lib/views/shared/accounts/AccountList.svelte:112 => {:else if false}
     await boot(page);
     await openView(page, 'calendar', t('views.calendar'));
 
-    const account = page.locator('[data-account="google-work"]');
+    const account = page.locator('[data-calendar-account="google-work"]');
     await expect(account).toHaveCount(1, { timeout: 15000 });
-    await expect(account).toContainText(t('calendar.not_connected'));
+    await expect(account).toContainText(t('accounts.not_connected'));
     await expect(account).toContainText('work');
-    await expect(account.getByRole('button', { name: t('calendar.connect') })).toBeVisible();
+    await expect(account.getByRole('button', { name: t('accounts.connect') })).toBeVisible();
 
     // The window holds nothing, since the account has no token and the poller called no provider.
     await expect(page.getByText(t('calendar.agenda_empty'))).toBeVisible();

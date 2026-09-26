@@ -2,7 +2,7 @@
 // origin and ServerContext token checks as the HPC refresh route, then calls that context's
 // refresher.
 
-import { hasToken, sameOrigin } from '../../core/auth.ts';
+import { gatedBody } from '../../core/auth.ts';
 
 export type UsageRefreshTarget = {
     token: string;
@@ -16,22 +16,9 @@ export async function handleUsageRefresh(
     request: Request,
     target: UsageRefreshTarget
 ): Promise<Response> {
-    if (
-        !sameOrigin(request, request.headers.get('host') ?? '') ||
-        !hasToken(request, target.token)
-    ) {
-        return json(403, { error: 'forbidden' });
-    }
-    let body: unknown;
-    try {
-        body = await request.json();
-    } catch {
-        return json(400, { error: 'bad body' });
-    }
-    if (typeof body !== 'object' || body === null || Array.isArray(body)) {
-        return json(400, { error: 'bad body' });
-    }
-    const label = (body as Record<string, unknown>).account;
+    const body = await gatedBody(request, target.token);
+    if (body instanceof Response) return body;
+    const label = body.account;
     if (typeof label !== 'string' || label === '') return json(400, { error: 'bad account' });
     if (!(await target.refresh(label))) return json(404, { error: 'account not found' });
     return json(200, { status: 'ok' });

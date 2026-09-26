@@ -30,7 +30,7 @@ nav_groups:
   academic: { label: "Academic life", glyph: scout, chord: c }
   sources: { label: "Sources", glyph: folder, chord: s }
   feeds: { label: "Feeds", glyph: scout }
-  personal: { label: "Personal" }
+  personal: { label: "Personal", glyph: memories, chord: p }
   system: { label: "System", glyph: audit, chord: y }
 
 
