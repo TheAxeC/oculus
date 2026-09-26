@@ -38,7 +38,7 @@ dispatch:      # X3b and S2 in flight (S2 ready to land); X3a next into the free
   worktree: .agents/worktrees/X3b
   base: a8848c49
   launched: 2026-09-25
-  report: tools/oculus/.scratch/migration/agents/reviews/X3b-report.md
+  report: tools/oculus/.scratch/migration/agents/reviews/X3b-report.md (back 2026-09-26: 273,078 tokens, 816 tool uses, 46,446 s)
   landing: not-started
   round: 0
 - step: S2
@@ -50,7 +50,7 @@ dispatch:      # X3b and S2 in flight (S2 ready to land); X3a next into the free
   launched: 2026-09-25
   report: tools/oculus/.scratch/migration/agents/reviews/S2-report.md
   refuter: agents/reviews/S2-refuter.md (claude:opus, native Agent a90a5b0a448470e78)
-  landing: not-started
+  landing: cherry-picking
   round: 1  # sent 2026-09-26 over the uncommitted worktree tree at 0249f8f9; report back 2026-09-26; refuted by a646099ef1b407116 (claude:opus, 189,405 tokens, 68 tool uses, 17 min), appended to S2-refuter.md
   landing_fixes:  # the round refutation's findings, all inside the brief, fixed at landing
   - HELP.md :89 :103 :105 Doc text rewritten as table rows keeping the files, session-list and terminal cells
