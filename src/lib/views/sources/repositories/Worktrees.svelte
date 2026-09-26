@@ -25,7 +25,7 @@
         plannedPath,
         worktreeLabel,
         type DiffSubject
-    } from '$lib/state/sources/repositories';
+    } from '$lib/state/sources/repositories/repositories';
     import type { GitState } from '$lib/state/client/selectors.svelte';
     import { t } from '$lib/state/shared/words/text';
 

@@ -14,7 +14,7 @@ import { expect, test, type Page, type Route } from '@playwright/test';
 import { existsSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
-import { gitIn } from '../helpers/git.ts';
+import { gitIn, gitOut, gitTry } from '../helpers/git.ts';
 import { servedHomeDir, writeTranscript } from '../helpers/hub.ts';
 import { boot, openView } from '../helpers/rail.ts';
 import { t } from '../helpers/words.ts';
@@ -200,6 +200,63 @@ test.describe('the Changes panel', () => {
         await expect(panel.getByText(t('sessions.ch_norepo'))).toHaveCount(0);
         // Nothing can be read at a folder that is not there, so no reading drawing appears.
         await expect(panel.locator('[data-repo="readable"]')).toHaveCount(0);
+    });
+
+    /** A repository of this spec's holding kept.txt in one commit, with a session over it. */
+    function committedRepo(name: string): string {
+        const repo = folder(name);
+        writeFileSync(inside(join(repo, 'kept.txt')), 'kept\n');
+        gitIn(repo, 'init', '--quiet', '--initial-branch=main');
+        gitIn(repo, 'add', '--all');
+        gitIn(repo, 'commit', '--quiet', '-m', 'one');
+        return repo;
+    }
+
+    // revert: src/lib/views/shared/changes/ChangeGroups.svelte:137 => onclick={() => undefined}
+    test("opens a changed row's diff from the panel", async ({ page }) => {
+        const repo = committedRepo('opened');
+        writeFileSync(inside(join(repo, 'kept.txt')), 'kept\nand more\n');
+        session('Changes spec opened', repo);
+        await boot(page);
+        await openView(page, 'session-list', t('sessions.rail_title'));
+        await openView(page, 'changes', t('sessions.view_changes'));
+        await showChanges(page, 'Changes spec opened');
+
+        const row = page.locator(
+            '.changes[data-instance] [data-changes-group="changed"] [data-entry="kept.txt"]'
+        );
+        await expect(row).toBeVisible({ timeout: 15000 });
+        await row.getByRole('button', { name: t('repositories.diff_open'), exact: true }).click();
+        const file = page.locator(
+            '[data-view="repositories-diff"]:visible [data-diff-file="kept.txt"]'
+        );
+        await expect(file).toBeVisible();
+        await expect(file.locator('.cell.added')).toContainText('and more');
+    });
+
+    // revert: src/lib/views/shared/changes/ChangeGroups.svelte:151 => onclick={() => undefined}
+    test('marks a conflicted path resolved from the Merge Changes group', async ({ page }) => {
+        const repo = committedRepo('conflicted');
+        gitIn(repo, 'checkout', '--quiet', '-b', 'other');
+        writeFileSync(inside(join(repo, 'kept.txt')), 'theirs\n');
+        gitIn(repo, 'commit', '--quiet', '-am', 'Theirs');
+        gitIn(repo, 'checkout', '--quiet', 'main');
+        writeFileSync(inside(join(repo, 'kept.txt')), 'ours\n');
+        gitIn(repo, 'commit', '--quiet', '-am', 'Ours');
+        expect(gitTry(repo, 'merge', '--no-edit', 'other')).toBe(1);
+        session('Changes spec conflicted', repo);
+        await boot(page);
+        await openView(page, 'session-list', t('sessions.rail_title'));
+        await openView(page, 'changes', t('sessions.view_changes'));
+        await showChanges(page, 'Changes spec conflicted');
+
+        const row = page.locator(
+            '.changes[data-instance] [data-changes-group="merge"] [data-entry="kept.txt"]'
+        );
+        await expect(row).toBeVisible({ timeout: 15000 });
+        await row.getByRole('button', { name: t('repositories.merge_mark'), exact: true }).click();
+        await expect.poll(() => gitOut(repo, 'ls-files', '-u')).toBe('');
+        expect(gitOut(repo, 'diff', '--cached', '--name-only')).toBe('kept.txt\n');
     });
 
     // Revert: in load() of views/sessions/changes/Changes.svelte, write `branches = listed`

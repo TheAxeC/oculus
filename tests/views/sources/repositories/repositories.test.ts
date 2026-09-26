@@ -1,30 +1,36 @@
-// The Repositories view rendered to HTML on the server: the picker over the roots of the `git`
-// channel, the one repository shown, its branch line, and its Changes, Commits, Branches and
-// Worktrees sections with their counts and the controls of each row. Each case written for the
-// source control shape names the change that turns it red.
+// The Repositories view rendered to HTML on the server: the Repositories section over the roots of
+// the `git` channel, the one repository shown, its branch line, its commit box, and its Changes,
+// Graph, Stashes, Tags, Branches and Worktrees sections with their counts and the controls of each
+// row. Each case names the change that turns it red.
 //
 // The catalog and the glyphs are the real config; the git payload is the test's own, so the
-// sections are drawn without a repository anywhere. What this does NOT cover: pressing a control
-// and the fetch the Diff pane makes, neither of which a server rendering runs; both are exercised
-// by tests/browser/sources/repositories.spec.ts.
+// sections are drawn without a repository anywhere. What this does NOT cover: pressing a control,
+// and the reads the graph, a diff pane and the merge editor make, none of which a server rendering
+// runs; those are exercised by tests/browser/sources/repositories.spec.ts and tests/browser/scm/.
+// The two panes the views open are rendered here too: the diff pane with its bar (the two
+// layouts, Previous Change and Next Change, Open File and the re-read) and the merge editor with
+// its count of open conflicts and Complete Merge.
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render } from 'svelte/server';
-import Repositories from '../../../src/lib/views/sources/repositories/Repositories.svelte';
-import Diff from '../../../src/lib/views/sources/repositories/Diff.svelte';
-import Repo from '../../../src/lib/views/sources/repositories/Repo.svelte';
-import { shapeBadgeTone } from '../../../src/lib/views/shared/changes/repo-shape.ts';
-import type { GitState } from '../../../src/lib/data/model/index.ts';
+import Repositories from '../../../../src/lib/views/sources/repositories/Repositories.svelte';
+import Repo from '../../../../src/lib/views/sources/repositories/Repo.svelte';
+import Diff from '../../../../src/lib/views/sources/repositories/diff/Diff.svelte';
+import Merge from '../../../../src/lib/views/sources/repositories/merge/Merge.svelte';
+import type { Component } from 'svelte';
+import type { ViewProps } from '../../../../src/lib/state/workbench/navigation/registry.ts';
+import { shapeBadgeTone } from '../../../../src/lib/views/shared/changes/repo-shape.ts';
+import type { GitState } from '../../../../src/lib/data/model/index.ts';
 import {
     engineDir,
     glyphCatalog,
     loadConfig,
     textCatalog
-} from '../../../src/lib/data/sources/config.ts';
-import { setCatalog, setGlyphs } from '../../../src/lib/state/shared/words/text.ts';
-import type { Instance } from '../../../src/lib/state/workbench/layout/index.ts';
-import { git } from '../../fixtures/sessions-fixture.ts';
-import { clientContext, createClientState, type ClientState } from '../../fixtures/client.ts';
+} from '../../../../src/lib/data/sources/config.ts';
+import { setCatalog, setGlyphs } from '../../../../src/lib/state/shared/words/text.ts';
+import type { Instance } from '../../../../src/lib/state/workbench/layout/index.ts';
+import { git } from '../../../fixtures/sessions-fixture.ts';
+import { clientContext, createClientState, type ClientState } from '../../../fixtures/client.ts';
 
 const { config } = loadConfig(engineDir());
 const catalog = textCatalog(config);
@@ -99,9 +105,8 @@ function html(
 ): string {
     hold(payload);
     // The view reads what it keeps from the ui store, which is where its own presses write it.
-    if (view === 'repositories') client.ui.setInstanceState(`${view}-one`, state);
-    const component = view === 'repositories' ? Repositories : Diff;
-    return render(component, {
+    client.ui.setInstanceState(`${view}-one`, state);
+    return render(Repositories, {
         context: clientContext(client),
         props: { instance: instance(view, state) }
     }).body;
@@ -123,14 +128,11 @@ function repo(state: GitState, root = OTHER): string {
         props: {
             root,
             git: state,
-            busy: false,
-            outcome: '',
             collapsed: [],
+            commit: '',
             ontoggle: noop,
-            onstage: noop,
-            onunstage: noop,
-            ondiscard: noop,
-            ondiff: noop,
+            oncommit: noop,
+            ask: noop,
             onswitch: noop,
             onbranch: noop,
             onworktree: noop,
@@ -151,7 +153,7 @@ function group(body: string, id: string): string {
 
 describe('the Repositories view', () => {
     it('audits that maps each repository picker status to its own tone and a readable repository to none', () => {
-        // revert: src/lib/views/shared/changes/repo-shape.ts:27 => if (shape === 'missing') return 'blue';
+        // revert: src/lib/views/shared/changes/repo-shape.ts:28 => if (shape === 'missing') return 'blue';
         expect([
             shapeBadgeTone('missing'),
             shapeBadgeTone('failed'),
@@ -160,6 +162,7 @@ describe('the Repositories view', () => {
         ]).toEqual(['red', 'amber', 'blue', undefined]);
     });
 
+    // revert: src/lib/views/sources/repositories/Repositories.svelte:281 => <Empty message={t('repositories.list')} glyph={t('repositories.empty_glyph')} />
     it('says nothing is on the channel before the first payload', () => {
         const body = render(Repositories, {
             context: clientContext(client),
@@ -168,7 +171,7 @@ describe('the Repositories view', () => {
         expect(body).toContain(catalog['repositories.empty']);
     });
 
-    // Revert: show the last root the channel carries instead of shownRoot's answer.
+    // revert: src/lib/views/sources/repositories/Repositories.svelte:81 => const shown = $derived(roots.at(-1) ?? '');
     it('draws one repository, the first root the channel carries while the instance keeps none', () => {
         const body = html({ [HUB]: HUB_GIT, [OTHER]: git({ branch: 'work' }) });
         expect(body).toContain(`data-root="${HUB}"`);
@@ -177,7 +180,7 @@ describe('the Repositories view', () => {
         expect(count(body, 'data-root=')).toBe(1);
     });
 
-    // Revert: show `roots[0]` whatever the instance keeps, in Repositories.svelte.
+    // revert: src/lib/views/sources/repositories/Repositories.svelte:81 => const shown = $derived(roots[0] ?? '');
     it('draws the repository the instance keeps, and the first one when that one has gone', () => {
         const kept = html({ [HUB]: HUB_GIT, [OTHER]: git({ branch: 'work' }) }, 'repositories', {
             root: OTHER
@@ -190,24 +193,43 @@ describe('the Repositories view', () => {
         expect(gone).toContain(`data-root="${HUB}"`);
     });
 
-    // Revert: label the picker with a fixed word instead of the shown repository's label.
-    it('names the repository shown on the picker', () => {
+    // revert: src/lib/views/sources/repositories/RepoList.svelte:71 => current={false}
+    it('lists every root in the Repositories section, each by its name, the one shown as current', () => {
         const body = html({ [HUB]: HUB_GIT, [OTHER]: git({ branch: 'work' }) }, 'repositories', {
             root: OTHER
         });
-        const picker = body.slice(body.indexOf('data-repo-picker'));
-        expect(picker.slice(0, picker.indexOf('</button>'))).toContain('aria-label="other"');
-        expect(picker).toContain('aria-haspopup="menu"');
+        const list = group(body, 'repos');
+        expect(list).toContain(`aria-label="${catalog['repositories.list']}"`);
+        expect(count(list, 'data-repo-row=')).toBe(2);
+        const other = list.slice(list.indexOf(`data-repo-row="${OTHER}"`));
+        const row = other.slice(0, other.indexOf('</li>'));
+        expect(row).toContain('aria-label="other"');
+        expect(row).toContain('aria-current="true"');
+        const hub = list.slice(list.indexOf(`data-repo-row="${HUB}"`));
+        // The view shows one repository at a time, so only the kept one is drawn in force.
+        expect(hub.slice(0, hub.indexOf('</li>'))).not.toContain('aria-current="true"');
     });
 
+    // revert: src/lib/views/sources/repositories/RepoList.svelte:84 => {:else if false}
+    it('says on each row its branch, its distance from the upstream and how many paths it changed', () => {
+        const body = html({ [HUB]: { ...HUB_GIT, upstream: true } });
+        const row = group(body, 'repos');
+        expect(row).toContain(
+            catalog['repositories.list_sync'].replace('{0}', '0').replace('{1}', '2')
+        );
+        expect(row).toContain(
+            `title="${catalog['repositories.list_changes'].replace('{0}', '3')}"`
+        );
+    });
+
+    // revert: src/lib/views/sources/repositories/Repo.svelte:118 => delete
     it('draws the branch line with the distance from the upstream', () => {
         const body = html({ [HUB]: HUB_GIT });
         expect(body).toContain('main');
         expect(body).toContain(catalog['sessions.ch_ahead'].replace('{0}', '2'));
     });
 
-    // Revert: push `sessions.ch_insync` whenever `bits` is empty in
-    // views/shared/changes/branch-state.ts.
+    // revert: src/lib/views/shared/changes/branch-state.ts:18 => if (bits.length === 0) bits.push(t('sessions.ch_insync'));
     it('says in step on the branch line only for a branch with an upstream', () => {
         // A repository with no commit yet has no upstream, and reads the line saying so instead.
         const fresh = html({ [HUB]: git({ branch: 'start', log: [], branches: [] }) });
@@ -219,9 +241,7 @@ describe('the Repositories view', () => {
         expect(tracked).toContain(catalog['sessions.ch_insync']);
     });
 
-    // Revert: return `t('sessions.ch_failed', held.error ?? '')` from rowLabel() for every shape in
-    // repositories/Repo.svelte, which then says git could not read a repository for a folder that
-    // is not there at all and for one that is no repository.
+    // revert: src/lib/views/sources/repositories/Repo.svelte:95 => delete
     it('says a folder that is not there is not there, and one that is no repository is neither', () => {
         const reason = 'no such directory';
         const away = repo(git({ branch: '', present: false, repository: false, error: reason }));
@@ -240,7 +260,7 @@ describe('the Repositories view', () => {
         expect(folder).not.toContain(catalog['sessions.ch_failed'].replace('{0}', norepo));
     });
 
-    // Revert: drop `count={total}` from the Changes section head in Changes.svelte.
+    // revert: src/lib/views/sources/repositories/Changes.svelte:100 => delete
     it('draws the Changes section with its count and the three groups with theirs', () => {
         const changes = group(html({ [HUB]: HUB_GIT }), 'changes');
         expect(changes).toContain(`aria-label="${catalog['repositories.changes']}"`);
@@ -251,16 +271,18 @@ describe('the Repositories view', () => {
         expect(count(changes, '>1</span>')).toBe(3);
     });
 
-    // Revert: label a change row's diff control with another word, in Changes.svelte.
-    it('draws each change row with its diff, its staging and, for a changed path, its discard', () => {
+    // revert: src/lib/views/sources/repositories/Changes.svelte:199 => {:else if true}
+    it('draws each change row with its diff, Open File, its staging and, for a changed path, its discard', () => {
         const changes = group(html({ [HUB]: HUB_GIT }), 'changes');
         expect(changes).toContain('data-entry="code/one.py"');
         expect(changes).toContain('one.py');
-        expect(count(changes, `aria-label="${catalog['repositories.diff']}"`)).toBe(3);
+        // An untracked path has no diff: its row opens the file itself.
+        expect(count(changes, `aria-label="${catalog['repositories.diff']}"`)).toBe(2);
+        expect(count(changes, `aria-label="${catalog['repositories.open_file']}"`)).toBe(3);
+        expect(changes).toContain(catalog['repositories.open_file_title']);
         // The row itself and its diff control each say which side they show.
         expect(count(changes, catalog['repositories.diff_staged_title'])).toBe(2);
-        // Revert: name a change row by its file name alone; two README.md files then sound the
-        // same.
+        // A row is named by its whole path, so two README.md files do not sound the same.
         expect(changes).toContain(
             `aria-label="code/one.py, ${catalog['repositories.status_modified']}"`
         );
@@ -269,30 +291,82 @@ describe('the Repositories view', () => {
         expect(count(changes, `aria-label="${catalog['git.discard']}"`)).toBe(1);
     });
 
-    // Revert: render a group's rows whether or not its id is in `collapsed`.
+    // revert: src/lib/views/sources/repositories/Changes.svelte:162 => {#if true}
     it('draws no row of a group or a section the instance keeps closed', () => {
-        const body = html({ [HUB]: HUB_GIT }, 'repositories', { collapsed: ['staged', 'log'] });
+        const body = html({ [HUB]: HUB_GIT }, 'repositories', { collapsed: ['staged', 'graph'] });
         // the staged group is closed, so its rows are not drawn
         expect(body).not.toContain('data-entry="code/one.py"');
         expect(body).toContain('data-entry="README.md"');
-        // the log is closed too, so no commit subject is drawn
-        expect(body).not.toContain('Add the thing');
-        expect(group(body, 'log')).toContain('aria-expanded="false"');
+        expect(group(body, 'graph')).toContain('aria-expanded="false"');
     });
 
-    // Revert: draw the first commit of the log alone, in Repo.svelte.
-    it('draws one row per commit with its short hash, and says when there is none', () => {
-        const log = group(html({ [HUB]: HUB_GIT }), 'log');
-        expect(log).toContain(catalog['repositories.log']);
-        expect(log).toContain('>2</span>');
-        expect(log).toContain('aaaaaaa');
-        expect(log).toContain('Add the thing');
-        expect(log).toContain('Take the other thing back');
-        const bare = html({ [HUB]: git({}) });
-        expect(bare).toContain(catalog['repositories.log_empty']);
+    // revert: src/lib/views/sources/repositories/Repo.svelte:137 => delete
+    it('draws the commit box above the sections, with the Commit button and its list', () => {
+        const body = html({ [HUB]: HUB_GIT });
+        const box = body.indexOf('data-commit-box');
+        expect(box).toBeGreaterThan(0);
+        expect(box).toBeLessThan(body.indexOf('data-group="changes"'));
+        expect(body).toContain(`aria-label="${catalog['git.commit_more']}"`);
     });
 
-    // Revert: draw the switch control on the checked-out branch too, in Branches.svelte.
+    // revert: src/lib/views/sources/repositories/graph/Graph.svelte:206 => label={t('repositories.tags')}
+    it('draws the Graph section, whose commits the page reads when it opens', () => {
+        const graph = group(html({ [HUB]: HUB_GIT }), 'graph');
+        expect(graph).toContain(`aria-label="${catalog['repositories.graph']}"`);
+        // A server rendering reads nothing, so the section says it holds no commit yet.
+        expect(graph).toContain(catalog['repositories.log_empty']);
+    });
+
+    // revert: src/lib/views/sources/repositories/refs/Stashes.svelte:51 => {#each [] as stash (stash.ref)}
+    it('lists the stashes, each with Apply, Pop and Drop, and says when there is none', () => {
+        const held = {
+            ...HUB_GIT,
+            stashes: [{ ref: 'stash@{0}', hash: 'd'.repeat(40), message: 'On main: wip', when: '' }]
+        };
+        const stashes = group(html({ [HUB]: held }), 'stashes');
+        expect(stashes).toContain('data-stash="stash@{0}"');
+        expect(stashes).toContain('On main: wip');
+        expect(stashes).toContain(`aria-label="${catalog['repositories.stash_apply']}"`);
+        expect(stashes).toContain(`aria-label="${catalog['repositories.stash_pop']}"`);
+        expect(stashes).toContain(`aria-label="${catalog['repositories.stash_drop']}"`);
+        expect(group(html({ [HUB]: HUB_GIT }), 'stashes')).toContain(
+            catalog['repositories.stashes_empty']
+        );
+    });
+
+    // revert: src/lib/views/sources/repositories/refs/Tags.svelte:46 => {#each [] as tag (tag.name)}
+    it('lists the tags, each with Delete Tag, and says when there is none', () => {
+        const held = {
+            ...HUB_GIT,
+            tags: [{ name: 'v1.0', commit: 'a'.repeat(40), annotated: true, subject: 'first' }]
+        };
+        const tags = group(html({ [HUB]: held }), 'tags');
+        expect(tags).toContain('data-tag="v1.0"');
+        expect(tags).toContain(`aria-label="${catalog['repositories.tag_delete']}"`);
+        expect(group(html({ [HUB]: HUB_GIT }), 'tags')).toContain(
+            catalog['repositories.tags_empty']
+        );
+    });
+
+    // revert: src/lib/views/sources/repositories/Repo.svelte:138 => {#if false}
+    it('says a merge is in progress with Abort, draws Merge Changes first, and opens a conflict in the merge editor', () => {
+        const held = git({
+            sequence: 'merging',
+            conflicted: [{ path: 'both.txt', status: 'UU', added: 0, deleted: 0 }]
+        });
+        const body = html({ [HUB]: held });
+        expect(body).toContain('data-sequence="merging"');
+        expect(body).toContain(catalog['repositories.merging'].replace('{0}', '1'));
+        expect(body).toContain(`>${catalog['repositories.abort']}</span>`);
+        const changes = group(body, 'changes');
+        expect(changes.indexOf('data-changes="merge"')).toBeLessThan(
+            changes.indexOf('data-changes="changed"')
+        );
+        expect(changes).toContain(`aria-label="${catalog['repositories.merge_open']}"`);
+        expect(changes).toContain(catalog['repositories.conflict_both_modified']);
+    });
+
+    // revert: src/lib/views/sources/repositories/Branches.svelte:79 => {#if true}
     it('lists the branches with the switch control on the ones not checked out', () => {
         const branches = group(html({ [HUB]: HUB_GIT }), 'branches');
         expect(branches).toContain('origin/main');
@@ -304,7 +378,7 @@ describe('the Repositories view', () => {
         expect(main.slice(0, main.indexOf('</li>'))).toContain('aria-current="true"');
     });
 
-    // Revert: list the checkout among the worktrees, in Worktrees.svelte.
+    // revert: src/lib/state/sources/repositories/repositories.ts:406 => return git.worktrees;
     it('lists every worktree but the checkout, each with its four controls', () => {
         const body = html({ [HUB]: HUB_GIT });
         const worktrees = group(body, 'worktrees');
@@ -318,7 +392,7 @@ describe('the Repositories view', () => {
         expect(worktrees).toContain(catalog['repositories.remove']);
     });
 
-    // Revert: drop `git.detached` from the merge control's `disabled` in Worktrees.svelte.
+    // revert: src/lib/views/sources/repositories/Worktrees.svelte:130 => title={false
     it('offers no merge back while the repository has no branch checked out', () => {
         const body = html({ [HUB]: HUB_GIT });
         expect(body).toContain(catalog['repositories.merge_title']);
@@ -333,6 +407,7 @@ describe('the Repositories view', () => {
         expect(group(loose, 'worktrees')).toContain('disabled');
     });
 
+    // revert: src/lib/views/sources/repositories/Worktrees.svelte:86 => {#if false}
     it('warns about a repository whose .gitignore does not keep the folder out', () => {
         // this repository's .gitignore keeps the worktree folder out, so there is nothing to warn
         // about
@@ -341,7 +416,7 @@ describe('the Repositories view', () => {
         expect(loose).toContain(catalog['repositories.worktrees_unignored']);
     });
 
-    // Revert: draw the busy line whatever `busy` says, in Repo.svelte.
+    // revert: src/lib/views/sources/repositories/Repo.svelte:122 => {#if true}
     it('draws the busy line on the root with a write in flight and on no other', async () => {
         // The write is held open, so the store is still busy on that root while the page renders.
         let release: () => void = () => undefined;
@@ -353,20 +428,20 @@ describe('the Repositories view', () => {
         expect(client.repositories.busy(HUB)).toBe(true);
 
         const payload = { [HUB]: HUB_GIT, [OTHER]: git({ branch: 'work' }) };
-        expect(count(html(payload), catalog['git.busy'])).toBe(1);
+        // The busy line; the Commit button also says it as the reason it is held back.
+        expect(count(html(payload), `>${catalog['git.busy']}</p>`)).toBe(1);
         // the write is on the other repository, and the busy mark belongs to the one it is running
         // on
-        expect(html(payload, 'repositories', { root: OTHER })).not.toContain(catalog['git.busy']);
+        expect(html(payload, 'repositories', { root: OTHER })).not.toContain(
+            `>${catalog['git.busy']}</p>`
+        );
 
         release();
         await first;
         vi.unstubAllGlobals();
     });
 
-    // Revert: filter by `stateOf(root)?.repository === true` in pickerRoots of
-    // state/sources/repositories.ts; the hub leaves the picker, the view falls to the other root,
-    // and a channel carrying only folders draws the empty line instead of a root that says what it
-    // is.
+    // revert: src/lib/state/sources/repositories/repositories.ts:210 => return roots.filter((root) => stateOf(root)?.repository === true);
     it('draws a root that is no repository, and says nothing is on the channel only when nothing is', () => {
         const folder = git({ branch: '', repository: false, error: 'not a git repository' });
         const body = html({ [HUB]: folder, [OTHER]: git({ branch: 'work' }) });
@@ -380,9 +455,7 @@ describe('the Repositories view', () => {
         expect(body).not.toContain(catalog['repositories.empty']);
     });
 
-    // Revert: filter by `stateOf(root)?.repository === true` in pickerRoots of
-    // state/sources/repositories.ts; the deleted root leaves the picker and shownRoot hands the
-    // view to the hub, so the reader is moved without being told why.
+    // revert: src/lib/state/sources/repositories/repositories.ts:210 => return roots.filter((root) => stateOf(root)?.repository === true);
     it('keeps the view on a root the reader picked after its folder was deleted', () => {
         const away = git({
             branch: '',
@@ -396,19 +469,18 @@ describe('the Repositories view', () => {
         expect(body).not.toContain(`data-root="${HUB}"`);
         expect(body).toContain('data-repo="missing"');
         expect(body).toContain(catalog['sessions.ch_nofolder']);
-        // Every root deleted is still every root: the picker is drawn and the first one says so,
+        // Every root deleted is still every root: the list is drawn and the first one says so,
         // rather than the view falling back to the line for a channel carrying nothing.
         const all = html({ '/gone': away, '/also-gone': away });
-        expect(all).toContain('data-repo-picker');
+        expect(count(all, 'data-repo-row=')).toBe(2);
         expect(all).toContain(catalog['sessions.ch_nofolder']);
         // Every root deleted is still every root, so the line for a channel with none stays away.
         expect(all).not.toContain(catalog['repositories.empty']);
-        // Revert: drop `title` from the row's div in repositories/Repo.svelte; the row then says
-        // the folder is gone with git's own reason nowhere, where the Changes panel carries it.
+        // The row carries git's own reason as its hover words, as the Changes panel does.
         expect(body).toContain('title="no such directory"');
     });
 
-    // Revert: draw Repo.svelte whenever `held` is not null, in Repositories.svelte.
+    // revert: src/lib/views/sources/repositories/Repo.svelte:129 => {#if false}
     it('draws a repository whose read failed as its error row and no section', () => {
         const reason = 'index file smaller than expected';
         const body = html(
@@ -426,19 +498,18 @@ describe('the Repositories view', () => {
         expect(count(body, row)).toBe(1);
         expect(failed).toContain(`>${row}</span>`);
         expect(failed).toMatch(/class="item[^"]*\berror\b/);
-        for (const id of ['changes', 'log', 'branches', 'worktrees']) {
+        for (const id of ['changes', 'graph', 'stashes', 'tags', 'branches', 'worktrees']) {
             // the read failed, so there is no listing to draw a section from
             expect(body).not.toContain(`data-group="${id}"`);
         }
-        // and with no section there is no tree either
-        expect(body).not.toContain('role="tree"');
-        // The picker still names the repository it is on.
-        const picker = body.slice(body.indexOf('data-repo-picker'));
-        expect(picker.slice(0, picker.indexOf('</button>'))).toContain('aria-label="other"');
+        // and with no section the only tree is the Repositories section's
+        expect(count(body, 'role="tree"')).toBe(1);
+        // The Repositories section still names the repository it is on as current.
+        const other = body.slice(body.indexOf(`data-repo-row="${OTHER}"`));
+        expect(other.slice(0, other.indexOf('</li>'))).toContain('aria-current="true"');
     });
 
-    // Revert: wrap the branch line and the path in `{#if git.error === null}` in
-    // repositories/Repo.svelte.
+    // revert: src/lib/views/sources/repositories/Repo.svelte:114 => {#if git.error === null}
     it('keeps the branch line and the path above the error row while the state names a branch', () => {
         const reason = 'index file smaller than expected';
         const named = html({ [OTHER]: git({ branch: 'work', error: reason }) });
@@ -457,9 +528,7 @@ describe('the Repositories view', () => {
         expect(unnamed).toContain('class="path');
     });
 
-    // Reverts: draw the empty line `repositories.branches_empty` alone in
-    // repositories/Branches.svelte; or leave the log out of noCommitYet, which a failed listing
-    // then misreads.
+    // revert: src/lib/views/sources/repositories/Branches.svelte:36 => const unborn = $derived(false);
     it('says a repository with no commit has no branch to list, and keeps New branch live', () => {
         const fresh = git({ branch: 'start', branches: [], log: [] });
         const branches = group(html({ [HUB]: fresh }), 'branches');
@@ -501,19 +570,18 @@ describe('the Repositories view', () => {
         expect(liveCreate.slice(0, liveCreate.indexOf('>'))).not.toContain('disabled');
     });
 
-    // Revert: label the picker with each root's last folder alone.
+    // revert: src/lib/state/sources/repositories/repositories.ts:240 => labels[root] = one;
     it('tells two repositories with the same last folder apart by the folder above it', () => {
         const body = html(
             { '/a/work/hub': HUB_GIT, '/b/other/hub': git({ branch: 'work' }) },
             'repositories',
             { root: '/b/other/hub' }
         );
-        const picker = body.slice(body.indexOf('data-repo-picker'));
-        expect(picker.slice(0, picker.indexOf('</button>'))).toContain('aria-label="other/hub"');
+        const row = body.slice(body.indexOf('data-repo-row="/b/other/hub"'));
+        expect(row.slice(0, row.indexOf('</li>'))).toContain('aria-label="other/hub"');
     });
 
-    // Revert: keep the staged group whatever it holds, in state/sources/repositories.ts's
-    // changeGroups.
+    // revert: src/lib/state/sources/repositories/repositories.ts:273 => () => true
     it('draws no staged group while nothing is staged, and one muted row under an empty group', () => {
         const changes = group(
             html({
@@ -528,18 +596,18 @@ describe('the Repositories view', () => {
         expect(changes).toContain(catalog['sessions.ch_group_empty']);
     });
 
-    // Revert: drop `role="tree"` from ui/tree/TreeView.svelte.
-    it('draws its sections as one tree, a treeitem per row at its level, with one stop', () => {
+    // revert: src/lib/ui/tree/TreeView.svelte:71 => <div class="tree" aria-label={label} bind:this={box} onfocusin={entered}>
+    it('draws the Repositories section and the sections of the repository as a tree each, a treeitem per row at its level, one stop each', () => {
         const body = html({ [HUB]: HUB_GIT });
-        expect(count(body, 'role="tree"')).toBe(1);
+        expect(count(body, 'role="tree"')).toBe(2);
         const changes = group(body, 'changes');
         expect(changes).toContain('aria-level="1"');
         expect(changes).toContain('aria-level="2"');
         expect(changes).toContain('aria-level="3"');
-        expect(count(body, 'tabindex="0"')).toBe(1);
+        expect(count(body, 'tabindex="0"')).toBe(2);
     });
 
-    // Revert: pass `selected={branch.current}` rather than `current` in Branches.svelte.
+    // revert: src/lib/views/sources/repositories/Branches.svelte:73 => selected={branch.current}
     it('draws the checked-out branch as in force and not as the selection', () => {
         const branches = group(html({ [HUB]: HUB_GIT }), 'branches');
         const main = branches.slice(branches.indexOf('data-branch="main"'));
@@ -549,7 +617,7 @@ describe('the Repositories view', () => {
         expect(row).toContain('class="mark');
     });
 
-    // Revert: give the branch field `label={t('git.branch_new_label')}` in Branches.svelte.
+    // revert: src/lib/views/sources/repositories/Branches.svelte:99 => label={t('git.branch_new_label')}
     it('names the new-branch and new-worktree fields by the words their rows show', () => {
         const body = html({ [HUB]: HUB_GIT });
         const branch = group(body, 'branches');
@@ -562,24 +630,79 @@ describe('the Repositories view', () => {
     });
 });
 
+/** One pane rendered for an instance of its view with the state given. */
+function pane(component: Component<ViewProps>, view: string, state: unknown): string {
+    const id = `${view}-one`;
+    client.ui.setInstanceState(id, state);
+    return render(component, {
+        context: clientContext(client),
+        props: { instance: { id, view, state } }
+    }).body;
+}
+
+const FILE = {
+    id: 'changed:/hub:README.md',
+    label: 'README.md',
+    root: '/hub',
+    path: 'README.md',
+    staged: false,
+    worktree: false
+};
+
 describe('the diff pane', () => {
+    // revert: src/lib/views/sources/repositories/diff/Diff.svelte:95 => const title = $derived(t('views.repositories_diff'));
     it('says what it is over in its title, and asks for nothing when it is over nothing', () => {
-        const body = html({ [HUB]: HUB_GIT }, 'repositories-diff', {});
-        expect(body).toContain(catalog['views.repositories_diff']);
-        expect(body).toContain(catalog['repositories.diff_empty']);
+        const empty = pane(Diff, 'repositories-diff', {});
+        expect(empty).toContain(catalog['views.repositories_diff']);
+        expect(empty).toContain(catalog['repositories.diff_empty']);
+        expect(pane(Diff, 'repositories-diff', FILE)).toContain('README.md');
     });
 
-    it('names the file it was opened for', () => {
-        const body = html({ [HUB]: HUB_GIT }, 'repositories-diff', {
-            id: 'changed:/hub:README.md',
-            label: 'README.md',
-            root: HUB,
-            path: 'README.md',
-            staged: false,
-            worktree: false
-        });
-        expect(body).toContain('README.md');
-        // A server rendering runs no effect, so the text is not read here: the pane says it is.
-        expect(body).toContain(catalog['repositories.diff_empty']);
+    // revert: src/lib/views/sources/repositories/diff/Diff.svelte:260 => pressed={false}
+    it('draws the two layouts, side by side pressed unless the pane keeps inline', () => {
+        const side = pane(Diff, 'repositories-diff', FILE);
+        const pressed = (body: string, key: string): boolean => {
+            const at = body.indexOf(`aria-label="${catalog[key]}"`);
+            const open = body.lastIndexOf('<button', at);
+            return body.slice(open, body.indexOf('>', at)).includes('aria-pressed="true"');
+        };
+        expect(pressed(side, 'repositories.diff_side')).toBe(true);
+        expect(pressed(side, 'repositories.diff_inline')).toBe(false);
+        const inline = pane(Diff, 'repositories-diff', { ...FILE, mode: 'inline' });
+        expect(pressed(inline, 'repositories.diff_inline')).toBe(true);
+    });
+
+    // revert: src/lib/views/sources/repositories/diff/Diff.svelte:286 => {#if true}
+    it('offers Previous Change, Next Change and Open File for a file, and no Open File for a commit', () => {
+        const file = pane(Diff, 'repositories-diff', FILE);
+        expect(file).toContain(`aria-label="${catalog['repositories.change_prev']}"`);
+        expect(file).toContain(`aria-label="${catalog['repositories.change_next']}"`);
+        expect(file).toContain(`aria-label="${catalog['repositories.open_file']}"`);
+        const commit = pane(Diff, 'repositories-diff', { ...FILE, commit: 'abc' });
+        // A commit's version of a file is not the file on disk, so there is no file to open.
+        expect(commit).not.toContain(`aria-label="${catalog['repositories.open_file']}"`);
+    });
+});
+
+describe('the merge editor', () => {
+    // revert: src/lib/views/sources/repositories/merge/Merge.svelte:170 => {#if false}
+    it('says it was opened for nothing, and waits for the three versions of a path it was opened for', () => {
+        expect(pane(Merge, 'repositories-merge', {})).toContain(
+            catalog['repositories.merge_empty']
+        );
+        const body = pane(Merge, 'repositories-merge', { root: '/hub', path: 'both.txt' });
+        expect(body).toContain(
+            catalog['repositories.merge_editor_title'].replace('{0}', 'both.txt')
+        );
+        expect(body).toContain(catalog['repositories.merge_pending']);
+        expect(body).toContain('data-conflicts-left="0"');
+    });
+
+    // revert: src/lib/views/sources/repositories/merge/Merge.svelte:153 => disabled={busy}
+    it('holds Complete Merge back until the three versions are read', () => {
+        const body = pane(Merge, 'repositories-merge', { root: '/hub', path: 'both.txt' });
+        const at = body.indexOf(`>${catalog['repositories.merge_complete']}</span>`);
+        const open = body.lastIndexOf('<button', at);
+        expect(body.slice(open, body.indexOf('>', open))).toContain('disabled');
     });
 });

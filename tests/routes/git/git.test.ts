@@ -388,3 +388,200 @@ describe('the branch listing', () => {
         expect(response.status).toBe(403);
     });
 });
+
+describe('the Source Control actions', () => {
+    /** Every action that asks the page first, with the fields it takes. */
+    const ASKING: [string, Record<string, unknown>][] = [
+        ['pull', {}],
+        ['sync', {}],
+        ['publish', { remote: 'origin' }],
+        ['revertPatch', { patch: 'diff --git a/a b/a\n' }],
+        ['discardAll', {}],
+        ['abortMerge', {}],
+        ['continueRebase', {}],
+        ['acceptDeletion', { path: 'a.txt' }],
+        ['stashDrop', { ref: 'stash@{0}' }],
+        ['deleteTag', { name: 'v1' }],
+        ['pushTags', {}]
+    ];
+
+    /** Every action a reader takes back in one press, which asks nothing. */
+    const PLAIN: [string, Record<string, unknown>][] = [
+        ['stagePatch', { patch: 'diff --git a/a b/a\n' }],
+        ['unstagePatch', { patch: 'diff --git a/a b/a\n' }],
+        ['stageAll', { group: 'changed' }],
+        ['unstageAll', {}],
+        ['fetch', {}],
+        ['resolve', { path: 'a.txt', content: 'both\n' }],
+        ['markResolved', { path: 'a.txt' }],
+        ['stash', { mode: 'untracked', message: 'aside' }],
+        ['stashApply', { ref: 'stash@{1}' }],
+        ['stashPop', { ref: 'stash@{0}' }],
+        ['createTag', { name: 'v1', message: '' }]
+    ];
+
+    // revert: src/lib/server/git/git-routes.ts:117 => delete
+    // revert: src/lib/server/git/git-routes.ts:114 => delete
+    it('refuses each asking action unconfirmed, and takes it confirmed with its fields', async () => {
+        for (const [action, fields] of ASKING) {
+            const into = options();
+            const unconfirmed = await handleGit(
+                request({ action, root: ROOT, ...fields }),
+                TOKEN,
+                into
+            );
+            expect(unconfirmed.status, action).toBe(400);
+            expect(ran, action).toEqual([]);
+            const confirmed = await handleGit(
+                request({ action, root: ROOT, ...fields, confirm: true }),
+                TOKEN,
+                into
+            );
+            expect(confirmed.status, action).toBe(200);
+            expect(ran.map((one) => one.action)).toEqual([action]);
+            expect(ran[0].fields).toMatchObject(fields);
+        }
+    });
+
+    // revert: src/lib/server/git/git-routes.ts:117 => 'pushTags', 'fetch'
+    it('takes each plain action with no confirm', async () => {
+        for (const [action, fields] of PLAIN) {
+            const into = options();
+            const response = await handleGit(
+                request({ action, root: ROOT, ...fields }),
+                TOKEN,
+                into
+            );
+            expect(response.status, action).toBe(200);
+            expect(ran.map((one) => one.action)).toEqual([action]);
+            expect(ran[0].fields).toMatchObject(fields);
+        }
+    });
+
+    // revert: src/lib/server/git/git-routes.ts:292 => if (outcome.ok) options.refresh?.(root);
+    it('reads the root again after a write git refused, since a stopped merge moved it', async () => {
+        const read: string[] = [];
+        const response = await handleGit(
+            request({ action: 'pull', root: ROOT, confirm: true }),
+            TOKEN,
+            options({
+                run: () =>
+                    Promise.resolve({
+                        ok: false,
+                        output: '',
+                        error: 'the pull stopped on conflicts'
+                    }),
+                refresh: (root) => read.push(root)
+            })
+        );
+        expect(response.status).toBe(400);
+        expect(read).toEqual([ROOT]);
+    });
+});
+
+describe('the reads on demand', () => {
+    function get(query: string): Request {
+        return new Request(`${URL_}?${query}`, {
+            headers: { host: HOST, 'sec-fetch-site': 'same-origin' }
+        });
+    }
+    const root = encodeURIComponent(ROOT);
+    const asked: unknown[][] = [];
+    const reads = {
+        graph: (...args: unknown[]) => {
+            asked.push(['graph', ...args]);
+            return {
+                ok: true as const,
+                value: { commits: [], more: false, incoming: [], outgoing: [] }
+            };
+        },
+        files: (...args: unknown[]) => {
+            asked.push(['files', ...args]);
+            return { ok: true as const, value: [{ status: 'M', path: 'a.txt', from: '' }] };
+        },
+        commit: (...args: unknown[]) => {
+            asked.push(['commit', ...args]);
+            return { ok: true as const, value: 'diff --git a/a.txt b/a.txt\n' };
+        },
+        stash: (...args: unknown[]) => {
+            asked.push(['stash', ...args]);
+            return { ok: true as const, value: 'diff --git a/b b/b\n' };
+        },
+        blame: (...args: unknown[]) => {
+            asked.push(['blame', ...args]);
+            return { ok: true as const, value: [] };
+        },
+        marks: (...args: unknown[]) => {
+            asked.push(['marks', ...args]);
+            return { ok: true as const, value: [{ kind: 'added', line: 2, count: 1 }] };
+        },
+        sides: (...args: unknown[]) => {
+            asked.push(['sides', ...args]);
+            return { ok: false as const, error: 'a.txt is not in conflict' };
+        }
+    };
+
+    // revert: src/lib/server/git/git-reads.ts:140 => if (key === 'blame') return answer(reads.blame(root, path), 'blame');
+    it('answers each read under its own key, with what the request named', async () => {
+        const into = options({ reads: reads as never });
+        asked.length = 0;
+        const cases: [string, string, unknown][] = [
+            [
+                `graph=${root}&skip=50`,
+                'page',
+                { commits: [], more: false, incoming: [], outgoing: [] }
+            ],
+            [`commit=abc123&root=${root}`, 'files', [{ status: 'M', path: 'a.txt', from: '' }]],
+            [`commit=abc123&root=${root}&path=a.txt`, 'output', 'diff --git a/a.txt b/a.txt\n'],
+            [
+                `stash=${encodeURIComponent('stash@{0}')}&root=${root}`,
+                'output',
+                'diff --git a/b b/b\n'
+            ],
+            [`blame=${root}&path=a.txt`, 'lines', []],
+            [`marks=${root}&path=a.txt`, 'marks', [{ kind: 'added', line: 2, count: 1 }]]
+        ];
+        for (const [query, key, value] of cases) {
+            const response = await handleGitGet(get(query), into);
+            expect(response.status, query).toBe(200);
+            expect(await response.json()).toEqual({ ok: true, [key]: value });
+        }
+        expect(asked).toEqual([
+            ['graph', ROOT, 50],
+            ['files', ROOT, 'abc123'],
+            ['commit', ROOT, 'abc123', 'a.txt'],
+            ['stash', ROOT, 'stash@{0}'],
+            ['blame', ROOT, 'a.txt'],
+            ['marks', ROOT, 'a.txt']
+        ]);
+    });
+
+    // revert: src/lib/server/git/git-reads.ts:122 => return answer(reads.graph(root, skip), 'page');
+    it('answers a refused read with its reason, and reads a page from 0 when skip is not a number', async () => {
+        const into = options({ reads: reads as never });
+        asked.length = 0;
+        const refused = await handleGitGet(get(`sides=${root}&path=a.txt`), into);
+        expect(refused.status).toBe(400);
+        expect(await refused.json()).toEqual({ error: 'a.txt is not in conflict' });
+        await handleGitGet(get(`graph=${root}&skip=many`), into);
+        expect(asked.at(-1)).toEqual(['graph', ROOT, 0]);
+    });
+
+    // revert: src/lib/server/git/git-reads.ts:103 => return root;
+    it('refuses every read of a root it was not given, before reading', async () => {
+        const into = options({ reads: reads as never });
+        asked.length = 0;
+        for (const query of [
+            'graph=/elsewhere',
+            'commit=abc&root=/elsewhere',
+            'stash=stash@%7B0%7D&root=/elsewhere',
+            'blame=/elsewhere&path=a',
+            'marks=/elsewhere&path=a',
+            'sides=/elsewhere&path=a'
+        ]) {
+            const response = await handleGitGet(get(query), into);
+            expect(response.status, query).toBe(400);
+        }
+        expect(asked).toEqual([]);
+    });
+});

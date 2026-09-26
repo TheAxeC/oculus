@@ -37,6 +37,8 @@ import {
 } from '../../../src/lib/server/git/git-write.ts';
 import { worktreePath } from '../../../src/lib/data/helpers/worktrees.ts';
 import { suggestMessage } from '../../../src/lib/server/git/git-message.ts';
+import { abortMerge } from '../../../src/lib/server/git/git-index.ts';
+import { ALLOWED } from './allowed.ts';
 import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
 
 afterAll(sweepScratch);
@@ -46,21 +48,10 @@ const MODULE = resolve(
     '../../../src/lib/server/git/git-write.ts'
 );
 
-/** Everything git-write.ts is allowed to run. The source scan below asserts it holds no other. */
-const ALLOWED = [
-    'add',
-    'branch',
-    'check-ref-format',
-    'commit',
-    'diff',
-    'merge',
-    'push',
-    'restore',
-    'rev-parse',
-    'status',
-    'switch',
-    'worktree'
-];
+/** The modules that write through git-write.ts's call sites. */
+const SIBLINGS = ['git-remote.ts', 'git-index.ts', 'git-refs.ts'].map((name) =>
+    resolve(dirname(MODULE), name)
+);
 
 /** Every argument vector the module ran, over the whole file. Asserted by the last gate. */
 const ran = vi.hoisted(() => [] as string[][]);
@@ -508,7 +499,8 @@ describe('the merge back', () => {
         expect(readFileSync(join(repo, 'inside.txt'), 'utf8')).toBe('made in the worktree\n');
     });
 
-    it('takes a conflicted merge back and names what conflicted', async () => {
+    // revert: src/lib/server/git/git-write.ts:520 => return done;
+    it('leaves a conflicted merge in progress and names what conflicted', async () => {
         git(repo, 'branch', 'other');
         git(repo, 'switch', '-q', 'other');
         write(repo, 'kept.txt', 'from the other branch\n');
@@ -522,14 +514,21 @@ describe('the merge back', () => {
         const answer = await merge(repo, 'other', ROOTS);
         expect(answer.ok).toBe(false);
         expect(answer.error).toContain('kept.txt');
-        expect(answer.error).toContain('taken back');
-        // Nothing is left half merged: no path is staged or changed, and the file is main's. The
-        // worktrees folder is untracked here, which is what the repository's .gitignore is for.
+        expect(answer.error).toContain('Merge Changes');
+        // The merge is left in progress for the merge editor: the path is unmerged, MERGE_HEAD is
+        // there, and the file holds git's conflict markers. The worktrees folder is untracked
+        // here, which is what the repository's .gitignore is for.
         expect(
             status()
                 .split('\n')
                 .filter((line) => line.trim() !== '' && !line.startsWith('??'))
-        ).toEqual([]);
+        ).toEqual(['UU kept.txt']);
+        expect(existsSync(join(repo, '.git', 'MERGE_HEAD'))).toBe(true);
+        expect(readFileSync(join(repo, 'kept.txt'), 'utf8')).toContain('<<<<<<<');
+
+        // Abort Merge takes it back to main's side, which the cases after this one start from.
+        expect((await abortMerge(repo, ROOTS)).ok).toBe(true);
+        expect(existsSync(join(repo, '.git', 'MERGE_HEAD'))).toBe(false);
         expect(readFileSync(join(repo, 'kept.txt'), 'utf8')).toBe('from main\n');
     });
 
@@ -559,6 +558,7 @@ describe('the merge back', () => {
 });
 
 describe('the gate over what this module can run', () => {
+    // revert: src/lib/server/git/git-write.ts:584 => return run(root, ['fetch'], PUSH_TIMEOUT_MS);
     it('names each allowed subcommand at exactly one call site', () => {
         const source = readFileSync(MODULE, 'utf8');
         const calls = [...source.matchAll(/\brun\(\s*root\s*,\s*\[\s*'([a-z-]+)'/g)].map(
@@ -567,11 +567,30 @@ describe('the gate over what this module can run', () => {
         expect(calls.sort()).toEqual([...ALLOWED].sort());
     });
 
-    it('never names --force', () => {
-        expect(readFileSync(MODULE, 'utf8')).not.toContain('--force');
+    // revert: src/lib/server/git/git-remote.ts:95 => return pushTo(root, ['--tags', '--force']);
+    it('never names --force, here or in a module beside it', () => {
+        for (const file of [MODULE, ...SIBLINGS]) {
+            expect(readFileSync(file, 'utf8'), file).not.toContain('--force');
+        }
     });
 
-    it('ran nothing but those subcommands over this whole file', () => {
+    // The modules beside git-write.ts reach git through its call sites and never run a process of
+    // their own, so the call-site count above is the whole of what they can run.
+    // revert: src/lib/server/git/git-refs.ts:12 => import { STASH_REF } from '../core/git-parse.ts'; import 'node:child_process';
+    it('leaves the modules beside it no subprocess of their own', () => {
+        for (const file of SIBLINGS) {
+            const source = readFileSync(file, 'utf8');
+            expect(source, file).not.toContain('node:child_process');
+            expect(source, file).not.toMatch(/\brun\(/);
+        }
+    });
+
+    // revert: src/lib/server/git/git-write.ts:560 => return run(root, ['add', '--force', ...args], TIMEOUT_MS);
+    it('ran nothing but those subcommands over this whole file', async () => {
+        // A stage runs here, so the case has a command to judge when it runs alone as well as
+        // after the rest of the file.
+        write(repo, 'gate.txt', 'staged by the gate\n');
+        expect((await stage(repo, ['gate.txt'], ROOTS)).ok).toBe(true);
         expect(ran.length).toBeGreaterThan(0);
         const used = new Set<string>();
         for (const args of ran) {

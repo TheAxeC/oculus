@@ -18,6 +18,19 @@ import { LOCAL_NAME } from '../../../src/lib/data/sources/config.ts';
 /** Folders whose contents are not what a build is made from, and are skipped when it is dated. */
 export const SKIPPED = ['node_modules', '.svelte-kit', 'build', '.hub'];
 
+/** The port the browser layer serves on unless the environment names another. */
+export const LAYER_PORT = 8792;
+
+/**
+ * The port the browser layer serves on: the one OCULUS_BROWSER_PORT names, or LAYER_PORT. The
+ * Playwright configuration and serve.ts both read it here, so the browser asks the server the run
+ * started; a run sharing the machine with another run of the layer names a port of its own.
+ */
+export function layerPort(env: Record<string, string | undefined> = process.env): number {
+    const named = Number(env.OCULUS_BROWSER_PORT);
+    return Number.isInteger(named) && named > 0 && named < 65536 ? named : LAYER_PORT;
+}
+
 /** The newest file under one directory, with the moment it was written. Nothing there is zero. */
 export function newest(dir: string): { at: number; path: string } {
     let found = { at: 0, path: dir };

@@ -20,12 +20,9 @@ src/lib/data/sources/feeds.ts src/lib/data/sources/manifests.ts 9d95463a045f the
 src/lib/data/sources/feeds.ts src/lib/data/sources/registries.ts 99e4d34d3988 the same 8 lines at 57 and 77, to fold into one place
 src/lib/data/sources/feeds.ts src/lib/data/sources/registries.ts ab1d4e1b3ce4 the same 8 lines at 49 and 64, to fold into one place
 src/lib/data/sources/manifests.ts src/lib/data/sources/registries.ts 9d95463a045f the same 8 lines at 94 and 82, to fold into one place
-src/lib/server/git/deposit-git.ts src/lib/server/core/git-parse.ts 05cee2d0cdf8 the same 8 lines at 255 and 28, to fold into one place
-src/lib/server/git/deposit-git.ts src/lib/server/git/git-write.ts 789edce9ee59 the same 8 lines at 148 and 90, to fold into one place
 src/lib/server/git/deposit-git.ts src/lib/server/git/git-write.ts f6da88e69cee the same 8 lines at 321 and 535, to fold into one place
 src/lib/server/git/deposit-routes.ts src/lib/server/files/fs.ts 2218e8d71b8d the same 8 lines at 76 and 283, to fold into one place
 src/lib/server/git/deposit-routes.ts src/lib/server/git/git-routes.ts 4c23bcded24d the same 8 lines at 164 and 252, to fold into one place
-src/lib/server/git/deposit-routes.ts src/lib/server/git/git-routes.ts 6811f1ed73be the same 8 lines at 74 and 95, to fold into one place
 src/lib/server/git/deposit-routes.ts src/lib/server/files/open.ts 4c23bcded24d the same 8 lines at 164 and 327, to fold into one place
 src/lib/server/git/deposit-routes.ts src/lib/server/machine/pty/routes.ts 4c23bcded24d the same 8 lines at 164 and 277, to fold into one place
 src/lib/server/git/deposit.ts src/lib/state/system/deposit.svelte.ts d1ae18af96c8 the same 8 lines at 113 and 31, to fold into one place
@@ -35,7 +32,6 @@ src/lib/server/content/docs.ts src/lib/server/files/fs/notes.ts 20b06154f5e8 the
 src/lib/server/edit/entry-edit/lines.ts src/lib/server/edit/yaml-edit.ts a24957db905f the same 8 lines at 290 and 400, to fold into one place
 src/lib/server/files/files.ts src/lib/server/files/fs.ts 20b06154f5e8 the same 8 lines at 64 and 211, to fold into one place
 src/lib/server/files/files.ts src/lib/server/files/fs/notes.ts 20b06154f5e8 the same 8 lines at 64 and 35, to fold into one place
-src/lib/server/files/fs.ts src/lib/server/git/git-routes.ts 2218e8d71b8d the same 8 lines at 283 and 97, to fold into one place
 src/lib/server/files/fs/notes.ts src/lib/server/files/fs.ts 20b06154f5e8 the same 8 lines at 35 and 211, to fold into one place
 src/lib/server/git/git-routes.ts src/lib/server/files/open.ts 4c23bcded24d the same 8 lines at 252 and 327, to fold into one place
 src/lib/server/git/git-routes.ts src/lib/server/machine/pty/routes.ts 4c23bcded24d the same 8 lines at 252 and 277, to fold into one place
@@ -51,8 +47,6 @@ src/lib/views/sources/data/Data.svelte src/lib/views/structure/domains/Domains.s
 src/lib/views/sources/data/Data.svelte src/lib/views/sources/venues/Venues.svelte 674e9832e033 the same 8 lines at 124 and 114, to fold into one place
 src/lib/views/sources/data/Data.svelte src/lib/views/sources/venues/Venues.svelte 9aaeae00559a the same 8 lines at 66 and 71, to fold into one place
 src/lib/views/sources/data/Data.svelte src/lib/views/sources/venues/Venues.svelte ac6e0a16dc8a the same 8 lines at 161 and 168, to fold into one place
-src/lib/views/boards/deposit/Deposit.svelte src/lib/views/sources/repositories/Repositories.svelte 5c61a5fd508f the same 8 lines at 390 and 186, to fold into one place
-src/lib/views/boards/deposit/Deposit.svelte src/lib/views/sessions/changes/Changes.svelte 5c61a5fd508f the same 8 lines at 390 and 258, to fold into one place
 src/lib/views/structure/domains/Domains.svelte src/lib/views/sources/venues/Venues.svelte ac6e0a16dc8a the same 8 lines at 132 and 168, to fold into one place
 src/lib/views/sources/file/File.svelte src/lib/views/boards/person/Person.svelte d7d18c14f024 the same 8 lines at 9 and 10, to fold into one place
 src/lib/views/sources/file/File.svelte src/lib/views/sources/source/Source.svelte 27d243e63d78 the same 8 lines at 101 and 86, to fold into one place
@@ -60,7 +54,6 @@ src/lib/views/feeds/inbox/Inbox.svelte src/lib/views/sources/venues/Venues.svelt
 src/lib/views/feeds/leads/Leads.svelte src/lib/views/feeds/radar/Radar.svelte ef437609cf31 the same 8 lines at 214 and 151, to fold into one place
 src/lib/views/feeds/leads/Leads.svelte src/lib/views/sources/venues/Venues.svelte ef437609cf31 the same 8 lines at 214 and 170, to fold into one place
 src/lib/views/feeds/radar/Radar.svelte src/lib/views/sources/venues/Venues.svelte ef437609cf31 the same 8 lines at 151 and 170, to fold into one place
-src/lib/views/sources/repositories/Repositories.svelte src/lib/views/sessions/changes/Changes.svelte 5c61a5fd508f the same 8 lines at 186 and 258, to fold into one place
 src/lib/views/boards/collection/Coverage.svelte src/lib/views/structure/pillars/ArchivalCard.svelte d9b6fb1eb85f the same 8 lines at 61 and 56, to fold into one place
 src/lib/views/boards/collection/EntryCard.svelte src/lib/views/shared/card/ProjectCard.svelte 66a43f147b18 the same 8 lines at 174 and 179, to fold into one place
 src/lib/views/sources/data/DatasetCard.svelte src/lib/views/structure/domains/DomainCard.svelte 7de515d6d9b3 the same 8 lines at 77 and 43, to fold into one place
@@ -182,7 +175,6 @@ tests/server/git/deposit.test.ts tests/server/core/git.test.ts aa36569ff27e the 
 tests/server/git/deposit.test.ts tests/server/root/watch/git.test.ts b7816553bad2 the same 8 lines at 54 and 46, to fold into one place
 tests/server/git/git-write.test.ts tests/server/core/git.test.ts aa36569ff27e the same 8 lines at 75 and 167, to fold into one place
 tests/server/git/git-write.test.ts tests/server/root/watch/git.test.ts b7816553bad2 the same 8 lines at 66 and 46, to fold into one place
-tests/server/core/git.test.ts tests/server/root/watch/repos.ts c81eea90e56f the same 8 lines at 186 and 19, to fold into one place
 tests/server/accounts/mail/routes.test.ts tests/server/accounts/mail/write.test.ts e37e6d945c5e the same 8 lines at 49 and 36, to fold into one place
 tests/server/sessions/stores/transcripts.test.ts tests/server/root/watch/sessions.test.ts 79844c5ebf5d the same 8 lines at 39 and 39, to fold into one place
 tests/server/sessions/stores/transcripts.test.ts tests/server/root/watch/sessions.test.ts e7734c6bf606 the same 8 lines at 80 and 56, to fold into one place

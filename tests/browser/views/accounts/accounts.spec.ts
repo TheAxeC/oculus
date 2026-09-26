@@ -19,6 +19,7 @@ import {
     servedHomeDir,
     writeConnectorFile
 } from '../../helpers/hub.ts';
+import { layerPort } from '../../helpers/layer.ts';
 import { t } from '../../helpers/words.ts';
 
 const GOOGLE_ID = '4242-browserlayer.apps.googleusercontent.com';
@@ -94,15 +95,18 @@ test('the setup page lists both Microsoft redirect addresses on the served port'
     // revert: src/lib/server/accounts/connect/setup.ts:56 => mail: callbackUrl(8787, 'mail')
     await boot(page);
     await openSetup(page);
+    // The served local.yml names the port the server listens on, which is the one this run serves:
+    // OCULUS_BROWSER_PORT when a run names one, as revert-check does for each case.
+    const port = layerPort();
     const redirects = page.locator('[data-redirects] [data-copy-value]');
     await expect(redirects).toHaveCount(2);
     await expect(redirects.nth(0)).toHaveAttribute(
         'data-copy-value',
-        /:8792\/api\/calendar\/callback$/
+        `http://127.0.0.1:${port}/api/calendar/callback`
     );
     await expect(redirects.nth(1)).toHaveAttribute(
         'data-copy-value',
-        /:8792\/api\/mail\/callback$/
+        `http://127.0.0.1:${port}/api/mail/callback`
     );
     await expect(page.locator('[data-permissions] [data-copy-value="Mail.Send"]')).toHaveCount(1);
 });

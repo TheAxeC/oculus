@@ -498,6 +498,20 @@ describe('the surfaces a component may fill and paint on', () => {
         ).toEqual([]);
     });
 
+    // revert: src/lib/themes/themes.css:54 => delete
+    it('defines the four Source Control hues in the root and in every theme block', () => {
+        const scm = ['--c-scm-added', '--c-scm-modified', '--c-scm-deleted', '--c-scm-conflict'];
+        const themed = Object.entries(blocks).filter(
+            ([, tokens]) => byKey(tokens, '--panel') !== undefined
+        );
+        expect(themed.length).toBeGreaterThan(16);
+        expect(
+            themed
+                .filter(([, tokens]) => scm.some((token) => byKey(tokens, token) === undefined))
+                .map(([name]) => name)
+        ).toEqual([]);
+    });
+
     it('keeps the card surface distinct from the panel in every resolved theme', () => {
         expect(
             names.filter((name) => {

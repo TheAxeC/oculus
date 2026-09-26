@@ -1,6 +1,7 @@
 // Layer 4, test helper. What the git watcher's cases share: a throwaway repository and a git
 // command confined to the system temporary directory, a sessions payload naming workspaces, the
-// git channel's payloads as a recording received them, and a clock whose ticks the case runs.
+// git channel's payloads as a recording received them, and a clock whose ticks the case runs. The
+// git reader's cases make their repositories and run their git commands through these too.
 //
 // The cases over the saved workspaces file are a file of their own beside the git watcher's other
 // cases, and both read these, so a repository, a payload and a tick are made one way. The mail
@@ -15,10 +16,10 @@ import type { Hub } from '../../../../src/lib/server/core/channels.ts';
 import type { Clock } from '../../../../src/lib/server/core/file-poll.ts';
 import type { GitPayload, Message, SessionsPayload } from '../../../../src/lib/data/model/index.ts';
 
-/** A git command inside the throwaway directory, and nowhere else. */
-function git(root: string, ...args: string[]): void {
+/** A git command inside the throwaway directory, and nowhere else, whatever it answers. */
+function spawnGit(root: string, args: string[]): ReturnType<typeof spawnSync> {
     expect(resolve(root).startsWith(resolve(tmpdir()) + sep)).toBe(true);
-    const done = spawnSync(
+    return spawnSync(
         'git',
         [
             '-c',
@@ -33,7 +34,23 @@ function git(root: string, ...args: string[]): void {
         ],
         { encoding: 'utf8', timeout: 30000 }
     );
+}
+
+/** A git command that may fail, as a merge that stops on conflicts does; answers its status. */
+export function tryGit(root: string, ...args: string[]): number | null {
+    return spawnGit(root, args).status;
+}
+
+/** A git command that must succeed; answers what it printed. */
+export function gitText(root: string, ...args: string[]): string {
+    const done = spawnGit(root, args);
     expect(done.status).toBe(0);
+    return String(done.stdout);
+}
+
+/** A git command that must succeed, for a case that reads nothing it printed. */
+function git(root: string, ...args: string[]): void {
+    gitText(root, ...args);
 }
 
 export function put(root: string, rel: string, body: string): void {

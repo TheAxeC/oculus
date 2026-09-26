@@ -12,6 +12,9 @@
     // line the status bar asks for. Tab inserts one step of the tab's indentation; Escape and then
     // Tab moves the focus on as Tab does anywhere else, so the keyboard is never held here.
     //
+    // The gutter is the tab's, handed in as a snippet and drawn left of the text, and every scroll
+    // of the text is reported so the gutter's lines stay beside the text's.
+    //
     // A Markdown file is written and read at once: the row splits into the editor and the rendered
     // half, with the handle between them. A file of any other kind is the editor alone.
     //
@@ -19,7 +22,7 @@
     // bar, which Source.svelte draws, so the tab spends one row on its controls and the editor
     // none.
 
-    import { untrack } from 'svelte';
+    import { untrack, type Snippet } from 'svelte';
     import Preview from './Preview.svelte';
     import Sash from '$lib/ui/frame/Sash.svelte';
     import TextArea from '$lib/ui/forms/TextArea.svelte';
@@ -62,6 +65,10 @@
         oninput: (value: string) => void;
         /** Where the caret is now, said on every move. */
         oncaret?: (caret: Caret) => void;
+        /** The gutter drawn left of the text: line numbers, quick diff marks and blame. */
+        gutter?: Snippet;
+        /** How far the text is scrolled down, said on every scroll. */
+        onscrolled?: (top: number) => void;
     };
 
     let {
@@ -73,7 +80,9 @@
         jump = null,
         rendered = true,
         oninput,
-        oncaret
+        oncaret,
+        gutter,
+        onscrolled
     }: Props = $props();
 
     let mirror: HTMLPreElement | undefined = $state();
@@ -232,6 +241,7 @@
             mirror.scrollTop = field.scrollTop;
             mirror.scrollLeft = field.scrollLeft;
         }
+        onscrolled?.(field.scrollTop);
         const room = field.scrollHeight - field.clientHeight;
         fraction = room > 0 ? field.scrollTop / room : 0;
     }
@@ -257,21 +267,26 @@
 >
     <div class="row" bind:this={box}>
         <div class="editor-wrap" bind:this={wrap} style="flex: {split ? share : 1} 1 0">
-            <!-- Keep pre and code on one line: a line break inside pre would enter the mirror's
-                 text. -->
-            <!-- eslint-disable-next-line svelte/no-at-html-tags -- highlight.js escapes the file text before it emits its own span classes -->
-            <pre class="mirror" bind:this={mirror} aria-hidden="true"><code>{@html painted}</code
-                ></pre>
-            <div class="input">
-                <TextArea
-                    value={shown}
-                    label={path}
-                    rows={24}
-                    spellcheck={false}
-                    {oninput}
-                    onkeydown={keys}
-                    onscroll={sync}
-                />
+            {@render gutter?.()}
+            <div class="field">
+                <!-- Keep pre and code on one line: a line break inside pre would enter the
+                     mirror's text. -->
+                <!-- eslint-disable svelte/no-at-html-tags -- highlight.js escapes the file text before it emits its own span classes -->
+                <pre class="mirror" bind:this={mirror} aria-hidden="true"><code
+                        >{@html painted}</code
+                    ></pre>
+                <!-- eslint-enable svelte/no-at-html-tags -->
+                <div class="input">
+                    <TextArea
+                        value={shown}
+                        label={path}
+                        rows={24}
+                        spellcheck={false}
+                        {oninput}
+                        onkeydown={keys}
+                        onscroll={sync}
+                    />
+                </div>
             </div>
         </div>
         {#if split}
@@ -303,7 +318,7 @@
     }
 
     .editor-wrap {
-        position: relative;
+        display: flex;
         min-width: 0;
         min-height: 240px;
         overflow: hidden;
@@ -315,6 +330,12 @@
     :global(body.wall) .editor-wrap {
         background: color-mix(in srgb, var(--chip) var(--wall-panel), transparent);
         backdrop-filter: blur(var(--wall-blur));
+    }
+
+    .field {
+        position: relative;
+        flex: 1 1 auto;
+        min-width: 0;
     }
 
     .mirror,

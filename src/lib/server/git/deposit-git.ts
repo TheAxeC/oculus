@@ -27,6 +27,9 @@ import { execFile } from 'node:child_process';
 import { homedir } from 'node:os';
 import { isAbsolute, join, resolve, sep } from 'node:path';
 import { GIT } from '../core/git.ts';
+import { parseBranches } from '../core/git-parse.ts';
+
+export { parseBranches };
 
 /** Milliseconds one command that stays on this machine is given. */
 export const TIMEOUT_MS = 10000;
@@ -247,23 +250,6 @@ export function push(at: Where): Promise<Outcome> {
  */
 export function forcePushSnapshot(at: Where): Promise<Outcome> {
     return pushCmd(at, ['--force', 'origin', 'HEAD:main']);
-}
-
-/** The rows of `branchCmd(['--format=...'])`, as the menu reads them. */
-export function parseBranches(output: string): Branch[] {
-    const rows: Branch[] = [];
-    for (const line of output.split('\n')) {
-        if (line.trim() === '') continue;
-        const parts = line.split('\t');
-        const name = parts.at(0);
-        if (name === undefined || name === '') continue;
-        rows.push({
-            name,
-            upstream: parts.at(1) ?? '',
-            current: (parts.at(2) ?? '').trim() === '*'
-        });
-    }
-    return rows;
 }
 
 // ---------------------------------------------------------------- the `gh` shapes

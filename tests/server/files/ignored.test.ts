@@ -100,7 +100,7 @@ function fakeGit(script: string): void {
 }
 
 describe('the entries git ignores in one folder', () => {
-    // revert: src/lib/server/core/git.ts:152 => const input = names.map((name) => `${name}/\0`).join('');
+    // revert: src/lib/server/core/git.ts:204 => const input = names.map((name) => `${name}/\0`).join('');
     it('names a folder a folder pattern matches and a file a file pattern matches, beside a linked folder', () => {
         const dir = repository();
         // A link to a folder is a file to git; a name asked with a trailing slash over it would
@@ -147,7 +147,7 @@ describe('the entries git ignores in one folder', () => {
         expect(ignoredIn(dir, ['a.log']).size).toBe(0);
     });
 
-    // revert: src/lib/server/core/git.ts:153 => const done = run(root, ['check-ignore', '--stdin', '-z'], 60000, input);
+    // revert: src/lib/server/core/git.ts:205 => const done = run(root, ['check-ignore', '--stdin', '-z'], 60000, input);
     it('leaves out nothing when git does not answer in time, and answers at the timeout', () => {
         const dir = repository();
         fakeGit('exec sleep 6');
@@ -156,7 +156,7 @@ describe('the entries git ignores in one folder', () => {
         expect(Date.now() - started).toBeLessThan(3000);
     }, 15000);
 
-    // revert: src/lib/server/core/git.ts:154 => delete
+    // revert: src/lib/server/core/git.ts:206 => delete
     it('takes no name from a git that failed, whatever it printed', () => {
         const dir = repository();
         // a git that fails says why on its error output, which is what the run keeps of it
@@ -164,7 +164,7 @@ describe('the entries git ignores in one folder', () => {
         expect(ignoredIn(dir, ['a.log']).size).toBe(0);
     });
 
-    // revert: src/lib/server/core/git.ts:151 => delete
+    // revert: src/lib/server/core/git.ts:203 => delete
     it('asks git nothing for an empty folder', () => {
         const dir = folder({});
         const ran = join(dir, 'ran');

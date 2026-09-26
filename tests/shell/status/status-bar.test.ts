@@ -42,7 +42,8 @@ const REPO: RepoStatus = {
     upstream: 'origin/main',
     ahead: 2,
     behind: 1,
-    branches: ['main', 'draft']
+    branches: ['main', 'draft'],
+    remotes: ['origin']
 };
 
 const SOURCE: EditorStatus = {
@@ -51,7 +52,8 @@ const SOURCE: EditorStatus = {
     indent: { tabs: true, size: 4 },
     ending: 'CRLF',
     language: 'python',
-    writable: true
+    writable: true,
+    blame: ''
 };
 
 let client: ClientState;
@@ -90,8 +92,8 @@ function sourceTab(said: EditorStatus = SOURCE): string {
 
 describe('the status bar', () => {
     it('draws the left group and the right group, every item in its place', () => {
-        // revert: src/lib/shell/status/status-items.ts:13 => export const LEFT_ITEMS = ['branch', 'host', 'sync', 'findings', 'hpc', 'usage', 'server'] as const;
-        sourceTab();
+        // revert: src/lib/shell/status/status-items.ts:14 => export const LEFT_ITEMS = ['branch', 'host', 'sync', 'findings', 'hpc', 'usage', 'server'] as const;
+        sourceTab({ ...SOURCE, blame: 'Ada, 2 days ago: Fix the reader' });
         const body = draw({ ...STATUS, repo: REPO });
         const left = body.slice(
             body.indexOf('data-status-group="left"'),
@@ -148,28 +150,31 @@ describe('the status bar', () => {
     });
 
     it('draws the branch and how far it is behind and ahead, and no sync for a branch that tracks none', () => {
-        // revert: src/lib/shell/status/RepoItems.svelte:99 => {#if sync && !detached}
+        // revert: src/lib/shell/status/RepoItems.svelte:119 => {#if sync && !detached}
         const body = draw({ ...STATUS, repo: REPO });
         expect(item(body, 'branch')).toContain('data-glyph="branch"');
         expect(item(body, 'branch')).toMatch(/>\s*main\s*<\/span>/);
         expect(body).toContain(t('statusbar.branch_tip', 'main', 'hub'));
         expect(item(body, 'sync')).toMatch(/data-sync="behind">1</);
         expect(item(body, 'sync')).toMatch(/data-sync="ahead">2</);
-        expect(body).toContain(t('statusbar.sync_tip_open', 1, 2, 'origin/main'));
-        const untracked = draw({ ...STATUS, repo: { ...REPO, tracked: false, upstream: '' } });
+        expect(body).toContain(t('statusbar.sync_tip_sync', 1, 2, 'origin/main'));
+        const untracked = draw({
+            ...STATUS,
+            repo: { ...REPO, tracked: false, upstream: '', remotes: [] }
+        });
         expect(item(untracked, 'branch')).not.toBe('');
         expect(item(untracked, 'sync')).toBe('');
         expect(item(draw(), 'branch')).toBe('');
     });
 
     it('offers a push for a branch only ahead, and names the commit of a detached head', () => {
-        // revert: src/lib/shell/status/RepoItems.svelte:48 => const pushes = $derived(repo.ahead > 0);
+        // revert: src/lib/shell/status/RepoItems.svelte:54 => const pushes = $derived(repo.ahead > 0);
         const ahead = draw({ ...STATUS, repo: { ...REPO, behind: 0 } });
         expect(ahead).toContain(t('statusbar.sync_tip_push', 2, 'origin/main'));
-        // Ahead and behind at once is no push: the item opens the Repositories view.
+        // Ahead and behind at once is no push: the item syncs, a pull then a push.
         const both = draw({ ...STATUS, repo: REPO });
         expect(both).not.toContain(t('statusbar.sync_tip_push', 2, 'origin/main'));
-        expect(both).toContain(t('statusbar.sync_tip_open', 1, 2, 'origin/main'));
+        expect(both).toContain(t('statusbar.sync_tip_sync', 1, 2, 'origin/main'));
         const loose = draw({
             ...STATUS,
             repo: { ...REPO, branch: '', head: 'abc1234', tracked: false, upstream: '' }
@@ -179,8 +184,36 @@ describe('the status bar', () => {
         expect(loose).toContain(t('statusbar.branch_detached_tip', 'abc1234', 'hub'));
     });
 
+    it('draws Publish Branch where the sync item is for a branch that tracks none', () => {
+        // revert: src/lib/shell/status/RepoItems.svelte:135 => {:else if false}
+        const lone = { ...REPO, tracked: false, upstream: '', ahead: 0, behind: 0 };
+        const one = draw({ ...STATUS, repo: lone });
+        expect(item(one, 'sync')).toBe('');
+        expect(item(one, 'publish')).toContain('data-glyph="publish"');
+        expect(one).toContain(t('statusbar.publish_tip', 'main', 'origin'));
+        // With two remotes the item lists them, one Publish Branch to each.
+        const two = draw({ ...STATUS, repo: { ...lone, remotes: ['origin', 'fork'] } });
+        expect(item(two, 'publish')).toContain('data-glyph="publish"');
+        expect(two).toContain(t('statusbar.publish_tip_many', 'main'));
+        // A branch with no remote has nowhere to publish, and a detached head has no branch.
+        expect(item(draw({ ...STATUS, repo: { ...lone, remotes: [] } }), 'publish')).toBe('');
+        const loose = { ...lone, branch: '', head: 'abc1234' };
+        expect(item(draw({ ...STATUS, repo: loose }), 'publish')).toBe('');
+    });
+
+    it('draws the caret line blame while the tab says one, and no blame item while it says none', () => {
+        // revert: src/lib/shell/status/SourceItems.svelte:117 => {#if false}
+        sourceTab({ ...SOURCE, blame: 'Ada, 2 days ago: Fix the reader' });
+        const body = draw();
+        expect(item(body, 'blame')).toContain('data-glyph="blame"');
+        expect(item(body, 'blame')).toContain('Ada, 2 days ago: Fix the reader');
+        expect(body).toContain(t('statusbar.blame_tip'));
+        sourceTab();
+        expect(item(draw(), 'blame')).toBe('');
+    });
+
     it('draws the source items while a source tab is on screen, and none for another tab', () => {
-        // revert: src/lib/state/workbench/navigation/editor-status.svelte.ts:63 => if (tab === null) return null;
+        // revert: src/lib/state/workbench/navigation/editor-status.svelte.ts:67 => if (tab === null) return null;
         expect(item(draw(), 'caret')).toBe('');
         const id = sourceTab();
         const body = draw();
@@ -201,7 +234,7 @@ describe('the status bar', () => {
     });
 
     it('draws no caret for a source tab that may not write its file, and says why its lists offer no change', () => {
-        // revert: src/lib/shell/status/SourceItems.svelte:114 => {#if shown('caret')}
+        // revert: src/lib/shell/status/SourceItems.svelte:128 => {#if shown('caret')}
         sourceTab({ ...SOURCE, caret: null, writable: false });
         const body = draw();
         expect(item(body, 'caret')).toBe('');
@@ -212,7 +245,7 @@ describe('the status bar', () => {
 
     it('draws no item the reader hid, and every other', () => {
         // revert: src/lib/shell/status/StatusBar.svelte:68 => return true;
-        sourceTab();
+        sourceTab({ ...SOURCE, blame: 'Ada, 2 days ago: Fix the reader' });
         client.ui.setStatusHidden('host', true);
         client.ui.setStatusHidden('language', true);
         client.ui.setStatusHidden('bell', true);
@@ -237,7 +270,7 @@ describe('the status bar', () => {
     });
 
     it('draws under a terminal palette no stand-in that reads as a separator between items', () => {
-        // revert: config/catalogs/glyphs.yml:157 =>   caret: "|"
+        // revert: config/catalogs/glyphs.yml:173 =>   caret: "|"
         // revert: config/catalogs/glyphs.yml:40 =>   branch: "|-"
         sourceTab();
         client.notices.post('one');

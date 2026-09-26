@@ -2,11 +2,10 @@
 // the request does is here and src/routes/api/(git)/git/+server.ts is the few lines that join them,
 // the pattern lib/server/edit/writes.ts and lib/server/machine/pty/routes.ts already hold.
 //
-// A GET reads and is same-origin only, like every read: the branches of one root, one file's diff,
-// or what a worktree holds that its repository does not. A POST writes, and carries three things:
-// the write token, this application's own origin, and, for the eight actions that can lose work
-// (commit, push, discard, createBranch, switchBranch, createWorktree, removeWorktree, merge), a
-// `confirm: true` the page sets only from the confirm dialog.
+// A GET reads and is same-origin only, like every read; server/git/git-reads.ts answers it. A POST
+// writes, and carries three things: the write token, this application's own origin, and, for the
+// actions that can lose work or move a branch (CONFIRMED below), a `confirm: true` the page sets
+// only from the confirm dialog.
 //
 // The roots a write may name come from the last published `git` payload, which is every root the
 // file browser serves and every workspace a session names, plus the hub itself;
@@ -19,52 +18,103 @@
 import { loadConfig, textCatalog } from '../../data/sources/config.ts';
 import { byKey, strings } from '../../data/helpers/guards.ts';
 import { hasToken, sameOrigin } from '../core/auth.ts';
+import { text } from '../core/json.ts';
 import {
     allowedRoots,
-    branches,
     commit,
     createBranch,
     createWorktree,
     discard,
-    fileDiff,
     merge,
-    parseBranches,
     permitted,
     push,
     removeWorktree,
     stage,
     switchBranch,
     unstage,
-    worktreeDiff,
     type Outcome
 } from './git-write.ts';
+import { fetchAll, publish, pull, pushTags, sync } from './git-remote.ts';
+import {
+    abortMerge,
+    acceptDeletion,
+    applyHunk,
+    continueRebase,
+    discardAll,
+    markResolved,
+    resolveMerge,
+    stageAll,
+    unstageAll
+} from './git-index.ts';
+import { createTag, deleteTag, stash, stashAct, type StashMode } from './git-refs.ts';
 import { messageModel, suggestMessage, type MessageOptions } from './git-message.ts';
+import { handleGitBranches, handleGitGet, type ReadOptions } from './git-reads.ts';
+
+export { handleGitBranches, handleGitGet };
 
 /** Every action POST /api/git knows. */
 export const ACTIONS = [
     'stage',
     'unstage',
     'discard',
+    'stagePatch',
+    'unstagePatch',
+    'revertPatch',
+    'stageAll',
+    'unstageAll',
+    'discardAll',
     'commit',
     'push',
+    'pull',
+    'fetch',
+    'sync',
+    'publish',
     'createBranch',
     'switchBranch',
     'createWorktree',
     'removeWorktree',
     'merge',
+    'abortMerge',
+    'continueRebase',
+    'resolve',
+    'markResolved',
+    'acceptDeletion',
+    'stash',
+    'stashApply',
+    'stashPop',
+    'stashDrop',
+    'createTag',
+    'deleteTag',
+    'pushTags',
     'suggest'
 ];
 
-/** The actions that may lose work, and therefore need the page's confirm. */
+/**
+ * The actions that may lose work, move a branch or reach a remote's branches, and therefore need
+ * the page's confirm. A stage, an unstage, a fetch, a stash made, applied or popped, a tag made and
+ * a resolved path are taken back by the reader in one press, as in VS Code, and ask nothing; a
+ * deletion taken removes the file from the worktree, so it asks.
+ */
 export const CONFIRMED = [
     'commit',
     'push',
+    'pull',
+    'sync',
+    'publish',
     'discard',
+    'revertPatch',
+    'discardAll',
     'createBranch',
     'switchBranch',
     'createWorktree',
     'removeWorktree',
-    'merge'
+    'merge',
+    'abortMerge',
+    'continueRebase',
+    'acceptDeletion',
+    'stashDrop',
+    'deleteTag',
+    'pushTags'
 ];
 
 /** One action, its root and whatever fields it takes. */
@@ -86,13 +136,9 @@ export type GitOptions = {
     suggest?: (root: string, roots: string[]) => Promise<Outcome>;
     /** Overrides for the default diff reader and message subprocess. */
     message?: MessageOptions;
-    /** Re-read a root after a successful write. */
+    /** Re-read a root after a write, whatever git answered. */
     refresh?: (root: string) => void;
-    /** One file's diff; the real `git diff` when absent. */
-    diff?: (root: string, path: string, staged: boolean, roots: string[]) => Promise<Outcome>;
-    /** A worktree's diff against its repository's branch; the real one when absent. */
-    worktree?: (root: string, path: string, roots: string[]) => Promise<Outcome>;
-};
+} & ReadOptions;
 
 function json(status: number, body: unknown): Response {
     return new Response(JSON.stringify(body), {
@@ -101,8 +147,9 @@ function json(status: number, body: unknown): Response {
     });
 }
 
-function text(value: unknown): string {
-    return typeof value === 'string' ? value : '';
+/** A field the page sends as a string, or as nothing, which reads as its default word. */
+function word<T extends string>(value: unknown, fallback: T): T {
+    return typeof value === 'string' && value !== '' ? (value as T) : fallback;
 }
 
 /** The required catalog instruction used to suggest a commit message. */
@@ -135,15 +182,45 @@ const OPERATIONS: Record<string, GitRun> = {
     stage: (_action, root, fields, roots) => stage(root, strings(fields.paths), roots),
     unstage: (_action, root, fields, roots) => unstage(root, strings(fields.paths), roots),
     discard: (_action, root, fields, roots) => discard(root, strings(fields.paths), roots),
-    commit: (_action, root, fields, roots) => commit(root, text(fields.message), roots),
+    stagePatch: (_action, root, fields, roots) =>
+        applyHunk(root, text(fields.patch), 'stage', roots),
+    unstagePatch: (_action, root, fields, roots) =>
+        applyHunk(root, text(fields.patch), 'unstage', roots),
+    revertPatch: (_action, root, fields, roots) =>
+        applyHunk(root, text(fields.patch), 'revert', roots),
+    stageAll: (_action, root, fields, roots) => stageAll(root, text(fields.group), roots),
+    unstageAll: (_action, root, _fields, roots) => unstageAll(root, roots),
+    discardAll: (_action, root, _fields, roots) => discardAll(root, roots),
+    commit: (_action, root, fields, roots) =>
+        commit(root, text(fields.message), roots, fields.amend === true),
     push: (_action, root, _fields, roots) => push(root, roots),
+    pull: (_action, root, _fields, roots) => pull(root, roots),
+    fetch: (_action, root, _fields, roots) => fetchAll(root, roots),
+    sync: (_action, root, _fields, roots) => sync(root, roots),
+    publish: (_action, root, fields, roots) => publish(root, text(fields.remote), roots),
     createBranch: (_action, root, fields, roots) => createBranch(root, text(fields.name), roots),
     switchBranch: (_action, root, fields, roots) => switchBranch(root, text(fields.name), roots),
     createWorktree: (_action, root, fields, roots) =>
         createWorktree(root, text(fields.name), roots),
     removeWorktree: (_action, root, fields, roots) =>
         removeWorktree(root, text(fields.path), roots),
-    merge: (_action, root, fields, roots) => merge(root, text(fields.branch), roots)
+    merge: (_action, root, fields, roots) => merge(root, text(fields.branch), roots),
+    abortMerge: (_action, root, _fields, roots) => abortMerge(root, roots),
+    continueRebase: (_action, root, _fields, roots) => continueRebase(root, roots),
+    resolve: (_action, root, fields, roots) =>
+        resolveMerge(root, text(fields.path), text(fields.content), roots),
+    markResolved: (_action, root, fields, roots) => markResolved(root, text(fields.path), roots),
+    acceptDeletion: (_action, root, fields, roots) =>
+        acceptDeletion(root, text(fields.path), roots),
+    stash: (_action, root, fields, roots) =>
+        stash(root, word<StashMode>(fields.mode, 'tracked'), text(fields.message), roots),
+    stashApply: (_action, root, fields, roots) => stashAct(root, 'apply', text(fields.ref), roots),
+    stashPop: (_action, root, fields, roots) => stashAct(root, 'pop', text(fields.ref), roots),
+    stashDrop: (_action, root, fields, roots) => stashAct(root, 'drop', text(fields.ref), roots),
+    createTag: (_action, root, fields, roots) =>
+        createTag(root, text(fields.name), text(fields.message), roots),
+    deleteTag: (_action, root, fields, roots) => deleteTag(root, text(fields.name), roots),
+    pushTags: (_action, root, _fields, roots) => pushTags(root, roots)
 };
 
 async function operate(
@@ -157,88 +234,6 @@ async function operate(
         return { ok: false, output: '', error: `no git action named ${action}` };
     }
     return operation(action, root, fields, roots);
-}
-
-/**
- * GET /api/git: one of three reads, by the parameter it names.
- * `diff=<root>&path=<file>&staged=<0|1>` answers one file's diff, `worktree=<path>&root=<root>`
- * answers what that worktree holds that its repository's branch does not, and `root=` answers the
- * branch listing. Each is same-origin only and refused for a root this server has not published;
- * the diffs are fetched when a pane opens rather than published, since the channel carries state
- * and not text.
- */
-export async function handleGitGet(request: Request, options: GitOptions): Promise<Response> {
-    const parameters = new URL(request.url).searchParams;
-    if (parameters.has('diff')) return handleGitDiff(request, parameters, options);
-    if (parameters.has('worktree')) return handleGitWorktree(request, parameters, options);
-    return handleGitBranches(request, options);
-}
-
-/** One file's diff, staged or not. */
-async function handleGitDiff(
-    request: Request,
-    parameters: URLSearchParams,
-    options: GitOptions
-): Promise<Response> {
-    if (!sameOrigin(request, request.headers.get('host') ?? '')) {
-        return json(403, { error: 'the request did not come from this page' });
-    }
-    const root = parameters.get('diff') ?? '';
-    const roots = (options.rootsFor ?? allowedRoots)();
-    if (!inside(root, roots)) {
-        return json(400, { error: 'that directory is not a workspace oculus knows' });
-    }
-    const staged = parameters.get('staged') === '1';
-    const outcome = await (options.diff ?? fileDiff)(
-        root,
-        parameters.get('path') ?? '',
-        staged,
-        roots
-    );
-    if (!outcome.ok) return json(400, { error: outcome.error });
-    return json(200, { ok: true, output: outcome.output });
-}
-
-/**
- * What one worktree holds that its repository's checked-out branch does not. The request names both
- * the worktree and the repository it belongs to: a worktree of the hub is itself a workspace on the
- * `git` channel, so a root worked out from the path would be the worktree.
- */
-async function handleGitWorktree(
-    request: Request,
-    parameters: URLSearchParams,
-    options: GitOptions
-): Promise<Response> {
-    if (!sameOrigin(request, request.headers.get('host') ?? '')) {
-        return json(403, { error: 'the request did not come from this page' });
-    }
-    const path = parameters.get('worktree') ?? '';
-    const root = parameters.get('root') ?? '';
-    const roots = (options.rootsFor ?? allowedRoots)();
-    if (!inside(root, roots)) {
-        return json(400, { error: 'that directory is not a workspace oculus knows' });
-    }
-    const outcome = await (options.worktree ?? worktreeDiff)(root, path, roots);
-    if (!outcome.ok) return json(400, { error: outcome.error });
-    return json(200, { ok: true, output: outcome.output });
-}
-
-/**
- * GET /api/git?root=: the branches of one root, for the branch menu. A read, so it carries no
- * token, but it is still refused to another origin, and to a root this server has not published.
- */
-export async function handleGitBranches(request: Request, options: GitOptions): Promise<Response> {
-    if (!sameOrigin(request, request.headers.get('host') ?? '')) {
-        return json(403, { error: 'the request did not come from this page' });
-    }
-    const root = new URL(request.url).searchParams.get('root') ?? '';
-    const roots = (options.rootsFor ?? allowedRoots)();
-    if (!inside(root, roots)) {
-        return json(400, { error: 'that directory is not a workspace oculus knows' });
-    }
-    const outcome = await branches(root, roots);
-    if (!outcome.ok) return json(400, { error: outcome.error });
-    return json(200, { ok: true, branches: parseBranches(outcome.output) });
 }
 
 /**
@@ -290,10 +285,12 @@ export async function handleGit(
     }
 
     const outcome = await (options.run ?? operate)(action, root, fields, roots);
-    if (!outcome.ok) return json(400, { error: outcome.error });
     // The watcher would find this at its next event, up to two seconds later and only if the write
-    // touched a path it watches; re-reading here is what makes the panel answer the click.
+    // touched a path it watches; re-reading here is what makes the panel answer the click. A write
+    // git refused may still have moved the repository (a merge that stopped on conflicts leaves
+    // them in the index), so it is read again either way.
     options.refresh?.(root);
+    if (!outcome.ok) return json(400, { error: outcome.error });
     return json(200, { ok: true, output: outcome.output });
 }
 

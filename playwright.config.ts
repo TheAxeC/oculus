@@ -10,8 +10,16 @@
 //
 // The browser is the installed Google Chrome through `channel: 'chrome'`, so nothing downloads one.
 // The specs write to one hub, so they run one at a time and in one worker.
+//
+// The server takes port 8792 unless OCULUS_BROWSER_PORT names another, read by layerPort of
+// tests/browser/helpers/layer.ts, which serve.ts reads too: a run that shares the machine with
+// another run of the layer, as bin/revert-check.mjs does, serves on a port of its own, so the
+// browser never presses a page the other run serves.
 
 import { defineConfig } from '@playwright/test';
+import { layerPort } from './tests/browser/helpers/layer.ts';
+
+const PORT = layerPort();
 
 export default defineConfig({
     testDir: 'tests/browser',
@@ -22,7 +30,7 @@ export default defineConfig({
     reporter: 'list',
     webServer: {
         command: 'node tests/browser/helpers/serve.ts',
-        url: 'http://127.0.0.1:8792/',
+        url: `http://127.0.0.1:${PORT}/`,
         reuseExistingServer: false,
         timeout: 60000,
         // The layer takes its copy of the hub away when it is signalled. Without this the server is
@@ -32,7 +40,7 @@ export default defineConfig({
     projects: [
         {
             name: 'chrome',
-            use: { channel: 'chrome', headless: true, baseURL: 'http://127.0.0.1:8792' }
+            use: { channel: 'chrome', headless: true, baseURL: `http://127.0.0.1:${PORT}` }
         }
     ]
 });

@@ -13,7 +13,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { render } from 'svelte/server';
 import Changes from '../../../src/lib/views/sessions/changes/Changes.svelte';
 import { branchState } from '../../../src/lib/views/shared/changes/branch-state.ts';
-import { repoShape } from '../../../src/lib/state/sources/repositories.ts';
+import { repoShape } from '../../../src/lib/state/sources/repositories/repositories.ts';
 import {
     engineDir,
     glyphCatalog,
@@ -308,6 +308,56 @@ describe('the changes view', () => {
         expect(body).toContain(catalog['git.suggest']);
         expect(body).toContain(catalog['git.commit']);
         expect(body).toContain(catalog['git.branch_new']);
+    });
+
+    // revert: src/lib/views/shared/changes/ChangeGroups.svelte:81 => {:else if false}
+    it('draws on each group head what acts on the whole group, as the Repositories view does', () => {
+        select('live-one');
+        const body = html(Changes);
+        const head = (kind: string): string => {
+            const at = body.indexOf(`data-changes-group="${kind}"`);
+            return body.slice(at, body.indexOf('data-entry=', at));
+        };
+        expect(head('staged')).toContain(`aria-label="${catalog['git.unstage_all']}"`);
+        expect(head('changed')).toContain(`aria-label="${catalog['git.discard_all']}"`);
+        expect(head('changed')).toContain(`aria-label="${catalog['git.stage_all']}"`);
+        expect(head('untracked')).toContain(`aria-label="${catalog['git.stage_all_untracked']}"`);
+    });
+
+    // revert: src/lib/views/shared/changes/ChangeGroups.svelte:67 => delete
+    it('offers on each row what opens it: the diff for a staged or changed path, the file for an untracked one', () => {
+        select('live-one');
+        const body = html(Changes);
+        expect(body.split(`aria-label="${catalog['repositories.diff_open']}"`)).toHaveLength(4);
+        expect(body.split(`aria-label="${catalog['repositories.open_file']}"`)).toHaveLength(2);
+    });
+
+    // revert: src/lib/views/shared/changes/ChangeGroups.svelte:176 => {#if false}
+    it('draws Merge Changes first while a merge left a path in conflict, its row opening the merge editor', () => {
+        const other = git({ branch: '', repository: false, error: 'not a git repository' });
+        const merging = {
+            ...HUB_GIT,
+            sequence: 'merging' as const,
+            conflicted: [{ path: 'both.txt', status: 'UU', added: 0, deleted: 0 }]
+        };
+        receive({ channel: 'git', version: 5, payload: { [HUB]: merging, '/other': other } });
+        select('live-one');
+        const body = html(Changes);
+        const merge = body.indexOf('data-changes-group="merge"');
+        expect(merge).toBeGreaterThan(0);
+        expect(merge).toBeLessThan(body.indexOf('data-changes-group="staged"'));
+        expect(body).toContain(catalog['repositories.merge_changes']);
+        expect(body).toContain(`aria-label="${catalog['repositories.merge_open']}"`);
+        expect(body).toContain(`>${catalog['repositories.merge_mark']}<`);
+        receive({ channel: 'git', version: 6, payload: { [HUB]: HUB_GIT, '/other': other } });
+    });
+
+    // revert: src/lib/views/sessions/changes/ChangesRepo.svelte:108 => delete
+    it('draws the one commit box the Repositories view draws, with Commit and its list of ways', () => {
+        select('live-one');
+        const body = html(Changes);
+        expect(body).toContain('data-commit-box');
+        expect(body).toContain(`aria-label="${catalog['git.commit_more']}"`);
     });
 
     it('shows its empty state with nothing selected', () => {

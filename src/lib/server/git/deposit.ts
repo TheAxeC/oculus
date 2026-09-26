@@ -67,6 +67,7 @@ import {
     type Outcome,
     type Where
 } from './deposit-git.ts';
+import { REFS_FORMAT } from '../core/git-parse.ts';
 import { target, writeManifest, type WriteTarget } from '../edit/writes.ts';
 
 /** Names and suffixes that look like a credential, and the size above which a file is flagged. */
@@ -451,9 +452,7 @@ export async function branches(id: string, options: DepositOptions = {}): Promis
     }
     if (!made(deposit.at))
         return { ...failed('there is no mirror yet; adopt it first'), branches: [] };
-    const listed = await branchCmd(deposit.at, [
-        '--format=%(refname:short)%09%(upstream:short)%09%(HEAD)'
-    ]);
+    const listed = await branchCmd(deposit.at, [REFS_FORMAT]);
     if (!listed.ok) return { ...listed, branches: [] };
     return { ...listed, branches: parseBranches(listed.output) };
 }

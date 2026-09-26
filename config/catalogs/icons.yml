@@ -40,6 +40,22 @@ icons:
     merge: git-merge
     commit: git-commit-horizontal
     worktree: folder-tree
+    # Source Control: the remote actions, stashes, tags, blame and the diff pane
+    pull: arrow-down-to-line
+    push: arrow-up-from-line
+    fetch: refresh-ccw
+    sync: refresh-cw
+    publish: cloud-upload
+    stash: archive
+    stash_apply: archive-restore
+    tag: tag
+    blame: user-round
+    side_by_side: columns-2
+    inline_diff: rows-2
+    prev_change: chevron-up
+    next_change: chevron-down
+    unfold: unfold-vertical
+    open_file: file-symlink
     # status + markers
     check: check
     done: check-circle

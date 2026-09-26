@@ -13,6 +13,8 @@
         readOnly?: boolean;
         /** Browser spelling support, off for source code. */
         spellcheck?: boolean;
+        /** Source text: in the code font, each line kept whole and scrolled rather than wrapped. */
+        code?: boolean;
         /**
          * A key pressed in the box, for a caller where a key means something other than a
          * character: the composer sends on Enter and recalls what it sent on the up arrow. The
@@ -37,6 +39,7 @@
         rows = 3,
         readOnly = false,
         spellcheck = true,
+        code = false,
         onkeydown,
         onscroll,
         bare = false,
@@ -52,6 +55,8 @@
 <textarea
     class="area"
     class:bare
+    class:code
+    wrap={code ? 'off' : undefined}
     {rows}
     aria-label={label}
     {placeholder}
@@ -91,6 +96,11 @@
 
     .area.bare:focus-visible {
         outline: none;
+    }
+
+    .area.code {
+        font-family: var(--font-mono);
+        white-space: pre;
     }
 
     .area:focus-visible {

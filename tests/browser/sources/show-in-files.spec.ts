@@ -85,7 +85,7 @@ test('a Show in Files pressed from the keyboard puts the keyboard on the row it 
 
 // Revert: give the Show in Files glyph a stand-in outside ASCII, U+2316, in
 // config/catalogs/glyphs.yml, so a terminal theme draws a character its font may not hold.
-// revert: config/catalogs/glyphs.yml:143 => show_in_files: "\u2316"
+// revert: config/catalogs/glyphs.yml:159 => show_in_files: "\u2316"
 test('a terminal theme draws the Show in Files control with its ASCII stand-in', async ({
     page
 }) => {

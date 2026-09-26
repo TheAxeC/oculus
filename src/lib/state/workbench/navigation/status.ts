@@ -26,7 +26,7 @@ export type SocketState = 'connecting' | 'open' | 'closed';
  * root the `git` channel keys it by, the name the item's tooltip calls it, the branch checked out
  * (the empty string on a detached head, where `head` is the commit), whether the branch tracks an
  * upstream and the upstream's name where the branch listing gave it, how far the two are apart,
- * and the branches the picker offers.
+ * the branches the picker offers, and the remotes a branch with no upstream can be published to.
  */
 export type RepoStatus = {
     root: string;
@@ -38,16 +38,19 @@ export type RepoStatus = {
     ahead: number;
     behind: number;
     branches: string[];
+    remotes: string[];
 };
 
 /**
  * What the branch and sync items ask of the page, which alone may write: check a branch out, push
- * the branch, and show the repository in the Repositories view. A write git refuses shows the
- * repository too, whose line says why.
+ * the branch, sync it (pull, then push), publish it to a remote, and show the repository in the
+ * Repositories view. A write git refuses shows the repository too, whose line says why.
  */
 export type StatusGit = {
     switchBranch: (root: string, name: string) => Promise<void>;
     push: (root: string) => Promise<void>;
+    sync: (root: string) => Promise<void>;
+    publish: (root: string, remote: string) => Promise<void>;
     show: (root: string) => void;
 };
 
@@ -55,6 +58,8 @@ export type StatusGit = {
 export const NO_GIT: StatusGit = {
     switchBranch: () => Promise.resolve(),
     push: () => Promise.resolve(),
+    sync: () => Promise.resolve(),
+    publish: () => Promise.resolve(),
     show: () => undefined
 };
 
@@ -183,7 +188,8 @@ export function repoStatus(
         upstream: state.upstream === true ? (current?.upstream ?? '') : '',
         ahead: state.ahead,
         behind: state.behind,
-        branches: state.branches.map((branch) => branch.name)
+        branches: state.branches.map((branch) => branch.name),
+        remotes: [...state.remotes]
     };
 }
 

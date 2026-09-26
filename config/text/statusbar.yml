@@ -10,6 +10,7 @@ text:
         item_hpc: HPC
         item_usage: Usage
         item_server: Server
+        item_blame: Blame
         item_caret: Line and column
         item_indent: Indentation
         item_encoding: Encoding
@@ -26,7 +27,10 @@ text:
         branch_menu: Branches of {0}
         sync_name: '{0} to pull, {1} to push'
         sync_tip_push: '{0} commits to push to {1}. Push.'
-        sync_tip_open: '{0} to pull and {1} to push against {2}. Open Repositories.'
+        sync_tip_sync: '{0} to pull and {1} to push against {2}. Sync.'
+        publish_tip: Publish {0} to {1}.
+        publish_tip_many: Publish {0} to one of the remotes.
+        blame_tip: The commit that last changed this line. Open it in the graph.
         sync_upstream: the upstream
         findings_name: '{0} findings'
         findings_tip: '{0} findings in the hub and the configuration. Open Findings.'

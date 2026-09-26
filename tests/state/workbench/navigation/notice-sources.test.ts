@@ -286,7 +286,7 @@ describe('an update task whose results land', () => {
 
 describe('a write that does not land', () => {
     it('is told once in the words the server gave, and not when its caller words it', async () => {
-        // revert: src/lib/state/client/context.ts:235 => delete
+        // revert: src/lib/state/client/context.ts:248 => delete
         vi.stubGlobal('fetch', () =>
             Promise.resolve(
                 new Response(

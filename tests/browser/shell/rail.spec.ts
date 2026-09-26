@@ -147,7 +147,7 @@ async function railShape(page: Page): Promise<{
 test('the rail is 48 px wide with square items and at most one badge, inside its button, under every kind of theme', async ({
     page
 }) => {
-    // revert: src/lib/themes/tokens.css:78 => --rail-width: 98px;
+    // revert: src/lib/themes/tokens.css:90 => --rail-width: 98px;
     // revert: src/lib/shell/rail/RailPages.svelte:256 => top: 40px;
     await boot(page);
     for (const theme of ['light', 'dark', 'mocha']) {
@@ -226,7 +226,7 @@ test('a rail button tooltip and the Settings theme list paint over what is besid
 test('a rail button under a terminal palette is its stand-in whole inside the square, clear of its badge, with no brackets', async ({
     page
 }) => {
-    // revert: src/lib/ui/controls/ToolButton.svelte:337 => font-size: var(--fs-3xl);
+    // revert: src/lib/ui/controls/ToolButton.svelte:384 => font-size: var(--fs-3xl);
     // revert: src/lib/shell/rail/RailPages.svelte:281 => top: 24px;
     await board(page);
 
@@ -696,7 +696,7 @@ test('the Bookmarks menu in a window too short for it ends on the star and scrol
 });
 
 test('the icon stays 24 px at a larger text scale, clear of the badge', async ({ page }) => {
-    // revert: src/lib/themes/tokens.css:81 => --rail-icon: calc(24px * var(--text-scale, 1));
+    // revert: src/lib/themes/tokens.css:93 => --rail-icon: calc(24px * var(--text-scale, 1));
     await boot(page);
     await page.evaluate(() => document.documentElement.style.setProperty('--text-scale', '1.5'));
     const icon = await railButton(page, 'projects').locator('.glyph svg').boundingBox();

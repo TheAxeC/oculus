@@ -585,7 +585,7 @@ test.describe('the rail buttons', () => {
     test('under a light, a dark and a terminal theme a button is muted, the hovered one and the one in force are bright, and only the one in force carries the accent bar', async ({
         page
     }) => {
-        // revert: src/lib/ui/controls/ToolButton.svelte:281 => box-shadow: none;
+        // revert: src/lib/ui/controls/ToolButton.svelte:328 => box-shadow: none;
         await boot(page);
         for (const pick of ['light', 'dark', 'mocha'] as const) {
             await theme(page, pick);

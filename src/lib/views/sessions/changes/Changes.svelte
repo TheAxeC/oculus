@@ -12,10 +12,14 @@
 </script>
 
 <script lang="ts">
-    // Layer 3, sessions view. The Changes frame owns repository writes and confirmation state
-    // because touched-file and git markup change independently.
+    // Layer 3, sessions view. The Changes frame asks before a write and presses through
+    // state/sources/repositories/repositories.svelte.ts, the store the Repositories view presses
+    // through, so which repository has a write in flight and what the last write answered are the
+    // same in both. The touched files and the repository are drawn by partials of their own, since
+    // the two change independently.
 
-    import Confirm from '$lib/ui/controls/Confirm.svelte';
+    import AskConfirm from '$lib/views/shared/AskConfirm.svelte';
+    import type { Ask } from '$lib/views/shared/ask';
     import PickSession from '$lib/views/shared/sessions/PickSession.svelte';
     import type { MenuItem } from '$lib/ui/menu/menu-items';
     import Pane from '$lib/ui/frame/Pane.svelte';
@@ -24,20 +28,19 @@
     import { pinnedSession } from '$lib/state/workbench/selection.svelte';
     import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
-    import { currentBranch, repoShape } from '$lib/state/sources/repositories';
+    import { currentBranch, repoShape } from '$lib/state/sources/repositories/repositories';
     import ChangesRepo from './ChangesRepo.svelte';
     import ChangesTouched from './ChangesTouched.svelte';
     import { useState } from '$lib/state/client/use';
 
     const {
         layout: { instanceLayoutState, pinInstance, unpinInstance },
-        selectors: { gitFor, sessionFor, touchers },
-        writes: { writeGit }
+        repositories,
+        selectors: { gitFor, sessionFor, touchers }
     } = useState();
 
     let { instance }: ViewProps = $props();
     type Branch = { name: string; upstream: string; current: boolean };
-    type Ask = { message: string; detail: string; act: () => void };
 
     const record = $derived(sessionFor(instance.id));
     const panePin = $derived(pinnedSession(instanceLayoutState(instance.id)));
@@ -46,21 +49,17 @@
     const repo = $derived(workspace === '' ? null : gitFor(workspace));
     const shape = $derived(repoShape(workspace, repo));
     const readable = $derived(shape === 'readable' ? repo : null);
-    let message = $state('');
     let branchName = $state('');
-    let outcome = $state('');
-    let busy = $state(false);
-    let suggesting = $state(false);
     let asking: Ask | null = $state(null);
     let branches: Branch[] = $state([]);
     // Each listing asked for takes the next number, and only the newest one may write `branches`: a
     // listing that answers after the workspace changed, or after a later listing was asked for, is
     // for a state the panel no longer draws.
     let asked = 0;
-    const staged = $derived(repo?.staged ?? []);
     const current = $derived(currentBranch(branches));
     const upstream = $derived(current?.upstream ?? '');
-    const canCommit = $derived(staged.length > 0 && message.trim() !== '' && !busy);
+    const busy = $derived(workspace !== '' && repositories.busy(workspace));
+    const outcome = $derived(workspace === '' ? '' : repositories.outcome(workspace));
 
     function togglePanePin(): void {
         if (panePin !== null) {
@@ -102,85 +101,60 @@
         return touchers(`${workspace}/${path}`, record.id).map((session) => session.title);
     }
 
-    async function act(
-        action: string,
-        fields: Record<string, unknown> = {},
-        confirmed = false
-    ): Promise<{ ok: boolean; output: string }> {
-        if (workspace === '' || busy) return { ok: false, output: '' };
-        busy = true;
-        outcome = '';
-        const answer = await writeGit(
-            action,
-            workspace,
-            confirmed ? { ...fields, confirm: true } : fields
-        );
-        busy = false;
-        outcome = answer.ok ? t('git.done') : (answer.error ?? '');
-        return { ok: answer.ok, output: answer.output ?? '' };
-    }
-
     function ask(question: string, detail: string, run: () => void): void {
         asking = { message: question, detail, act: run };
     }
-    function answered(): void {
-        const held = asking;
-        asking = null;
-        held?.act();
-    }
     function stagePath(path: string): void {
-        void act('stage', { paths: [path] });
+        void repositories.stage(workspace, path);
     }
     function unstagePath(path: string): void {
-        void act('unstage', { paths: [path] });
+        void repositories.unstage(workspace, path);
     }
     function discardPath(path: string): void {
+        const root = workspace;
         ask(t('git.discard_confirm', path), t('git.discard_detail'), () => {
-            void act('discard', { paths: [path] }, true);
+            void repositories.discard(root, path);
         });
+    }
+    function groupAct(which: 'stage-changed' | 'stage-untracked' | 'unstage' | 'discard'): void {
+        const root = workspace;
+        if (which === 'stage-changed') void repositories.stageAll(root, 'changed');
+        else if (which === 'stage-untracked') void repositories.stageAll(root, 'untracked');
+        else if (which === 'unstage') void repositories.unstageAll(root);
+        else
+            ask(
+                t('git.discard_all_confirm', repo?.unstaged.length ?? 0),
+                t('git.discard_all_detail'),
+                () => void repositories.discardAll(root)
+            );
     }
     function pushIt(): void {
         if (upstream === '') return;
+        const root = workspace;
         ask(
             t('git.push_confirm', repo?.branch ?? '', upstream),
             t('git.push_detail', repo?.ahead ?? 0),
             () => {
-                void act('push', {}, true);
+                void repositories.push(root);
             }
         );
-    }
-    function commitIt(): void {
-        if (!canCommit) return;
-        ask(
-            t('git.commit_confirm', staged.length, repo?.branch ?? ''),
-            t('git.commit_detail'),
-            async () => {
-                const answer = await act('commit', { message }, true);
-                if (answer.ok) message = '';
-            }
-        );
-    }
-    async function suggest(): Promise<void> {
-        if (busy || suggesting) return;
-        suggesting = true;
-        const answer = await act('suggest');
-        suggesting = false;
-        if (answer.ok && answer.output !== '') message = answer.output;
     }
     function switchTo(name: string): void {
         if (name === '' || name === repo?.branch) return;
+        const root = workspace;
         ask(t('git.branch_switch_confirm', name), t('git.branch_switch_detail'), async () => {
-            await act('switchBranch', { name }, true);
-            await load(workspace);
+            await repositories.switchBranch(root, name);
+            await load(root);
         });
     }
     function createBranch(): void {
         const name = branchName.trim();
         if (name === '') return;
+        const root = workspace;
         ask(t('git.branch_new_confirm', name), t('git.branch_switch_detail'), async () => {
-            await act('createBranch', { name }, true);
+            await repositories.createBranch(root, name);
             branchName = '';
-            await load(workspace);
+            await load(root);
         });
     }
     const branchItems = $derived<MenuItem[]>(
@@ -234,13 +208,11 @@
                 </section>
             {:else if readable !== null}
                 <ChangesRepo
+                    root={workspace}
                     state={readable}
                     {branchItems}
                     {upstream}
                     {busy}
-                    {suggesting}
-                    {canCommit}
-                    {message}
                     {branchName}
                     {outcome}
                     {shared}
@@ -251,25 +223,17 @@
                     onstage={stagePath}
                     onunstage={unstagePath}
                     ondiscard={discardPath}
-                    onmessage={(next: string) => (message = next)}
-                    onsuggest={suggest}
-                    oncommit={commitIt}
+                    onresolve={(path: string) => void repositories.markResolved(workspace, path)}
+                    ongroup={groupAct}
+                    onopen={(path: string, kind: string) =>
+                        repositories.openChange(workspace, kind, path)}
                 />
             {/if}
         {/if}
     </div>
 </Pane>
 
-{#if asking !== null}
-    <Confirm
-        message={asking.message}
-        detail={asking.detail}
-        confirm={t('ui.confirm_ok')}
-        cancel={t('ui.confirm_cancel')}
-        onconfirm={answered}
-        oncancel={() => (asking = null)}
-    />
-{/if}
+<AskConfirm {asking} onclose={() => (asking = null)} />
 
 <style>
     .changes {

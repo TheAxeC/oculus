@@ -1,10 +1,12 @@
 <script lang="ts">
     // Layer 3, partial of views/sources/repositories/Repositories.svelte. The one repository the
-    // view shows: its branch line, then Changes, Commits, Branches and Worktrees as collapsible
-    // sections of explorer rows, each with its count at the right edge of its head. The sections
-    // are one tree and one stop of the focus order through ui/tree/TreeView.svelte, moved along
-    // with the arrow keys over the rows state/sources/repositories.ts's repositoryKeyRows() lists,
-    // Right and Left opening and closing a head or a group.
+    // view shows: its branch line, the commit box, a line saying a merge or a rebase is in progress
+    // with Abort and, for a rebase, Continue, then Changes, Graph, Stashes, Tags, Branches and
+    // Worktrees as collapsible sections of explorer rows, each with its count at the right edge of
+    // its head. The sections are one tree and one stop of the focus order through
+    // ui/tree/TreeView.svelte, moved along with the arrow keys over the rows
+    // state/sources/repositories/repositories.ts's repositoryKeyRows() lists, Right and Left
+    // opening and closing a head or a group.
     //
     // A state with no repository to draw says so as one row in the explorer's row style in place of
     // the sections, which such a state has nothing true to fill: git's reason in the error hue for
@@ -14,43 +16,42 @@
     // stay above the row whenever the state names a branch, since the branch was read before
     // whatever failed.
     //
-    // Four of the six shapes of views/shared/changes/repo-shape.ts are drawn here, and the picker
-    // offers a root of each: state/sources/repositories.ts's pickerRoots() offers every root the
-    // channel carries, so a folder that is not there, one that is no repository, a repository whose
-    // read failed and one that reads are all reachable. The two that are not drawn are `unplaced`
-    // and `reading`, which need a root with no name and a root with no state, and this file is
-    // drawn for neither.
-    //
-    // It draws and reports presses; every write is the view's, so a section knows nothing about the
-    // endpoint. Which sections are closed is the view's instance state, handed in, so a section the
-    // reader closed stays closed across a tab switch and a switch to another repository.
+    // The sections press through the Source Control store themselves; what asks first is asked in
+    // the view's dialog, handed in as `ask`. Which sections are closed and which commit of the
+    // graph is open are the view's instance state, handed in, so both survive a tab switch.
 
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
-    import TreeSection from '$lib/ui/tree/TreeSection.svelte';
     import TreeView from '$lib/ui/tree/TreeView.svelte';
+    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import type { TreeNav } from '$lib/ui/tree/tree-keys';
     import Branches from './Branches.svelte';
     import Changes from './Changes.svelte';
     import Worktrees from './Worktrees.svelte';
-    import { elide, stamp } from '$lib/state/shared/words/format';
-    import { repositoryKeyRows, type DiffSubject } from '$lib/state/sources/repositories';
+    import Graph from './graph/Graph.svelte';
+    import Stashes from './refs/Stashes.svelte';
+    import Tags from './refs/Tags.svelte';
+    import CommitBox from '$lib/views/shared/changes/CommitBox.svelte';
+    import { elide } from '$lib/state/shared/words/format';
+    import {
+        repoShape,
+        repositoryKeyRows,
+        type RepoShape
+    } from '$lib/state/sources/repositories/repositories';
     import type { GitState } from '$lib/state/client/selectors.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { branchState } from '$lib/views/shared/changes/branch-state';
-    import { repoShape, type RepoShape } from '$lib/state/sources/repositories';
+    import { useState } from '$lib/state/client/use';
 
     type Props = {
         root: string;
         git: GitState;
-        busy: boolean;
-        outcome: string;
         /** The section ids the reader closed. */
         collapsed: string[];
+        /** The commit of the graph whose files are open. */
+        commit: string;
         ontoggle: (id: string) => void;
-        onstage: (path: string) => void;
-        onunstage: (path: string) => void;
-        ondiscard: (path: string) => void;
-        ondiff: (subject: DiffSubject, label: string) => void;
+        oncommit: (hash: string) => void;
+        ask: (message: string, detail: string, act: () => void) => void;
         onswitch: (name: string) => void;
         onbranch: (name: string) => void;
         onworktree: (name: string) => void;
@@ -62,14 +63,11 @@
     let {
         root,
         git,
-        busy,
-        outcome,
         collapsed,
+        commit,
         ontoggle,
-        onstage,
-        onunstage,
-        ondiscard,
-        ondiff,
+        oncommit,
+        ask,
         onswitch,
         onbranch,
         onworktree,
@@ -78,8 +76,14 @@
         onterminal
     }: Props = $props();
 
-    const keyRows = $derived(repositoryKeyRows(git, collapsed));
+    const { repositories } = useState();
+
+    let graphRows: string[] = $state([]);
+
+    const keyRows = $derived(repositoryKeyRows(git, collapsed, graphRows));
     const shape = $derived(repoShape(root, git));
+    const busy = $derived(repositories.busy(root));
+    const outcome = $derived(repositories.outcome(root));
 
     /** A key's toggle names a group by its row id; the view keeps it by the group's own id. */
     function toggled(id: string): void {
@@ -91,6 +95,18 @@
         if (drawn === 'missing') return t('sessions.ch_nofolder');
         if (drawn === 'none') return t('sessions.ch_norepo');
         return t('sessions.ch_failed', held.error ?? '');
+    }
+
+    function abort(): void {
+        ask(t('repositories.abort_confirm'), t('repositories.abort_detail'), () => {
+            void repositories.abortMerge(root);
+        });
+    }
+
+    function carryOn(): void {
+        ask(t('repositories.continue_confirm'), t('repositories.continue_detail'), () => {
+            void repositories.continueRebase(root);
+        });
     }
 </script>
 
@@ -118,54 +134,62 @@
             <TreeItem label={rowLabel(shape, git)} tone={shape === 'failed' ? 'error' : 'muted'} />
         </div>
     {:else}
+        <CommitBox {root} {git} />
+        {#if git.sequence !== ''}
+            <div class="sequence" data-sequence={git.sequence}>
+                <span class="said">
+                    {git.sequence === 'merging'
+                        ? t('repositories.merging', git.conflicted.length)
+                        : t('repositories.rebasing', git.conflicted.length)}
+                </span>
+                {#if git.sequence === 'rebasing' && git.conflicted.length === 0}
+                    <ToolButton
+                        label={t('repositories.continue')}
+                        glyph="goto"
+                        disabled={busy}
+                        onclick={carryOn}
+                    />
+                {/if}
+                <ToolButton
+                    label={t('repositories.abort')}
+                    glyph="cross"
+                    disabled={busy}
+                    onclick={abort}
+                />
+            </div>
+        {/if}
         <TreeView label={t('views.repositories')} rows={keyRows} ontoggle={toggled}>
             {#snippet children(nav: TreeNav)}
-                <Changes
+                <Changes {root} {git} {nav} {collapsed} {ontoggle} {ask} />
+
+                <Graph
                     {root}
                     {git}
                     {nav}
-                    {collapsed}
-                    {ontoggle}
-                    {onstage}
-                    {onunstage}
-                    {ondiscard}
-                    {ondiff}
+                    open={!collapsed.includes('graph')}
+                    ontoggle={() => ontoggle('graph')}
+                    {commit}
+                    onpick={oncommit}
+                    onrows={(ids: string[]) => (graphRows = ids)}
                 />
 
-                <div data-group="log">
-                    <TreeSection
-                        label={t('repositories.log')}
-                        id="log"
-                        {nav}
-                        count={git.log.length}
-                        open={!collapsed.includes('log')}
-                        ontoggle={() => ontoggle('log')}
-                    >
-                        {#if git.log.length === 0}
-                            <li role="none">
-                                <TreeItem label={t('repositories.log_empty')} tone="muted" />
-                            </li>
-                        {/if}
-                        {#each git.log as commit (commit.hash)}
-                            <li role="none" data-commit={commit.hash}>
-                                <TreeItem
-                                    label={commit.subject}
-                                    id={`commit:${commit.hash}`}
-                                    {nav}
-                                    level={2}
-                                    glyph="commit"
-                                >
-                                    {#snippet detail()}
-                                        <span class="hash">{commit.short}</span>
-                                    {/snippet}
-                                    {#snippet end()}
-                                        {stamp(commit.when)}
-                                    {/snippet}
-                                </TreeItem>
-                            </li>
-                        {/each}
-                    </TreeSection>
-                </div>
+                <Stashes
+                    {root}
+                    {git}
+                    {nav}
+                    open={!collapsed.includes('stashes')}
+                    ontoggle={() => ontoggle('stashes')}
+                    {ask}
+                />
+
+                <Tags
+                    {root}
+                    {git}
+                    {nav}
+                    open={!collapsed.includes('tags')}
+                    ontoggle={() => ontoggle('tags')}
+                    {ask}
+                />
 
                 <Branches
                     {git}
@@ -184,7 +208,7 @@
                     {busy}
                     open={!collapsed.includes('worktrees')}
                     ontoggle={() => ontoggle('worktrees')}
-                    {ondiff}
+                    ondiff={repositories.openDiff}
                     {onremove}
                     {onmerge}
                     {onterminal}
@@ -230,11 +254,6 @@
         font-size: var(--fs-xs);
     }
 
-    .hash {
-        margin-right: 4px;
-        font-family: var(--font-mono);
-    }
-
     .none {
         margin: 0;
         color: var(--muted-txt, var(--muted));
@@ -244,5 +263,17 @@
     .outcome {
         margin: 0;
         font-size: var(--fs-md);
+    }
+
+    .sequence {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        color: var(--c-scm-conflict-txt);
+        font-size: var(--fs-sm);
+    }
+
+    .sequence .said {
+        margin-right: auto;
     }
 </style>

@@ -5,10 +5,13 @@
     // locks, and one too long for the tab to hold whole.
     //
     // The two columns scroll as one box rather than two synchronised ones, so a long line moves the
-    // text under fixed numbers and nothing has to be kept in step by hand. The highlighter's token
-    // classes are coloured from the palette's own code hues, so the window follows the theme the
-    // reader picked instead of carrying a stylesheet of its own.
+    // text under fixed numbers and nothing has to be kept in step by hand. The source tab hands its
+    // own gutter (Gutter.svelte) in place of the plain numbers, which draws them with the quick
+    // diff marks and the blame, and is told every scroll of the text so its lines follow. The
+    // highlighter's token classes are coloured from the palette's own code hues, so the window
+    // follows the theme the reader picked instead of carrying a stylesheet of its own.
 
+    import type { Snippet } from 'svelte';
     import { codeHtml, lineNumbers } from '$lib/state/shared/words/languages';
     import { t } from '$lib/state/shared/words/text';
 
@@ -19,20 +22,34 @@
         language: string;
         /** The file's path, which names the window for a reader on the keyboard. */
         path: string;
+        /** The tab's own gutter, drawn in place of the plain line numbers. */
+        gutter?: Snippet;
+        /** How far the text is scrolled down, said on every scroll. */
+        onscrolled?: (top: number) => void;
     };
 
-    let { text, language, path }: Props = $props();
+    let { text, language, path, gutter, onscrolled }: Props = $props();
+
+    function scrolled(event: Event): void {
+        if (event.currentTarget instanceof HTMLElement) onscrolled?.(event.currentTarget.scrollTop);
+    }
 
     const painted = $derived(codeHtml(text, language));
     const numbers = $derived(lineNumbers(text));
 </script>
 
 <div class="code" data-fs-code={path} data-language={language}>
-    <pre class="gutter" aria-hidden="true">{numbers.join('\n')}</pre>
+    {#if gutter}
+        {@render gutter()}
+    {:else}
+        <pre class="gutter" aria-hidden="true">{numbers.join('\n')}</pre>
+    {/if}
     <!-- Keep pre and code on one line: a line break inside pre would enter the drawn text. -->
-    <!-- eslint-disable-next-line svelte/no-at-html-tags -- highlight.js escapes the file text before it emits its own span classes -->
-    <pre class="text" role="region" aria-label={t('source.code', path)}><code>{@html painted}</code
+    <!-- eslint-disable svelte/no-at-html-tags -- highlight.js escapes the file text before it emits its own span classes -->
+    <pre class="text" role="region" aria-label={t('source.code', path)} onscroll={scrolled}><code
+            >{@html painted}</code
         ></pre>
+    <!-- eslint-enable svelte/no-at-html-tags -->
 </div>
 
 <style>

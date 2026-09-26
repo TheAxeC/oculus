@@ -1,13 +1,14 @@
 // Layer 2, client state. What each source tab says about the text it holds, for the status bar to
 // draw, and what the status bar asks of it, for the tab to do.
 //
-// The source view publishes its caret, its indentation, its line ending, its language and whether
-// it may be written, keyed by its instance, and takes its entry away when it unmounts. The shell
-// reads the entry of the tab on screen and draws the bar's source items from it; it never holds the
-// text, so a change it offers (a line to go to, an indentation to convert to, another line ending,
-// another language) is asked of the instance, and the view that holds the text performs it. Every
-// ask carries a sequence number, so a view performs one ask once, and a view that mounts after an
-// ask was made does not perform it.
+// The source view publishes its caret, its indentation, its line ending, its language, whether it
+// may be written and, while its blame is on, the caret line's blame, keyed by its instance, and
+// takes its entry away when it unmounts. The shell reads the entry of the tab on screen and draws
+// the bar's source items from it; it never holds the text, so a change it offers (a line to go to,
+// an indentation to convert to, another line ending, another language, the blamed commit to open)
+// is asked of the instance, and the view that holds the text performs it. Every ask carries a
+// sequence number, so a view performs one ask once, and a view that mounts after an ask was made
+// does not perform it.
 
 import { untrack } from 'svelte';
 import type { Caret, Indent, LineEnding } from './editor-text.ts';
@@ -23,6 +24,8 @@ export type EditorStatus = {
     language: string;
     /** Whether the tab may write its file, which is when the text can be changed from the bar. */
     writable: boolean;
+    /** The caret line's blame in the bar's words while blame is on, and the empty string else. */
+    blame: string;
 };
 
 /** One change the status bar asks of a source tab. */
@@ -31,7 +34,8 @@ export type EditorAsk =
     | { kind: 'indent'; indent: Indent }
     | { kind: 'convert'; tabs: boolean }
     | { kind: 'ending'; ending: LineEnding }
-    | { kind: 'language'; language: string };
+    | { kind: 'language'; language: string }
+    | { kind: 'commit' };
 
 /** An ask as the instance reads it, numbered so it is performed once. */
 export type EditorRequest = EditorAsk & { instance: string; seq: number };

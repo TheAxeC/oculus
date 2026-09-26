@@ -17,7 +17,7 @@
 
     import Pane from '$lib/ui/frame/Pane.svelte';
     import { liveCount } from '$lib/state/sessions/folds';
-    import { workspaceCount } from '$lib/state/sources/repositories';
+    import { workspaceCount } from '$lib/state/sources/repositories/repositories';
     import { entityCount, type CountedKind } from '$lib/state/workbench/navigation/status';
     import { t } from '$lib/state/shared/words/text';
     import Hooks from './Hooks.svelte';

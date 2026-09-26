@@ -43,6 +43,7 @@ import {
     buildState,
     copyConfig,
     endLeftoverTmux,
+    layerPort,
     removeLeftovers,
     removeOnExit,
     takeLock
@@ -51,9 +52,10 @@ import { runLayout } from './hub.ts';
 import { LOCAL_NAME } from '../../../src/lib/data/sources/config.ts';
 
 /**
- * The port the browser layer serves on. 8787 is the cockpit's and 8790 the machine's own oculus.
+ * The port the browser layer serves on, which playwright.config.ts reads from the same function.
+ * 8787 is the cockpit's and 8790 the machine's own oculus.
  */
-const PORT = 8792;
+const PORT = layerPort();
 
 /**
  * The name every run's directory starts with, which is how a run finds what an earlier one left.

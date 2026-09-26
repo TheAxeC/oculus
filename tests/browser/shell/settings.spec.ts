@@ -160,7 +160,7 @@ test('each status bar item opens its view', async ({ page }) => {
 });
 
 // revert: src/routes/+page.svelte:122 => findings: 0,
-// revert: src/lib/state/workbench/navigation/status.ts:199 => return snapshot?.findings?.length ?? 0;
+// revert: src/lib/state/workbench/navigation/status.ts:205 => return snapshot?.findings?.length ?? 0;
 test("the findings item counts the Findings view's list, the hub's and the configuration's", async ({
     page
 }) => {

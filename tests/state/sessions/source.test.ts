@@ -270,8 +270,20 @@ describe('source tab state', () => {
         expect(sourceDraft('one').rendered).toBe(true);
     });
 
+    it('keeps the blame per instance, off until the toggle turns it on', () => {
+        // revert: src/lib/state/sessions/source.svelte.ts:284 => updateDraft(id, {});
+        expect(sourceDraft('one').blame).toBe(false);
+        client.source.toggleSourceBlame('one');
+        expect(sourceDraft('one').blame).toBe(true);
+        expect(sourceDraft('two').blame).toBe(false);
+        editSourceDraft('one', 'typed');
+        expect(sourceDraft('one')).toMatchObject({ text: 'typed', blame: true });
+        client.source.toggleSourceBlame('one');
+        expect(sourceDraft('one').blame).toBe(false);
+    });
+
     it('keeps the language and the indentation chosen from the status bar per instance, and drops them for another file', async () => {
-        // revert: src/lib/state/sessions/source.svelte.ts:233 => updateDraft(id, { file });
+        // revert: src/lib/state/sessions/source.svelte.ts:237 => updateDraft(id, { file });
         vi.stubGlobal('fetch', () => Promise.resolve(new Response('text\n')));
         expect(sourceDraft('one')).toMatchObject({ language: '', indent: null });
         client.source.setSourceLanguage('one', 'python');

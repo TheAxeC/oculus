@@ -1,16 +1,76 @@
 // Layer 2, client state. What the Repositories view computes rather than draws: the addresses of
-// the two diff reads, the identity of a diff pane, the worktree rule the view and the write share,
-// which repository one view shows with which of its sections closed, the rows its keyboard moves
-// along, and the colour of a status letter both change lists draw.
+// the reads it asks for on demand (a diff, a page of the graph, a commit's files, a blame, the
+// gutter marks, the three versions of a conflict), the identity of a diff pane, the worktree rule
+// the view and the write share, which repository one view shows with which of its sections closed,
+// the rows its keyboard moves along, and the colour and word of a status letter both change lists
+// draw.
 //
 // The worktree rule comes from data/helpers/worktrees.ts, the one place it lives, so the path the
 // view shows before a worktree is made is the path the write makes. Nothing here fetches: the view
 // owns its own requests, and these are the strings they are made from.
 
-import type { GitEntry, GitState, GitWorktree } from '../../data/model/index.ts';
-import { worktreePath, worktreesDir } from '../../data/helpers/worktrees.ts';
+import type {
+    GitBlameLine,
+    GitCommitFile,
+    GitEntry,
+    GitGraphCommit,
+    GitGraphPage,
+    GitLineMark,
+    GitMergeSides,
+    GitStash,
+    GitState,
+    GitTag,
+    GitWorktree
+} from '../../../data/model/index.ts';
+import { worktreePath, worktreesDir } from '../../../data/helpers/worktrees.ts';
 
-export { validName, worktreePath, worktreesDir } from '../../data/helpers/worktrees.ts';
+export { validName, worktreePath, worktreesDir } from '../../../data/helpers/worktrees.ts';
+
+export type {
+    GitBlameLine,
+    GitCommitFile,
+    GitGraphCommit,
+    GitGraphPage,
+    GitLineMark,
+    GitMergeSides,
+    GitStash,
+    GitTag
+};
+
+/** An address on /api/git, from its parameters in order. */
+function gitUrl(parameters: Record<string, string>): string {
+    return `/api/git?${new URLSearchParams(parameters).toString()}`;
+}
+
+/** The endpoint a page of the graph is read from, `skip` commits in. */
+export function graphUrl(root: string, skip: number): string {
+    return gitUrl({ graph: root, skip: String(skip) });
+}
+
+/** The endpoint one commit's changed files are read from, or its diff of one of them. */
+export function commitUrl(root: string, hash: string, path = ''): string {
+    return gitUrl(path === '' ? { commit: hash, root } : { commit: hash, root, path });
+}
+
+/** The endpoint a stash's diff is read from. */
+export function stashUrl(root: string, ref: string): string {
+    return gitUrl({ stash: ref, root });
+}
+
+/** The endpoint a file's blame is read from. */
+export function blameUrl(root: string, path: string): string {
+    return gitUrl({ blame: root, path });
+}
+
+/** The endpoint a file's gutter marks are read from. */
+export function marksUrl(root: string, path: string): string {
+    return gitUrl({ marks: root, path });
+}
+
+/** The endpoint the three versions of a conflicted path are read from. */
+export function sidesUrl(root: string, path: string): string {
+    return gitUrl({ sides: root, path });
+}
 
 /** The endpoint one file's diff is read from, staged or from the worktree. */
 export function fileDiffUrl(root: string, path: string, staged: boolean): string {
@@ -31,27 +91,77 @@ export function worktreeDiffUrl(root: string, path: string): string {
     return `/api/git?${new URLSearchParams({ worktree: path, root }).toString()}`;
 }
 
-/** What one diff pane is over: a file under a root, staged or not, or a whole worktree. */
-export type DiffSubject = { root: string; path: string; staged: boolean; worktree: boolean };
+/**
+ * What one diff pane is over: a file under a root, staged or not; a whole worktree; one commit's
+ * change to a file (`commit`); or a whole stash (`stash`). `line` is the line of the new side the
+ * pane opens at, 0 for its top.
+ */
+export type DiffSubject = {
+    root: string;
+    path: string;
+    staged: boolean;
+    worktree: boolean;
+    commit?: string;
+    stash?: string;
+    line?: number;
+};
 
 /**
  * One diff pane's state, as the instance carries it. `id` is what makes two panes two instances.
  */
 export type DiffState = DiffSubject & { id: string; label: string };
 
+/** Which diff a subject is, the part of its id that is not the root and the path. */
+function sideOf(subject: DiffSubject): string {
+    if (subject.worktree) return 'worktree';
+    if ((subject.commit ?? '') !== '') return `commit@${subject.commit ?? ''}`;
+    if ((subject.stash ?? '') !== '') return `stash@${subject.stash ?? ''}`;
+    return subject.staged ? 'staged' : 'changed';
+}
+
 /**
- * The instance state a diff pane is opened with. The id names root, path and which side, so the
- * same file opened twice activates the pane that is already there and two files are two panes.
+ * The instance state a diff pane is opened with. The id names root, path and which diff, and not
+ * the line, so the same file opened twice activates the pane that is already there and points it
+ * at the new line, and two files are two panes.
  */
 export function diffState(subject: DiffSubject, label: string): DiffState {
-    const side = subject.worktree ? 'worktree' : subject.staged ? 'staged' : 'changed';
-    return { ...subject, id: `${side}:${subject.root}:${subject.path}`, label };
+    return { ...subject, id: `${sideOf(subject)}:${subject.root}:${subject.path}`, label };
 }
 
 /** The address one diff pane reads, by what it is over. */
 export function diffUrl(state: DiffSubject): string {
     if (state.worktree) return worktreeDiffUrl(state.root, state.path);
+    if ((state.commit ?? '') !== '') return commitUrl(state.root, state.commit ?? '', state.path);
+    if ((state.stash ?? '') !== '') return stashUrl(state.root, state.stash ?? '');
     return fileDiffUrl(state.root, state.path, state.staged);
+}
+
+/**
+ * Whether a diff pane's hunks can be staged, unstaged or reverted: a file's own diff, staged or
+ * not, and nothing a commit, a stash or a worktree holds.
+ */
+export function diffActs(state: DiffSubject): boolean {
+    return !state.worktree && (state.commit ?? '') === '' && (state.stash ?? '') === '';
+}
+
+/** How a diff pane lays its two sides out, kept per pane. */
+export type DiffMode = 'side' | 'inline';
+
+/** A diff pane's own remembered choices: its layout, and the folds the reader opened. */
+export type DiffView = { mode: DiffMode; opened: number[] };
+
+/** A diff pane's remembered choices, every field defaulted: side by side, nothing opened. */
+export function diffViewOf(state: unknown): DiffView {
+    const map =
+        typeof state === 'object' && state !== null && !Array.isArray(state)
+            ? (state as Record<string, unknown>)
+            : {};
+    return {
+        mode: map.mode === 'inline' ? 'inline' : 'side',
+        opened: Array.isArray(map.opened)
+            ? map.opened.filter((one): one is number => typeof one === 'number')
+            : []
+    };
 }
 
 /** The name a worktree is shown under: its folder name, which is the branch it was made on. */
@@ -67,9 +177,10 @@ export function plannedPath(root: string, name: string): string {
 
 /**
  * What one Repositories view keeps about itself across a tab switch and a saved page: the
- * repository it shows and the sections the reader closed.
+ * repository it shows, the sections the reader closed, and the commit of the graph whose files are
+ * open, the empty string for none.
  */
-export type RepositoriesView = { root: string; collapsed: string[] };
+export type RepositoriesView = { root: string; collapsed: string[]; commit: string };
 
 /**
  * The Repositories view's instance state, every field defaulted, so a state from any source draws.
@@ -83,7 +194,8 @@ export function repositoriesViewOf(state: unknown): RepositoriesView {
         root: typeof map.root === 'string' ? map.root : '',
         collapsed: Array.isArray(map.collapsed)
             ? map.collapsed.filter((one): one is string => typeof one === 'string')
-            : []
+            : [],
+        commit: typeof map.commit === 'string' ? map.commit : ''
     };
 }
 
@@ -145,15 +257,35 @@ export function noCommitYet(git: GitState): boolean {
     );
 }
 
-/** The three change groups in the order they are drawn, with the entries each holds. */
+/**
+ * The change groups in the order they are drawn, with the entries each holds: Merge Changes first,
+ * as VS Code draws it, then staged, changed and untracked.
+ */
 export function changeGroups(git: GitState): { id: string; entries: GitEntry[] }[] {
     const groups = [
+        { id: 'merge', entries: git.conflicted },
         { id: 'staged', entries: git.staged },
         { id: 'changed', entries: git.unstaged },
         { id: 'untracked', entries: git.untracked }
     ];
-    // An empty staged group says nothing a reader acts on, so it is not drawn.
-    return groups.filter((group) => group.id !== 'staged' || group.entries.length > 0);
+    // An empty merge or staged group says nothing a reader acts on, so it is not drawn.
+    return groups.filter(
+        (group) => (group.id !== 'staged' && group.id !== 'merge') || group.entries.length > 0
+    );
+}
+
+/** One row of the keyboard's order: its id, the row it sits under, and whether it is open. */
+export type KeyRow = { id: string; parent: string | null; open?: boolean };
+
+/**
+ * The rows of the Repositories section as its keyboard reads them: its head, and under it while it
+ * is open one row per repository.
+ */
+export function repoListRows(roots: readonly string[], collapsed: readonly string[]): KeyRow[] {
+    const open = !collapsed.includes('repos');
+    const rows: KeyRow[] = [{ id: 'repos', parent: null, open }];
+    if (open) for (const root of roots) rows.push({ id: `repo:${root}`, parent: 'repos' });
+    return rows;
 }
 
 /**
@@ -164,9 +296,10 @@ export function changeGroups(git: GitState): { id: string; entries: GitEntry[] }
  */
 export function repositoryKeyRows(
     git: GitState,
-    collapsed: string[]
-): { id: string; parent: string | null; open?: boolean }[] {
-    const rows: { id: string; parent: string | null; open?: boolean }[] = [];
+    collapsed: string[],
+    graph: readonly string[] = []
+): KeyRow[] {
+    const rows: KeyRow[] = [];
     const head = (id: string): boolean => {
         const open = !collapsed.includes(id);
         rows.push({ id, parent: null, open });
@@ -187,10 +320,17 @@ export function repositoryKeyRows(
             }
         }
     }
-    if (head('log'))
+    // The graph's rows are read on demand, so the view hands in the ids it has drawn.
+    if (head('graph')) under('graph', [...graph]);
+    if (head('stashes'))
         under(
-            'log',
-            git.log.map((commit) => `commit:${commit.hash}`)
+            'stashes',
+            git.stashes.map((stash) => `stash:${stash.ref}`)
+        );
+    if (head('tags'))
+        under(
+            'tags',
+            git.tags.map((tag) => `tag:${tag.name}`)
         );
     if (head('branches'))
         under(
@@ -206,11 +346,14 @@ export function repositoryKeyRows(
     return rows;
 }
 
-/** The hue each git status letter is drawn in, by the letter. */
+/**
+ * The colour token each git status letter is drawn in: the Source Control tokens for an added, a
+ * modified and a deleted path, which every theme defines, and a hue for the rest.
+ */
 const STATUS_TONES: Record<string, string> = {
-    M: 'amber',
-    A: 'green',
-    D: 'red',
+    M: 'scm-modified',
+    A: 'scm-added',
+    D: 'scm-deleted',
     R: 'violet',
     C: 'violet',
     '?': 'slate'
@@ -226,14 +369,36 @@ const STATUS_WORDS: Record<string, string> = {
     '?': 'untracked'
 };
 
-/** The catalog key of the word one git status letter stands for, `changed` for any other letter. */
+/**
+ * The word each unmerged pair stands for, VS Code's: both sides modified it, both added it, both
+ * deleted it, or one side added or deleted what the other did not.
+ */
+const CONFLICT_WORDS: Record<string, string> = {
+    UU: 'both_modified',
+    AA: 'both_added',
+    DD: 'both_deleted',
+    AU: 'added_by_us',
+    UA: 'added_by_them',
+    DU: 'deleted_by_us',
+    UD: 'deleted_by_them'
+};
+
+/** Whether a status is an unmerged pair, which is a conflict. */
+export function isConflict(status: string): boolean {
+    return status in CONFLICT_WORDS;
+}
+
+/** The catalog key of the word one git status stands for, `changed` for any other letter. */
 export function statusWordKey(status: string): string {
+    const conflict = CONFLICT_WORDS[status] as string | undefined;
+    if (conflict !== undefined) return `repositories.conflict_${conflict}`;
     return `repositories.status_${STATUS_WORDS[status] ?? 'changed'}`;
 }
 
-/** The inline style that colours one git status letter: its hue's text colour. */
+/** The inline style that colours one git status: its token's text colour. */
 export function statusStyle(status: string): string {
-    return `--tone-txt: var(--c-${STATUS_TONES[status] ?? 'grey'}-txt)`;
+    const tone = isConflict(status) ? 'scm-conflict' : (STATUS_TONES[status] ?? 'grey');
+    return `--tone-txt: var(--c-${tone}-txt)`;
 }
 
 /** The worktrees of a repository other than its main checkout, in the order git lists them. */
@@ -246,9 +411,28 @@ export function workspaceCount(git: Record<string, GitState> | null | undefined)
     return Object.keys(git ?? {}).length;
 }
 
-/** How many files a repository's state lists as staged, changed or untracked together. */
+/** How many files a repository's state lists as conflicted, staged, changed or untracked. */
 export function changeCount(git: GitState): number {
-    return git.staged.length + git.unstaged.length + git.untracked.length;
+    return git.conflicted.length + git.staged.length + git.unstaged.length + git.untracked.length;
+}
+
+/** The upstream the checked-out branch tracks, by name, or the empty string. */
+export function upstreamOf(git: GitState): string {
+    return git.branches.find((branch) => branch.current)?.upstream ?? '';
+}
+
+/**
+ * Whether Publish Branch is offered: a branch is checked out, git says it tracks nothing, and the
+ * repository has a remote to publish it to.
+ */
+export function canPublish(git: GitState): boolean {
+    return (
+        !git.detached &&
+        git.branch !== '' &&
+        git.branch !== 'HEAD' &&
+        git.upstream === false &&
+        git.remotes.length > 0
+    );
 }
 
 /**

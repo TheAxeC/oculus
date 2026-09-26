@@ -36,6 +36,11 @@ digraph channels {
         "ch sessions" [label="sessions", shape=ellipse];
         "ch usage" [label="usage", shape=ellipse];
     }
+    subgraph "cluster_lost" {
+        label="not placed"; style=dashed;
+        "? src/lib/views/shared/changes/CommitBox.svelte:38" [label="src/lib/views/shared/changes/CommitBox.svelte:38 message(root)"];
+        "? src/lib/views/shared/changes/CommitBox.svelte:50" [label="src/lib/views/shared/changes/CommitBox.svelte:50 message(root)"];
+    }
     subgraph "cluster_read state" {
         label="state"; style=solid;
         "state/client/context";
@@ -68,6 +73,7 @@ digraph channels {
         "views/feeds/radar";
         "views/sessions/terminal";
         "views/shared/card";
+        "views/shared/changes";
         "views/sources/doc";
         "views/structure/domains";
         "views/structure/map";
@@ -82,6 +88,8 @@ digraph channels {
         label="routes"; style=solid;
         "routes/+page";
     }
+    "? src/lib/views/shared/changes/CommitBox.svelte:38" -> "views/shared/changes";
+    "? src/lib/views/shared/changes/CommitBox.svelte:50" -> "views/shared/changes";
     "ch audit" -> "routes/+page" [style=dashed];
     "ch audit" -> "state/system/audit";
     "ch calendar" -> "routes/+page" [style=dashed];

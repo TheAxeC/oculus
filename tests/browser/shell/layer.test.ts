@@ -1,6 +1,8 @@
 // The facts tests/browser/helpers/layer.ts holds for the browser layer, over a tree made in a
 // temporary directory: a build that no longer describes its source is refused, the copy of the
-// config folder carries no machine-local file, and what a run made is removed.
+// config folder carries no machine-local file, what a run made is removed, the port a run serves
+// on is the one the Playwright configuration and serve.ts both read, and a spec's read of a
+// repository never takes the index lock a write of the server needs.
 //
 // This is a vitest file rather than a spec: Playwright's testMatch is `*.spec.ts`, so the browser
 // layer never collects it and it never starts a server.
@@ -14,12 +16,14 @@ import {
     buildState,
     copyConfig,
     endLeftoverTmux,
+    layerPort,
     newest,
     removeLeftovers,
     removeOnExit,
     removePaths,
     takeLock
 } from '../helpers/layer.ts';
+import { gitIn, gitOut } from '../helpers/git.ts';
 import { LOCAL_NAME } from '../../../src/lib/data/sources/config.ts';
 import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
 
@@ -147,7 +151,7 @@ describe('the cleanup', () => {
         expect(removeLeftovers(join(dir, 'never-there'), 'oculus-browser-')).toEqual([]);
     });
 
-    // revert: tests/browser/helpers/layer.ts:178 => delete
+    // revert: tests/browser/helpers/layer.ts:191 => delete
     it.skipIf(!TMUX)('ends the tmux server an earlier run left on its socket, and no other', () => {
         const old = join(dir, 'ob-old', 'tmux.sock');
         const other = join(dir, 'other', 'tmux.sock');
@@ -192,5 +196,49 @@ describe('the cleanup', () => {
         // The exit event runs the same removal over paths that are already gone.
         listeners.get('exit')?.();
         expect(existsSync(folder)).toBe(false);
+    });
+});
+
+describe('the port', () => {
+    // revert: tests/browser/helpers/layer.ts:30 => const named = Number(undefined);
+    it('is 8792, or the one OCULUS_BROWSER_PORT names when that is a port', () => {
+        expect(layerPort({})).toBe(8792);
+        expect(layerPort({ OCULUS_BROWSER_PORT: '43121' })).toBe(43121);
+        expect(layerPort({ OCULUS_BROWSER_PORT: 'x' })).toBe(8792);
+        expect(layerPort({ OCULUS_BROWSER_PORT: '70000' })).toBe(8792);
+    });
+
+    // revert: playwright.config.ts:22 => const PORT = 8792;
+    it('is the one the Playwright configuration asks the server and the browser for', () => {
+        const read =
+            "const c = (await import('./playwright.config.ts')).default;" +
+            'process.stdout.write(JSON.stringify([c.webServer.url, c.projects[0].use.baseURL]));';
+        const done = spawnSync(process.execPath, ['--input-type=module', '-e', read], {
+            cwd: process.cwd(),
+            encoding: 'utf8',
+            env: { ...process.env, OCULUS_BROWSER_PORT: '43121' }
+        });
+        expect(done.status, done.stderr).toBe(0);
+        expect(JSON.parse(done.stdout)).toEqual([
+            'http://127.0.0.1:43121/',
+            'http://127.0.0.1:43121'
+        ]);
+    });
+});
+
+describe('a git read of a spec', () => {
+    // revert: tests/browser/helpers/git.ts:27 => delete
+    it('leaves the index as it was, so it never holds the lock a write of the server needs', () => {
+        gitIn(dir, 'init', '--quiet');
+        writeFileSync(join(dir, 'a.txt'), 'one\n');
+        gitIn(dir, 'add', 'a.txt');
+        gitIn(dir, 'commit', '--quiet', '-m', 'one');
+        // The file keeps its text and gets another time, so a status that refreshed would write
+        // the index again.
+        utimesSync(join(dir, 'a.txt'), new Date(2020, 0, 1), new Date(2020, 0, 1));
+        const index = join(dir, '.git', 'index');
+        const before = readFileSync(index);
+        expect(gitOut(dir, 'status', '--porcelain')).toBe('');
+        expect(readFileSync(index).equals(before)).toBe(true);
     });
 });

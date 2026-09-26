@@ -1,8 +1,9 @@
-// Layer 3, view support. The words and the hue a repository picker's row carries for what one
-// root's git state comes to; which of the six shapes a state is, is state/sources/repositories.ts's
-// repoShape, since the Changes panel's branch listing decides on it too.
+// Layer 3, view support. The words and the hue a row of the Repositories section carries for what
+// one root's git state comes to; which of the six shapes a state is, is
+// state/sources/repositories/repositories.ts's repoShape, since the Changes panel's branch listing
+// decides on it too.
 
-import type { RepoShape } from '$lib/state/sources/repositories';
+import type { RepoShape } from '$lib/state/sources/repositories/repositories';
 import { t } from '$lib/state/shared/words/text';
 
 /**

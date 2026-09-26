@@ -21,8 +21,8 @@
     //
     // Every write goes to POST /api/deposit with the write token, and the five that can lose work
     // (commit, push, snapshot, the two branch actions) carry a confirm this view sets only from
-    // ui/controls/Confirm.svelte. Nothing here acts on a timer or on a payload arriving; a write
-    // happens when a button is pressed and never otherwise.
+    // the yes of views/shared/AskConfirm.svelte. Nothing here acts on a timer or on a payload
+    // arriving; a write happens when a button is pressed and never otherwise.
     //
     // The commit message is suggested by POST /api/git with the mirror as its root, which is why
     // server/git/git-write.ts's allowedRoots names the mirrors folder beside the workspaces and the
@@ -33,7 +33,8 @@
     // server's as well: server/git/deposit.ts refuses those three while the plan has findings, so a
     // control wired past this would be refused rather than quietly obeyed.
 
-    import Confirm from '$lib/ui/controls/Confirm.svelte';
+    import AskConfirm from '$lib/views/shared/AskConfirm.svelte';
+    import type { Ask } from '$lib/views/shared/ask';
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Menu from '$lib/ui/menu/Menu.svelte';
     import type { MenuItem } from '$lib/ui/menu/menu-items';
@@ -58,9 +59,6 @@
 
     /** One row of `git branch --format`, as POST /api/deposit answers it. */
     type Branch = { name: string; upstream: string; current: boolean };
-
-    /** What a confirm dialog is holding: what it says, and what pressing it does. */
-    type Ask = { message: string; detail: string; act: () => void };
 
     /** The project this instance was opened for, from the state the card handed openView. */
     const id = $derived(readId(instance.state));
@@ -140,12 +138,6 @@
 
     function ask(question: string, detail: string, run: () => void): void {
         asking = { message: question, detail, act: run };
-    }
-
-    function answered(): void {
-        const held_ = asking;
-        asking = null;
-        held_?.act();
     }
 
     function adopt(): void {
@@ -393,16 +385,7 @@
     </div>
 </Pane>
 
-{#if asking !== null}
-    <Confirm
-        message={asking.message}
-        detail={asking.detail}
-        confirm={t('ui.confirm_ok')}
-        cancel={t('ui.confirm_cancel')}
-        onconfirm={answered}
-        oncancel={() => (asking = null)}
-    />
-{/if}
+<AskConfirm {asking} onclose={() => (asking = null)} />
 
 <style>
     .deposit {

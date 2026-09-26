@@ -101,6 +101,8 @@ const SOLID: Record<string, string> = {
     'src/lib/ui/controls/Chip.svelte .chip.filled:not(.toned)': 'the same control, filled',
     'src/lib/ui/controls/Confirm.svelte .row button':
         'a button inside a box that is already translucent',
+    'src/lib/ui/forms/Prompt.svelte .row button':
+        'a button inside a box that is already translucent',
     'src/lib/ui/forms/DateInput.svelte .date': 'an input, whose text is typed and read back',
     'src/lib/ui/tree/Disclosure.svelte .disclosure': 'a control, pressed to open a section',
     'src/lib/ui/menu/MenuOpener.svelte .opener': 'a control, the button a list hangs off',

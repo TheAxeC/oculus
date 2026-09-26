@@ -136,7 +136,7 @@ describe('the source editor', () => {
         expect(editable).toContain(catalog['source.saved']);
     });
 
-    // revert: src/lib/views/sources/source/Editor.svelte:258 => <div role="toolbar"></div><div class="row" bind:this={box}>
+    // revert: src/lib/views/sources/source/Editor.svelte:268 => <div role="toolbar"></div><div class="row" bind:this={box}>
     it('draws the highlight mirror and the editable textarea, and no control row of its own', () => {
         const { body } = render(Editor, {
             context: clientContext(client),
@@ -155,7 +155,7 @@ describe('the source editor', () => {
         expect(body).not.toContain('readonly');
     });
 
-    // revert: src/lib/views/sources/source/Source.svelte:223 => delete
+    // revert: src/lib/views/sources/source/Source.svelte:350 => delete
     it('draws a refused save with the cross glyph beside its words, and a later word without it', async () => {
         let refuse = true;
         vi.stubGlobal('fetch', (_url: string, init?: RequestInit) =>
@@ -198,7 +198,7 @@ describe('the source editor', () => {
         expect(saved).not.toContain('data-glyph="cross"');
     });
 
-    // revert: src/lib/views/sources/source/Source.svelte:200 => {#if false}
+    // revert: src/lib/views/sources/source/Source.svelte:318 => {#if false}
     it('draws Save, Revert, Preview and the star on the pane bar in that order, the saved word after', async () => {
         vi.stubGlobal('fetch', (_url: string, init?: RequestInit) =>
             Promise.resolve(

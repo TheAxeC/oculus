@@ -71,3 +71,52 @@ All commands were run from .agents/worktrees/X3b/tools/oculus. The worktree diff
 - The merge-regions algorithm against git's own conflict hunks on real conflicts beyond the tests' cases.
 
 Reviewer usage: 268,477 tokens, 101 tool uses, 57 minutes (claude:opus, native Agent a8689ea922c90a936).
+
+# Repair round 1, refuted
+
+Reviewer: claude:opus native agent ac86b667fb134aca7, sampled under option (b). Usage: 273,400 tokens, 80 tool uses, 3,077 s.
+
+## Verification, rerun by the reviewer
+
+- `npx vitest run --reporter=dot`: `Test Files  320 passed (320)`, `Tests  5052 passed (5052)`.
+- `npm run check`: `COMPLETED 1442 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS`. `npm run build`: exit 0. `npm run format:check`: `All matched files use Prettier code style!`. `npm run lint`: exit 0.
+- ASCII gate: 0 lines; DESIGN.md, HELP.md, playwright.config.ts: 0 non-ASCII each. `sh bin/size-check.sh` and `sh bin/folder-check.sh`: exit 0.
+- `npm run diagrams` twice: exit 0 both, `cat docs/diagrams/* | shasum` `e2517c24908a51ae28239c9aa1d09ab5ab00ef90` both times, as the report says.
+- revert-check per file, each browser case on its own free port: the six scm specs `44 reverts, 0 unproven, 0 unchecked`; rail, views/changes and sources/repositories specs `38 reverts, 0 unproven, 10 unchecked` (rail 27 red; the unchecked are 3 rail cases unchanged from main, 2 describe names, 5 with a prose revert or none); eleven unit files `144 reverts, 0 unproven, 151 unchecked`, every unchecked one in a case the round did not change.
+- `OCULUS_BROWSER_PORT=47123 npx playwright test tests/browser/scm tests/browser/views/changes.spec.ts tests/browser/sources/repositories.spec.ts tests/browser/shell/rail.spec.ts tests/browser/shell/shell-defects.spec.ts tests/browser/status/bar.spec.ts`: `104 passed (2.2m)`.
+- collection.spec.ts "+ subtask adds a line and done ticks it" five times: `1 passed` each (4.2 to 4.5 s); the boards folder twice: `50 passed` both. X3b's changes to ToolButton (`cell` default false, `data` default `{}`) and TextArea (`code` default false) are additive, and collection.spec.ts is byte-identical to main; the builder's one failure did not reproduce.
+- `ls -d $TMPDIR/oculus-*`: 0 before and after. The worktree unchanged by the review (`git diff a8848c49 | shasum` and the untracked files' shasum the same before and after).
+- The report's line counts match `wc -l`; "14 raw buttons in views" matches `grep -rn "<button" src/lib/views | wc -l`.
+
+## The round's closures
+
+Findings 1 to 16 closed, each with red directives named by the reviewer (listed in the reviewer's hand-back); 2 closed for DD, DU and UD with a new defect for AU and UA (Behaviour 1); 9 closed with a new false comment (Standards 1); 15 closed on the count, the builder's timing not rerun. A further sample of 22 directives chosen by the reviewer, all red.
+
+## 1. Spec
+
+- `git.ts:403-412` and `:420-427`: the `refs()` read and the conditional stash and remote reads go beyond finding 15's ruling (measure, and read lazily only when past noise). The behaviour matches DESIGN.md's **Git.** paragraph; `GitState.remotes` is now `[]` for every repository with an upstream, and its three readers (Repositories.svelte:110, RepoItems.svelte:135-154, repositories.ts:434) read remotes only without an upstream, so nothing on screen changes. The restructure is what made the second branch parser (Standards 2).
+- `OCULUS_BROWSER_PORT` (layer.ts:24-32, playwright.config.ts:14-23, serve.ts:44-48, revert-check.mjs:283-305 and :379-389) and `--no-optional-locks` in tests/browser/helpers/git.ts:27: both judged correct.
+
+## 2. Proof
+
+1. `tests/browser/shell/layer.test.ts:204-208` asserts over source text (`expect(source).toContain('const PORT = layerPort();')`), which spec.md:56 counts as an audit, not coverage.
+2. `CommitBox.svelte:104` `!(event.ctrlKey || event.metaKey)`: only Control+Enter is pressed; the Cmd half is unproven.
+3. conflicts.spec "keeps the side the other branch deleted by Accept Current and Complete Merge": its directive proves only that Accept Deletion is drawn; Complete Merge over a non-empty Result on a UD row writing the Result is proven only at unit level.
+4. No case reads `mergeSides` for an AU or UA path, though `tests/server/git/deletions.ts` makes both.
+5. controls.test.ts is a source scan, acceptable as a gate; the cell presses are proven in the browser (DiffFile.svelte:161, :178, Gutter.svelte:96), the blame cell's through Source.svelte:340.
+
+## 3. Standards
+
+1. `src/lib/server/git/git-write.ts:549-552` says Mark Resolved runs `rm`; it runs `add` (git-index.ts:217).
+2. `src/lib/server/core/git-parse.ts:3-7` is false, and the branch row has two parsers and two formats: git.ts uses `parseRefs`/`REFS_FORMAT`, git-write.ts:310 and :508 and deposit.ts:458 still use `parseBranches`/`BRANCH_FORMAT`.
+3. `src/lib/server/core/git.ts:44-46` still names `branch` among its commands.
+4. `tests/server/core/git.test.ts:802` and `:822` titles say "the pinned five"; PINNED holds six.
+
+## 4. Behaviour
+
+1. AU and UA conflicts: `git.ts:373-374` reads an AU path (stage 2 only) as `deleted: 'theirs'` and a UA path as `'ours'`, so Merge.svelte offers Accept Deletion and says a side deleted the file, while `acceptDeletion` (`git-index.ts:160`, `:192`) refuses AU and UA. The round's own fixture makes such rows (conflicts.spec.ts:130-136). Read from the code, not run.
+2. The gutter draws a ToolButton with a tooltip wrapper per blamed and per marked line (Gutter.svelte:64-99); the cost on a long file with blame on is not measured.
+
+## Not checked
+
+The builder's timing for finding 15; the AU/UA rows on screen; the full browser suite and a revert-check over every changed file (excluded by the brief); the look; the catch-branch guard at Diff.svelte:136, which has no directive.

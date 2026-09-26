@@ -63,6 +63,18 @@
     --c-code-name: #2563eb;
     --c-code-meta: #0891b2;
     --c-code-comment: #6b7280;
+    /* Source Control: one hue each for an added, a modified, a deleted and a conflicted path or
+       line, which the change lists, the diff and the source tab's gutter marks draw, and the tint
+       an added, a deleted and a conflicted line of the diff and the merge editor is filled with,
+       each a fifth of its hue in the page. Palette entries, so derive.ts mints their `-txt`
+       against each theme's surfaces; every theme block sets its own. */
+    --c-scm-added: #16a34a;
+    --c-scm-modified: #b45309;
+    --c-scm-deleted: #dc2626;
+    --c-scm-conflict: #a21caf;
+    --c-scm-added-bg: #c5e5d6;
+    --c-scm-deleted-bg: #edcccf;
+    --c-scm-conflict-bg: #e1caea;
     --map-line: #475569;
     --map-collab: #0891b2;
     --map-edge: #94a3b8;

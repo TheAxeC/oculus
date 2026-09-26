@@ -60,12 +60,22 @@
          * tooltip over it rather than under, since the bar is the window's foot.
          */
         status?: boolean;
+        /**
+         * A cell of a grid it sits in, a gutter's line number or change mark: no border, fill,
+         * padding or brackets of its own, the size, colour and alignment of the cell around it,
+         * and the whole of that cell, so the caller's cell draws what state it is in. The cell is
+         * a flex box, which is what stretches the button to its height. Its words are its
+         * children, or nothing for a cell that is a mark alone, and `label` is its name.
+         */
+        cell?: boolean;
         /** A rail view id, rendered on the button for browser navigation. */
         dataView?: string;
         /** A configured hub document's path, rendered on the button for browser navigation. */
         dataDoc?: string;
         /** Marks the project-card control the keyboard cursor activates when its title is plain. */
         dataCardToggle?: boolean;
+        /** `data-*` attributes by their names after `data-`, for a caller that finds a button. */
+        data?: Record<string, string | number>;
         /**
          * The button's place in the browser's focus order, for a strip that is one stop: 0 for the
          * control at the stop and -1 for the rest. A button with none is an ordinary stop.
@@ -100,9 +110,11 @@
         rail = false,
         bare = false,
         status = false,
+        cell = false,
         dataView,
         dataDoc,
         dataCardToggle = false,
+        data = {},
         tabindex,
         stop,
         onkeydown,
@@ -112,6 +124,10 @@
     const compactGlyph = $derived(compact && glyph !== undefined);
     const iconOnly = $derived(compactGlyph);
     const tip = $derived(title ?? (compactGlyph ? label : ''));
+    const named = $derived(iconOnly || cell || children !== undefined);
+    const attributes = $derived(
+        Object.fromEntries(Object.entries(data).map(([name, value]) => [`data-${name}`, value]))
+    );
 </script>
 
 <!-- A button of an exclusive group is a radio its group owns, and a radiogroup owns radios: a
@@ -120,7 +136,7 @@
     text={tip}
     placement={rail ? 'beside' : status ? 'above' : 'below'}
     presentational={checked !== undefined}
-    block={rail}
+    block={rail || cell}
 >
     <button
         type="button"
@@ -130,11 +146,12 @@
         class:rail-control={rail}
         class:bare
         class:status
+        class:cell
         role={checked === undefined ? undefined : 'radio'}
         aria-checked={checked}
         aria-expanded={expanded}
         aria-pressed={pressed}
-        aria-label={iconOnly || children !== undefined ? label : undefined}
+        aria-label={named ? label : undefined}
         data-view={dataView}
         data-doc={dataDoc}
         data-card-toggle={dataCardToggle || undefined}
@@ -144,11 +161,16 @@
         {onclick}
         {ondblclick}
         {onkeydown}
+        {...attributes}
     >
         {#if glyph !== undefined}
             <Glyph name={glyph} />
         {/if}
-        {#if !iconOnly}
+        {#if cell}
+            {#if children !== undefined}
+                {@render children()}
+            {/if}
+        {:else if !iconOnly}
             {#if children !== undefined}
                 <span class="label">{@render children()}</span>
             {:else}
@@ -258,6 +280,31 @@
         width: auto;
     }
 
+    /* A cell of a grid: the button is the cell's whole box and draws nothing of its own, so the
+       caller's cell around it holds the colour, the fill and the alignment of its state. */
+    .tool.cell,
+    :global(body.rice) .tool.cell {
+        display: block;
+        width: 100%;
+        height: 100%;
+        box-sizing: border-box;
+        padding: 0;
+        border: 0;
+        border-radius: 0;
+        background: none;
+        color: inherit;
+        font: inherit;
+        line-height: inherit;
+        text-align: inherit;
+        white-space: inherit;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .tool.cell:disabled {
+        opacity: 1;
+    }
+
     .tool.bare:hover:not(:disabled) {
         border-color: transparent;
         background: var(--chip);
@@ -310,12 +357,12 @@
        a glyph in a box the rail's width sets, where the terminal stand-in the glyph draws carries
        its own brackets already. A bare button is a strip's icon and draws none, as a bare menu
        opener beside it draws none, and a status bar item is a word in a bar of words. */
-    :global(body.rice) .tool:not(.rail-control):not(.bare):not(.status)::before {
+    :global(body.rice) .tool:not(.rail-control):not(.bare):not(.status):not(.cell)::before {
         content: '[';
         opacity: 0.5;
     }
 
-    :global(body.rice) .tool:not(.rail-control):not(.bare):not(.status)::after {
+    :global(body.rice) .tool:not(.rail-control):not(.bare):not(.status):not(.cell)::after {
         content: ']';
         opacity: 0.5;
     }

@@ -1,0 +1,175 @@
+// Layer 2, client state. What the source tab needs to put git in its gutter: which repository holds
+// the file it has open and the file's path there, the words a blamed line carries, how long ago a
+// commit was made, and which gutter mark each line draws.
+//
+// A source tab names its file by the key of the root the file routes serve it under and a path
+// under that root; the `git` channel names a repository by its folder. The repository holding a
+// file is the deepest one whose folder holds the file's folder, which is the rule the status bar's
+// branch item already reads a tab's repository by.
+
+import type { GitBlameLine, GitLineMark } from '../../../data/model/index.ts';
+import { t } from '../../shared/words/text.ts';
+
+/** A root the file routes serve: its key and the folder it is. */
+export type ServedRoot = { key: string; dir: string };
+
+/** A file of a repository: the repository's folder and the path under it. */
+export type RepoFile = { root: string; path: string };
+
+/** A file as a source tab names it: the served root's key and the path under it. */
+export type TabFile = { root: string; path: string };
+
+/** A folder with no trailing slash, so two spellings of one folder compare equal. */
+function bare(dir: string): string {
+    return dir.replace(/\/+$/, '');
+}
+
+/** A path under a folder, its slashes normalised, or null for one outside it. */
+function under(folder: string, target: string): string | null {
+    const base = bare(folder);
+    if (target === base) return '';
+    return target.startsWith(`${base}/`) ? target.slice(base.length + 1) : null;
+}
+
+/** The whole path of a tab's file, or null for a key no served root has. */
+function wholePath(served: readonly ServedRoot[], file: TabFile): string | null {
+    const dir = served.find((root) => root.key === file.root)?.dir;
+    if (dir === undefined) return null;
+    const path = file.path.split('/').filter(Boolean).join('/');
+    return path === '' ? bare(dir) : `${bare(dir)}/${path}`;
+}
+
+/** The repository holding a tab's file and the file's path in it, or null for none. */
+export function repoOfFile(
+    served: readonly ServedRoot[],
+    file: TabFile,
+    repositories: readonly string[]
+): RepoFile | null {
+    const target = wholePath(served, file);
+    if (target === null) return null;
+    const holding = repositories
+        .map((root) => ({ root, path: under(root, target) }))
+        .filter((one): one is RepoFile => one.path !== null && one.path !== '')
+        .sort((left, right) => right.root.length - left.root.length);
+    return holding.at(0) ?? null;
+}
+
+/**
+ * The tab a repository's file opens in: the served root holding it most closely and the path under
+ * that root, or null when no served root holds it and the file routes could not read it.
+ */
+export function tabOfFile(served: readonly ServedRoot[], file: RepoFile): TabFile | null {
+    const target = `${bare(file.root)}/${file.path}`;
+    const holding = served
+        .map((root) => ({ root: root.key, dir: root.dir, path: under(root.dir, target) }))
+        .filter((one) => one.path !== null && one.path !== '')
+        .sort((left, right) => right.dir.length - left.dir.length);
+    const found = holding.at(0);
+    return found === undefined ? null : { root: found.root, path: found.path ?? '' };
+}
+
+const MINUTE = 60;
+const HOUR = 60 * MINUTE;
+const DAY = 24 * HOUR;
+const WEEK = 7 * DAY;
+const MONTH = 30 * DAY;
+const YEAR = 365 * DAY;
+
+/** How long ago a moment was, in the largest unit that is at least one. */
+export function ago(iso: string, now: number = Date.now()): string {
+    const at = Date.parse(iso);
+    if (!Number.isFinite(at)) return '';
+    const seconds = Math.max(0, Math.round((now - at) / 1000));
+    if (seconds < MINUTE) return t('repositories.ago_now');
+    if (seconds < HOUR) return counted('minute', Math.floor(seconds / MINUTE));
+    if (seconds < DAY) return counted('hour', Math.floor(seconds / HOUR));
+    if (seconds < WEEK) return counted('day', Math.floor(seconds / DAY));
+    if (seconds < MONTH) return counted('week', Math.floor(seconds / WEEK));
+    if (seconds < YEAR) return counted('month', Math.floor(seconds / MONTH));
+    return counted('year', Math.floor(seconds / YEAR));
+}
+
+/** A count of one unit ago, in the unit's singular for one and its plural otherwise. */
+function counted(
+    unit: 'minute' | 'hour' | 'day' | 'week' | 'month' | 'year',
+    count: number
+): string {
+    if (unit === 'minute') {
+        return count === 1 ? t('repositories.ago_minute') : t('repositories.ago_minutes', count);
+    }
+    if (unit === 'hour') {
+        return count === 1 ? t('repositories.ago_hour') : t('repositories.ago_hours', count);
+    }
+    if (unit === 'day') {
+        return count === 1 ? t('repositories.ago_day') : t('repositories.ago_days', count);
+    }
+    if (unit === 'week') {
+        return count === 1 ? t('repositories.ago_week') : t('repositories.ago_weeks', count);
+    }
+    if (unit === 'month') {
+        return count === 1 ? t('repositories.ago_month') : t('repositories.ago_months', count);
+    }
+    return count === 1 ? t('repositories.ago_year') : t('repositories.ago_years', count);
+}
+
+/** What one blamed line carries: its gutter words and its hover words. */
+export type BlameWords = { gutter: string; title: string };
+
+/** A blamed line's gutter words (the author and how long ago) and its hover words. */
+export function blameWords(line: GitBlameLine, now: number = Date.now()): BlameWords {
+    if (line.uncommitted) {
+        const words = t('repositories.blame_uncommitted');
+        return { gutter: words, title: words };
+    }
+    return {
+        gutter: t('repositories.blame_gutter', line.author, ago(line.when, now)),
+        title: t('repositories.blame_title', line.short, line.subject, line.when.slice(0, 10))
+    };
+}
+
+/** What the status bar says for the caret's line while blame is on. */
+export function blameStatus(line: GitBlameLine | undefined, now: number = Date.now()): string {
+    if (line === undefined) return '';
+    if (line.uncommitted) return t('repositories.blame_uncommitted');
+    return t('repositories.blame_status', line.author, ago(line.when, now), line.subject);
+}
+
+/** The mark each line of a file draws, by line from one: added, modified, or a deletion above. */
+export type LineMark = { kind: GitLineMark['kind']; start: number };
+
+/**
+ * The gutter mark of every line a mark touches, by line number. An added or modified run marks
+ * each of its lines; a deletion marks the line it sits before with a wedge at its top, or the last
+ * line, with a wedge at its foot, for a deletion at the end of the file. `start` is the first line
+ * of the mark, which is where the diff pane opens.
+ */
+export function marksByLine(marks: readonly GitLineMark[], lines: number): Map<number, LineMark> {
+    const byLine = new Map<number, LineMark>();
+    for (const mark of marks) {
+        if (mark.kind === 'deleted') {
+            const line = Math.min(Math.max(1, mark.line), Math.max(1, lines));
+            byLine.set(line, { kind: 'deleted', start: mark.line });
+            continue;
+        }
+        for (let line = mark.line; line < mark.line + mark.count; line += 1) {
+            byLine.set(line, { kind: mark.kind, start: mark.line });
+        }
+    }
+    return byLine;
+}
+
+/**
+ * The lines where a run of lines from one commit starts, which is where the gutter writes the
+ * blame's words; the lines under them in the same run draw the run's bar alone, so a block written
+ * in one commit reads as one block.
+ */
+export function blameStarts(lines: readonly GitBlameLine[]): Set<number> {
+    const starts = new Set<number>();
+    let before = '';
+    for (const line of lines) {
+        const key = line.uncommitted ? '' : line.hash;
+        if (line.line === 1 || key !== before || starts.size === 0) starts.add(line.line);
+        before = key;
+    }
+    return starts;
+}

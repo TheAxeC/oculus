@@ -23,7 +23,7 @@
         tabFile,
         type StatusGit
     } from '$lib/state/workbench/navigation/status';
-    import { repositoriesViewOf } from '$lib/state/sources/repositories';
+    import { repositoriesViewOf } from '$lib/state/sources/repositories/repositories';
     import { configGeneration } from '$lib/state/shared/words/generation.svelte';
     import { collectionKeys } from '$lib/data/snapshot/normalise';
     import { typeOfFile, HUB_ROOT } from '$lib/state/sources/fs';
@@ -131,8 +131,8 @@
     }
 
     /**
-     * The git writes of the status bar's branch and sync items, through the Repositories view's own
-     * store. A write git refuses shows the repository, whose line says why.
+     * The git writes of the status bar's branch, sync and publish items, through the Repositories
+     * view's own store. A write git refuses shows the repository, whose line says why.
      */
     const git: StatusGit = {
         switchBranch: async (root, name) => {
@@ -140,6 +140,12 @@
         },
         push: async (root) => {
             if (!(await repositories.push(root))) showRepository(root);
+        },
+        sync: async (root) => {
+            if (!(await repositories.sync(root))) showRepository(root);
+        },
+        publish: async (root, remote) => {
+            if (!(await repositories.publish(root, remote))) showRepository(root);
         },
         show: showRepository
     };

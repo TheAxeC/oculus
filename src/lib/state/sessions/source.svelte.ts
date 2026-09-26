@@ -44,6 +44,8 @@ export type SourceDraft = {
     failed: boolean;
     /** Whether the rendered half is drawn beside the editor, for a file that has one. */
     rendered: boolean;
+    /** Whether the blame of each line is drawn in the gutter, VS Code's Toggle Blame. */
+    blame: boolean;
     /**
      * Whether this machine's mode on the file refuses a write, which the tab draws instead of an
      * editor.
@@ -162,6 +164,7 @@ export type SourceStore = {
     revertSourceDraft: (id: string) => void;
     saveSourceDraft: (id: string, root: string, path: string) => Promise<void>;
     toggleSourceRendered: (id: string) => void;
+    toggleSourceBlame: (id: string) => void;
     setSourceLanguage: (id: string, language: string) => void;
     setSourceIndent: (id: string, indent: Indent | null) => void;
     saveSource: (root: string, path: string, content: string) => Promise<WriteAnswer>;
@@ -187,6 +190,7 @@ export function createSource(writes: WritesStore, ui: InstanceStates): SourceSto
             // A tab that has never been told otherwise shows the rendered half, so opening a
             // Markdown file reads as the document it is without a control being found first.
             rendered: held.rendered !== false,
+            blame: held.blame === true,
             readonly: held.readonly === true,
             truncated: held.truncated === true,
             file: typeof held.file === 'string' ? held.file : '',
@@ -275,6 +279,11 @@ export function createSource(writes: WritesStore, ui: InstanceStates): SourceSto
         updateDraft(id, { rendered: !sourceDraft(id).rendered });
     }
 
+    /** Show or hide the blame in the gutter, the instance's own as the rendered half is. */
+    function toggleSourceBlame(id: string): void {
+        updateDraft(id, { blame: !sourceDraft(id).blame });
+    }
+
     /**
      * The language the tab paints in, chosen from the status bar and kept with the draft, so the
      * choice comes back after a tab switch and a reload. The empty string goes back to the name's.
@@ -349,6 +358,7 @@ export function createSource(writes: WritesStore, ui: InstanceStates): SourceSto
         revertSourceDraft,
         saveSourceDraft,
         toggleSourceRendered,
+        toggleSourceBlame,
         setSourceLanguage,
         setSourceIndent,
         saveSource

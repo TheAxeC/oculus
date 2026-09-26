@@ -5,7 +5,8 @@
 // The order is VS Code's: on the left what the window is connected to (the machine, the repository
 // and how far it is from its upstream, the findings), then the extensions' items oculus keeps (the
 // HPC poll, the usage refreshers, the server connection); on the right the editor's own items for
-// the source tab on screen, then the live sessions and the unsaved tabs, and the bell last.
+// the source tab on screen (the caret line's blame while it is on, then the caret and the text's
+// own items), then the live sessions and the unsaved tabs, and the bell last.
 
 import { t } from '$lib/state/shared/words/text';
 
@@ -14,6 +15,7 @@ export const LEFT_ITEMS = ['host', 'branch', 'sync', 'findings', 'hpc', 'usage',
 
 /** The right group, in the order it is drawn, the bell against the window's right edge. */
 export const RIGHT_ITEMS = [
+    'blame',
     'caret',
     'indent',
     'encoding',
@@ -47,6 +49,8 @@ export function itemName(item: StatusItem): string {
             return t('statusbar.item_usage');
         case 'server':
             return t('statusbar.item_server');
+        case 'blame':
+            return t('statusbar.item_blame');
         case 'caret':
             return t('statusbar.item_caret');
         case 'indent':

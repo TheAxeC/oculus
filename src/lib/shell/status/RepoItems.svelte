@@ -5,10 +5,13 @@
     // The branch item names the branch checked out, or the commit a detached head is at, and opens
     // a picker of the repository's branches; a choice is checked out through the same confirm the
     // Repositories view asks, since the server takes a switch only with it. The sync item draws
-    // how far the branch is behind and ahead of its upstream, once it has one. A branch only ahead
-    // is pushed, after the same confirm; any other state opens the Repositories view on the
-    // repository, which is where a pull will be. The writes are the page's, handed in, since the
-    // shell may not write.
+    // how far the branch is behind and ahead of its upstream, once it has one, and a press
+    // synchronizes as VS Code's does: a branch only ahead is pushed, and any other is pulled and
+    // then pushed, each after a confirm naming the upstream. A branch with no upstream draws
+    // Publish Branch in the sync item's place, which pushes it to a remote and makes that its
+    // upstream; with several remotes it lists them. A write git refuses opens the Repositories
+    // view on the repository, whose line says why. The writes are the page's, handed in, since
+    // the shell may not write.
 
     import Confirm from '$lib/ui/controls/Confirm.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
@@ -44,6 +47,9 @@
         repo.branches.map((name) => ({ id: name, label: name, active: name === repo.branch }))
     );
     const upstream = $derived(repo.upstream === '' ? t('statusbar.sync_upstream') : repo.upstream);
+    const remotes = $derived<MenuItem[]>(
+        repo.remotes.map((name) => ({ id: name, label: t('repositories.publish_to', name) }))
+    );
     /** Whether a press of the sync item pushes, which is when the branch is only ahead. */
     const pushes = $derived(repo.ahead > 0 && repo.behind === 0);
 
@@ -61,15 +67,29 @@
 
     function synced(): void {
         const root = repo.root;
-        if (!pushes) {
-            git.show(root);
-            return;
-        }
+        asking = pushes
+            ? {
+                  message: t('git.push_confirm', repo.branch, upstream),
+                  detail: t('git.push_detail', repo.ahead),
+                  verb: t('git.push'),
+                  act: () => void git.push(root)
+              }
+            : {
+                  message: t('repositories.sync_confirm', repo.branch, upstream),
+                  detail: t('repositories.sync_detail', repo.behind, repo.ahead),
+                  verb: t('repositories.sync'),
+                  act: () => void git.sync(root)
+              };
+    }
+
+    /** Publish the branch to a remote, once the reader confirms. */
+    function publish(remote: string): void {
+        const root = repo.root;
         asking = {
-            message: t('git.push_confirm', repo.branch, upstream),
-            detail: t('git.push_detail', repo.ahead),
-            verb: t('git.push'),
-            act: () => void git.push(root)
+            message: t('repositories.publish_confirm', repo.branch, remote),
+            detail: t('repositories.publish_detail'),
+            verb: t('repositories.publish'),
+            act: () => void git.publish(root, remote)
         };
     }
 
@@ -102,7 +122,7 @@
             label={t('statusbar.sync_name', repo.behind, repo.ahead)}
             title={pushes
                 ? t('statusbar.sync_tip_push', repo.ahead, upstream)
-                : t('statusbar.sync_tip_open', repo.behind, repo.ahead, upstream)}
+                : t('statusbar.sync_tip_sync', repo.behind, repo.ahead, upstream)}
             status
             onclick={synced}
         >
@@ -111,6 +131,29 @@
             <Glyph name="ahead" />
             <span data-sync="ahead">{repo.ahead}</span>
         </ToolButton>
+    </span>
+{:else if sync && !detached && repo.remotes.length === 1}
+    <span data-status="publish">
+        <ToolButton
+            label={t('repositories.publish')}
+            title={t('statusbar.publish_tip', repo.branch, repo.remotes[0])}
+            glyph="publish"
+            compact
+            status
+            onclick={() => publish(repo.remotes[0])}
+        />
+    </span>
+{:else if sync && !detached && repo.remotes.length > 1}
+    <span data-status="publish">
+        <Menu
+            status
+            placement="above"
+            label={t('repositories.publish')}
+            glyph="publish"
+            title={t('statusbar.publish_tip_many', repo.branch)}
+            items={remotes}
+            onpick={publish}
+        />
     </span>
 {/if}
 {#if asking !== null}

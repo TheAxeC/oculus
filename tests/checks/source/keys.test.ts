@@ -4,7 +4,7 @@
 // every `findings.` string literal under src is a key of that file and every key of it is such a
 // literal, whatever expression the formatter is handed the catalog through.
 
-import { statusWordKey } from '../../../src/lib/state/sources/repositories.ts';
+import { statusWordKey } from '../../../src/lib/state/sources/repositories/repositories.ts';
 import { registered } from '../../../src/lib/state/shared/words/languages.ts';
 import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -173,11 +173,14 @@ const COMPUTED_PREFIXES = [
         keys: () => registered().map((name) => `statusbar.language_${name}`)
     },
     {
-        // A change row is named by its path and the word its git status letter stands for; a letter
-        // git adds later reads as `changed`.
+        // A change row is named by its path and the word its git status stands for, an unmerged
+        // pair by the conflict it is; a letter git adds later reads as `changed`.
         file: 'lib/views/sources/repositories/Changes.svelte',
         start: 't(statusWordKey(',
-        keys: () => ['M', 'A', 'D', 'R', 'C', '?', 'U'].map((letter) => statusWordKey(letter))
+        keys: () =>
+            ['M', 'A', 'D', 'R', 'C', '?', 'U', 'UU', 'AA', 'DD', 'AU', 'UA', 'DU', 'UD'].map(
+                (status) => statusWordKey(status)
+            )
     }
 ] as const;
 
@@ -313,7 +316,7 @@ describe('text keys', () => {
         expect(missing).toEqual([]);
     });
 
-    // revert: tests/checks/source/keys.test.ts:321 => delete
+    // revert: tests/checks/source/keys.test.ts:325 => delete
     it('has a reader for every catalog key', () => {
         const allowed = new Set(found.flatMap((call) => (call.key === null ? [] : [call.key])));
         for (const registration of views()) {

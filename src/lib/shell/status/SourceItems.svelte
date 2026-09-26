@@ -1,15 +1,18 @@
 <script lang="ts">
     // Layer 3, shell. The status bar's items for the source tab on screen, VS Code's editor items:
-    // the caret's line and column, the indentation, the encoding, the line endings and the language
-    // mode. They are drawn from what the tab publishes to state/workbench/navigation/
-    // editor-status.svelte.ts, and every change they offer is asked of the tab through the same
-    // store, since the tab holds the text and the shell does not.
+    // the caret line's blame while the tab's blame is on, the caret's line and column, the
+    // indentation, the encoding, the line endings and the language mode. They are drawn from what
+    // the tab publishes to state/workbench/navigation/editor-status.svelte.ts, and every change
+    // they offer is asked of the tab through the same store, since the tab holds the text and the
+    // shell does not.
     //
-    // The caret item and the language item open the palette, the one quick input oculus has: on a
-    // go-to-line query, a colon, and on the language list. The other three open a list over the
-    // item. A tab that may not write its file draws no caret and offers no change of its text: its
-    // indentation list offers no conversion, its line endings list holds the one the file has, and
-    // each item's tooltip says why.
+    // The blame item opens the commit that last changed the caret's line in the Repositories
+    // view's graph, which the tab does, since it holds the blame. The caret item and the language
+    // item open the palette, the one quick input oculus has: on a go-to-line query, a colon, and on
+    // the language list. The other three open a list over the item. A tab that may not write its
+    // file draws no caret and offers no change of its text: its indentation list offers no
+    // conversion, its line endings list holds the one the file has, and each item's tooltip says
+    // why.
 
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import type { MenuItem } from '$lib/ui/menu/menu-items';
@@ -111,6 +114,17 @@
     }
 </script>
 
+{#if shown('blame') && status.blame !== ''}
+    <span data-status="blame">
+        <ToolButton
+            label={status.blame}
+            glyph="blame"
+            title={t('statusbar.blame_tip')}
+            status
+            onclick={() => ask(instance, { kind: 'commit' })}
+        />
+    </span>
+{/if}
 {#if shown('caret') && status.caret !== null}
     <span data-status="caret">
         <ToolButton

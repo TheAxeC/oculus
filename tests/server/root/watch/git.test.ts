@@ -239,10 +239,11 @@ describe('watchGit', () => {
             'third.txt'
         ]);
         expect(payload[second].untracked).toEqual([]);
-        // Revert: drop the `rev-parse --git-dir` read from state() in server/core/git.ts. Eight
-        // commands make one read of the first root (the repository check, the status four, the log,
-        // the branch listing and the worktree listing), and the second root was not read at all.
-        expect(reads(first) - before.first).toBe(8);
+        // Nine commands make one read of the first root (the repository check, the status four,
+        // the log, the one ref listing, the worktree listing, and the remotes, since its branch
+        // tracks nothing and no stash is kept), and the second root was not read at all.
+        // revert: src/lib/server/core/git.ts:432 => delete
+        expect(reads(first) - before.first).toBe(9);
         expect(reads(second) - before.second).toBe(0);
     });
 
@@ -274,9 +275,10 @@ describe('watchGit', () => {
         const since = client.got.slice(before.got);
         const named = since.filter((message) => message.channel === 'files');
         expect(named.map((message) => (message.payload as FilesPayload).root)).toEqual([first]);
-        // Revert: drop the `rev-parse --git-dir` read from state() in server/core/git.ts. The cost
-        // of one write under one watched root: eight git commands, none for the other root.
-        expect(reads(first) - before.first).toBe(8);
+        // The cost of one write under one watched root: nine git commands, none for the other
+        // root.
+        // revert: src/lib/server/core/git.ts:432 => delete
+        expect(reads(first) - before.first).toBe(9);
         expect(reads(second) - before.second).toBe(0);
     });
 

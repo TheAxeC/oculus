@@ -68,7 +68,10 @@ import {
 import { createPresent, type PresentStore } from '../life/present.svelte.ts';
 import { configRail, railTyped } from '../workbench/navigation/rail.ts';
 import { createRailBadges, type RailBadgesStore } from '../workbench/rail-badges.svelte.ts';
-import { createRepositories, type RepositoriesStore } from '../sources/repositories.svelte.ts';
+import {
+    createRepositories,
+    type RepositoriesStore
+} from '../sources/repositories/repositories.svelte.ts';
 import { createSelection, type SelectionStore } from '../workbench/selection.svelte.ts';
 import { createSearch, type SearchStore } from '../sources/search.svelte.ts';
 import { createSelectors, type SelectorsStore } from './selectors.svelte.ts';
@@ -202,7 +205,13 @@ export function createClientState(): ClientState {
     const audit = createAudit(entities);
     const memories = createMemories();
     const present = createPresent(entities);
-    const repositories = createRepositories(writes, terminals, layout);
+    // The Source Control views open a repository's file in a source tab by the root the file routes
+    // serve it under, and point the Repositories view at a commit through its remembered state.
+    const repositories = createRepositories(writes, terminals, layout, {
+        served: () => fs.workspaces().workspaces.flatMap((workspace) => workspace.roots),
+        instanceState: ui.instanceState,
+        setInstanceState: ui.setInstanceState
+    });
     const search = createSearch(entities, writes, ui);
     const usageRefresh = createUsageRefresh(entities, writes);
     const selectors = createSelectors(entities, layout, selection);

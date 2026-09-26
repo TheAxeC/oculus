@@ -33,15 +33,25 @@ import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     LOG_ENTRIES,
     MAX_ENTRIES,
-    capped,
+    blameOf,
+    commitDiff,
+    commitFiles,
     empty,
+    graphPage,
     ignoredIn,
+    lineMarks,
+    mergeSides,
+    stashDiff,
     statusFor
 } from '../../../src/lib/server/core/git.ts';
-import { BRANCH_FORMAT } from '../../../src/lib/server/core/git-parse.ts';
-import { pickerRoots, shownRoot } from '../../../src/lib/state/sources/repositories.ts';
+import { REFS_FORMAT } from '../../../src/lib/server/core/git-parse.ts';
+import {
+    pickerRoots,
+    shownRoot
+} from '../../../src/lib/state/sources/repositories/repositories.ts';
 import type { GitEntry, GitState } from '../../../src/lib/data/model/index.ts';
 import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
+import { gitText as git } from '../root/watch/repos.ts';
 
 afterAll(sweepScratch);
 
@@ -52,12 +62,15 @@ const MODULE = resolve(
 
 /** Everything git.ts is allowed to run. The source scan below asserts it holds no other. */
 const ALLOWED = [
-    'branch',
+    'blame',
     'check-ignore',
     'diff',
+    'for-each-ref',
     'log',
+    'remote',
     'rev-list',
     'rev-parse',
+    'show',
     'status',
     'symbolic-ref',
     'worktree'
@@ -65,20 +78,23 @@ const ALLOWED = [
 
 /**
  * Every call the module makes, by subcommand, one entry per call site: `rev-parse` is run twice,
- * once to tell a repository from a folder and once for the branch.
+ * once to tell a repository from a folder and once for the branch; `diff` twice, the channel's
+ * line counts and the on-demand diffs; `log` four times, the channel's log, the stashes' reflog, a
+ * page of the graph and the range either side of the upstream.
  */
-const CALLS = [...ALLOWED, 'rev-parse'].sort();
+const CALLS = [...ALLOWED, 'rev-parse', 'diff', 'log', 'log', 'log'].sort();
 
 /**
- * The exact vectors five subcommands may run as. `branch <name>` and `branch -d` make and delete a
- * branch, `symbolic-ref HEAD <ref>` moves HEAD and `worktree add` makes a checkout, so each of
- * those is held to its one reading vector; `rev-parse` has no writing form and is held to the
- * module's two reads so a third use is a change this gate sees, and `check-ignore` to the one form
- * the file browser reads its ignored entries by.
+ * The exact vectors six subcommands may run as. `symbolic-ref HEAD <ref>` moves HEAD, `worktree
+ * add` makes a checkout and `remote add` adds a remote, so each of those is held to its one reading
+ * vector; `rev-parse` has no writing form and is held to the module's two reads so a third use is a
+ * change this gate sees, `check-ignore` to the one form the file browser reads its ignored entries
+ * by, and `for-each-ref` to the one ref listing over the branches, the tags and the stash ref.
  */
 const PINNED: Partial<Record<string, string[][]>> = {
-    branch: [['branch', BRANCH_FORMAT]],
     'check-ignore': [['check-ignore', '--stdin', '-z']],
+    'for-each-ref': [['for-each-ref', REFS_FORMAT, 'refs/heads', 'refs/tags', 'refs/stash']],
+    remote: [['remote']],
     'rev-parse': [
         ['rev-parse', '--git-dir'],
         ['rev-parse', '--abbrev-ref', 'HEAD']
@@ -89,8 +105,9 @@ const PINNED: Partial<Record<string, string[][]>> = {
 
 /** The same vectors as the module's source writes them, one list literal per call. */
 const PINNED_SOURCE = [
-    "['branch', BRANCH_FORMAT]",
     "['check-ignore', '--stdin', '-z']",
+    "['for-each-ref', REFS_FORMAT, 'refs/heads', 'refs/tags', 'refs/stash']",
+    "['remote']",
     "['rev-parse', '--git-dir']",
     "['rev-parse', '--abbrev-ref', 'HEAD']",
     "['symbolic-ref', '--short', 'HEAD']",
@@ -180,30 +197,6 @@ vi.mock('node:child_process', async (importOriginal) => {
 
 let dir = '';
 let repo = '';
-
-/** A git command inside the throwaway directory, and nowhere else. */
-function git(root: string, ...args: string[]): string {
-    expect(resolve(root).startsWith(resolve(tmpdir()) + sep)).toBe(true);
-    const done = spawnSync(
-        'git',
-        [
-            '-c',
-            'user.email=nobody@example.invalid',
-            '-c',
-            'user.name=Oculus Test',
-            '-c',
-            'commit.gpgsign=false',
-            '-c',
-            'protocol.file.allow=always',
-            '-C',
-            root,
-            ...args
-        ],
-        { encoding: 'utf8', timeout: 30000 }
-    );
-    expect(done.status).toBe(0);
-    return done.stdout;
-}
 
 function write(name: string, body: string): string {
     const full = join(repo, name);
@@ -466,16 +459,58 @@ describe('the log, the branches and the worktrees', () => {
         expect(state().branches.length).toBe(MAX_ENTRIES);
     });
 
-    it('cuts every list it publishes at the cap, and takes both new lists through it', () => {
-        expect(capped(Array.from({ length: MAX_ENTRIES + 5 }, (_, at) => at)).length).toBe(
-            MAX_ENTRIES
-        );
-        expect(capped([1, 2, 3])).toEqual([1, 2, 3]);
-        // Making two hundred worktrees would cost minutes of git, so the worktree list is held to
-        // the same cut by the source: two calls, the branch listing's and the worktree listing's,
-        // which is how this file gates its commands too.
-        const source = readFileSync(MODULE, 'utf8');
-        expect(source.match(/\bcapped\(parse/g)?.length).toBe(2);
+    // revert: src/lib/server/core/git.ts:504 => return { branches: read.branches, tags: capped(read.tags), stash: read.stash };
+    it('cuts every list it publishes at the cap', () => {
+        // revert: src/lib/server/core/git.ts:504 => return { branches: capped(read.branches), tags: read.tags, stash: read.stash };
+        // revert: src/lib/server/core/git.ts:513 => return done.ok ? parseStashes(done.text) : [];
+        // revert: src/lib/server/core/git.ts:519 => return done.ok ? done.text.split('\n').filter((one) => one.trim() !== '') : [];
+        // revert: src/lib/server/core/git.ts:560 => return parseWorktrees(done.text).map((one) => ({
+        // Past the cap in every list, each made by writing what git reads rather than by a git
+        // process per entry: the branches and the tags by one update-ref, the stashes as the stash
+        // reflog's lines, the worktrees as their administrative folders and the remotes in the
+        // repository's config. The branch tracks nothing, so the remotes are read.
+        const past = MAX_ENTRIES + 3;
+        const head = git(repo, 'rev-parse', 'HEAD').trim();
+        const numbered = (at: number): string => String(at).padStart(3, '0');
+        const refs = Array.from(
+            { length: past },
+            (_, at) =>
+                `create refs/heads/side-${numbered(at)} ${head}\n` +
+                `create refs/tags/tag-${numbered(at)} ${head}\n`
+        ).join('');
+        const made = spawnSync('git', ['-C', repo, 'update-ref', '--stdin'], {
+            encoding: 'utf8',
+            input: refs,
+            timeout: 30000
+        });
+        expect(made.status).toBe(0);
+        const zero = '0'.repeat(40);
+        const reflog = Array.from(
+            { length: past },
+            (_, at) =>
+                `${at === 0 ? zero : head} ${head} Oculus Test <nobody@example.invalid> ` +
+                `${1_700_000_000 + at} +0000\tOn work: stash ${at}\n`
+        ).join('');
+        write('.git/logs/refs/stash', reflog);
+        write('.git/refs/stash', `${head}\n`);
+        for (let at = 0; at < past; at += 1) {
+            const name = `tree-${numbered(at)}`;
+            write(`.git/worktrees/${name}/gitdir`, `${join(dir, 'gone', name, '.git')}\n`);
+            write(`.git/worktrees/${name}/HEAD`, `${head}\n`);
+            write(`.git/worktrees/${name}/commondir`, '../..\n');
+        }
+        const remotes = Array.from(
+            { length: past },
+            (_, at) => `[remote "far-${numbered(at)}"]\n\turl = ${join(dir, 'far')}\n`
+        ).join('');
+        write('.git/config', readFileSync(join(repo, '.git', 'config'), 'utf8') + remotes);
+
+        const found = state();
+        expect(found.branches.length).toBe(MAX_ENTRIES);
+        expect(found.tags.length).toBe(MAX_ENTRIES);
+        expect(found.stashes.length).toBe(MAX_ENTRIES);
+        expect(found.worktrees.length).toBe(MAX_ENTRIES);
+        expect(found.remotes.length).toBe(MAX_ENTRIES);
     });
 
     it('says whether the repository keeps its worktrees folder out of its history', () => {
@@ -531,7 +566,7 @@ describe('failure', () => {
     });
 
     it('keeps a repository whose config git cannot parse a repository, and says why', () => {
-        // revert: src/lib/server/core/git.ts:189 =>         refused.repository = false;
+        // revert: src/lib/server/core/git.ts:422 =>         refused.repository = false;
         const broken = join(dir, 'broken');
         mkdirSync(broken);
         git(broken, 'init', '--initial-branch=work');
@@ -716,9 +751,24 @@ describe('read only', () => {
         expect(states[clone].upstream).toBe(true);
         expect(states[unborn].branch).toBe('fresh');
         expect([...ignoredIn(repo, ['a.log', 'kept.txt'])]).toEqual(['a.log']);
+        // The reads on demand, each once, so the gates below see their commands too.
+        const hash = git(repo, 'rev-parse', 'HEAD').trim();
+        expect(graphPage(clone, 0).ok).toBe(true);
+        expect(commitFiles(repo, hash).ok).toBe(true);
+        expect(commitDiff(repo, hash, 'kept.txt').ok).toBe(true);
+        expect(blameOf(repo, 'kept.txt').ok).toBe(true);
+        expect(lineMarks(repo, 'kept.txt').ok).toBe(true);
+        // kept.txt is in no conflict, which the read says after asking git for each stage.
+        expect(mergeSides(repo, 'kept.txt').ok).toBe(false);
+        write('kept.txt', 'stashed\n');
+        git(repo, 'stash', 'push');
+        expect(stashDiff(repo, 'stash@{0}').ok).toBe(true);
+        // A repository that keeps a stash has its reflog walked, which the channel read does only
+        // then.
+        expect(state().stashes.length).toBe(1);
     }
 
-    // revert: src/lib/server/core/git.ts:153 => const done = run(root, ['check-ignore', '--stdin'], milliseconds(timeout), input);
+    // revert: src/lib/server/core/git.ts:205 => const done = run(root, ['check-ignore', '--stdin'], milliseconds(timeout), input);
     it('names the entries the repository ignores, and leaves it as it was', () => {
         write('.gitignore', '*.log\n');
         write('a.log', 'ignored\n');
@@ -748,8 +798,8 @@ describe('read only', () => {
     });
 
     // Revert: write the `symbolic-ref` call in server/core/git.ts as `['symbolic-ref', 'HEAD']`.
-    // revert: src/lib/server/core/git.ts:225 => const unborn = run(root, ['symbolic-ref', 'HEAD'], timeout);
-    it('holds only the allowed subcommands at its call site, the pinned five as their exact vectors', () => {
+    // revert: src/lib/server/core/git.ts:466 => const unborn = run(root, ['symbolic-ref', 'HEAD'], timeout);
+    it('holds only the allowed subcommands at its call site, the pinned six as their exact vectors', () => {
         const source = readFileSync(MODULE, 'utf8');
         const calls = [...source.matchAll(/\brun\(\s*root\s*,\s*\[\s*'([a-z-]+)'/g)];
         expect(calls.map((call) => call[1]).sort()).toEqual(CALLS);
@@ -758,7 +808,7 @@ describe('read only', () => {
         for (const form of PINNED_SOURCE) expect(source).toContain(form);
     });
 
-    // revert: src/lib/server/core/git.ts:410 => const argv = ['-C', root, ...args];
+    // revert: src/lib/server/core/git.ts:718 => const argv = ['-C', root, ...args];
     it('ran every command without optional locks, so a read writes no index lock', () => {
         everyRead();
         expect(ran.length).toBeGreaterThan(0);
@@ -767,9 +817,9 @@ describe('read only', () => {
         }
     });
 
-    // revert: src/lib/server/core/git.ts:225 => const unborn = run(root, ['symbolic-ref', 'HEAD'], timeout);
-    // revert: src/lib/server/core/git.ts:251 => const done = run(root, ['branch', '--list', BRANCH_FORMAT], timeout);
-    it('ran nothing but those commands over this file, the pinned five as their vectors', () => {
+    // revert: src/lib/server/core/git.ts:466 => const unborn = run(root, ['symbolic-ref', 'HEAD'], timeout);
+    // revert: src/lib/server/core/git.ts:499 => ['for-each-ref', REFS_FORMAT, '--sort=-refname', 'refs/heads', 'refs/tags', 'refs/stash'],
+    it('ran nothing but those commands over this file, the pinned six as their vectors', () => {
         everyRead();
         expect(ran.length).toBeGreaterThan(0);
         const used = new Set<string>();

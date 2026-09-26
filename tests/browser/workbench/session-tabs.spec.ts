@@ -156,7 +156,7 @@ test('the Transcript view with no session picked offers the Sessions view', asyn
 });
 
 test('the Changes view with no session picked offers the Sessions view', async ({ page }) => {
-    // revert: src/lib/views/sessions/changes/Changes.svelte:207 => <p>{t('sessions.detail_empty')}</p>
+    // revert: src/lib/views/sessions/changes/Changes.svelte:181 => <p>{t('sessions.detail_empty')}</p>
     await pickFrom(page, 'changes', t('sessions.view_changes'));
 });
 

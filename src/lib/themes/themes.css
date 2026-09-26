@@ -21,6 +21,14 @@ body.dark {
     --c-red-s: #7f1d1d;
     --c-amber-bg: #3b2f0b;
     --c-amber-s: #5c4a14;
+    /* Source Control: added, modified, deleted and conflicted paths and lines. */
+    --c-scm-added: #16a34a;
+    --c-scm-modified: #b45309;
+    --c-scm-deleted: #dc2626;
+    --c-scm-conflict: #a21caf;
+    --c-scm-added-bg: #0d2e28;
+    --c-scm-deleted-bg: #351521;
+    --c-scm-conflict-bg: #29133d;
 }
 
 /* --- VS Code Dark Modern ------------------------------------------------- */
@@ -42,6 +50,14 @@ body.vscode-dark-modern {
     --c-red-s: #7f1d1d;
     --c-amber-bg: #3b2f0b;
     --c-amber-s: #5c4a14;
+    /* Source Control: added, modified, deleted and conflicted paths and lines. */
+    --c-scm-added: #81b88b;
+    --c-scm-modified: #e2c08d;
+    --c-scm-deleted: #c74e39;
+    --c-scm-conflict: #e4676b;
+    --c-scm-added-bg: #2d382f;
+    --c-scm-deleted-bg: #3b231f;
+    --c-scm-conflict-bg: #412829;
 }
 
 /* --- VS Code Light Modern ------------------------------------------------ */
@@ -54,6 +70,14 @@ body.vscode-light-modern {
     --line: #e5e5e5;
     --chip: #f3f3f3;
     --accent: #005fb8;
+    /* Source Control: added, modified, deleted and conflicted paths and lines. */
+    --c-scm-added: #587c0c;
+    --c-scm-modified: #895503;
+    --c-scm-deleted: #ad0707;
+    --c-scm-conflict: #a31515;
+    --c-scm-added-bg: #d8dfc9;
+    --c-scm-deleted-bg: #e9c8c8;
+    --c-scm-conflict-bg: #e7cbcb;
 }
 
 /* --- Catppuccin Mocha ---------------------------------------------------- */
@@ -91,6 +115,14 @@ body.mocha {
     --c-pink: #f5c2e7;
     --c-mauve: #e5a3c6;
     --c-on: #181825;
+    /* Source Control: added, modified, deleted and conflicted paths and lines. */
+    --c-scm-added: #a6e3a1;
+    --c-scm-modified: #fab387;
+    --c-scm-deleted: #f38ba8;
+    --c-scm-conflict: #dd9ce8;
+    --c-scm-added-bg: #34413e;
+    --c-scm-deleted-bg: #442f3f;
+    --c-scm-conflict-bg: #3f324c;
 }
 
 /* --- Gruvbox dark -------------------------------------------------------- */
@@ -128,6 +160,14 @@ body.gruvbox {
     --c-pink: #d3869b;
     --c-mauve: #d3869b;
     --c-on: #1d2021;
+    /* Source Control: added, modified, deleted and conflicted paths and lines. */
+    --c-scm-added: #b8bb26;
+    --c-scm-modified: #fabd2f;
+    --c-scm-deleted: #fb4934;
+    --c-scm-conflict: #d3869b;
+    --c-scm-added-bg: #3c3f22;
+    --c-scm-deleted-bg: #492825;
+    --c-scm-conflict-bg: #413439;
 }
 
 /* --- Nord ---------------------------------------------------------------- */
@@ -165,6 +205,14 @@ body.nord {
     --c-pink: #c295b8;
     --c-mauve: #b48ead;
     --c-on: #2e3440;
+    /* Source Control: added, modified, deleted and conflicted paths and lines. */
+    --c-scm-added: #a3be8c;
+    --c-scm-modified: #ebcb8b;
+    --c-scm-deleted: #bf616a;
+    --c-scm-conflict: #b48ead;
+    --c-scm-added-bg: #45504f;
+    --c-scm-deleted-bg: #4b3d48;
+    --c-scm-conflict-bg: #494656;
 }
 
 /* --- Tokyo Night (folke/tokyonight.nvim) --------------------------------- */
@@ -210,6 +258,14 @@ body.tokyonight {
     --c-grey: #565f89;
     --c-grey-d: #565f89;
     --c-on: #16161e;
+    /* Source Control: added, modified, deleted and conflicted paths and lines. */
+    --c-scm-added: #9ece6a;
+    --c-scm-modified: #e0af68;
+    --c-scm-deleted: #f7768e;
+    --c-scm-conflict: #bb9af7;
+    --c-scm-added-bg: #313b2d;
+    --c-scm-deleted-bg: #432934;
+    --c-scm-conflict-bg: #373049;
 }
 
 /* --- Rose Pine (rosepinetheme.com) --------------------------------------- */
@@ -255,6 +311,14 @@ body.rosepine {
     --c-grey: #6e6a86;
     --c-grey-d: #6e6a86;
     --c-on: #191724;
+    /* Source Control: added, modified, deleted and conflicted paths and lines. */
+    --c-scm-added: #9ccfd8;
+    --c-scm-modified: #f6c177;
+    --c-scm-deleted: #eb6f92;
+    --c-scm-conflict: #eb6f92;
+    --c-scm-added-bg: #333c48;
+    --c-scm-deleted-bg: #43293a;
+    --c-scm-conflict-bg: #43293a;
 }
 
 /* --- Everforest (sainnhe/everforest) ------------------------------------- */
@@ -300,6 +364,14 @@ body.everforest {
     --c-grey: #859289;
     --c-grey-d: #859289;
     --c-on: #272e33;
+    /* Source Control: added, modified, deleted and conflicted paths and lines. */
+    --c-scm-added: #a7c080;
+    --c-scm-modified: #dbbc7f;
+    --c-scm-deleted: #e67e80;
+    --c-scm-conflict: #d699b6;
+    --c-scm-added-bg: #414b42;
+    --c-scm-deleted-bg: #4d3e42;
+    --c-scm-conflict-bg: #4a434d;
 }
 
 /* --- Dracula (draculatheme.com) ------------------------------------------ */
@@ -345,6 +417,14 @@ body.dracula {
     --c-grey: #6272a4;
     --c-grey-d: #6272a4;
     --c-on: #21222c;
+    /* Source Control: added, modified, deleted and conflicted paths and lines. */
+    --c-scm-added: #50fa7b;
+    --c-scm-modified: #ffb86c;
+    --c-scm-deleted: #ff5555;
+    --c-scm-conflict: #ff79c6;
+    --c-scm-added-bg: #2a4d3c;
+    --c-scm-deleted-bg: #4d2c34;
+    --c-scm-conflict-bg: #4d334b;
 }
 
 /* --- Latte (light) (catppuccin.com) -------------------------------------- */
@@ -390,6 +470,14 @@ body.latte {
     --c-grey: #7c7f93;
     --c-grey-d: #7c7f93;
     --c-on: #eff1f5;
+    /* Source Control: added, modified, deleted and conflicted paths and lines. */
+    --c-scm-added: #40a02b;
+    --c-scm-modified: #df8e1d;
+    --c-scm-deleted: #d20f39;
+    --c-scm-conflict: #ea76cb;
+    --c-scm-added-bg: #cce1cd;
+    --c-scm-deleted-bg: #e9c4cf;
+    --c-scm-conflict-bg: #eed8ed;
 }
 
 /* --- Solarized (ethanschoonover.com/solarized) --------------------------- */
@@ -435,6 +523,14 @@ body.solarized {
     --c-grey: #586e75;
     --c-grey-d: #586e75;
     --c-on: #002b36;
+    /* Source Control: added, modified, deleted and conflicted paths and lines. */
+    --c-scm-added: #859900;
+    --c-scm-modified: #b58900;
+    --c-scm-deleted: #dc322f;
+    --c-scm-conflict: #d33682;
+    --c-scm-added-bg: #1b412b;
+    --c-scm-deleted-bg: #2c2c35;
+    --c-scm-conflict-bg: #2a2d45;
 }
 
 /* --- Kanagawa (rebelot/kanagawa.nvim) ------------------------------------ */
@@ -480,6 +576,14 @@ body.kanagawa {
     --c-grey: #727169;
     --c-grey-d: #727169;
     --c-on: #1f1f28;
+    /* Source Control: added, modified, deleted and conflicted paths and lines. */
+    --c-scm-added: #98bb6c;
+    --c-scm-modified: #dca561;
+    --c-scm-deleted: #c34043;
+    --c-scm-conflict: #d27e99;
+    --c-scm-added-bg: #373e36;
+    --c-scm-deleted-bg: #40262d;
+    --c-scm-conflict-bg: #43323f;
 }
 
 /* --- Gruvbox Light (morhetz/gruvbox) ------------------------------------- */
@@ -525,6 +629,14 @@ body.gruvboxlight {
     --c-grey: #7c6f64;
     --c-grey-d: #7c6f64;
     --c-on: #fbf1c7;
+    /* Source Control: added, modified, deleted and conflicted paths and lines. */
+    --c-scm-added: #79740e;
+    --c-scm-modified: #b57614;
+    --c-scm-deleted: #9d0006;
+    --c-scm-conflict: #8f3f71;
+    --c-scm-added-bg: #dfdbaf;
+    --c-scm-deleted-bg: #e7c4ad;
+    --c-scm-conflict-bg: #e4d1c3;
 }
 
 /* --- Synthwave '84 (robb0wen/synthwave-vscode) - neon, pairs with the CRT overlay --- */
@@ -570,6 +682,14 @@ body.synthwave {
     --c-grey: #848bbd;
     --c-grey-d: #848bbd;
     --c-on: #241b2f;
+    /* Source Control: added, modified, deleted and conflicted paths and lines. */
+    --c-scm-added: #72f1b8;
+    --c-scm-modified: #ffcc99;
+    --c-scm-deleted: #fe4450;
+    --c-scm-conflict: #ff7edb;
+    --c-scm-added-bg: #34464a;
+    --c-scm-deleted-bg: #502336;
+    --c-scm-conflict-bg: #502f51;
 }
 
 /* --- Tokyo Neon (folke/tokyonight.nvim, neon) - neon, pairs with the CRT overlay --- */
@@ -615,6 +735,14 @@ body.tokyoneon {
     --c-grey: #636da6;
     --c-grey-d: #636da6;
     --c-on: #0f0f17;
+    /* Source Control: added, modified, deleted and conflicted paths and lines. */
+    --c-scm-added: #c3e88d;
+    --c-scm-modified: #ffc777;
+    --c-scm-deleted: #ff007c;
+    --c-scm-conflict: #ff007c;
+    --c-scm-added-bg: #333a2f;
+    --c-scm-deleted-bg: #3f0c2b;
+    --c-scm-conflict-bg: #3f0c2b;
 }
 
 /* --- Rice: the shape the thirteen terminal palettes share ---------------- */

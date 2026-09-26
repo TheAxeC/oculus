@@ -6,25 +6,42 @@
 // subcommands it may run, asserts each appears at exactly one call site, and watches every argument
 // vector the suite ran.
 //
-//     git -C <root> add -- <paths>
-//     git -C <root> restore [--staged] -- <paths>
-//     git -C <root> commit -F <file>
-//     git -C <root> push
+//     git -C <root> add [-u] -- <paths | .>
+//     git -C <root> apply --cached [--reverse] --recount -    (the patch on standard input)
+//     git -C <root> apply --reverse --recount -
+//     git -C <root> restore [--staged] -- <paths | .>
+//     git -C <root> rm --quiet -- <path>
+//     git -C <root> commit [--amend] -F <file> | commit --amend --no-edit
+//     git -C <root> merge-base --is-ancestor HEAD @{upstream}
+//     git -C <root> push [--set-upstream <remote> <branch> | --tags]
+//     git -C <root> pull
+//     git -C <root> fetch --prune
+//     git -C <root> remote
 //     git -C <root> branch [--format=... | -d <name>]
 //     git -C <root> switch [-c] <name>
-//     git -C <root> check-ref-format --branch <name>
+//     git -C <root> check-ref-format [--branch <name> | refs/tags/<name>]
 //     git -C <root> status --porcelain=v1 -z
-//     git -C <root> diff [--cached | --name-only --diff-filter=U | <range>] [-- <path>]
-//     git -C <root> rev-parse [--abbrev-ref] <rev>
+//     git -C <root> diff [--cached] [-U<all>] [--name-only --diff-filter=U | <range>] [-- <path>]
+//     git -C <root> rev-parse [--abbrev-ref] <rev> | rev-parse --verify --quiet MERGE_HEAD |
+//         rev-parse --git-path <rebase-merge | rebase-apply>
 //     git -C <root> worktree [add -b <name> <path> HEAD | remove <path>]
 //     git -C <root> merge [<branch> | --abort]
+//     git -C <root> rebase [--abort | --continue]
+//     git -C <root> stash [push [--include-untracked | --staged] [--message=<text>] | apply |
+//         pop | drop] [stash@{<n>}]
+//     git -C <root> tag [-a <name> -F <file> | <name> | -d <name>]
+//
+// The operations over the remote, over the index and over stashes and tags are in the modules
+// beside this one (git-remote.ts, git-index.ts, git-refs.ts), each reaching git through the call
+// sites exported below, so every subcommand still has exactly one place it is run from and that
+// place is in this file.
 //
 // Nothing here is reachable from a watcher, a timer or the socket. The one caller is server/
 // git-routes.ts, which answers POST /api/git only for a request carrying the write token, coming
-// from this application's own page, and (for the eight destructive actions) carrying the confirm
+// from this application's own page, and (for the actions that can lose work) carrying the confirm
 // the page sets from a dialog. DESIGN.md's decision on git writes is that shape: commit, push,
-// branches and worktrees on the repositories oculus knows, every write behind the token and a
-// confirm.
+// pull, branches, stashes, tags and worktrees on the repositories oculus knows, every write behind
+// the token and those behind a confirm.
 //
 // `git.ts`'s `run` is not imported: putting a writing subcommand through the read-only module's one
 // call site would run it past that module's recorder and break the gate that says what it ran.
@@ -43,7 +60,7 @@ import { scalar } from '../../data/helpers/guards.ts';
 import type { GitBranch } from '../../data/model/index.ts';
 import { isWorktreePath, validName, worktreePath } from '../../data/helpers/worktrees.ts';
 import { defaultMirrorsDir } from './deposit-git.ts';
-import { BRANCH_FORMAT, parseBranches } from '../core/git-parse.ts';
+import { REFS_FORMAT, WHOLE_FILE, parseBranches } from '../core/git-parse.ts';
 import { GIT } from '../core/git.ts';
 
 export { parseBranches };
@@ -51,7 +68,7 @@ export { parseBranches };
 /** Milliseconds one git command is given, for everything that stays on this machine. */
 export const TIMEOUT_MS = 10000;
 
-/** A push crosses the network, so it is given a minute rather than ten seconds. */
+/** A push, a pull or a fetch crosses the network, so it is given a minute, not ten seconds. */
 export const PUSH_TIMEOUT_MS = 60000;
 
 /** How much output one command may produce. A staged diff is the big one. */
@@ -63,36 +80,50 @@ export type Outcome = { ok: boolean; output: string; error: string };
 /** One row of `git branch --format`, as the branch menu draws it. */
 export type Branch = GitBranch;
 
-function failed(error: string): Outcome {
+export function failed(error: string): Outcome {
     return { ok: false, output: '', error };
 }
 
+/** What one command may carry beside its arguments: text on its standard input, and variables. */
+type Extra = { input?: string; env?: Record<string, string> };
+
 /**
  * One git command, as a list, with a timeout. This is the module's one subprocess call site, and
- * every refusal above it has already run by the time it is reached.
+ * every refusal above it has already run by the time it is reached. A failure says git's own
+ * reason, the error stream's first line or, where git wrote its reason to the output stream (a
+ * merge that stopped on conflicts), that stream's.
  */
-function run(root: string, args: string[], timeout: number): Promise<Outcome> {
+function run(root: string, args: string[], timeout: number, extra: Extra = {}): Promise<Outcome> {
     const argv = ['-C', root, ...args];
     return new Promise((settle) => {
         // A list, never a shell. A path or a branch name from the page is an argument and can
         // therefore never be read as syntax.
-        execFile(
+        const child = execFile(
             GIT,
             argv,
-            { encoding: 'utf8', timeout, maxBuffer: MAX_OUTPUT },
+            {
+                encoding: 'utf8',
+                timeout,
+                maxBuffer: MAX_OUTPUT,
+                env: extra.env === undefined ? process.env : { ...process.env, ...extra.env }
+            },
             (error, stdout, stderr) => {
                 if (error !== null) {
                     const failure = error as NodeJS.ErrnoException;
                     const reason =
                         failure.code === 'ETIMEDOUT'
                             ? 'git timed out'
-                            : short(stderr) || short(failure.message) || 'git failed';
+                            : short(stderr) ||
+                              short(stdout) ||
+                              short(failure.message) ||
+                              'git failed';
                     settle(failed(reason));
                     return;
                 }
                 settle({ ok: true, output: typeof stdout === 'string' ? stdout : '', error: '' });
             }
         );
+        child.stdin?.end(extra.input ?? '');
     });
 }
 
@@ -136,7 +167,7 @@ export function insideRepo(root: string, path: string): boolean {
     return full === base || full.startsWith(base + sep);
 }
 
-function checkPaths(root: string, paths: unknown[], roots: string[]): string {
+export function checkPaths(root: string, paths: unknown[], roots: string[]): string {
     if (!permitted(root, roots)) return 'that directory is not a workspace oculus knows';
     if (!Array.isArray(paths) || paths.length === 0) return 'no path was given';
     for (const path of paths) {
@@ -158,7 +189,7 @@ export async function stage(
 ): Promise<Outcome> {
     const wrong = checkPaths(root, paths, roots);
     if (wrong !== '') return failed(wrong);
-    return run(root, ['add', '--', ...paths], TIMEOUT_MS);
+    return addTo(root, ['--', ...paths]);
 }
 
 /** Take the given paths back out of the index, leaving the worktree as it is. */
@@ -197,24 +228,66 @@ export async function discard(
 /**
  * Commit what is staged. The message goes through a file rather than an argument: it is several
  * lines with quotes and backticks in it, and `-F` is the one form no quoting can break.
+ *
+ * With `amend`, the commit replaces the one at HEAD, keeping its message when the box is empty.
+ * An amend of a commit the upstream already holds is refused before anything runs: the only way
+ * on from there is a forced push, which nothing here runs.
  */
 export async function commit(
     root: string,
     message: string,
-    roots: string[] = allowedRoots()
+    roots: string[] = allowedRoots(),
+    amend = false
 ): Promise<Outcome> {
     if (!permitted(root, roots)) return failed('that directory is not a workspace oculus knows');
-    if (typeof message !== 'string' || message.trim() === '') {
-        return failed('a commit needs a message');
+    const text = typeof message === 'string' ? message : '';
+    if (!amend && text.trim() === '') return failed('a commit needs a message');
+    if (amend) {
+        const pushed = await pushedAlready(root);
+        if (pushed) {
+            return failed(
+                'the upstream already holds this commit, so amending it would need a forced push'
+            );
+        }
+        if (text.trim() === '') return commitWith(root, ['--amend', '--no-edit']);
     }
-    const dir = mkdtempSync(join(tmpdir(), 'oculus-commit-'));
+    return withFile('oculus-commit-', text, (file) =>
+        commitWith(root, [...(amend ? ['--amend'] : []), '-F', file])
+    );
+}
+
+/**
+ * Hand git a text through a file of its own in a folder made for it and taken away after, for the
+ * two writes whose text is a message a person wrote: a commit and an annotated tag.
+ */
+export async function withFile(
+    prefix: string,
+    text: string,
+    act: (file: string) => Promise<Outcome>
+): Promise<Outcome> {
+    const dir = mkdtempSync(join(tmpdir(), prefix));
     const file = join(dir, 'message.txt');
     try {
-        writeFileSync(file, message.endsWith('\n') ? message : `${message}\n`, 'utf8');
-        return await run(root, ['commit', '-F', file], TIMEOUT_MS);
+        writeFileSync(file, text.endsWith('\n') ? text : `${text}\n`, 'utf8');
+        return await act(file);
     } finally {
         rmSync(dir, { recursive: true, force: true });
     }
+}
+
+/**
+ * Whether the upstream already holds HEAD. A branch with no upstream holds nothing anywhere, so
+ * its HEAD is not pushed; git answering that HEAD is an ancestor of the upstream is the one yes.
+ */
+async function pushedAlready(root: string): Promise<boolean> {
+    const up = await upstream(root);
+    if (!up.ok) return false;
+    const held = await run(
+        root,
+        ['merge-base', '--is-ancestor', 'HEAD', '@{upstream}'],
+        TIMEOUT_MS
+    );
+    return held.ok;
 }
 
 /**
@@ -228,13 +301,13 @@ export async function push(root: string, roots: string[] = allowedRoots()): Prom
     if (!permitted(root, roots)) return failed('that directory is not a workspace oculus knows');
     const up = await upstream(root);
     if (!up.ok) return failed('this branch has no upstream, so there is nowhere to push it');
-    return run(root, ['push'], PUSH_TIMEOUT_MS);
+    return pushTo(root, []);
 }
 
 /** Every branch, with its upstream and which one is checked out. A read, and the only one here. */
 export async function branches(root: string, roots: string[] = allowedRoots()): Promise<Outcome> {
     if (!permitted(root, roots)) return failed('that directory is not a workspace oculus knows');
-    return branch(root, [BRANCH_FORMAT]);
+    return branch(root, [REFS_FORMAT]);
 }
 
 /** Make a branch and check it out. The name is git's own to judge, so git judges it first. */
@@ -286,7 +359,14 @@ export async function fileDiff(
 ): Promise<Outcome> {
     const wrong = checkPaths(root, [path], roots);
     if (wrong !== '') return failed(wrong);
-    return diff(root, [...(staged ? ['--cached'] : []), '--', path]);
+    return diff(root, [
+        ...(staged ? ['--cached'] : []),
+        '--no-color',
+        '--no-ext-diff',
+        WHOLE_FILE,
+        '--',
+        path
+    ]);
 }
 
 /**
@@ -310,13 +390,13 @@ export async function worktreeDiff(
     const name = head.output.trim();
     const from = name === '' || name === 'HEAD' ? await revParse(root, ['HEAD']) : head;
     if (!from.ok) return from;
-    return diff(path, [`${from.output.trim()}...HEAD`]);
+    return diff(path, ['--no-color', '--no-ext-diff', WHOLE_FILE, `${from.output.trim()}...HEAD`]);
 }
 
 // ---------------------------------------------------------------- worktrees and the merge back
 
 /** What a request naming a path outside the root's worktrees folder is refused with. */
-const OUTSIDE_WORKTREES = 'that path is not a worktree oculus made under this repository';
+export const OUTSIDE_WORKTREES = 'that path is not a worktree oculus made under this repository';
 
 /** The real path of a directory, or null when there is nothing there to resolve. */
 function real(path: string): string | null {
@@ -401,8 +481,9 @@ export async function removeWorktree(
 /**
  * Merge a branch into the root's checked-out branch, which is git's own default: a fast-forward
  * where it can be one and a merge commit otherwise. A dirty root and the checked-out branch itself
- * are refused before anything runs, and a conflict is aborted and reported by the paths that
- * conflicted, so a press on the page never leaves a repository half merged.
+ * are refused before anything runs. A merge that stops on conflicts is left in progress, as VS
+ * Code leaves it, and reported by the paths that conflicted: the view draws them under Merge
+ * Changes, where each is resolved in the merge editor, and Abort Merge takes the whole merge back.
  */
 export async function merge(
     root: string,
@@ -424,7 +505,7 @@ export async function merge(
     }
     // A name git accepts as a reference is not a branch: a tag or a commit id would be merged just
     // as happily, and what this control offers is the branch of a worktree.
-    const listed = await branch(root, [BRANCH_FORMAT]);
+    const listed = await branch(root, [REFS_FORMAT]);
     if (!listed.ok) return listed;
     if (!parseBranches(listed.output).some((one) => one.name === name)) {
         return failed(`${name} is not a branch of this repository`);
@@ -436,19 +517,99 @@ export async function merge(
     }
     const done = await mergeIn(root, [name]);
     if (done.ok) return done;
-    const conflicted = await diff(root, ['--name-only', '--diff-filter=U']);
-    const paths = conflicted.ok ? conflicted.output.trim().split('\n').filter(Boolean) : [];
-    await mergeIn(root, ['--abort']);
+    return stoppedOn(root, done, 'the merge');
+}
+
+/**
+ * What a write that stopped answers: the paths git left unmerged, when there are any, and git's
+ * own reason otherwise. A merge, a pull, a stash applied or popped all leave their conflicts in
+ * the index for the merge editor, so the sentence says where they are.
+ */
+export async function stoppedOn(root: string, done: Outcome, what: string): Promise<Outcome> {
+    const paths = await unmergedPaths(root);
     if (paths.length === 0) return done;
-    return failed(`the merge was taken back: ${paths.join(', ')} conflicted`);
+    return failed(
+        `${what} stopped on conflicts in ${paths.join(', ')}; they are under Merge Changes`
+    );
+}
+
+/** The paths the index holds unmerged, which is where a stopped write left its conflicts. */
+export async function unmergedPaths(root: string): Promise<string[]> {
+    const conflicted = await diff(root, ['--name-only', '--diff-filter=U']);
+    return conflicted.ok ? conflicted.output.trim().split('\n').filter(Boolean) : [];
 }
 
 // ---------------------------------------------------------------- the shared call sites
 
 /** The one `restore` call site: staged is the unstage, unstaged is the discard. */
-function restore(root: string, paths: string[], staged: boolean): Promise<Outcome> {
+export function restore(root: string, paths: string[], staged: boolean): Promise<Outcome> {
     const flags = staged ? ['--staged'] : [];
     return run(root, ['restore', ...flags, '--', ...paths], TIMEOUT_MS);
+}
+
+/**
+ * The one `rm` call site: Accept Deletion over a conflicted path a side deleted, which takes the
+ * path from the index and the worktree.
+ */
+export function removeIn(root: string, args: string[]): Promise<Outcome> {
+    return run(root, ['rm', ...args], TIMEOUT_MS);
+}
+
+/** The one `add` call site: named paths, and every tracked change under the root with `-u`. */
+export function addTo(root: string, args: string[]): Promise<Outcome> {
+    return run(root, ['add', ...args], TIMEOUT_MS);
+}
+
+/**
+ * The one `apply` call site: a patch the page made from a hunk or from chosen lines, handed on
+ * standard input. `--recount` has git count the lines itself, since a patch cut down to some of
+ * a hunk's lines no longer matches the counts in its head.
+ */
+export function applyPatch(root: string, flags: string[], patch: string): Promise<Outcome> {
+    return run(root, ['apply', ...flags, '--recount', '-'], TIMEOUT_MS, { input: patch });
+}
+
+/** The one `commit` call site: a message from a file, an amend, and a merge's commit. */
+function commitWith(root: string, args: string[]): Promise<Outcome> {
+    return run(root, ['commit', ...args], TIMEOUT_MS);
+}
+
+/** The one `push` call site: the branch to its upstream, a branch published, and the tags. */
+export function pushTo(root: string, args: string[]): Promise<Outcome> {
+    return run(root, ['push', ...args], PUSH_TIMEOUT_MS);
+}
+
+/** The one `pull` call site, with the repository's own configuration and nothing imposed. */
+export function pullIn(root: string): Promise<Outcome> {
+    return run(root, ['pull'], PUSH_TIMEOUT_MS);
+}
+
+/** The one `fetch` call site: every remote branch, and the ones gone from the remote taken away. */
+export function fetchIn(root: string): Promise<Outcome> {
+    return run(root, ['fetch', '--prune'], PUSH_TIMEOUT_MS);
+}
+
+/** The one `remote` call site: the remotes by name, which a branch may be published to. */
+export function remoteNames(root: string): Promise<Outcome> {
+    return run(root, ['remote'], TIMEOUT_MS);
+}
+
+/**
+ * The one `rebase` call site: the abort, and the continue once every conflict is resolved, whose
+ * editor is told to take the message as it stands, since no one is at a terminal to write it.
+ */
+export function rebaseIn(root: string, step: '--abort' | '--continue'): Promise<Outcome> {
+    return run(root, ['rebase', step], TIMEOUT_MS, { env: { GIT_EDITOR: 'true' } });
+}
+
+/** The one `stash` call site: every form of it, the push, the apply, the pop and the drop. */
+export function stashIn(root: string, args: string[]): Promise<Outcome> {
+    return run(root, ['stash', ...args], TIMEOUT_MS);
+}
+
+/** The one `tag` call site: a tag made at HEAD, plain or annotated, and a tag deleted. */
+export function tagIn(root: string, args: string[]): Promise<Outcome> {
+    return run(root, ['tag', ...args], TIMEOUT_MS);
 }
 
 /** The one `switch` call site, for both the branch that exists and the one being made. */
@@ -457,22 +618,25 @@ function switchTo(root: string, args: string[]): Promise<Outcome> {
 }
 
 /** The one `status` call site: the dirty check and the untracked list read the same output. */
-function porcelain(root: string): Promise<Outcome> {
+export function porcelain(root: string): Promise<Outcome> {
     return run(root, ['status', '--porcelain=v1', '-z'], TIMEOUT_MS);
 }
 
-/** The one `rev-parse` call site: the upstream of the current branch, and what HEAD is. */
-function revParse(root: string, args: string[]): Promise<Outcome> {
+/**
+ * The one `rev-parse` call site: the upstream of the current branch, what HEAD is, whether a merge
+ * is in progress, and where git keeps a rebase's state.
+ */
+export function revParse(root: string, args: string[]): Promise<Outcome> {
     return run(root, ['rev-parse', ...args], TIMEOUT_MS);
 }
 
 /** Whether the current branch has somewhere to push to. */
-function upstream(root: string): Promise<Outcome> {
+export function upstream(root: string): Promise<Outcome> {
     return revParse(root, ['--abbrev-ref', '@{upstream}']);
 }
 
 /** The one `diff` call site: the staged diff, one file's, a worktree's range, and the conflicts. */
-function diff(root: string, args: string[]): Promise<Outcome> {
+export function diff(root: string, args: string[]): Promise<Outcome> {
     return run(root, ['diff', ...args], TIMEOUT_MS);
 }
 
@@ -489,17 +653,22 @@ function worktree(root: string, args: string[]): Promise<Outcome> {
 }
 
 /** The one `merge` call site: the merge itself and the abort that takes a conflicted one back. */
-function mergeIn(root: string, args: string[]): Promise<Outcome> {
+export function mergeIn(root: string, args: string[]): Promise<Outcome> {
     return run(root, ['merge', ...args], TIMEOUT_MS);
 }
 
-/** The one `check-ref-format` call site: git's own answer on whether a name is a branch name. */
+/** Whether a name is a branch name git accepts, judged by git, or the empty string when it is. */
 async function checkName(root: string, name: string, roots: string[]): Promise<string> {
     if (!permitted(root, roots)) return 'that directory is not a workspace oculus knows';
     if (typeof name !== 'string' || name.trim() === '') return 'a branch needs a name';
     if (name.startsWith('-')) return `${name} is not a branch name git accepts`;
-    const judged = await run(root, ['check-ref-format', '--branch', name], TIMEOUT_MS);
+    const judged = await refFormat(root, ['--branch', name]);
     return judged.ok ? '' : `${name} is not a branch name git accepts`;
+}
+
+/** The one `check-ref-format` call site: git's own answer on a branch name or a whole ref. */
+export function refFormat(root: string, args: string[]): Promise<Outcome> {
+    return run(root, ['check-ref-format', ...args], TIMEOUT_MS);
 }
 
 // ---------------------------------------------------------------- small stuff
@@ -521,7 +690,7 @@ function tracked(output: string): boolean {
  * The paths `status --porcelain=v1 -z` reported as untracked. A rename names its old path in the
  * record after it, which is a path rather than a status line, so that record is stepped over.
  */
-function untrackedIn(output: string): Set<string> {
+export function untrackedIn(output: string): Set<string> {
     const loose = new Set<string>();
     const records = output.split('\0');
     for (let at = 0; at < records.length; at += 1) {

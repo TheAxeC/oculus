@@ -171,16 +171,15 @@ const VIEWS: Record<string, string> = {
     'feeds/radar/Bucket.svelte': '',
     'feeds/radar/RadarCard.svelte': '.sub=fs-md | .date=fs-sm',
     'feeds/radar/RadarIntro.svelte': '',
-    'sources/repositories/Diff.svelte': '.text=fs-sm | .note, .failed=fs-sm',
     'sources/repositories/Branches.svelte': '',
     'sources/repositories/Changes.svelte': '',
     'sources/repositories/Repo.svelte':
-        '.branch=fs-sm | .branch .lb, .branch .mt=fs-xs | .path=fs-xs | .none=fs-xs | .outcome=fs-md',
+        '.branch=fs-sm | .branch .lb, .branch .mt=fs-xs | .path=fs-xs | .none=fs-xs | .outcome=fs-md | .sequence=fs-sm',
     'sources/repositories/Worktrees.svelte': '',
     'sessions/agents/Agents.svelte': '.agent=fs-sm | .st=fs-xs | .mo=fs-xs',
     'sessions/changes/Changes.svelte': '.sec-h=fs-sm | .none=fs-xs',
     'sessions/changes/ChangesRepo.svelte':
-        '.sec-h=fs-sm | .mark=fs-xs | .none=fs-xs | .cacts .none=fs-sm | .outcome=fs-md | .branch, .newbranch, .cacts=fs-sm | .branch .lb, .newbranch .lb=fs-xs | .branch .mt=fs-xs',
+        '.sec-h=fs-sm | .mark=fs-xs | .none=fs-xs | .outcome=fs-md | .branch, .newbranch=fs-sm | .branch .lb, .newbranch .lb=fs-xs | .branch .mt=fs-xs',
     'sessions/changes/ChangesTouched.svelte':
         '.sec-h=fs-sm | .file=fs-sm | .ct, .mark=fs-xs | .to=fs-xs | .none=fs-xs',
     'sessions/session-detail/SessionDetail.svelte':
@@ -233,7 +232,20 @@ const VIEWS: Record<string, string> = {
     'sources/venues/Facets.svelte': '.label=fs-xxs',
     'sources/venues/Ribbon.svelte':
         '.next=fs-sm | .legend=fs-xs | .spark=fs-xs | .spark .bars=fs-xl | .spark-label=fs-xxs | .spark-months=fs-3xs | .monthname=fs-xxs',
-    'sources/venues/VenueCard.svelte': '.meta, .users=fs-sm | .wants=fs-md'
+    'sources/venues/VenueCard.svelte': '.meta, .users=fs-sm | .wants=fs-md',
+    'shared/AskConfirm.svelte': '',
+    'shared/changes/CommitBox.svelte': '.none=fs-xs',
+    'sources/repositories/RepoList.svelte': '',
+    'sources/repositories/diff/Diff.svelte': '.note, .failed=fs-sm',
+    'sources/repositories/diff/DiffFile.svelte': '.file=fs-sm',
+    'sources/repositories/graph/CommitFiles.svelte': '',
+    'sources/repositories/graph/Graph.svelte': '',
+    'sources/repositories/graph/Lanes.svelte': '',
+    'sources/repositories/merge/Merge.svelte': '.head=fs-xs | .left=fs-sm | .note, .failed=fs-sm',
+    'sources/repositories/merge/MergeSide.svelte': '.head=fs-xs | .text=fs-sm',
+    'sources/repositories/refs/Stashes.svelte': '',
+    'sources/repositories/refs/Tags.svelte': '',
+    'sources/source/Gutter.svelte': '.gutter=fs-sm'
 };
 
 const PASS_THROUGH: Record<string, string> = {
@@ -270,6 +282,7 @@ const PASS_THROUGH: Record<string, string> = {
     'src/lib/ui/forms/Field.svelte': '.name=fs-xs | .help, .note=fs-xs',
     'src/lib/ui/forms/MultiSelect.svelte': '.filter=fs-sm',
     'src/lib/ui/forms/Select.svelte': '.select=fs-sm',
+    'src/lib/ui/forms/Prompt.svelte': '.message=fs-sm | .detail, .name=fs-xs | .row button=fs-sm',
     'src/lib/ui/forms/TextArea.svelte': '.area=fs-sm',
     'src/lib/ui/forms/TextInput.svelte': '.text=fs-sm',
     'src/lib/ui/frame/Sash.svelte': '',
@@ -302,7 +315,7 @@ describe('the view type scale', () => {
         ).toEqual(Object.keys(VIEWS).sort());
     });
 
-    // revert: tests/views/whole/type-scale.test.ts:278 => delete
+    // revert: tests/views/whole/type-scale.test.ts:291 => delete
     it('audits that every ui component is listed in the pass-through audit', () => {
         const ui = 'src/lib/ui';
         expect(files(ui).sort()).toEqual(

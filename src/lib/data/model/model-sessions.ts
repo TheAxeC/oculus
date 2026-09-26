@@ -357,6 +357,92 @@ export type GitWorktree = {
     main: boolean;
 };
 
+/** One stash of a repository, newest first, as `stash list` names it. */
+export type GitStash = {
+    /** git's own name for it, `stash@{<n>}`, which every stash write is addressed by. */
+    ref: string;
+    hash: string;
+    /** The line git wrote for it: the message given, or `WIP on <branch>: ...`. */
+    message: string;
+    /** When it was made, ISO 8601 with its offset. */
+    when: string;
+};
+
+/** One tag of a repository and the commit it points at, whether it is annotated or not. */
+export type GitTag = { name: string; commit: string; annotated: boolean; subject: string };
+
+/**
+ * What a repository is in the middle of: a merge that stopped on conflicts (MERGE_HEAD is there), a
+ * rebase that did (a rebase folder is there), or nothing.
+ */
+export type GitSequence = 'merging' | 'rebasing' | '';
+
+/**
+ * One commit of the graph: its parents, which the lanes are drawn from, the branch and tag names
+ * `%D` puts on it, and whether it is the checked-out branch's head.
+ */
+export type GitGraphCommit = GitCommit & {
+    parents: string[];
+    author: string;
+    /** Branch and remote-branch names on this commit, `HEAD` itself left out. */
+    refs: string[];
+    tags: string[];
+    head: boolean;
+    /** The whole message, subject and body, which Copy Message copies. */
+    message: string;
+};
+
+/** One page of the graph and, on the first page, the commits either side of the upstream. */
+export type GitGraphPage = {
+    commits: GitGraphCommit[];
+    /** Whether the log goes on past this page. */
+    more: boolean;
+    /** What the upstream holds that HEAD does not, newest first; empty with no upstream. */
+    incoming: GitGraphCommit[];
+    /** What HEAD holds that the upstream does not, newest first; empty with no upstream. */
+    outgoing: GitGraphCommit[];
+};
+
+/** One path a commit changed, git's letter first, and the old path of a rename or copy. */
+export type GitCommitFile = { status: string; path: string; from: string };
+
+/** One line of a blame, by the line it is in the file, counting from one. */
+export type GitBlameLine = {
+    line: number;
+    hash: string;
+    short: string;
+    author: string;
+    /** The author time, ISO 8601 in UTC. */
+    when: string;
+    subject: string;
+    /** A line the worktree holds that no commit does yet. */
+    uncommitted: boolean;
+};
+
+/** One change quick diff marks in the gutter, against the index, by the worktree's lines. */
+export type GitLineMark = {
+    kind: 'added' | 'modified' | 'deleted';
+    /** The first line of the mark, counting from one; for a deletion, the line it sits before. */
+    line: number;
+    /** How many lines it spans; zero for a deletion. */
+    count: number;
+};
+
+/**
+ * The three versions a conflicted path has in the index: the base, ours and theirs, and which side
+ * deleted the path, when one did: `ours` for a conflict git lists as DU, `theirs` for UD, `both`
+ * for DD, and the empty string when both sides hold the path. A deleted side is the empty text.
+ */
+export type GitMergeSides = {
+    base: string;
+    ours: string;
+    theirs: string;
+    deleted: GitMergeDeleted;
+};
+
+/** Which side of a conflict deleted the path, or the empty string when neither did. */
+export type GitMergeDeleted = '' | 'ours' | 'theirs' | 'both';
+
 /**
  * One workspace's git state. Every field is filled, `error` saying why when the rest is empty, and
  * `repository` saying whether the root is a repository whatever else failed.
@@ -380,6 +466,19 @@ export type GitState = {
     staged: GitEntry[];
     unstaged: GitEntry[];
     untracked: GitEntry[];
+    /**
+     * The paths git lists as unmerged, each with the two letters of its pair (`UU`, `AA`, `DD`,
+     * `AU`, `UA`, `DU`, `UD`) as its status. A path here is in neither list above.
+     */
+    conflicted: GitEntry[];
+    /** What the repository is in the middle of, which Abort and Commit act on. */
+    sequence: GitSequence;
+    /** The message git prepared for the merge in progress, comment lines left out. */
+    mergeMessage: string;
+    /** The repository's remotes by name, which Publish Branch offers. */
+    remotes: string[];
+    stashes: GitStash[];
+    tags: GitTag[];
     /** The newest commits of the checked-out branch, newest first. */
     log: GitCommit[];
     branches: GitBranch[];

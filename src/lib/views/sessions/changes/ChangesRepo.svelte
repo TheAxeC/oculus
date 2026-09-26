@@ -1,25 +1,26 @@
 <script lang="ts">
-    // Layer 3, sessions view partial. Repository rows, branch controls and the commit box live here
-    // because git presentation changes independently of the selected session's own file activity.
+    // Layer 3, sessions view partial. The repository a session works in: its branch line with push,
+    // the new-branch field, its changes and the commit box. The commit box is
+    // views/shared/changes/CommitBox.svelte, the one the Repositories view draws, so a message
+    // typed here is the message that view shows for the same repository, and the four ways to
+    // commit are the same four.
 
     import Menu from '$lib/ui/menu/Menu.svelte';
     import type { MenuItem } from '$lib/ui/menu/menu-items';
-    import TextArea from '$lib/ui/forms/TextArea.svelte';
     import TextInput from '$lib/ui/forms/TextInput.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import ChangeGroups from '$lib/views/shared/changes/ChangeGroups.svelte';
+    import CommitBox from '$lib/views/shared/changes/CommitBox.svelte';
     import { branchState } from '$lib/views/shared/changes/branch-state';
     import type { GitEntry, GitState } from '$lib/state/client/selectors.svelte';
     import { t } from '$lib/state/shared/words/text';
 
     type Props = {
+        root: string;
         state: GitState;
         branchItems: MenuItem[];
         upstream: string;
         busy: boolean;
-        suggesting: boolean;
-        canCommit: boolean;
-        message: string;
         branchName: string;
         outcome: string;
         shared: (path: string) => string[];
@@ -30,19 +31,17 @@
         onstage: (path: string) => void;
         onunstage: (path: string) => void;
         ondiscard: (path: string) => void;
-        onmessage: (message: string) => void;
-        onsuggest: () => void | Promise<void>;
-        oncommit: () => void;
+        onresolve: (path: string) => void;
+        ongroup: (act: 'stage-changed' | 'stage-untracked' | 'unstage' | 'discard') => void;
+        onopen: (path: string, kind: string) => void;
     };
 
     let {
+        root,
         state,
         branchItems,
         upstream,
         busy,
-        suggesting,
-        canCommit,
-        message,
         branchName,
         outcome,
         shared,
@@ -53,9 +52,9 @@
         onstage,
         onunstage,
         ondiscard,
-        onmessage,
-        onsuggest,
-        oncommit
+        onresolve,
+        ongroup,
+        onopen
     }: Props = $props();
 
     /**
@@ -103,39 +102,32 @@
     <div class="newbranch">
         <span class="lb">{t('git.branch_new')}</span>
         <TextInput value={branchName} label={t('git.branch_new_label')} oninput={onbranchname} />
-        <ToolButton label={t('git.branch_new_create')} onclick={onbranch} />
+        <ToolButton label={t('git.branch_new_create')} disabled={busy} onclick={onbranch} />
+    </div>
+    <div class="commit">
+        <CommitBox {root} git={state} />
     </div>
     <ChangeGroups
+        conflicted={state.conflicted}
         staged={state.staged}
         unstaged={state.unstaged}
         untracked={state.untracked}
+        {busy}
         {onstage}
         {onunstage}
         {ondiscard}
+        {onresolve}
+        {ongroup}
+        {onopen}
         beside={mark}
         marked={(entry: GitEntry) => shared(entry.path).length > 0}
     />
-    <div class="commit">
-        <TextArea value={message} label={t('git.commit_label')} rows={4} oninput={onmessage} />
-        <div class="cacts">
-            <ToolButton
-                label={suggesting ? t('git.suggest_pending') : t('git.suggest')}
-                title={t('git.suggest_title')}
-                disabled={busy || suggesting || state.staged.length === 0}
-                onclick={onsuggest}
-            />
-            <ToolButton label={t('git.commit')} disabled={!canCommit} onclick={oncommit} />
-            {#if state.staged.length === 0}
-                <span class="none">{t('git.commit_none')}</span>
-            {/if}
-        </div>
-        {#if busy}
-            <p class="none">{t('git.busy')}</p>
-        {/if}
-        {#if outcome !== ''}
-            <p class="outcome">{outcome}</p>
-        {/if}
-    </div>
+    {#if busy}
+        <p class="none">{t('git.busy')}</p>
+    {/if}
+    {#if outcome !== ''}
+        <p class="outcome">{outcome}</p>
+    {/if}
 </section>
 
 <style>
@@ -161,16 +153,12 @@
         font-size: var(--fs-xs);
         margin: 2px 0 0;
     }
-    .cacts .none {
-        font-size: var(--fs-sm);
-    }
     .outcome {
         margin: 2px 0 0;
         font-size: var(--fs-md);
     }
     .branch,
-    .newbranch,
-    .cacts {
+    .newbranch {
         display: flex;
         align-items: center;
         gap: 6px;
@@ -179,11 +167,6 @@
     .newbranch,
     .commit {
         margin-top: 6px;
-    }
-    .commit {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
     }
     .branch .lb,
     .newbranch .lb {

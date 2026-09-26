@@ -16,7 +16,7 @@
     import TreeSection from '$lib/ui/tree/TreeSection.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import type { TreeNav } from '$lib/ui/tree/tree-keys';
-    import { noCommitYet } from '$lib/state/sources/repositories';
+    import { noCommitYet } from '$lib/state/sources/repositories/repositories';
     import type { GitState } from '$lib/state/client/selectors.svelte';
     import { t } from '$lib/state/shared/words/text';
 

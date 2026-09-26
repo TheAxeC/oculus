@@ -2,8 +2,8 @@
 // copy under the system temporary directory with a bare upstream beside it, a second branch, and
 // one commit not yet pushed. It is added to the file browser as a root, and a file of it opened in
 // a source tab is what makes it the repository the bar draws. The branch picker checks a branch
-// out, and the sync item pushes the commit, each after the confirm, and the repository on disk is
-// read back to prove it.
+// out, the sync item pushes the commit or pulls and then pushes, and Publish Branch pushes a branch
+// with no upstream, each after the confirm, and the repository on disk is read back to prove it.
 
 import { expect, test, type Page } from '@playwright/test';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -60,7 +60,7 @@ async function openIn(page: Page, work: string): Promise<void> {
     });
 }
 
-// revert: src/lib/shell/status/RepoItems.svelte:58 => act: () => undefined
+// revert: src/lib/shell/status/RepoItems.svelte:64 => act: () => undefined
 test('the branch item lists the branches of the tab repository, and a choice checks it out after the confirm', async ({
     page
 }) => {
@@ -82,7 +82,7 @@ test('the branch item lists the branches of the tab repository, and a choice che
     expect(readFileSync(join(work, '.git', 'HEAD'), 'utf8').trim()).toBe('ref: refs/heads/draft');
 });
 
-// revert: src/lib/shell/status/RepoItems.svelte:72 => act: () => undefined
+// revert: src/lib/shell/status/RepoItems.svelte:75 => act: () => undefined
 test('the sync item draws how far the branch is from its upstream, and pushes a branch only ahead after the confirm', async ({
     page
 }) => {
@@ -101,10 +101,63 @@ test('the sync item draws how far the branch is from its upstream, and pushes a 
     const pushed = readFileSync(join(bare, 'refs', 'heads', 'main'), 'utf8').trim();
     const local = readFileSync(join(work, '.git', 'refs', 'heads', 'main'), 'utf8').trim();
     expect(pushed).toBe(local);
-    // In step with its upstream, the item opens the Repositories view rather than pushing.
+});
+
+// revert: src/lib/shell/status/RepoItems.svelte:81 => act: () => undefined
+test('the sync item pulls and then pushes a branch behind its upstream, after the confirm', async ({
+    page
+}) => {
+    const { work, bare } = repository();
+    // Another clone pushes a commit, so the working copy is one behind as well as one ahead. The
+    // pull takes the repository's own configuration, which here merges, under an identity of the
+    // repository's own so the machine's is never read.
+    const other = join(scratchDir('oculus-status-other-'), 'other');
+    gitIn(join(work, '..'), 'clone', '--quiet', bare, other);
+    writeFileSync(join(other, 'b.txt'), 'b\n');
+    gitIn(other, 'add', 'b.txt');
+    gitIn(other, 'commit', '-m', 'Three');
+    gitIn(other, 'push', 'origin', 'main');
+    gitIn(work, 'fetch', 'origin');
+    gitIn(work, 'config', 'pull.rebase', 'false');
+    gitIn(work, 'config', 'user.name', 'Oculus Browser Spec');
+    gitIn(work, 'config', 'user.email', 'nobody@example.invalid');
+    await openIn(page, work);
+    const sync = button(page, 'sync');
+    await expect(sync.locator('[data-sync="behind"]')).toHaveText('1', { timeout: 15_000 });
     await sync.click();
-    await expect(page.getByRole('tab', { name: t('views.repositories') })).toHaveAttribute(
-        'aria-selected',
-        'true'
+    const asked = page.getByRole('alertdialog', {
+        name: t('repositories.sync_confirm', 'main', 'origin/main')
+    });
+    await expect(asked).toBeVisible();
+    await asked.getByRole('button', { name: t('repositories.sync'), exact: true }).click();
+    await expect(sync.locator('[data-sync="behind"]')).toHaveText('0', { timeout: 15_000 });
+    await expect(sync.locator('[data-sync="ahead"]')).toHaveText('0');
+    const pushed = readFileSync(join(bare, 'refs', 'heads', 'main'), 'utf8').trim();
+    const local = readFileSync(join(work, '.git', 'refs', 'heads', 'main'), 'utf8').trim();
+    expect(pushed).toBe(local);
+    expect(readFileSync(join(work, 'b.txt'), 'utf8')).toBe('b\n');
+});
+
+// revert: src/lib/shell/status/RepoItems.svelte:92 => act: () => undefined
+test('a branch with no upstream draws Publish Branch, which pushes it and tracks it after the confirm', async ({
+    page
+}) => {
+    const { work, bare } = repository();
+    gitIn(work, 'checkout', '--quiet', '-b', 'fresh');
+    await openIn(page, work);
+    await expect(button(page, 'branch')).toHaveText('fresh', { timeout: 15_000 });
+    const publish = page.locator('[data-status="publish"]').getByRole('button');
+    await publish.click();
+    const asked = page.getByRole('alertdialog', {
+        name: t('repositories.publish_confirm', 'fresh', 'origin')
+    });
+    await expect(asked).toBeVisible();
+    await asked.getByRole('button', { name: t('repositories.publish'), exact: true }).click();
+    await expect(page.locator('[data-status="sync"]')).toBeVisible({ timeout: 15_000 });
+    const pushed = readFileSync(join(bare, 'refs', 'heads', 'fresh'), 'utf8').trim();
+    const local = readFileSync(join(work, '.git', 'refs', 'heads', 'fresh'), 'utf8').trim();
+    expect(pushed).toBe(local);
+    expect(readFileSync(join(work, '.git', 'config'), 'utf8')).toContain(
+        '[branch "fresh"]\n\tremote = origin\n\tmerge = refs/heads/fresh'
     );
 });

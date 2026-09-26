@@ -14,19 +14,36 @@
 //     git -C <root> rev-list --left-right --count @{upstream}...HEAD
 //     git -C <root> status --porcelain=v1 -z --untracked-files=normal
 //     git -C <root> diff --numstat -z
+//     git -C <root> diff --no-color --no-ext-diff -U0 -- <path>
+//     git -C <root> diff --no-color --no-ext-diff -U<all> <stash>^1 <stash>
 //     git -C <root> log -<n> --format=...
-//     git -C <root> branch --format=...
+//     git -C <root> log --topo-order --format=... --skip=<n> -<n> HEAD --
+//     git -C <root> log --topo-order --format=... -<n> <HEAD..@{upstream} | @{upstream}..HEAD> --
+//     git -C <root> log --walk-reflogs --format=... refs/stash --
 //     git -C <root> worktree list --porcelain
 //     git -C <root> check-ignore --stdin -z
+//     git -C <root> for-each-ref --format=... refs/heads refs/tags refs/stash
+//     git -C <root> remote
+//     git -C <root> blame --porcelain -- <path>
+//     git -C <root> show :<1|2|3>:<path>
+//     git -C <root> show --format= --name-status -z --diff-merges=first-parent <commit>
+//     git -C <root> show --format= --no-color --no-ext-diff -U<all> --diff-merges=first-parent
+//         <commit> -- <path>
 //
-// The last is the file browser's: which entries of one listed folder the repository ignores, the
-// names handed on its standard input, so the tree can leave them out (ignoredIn below).
+// `check-ignore` is the file browser's: which entries of one listed folder the repository ignores,
+// the names handed on its standard input, so the tree can leave them out (ignoredIn below). The
+// status read above it is the `git` channel's; the graph, the blame, the gutter marks, the three
+// versions of a conflicted path, a commit's files and diffs and a stash's diff are read on demand
+// by GET /api/git, since each is text or a page a reader asked for rather than state every event
+// carries. A stash is listed from its reflog and diffed against its first parent, which is what
+// `stash list` and `stash show -p` print, so no command here is a form of a writing subcommand.
 //
 // Nothing here may ever change a repository. Every writing subcommand belongs to Axel alone, and a
 // dashboard watcher must never be the thing that runs one. tests/server/core/git.test.ts holds two
 // gates over that: the source names no writing subcommand, and the suite records every argument
-// vector the process runs and asserts the whole suite ran only the commands above, `branch`,
-// `worktree`, `symbolic-ref` and `check-ignore` only as the vectors written here.
+// vector the process runs and asserts the whole suite ran only the commands above, `for-each-ref`,
+// `worktree`, `symbolic-ref`, `check-ignore`, `remote` and `rev-parse` only as the vectors written
+// here.
 //
 // A repository on a slow mount must not stall a watcher, so the one call site takes a list argument
 // (never a shell string), carries a timeout, and collapses any failure into the empty shape with a
@@ -34,17 +51,40 @@
 
 import { scalar } from '../../data/helpers/guards.ts';
 import { spawnSync } from 'node:child_process';
-import { lstatSync, readFileSync, realpathSync, statSync } from 'node:fs';
-import { join, sep } from 'node:path';
+import { existsSync, lstatSync, readFileSync, realpathSync, statSync } from 'node:fs';
+import { isAbsolute, join, resolve, sep } from 'node:path';
 import type {
-    GitBranch,
+    GitBlameLine,
     GitCommit,
+    GitCommitFile,
     GitEntry,
+    GitGraphCommit,
+    GitGraphPage,
+    GitLineMark,
+    GitMergeSides,
+    GitSequence,
+    GitStash,
     GitState,
     GitWorktree
 } from '../../data/model/index.ts';
 import { ignoresWorktrees } from '../../data/helpers/worktrees.ts';
-import { BRANCH_FORMAT, LOG_FORMAT, parseBranches, parseLog, parseWorktrees } from './git-parse.ts';
+import {
+    GRAPH_FORMAT,
+    LOG_FORMAT,
+    STASH_FORMAT,
+    STASH_REF,
+    REFS_FORMAT,
+    WHOLE_FILE,
+    parseBlame,
+    parseGraph,
+    parseLineMarks,
+    parseLog,
+    parseNameStatus,
+    parseStashes,
+    parseRefs,
+    parseWorktrees,
+    type RefRows
+} from './git-parse.ts';
 
 export const GIT = 'git';
 /** Milliseconds one git command is given before it is given up on. */
@@ -55,10 +95,16 @@ export const MAX_ENTRIES = 200;
  * How many commits the log carries: the view is a glance, and a terminal reads a longer history.
  */
 export const LOG_ENTRIES = 20;
+/** How many commits one page of the graph holds; Load More asks for the next as many. */
+export const GRAPH_PAGE = 50;
 /** git's own letter for a path it does not track. */
 export const UNTRACKED = '?';
 /** An index or worktree column saying "nothing here". */
 const QUIET = [' ', UNTRACKED, '!'];
+/** The pairs `status --porcelain` reports an unmerged path by: both columns name the conflict. */
+const UNMERGED = ['DD', 'AU', 'UD', 'UA', 'DU', 'AA', 'UU'];
+/** A commit named on a request: a whole or abbreviated hash and nothing a revision could mean. */
+const HASH = /^[0-9a-f]{4,40}$/;
 /** A rename or a copy reports its old path as a second field. */
 const TWO_PATHS = ['R', 'C'];
 /**
@@ -93,6 +139,12 @@ export function empty(error: string | null = null): GitState {
         staged: [],
         unstaged: [],
         untracked: [],
+        conflicted: [],
+        sequence: '',
+        mergeMessage: '',
+        remotes: [],
+        stashes: [],
+        tags: [],
         log: [],
         branches: [],
         worktrees: [],
@@ -156,6 +208,187 @@ export function ignoredIn(
     return new Set(names.filter((name) => said.has(name)));
 }
 
+// ---------------------------------------------------------------- read on demand
+
+/** What one on-demand read answers: its value, or why it could not be read. */
+export type Read<T> = { ok: true; value: T } | { ok: false; error: string };
+
+function refused<T>(error: string): Read<T> {
+    return { ok: false, error };
+}
+
+/**
+ * Whether a path is one a read hands to git: relative, inside the repository, and not a lone
+ * dash git would take for an option. The writing module holds the same rule for its own paths.
+ */
+export function pathInside(root: string, path: string): boolean {
+    if (typeof path !== 'string' || path === '' || path.startsWith('-') || isAbsolute(path)) {
+        return false;
+    }
+    const base = resolve(root);
+    const full = resolve(join(root, path));
+    return full === base || full.startsWith(base + sep);
+}
+
+/**
+ * One page of the graph: GRAPH_PAGE commits of HEAD's history in topological order after the
+ * first `skip`, whether more follow, and on the first page the commits the upstream holds that
+ * HEAD does not and the other way round. A branch with no upstream answers both lists empty, and
+ * a repository with no commit answers git's own reason.
+ */
+export function graphPage(
+    root: string,
+    skip: number,
+    timeout: number = TIMEOUT_MS
+): Read<GitGraphPage> {
+    const from = Number.isInteger(skip) && skip > 0 ? skip : 0;
+    const ms = milliseconds(timeout);
+    const done = run(
+        root,
+        ['log', '--topo-order', GRAPH_FORMAT, `--skip=${from}`, `-${GRAPH_PAGE + 1}`, 'HEAD', '--'],
+        ms
+    );
+    if (!done.ok) return refused(done.text || 'git log failed');
+    const rows = parseGraph(done.text);
+    return {
+        ok: true,
+        value: {
+            commits: rows.slice(0, GRAPH_PAGE),
+            more: rows.length > GRAPH_PAGE,
+            incoming: from === 0 ? between(root, 'HEAD..@{upstream}', ms) : [],
+            outgoing: from === 0 ? between(root, '@{upstream}..HEAD', ms) : []
+        }
+    };
+}
+
+/** The commits of one range around the upstream, capped; a range git cannot read is empty. */
+function between(root: string, range: string, timeout: number): GitGraphCommit[] {
+    const done = run(
+        root,
+        ['log', '--topo-order', GRAPH_FORMAT, `-${MAX_ENTRIES}`, range, '--'],
+        timeout
+    );
+    return done.ok ? parseGraph(done.text) : [];
+}
+
+/** The paths one commit changed against its first parent, or against nothing for a root commit. */
+export function commitFiles(
+    root: string,
+    hash: string,
+    timeout: number = TIMEOUT_MS
+): Read<GitCommitFile[]> {
+    if (!HASH.test(hash)) return refused('that is not a commit');
+    const done = show(
+        root,
+        ['--format=', '--name-status', '-z', '--diff-merges=first-parent', hash],
+        milliseconds(timeout)
+    );
+    return done.ok ? { ok: true, value: parseNameStatus(done.text) } : refused(done.text);
+}
+
+/** One commit's diff of one path against its first parent, every unchanged line with it. */
+export function commitDiff(
+    root: string,
+    hash: string,
+    path: string,
+    timeout: number = TIMEOUT_MS
+): Read<string> {
+    if (!HASH.test(hash)) return refused('that is not a commit');
+    if (!pathInside(root, path)) return refused(`the path ${path} is not inside the repository`);
+    const done = show(
+        root,
+        [
+            '--format=',
+            '--no-color',
+            '--no-ext-diff',
+            WHOLE_FILE,
+            '--diff-merges=first-parent',
+            hash,
+            '--',
+            path
+        ],
+        milliseconds(timeout)
+    );
+    return done.ok ? { ok: true, value: done.text } : refused(done.text);
+}
+
+/** One stash's diff against the commit it was made on, which is what `stash show -p` prints. */
+export function stashDiff(root: string, ref: string, timeout: number = TIMEOUT_MS): Read<string> {
+    if (!STASH_REF.test(ref)) return refused('that is not a stash');
+    const done = readDiff(
+        root,
+        ['--no-color', '--no-ext-diff', WHOLE_FILE, `${ref}^1`, ref],
+        milliseconds(timeout)
+    );
+    return done.ok ? { ok: true, value: done.text } : refused(done.text);
+}
+
+/** Who last changed each line of one file as the worktree holds it. */
+export function blameOf(
+    root: string,
+    path: string,
+    timeout: number = TIMEOUT_MS
+): Read<GitBlameLine[]> {
+    if (!pathInside(root, path)) return refused(`the path ${path} is not inside the repository`);
+    const done = run(root, ['blame', '--porcelain', '--', path], milliseconds(timeout));
+    return done.ok ? { ok: true, value: parseBlame(done.text) } : refused(done.text);
+}
+
+/**
+ * The gutter marks of one file: its worktree lines against the index. An untracked file and a
+ * file git has no index entry for answer no marks, as VS Code draws none for them.
+ */
+export function lineMarks(
+    root: string,
+    path: string,
+    timeout: number = TIMEOUT_MS
+): Read<GitLineMark[]> {
+    if (!pathInside(root, path)) return refused(`the path ${path} is not inside the repository`);
+    const done = readDiff(
+        root,
+        ['--no-color', '--no-ext-diff', '-U0', '--', path],
+        milliseconds(timeout)
+    );
+    return done.ok ? { ok: true, value: parseLineMarks(done.text) } : refused(done.text);
+}
+
+/**
+ * The three versions of a conflicted path: the common base (stage 1), ours (2) and theirs (3). A
+ * side the conflict has no version on (a path one side deleted, the base of a path both sides
+ * added, or the other side of a path one side added) is empty.
+ */
+export function mergeSides(
+    root: string,
+    path: string,
+    timeout: number = TIMEOUT_MS
+): Read<GitMergeSides> {
+    if (!pathInside(root, path)) return refused(`the path ${path} is not inside the repository`);
+    const ms = milliseconds(timeout);
+    // A side that deleted the path has no stage in the index, which `show` answers with a failure;
+    // an empty file is a stage that answers with no text.
+    const side = (stage: number): { held: boolean; text: string } => {
+        const done = show(root, [`:${stage}:${path}`], ms);
+        return { held: done.ok, text: done.ok ? done.text : '' };
+    };
+    const [base, ours, theirs] = [side(1), side(2), side(3)];
+    if (!base.held && !ours.held && !theirs.held) return refused(`${path} is not in conflict`);
+    // A side deleted the path only when the base holds it: with no base, a side without a version
+    // never had the path, which the other side added (git's AU and UA).
+    const deleted = !base.held
+        ? ''
+        : !ours.held && !theirs.held
+          ? 'both'
+          : !ours.held
+            ? 'ours'
+            : !theirs.held
+              ? 'theirs'
+              : '';
+    return {
+        ok: true,
+        value: { base: base.text, ours: ours.text, theirs: theirs.text, deleted }
+    };
+}
+
 // ---------------------------------------------------------------- one root
 
 function state(root: string, timeout: number): GitState {
@@ -198,9 +431,17 @@ function state(root: string, timeout: number): GitState {
     if (!checkedOut(root, found, timeout)) return found;
     upstream(root, found, timeout);
     found.log = log(root, timeout);
-    found.branches = branches(root, timeout);
+    const listed = refs(root, timeout);
+    found.branches = listed.branches;
+    found.tags = listed.tags;
+    // The reflog is walked only where a stash is kept, and the remotes are read only where Publish
+    // Branch can be offered, a branch that tracks nothing; either read is a process per root on
+    // every event, which the repositories that have no use for it do not pay.
+    found.stashes = listed.stash ? stashes(root, timeout) : [];
+    found.remotes = found.upstream || found.detached ? [] : remotes(root, timeout);
     found.worktrees = worktrees(root, timeout);
     found.ignoresWorktrees = ignored(root);
+    sequenceOf(root, gitDir.text.trim(), found);
     const rows = porcelain(root, timeout);
     if (rows.rows === null) {
         found.error = rows.reason || 'git status failed';
@@ -246,10 +487,62 @@ export function capped<Row>(rows: Row[]): Row[] {
     return rows.slice(0, MAX_ENTRIES);
 }
 
-/** Every branch, with its upstream and which one is checked out, capped like the change lists. */
-function branches(root: string, timeout: number): GitBranch[] {
-    const done = run(root, ['branch', BRANCH_FORMAT], timeout);
-    return done.ok ? capped(parseBranches(done.text)) : [];
+/**
+ * The branches with their upstreams and which one is checked out, the tags with the commits they
+ * point at, and whether a stash is kept, from one `for-each-ref` over the three namespaces, each
+ * list capped like the change lists. One process reads all three, where a listing each would be
+ * three processes per root on every event.
+ */
+function refs(root: string, timeout: number): RefRows {
+    const done = run(
+        root,
+        ['for-each-ref', REFS_FORMAT, 'refs/heads', 'refs/tags', 'refs/stash'],
+        timeout
+    );
+    if (!done.ok) return { branches: [], tags: [], stash: false };
+    const read = parseRefs(done.text);
+    return { branches: capped(read.branches), tags: capped(read.tags), stash: read.stash };
+}
+
+/**
+ * Every stash, newest first, read from the stash's reflog as `stash list` reads it. A repository
+ * with no stash has no such reflog and answers with a failure, which is the empty list.
+ */
+function stashes(root: string, timeout: number): GitStash[] {
+    const done = run(root, ['log', '--walk-reflogs', STASH_FORMAT, 'refs/stash', '--'], timeout);
+    return done.ok ? capped(parseStashes(done.text)) : [];
+}
+
+/** The repository's remotes by name. */
+function remotes(root: string, timeout: number): string[] {
+    const done = run(root, ['remote'], timeout);
+    return done.ok ? capped(done.text.split('\n').filter((one) => one.trim() !== '')) : [];
+}
+
+/**
+ * What the repository is in the middle of, read from its git folder: a merge while MERGE_HEAD is
+ * there, with the message git prepared for it, and a rebase while either rebase folder is. The
+ * folder is the one `rev-parse --git-dir` named, so a worktree reads its own.
+ */
+function sequenceOf(root: string, gitDir: string, found: GitState): void {
+    const dir = isAbsolute(gitDir) ? gitDir : join(root, gitDir);
+    let sequence: GitSequence = '';
+    if (existsSync(join(dir, 'rebase-merge')) || existsSync(join(dir, 'rebase-apply'))) {
+        sequence = 'rebasing';
+    } else if (existsSync(join(dir, 'MERGE_HEAD'))) {
+        sequence = 'merging';
+    }
+    found.sequence = sequence;
+    if (sequence !== 'merging') return;
+    try {
+        found.mergeMessage = readFileSync(join(dir, 'MERGE_MSG'), 'utf8')
+            .split('\n')
+            .filter((line) => !line.startsWith('#'))
+            .join('\n')
+            .trim();
+    } catch {
+        found.mergeMessage = '';
+    }
 }
 
 /**
@@ -318,6 +611,10 @@ function upstream(root: string, found: GitState, timeout: number): void {
 
 function fill(found: GitState, rows: Row[], counts: Counts): void {
     for (const [index, work, path] of rows) {
+        if (UNMERGED.includes(`${index}${work}`)) {
+            found.conflicted.push(entry(path, `${index}${work}`, undefined));
+            continue;
+        }
         if (index === UNTRACKED || work === UNTRACKED) {
             found.untracked.push(entry(path, UNTRACKED, undefined));
             continue;
@@ -332,6 +629,7 @@ function fill(found: GitState, rows: Row[], counts: Counts): void {
     found.staged.length = Math.min(found.staged.length, MAX_ENTRIES);
     found.unstaged.length = Math.min(found.unstaged.length, MAX_ENTRIES);
     found.untracked.length = Math.min(found.untracked.length, MAX_ENTRIES);
+    found.conflicted.length = Math.min(found.conflicted.length, MAX_ENTRIES);
 }
 
 function entry(
@@ -397,6 +695,16 @@ function numstat(root: string, timeout: number): Counts {
         out.set(path, [count(parts[0]), count(parts[1])]);
     }
     return out;
+}
+
+/** The one `show` call site: an index stage of a path, and a commit's files and diffs. */
+function show(root: string, args: string[], timeout: number): Outcome {
+    return run(root, ['show', ...args], timeout);
+}
+
+/** The call site of the diffs read on demand: a file's gutter marks and a stash's changes. */
+function readDiff(root: string, args: string[], timeout: number): Outcome {
+    return run(root, ['diff', ...args], timeout);
 }
 
 /**

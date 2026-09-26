@@ -495,7 +495,7 @@ describe("oculus's own config directory", () => {
         expect(icons.filter((name) => !(name in glyphs))).toEqual([]);
     });
 
-    // revert: config/catalogs/icons.yml:53 => delete
+    // revert: config/catalogs/icons.yml:69 => delete
     it('names one icon for every glyph and for nothing but a glyph', () => {
         const { config } = loadConfig(engineDir());
         expect(Object.keys(iconCatalog(config))).toEqual(Object.keys(glyphCatalog(config)));
@@ -520,7 +520,7 @@ describe("oculus's own config directory", () => {
         expect(config.ascii).toBe(undefined);
     });
 
-    // revert: config/catalogs/glyphs.yml:66 => changes: "[><]"
+    // revert: config/catalogs/glyphs.yml:82 => changes: "[><]"
     it('holds every stand-in to three characters, the box a terminal theme draws it in', () => {
         const { config } = loadConfig(engineDir());
         const wide = Object.entries(glyphCatalog(config)).filter(

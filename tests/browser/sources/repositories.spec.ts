@@ -1,5 +1,5 @@
 // The Repositories view in a real browser, over the served copy of the hub, which the layer makes a
-// git repository of its own with one commit in it: the repository picker, the sections and their
+// git repository of its own with one commit in it: the Repositories list, the sections and their
 // heads, the diff a change row opens, and a worktree made and taken away.
 //
 // Every write here lands inside that copy: the worktree is made under its own worktrees folder and
@@ -7,7 +7,7 @@
 // made. Nothing reaches the machine's own checkout. The shell a made worktree opens runs on the
 // layer's own tmux server, which each case ends.
 
-import { expect, test, type Locator, type Page } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
@@ -17,6 +17,7 @@ import { endServedTerminals, hubDir } from '../helpers/hub.ts';
 import { keepServedFiles } from '../helpers/files.ts';
 import { t } from '../helpers/words.ts';
 import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
+import { listEntry, listRow, pick, showAdded } from '../scm/scm.ts';
 
 keepServedFiles();
 
@@ -30,54 +31,12 @@ const CHANGED = 'feeds/position-leads.yml';
 /** The name the case makes its worktree under, and where the view says it will go. */
 const NAME = 'browser-case';
 
-/** Pick one repository by the name the picker lists it under. */
-async function pick(page: Page, name: string): Promise<void> {
-    await page.locator('[data-repo-picker]').getByRole('button').first().click();
-    await page.getByRole('menuitem', { name, exact: true }).click();
-}
-
 function worktree(): string {
     return join(hubDir(), '.agents', 'worktrees', NAME);
 }
 
-/**
- * Add a folder as a root through the file browser, then show it in the Repositories view. The
- * channel reads the roots again once the workspaces file has changed, so the picker is asked until
- * it lists the folder. Answers the view's shown section, which then names the folder.
- */
-async function showAdded(page: Page, dir: string): Promise<Locator> {
-    const label = dir.split(sep).at(-1) ?? '';
-    await openView(page, 'files', t('views.files'));
-    await page.getByRole('button', { name: t('files.add_root'), exact: true }).click();
-    await page.getByRole('textbox', { name: t('files.root_dir') }).fill(dir);
-    await page.getByRole('button', { name: t('files.add'), exact: true }).click();
-    // the add closed the form, which is what says it was taken
-    await expect(page.getByRole('textbox', { name: t('files.root_dir') })).toHaveCount(0);
-
-    await openView(page, 'repositories', t('views.repositories'));
-    const shown = page.locator('[data-view="repositories"] [data-root]');
-    await expect(shown).toHaveAttribute('data-root', hubDir());
-    const opener = page.locator('[data-repo-picker]').getByRole('button').first();
-    await expect
-        .poll(
-            async () => {
-                await opener.click();
-                const listed = await page
-                    .getByRole('menuitem', { name: label, exact: true })
-                    .count();
-                await page.keyboard.press('Escape');
-                return listed;
-            },
-            { timeout: 10_000 }
-        )
-        .toBe(1);
-    await pick(page, label);
-    await expect(shown).toHaveAttribute('data-root', new RegExp(`${label}$`));
-    return shown;
-}
-
 test.describe('the Repositories view', () => {
-    test('draws the missing, failed and non-repository picker badges in their own tones', async ({
+    test('draws the missing, failed and non-repository list badges in their own tones', async ({
         page
     }) => {
         const missing = scratchDir('oculus-repositories-missing-tone-');
@@ -107,44 +66,40 @@ test.describe('the Repositories view', () => {
         }
 
         await openView(page, 'repositories', t('views.repositories'));
-        const opener = page.locator('[data-repo-picker]').getByRole('button').first();
-        await expect
-            .poll(
-                async () => {
-                    await opener.click();
-                    const listed = await page
-                        .getByRole('menuitem', { name: labels.missing, exact: true })
-                        .count();
-                    await page.keyboard.press('Escape');
-                    return listed;
-                },
-                { timeout: 10_000 }
-            )
-            .toBe(1);
+        await expect(listRow(page, labels.missing)).toHaveCount(1, { timeout: 10_000 });
         rmSync(missing, { recursive: true, force: true });
 
-        await opener.click();
-        const badge = (label: string) =>
-            page.getByRole('menuitem', { name: label, exact: true }).locator('.item-badge');
+        const badge = (label: string) => listEntry(page, label).locator('.badge');
         await expect(badge(labels.missing)).toContainText(t('repositories.pick_missing'), {
             timeout: 20_000
         });
 
-        // revert: src/lib/views/sources/repositories/Repositories.svelte:85 => badgeTone: undefined,
-        await expect(badge(labels.missing)).toHaveAttribute('style', /--badge-bg: var\(--c-red\)/);
-        await expect(badge(labels.failed)).toHaveAttribute('style', /--badge-bg: var\(--c-amber\)/);
-        await expect(badge(labels.none)).toHaveAttribute('style', /--badge-bg: var\(--c-blue\)/);
-        await page.keyboard.press('Escape');
+        // revert: src/lib/views/sources/repositories/RepoList.svelte:81 => style={`--tone-txt: var(--c-grey-txt)`}
+        await expect(badge(labels.missing)).toHaveAttribute(
+            'style',
+            /--tone-txt: var\(--c-red-txt\)/
+        );
+        await expect(badge(labels.failed)).toHaveAttribute(
+            'style',
+            /--tone-txt: var\(--c-amber-txt\)/
+        );
+        await expect(badge(labels.none)).toHaveAttribute(
+            'style',
+            /--tone-txt: var\(--c-blue-txt\)/
+        );
     });
 
-    test('draws the served hub with its branch line and its log', async ({ page }) => {
+    // revert: src/lib/views/sources/repositories/graph/Graph.svelte:162 => label={one.short}
+    test('draws the served hub with its branch line and its graph', async ({ page }) => {
         await boot(page);
         await openView(page, 'repositories', t('views.repositories'));
 
         const section = page.locator(`[data-root="${hubDir()}"]`);
         await expect(section).toBeVisible();
         await expect(section.getByText('main', { exact: true }).first()).toBeVisible();
-        await expect(section.getByText('The demo hub as it is shipped')).toBeVisible();
+        await expect(
+            section.locator('[data-group="graph"]').getByText('The demo hub as it is shipped')
+        ).toBeVisible();
         // The layer's .gitignore carries the rule, so no warning is drawn.
         await expect(section.getByText(t('repositories.worktrees_unignored'))).toHaveCount(0);
         await expect(section.getByText(t('repositories.worktrees_empty'))).toBeVisible();
@@ -168,7 +123,7 @@ test.describe('the Repositories view', () => {
         await expect(page.getByRole('region', { name: CHANGED })).toContainText('deadline');
     });
 
-    // revert: src/lib/state/sources/repositories.svelte.ts:123 => delete
+    // revert: src/lib/state/sources/repositories/repositories.svelte.ts:219 => delete
     test('makes a worktree, lists it, and takes it away again', async ({ page }) => {
         await boot(page);
         await openView(page, 'repositories', t('views.repositories'));
@@ -203,9 +158,10 @@ test.describe('the Repositories view', () => {
 
     // Revert: return `''` for every shape from shapeBadge of views/shared/changes/repo-shape.ts, or
     // filter by `stateOf(root)?.repository === true` in pickerRoots of
-    // state/sources/repositories.ts; the folder that is no repository then carries no badge, or
-    // leaves the list entirely.
-    test('picks among every root, the folder that is no repository saying so on its row', async ({
+    // state/sources/repositories/repositories.ts; the folder that is no repository then carries no
+    // badge, or leaves the list entirely.
+    // revert: src/lib/views/shared/changes/repo-shape.ts:18 => delete
+    test('lists every root, the folder that is no repository saying so on its row', async ({
         page
     }) => {
         // Two repositories whose last folders are both `repo`, and a folder that is none, all under
@@ -239,41 +195,19 @@ test.describe('the Repositories view', () => {
         const shown = page.locator('[data-view="repositories"] [data-root]');
         await expect(shown).toHaveAttribute('data-root', hubDir());
 
-        // The channel reads the roots again once the workspaces file has changed, so the picker is
-        // asked until it lists the new repositories.
-        const opener = page.locator('[data-repo-picker]').getByRole('button').first();
-        await expect
-            .poll(
-                async () => {
-                    await opener.click();
-                    const listed = await page
-                        .getByRole('menuitem', { name: made[1].label, exact: true })
-                        .count();
-                    await page.keyboard.press('Escape');
-                    return listed;
-                },
-                { timeout: 10_000 }
-            )
-            .toBe(1);
-        await opener.click();
-        await expect(page.getByRole('menuitem', { name: made[0].label, exact: true })).toHaveCount(
-            1
-        );
+        // The channel reads the roots again once the workspaces file has changed, so this waits
+        // until the list draws the new repositories.
+        await expect(listRow(page, made[1].label)).toHaveCount(1, { timeout: 10_000 });
+        await expect(listRow(page, made[0].label)).toHaveCount(1);
         // The folder that is no repository is a row like any other, saying which it is. The badge
         // is out of the accessible name, so the row is still found by its label alone.
-        const folder = page.getByRole('menuitem', { name: looseName, exact: true });
+        const folder = listEntry(page, looseName);
         await expect(folder).toHaveCount(1);
-        await expect(folder).toContainText(t('repositories.pick_norepo'));
-        await expect(folder.locator('.item-badge')).toHaveAttribute(
-            'title',
-            /not a git repository/
-        );
-        // A repository that reads says its name alone.
-        await expect(
-            page.getByRole('menuitem', { name: made[0].label, exact: true }).locator('.item-badge')
-            // Nothing is wrong with this root, so no few words are drawn at the end of its row.
-        ).toHaveCount(0);
-        await page.keyboard.press('Escape');
+        await expect(folder.locator('.badge')).toContainText(t('repositories.pick_norepo'));
+        await expect(folder.locator('.badge')).toHaveAttribute('title', /not a git repository/);
+        // A repository that reads says its name alone: nothing is wrong with this root, so no few
+        // words are drawn at the end of its row.
+        await expect(listEntry(page, made[0].label).locator('.badge')).toHaveCount(0);
 
         await pick(page, made[1].label);
         await expect(shown).toHaveAttribute('data-root', new RegExp(`${made[1].label}$`));
@@ -286,8 +220,9 @@ test.describe('the Repositories view', () => {
     });
 
     // Revert: filter by `stateOf(root)?.repository === true` in pickerRoots of
-    // state/sources/repositories.ts; the deleted root leaves the picker and the view hands itself
-    // to the hub, so the row this case waits for never appears.
+    // state/sources/repositories/repositories.ts; the deleted root leaves the list and the view
+    // hands itself to the hub, so the row this case waits for never appears.
+    // revert: src/lib/state/sources/repositories/repositories.ts:210 => return roots.filter((root) => stateOf(root)?.repository === true);
     test('keeps a root whose folder the reader deleted, saying it is gone', async ({ page }) => {
         const doomed = scratchDir('oculus-repositories-doomed-');
         expect(resolve(doomed).startsWith(resolve(tmpdir()) + sep)).toBe(true);
@@ -307,26 +242,13 @@ test.describe('the Repositories view', () => {
             await expect(page.getByRole('textbox', { name: t('files.root_dir') })).toHaveCount(0);
 
             await openView(page, 'repositories', t('views.repositories'));
-            const opener = page.locator('[data-repo-picker]').getByRole('button').first();
-            const row = page.getByRole('menuitem', { name: label, exact: true });
+            const row = listEntry(page, label);
 
             // The channel reads the roots again once the workspaces file has changed, and the row
             // is a repository that reads, so it carries no badge yet.
-            await expect
-                .poll(
-                    async () => {
-                        await opener.click();
-                        const listed = await row.count();
-                        await page.keyboard.press('Escape');
-                        return listed;
-                    },
-                    { timeout: 10_000 }
-                )
-                .toBe(1);
-            await opener.click();
-            // This root reads as a repository again, so the few words about its state are gone.
-            await expect(row.locator('.item-badge')).toHaveCount(0);
-            await page.keyboard.press('Escape');
+            await expect(row).toHaveCount(1, { timeout: 10_000 });
+            // A root that reads carries no few words at the end of its row.
+            await expect(row.locator('.badge')).toHaveCount(0);
 
             await pick(page, label);
             const shown = page.locator('[data-view="repositories"] [data-root]');
@@ -338,9 +260,7 @@ test.describe('the Repositories view', () => {
             await expect(shown.locator('[data-repo="missing"]')).toBeVisible({ timeout: 20_000 });
             await expect(shown.getByText(t('sessions.ch_nofolder'))).toBeVisible();
             await expect(shown).toHaveAttribute('data-root', new RegExp(`${label}$`));
-            await opener.click();
-            await expect(row.locator('.item-badge')).toContainText(t('repositories.pick_missing'));
-            await page.keyboard.press('Escape');
+            await expect(row.locator('.badge')).toContainText(t('repositories.pick_missing'));
 
             // Back to the hub, which the other cases of this file draw.
             await pick(page, hubDir().split(sep).at(-1) ?? '');
@@ -352,6 +272,7 @@ test.describe('the Repositories view', () => {
 
     // Revert: drop the `symbolic-ref --short HEAD` read from state() in server/core/git.ts, so the
     // repository with no commit is drawn as its error row rather than its branch and its files.
+    // revert: src/lib/views/sources/repositories/graph/Graph.svelte:84 => if (false) {
     test('lists a repository with no commit yet and switches to it', async ({ page }) => {
         const fresh = scratchDir('oculus-repositories-fresh-');
         expect(resolve(fresh).startsWith(resolve(tmpdir()) + sep)).toBe(true);
@@ -419,6 +340,7 @@ test.describe('the Repositories view', () => {
     // Revert: in repositories/Repo.svelte write the row's attribute as a bare attribute of its own
     // rather than `data-repo={shape}`; the spelling the two git views share for one fact is then
     // gone and the selector below resolves to nothing.
+    // revert: src/lib/views/sources/repositories/Repo.svelte:133 => <div data-failed title={git.error ?? undefined}>
     test('draws a repository whose read fails as one row under the failed spelling', async ({
         page
     }) => {
@@ -442,22 +364,9 @@ test.describe('the Repositories view', () => {
             await openView(page, 'repositories', t('views.repositories'));
             const shown = page.locator('[data-view="repositories"] [data-root]');
 
-            // The channel reads the roots again once the workspaces file has changed, so the picker
-            // is asked until it lists the new repository.
-            const opener = page.locator('[data-repo-picker]').getByRole('button').first();
-            await expect
-                .poll(
-                    async () => {
-                        await opener.click();
-                        const listed = await page
-                            .getByRole('menuitem', { name: label, exact: true })
-                            .count();
-                        await page.keyboard.press('Escape');
-                        return listed;
-                    },
-                    { timeout: 10_000 }
-                )
-                .toBe(1);
+            // The channel reads the roots again once the workspaces file has changed, so this waits
+            // until the list draws the new repository.
+            await expect(listRow(page, label)).toHaveCount(1, { timeout: 10_000 });
 
             await pick(page, label);
             await expect(shown).toHaveAttribute('data-root', new RegExp(`${label}$`));
@@ -475,20 +384,21 @@ test.describe('the Repositories view', () => {
         }
     });
 
-    // Revert: read `open` as true whatever `collapsed` holds for the log in
+    // Revert: read `open` as true whatever `collapsed` holds for the graph in
     // repositories/Repo.svelte.
+    // revert: src/lib/views/sources/repositories/Repo.svelte:169 => open={true}
     test('closes a section from its head, and keeps it closed after a tab switch', async ({
         page
     }) => {
         await boot(page);
         await openView(page, 'repositories', t('views.repositories'));
-        const log = page.locator(`[data-root="${hubDir()}"] [data-group="log"]`);
-        const head = log.getByRole('treeitem', { name: t('repositories.log'), exact: true });
+        const log = page.locator(`[data-root="${hubDir()}"] [data-group="graph"]`);
+        const head = log.getByRole('treeitem', { name: t('repositories.graph'), exact: true });
 
         await expect(log.getByText('The demo hub as it is shipped')).toBeVisible();
         await head.getByRole('button').first().click();
         await expect(head).toHaveAttribute('aria-expanded', 'false');
-        // the log section is closed, so its commits are not drawn
+        // the graph section is closed, so its commits are not drawn
         await expect(log.getByText('The demo hub as it is shipped')).toHaveCount(0);
 
         await openView(page, 'files', t('views.files'));
@@ -497,12 +407,13 @@ test.describe('the Repositories view', () => {
         // the tab switch brought the section back closed, so its commits are still not drawn
         await expect(log.getByText('The demo hub as it is shipped')).toHaveCount(0);
 
-        // Opened again, so the page this run saves draws the log as the first case expects it.
+        // Opened again, so the page this run saves draws the graph as the first case expects it.
         await head.getByRole('button').first().click();
         await expect(log.getByText('The demo hub as it is shipped')).toBeVisible();
     });
 
     // Revert: make every row's tabindex 0 in ui/tree/TreeView.svelte's nav.
+    // revert: src/lib/ui/tree/TreeView.svelte:45 => tabindex: () => 0,
     test("is one stop the arrow keys move along, with a row's controls one Tab from it", async ({
         page
     }) => {
@@ -514,11 +425,15 @@ test.describe('the Repositories view', () => {
             exact: true
         });
 
-        // From the picker, Tab lands on the first head and a second Tab leaves the tree for the
-        // first field, past every row and every control.
-        await page.locator('[data-repo-picker]').getByRole('button').first().focus();
+        // The list is one stop, the commit box's field the next, and from the first head of the
+        // repository's own tree a Tab leaves that tree for the first field, past every row and
+        // every control.
+        await listRow(page, hubDir().split(sep).at(-1) ?? '').focus();
         await page.keyboard.press('Tab');
-        await expect(changes).toBeFocused();
+        await expect(
+            section.getByRole('textbox', { name: t('git.commit_label'), exact: true })
+        ).toBeFocused();
+        await changes.focus();
         await page.keyboard.press('Tab');
         await expect(
             section.getByRole('textbox', { name: t('git.branch_new'), exact: true })

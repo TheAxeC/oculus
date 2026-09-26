@@ -2,6 +2,8 @@
 text:
     source:
         binary: This file is not text on disk; the editor saves nothing over it.
+        blame: Blame
+        blame_title: Show who last changed each line, and when
         cannot_open: 'Cannot open: {0}'
         code: '{0}, read only'
         failed: failed

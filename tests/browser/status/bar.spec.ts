@@ -20,8 +20,8 @@ const TEXT = 'def f():\n    return 1\n';
 test.beforeEach(() => writeHubFile(FILE, TEXT));
 test.afterEach(() => removeFromHub(FILE));
 
-// revert: src/lib/themes/tokens.css:87 => --status-text: calc(12px * var(--text-scale, 1));
-// revert: src/lib/ui/controls/ToolButton.svelte:235 => height: auto;
+// revert: src/lib/themes/tokens.css:99 => --status-text: calc(12px * var(--text-scale, 1));
+// revert: src/lib/ui/controls/ToolButton.svelte:257 => height: auto;
 test('the bar is 22 px high and every item 22 px with 12 px words, at the largest text scale too', async ({
     page
 }) => {
@@ -97,7 +97,7 @@ test('the left group and the right group hold their items in VS Code order, the 
     );
 });
 
-// revert: src/lib/ui/controls/ToolButton.svelte:121 => placement={rail ? 'beside' : 'below'}
+// revert: src/lib/ui/controls/ToolButton.svelte:137 => placement={rail ? 'beside' : 'below'}
 test('every item is reached by Tab, opens its tooltip over the bar, and opens what it names on Enter', async ({
     page
 }) => {
@@ -153,7 +153,11 @@ test('a right-click lists every item, unchecking one hides it, and it stays hidd
     await expect(item(page, 'usage')).toBeVisible();
     await button(page, 'usage').click({ button: 'right' });
     const menu = page.getByRole('menu', { name: t('statusbar.hide_menu') });
-    await expect(menu.getByRole('menuitem')).toHaveCount(15);
+    await expect(menu.getByRole('menuitem')).toHaveCount(16);
+    // The source tab's blame item is listed with the rest, though it draws only while blame is on.
+    await expect(
+        menu.getByRole('menuitem', { name: t('statusbar.item_blame'), exact: true })
+    ).toHaveCount(1);
     const usage = menu.getByRole('menuitem', { name: t('statusbar.item_usage'), exact: true });
     await expect(usage).toHaveAttribute('aria-current', 'true');
     await usage.click();

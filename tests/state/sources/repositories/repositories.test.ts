@@ -1,13 +1,13 @@
-// What the Repositories view computes rather than draws, and what the writes store puts on the wire
-// for the three actions it added.
+// What the Repositories view computes rather than draws, what the writes store puts on the wire for
+// the worktree actions, and what the Source Control store sends and opens for each press.
 //
 // The rules are pure and are checked as such. The store is exercised with fetch replaced, so
 // nothing here starts a server or reaches a repository: what the endpoint then does with the body
 // is tests/routes/git/git.test.ts and tests/server/git/git-write.test.ts.
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { GitEntry, GitState } from '../../../src/lib/data/model/index.ts';
-import { git } from '../../fixtures/sessions-fixture.ts';
+import type { GitEntry, GitState } from '../../../../src/lib/data/model/index.ts';
+import { git } from '../../../fixtures/sessions-fixture.ts';
 import {
     diffState,
     diffUrl,
@@ -28,24 +28,34 @@ import {
     worktreesDir,
     linkedWorktrees,
     workspaceCount
-} from '../../../src/lib/state/sources/repositories.ts';
+} from '../../../../src/lib/state/sources/repositories/repositories.ts';
 import {
     ignoresWorktrees,
     IGNORE_RULE,
     isWorktreePath
-} from '../../../src/lib/data/helpers/worktrees.ts';
-import { createRepositories } from '../../../src/lib/state/sources/repositories.svelte.ts';
-import { createWrites } from '../../../src/lib/state/client/writes.svelte.ts';
-import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
-import { setCatalog } from '../../../src/lib/state/shared/words/text.ts';
-import type { LayoutStore } from '../../../src/lib/state/workbench/layout.svelte.ts';
-import type { TerminalsStore } from '../../../src/lib/state/sessions/terminals.svelte.ts';
-import type { WriteAnswer, WritesStore } from '../../../src/lib/state/client/writes.svelte.ts';
+} from '../../../../src/lib/data/helpers/worktrees.ts';
 import {
+    createRepositories,
+    DIFF_VIEW,
+    MERGE_VIEW
+} from '../../../../src/lib/state/sources/repositories/repositories.svelte.ts';
+import { createWrites } from '../../../../src/lib/state/client/writes.svelte.ts';
+import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sources/config.ts';
+import { setCatalog } from '../../../../src/lib/state/shared/words/text.ts';
+import type { LayoutStore } from '../../../../src/lib/state/workbench/layout.svelte.ts';
+import type { TerminalsStore } from '../../../../src/lib/state/sessions/terminals.svelte.ts';
+import type { WriteAnswer, WritesStore } from '../../../../src/lib/state/client/writes.svelte.ts';
+import {
+    canPublish,
     changeCount,
     currentBranch,
-    repoShape
-} from '../../../src/lib/state/sources/repositories.ts';
+    diffActs,
+    diffViewOf,
+    isConflict,
+    repoListRows,
+    repoShape,
+    upstreamOf
+} from '../../../../src/lib/state/sources/repositories/repositories.ts';
 
 const ROOT = '/hub';
 
@@ -55,6 +65,7 @@ const catalog = textCatalog(loadConfig(engineDir()).config);
 setCatalog(catalog);
 
 describe('where a worktree goes', () => {
+    // revert: src/lib/data/helpers/worktrees.ts:20 => delete
     it('puts one under the repository own worktrees folder, whatever the root ends with', () => {
         expect(worktreesDir(ROOT)).toBe('/hub/.agents/worktrees');
         expect(worktreesDir('/hub/')).toBe('/hub/.agents/worktrees');
@@ -62,6 +73,7 @@ describe('where a worktree goes', () => {
         expect(plannedPath(ROOT, '  package-one  ')).toBe('/hub/.agents/worktrees/package-one');
     });
 
+    // revert: src/lib/data/helpers/worktrees.ts:42 => return true;
     it('takes a name that is one folder and refuses one that is not', () => {
         expect(validName('package-one')).toBe(true);
         expect(validName('a/b')).toBe(false);
@@ -70,6 +82,7 @@ describe('where a worktree goes', () => {
         expect(validName('')).toBe(false);
     });
 
+    // revert: src/lib/data/helpers/worktrees.ts:57 => return resolved.startsWith(folder);
     it('takes a resolved path of one name under the folder and nothing else', () => {
         expect(isWorktreePath(ROOT, '/hub/.agents/worktrees/one')).toBe(true);
         expect(isWorktreePath(ROOT, '/hub/.agents/worktrees')).toBe(false);
@@ -81,11 +94,13 @@ describe('where a worktree goes', () => {
         expect(isWorktreePath(ROOT, '/hub/.agents/worktrees/..')).toBe(false);
     });
 
+    // revert: src/lib/state/sources/repositories/repositories.ts:170 => return path;
     it('shows a worktree under its own name, and a path elsewhere as it is', () => {
         expect(worktreeLabel(ROOT, '/hub/.agents/worktrees/one')).toBe('one');
         expect(worktreeLabel(ROOT, '/elsewhere/tree')).toBe('/elsewhere/tree');
     });
 
+    // revert: src/lib/data/helpers/worktrees.ts:70 => const rule = line;
     it('reads the .gitignore rule, past a comment and a missing slash', () => {
         expect(ignoresWorktrees(`build/\n${IGNORE_RULE}\n`)).toBe(true);
         expect(ignoresWorktrees('/.agents/worktrees\n')).toBe(true);
@@ -96,10 +111,10 @@ describe('where a worktree goes', () => {
     });
 });
 
-// Which repository one view shows. Each case names the change to state/sources/repositories.ts that
-// turns it red.
+// Which repository one view shows. Each case names the change to
+// state/sources/repositories/repositories.ts that turns it red.
 describe('the repository a view shows', () => {
-    // Revert: return `kept` from shownRoot whether or not the channel carries it.
+    // revert: src/lib/state/sources/repositories/repositories.ts:220 => return kept;
     it('shows the repository it keeps while the channel carries it, and the first one otherwise', () => {
         expect(shownRoot(['/hub', '/other'], '/other')).toBe('/other');
         expect(shownRoot(['/hub', '/other'], '/gone')).toBe('/hub');
@@ -107,20 +122,34 @@ describe('the repository a view shows', () => {
         expect(shownRoot([], '/hub')).toBe('');
     });
 
-    // Revert: default `root` to the first entry of `collapsed`.
+    // revert: src/lib/state/sources/repositories/repositories.ts:198 => commit: ''
     it('reads what the instance keeps, and a default for anything it cannot read', () => {
-        expect(repositoriesViewOf({ root: '/hub', collapsed: ['log', 4] })).toEqual({
+        expect(
+            repositoriesViewOf({ root: '/hub', collapsed: ['graph', 4], commit: 'abc' })
+        ).toEqual({
             root: '/hub',
-            collapsed: ['log']
+            collapsed: ['graph'],
+            commit: 'abc'
         });
-        expect(repositoriesViewOf(null)).toEqual({ root: '', collapsed: [] });
-        expect(repositoriesViewOf({ root: 7, collapsed: 'log' })).toEqual({
+        expect(repositoriesViewOf(null)).toEqual({ root: '', collapsed: [], commit: '' });
+        expect(repositoriesViewOf({ root: 7, collapsed: 'log', commit: 3 })).toEqual({
             root: '',
-            collapsed: []
+            collapsed: [],
+            commit: ''
         });
     });
 
-    // Revert: filter by `stateOf(root)?.repository === true` in pickerRoots.
+    // revert: src/lib/state/sources/repositories/repositories.ts:160 => mode: 'side',
+    it('reads a diff pane layout and its opened folds, side by side by default', () => {
+        expect(diffViewOf({ mode: 'inline', opened: [4, 'x', 12] })).toEqual({
+            mode: 'inline',
+            opened: [4, 12]
+        });
+        expect(diffViewOf({ mode: 'odd' })).toEqual({ mode: 'side', opened: [] });
+        expect(diffViewOf(null)).toEqual({ mode: 'side', opened: [] });
+    });
+
+    // revert: src/lib/state/sources/repositories/repositories.ts:210 => return roots.filter((root) => stateOf(root)?.repository === true);
     it('offers every root the channel carries a state for, in the channel order', () => {
         const states: Record<string, GitState> = {
             '/hub': git({ branch: 'main' }),
@@ -138,7 +167,7 @@ describe('the repository a view shows', () => {
         ).toEqual(['/hub', '/notes', '/deleted']);
     });
 
-    // Revert: filter by `stateOf(root)?.repository === true` in pickerRoots.
+    // revert: src/lib/state/sources/repositories/repositories.ts:210 => return roots.filter((root) => stateOf(root)?.repository === true);
     it('keeps showing a root the reader picked after its folder was deleted', () => {
         const states: Record<string, GitState> = {
             '/hub': git({ branch: 'main' }),
@@ -155,7 +184,7 @@ describe('the repository a view shows', () => {
         expect(shownRoot(offered, '/deleted')).toBe('/deleted');
     });
 
-    // Revert: keep the roots whose state has `error === null` in pickerRoots.
+    // revert: src/lib/state/sources/repositories/repositories.ts:210 => return roots.filter((root) => stateOf(root)?.error === null);
     it('offers a repository with no commit yet and one whose read failed, and keeps showing it', () => {
         const states: Record<string, GitState> = {
             '/hub': git({ branch: 'main' }),
@@ -172,7 +201,7 @@ describe('the repository a view shows', () => {
         expect(shownRoot(offered, '/broken')).toBe('/broken');
     });
 
-    // Revert: keep the roots whose state has `error === null` in pickerRoots.
+    // revert: src/lib/state/sources/repositories/repositories.ts:210 => return roots.filter((root) => stateOf(root)?.error === null);
     it('offers a root whose repository check did not answer, and keeps showing it', () => {
         // The shape server/core/git.ts gives a root whose `rev-parse --git-dir` timed out.
         const states: Record<string, GitState> = {
@@ -184,7 +213,7 @@ describe('the repository a view shows', () => {
         expect(shownRoot(offered, '/slow')).toBe('/slow');
     });
 
-    // Revert: label every root by its last folder alone in repositoryLabels.
+    // revert: src/lib/state/sources/repositories/repositories.ts:240 => labels[root] = one;
     it('names a repository by its last folder, and by its last two where another shares it', () => {
         expect(repositoryLabels(['/a/work/hub', '/b/other/hub', '/c/engine'])).toEqual({
             '/a/work/hub': 'work/hub',
@@ -202,8 +231,8 @@ describe('the repository a view shows', () => {
 describe('the rows of one repository', () => {
     const entry = (path: string): GitEntry => ({ path, status: 'M', added: 1, deleted: 0 });
 
-    // Revert: keep the staged group whatever it holds, in changeGroups.
-    it('leaves out an empty staged group and keeps the changed and untracked groups', () => {
+    // revert: src/lib/state/sources/repositories/repositories.ts:273 => (group) => group.id !== 'staged' || group.entries.length > 0
+    it('leaves out an empty staged group and an empty merge group, and draws Merge Changes first', () => {
         expect(changeGroups(git({ unstaged: [entry('a')] })).map((group) => group.id)).toEqual([
             'changed',
             'untracked'
@@ -213,34 +242,54 @@ describe('the rows of one repository', () => {
             'changed',
             'untracked'
         ]);
+        const merging = git({ conflicted: [{ ...entry('c'), status: 'UU' }] });
+        expect(changeGroups(merging).map((group) => group.id)).toEqual([
+            'merge',
+            'changed',
+            'untracked'
+        ]);
     });
 
-    // Revert: push the rows under a closed head as well, in repositoryKeyRows.
+    // revert: src/lib/state/sources/repositories/repositories.ts:324 => if (head('graph')) under('graph', []);
     it('lists each head, and under an open one its groups and rows, for the keyboard', () => {
         const held = git({
             unstaged: [entry('a.md')],
             log: [{ hash: 'h1', short: 'h1', subject: 's', when: '' }],
             branches: [{ name: 'main', upstream: '', current: true }],
+            stashes: [
+                { ref: 'stash@{0}', hash: 'd'.repeat(40), message: 'On main: wip', when: '' }
+            ],
+            tags: [{ name: 'v1', commit: 'h1', annotated: false, subject: '' }],
             worktrees: [
                 { path: '/hub', branch: 'main', head: 'h1', main: true },
                 { path: '/hub/.agents/worktrees/x', branch: 'x', head: 'h2', main: false }
             ]
         });
-        expect(repositoryKeyRows(held, [])).toEqual([
+        expect(repositoryKeyRows(held, [], ['commit:h1'])).toEqual([
             { id: 'changes', parent: null, open: true },
             { id: 'group:changed', parent: 'changes', open: true },
             { id: 'change:changed:a.md', parent: 'group:changed' },
             { id: 'group:untracked', parent: 'changes', open: true },
-            { id: 'log', parent: null, open: true },
-            { id: 'commit:h1', parent: 'log' },
+            { id: 'graph', parent: null, open: true },
+            { id: 'commit:h1', parent: 'graph' },
+            { id: 'stashes', parent: null, open: true },
+            { id: 'stash:stash@{0}', parent: 'stashes' },
+            { id: 'tags', parent: null, open: true },
+            { id: 'tag:v1', parent: 'tags' },
             { id: 'branches', parent: null, open: true },
             { id: 'branch:main', parent: 'branches' },
             { id: 'worktrees', parent: null, open: true },
             { id: 'worktree:/hub/.agents/worktrees/x', parent: 'worktrees' }
         ]);
-        expect(repositoryKeyRows(held, ['changes', 'log']).map((row) => row.id)).toEqual([
+        expect(
+            repositoryKeyRows(held, ['changes', 'graph', 'stashes', 'tags'], ['commit:h1']).map(
+                (row) => row.id
+            )
+        ).toEqual([
             'changes',
-            'log',
+            'graph',
+            'stashes',
+            'tags',
             'branches',
             'branch:main',
             'worktrees',
@@ -248,22 +297,42 @@ describe('the rows of one repository', () => {
         ]);
     });
 
-    // Revert: answer one key for every letter in statusWordKey.
-    it('names each status letter by its word, and any other letter as changed', () => {
+    // revert: src/lib/state/sources/repositories/repositories.ts:287 => if (open) return rows;
+    it('lists the Repositories section head and a row per repository under it while it is open', () => {
+        expect(repoListRows(['/a', '/b'], [])).toEqual([
+            { id: 'repos', parent: null, open: true },
+            { id: 'repo:/a', parent: 'repos' },
+            { id: 'repo:/b', parent: 'repos' }
+        ]);
+        expect(repoListRows(['/a'], ['repos'])).toEqual([
+            { id: 'repos', parent: null, open: false }
+        ]);
+    });
+
+    // revert: src/lib/state/sources/repositories/repositories.ts:394 => if (conflict === 'x') return '';
+    it('names each status letter by its word, each unmerged pair by its conflict, and any other as changed', () => {
         expect(statusWordKey('M')).toBe('repositories.status_modified');
         expect(statusWordKey('?')).toBe('repositories.status_untracked');
         expect(statusWordKey('U')).toBe('repositories.status_changed');
+        expect(statusWordKey('UU')).toBe('repositories.conflict_both_modified');
+        expect(statusWordKey('DU')).toBe('repositories.conflict_deleted_by_us');
+        expect(isConflict('AA')).toBe(true);
+        expect(isConflict('A')).toBe(false);
     });
 
-    // Revert: colour every letter grey in statusStyle.
-    it('colours a status letter in its hue, and an unknown one grey', () => {
-        expect(statusStyle('M')).toBe('--tone-txt: var(--c-amber-txt)');
+    // revert: src/lib/state/sources/repositories/repositories.ts:354 =>     M: 'amber',
+    it('colours a status letter in its Source Control hue, a conflict in its own, and an unknown one grey', () => {
+        expect(statusStyle('M')).toBe('--tone-txt: var(--c-scm-modified-txt)');
+        expect(statusStyle('A')).toBe('--tone-txt: var(--c-scm-added-txt)');
+        expect(statusStyle('D')).toBe('--tone-txt: var(--c-scm-deleted-txt)');
+        expect(statusStyle('UU')).toBe('--tone-txt: var(--c-scm-conflict-txt)');
         expect(statusStyle('?')).toBe('--tone-txt: var(--c-slate-txt)');
         expect(statusStyle('X')).toBe('--tone-txt: var(--c-grey-txt)');
     });
 });
 
 describe('what one diff pane is over', () => {
+    // revert: src/lib/state/sources/repositories/repositories.ts:128 => return { ...subject, id: `${subject.root}:${subject.path}`, label };
     it('names the file and the side, so two sides of one path are two panes', () => {
         const changed = diffState(
             { root: ROOT, path: 'a.txt', staged: false, worktree: false },
@@ -277,6 +346,7 @@ describe('what one diff pane is over', () => {
         ).toBe(changed.id);
     });
 
+    // revert: src/lib/state/sources/repositories/repositories.ts:80 => staged: '0'
     it('reads a file from the diff address and a worktree from its own', () => {
         expect(fileDiffUrl(ROOT, 'a b.txt', true)).toBe(
             '/api/git?diff=%2Fhub&path=a+b.txt&staged=1'
@@ -325,6 +395,7 @@ describe('the writes store over the git endpoint', () => {
         return sent;
     }
 
+    // revert: src/lib/state/client/writes.svelte.ts:341 => return send({ action, ...fields }, GIT_PATH);
     it('posts each worktree action to the git endpoint with the page token', async () => {
         const sent = record();
         const writes = createWrites();
@@ -356,6 +427,7 @@ describe('the writes store over the git endpoint', () => {
         expect(answer.output).toBe('done');
     });
 
+    // revert: src/lib/state/client/writes.svelte.ts:398 => `HTTP ${response.status}`;
     it("carries the endpoint's own refusal back to the view", async () => {
         record({ error: 'that worktree holds uncommitted changes' }, 400);
         const writes = createWrites();
@@ -395,6 +467,7 @@ describe('what a press leaves behind', () => {
                 return started(kind as 'shell', cwd);
             }
         } as unknown as TerminalsStore;
+        const kept = new Map<string, unknown>();
         const layout = {
             openView: (view: string, state?: unknown) => {
                 opened.push({ view, state, beside: false });
@@ -405,9 +478,18 @@ describe('what a press leaves behind', () => {
                 return 'one';
             }
         } as unknown as LayoutStore;
-        return { store: createRepositories(writes, terminals, layout), sent, opened, shells };
+        // The hub is served under the key `hub`, so a file of it opens in a source tab; `/other`
+        // is served by nothing.
+        const access = {
+            served: () => [{ key: 'hub', dir: ROOT }],
+            instanceState: (id: string) => kept.get(id),
+            setInstanceState: (id: string, state: unknown) => kept.set(id, state)
+        };
+        const store = createRepositories(writes, terminals, layout, access);
+        return { store, sent, opened, shells, kept };
     }
 
+    // revert: src/lib/state/sources/repositories/repositories.svelte.ts:182 => if (root === '') return { ok: false, output: '' };
     it('holds one root busy at a time and leaves every other root live', async () => {
         let release: () => void = () => undefined;
         const held = new Promise<WriteAnswer>((settle) => {
@@ -434,8 +516,8 @@ describe('what a press leaves behind', () => {
         expect(store.busy(ROOT)).toBe(false);
     });
 
+    // revert: src/lib/state/sources/repositories/repositories.svelte.ts:296 => push: (root) => act(root, 'push', {}, false),
     it('pushes the branch behind the confirm and answers whether git did, as a switch does', async () => {
-        // revert: src/lib/state/sources/repositories.svelte.ts:145 => return act(root, 'push', {}, false);
         const { store, sent } = harness((action) =>
             Promise.resolve(
                 action === 'switchBranch'
@@ -454,6 +536,7 @@ describe('what a press leaves behind', () => {
         expect(store.outcome(ROOT)).toBe('the working tree is dirty');
     });
 
+    // revert: src/lib/state/sources/repositories/repositories.svelte.ts:331 => await act(root, 'createWorktree', { name }, true);
     it('asks for a shell in the worktree it just made, and opens the terminal', async () => {
         const { store, shells, opened, sent } = harness();
         await store.createWorktree(ROOT, 'package-one');
@@ -467,6 +550,7 @@ describe('what a press leaves behind', () => {
         expect(opened[0].state).toEqual({ session: 'terminal-one', label: 'package-one' });
     });
 
+    // revert: src/lib/state/sources/repositories/repositories.svelte.ts:219 => delete
     it('asks for a shell in a worktree that is already there', async () => {
         const path = plannedPath(ROOT, 'package-one');
         const { store, shells, opened } = harness();
@@ -475,6 +559,7 @@ describe('what a press leaves behind', () => {
         expect(opened[0].view).toBe('terminal');
     });
 
+    // revert: src/lib/state/sources/repositories/repositories.svelte.ts:331 => await act(root, 'createWorktree', { name }, true); await shellIn(root, path, name);
     it('starts no shell when the worktree was not made', async () => {
         const { store, shells } = harness(() =>
             Promise.resolve({ ok: false, changed: [], refused: [], error: 'git said no' })
@@ -484,6 +569,7 @@ describe('what a press leaves behind', () => {
         expect(store.outcome(ROOT)).toBe('git said no');
     });
 
+    // revert: src/lib/state/sources/repositories/repositories.svelte.ts:216 => say(root, answer.error);
     it('keeps the write sentence and says the terminal failure after it', async () => {
         const { store } = harness(undefined, () =>
             Promise.resolve({ ok: false, id: '', error: 'this run has no tmux' })
@@ -494,6 +580,7 @@ describe('what a press leaves behind', () => {
         expect(store.outcome(ROOT)).toBe(`${catalog['git.done']} this run has no tmux`);
     });
 
+    // revert: src/lib/state/sources/repositories/repositories.svelte.ts:223 => layout.openView(DIFF_VIEW, diffState(subject, label));
     it('opens a diff in a pane of its own, keyed by what it is over', () => {
         const { store, opened } = harness();
         store.openDiff({ root: ROOT, path: 'a.txt', staged: false, worktree: false }, 'a.txt');
@@ -503,6 +590,7 @@ describe('what a press leaves behind', () => {
         expect(opened[0].state).toMatchObject({ root: ROOT, path: 'a.txt', label: 'a.txt' });
     });
 
+    // revert: src/lib/state/sources/repositories/repositories.svelte.ts:276 => await act(root, 'discard', { paths: [path] });
     it('carries the confirm on every write that can lose work, and on none of the others', async () => {
         const { store, sent } = harness();
         await store.stage(ROOT, 'a.txt');
@@ -522,10 +610,206 @@ describe('what a press leaves behind', () => {
             ['merge', true]
         ]);
     });
+
+    // revert: src/lib/state/sources/repositories/repositories.svelte.ts:242 => const fields = { message };
+    it('commits, amends, and commits then pushes or syncs, and clears the message after', async () => {
+        const { store, sent } = harness();
+        store.setMessage(ROOT, 'one');
+        expect(store.message(ROOT)).toBe('one');
+        await expect(store.commit(ROOT, 'commit', 'one')).resolves.toBe(true);
+        expect(store.message(ROOT)).toBe('');
+        await store.commit(ROOT, 'amend', 'two');
+        await store.commit(ROOT, 'push', 'three');
+        await store.commit(ROOT, 'sync', 'four');
+        expect(sent.map((one) => [one.action, one.fields])).toEqual([
+            ['commit', { message: 'one', confirm: true }],
+            ['commit', { message: 'two', amend: true, confirm: true }],
+            ['commit', { message: 'three', confirm: true }],
+            ['push', { confirm: true }],
+            ['commit', { message: 'four', confirm: true }],
+            ['sync', { confirm: true }]
+        ]);
+    });
+
+    // revert: src/lib/state/sources/repositories/repositories.svelte.ts:243 => await act(root, 'commit', fields, true);
+    it('keeps the message and pushes nothing when the commit is refused', async () => {
+        const { store, sent } = harness((action) =>
+            Promise.resolve(
+                action === 'commit'
+                    ? { ok: false, changed: [], refused: [], error: 'nothing staged' }
+                    : { ok: true, changed: [], refused: [], output: '' }
+            )
+        );
+        store.setMessage(ROOT, 'kept');
+        await expect(store.commit(ROOT, 'push', 'kept')).resolves.toBe(false);
+        expect(sent.map((one) => one.action)).toEqual(['commit']);
+        expect(store.message(ROOT)).toBe('kept');
+        expect(store.outcome(ROOT)).toBe('nothing staged');
+    });
+
+    // revert: src/lib/state/sources/repositories/repositories.svelte.ts:255 => delete
+    it('fills the message from what the suggest action answers', async () => {
+        const { store } = harness(() =>
+            Promise.resolve({ ok: true, changed: [], refused: [], output: 'Add the thing' })
+        );
+        await store.suggest(ROOT);
+        expect(store.message(ROOT)).toBe('Add the thing');
+        expect(store.suggesting(ROOT)).toBe(false);
+    });
+
+    // revert: src/lib/state/sources/repositories/repositories.svelte.ts:289 => delete
+    it('sends a hunk or a line as a patch to stage, unstage or revert, and confirms only a revert', async () => {
+        const { store, sent } = harness();
+        await store.applyPatch(ROOT, 'P1', 'stage');
+        await store.applyPatch(ROOT, 'P2', 'unstage');
+        await store.applyPatch(ROOT, 'P3', 'revert');
+        expect(sent.map((one) => [one.action, one.fields])).toEqual([
+            ['stagePatch', { patch: 'P1' }],
+            ['unstagePatch', { patch: 'P2' }],
+            ['revertPatch', { patch: 'P3', confirm: true }]
+        ]);
+    });
+
+    // revert: src/lib/state/sources/repositories/repositories.svelte.ts:285 => await act(root, 'discardAll');
+    it('acts on a whole group from its head, and confirms only Discard All Changes', async () => {
+        const { store, sent } = harness();
+        await store.stageAll(ROOT, 'changed');
+        await store.stageAll(ROOT, 'untracked');
+        await store.unstageAll(ROOT);
+        await store.discardAll(ROOT);
+        expect(sent.map((one) => [one.action, one.fields])).toEqual([
+            ['stageAll', { group: 'changed' }],
+            ['stageAll', { group: 'untracked' }],
+            ['unstageAll', {}],
+            ['discardAll', { confirm: true }]
+        ]);
+    });
+
+    // revert: src/lib/state/sources/repositories/repositories.svelte.ts:318 => else await act(root, 'stashDrop', { ref });
+    it('confirms the remote, merge, stash and tag writes that can lose work, and none of the rest', async () => {
+        const { store, sent } = harness();
+        await store.pull(ROOT);
+        await store.fetch(ROOT);
+        await store.sync(ROOT);
+        await store.publish(ROOT, 'origin');
+        await store.abortMerge(ROOT);
+        await store.continueRebase(ROOT);
+        await store.resolve(ROOT, 'a.txt', 'merged\n');
+        await store.stash(ROOT, 'untracked', 'wip');
+        await store.stashAct(ROOT, 'apply', 'stash@{0}');
+        await store.stashAct(ROOT, 'pop', 'stash@{0}');
+        await store.stashAct(ROOT, 'drop', 'stash@{1}');
+        await store.createTag(ROOT, 'v1', 'first');
+        await store.deleteTag(ROOT, 'v1');
+        await store.pushTags(ROOT);
+        expect(sent.map((one) => [one.action, one.fields])).toEqual([
+            ['pull', { confirm: true }],
+            ['fetch', {}],
+            ['sync', { confirm: true }],
+            ['publish', { remote: 'origin', confirm: true }],
+            ['abortMerge', { confirm: true }],
+            ['continueRebase', { confirm: true }],
+            ['resolve', { path: 'a.txt', content: 'merged\n' }],
+            ['stash', { mode: 'untracked', message: 'wip' }],
+            ['stashApply', { ref: 'stash@{0}' }],
+            ['stashPop', { ref: 'stash@{0}' }],
+            ['stashDrop', { ref: 'stash@{1}', confirm: true }],
+            ['createTag', { name: 'v1', message: 'first' }],
+            ['deleteTag', { name: 'v1', confirm: true }],
+            ['pushTags', { confirm: true }]
+        ]);
+    });
+
+    // revert: src/lib/state/sources/repositories/repositories.svelte.ts:342 => if (group === 'x') openMerge(root, path);
+    it('opens a conflict in the merge editor, an untracked file in a source tab, and the rest as a diff', () => {
+        const { store, opened } = harness();
+        store.openChange(ROOT, 'merge', 'c.txt');
+        store.openChange(ROOT, 'untracked', 'new/u.txt');
+        store.openChange(ROOT, 'staged', 's.txt');
+        store.openChange(ROOT, 'changed', 'm.txt');
+        expect(opened.map((one) => [one.view, one.beside])).toEqual([
+            [MERGE_VIEW, true],
+            ['source', false],
+            [DIFF_VIEW, true],
+            [DIFF_VIEW, true]
+        ]);
+        expect(opened[0].state).toEqual({
+            id: `merge:${ROOT}:c.txt`,
+            root: ROOT,
+            path: 'c.txt',
+            label: 'c.txt'
+        });
+        expect(opened[1].state).toEqual({ root: 'hub', path: 'new/u.txt', label: 'u.txt' });
+        expect(opened[2].state).toMatchObject({ path: 's.txt', staged: true });
+        expect(opened[3].state).toMatchObject({ path: 'm.txt', staged: false });
+    });
+
+    // revert: src/lib/state/sources/repositories/repositories.svelte.ts:237 => layout.openView('source', state);
+    it('opens a file at the line asked for, and says so when no served root holds it', () => {
+        const { store, opened } = harness();
+        expect(store.openFile(ROOT, 'a.txt', 12)).toBe(true);
+        expect(opened[0].state).toEqual({ root: 'hub', path: 'a.txt', label: 'a.txt', line: 12 });
+        expect(store.openFile('/other', 'b.txt')).toBe(false);
+        expect(opened).toHaveLength(1);
+        expect(store.outcome('/other')).toBe(
+            catalog['repositories.open_unserved'].replace('{0}', 'b.txt')
+        );
+    });
+
+    // revert: src/lib/state/sources/repositories/repositories.svelte.ts:355 => collapsed: held.collapsed
+    it('opens a blamed commit in the graph of the Repositories view, the graph opened', () => {
+        const { store, opened, kept } = harness();
+        kept.set('one', { root: '/elsewhere', collapsed: ['graph', 'tags'], commit: '' });
+        store.openCommit(ROOT, 'abc123');
+        expect(opened[0].view).toBe('repositories');
+        expect(kept.get('one')).toEqual({ root: ROOT, collapsed: ['tags'], commit: 'abc123' });
+    });
+});
+
+describe('what a branch and a diff pane offer', () => {
+    // revert: src/lib/state/sources/repositories/repositories.ts:433 => git.upstream !== undefined &&
+    it('offers Publish Branch only on a branch that tracks nothing and has a remote to go to', () => {
+        expect(canPublish(git({ upstream: false, remotes: ['origin'] }))).toBe(true);
+        expect(canPublish(git({ upstream: true, remotes: ['origin'] }))).toBe(false);
+        expect(canPublish(git({ upstream: false, remotes: [] }))).toBe(false);
+        expect(canPublish(git({ upstream: false, remotes: ['origin'], detached: true }))).toBe(
+            false
+        );
+    });
+
+    // revert: src/lib/state/sources/repositories/repositories.ts:421 => return git.branches[0]?.upstream ?? '';
+    it('names the upstream of the branch that is checked out', () => {
+        const branches = [
+            { name: 'main', upstream: 'origin/main', current: false },
+            { name: 'work', upstream: 'origin/work', current: true }
+        ];
+        expect(upstreamOf(git({ branches }))).toBe('origin/work');
+        expect(upstreamOf(git())).toBe('');
+    });
+
+    // revert: src/lib/state/sources/repositories/repositories.ts:144 => return true;
+    it('lets a file diff act on its hunks, and not a commit, a stash or a worktree', () => {
+        const file = { root: ROOT, path: 'a.txt', staged: false, worktree: false };
+        expect(diffActs(file)).toBe(true);
+        expect(diffActs({ ...file, staged: true })).toBe(true);
+        expect(diffActs({ ...file, commit: 'abc' })).toBe(false);
+        expect(diffActs({ ...file, stash: 'stash@{0}' })).toBe(false);
+        expect(diffActs({ ...file, worktree: true })).toBe(false);
+    });
+
+    // revert: src/lib/state/sources/repositories/repositories.ts:135 => delete
+    it('reads a commit diff and a stash diff from their own addresses', () => {
+        expect(
+            diffUrl({ root: ROOT, path: 'a.txt', staged: false, worktree: false, commit: 'abc' })
+        ).toBe('/api/git?commit=abc&root=%2Fhub&path=a.txt');
+        expect(
+            diffUrl({ root: ROOT, path: '', staged: false, worktree: false, stash: 'stash@{0}' })
+        ).toBe('/api/git?stash=stash%40%7B0%7D&root=%2Fhub');
+    });
 });
 
 describe('the worktrees and workspaces a repository payload names', () => {
-    // revert: src/lib/state/sources/repositories.ts:241 => return git.worktrees;
+    // revert: src/lib/state/sources/repositories/repositories.ts:406 => return git.worktrees;
     it('are the worktrees other than the main checkout, and the workspaces counted', () => {
         const git = {
             worktrees: [
@@ -545,13 +829,14 @@ describe('what a repository state comes to', () => {
             present: true,
             repository: true,
             error: null,
+            conflicted: [],
             staged: [],
             unstaged: [],
             untracked: [],
             ...over
         }) as unknown as Parameters<typeof repoShape>[1] & object;
 
-    // revert: src/lib/state/sources/repositories.ts:273 => if (!state.present) return 'none';
+    // revert: src/lib/state/sources/repositories/repositories.ts:457 => if (!state.present) return 'none';
     it('is one of the six shapes, told apart by the facts the channel carries', () => {
         expect(repoShape('', null)).toBe('unplaced');
         expect(repoShape('/r', null)).toBe('reading');
@@ -561,12 +846,13 @@ describe('what a repository state comes to', () => {
         expect(repoShape('/r', state({}))).toBe('readable');
     });
 
-    // revert: src/lib/state/sources/repositories.ts:251 => return git.staged.length + git.unstaged.length;
-    it('counts the staged, changed and untracked files together', () => {
-        expect(changeCount(state({ staged: [{}], unstaged: [{}, {}], untracked: [{}] }))).toBe(4);
+    // revert: src/lib/state/sources/repositories/repositories.ts:416 => return git.staged.length + git.unstaged.length + git.untracked.length;
+    it('counts the conflicted, staged, changed and untracked files together', () => {
+        const held = state({ conflicted: [{}], staged: [{}], unstaged: [{}, {}], untracked: [{}] });
+        expect(changeCount(held)).toBe(5);
     });
 
-    // revert: src/lib/state/sources/repositories.ts:280 => return branches[0] ?? null;
+    // revert: src/lib/state/sources/repositories/repositories.ts:464 => return branches[0] ?? null;
     it('names the branch the listing marks as checked out, and none without one', () => {
         const branches = [
             { name: 'main', current: false },

@@ -1,6 +1,158 @@
 # Oculus text owned by the Repositories view: the repository picker, the changes, the commits, the branches, the worktrees and the merge back.
 text:
     repositories:
+        abort: Abort
+        abort_confirm: Abort the merge in progress?
+        abort_detail: The worktree and the index go back to where they were before the merge or the rebase started. Resolutions made so far are lost.
+        accept_both_current: Accept Both (Current First)
+        accept_both_incoming: Accept Both (Incoming First)
+        accept_current: Accept Current
+        accept_incoming: Accept Incoming
+        accept_none: Ignore
+        accept_none_title: Take neither side and keep the common ancestor's lines
+        ago_day: 1 day ago
+        ago_days: '{0} days ago'
+        ago_hour: 1 hour ago
+        ago_hours: '{0} hours ago'
+        ago_minute: 1 minute ago
+        ago_minutes: '{0} minutes ago'
+        ago_month: 1 month ago
+        ago_months: '{0} months ago'
+        ago_now: just now
+        ago_week: 1 week ago
+        ago_weeks: '{0} weeks ago'
+        ago_year: 1 year ago
+        ago_years: '{0} years ago'
+        blame_gutter: '{0}, {1}'
+        blame_status: '{0}, {1}: {2}'
+        blame_title: '{0} {1} ({2}). Open this commit in the graph.'
+        blame_uncommitted: Not Committed Yet
+        change_next: Next Change
+        change_next_title: Go to the next change (Alt+F5)
+        change_prev: Previous Change
+        change_prev_title: Go to the previous change (Shift+Alt+F5)
+        commit_diff_label: '{0} ({1})'
+        commit_menu: Commit actions
+        commit_outside: Commit {0}
+        commit_title: '{0} by {1} on {2}. Show the files it changed.'
+        conflict_added_by_them: added by them
+        conflict_added_by_us: added by us
+        conflict_both_added: both added
+        conflict_both_deleted: both deleted
+        conflict_both_modified: both modified
+        conflict_deleted_by_them: deleted by them
+        conflict_deleted_by_us: deleted by us
+        continue: Continue
+        continue_confirm: Continue the rebase?
+        continue_detail: git commits the resolved step and goes on with the next one.
+        copy_id: Copy Commit ID
+        copy_message: Copy Commit Message
+        diff_binary: Binary file, no lines to show.
+        diff_inline: Inline
+        diff_open: Open Changes
+        diff_side: Side by Side
+        fetch: Fetch
+        fold_open: Show {0} unchanged lines
+        graph: Graph
+        graph_failed: The graph could not be read.
+        graph_more: Load More
+        graph_pending: Reading the graph
+        hunk_head: '@@ -{0},{1} +{2},{3} @@'
+        hunk_revert: Revert Block
+        hunk_revert_confirm: Revert this block of {0}?
+        hunk_stage: Stage Block
+        hunk_unstage: Unstage Block
+        incoming: Incoming
+        line_choose: Choose line {0}
+        line_choose_title: Choose this line, so the block's actions act on the chosen lines only
+        lines_revert: Revert {0} Selected Lines
+        lines_revert_confirm: Revert {0} chosen lines of {1}?
+        lines_stage: Stage {0} Selected Lines
+        lines_unstage: Unstage {0} Selected Lines
+        list: Repositories
+        list_changes: '{0} changes'
+        list_sync: '{0} to pull, {1} to push'
+        mark_added: Lines added from line {0}. Open the change.
+        mark_deleted: Lines deleted before line {0}. Open the change.
+        mark_modified: Lines changed from line {0}. Open the change.
+        menu: More Actions
+        menu_remote: Pull, Push
+        menu_stash: Stash
+        menu_tags: Tags
+        merge_changes: Merge Changes
+        merge_complete: Complete Merge
+        merge_complete_confirm: '{0} conflicts are still open. Complete the merge anyway?'
+        merge_complete_detail: The Result is written over the file and staged, and an open conflict keeps the common ancestor's lines.
+        merge_current: Current
+        merge_delete: Accept Deletion
+        merge_delete_confirm: 'Delete {0}?'
+        merge_delete_detail: The file leaves the index and the worktree, which resolves its conflict as the deletion.
+        merge_delete_title: Take the deletion, removing the file from the index and the worktree
+        merge_deleted_both: Both sides deleted this file. An empty Result takes the deletion, as Accept Deletion does.
+        merge_deleted_ours: Current deleted this file and Incoming changed it. An empty Result takes the deletion.
+        merge_deleted_theirs: Incoming deleted this file and Current changed it. An empty Result takes the deletion.
+        merge_done: '{0} is resolved and staged.'
+        merge_editor_title: Merging {0}
+        merge_empty: No conflicted file is open here.
+        merge_failed: The three versions of this file could not be read.
+        merge_incoming: Incoming
+        merge_left: '{0} conflicts left'
+        merge_mark: Mark Resolved
+        merge_mark_title: Take the file as it stands, staged, or its deletion where the worktree no longer holds it, which tells git its conflict is resolved
+        merge_open: Open in Merge Editor
+        merge_open_title: Resolve this conflict in the merge editor
+        merge_pending: Reading the three versions
+        merge_result: Result
+        merge_took_both: took both
+        merge_took_current: took current
+        merge_took_edited: edited by hand
+        merge_took_incoming: took incoming
+        merge_took_none: ignored
+        merging: A merge is in progress. {0} files are in conflict.
+        open_file: Open File
+        open_file_title: Open this file in a source tab
+        open_unserved: No served folder holds {0}, so it cannot open in a tab.
+        outgoing: Outgoing
+        publish: Publish Branch
+        publish_confirm: Publish {0} to {1}?
+        publish_detail: The branch is pushed to that remote and tracks it from then on. Nothing is forced.
+        publish_to: Publish Branch to {0}
+        pull: Pull
+        pull_confirm: Pull {1} into {0}?
+        pull_detail: git fetches the upstream and merges it into the branch. A conflict stops the merge and is shown under Merge Changes.
+        rebasing: A rebase is in progress. {0} files are in conflict.
+        renamed_from: '{0}, renamed from {1}'
+        stash_apply: Apply Stash
+        stash_do: Stash
+        stash_drop: Drop Stash
+        stash_drop_confirm: Drop {0}?
+        stash_label: '{0}'
+        stash_message: Message
+        stash_message_detail: An optional message names the stash in the list.
+        stash_pop: Pop Stash
+        stash_staged: Stash Staged
+        stash_tracked: Stash
+        stash_untracked: Stash (Include Untracked)
+        stash_view_title: Show the changes {0} holds
+        stashes: Stashes
+        stashes_empty: No stash is kept here.
+        sync: Sync
+        sync_confirm: Sync {0} with {1}?
+        sync_detail: git pulls {0} commits and then pushes {1}. Nothing is forced.
+        tag_create: Create Tag
+        tag_create_detail: A tag with a message is annotated; without one it is a plain tag. It is made on HEAD.
+        tag_delete: Delete Tag
+        tag_delete_confirm: Delete the tag {0}?
+        tag_delete_detail: The tag goes from this repository only; a tag already pushed stays on the remote.
+        tag_do: Create
+        tag_message: Message
+        tag_name: Tag name
+        tag_title: Tag on {0}. Show that commit in the graph.
+        tags: Tags
+        tags_empty: No tag is made here.
+        tags_push: Push Tags
+        tags_push_confirm: Push every tag to the upstream's remote?
+        tags_push_detail: Tags the remote already has are left as they are. Nothing is forced.
         branches: Branches
         branches_empty: git named no branch here.
         branches_unborn: '{0} has no commit yet, and git lists a branch only from its first commit.'
@@ -22,7 +174,6 @@ text:
         diff_worktree_title: Show what this worktree holds that the repository does not
         empty: Nothing is on the channel yet.
         empty_glyph: repositories
-        log: Commits
         log_empty: No commit has been made here yet.
         merge: merge back
         merge_confirm: Merge {0} into {1}?
@@ -54,3 +205,5 @@ text:
         repositories_glyph: repositories
         repositories_diff: Diff
         repositories_diff_glyph: diff
+        repositories_merge: Merge Editor
+        repositories_merge_glyph: merge

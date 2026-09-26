@@ -284,7 +284,7 @@ describe('the agents view', () => {
 describe('the terminal view with nothing selected', () => {
     // revert: src/lib/views/sessions/terminal/Terminal.svelte:373 => <p>{owner}</p>
     // revert: src/lib/views/sessions/terminal/Composer.svelte:238 => delete
-    // revert: src/lib/ui/forms/TextArea.svelte:57 => delete
+    // revert: src/lib/ui/forms/TextArea.svelte:62 => delete
     it('draws the composer: the prompt box, its foot with the attach control, the pickers and Start', () => {
         select(null);
         const body = html(Terminal);

@@ -18,6 +18,11 @@
 // run, was skipped or shares its name with another, a target the copy does not hold, a script the
 // revert leaves unparsable, and a build that refused the edit are all unproven.
 //
+// A browser case serves on a port of its own, one the system says is free, named to the copy's
+// Playwright configuration and server through OCULUS_BROWSER_PORT: another run of the browser layer
+// on the machine serves on its own port, so the case never presses a page built from another tree,
+// and a run whose server found its port taken all the same is run again on a new one.
+//
 // The case runs with its temporary directory inside the copy, and a run stopped by a signal removes
 // the copy in hand, so a run leaves nothing in the system's temporary directory.
 //
@@ -274,6 +279,28 @@ function isBrowserCase(file) {
     return file.startsWith('tests/browser/') && file.endsWith('.spec.ts');
 }
 
+/** How many times a browser case is run again, on a new port, after its server found it taken. */
+const PORT_TRIES = 5;
+
+/** A port nothing listens on, as the system hands one to a server that asks for port 0. */
+export function freePort() {
+    const probe = `const one = require('node:net').createServer();
+one.listen(0, '127.0.0.1', () => { process.stdout.write(String(one.address().port)); one.close(); });`;
+    return Number(spawnSync(process.execPath, ['-e', probe], { encoding: 'utf8' }).stdout);
+}
+
+/** The environment of one browser case run: its report file and the port it serves on. */
+export function browserEnv(env, report, port) {
+    return { ...env, PLAYWRIGHT_JSON_OUTPUT_NAME: report, OCULUS_BROWSER_PORT: String(port) };
+}
+
+/** Whether a Playwright report says its server could not start because the port was taken. */
+export function portTaken(report) {
+    return (report?.errors ?? []).some((one) =>
+        /is already used|EADDRINUSE/.test(one.message ?? '')
+    );
+}
+
 /**
  * The name as a pattern that matches it and nothing else: metacharacters escaped, the end anchored.
  */
@@ -352,12 +379,14 @@ function runCase(dir, file, caseName) {
     if (isBrowserCase(file)) {
         const built = spawnSync('npm', ['run', 'build'], shared);
         if (built.status !== 0) return { ran: false, why: 'the build refused the revert' };
-        const env = { ...shared.env, PLAYWRIGHT_JSON_OUTPUT_NAME: report };
-        spawnSync('npx', ['playwright', 'test', file, '-g', exactly(caseName), '--reporter=json'], {
-            ...shared,
-            env
-        });
-        return verdict(playwrightResults(jsonOf(report), caseName));
+        const args = ['playwright', 'test', file, '-g', exactly(caseName), '--reporter=json'];
+        for (let attempt = 0; attempt < PORT_TRIES; attempt += 1) {
+            rmSync(report, { force: true });
+            spawnSync('npx', args, { ...shared, env: browserEnv(shared.env, report, freePort()) });
+            const read = jsonOf(report);
+            if (!portTaken(read)) return verdict(playwrightResults(read, caseName));
+        }
+        return { ran: false, why: `the server found its port taken ${PORT_TRIES} times` };
     }
     spawnSync(
         'npx',

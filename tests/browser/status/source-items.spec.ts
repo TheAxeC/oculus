@@ -52,7 +52,7 @@ async function pick(page: Page, name: string, choice: string, inner?: string): P
     if (inner !== undefined) await page.getByRole('menuitem', { name: inner, exact: true }).click();
 }
 
-// revert: src/lib/views/sources/source/Source.svelte:126 => caret: editing ? START : null,
+// revert: src/lib/views/sources/source/Source.svelte:175 => caret: editing ? START : null,
 test("a source tab's items say its caret, indentation, encoding, line ending and language, and another tab draws none", async ({
     page
 }) => {
@@ -85,7 +85,7 @@ test("a source tab's items say its caret, indentation, encoding, line ending and
     await expect(item(page, 'language')).toHaveCount(1);
 });
 
-// revert: src/lib/views/sources/source/Source.svelte:146 => delete
+// revert: src/lib/views/sources/source/Source.svelte:250 => delete
 test('the caret item opens the palette on a colon, and a line number there moves the caret to it', async ({
     page
 }) => {
@@ -121,8 +121,8 @@ test('the caret item opens the palette on a colon, and a line number there moves
     await expect(page.getByText(t('statusbar.palette_line_none'))).toBeVisible();
 });
 
-// revert: src/lib/views/sources/source/Source.svelte:155 => delete
-// revert: src/lib/views/sources/source/Source.svelte:159 => delete
+// revert: src/lib/views/sources/source/Source.svelte:261 => delete
+// revert: src/lib/views/sources/source/Source.svelte:265 => delete
 test('converting the indentation and the line endings rewrites the text, unsaved until Save writes it', async ({
     page
 }) => {
@@ -159,7 +159,7 @@ test('converting the indentation and the line endings rewrites the text, unsaved
     expect(readHubFile(CRLF)).toBe(CRLF_TEXT);
 });
 
-// revert: src/lib/views/sources/source/Source.svelte:194 => editSourceDraft(instance.id, value);
+// revert: src/lib/views/sources/source/Source.svelte:300 => editSourceDraft(instance.id, value);
 test('typing into a CRLF file keeps its line endings when it is saved', async ({ page }) => {
     await bootOn(page, [sourceTab('crlf', 'hub', CRLF)]);
     await atStart(page);
@@ -174,7 +174,7 @@ test('typing into a CRLF file keeps its line endings when it is saved', async ({
     await expect(button(page, 'line_ending')).toHaveText('CRLF');
 });
 
-// revert: src/lib/views/sources/source/Editor.svelte:203 => if (event.key !== 'Tab' || leave || event.key === 'Tab') return;
+// revert: src/lib/views/sources/source/Editor.svelte:212 => if (event.key !== 'Tab' || leave || event.key === 'Tab') return;
 test('Tab inserts the indentation chosen from the bar, and Escape then Tab moves on', async ({
     page
 }) => {
@@ -196,7 +196,7 @@ test('Tab inserts the indentation chosen from the bar, and Escape then Tab moves
     await expect(area(page)).toHaveValue(`  ${PLAIN_TEXT}`);
 });
 
-// revert: src/lib/views/sources/source/Source.svelte:148 => delete
+// revert: src/lib/views/sources/source/Source.svelte:254 => delete
 test('the language item lists every language, and a choice recolours the tab and is kept after a reload', async ({
     page
 }) => {
