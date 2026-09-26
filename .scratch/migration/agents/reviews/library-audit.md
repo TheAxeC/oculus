@@ -90,17 +90,30 @@ X3b hand-writes a Myers diff with a 2,000-edit cap, a word diff, a unified-diff 
 
 Recommendation: (b) if LA9 moves the diff pane to Monaco's diff editor, otherwise (a). The partial-hunk patch builder (`diff-patch.ts`) stays under every option: no library builds a patch from chosen lines. Lazy option: (c).
 
-### LA9. The Monaco step's shape (ruled L2 (a); B C1 to C3, H 2.1 and 2.4)
+### LA9. The Monaco step's shape (ruled L2 (a); B C1 to C3, H 2.1 and 2.4, and `editor-comparison.md`)
+
+**Monaco against CodeMirror 6, measured again on Axel's request.** A spike in the session scratchpad (SvelteKit with adapter-node, Svelte 5, monaco-editor 0.57.0 and the CodeMirror 6 packages, oculus's `tokens.css` and `themes.css`, probed in headless Chrome) measured both costs; the report is `agents/reviews/editor-comparison.md`. The probe outputs are the agent's; the orchestrator checked the spike's build output, the `lsp` namespace in monaco-editor's CHANGELOG ("Adds native LSP support"), and the two lines of `shell/keys/workbench-keys.svelte.ts` it cites.
+
+| | CodeMirror 6 brought to VS Code parity | Monaco made to fit oculus |
+|---|---|---|
+| Hand-written lines (estimate) | 3,000 to 3,800 | 1,500 to 2,100 |
+| What the lines are | lookalikes of what VS Code has: the find widget, sticky scroll, overview ruler, bracket colours, the missing default keys (its VS Code keymap has 59 bindings, last released 2023), editor commands, breakpoint and diff glue | fit: the `ui/editor/` primitive, the theme from tokens (about 90 colour keys, 3-digit hex expanded), key removals, a context menu drawn by oculus, test helpers, diff staging and breakpoint glue |
+| Theme tokens | `var(--token)` directly, no JavaScript | read from the computed style and redefined on a theme change; one theme per page, which is oculus's case |
+| Result | close to VS Code, not VS Code | VS Code's editor |
+
+Fit questions the spike proved through supported API: the node-adapter build with Monaco imported in an `$effect` (server bundle holds none of it), the workers through Vite's `?worker`, all 17 themes painted from tokens, `addKeybindingRules` removing a key, `contextmenu: false` handing the event to oculus, `automaticLayout` recovering a hidden tab, 9 editors and a diff editor on one page. Two defects the step must fix: Chrome focuses Monaco's EditContext `div`, which `typingIn` (`workbench-keys.svelte.ts:437`) does not treat as typing, so every typed key reaches the shell (a digit would switch pages); and Monaco refuses 3-digit hex colours. Unproven: widgets clipped by panes (`fixedOverflowWidgets` not tried), colours on the translucent wallpaper surfaces, @shikijs/monaco with 0.57, any of the 87 fixed-default colour keys left unmapped showing VS Code's colour instead of a token.
+
+Recommendation: Monaco stands (L2 (a)). CodeMirror would cost about twice the hand lines and still not be VS Code. DESIGN.md's sentence that Terminal.svelte is the one file reading a computed token changes to name the editor primitive too.
 
 Three questions the ruling leaves open.
 
 1. The package.
-   - (a) monaco-editor 0.57.0, MIT, Microsoft, 2026-09-24.
-   - (b) @codingame/monaco-vscode-editor-api 37.1.0, MIT, 2026-09-21: Monaco built from VS Code's sources, which monaco-languageclient (LA15) depends on.
-   Recommendation: (b) if LA15 is (a), since D23 then needs no package swap; otherwise (a).
+   - (a) monaco-editor 0.57.0, MIT, Microsoft, 2026-09-24, with its native `lsp` namespace for D23 (LA16).
+   - (b) @codingame/monaco-vscode-editor-api 37.1.0, MIT, 2026-09-21: Monaco built from VS Code's sources, needed only by monaco-languageclient.
+   Recommendation: (a), since the native client makes (b) unnecessary. Lazy option: none; both cost the same.
 2. The languages. Monaco's own grammars cover 13 of oculus's 19 (none for latex, lisp, matlab, ocaml, makefile, diff).
-   - (a) @shikijs/monaco 4.4.3, MIT, 2026-08-10, with VS Code's TextMate grammars (all 18 non-plain languages present in @shikijs/langs). Its fit with Monaco 0.57 is to be proven in the step.
-   - (b) Monarch grammars written by hand for the six.
+   - (a) @shikijs/monaco 4.4.3, MIT, 2026-08-10, with VS Code's TextMate grammars and VS Code theme files (LA22). Its fit with Monaco 0.57 is proven first in the step.
+   - (b) Monarch grammars written by hand for the six, about 700 lines.
    Recommendation: (a). Lazy option: (b).
 3. The diff. Monaco's diff editor compares two whole texts; `api/git` answers a unified diff. Using it means `api/git` also answers both versions of a file, a wire change.
    - (a) Add the two versions to the answer and draw every single-file diff in Monaco's diff editor; the multi-file diff is one diff editor per file; hunk and line staging stay as glue over `diff-patch.ts`.
@@ -169,13 +182,13 @@ Each row is a separate ruling.
 
 ## B. The open steps of plan.md (H)
 
-### LA16. The language server client (D23; H 2.2)
+### LA16. The language server client (D23; H 2.2, `editor-comparison.md`)
 
-- (a) monaco-languageclient 11.0.2 with vscode-ws-jsonrpc 4.0.2, both MIT, TypeFox, 2026-09-24: hover, definition, references, diagnostics and the rest of the protocol. Oculus writes the per-root server spawn and the relay on its `ws`.
-- (b) vscode-languageserver-protocol types with hand-written Monaco providers, 600 to 900 lines.
-- (c) All by hand.
+- (a) monaco-editor 0.57's native `lsp` namespace (`MonacoLspClient`, `WebSocketTransport`, 21 providers, push and pull diagnostics; in the package since 0.55 per its CHANGELOG). Oculus writes the per-root server spawn, the relay on its `ws` and the root URI the relay injects (the client sends `rootUri: null`), about 60 to 100 lines (estimate). Unproven against pyright and clangd; it syncs every model on the page, so diff originals and merge panes need URIs the server ignores.
+- (b) monaco-languageclient 11.0.2 with vscode-ws-jsonrpc 4.0.2, both MIT, TypeFox, 2026-09-24; requires the @codingame packages (LA9 package (b)).
+- (c) vscode-languageserver-protocol types with hand-written Monaco providers, 600 to 900 lines.
 
-Recommendation: (a). Lazy option: (c). pyright is not on PATH; the npm package `pyright` ships it.
+Recommendation: (a), the least code and no second Monaco build; (b) if the step's first proof against pyright fails. Lazy option: (c). pyright is not on PATH; the npm package `pyright` ships it.
 
 ### LA17. The debug client (D11; H 2.3)
 
@@ -222,6 +235,24 @@ A table on the Status view of files, blank, comment and code lines per folder an
 
 Recommendation: (a), with the licence question Axel's to accept; (b) if a GPL package is not wanted. The TODO count is a grep over the same file list under every option. Lazy option: (d).
 
+### LA21. Cmd+K inside the editor (`editor-comparison.md`)
+
+Oculus opens its palette on Cmd+K (`workbench-keys.svelte.ts:88`, which ignores `defaultPrevented`); VS Code uses Cmd+K as the first key of chords (Cmd+K Cmd+C to comment, and others). Inside Monaco today Cmd+K is taken by Monaco.
+
+- (a) Cmd+K opens the palette everywhere; Monaco's Cmd+K chords are removed with one `addKeybindingRules` null rule.
+- (b) Inside the editor Cmd+K starts VS Code's chords; the palette opens by its other keys there.
+
+Recommendation: (a): Cmd+K is a shell chord and the palette is reachable from every pane the same way. Lazy option: leave both bound, which lets Monaco take the key.
+
+### LA22. A code theme separate from the app theme
+
+Shiki (LA9 question 2) loads VS Code theme files as they are (`tokenColors` and `colors` are fields of `ThemeRegistrationRaw` in @shikijs/types 4.4.3) and ships 65, `dark-plus` and `light-plus` among them. Axel's VS Code settings set no `workbench.colorTheme`, so VS Code draws its default, whose syntax colours are Dark+.
+
+- (a) A `code_theme:` key in `config/appearance.yml`: `tokens` (the syntax colours come from the oculus theme's `--c-code-*` tokens, as today) or the id of a Shiki theme, such as `dark-plus`; the editor background and chrome stay on the oculus tokens either way.
+- (b) The syntax colours always come from the oculus theme.
+
+Recommendation: (a), default `tokens`, since it gives Axel VS Code's own syntax colours without a seventeenth app theme. The key name and its values are Axel's to rule. Lazy option: (b).
+
 ## Totals
 
 What oculus has, `cloc` 2.06 over `git ls-files` per folder on main (2026-09-26):
@@ -251,6 +282,8 @@ What the recommendations remove from that, in all lines as `wc -l` counts them, 
 | LA15 the six server helpers | 290 |
 | Section D, existing dependencies and built-ins | 700 |
 | Total | about 5,780 |
+
+Tests are not in those figures. The test files that exercise the code a library replaces, counted with `grep -rlE <module paths> tests` and `wc -l` on main (whole files, so an upper bound on what is touched; how much of each goes and how much is rewritten against the library is not estimated; X3b's own tests are not on main and are not counted): LA1 17 files, 6,875 lines; LA2 5 files, 1,297; LA5 6 files, 2,094; LA6 21 files, 9,017; LA9 7 files, 1,911; LA10 2 files, 961; LA11 6 files, 2,092; LA15 images 1 file, 532.
 
 That is about 2.6% of the 223,969 lines, or about 5.3% of the 108,620 lines of `src` and `bin`. LA3, LA4, LA13 and LA14 add capabilities oculus lacks and remove little. The open steps are not in the totals, since their code is not written yet; the libraries recommended for them avoid, by the auditors' estimates, 600 to 900 lines in D23, 300 to 500 in X3a, 150 to 250 in L4 and 150 to 250 in D11.
 
