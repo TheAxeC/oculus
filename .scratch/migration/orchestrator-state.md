@@ -62,7 +62,7 @@ dispatch:      # X3b, Q67 and S2 in flight; X3a and X3c ruled, specced when a sl
   report: tools/oculus/.scratch/migration/agents/reviews/S2-report.md
   refuter: agents/reviews/S2-refuter.md (claude:opus, native Agent a90a5b0a448470e78)
   landing: not-started
-  round: 1  # sent 2026-09-26 over the uncommitted worktree tree at 0249f8f9
+  round: 1  # sent 2026-09-26 over the uncommitted worktree tree at 0249f8f9; report back 2026-09-26, round refuter a646099ef1b407116 running
 ```
 
 ## The standing demands (from Axel, in force)
