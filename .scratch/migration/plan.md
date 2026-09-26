@@ -170,6 +170,7 @@ One line per package: the status mark, the id, the title, and where the rest is 
 - ✅ Q67 assisted account setup: Add account and Remove in the Calendar and the Inbox writing `local.yml` with its comments kept, one Account setup view per provider saving a client half every account shares, the lists read again live (brief `agents/briefs/Q67.md`; one repair round; landing `agents/reviews/Q67-landing.md`); landed 2026-09-26
   - Step 0, ruled 2026-09-26 by Axel: (a) the Personal group's chord letter `p` (p1 to p5, glyph `memories`); (a) the `open_bin` key in `local.yml`, `/usr/bin/open` when absent.
   - Step 0, ruled 2026-09-23 by Axel: an Add account control in the Calendar and Inbox views, and a guided one-time setup page per provider serving every account; in full in the state file's "Rulings in full".
+- Q76 the document tabs: a tab of a `docs:` entry whose path moved follows the entry, and a re-read keeps what is shown until its answer lands and repaints nothing when the text did not change (Axel 2026-09-26: the docs tabs said "document does not exist" and every Markdown tab flickered every few seconds; brief `agents/briefs/Q76.md`)
 - O32 the launch note completed, NOT DONE: the oculus half landed 2026-09-23; the skill half (Ordo's plan 2.B) is not in the installed skills. Ticked when Axel has pinned the Ordo release carrying 2.B and a shell-launched step has written its note; nothing in Ordo is touched from this plan (Axel 2026-09-23; brief `agents/briefs/O32.md`, the full line there)
   - Step 0, ruled 2026-09-23 by Axel: (a) on both O31 open items, the `launch_note:` key and the builder's pid in the record.
 - ✅ Q68 the git watcher reads a root added to the saved workspaces file under any load, by a 500 ms poll on its own clock (booked 2026-09-24; brief `agents/briefs/Q68.md`, the full line there; landing `agents/reviews/Q68-landing.md`); landed 2026-09-24
@@ -254,7 +255,7 @@ One line per package: the status mark, the id, the title, and where the rest is 
 ## Could run in parallel
 
 - The feature stretch after R17, three in flight at all times, one dispatched at each landing (Axel 2026-09-14 17:50 and 2026-09-15 19:58; the steps that run alone and the order are in `orchestrator-state.md`, which holds this line whole)
-- The queue, in order: S2; X3a + X3b + X3c; Q67; L4; Q66; Q35; D11 + D13 + D14; D23 + D15 + D17; D18 + D20 + D24; A1 + A2 + A3; M3 + E1; M4; then Q72, R2, O29, O30, X2, then O33 last.
+- The queue, in order: Q76; S2; X3a + X3b + X3c; Q67; L4; Q66; Q35; D11 + D13 + D14; D23 + D15 + D17; D18 + D20 + D24; A1 + A2 + A3; M3 + E1; M4; then Q72, R2, O29, O30, X2, then O33 last.
 Independent of each other; two may run side by side under R9's rule when their briefs name disjoint paths and different views, else they run one at a time.
 - S1 with anything after R1.
 - O5 with O2 to O4.
