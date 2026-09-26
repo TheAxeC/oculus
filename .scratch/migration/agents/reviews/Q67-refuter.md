@@ -72,3 +72,53 @@ All commands were run from `.agents/worktrees/Q67/tools/oculus`.
 - Races between an Add and a whole-text save of `local.yml` from the source tab, which does not use the write chain (brief premise 2).
 
 Reviewer usage: tokens not measured; about 50 tool uses; about 75 minutes, mostly waiting for port 8792 and the revert-check run.
+
+## Repair round 1, refuted
+
+All commands were run from `.agents/worktrees/Q67/tools/oculus`.
+
+**Verification commands and their summary lines, verbatim:**
+- `npx vitest run --reporter=dot`: `Test Files  2 failed | 319 passed (321)` / `Tests  5 failed | 4978 passed (4983)`.
+  - Four of the five are the expected tests/views/system/help.test.ts cases: view id, sheet keys, group letter, machine-local keys.
+  - The fifth was `tests/server/root/watch/bookmarks.test.ts > publishes once for a burst of writes...` (`expected ... length of 1 but got 2`). That file is not in the diff. Run alone it printed `Tests  4 passed (4)`, so it is load timing and not a finding.
+- `npm run check`: `COMPLETED 1424 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS`
+- `npm run build`: `build exit 0`
+- `npm run format:check`: `All matched files use Prettier code style!`
+- `npm run lint`: `lint exit 0`
+- ASCII gate (the rules file's perl line): no output, `ascii exit 0`
+- `sh bin/size-check.sh`: `size exit 0`. `sh bin/folder-check.sh`: `folder exit 0`
+- `npm run diagrams` twice: the sha of `git diff ef269f83 -- docs/diagrams` was `3cd788ff...` before, after the first run and after the second.
+- `npx playwright test`, after the build, with port 8792 free: `393 passed (7.0m)`, `pw exit 0`.
+- Revert-check over the unit files of items 1, 2, 5 and 12 (`node bin/revert-check.mjs` with rows.test.ts, accounts.test.ts, accounts-store.test.ts, account-setup.test.ts, remove-account.test.ts, calendar/poll.test.ts and mail/poll.test.ts): `74 reverts, 0 unproven, 18 unchecked`. The 18 unchecked are older poll cases that name no revert.
+- Revert-check over `tests/browser/views/accounts/accounts.spec.ts`:
+  - First run: `7 reverts, 4 unproven, 0 unchecked`. Red: `accounts.svelte.ts:192` (item 7), `AccountList.svelte:153`, `calendar/poll.ts:167` (item 12). The 4 unproven are "the case did not run".
+  - Second run: `7 reverts, 6 unproven, 0 unchecked`. All 6 unproven are "the case did not run". Port 8792 was held by another worktree's revert copy (pid 71099, `oculus-revert-yUQIAy/src/server.ts`).
+- `ls -d $TMPDIR/oculus-* | wc -l`: 2 before and 2 after. Every entry was another run's `oculus-revert-*` folder, and the names changed between the two counts.
+
+**Closures read and reproduced:**
+- Item 1: a probe of `rows.ts:151-152` through `npx tsx`, over a comment beside the key, comment lines inside the list, a trailing comment line, a block-map row and no final newline, keeps every comment except the row's own.
+- Items 3, 4, 6, 9, 10, 11 and 13: read at the lines the report cites, and they hold.
+  - Item 6: the context's opener choice is at `context.ts:352`, `open-bin.test.ts:12-34` covers the empty and non-string values and the non-https refusal, and the DESIGN.md:300 line is in the Doc text.
+  - Item 13: `setupName` is used at AccountList.svelte:108 and :139.
+- Item 14: boundaries.test.ts:33-40 reads as one rejoined paragraph.
+- Item 15: the premise-wrong claim holds, since `catalogue.ts:155` keys only `at < 9`.
+
+**Findings:**
+- `src/lib/state/feeds/inbox.svelte.ts:57-60` with `src/lib/views/feeds/inbox/InboxCard.svelte:99` (Behaviour). Item 4 moved the Inbox store onto `postCommand`. When a triage, reply or archive gets no answer or a non-JSON answer, the store returns the helper's code as `error`, and the card then reads "Refused: unreachable" or "Refused: unreadable".
+  - That is an internal code in a user-facing sentence, not the catalog sentence item 5 asked for. `accounts.svelte.ts` maps these two codes to `accounts.unreachable` and `accounts.unreadable`; the Inbox store does not.
+  - The Calendar store's `refresh` and `openEvent` (`calendar.svelte.ts:42`) drop the failure without a sentence.
+  - No case covers either path.
+- `src/lib/server/accounts/connect/rows.ts:110-111` (Spec, brief item 3: the Add keeps the file's comments). An Add into an empty flow list replaces the whole bracket range, so a comment inside the brackets is lost.
+  - Probe: removing the last row of `calendars: [ # c\n  { provider: google, label: work } ] # k\n` gives `calendars: [ # c\n   ] # k\n`. Adding the row back gives `calendars: [{ provider: google, label: work }] # k\n`, and `# c` is gone.
+  - Every Remove of a last row now writes a flow `[]`, so the next Add always takes this branch. No test covers a comment inside the brackets.
+- `tests/browser/helpers/hub.ts:166-171` `removeServedHomeFile` (Standards, the rules file's temporary-directory rule). It asserts only that the path is inside `servedHomeDir()`, never that the home is inside `tmpdir()`.
+  - `writeConnectorFile` at :119-121 asserts both.
+  - The round report's row 8 says "both check that the path is inside the run's temp before they write", which the code does not bear out for the deleting helper. That helper deletes `.oculus/connect/google.json` at the start and end of every accounts.spec case.
+
+## Not checked
+- The browser reverts `setup.ts:56`, `HalfForm.svelte:35`, `actions.ts:211` and `store.ts:169` did not run in either revert-check pass, because port 8792 was held by another worktree's run. Those reverts are outside items 1, 2, 5 and 12. The item 12 browser revert (`calendar/poll.ts:167`) came out red in the first pass.
+- Each accounts.spec case run alone (the builder's item 8 output) was not rerun. The whole file ran green inside the full Playwright run.
+- Whether the console URLs in account-setup.yml resolve to the pages they name.
+- A live Connect against a real provider.
+
+Reviewer usage: tokens not measured; about 35 tool uses; about 45 minutes, most of it the vitest, Playwright and revert-check runs.
