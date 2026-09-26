@@ -51,7 +51,7 @@ dispatch:      # X3b, Q67 and S2 in flight; X3a and X3c ruled, specced when a sl
   report: tools/oculus/.scratch/migration/agents/reviews/Q67-report.md
   refuter: agents/reviews/Q67-refuter.md (claude:opus, native Agent ae292619dd682d411)
   landing: not-started
-  round: 1  # sent 2026-09-26 over the uncommitted worktree tree at ef269f83; the round's delta is read against the report's file list
+  round: 1  # sent 2026-09-26 over the uncommitted worktree tree at ef269f83; the builder's round report is in Q67-report.md; the run over the round refuted by a fresh reviewer (native Agent ac57d42e791fa3b7d)
 - step: S2
   executor: agent
   worker: claude:opus (native Agent, general-purpose)
@@ -60,6 +60,7 @@ dispatch:      # X3b, Q67 and S2 in flight; X3a and X3c ruled, specced when a sl
   base: 0249f8f9
   launched: 2026-09-25
   report: tools/oculus/.scratch/migration/agents/reviews/S2-report.md
+  refuter: agents/reviews/S2-refuter.md (claude:opus, native Agent a90a5b0a448470e78, running)
   landing: not-started
   round: 0
 ```
@@ -113,7 +114,7 @@ None. Axel lifted it on 2026-09-23 with `/plan-orchestration oculus/migration` a
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is booked as its own step in `plan.md` and carried in the Booked section below, since it needs no ruling from him.
 
-- Q67, two shapes its builder took (raised 2026-09-26 by Q67's review). (1) The Personal group's keyboard letter. Q67 adds the Account setup view to the Personal group, which then holds five entries (Memories, Calendar, Account setup and the group's two documents), and `config/layout.yml:25` rules that a group of more than four entries is reached only by its own chord. So Personal needs a letter: Memories and Calendar move from the direct chord's `v12` and `v13` to `p1` and `p2`, Account setup is `p3`, the two documents `p4` and `p5`. The letters in use are `m`, `c`, `s`, `y` and `v` (`grep -n "chord:" config/layout.yml`). Options: (a) `p` for Personal, as the builder chose, with the group glyph `memories`; (b) another free letter you name. Recommended (a): `p` is free and is the group's first letter, as `s` and `c` are for theirs. (2) A new `local.yml` key, `open_bin`: the program an `https` address (a consent page, an event's link) is handed to, `/usr/bin/open` when absent (`server/files/open.ts:56, 280-288`). The builder added it so the browser suite's served test engine records the consent address instead of opening a real browser; the calendar and mail links go through the same opener. Options: (a) keep `open_bin` in `local.yml`, as `claude_bin` names the Claude command there; (b) a server flag `--open-bin <program>` beside `--engine`, so `local.yml` keeps no key a reader would never set; (c) neither, and the browser suite never presses Connect or Add, leaving the consent start proven only by the node tests. Recommended (a): the test engine is configured the way a machine is, through its own `local.yml`, as `claude_bin` already is; (c) drops proof and is the lazy option.
+- Q67, two shapes its builder took (raised 2026-09-26 by Q67's review). (1) The Personal group's keyboard letter. Q67 adds the Account setup view to the Personal group, which then holds five entries (Memories, Calendar, Account setup and the group's two documents), and `config/layout.yml:25` rules that a group of more than four entries is reached only by its own chord. So Personal needs a letter: Memories, Calendar, Account setup and the two documents become `p1` to `p5`. Before, Memories, Calendar and the two documents were the 12th to 15th entries of the `v` list, and only the first nine get a key (`state/workbench/navigation/catalogue.ts:155`, `at < 9`), so they had no key; the chord gives them keys and takes none away. The letters in use are `m`, `c`, `s`, `y` and `v` (`grep -n "chord:" config/layout.yml`). Options: (a) `p` for Personal, as the builder chose, with the group glyph `memories`; (b) another free letter you name. Recommended (a): `p` is free and is the group's first letter, as `s` and `c` are for theirs. (2) A new `local.yml` key, `open_bin`: the program an `https` address (a consent page, an event's link) is handed to, `/usr/bin/open` when absent (`server/files/open.ts:56, 280-288`). The builder added it so the browser suite's served test engine records the consent address instead of opening a real browser; the calendar and mail links go through the same opener. Options: (a) keep `open_bin` in `local.yml`, as `claude_bin` names the Claude command there; (b) a server flag `--open-bin <program>` beside `--engine`, so `local.yml` keeps no key a reader would never set; (c) neither, and the browser suite never presses Connect or Add, leaving the consent start proven only by the node tests. Recommended (a): the test engine is configured the way a machine is, through its own `local.yml`, as `claude_bin` already is; (c) drops proof and is the lazy option.
 
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)
 
