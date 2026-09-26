@@ -39,8 +39,9 @@ dispatch:      # X3b and S2 in flight (S2 ready to land); X3a next into the free
   base: a8848c49
   launched: 2026-09-25
   report: tools/oculus/.scratch/migration/agents/reviews/X3b-report.md (back 2026-09-26: 273,078 tokens, 816 tool uses, 46,446 s)
+  refuter: agents/reviews/X3b-refuter.md (claude:opus, native Agent a8689ea922c90a936, 268,477 tokens, 101 tool uses, 57 min)
   landing: not-started
-  round: 0
+  round: 1  # sent 2026-09-26 over the uncommitted worktree tree at a8848c49: the refuter's 16 findings, each with its ruling, all inside the brief
 - step: S2
   executor: agent
   worker: claude:opus (native Agent, general-purpose)
