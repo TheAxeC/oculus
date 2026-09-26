@@ -30,7 +30,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:      # X3b in flight (repair round 1). Nothing else is dispatched until it lands: X3a needs `server/core/git.ts` and the diff pane, L4 `src/lib/themes/`, Q35 and D13 the source tab, Q66 the views that re-read, all in X3b's paths; then X3a, X3c and L4
+dispatch:      # X3b in flight (repair round 1) and Q76 beside it (disjoint paths). Nothing else is dispatched until X3b lands: X3a needs `server/core/git.ts` and the diff pane, L4 `src/lib/themes/`, Q35 and D13 the source tab, Q66 the views that re-read, all in X3b's paths; then X3a, X3c and L4
 - step: X3b
   executor: agent
   worker: claude:opus (native Agent, general-purpose)
@@ -42,6 +42,16 @@ dispatch:      # X3b in flight (repair round 1). Nothing else is dispatched unti
   refuter: agents/reviews/X3b-refuter.md (claude:opus, native Agent a8689ea922c90a936, 268,477 tokens, 101 tool uses, 57 min)
   landing: not-started
   round: 1  # sent 2026-09-26 over the uncommitted worktree tree at a8848c49: the refuter's 16 findings, each with its ruling, all inside the brief
+- step: Q76
+  executor: agent
+  worker: claude:opus (native Agent, general-purpose)
+  session_id: a2aa629ad1f8dd2f7
+  worktree: .agents/worktrees/Q76
+  base: c2e6dedc
+  launched: 2026-09-26
+  report: tools/oculus/.scratch/migration/agents/reviews/Q76-report.md
+  landing: not-started
+  round: 0
 ```
 
 ## The standing demands (from Axel, in force)
