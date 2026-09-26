@@ -92,13 +92,9 @@ async function listings(
 /** Select one of this spec's sessions in the list and bring the Changes panel up over it. */
 async function showChanges(page: Page, title: string): Promise<void> {
     await page.getByRole('tab', { name: t('sessions.rail_title') }).click();
-    // The sessions are not running, so the list keeps them behind the ended head.
-    const ended = page.locator('button.ended-h');
-    await expect(ended).toHaveCount(1, { timeout: 15000 });
-    if ((await ended.getAttribute('aria-expanded')) !== 'true') await ended.click();
-    const row = page.locator('.row').filter({ hasText: title }).first();
+    const row = page.locator('[data-session-row]').filter({ hasText: title }).first();
     await expect(row).toBeVisible({ timeout: 15000 });
-    await row.locator('button.pick').click();
+    await row.locator('button.row-button').click();
     await page.getByRole('tab', { name: t('sessions.view_changes') }).click();
 }
 

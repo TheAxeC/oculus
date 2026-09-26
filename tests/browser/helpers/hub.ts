@@ -2,8 +2,17 @@
 // writes that path here; a spec that asserts on a file reads it back through readHubFile, so a
 // write the DOM says happened is checked against the bytes on disk.
 
+import { spawnSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
-import { copyFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import {
+    copyFileSync,
+    existsSync,
+    mkdirSync,
+    readFileSync,
+    readdirSync,
+    rmSync,
+    writeFileSync
+} from 'node:fs';
 import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
@@ -173,6 +182,61 @@ export function removeServedHomeFile(relative: string): void {
         throw new Error(`${full} is not inside ${root}`);
     }
     rmSync(full, { force: true });
+}
+
+/**
+ * The folder the served run's stand-ins for `claude` and `codex` write their arguments into, one
+ * file per start, named after the agent and its process id.
+ */
+export function servedArgvDir(): string {
+    const dir = join(dirname(hubDir()), 'argv');
+    if (!existsSync(dir)) throw new Error(`${dir} is not there`);
+    return dir;
+}
+
+/** The served run's own tmux, which reaches the run's tmux server and no other. */
+export function servedTmux(): string {
+    return join(dirname(hubDir()), 'bin', 'tmux');
+}
+
+/** The argument lists one stand-in was started with so far, one per start. */
+export function startedWith(tool: 'claude' | 'codex' | 'latexmk'): string[][] {
+    const dir = servedArgvDir();
+    return readdirSync(dir)
+        .filter((name) => new RegExp(`^${tool}-\\d+$`).test(name))
+        .map((name) => readFileSync(join(dir, name), 'utf8').split('\0').slice(0, -1));
+}
+
+/**
+ * The account variables one stand-in was started with, one map per start in the order startedWith
+ * lists them: CLAUDE_CONFIG_DIR and CODEX_HOME where the process had them, and no key where it did
+ * not.
+ */
+export function startedEnv(tool: 'claude' | 'codex'): Record<string, string>[] {
+    const dir = servedArgvDir();
+    return readdirSync(dir)
+        .filter((name) => new RegExp(`^${tool}-\\d+$`).test(name))
+        .map((name) =>
+            Object.fromEntries(
+                readFileSync(join(dir, `${name}.env`), 'utf8')
+                    .split('\n')
+                    .filter((line) => line !== '')
+                    .map((line) => [
+                        line.slice(0, line.indexOf('=')),
+                        line.slice(line.indexOf('=') + 1)
+                    ])
+            )
+        );
+}
+
+/**
+ * End every terminal the served run's tmux holds, and forget what the stand-ins were started with,
+ * so the next case starts from none. The run's tmux reaches no server of the owner's.
+ */
+export function endServedTerminals(): void {
+    spawnSync(servedTmux(), ['kill-server'], { encoding: 'utf8' });
+    const dir = servedArgvDir();
+    for (const name of readdirSync(dir)) rmSync(join(dir, name), { force: true });
 }
 
 /**

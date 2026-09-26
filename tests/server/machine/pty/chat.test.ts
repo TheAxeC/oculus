@@ -1,12 +1,12 @@
 // Layer 2, server tests. The words a chat terminal and a LaTeX terminal are started with, filled
-// from the engine's own catalog by `words` of server/machine/pty/chat.ts. The arguments are a
+// from the engine's own catalog by `words` of server/core/words.ts. The arguments are a
 // project's id, title and folder and a manuscript's main file, which are text the hub decides.
 // Three cases give them placeholder braces, the second also `$` replacement patterns, and expect
 // them in the sentence as written; the fourth names a key the catalog lacks and expects the throw.
 
 import { describe, expect, it } from 'vitest';
 import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sources/config.ts';
-import { words } from '../../../../src/lib/server/machine/pty/chat.ts';
+import { words } from '../../../../src/lib/server/core/words.ts';
 
 const CATALOG = textCatalog(loadConfig(engineDir()).config);
 

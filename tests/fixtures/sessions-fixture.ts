@@ -121,6 +121,35 @@ export function git(over: Partial<GitState> = {}): GitState {
     };
 }
 
+/**
+ * The hub's git state the session view tests read: one staged, two changed, one untracked file.
+ * The changed manuscript is the file the fixture's other live session holds open, as git sees it:
+ * relative to the workspace root, which is what the "also open" mark has to match across.
+ */
+export const HUB_GIT: GitState = git({
+    branch: 'main',
+    ahead: 1,
+    staged: [{ path: 'a/one.ts', status: 'M', added: 4, deleted: 2 }],
+    unstaged: [
+        { path: 'a/two.png', status: 'M', added: null, deleted: null },
+        {
+            path: 'projects/manuscripts/alpha/manuscript/main.tex',
+            status: 'M',
+            added: 1,
+            deleted: 0
+        }
+    ],
+    untracked: [{ path: 'a/three.ts', status: '?', added: 0, deleted: 0 }]
+});
+
+/** The session view tests' git channel: the hub's repository, and `/other`, a folder, no repo. */
+export function sessionsGit(hub: string): GitPayload {
+    return {
+        [hub]: HUB_GIT,
+        '/other': git({ branch: '', repository: false, error: 'not a git repository' })
+    };
+}
+
 /** The `git` payload: one state per workspace root. */
 export function gitPayload(states: Record<string, GitState>): GitPayload {
     return states;

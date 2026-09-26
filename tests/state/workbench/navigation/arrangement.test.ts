@@ -82,23 +82,54 @@ describe('parseArrangement', () => {
             'transcript',
             'timeline',
             'session-detail',
+            'agents',
             'changes',
-            'agents'
+            'files'
         ]);
     });
 
+    it('reads the sessions arrangement as three columns, its Files tab following the selection', () => {
+        // revert: config/layout.yml:63 => sizes: [0.3, 0.4, 0.3]
+        const made = present(parseArrangement(real()), 'arrangement');
+        const root = made.root;
+        expect(root.kind === 'split' ? root.sizes : []).toEqual([0.22, 0.5, 0.28]);
+        const files = panes(root)
+            .flatMap(({ pane: node }) => node.tabs)
+            .find((tab) => tab.view === 'files');
+        // revert: src/lib/state/workbench/navigation/arrangement.ts:79 => return isRecord(state) ? newInstance(view) : null;
+        expect(files?.state).toEqual({ follow: true });
+    });
+
+    it('takes a tab written as a view with a state, and refuses one that does not add up', () => {
+        const tab = (view: unknown) => parseArrangement({ root: { kind: 'pane', view: [view] } });
+        const made = present(tab({ view: 'files', state: { follow: true } }), 'arrangement');
+        const opened = panes(made.root)[0].pane.tabs[0];
+        expect([opened.view, opened.state]).toEqual(['files', { follow: true }]);
+        const bare = present(tab({ view: 'files' }), 'arrangement');
+        expect(panes(bare.root)[0].pane.tabs[0].state).toEqual({});
+        // revert: src/lib/state/workbench/navigation/arrangement.ts:79 => return newInstance(view, isRecord(state) ? { ...state } : {});
+        expect(tab({ view: 'files', state: 'follow' })).toBe(null);
+        expect(tab({ view: 'files', state: [true] })).toBe(null);
+        // revert: src/lib/state/workbench/navigation/arrangement.ts:77 => if (typeof view !== 'string') return null;
+        expect(tab({ view: '', state: {} })).toBe(null);
+        expect(tab({ state: {} })).toBe(null);
+        // revert: src/lib/state/workbench/navigation/arrangement.ts:74 => if (typeof value === 'string') return newInstance(value);
+        expect(tab('')).toBe(null);
+        expect(tab(7)).toBe(null);
+    });
+
     it('mints a fresh instance id for every tab, so two applications never collide', () => {
-        // revert: src/lib/state/workbench/navigation/arrangement.ts:61 => tabs.push({ id: name, view: name, state: {} });
+        // revert: src/lib/state/workbench/navigation/arrangement.ts:74 => if (typeof value === 'string') return value === '' ? null : { id: value, view: value, state: {} };
         const first = present(parseArrangement(real()), 'arrangement');
         const second = present(parseArrangement(real()), 'arrangement');
         const ids = (made: Workbench): string[] =>
             panes(made.root).flatMap(({ pane: node }) => node.tabs.map((tab) => tab.id));
-        expect(new Set(ids(first)).size).toBe(7);
+        expect(new Set(ids(first)).size).toBe(8);
         expect(ids(first).some((id) => ids(second).includes(id))).toBe(false);
     });
 
     it('takes a pane naming one view as well as a pane naming several', () => {
-        // revert: src/lib/state/workbench/navigation/arrangement.ts:56 => const names = Array.isArray(view) ? view : null;
+        // revert: src/lib/state/workbench/navigation/arrangement.ts:61 => const names = Array.isArray(view) ? view : null;
         const one = present(
             parseArrangement({ root: { kind: 'pane', view: 'timeline' } }),
             'arrangement'
@@ -112,7 +143,7 @@ describe('parseArrangement', () => {
     });
 
     it('refuses a tree that is not a tree, and one naming no root', () => {
-        // revert: src/lib/state/workbench/navigation/arrangement.ts:57 => if (names === null) return null;
+        // revert: src/lib/state/workbench/navigation/arrangement.ts:62 => if (names === null) return null;
         expect(parseArrangement(null)).toBe(null);
         expect(parseArrangement({ main: { kind: 'pane', view: 'timeline' } })).toBe(null);
         expect(parseArrangement({ root: { kind: 'box' } })).toBe(null);

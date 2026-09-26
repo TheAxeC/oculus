@@ -66,6 +66,7 @@ digraph channels {
         "views/boards/person";
         "views/feeds/leads";
         "views/feeds/radar";
+        "views/sessions/terminal";
         "views/shared/card";
         "views/structure/domains";
         "views/structure/map";
@@ -109,6 +110,7 @@ digraph channels {
     "ch git" -> "routes/+page" [style=dashed];
     "ch git" -> "routes/+page";
     "ch git" -> "state/client/selectors";
+    "ch git" -> "views/sessions/terminal";
     "ch git" -> "views/system/status";
     "ch hpc" -> "routes/+page" [style=dashed];
     "ch hpc" -> "routes/+page";

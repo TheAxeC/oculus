@@ -1,11 +1,15 @@
-// Layer 2, server. The terminals as records: what `tmux list-sessions` says, and the four commands
-// that start, resize, stop and capture one. DESIGN.md's "PTY" puts a session inside tmux so it
-// outlives the server; the `oculus-` prefix is the only thing that tells a session oculus started
-// from one Axel started in a terminal window, and the kind is the suffix of the same name.
+// Layer 2, server. The terminals as records: what `tmux list-sessions` says, and the commands that
+// start, resize, stop, capture, steer and interrupt one. DESIGN.md's "PTY" puts a session inside
+// tmux so it outlives the server; the `oculus-` prefix is all that tells a session oculus
+// started from one Axel started in a terminal window, and the kind is the suffix of the same name.
 //
-// Nothing on the page reaches a command line here. A cwd is checked to be an absolute existing
-// directory, the geometry is checked to be a small positive integer, the id is checked against the
-// shape start() gives it, and what the page typed goes out only through `send-keys -l`.
+// Nothing the page sends is read by a shell on its way to tmux. A cwd is checked to be an absolute
+// existing directory, the geometry a small positive integer, and the id the shape start() gives
+// it. A composer's start is an argument vector of at least two words, which tmux runs directly,
+// with the prompt as one word of it and the account as one `-e NAME=folder` pair, or, for the
+// default account, `env -u NAME` leading the argument vector. What the page types into a running
+// terminal, a steer included, goes out only through `send-keys -l`, and an interrupt is the one
+// Escape key.
 
 import { randomBytes } from 'node:crypto';
 import { statSync } from 'node:fs';
@@ -82,6 +86,11 @@ export type StartRequest = {
      * rather than a bare `claude` or `codex`, and the kind is that tool.
      */
     resume?: TerminalResume;
+    /**
+     * The environment the session's process starts with beside tmux's own, each `NAME=value` set
+     * with new-session's `-e`: the account folder an agent reads its login and settings from.
+     */
+    env?: Record<string, string>;
 };
 
 /** One tmux call, the shape run() of tmux.ts has, for a test that records the argv instead. */
@@ -102,7 +111,16 @@ export type StartOptions = RunOptions & {
      * shell.
      */
     command?: string;
+    /**
+     * The command as an argument vector, run by tmux directly and never through a shell: tmux
+     * hands a command of more than one word to execvp as it stands, so a word holding `$(...)` or a
+     * quote reaches the process as those characters. Wins over `command`.
+     */
+    argv?: string[];
 };
+
+/** The environment names a start may set: the two agents' account folders. */
+export const ENV_NAMES = ['CLAUDE_CONFIG_DIR', 'CODEX_HOME'];
 
 /** The tmux session name of a terminal id. */
 export function sessionName(id: string): string {
@@ -258,8 +276,37 @@ export async function listTerminals(options: RunOptions = {}): Promise<Terminal[
     }
 }
 
-/** The arguments that start a terminal, with the command already chosen. */
-export function startArgs(id: string, request: StartRequest, command: string): string[] {
+/**
+ * The `-e NAME=value` pairs of a start. A name outside ENV_NAMES, or a value that is not an
+ * absolute path, is refused: the only environment a start carries is an account folder.
+ */
+export function envArgs(env: Record<string, string> | undefined): string[] {
+    const args: string[] = [];
+    for (const [name, value] of Object.entries(env ?? {})) {
+        if (!ENV_NAMES.includes(name)) {
+            throw new Error(`env must name one of ${ENV_NAMES.join(', ')}`);
+        }
+        // eslint-disable-next-line no-control-regex
+        if (!isAbsolute(value) || /[\u0000-\u001f]/.test(value)) {
+            throw new Error(`${name} must be an absolute path`);
+        }
+        args.push('-e', `${name}=${value}`);
+    }
+    return args;
+}
+
+/** A vector tmux runs directly: at least two words, `env` before a vector of one. */
+function vector(command: string[]): string[] {
+    return command.length === 1 ? ['env', ...command] : command;
+}
+
+/**
+ * The arguments that start a terminal, with the command already chosen: one shell command as one
+ * word, or an argument vector after `--`. tmux runs a command of one word through `sh -c` and one
+ * of more words directly, so a vector of one word gets `env` in front: `env` runs the word as the
+ * program it names, and no shell reads it.
+ */
+export function startArgs(id: string, request: StartRequest, command: string | string[]): string[] {
     return [
         'new-session',
         '-d',
@@ -271,7 +318,9 @@ export function startArgs(id: string, request: StartRequest, command: string): s
         String(request.cols),
         '-y',
         String(request.rows),
-        command
+        ...envArgs(request.env),
+        '--',
+        ...(typeof command === 'string' ? [command] : vector(command))
     ];
 }
 
@@ -294,12 +343,14 @@ export async function startTerminal(
         throw new Error(`id must be a terminal id for ${kind}`);
     }
     const name = label(request.name, id);
-    // The argv is joined into the one shell-command new-session takes. Both words of it are fixed
-    // and the third is a UUID, so there is nothing here for a shell to read as anything else.
+    // A resume is its argument vector, run by tmux directly; a bare kind is its one command word.
     const command =
-        options.command ?? (resume === undefined ? commandFor(kind) : resumeArgs(resume).join(' '));
+        options.argv ??
+        options.command ??
+        (resume === undefined ? commandFor(kind) : resumeArgs(resume));
+    if (Array.isArray(command) && command.length === 0) throw new Error('argv must not be empty');
     const exec = options.run ?? run;
-    await exec(startArgs(id, { kind, cwd, cols, rows }, command), options);
+    await exec(startArgs(id, { kind, cwd, cols, rows, env: request.env }, command), options);
     if (name !== id) {
         await exec(['set-option', '-t', sessionName(id), NAME_OPTION, name], options);
     }
@@ -367,4 +418,39 @@ export function sendKeysArgs(id: string, chunk: KeyChunk): string[] {
     const target = sessionName(id);
     if ('literal' in chunk) return ['send-keys', '-t', target, '-l', '--', chunk.literal];
     return ['send-keys', '-t', target, '--', chunk.key];
+}
+
+/**
+ * The two calls that type one message into a running agent and send it: the text as literal keys,
+ * a line break inside it typed as the character it is, then Enter. Both agents read a typed line
+ * feed as a new line of the message and Enter as its end.
+ */
+export function steerArgs(id: string, text: string): string[][] {
+    return [sendKeysArgs(id, { literal: text }), sendKeysArgs(id, { key: 'Enter' })];
+}
+
+/** The longest message one steer types. */
+export const STEER_MAX = 100_000;
+
+/** Type one message into a terminal oculus started, then Enter. */
+export async function steerTerminal(id: string, text: string, options: RunOptions = {}) {
+    if (!isTerminalId(id)) throw new Error(`not a terminal id: ${String(id)}`);
+    if (typeof text !== 'string' || text.trim() === '') throw new Error('text must not be empty');
+    if (text.length > STEER_MAX) throw new Error(`text must be at most ${STEER_MAX} chars`);
+    // A control character typed literally is a key of its own (Escape, Ctrl-C), which a message
+    // must not carry; a line break and a tab are the two a message holds.
+    // eslint-disable-next-line no-control-regex
+    if (/[\u0000-\u0008\u000b-\u001f\u007f]/.test(text)) {
+        throw new Error('text must not hold control characters');
+    }
+    for (const args of steerArgs(id, text)) await (options.run ?? run)(args, options);
+}
+
+/**
+ * Interrupt the turn a terminal's agent is running: Escape, which both agents read as stopping the
+ * turn and keeping the session. It is not a stop: the tmux session and its process stay.
+ */
+export async function interruptTerminal(id: string, options: RunOptions = {}): Promise<void> {
+    if (!isTerminalId(id)) throw new Error(`not a terminal id: ${String(id)}`);
+    await (options.run ?? run)(sendKeysArgs(id, { key: 'Escape' }), options);
 }

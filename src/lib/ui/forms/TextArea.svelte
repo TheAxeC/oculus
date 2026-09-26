@@ -21,6 +21,13 @@
         onkeydown?: (event: KeyboardEvent) => void;
         /** The caller may keep a visual mirror aligned with this field. */
         onscroll?: (event: Event) => void;
+        /**
+         * No border, fill or padding of its own and no resize handle, for a field inside a box that
+         * draws them, as the composer's box holds its prompt and its controls under one border.
+         */
+        bare?: boolean;
+        /** What the empty box shows, already translated by the view. */
+        placeholder?: string;
     };
 
     let {
@@ -31,7 +38,9 @@
         readOnly = false,
         spellcheck = true,
         onkeydown,
-        onscroll
+        onscroll,
+        bare = false,
+        placeholder
     }: Props = $props();
 
     function typed(event: Event): void {
@@ -42,8 +51,10 @@
 
 <textarea
     class="area"
+    class:bare
     {rows}
     aria-label={label}
+    {placeholder}
     {value}
     readonly={readOnly}
     {spellcheck}
@@ -64,6 +75,22 @@
         font: inherit;
         font-size: var(--fs-sm);
         padding: 3px 8px;
+    }
+
+    .area.bare,
+    :global(body.rice) .area.bare {
+        border: 0;
+        background: none;
+        padding: 0;
+        resize: none;
+    }
+
+    .area::placeholder {
+        color: var(--muted-txt, var(--muted));
+    }
+
+    .area.bare:focus-visible {
+        outline: none;
     }
 
     .area:focus-visible {

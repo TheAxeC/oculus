@@ -20,6 +20,7 @@ const STORES: (keyof ClientState)[] = [
     'clock',
     'selection',
     'terminals',
+    'agents',
     'files',
     'fs',
     'docs',
@@ -51,6 +52,7 @@ const STORES: (keyof ClientState)[] = [
 describe('the client object', () => {
     // revert: src/lib/state/client/context.ts:261 => delete
     it('holds one instance of every store it names', () => {
+        // revert: src/lib/state/client/context.ts:248 => delete
         const client = createClientState();
         const missing = STORES.filter((name) => typeof client[name] !== 'object');
         expect(missing).toEqual([]);

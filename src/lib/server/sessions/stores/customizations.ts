@@ -1,0 +1,455 @@
+// Layer 2, server. What an agent reads before its first turn, for one workspace and one account:
+// its instructions, skills, subagents, hooks, MCP servers, plugins and the tools a file names. The
+// Customizations section at the foot of the sessions list shows it, and the viewer opens one of its
+// files.
+//
+// Every read is of the agents' own files and is only a read. Each kind is a fixed list of places,
+// the places Claude Code and Codex read themselves, so a row's `looked` is the whole of where it
+// looked: a missing file counts nothing, and a file that is there and does not parse is a finding
+// on its row rather than a count of zero. The file served for one item is served only when it is
+// one of the paths the same listing gives, so the viewer cannot be asked for any other file.
+
+import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { homedir } from 'node:os';
+import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
+import type {
+    AgentId,
+    CustomizationFinding,
+    CustomizationItem,
+    CustomizationKind,
+    CustomizationRow,
+    CustomizationsAnswer
+} from '../../../data/model/index.ts';
+import { sameOrigin } from '../../core/auth.ts';
+
+/** The rows in the order the section lists them. */
+export const CUSTOMIZATION_KINDS: CustomizationKind[] = [
+    'instructions',
+    'skills',
+    'agents',
+    'hooks',
+    'mcp',
+    'plugins',
+    'tools'
+];
+
+/** The largest file the viewer serves. */
+export const CUSTOMIZATION_MAX = 1_000_000;
+
+/** What one read asks for: the agent, its account's folder, the workspace, the roots above it. */
+export type CustomizationScope = {
+    agent: AgentId;
+    account: string;
+    workspace: string;
+    /** The folders a walk from the workspace upward stops at, the deepest holding it first. */
+    roots: string[];
+};
+
+/** Whether a path is a file, following a link, and false for anything missing. */
+function isFile(path: string): boolean {
+    try {
+        return statSync(path).isFile();
+    } catch {
+        return false;
+    }
+}
+
+/** A folder's entries in name order, or none for a folder that is not there. */
+function entries(dir: string): string[] {
+    try {
+        return readdirSync(dir).sort();
+    } catch {
+        return [];
+    }
+}
+
+/** Whether a path lies inside a folder or is the folder. */
+function within(path: string, dir: string): boolean {
+    const rest = relative(resolve(dir), resolve(path));
+    return rest === '' || (!rest.startsWith('..') && !isAbsolute(rest) && !rest.startsWith(sep));
+}
+
+/**
+ * The folders from the workspace up to the deepest root holding it, both included, nearest first.
+ * A workspace no root holds is walked up to the filesystem's root, as the agents walk it.
+ */
+export function upward(workspace: string, roots: string[]): string[] {
+    const start = resolve(workspace);
+    const holding = roots
+        .map((one) => resolve(one))
+        .filter((one) => within(start, one))
+        .sort((a, b) => b.length - a.length)
+        .at(0);
+    const dirs: string[] = [];
+    let dir = start;
+    for (;;) {
+        dirs.push(dir);
+        if (holding !== undefined && dir === holding) break;
+        const up = dirname(dir);
+        if (up === dir) break;
+        dir = up;
+    }
+    return dirs;
+}
+
+/** The global file Claude Code keeps beside an account: ~/.claude.json for the default folder. */
+export function claudeJsonOf(account: string): string {
+    return resolve(account) === join(homedir(), '.claude')
+        ? join(homedir(), '.claude.json')
+        : join(account, '.claude.json');
+}
+
+type Collect = {
+    items: CustomizationItem[];
+    looked: string[];
+    findings: CustomizationFinding[];
+};
+
+function collect(): Collect {
+    return { items: [], looked: [], findings: [] };
+}
+
+function rowOf(kind: CustomizationKind, found: Collect, counted = true): CustomizationRow {
+    return {
+        kind,
+        count: counted ? found.items.length : null,
+        items: found.items,
+        looked: found.looked,
+        findings: found.findings
+    };
+}
+
+/**
+ * A JSON file's value: undefined for a file that is not there, and a finding on the row for one
+ * that is there and does not parse.
+ */
+function jsonFile(path: string, found: Collect): unknown {
+    found.looked.push(path);
+    if (!isFile(path)) return undefined;
+    try {
+        return JSON.parse(readFileSync(path, 'utf8')) as unknown;
+    } catch {
+        found.findings.push({ path, reason: 'malformed' });
+        return undefined;
+    }
+}
+
+/** A plain map, or null. */
+function mapOf(value: unknown): Record<string, unknown> | null {
+    return typeof value === 'object' && value !== null && !Array.isArray(value)
+        ? (value as Record<string, unknown>)
+        : null;
+}
+
+/** A map field that must be a map when present: a finding when it is something else. */
+function mapField(
+    value: unknown,
+    field: string,
+    path: string,
+    found: Collect
+): Record<string, unknown> | null {
+    const map = mapOf(value);
+    if (map === null || !(field in map)) return null;
+    const inner = mapOf(map[field]);
+    if (inner === null) found.findings.push({ path, reason: 'malformed' });
+    return inner;
+}
+
+/** The instruction files, account first, then the workspace and each folder above it. */
+function instructions(scope: CustomizationScope): Collect {
+    const found = collect();
+    const names =
+        scope.agent === 'claude'
+            ? ['CLAUDE.md', join('.claude', 'CLAUDE.md'), 'CLAUDE.local.md']
+            : ['AGENTS.override.md', 'AGENTS.md'];
+    const account = scope.agent === 'claude' ? ['CLAUDE.md'] : ['AGENTS.override.md', 'AGENTS.md'];
+    const places: string[] = account.map((name) => join(scope.account, name));
+    for (const dir of upward(scope.workspace, scope.roots)) {
+        for (const name of names) places.push(join(dir, name));
+    }
+    for (const path of places) {
+        found.looked.push(path);
+        if (isFile(path)) found.items.push({ name: path, path });
+    }
+    return found;
+}
+
+/** Every `<folder>/*\/SKILL.md`, named by its folder. */
+function skillsIn(dir: string, found: Collect): void {
+    found.looked.push(join(dir, '*', 'SKILL.md'));
+    for (const name of entries(dir)) {
+        const path = join(dir, name, 'SKILL.md');
+        if (isFile(path)) found.items.push({ name, path });
+    }
+}
+
+function skills(scope: CustomizationScope): Collect {
+    const found = collect();
+    skillsIn(join(scope.account, 'skills'), found);
+    if (scope.agent === 'claude') skillsIn(join(scope.workspace, '.claude', 'skills'), found);
+    return found;
+}
+
+/** Every `<folder>/*.md`, named by its file. */
+function agentsIn(dir: string, found: Collect): void {
+    found.looked.push(join(dir, '*.md'));
+    for (const name of entries(dir)) {
+        const path = join(dir, name);
+        if (name.endsWith('.md') && isFile(path)) {
+            found.items.push({ name: basename(name, '.md'), path });
+        }
+    }
+}
+
+function agents(scope: CustomizationScope): Collect {
+    const found = collect();
+    if (scope.agent !== 'claude') return found;
+    agentsIn(join(scope.account, 'agents'), found);
+    agentsIn(join(scope.workspace, '.claude', 'agents'), found);
+    return found;
+}
+
+/** The three settings files Claude Code reads for one account and one workspace. */
+function settingsFiles(scope: CustomizationScope): string[] {
+    return [
+        join(scope.account, 'settings.json'),
+        join(scope.workspace, '.claude', 'settings.json'),
+        join(scope.workspace, '.claude', 'settings.local.json')
+    ];
+}
+
+/** The hooks each settings file names, one item per command, named by its event. */
+function hooks(scope: CustomizationScope): Collect {
+    const found = collect();
+    if (scope.agent !== 'claude') return found;
+    for (const path of settingsFiles(scope)) {
+        const events = mapField(jsonFile(path, found), 'hooks', path, found);
+        if (events === null) continue;
+        for (const [event, groups] of Object.entries(events)) {
+            if (!Array.isArray(groups)) {
+                found.findings.push({ path, reason: 'malformed' });
+                continue;
+            }
+            for (const group of groups) {
+                const list = mapOf(group)?.hooks;
+                if (!Array.isArray(list)) {
+                    found.findings.push({ path, reason: 'malformed' });
+                    continue;
+                }
+                for (const hook of list) {
+                    const command = mapOf(hook)?.command;
+                    const said = typeof command === 'string' ? command : '';
+                    found.items.push({ name: said === '' ? event : `${event}: ${said}`, path });
+                }
+            }
+        }
+    }
+    return found;
+}
+
+/** The server names of one `mcpServers` map, each named once. */
+function serversOf(servers: Record<string, unknown> | null, path: string, found: Collect): void {
+    if (servers === null) return;
+    for (const name of Object.keys(servers)) {
+        if (!found.items.some((one) => one.name === name)) found.items.push({ name, path });
+    }
+}
+
+/**
+ * The table names under `[mcp_servers.<name>]` in a Codex config.toml. The file is read by its
+ * table headers only, which is all a count needs; a header that does not close is a finding.
+ */
+export function tomlServers(text: string): { names: string[]; malformed: boolean } {
+    const names: string[] = [];
+    let malformed = false;
+    for (const raw of text.split('\n')) {
+        const line = raw.trim();
+        if (!line.startsWith('[') || line.startsWith('[[')) continue;
+        const close = line.indexOf(']');
+        if (close < 0) {
+            malformed = true;
+            continue;
+        }
+        const header = line.slice(1, close).trim();
+        const match = /^mcp_servers\.(?:"([^"]+)"|([A-Za-z0-9_-]+))$/.exec(header);
+        const name = match?.[1] ?? match?.[2];
+        if (name !== undefined && !names.includes(name)) names.push(name);
+    }
+    return { names, malformed };
+}
+
+/** A Codex config.toml's text, or null for a file that is not there or cannot be read. */
+function tomlText(path: string, found: Collect): string | null {
+    found.looked.push(path);
+    if (!isFile(path)) return null;
+    try {
+        return readFileSync(path, 'utf8');
+    } catch {
+        found.findings.push({ path, reason: 'unreadable' });
+        return null;
+    }
+}
+
+function mcp(scope: CustomizationScope): Collect {
+    const found = collect();
+    if (scope.agent === 'codex') {
+        const path = join(scope.account, 'config.toml');
+        const text = tomlText(path, found);
+        if (text === null) return found;
+        const read = tomlServers(text);
+        if (read.malformed) found.findings.push({ path, reason: 'malformed' });
+        for (const name of read.names) found.items.push({ name, path });
+        return found;
+    }
+    const project = join(scope.workspace, '.mcp.json');
+    serversOf(mapField(jsonFile(project, found), 'mcpServers', project, found), project, found);
+    const settings = join(scope.account, 'settings.json');
+    serversOf(mapField(jsonFile(settings, found), 'mcpServers', settings, found), settings, found);
+    const global = claudeJsonOf(scope.account);
+    const projects = mapField(jsonFile(global, found), 'projects', global, found);
+    const entry = projects === null ? null : mapOf(projects[resolve(scope.workspace)]);
+    serversOf(mapField(entry, 'mcpServers', global, found), global, found);
+    return found;
+}
+
+/** The plugins the account's installed-plugins file lists, named as the file names them. */
+function plugins(scope: CustomizationScope): Collect {
+    const found = collect();
+    if (scope.agent !== 'claude') return found;
+    const path = join(scope.account, 'plugins', 'installed_plugins.json');
+    const listed = mapField(jsonFile(path, found), 'plugins', path, found);
+    if (listed === null) return found;
+    for (const name of Object.keys(listed)) found.items.push({ name, path });
+    return found;
+}
+
+/**
+ * The tools a Codex config.toml switches on in its `[tools]` table, one per key set to `true`, each
+ * named once. Only that table is read; a key set to anything else names no tool that is on.
+ */
+export function tomlTools(text: string): string[] {
+    const names: string[] = [];
+    let inTools = false;
+    for (const raw of text.split('\n')) {
+        const line = raw.replace(/#.*$/, '').trim();
+        if (line.startsWith('[')) {
+            inTools = line === '[tools]';
+            continue;
+        }
+        if (!inTools) continue;
+        const match = /^([A-Za-z0-9_-]+)\s*=\s*true$/.exec(line);
+        const name = match?.[1];
+        if (name !== undefined && !names.includes(name)) names.push(name);
+    }
+    return names;
+}
+
+/**
+ * The tools a file names. Codex's config.toml names the tools it switches on; no file of Claude
+ * Code lists the tools its agent has (they are built into the CLI, and an MCP server's tools are
+ * known only once the server runs), so a Claude row looks in no file. A row whose file names no
+ * tool shows no count.
+ */
+function tools(scope: CustomizationScope): Collect {
+    const found = collect();
+    if (scope.agent !== 'codex') return found;
+    const path = join(scope.account, 'config.toml');
+    const text = tomlText(path, found);
+    if (text === null) return found;
+    for (const name of tomlTools(text)) found.items.push({ name, path });
+    return found;
+}
+
+const READERS: Record<CustomizationKind, (scope: CustomizationScope) => Collect> = {
+    instructions,
+    skills,
+    agents,
+    hooks,
+    mcp,
+    plugins,
+    tools
+};
+
+/** Every row for one scope, in the section's order. */
+export function customizationRows(scope: CustomizationScope): CustomizationRow[] {
+    return CUSTOMIZATION_KINDS.map((kind) => {
+        const found = READERS[kind](scope);
+        return rowOf(kind, found, kind !== 'tools' || found.items.length > 0);
+    });
+}
+
+/**
+ * One listed file's text for the viewer, or null when the path is not one the listing gives or
+ * the file is too large to show.
+ */
+export function customizationFile(scope: CustomizationScope, path: string): string | null {
+    const wanted = resolve(path);
+    const listed = customizationRows(scope).some((row) =>
+        row.items.some((item) => resolve(item.path) === wanted)
+    );
+    if (!listed) return null;
+    try {
+        if (statSync(wanted).size > CUSTOMIZATION_MAX) return null;
+        return readFileSync(wanted, 'utf8');
+    } catch {
+        return null;
+    }
+}
+
+function json(status: number, body: unknown): Response {
+    return new Response(JSON.stringify(body), {
+        status,
+        headers: { 'content-type': 'application/json', 'cache-control': 'no-store' }
+    });
+}
+
+/** Whether a path is an existing folder. */
+function isDir(path: string): boolean {
+    try {
+        return statSync(path).isDirectory();
+    } catch {
+        return false;
+    }
+}
+
+/**
+ * GET /api/customizations: the rows for `agent`, `account` (a label of local.yml's accounts, the
+ * agent's first when empty) and `workspace` (an absolute folder), or with `file` the text of one
+ * listed file. A read, so same-origin only.
+ */
+export function handleCustomizations(
+    request: Request,
+    accounts: { tool: string; label: string; dir: string }[],
+    roots: string[]
+): Response {
+    if (!sameOrigin(request, request.headers.get('host') ?? '')) {
+        return json(403, { error: 'the request did not come from this page' });
+    }
+    const params = new URL(request.url).searchParams;
+    const agent = params.get('agent');
+    if (agent !== 'claude' && agent !== 'codex')
+        return json(400, { error: 'agent must be claude or codex' });
+    const workspace = params.get('workspace') ?? '';
+    if (!isAbsolute(workspace) || !isDir(workspace)) {
+        return json(400, { error: 'workspace must be an absolute folder' });
+    }
+    const label = params.get('account') ?? '';
+    const own = accounts.filter((one) => one.tool === agent);
+    const account = label === '' ? own[0] : own.find((one) => one.label === label);
+    if (account === undefined) return json(400, { error: `no ${agent} account ${label}` });
+    const scope: CustomizationScope = { agent, account: account.dir, workspace, roots };
+    const file = params.get('file');
+    if (file !== null) {
+        const text = customizationFile(scope, file);
+        return text === null
+            ? json(404, { error: 'the file is not one this listing gives' })
+            : json(200, { path: resolve(file), text });
+    }
+    const answer: CustomizationsAnswer = {
+        agent,
+        account: account.label,
+        workspace: resolve(workspace),
+        rows: customizationRows(scope)
+    };
+    return json(200, answer);
+}

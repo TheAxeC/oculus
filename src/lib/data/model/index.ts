@@ -417,4 +417,23 @@ export type {
     Workspace
 } from './model-sessions.ts';
 
+export type {
+    AgentAccount,
+    AgentChoice,
+    AgentChoiceList,
+    AgentChoices,
+    AgentChoicesFinding,
+    AgentChoicesWhy,
+    AgentId,
+    AgentsAnswer,
+    ComposeStart,
+    CustomizationFinding,
+    CustomizationItem,
+    CustomizationKind,
+    CustomizationRow,
+    CustomizationsAnswer,
+    ListedSession,
+    SizedAgent
+} from './model-agents.ts';
+
 export type { SearchAnswer, SearchFailure, SearchFile, SearchHit } from './model-search.ts';

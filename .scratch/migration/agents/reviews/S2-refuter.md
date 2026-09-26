@@ -173,3 +173,15 @@ Findings:
 - The round-0 eslint-disable lines (the three `no-control-regex` in sessions.ts, compose.ts and agents.ts, and the one `no-dynamic-delete` in overrides.ts), weighed against the no-exemption rule. These predate this round.
 
 Reviewer usage: about 75k tokens, 45 tool uses, 40 minutes.
+
+## Closed
+
+- The first run's findings: closed by the repair round, each closure read and reproduced by the run over the round above.
+- HELP.md :89, :103 and :105: fixed at landing, the three table rows keep their `files`, `session-list` and `terminal` cells with the new text in them.
+- sessions-page.spec contrast case: fixed at landing, `inked()` measures words, an empty field's placeholder and each top-level SVG glyph, composited over the wallpaper's dimmed range (black and the dimmed white) under every rice theme with the wallpaper on, and over the plain ground under every theme with it off; 4.5:1 for text and 3:1 for a glyph.
+- Menu and MenuOpener `inherit`: fixed at landing, the contrast case names the revert `MenuOpener.svelte:138 => delete` and it comes back red.
+- Tree.svelte `rootActions` in follow mode: fixed at landing, the head row's Collapse-all closes the folders under the workspace folder (`collapseRoot(expanded, root, from)`), its title names the folder, and Remove is not drawn for a followed root (`fixedRootKeys(roots, following)`); unit cases in `explorer.test.ts` and `fs-shape.test.ts`, a browser assertion in the follow case.
+- Files.svelte size: fixed at landing, 538 lines under the 540 limit.
+- pty/sessions.ts head comment: fixed at landing, it names `env -u NAME` for the default account.
+- overrides.ts `setFlag`: fixed at landing, the parameter is `on`, and a `without()` helper replaces the two `no-dynamic-delete` exemptions of that function.
+- Not checked by the round, checked at landing: the real `claude` (2.1.283) takes `--` before a prompt (`claude -p --no-session-persistence --model claude-haiku-4-5-20251001 -- "mcp: reply with the single word OK"` printed `OK`), and `codex` (0.155.1) takes the word after `--` as its prompt (`codex -- --help` went on to `Error: stdin is not a terminal` instead of printing help).

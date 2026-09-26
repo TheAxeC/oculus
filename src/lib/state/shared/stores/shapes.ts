@@ -88,8 +88,10 @@ export type WriteAnswer = {
 
 /** What one session write may set. A field left out is left as the overrides file has it. */
 export type SessionFields = {
-    /** True dismisses the session from the rail, false brings it back. */
+    /** True archives the session, false brings it back. */
     hidden?: boolean;
+    /** True pins the session to the top of its group in the sessions list, false unpins it. */
+    top?: boolean;
     /** An absolute directory to pin the session to, or the empty string to unpin it. */
     area?: string;
     /** A title to show instead of the transcript's own, or the empty string to clear it. */

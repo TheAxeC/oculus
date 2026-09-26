@@ -15,9 +15,9 @@ import {
  * One arrangement of `arrangements:` in config/layout.yml as a workbench, with a fresh instance id
  * for every tab. It is the same tree as a saved envelope with the instances left out: the
  * arrangement carries `root`, and a node is `{ kind: split, dir, sizes, children }` or
- * `{ kind: pane, view }`, where `view` is one view id or a list of them. Anything the shape or
- * checkWorkbench refuses is null, so a hand edit that does not add up leaves the workbench the user
- * had rather than replacing it with a broken one.
+ * `{ kind: pane, view }`, where `view` is one view id or a list of them, and a tab of the list may
+ * be `{ view, state }`. Anything the shape or checkWorkbench refuses is null, so a hand edit that
+ * does not add up leaves the workbench the user had rather than replacing it with a broken one.
  */
 export function parseArrangement(value: unknown): Workbench | null {
     if (!isRecord(value)) return null;
@@ -51,14 +51,30 @@ function readArrangement(value: unknown): Layout | null {
     return { kind: 'split', dir, sizes, children };
 }
 
-/** A pane's tabs from its `view`, which is one view id or a list of them. */
+/**
+ * A pane's tabs from its `view`, which is one view id or a list of them. A tab of the list may be
+ * `{ view, state }` instead of an id, for a tab the arrangement opens in a state of its own (the
+ * sessions page's Files tab, which follows the selected session); the state is a map, and anything
+ * else refuses the arrangement.
+ */
 function readArrangementPane(view: unknown): Layout | null {
     const names = typeof view === 'string' ? [view] : Array.isArray(view) ? view : null;
     if (names === null || names.length === 0) return null;
     const tabs: Instance[] = [];
     for (const name of names) {
-        if (typeof name !== 'string' || name === '') return null;
-        tabs.push(newInstance(name));
+        const tab = readArrangementTab(name);
+        if (tab === null) return null;
+        tabs.push(tab);
     }
     return { kind: 'pane', tabs, active: tabs[0].id };
+}
+
+/** One tab of a pane: a view id, or a view id with the state its instance opens in. */
+function readArrangementTab(value: unknown): Instance | null {
+    if (typeof value === 'string') return value === '' ? null : newInstance(value);
+    if (!isRecord(value)) return null;
+    const { view, state } = value;
+    if (typeof view !== 'string' || view === '') return null;
+    if (state === undefined) return newInstance(view);
+    return isRecord(state) ? newInstance(view, { ...state }) : null;
 }

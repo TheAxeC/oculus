@@ -165,6 +165,7 @@ describe('one-shot Claude usage refresher', () => {
             '80',
             '-y',
             '24',
+            '--',
             "'env' 'CLAUDE_CONFIG_DIR=" +
                 account.dir +
                 "' '/opt/Claude Code/claude' '--model' 'haiku' '--name' 'oculus-usage-university'"

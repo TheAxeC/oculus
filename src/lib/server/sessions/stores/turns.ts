@@ -46,16 +46,22 @@ export type TurnsAnswer = {
 };
 
 /**
- * The turns of one transcript from byte `from`. An unreadable file, or one with nothing appended,
- * answers with no turns and the offset it was asked from.
+ * The turns of one transcript from byte `from`, each said turn cut at `cap` characters. An
+ * unreadable file, or one with nothing appended, answers with no turns and the offset it was asked
+ * from. The export asks with no cap, since a file handed to the reader is the whole conversation.
  */
-export function readTurns(path: string, tool: SessionTool, from = 0): TurnsAnswer {
+export function readTurns(
+    path: string,
+    tool: SessionTool,
+    from = 0,
+    cap: number = TURN_CHARS
+): TurnsAnswer {
     const answer: TurnsAnswer = { turns: [], offset: from, results: {} };
     /** The tool turns of this read, by call id, so a result in the same read fills its own turn. */
     const calls = new Map<string, Turn>();
     const read = foldFrom(path, from, (record) => {
-        if (tool === 'codex') codexRecord(answer, record);
-        else claudeRecord(answer, calls, record);
+        if (tool === 'codex') codexRecord(answer, record, cap);
+        else claudeRecord(answer, calls, record, cap);
     });
     answer.offset = from + read;
     return answer;
@@ -67,7 +73,8 @@ export function readTurns(path: string, tool: SessionTool, from = 0): TurnsAnswe
 function claudeRecord(
     answer: TurnsAnswer,
     calls: Map<string, Turn>,
-    record: Record<string, unknown>
+    record: Record<string, unknown>,
+    cap: number
 ): void {
     const kind = record.type;
     if (kind !== 'user' && kind !== 'assistant') return;
@@ -78,7 +85,7 @@ function claudeRecord(
         const origin = record.origin;
         if (isMap(origin) && origin.kind === 'human') {
             const said = blockText(content);
-            if (said !== '') answer.turns.push(saidTurn(at, 'user', said));
+            if (said !== '') answer.turns.push(saidTurn(at, 'user', said, cap));
         }
         for (const block of list(content)) {
             if (!isMap(block) || block.type !== 'tool_result') continue;
@@ -92,7 +99,7 @@ function claudeRecord(
         return;
     }
     const said = blockText(content);
-    if (said !== '') answer.turns.push(saidTurn(at, 'assistant', said));
+    if (said !== '') answer.turns.push(saidTurn(at, 'assistant', said, cap));
     for (const block of list(content)) {
         if (!isMap(block) || block.type !== 'tool_use') continue;
         const id = text(block.id);
@@ -106,7 +113,7 @@ function claudeRecord(
  * One line of a Codex rollout. Only a completed item says anything: the two message items are the
  * conversation, everything else the model did is a tool turn under its own type name.
  */
-function codexRecord(answer: TurnsAnswer, record: Record<string, unknown>): void {
+function codexRecord(answer: TurnsAnswer, record: Record<string, unknown>, cap: number): void {
     if (record.type !== 'event_msg') return;
     const payload = isMap(record.payload) ? record.payload : {};
     if (payload.type !== 'item_completed') return;
@@ -117,7 +124,7 @@ function codexRecord(answer: TurnsAnswer, record: Record<string, unknown>): void
     if (type === 'UserMessage' || type === 'AgentMessage') {
         const said = blockText(item.content) || text(item.text);
         if (said === '') return;
-        answer.turns.push(saidTurn(at, type === 'UserMessage' ? 'user' : 'assistant', said));
+        answer.turns.push(saidTurn(at, type === 'UserMessage' ? 'user' : 'assistant', said, cap));
         return;
     }
     if (type === '' || CODEX_SILENT.includes(type)) return;
@@ -138,9 +145,9 @@ function blockText(content: unknown): string {
 }
 
 /** A said turn, cut at the cap. The assistant's Markdown is rendered; nothing else is. */
-function saidTurn(at: string | null, role: 'user' | 'assistant', said: string): Turn {
-    const cut = said.length > TURN_CHARS;
-    const body = cut ? said.slice(0, TURN_CHARS) : said;
+function saidTurn(at: string | null, role: 'user' | 'assistant', said: string, cap: number): Turn {
+    const cut = said.length > cap;
+    const body = cut ? said.slice(0, cap) : said;
     return {
         at,
         role,

@@ -100,12 +100,12 @@ test('draws the launch under its orchestrator and opens its own transcript', asy
     await boot(page);
     await openView(page, 'session-list', t('sessions.rail_title'));
     await page.getByRole('tab', { name: t('sessions.rail_title') }).click();
-    const ended = page.locator('button.ended-h');
-    await expect(ended).toHaveCount(1, { timeout: 15000 });
-    if ((await ended.getAttribute('aria-expanded')) !== 'true') await ended.click();
-    const row = page.locator('.row').filter({ hasText: 'Agents spec orchestrator' }).first();
+    const row = page
+        .locator('[data-session-row]')
+        .filter({ hasText: 'Agents spec orchestrator' })
+        .first();
     await expect(row).toBeVisible({ timeout: 15000 });
-    await row.locator('button.pick').click();
+    await row.locator('button.row-button').click();
 
     await openView(page, 'agents', t('sessions.view_agents'));
     const launched = page.locator('.agents [data-launched="true"]');
@@ -116,7 +116,7 @@ test('draws the launch under its orchestrator and opens its own transcript', asy
     // No end is stamped, and the builder's own session is not running, so the row reads done.
     await expect(launched).toContainText(t('sessions.ag_done'));
 
-    // revert: src/lib/views/sessions/agents/Agents.svelte:133 => if (session !== null) openView('transcript');
+    // revert: src/lib/views/sessions/agents/Agents.svelte:131 => if (session !== null) openView('transcript');
     await launched.getByRole('button', { name: t('sessions.ag_open') }).click();
     const chat = page.locator('.chat[data-instance]').filter({ hasText: 'Built the step' });
     await expect(chat).toBeVisible({ timeout: 15000 });
@@ -154,12 +154,11 @@ test('marks the launch ended once its note is stamped', async ({ page }) => {
     await boot(page);
     await openView(page, 'session-list', t('sessions.rail_title'));
     await page.getByRole('tab', { name: t('sessions.rail_title') }).click();
-    const ended = page.locator('button.ended-h');
-    await expect(ended).toHaveCount(1, { timeout: 15000 });
-    if ((await ended.getAttribute('aria-expanded')) !== 'true') await ended.click();
-    const row = page.locator('.row').filter({ hasText: 'Agents spec ended orchestrator' });
+    const row = page
+        .locator('[data-session-row]')
+        .filter({ hasText: 'Agents spec ended orchestrator' });
     await expect(row.first()).toBeVisible({ timeout: 15000 });
-    await row.first().locator('button.pick').click();
+    await row.first().locator('button.row-button').click();
     await openView(page, 'agents', t('sessions.view_agents'));
     const launched = page.locator('.agents [data-agent="dispatch:agents-spec-ended"]');
     await expect(launched).toContainText(t('sessions.ag_running'), { timeout: 15000 });
@@ -190,7 +189,7 @@ test('marks the launch ended once its note is stamped', async ({ page }) => {
 test('counts a running launch on while the page is open, and a stamped one from start to end', async ({
     page
 }) => {
-    // revert: src/lib/views/sessions/agents/Agents.svelte:77 => const timer = 0;
+    // revert: src/lib/views/sessions/agents/Agents.svelte:76 => const timer = 0;
     const parent = randomUUID();
     session(parent, 'Agents spec counting orchestrator', 'Launched and counted.');
     mkdirSync(join(servedHomeDir(), '.oculus'), { recursive: true });
@@ -211,12 +210,11 @@ test('counts a running launch on while the page is open, and a stamped one from 
 
     await boot(page);
     await openView(page, 'session-list', t('sessions.rail_title'));
-    const ended = page.locator('button.ended-h');
-    await expect(ended).toHaveCount(1, { timeout: 15000 });
-    if ((await ended.getAttribute('aria-expanded')) !== 'true') await ended.click();
-    const row = page.locator('.row').filter({ hasText: 'Agents spec counting orchestrator' });
+    const row = page
+        .locator('[data-session-row]')
+        .filter({ hasText: 'Agents spec counting orchestrator' });
     await expect(row.first()).toBeVisible({ timeout: 15000 });
-    await row.first().locator('button.pick').click();
+    await row.first().locator('button.row-button').click();
     await openView(page, 'agents', t('sessions.view_agents'));
     const line = page.locator('.agents [data-launched="true"] .st');
     await expect(line).toContainText(t('sessions.ag_running'), { timeout: 15000 });

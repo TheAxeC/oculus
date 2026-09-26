@@ -8,7 +8,12 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
-import { overrides, setHidden, setOverride } from '../../../src/lib/server/sessions/overrides.ts';
+import {
+    overrides,
+    setFlag,
+    setHidden,
+    setOverride
+} from '../../../src/lib/server/sessions/overrides.ts';
 import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
 
 afterAll(sweepScratch);
@@ -60,6 +65,22 @@ describe('setHidden', () => {
         expect(setHidden(ID, true, path)).toEqual({ changed: [], refused: [], records: [] });
         // The trailing newline is still there, so the file was not rewritten.
         expect(readFileSync(path, 'utf8').endsWith('\n')).toBe(true);
+    });
+});
+
+describe('setFlag top', () => {
+    // revert: src/lib/server/sessions/overrides.ts:105 => const next = on ? { ...entry, hidden: true } : without(entry, flag);
+    it('pins a session to the top of its group and takes it off, keeping the dismissal beside it', () => {
+        const path = file({ sessions: { [ID]: { hidden: true } } });
+        expect(setFlag(ID, 'top', true, path)).toEqual({
+            changed: ['top'],
+            refused: [],
+            records: [record(path, 'top', null, true)]
+        });
+        expect(held(path)).toEqual({ sessions: { [ID]: { hidden: true, top: true } } });
+        expect(setFlag(ID, 'top', false, path).changed).toEqual(['top']);
+        expect(held(path)).toEqual({ sessions: { [ID]: { hidden: true } } });
+        expect(() => setFlag('  ', 'top', true, path)).toThrow('a session id is required');
     });
 });
 

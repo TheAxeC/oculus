@@ -185,6 +185,12 @@ describe('the explorer over the rows', () => {
         expect(collapseRoot([...open, 'hubby:x'], 'hub')).toEqual(['hub:', 'notes:', 'hubby:x']);
     });
 
+    // revert: src/lib/state/sources/fs.ts:708 => const under = own;
+    it('closes only the folders under the followed folder, leaving it and its neighbours open', () => {
+        const held = ['hub:', 'hub:a', 'hub:a/b', 'hub:a/b/c', 'hub:ab', 'hub:z'];
+        expect(collapseRoot(held, 'hub', 'a')).toEqual(['hub:', 'hub:a', 'hub:ab', 'hub:z']);
+    });
+
     // revert: src/lib/state/sources/fs.ts:316 => hidden: false,
     it('reads the two toggles an instance keeps, and false for anything that is not true', () => {
         expect(filesViewOf({ hidden: true, ignored: true })).toMatchObject({

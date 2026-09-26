@@ -20,15 +20,21 @@
     // that moves the focus selects the row it moves to. While a filter draws the rows, a folder it
     // holds open is stepped through by Right and Left and never opened or closed, so clearing the
     // filter gives back the folders that were open before it.
+    //
+    // A file row is draggable and carries its absolute path under the file drag type, which a drop
+    // target that takes a file (the composer's prompt box) reads.
 
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
     import TreeView from '$lib/ui/tree/TreeView.svelte';
     import type { TreeNav } from '$lib/ui/tree/tree-keys';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import {
+        FILE_DRAG,
+        absoluteOf,
         rowKey,
         treeKeyRows,
         typeOfFile,
+        type FsRoot,
         type RowRef,
         type TreeRow
     } from '$lib/state/sources/fs';
@@ -36,6 +42,8 @@
 
     type Props = {
         rows: TreeRow[];
+        /** The roots the rows are under, for the absolute path a dragged file row carries. */
+        roots?: FsRoot[];
         /** Whether a filter draws the rows, which holds the folders it draws open. */
         filtering: boolean;
         selected: RowRef | null;
@@ -55,6 +63,7 @@
 
     let {
         rows,
+        roots,
         filtering,
         selected,
         fixed,
@@ -92,6 +101,16 @@
         return rows.find((row) => rowKey(row) === id);
     }
 
+    /** Put a file row's absolute path on the drag, for a drop target that takes a file. */
+    function dragged(event: DragEvent, row: TreeRow): void {
+        const dir = roots?.find((one) => one.key === row.root)?.dir ?? '';
+        if (dir === '' || event.dataTransfer === null) return;
+        const path = absoluteOf(dir, row.path);
+        event.dataTransfer.setData(FILE_DRAG, path);
+        event.dataTransfer.setData('text/plain', path);
+        event.dataTransfer.effectAllowed = 'copy';
+    }
+
     /** What a press on a row does: it is selected, and a folder opens or closes, a file opens. */
     function pressed(row: TreeRow): void {
         onselect(row);
@@ -111,7 +130,7 @@
     />
     <ToolButton
         label={t('files.collapse_all')}
-        title={t('files.collapse_all_title', row.root)}
+        title={t('files.collapse_all_title', row.name)}
         glyph="collapse_all"
         compact
         tabindex={reach}
@@ -174,7 +193,14 @@
     {#snippet children(nav: TreeNav)}
         <ul class="rows" role="none">
             {#each rows as row (rowKey(row))}
-                <li class="row" class:head={row.depth === 0} role="none" data-fs-row={rowKey(row)}>
+                <li
+                    class="row"
+                    class:head={row.depth === 0}
+                    role="none"
+                    data-fs-row={rowKey(row)}
+                    draggable={row.kind === 'file' && roots !== undefined ? 'true' : undefined}
+                    ondragstart={(event) => dragged(event, row)}
+                >
                     {#if row.depth === 0}
                         <TreeItem
                             label={row.name}

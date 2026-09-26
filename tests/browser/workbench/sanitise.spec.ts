@@ -140,12 +140,8 @@ test('an assistant turn is drawn without its handler and keeps its fenced block'
     const seen = dialogs(page);
     await boot(page);
     await openView(page, 'session-list', t('sessions.rail_title'));
-    // The fixture session is not running, and the list keeps the ended ones behind their own head.
-    const ended = page.locator('button.ended-h');
-    await expect(ended).toHaveCount(1, { timeout: 15000 });
-    await ended.click();
 
-    const row = page.locator('.row').filter({ hasText: SESSION }).first();
+    const row = page.locator('[data-session-row]').filter({ hasText: SESSION }).first();
     await expect(row).toBeVisible();
     // The row's own menu is what opens a transcript: it selects the session and opens the view.
     await row.getByRole('button', { name: t('ui.row_menu') }).click();

@@ -88,120 +88,138 @@
 {/snippet}
 
 {#if entries.length > 0}
-    <div class="ws">
-        <div class="ws-h">
+    <section class="group" data-terminal-group>
+        <h3 class="head">
             <span class="nm">{t('sessions.terminals')}</span>
             <span class="n">{entries.length}</span>
-        </div>
-        <div class="area">
-            {#each entries as entry (entry.id)}
-                <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-                {@render row(entry)}{/each}
-        </div>
-    </div>
+        </h3>
+        {#each entries as entry (entry.id)}
+            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+            {@render row(entry)}{/each}
+    </section>
 {/if}
 
 <style>
-    .row .menu {
+    .group {
         display: flex;
-        align-items: center;
+        flex-direction: column;
+        min-width: 0;
     }
-    .ws-h {
+
+    /* A side-bar section header, as the session groups above draw theirs. */
+    .head {
         display: flex;
         align-items: center;
         gap: 6px;
+        height: 22px;
+        margin: 0;
+        padding: 0 8px;
         color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-sm);
+        font-size: var(--fs-xs);
+        font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.04em;
-        border-bottom: 1px solid var(--line);
-        padding-bottom: 2px;
     }
-    .ws-h .nm {
+
+    .head .nm {
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
     }
-    .ws-h .n {
+
+    .head .n {
         margin-left: auto;
         font-family: var(--font-num);
+        font-weight: 400;
     }
-    .area {
-        margin-top: 6px;
-        padding-left: 6px;
+
+    .row .menu {
+        display: flex;
+        align-items: flex-start;
     }
+
     .hide .confirm {
         font-size: var(--fs-xs);
         text-transform: uppercase;
         letter-spacing: 0.04em;
     }
+
     .row {
         display: flex;
         align-items: stretch;
-        gap: 2px;
-        border: 1px solid transparent;
-        border-radius: var(--radius-sm);
+        min-width: 0;
+        border-left: 2px solid transparent;
     }
+
+    .row:hover {
+        background: var(--chip);
+    }
+
     .row.on {
-        border-color: var(--accent);
+        background: var(--accent-bg);
     }
+
+    .row.on .pick {
+        color: var(--on-accent-bg, var(--ink));
+    }
+
     .pick {
         display: flex;
         flex-direction: column;
-        gap: 2px;
         flex: 1 1 auto;
         min-width: 0;
         border: 0;
-        border-radius: var(--radius-sm);
         background: none;
         color: var(--ink-txt, var(--ink));
         font: inherit;
         text-align: left;
-        padding: 4px 6px;
+        padding: 0 6px;
         cursor: pointer;
     }
-    .pick:hover,
-    .hide:hover {
-        background: var(--chip);
-    }
+
     .pick:focus-visible,
     .hide:focus-visible {
-        outline: 2px solid var(--accent);
-        outline-offset: -2px;
+        outline: 1px solid var(--accent);
+        outline-offset: -1px;
     }
+
+    /* Each line is one list row of VS Code's, 22 pixels. */
     .top,
     .meta {
         display: flex;
         align-items: center;
         gap: 4px;
+        height: 22px;
         min-width: 0;
+        white-space: nowrap;
     }
+
     .top .nm {
         overflow: hidden;
         text-overflow: ellipsis;
-        white-space: nowrap;
         font-size: var(--fs-md);
     }
+
     .meta {
-        flex-wrap: wrap;
+        overflow: hidden;
         color: var(--muted-txt, var(--muted));
         font-size: var(--fs-xs);
+        padding-left: 12px;
     }
+
     .meta .act {
         overflow: hidden;
         text-overflow: ellipsis;
-        white-space: nowrap;
     }
-    .meta .ts {
-        font-size: var(--fs-xs);
-    }
+
     .sep {
         opacity: 0.5;
     }
+
     .hide {
         flex: 0 0 auto;
+        height: 22px;
         border: 0;
-        border-radius: var(--radius-sm);
         background: none;
         color: var(--muted-txt, var(--muted));
         font: inherit;

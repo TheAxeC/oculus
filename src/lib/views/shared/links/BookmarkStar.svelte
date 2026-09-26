@@ -11,7 +11,7 @@
 
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { nameOf } from '$lib/state/sources/fs';
-    import { bookmarkAt } from '$lib/state/sources/fs-transport';
+    import { bookmarkAt, markRefusal } from '$lib/state/sources/fs-transport';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
 
@@ -38,9 +38,7 @@
             marked === null
                 ? await addBookmark({ label: nameOf(path), root, path })
                 : await removeBookmark(marked.id);
-        failed = answer.ok
-            ? answer.refused.map((one) => one.reason).join('; ')
-            : (answer.error ?? '');
+        failed = markRefusal(answer);
     }
 </script>
 

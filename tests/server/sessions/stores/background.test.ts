@@ -178,7 +178,7 @@ describe('a subagent started in the background', () => {
     });
 
     it('ends a background subagent at the completion notice naming its agent id', () => {
-        // revert: src/lib/server/sessions/fold.ts:119 => delete
+        // revert: src/lib/server/sessions/fold.ts:121 => delete
         const f = new Fixture();
         const own = launched(f, false);
         f.append([notice('2026-01-01T10:05:00.000Z', { task: 'someone-else' }, 'completed')]);

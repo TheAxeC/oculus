@@ -1,5 +1,6 @@
-// The six session views rendered to HTML on the server: what each one draws over one synthetic
-// payload, and what each one draws when nothing is selected.
+// The session views rendered to HTML on the server: what each one draws over the synthetic payload
+// of views-fixture.ts, and what each one draws when nothing is selected. The sessions list has its
+// own file, session-list.test.ts.
 //
 // The catalog, glyphs and vocabulary are the real config. The sessions and git state are the test's
 // own: nothing reads ~/.claude, ~/.codex or ~/.oculus, and nothing writes anywhere.
@@ -10,310 +11,41 @@
 
 import { readFileSync } from 'node:fs';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { render } from 'svelte/server';
 import Agents from '../../../src/lib/views/sessions/agents/Agents.svelte';
 import SessionDetail from '../../../src/lib/views/sessions/session-detail/SessionDetail.svelte';
 import SessionList from '../../../src/lib/views/sessions/session-list/SessionList.svelte';
-import {
-    sessionRowItems,
-    terminalRowItems
-} from '../../../src/lib/views/sessions/session-list/session-list.ts';
 import Terminal from '../../../src/lib/views/sessions/terminal/Terminal.svelte';
 import Timeline from '../../../src/lib/views/sessions/timeline/Timeline.svelte';
 import Transcript from '../../../src/lib/views/sessions/transcript/Transcript.svelte';
 import { scheduleReflow } from '../../../src/lib/views/sessions/terminal/reflow.ts';
-import {
-    engineDir,
-    glyphCatalog,
-    loadConfig,
-    textCatalog,
-    vocabCatalog
-} from '../../../src/lib/data/sources/config.ts';
 import { clock } from '../../../src/lib/state/shared/words/format.ts';
-import { setCatalog, setGlyphs } from '../../../src/lib/state/shared/words/text.ts';
-import { setVocab } from '../../../src/lib/state/shared/words/tones.ts';
 import type { Turn } from '../../../src/lib/state/sessions/transcript.svelte.ts';
-import {
-    area,
-    git,
-    payload,
-    record,
-    terminal,
-    workspace
-} from '../../fixtures/sessions-fixture.ts';
+import { area, payload, record, terminal, workspace } from '../../fixtures/sessions-fixture.ts';
 import { NO_FEEDS } from '../../fixtures/entities-fixture.ts';
 import type { Project, Snapshot } from '../../../src/lib/data/model/index.ts';
 import type { Component } from 'svelte';
-import type { Instance } from '../../../src/lib/state/workbench/layout/index.ts';
 import type { ViewProps } from '../../../src/lib/state/workbench/navigation/registry.ts';
-import { clientContext, createClientState, type ClientState } from '../../fixtures/client.ts';
+import { createClientState, type ClientState } from '../../fixtures/client.ts';
+import { ALPHA, HUB, UNKNOWN, catalog, installFixture, renderView, tree } from './views-fixture.ts';
 
 let client: ClientState;
 let receive: ClientState['entities']['receive'];
-let apply: ClientState['layout']['apply'];
 let select: ClientState['selection']['select'];
 let forget: ClientState['transcripts']['forget'];
 let hold: ClientState['transcripts']['hold'];
-let setInstanceState: ClientState['ui']['setInstanceState'];
 
 beforeEach(() => {
     client = createClientState();
     ({ receive } = client.entities);
-    ({ apply } = client.layout);
     ({ select } = client.selection);
     ({ forget, hold } = client.transcripts);
-    ({ setInstanceState } = client.ui);
-    installFixture();
+    installFixture(client);
 });
 
-const { config } = loadConfig(engineDir());
-const catalog = textCatalog(config);
-setCatalog(catalog);
-const glyphs = glyphCatalog(config);
-setGlyphs(glyphs);
-setVocab(vocabCatalog(config));
-
-const HUB = '/hub';
-const ALPHA = `${HUB}/projects/manuscripts/alpha`;
-const UNKNOWN = `${HUB}/scratch`;
-
-const live = record('live-one', {
-    title: 'The live one',
-    tool: 'claude',
-    live: true,
-    liveStatus: 'busy',
-    state: 'working',
-    pid: 4242,
-    model: 'claude-opus-5',
-    effort: 'high',
-    permissionMode: 'acceptEdits',
-    version: '2.1.0',
-    branch: 'main',
-    prompts: 4,
-    contextTokens: 800000,
-    // The last turn read 400k of its 800k; the lifetime sum is larger than any window, which is the
-    // whole reason the share is not taken from it.
-    lastCacheRead: 400000,
-    tokens: { input: 1200, output: 340, cacheRead: 9000000, cacheCreation: 0, thinking: 90 },
-    cache: { ttl: '1h', lastCreation: null, lastRead: null, busts: 2 },
-    workspace: HUB,
-    area: ALPHA,
-    cwd: ALPHA,
-    secondaryAreas: [{ key: `${HUB}/tools/oculus`, short: 'tools/oculus' }],
-    files: [
-        { path: `${ALPHA}/manuscript/main.tex`, tool: 'Edit', count: 3, last: null },
-        { path: `${ALPHA}/code/run.py`, tool: 'Edit', count: 1, last: null }
-    ],
-    agents: [
-        {
-            id: 'ag-1',
-            description: 'Read the whole tree and report',
-            subagentType: 'Explore',
-            model: 'claude-sonnet-5',
-            started: '2026-09-10T08:00:00.000Z',
-            ended: '2026-09-10T08:00:45.000Z',
-            status: 'done',
-            resultChars: 5200
-        },
-        {
-            id: 'ag-2',
-            description: 'Still going',
-            subagentType: '',
-            model: null,
-            started: '2026-09-10T08:01:00.000Z',
-            ended: null,
-            status: 'running',
-            resultChars: 0
-        }
-    ],
-    timeline: [
-        { ts: '2026-09-10T08:00:00.000Z', kind: 'prompt', text: 'do the thing' },
-        { ts: '2026-09-10T08:00:10.000Z', kind: 'edit', text: `${ALPHA}/manuscript/main.tex` },
-        { ts: '2026-09-10T08:00:20.000Z', kind: 'turn', text: '42000' },
-        { ts: '2026-09-10T08:00:30.000Z', kind: 'bust', text: '84000' },
-        { ts: '2026-09-10T08:00:40.000Z', kind: 'compaction', text: 'compacted' }
-    ]
-});
-
-const sharer = record('live-two', {
-    title: 'The other live one',
-    tool: 'codex',
-    live: true,
-    liveStatus: 'idle',
-    state: 'idle',
-    workspace: HUB,
-    area: ALPHA,
-    cwd: ALPHA,
-    files: [{ path: `${ALPHA}/manuscript/main.tex`, tool: 'Edit', count: 1, last: null }]
-});
-
-const gone = record('ended-one', {
-    title: 'The ended one',
-    kind: 'observed',
-    workspace: HUB,
-    area: UNKNOWN,
-    cwd: UNKNOWN
-});
-
-const away = record('dismissed-one', {
-    title: 'The dismissed one',
-    hidden: true,
-    workspace: HUB,
-    area: UNKNOWN,
-    cwd: UNKNOWN
-});
-
-const bare = record('bare-one', {
-    title: 'The bare one',
-    workspace: '/other',
-    area: '/other',
-    cwd: '/other'
-});
-
-/** A session an override pinned to its area rather than the score choosing it. */
-const held = record('pinned-one', {
-    title: 'The pinned one',
-    // Live, so the counts the rail draws for the ended and the dismissed rows are the same five
-    // rows those cases were written against.
-    live: true,
-    liveStatus: 'idle',
-    state: 'idle',
-    workspace: HUB,
-    area: ALPHA,
-    cwd: UNKNOWN,
-    pinned: true
-});
-
-const tree = [
-    workspace(HUB, [
-        area(ALPHA, [live, sharer, held]),
-        area(UNKNOWN, [gone, away], { known: false, short: 'scratch', full: UNKNOWN })
-    ]),
-    workspace('/other', [area('/other', [bare])])
-];
-
-/** What every case here starts from, installed into the case's own client. */
-function installFixture(): void {
-    receive({ channel: 'sessions', version: 1, payload: payload(tree) });
-    receive({
-        channel: 'git',
-        version: 1,
-        payload: {
-            [HUB]: HUB_GIT,
-            '/other': git({ branch: '', repository: false, error: 'not a git repository' })
-        }
-    });
-    receive({ channel: 'config', version: 1, payload: { config, text: catalog, findings: [] } });
+/** One view rendered as a fresh instance of this case's client. */
+function html(view: Component<ViewProps>, state: unknown = {}, id?: string): string {
+    return renderView(client, view, state, id);
 }
-
-/** The hub's git state as the tests read it: one staged, two changed, one untracked file. */
-const HUB_GIT = git({
-    branch: 'main',
-    ahead: 1,
-    staged: [{ path: 'a/one.ts', status: 'M', added: 4, deleted: 2 }],
-    unstaged: [
-        { path: 'a/two.png', status: 'M', added: null, deleted: null },
-        // The same file the other live session is holding open, as git sees it: relative to
-        // the workspace root, which is what the "also open" mark has to match across.
-        {
-            path: 'projects/manuscripts/alpha/manuscript/main.tex',
-            status: 'M',
-            added: 1,
-            deleted: 0
-        }
-    ],
-    untracked: [{ path: 'a/three.ts', status: '?', added: 0, deleted: 0 }]
-});
-
-let counter = 0;
-
-/** One view rendered as a fresh instance, with the state that instance has saved. */
-function html(view: Component<ViewProps>, state: unknown = {}, id = `probe-${(counter += 1)}`) {
-    setInstanceState(id, state);
-    const instance: Instance = { id, view: 'probe', state };
-    apply({ root: { kind: 'pane', tabs: [instance], active: id } });
-    return render(view, { context: clientContext(client), props: { instance } }).body;
-}
-
-describe('the session list', () => {
-    it('audits that offers a labelled pinned pane action for sessions and terminals', () => {
-        const session = sessionRowItems(live, '').find((item) => item.id === 'pinned');
-        const terminal = terminalRowItems().find((item) => item.id === 'pinned');
-        expect(session).toEqual({
-            id: 'pinned',
-            label: catalog['sessions.open_pinned'],
-            title: catalog['sessions.open_pinned_tip']
-        });
-        expect(terminal).toEqual(session);
-    });
-
-    it('draws every workspace, its areas and its live rows', () => {
-        select('live-one');
-        const body = html(SessionList);
-        expect(body).toContain('The live one');
-        expect(body).toContain('The other live one');
-        expect(body).toContain('claude');
-        expect(body).toContain('codex');
-        // The short area label, and the whole of it as the tooltip.
-        expect(body).toContain(`title="${ALPHA}"`);
-    });
-
-    it('marks a session an override pinned to its area', () => {
-        const body = html(SessionList);
-        expect(body).toContain(catalog['sessions.pin_mark']);
-        // The mark is on the pinned row and on no other: four of the five rows it draws scored
-        // their own area.
-        expect(body.split(catalog['sessions.pin_mark']).length - 1).toBe(1);
-    });
-
-    it('marks an area that is not a known project folder', () => {
-        const body = html(SessionList, { ended: true });
-        expect(body).toContain(catalog['sessions.area_unknown']);
-    });
-
-    it('says how many are ended and keeps them out of the rail until asked', () => {
-        // Two of the five are ended and not dismissed: the observed one and the bare one.
-        const shut = html(SessionList);
-        expect(shut).toContain(catalog['sessions.ended_section'].replace('{0}', '2'));
-        // the ended section is closed, so the sessions in it are not drawn
-        expect(shut).not.toContain('The ended one');
-        const open = html(SessionList, { ended: true });
-        expect(open).toContain('The ended one');
-        // a dismissed session stays out of the list until it is asked for by name
-        expect(open).not.toContain('The dismissed one');
-    });
-
-    it('offers the dismissed ones by count, and shows them when asked', () => {
-        const shut = html(SessionList, { ended: true });
-        expect(shut).toContain(catalog['sessions.show_dismissed'].replace('{0}', '1'));
-        const open = html(SessionList, { ended: true, dismissed: true });
-        expect(open).toContain('The dismissed one');
-        expect(open).toContain(catalog['sessions.hide_dismissed'].replace('{0}', '1'));
-    });
-
-    it('carries a dismiss control on an ended row and none on a live one', () => {
-        const body = html(SessionList, { ended: true, dismissed: true });
-        expect(body).toContain(catalog['sessions.close_tip']);
-        expect(body).toContain(catalog['sessions.restore_tip']);
-    });
-
-    it('marks the selected row and the live labels', () => {
-        select('live-one');
-        const body = html(SessionList);
-        // Svelte writes its own scoped class between the two, so the mark is matched rather than
-        // compared: what is checked is that exactly one row carries it.
-        expect(body.match(/class="row[^"]*\bon\b/g)).toHaveLength(1);
-        expect(body).toContain(catalog['sessions.live_busy']);
-        expect(body).toContain(catalog['sessions.live_idle']);
-        expect(body).toContain('opus-5');
-    });
-
-    it('shows its empty state when the payload holds nothing', () => {
-        receive({ channel: 'sessions', version: 2, payload: payload([]) });
-        expect(html(SessionList)).toContain(catalog['sessions.state_empty']);
-        receive({ channel: 'sessions', version: 3, payload: payload(tree) });
-    });
-});
 
 describe('the session detail', () => {
     it('draws the fields of the selected session', () => {
@@ -550,27 +282,76 @@ describe('the agents view', () => {
 });
 
 describe('the terminal view with nothing selected', () => {
-    it('offers the three kinds, a directory, the start control and three size controls', () => {
+    // revert: src/lib/views/sessions/terminal/Terminal.svelte:373 => <p>{owner}</p>
+    // revert: src/lib/views/sessions/terminal/Composer.svelte:238 => delete
+    // revert: src/lib/ui/forms/TextArea.svelte:57 => delete
+    it('draws the composer: the prompt box, its foot with the attach control, the pickers and Start', () => {
         select(null);
         const body = html(Terminal);
-        expect(body).toContain(catalog['sessions.no_terminal']);
-        expect(body).toContain(catalog['sessions.start_terminal']);
+        expect(body).toContain('data-composer-prompt');
+        // the empty box says what it takes, as the label it is named by
+        expect(body).toContain(`placeholder="${catalog['composer.prompt']}"`);
+        expect(body).toContain('data-composer-foot');
+        expect(body).toContain(catalog['composer.attach']);
+        expect(body).toContain('data-picker="workspace"');
+        expect(body).toContain('data-picker="agent"');
         expect(body).toContain(catalog['sessions.kind_claude']);
-        expect(body).toContain(catalog['sessions.kind_codex']);
-        expect(body).toContain(catalog['sessions.kind_shell']);
-        expect(body).toContain(catalog['sessions.cwd']);
-        expect(body).toContain(catalog['sessions.cwd_empty']);
+        expect(body).toContain(catalog['composer.start']);
         expect(body).toContain(catalog['sessions.terminal_smaller']);
         expect(body).toContain(catalog['sessions.terminal_larger']);
         expect(body).toContain(catalog['sessions.terminal_reset']);
-        expect(body.match(/class="tool[^"]*compact/g)).toHaveLength(3);
+    });
+
+    // revert: src/lib/views/sessions/terminal/Composer.svelte:237 => label={t('composer.prompt')}
+    // revert: src/lib/views/sessions/terminal/Composer.svelte:238 => placeholder={t('composer.prompt')}
+    it('draws a Shell composer without the agent lists, its box asking for a command', () => {
+        select(null);
+        const body = html(Terminal, { composer: { agent: 'shell' } });
+        expect(body).toContain(`aria-label="${catalog['composer.command']}"`);
+        expect(body).toContain(`placeholder="${catalog['composer.command']}"`);
+        expect(body).toContain('data-picker="agent"');
+        // a shell runs under the reader's own login and takes none of an agent's lists
+        expect(body).not.toContain('data-picker="account"');
+        // nor the model list, which belongs to the agent a shell is not
+        expect(body).not.toContain('data-picker="model"');
+    });
+
+    // revert: src/lib/views/sessions/terminal/Terminal.svelte:364 => {#if false}
+    it('draws the steer box disabled with its sentence for a selected session running outside oculus', () => {
+        select('ended-one');
+        const body = html(Terminal);
+        expect(body).toContain('data-runs-elsewhere');
+        expect(body).toContain('data-steer');
+        expect(body).toContain('data-steer-elsewhere');
+        expect(body).toMatch(/<textarea[^>]*readonly/);
+        // a session running elsewhere is read, not restarted, so no new-session composer is drawn
+        expect(body).not.toContain('data-composer-prompt');
+        select(null);
+    });
+
+    // revert: src/lib/views/sessions/terminal/Terminal.svelte:112 => const fresh = false;
+    it('draws the composer in the tab New put it in, whatever session is selected', () => {
+        select('ended-one');
+        const body = html(Terminal, { id: 'new-from-the-list', follow: true });
+        expect(body).toContain('data-composer-prompt');
+        // New asked for a composer, so the sentence about the selected session is not drawn
+        expect(body).not.toContain('data-runs-elsewhere');
+        select(null);
+    });
+
+    // revert: src/lib/views/sessions/terminal/Composer.svelte:265 => {#if false}
+    it('shows the branch of the workspace a new session starts in, read only', () => {
+        select(null);
+        const body = html(Terminal, { composer: { workspace: HUB } });
+        expect(body).toMatch(/data-composer-branch[^>]*>[\s\S]*?main/);
+        expect(body).toContain(catalog['composer.branch_title']);
     });
 });
 
 describe('the terminal toolbar pin', () => {
     // The label follows the pinned terminal's name through an $effect, which no server render runs;
     // the write it makes is read off the source and the browser suite presses the rename itself.
-    // revert: src/lib/views/sessions/terminal/Terminal.svelte:351 => glyph="dismiss"
+    // revert: src/lib/views/sessions/terminal/Terminal.svelte:335 => glyph="dismiss"
     it('is a glyph button among the glyph buttons, not a word among them', () => {
         select(null);
         const body = html(Terminal, { session: 'abc123-shell' });
@@ -672,16 +453,22 @@ describe('a hook event on a session', () => {
         return result;
     }
 
-    it('draws a permission_prompt as a chip with the message as its tooltip', () => {
-        const body = withHooks(() => html(SessionList, { ended: true }));
-        expect(body).toContain(catalog['notify.permission_chip']);
+    // revert: src/lib/state/sessions/folds.ts:113 => return false;
+    it('draws a live session a notification waits on as needing input, the message its tooltip', () => {
+        const body = withHooks(() => html(SessionList));
+        expect(body).toMatch(/data-session-row="waiting-one"[^>]*data-state="input"/);
+        expect(body).toContain(catalog['sessions.state_input']);
+        // revert: src/lib/views/sessions/session-list/SessionWorkspace.svelte:140 => <span class="mark"
         expect(body).toContain('title="may I edit main.py?"');
     });
 
-    it('draws the stop event as a stopped-at line in the row meta', () => {
-        const body = withHooks(() => html(SessionList, { ended: true }));
-        expect(body).toContain(
-            catalog['sessions.stopped_at'].replace('{0}', clock(stopped.hook?.at))
+    it('draws a stopped session as ended, and not as waiting on the reader', () => {
+        // revert: src/lib/state/sessions/folds.ts:124 => if (!row.live) return 'idle';
+        const body = withHooks(() => html(SessionList));
+        expect(body).toMatch(/data-session-row="stopped-one"[^>]*data-state="ended"/);
+        // a row needing input is drawn first in its group
+        expect(body.indexOf('Waiting on a permission')).toBeLessThan(
+            body.indexOf('A finished run')
         );
     });
 
@@ -720,18 +507,20 @@ describe('a terminal in the payload', () => {
             return html(Terminal);
         });
         expect(body).toContain(`data-terminal="${pane.id}"`);
-        // the grid is the selection, and the composer belongs to a session's own pane
-        expect(body).not.toContain('textarea');
+        // the grid is the selection, so no composer is drawn; the steer box sits under the grid
+        expect(body).not.toContain('data-composer');
+        // revert: src/lib/views/sessions/terminal/Terminal.svelte:377 => delete
+        expect(body).toContain(catalog['composer.steer']);
         select(null);
     });
 
-    // revert: src/lib/views/sessions/terminal/Terminal.svelte:113 => const fresh = false;
-    it('shows the start form in a tab opened for a terminal of its own, whatever the rail selected', () => {
+    // revert: src/lib/views/sessions/terminal/Terminal.svelte:112 => const fresh = false;
+    it('shows the composer in a tab opened for a terminal of its own, whatever the rail selected', () => {
         const body = withTerminals(() => {
             select(pane.id);
             return html(Terminal, { id: 'a-tab-of-its-own' });
         });
-        expect(body).toContain(catalog['sessions.start_terminal']);
+        expect(body).toContain('data-composer-prompt');
         // the tab owns no terminal yet, so the terminal the rail selected is not drawn in it
         expect(body).not.toContain(`data-terminal="${pane.id}"`);
         select(null);
@@ -784,11 +573,9 @@ describe('resuming a session into a terminal', () => {
     });
 
     it('puts a row menu on every session row', () => {
-        const ended = html(SessionList, { ended: true });
-        expect(ended).toContain(`aria-label="${catalog['ui.row_menu']}"`);
-        const liveOnly = html(SessionList);
-        expect(liveOnly).toContain('The live one');
-        expect(liveOnly).toContain(`aria-label="${catalog['ui.row_menu']}"`);
+        const body = html(SessionList);
+        const menus = body.split(`aria-label="${catalog['ui.row_menu']}"`).length - 1;
+        expect(menus).toBe(body.match(/data-session-row=/g)?.length);
     });
 });
 

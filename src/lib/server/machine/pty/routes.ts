@@ -4,7 +4,8 @@
 // already hold.
 //
 // A GET lists the terminals and is same-origin only, like every read. A POST starts, stops, resizes
-// or resumes a terminal, starts dataset recovery, starts an update task, or builds or cleans one
+// or resumes a terminal, starts the composer's session, types a message into one or interrupts its
+// turn, forks a session, starts dataset recovery, starts an update task, or builds or cleans one
 // main file of a manuscript, and additionally carries the write token,
 // since it is a write in DESIGN.md's "Auth" sense: it runs a process on the machine.
 //
@@ -23,15 +24,28 @@ import { hasToken, sameOrigin } from '../../core/auth.ts';
 import { loadConfig, loadLocalOrDefaults, textCatalog } from '../../../data/sources/config.ts';
 import { MANUSCRIPT, mains } from '../../content/latex.ts';
 import { projectDirectory } from '../../files/files.ts';
-import { startChat, words, type ChatOptions } from './chat.ts';
+import { startChat, type ChatOptions } from './chat.ts';
+import { words } from '../../core/words.ts';
+import {
+    accountEnv,
+    accountOfPath,
+    agentAccounts,
+    compose,
+    composeRequest,
+    readAgentsFile
+} from './compose.ts';
 import {
     KINDS,
     RESUME_TOOLS,
+    interruptTerminal,
     isSessionId,
     isTerminalId,
     listTerminals,
+    newId,
     resizeTerminal,
+    resumeArgs,
     startTerminal,
+    steerTerminal,
     stopTerminal,
     type StartOptions
 } from './sessions.ts';
@@ -112,6 +126,7 @@ async function resumeSession(
     if (record === null) return json(400, { error: UNKNOWN });
     if (record.live) return json(400, { error: LIVE });
     const title = record.title === '' ? record.id : record.title;
+    const { prefix, env } = sessionAccount(record, options);
     const terminal = await startTerminal(
         {
             kind: resume.tool,
@@ -119,10 +134,97 @@ async function resumeSession(
             cols: cols as number,
             rows: rows as number,
             name: title.slice(0, NAME_MAX),
-            resume
+            resume,
+            env
         },
-        options
+        { ...options, argv: [...prefix, ...resumeArgs(resume)] }
     );
+    options.refresh?.();
+    return json(200, { ok: true, terminal });
+}
+
+/** The local config a request reads, the route's own when it hands one. */
+function localOf(options: TerminalOptions) {
+    return options.localFor?.() ?? loadLocalOrDefaults(options.engine);
+}
+
+/**
+ * The account a session's transcript sits under, as the environment its resumed or forked process
+ * starts with, so a session of a second account continues under that account's login.
+ */
+function sessionAccount(record: SessionRecord, options: TerminalOptions) {
+    const accounts = agentAccounts(localOf(options));
+    return accountEnv(record.tool, accountOfPath(record.tool, record.path, accounts));
+}
+
+/**
+ * The argv that forks one session: a new session carrying the old one's conversation, which
+ * `claude --resume <id> --fork-session` and `codex fork <id>` start. A fork leaves the session it
+ * copies running, so a live one is forked as well as an ended one.
+ */
+export function forkArgs(resume: TerminalResume): string[] {
+    const args = resumeArgs(resume);
+    if (resume.tool === 'claude') return [...args, '--fork-session'];
+    return ['codex', 'fork', resume.id];
+}
+
+/** Start a fork of one session in a new terminal, in the session's own folder. */
+async function forkSession(
+    resume: TerminalResume,
+    message: Record<string, unknown>,
+    options: TerminalOptions
+): Promise<Response> {
+    const record = (options.recordFor ?? (() => null))(resume.id);
+    if (record?.tool !== resume.tool) return json(400, { error: UNKNOWN });
+    const title = record.title === '' ? record.id : record.title;
+    const catalog = textCatalog(options.configFor?.() ?? loadConfig(options.engine).config);
+    const { prefix, env } = sessionAccount(record, options);
+    const terminal = await startTerminal(
+        {
+            kind: resume.tool,
+            cwd: record.cwd ?? '',
+            cols: message.cols as number,
+            rows: message.rows as number,
+            name: words(catalog, 'server.fork.name', title).slice(0, NAME_MAX),
+            env
+        },
+        { ...options, argv: [...prefix, ...forkArgs(resume)] }
+    );
+    options.refresh?.();
+    return json(200, { ok: true, terminal });
+}
+
+/**
+ * Start the session the composer asked for. The argv is built from config/catalogs/agents.yml, the
+ * account from local.yml and the prompt from the request, and tmux runs it directly; a shell's
+ * prompt is its first command, typed into it once it has started.
+ */
+async function composeSession(
+    message: Record<string, unknown>,
+    options: TerminalOptions
+): Promise<Response> {
+    const request = composeRequest(message);
+    const local = localOf(options);
+    const composed = compose(
+        request,
+        readAgentsFile(options.engine).agents,
+        agentAccounts(local),
+        local.claudeBin
+    );
+    const kind: TerminalKind = request.agent;
+    const id = newId(kind);
+    const terminal = await startTerminal(
+        {
+            id,
+            kind,
+            cwd: request.cwd,
+            cols: message.cols as number,
+            rows: message.rows as number,
+            env: composed.env
+        },
+        composed.argv === null ? options : { ...options, argv: composed.argv }
+    );
+    if (composed.keys.trim() !== '') await steerTerminal(id, composed.keys, options);
     options.refresh?.();
     return json(200, { ok: true, terminal });
 }
@@ -270,7 +372,10 @@ async function startLatex(
     return json(200, { ok: true, terminal });
 }
 
-/** POST /api/terminal: start, stop, resize, resume or recover one terminal. */
+/**
+ * POST /api/terminal: start, compose, steer, interrupt, fork, stop, resize, resume or recover one
+ * terminal.
+ */
 export async function handleTerminal(
     request: Request,
     token: string,
@@ -326,6 +431,27 @@ export async function handleTerminal(
             options.refresh?.();
             return json(200, { ok: true, terminal });
         }
+        if (message.action === 'compose') {
+            return await composeSession(message, options);
+        }
+        if (message.action === 'steer') {
+            if (!isTerminalId(message.id)) return json(400, { error: NOT_OURS });
+            await steerTerminal(message.id, scalar(message.text), options);
+            return json(200, { ok: true, id: message.id });
+        }
+        if (message.action === 'interrupt') {
+            if (!isTerminalId(message.id)) return json(400, { error: NOT_OURS });
+            await interruptTerminal(message.id, options);
+            return json(200, { ok: true, id: message.id });
+        }
+        if (message.action === 'fork') {
+            const tool = message.tool as TerminalResume['tool'];
+            if (!RESUME_TOOLS.includes(tool)) {
+                return json(400, { error: `tool must be one of ${RESUME_TOOLS.join(', ')}` });
+            }
+            if (!isSessionId(message.id)) return json(400, { error: 'id is not a session id' });
+            return await forkSession({ tool, id: message.id }, message, options);
+        }
         if (message.action === 'stop') {
             if (!isTerminalId(message.id)) return json(400, { error: NOT_OURS });
             await stopTerminal(message.id, options);
@@ -359,6 +485,6 @@ export async function handleTerminal(
         return json(400, { error: reason(error) });
     }
     return json(400, {
-        error: 'action must be start, stop, resize, resume, recover, task, latex or chat'
+        error: 'action must be start, compose, steer, interrupt, fork, stop, resize, resume, recover, task, latex or chat'
     });
 }

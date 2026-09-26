@@ -92,14 +92,14 @@ describe('the rail write', () => {
     });
 
     it('refuses a glyph the vocabulary does not hold', async () => {
-        // revert: src/lib/server/edit/writes.ts:467 => outcome = writeRail(into.layoutFile, rail.rail, [...into.glyphs, 'nonesuch']);
+        // revert: src/lib/server/edit/writes.ts:469 => outcome = writeRail(into.layoutFile, rail.rail, [...into.glyphs, 'nonesuch']);
         const into = railTarget();
         expect((await send(into, [{ ...FOCUS, glyph: 'nonesuch' }])).status).toBe(400);
         expect(layoutOf(into)).toBe(LAYOUT);
     });
 
     it('reads no write in a body whose rows are not three strings', () => {
-        // revert: src/lib/server/edit/writes/bodies.ts:336 => if (typeof label !== 'string') {
+        // revert: src/lib/server/edit/writes/bodies.ts:345 => if (typeof label !== 'string') {
         expect(railWrite({ kind: 'rail', rail: [FOCUS] })).toEqual({ kind: 'rail', rail: [FOCUS] });
         expect(railWrite({ kind: 'rail', rail: [{ ...FOCUS, page: 3 }] })).toBe(null);
         expect(railWrite({ kind: 'rail', rail: 'focus' })).toBe(null);
@@ -124,7 +124,7 @@ describe('the rail write', () => {
     });
 
     it('records the change, and the undo puts the list back through the same writer', async () => {
-        // revert: src/lib/server/edit/writes/undo.ts:225 => const outcome = writeRail(into.layoutFile, [], into.glyphs);
+        // revert: src/lib/server/edit/writes/undo.ts:227 => const outcome = writeRail(into.layoutFile, [], into.glyphs);
         const into = railTarget();
         expect((await send(into, [FOCUS, INBOX])).status).toBe(200);
         const [change] = changesOf(into);

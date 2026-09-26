@@ -288,6 +288,17 @@ describe('the overrides', () => {
         expect(session.secondaryAreas.map((entry) => entry.key)).toEqual([WS + '/tools']);
     });
 
+    // revert: src/lib/server/sessions/group.ts:124 => top: false
+    it('carries the top mark of an override, and none for a session without one', () => {
+        const { overrides } = fixture();
+        writeFileSync(overrides, JSON.stringify({ sessions: { s1: { top: true } } }));
+        const { session } = one([record({ cwd: WS + '/tools' })], { overrides });
+        expect((session as { top?: boolean }).top).toBe(true);
+        writeFileSync(overrides, JSON.stringify({ sessions: { s1: { top: 'yes' } } }));
+        const plain = one([record({ cwd: WS + '/tools' })], { overrides }).session;
+        expect((plain as { top?: boolean }).top).toBe(false);
+    });
+
     it('leaves the scored area alone for a title override', () => {
         const { overrides } = fixture();
         writeFileSync(overrides, JSON.stringify({ sessions: { s1: { title: 'renamed' } } }));

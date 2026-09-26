@@ -48,6 +48,7 @@ const VIEWS: Record<string, string> = {
     'sources/files/sections/Bookmarks.svelte': '',
     'sources/files/tree/Controls.svelte': '',
     'sources/files/tree/Failed.svelte': '',
+    'sources/files/tree/Follow.svelte': '.said=fs-sm',
     'sources/files/sections/Notes.svelte': '',
     'sources/files/sections/RootForm.svelte': '',
     'sources/files/sections/Sections.svelte': '',
@@ -184,13 +185,18 @@ const VIEWS: Record<string, string> = {
         '.sec-h=fs-sm | .file=fs-sm | .ct, .mark=fs-xs | .to=fs-xs | .none=fs-xs',
     'sessions/session-detail/SessionDetail.svelte':
         '.kv=fs-sm | .kv dt=fs-sm | .pin .lb=fs-xs | .pin .outcome=fs-md | .line=fs-sm',
-    'sessions/session-list/SessionList.svelte': '.failure=fs-md | .ended-h=fs-sm',
+    'sessions/session-list/SessionList.svelte': '.failure=fs-md',
     'sessions/session-list/SessionWorkspace.svelte':
-        '.ws-h, .area-h=fs-sm | .top .pin, .top .hook=fs-3xs | .top .nm=fs-md | .meta=fs-xs | .meta .ts=fs-xs',
-    'sessions/terminal/Terminal.svelte': '.failure=fs-md',
+        '.head=fs-xs | .one .nm=fs-md | .two=fs-xs | .mark=fs-3xs',
+    'sessions/session-list/Customizations.svelte': '.line=fs-sm',
+    'sessions/customization/CustomizationView.svelte': '.path, .line=fs-sm | .text=fs-sm',
+    'sessions/terminal/Terminal.svelte': '.elsewhere=fs-sm',
+    'sessions/terminal/AttachPicker.svelte': '.where=fs-sm | .line=fs-sm',
+    'sessions/terminal/Composer.svelte': '.branch=fs-sm | .findings=fs-sm | .failure=fs-md',
+    'sessions/terminal/TerminalPicker.svelte': '',
     'sessions/session-list/TerminalRows.svelte':
-        '.ws-h=fs-sm | .hide .confirm=fs-xs | .top .nm=fs-md | .meta=fs-xs | .meta .ts=fs-xs',
-    'sessions/timeline/Timeline.svelte': '.event=fs-sm | .ts=fs-xs',
+        '.head=fs-xs | .hide .confirm=fs-xs | .top .nm=fs-md | .meta=fs-xs',
+    'sessions/timeline/Timeline.svelte': '.turn-h=fs-sm | .event=fs-sm | .ts=fs-xs',
     'sessions/transcript/Transcript.svelte':
         '.turn=fs-md | .turn.tool=fs-sm | .who=fs-xs | .ts=fs-xs | .cut=fs-md | .failed=fs-md | .doc=fs-md | .doc :global(h1), .doc :global(h2), .doc :global(h3), .doc :global(h4)=fs-md | .doc :global(code), .doc :global(pre)=fs-sm',
     'shared/changes/ChangeCounts.svelte': '.bin=fs-xs | .add, .del=fs-xs',
@@ -204,6 +210,9 @@ const VIEWS: Record<string, string> = {
     'shared/card/CardLinks.svelte': '.kind=fs-xxs',
     'shared/card/CardSessions.svelte': '.session=fs-sm',
     'shared/sessions/PickSession.svelte': '',
+    'shared/sessions/SessionPicker.svelte': '',
+    'shared/sessions/SteerBox.svelte': '.failure, .elsewhere=fs-sm',
+    'shared/sessions/WorkspacePicker.svelte': '',
     'shared/forms/EntryForm.svelte': '.label=fs-xs | .said=fs-md',
     'shared/prose/Intro.svelte': '.intro=fs-md',
     'shared/prose/Markdown.svelte':
@@ -251,6 +260,7 @@ const PASS_THROUGH: Record<string, string> = {
         '.opener=fs-sm | .opener.compact=fs-lg | .opener.bare=fs-lg | :global(body.rice) .opener.rail :global(.glyph:not(:has(svg)))=fs-lg',
     'src/lib/ui/controls/Confirm.svelte': '.message=fs-sm | .detail=fs-xs | .row button=fs-sm',
     'src/lib/ui/display/Glyph.svelte': '',
+    'src/lib/ui/controls/RowButton.svelte': '',
     'src/lib/ui/controls/Search.svelte': '.search=fs-sm',
     'src/lib/ui/controls/Segment.svelte': '',
     'src/lib/ui/controls/Tag.svelte': '.tag=fs-sm',
@@ -284,7 +294,7 @@ const PASS_THROUGH: Record<string, string> = {
 
 describe('the view type scale', () => {
     it('lists every view file in the audit', () => {
-        // revert: tests/views/whole/type-scale.test.ts:65 => delete
+        // revert: tests/views/whole/type-scale.test.ts:66 => delete
         expect(
             files(ROOT)
                 .map((file) => file.slice(`${ROOT}/`.length))
@@ -292,7 +302,7 @@ describe('the view type scale', () => {
         ).toEqual(Object.keys(VIEWS).sort());
     });
 
-    // revert: tests/views/whole/type-scale.test.ts:266 => delete
+    // revert: tests/views/whole/type-scale.test.ts:278 => delete
     it('audits that every ui component is listed in the pass-through audit', () => {
         const ui = 'src/lib/ui';
         expect(files(ui).sort()).toEqual(

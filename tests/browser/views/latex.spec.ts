@@ -1,16 +1,16 @@
 // The LaTeX panel in Chrome: the row the served hub's one manuscript draws, and what the build
 // control reaches.
 //
-// What this file does NOT run is latexmk. The browser layer puts its own `tmux` on PATH ahead of
-// the machine's and that one fails on purpose (tests/browser/helpers/serve.ts), so no spec starts a
-// process on the machine; a press of build here therefore ends at the panel's own refusal line,
-// which is still the whole path from the control through /api/terminal and back. The command
-// latexmk is given, the folder it runs in and the file check in front of it are asserted in
+// What this file does NOT run is latexmk. The browser layer's tmux is the machine's on a socket of
+// the run's own, and the `latexmk` on its PATH is a stand-in that writes the arguments it was given
+// and waits (tests/browser/helpers/serve.ts), so a press of build starts a terminal running the
+// stand-in, which is the whole path from the control through /api/terminal to the command. The
+// folder latexmk runs in and the file check in front of it are asserted in
 // tests/routes/sessions/terminal.test.ts, and what a build leaves is read in
 // tests/server/content/latex.test.ts.
 
 import { expect, test, type Page } from '@playwright/test';
-import { shortOf } from '../helpers/hub.ts';
+import { endServedTerminals, shortOf, startedWith } from '../helpers/hub.ts';
 import { boot, openView } from '../helpers/rail.ts';
 import { t } from '../helpers/words.ts';
 
@@ -20,6 +20,8 @@ const BANDITS = 'projects/active/graph-bandits';
 
 /** The one main file of that manuscript. */
 const MAIN = 'main.tex';
+
+test.afterEach(endServedTerminals);
 
 /** Open the projects board and open one project as its own tab. */
 async function openProject(page: Page, project: string): Promise<void> {
@@ -61,7 +63,12 @@ test('the build control reaches the endpoint and the panel says what came back',
     const panel = page.locator('[data-latex]');
     await panel.getByRole('button', { name: t('project.latex.build') }).click();
 
-    // This layer has no tmux, so what comes back is the refusal rather than a running terminal.
-    console.log('latex.spec: this layer starts no process, so the build itself is not run here');
-    await expect(panel).toContainText(t('project.latex.refused', '').trim());
+    // The build runs in a terminal of its own, which the page opens.
+    // revert: src/lib/server/machine/pty/routes.ts:320 => return `latexmk -pdf ${shellWord(main)}`;
+    await expect
+        .poll(() => startedWith('latexmk'), { timeout: 15000 })
+        .toEqual([['-pdf', '-interaction=nonstopmode', '-file-line-error', MAIN]]);
+    await expect(page.getByRole('tab', { name: t('sessions.view_terminal') })).toBeVisible();
+    // a build that started draws no refusal line
+    await expect(panel).not.toContainText(t('project.latex.refused', '').trim());
 });

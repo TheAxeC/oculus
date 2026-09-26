@@ -94,7 +94,7 @@ describe('the store reading the endpoints', () => {
         expect(asked).toEqual(['/api/fs?root=hub&path=']);
     });
 
-    // revert: src/lib/state/sources/fs-transport.ts:154 => return key;
+    // revert: src/lib/state/sources/fs-transport.ts:160 => return key;
     it('asks for a folder once per pair of toggles, each on its own query, and holds the answers apart', async () => {
         serving((url) => listingOf(url.includes('hidden=1') ? ['.env', 'a.txt'] : ['a.txt']));
         const hidden = { hidden: true, ignored: false };

@@ -5,8 +5,6 @@
 import { rmSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { chatModel } from '../../../data/accounts/chat.ts';
-import { fillPlaceholders } from '../../../data/helpers/finding-text.ts';
-import { byKey } from '../../../data/helpers/guards.ts';
 import {
     loadConfig,
     loadLocalOrDefaults,
@@ -16,6 +14,7 @@ import {
 import type { Project } from '../../../data/model/index.ts';
 import { defaultOverridesPath } from '../../sessions/overrides.ts';
 import { writeTextAtomic } from '../../core/json.ts';
+import { words } from '../../core/words.ts';
 import { projectDirectory } from '../../files/files.ts';
 import { portfolioContext } from './context.ts';
 import { listTerminals, newId, startTerminal, type StartOptions } from './sessions.ts';
@@ -38,26 +37,6 @@ export type ChatOptions = StartOptions & {
 /** Quote one word for the shell command tmux starts. */
 function shellWord(value: string): string {
     return `'${value.replaceAll("'", `'"'"'`)}'`;
-}
-
-/**
- * One flattened catalog entry with its positional placeholders filled by fillPlaceholders, the fill
- * t() and findingText use, so each placeholder of the template is replaced once and an argument
- * that itself holds braces or a `$` pattern (a project title, a path) is kept as written. A key the
- * catalog lacks throws: these keys are the server's own, so a missing one is a fault of the code
- * and never text a hub edit can break. tests/checks/source/keys.test.ts reads every `words` call
- * under lib/server, whatever its first argument is, and fails on a key that is not a literal of the
- * catalog; its argument split does not know a regular expression literal or a type argument inside
- * the first argument.
- */
-export function words(
-    catalog: Record<string, string>,
-    key: string,
-    ...args: (string | number)[]
-): string {
-    const template = byKey(catalog, key);
-    if (template === undefined) throw new Error(`text key not in config: ${key}`);
-    return fillPlaceholders(template, args);
 }
 
 /** The chat index path beside the configured sessions file, under its own retained folder. */

@@ -344,7 +344,7 @@ describe('Escape while the update tray is open', () => {
 
 describe('a bare digit', () => {
     it('shows the rail page of its place, and is swallowed only when there was one', () => {
-        // revert: src/lib/shell/keys/workbench-keys.svelte.ts:182 => return options.railPage(action.index + 1);
+        // revert: src/lib/shell/keys/workbench-keys.svelte.ts:199 => return options.railPage(action.index + 1);
         const asked: number[] = [];
         const keys = handler(
             '1',
@@ -364,5 +364,42 @@ describe('a bare digit', () => {
         keys.keys(past.event);
         expect(past.prevented).not.toHaveBeenCalled();
         expect(asked).toEqual([2, 7]);
+    });
+});
+
+describe('the n key', () => {
+    /** A pane holding Projects and a Terminal tab in the state the case names. */
+    function withTerminal(state: unknown): void {
+        client.layout.apply({
+            root: {
+                kind: 'pane',
+                tabs: [instance('a'), { id: 't', view: 'terminal', state }],
+                active: 'a'
+            }
+        });
+    }
+
+    // revert: src/lib/shell/keys/workbench-keys.svelte.ts:173 => delete
+    it("shows a fresh composer in the page's Terminal tab that follows the selection", () => {
+        withTerminal(null);
+        const keys = handler('');
+        const { event, prevented } = keyEvent('n', false);
+        keys.keys(event);
+        expect(prevented).toHaveBeenCalledOnce();
+        const tab = paneAt(client.layout.layout(), [])?.tabs.find((one) => one.id === 't');
+        expect(tab?.state).toMatchObject({ follow: true });
+        expect(client.layout.activeInstance()?.id).toBe('t');
+    });
+
+    // revert: src/lib/shell/keys/workbench-keys.svelte.ts:170 => delete
+    it('opens a new Terminal tab when the only one there is pinned to a terminal', () => {
+        withTerminal({ session: 'a1b2c3-shell' });
+        const keys = handler('');
+        keys.keys(keyEvent('n', false).event);
+        const tabs = paneAt(client.layout.layout(), [])?.tabs ?? [];
+        expect(tabs.find((one) => one.id === 't')?.state).toEqual({ session: 'a1b2c3-shell' });
+        const fresh = tabs.filter((one) => one.view === 'terminal' && one.id !== 't');
+        expect(fresh).toHaveLength(1);
+        expect(fresh[0].state).toMatchObject({ follow: true });
     });
 });

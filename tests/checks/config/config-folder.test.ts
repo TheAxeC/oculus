@@ -142,6 +142,7 @@ describe("oculus's own config directory", () => {
             'search',
             'open'
         ],
+        'catalogs/agents.yml': ['agents'],
         'catalogs/glyphs.yml': ['glyphs'],
         'catalogs/icons.yml': ['icons'],
         'layout.yml': [
@@ -230,6 +231,8 @@ describe("oculus's own config directory", () => {
         'views/personal/memories.yml',
         'views/sessions/agents.yml',
         'views/sessions/changes.yml',
+        'views/sessions/composer.yml',
+        'views/sessions/customizations.yml',
         'views/sessions/session-detail.yml',
         'views/sessions/session-list.yml',
         'views/sessions/terminal.yml',

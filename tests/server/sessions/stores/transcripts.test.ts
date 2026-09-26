@@ -29,6 +29,7 @@ import {
 } from '../../../../src/lib/server/sessions/registry.ts';
 import { hiddenIds, setHidden } from '../../../../src/lib/server/sessions/overrides.ts';
 import { CACHE_VERSION } from '../../../../src/lib/server/sessions/cache.ts';
+import { spentTokens } from '../../../../src/lib/server/sessions/fold.ts';
 import type { LiveEntry, SessionRecord } from '../../../../src/lib/data/model/index.ts';
 import { scratchDir, sweepScratch } from '../../../fixtures/scratch.ts';
 
@@ -493,6 +494,30 @@ describe('the fold', () => {
         expect(agents.get('a3')?.status).toBe('running');
         expect(agents.get('a3')?.ended).toBeNull();
         expect(agents.get('a3')?.resultChars).toBe(0);
+    });
+
+    // revert: src/lib/server/sessions/fold.ts:119 => if (spent !== null) agent.tokens = 0;
+    it('reports the tokens an agent result says it spent, and none where the result says nothing', () => {
+        const f = make();
+        const spent = outcome('2026-01-01T10:00:09.000Z', 'a1', 'done');
+        spent.toolUseResult = { totalTokens: 48200 };
+        const junk = outcome('2026-01-01T10:00:09.000Z', 'a2', 'done');
+        junk.toolUseResult = { totalTokens: -1 };
+        f.write([
+            assistant('2026-01-01T10:00:00.000Z', {
+                tools: [
+                    ['a1', 'Agent', { description: 'first', subagent_type: 'Explore' }],
+                    ['a2', 'Agent', { description: 'second', subagent_type: 'Explore' }]
+                ]
+            }),
+            spent,
+            junk
+        ]);
+        const agents = new Map(f.only().agents.map((agent) => [agent.id, agent]));
+        expect((agents.get('a1') as { tokens?: number }).tokens).toBe(48200);
+        expect((agents.get('a2') as { tokens?: number }).tokens).toBe(undefined);
+        expect(spentTokens({ totalTokens: 7 })).toBe(7);
+        expect([spentTokens({ totalTokens: '7' }), spentTokens(null)]).toEqual([null, null]);
     });
 
     it('reads the state off the tail of the transcript', () => {

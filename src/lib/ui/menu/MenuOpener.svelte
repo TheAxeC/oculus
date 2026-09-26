@@ -20,6 +20,8 @@
         glyph?: string;
         compact?: boolean;
         bare?: boolean;
+        /** A bare opener's glyph in the ink of what it sits in rather than muted. */
+        inherit?: boolean;
         /** An item of the activity rail: the rail's square box, muted until hovered. */
         rail?: boolean;
         /**
@@ -44,6 +46,7 @@
         glyph,
         compact = false,
         bare = false,
+        inherit = false,
         rail = false,
         status = false,
         words = '',
@@ -67,6 +70,7 @@
         class="opener"
         class:compact
         class:bare
+        class:inherit
         class:rail
         class:status
         bind:this={button}
@@ -128,6 +132,10 @@
         color: var(--muted-txt, var(--muted));
         font-size: var(--fs-lg);
         line-height: 1;
+    }
+
+    .opener.bare.inherit {
+        color: inherit;
     }
 
     .opener.bare:hover {

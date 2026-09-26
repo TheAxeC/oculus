@@ -9,10 +9,13 @@ import { join, resolve, sep } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
 import {
     FIRST_READ_TURNS,
-    handleTranscript
+    exportName,
+    handleTranscript,
+    transcriptMarkdown
 } from '../../../src/lib/server/sessions/transcript-routes.ts';
+import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
 import { record } from '../../fixtures/sessions-fixture.ts';
-import type { SessionRecord } from '../../../src/lib/data/model/index.ts';
+import type { SessionRecord, Turn } from '../../../src/lib/data/model/index.ts';
 import { sessionRecord } from '../../../src/lib/server/sessions/stores/hooks.ts';
 import { contextFixture } from '../../server/root/context-fixture.ts';
 import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
@@ -140,5 +143,72 @@ describe('GET /api/transcript', () => {
         });
         const response = handleTranscript(other, { recordFor: recordFor(transcript()) });
         expect(response.status).toBe(403);
+    });
+});
+
+describe('GET /api/transcript?format=markdown', () => {
+    const catalog = textCatalog(loadConfig(engineDir()).config);
+
+    // revert: src/lib/server/sessions/transcript-routes.ts:56 => if (url.searchParams.get('format') === 'md') {
+    it('answers the whole conversation as a Markdown file to save, named from the title', async () => {
+        const path = transcript();
+        const held = record(SESSION, { path, tool: 'claude', title: 'Fix the loader: now!' });
+        const response = handleTranscript(request(`id=${SESSION}&format=markdown`), {
+            recordFor: (id) => (id === SESSION ? held : null),
+            catalogFor: () => catalog
+        });
+        expect(response.status).toBe(200);
+        expect(response.headers.get('content-type')).toBe('text/markdown; charset=utf-8');
+        expect(response.headers.get('content-disposition')).toBe(
+            'attachment; filename="Fix-the-loader-now.md"'
+        );
+        const text = await response.text();
+        expect(text.startsWith('# Fix the loader: now!\n')).toBe(true);
+        expect(text).toContain(`- Session: ${SESSION}`);
+        expect(text).toContain('> do the thing');
+        expect(text).toContain('Doing it.');
+    });
+
+    // revert: src/lib/server/sessions/transcript-routes.ts:74 => return `${record.id}.md`;
+    it('names a file after the id when the title holds no letter', () => {
+        expect(exportName(record(SESSION, { title: '!!!' }))).toBe(`${SESSION}.md`);
+        expect(exportName(record(SESSION, { title: 'a b' }))).toBe('a-b.md');
+    });
+
+    // revert: src/lib/server/sessions/transcript-routes.ts:122 => lines.push(turn.text);
+    it('quotes a user turn line by line, and writes a tool call as one line', () => {
+        const text = transcriptMarkdown(
+            record(SESSION, { title: '' }),
+            [
+                { role: 'user', text: 'one\ntwo', at: null, tool: null },
+                {
+                    role: 'tool',
+                    text: '',
+                    at: null,
+                    tool: { name: 'Bash', summary: 'ls', ok: false }
+                }
+            ] as unknown as Turn[],
+            catalog
+        );
+        expect(text).toContain('> one\n> two');
+        expect(text).toContain('- Bash: ls (error)');
+    });
+
+    // revert: src/lib/server/core/words.ts:24 => if (template === undefined) return key;
+    it('refuses to word an export from a catalog that lacks its keys', () => {
+        const turns: Turn[] = [];
+        expect(() => transcriptMarkdown(record(SESSION, { title: 'x' }), turns, {})).toThrow(
+            'text key not in config: server.export.session'
+        );
+    });
+
+    // revert: src/lib/server/sessions/transcript-routes.ts:57 => delete
+    it('refuses an export when no text catalog is handed to it', () => {
+        const held = record(SESSION, { path: transcript(), tool: 'claude', title: 'x' });
+        expect(() =>
+            handleTranscript(request(`id=${SESSION}&format=markdown`), {
+                recordFor: (id) => (id === SESSION ? held : null)
+            })
+        ).toThrow('an export needs the text catalog');
     });
 });

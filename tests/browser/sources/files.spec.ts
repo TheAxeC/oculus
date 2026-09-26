@@ -532,6 +532,27 @@ test('a breadcrumb segment selects the folder it names, and the path follows the
     await expect(crumbs.getByRole('button')).toHaveText([key, 'sub']);
 });
 
+// revert: src/lib/views/sources/files/Files.svelte:196 => crumbsOf(view.selected)
+// revert: src/lib/views/sources/files/Files.svelte:458 => {#if true}
+test('a tab turned to follow nothing drops the path of a row its tree no longer draws, and says why it is empty', async ({
+    page
+}) => {
+    await boot(page);
+    await openView(page, 'files', t('views.files'));
+    const { key } = await nestedRoot(page);
+    await openNested(page, key);
+    await page.keyboard.press('ArrowRight');
+    const crumbs = page.getByRole('navigation', { name: t('files.breadcrumb') });
+    await expect(crumbs.getByRole('button')).toHaveText([key, 'sub', 'inner.txt']);
+
+    await page.getByRole('button', { name: t('files.follow'), exact: true }).click();
+    await expect(page.getByText(t('files.follow_none'))).toBeVisible();
+    // the selected row sits under a root the tree following nothing does not draw
+    await expect(crumbs).toHaveCount(0);
+    // with no workspace followed, there are no roots whose absence could be named
+    await expect(page.getByText(t('files.none'))).toHaveCount(0);
+});
+
 // Revert: make every row's tabindex 0 in ui/tree/TreeView.svelte's nav.
 test('the tree is one stop from the filter box, and the focused row hands Tab to its controls', async ({
     page
@@ -729,6 +750,7 @@ test('a row is 22 pixels at 13-pixel names under 11-pixel heads, a selected row 
 
 // Revert: call remove(key) straight from the head's control in views/sources/files/Files.svelte,
 // with no confirm.
+// revert: src/lib/views/sources/files/Files.svelte:513 => void remove(removing);
 test('removing a root the reader added asks first, and a cancel keeps it', async ({ page }) => {
     await boot(page);
     await openView(page, 'files', t('views.files'));

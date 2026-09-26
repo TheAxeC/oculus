@@ -148,7 +148,16 @@ describe('POST /api/terminal, the resume action', () => {
         const started = driver.calls.find((args) => args[0] === 'new-session') ?? [];
         expect(started).toContain('-c');
         expect(started[started.indexOf('-c') + 1]).toBe(HERE);
-        expect(started[started.length - 1]).toBe(`claude --resume ${SESSION}`);
+        // The argv follows `--`, one word each, under the default account's `env -u`.
+        // revert: src/lib/server/machine/pty/sessions.ts:166 => if (resume.tool === 'claude') return ['claude', '--continue'];
+        expect(started.slice(started.indexOf('--') + 1)).toEqual([
+            'env',
+            '-u',
+            'CLAUDE_CONFIG_DIR',
+            'claude',
+            '--resume',
+            SESSION
+        ]);
         expect(started).toContain(`oculus-${terminal.id}`);
         expect(started[started.indexOf('-x') + 1]).toBe('100');
         expect(started[started.indexOf('-y') + 1]).toBe('30');
@@ -168,7 +177,15 @@ describe('POST /api/terminal, the resume action', () => {
         );
         expect(response.status).toBe(200);
         const started = driver.calls.find((args) => args[0] === 'new-session') ?? [];
-        expect(started[started.length - 1]).toBe(`codex resume ${SESSION}`);
+        // revert: src/lib/server/machine/pty/sessions.ts:167 => return ['codex', 'resume', '--last'];
+        expect(started.slice(started.indexOf('--') + 1)).toEqual([
+            'env',
+            '-u',
+            'CODEX_HOME',
+            'codex',
+            'resume',
+            SESSION
+        ]);
     });
 
     it('refuses a request without the write token, before reading any record', async () => {

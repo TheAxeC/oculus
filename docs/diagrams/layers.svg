@@ -19,7 +19,7 @@
 <g id="node19" class="node">
 <title>server to data</title>
 <polygon fill="none" stroke="none" points="364.76,-123.12 347,-123.12 347,-110.64 364.76,-110.64 364.76,-123.12"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="355.88" y="-114.48" font-family="Helvetica,Arial,sans-serif" font-size="8.00">105</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="355.88" y="-114.48" font-family="Helvetica,Arial,sans-serif" font-size="8.00">107</text>
 </g>
 <!-- server&#45;&gt;server to data -->
 <g id="edge17" class="edge">
@@ -36,7 +36,7 @@
 <g id="node25" class="node">
 <title>state to data</title>
 <polygon fill="none" stroke="none" points="135.76,-70.08 122,-70.08 122,-57.6 135.76,-57.6 135.76,-70.08"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="128.88" y="-61.44" font-family="Helvetica,Arial,sans-serif" font-size="8.00">52</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="128.88" y="-61.44" font-family="Helvetica,Arial,sans-serif" font-size="8.00">54</text>
 </g>
 <!-- state&#45;&gt;state to data -->
 <g id="edge29" class="edge">
@@ -81,7 +81,7 @@
 <g id="node20" class="node">
 <title>shell to state</title>
 <polygon fill="none" stroke="none" points="80.76,-176.16 67,-176.16 67,-163.68 80.76,-163.68 80.76,-176.16"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="73.88" y="-167.52" font-family="Helvetica,Arial,sans-serif" font-size="8.00">68</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="73.88" y="-167.52" font-family="Helvetica,Arial,sans-serif" font-size="8.00">69</text>
 </g>
 <!-- shell&#45;&gt;shell to state -->
 <g id="edge19" class="edge">
@@ -109,7 +109,7 @@
 <g id="node28" class="node">
 <title>views to state</title>
 <polygon fill="none" stroke="none" points="112.76,-229.2 95,-229.2 95,-216.72 112.76,-216.72 112.76,-229.2"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="103.88" y="-220.56" font-family="Helvetica,Arial,sans-serif" font-size="8.00">486</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="103.88" y="-220.56" font-family="Helvetica,Arial,sans-serif" font-size="8.00">516</text>
 </g>
 <!-- views&#45;&gt;views to state -->
 <g id="edge35" class="edge">
@@ -120,7 +120,7 @@
 <g id="node29" class="node">
 <title>views to ui</title>
 <polygon fill="none" stroke="none" points="170.76,-282.24 153,-282.24 153,-269.76 170.76,-269.76 170.76,-282.24"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="161.88" y="-273.6" font-family="Helvetica,Arial,sans-serif" font-size="8.00">481</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="161.88" y="-273.6" font-family="Helvetica,Arial,sans-serif" font-size="8.00">499</text>
 </g>
 <!-- views&#45;&gt;views to ui -->
 <g id="edge37" class="edge">
@@ -143,7 +143,7 @@
 <g id="node11" class="node">
 <title>routes to data</title>
 <polygon fill="none" stroke="none" points="257.76,-70.08 244,-70.08 244,-57.6 257.76,-57.6 257.76,-70.08"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="250.88" y="-61.44" font-family="Helvetica,Arial,sans-serif" font-size="8.00">10</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="250.88" y="-61.44" font-family="Helvetica,Arial,sans-serif" font-size="8.00">11</text>
 </g>
 <!-- routes&#45;&gt;routes to data -->
 <g id="edge1" class="edge">
@@ -165,7 +165,7 @@
 <g id="node13" class="node">
 <title>routes to server</title>
 <polygon fill="none" stroke="none" points="356.76,-388.32 343,-388.32 343,-375.84 356.76,-375.84 356.76,-388.32"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="349.88" y="-379.68" font-family="Helvetica,Arial,sans-serif" font-size="8.00">46</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="349.88" y="-379.68" font-family="Helvetica,Arial,sans-serif" font-size="8.00">49</text>
 </g>
 <!-- routes&#45;&gt;routes to server -->
 <g id="edge5" class="edge">

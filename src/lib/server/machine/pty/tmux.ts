@@ -34,10 +34,15 @@ export type TmuxOptions = {
     binary?: string;
 };
 
-/** The `-S <socket>` prefix, or nothing when the default tmux server is meant. */
+/**
+ * The prefix of every tmux call: `-u`, and `-S <socket>` when a private server is meant. `-u` tells
+ * tmux the client takes UTF-8, which it otherwise decides from the locale of the process that runs
+ * it; a server started with no UTF-8 locale would have every tab of a list format and every
+ * character outside ASCII in a pane's output written as `_`, and then no terminal would be read.
+ */
 export function socketArgs(options: TmuxOptions = {}): string[] {
     const socket = options.socket;
-    return socket === undefined || socket === '' ? [] : ['-S', socket];
+    return socket === undefined || socket === '' ? ['-u'] : ['-u', '-S', socket];
 }
 
 /**

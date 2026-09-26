@@ -23,7 +23,15 @@ import {
 } from '../../../src/lib/data/sources/config.ts';
 import { setCatalog, setGlyphs } from '../../../src/lib/state/shared/words/text.ts';
 import { setVocab } from '../../../src/lib/state/shared/words/tones.ts';
-import { area, git, payload, record, workspace } from '../../fixtures/sessions-fixture.ts';
+import {
+    HUB_GIT,
+    area,
+    git,
+    payload,
+    record,
+    sessionsGit,
+    workspace
+} from '../../fixtures/sessions-fixture.ts';
 import type { GitState } from '../../../src/lib/data/model/model-sessions.ts';
 import type { Component } from 'svelte';
 import type { Instance } from '../../../src/lib/state/workbench/layout/index.ts';
@@ -92,36 +100,10 @@ const tree = [
     workspace('', [area('', [adrift], { known: false, short: 'nowhere', full: '' })])
 ];
 
-/** The hub's git state as the tests read it: one staged, two changed, one untracked file. */
-const HUB_GIT = git({
-    branch: 'main',
-    ahead: 1,
-    staged: [{ path: 'a/one.ts', status: 'M', added: 4, deleted: 2 }],
-    unstaged: [
-        { path: 'a/two.png', status: 'M', added: null, deleted: null },
-        // The same file the other live session is holding open, as git sees it: relative to
-        // the workspace root, which is what the "also open" mark has to match across.
-        {
-            path: 'projects/manuscripts/alpha/manuscript/main.tex',
-            status: 'M',
-            added: 1,
-            deleted: 0
-        }
-    ],
-    untracked: [{ path: 'a/three.ts', status: '?', added: 0, deleted: 0 }]
-});
-
 /** What every case here starts from, installed into the case's own client. */
 function installFixture(): void {
     receive({ channel: 'sessions', version: 1, payload: payload(tree) });
-    receive({
-        channel: 'git',
-        version: 1,
-        payload: {
-            [HUB]: HUB_GIT,
-            '/other': git({ branch: '', repository: false, error: 'not a git repository' })
-        }
-    });
+    receive({ channel: 'git', version: 1, payload: sessionsGit(HUB) });
     receive({ channel: 'config', version: 1, payload: { config, text: catalog, findings: [] } });
 }
 

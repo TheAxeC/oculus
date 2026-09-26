@@ -34,7 +34,7 @@ import { hasToken, sameOrigin } from '../core/auth.ts';
 import { changeAt, defaultChangesPath, logChanges, pathOf } from '../core/changes.ts';
 import { undoChange } from './writes/undo.ts';
 import { defaultBookmarksPath } from '../files/fs/bookmarks.ts';
-import { setHidden, setOverride } from '../sessions/overrides.ts';
+import { setFlag, setOverride } from '../sessions/overrides.ts';
 import { projects as projectsOf } from '../sessions/stores/hooks.ts';
 import type { HubLike } from '../sessions/stores/hooks.ts';
 import { createIdea, writeManifest } from './writes/manifest.ts';
@@ -258,8 +258,10 @@ export async function handleWrite(
         const refused: Refusal[] = [];
         const records: ChangeRecord[] = [];
         try {
-            if (session.hidden !== undefined) {
-                const outcome = setHidden(session.id, session.hidden, into.overrides);
+            for (const flag of ['hidden', 'top'] as const) {
+                const value = session[flag];
+                if (value === undefined) continue;
+                const outcome = setFlag(session.id, flag, value, into.overrides);
                 changed.push(...outcome.changed);
                 records.push(...outcome.records);
             }

@@ -39,6 +39,7 @@ export type KeyAction =
     | { kind: 'search' }
     | { kind: 'scroll'; edge: 'top' | 'bottom' }
     | { kind: 'sheet' }
+    | { kind: 'new-session' }
     | { kind: 'clear-cursor' };
 
 export type KeyResult = { action: KeyAction | null; state: KeyState };
@@ -162,6 +163,9 @@ export function resolveKey(
         return { action: { kind: 'activate' }, state: cleared };
     }
     if (event.key === '/') return { action: { kind: 'search' }, state: cleared };
+    // `n` starts a new agent session: the composer, in the page's Terminal tab. No chord prefix of
+    // the catalogue's groups is `n`, and `direct_chord` is `v`.
+    if (event.key === 'n') return { action: { kind: 'new-session' }, state: cleared };
     if (event.key === 'G') {
         return { action: { kind: 'scroll', edge: 'bottom' }, state: { ...cleared, lastG: 0 } };
     }

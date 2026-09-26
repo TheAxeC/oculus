@@ -134,7 +134,7 @@ test('Escape pressed while another tab is shown leaves a hidden new-idea form op
     await expect(field).toBeVisible();
 });
 
-// revert: src/lib/shell/keys/workbench-keys.svelte.ts:244 => (one) => one !== null
+// revert: src/lib/shell/keys/workbench-keys.svelte.ts:264 => (one) => one !== null
 test('a confirm left open in a hidden tab holds no key: Ctrl and a bracket still cycle the tabs', async ({
     page
 }) => {

@@ -21,6 +21,7 @@
     // states one, which Codex does and Claude does not.
 
     import PickSession from '$lib/views/shared/sessions/PickSession.svelte';
+    import SessionPicker from '$lib/views/shared/sessions/SessionPicker.svelte';
     import Meter from '$lib/ui/display/Meter.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Select from '$lib/ui/forms/Select.svelte';
@@ -37,7 +38,7 @@
     import { useState } from '$lib/state/client/use';
 
     const {
-        layout: { instanceLayoutState, layout, openView, pinInstance, unpinInstance },
+        layout: { instanceLayoutState, layout, openView },
         selection: { select },
         selectors: { contextWindow, pinnableAreas, sessionFor },
         terminals: { resumeTerminal },
@@ -182,17 +183,6 @@
         openView('transcript', { session: record.id, label: record.title });
     }
 
-    /** Pin this detail to what it shows, or return it to following the workbench selection. */
-    function togglePanePin(): void {
-        if (panePin !== null) {
-            unpinInstance(instance.id);
-            return;
-        }
-        if (record !== null) {
-            pinInstance(instance.id, record.id, record.title);
-        }
-    }
-
     /** Whether an unpinned terminal is already up and will follow a resumed terminal. */
     function terminalOpen(): boolean {
         return findView(layout(), 'terminal', null) !== null;
@@ -236,14 +226,7 @@
 
 {#snippet tools()}
     <Toolbar label={t('sessions.detail_title')}>
-        {#if record !== null || panePin !== null}
-            <ToolButton
-                label={panePin === null ? t('sessions.pin_pane') : t('sessions.unpin_pane')}
-                title={panePin === null ? t('sessions.pin_pane') : t('sessions.unpin_pane')}
-                pressed={panePin !== null}
-                onclick={togglePanePin}
-            />
-        {/if}
+        <SessionPicker instance={instance.id} />
         {#if panePin !== null && record !== null}
             <ToolButton
                 label={t('sessions.view_transcript')}

@@ -19,6 +19,7 @@
 // registry.ts), and the primitives' tooltip counter is made by the page root beside this object.
 
 import { createRegistry, type RegistryStore } from '../workbench/navigation/registry.ts';
+import { createAgents, type AgentsStore } from '../sessions/agents.svelte.ts';
 import { createChanges, type ChangesStore } from '../sessions/changes.svelte.ts';
 import { createAudit, type AuditStore } from '../system/audit.svelte.ts';
 import { createAccounts, type AccountsStore } from '../life/accounts.svelte.ts';
@@ -91,6 +92,8 @@ export type ClientState = {
     changes: ChangesStore;
     selection: SelectionStore;
     terminals: TerminalsStore;
+    /** The composer's choices, the Customizations section's rows, and a session's export. */
+    agents: AgentsStore;
     files: FilesStore;
     fs: FsStore;
     docs: DocsStore;
@@ -151,6 +154,7 @@ export function createClientState(): ClientState {
     const changes = createChanges();
     const selection = createSelection();
     const terminals = createTerminals(entities, socket, writes);
+    const agents = createAgents();
     const files = createFiles(entities);
     // The file browser's bookmark forms are the fs store's to close: it is what learns that a
     // bookmark has left the file, and a form over one that is gone has nothing to draw and nothing
@@ -245,6 +249,7 @@ export function createClientState(): ClientState {
         changes,
         selection,
         terminals,
+        agents,
         files,
         fs,
         docs,

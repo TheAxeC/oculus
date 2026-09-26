@@ -1,0 +1,267 @@
+// Layer 2, server test. The Customizations reader (server/sessions/stores/customizations.ts) over a
+// planted account folder and a planted workspace: each of the seven rows counts what is there, a
+// file that does not parse is a finding on its row, the viewer is served only a listed file, and
+// GET /api/customizations checks what it is asked before it reads anything.
+//
+// Every folder here is a scratch folder; nothing under ~/.claude, ~/.codex or the hub is read.
+
+import { homedir } from 'node:os';
+import { join } from 'node:path';
+import { afterAll, describe, expect, it } from 'vitest';
+import {
+    CUSTOMIZATION_KINDS,
+    CUSTOMIZATION_MAX,
+    claudeJsonOf,
+    customizationFile,
+    customizationRows,
+    handleCustomizations,
+    tomlServers,
+    tomlTools,
+    upward,
+    type CustomizationScope
+} from '../../../../src/lib/server/sessions/stores/customizations.ts';
+import type {
+    CustomizationRow,
+    CustomizationsAnswer
+} from '../../../../src/lib/data/model/index.ts';
+import { plantScratch, sweepScratch } from '../../../fixtures/scratch.ts';
+
+afterAll(sweepScratch);
+
+const settings = {
+    hooks: {
+        Stop: [{ hooks: [{ type: 'command', command: 'say done' }] }],
+        Notification: [{ hooks: [{ type: 'command', command: 'notify' }, {}] }]
+    },
+    permissions: { allow: ['Bash(npm test)', 'Read'], deny: ['WebFetch'] },
+    mcpServers: { global: { command: 'g' } }
+};
+
+const ACCOUNT = plantScratch('oculus-custom-account-', {
+    'CLAUDE.md': '# account',
+    'settings.json': JSON.stringify(settings),
+    'skills/review/SKILL.md': '# review',
+    'skills/empty/notes.txt': 'no skill here',
+    'agents/explorer.md': '# explorer',
+    'agents/notes.txt': 'not an agent',
+    'plugins/installed_plugins.json': JSON.stringify({ plugins: { 'a@b': {}, 'c@d': {} } }),
+    '.claude.json': JSON.stringify({ projects: {} }),
+    'AGENTS.md': '# codex account',
+    'config.toml':
+        '[mcp_servers.docs]\ncommand = "d"\n[mcp_servers."two words"]\n[model]\n' +
+        '[tools]\nweb_search = true # on\nview_image = false\n'
+});
+
+const ROOT = plantScratch('oculus-custom-root-', {
+    'CLAUDE.md': '# root',
+    'work/CLAUDE.local.md': '# local',
+    'work/.claude/CLAUDE.md': '# nested',
+    'work/.claude/settings.json': '{ not json',
+    'work/.claude/settings.local.json': JSON.stringify({ hooks: { Stop: 'nope' } }),
+    'work/.claude/skills/fix/SKILL.md': '# fix',
+    'work/.claude/agents/writer.md': '# writer',
+    'work/.mcp.json': JSON.stringify({ mcpServers: { local: {}, global: {} } }),
+    'work/AGENTS.md': '# codex work',
+    'work/AGENTS.override.md': '# codex override'
+});
+
+const WORK = join(ROOT, 'work');
+
+function scope(over: Partial<CustomizationScope> = {}): CustomizationScope {
+    return { agent: 'claude', account: ACCOUNT, workspace: WORK, roots: [ROOT], ...over };
+}
+
+function row(rows: CustomizationRow[], kind: string): CustomizationRow {
+    const found = rows.find((one) => one.kind === kind);
+    if (found === undefined) throw new Error(`no ${kind} row`);
+    return found;
+}
+
+describe('the customizations of a Claude workspace', () => {
+    const rows = customizationRows(scope());
+
+    // revert: src/lib/server/sessions/stores/customizations.ts:33 => delete
+    it('audits that lists the seven rows in the section order', () => {
+        expect(rows.map((one) => one.kind)).toEqual([
+            'instructions',
+            'skills',
+            'agents',
+            'hooks',
+            'mcp',
+            'plugins',
+            'tools'
+        ]);
+        expect(CUSTOMIZATION_KINDS).toHaveLength(7);
+    });
+
+    // revert: src/lib/server/sessions/stores/customizations.ts:87 => if (holding !== undefined && dir === start) break;
+    it('reads the instructions of the account, then the workspace and each folder up to its root', () => {
+        const names = row(rows, 'instructions').items.map((item) => item.path);
+        expect(names).toEqual([
+            join(ACCOUNT, 'CLAUDE.md'),
+            join(WORK, '.claude', 'CLAUDE.md'),
+            join(WORK, 'CLAUDE.local.md'),
+            join(ROOT, 'CLAUDE.md')
+        ]);
+        expect(upward(WORK, [ROOT])).toEqual([WORK, ROOT]);
+    });
+
+    // revert: src/lib/server/sessions/stores/customizations.ts:189 => if (scope.agent === 'codex') skillsIn(join(scope.workspace, '.claude', 'skills'), found);
+    it('counts the skills of the account and of the workspace, a folder with no SKILL.md not among them', () => {
+        const skills = row(rows, 'skills');
+        expect(skills.items.map((item) => item.name)).toEqual(['review', 'fix']);
+        expect(skills.count).toBe(2);
+    });
+
+    // revert: src/lib/server/sessions/stores/customizations.ts:198 => if (isFile(path)) {
+    it('counts the subagents, each by its file name', () => {
+        expect(row(rows, 'agents').items.map((item) => item.name)).toEqual(['explorer', 'writer']);
+    });
+
+    // revert: src/lib/server/sessions/stores/customizations.ts:230 => found.items.push({ name: event, path });
+    it('counts one hook per command, and says which settings files do not parse', () => {
+        const hooks = row(rows, 'hooks');
+        expect(hooks.items.map((item) => item.name)).toEqual([
+            'Stop: say done',
+            'Notification: notify',
+            'Notification'
+        ]);
+        expect(hooks.findings).toEqual([
+            { path: join(WORK, '.claude', 'settings.json'), reason: 'malformed' },
+            { path: join(WORK, '.claude', 'settings.local.json'), reason: 'malformed' }
+        ]);
+    });
+
+    // revert: src/lib/server/sessions/stores/customizations.ts:254 => found.items.push({ name, path });
+    it('counts each MCP server once, from the project file, the account settings and the account global file', () => {
+        expect(row(rows, 'mcp').items.map((item) => item.name)).toEqual(['local', 'global']);
+    });
+
+    // revert: src/lib/server/sessions/stores/customizations.ts:322 => for (const name of Object.keys(listed).slice(1)) found.items.push({ name, path });
+    it('counts the installed plugins', () => {
+        expect(row(rows, 'plugins').items.map((item) => item.name)).toEqual(['a@b', 'c@d']);
+    });
+
+    // revert: src/lib/server/sessions/stores/customizations.ts:355 => if (scope.agent !== 'claude') return found;
+    it('counts no tools for Claude and looks in no file, since no file of Claude Code lists them', () => {
+        const tools = row(rows, 'tools');
+        expect(tools.count).toBe(null);
+        expect(tools.looked).toEqual([]);
+        // the settings' permission rules name what may run, which is not the tools the agent has
+        expect(tools.items).toEqual([]);
+    });
+});
+
+describe('the customizations of a Codex workspace', () => {
+    const rows = customizationRows(scope({ agent: 'codex' }));
+
+    // revert: src/lib/server/sessions/stores/customizations.ts:164 => : ['AGENTS.md'];
+    it('reads AGENTS files and the config.toml servers, and nothing a Codex account does not have', () => {
+        expect(row(rows, 'instructions').items.map((item) => item.path)).toEqual([
+            join(ACCOUNT, 'AGENTS.md'),
+            join(WORK, 'AGENTS.override.md'),
+            join(WORK, 'AGENTS.md')
+        ]);
+        expect(row(rows, 'mcp').items.map((item) => item.name)).toEqual(['docs', 'two words']);
+        for (const kind of ['agents', 'hooks', 'plugins']) {
+            expect(row(rows, kind).count).toBe(0);
+        }
+    });
+
+    // revert: src/lib/server/sessions/stores/customizations.ts:340 => const match = /^([A-Za-z0-9_-]+)\s*=/.exec(line);
+    it('counts the tools config.toml switches on, looking in that file alone', () => {
+        const tools = row(rows, 'tools');
+        expect(tools.items).toEqual([{ name: 'web_search', path: join(ACCOUNT, 'config.toml') }]);
+        expect(tools.count).toBe(1);
+        expect(tools.looked).toEqual([join(ACCOUNT, 'config.toml')]);
+        const bare = plantScratch('oculus-custom-bare-', { 'x.txt': '' });
+        const none = row(customizationRows(scope({ agent: 'codex', account: bare })), 'tools');
+        // revert: src/lib/server/sessions/stores/customizations.ts:377 => return rowOf(kind, found);
+        expect(none.count).toBe(null);
+        expect(none.looked).toEqual([join(bare, 'config.toml')]);
+    });
+
+    // revert: src/lib/server/sessions/stores/customizations.ts:336 => inTools = line.startsWith('[tools');
+    it('reads a tool only inside the tools table, each once', () => {
+        expect(
+            tomlTools('a = true\n[tools]\nx = true\nx = true\ny = 1\n[tools.z]\nz = true\n')
+        ).toEqual(['x']);
+    });
+
+    // revert: src/lib/server/sessions/stores/customizations.ts:270 => malformed = false;
+    it('reads a server table name bare or quoted, and a header that does not close as a finding', () => {
+        expect(tomlServers('[mcp_servers.a]\n[mcp_servers."b c"]\n[[x]]\n[other]\n')).toEqual({
+            names: ['a', 'b c'],
+            malformed: false
+        });
+        expect(tomlServers('[mcp_servers.a\n').malformed).toBe(true);
+    });
+});
+
+describe('a customization file for the viewer', () => {
+    // revert: src/lib/server/sessions/stores/customizations.ts:390 => if (!listed && false) return null;
+    it('is served when the listing gives it, and refused for any other path', () => {
+        expect(customizationFile(scope(), join(ACCOUNT, 'CLAUDE.md'))).toBe('# account');
+        expect(customizationFile(scope(), join(ACCOUNT, 'agents', 'notes.txt'))).toBe(null);
+        expect(customizationFile(scope(), join(ACCOUNT, '..', 'etc'))).toBe(null);
+        expect(customizationFile(scope(), '')).toBe(null);
+    });
+
+    // revert: src/lib/server/sessions/stores/customizations.ts:392 => if (statSync(wanted).size > CUSTOMIZATION_MAX * 2) return null;
+    it('is refused when it is larger than the viewer shows', () => {
+        const big = plantScratch('oculus-custom-big-', {
+            'CLAUDE.md': 'x'.repeat(CUSTOMIZATION_MAX + 1)
+        });
+        expect(customizationFile(scope({ account: big }), join(big, 'CLAUDE.md'))).toBe(null);
+    });
+
+    // revert: src/lib/server/sessions/stores/customizations.ts:98 => ? join(account, '.claude.json')
+    it("keeps Claude's global file in the home folder for the default account, and beside any other", () => {
+        expect(claudeJsonOf(ACCOUNT)).toBe(join(ACCOUNT, '.claude.json'));
+        expect(claudeJsonOf(join(homedir(), '.claude'))).toBe(join(homedir(), '.claude.json'));
+    });
+});
+
+describe('GET /api/customizations', () => {
+    const ACCOUNTS = [
+        { tool: 'claude', label: 'Home', dir: ACCOUNT },
+        { tool: 'codex', label: 'Work', dir: ACCOUNT }
+    ];
+
+    function get(query: Record<string, string>, origin = 'http://127.0.0.1:8792'): Response {
+        const url = new URL('http://127.0.0.1:8792/api/customizations');
+        for (const [key, value] of Object.entries(query)) url.searchParams.set(key, value);
+        return handleCustomizations(
+            new Request(url, { headers: { host: '127.0.0.1:8792', origin } }),
+            ACCOUNTS,
+            [ROOT]
+        );
+    }
+
+    // revert: src/lib/server/sessions/stores/customizations.ts:452 => rows: []
+    it('answers the rows for the agent, the account and the workspace', async () => {
+        const response = get({ agent: 'claude', workspace: WORK });
+        expect(response.status).toBe(200);
+        const answer = (await response.json()) as CustomizationsAnswer;
+        expect(answer.account).toBe('Home');
+        expect(row(answer.rows, 'skills').count).toBe(2);
+    });
+
+    // revert: src/lib/server/sessions/stores/customizations.ts:445 => ? json(200, { path: file, text: '' })
+    it('answers one listed file, and a 404 for one it does not list', async () => {
+        const read = get({ agent: 'claude', workspace: WORK, file: join(ROOT, 'CLAUDE.md') });
+        expect(await read.json()).toEqual({ path: join(ROOT, 'CLAUDE.md'), text: '# root' });
+        const other = get({ agent: 'claude', workspace: WORK, file: join(ACCOUNT, 'config.toml') });
+        expect(other.status).toBe(404);
+    });
+
+    // revert: src/lib/server/sessions/stores/customizations.ts:433 => if (!isAbsolute(workspace)) {
+    it('refuses another origin, an agent it does not know, a workspace that is not a folder and an account it does not hold', () => {
+        expect(get({ agent: 'claude', workspace: WORK }, 'http://evil.test').status).toBe(403);
+        expect(get({ agent: 'shell', workspace: WORK }).status).toBe(400);
+        expect(get({ agent: 'claude', workspace: 'work' }).status).toBe(400);
+        expect(get({ agent: 'claude', workspace: join(WORK, 'CLAUDE.local.md') }).status).toBe(400);
+        expect(get({ agent: 'claude', workspace: WORK, account: 'Nobody' }).status).toBe(400);
+        expect(get({ agent: 'claude', workspace: WORK, account: 'Work' }).status).toBe(400);
+    });
+});

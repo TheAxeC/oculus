@@ -13,5 +13,18 @@ text:
             chat_name_focus: '{0}'
             seed_focus: "Ask about {0}: methods, results, what's next..."
             seed_portfolio: Ask about the portfolio, e.g. "what's blocked?", "summarise a project". Runs on your Claude Code / Max plan; I remember this conversation.
+        export:
+            agent: 'Agent: {0}'
+            assistant: Agent
+            error: error
+            folder: 'Folder: {0}'
+            ok: ok
+            running: running
+            session: 'Session: {0}'
+            started: 'Started: {0}'
+            tool: '{0}: {1} ({2})'
+            user: You
+        fork:
+            name: fork of {0}
         latex:
             name: latex {0} {1}/{2}

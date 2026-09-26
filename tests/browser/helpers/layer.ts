@@ -2,6 +2,7 @@
 // afterwards. Both live here rather than in serve.ts because serve.ts is a process Playwright
 // starts: importing it starts a server, so nothing in it can be held by a unit test.
 
+import { spawnSync } from 'node:child_process';
 import {
     cpSync,
     existsSync,
@@ -148,6 +149,36 @@ export function removeLeftovers(root: string, prefix: string): string[] {
         }
     }
     return gone;
+}
+
+/**
+ * End the tmux servers earlier runs left. A run killed outright never reaches its exit handler, so
+ * the tmux server on its socket keeps running, with every shell a spec started in it; the socket is
+ * a file of the run's directory, which is how the next run finds that server and ends it before the
+ * directory goes. The names of the sockets it ended are returned.
+ */
+export function endLeftoverTmux(
+    root: string,
+    prefix: string,
+    tmux: string,
+    name: string
+): string[] {
+    const ended: string[] = [];
+    if (tmux === '') return ended;
+    let entries;
+    try {
+        entries = readdirSync(root, { withFileTypes: true });
+    } catch {
+        return ended;
+    }
+    for (const entry of entries) {
+        if (!entry.isDirectory() || !entry.name.startsWith(prefix)) continue;
+        const socket = join(root, entry.name, name);
+        if (!existsSync(socket)) continue;
+        spawnSync(tmux, ['-S', socket, 'kill-server'], { timeout: 10000 });
+        ended.push(socket);
+    }
+    return ended;
 }
 
 /** Remove what one run made: its temporary directory, and the file the specs read its hub from. */

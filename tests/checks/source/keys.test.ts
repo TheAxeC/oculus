@@ -46,8 +46,9 @@ const SRC = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', '
 const CALL = /(?<![\w$.])(?:\.\.\.)?(t|lookup|catalogText|sentence)\(/g;
 
 /**
- * Server interpolation takes the catalog before its key: `words` of server/machine/pty/chat.ts,
- * which names the chat terminals and the LaTeX terminals and writes the chat instruction. Every
+ * Server interpolation takes the catalog before its key: `words` of server/core/words.ts, which
+ * names the chat terminals and the LaTeX terminals and writes the chat instruction and the
+ * transcript export. Every
  * `words(` call in a file under WORDS_DIR is read, whatever its first argument is spelled, and its
  * declaration is left out by the `function` rule CALL uses. Outside that folder a `words` is
  * another module's own helper (the data layer's `words(catalog)` in sources/config/merge.ts, the

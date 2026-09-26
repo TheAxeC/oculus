@@ -1,12 +1,11 @@
 // The update tray in Chrome: what a press of a task control reaches with `tasks.skip_permissions`
 // off, which is what the checked-in config/behavior.yml holds, and what it asks first with it on.
 //
-// What this file does NOT run is `claude`. The browser layer puts its own `tmux` on PATH ahead of
-// the machine's and that one fails on purpose (tests/browser/helpers/serve.ts), so no spec starts a
-// process on the machine; a press here therefore ends at the tray's own refusal line, which is
-// still the whole path from the control through /api/terminal and back. The argv the task is given
-// and the flag the setting puts back are asserted in tests/routes/sessions/terminal.test.ts, and
-// what the tray draws while the setting is on in tests/shell/keys/palette.test.ts.
+// What this file does NOT run is `claude`. The browser layer's tmux is the machine's on a socket of
+// the run's own, and the `claude` on its PATH is a stand-in that writes the arguments it was given
+// and waits (tests/browser/helpers/serve.ts), so a press here starts a terminal running the
+// stand-in, which is the whole path from the control through /api/terminal to the command. What
+// the tray draws while the setting is on is asserted in tests/shell/keys/palette.test.ts.
 //
 // The last case is the one that turns the setting on. It writes the served copy's behavior.yml, the
 // engine directory this run made, and puts the file back in a `finally`; the checkout's own file is
@@ -14,12 +13,19 @@
 // no other spec is reading that copy while the case holds it.
 
 import { expect, test, type Page, type Locator } from '@playwright/test';
-import { readEngineFile, writeEngineFile } from '../helpers/hub.ts';
+import {
+    endServedTerminals,
+    readEngineFile,
+    startedWith,
+    writeEngineFile
+} from '../helpers/hub.ts';
 import { boot } from '../helpers/rail.ts';
 import { t } from '../helpers/words.ts';
 
 /** The engine file the setting lives in, relative to the engine directory this run serves. */
 const BEHAVIOR = 'config/behavior.yml';
+
+test.afterEach(endServedTerminals);
 
 /** Open the tray from the rail's own control and hand back the dialog. */
 async function openTray(page: Page): Promise<Locator> {
@@ -58,11 +64,14 @@ test('a task control reaches the endpoint with no confirmation in front of it', 
         kind: 'litwatch'
     });
 
-    // This layer has no tmux, so what comes back is the refusal rather than a running terminal.
-    console.log('tasks.spec: this layer starts no process, so the task itself is not run here');
-    await expect(tray).toContainText(t('editor.failed', '').trim());
-    // this layer starts no process, so no terminal tab is opened by the refusal
-    await expect(page.getByRole('tab', { name: t('sessions.view_terminal') })).toHaveCount(0);
+    // The task runs in a terminal of its own, which the page opens as the tray closes.
+    // revert: src/lib/server/machine/pty/routes.ts:279 => argv.push(`/research-cockpit`);
+    await expect
+        .poll(() => startedWith('claude'), { timeout: 15000 })
+        .toEqual([['/research-cockpit litwatch']]);
+    // a task that started closes the tray it was pressed in
+    await expect(tray).toHaveCount(0);
+    await expect(page.getByRole('tab', { name: t('sessions.view_terminal') })).toBeVisible();
 });
 
 test('with the setting on a press asks first, and the confirmation starts the task', async ({
@@ -114,8 +123,11 @@ test('with the setting on a press asks first, and the confirmation starts the ta
         // the yes closes the question
         await expect(page.getByRole('alertdialog')).toHaveCount(0);
 
-        // This layer has no tmux, so the task ends at the refusal line, as the case above does.
-        await expect(reopened).toContainText(t('editor.failed', '').trim());
+        // The setting puts the flag back in front of the task's own words.
+        // revert: src/lib/server/machine/pty/routes.ts:278 => delete
+        await expect
+            .poll(() => startedWith('claude'), { timeout: 15000 })
+            .toEqual([['--dangerously-skip-permissions', '/research-cockpit litwatch']]);
         expect(calls.map((body) => JSON.parse(body) as unknown)).toMatchObject([
             { action: 'task', kind: 'litwatch' }
         ]);

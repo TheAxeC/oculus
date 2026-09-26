@@ -56,16 +56,19 @@
     // supplies is the list of roots a bookmark may name, since that is what the workspace in force
     // says and not what the file said when it was written. Its typed values are that form's drafts,
     // and closing the form by a control of this view forgets them through toggleAdd and toggleEdit,
-    // as a collection view's own Add and Edit controls do. A note opens as a tab and is a file in a
-    // folder of its own, written by the first keystroke typed into it.
+    // as a collection view's own Add and Edit controls do.
     //
     // Another view shows a path here through the layout store's showInFiles, which writes the ask
     // into this instance's state; files/tree/ShowPath.svelte reads the folders on the way, opens
     // them, selects the path (or the nearest folder of it that is there, and says so) and scrolls
     // it into view.
+    //
+    // A tab with `follow: true` in its layout state is rooted at a session's workspace: the tree is
+    // that folder as its own head, read through the root that holds it (tree/Follow.svelte). The
+    // session is the one the tab pins in its layout state, and the selection when it pins none, as
+    // the Changes view reads its session. A dragged file row carries its path.
 
     import Breadcrumb from '$lib/ui/tabs/Breadcrumb.svelte';
-    import Confirm from '$lib/ui/controls/Confirm.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Search from '$lib/ui/controls/Search.svelte';
@@ -74,6 +77,8 @@
     import RootForm from './sections/RootForm.svelte';
     import Sections from './sections/Sections.svelte';
     import ShowPath from './tree/ShowPath.svelte';
+    import Follow from './tree/Follow.svelte';
+    import Confirm from '$lib/ui/controls/Confirm.svelte';
     import { refusal } from './tree/refusal';
     import { openBookmark, openRow } from './opening';
     import Tree from './tree/Tree.svelte';
@@ -84,6 +89,8 @@
         editShown,
         filesViewOf,
         filterRows,
+        followView,
+        followedDirOf,
         formSettled,
         formShown,
         formsOf,
@@ -98,6 +105,7 @@
         treeKey,
         treeRows,
         type FilesForms,
+        type FsEntry,
         type FilesView,
         type RowRef,
         type TreeRow
@@ -108,12 +116,13 @@
         bookmarkTitles,
         currentWorkspace,
         fixedRootKeys,
+        markRefusal,
         matchedNothing,
         openFailures,
         rootKeysOf,
         workspaceNames
     } from '$lib/state/sources/fs-transport';
-    import { noteId } from '$lib/state/life/notes';
+    import { pinnedSession } from '$lib/state/workbench/selection.svelte';
     import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
@@ -124,7 +133,6 @@
             addRoot,
             bookmarks,
             bookmarksChanged,
-            deleteNote,
             entries,
             heldEntries,
             invalidate,
@@ -138,7 +146,10 @@
             shiftForms,
             workspaces
         },
-        layout: { closeRecord, keepPreview, openView },
+        layout: { instanceLayoutState, keepPreview, openView },
+        selection: { selected },
+        selectors: { sessionById },
+        terminals: { terminalById },
         ui: { instanceState, setInstanceState }
     } = useState();
 
@@ -154,24 +165,37 @@
     // store prefix of `$state`, which svelte-check refuses.
     const saved = $derived(workspaces());
     const current = $derived(currentWorkspace(saved));
+
+    /** The session or terminal the tab follows: the one it pins, else the selection. */
+    const followed = $derived(pinnedSession(instanceLayoutState(instance.id)) ?? selected());
+    const follow = $derived(
+        followView(
+            instanceLayoutState(instance.id),
+            current.roots,
+            followedDirOf(sessionById(followed), terminalById(followed))
+        )
+    );
     const view = $derived(filesViewOf(instanceState(instance.id)));
     /** What this tab's listings show beside the default: its two toggles. */
     const listed = $derived(shownOf(view));
     const rows = $derived(
-        treeRows(current.roots, (root, path) => entries(root, path, listed), view.expanded)
+        treeRows(
+            follow.roots,
+            (root, path) => entries(root, path, listed),
+            view.expanded,
+            follow.top
+        )
     );
     const filtering = $derived(view.filter.trim() !== '');
+    /** What the typed filter matches among the folders already read, or the tree when none is. */
     const shown = $derived(
-        filtering
-            ? filterRows(
-                  current.roots,
-                  (root, path) => heldEntries(root, path, listed),
-                  view.filter
-              )
-            : rows
+        filtering ? filterRows(follow.roots, held, view.filter, follow.top) : rows
     );
-    const crumbs = $derived(crumbsOf(view.selected));
-    const fixed = $derived(fixedRootKeys(current.roots));
+    /** The selection's path, while the tree on screen draws the root it is under. */
+    const crumbs = $derived(
+        follow.roots.some((root) => root.key === view.selected?.root) ? crumbsOf(view.selected) : []
+    );
+    const fixed = $derived(fixedRootKeys(current.roots, follow.following));
     /** The root keys an ask to show a path is answered against, and null until they are read. */
     const rootKeys = $derived(rootKeysOf(saved));
 
@@ -202,6 +226,11 @@
     const failures = $derived(
         openFailures(rows, (root, path) => listing(root, path, listed).error)
     );
+
+    /** The entries of one folder already read, as this tab's toggles list them. */
+    function held(root: string, path: string): FsEntry[] | null {
+        return heldEntries(root, path, listed);
+    }
 
     /** Write part of what one instance remembers, keeping the rest of it as it was. */
     function patchAt(id: string, part: Partial<FilesView>): void {
@@ -263,9 +292,7 @@
             found === null
                 ? await addBookmark({ label, root: row.root, path: row.path })
                 : await removeBookmark(found.id);
-        const reason = answer.ok
-            ? answer.refused.map((one) => one.reason).join('; ')
-            : (answer.error ?? '');
+        const reason = markRefusal(answer);
         answerAt(owner, { note: reason === '' ? '' : t('files.bookmark_failed', reason) });
     }
 
@@ -296,7 +323,8 @@
 
     /**
      * Close the form an answer was for in the instance it was sent from, if it is still open as it
-     * was.
+     * was. The bookmark form asks for it once Cancel, a save or a delete is done with it, when the
+     * form has forgotten its own draft; a form the reader has since left is not closed.
      */
     function settle(owner: string, asked: FilesForms): void {
         const closed = formSettled(filesViewOf(instanceState(owner)), asked);
@@ -307,27 +335,6 @@
         const owner = instance.id;
         const answer = await selectWorkspace(name);
         answerAt(owner, { note: answer.ok ? '' : refusal(answer.error ?? '') });
-    }
-
-    /** Open one note. Its file is written by the first keystroke, so nothing is made here. */
-    function addNote(): void {
-        patch({ note: '' });
-        // The tab is told its note has no file yet, so it knows the note is empty without a round
-        // trip and asks the server for nothing that is not there.
-        openView('note', { id: noteId(new Date()), fresh: true });
-    }
-
-    /** Open one note as its own tab, under the title the list carries for it now. */
-    function openNote(id: string, label: string): void {
-        openView('note', { id, label });
-    }
-
-    /** Take one note off the disk, and take its tab with it: what it drew is not there any more. */
-    async function dropNote(id: string): Promise<void> {
-        const owner = instance.id;
-        const answer = await deleteNote(id);
-        answerAt(owner, { note: answer.ok ? '' : refusal(answer.error ?? '') });
-        if (answer.ok) closeRecord('note', id);
     }
 
     /** Move the file browser on screen to other forms, for a press made on it now. */
@@ -351,14 +358,6 @@
     }
 
     /**
-     * Close the bookmark form, which asks once Cancel, a save or a delete is done with it; the form
-     * has forgotten its own draft by then. A form the reader has since left is not closed.
-     */
-    function closeMark(owner: string, forms: FilesForms): void {
-        settle(owner, forms);
-    }
-
-    /**
      * Open the bookmark form over the id its own save gave the bookmark. The form is drawn per
      * instance and per opening, and a rename moves neither, so the form stays as it is with what
      * was typed into it; the bookmark it edits is the one the file now holds, so the close of a
@@ -375,6 +374,10 @@
         names={workspaceNames(saved)}
         adding={view.form === 'root'}
         shown={listed}
+        owner={instance.id}
+        followed={sessionById(followed) !== null || terminalById(followed) !== null
+            ? followed
+            : null}
         onselect={(name: string) => void select(name)}
         onshow={flip}
         onadd={() => {
@@ -410,7 +413,7 @@
                     entry={editedMark}
                     initial={{ root: current.roots[0]?.key ?? '' }}
                     onadd={addBookmark}
-                    onclose={closeMark}
+                    onclose={settle}
                     onrenamed={renameMark}
                     onsaid={(owner: string, answer: string) => {
                         answerAt(owner, { said: answer });
@@ -445,12 +448,16 @@
                 }}
             />
         {/if}
+        <Follow owner={instance.id} {follow} />
         {#if saved.error !== ''}
             <p class="note" aria-live="polite">{t('files.read_failed', saved.error)}</p>
         {:else if saved.loading}
             <Empty message={t('files.loading')} glyph={t('files.none_glyph')} />
         {:else if rows.length === 0}
-            <Empty message={t('files.none')} glyph={t('files.none_glyph')} />
+            <!-- A tab following nothing, or a folder no root serves, has its own line above. -->
+            {#if !follow.following || follow.found !== null}
+                <Empty message={t('files.none')} glyph={t('files.none_glyph')} />
+            {/if}
         {:else}
             {#each saved.dropped as key (key)}
                 <p class="note">{t('files.reserved', key)}</p>
@@ -462,6 +469,7 @@
             {/each}
             <Tree
                 rows={shown}
+                roots={current.roots}
                 {filtering}
                 selected={view.selected}
                 {fixed}
@@ -473,21 +481,20 @@
                 onbookmark={(row: TreeRow) => void bookmark(row)}
                 onrefresh={invalidate}
                 oncollapse={(root: string) =>
-                    patch({ expanded: collapseRoot(view.expanded, root) })}
+                    patch({ expanded: collapseRoot(view.expanded, root, follow.top?.path) })}
             />
             {#if filtering && matchedNothing(shown)}
                 <p class="said">{t('files.filter_none')}</p>
             {/if}
         {/if}
         <Sections
+            owner={instance.id}
             {view}
             onsection={toggleSection}
             onaddmark={() => show('bookmark')}
             onopenmark={(entry: Entry) => openBookmark(opener, entry)}
             oneditmark={edit}
-            onaddnote={addNote}
-            onopennote={openNote}
-            onremovenote={(id: string) => void dropNote(id)}
+            onnote={(owner: string, note: string) => answerAt(owner, { note })}
             onsaveworkspace={() => show('workspace')}
             onselectworkspace={(name: string) => void select(name)}
         />

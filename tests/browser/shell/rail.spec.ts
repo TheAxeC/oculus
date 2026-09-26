@@ -424,7 +424,7 @@ test('a page button dragged above another moves its entry there in layout.yml, t
     page
 }) => {
     // revert: src/lib/shell/rail/RailPages.svelte:137 => delete
-    // revert: src/lib/server/edit/writes/undo.ts:225 => const outcome = writeRail(into.layoutFile, railRows(change.after) ?? [], into.glyphs);
+    // revert: src/lib/server/edit/writes/undo.ts:227 => const outcome = writeRail(into.layoutFile, railRows(change.after) ?? [], into.glyphs);
     const before = readEngineFile(LAYOUT);
     const order = fileOrder();
     try {
@@ -461,7 +461,7 @@ test('Hide in a page button right-click menu takes its entry out of layout.yml, 
     page
 }) => {
     // revert: src/lib/shell/rail/ActivityRail.svelte:102 => void write((rail) => rail);
-    // revert: src/lib/server/edit/writes/undo.ts:225 => const outcome = writeRail(into.layoutFile, railRows(change.after) ?? [], into.glyphs);
+    // revert: src/lib/server/edit/writes/undo.ts:227 => const outcome = writeRail(into.layoutFile, railRows(change.after) ?? [], into.glyphs);
     const before = readEngineFile(LAYOUT);
     const order = fileOrder();
     try {
@@ -659,7 +659,7 @@ test('a rail tooltip points at its item, and none opens during a drag or on a fo
 });
 
 test('the Bookmarks menu opens upward from the star, inside the window', async ({ page }) => {
-    // revert: src/lib/ui/menu/Menu.svelte:181 => delete
+    // revert: src/lib/ui/menu/Menu.svelte:188 => delete
     await boot(page);
     const star = page.locator('nav').getByRole('button', { name: t('ui.docs'), exact: true });
     await star.click();

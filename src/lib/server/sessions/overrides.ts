@@ -1,7 +1,8 @@
-// Layer 2, server. The per-session overrides file: what the user dismissed, pinned or renamed.
+// Layer 2, server. The per-session overrides file: what the user archived, pinned or renamed.
 //
-// `{"sessions": {"<id>": {"hidden": true, "area": "/path", "title": "my name"}}}` at
-// ~/.oculus/sessions.json by default. The scoring in group.ts is a heuristic and is wrong
+// `{"sessions": {"<id>": {"hidden": true, "top": true, "area": "/path", "title": "my name"}}}` at
+// ~/.oculus/sessions.json by default. `hidden` is an archived session and `top` one pinned to the
+// top of its group in the sessions list. The scoring in group.ts is a heuristic and is wrong
 // sometimes, which is why a session can be pinned to an area by hand; a dismissal hides a session
 // that has ended and nothing else.
 //
@@ -17,6 +18,8 @@ import type { ChangeRecord } from '../core/changes.ts';
 /** What one session's entry may hold. Any other key the file carries is kept but not read. */
 export type Override = {
     hidden?: boolean;
+    /** Pinned to the top of its group in the sessions list. */
+    top?: boolean;
     area?: string;
     title?: string;
     [key: string]: unknown;
@@ -63,12 +66,30 @@ export type OverrideResult = {
     records: ChangeRecord[];
 };
 
+/** The two flags of an entry: archived, and pinned to the top of its group. */
+export type OverrideFlag = 'hidden' | 'top';
+
+/** Archive one session, or restore it. */
+export function setHidden(sessionId: unknown, hidden: boolean, path?: string): OverrideResult {
+    return setFlag(sessionId, 'hidden', hidden, path);
+}
+
+/** A copy of a record with one key left out, the others in their order. */
+function without(record: Record<string, unknown>, key: string): Record<string, unknown> {
+    return Object.fromEntries(Object.entries(record).filter(([name]) => name !== key));
+}
+
 /**
- * Dismiss one session, or restore it. Every other key in the file, and every other key on this
- * session's own entry, is preserved; a restore that empties an entry removes the entry rather than
+ * Set or clear one flag of one session. Every other key in the file, and every other key on this
+ * session's own entry, is preserved; a clear that empties an entry removes the entry rather than
  * leaving a shell behind. Nothing is written when the flag is already what it is being set to.
  */
-export function setHidden(sessionId: unknown, hidden: boolean, path?: string): OverrideResult {
+export function setFlag(
+    sessionId: unknown,
+    flag: OverrideFlag,
+    on: boolean,
+    path?: string
+): OverrideResult {
     if (typeof sessionId !== 'string' || sessionId.trim() === '') {
         throw new Error('a session id is required');
     }
@@ -79,27 +100,24 @@ export function setHidden(sessionId: unknown, hidden: boolean, path?: string): O
     const sessions: Record<string, unknown> = isMap(data.sessions) ? { ...data.sessions } : {};
     const existing = sessions[ident];
     const entry: Record<string, unknown> = isMap(existing) ? { ...existing } : {};
-    const before = entry.hidden;
-    if (hidden === (before === true)) return { changed: [], refused: [], records: [] };
-    if (hidden) entry.hidden = true;
-    else delete entry.hidden;
-    if (Object.keys(entry).length > 0) sessions[ident] = entry;
-    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- a Map here would change the shape every reader of this record depends on
-    else delete sessions[ident];
-    data.sessions = sessions;
+    const before = entry[flag];
+    if (on === (before === true)) return { changed: [], refused: [], records: [] };
+    const next = on ? { ...entry, [flag]: true } : without(entry, flag);
+    data.sessions =
+        Object.keys(next).length > 0 ? { ...sessions, [ident]: next } : without(sessions, ident);
     writeJsonAtomic(file, data);
     return {
-        changed: ['hidden'],
+        changed: [flag],
         refused: [],
         records: [
             {
                 file,
                 key: ident,
-                field: 'hidden',
+                field: flag,
                 before: plain(before),
                 // A restore deletes the key rather than writing `false`, so the record says the
                 // field holds nothing: it is what the file has, and it is what an undo checks.
-                after: hidden ? true : null,
+                after: on ? true : null,
                 undo: 'field'
             }
         ]

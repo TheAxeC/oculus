@@ -25,6 +25,12 @@ text:
         file_glyph: paper
         filter: Filter the folders already read by name
         filter_none: No folder read so far holds a name with that text.
+        follow: Follow the session
+        follow_none: No session is picked, so there is no workspace to follow.
+        follow_pin: Keep following this session when the selection moves
+        follow_title: Root the tree at the workspace of the selected session, and move with the selection
+        follow_unpin: Follow the selected session again
+        follow_unserved: 'No root holds {0}, so its files cannot be listed here.'
         folder_glyph: folder
         html_glyph: page
         image_glyph: memories

@@ -1,16 +1,20 @@
 <script lang="ts">
-    // Layer 3, sessions view partial. Workspace, area and session rows live here because their
-    // selection, resume and dismissal controls change independently of the session-list frame.
+    // Layer 3, sessions view partial. One workspace's group of the sessions list: a side-bar
+    // section header with the workspace's name and count, then its rows. A row is two lines of the
+    // list's row height, as a VS Code list row is one: the state at the left and the title, then
+    // the agent, the model, how long ago it last moved, the files it changed and its prompts. A
+    // row being renamed holds the title's field in place of the title.
 
+    import RowButton from '$lib/ui/controls/RowButton.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
+    import TextInput from '$lib/ui/forms/TextInput.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import Menu from '$lib/ui/menu/Menu.svelte';
-    import { clock, modelShort, stamp } from '$lib/state/shared/words/format';
-    import type { Area, GroupedSession, Workspace } from '$lib/state/client/selectors.svelte';
-    import { asText } from '$lib/state/forms/schema';
-    import { sessionCount } from '$lib/state/sessions/folds';
+    import { modelShort } from '$lib/state/shared/words/format';
+    import type { GroupedSession } from '$lib/state/client/selectors.svelte';
+    import { ago, rowState, type ListGroup, type ListStateKey } from '$lib/state/sessions/folds';
     import { t } from '$lib/state/shared/words/text';
-    import { sessionRowItems } from './session-list';
+    import { sessionRowItems, stateLabel } from './session-list';
     import { useState } from '$lib/state/client/use';
 
     const {
@@ -18,297 +22,283 @@
     } = useState();
 
     type Props = {
-        workspace: Workspace;
+        group: ListGroup;
         now: number;
         armedResume: string;
-        isHidden: (row: GroupedSession) => boolean;
-        onresume: (row: GroupedSession) => void | Promise<void>;
-        ondismiss: (row: GroupedSession) => void | Promise<void>;
-        ontranscript: (row: GroupedSession) => void;
-        onpinned: (row: GroupedSession) => void;
+        /** The row whose title is being typed, and the empty string for none. */
+        renaming: string;
+        isArchived: (row: GroupedSession) => boolean;
+        /** Whether a row is pinned to the top, the mark drawn ahead of its write included. */
+        topOf: (row: GroupedSession) => boolean;
+        onaction: (id: string, row: GroupedSession) => void;
+        onrename: (row: GroupedSession, title: string | null) => void;
     };
 
-    let {
-        workspace,
-        now,
-        armedResume,
-        isHidden,
-        onresume,
-        ondismiss,
-        ontranscript,
-        onpinned
-    }: Props = $props();
+    let { group, now, armedResume, renaming, isArchived, topOf, onaction, onrename }: Props =
+        $props();
 
-    /** How many session rows the workspace's areas hold. */
-    function count(): number {
-        return sessionCount(workspace);
+    /** What the rename field holds while it is open. */
+    let typed = $state('');
+
+    const TONES: Record<ListStateKey, string> = {
+        input: 'amber',
+        working: 'green',
+        idle: 'blue',
+        ended: 'grey',
+        archived: 'slate'
+    };
+
+    function dotStyle(state: ListStateKey): string {
+        return `--tone: var(--c-${TONES[state]})`;
     }
 
-    /** The hue of one session state dot. */
-    function dotTone(row: GroupedSession): string {
-        if (row.state === 'working') return 'green';
-        if (row.state === 'idle') return 'amber';
-        if (row.state === 'ended') return 'grey';
-        return 'slate';
+    /** How long ago the row last moved, in the list's own few words. */
+    function since(row: GroupedSession): string {
+        const told = ago(row.lastActivity ?? row.started, now);
+        if (told === null) return '';
+        if (told.unit === 'now') return t('sessions.ago_now');
+        if (told.unit === 'm') return t('sessions.ago_m', String(told.count));
+        if (told.unit === 'h') return t('sessions.ago_h', String(told.count));
+        return t('sessions.ago_d', String(told.count));
     }
 
-    /** The custom property that colors one session state dot. */
-    function dotStyle(row: GroupedSession): string {
-        return `--tone: var(--c-${dotTone(row)})`;
+    function agentWords(row: GroupedSession): string {
+        return row.tool === 'codex' ? t('sessions.kind_codex') : t('sessions.kind_claude');
     }
 
-    /** What the registry says a live process is doing. */
-    function liveLabel(row: GroupedSession): string {
-        if (row.liveStatus === 'busy') return t('sessions.live_busy');
-        if (row.liveStatus === 'idle') return t('sessions.live_idle');
-        return row.liveStatus ?? '';
+    function startRename(row: GroupedSession): void {
+        typed = row.title;
+        onrename(row, null);
     }
 
-    /** The newest timeline event, or the last prompt when there is no event. */
-    function activity(row: GroupedSession): string {
-        const event = row.timeline.length > 0 ? row.timeline[row.timeline.length - 1] : null;
-        if (event === null) return row.lastPrompt;
-        if (event.kind === 'turn') {
-            return t(
-                'sessions.activity_turn',
-                String(Math.round((Number(event.text) || 0) / 1000))
-            );
+    // Escape closes the rename field without a title. The field is a primitive that takes no key
+    // handler, so the key is read on the document while a field is open.
+    $effect(() => {
+        const open = renaming;
+        if (open === '') return;
+        const row = group.rows.find((one) => one.id === open);
+        if (row === undefined) return;
+        const escape = (event: KeyboardEvent): void => {
+            if (event.key !== 'Escape') return;
+            event.preventDefault();
+            event.stopPropagation();
+            onrename(row, '');
+        };
+        document.addEventListener('keydown', escape, true);
+        // The field opens with the focus in it and its text selected, as an inline rename does.
+        const field = document.querySelector(`[data-rename="${CSS.escape(open)}"] input`);
+        if (field instanceof HTMLInputElement) {
+            field.focus();
+            field.select();
         }
-        const text = asText(event.text);
-        const at = text.lastIndexOf('/');
-        return at < 0 ? text : text.slice(at + 1);
-    }
+        return () => document.removeEventListener('keydown', escape, true);
+    });
 </script>
 
 {#snippet row(entry: GroupedSession)}
-    {@const away = isHidden(entry)}
-    <div class="row" class:on={entry.id === selected()} class:away>
-        <button
-            type="button"
-            class="pick"
-            title={t('sessions.select_tip')}
-            onclick={() => select(entry.id)}
-        >
-            <span class="top">
-                <span class="dot" class:observed={entry.kind === 'observed'} style={dotStyle(entry)}
-                ></span>
-                <Tag label={entry.tool} />
-                <span class="nm">{entry.title}</span>
-                {#if entry.pinned}
-                    <span class="pin" title={t('sessions.pin_mark')}
-                        ><Glyph name={t('project.card.pin_glyph')} /></span
-                    >
-                {/if}
-                {#if entry.hook?.event === 'notification' && entry.hook.kind === 'permission_prompt'}
-                    <span class="hook" title={entry.hook.message ?? ''}
-                        ><Tag label={t('notify.permission_chip')} tone="amber" /></span
-                    >
-                {:else if entry.hook?.event === 'notification' && entry.hook.kind === 'idle_prompt'}
-                    <Tag label={t('notify.idle_chip')} />
-                {/if}
-            </span>
-            <span class="meta">
-                {#if entry.live}
-                    <span class="live">{liveLabel(entry)}</span>
-                    <span class="sep">{t('sessions.meta_sep')}</span>
-                {/if}
-                <span class="mo">{modelShort(entry.model)}</span>
-                <span class="sep">{t('sessions.meta_sep')}</span>
-                <span class="ts">{stamp(entry.started, now)}</span>
-                <span class="sep">{t('sessions.meta_sep')}</span>
-                <span class="act">{activity(entry)}</span>
-                {#if entry.hook?.event === 'stop'}
-                    <span class="sep">{t('sessions.meta_sep')}</span>
-                    <span class="stopped">{t('sessions.stopped_at', clock(entry.hook.at))}</span>
-                {/if}
-                {#each entry.secondaryAreas as area (area.key)}
-                    <Tag label={area.short === '' ? area.key : area.short} />
-                {/each}
-            </span>
-        </button>
-        <div class="menu">
-            <Menu
-                label={t('ui.row_menu')}
-                items={sessionRowItems(entry, armedResume)}
-                glyph={t('ui.pane_menu_glyph')}
-                compact
-                placement="down"
-                align="right"
-                onpick={(id) => {
-                    if (id === 'pinned') onpinned(entry);
-                    if (id === 'resume') void onresume(entry);
-                    if (id === 'transcript') ontranscript(entry);
+    {@const archived = isArchived(entry)}
+    {@const state = rowState(entry, archived)}
+    {@const top = topOf(entry)}
+    <div
+        class="row"
+        class:on={entry.id === selected()}
+        class:input={state === 'input'}
+        class:away={archived}
+        data-session-row={entry.id}
+        data-state={state}
+    >
+        {#if renaming === entry.id}
+            <form
+                class="rename"
+                data-rename={entry.id}
+                onsubmit={(event) => {
+                    event.preventDefault();
+                    onrename(entry, typed);
                 }}
-            />
-        </div>
-        {#if !entry.live}
-            <button
-                type="button"
-                class="hide"
-                title={away ? t('sessions.restore_tip') : t('sessions.close_tip')}
-                aria-label={away ? t('sessions.restore_tip') : t('sessions.close_tip')}
-                onclick={() => ondismiss(entry)}
             >
-                {#if away}
-                    <Glyph name={t('sessions.restore_glyph')} />
-                {:else}
-                    <Glyph name={t('sessions.dismiss_glyph')} />
-                {/if}
-            </button>
+                <TextInput
+                    value={typed}
+                    label={t('sessions.rename_field')}
+                    oninput={(value: string) => (typed = value)}
+                />
+            </form>
+        {:else}
+            <RowButton
+                title={t('sessions.select_tip')}
+                selected={entry.id === selected()}
+                onclick={() => select(entry.id)}
+                ondblclick={() => startRename(entry)}
+            >
+                <span class="line one">
+                    <span class="dot" style={dotStyle(state)} title={stateLabel(state)}></span>
+                    <span class="nm">{entry.title}</span>
+                    {#if top}
+                        <span class="mark" title={t('sessions.top_mark')}><Glyph name="pin" /></span
+                        >
+                    {/if}
+                    {#if state === 'input'}
+                        <span class="mark" title={entry.hook?.message ?? undefined}
+                            ><Tag label={t('sessions.state_input')} tone="amber" /></span
+                        >
+                    {/if}
+                </span>
+                <span class="line two">
+                    <span>{agentWords(entry)}</span>
+                    {#if entry.model !== null}
+                        <span class="sep">{t('sessions.meta_sep')}</span>
+                        <span>{modelShort(entry.model)}</span>
+                    {/if}
+                    <span class="sep">{t('sessions.meta_sep')}</span>
+                    <span>{since(entry)}</span>
+                    <span class="sep">{t('sessions.meta_sep')}</span>
+                    <span title={t('sessions.files_tip')}
+                        >{t('sessions.files_n', String(entry.files.length))}</span
+                    >
+                    <span class="sep">{t('sessions.meta_sep')}</span>
+                    <span title={t('sessions.prompts_tip')}
+                        >{t('sessions.prompts_n', String(entry.prompts))}</span
+                    >
+                </span>
+            </RowButton>
+            <div class="menu">
+                <Menu
+                    label={t('ui.row_menu')}
+                    items={sessionRowItems(entry, armedResume, { top, archived })}
+                    glyph={t('ui.pane_menu_glyph')}
+                    compact
+                    bare
+                    inherit={entry.id === selected()}
+                    placement="down"
+                    align="right"
+                    onpick={(id: string) => {
+                        if (id === 'rename') startRename(entry);
+                        else onaction(id, entry);
+                    }}
+                />
+            </div>
         {/if}
     </div>
 {/snippet}
 
-{#snippet areaOf(area: Area)}
-    <div class="area">
-        <div class="area-h" title={area.full}>
-            <span class="short">{area.short === '' ? area.key : area.short}</span>
-            {#if !area.known}
-                <span class="unknown">{t('sessions.area_unknown')}</span>
-            {/if}
-        </div>
-        {#each area.sessions as entry (entry.id)}
-            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-            {@render row(entry)}{/each}
-    </div>
-{/snippet}
-
-<div class="ws">
-    <div class="ws-h">
-        <span class="nm">{workspace.name === '' ? workspace.key : workspace.name}</span>
-        <span class="n">{count()}</span>
-    </div>
-    {#each workspace.areas as area (area.key)}
+<section class="group" data-session-group={group.key}>
+    <h3 class="head" title={group.key}>
+        <span class="nm">{group.name === '' ? t('sessions.no_workspace') : group.name}</span>
+        <span class="n">{group.rows.length}</span>
+    </h3>
+    {#each group.rows as entry (entry.id)}
         <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-        {@render areaOf(area)}{/each}
-</div>
+        {@render row(entry)}{/each}
+</section>
 
 <style>
-    .row .menu {
+    .group {
         display: flex;
-        align-items: center;
+        flex-direction: column;
+        min-width: 0;
     }
-    .ws-h,
-    .area-h {
+
+    /* A side-bar section header: the name in small capitals on a line of the row height. */
+    .head {
         display: flex;
         align-items: center;
         gap: 6px;
+        height: 22px;
+        margin: 0;
+        padding: 0 8px;
         color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-sm);
+        font-size: var(--fs-xs);
+        font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.04em;
     }
-    .ws-h {
-        border-bottom: 1px solid var(--line);
-        padding-bottom: 2px;
-    }
-    .ws-h .nm {
+
+    .head .nm {
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
     }
-    .ws-h .n {
+
+    .head .n {
         margin-left: auto;
         font-family: var(--font-num);
+        font-weight: 400;
     }
-    .area {
-        margin-top: 6px;
-        padding-left: 6px;
-    }
-    .area-h .unknown {
-        text-transform: none;
-        letter-spacing: 0;
-        opacity: 0.7;
-    }
+
     .row {
         display: flex;
         align-items: stretch;
-        gap: 2px;
-        border: 1px solid transparent;
-        border-radius: var(--radius-sm);
-    }
-    .row.on {
-        border-color: var(--accent);
-    }
-    .row.away {
-        opacity: 0.55;
-    }
-    .pick {
-        display: flex;
-        flex-direction: column;
-        gap: 2px;
-        flex: 1 1 auto;
         min-width: 0;
-        border: 0;
-        border-radius: var(--radius-sm);
-        background: none;
-        color: var(--ink-txt, var(--ink));
-        font: inherit;
-        text-align: left;
-        padding: 4px 6px;
-        cursor: pointer;
+        border-left: 2px solid transparent;
     }
-    .pick:hover,
-    .hide:hover {
+
+    .row:hover {
         background: var(--chip);
     }
-    .pick:focus-visible,
-    .hide:focus-visible {
-        outline: 2px solid var(--accent);
-        outline-offset: -2px;
+
+    .row.on {
+        background: var(--accent-bg);
+        color: var(--on-accent-bg, var(--ink));
     }
-    .top,
-    .meta {
+
+    /* The selected row's second line and its menu read in the ink of the selection tint. */
+    .row.on .two {
+        color: inherit;
+    }
+
+    .row.input {
+        border-left-color: var(--c-amber);
+    }
+
+    .row.away {
+        opacity: 0.6;
+    }
+
+    /* Each line is one list row of VS Code's, 22 pixels. */
+    .line {
         display: flex;
         align-items: center;
         gap: 4px;
+        height: 22px;
         min-width: 0;
+        white-space: nowrap;
     }
-    .top .pin,
-    .top .hook {
-        flex: none;
-        font-size: var(--fs-3xs);
-    }
-    .top .nm {
+
+    .one .nm {
         overflow: hidden;
         text-overflow: ellipsis;
-        white-space: nowrap;
         font-size: var(--fs-md);
     }
-    .meta {
-        flex-wrap: wrap;
+
+    .two {
+        overflow: hidden;
         color: var(--muted-txt, var(--muted));
         font-size: var(--fs-xs);
+        padding-left: 12px;
     }
-    .meta .act {
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
+
+    .mark {
+        flex: none;
+        display: inline-flex;
+        font-size: var(--fs-3xs);
     }
-    .meta .ts {
-        font-size: var(--fs-xs);
-    }
-    .sep {
-        opacity: 0.5;
-    }
+
     .dot {
-        flex: 0 0 auto;
+        flex: none;
         width: 8px;
         height: 8px;
         border-radius: var(--radius-pill);
         background: var(--tone);
     }
-    .dot.observed {
-        opacity: 0.45;
+
+    .menu {
+        display: flex;
+        align-items: flex-start;
+        padding-top: 1px;
     }
-    .hide {
-        flex: 0 0 auto;
-        border: 0;
-        border-radius: var(--radius-sm);
-        background: none;
-        color: var(--muted-txt, var(--muted));
-        font: inherit;
-        padding: 0 4px;
-        cursor: pointer;
+
+    .rename {
+        flex: 1 1 auto;
+        min-width: 0;
+        padding: 2px 6px;
     }
 </style>

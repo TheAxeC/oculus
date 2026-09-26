@@ -23,6 +23,7 @@ import Menu from '../../src/lib/ui/menu/Menu.svelte';
 import Meter from '../../src/lib/ui/display/Meter.svelte';
 import Pane from '../../src/lib/ui/frame/Pane.svelte';
 import { heldStop, nextStop } from '../../src/lib/ui/tree/roving.ts';
+import RowButton from '../../src/lib/ui/controls/RowButton.svelte';
 import Search from '../../src/lib/ui/controls/Search.svelte';
 import Segment from '../../src/lib/ui/controls/Segment.svelte';
 import Tabs from '../../src/lib/ui/tabs/Tabs.svelte';
@@ -646,6 +647,27 @@ describe('the gallery', () => {
     it('fills its table from the chip vocabulary', () => {
         expect([...body.matchAll(/<tbody/g)]).toHaveLength(1);
         expect([...body.matchAll(/<tr/g)].length).toBeGreaterThan(4);
+    });
+});
+
+describe('RowButton', () => {
+    const lines = createRawSnippet(() => ({ render: () => '<span>two lines</span>' }));
+
+    // revert: src/lib/ui/controls/RowButton.svelte:25 => <button class="row-button" class:selected {title} {onclick} {ondblclick}>
+    it('is a button that submits nothing, holding the lines the caller draws', () => {
+        const body = html(RowButton, {
+            title: 'Select',
+            onclick: () => undefined,
+            children: lines
+        });
+        expect(body).toMatch(/<button type="button" class="row-button[^"]*" title="Select"/);
+        expect(body).toContain('<span>two lines</span>');
+    });
+
+    // revert: src/lib/ui/controls/RowButton.svelte:25 => <button type="button" class="row-button" {title} {onclick} {ondblclick}>
+    it('draws the selected row in the ink of the selection tint', () => {
+        const on = html(RowButton, { selected: true, onclick: () => undefined, children: lines });
+        expect(on).toMatch(/class="row-button[^"]* selected/);
     });
 });
 

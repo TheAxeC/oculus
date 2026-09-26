@@ -1,6 +1,7 @@
 # Oculus text owned by the config view: one card per file of the engine's config folder.
 text:
     config:
+        desc_agents: 'The composer of a new agent session: per agent, the models, efforts and permission modes it offers, each with the words it shows and the flag it passes, and each list with its default.'
         desc_appearance: "The UI theme list with the glyph each theme is offered under, the wallpaper behind the panels, the Memories wall's folder, the CRT default and the terminal text size."
         desc_behavior: "Thresholds, horizons and cadences: read limits, stale days, the context window, the Live HPC settings, the audit's waiting statuses and mute list, the source editor's `editor.paint_limit_kb`, the update tasks' `tasks.skip_permissions`, the application `open.program_ext` names for each extension that may open, git and chat."
         desc_glyphs: 'The glyph vocabulary: each name with the ASCII stand-in, one to three characters, that a terminal theme draws in place of its icon.'

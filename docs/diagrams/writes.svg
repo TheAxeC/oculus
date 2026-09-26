@@ -235,7 +235,7 @@
 </g>
 <!-- lib/server/edit/writes.ts&#45;&gt;lib/server/sessions/overrides.ts -->
 <g id="edge24" class="edge">
-<title>lib/server/edit/writes.ts&#45;&gt;lib/server/sessions/overrides.ts: setHidden, setOverride</title>
+<title>lib/server/edit/writes.ts&#45;&gt;lib/server/sessions/overrides.ts: setFlag, setOverride</title>
 <path fill="none" stroke="currentColor" d="M203.48,-399.17C242.44,-387.22 315.72,-364.73 360.59,-350.96"/>
 <polygon fill="currentColor" stroke="currentColor" points="360.98,-353.04 366.1,-349.27 359.74,-349.02 360.98,-353.04"/>
 </g>
@@ -420,7 +420,7 @@
 </g>
 <!-- lib/server/edit/writes/undo.ts&#45;&gt;lib/server/sessions/overrides.ts -->
 <g id="edge51" class="edge">
-<title>lib/server/edit/writes/undo.ts&#45;&gt;lib/server/sessions/overrides.ts: overrides, setHidden, setOverride</title>
+<title>lib/server/edit/writes/undo.ts&#45;&gt;lib/server/sessions/overrides.ts: overrides, setFlag, setOverride</title>
 <path fill="none" stroke="currentColor" d="M182.58,-222.23C193.84,-243.96 222.11,-292.28 261.08,-315.24 291.34,-333.07 331.4,-338.41 360.51,-339.68"/>
 <polygon fill="currentColor" stroke="currentColor" points="360.08,-341.77 366.14,-339.87 360.22,-337.57 360.08,-341.77"/>
 </g>

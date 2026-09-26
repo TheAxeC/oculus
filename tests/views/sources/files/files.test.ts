@@ -122,7 +122,7 @@ describe('the file browser as a tab', () => {
 // Pressing the control is a DOM event no server render fires, so what it does is read off the
 // source.
 describe('the control that opens a note', () => {
-    const source = readFileSync('src/lib/views/sources/files/Files.svelte', 'utf8');
+    const source = readFileSync('src/lib/views/sources/files/sections/Sections.svelte', 'utf8');
 
     it('audits that opening the tab writes no file, so an untouched note leaves nothing', () => {
         const from = source.slice(source.indexOf('function addNote('));
@@ -385,7 +385,7 @@ describe('the form a root and a workspace are named in', () => {
 
 describe('the marks the tree draws', () => {
     // Revert: draw a folder row with the file glyph in Tree.svelte's glyphOf.
-    // revert: src/lib/views/sources/files/tree/Tree.svelte:75 => if (row.kind === 'dir') return t('files.file_glyph');
+    // revert: src/lib/views/sources/files/tree/Tree.svelte:84 => if (row.kind === 'dir') return t('files.file_glyph');
     it('gives a folder row and the empty state different marks', () => {
         const { body } = render(Tree, { context: clientContext(client), props: treeProps() });
         const empty = render(Files, {

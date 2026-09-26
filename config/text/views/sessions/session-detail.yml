@@ -25,7 +25,6 @@ text:
         f_title: title
         f_version: version
         pin_label: Pin
-        pin_mark: pinned to this area by hand
         pin_scored: (scored)
         pin_tip: file this session under a project folder instead of the one its files scored
         rename_glyph: check

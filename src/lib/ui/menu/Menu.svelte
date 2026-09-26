@@ -57,6 +57,11 @@
          * unchanged.
          */
         bare?: boolean;
+        /**
+         * A bare opener's glyph in the ink of what it sits in, for an opener on a row whose tint
+         * sets its own ink, where the muted colour would not read.
+         */
+        inherit?: boolean;
         /** The opener as one item of the activity rail, the box a rail ToolButton draws. */
         rail?: boolean;
         /**
@@ -91,6 +96,7 @@
         placement = 'up',
         align = 'left',
         bare = false,
+        inherit = false,
         rail = false,
         status = false,
         words,
@@ -160,6 +166,7 @@
         {glyph}
         {compact}
         {bare}
+        {inherit}
         {rail}
         {status}
         {words}

@@ -21,6 +21,8 @@ import {
     type RailOrder
 } from './keys';
 import { DOC_PICK } from '$lib/state/workbench/navigation/catalogue';
+import { composerState, composerTarget } from '$lib/state/sessions/terminals.svelte';
+import { tabsOf } from '$lib/state/workbench/layout';
 
 type Options = {
     drag: DragStore;
@@ -157,6 +159,21 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
         return page ?? options.layout.currentPage().id;
     }
 
+    /**
+     * Start a new session on a page: the composer in its Terminal tab that follows the selection,
+     * or in a new Terminal tab when it has none, as the sessions list's New does.
+     */
+    function newSession(page: string): void {
+        const state = composerState(crypto.randomUUID());
+        const target = composerTarget(tabsOf(options.layout.layout(page)));
+        if (target === null) {
+            options.layout.openView('terminal', state, page);
+            return;
+        }
+        options.layout.restateInstance(target, state);
+        options.layout.activateInstance(target, page);
+    }
+
     /** Apply one resolved key action to shell state or the focused pane's DOM. */
     function perform(action: KeyAction, pane: HTMLElement | null): boolean {
         if (action.kind === 'open') {
@@ -184,6 +201,9 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
             return activateTab(pane, action.index);
         } else if (action.kind === 'cycle-tab') {
             return cycleTab(pane, action.by);
+        } else if (action.kind === 'new-session') {
+            clearCursor();
+            newSession(pageOf());
         } else if (action.kind === 'sheet') {
             clearCursor();
             options.setSheetOpen(!options.sheetOpen());

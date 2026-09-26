@@ -22,31 +22,34 @@
     // An assistant turn is rendered Markdown, drawn with {@html} through ui/html.ts's sanitise: the
     // turn is what an agent wrote into a file on disk, so the markup is filtered to that profile
     // before it reaches the page. A user turn keeps its own line breaks and is never rendered.
+    //
+    // Under the conversation sits the prompt box that steers the session, which works for a
+    // session running in a terminal oculus started and says so for any other.
 
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
     import PickSession from '$lib/views/shared/sessions/PickSession.svelte';
+    import SessionPicker from '$lib/views/shared/sessions/SessionPicker.svelte';
+    import SteerBox from '$lib/views/shared/sessions/SteerBox.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Toolbar from '$lib/ui/frame/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { sanitise } from '$lib/ui/html';
     import { clock } from '$lib/state/shared/words/format';
-    import { pinnedSession } from '$lib/state/workbench/selection.svelte';
     import { t } from '$lib/state/shared/words/text';
     import type { Turn } from '$lib/state/sessions/transcript.svelte';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 
     const {
-        layout: { instanceLayoutState, pinInstance, unpinInstance },
         selectors: { sessionFor },
+        terminals: { terminalOfSession },
         transcripts: { follow, showing, turnsFor }
     } = useState();
 
     let { instance }: ViewProps = $props();
 
     const record = $derived(sessionFor(instance.id));
-    const panePin = $derived(pinnedSession(instanceLayoutState(instance.id)));
     const held = $derived(turnsFor(record?.id ?? ''));
     const turns = $derived(held.turns);
 
@@ -103,17 +106,6 @@
         column.scrollTop = column.scrollHeight;
     }
 
-    /** Pin this transcript to what it shows, or return it to following the selection. */
-    function togglePanePin(): void {
-        if (panePin !== null) {
-            unpinInstance(instance.id);
-            return;
-        }
-        if (record !== null) {
-            pinInstance(instance.id, record.id, record.title);
-        }
-    }
-
     /** What the block is labelled: who said it, or that a tool was called. */
     function roleLabel(role: string): string {
         if (role === 'user') return t('sessions.turn_user');
@@ -141,14 +133,7 @@
 <Pane title={t('sessions.view_transcript')} tinted>
     {#snippet toolbar()}
         <Toolbar label={t('sessions.turn_toolbar')}>
-            {#if record !== null || panePin !== null}
-                <ToolButton
-                    label={panePin === null ? t('sessions.pin_pane') : t('sessions.unpin_pane')}
-                    title={panePin === null ? t('sessions.pin_pane') : t('sessions.unpin_pane')}
-                    pressed={panePin !== null}
-                    onclick={togglePanePin}
-                />
-            {/if}
+            <SessionPicker instance={instance.id} />
             <ToolButton
                 label={t('sessions.turn_end')}
                 glyph={t('sessions.turn_end_glyph')}
@@ -157,52 +142,70 @@
             />
         </Toolbar>
     {/snippet}
-    <div
-        class="chat"
-        bind:this={column}
-        onscroll={scrolled}
-        data-instance={instance.id}
-        data-scroll
-    >
-        {#if record === null}
-            <PickSession message={t('sessions.detail_empty')} glyph={t('sessions.empty_glyph')} />
-        {:else if held.error !== ''}
-            <p class="failed">{held.error}</p>
-        {:else if turns.length === 0}
-            <Empty message={t('sessions.turns_empty')} glyph={t('sessions.empty_glyph')} />
-        {:else}
-            {#each turns as turn, at (key(turn, at))}
-                <div class="turn {turn.role}">
-                    <div class="head">
-                        <span class="who">{roleLabel(turn.role)}</span>
-                        <span class="ts">{clock(turn.at)}</span>
-                        {#if turn.tool !== null}
-                            <span class="name">{turn.tool.name}</span>
-                            <span class="sum" title={turn.tool.summary}>{turn.tool.summary}</span>
-                            <Tag label={okLabel(turn.tool.ok)} tone={okTone(turn.tool.ok)} />
+    <div class="frame">
+        <div
+            class="chat"
+            bind:this={column}
+            onscroll={scrolled}
+            data-instance={instance.id}
+            data-scroll
+        >
+            {#if record === null}
+                <PickSession
+                    message={t('sessions.detail_empty')}
+                    glyph={t('sessions.empty_glyph')}
+                />
+            {:else if held.error !== ''}
+                <p class="failed">{held.error}</p>
+            {:else if turns.length === 0}
+                <Empty message={t('sessions.turns_empty')} glyph={t('sessions.empty_glyph')} />
+            {:else}
+                {#each turns as turn, at (key(turn, at))}
+                    <div class="turn {turn.role}">
+                        <div class="head">
+                            <span class="who">{roleLabel(turn.role)}</span>
+                            <span class="ts">{clock(turn.at)}</span>
+                            {#if turn.tool !== null}
+                                <span class="name">{turn.tool.name}</span>
+                                <span class="sum" title={turn.tool.summary}
+                                    >{turn.tool.summary}</span
+                                >
+                                <Tag label={okLabel(turn.tool.ok)} tone={okTone(turn.tool.ok)} />
+                            {/if}
+                        </div>
+                        {#if turn.role === 'assistant'}
+                            <!-- eslint-disable-next-line svelte/no-at-html-tags -- the sanitiser writes this -->
+                            <div class="doc">{@html sanitise(turn.html)}</div>
+                        {:else if turn.role === 'user'}
+                            <div class="said">{turn.text}</div>
+                        {/if}
+                        {#if turn.cut}
+                            <p class="cut">{t('sessions.turn_cut')}</p>
                         {/if}
                     </div>
-                    {#if turn.role === 'assistant'}
-                        <!-- eslint-disable-next-line svelte/no-at-html-tags -- the sanitiser writes this -->
-                        <div class="doc">{@html sanitise(turn.html)}</div>
-                    {:else if turn.role === 'user'}
-                        <div class="said">{turn.text}</div>
-                    {/if}
-                    {#if turn.cut}
-                        <p class="cut">{t('sessions.turn_cut')}</p>
-                    {/if}
-                </div>
-            {/each}
+                {/each}
+            {/if}
+        </div>
+        {#if record !== null}
+            <SteerBox terminal={terminalOfSession(record)} />
         {/if}
     </div>
 </Pane>
 
 <style>
+    .frame {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        min-height: 0;
+    }
+
     .chat {
         display: flex;
         flex-direction: column;
         gap: 10px;
-        height: 100%;
+        flex: 1 1 auto;
+        min-height: 0;
         overflow: auto;
     }
 

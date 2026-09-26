@@ -5,6 +5,7 @@
 // This is a vitest file rather than a spec: Playwright's testMatch is `*.spec.ts`, so the browser
 // layer never collects it and it never starts a server.
 
+import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, utimesSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
@@ -12,6 +13,7 @@ import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
     buildState,
     copyConfig,
+    endLeftoverTmux,
     newest,
     removeLeftovers,
     removeOnExit,
@@ -24,6 +26,10 @@ import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
 afterAll(sweepScratch);
 
 let dir = '';
+
+/** The machine's own tmux, or '' where it has none; the tmux case is skipped without it. */
+const TMUX = spawnSync('sh', ['-c', 'command -v tmux'], { encoding: 'utf8' }).stdout.trim();
+if (TMUX === '') console.error('tests/browser/shell/layer.test.ts: tmux case skipped, no tmux');
 
 beforeEach(() => {
     dir = scratchDir('oculus-layer-');
@@ -139,6 +145,27 @@ describe('the cleanup', () => {
         expect(existsSync(join(dir, 'oculus-browser-aaa'))).toBe(false);
         expect(existsSync(join(dir, 'something-else'))).toBe(true);
         expect(removeLeftovers(join(dir, 'never-there'), 'oculus-browser-')).toEqual([]);
+    });
+
+    // revert: tests/browser/helpers/layer.ts:178 => delete
+    it.skipIf(!TMUX)('ends the tmux server an earlier run left on its socket, and no other', () => {
+        const old = join(dir, 'ob-old', 'tmux.sock');
+        const other = join(dir, 'other', 'tmux.sock');
+        mkdirSync(join(dir, 'ob-old'));
+        mkdirSync(join(dir, 'other'));
+        mkdirSync(join(dir, 'ob-empty'));
+        try {
+            for (const socket of [old, other]) {
+                const started = spawnSync(TMUX, ['-S', socket, 'new-session', '-d', 'sleep 60']);
+                expect(started.status).toBe(0);
+            }
+            expect(endLeftoverTmux(dir, 'ob-', TMUX, 'tmux.sock')).toEqual([old]);
+            expect(spawnSync(TMUX, ['-S', old, 'has-session']).status).not.toBe(0);
+            expect(spawnSync(TMUX, ['-S', other, 'has-session']).status).toBe(0);
+            expect(endLeftoverTmux(dir, 'ob-', '', 'tmux.sock')).toEqual([]);
+        } finally {
+            for (const socket of [old, other]) spawnSync(TMUX, ['-S', socket, 'kill-server']);
+        }
     });
 
     it('removes them on the exit event and on a signal, stopping the server first', () => {

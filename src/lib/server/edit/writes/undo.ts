@@ -21,7 +21,7 @@ import {
     restoreFeedEntry,
     writeFeedField
 } from '../feeds.ts';
-import { overrides, setHidden, setOverride } from '../../sessions/overrides.ts';
+import { overrides, setFlag, setOverride } from '../../sessions/overrides.ts';
 import { deckNow, writeDeck } from './deck.ts';
 import { railNow, writeRail } from './rail.ts';
 import { railRows } from '../../../data/sources/config/rail.ts';
@@ -197,8 +197,10 @@ function apply(into: WriteTarget, change: Change): WriteOutcome | null {
         return writeManifest(hub, config, change.key, { [change.field]: change.before });
     }
     if (change.kind === 'session') {
-        if (change.field === 'hidden') {
-            return outcomeOf(setHidden(change.key, change.before === true, into.overrides));
+        if (change.field === 'hidden' || change.field === 'top') {
+            return outcomeOf(
+                setFlag(change.key, change.field, change.before === true, into.overrides)
+            );
         }
         const value = typeof change.before === 'string' ? change.before : '';
         return outcomeOf(setOverride(change.key, { [change.field]: value }, into.overrides));

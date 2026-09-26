@@ -11,15 +11,22 @@
 </script>
 
 <script lang="ts">
-    // Layer 3, view. One terminal pane: xterm.js over the `pty:` channel and the control that
-    // starts one when nothing is selected. The grid takes keyboard input and carries its own bytes.
+    // Layer 3, view. One terminal pane: xterm.js over the `pty:` channel with the prompt box that
+    // steers it under the grid, and the composer of a new session when the tab shows no terminal.
+    // The grid takes keyboard input and carries its own bytes.
+    //
+    // A selected session that runs in no terminal of oculus cannot be typed into, so the tab draws
+    // its steer box disabled with the sentence saying why; a new session is reached by New.
     //
     // A tab owns the terminal it was opened on or started, kept in its own instance state as
     // `session`, so several terminals show at once, one per tab. The bar's `new terminal` control
     // opens another Terminal tab, which carries an identity of its own and no terminal and so shows
-    // the start form rather than the selection; a start from any tab makes the terminal it started
-    // that tab's own. A tab opened with neither follows the terminal selected in the rail, as the
-    // pin control's unpinned state does.
+    // the composer rather than the selection; a start from such a tab makes the terminal it started
+    // that tab's own. A tab opened with neither follows the selection: the terminal selected, or
+    // the oculus terminal the selected session runs in; a start from it selects what it started and
+    // it goes on following. New in the sessions list puts a composer in that following tab
+    // (state/sessions/terminals.svelte.ts, `composerState`), which returns to following once it
+    // starts.
     //
     // xterm.js is loaded inside the effect rather than at the top of the module: it needs a DOM,
     // and this view renders on the server like every other. The effect runs in the browser alone,
@@ -31,17 +38,16 @@
     // cannot be CSS: xterm paints the glyphs itself and takes its palette as strings through its
     // own API. This is the one file in the application that reads a computed token.
 
-    import PickSession from '$lib/views/shared/sessions/PickSession.svelte';
+    import Composer from './Composer.svelte';
+    import TerminalPicker from './TerminalPicker.svelte';
+    import SteerBox from '$lib/views/shared/sessions/SteerBox.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
-    import Segment from '$lib/ui/controls/Segment.svelte';
-    import Select from '$lib/ui/forms/Select.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Toolbar from '$lib/ui/frame/Toolbar.svelte';
     import { terminalFontPx } from '$lib/state/shared/words/appearance';
     import { pinnedTerminal } from '$lib/state/workbench/selection.svelte';
     import { stateId } from '$lib/state/workbench/layout/instance';
-    import { titleStripper, type TerminalKind } from '$lib/state/sessions/terminals.svelte';
-    import { terminalPlaces } from '$lib/state/sessions/folds';
+    import { followsSelection, titleStripper } from '$lib/state/sessions/terminals.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { scheduleReflow } from './reflow';
     import { untrack } from 'svelte';
@@ -51,15 +57,15 @@
 
     const {
         layout: { instanceLayoutState, openView, pinInstance, restateInstance, unpinInstance },
-        selectors: { hubRoot, sessionsByWorkspace },
-        selection: { selectedTerminal },
+        selectors: { sessionById },
+        selection: { select, selected, selectedTerminal },
         terminals: {
             resizeTerminal,
             sendInput,
             sendResize,
-            startTerminal,
             subscribePty,
             terminalById,
+            terminalOfSession,
             unsubscribePty
         },
         ui: { setTerminalFont, terminalFont, textScale, theme }
@@ -93,13 +99,6 @@
     /** The mount point, once the browser has it. */
     let body: HTMLDivElement | null = $state(null);
 
-    /** What the last start was refused with, in the server's own words, or the empty string. */
-    let failure = $state('');
-
-    /** The start control's two fields. */
-    let kind: TerminalKind = $state('shell');
-    let where = $state('');
-
     /** The grid and its fit addon, while one is mounted. */
     let grid: Grid | null = null;
     let measure: (() => { cols: number; rows: number } | null) | null = null;
@@ -111,9 +110,15 @@
      * terminal yet, so it shows the start form rather than whatever the rail has selected.
      */
     const fresh = $derived(pinned === null && stateId(instanceLayoutState(instance.id)) !== null);
-    const id = $derived(pinned ?? (fresh ? null : selectedTerminal()));
+    /** The session selected, when the selection is a session rather than a terminal. */
+    const selectedSession = $derived(
+        pinned !== null || fresh || selectedTerminal() !== null ? null : sessionById(selected())
+    );
+    const id = $derived(
+        pinned ??
+            (fresh ? null : (selectedTerminal() ?? terminalOfSession(selectedSession)?.id ?? null))
+    );
     const terminal = $derived(terminalById(id));
-    const hub = $derived(hubRoot());
 
     /**
      * A pinned tab carries the session's name, and a terminal is renamed while it runs; the label
@@ -133,9 +138,6 @@
         restateInstance(instance.id, { session: held, label: live.name });
     });
 
-    /** Where the next terminal starts: what was picked, and the hub until something is. */
-    const chosen = $derived(where === '' ? hub : where);
-
     /** Pin this terminal to what it shows, or return it to following the terminal selection. */
     function togglePanePin(): void {
         if (pinned !== null) {
@@ -146,17 +148,6 @@
             pinInstance(instance.id, terminal.id, terminal.name);
         }
     }
-
-    /** Where a terminal may be started: the workspaces the payload knows, and the hub itself. */
-    const places = $derived(
-        terminalPlaces(hub, sessionsByWorkspace(true)).map((key) => ({ id: key, label: key }))
-    );
-
-    const kinds = $derived([
-        { id: 'claude', label: t('sessions.kind_claude'), glyph: t('sessions.kind_claude_glyph') },
-        { id: 'codex', label: t('sessions.kind_codex'), glyph: t('sessions.kind_codex_glyph') },
-        { id: 'shell', label: t('sessions.kind_shell'), glyph: t('sessions.kind_shell_glyph') }
-    ]);
 
     /**
      * The palette in force, read off the body, which is where the theme's class sits and where its
@@ -203,30 +194,22 @@
     }
 
     /**
-     * Start a terminal and make it this tab's own. The tab is named after the kind until the
-     * terminal's own name arrives, which the effect above then puts on it. The rail's selection is
-     * left as it was: a tab following the selection goes on showing what it showed, so one
-     * terminal is not drawn in two tabs.
+     * What a start from the composer does with the terminal it made. A tab that owns what it shows
+     * owns this one, named after the agent until the terminal's own name arrives, which the effect
+     * above then puts on it. A tab that follows the selection selects it and goes on following, so
+     * the list and this tab agree on what is being read.
      */
-    async function start(): Promise<void> {
-        const size = measure?.() ?? null;
+    function started(made: string, label: string): void {
         const owner = instance.id;
-        const started = kind;
-        const answer =
-            size === null
-                ? await startTerminal(started, chosen)
-                : await startTerminal(started, chosen, size.cols, size.rows);
-        failure = answer.error;
-        if (!answer.ok || answer.id === '') return;
-        restateInstance(owner, { session: answer.id, label: kindLabel(started) });
+        if (followsSelection(instanceLayoutState(owner))) {
+            restateInstance(owner, {});
+            select(made);
+            return;
+        }
+        restateInstance(owner, { session: made, label });
     }
 
-    /** The words for one kind of terminal, which is what a tab is named before its terminal is. */
-    function kindLabel(of: TerminalKind): string {
-        return kinds.find((one) => one.id === of)?.label ?? t('sessions.view_terminal');
-    }
-
-    /** Open another Terminal tab, with an identity of its own, showing the start form. */
+    /** Open another Terminal tab, with an identity of its own, showing the composer. */
     function openAnother(): void {
         openView('terminal', { id: crypto.randomUUID() });
     }
@@ -338,6 +321,7 @@
 
 {#snippet tools()}
     <Toolbar label={t('sessions.view_terminal')}>
+        <TerminalPicker instance={instance.id} current={id} />
         <ToolButton
             label={t('sessions.new_terminal')}
             title={t('sessions.new_terminal_title')}
@@ -377,32 +361,20 @@
 
 <Pane title={t('sessions.view_terminal')} toolbar={tools} tinted>
     <div class="terminal" data-instance={instance.id}>
-        {#if id === null}
+        {#if id === null && selectedSession !== null}
             <div class="start">
-                <PickSession
-                    message={t('sessions.no_terminal')}
-                    glyph={t('sessions.terminal_glyph')}
-                />
-                <Segment
-                    items={kinds}
-                    value={kind}
-                    label={t('sessions.start_terminal')}
-                    onchange={(picked) => (kind = picked as TerminalKind)}
-                />
-                <Select
-                    value={chosen}
-                    label={t('sessions.cwd')}
-                    empty={t('sessions.cwd_empty')}
-                    choices={places}
-                    onchange={(picked: string) => (where = picked)}
-                />
-                <ToolButton label={t('sessions.start_terminal')} onclick={() => void start()} />
-                {#if failure !== ''}
-                    <p class="failure">{failure}</p>
-                {/if}
+                <p class="elsewhere" data-runs-elsewhere>
+                    {t('composer.selected_elsewhere', selectedSession.title)}
+                </p>
+                <SteerBox terminal={null} />
+            </div>
+        {:else if id === null}
+            <div class="start">
+                <Composer owner={instance.id} onstarted={started} />
             </div>
         {:else}
             <div class="grid" bind:this={body} data-terminal={id}></div>
+            <SteerBox {terminal} />
         {/if}
     </div>
 </Pane>
@@ -420,8 +392,14 @@
     .start {
         display: flex;
         flex-direction: column;
-        align-items: flex-start;
         gap: 8px;
+        min-width: 0;
+    }
+
+    .elsewhere {
+        margin: 0;
+        font-size: var(--fs-sm);
+        color: var(--muted-txt, var(--muted));
     }
 
     .grid {
@@ -429,11 +407,5 @@
         min-height: 0;
         min-width: 0;
         overflow: hidden;
-    }
-
-    .failure {
-        margin: 0;
-        font-size: var(--fs-md);
-        color: var(--c-red-txt, var(--ink));
     }
 </style>

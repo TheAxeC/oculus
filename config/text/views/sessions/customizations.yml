@@ -1,0 +1,20 @@
+# Oculus text owned by the Customizations section of the sessions list and its viewer.
+text:
+    customize:
+        agents: Agents
+        finding: 'Could not be read: {0}'
+        hooks: Hooks
+        instructions: Instructions
+        loading: 'Reading...'
+        mcp: MCP servers
+        none: None
+        plugins: Plugins
+        refresh: Read again
+        skills: Skills
+        title: Customizations
+        title_tip: 'What the agent reads before its first turn in {0}'
+        tools: Tools
+        uncounted: No file names them, so they are not counted.
+        view: Customization
+        view_glyph: writing
+        view_none: No file is open here.

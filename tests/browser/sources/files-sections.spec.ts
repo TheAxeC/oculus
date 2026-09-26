@@ -200,7 +200,7 @@ async function toggleRoot(page: Page): Promise<{ dir: string; key: string }> {
     return { dir, key };
 }
 
-// revert: src/lib/views/sources/files/Files.svelte:245 => delete
+// revert: src/lib/views/sources/files/Files.svelte:274 => delete
 test('the two header toggles list the hidden and the ignored files, each on its own query', async ({
     page
 }) => {
@@ -231,7 +231,7 @@ test('the two header toggles list the hidden and the ignored files, each on its 
     );
 });
 
-// revert: src/lib/views/sources/files/tree/Controls.svelte:63 => delete
+// revert: src/lib/views/sources/files/tree/Controls.svelte:109 => delete
 test('a toggle that is on is drawn filled, apart from one that is off', async ({ page }) => {
     await boot(page);
     await openView(page, 'files', t('views.files'));
@@ -246,7 +246,7 @@ test('a toggle that is on is drawn filled, apart from one that is off', async ({
     await expect.poll(() => fill(hidden)).not.toBe(off);
 });
 
-// revert: src/lib/views/sources/files/Files.svelte:244 => delete
+// revert: src/lib/views/sources/files/Files.svelte:273 => delete
 test('flipping a toggle reads the open folders again, so a file made since shows', async ({
     page
 }) => {
@@ -264,7 +264,7 @@ test('flipping a toggle reads the open folders again, so a file made since shows
     await expect(page.locator(`[data-fs-row="${key}:.made-since"]`)).toBeVisible();
 });
 
-// revert: src/lib/views/sources/files/Files.svelte:168 => (root, path) => heldEntries(root, path),
+// revert: src/lib/views/sources/files/Files.svelte:232 => return heldEntries(root, path);
 test('the filter looks through what the toggles list, so a hidden file is found once they show it', async ({
     page
 }) => {

@@ -38,7 +38,7 @@ nav_groups:
 direct_chord: v
 
 
-# What each rail page is first made from, by the key its `rail:` entry names. After that first press the page is the one the reader arranged, kept in the saved layout. An arrangement carries `root`, the page's one tree. A node is `{ kind: split, dir, sizes, children }` or `{ kind: pane, view }`, where `view` is one view id or a list of them (the tabs of that pane). It is the layout tree of DESIGN.md with the instance ids left out, since those are minted fresh when the page is made. An arrangement that does not add up makes no page.
+# What each rail page is first made from, by the key its `rail:` entry names. After that first press the page is the one the reader arranged, kept in the saved layout. An arrangement carries `root`, the page's one tree. A node is `{ kind: split, dir, sizes, children }` or `{ kind: pane, view }`, where `view` is one view id or a list of them (the tabs of that pane), and a tab of the list may be `{ view, state }` to open it in a state of its own, as the sessions page's Files tab follows the selected session with `state: { follow: true }`. It is the layout tree of DESIGN.md with the instance ids left out, since those are minted fresh when the page is made. An arrangement that does not add up makes no page.
 arrangements:
   focus:
     root: { kind: pane, view: focus }
@@ -60,20 +60,11 @@ arrangements:
     root:
       kind: split
       dir: row
-      sizes: [0.7, 0.3]
+      sizes: [0.22, 0.5, 0.28]
       children:
-        - kind: split
-          dir: row
-          sizes: [0.28, 0.72]
-          children:
-            - { kind: pane, view: session-list }
-            - kind: split
-              dir: col
-              sizes: [0.6, 0.4]
-              children:
-                - { kind: pane, view: terminal }
-                - { kind: pane, view: [transcript, timeline] }
-        - { kind: pane, view: [session-detail, changes, agents] }
+        - { kind: pane, view: session-list }
+        - { kind: pane, view: [terminal, transcript, timeline, session-detail, agents] }
+        - { kind: pane, view: [changes, { view: files, state: { follow: true } }] }
   info:
     root: { kind: pane, view: [status, findings, audit, history, usage, help] }
   calendar:

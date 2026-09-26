@@ -20,9 +20,10 @@ export type Found = TranscriptFile;
 /**
  * Bumped by any change to the accumulator's shape, or to what a record reads out of it; a store
  * cached at an earlier version is folded again once, whole. The current version reads background
- * subagents and their completion notices, queued ones included.
+ * subagents and their completion notices, queued ones included, and the tokens an Agent call's
+ * result says its subagent spent.
  */
-export const CACHE_VERSION = 4;
+export const CACHE_VERSION = 5;
 export const MAX_CACHE_ENTRIES = 200;
 /** A first read of a file above this is not folded; the record says so and nothing is cached. */
 export const MAX_FIRST_READ_BYTES = 256 * 1024 * 1024;

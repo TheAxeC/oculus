@@ -1,0 +1,80 @@
+# The composer's choices for a new agent session: per agent, its pickers in the order the composer draws them. A picker has the words it is labelled with, the one flag every value of it passes, its default, and its values; a value has an id, the words it shows and what it passes after the flag, or no `pass:` for the CLI's own default, which passes nothing. A CLI release that adds a value is one line here. src/lib/data/sources/config/agents.ts reads this file and refuses a line it cannot use.
+
+agents:
+    claude:
+        label: Claude
+        lists:
+            model:
+                label: Model
+                flag: --model
+                default: cli
+                values:
+                    - { id: cli, label: 'CLI default' }
+                    - { id: opus, label: Opus, pass: opus }
+                    - { id: sonnet, label: Sonnet, pass: sonnet }
+                    - { id: haiku, label: Haiku, pass: haiku }
+                    - { id: fable, label: Fable, pass: fable }
+            effort:
+                label: Effort
+                flag: --effort
+                default: cli
+                values:
+                    - { id: cli, label: 'CLI default' }
+                    - { id: low, label: Low, pass: low }
+                    - { id: medium, label: Medium, pass: medium }
+                    - { id: high, label: High, pass: high }
+                    - { id: xhigh, label: 'Extra high', pass: xhigh }
+                    - { id: max, label: Max, pass: max }
+            mode:
+                label: Permissions
+                flag: --permission-mode
+                default: manual
+                values:
+                    - { id: manual, label: 'Manual permissions', pass: manual }
+                    - { id: acceptEdits, label: 'Accept edits', pass: acceptEdits }
+                    - { id: auto, label: Auto, pass: auto }
+                    - { id: plan, label: Plan, pass: plan }
+                    - { id: dontAsk, label: "Don't ask", pass: dontAsk }
+                    - {
+                          id: bypassPermissions,
+                          label: 'Bypass permissions',
+                          pass: bypassPermissions
+                      }
+    codex:
+        label: Codex
+        lists:
+            model:
+                label: Model
+                flag: -m
+                default: cli
+                # The account's models_cache.json replaces these when it lists models; these stand when it does not.
+                cache: models_cache.json
+                values:
+                    - { id: cli, label: 'CLI default' }
+                    - { id: gpt-5.6-sol, label: 'gpt-5.6-sol', pass: gpt-5.6-sol }
+            effort:
+                label: Effort
+                flag: -c
+                default: cli
+                values:
+                    - { id: cli, label: 'CLI default' }
+                    - { id: low, label: Low, pass: 'model_reasoning_effort="low"' }
+                    - { id: medium, label: Medium, pass: 'model_reasoning_effort="medium"' }
+                    - { id: high, label: High, pass: 'model_reasoning_effort="high"' }
+                    - { id: xhigh, label: 'Extra high', pass: 'model_reasoning_effort="xhigh"' }
+            sandbox:
+                label: Sandbox
+                flag: -s
+                default: workspace-write
+                values:
+                    - { id: read-only, label: 'Read only', pass: read-only }
+                    - { id: workspace-write, label: 'Workspace write', pass: workspace-write }
+                    - { id: danger-full-access, label: 'Full access', pass: danger-full-access }
+            approval:
+                label: Approvals
+                flag: -a
+                default: cli
+                values:
+                    - { id: cli, label: 'CLI default' }
+                    - { id: on-request, label: 'On request', pass: on-request }
+                    - { id: never, label: Never, pass: never }

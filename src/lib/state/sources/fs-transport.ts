@@ -4,6 +4,7 @@
 // they depend only on the wire and the response stream.
 
 import type { Entry, SchemaField } from '../../data/model/index.ts';
+import type { WriteAnswer } from '../shared/stores/shapes.ts';
 import { SHOWN_DEFAULT, type FsEntry, type FsRoot, type ListingShown, type TreeRow } from './fs.ts';
 
 /** One directory as the tree reads it. */
@@ -59,14 +60,19 @@ export function currentWorkspace(saved: WorkspacesState): { name: string; roots:
     return saved.workspaces.find((one) => one.name === saved.current) ?? { name: '', roots: [] };
 }
 
-/** The keys of the roots the configuration fixes, which the reader cannot take off a workspace. */
-export function fixedRootKeys(roots: FsRoot[]): string[] {
-    return roots.filter((one) => one.fixed).map((one) => one.key);
+/** The roots the reader cannot take off: the configured ones, or all while the tab follows. */
+export function fixedRootKeys(roots: FsRoot[], following = false): string[] {
+    return roots.filter((one) => following || one.fixed).map((one) => one.key);
 }
 
 /** The bookmark of the given id, or null when the reader has none of it. */
 export function bookmarkById(entries: Entry[], id: string): Entry | null {
     return entries.find((one) => one.id === id) ?? null;
+}
+
+/** Why a bookmark write was refused, the refused fields' reasons joined, or the empty string. */
+export function markRefusal(answer: WriteAnswer): string {
+    return answer.ok ? answer.refused.map((one) => one.reason).join('; ') : (answer.error ?? '');
 }
 
 /** The bookmark over one file of one root, or null when the reader has not made one. */

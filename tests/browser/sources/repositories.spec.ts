@@ -4,7 +4,8 @@
 //
 // Every write here lands inside that copy: the worktree is made under its own worktrees folder and
 // taken away again in the same case, so the copy the next spec file serves is the one the layer
-// made. Nothing reaches the machine's own checkout.
+// made. Nothing reaches the machine's own checkout. The shell a made worktree opens runs on the
+// layer's own tmux server, which each case ends.
 
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
@@ -12,7 +13,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
 import { gitIn } from '../helpers/git.ts';
 import { boot, openView } from '../helpers/rail.ts';
-import { hubDir } from '../helpers/hub.ts';
+import { endServedTerminals, hubDir } from '../helpers/hub.ts';
 import { keepServedFiles } from '../helpers/files.ts';
 import { t } from '../helpers/words.ts';
 import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
@@ -20,6 +21,8 @@ import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
 keepServedFiles();
 
 test.afterAll(sweepScratch);
+
+test.afterEach(endServedTerminals);
 
 /** The file the browser layer leaves changed in the copy it serves, which the diff pane opens. */
 const CHANGED = 'feeds/position-leads.yml';
@@ -165,6 +168,7 @@ test.describe('the Repositories view', () => {
         await expect(page.getByRole('region', { name: CHANGED })).toContainText('deadline');
     });
 
+    // revert: src/lib/state/sources/repositories.svelte.ts:123 => delete
     test('makes a worktree, lists it, and takes it away again', async ({ page }) => {
         await boot(page);
         await openView(page, 'repositories', t('views.repositories'));
@@ -185,6 +189,9 @@ test.describe('the Repositories view', () => {
         await expect(row.getByText(NAME).first()).toBeVisible();
         await expect.poll(() => existsSync(worktree())).toBe(true);
 
+        // The worktree made opens a shell in it, in a Terminal tab named after it.
+        await expect(page.getByRole('tab', { name: NAME, exact: true })).toBeVisible();
+        await page.getByRole('tab', { name: t('views.repositories'), exact: true }).click();
         await row.hover();
         await row.getByRole('button', { name: t('repositories.remove'), exact: true }).click();
         await page.getByRole('button', { name: t('ui.confirm_ok') }).click();

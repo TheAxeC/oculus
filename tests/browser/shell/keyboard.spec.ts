@@ -23,7 +23,7 @@ async function press(page: Page, key: string): Promise<void> {
 }
 
 test('a bare digit shows the rail page of its place', async ({ page }) => {
-    // revert: src/lib/shell/keys/workbench-keys.svelte.ts:182 => return options.railPage(action.index + 1);
+    // revert: src/lib/shell/keys/workbench-keys.svelte.ts:199 => return options.railPage(action.index + 1);
     await boot(page);
     await press(page, '2');
     await expect(page.locator('nav [data-rail-page="projects"] button')).toHaveClass(/\bactive\b/);

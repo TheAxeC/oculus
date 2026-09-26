@@ -17,6 +17,8 @@ import { taskSkipPermissions } from '../../data/helpers/tasks.ts';
 import type { EntitiesStore, SocketStore, WritesStore } from '../shared/stores/shapes.ts';
 import { t } from '../shared/words/text.ts';
 import type {
+    ComposeStart,
+    SessionRecord,
     SessionsPayload,
     PtyPayload,
     Terminal,
@@ -25,6 +27,7 @@ import type {
     TerminalResize,
     TerminalResume
 } from '../../data/model/index.ts';
+import { isMap } from '../../data/helpers/guards.ts';
 
 // The three model types a view needs of a terminal. The boundary table lets `state/` import
 // `data/model` and lets a view import `state/`, so they reach a view from here, the way
@@ -163,6 +166,53 @@ function indexOfPair(bytes: Uint8Array, first: number, second: number, from: num
     return -1;
 }
 
+/** A plain map, or null. */
+function mapOf(value: unknown): Record<string, unknown> | null {
+    return isMap(value) ? value : null;
+}
+
+/** The view a composer is drawn in. */
+export const COMPOSER_VIEW = 'terminal';
+
+/**
+ * The layout state of a Terminal tab asked to show a fresh composer by New: an identity of its
+ * own, so it draws the composer rather than the selected terminal, and `follow`, so what it starts
+ * becomes the selection and the tab goes back to following it.
+ */
+export function composerState(id: string): { id: string; follow: true } {
+    return { id, follow: true };
+}
+
+function identity(state: unknown): string | null {
+    const held = mapOf(state);
+    if (held === null) return null;
+    for (const key of ['id', 'session']) {
+        const value = held[key];
+        if (typeof value === 'string' && value !== '') return value;
+    }
+    return null;
+}
+
+/**
+ * Whether a Terminal tab follows the selection rather than owning one terminal: it carries no
+ * identity, or it is a composer New put there, which returns to following once it starts.
+ */
+export function followsSelection(state: unknown): boolean {
+    return identity(state) === null || mapOf(state)?.follow === true;
+}
+
+/**
+ * The Terminal tab New shows its composer in: the first that follows the selection, so a tab the
+ * reader pinned to a terminal keeps it. Null when the page holds none, and New opens a tab.
+ */
+export function composerTarget(
+    tabs: readonly { id: string; view: string; state: unknown }[]
+): string | null {
+    return (
+        tabs.find((tab) => tab.view === COMPOSER_VIEW && followsSelection(tab.state))?.id ?? null
+    );
+}
+
 /** The terminals one client owns, and the actions it runs on them. */
 export type TerminalsStore = {
     terminals: () => Terminal[];
@@ -191,6 +241,16 @@ export type TerminalsStore = {
         rows?: number
     ) => Promise<TerminalAnswer>;
     stopTerminal: (id: string) => Promise<TerminalAnswer>;
+    composeTerminal: (start: ComposeStart, cols?: number, rows?: number) => Promise<TerminalAnswer>;
+    steerTerminal: (id: string, text: string) => Promise<TerminalAnswer>;
+    interruptTerminal: (id: string) => Promise<TerminalAnswer>;
+    forkTerminal: (
+        tool: TerminalResume['tool'],
+        id: string,
+        cols?: number,
+        rows?: number
+    ) => Promise<TerminalAnswer>;
+    terminalOfSession: (record: Pick<SessionRecord, 'id' | 'pid'> | null) => Terminal | null;
     resizeTerminal: (id: string, cols: number, rows: number) => Promise<TerminalAnswer>;
     sendInput: (id: string, text: string) => boolean;
     sendResize: (id: string, cols: number, rows: number) => boolean;
@@ -347,6 +407,61 @@ export function createTerminals(
     }
 
     /**
+     * Start what the composer asked for: an agent with the picked flags, the account and the prompt
+     * as its first message, or a shell with the prompt as its first command. The server builds the
+     * argv from config/catalogs/agents.yml; the page sends ids and the prompt, never a command.
+     */
+    async function composeTerminal(
+        start: ComposeStart,
+        cols: number = COLS,
+        rows: number = ROWS
+    ): Promise<TerminalAnswer> {
+        return post({ action: 'compose', ...start, cols, rows });
+    }
+
+    /** Send one message to a running terminal: the text typed literally, then Enter. */
+    async function steerTerminal(id: string, text: string): Promise<TerminalAnswer> {
+        return post({ action: 'steer', id, text });
+    }
+
+    /**
+     * Interrupt the turn a terminal's agent is on with Escape. The session goes on; ending it is
+     * stopTerminal's.
+     */
+    async function interruptTerminal(id: string): Promise<TerminalAnswer> {
+        return post({ action: 'interrupt', id });
+    }
+
+    /**
+     * Continue a session as a new one in a new terminal: `claude --resume <id> --fork-session` or
+     * `codex fork <id>`, in the session's own directory, which the server reads off the record.
+     */
+    async function forkTerminal(
+        tool: TerminalResume['tool'],
+        id: string,
+        cols: number = COLS,
+        rows: number = ROWS
+    ): Promise<TerminalAnswer> {
+        return post({ action: 'fork', tool, id, cols, rows });
+    }
+
+    /**
+     * The oculus terminal a session runs in: the one that resumed it, or the one whose pane process
+     * is the session's own. The pane's process is the agent itself, since tmux runs the argv
+     * directly, so a Claude session the registry reports by pid is found by it. Null for a session
+     * that runs in a terminal of its own.
+     */
+    function terminalOfSession(record: Pick<SessionRecord, 'id' | 'pid'> | null): Terminal | null {
+        if (record === null) return null;
+        const all = terminals().filter((one) => one.foreign !== true);
+        return (
+            all.find((one) => one.resumes?.id === record.id) ??
+            all.find((one) => record.pid !== null && one.pid !== 0 && one.pid === record.pid) ??
+            null
+        );
+    }
+
+    /**
      * Resize one terminal's tmux window, for a page whose socket is not open to carry the message.
      */
     async function resizeTerminal(id: string, cols: number, rows: number): Promise<TerminalAnswer> {
@@ -411,6 +526,11 @@ export function createTerminals(
         startChat,
         resumeTerminal,
         stopTerminal,
+        composeTerminal,
+        steerTerminal,
+        interruptTerminal,
+        forkTerminal,
+        terminalOfSession,
         resizeTerminal,
         sendInput,
         sendResize,

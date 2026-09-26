@@ -135,9 +135,9 @@ const SOLID: Record<string, string> = {
         'a hover response, saying which row the pointer is on',
     'src/lib/views/system/hpc/Capacity.svelte .bar':
         'a track, read as the proportion of it the fill covers',
-    'src/lib/views/sessions/session-list/SessionWorkspace.svelte .pick:hover, .hide:hover':
+    'src/lib/views/sessions/session-list/SessionWorkspace.svelte .row:hover':
         'a hover response, saying which row the pointer is on',
-    'src/lib/views/sessions/session-list/TerminalRows.svelte .pick:hover, .hide:hover':
+    'src/lib/views/sessions/session-list/TerminalRows.svelte .row:hover':
         'a hover response, saying which row the pointer is on',
     'src/lib/views/shared/card/CardDetails.svelte .crosslink:hover':
         'a hover response, saying which tag the pointer is on',
@@ -158,6 +158,8 @@ describe('the wallpaper rule', () => {
         });
 
     // revert: src/lib/ui/tabs/TabFace.svelte:258 => delete
+    // revert: src/lib/views/sessions/terminal/Composer.svelte:411 => background: var(--bg);
+    // revert: src/lib/views/shared/sessions/SteerBox.svelte:164 => background: var(--bg);
     it('answers every surface a component paints, or names it as solid with its reason', () => {
         expect([...new Set(unpaired)].sort()).toEqual(Object.keys(SOLID).sort());
     });

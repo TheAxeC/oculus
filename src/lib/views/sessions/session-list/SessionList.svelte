@@ -13,67 +13,116 @@
 </script>
 
 <script lang="ts">
-    // Layer 3, sessions view. The session-list frame owns grouping and transient list state because
-    // workspace rows and terminal rows render and change independently.
+    // Layer 3, sessions view. The sessions list of VS Code's Agents window: New, the filter menu
+    // and the search box in its header, the sessions grouped by workspace, the terminals oculus
+    // started, and the Customizations section at its foot.
+    //
+    // The filter and the search text are kept in the instance's state, so a list comes back as it
+    // was left. The marks a row menu sets (pinned to the top, archived, a title) are writes to
+    // ~/.oculus/sessions.json and are drawn at once, before the write lands, and put back when it
+    // does not.
 
     import Empty from '$lib/ui/frame/Empty.svelte';
-    import Glyph from '$lib/ui/display/Glyph.svelte';
+    import Menu from '$lib/ui/menu/Menu.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
+    import Search from '$lib/ui/controls/Search.svelte';
     import Toolbar from '$lib/ui/frame/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import { findView } from '$lib/state/workbench/layout';
+    import { findView, tabsOf } from '$lib/state/workbench/layout';
     import type { GroupedSession } from '$lib/state/client/selectors.svelte';
-    import { hiddenCounts, pruneTree, sessionRows } from '$lib/state/sessions/folds';
-    import { resumeRefusal, type Terminal } from '$lib/state/sessions/terminals.svelte';
+    import {
+        LIST_AGENTS,
+        LIST_STATES,
+        isTop,
+        listFilterOf,
+        listGroups,
+        toggled,
+        type ListFilter
+    } from '$lib/state/sessions/folds';
+    import {
+        composerState,
+        composerTarget,
+        resumeRefusal,
+        type Terminal
+    } from '$lib/state/sessions/terminals.svelte';
     import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
+    import Customizations from './Customizations.svelte';
     import SessionWorkspace from './SessionWorkspace.svelte';
     import TerminalRows from './TerminalRows.svelte';
+    import { filterGroups } from './session-list';
     import { useState } from '$lib/state/client/use';
 
     const {
-        layout: { layout, openView },
+        agents: { exportSession },
+        layout: { activateInstance, layout, openView, restateInstance },
         selection: { select },
         selectors: { sessionsByWorkspace },
+        clock: { minuteNow, startMinuteClock },
         ui: { instanceState, setInstanceState },
-        terminals: { resumeTerminal, stopTerminal, terminals },
+        terminals: { forkTerminal, resumeTerminal, stopTerminal, terminals },
         writes: { writeSession }
     } = useState();
 
     let { instance }: ViewProps = $props();
-    type ListState = { ended: boolean; dismissed: boolean };
 
-    let flipped: Record<string, boolean> = $state({});
+    /** The marks drawn ahead of their writes, by session id. */
+    let archivedNow: Record<string, boolean> = $state({});
+    let topNow: Record<string, boolean> = $state({});
     let failure = $state('');
     let arming = $state('');
     let armedResume = $state('');
-    const now = Date.now();
+    let renaming = $state('');
+    // A row's age moves between publishes, so the minute the page is in is read as state.
+    $effect(startMinuteClock);
+    const now = $derived(minuteNow());
 
-    const opened = $derived(readState(instanceState(instance.id)));
+    const filter = $derived(listFilterOf(instanceState(instance.id)));
     const tree = $derived(sessionsByWorkspace(true));
-    const rows = $derived(sessionRows(tree));
-    const counts = $derived(hiddenCounts(rows, hidden));
-    const dismissed = $derived(counts.dismissed);
-    const endedCount = $derived(counts.ended);
-    const live = $derived(pruneTree(tree, (row) => row.live));
+    const groups = $derived(listGroups(tree, filter, archived, top));
     const panes = $derived(terminals());
-    const ended = $derived(
-        pruneTree(tree, (row) => !row.live && (opened.dismissed || !hidden(row)))
+    const filtered = $derived(
+        filter.states.length > 0 || filter.agents.length > 0 || filter.query.trim() !== ''
     );
 
-    function readState(saved: unknown): ListState {
-        if (typeof saved !== 'object' || saved === null || Array.isArray(saved))
-            return { ended: false, dismissed: false };
-        const held = saved as Record<string, unknown>;
-        return { ended: held.ended === true, dismissed: held.dismissed === true };
+    function write(next: Partial<ListFilter>): void {
+        const held = instanceState(instance.id);
+        const kept = typeof held === 'object' && held !== null && !Array.isArray(held) ? held : {};
+        setInstanceState(instance.id, { ...kept, ...filter, ...next });
     }
 
-    function write(next: Partial<ListState>): void {
-        setInstanceState(instance.id, { ...opened, ...next });
+    function archived(row: GroupedSession): boolean {
+        return archivedNow[row.id] ?? row.hidden;
     }
 
-    function hidden(row: GroupedSession): boolean {
-        return flipped[row.id] ?? row.hidden;
+    function top(row: GroupedSession): boolean {
+        return topNow[row.id] ?? isTop(row);
+    }
+
+    /** A pick in the filter menu: a state or an agent kept or let go. */
+    function picked(id: string, group?: string): void {
+        if (group === 'state') {
+            const state = LIST_STATES.find((one) => one === id);
+            if (state !== undefined) write({ states: toggled(filter.states, state) });
+        } else if (group === 'agent') {
+            const agent = LIST_AGENTS.find((one) => one === id);
+            if (agent !== undefined) write({ agents: toggled(filter.agents, agent) });
+        }
+    }
+
+    /**
+     * Start a new session: the composer in the page's Terminal tab that follows the selection, or
+     * in a new Terminal tab when the page has none. The workbench's `n` key does the same.
+     */
+    function newSession(): void {
+        const state = composerState(crypto.randomUUID());
+        const target = composerTarget(tabsOf(layout()));
+        if (target === null) {
+            openView('terminal', state);
+            return;
+        }
+        restateInstance(target, state);
+        activateInstance(target);
     }
 
     async function stop(entry: Terminal): Promise<void> {
@@ -85,20 +134,6 @@
         failure = '';
         const answer = await stopTerminal(entry.id);
         if (!answer.ok) failure = answer.error;
-    }
-
-    /** Open the session's own Transcript tab, so each session read has a tab of its own. */
-    function openTranscript(row: GroupedSession): void {
-        select(row.id);
-        openView('transcript', { session: row.id, label: row.title });
-    }
-
-    function openPinnedSession(row: GroupedSession): void {
-        openView('session-detail', { session: row.id, label: row.title });
-    }
-
-    function openPinnedTerminal(entry: Terminal): void {
-        openView('terminal', { session: entry.id, label: entry.name });
     }
 
     function terminalOpen(): boolean {
@@ -121,88 +156,130 @@
         if (!terminalOpen()) openView('terminal');
     }
 
-    async function dismiss(row: GroupedSession): Promise<void> {
-        const next = !hidden(row);
-        flipped = { ...flipped, [row.id]: next };
+    async function fork(row: GroupedSession): Promise<void> {
         failure = '';
-        const answer = await writeSession(row.id, { hidden: next });
+        const answer = await forkTerminal(row.tool, row.id);
+        if (!answer.ok) {
+            failure = answer.error;
+            return;
+        }
+        select(answer.id);
+        if (!terminalOpen()) openView('terminal');
+    }
+
+    /** Flip one mark at once and write it; a write that does not land puts the mark back. */
+    async function mark(
+        row: GroupedSession,
+        field: 'hidden' | 'top',
+        next: boolean
+    ): Promise<void> {
+        const drawn = field === 'hidden' ? archivedNow : topNow;
+        drawn[row.id] = next;
+        failure = '';
+        const answer = await writeSession(row.id, { [field]: next });
         if (answer.ok) return;
-        flipped = { ...flipped, [row.id]: !next };
-        failure = t('sessions.dismiss_failed');
+        drawn[row.id] = !next;
+        failure = field === 'hidden' ? t('sessions.archive_failed') : t('sessions.top_failed');
+    }
+
+    /** A title typed and taken (a string), the field opened (null), or closed without one (''). */
+    async function rename(row: GroupedSession, title: string | null): Promise<void> {
+        if (title === null) {
+            renaming = row.id;
+            return;
+        }
+        renaming = '';
+        const next = title.trim();
+        if (next === '' || next === row.title) return;
+        failure = '';
+        const answer = await writeSession(row.id, { title: next });
+        if (!answer.ok) failure = t('sessions.rename_failed');
+    }
+
+    function action(id: string, row: GroupedSession): void {
+        if (id === 'top') void mark(row, 'top', !top(row));
+        else if (id === 'archive') void mark(row, 'hidden', !archived(row));
+        else if (id === 'fork') void fork(row);
+        else if (id === 'export') {
+            if (!exportSession(row.id)) failure = t('sessions.export_failed');
+        } else if (id === 'pinned')
+            openView('session-detail', { session: row.id, label: row.title });
+        else if (id === 'transcript') {
+            select(row.id);
+            openView('transcript', { session: row.id, label: row.title });
+        } else if (id === 'resume') void resume(row);
     }
 </script>
 
 {#snippet tools()}
     <Toolbar label={t('sessions.list_toolbar')}>
-        {#if dismissed > 0}
-            <ToolButton
-                label={opened.dismissed
-                    ? t('sessions.hide_dismissed', dismissed)
-                    : t('sessions.show_dismissed', dismissed)}
-                active={opened.dismissed}
-                onclick={() => write({ dismissed: !opened.dismissed })}
+        <ToolButton
+            label={t('sessions.new_session')}
+            title={t('sessions.new_session_title')}
+            glyph="expand"
+            compact
+            bare
+            onclick={newSession}
+        />
+        <span class="filter" data-list-filter>
+            <Menu
+                label={t('sessions.filter')}
+                glyph="search"
+                compact
+                bare
+                placement="down"
+                align="right"
+                items={[]}
+                groups={filterGroups(filter)}
+                onpick={(id: string, _event: MouseEvent, group?: string) => picked(id, group)}
             />
-        {/if}
+        </span>
     </Toolbar>
 {/snippet}
 
 <Pane title={t('sessions.rail_title')} toolbar={tools} tinted>
     <div class="list" data-instance={instance.id}>
+        <div class="search">
+            <Search
+                value={filter.query}
+                placeholder={t('sessions.search')}
+                oninput={(value: string) => write({ query: value })}
+            />
+        </div>
         {#if failure !== ''}
             <p class="failure">{failure}</p>
         {/if}
-        {#if rows.length === 0 && panes.length === 0}
-            <Empty message={t('sessions.state_empty')} glyph={t('sessions.empty_glyph')} />
-        {:else}
-            {#each live as workspace (workspace.key)}
-                <SessionWorkspace
-                    {workspace}
-                    {now}
-                    {armedResume}
-                    isHidden={hidden}
-                    onresume={resume}
-                    ondismiss={dismiss}
-                    ontranscript={openTranscript}
-                    onpinned={openPinnedSession}
+        <div class="rows">
+            {#if groups.length === 0 && panes.length === 0}
+                <Empty
+                    message={filtered ? t('sessions.filter_empty') : t('sessions.state_empty')}
+                    glyph={t('sessions.empty_glyph')}
                 />
-            {/each}
-            <TerminalRows
-                entries={panes}
-                {now}
-                {arming}
-                onstop={stop}
-                onpinned={openPinnedTerminal}
-            />
-            {#if ended.length > 0}
-                <div class="ended" class:open={opened.ended}>
-                    <button
-                        type="button"
-                        class="ended-h"
-                        aria-expanded={opened.ended}
-                        onclick={() => write({ ended: !opened.ended })}
-                    >
-                        <Glyph name={t('sessions.ended_glyph')} />
-                        <span>{t('sessions.ended_section', endedCount)}</span>
-                    </button>
-                    {#if opened.ended}
-                        <div class="ended-body">
-                            {#each ended as workspace (workspace.key)}
-                                <SessionWorkspace
-                                    {workspace}
-                                    {now}
-                                    {armedResume}
-                                    isHidden={hidden}
-                                    onresume={resume}
-                                    ondismiss={dismiss}
-                                    ontranscript={openTranscript}
-                                    onpinned={openPinnedSession}
-                                />
-                            {/each}
-                        </div>
-                    {/if}
-                </div>
+            {:else}
+                {#each groups as group (group.key)}
+                    <SessionWorkspace
+                        {group}
+                        {now}
+                        {armedResume}
+                        {renaming}
+                        isArchived={archived}
+                        topOf={top}
+                        onaction={action}
+                        onrename={(row: GroupedSession, title: string | null) =>
+                            void rename(row, title)}
+                    />
+                {/each}
+                <TerminalRows
+                    entries={panes}
+                    {now}
+                    {arming}
+                    onstop={stop}
+                    onpinned={(entry: Terminal) =>
+                        openView('terminal', { session: entry.id, label: entry.name })}
+                />
             {/if}
-        {/if}
+        </div>
+        <Customizations owner={instance.id} />
     </div>
 </Pane>
 
@@ -210,33 +287,38 @@
     .list {
         display: flex;
         flex-direction: column;
-        gap: 10px;
+        height: 100%;
+        min-height: 0;
     }
+
+    /* The box spans the list, so its placeholder is read whole. */
+    .search {
+        flex: none;
+        display: flex;
+        flex-direction: column;
+        padding: 0 4px 4px;
+    }
+
+    .rows {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
     .failure {
         margin: 0;
+        padding: 0 8px;
         color: var(--c-red-txt, var(--ink));
         font-size: var(--fs-md);
     }
-    .ended-h {
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        width: 100%;
-        border: 0;
-        border-top: 1px solid var(--line);
-        background: none;
-        color: var(--muted-txt, var(--muted));
-        font: inherit;
-        font-size: var(--fs-sm);
-        text-align: left;
-        padding: 4px 0;
-        cursor: pointer;
+
+    .filter {
+        display: inline-flex;
     }
-    .ended-body {
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-    }
+
     :global(body.rice) .list {
         font-family: var(--font-mono);
     }

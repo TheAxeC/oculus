@@ -71,7 +71,7 @@ writeEntry"];
     "lib/server/edit/writes.ts" -> "lib/server/edit/writes/subtasks.ts" [tailport=se, tooltip="writeHost, writeSubtask, writeSubtaskAdd"];
     "lib/server/edit/writes.ts" -> "lib/server/edit/writes/undo.ts" [tooltip="undoChange"];
     "lib/server/edit/writes.ts" -> "lib/server/files/fs/bookmarks.ts" [tooltip="defaultBookmarksPath"];
-    "lib/server/edit/writes.ts" -> "lib/server/sessions/overrides.ts" [tooltip="setHidden, setOverride"];
+    "lib/server/edit/writes.ts" -> "lib/server/sessions/overrides.ts" [tooltip="setFlag, setOverride"];
     "lib/server/edit/writes/audit-mute.ts" -> "? src/lib/server/edit/writes/audit-mute.ts:66" [style=dashed];
     "lib/server/edit/writes/audit-mute.ts to file on disk (calls)" [label="writeFileSync", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     "lib/server/edit/writes/audit-mute.ts" -> "lib/server/edit/writes/audit-mute.ts to file on disk (calls)" [arrowhead=none];
@@ -107,7 +107,7 @@ reorderCollection, writeEntry"];
     "lib/server/edit/writes/undo.ts" -> "lib/server/edit/writes/rail.ts" [tooltip="railNow, writeRail"];
     "lib/server/edit/writes/undo.ts" -> "lib/server/edit/writes/subtasks.ts" [tooltip="hostStatus, restoreSubtask, subtaskValue
 writeHost, writeSubtask, writeSubtaskAdd"];
-    "lib/server/edit/writes/undo.ts" -> "lib/server/sessions/overrides.ts" [tooltip="overrides, setHidden, setOverride"];
+    "lib/server/edit/writes/undo.ts" -> "lib/server/sessions/overrides.ts" [tooltip="overrides, setFlag, setOverride"];
     "lib/server/files/fs/bookmarks.ts" -> "lib/server/core/json.ts" [tooltip="writeTextAtomic"];
     "lib/server/sessions/overrides.ts" -> "lib/server/core/changes.ts" [tooltip="plain"];
     "lib/server/sessions/overrides.ts" -> "lib/server/core/json.ts" [tooltip="readJson, writeJsonAtomic"];

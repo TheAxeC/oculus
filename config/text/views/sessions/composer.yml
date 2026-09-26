@@ -1,0 +1,36 @@
+# Oculus text owned by the composer of a new session and the prompt box that steers a running one.
+text:
+    composer:
+        attach: Attach a file
+        attach_close: Close the file list
+        attach_empty: This folder is empty.
+        attach_loading: 'Reading...'
+        attach_title: Put a file of the workspace into the prompt as @ and its path
+        attach_top: The workspace
+        attach_unserved: 'No root of the workspace in force holds {0}, so its files cannot be listed here.'
+        attach_up: Up one folder
+        branch_title: The branch checked out in this workspace, which a new session starts on
+        command: The first command
+        elsewhere: This session runs in a terminal of its own, so it cannot be typed into from here.
+        failed: The session did not start.
+        hub: hub
+        interrupt: Stop
+        interrupt_title: Interrupt the turn with Escape; the session goes on
+        outside: '{0} is not inside the workspace the session starts in.'
+        prompt: The first message
+        selected_elsewhere: '{0} runs in a terminal of its own. Read it in Transcript, or start a new session with New.'
+        send: Send
+        send_title: Type the message into the session and press Enter
+        start: Start
+        start_title: Start the session (Enter); Shift+Enter adds a line
+        steer: A message to the session
+        title: New session
+        why_default_missing: 'config/catalogs/agents.yml line {0}: the default {1} is not one of its values'
+        why_flag: 'config/catalogs/agents.yml line {0}: {1} is not a flag this agent takes'
+        why_no_default: 'config/catalogs/agents.yml line {0}: {1} names no default'
+        why_parse: 'config/catalogs/agents.yml line {0}: the file does not parse'
+        why_repeated: 'config/catalogs/agents.yml line {0}: {1} is listed twice'
+        why_shape: 'config/catalogs/agents.yml line {0}: {1} is not the shape the file takes'
+        why_unknown_agent: 'config/catalogs/agents.yml line {0}: {1} is not an agent the composer starts'
+        why_unknown_key: 'config/catalogs/agents.yml line {0}: {1} is not a key the file takes'
+        why_value: 'config/catalogs/agents.yml line {0}: {1} cannot follow its flag'

@@ -115,8 +115,20 @@ function foldUser(
         agent.ended = stamp;
         agent.status = block.is_error === true ? 'error' : 'done';
         agent.resultChars = length(block.content);
+        const spent = spentTokens(record.toolUseResult);
+        if (spent !== null) agent.tokens = spent;
     }
     takeNotices(acc, content, stamp);
+}
+
+/**
+ * The tokens an Agent call's result says the subagent spent, `totalTokens` on the result Claude
+ * Code writes beside it, or null where the result carries no such count.
+ */
+export function spentTokens(answer: unknown): number | null {
+    if (!isMap(answer)) return null;
+    const total = answer.totalTokens;
+    return typeof total === 'number' && Number.isFinite(total) && total >= 0 ? total : null;
 }
 
 function foldAssistant(

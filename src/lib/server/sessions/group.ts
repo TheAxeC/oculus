@@ -17,7 +17,7 @@ import { homedir } from 'node:os';
 import { basename, dirname, isAbsolute, join, normalize, relative, sep } from 'node:path';
 import type {
     Area,
-    GroupedSession,
+    ListedSession,
     SecondaryArea,
     SessionFile,
     SessionRecord,
@@ -114,13 +114,14 @@ function place(
     }
     if (!primary) primary = general(workspace);
 
-    const session: GroupedSession = {
+    const session: ListedSession = {
         ...record,
         workspace,
         area: primary,
         secondaryAreas: secondary(scores, primary, workspace),
         kind: attached.has(record.id) ? 'attached' : 'observed',
-        pinned: Boolean(forced)
+        pinned: Boolean(forced),
+        top: override.top === true
     };
     if (typeof override.title === 'string' && override.title) session.title = override.title;
 

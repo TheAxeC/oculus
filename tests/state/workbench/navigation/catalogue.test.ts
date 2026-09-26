@@ -250,7 +250,7 @@ describe('the catalogue of the real config', () => {
     }
 
     it('lists Personal with the wall, the agenda, the setup page and two documents, and the third in System', () => {
-        // revert: config/layout.yml:159 => - { label: "HPC how-to", path: docs/HPC-UTwente-howto.md, group: personal }
+        // revert: config/layout.yml:150 => - { label: "HPC how-to", path: docs/HPC-UTwente-howto.md, group: personal }
         // revert: src/lib/views/personal/account-setup/AccountSetup.svelte:11 => group: 'system',
         const personal = sections.find((found) => found.label === 'Personal');
         expect(personal?.items.map((view) => view.id)).toEqual([

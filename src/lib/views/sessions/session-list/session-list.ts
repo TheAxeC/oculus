@@ -1,14 +1,41 @@
 // Layer 3, view support. Session-list menu builders live here because row actions change
 // independently of the parent view and are unit-tested without a DOM.
 
-import type { MenuItem } from '$lib/ui/menu/menu-items';
+import type { MenuGroup, MenuItem } from '$lib/ui/menu/menu-items';
+import {
+    LIST_AGENTS,
+    LIST_STATES,
+    type ListFilter,
+    type ListStateKey
+} from '$lib/state/sessions/folds';
 import { t } from '$lib/state/shared/words/text';
 
 export type SessionRow = { id: string; live: boolean; cwd: string | null };
 
-/** The actions in a session row's menu, including the pinned pane available on every row. */
-export function sessionRowItems(row: SessionRow, armedResume: string): MenuItem[] {
+/** What the row menu knows of the row beyond the row itself: its two marks. */
+export type RowMarks = { top: boolean; archived: boolean };
+
+/**
+ * The actions in a session row's menu: pin to the top of its group, rename, fork, export, the
+ * pinned pane and the transcript every row has, and archive and resume for a session that has
+ * ended. A running session is never archived, since the server shows it whatever the overrides file
+ * says. There is no delete: the transcript is the agent's own file, and oculus only reads it.
+ */
+export function sessionRowItems(row: SessionRow, armedResume: string, marks: RowMarks): MenuItem[] {
     const items: MenuItem[] = [
+        {
+            id: 'top',
+            label: marks.top ? t('sessions.unpin_top') : t('sessions.pin_top'),
+            glyph: 'pin'
+        },
+        { id: 'rename', label: t('sessions.rename'), glyph: 'edit' },
+        { id: 'fork', label: t('sessions.fork'), title: t('sessions.fork_tip'), glyph: 'branch' },
+        {
+            id: 'export',
+            label: t('sessions.export'),
+            title: t('sessions.export_tip'),
+            glyph: 'page'
+        },
         {
             id: 'pinned',
             label: t('sessions.open_pinned'),
@@ -21,6 +48,11 @@ export function sessionRowItems(row: SessionRow, armedResume: string): MenuItem[
         }
     ];
     if (!row.live) {
+        items.push({
+            id: 'archive',
+            label: marks.archived ? t('sessions.unarchive') : t('sessions.archive'),
+            glyph: marks.archived ? t('sessions.restore_glyph') : 'archived'
+        });
         items.push({
             id: 'resume',
             label:
@@ -40,6 +72,44 @@ export function terminalRowItems(): MenuItem[] {
             id: 'pinned',
             label: t('sessions.open_pinned'),
             title: t('sessions.open_pinned_tip')
+        }
+    ];
+}
+
+/** The words of one state of the filter. */
+export function stateLabel(state: ListStateKey): string {
+    if (state === 'input') return t('sessions.state_input');
+    if (state === 'working') return t('sessions.state_working');
+    if (state === 'idle') return t('sessions.state_idle');
+    if (state === 'ended') return t('sessions.state_ended');
+    return t('sessions.state_archived');
+}
+
+/** The words of one agent of the filter. */
+function agentLabel(agent: string): string {
+    return agent === 'codex' ? t('sessions.kind_codex') : t('sessions.kind_claude');
+}
+
+/** The filter menu's two headed groups, each choice checked while the filter keeps it. */
+export function filterGroups(filter: ListFilter): MenuGroup[] {
+    return [
+        {
+            id: 'state',
+            heading: t('sessions.filter_state'),
+            items: LIST_STATES.map((state) => ({
+                id: state,
+                label: stateLabel(state),
+                active: filter.states.includes(state)
+            }))
+        },
+        {
+            id: 'agent',
+            heading: t('sessions.filter_agent'),
+            items: LIST_AGENTS.map((agent) => ({
+                id: agent,
+                label: agentLabel(agent),
+                active: filter.agents.includes(agent)
+            }))
         }
     ];
 }

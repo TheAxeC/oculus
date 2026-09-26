@@ -14,6 +14,11 @@
     // What the view keeps is what its own presses are about: which section is open, which form is
     // open, and what the last press answered. Those come in as the instance's own state and the
     // callbacks, so this component holds nothing of its own.
+    //
+    // A note opens as a tab and is a file in a folder of its own, written by the first keystroke
+    // typed into it, so adding one makes nothing here. Its three presses are this component's, and
+    // what a press answered goes to the view's refusal line through `onnote`, in the instance the
+    // press was made in.
 
     import { untrack } from 'svelte';
     import Bookmarks from './Bookmarks.svelte';
@@ -21,13 +26,26 @@
     import Workspaces from './Workspaces.svelte';
     import type { Entry } from '$lib/state/boards/collection';
     import type { FilesView } from '$lib/state/sources/fs';
+    import { noteId } from '$lib/state/life/notes';
+    import { refusal } from '../tree/refusal';
     import { useState } from '$lib/state/client/use';
 
     const {
-        fs: { bookmarks, notes, retryBookmarks, retryNotes, retryWorkspaces, workspaces }
+        fs: {
+            bookmarks,
+            deleteNote,
+            notes,
+            retryBookmarks,
+            retryNotes,
+            retryWorkspaces,
+            workspaces
+        },
+        layout: { closeRecord, openView }
     } = useState();
 
     type Props = {
+        /** The instance id of the file browser on screen. */
+        owner: string;
         /**
          * What the file browser on screen remembers: which sections are closed, which form is open.
          */
@@ -37,23 +55,20 @@
         onaddmark: () => void;
         onopenmark: (entry: Entry) => void;
         oneditmark: (id: string) => void;
-        onaddnote: () => void;
-        /** Open one note as a tab, under the title the list carries for it now. */
-        onopennote: (id: string, label: string) => void;
-        onremovenote: (id: string) => void;
+        /** Say what a note press answered on the refusal line of the instance it was made in. */
+        onnote: (owner: string, note: string) => void;
         onsaveworkspace: () => void;
         onselectworkspace: (name: string) => void;
     };
 
     let {
+        owner,
         view,
         onsection,
         onaddmark,
         onopenmark,
         oneditmark,
-        onaddnote,
-        onopennote,
-        onremovenote,
+        onnote,
         onsaveworkspace,
         onselectworkspace
     }: Props = $props();
@@ -69,6 +84,20 @@
             retryNotes();
         });
     });
+
+    /** Open a new note. The tab is told it has no file yet, so it asks the server for nothing. */
+    function addNote(): void {
+        onnote(owner, '');
+        openView('note', { id: noteId(new Date()), fresh: true });
+    }
+
+    /** Take one note off the disk, and take its tab with it: what it drew is not there any more. */
+    async function dropNote(id: string): Promise<void> {
+        const from = owner;
+        const answer = await deleteNote(id);
+        onnote(from, answer.ok ? '' : refusal(answer.error ?? ''));
+        if (answer.ok) closeRecord('note', id);
+    }
 </script>
 
 <Bookmarks
@@ -88,9 +117,10 @@
     error={held.error}
     open={!view.collapsed.includes('notes')}
     ontoggle={() => onsection('notes')}
-    onadd={onaddnote}
-    onopen={(id: string) => onopennote(id, held.notes.find((one) => one.id === id)?.title ?? '')}
-    onremove={onremovenote}
+    onadd={addNote}
+    onopen={(id: string) =>
+        openView('note', { id, label: held.notes.find((one) => one.id === id)?.title ?? '' })}
+    onremove={(id: string) => void dropNote(id)}
     onretry={retryNotes}
 />
 <Workspaces

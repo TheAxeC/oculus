@@ -10,7 +10,7 @@
 
 import { byKey } from '../../data/helpers/guards.ts';
 import type {
-    SessionAgent,
+    SizedAgent,
     SessionCache,
     SessionEvent,
     SessionFile,
@@ -61,7 +61,7 @@ export type Acc = {
     contextWindow: number | null;
     tools: Record<string, number>;
     files: Record<string, SessionFile>;
-    agents: Record<string, SessionAgent>;
+    agents: Record<string, SizedAgent>;
     /**
      * The subagents started in the background, by tool-use id, each with the agent id its launch
      * answer named ('' until it names one). A launch answers at once while the subagent works on,
@@ -158,10 +158,10 @@ export function countFile(acc: Acc, path: string, tool: string, stamp: string | 
 }
 
 /** Open, or update, one subagent entry. Keyed by tool-use id (Claude) or agent path (Codex). */
-export function agentEntry(acc: Acc, id: string, stamp: string | null): SessionAgent {
+export function agentEntry(acc: Acc, id: string, stamp: string | null): SizedAgent {
     const existing = byKey(acc.agents, id);
     if (existing !== undefined) return existing;
-    const agent: SessionAgent = {
+    const agent: SizedAgent = {
         id,
         description: '',
         subagentType: '',
@@ -192,7 +192,7 @@ export function prune(acc: Acc): void {
     const ids = Object.keys(acc.agents);
     if (ids.length > MAX_AGENTS) {
         const keep = ids.slice(-MAX_AGENTS);
-        const agents: Record<string, SessionAgent> = {};
+        const agents: Record<string, SizedAgent> = {};
         for (const id of keep) agents[id] = acc.agents[id];
         acc.agents = agents;
     }

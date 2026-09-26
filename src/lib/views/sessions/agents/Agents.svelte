@@ -31,15 +31,15 @@
     import Toolbar from '$lib/ui/frame/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { compactCount, modelShort, seconds, span } from '$lib/state/shared/words/format';
-    import { pinnedSession } from '$lib/state/workbench/selection.svelte';
     import type { SessionAgent } from '$lib/state/client/selectors.svelte';
-    import { anyRunning, newestFirst } from '$lib/state/sessions/folds';
+    import { agentTokens, anyRunning, newestFirst } from '$lib/state/sessions/folds';
+    import SessionPicker from '$lib/views/shared/sessions/SessionPicker.svelte';
     import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 
     const {
-        layout: { instanceLayoutState, openView, pinInstance, unpinInstance },
+        layout: { openView },
         selectors: { sessionFor }
     } = useState();
 
@@ -60,7 +60,6 @@
     let now = $state(Date.now());
 
     const record = $derived(sessionFor(instance.id));
-    const panePin = $derived(pinnedSession(instanceLayoutState(instance.id)));
     /**
      * Newest first by the moment each started. The server lists the transcript's subagents and the
      * launched builders in two runs, so the order is the stamps', not the list's; an agent with no
@@ -105,9 +104,8 @@
             parts.push(t('sessions.ag_chars', compactCount(agent.resultChars)));
         }
         const tokens = agent.dispatch?.tokens ?? null;
-        if (tokens !== null) {
-            parts.push(t('sessions.ag_tokens', compactCount(tokens.input + tokens.output)));
-        }
+        const spent = tokens === null ? agentTokens(agent) : tokens.input + tokens.output;
+        if (spent !== null) parts.push(t('sessions.ag_tokens', compactCount(spent)));
         return parts.join(` ${t('sessions.meta_sep')} `);
     }
 
@@ -132,29 +130,11 @@
         const session = agent.dispatch?.session ?? null;
         if (session !== null) openView('transcript', { session, label: agent.description });
     }
-
-    /** Pin these agents to what they show, or return them to following the selection. */
-    function togglePanePin(): void {
-        if (panePin !== null) {
-            unpinInstance(instance.id);
-            return;
-        }
-        if (record !== null) {
-            pinInstance(instance.id, record.id, record.title);
-        }
-    }
 </script>
 
 {#snippet tools()}
     <Toolbar label={t('sessions.view_agents')}>
-        {#if record !== null || panePin !== null}
-            <ToolButton
-                label={panePin === null ? t('sessions.pin_pane') : t('sessions.unpin_pane')}
-                title={panePin === null ? t('sessions.pin_pane') : t('sessions.unpin_pane')}
-                pressed={panePin !== null}
-                onclick={togglePanePin}
-            />
-        {/if}
+        <SessionPicker instance={instance.id} />
     </Toolbar>
 {/snippet}
 

@@ -286,7 +286,7 @@ test("a bookmark added while another bookmark's form was opened leaves that form
 });
 
 // The answer lands while the file browser's tab is hidden, and closes its form all the same.
-// revert: src/lib/views/sources/files/Files.svelte:294 => delete
+// revert: src/lib/views/sources/files/Files.svelte:321 => delete
 test('a root added while the tab is switched away closes its form in the file browser it came from', async ({
     page
 }) => {
@@ -315,7 +315,7 @@ test('a root added while the tab is switched away closes its form in the file br
 });
 
 // The answer lands while the file browser's tab is hidden, and closes its form all the same.
-// revert: src/lib/views/sources/files/Files.svelte:358 => delete
+// revert: src/lib/views/sources/files/Files.svelte:416 => onclose={() => undefined}
 test('a bookmark added while the tab is switched away closes its form in the file browser it came from', async ({
     page
 }) => {
@@ -397,7 +397,7 @@ test("a row's edit moving a typed edit form to another bookmark forgets what was
 
 // Revert: in views/sources/files/Files.svelte, draw BookmarkForm without its `{#key}` block, or
 // key it by the instance alone, so the add form's component is kept for the edit form.
-// revert: src/lib/views/sources/files/Files.svelte:405 => {#key instance.id}
+// revert: src/lib/views/sources/files/Files.svelte:408 => {#key instance.id}
 test('an edit form opened from the add form is the one its Cancel closes', async ({ page }) => {
     await boot(page);
     await openView(page, 'files', t('views.files'));
@@ -469,7 +469,7 @@ test('a bookmark add form typed on while its save was out keeps the typing, open
 
 // Revert: in views/sources/files/Files.svelte, hand the bookmark form a rename that opens nothing,
 // so the form stays over the id its bookmark had before the save.
-// revert: src/lib/views/sources/files/Files.svelte:414 => onrenamed={() => undefined}
+// revert: src/lib/views/sources/files/Files.svelte:417 => onrenamed={() => undefined}
 test('a bookmark renamed by its form keeps what was typed, open over the bookmark it renamed', async ({
     page
 }) => {

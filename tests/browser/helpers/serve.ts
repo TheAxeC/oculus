@@ -12,17 +12,24 @@
 // writes that folder: a spec that presses Save in the Slides view writes the copy's present.yml and
 // never the checkout's. HOME names a home directory this run made, so the session stores, the
 // session registry and the byte-offset cache are the fixture's rather than the owner's. PATH puts
-// this run's own `ssh` and `tmux` in front: the Live HPC poller's ssh answers from demo/hpc/
-// instead of opening a connection, and tmux fails, so no terminal and no usage refresh starts a
-// process on the machine. `calendar_dir` and `mail_dir` in this run's local.yml are folders this
-// run made, each holding one account's client half and no refresh token, so the two pollers mark
-// those accounts not connected and call no provider, and the triage notes this run writes are its
-// own folder's. A provider's client half the setup page saves lands in this run's HOME, and
-// `open_bin` names this run's own recorder, so a consent page is written to a file a spec reads
-// rather than opened in the owner's browser. TMPDIR is passed through when the parent has one,
-// since it is the operating system's like the other two and os.tmpdir() in a child without it
-// answers /tmp, which is not where this machine puts a process's temporary files. The server reads
-// no environment variable of its own.
+// this run's own `ssh`, `tmux`, `claude`, `codex` and `latexmk` in front: the Live HPC poller's ssh
+// answers from demo/hpc/ instead of opening a connection; tmux is the machine's own run on a socket
+// inside this run's directory, so no session of the owner's tmux server is listed, started or
+// ended, and it refuses a usage refresh; and the other three are stand-ins that write the arguments
+// and the account variables they were given into this run's `argv` folder and then wait, so a start
+// from the composer, an update task and a LaTeX step are checked argument by argument and run
+// nothing. When the machine has no tmux, this run's tmux fails, as every start then does.
+// `calendar_dir` and `mail_dir` in this run's local.yml are folders this run made, each holding one
+// account's client half and no refresh token, so the two pollers mark those accounts not connected
+// and call no provider, and the triage notes this run writes are its own folder's. A provider's
+// client half the setup page saves lands in this run's HOME, and `open_bin` names this run's own
+// recorder, so a consent page is written to a file a spec reads rather than opened in the owner's
+// browser. TMPDIR is passed through when the parent has one, since it is the operating system's
+// like the other two and os.tmpdir() in a child without it answers /tmp, which is not where this
+// machine puts a process's temporary files. CLAUDE_CONFIG_DIR is set to a folder of this run that
+// no account names, as a terminal that started oculus may have it set: a start with the default
+// Claude account must take it away, and the stand-in's record shows whether it did. The server
+// reads no environment variable of its own.
 //
 // The server refuses to start over a stale build, since src/server.ts imports build/handler.js and
 // a spec would otherwise press yesterday's page. What the run made is removed when it exits.
@@ -32,7 +39,14 @@ import { cpSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, writeFileSyn
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { buildState, copyConfig, removeLeftovers, removeOnExit, takeLock } from './layer.ts';
+import {
+    buildState,
+    copyConfig,
+    endLeftoverTmux,
+    removeLeftovers,
+    removeOnExit,
+    takeLock
+} from './layer.ts';
 import { runLayout } from './hub.ts';
 import { LOCAL_NAME } from '../../../src/lib/data/sources/config.ts';
 
@@ -45,6 +59,9 @@ const PORT = 8792;
  * The name every run's directory starts with, which is how a run finds what an earlier one left.
  */
 const PREFIX = 'oculus-browser-';
+
+/** The file inside a run's directory that its tmux server is reached by. */
+const SOCKET = 'tmux.sock';
 
 /** The one file that says which run owns those directories. */
 const LOCK = 'oculus-browser.lock';
@@ -98,8 +115,13 @@ if (!lock.taken) {
     process.exit(1);
 }
 
+/** The machine's own tmux, or '' where it has none. */
+const machineTmux = spawnSync('sh', ['-c', 'command -v tmux'], { encoding: 'utf8' }).stdout.trim();
+
 // Anything under the run name is now an earlier run's and goes: Playwright signals the layer, but a
-// run killed outright removes nothing, however carefully the handlers below are written.
+// run killed outright removes nothing, however carefully the handlers below are written. Its tmux
+// server is ended first, while the socket that reaches it is still there.
+endLeftoverTmux(tmpdir(), PREFIX, machineTmux, SOCKET);
 removeLeftovers(tmpdir(), PREFIX);
 
 const temp = mkdtempSync(join(tmpdir(), PREFIX));
@@ -115,6 +137,10 @@ const mailDir = inside(layout.mail, tmpdir());
 const opened = inside(layout.opened, tmpdir());
 const recorder = inside(join(bin, 'open-recorder'), tmpdir());
 const marker = inside(join(here, '.hub'), engine);
+const argv = inside(join(temp, 'argv'), tmpdir());
+const socket = inside(join(temp, SOCKET), tmpdir());
+const workAccount = inside(join(temp, 'accounts', 'claude-work'), tmpdir());
+const inherited = inside(join(temp, 'inherited-claude'), tmpdir());
 
 cpSync(join(engine, 'demo'), hub, { recursive: true });
 // The copy is made a git repository of its own, so the Repositories view has something to draw and
@@ -185,9 +211,10 @@ for (const folder of readdirSync(store, { withFileTypes: true })) {
     }
 }
 
-// This run's own commands, in front of the machine's on PATH. The cluster is two fixture files, and
-// tmux is nothing at all: a browser run starts no terminal and refreshes no usage account.
+// This run's own commands, in front of the machine's on PATH. The cluster is two fixture files,
+// tmux is the machine's on this run's socket, and the stand-ins write what they were started with.
 mkdirSync(bin, { recursive: true });
+mkdirSync(argv, { recursive: true });
 const cluster = join(hub, 'hpc');
 writeFileSync(
     inside(join(bin, 'ssh'), tmpdir()),
@@ -206,7 +233,21 @@ writeFileSync(
 );
 writeFileSync(
     inside(join(bin, 'tmux'), tmpdir()),
-    ['#!/bin/sh', 'echo "browser layer: this run has no tmux" >&2', 'exit 1', ''].join('\n'),
+    (machineTmux === ''
+        ? ['#!/bin/sh', 'echo "browser layer: this machine has no tmux" >&2', 'exit 1']
+        : [
+              '#!/bin/sh',
+              "# The machine's tmux on this run's own socket; a usage refresh starts nothing.",
+              'for word; do',
+              '    case "$word" in',
+              '        oculus-usage-*) echo "browser layer: no usage refresh" >&2; exit 1 ;;',
+              '    esac',
+              'done',
+              `exec ${JSON.stringify(machineTmux)} -S ${JSON.stringify(socket)} "$@"`
+          ]
+    )
+        .concat([''])
+        .join('\n'),
     { mode: 0o755 }
 );
 // The opener the server hands an https address to, `open_bin` below: it appends the address to
@@ -221,6 +262,36 @@ writeFileSync(
     ].join('\n'),
     { mode: 0o755 }
 );
+for (const tool of ['claude', 'codex', 'latexmk']) {
+    writeFileSync(
+        inside(join(bin, tool), tmpdir()),
+        [
+            '#!/bin/sh',
+            `# A stand-in for ${tool}: the two account variables it was given, one line each where`,
+            '# set, into one file; its arguments, a NUL after each, into another; then a wait.',
+            `out=${JSON.stringify(join(argv, tool))}-$$`,
+            ': > "$out.env.part"',
+            'for name in CLAUDE_CONFIG_DIR CODEX_HOME; do',
+            '    if printenv "$name" > /dev/null; then',
+            '        printf \'%s=%s\\n\' "$name" "$(printenv "$name")" >> "$out.env.part"',
+            '    fi',
+            'done',
+            'mv "$out.env.part" "$out.env"',
+            ': > "$out.part"',
+            `for word; do printf '%s\\0' "$word" >> "$out.part"; done`,
+            'mv "$out.part" "$out"',
+            'exec cat',
+            ''
+        ].join('\n'),
+        { mode: 0o755 }
+    );
+}
+// A shell started in a terminal reads this run's HOME, and an empty startup file keeps zsh from
+// asking a new user's questions in place of the prompt.
+writeFileSync(inside(join(home, '.zshrc'), tmpdir()), '');
+// The second Claude account of local.yml, a folder of this run's own, so a start from the composer
+// with that account is given it as CLAUDE_CONFIG_DIR.
+mkdirSync(workAccount, { recursive: true });
 
 // The reader's own bookmarks file under this run's HOME, holding the two manuals a machine's file
 // carries, so the rail's Bookmarks menu has choices to list. It is the Files view's collection
@@ -284,6 +355,10 @@ writeFileSync(
         `mail_dir: ${mailDir}`,
         'mail:',
         `  - { provider: ${MAIL.provider}, label: ${MAIL.label} }`,
+        'accounts:',
+        '  - { tool: claude, label: claude, dir: ~/.claude }',
+        `  - { tool: claude, label: work, dir: ${workAccount} }`,
+        '  - { tool: codex, label: codex, dir: ~/.codex }',
         ''
     ].join('\n')
 );
@@ -297,12 +372,25 @@ const server = spawn(process.execPath, [join(engine, 'src', 'server.ts'), '--eng
     env: {
         HOME: home,
         PATH: `${bin}:${process.env.PATH ?? ''}`,
+        CLAUDE_CONFIG_DIR: inherited,
         ...(temporary === undefined ? {} : { TMPDIR: temporary })
     },
     stdio: 'inherit'
 });
 
-removeOnExit([temp, marker, lock.path], process, () => server.kill());
+/**
+ * The run's tmux server goes with the run, and with it every session a spec started. It is ended
+ * before the run's directory goes, since the socket it is reached by is a file of that directory.
+ */
+function endTmux(): void {
+    if (machineTmux !== '') spawnSync(machineTmux, ['-S', socket, 'kill-server']);
+}
+process.on('exit', endTmux);
+
+removeOnExit([temp, marker, lock.path], process, () => {
+    endTmux();
+    server.kill();
+});
 
 server.on('exit', (code, signal) => {
     process.exit(signal === null ? (code ?? 0) : 1);

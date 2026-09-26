@@ -11,7 +11,8 @@
 </script>
 
 <script lang="ts">
-    // Layer 3, view. What the session did, newest last: a clock, what kind of thing it was, and the
+    // Layer 3, view. What the session did, newest last, one group per turn under the prompt that
+    // opened it and that prompt's time; each event a clock, what kind of thing it was, and the
     // thing itself. A path is shown as its basename with the whole of it in the tooltip; a prompt
     // keeps its words, because a slash in a prompt is not a path.
     //
@@ -25,9 +26,9 @@
     import PickSession from '$lib/views/shared/sessions/PickSession.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Toolbar from '$lib/ui/frame/Toolbar.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { basename, clock, compactCount } from '$lib/state/shared/words/format';
-    import { pinnedSession } from '$lib/state/workbench/selection.svelte';
+    import { timelineTurns } from '$lib/state/sessions/folds';
+    import SessionPicker from '$lib/views/shared/sessions/SessionPicker.svelte';
     import type { SessionEvent } from '$lib/state/client/selectors.svelte';
     import { asText } from '$lib/state/forms/schema';
     import { t } from '$lib/state/shared/words/text';
@@ -35,7 +36,6 @@
     import { useState } from '$lib/state/client/use';
 
     const {
-        layout: { instanceLayoutState, pinInstance, unpinInstance },
         selectors: { sessionFor }
     } = useState();
 
@@ -51,8 +51,8 @@
     };
 
     const record = $derived(sessionFor(instance.id));
-    const panePin = $derived(pinnedSession(instanceLayoutState(instance.id)));
     const events = $derived(record?.timeline ?? []);
+    const turns = $derived(timelineTurns(events));
 
     let column: HTMLDivElement | undefined = $state();
 
@@ -113,29 +113,11 @@
         }
         return held;
     }
-
-    /** Pin this timeline to what it shows, or return it to following the selection. */
-    function togglePanePin(): void {
-        if (panePin !== null) {
-            unpinInstance(instance.id);
-            return;
-        }
-        if (record !== null) {
-            pinInstance(instance.id, record.id, record.title);
-        }
-    }
 </script>
 
 {#snippet tools()}
     <Toolbar label={t('sessions.view_timeline')}>
-        {#if record !== null || panePin !== null}
-            <ToolButton
-                label={panePin === null ? t('sessions.pin_pane') : t('sessions.unpin_pane')}
-                title={panePin === null ? t('sessions.pin_pane') : t('sessions.unpin_pane')}
-                pressed={panePin !== null}
-                onclick={togglePanePin}
-            />
-        {/if}
+        <SessionPicker instance={instance.id} />
     </Toolbar>
 {/snippet}
 
@@ -146,12 +128,25 @@
         {:else if events.length === 0}
             <Empty message={t('sessions.tl_empty')} glyph={t('sessions.empty_glyph')} />
         {:else}
-            {#each events as event, at (`${at}:${event.ts ?? ''}`)}
-                <div class="event">
-                    <span class="ts">{clock(event.ts)}</span>
-                    <Tag label={kindLabel(event.kind)} tone={TONES[event.kind]} />
-                    <span class="tx" title={tip(event)}>{text(event)}</span>
-                </div>
+            {#each turns as turn, index (`${index}:${turn.at ?? ''}`)}
+                <section class="turn" data-turn={index}>
+                    <h4 class="turn-h">
+                        <span class="ts">{clock(turn.at)}</span>
+                        {#if turn.prompt !== null}
+                            <Tag label={kindLabel('prompt')} tone="blue" />
+                            <span class="tx" title={tip(turn.prompt)}>{text(turn.prompt)}</span>
+                        {:else}
+                            <span class="tx">{t('sessions.tl_before')}</span>
+                        {/if}
+                    </h4>
+                    {#each turn.events as event, at (`${at}:${event.ts ?? ''}`)}
+                        <div class="event">
+                            <span class="ts">{clock(event.ts)}</span>
+                            <Tag label={kindLabel(event.kind)} tone={TONES[event.kind]} />
+                            <span class="tx" title={tip(event)}>{text(event)}</span>
+                        </div>
+                    {/each}
+                </section>
             {/each}
         {/if}
     </div>
@@ -164,6 +159,28 @@
         gap: 2px;
         height: 100%;
         overflow: auto;
+    }
+
+    .turn {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        padding-bottom: 4px;
+        border-bottom: 1px solid var(--line);
+    }
+
+    .turn-h {
+        display: flex;
+        align-items: baseline;
+        gap: 6px;
+        min-width: 0;
+        margin: 0;
+        font-size: var(--fs-sm);
+        font-weight: 700;
+    }
+
+    .turn .event {
+        padding-left: 12px;
     }
 
     .event {

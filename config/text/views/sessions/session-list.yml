@@ -1,40 +1,70 @@
 # Oculus text owned by the session-list view.
 text:
     sessions:
-        activity_turn: turn finished in {0} s
-        area_unknown: no manifest
+        ago_d: '{0}d ago'
+        ago_h: '{0}h ago'
+        ago_m: '{0}m ago'
+        ago_now: just now
+        archive: Archive
+        archive_failed: could not save the archive mark of that session
         card_live: '{0} live'
         card_n: '{0} sessions'
         card_one: 1 session
-        close_tip: dismiss this ended session
-        detail_empty: No session is picked. Pick one in the Sessions view.
-        dismiss_failed: could not save that dismissal
+        detail_empty: No session is picked. Pick one with the session control on this view's bar, or in the Sessions list.
         dismiss_glyph: dismiss
         empty_glyph: circle_empty
-        ended_glyph: disclosure
-        ended_section: Ended ({0})
-        hide_dismissed: Hide dismissed ({0})
+        export: Export
+        export_failed: could not start the download
+        export_tip: save the conversation as a Markdown file
+        files_n: '{0} files'
+        files_tip: files the session changed
+        filter: Filter
+        filter_agent: Agent
+        filter_empty: No session is kept by the filter and the search.
+        filter_state: State
+        fork: Fork
+        fork_tip: continue it as a new session in a new terminal
         list_toolbar: Session list controls
         live_busy: busy
         live_idle: idle
         meta_sep: '|'
         n_millions: '{0}M'
         n_thousands: '{0}k'
+        new_session: New
+        new_session_title: Start a new session (n)
+        no_workspace: no workspace
         open_pinned: Open in its own pane
         open_pinned_tip: keep it in a pane of its own
         open_sessions: Open the Sessions view
         open_sessions_tip: the Sessions view lists every session and terminal, and a row picks one
+        pick_session: Pick a session
+        pick_session_tip: the session this view shows
+        pick_terminal: Pick a terminal
+        pick_terminal_tip: the terminal this tab shows, under the session running in it
         pin_glyph: pin
         pin_pane: Pin this pane
+        pin_top: Pin to the top
+        prompts_n: '{0} prompts'
+        prompts_tip: prompts the session was given
         rail_glyph: list
         rail_title: Sessions
+        rename: Rename
+        rename_failed: could not save that title
+        rename_field: The session title
         restore_glyph: note_back
-        restore_tip: bring this session back to the list
+        search: Search title, prompts, workspace, branch
         select_tip: show this session in the other session views
-        show_dismissed: Show dismissed ({0})
         stamp_day: '{0} {1}'
+        state_archived: archived
         state_empty: No sessions in the window.
         state_ended: ended
+        state_idle: idle
+        state_input: needs input
+        state_working: working
         stopped_at: stopped at {0}
         tokens: tokens
+        top_failed: could not save that pin
+        top_mark: pinned to the top of its group
+        unarchive: Bring back from the archive
         unpin_pane: Unpin this pane
+        unpin_top: Unpin from the top

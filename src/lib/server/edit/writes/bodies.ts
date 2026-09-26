@@ -23,6 +23,8 @@ export type SessionWrite = {
     kind: 'session';
     id: string;
     hidden?: boolean;
+    /** True pins the session to the top of its group in the sessions list, false unpins it. */
+    top?: boolean;
     /** An absolute directory to pin the session to, or the empty string to unpin it. */
     area?: string;
     /** The title to show instead of the transcript's own, or the empty string to clear it. */
@@ -124,16 +126,18 @@ export function manifestWrite(body: unknown): ManifestWrite | null {
 
 /**
  * The body as a session write, or null when it is not one. A field of the wrong type makes the
- * whole body unknown rather than being dropped quietly, and a body carrying none of the three
+ * whole body unknown rather than being dropped quietly, and a body carrying none of the four
  * fields is not a write either: there would be nothing to do and nothing to answer with.
  */
 export function sessionWrite(body: unknown): SessionWrite | null {
     if (!isMap(body)) return null;
     if (body.kind !== 'session' || typeof body.id !== 'string' || body.id === '') return null;
     const write: SessionWrite = { kind: 'session', id: body.id };
-    if (body.hidden !== undefined) {
-        if (typeof body.hidden !== 'boolean') return null;
-        write.hidden = body.hidden;
+    for (const flag of ['hidden', 'top'] as const) {
+        const value = body[flag];
+        if (value === undefined) continue;
+        if (typeof value !== 'boolean') return null;
+        write[flag] = value;
     }
     for (const key of ['area', 'title'] as const) {
         const value = body[key];
@@ -141,7 +145,12 @@ export function sessionWrite(body: unknown): SessionWrite | null {
         if (typeof value !== 'string') return null;
         write[key] = value;
     }
-    if (write.hidden === undefined && write.area === undefined && write.title === undefined) {
+    if (
+        write.hidden === undefined &&
+        write.top === undefined &&
+        write.area === undefined &&
+        write.title === undefined
+    ) {
         return null;
     }
     return write;

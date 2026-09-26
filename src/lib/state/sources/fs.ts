@@ -579,7 +579,8 @@ export function parentOf(row: RowRef): RowRef | null {
 export function filterRows(
     roots: FsRoot[],
     heldOf: (root: string, path: string) => FsEntry[] | null,
-    text: string
+    text: string,
+    top: TreeTop | null = null
 ): TreeRow[] {
     const wanted = text.trim().toLowerCase();
     const walk = (root: string, path: string, depth: number): TreeRow[] => {
@@ -602,11 +603,12 @@ export function filterRows(
         return found;
     };
     return roots.flatMap((root) => {
-        const below = walk(root.key, '', 1);
+        const path = top?.path ?? '';
+        const below = walk(root.key, path, 1);
         const own: TreeRow = {
             root: root.key,
-            path: '',
-            name: root.key,
+            path,
+            name: top?.name ?? root.key,
             kind: 'dir',
             size: 0,
             depth: 0,
@@ -634,7 +636,8 @@ export function treeKeyRows(
     filtering: boolean
 ): { id: string; parent: string | null; open?: boolean; fixed?: boolean }[] {
     return rows.map((row) => {
-        const parent = parentOf(row);
+        // A tree drawn from a folder inside its root has that folder as its head, with no parent.
+        const parent = row.depth === 0 ? null : parentOf(row);
         return {
             id: rowKey(row),
             parent: parent === null ? null : rowKey(parent),
@@ -695,10 +698,15 @@ export function crumbsOf(selected: RowRef | null): { row: RowRef; label: string 
     ];
 }
 
-/** The open folders with every folder under one root closed, the root's own line left as it was. */
-export function collapseRoot(expanded: string[], root: string): string[] {
-    const own = treeKey(root, '');
-    return expanded.filter((key) => key === own || !key.startsWith(own));
+/**
+ * The open folders with every folder under one root closed, the root's own line left as it was;
+ * with `from`, only the folders under that folder of the root, the folder's own line left as it
+ * was.
+ */
+export function collapseRoot(expanded: string[], root: string, from = ''): string[] {
+    const own = treeKey(root, from);
+    const under = from === '' ? own : `${own}/`;
+    return expanded.filter((key) => key === own || !key.startsWith(under));
 }
 
 /**
@@ -709,7 +717,8 @@ export function collapseRoot(expanded: string[], root: string): string[] {
 export function treeRows(
     roots: FsRoot[],
     entriesOf: (root: string, path: string) => FsEntry[],
-    expanded: string[]
+    expanded: string[],
+    top: TreeTop | null = null
 ): TreeRow[] {
     const rows: TreeRow[] = [];
     const walk = (root: string, path: string, depth: number): void => {
@@ -729,17 +738,18 @@ export function treeRows(
         }
     };
     for (const root of roots) {
-        const open = expanded.includes(treeKey(root.key, ''));
+        const path = top?.path ?? '';
+        const open = expanded.includes(treeKey(root.key, path));
         rows.push({
             root: root.key,
-            path: '',
-            name: root.key,
+            path,
+            name: top?.name ?? root.key,
             kind: 'dir',
             size: 0,
             depth: 0,
             open
         });
-        if (open) walk(root.key, '', 1);
+        if (open) walk(root.key, path, 1);
     }
     return rows;
 }
@@ -750,4 +760,137 @@ export function treeRows(
  */
 export function workspaceChoices(names: string[]): string[] {
     return ['', ...names.filter((name) => name !== '')];
+}
+
+/**
+ * The root a folder lies in and its path inside that root, the deepest root holding it winning, or
+ * null when no root holds it. A Files tab in follow mode shows the root holding the followed
+ * session's workspace, and the composer's attach picker lists the workspace through the same root.
+ */
+export function rootHolding(roots: FsRoot[], dir: string): { root: FsRoot; path: string } | null {
+    const wanted = dir.endsWith('/') && dir.length > 1 ? dir.slice(0, -1) : dir;
+    let best: { root: FsRoot; path: string } | null = null;
+    for (const root of roots) {
+        const base =
+            root.dir.endsWith('/') && root.dir.length > 1 ? root.dir.slice(0, -1) : root.dir;
+        if (base === '') continue;
+        const inside =
+            wanted === base
+                ? ''
+                : wanted.startsWith(`${base}/`)
+                  ? wanted.slice(base.length + 1)
+                  : null;
+        if (inside === null) continue;
+        if (best === null || base.length > best.root.dir.length) best = { root, path: inside };
+    }
+    return best;
+}
+
+/**
+ * Whether a Files tab follows the workspace of the selected session: `follow: true` in its
+ * instance's layout state, which the sessions arrangement gives its Files tab.
+ */
+export function followsSession(state: unknown): boolean {
+    return (
+        typeof state === 'object' &&
+        state !== null &&
+        !Array.isArray(state) &&
+        (state as Record<string, unknown>).follow === true
+    );
+}
+
+/**
+ * The folder a tree is drawn from when it is not its root's top: its path inside the root, and the
+ * name its head row shows.
+ */
+export type TreeTop = { path: string; name: string };
+
+/** What a Files tab's follow mode draws: the folder followed, its root, and the roots drawn. */
+export type FollowView = {
+    following: boolean;
+    dir: string | null;
+    found: { root: FsRoot; path: string } | null;
+    /** The roots the tree draws: the one holding the followed folder, or all of them. */
+    roots: FsRoot[];
+    /** The followed folder as the head of the tree, which is then that folder and what is in it. */
+    top: TreeTop | null;
+};
+
+/** The last segment of a folder, the name a tree drawn from it shows on its head. */
+function folderName(dir: string): string {
+    const trimmed = dir.endsWith('/') && dir.length > 1 ? dir.slice(0, -1) : dir;
+    const at = trimmed.lastIndexOf('/');
+    return at < 0 ? trimmed : trimmed.slice(at + 1);
+}
+
+/**
+ * The follow mode of one Files tab, from its layout state, its workspace's roots and a folder: the
+ * tree is the followed folder itself, as the head of its own tree, read through the root that holds
+ * it.
+ */
+export function followView(state: unknown, roots: FsRoot[], dir: string | null): FollowView {
+    if (!followsSession(state)) {
+        return { following: false, dir: null, found: null, roots, top: null };
+    }
+    const found = dir === null ? null : rootHolding(roots, dir);
+    if (found === null || dir === null) {
+        return { following: true, dir, found: null, roots: [], top: null };
+    }
+    return {
+        following: true,
+        dir,
+        found,
+        roots: [found.root],
+        top: { path: found.path, name: folderName(dir) }
+    };
+}
+
+/**
+ * The folder follow mode shows for the selection: a session's workspace, else its folder, else a
+ * selected terminal's folder, and null when nothing selected names one.
+ */
+export function followedDirOf(
+    session: { workspace: string; cwd?: string | null } | null,
+    terminal: { cwd: string } | null
+): string | null {
+    const dir =
+        session !== null
+            ? session.workspace === ''
+                ? (session.cwd ?? '')
+                : session.workspace
+            : (terminal?.cwd ?? '');
+    return dir === '' ? null : dir;
+}
+
+/** A tab's layout state with follow mode set on or off, the rest of it kept. */
+export function withFollow(state: unknown, on: boolean): Record<string, unknown> {
+    const kept = typeof state === 'object' && state !== null && !Array.isArray(state) ? state : {};
+    return { ...kept, follow: on };
+}
+
+/**
+ * A tab's layout state pinned to one session or terminal, which it then follows instead of the
+ * selection, or with its pin taken away for null; follow mode stays on either way.
+ */
+export function withFollowPin(state: unknown, session: string | null): Record<string, unknown> {
+    const kept: Record<string, unknown> = { ...withFollow(state, true) };
+    delete kept.session;
+    return session === null ? kept : { ...kept, session };
+}
+
+/** A tab's instance state with the followed folder, the head of its tree, open. */
+export function followRevealed(held: unknown, found: { root: FsRoot; path: string }): object {
+    const key = treeKey(found.root.key, found.path);
+    return patchedFilesView(held, {
+        expanded: setExpanded(filesViewOf(held).expanded, key, true)
+    });
+}
+
+/** The drag type a file row carries: its absolute path, for a drop target that takes a file. */
+export const FILE_DRAG = 'application/x-oculus-file';
+
+/** The absolute path of a row, from its root's folder and its path inside it. */
+export function absoluteOf(rootDir: string, path: string): string {
+    const base = rootDir.endsWith('/') ? rootDir.slice(0, -1) : rootDir;
+    return path === '' ? base : `${base}/${path}`;
 }
