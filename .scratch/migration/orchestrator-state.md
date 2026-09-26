@@ -50,9 +50,9 @@ dispatch:      # X3b in flight (repair round 1) and Q76 beside it (disjoint path
   base: c2e6dedc
   launched: 2026-09-26
   report: tools/oculus/.scratch/migration/agents/reviews/Q76-report.md (back 2026-09-26: 296,689 tokens, 128 tool uses, 6,794 s)
-  refuter: agents/reviews/Q76-refuter.md (claude:opus, native Agent a5533058c74485625, dispatched 2026-09-26; review earned: the step changes a state layer, a server module and a wire shape)
+  refuter: agents/reviews/Q76-refuter.md (claude:opus, native Agent a5533058c74485625, 172,955 tokens, 48 tool uses, 41 min; review earned: the step changes a state layer, a server module and a wire shape)
   landing: not-started
-  round: 0
+  round: 1  # sent 2026-09-26 over the uncommitted worktree tree at c2e6dedc: 7 findings of the refuter, each with its ruling, all inside the brief
 ```
 
 ## The standing demands (from Axel, in force)
@@ -104,6 +104,8 @@ None. Axel lifted it on 2026-09-23 with `/plan-orchestration oculus/migration` a
 ## Open items (only what Axel must rule on; every report opens with this list verbatim and repeats it until he has ruled)
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is booked as its own step in `plan.md` and carried in the Booked section below, since it needs no ruling from him.
+
+- Q76, the `file` field on the `api/docs` answer (raised 2026-09-26 by Q76's report, judgment call 1, and its review): every answer of `api/docs`, the 200 and the 404 for a missing file, now carries `file`, the absolute path of the file it read. The document store needs it to tell whether a `files` message's root holds a document; the manual's path is known only to the server. The page already receives every absolute root in the `files` and `git` payloads and every manifest's absolute path in the snapshot, so the field adds the engine directory's path and nothing of a new kind; a path that climbs out of its root gets no `file`. A wire shape is yours to see. Recommended: keep it. The alternative, the server naming the watched root that holds each document, puts the root lookup of the watcher into the document route and still sends an absolute root; the lazy option would be to drop the field and re-read every document on every message, which is the flicker's cause.
 
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)
 
