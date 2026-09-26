@@ -30,7 +30,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:      # X3b in flight (repair round 1) and Q76 beside it (disjoint paths). Nothing else is dispatched until X3b lands: X3a needs `server/core/git.ts` and the diff pane, L4 `src/lib/themes/`, Q35 and D13 the source tab, Q66 the views that re-read, all in X3b's paths; then X3a, X3c and L4
+dispatch:      # X3b in flight (repair round 1) and Q76 beside it (disjoint paths). Nothing else is dispatched until X3b lands: X3a needs `server/core/git.ts` and the diff pane, L4 `src/lib/themes/`, Q35 and D13 the source tab, Q66 the views that re-read, all in X3b's paths; then Q77 alone (it changes the verification tooling), then X3a, X3c and L4
 - step: X3b
   executor: agent
   worker: claude:opus (native Agent, general-purpose)
@@ -49,12 +49,14 @@ dispatch:      # X3b in flight (repair round 1) and Q76 beside it (disjoint path
   worktree: .agents/worktrees/Q76
   base: c2e6dedc
   launched: 2026-09-26
-  report: tools/oculus/.scratch/migration/agents/reviews/Q76-report.md
+  report: tools/oculus/.scratch/migration/agents/reviews/Q76-report.md (back 2026-09-26: 296,689 tokens, 128 tool uses, 6,794 s)
+  refuter: agents/reviews/Q76-refuter.md (claude:opus, native Agent a5533058c74485625, dispatched 2026-09-26; review earned: the step changes a state layer, a server module and a wire shape)
   landing: not-started
   round: 0
 ```
 
 ## The standing demands (from Axel, in force)
+- The browser suite in a step (Axel, 2026-09-26, "Agreed on all"): a brief tells its builder, and a review its reviewer, to run only the browser spec files the step adds or changes (and those covering the views it changes); the whole browser suite runs once, on main, at landing, as the verification list above says (`npm run test:browser`, orchestrator only). Revert-check scoped to the directives a diff adds or changes, and a browser port per worktree, are step Q77, queued after X3b and before X3a.
 - A step ends at its rounds (Axel, 2026-09-25, stopping Q75): what its last review still finds is fixed at landing when it is small, and everything else is written into Q72's list, the re-read before the release, and the loop goes straight on to Axel's next queued step. No new step is made from a review finding and nothing pauses for one; only a defect that breaks something Axel uses stops the loop, as an open item.
 - When Axel says the Ordo release carrying plan 2.B is pinned: drop this file's demand that reports open with the open items (Ordo's skills then carry it, with a position line first), and close O32 by its tick condition (Axel, 2026-09-24, passing on Ordo's review).
 - Landed work is finished forward, never reverted (Axel, 2026-09-24): a landed step found short of its brief, or wrong, gets a new step that fixes, rebuilds or finishes it on top of what landed; no landed commit is reverted to redo it.
