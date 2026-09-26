@@ -111,3 +111,146 @@ All commands were run from /Users/axelfaes/workspace/research-hub/.agents/worktr
 ## Usage
 
 Wall time about 42 minutes (15:23 to 16:05 CEST). Most of it went to the three node suite runs, the full browser suite (7.4 min) and the two revert-check runs (about 12 min and 3.5 min).
+
+## Repair round 1, refuted
+
+### Verification
+
+All commands were run from /Users/axelfaes/workspace/research-hub/.agents/worktrees/Q76/tools/oculus.
+
+1. `npx vitest run --reporter=dot`, one run, started 17:20: `Test Files  330 passed (330)` / `Tests  5158 passed (5158)`. No FAIL line.
+2. `npm run check`: `COMPLETED 1458 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS`
+3. `npm run build`: `build exit 0`
+4. `npm run format:check`: `All matched files use Prettier code style!`
+5. `npm run lint`: `lint exit 0`
+6. The ASCII gate of spec.md:85, piped to `wc -l`: `0`
+7. `sh bin/size-check.sh`: `size exit 0`. `sh bin/folder-check.sh`: `folder exit 0`
+8. `npm run diagrams` twice. `cat docs/diagrams/* | md5` gave `309bec94ddb098c47a7aa92bb23a9788` before the first run, after the first run and after the second run. Both runs exited 0.
+9. `npm run build`, then the port wait (`free=3 polls=3`), then `npx playwright test tests/browser/workbench/system.spec.ts`: `16 passed (32.7s)`. It ran on the first attempt, and no case printed "did not run".
+10. `node bin/revert-check.mjs` over tests/state/system/docs.test.ts, tests/routes/docs/docs.test.ts, tests/views/sources/doc.test.ts, tests/state/workbench/navigation/catalogue.test.ts and tests/views/system/help.test.ts: `101 reverts, 0 unproven, 9 unchecked`, exit 0.
+    - All 9 unchecked cases are pre-existing help.test.ts cases.
+    - The output has 0 "did not run" lines.
+    - This run passed the tool's 600 s foreground limit, and the harness moved it to the background by itself. I waited for it in a foreground loop that read its output file. I started no background shell myself.
+11. After the port wait (`free=3 polls=3`), `node bin/revert-check.mjs tests/browser/workbench/system.spec.ts`: `12 reverts, 0 unproven, 5 unchecked`. It ran on the first attempt. The new cases are red under their reverts:
+    - "a hub document keeps its drawn heading while writes under the hub are read": docs.svelte.ts:168
+    - "follows the entry carrying its label": Doc.svelte:69
+    - "names the path it asked for": Doc.svelte:104
+    - "closes into that tab": Doc.svelte:67
+    - The 5 unchecked cases are pre-existing ones.
+12. `ls -d $TMPDIR/oculus-* | wc -l`: `0` before and `0` after.
+13. `git status --short`: the same 18 modified files before and after my runs, and no untracked file.
+
+### Closures
+
+1. Colliding tab: reproduced, with Proof 1 below.
+   - Doc.svelte:64-86 closes the stale tab into the other tab.
+   - The browser case is green, and it is red under its revert (Doc.svelte:67), per check 11.
+   - The effect cannot loop:
+     - After the restate, `path` equals the entry's path, so `followDoc` returns `moved: false` and the effect returns at :66.
+     - After the close, the component unmounts.
+     - A restate on an id no page holds changes nothing (instances.ts:92-96), so no dependency moves.
+   - It cannot close the wrong tab: it closes only `instance.id`, and `openElsewhere` skips `instance.id` (:82).
+   - It does not fire before the config lands: when `pushed === null`, `followed` is null and the effect returns (:57, :66).
+   - A hidden tab that was never shown is not mounted (PaneView.svelte:127 keeps only the active tab or tabs already seen), so it does not act until it is shown. The report states this as a sharp edge.
+2. Transport failure: reproduced, with Proof 2 and Behaviour 1 below.
+   - docs.svelte.ts:255-256 returns before `askedAt[key]` is set when a drawn document with no error is held.
+   - An HTTP error answer with a JSON body replaces the drawn document (:237-243).
+   - Both store cases are green and red under their reverts, per check 10.
+   - No request storm, by reading the code, not by a run:
+     - Each of the three readers calls the store only inside a `$derived` whose dependencies are the key's `held` and `marks` entries plus primitives: Doc.svelte:62, Help.svelte:43, Project.svelte:78 (`id`, `chosen`).
+     - A failed re-read writes neither `held` nor `marks`, and `finally` re-asks only when `marks[key]` moved (:266).
+     - So a permanently failing fetch costs one request per concerning `files` message, plus one per re-evaluation for another reason. For Doc.svelte, that is a push on the config channel.
+3. `holds()` normalising: reproduced, with Proof 3 below.
+   - `segments()` (docs.svelte.ts:68-76) resolves an empty segment, `.` and `..` as a string operation.
+   - The four cases are red under their reverts.
+   - A root of `/` gives `segments('/') = []`, so it holds every non-empty file, which is correct.
+   - A root below the filesystem top (`/..`) pops on an empty list and stays `[]`, which is also correct.
+4. The DESIGN.md:275 Doc text names the third rule: reproduced. The report's replacement text contains "after any message that names a root when its answer named no file", which matches `concerns()` at :179. See Standards 1 for a different sentence of the same text.
+5. Before and after entries: reproduced. Entries 7 to 11 of the report's "Before and after" section cover data-path (7), the unlisted tab (8), the manual root (9), the transport failure (10) and the busy builder (11).
+6. Report counts from one run: reproduced.
+   - The node revert-check gives `101 reverts, 0 unproven, 9 unchecked` and the browser one `12 reverts, 0 unproven, 5 unchecked`, both equal to the report.
+   - The browser spec gives `16 passed`, the same count as the report.
+   - vitest gives `5158 passed (5158)`, equal to the report.
+7. Three full vitest runs: not reproduced in full. I ran one full run, which passed with no FAIL line and the same count as the report. The builder's other two runs are not re-run by me.
+
+### Spec
+
+none
+
+### Proof
+
+1. tests/browser/workbench/system.spec.ts:528-548 and Doc.svelte:74, the activation half of the collision fix is not proven.
+   - The line: `activateInstance(open);`
+   - The case seeds the tabs in the order `status-tab`, `doc-current`, `doc-tab`, with `doc-tab` active (bootWithDocTab, :419-447). Closing the active last tab settles the pane onto its neighbour, which is `doc-current`. The heading and the single tab would therefore likely still be asserted with :74 deleted.
+   - Not run: I edit nothing.
+   - The branch where the other tab is on another page, the `pages()` loop of `openElsewhere` (:79-86), is not exercised by any case.
+   - Fix:
+     - Seed `doc-current` first and `status-tab` between it and `doc-tab`, so the neighbour is the Status tab. Assert that `doc-current` is the active tab, and give the case a revert directive for :74.
+     - Add a case with `doc-current` on a second page.
+2. tests/state/system/docs.test.ts:430-454, the "mark stays unconsumed" half of ruling 2 is not asserted.
+   - The second request in the case follows a fresh `wrote(HUB)`, which marks the key again. A variant that consumed the mark (`askedAt[key] = mark; return;` at :256) would therefore stay green.
+   - Fix: after the rejected fetch, call `hubDocument(...)` again with no write, `settle()`, and assert a second request was made. Give that assertion a directive that sets `askedAt[key] = mark` before the return at :256.
+3. docs.svelte.ts:70, `path.split(/[/\\]/)` splits on a backslash as well, and no case covers it.
+   - Replacing the pattern with `'/'` keeps every case green, by reading the four cases (:471-491), which use forward slashes only.
+   - A root of `/` has no case either.
+   - Fix: a case with backslash-separated root and file, and a case `holds('/', '/a/x.md') === true`, each with a directive.
+
+### Standards
+
+1. Doc.svelte:32-33 and the report's DESIGN.md:275 Doc text say something false for a tab on another page.
+   - Doc.svelte:32-33: `when another tab already holds that path, this one is closed and that one shown`
+   - The DESIGN.md:275 text: `is closed and that tab shown`
+   - `activateInstance` (instances.ts:131-137) makes the tab active within the page holding it and records it in `attention.touchPane`. It does not switch the page on screen. `attention.touched()` (attention.ts:82-91) falls back to the current page, and the report's own judgment call says "The page on screen is not switched to it".
+   - So for a tab on another page, "shown" is false.
+   - Fix: "that one made the active tab of its page" in both places. HELP.md's "closes into the tab already showing that entry" can stay.
+2. docs.svelte.ts:252-254, the comment `A request that never reached the server (a restart, a dropped connection) says nothing about the file` does not cover every way into the catch.
+   - The catch is also reached when `response.json()` (:229) throws on an answer whose body is not JSON. That request did reach the server, so the comment is false for that path. See Behaviour 1.
+   - Fix: parse the body in its own try, so the outer catch holds only fetch rejections, or reword the comment to match.
+
+### Behaviour
+
+1. docs.svelte.ts:227-229 and :251-256, an HTTP error whose body is not JSON keeps the drawn document. Ruling 2 says it replaces it.
+   - The hunk:
+     ```
+     askedAt[key] = mark;
+     if (response.status === NOT_MODIFIED && held[key] !== undefined) return;
+     const body = (await response.json()) as { ... };
+     ```
+   - A 5xx whose body is HTML or empty (a proxy, a crash page) throws at :229. The catch then returns at :256 because a drawn document is held.
+   - The error is never shown. The mark was already consumed at :227, so nothing asks again until the next concerning message. `tags[key]` keeps the old tag.
+   - The same holds for a 200 whose body is not JSON.
+   - Not reproduced by a run.
+   - Fix: read the body in its own try. On a parse failure, use `String(response.status)` as the error, taking the `!response.ok` branch.
+
+### Not checked
+
+- The builder's second and third full vitest runs. I ran one.
+- Whether deleting Doc.svelte:74 or changing :70 actually keeps the named cases green (Proof 1 and 3). This is reasoned from the seeded layout and the case inputs, since I edit nothing.
+- A Windows path at runtime, and drive-letter case (`C:` vs `c:`). `segments()` compares segments case-sensitively.
+- The whole browser suite (Axel's ruling: it runs on main at landing).
+- The look on the TEST page in Axel's Chrome.
+- The DESIGN.md and HELP.md text as it will read after landing. I read only the report's replacement lines.
+- Request volume under a running builder.
+
+### Usage
+
+Wall time about 29 minutes (17:19 to 17:48): the full vitest run took about 3 min, the node revert-check about 23 min wall time including the wait, and the browser revert-check about 5 min.
+
+## Closed
+
+First review (sent in repair round 1):
+- Proof 1, the colliding restate: closed in the round (`Doc.svelte` closes the stale tab into the one holding the path), and at landing the activation proven by two browser cases (below).
+- Standards 1, the DESIGN.md:275 text: closed in the round's Doc text, applied at landing.
+- Behaviour 1, a transport failure replacing a drawn document: closed in the round.
+- Behaviour 2, the manual re-read only for its own root: stated in the round report's before and after (c).
+- Behaviour 3, `holds()` not normalising: closed in the round.
+- Behaviour 5 and 6, `data-path` and the unlisted tab: stated in the round report's before and after (a) and (b).
+- Spec 2, the `file` field: ruled by Axel, keep.
+- Standards 2, report counts: closed by the round report's single-run lines.
+
+Round 1 refutation, fixed at landing on main:
+- Proof 1: `bootWithDocTab` takes `statusSecond` and `other`; the collision case puts the Status tab between the two document tabs and asserts the remaining tab is selected; a new case holds the other tab on a second page and asserts the saved layout makes it that page's active tab. Both name `Doc.svelte:75 => delete`, red in `node bin/revert-check.mjs tests/browser/workbench/system.spec.ts` on main.
+- Proof 2: the transport-failure case asserts a call with no write asks again, named `docs.svelte.ts:263 => ... { askedAt[key] = mark; return; }`, red on main.
+- Proof 3: cases for a backslash path (`docs.svelte.ts:73 => path.split('/')`) and the root `/` (`:87 => base.length > 0 && ...`), red on main.
+- Standards 1: `Doc.svelte:32-34` and the DESIGN.md:275 text say the other tab is made the active tab of its page.
+- Standards 2 and Behaviour 1: the body is read in its own `try` (`readBody`, `docs.svelte.ts:277-284`), so an answer whose body is not JSON replaces what is held with its status and the outer `catch` holds only requests that never reached the server; a case with a 502 HTML body, named `docs.svelte.ts:282 => throw error;`, red on main.

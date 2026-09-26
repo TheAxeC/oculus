@@ -1,10 +1,11 @@
 # Oculus text owned by the doc view: one hub document, named by the `docs:` list of layout.yml.
 text:
     doc:
-        failed: 'The document could not be read: {0}'
+        failed: 'The document {0} could not be read: {1}'
         loading: Reading the document...
         none: No document chosen. Open one from a group of the Views catalogue.
         none_glyph: book
+        unlisted: "{0} is not in the documents list of config/layout.yml, and no entry there carries this tab's name."
     views:
         doc: Hub document
         doc_glyph: book

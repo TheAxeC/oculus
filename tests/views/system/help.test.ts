@@ -119,7 +119,7 @@ describe('the diagrams in the manual', () => {
     });
 
     it('audits that an image written inside a code block is no diagram', () => {
-        // revert: src/lib/server/content/docs.ts:213 => if (base === null) return text.replace(/!\[([^\]]*)\]\(([^)]*)\)/g, '<img src="$2" alt="$1">');
+        // revert: src/lib/server/content/docs.ts:248 => if (base === null) return text.replace(/!\[([^\]]*)\]\(([^)]*)\)/g, '<img src="$2" alt="$1">');
         const fenced = renderMarkdown('```\n![Layers](docs/diagrams/layers.svg)\n```\n', null);
         expect(diagramsOf(fenced)).toEqual([]);
         expect(diagramsOf(renderMarkdown('![Layers](docs/diagrams/layers.svg)\n', null))).toEqual([

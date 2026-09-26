@@ -26,6 +26,24 @@ export function docState(entry: DocEntry): { id: string; path: string; label: st
     return { id: entry.path, path: entry.path, label: entry.label };
 }
 
+/**
+ * Which entry of the `docs:` list a document tab shows: the one at the path it holds, or, when
+ * that path has left the list, the one entry carrying its label, which is what a moved file keeps.
+ * `moved` says the tab's saved path is no longer the entry's, so the tab is to be restated. No
+ * entry is found for a path the list does not hold and a label no entry or several entries carry.
+ */
+export function followDoc(
+    docs: DocEntry[],
+    path: string,
+    label: string
+): { entry: DocEntry | null; moved: boolean } {
+    const listed = docs.find((one) => one.path === path);
+    if (listed !== undefined) return { entry: listed, moved: false };
+    const named = label === '' ? [] : docs.filter((one) => one.label === label);
+    if (named.length !== 1) return { entry: null, moved: false };
+    return { entry: named[0], moved: true };
+}
+
 /** What a document is identified by inside a chord's list, told from a view's id. */
 export const DOC_PICK = 'doc:';
 

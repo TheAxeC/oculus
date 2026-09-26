@@ -7,6 +7,12 @@
 // into that hub, which is the run's own copy of demo/ under the system temporary directory, and
 // removed again at the end.
 //
+// A hub document keeps the heading node it drew while writes elsewhere under the hub are read,
+// each re-read answered 304 and none of them drawing the loading words; a saved document tab whose
+// path left the `docs:` list follows the entry carrying its label and writes the entry's path into
+// the saved layout, and closes into the tab that already shows that entry when there is one; one
+// matching no entry names the path it asked for.
+//
 // The manual shows every diagram of docs/diagrams/, each drawn in the prose's own colour from
 // the diagram route under a light theme and a dark one; a diagram file that carries a script is
 // drawn as its drawing alone; a diagram whose view closes while its answer is held back aborts its
@@ -21,6 +27,7 @@ import { removeFromHub, writeHubFile } from '../helpers/hub.ts';
 import { t, tabNamed } from '../helpers/words.ts';
 import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
 import { NAMES } from '../../../bin/diagrams/diagrams.mjs';
+import { LAYOUT_KEY } from '../../../src/lib/state/workbench/layout/saved/storage.ts';
 
 const merged = loadConfig(engineDir()).config;
 
@@ -349,3 +356,254 @@ test('a hub document opens from its group in the catalogue', async ({ page }) =>
         removeFromHub(HPC.path);
     }
 });
+
+test('a hub document keeps its drawn heading while writes under the hub are read', async ({
+    page
+}) => {
+    // revert: src/lib/state/system/docs.svelte.ts:171 => return askedAt[key] !== (marks[key] ?? 0) ? PENDING : (doc ?? PENDING);
+    writeHubFile(HPC.path, HOWTO);
+    try {
+        const rereads: number[] = [];
+        page.on('response', (response) => {
+            if (response.url().includes(`hub=${encodeURIComponent(HPC.path)}`)) {
+                rereads.push(response.status());
+            }
+        });
+        await boot(page);
+        await showRailPage(page, 'views');
+        await page.locator(`${SHOWN_VIEW} [data-catalogue] button[data-doc="${HPC.path}"]`).click();
+        const heading = page.getByRole('heading', { name: 'The cluster' });
+        await expect(heading).toBeVisible();
+
+        // The node drawn now is marked once, and every appearance of the loading words is counted
+        // from here on.
+        await heading.evaluate((node) => node.setAttribute('data-kept', 'first'));
+        const loading = t('doc.loading');
+        await page.evaluate((words) => {
+            const seen = { count: 0 };
+            (window as unknown as { loadingSeen: { count: number } }).loadingSeen = seen;
+            new MutationObserver(() => {
+                if (document.body.innerText.includes(words)) seen.count += 1;
+            }).observe(document.body, { childList: true, subtree: true, characterData: true });
+        }, loading);
+
+        // Each write lands under the served hub, which is the root the document lies under, so each
+        // is a `files` message the document is asked for again on; the watcher reads a root at most
+        // once in two seconds, so the writes are spaced past that.
+        const before = rereads.length;
+        for (let at = 0; at < 3; at += 1) {
+            writeHubFile(`notes/tick-${String(at)}.md`, `# Tick ${String(at)}\n`);
+            await expect
+                .poll(() => rereads.length, { timeout: 10000 })
+                .toBeGreaterThan(before + at);
+        }
+        // An unchanged file is answered 304 every time, so nothing was rendered again.
+        expect(rereads.slice(before).every((status) => status === 304)).toBe(true);
+        await expect(page.locator('[data-kept="first"]')).toHaveText('The cluster');
+        const seen = await page.evaluate(
+            () => (window as unknown as { loadingSeen: { count: number } }).loadingSeen.count
+        );
+        // The re-reads kept what was drawn, so the loading words never came back.
+        expect(seen).toBe(0);
+
+        // A write to the document itself is drawn once its answer lands.
+        writeHubFile(HPC.path, '# The cluster, edited\n');
+        await expect(page.getByRole('heading', { name: 'The cluster, edited' })).toBeVisible();
+    } finally {
+        removeFromHub(HPC.path);
+        for (let at = 0; at < 3; at += 1) removeFromHub(`notes/tick-${String(at)}.md`);
+    }
+});
+
+type SavedTab = { id: string; view: string; state: Record<string, string> | null };
+
+/**
+ * Open the application on a saved layout whose page holds the Status tab, the tabs given, and one
+ * document tab with the state given, that tab shown. `statusSecond` puts the Status tab after the
+ * tabs given, so it is the document tab's neighbour; `other` is a second page's tabs and the one
+ * active there, the page not shown.
+ */
+async function bootWithDocTab(
+    page: Page,
+    state: Record<string, string>,
+    before: SavedTab[] = [],
+    {
+        statusSecond = false,
+        other
+    }: { statusSecond?: boolean; other?: { tabs: SavedTab[]; active: string } } = {}
+): Promise<void> {
+    const status: SavedTab = { id: 'status-tab', view: 'status', state: null };
+    const pages: unknown[] = [
+        {
+            id: 'doc-page',
+            label: t('ui.page_default', 1),
+            workbench: {
+                root: {
+                    kind: 'pane',
+                    tabs: [
+                        ...(statusSecond ? [...before, status] : [status, ...before]),
+                        { id: 'doc-tab', view: 'doc', state }
+                    ],
+                    active: 'doc-tab'
+                }
+            }
+        }
+    ];
+    if (other !== undefined) {
+        pages.push({
+            id: 'other-page',
+            label: t('ui.page_default', 2),
+            workbench: { root: { kind: 'pane', tabs: other.tabs, active: other.active } }
+        });
+    }
+    const saved = JSON.stringify({ version: 4, pages, current: 'doc-page' });
+    await page.addInitScript(
+        ({ key, value }) => {
+            try {
+                if (localStorage.getItem(key) === null) localStorage.setItem(key, value);
+            } catch {
+                // A storage the browser refuses leaves the page to start as a fresh one would.
+            }
+        },
+        { key: LAYOUT_KEY, value: saved }
+    );
+    await boot(page);
+}
+
+/** The state the saved layout holds for the seeded document tab, or null when it holds none. */
+async function savedDocState(page: Page): Promise<unknown> {
+    return page.evaluate((key) => {
+        const find = (node: unknown): unknown => {
+            if (Array.isArray(node)) {
+                for (const one of node) {
+                    const found = find(one);
+                    if (found !== null) return found;
+                }
+                return null;
+            }
+            if (typeof node !== 'object' || node === null) return null;
+            const held = node as Record<string, unknown>;
+            if (held.id === 'doc-tab' && held.view === 'doc') return held.state;
+            return find(Object.values(held));
+        };
+        return find(JSON.parse(localStorage.getItem(key) ?? 'null'));
+    }, LAYOUT_KEY);
+}
+
+test('a saved document tab whose path left the list follows the entry carrying its label', async ({
+    page
+}) => {
+    // revert: src/lib/views/sources/doc/Doc.svelte:70 => delete
+    const stale = HPC.path.slice(HPC.path.lastIndexOf('/') + 1);
+    expect(stale).not.toBe(HPC.path);
+    writeHubFile(HPC.path, HOWTO);
+    try {
+        await bootWithDocTab(page, { id: stale, path: stale, label: HPC.label });
+
+        await expect(page.getByRole('heading', { name: 'The cluster' })).toBeVisible();
+        await expect
+            .poll(() => savedDocState(page))
+            .toEqual({ id: HPC.path, path: HPC.path, label: HPC.label });
+    } finally {
+        removeFromHub(HPC.path);
+    }
+});
+
+test('a saved document tab matching no entry names the path it asked for', async ({ page }) => {
+    // revert: src/lib/views/sources/doc/Doc.svelte:105 => <Empty message={t('doc.none')} glyph={t('doc.none_glyph')} />
+    await bootWithDocTab(page, { id: 'GONE.md', path: 'GONE.md', label: 'Gone' });
+
+    await expect(page.getByText(t('doc.unlisted', 'GONE.md'))).toBeVisible();
+    // No entry matched, so the tab keeps the path it was saved with.
+    expect(await savedDocState(page)).toEqual({ id: 'GONE.md', path: 'GONE.md', label: 'Gone' });
+});
+
+/** The state of every document tab the saved layout holds, by tab id. */
+async function savedDocTabs(page: Page): Promise<Record<string, unknown>> {
+    return page.evaluate((key) => {
+        const found: Record<string, unknown> = {};
+        const walk = (node: unknown): void => {
+            if (Array.isArray(node)) {
+                for (const one of node) walk(one);
+                return;
+            }
+            if (typeof node !== 'object' || node === null) return;
+            const held = node as Record<string, unknown>;
+            if (held.view === 'doc' && typeof held.id === 'string') found[held.id] = held.state;
+            for (const value of Object.values(held)) walk(value);
+        };
+        walk(JSON.parse(localStorage.getItem(key) ?? 'null'));
+        return found;
+    }, LAYOUT_KEY);
+}
+
+test('a saved document tab whose entry another tab already shows closes into that tab', async ({
+    page
+}) => {
+    // revert: src/lib/views/sources/doc/Doc.svelte:68 => const open = openElsewhere('');
+    const stale = HPC.path.slice(HPC.path.lastIndexOf('/') + 1);
+    expect(stale).not.toBe(HPC.path);
+    const current = { id: HPC.path, path: HPC.path, label: HPC.label };
+    writeHubFile(HPC.path, HOWTO);
+    try {
+        // The Status tab sits between the two, so the pane settling on a neighbour after the close
+        // would show Status: the document drawn means the other tab was made active.
+        // revert: src/lib/views/sources/doc/Doc.svelte:75 => delete
+        await bootWithDocTab(
+            page,
+            { id: stale, path: stale, label: HPC.label },
+            [{ id: 'doc-current', view: 'doc', state: current }],
+            { statusSecond: true }
+        );
+
+        await expect(page.getByRole('heading', { name: 'The cluster' })).toBeVisible();
+        await expect(page.getByRole('tab', { name: HPC.label })).toHaveCount(1);
+        await expect(page.getByRole('tab', { name: HPC.label })).toHaveAttribute(
+            'aria-selected',
+            'true'
+        );
+        // The stale tab went, and the one left is the tab that already held the path.
+        await expect.poll(() => savedDocTabs(page)).toEqual({ 'doc-current': current });
+    } finally {
+        removeFromHub(HPC.path);
+    }
+});
+
+test("a saved document tab whose entry a tab on another page shows closes, and that tab becomes its page's active one", async ({
+    page
+}) => {
+    // revert: src/lib/views/sources/doc/Doc.svelte:75 => delete
+    const stale = HPC.path.slice(HPC.path.lastIndexOf('/') + 1);
+    const current = { id: HPC.path, path: HPC.path, label: HPC.label };
+    writeHubFile(HPC.path, HOWTO);
+    try {
+        await bootWithDocTab(page, { id: stale, path: stale, label: HPC.label }, [], {
+            other: {
+                tabs: [
+                    { id: 'doc-current', view: 'doc', state: current },
+                    { id: 'status-other', view: 'status', state: null }
+                ],
+                active: 'status-other'
+            }
+        });
+
+        await expect.poll(() => savedDocTabs(page)).toEqual({ 'doc-current': current });
+        await expect.poll(() => activeOf(page, 'other-page')).toBe('doc-current');
+    } finally {
+        removeFromHub(HPC.path);
+    }
+});
+
+/** The id of the active tab the saved layout holds for one page's single pane. */
+async function activeOf(page: Page, id: string): Promise<string | null> {
+    return page.evaluate(
+        ({ key, id }) => {
+            const saved = JSON.parse(localStorage.getItem(key) ?? 'null') as {
+                pages?: { id: string; workbench: { root: { active?: string } } }[];
+            } | null;
+            const held = saved?.pages?.find((one) => one.id === id);
+            return held?.workbench.root.active ?? null;
+        },
+        { key: LAYOUT_KEY, id }
+    );
+}

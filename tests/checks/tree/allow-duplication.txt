@@ -32,7 +32,6 @@ src/lib/server/git/deposit.ts src/lib/state/system/deposit.svelte.ts d1ae18af96c
 src/lib/server/content/docs.ts src/lib/server/files/files.ts 20b06154f5e8 the same 8 lines at 86 and 64, to fold into one place
 src/lib/server/content/docs.ts src/lib/server/files/fs.ts 20b06154f5e8 the same 8 lines at 86 and 211, to fold into one place
 src/lib/server/content/docs.ts src/lib/server/files/fs/notes.ts 20b06154f5e8 the same 8 lines at 86 and 35, to fold into one place
-src/lib/server/content/docs.ts src/lib/server/files/project-files.ts 5620563406c5 the same 8 lines at 74 and 93, to fold into one place
 src/lib/server/edit/entry-edit/lines.ts src/lib/server/edit/yaml-edit.ts a24957db905f the same 8 lines at 290 and 400, to fold into one place
 src/lib/server/files/files.ts src/lib/server/files/fs.ts 20b06154f5e8 the same 8 lines at 64 and 211, to fold into one place
 src/lib/server/files/files.ts src/lib/server/files/fs/notes.ts 20b06154f5e8 the same 8 lines at 64 and 35, to fold into one place
@@ -300,8 +299,6 @@ tests/state/boards/collection.test.ts tests/views/boards/project.test.ts bec0f2c
 tests/state/boards/collection.test.ts tests/views/boards/projects.test.ts 9537ea52b205 the same 8 lines at 509 and 80, to fold into one place
 tests/state/boards/collection.test.ts tests/views/sessions/sessions.test.ts 9537ea52b205 the same 8 lines at 509 and 788, to fold into one place
 tests/state/boards/collection.test.ts tests/views/academic/slides.test.ts 964ac956944f the same 8 lines at 511 and 44, to fold into one place
-tests/state/system/docs.test.ts tests/state/sources/files.test.ts 8bf447937a82 the same 8 lines at 22 and 20, to fold into one place
-tests/state/system/docs.test.ts tests/state/sources/files.test.ts c51a63177e66 the same 8 lines at 42 and 57, to fold into one place
 tests/state/feeds/feeds.test.ts tests/state/boards/focus-lanes.test.ts 964ac956944f the same 8 lines at 68 and 23, to fold into one place
 tests/state/feeds/feeds.test.ts tests/state/boards/focus-lanes.test.ts fc58594fe2fe the same 8 lines at 113 and 60, to fold into one place
 tests/state/feeds/feeds.test.ts tests/state/boards/focus.test.ts 3538d24336d3 the same 8 lines at 115 and 49, to fold into one place

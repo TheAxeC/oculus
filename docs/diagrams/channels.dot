@@ -68,6 +68,7 @@ digraph channels {
         "views/feeds/radar";
         "views/sessions/terminal";
         "views/shared/card";
+        "views/sources/doc";
         "views/structure/domains";
         "views/structure/map";
         "views/structure/pillars";
@@ -97,6 +98,7 @@ digraph channels {
     "ch config" -> "state/workbench/palette-source";
     "ch config" -> "views/feeds/leads";
     "ch config" -> "views/feeds/radar";
+    "ch config" -> "views/sources/doc";
     "ch config" -> "views/system/config";
     "ch config" -> "views/system/findings";
     "ch config" -> "views/system/usage";

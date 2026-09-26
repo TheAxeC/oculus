@@ -21,6 +21,11 @@
 // process that has published no portfolio yet has no snapshot to ask, and the folder is then the
 // project's own folder under the hub's scan directories, found by the id it is named after.
 //
+// Every file answered carries an entity tag of its size and modification time, and a request that
+// sends the tag it holds back in If-None-Match is answered 304 while the file is unchanged. The
+// page asks again after every write that may concern a document, which on a busy hub is every few
+// seconds, so the stat is what keeps a re-read of an unchanged file from rendering it again.
+//
 // The HTML is rendered here and filtered on the page: ui/html.ts's sanitise runs over every body
 // this route answers with, before views/boards/project/Project.svelte draws it. One filter, at the
 // one place the markup becomes a document, so this route stays the reader of a file and nothing
@@ -63,20 +68,50 @@ export const MARKDOWN_DOCS = [
     PRESENT_DOC
 ];
 
-/** What the endpoint answers with: the rendered document, and the frontmatter block it had. */
-export type DocAnswer = { html: string; frontmatter: Record<string, unknown> | null };
+/**
+ * What the endpoint answers with: the rendered document, the frontmatter block it had, and the
+ * absolute path of the file read. The page holds the path to tell which `files` events concern the
+ * document: an event names the watched root a write landed under, and only a root that holds this
+ * file can have changed it.
+ */
+export type DocAnswer = {
+    html: string;
+    frontmatter: Record<string, unknown> | null;
+    file: string;
+};
 
-/** A document is asked for again whenever the tab is shown, so nothing here is ever cached. */
+/**
+ * A document is asked for again whenever a write may have changed it, and the page itself asks
+ * with the tag it holds, so the browser keeps nothing: the tag below is what spares the render.
+ */
 const CACHE = 'no-store';
 
 /** The query parameter that asks for the manual instead of a project's or the hub's document. */
 export const MANUAL_PARAM = 'manual';
 
-function json(status: number, body: unknown): Response {
-    return new Response(JSON.stringify(body), {
-        status,
-        headers: { 'content-type': 'application/json', 'cache-control': CACHE }
-    });
+function json(status: number, body: unknown, tag = ''): Response {
+    const headers: Record<string, string> = {
+        'content-type': 'application/json',
+        'cache-control': CACHE
+    };
+    if (tag !== '') headers.etag = tag;
+    return new Response(JSON.stringify(body), { status, headers });
+}
+
+/**
+ * The entity tag of one file: its size and modification time, one stat and no read. The empty
+ * string for a path that is not a file, which is then never answered 304. A tag changes whenever
+ * either does, which is every write that can change the rendered text; a write that keeps both
+ * (the same bytes rewritten within the clock's resolution) keeps what the page holds, which is
+ * the same document.
+ */
+export function fileTag(path: string): string {
+    try {
+        const stat = statSync(path);
+        return stat.isFile() ? `"${String(stat.size)}-${String(stat.mtimeMs)}"` : '';
+    } catch {
+        return '';
+    }
 }
 
 /** Whether a path is the folder itself or sits inside it. */
@@ -238,19 +273,29 @@ export function renderMarkdown(
 
 /**
  * One read file as the endpoint's answer, or the 404 the read failed with, in the catalog's words.
+ * A request that already holds the file's current tag is answered 304 with no body, so a re-read
+ * of an unchanged file costs one stat and no render. Both answers name the file, so the page can
+ * tell a later write to it from a write elsewhere whether the file was there or not.
  */
 function answer(
     path: string,
     base: { root: string; folder: string } | null,
-    catalog: Record<string, string>
+    catalog: Record<string, string>,
+    held: string
 ): Response {
-    const read = readDoc(path, catalog);
-    if (isFinding(read)) return json(404, { error: read.message });
+    const file = resolve(path);
+    const tag = fileTag(file);
+    if (tag !== '' && tag === held) {
+        return new Response(null, { status: 304, headers: { etag: tag, 'cache-control': CACHE } });
+    }
+    const read = readDoc(file, catalog);
+    if (isFinding(read)) return json(404, { error: read.message, file });
     const body: DocAnswer = {
         html: renderMarkdown(read.text, base),
-        frontmatter: read.frontmatter
+        frontmatter: read.frontmatter,
+        file
     };
-    return json(200, body);
+    return json(200, body, tag);
 }
 
 /**
@@ -258,7 +303,7 @@ function answer(
  * route does not serve, an id the reader does not know, a path that would leave the hub, and a file
  * that is not there or whose frontmatter does not parse.
  */
-export function renderDoc(into: DocTarget, id: string, name: string): Response {
+export function renderDoc(into: DocTarget, id: string, name: string, held = ''): Response {
     if (!MARKDOWN_DOCS.includes(name)) {
         return json(404, { error: `not a document this route serves: ${name}` });
     }
@@ -268,7 +313,12 @@ export function renderDoc(into: DocTarget, id: string, name: string): Response {
     const path = join(into.hub, folder, name);
     if (escapes(path, into.hub)) return json(404, { error: 'the document is not inside the hub' });
 
-    return answer(path, { root: HUB_ROOT, folder: dirname(join(folder, name)) }, into.config.text);
+    return answer(
+        path,
+        { root: HUB_ROOT, folder: dirname(join(folder, name)) },
+        into.config.text,
+        held
+    );
 }
 
 /**
@@ -278,13 +328,13 @@ export function renderDoc(into: DocTarget, id: string, name: string): Response {
  * a path climbing out of it is a 404 and nothing is opened. The hub's own files are already served
  * to this page by api/file under the `hub` root; this is the same ground, rendered as prose.
  */
-export function renderHubDoc(into: DocTarget, path: string): Response {
+export function renderHubDoc(into: DocTarget, path: string, held = ''): Response {
     if (path === '' || !path.endsWith('.md')) {
         return json(404, { error: `not a document this route serves: ${path}` });
     }
     const full = join(into.hub, path);
     if (escapes(full, into.hub)) return json(404, { error: 'the document is not inside the hub' });
-    return answer(full, { root: HUB_ROOT, folder: dirname(path) }, into.config.text);
+    return answer(full, { root: HUB_ROOT, folder: dirname(path) }, into.config.text, held);
 }
 
 /**
@@ -391,8 +441,8 @@ export const MANUAL = 'HELP.md';
  * and it is a constant rather than anything the request names: the `engine` root of api/file is the
  * config folder alone, so the manual has no other way to the page.
  */
-export function renderManual(into: DocTarget): Response {
-    return answer(join(into.engine, MANUAL), null, into.config.text);
+export function renderManual(into: DocTarget, held = ''): Response {
+    return answer(join(into.engine, MANUAL), null, into.config.text, held);
 }
 
 /**
@@ -405,12 +455,14 @@ export function handleDocs(request: Request, into: DocTarget): Response {
         return json(403, { error: 'the request did not come from this page' });
     }
     const url = new URL(request.url);
-    if (url.searchParams.has(MANUAL_PARAM)) return renderManual(into);
+    const held = request.headers.get('if-none-match') ?? '';
+    if (url.searchParams.has(MANUAL_PARAM)) return renderManual(into, held);
     const hub = url.searchParams.get(HUB_ROOT);
-    if (hub !== null) return renderHubDoc(into, hub);
+    if (hub !== null) return renderHubDoc(into, hub, held);
     return renderDoc(
         into,
         url.searchParams.get('project') ?? '',
-        url.searchParams.get('name') ?? ''
+        url.searchParams.get('name') ?? '',
+        held
     );
 }

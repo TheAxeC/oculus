@@ -30,7 +30,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:      # X3b in flight (repair round 1) and Q76 beside it (disjoint paths). Nothing else is dispatched until X3b lands: X3a needs `server/core/git.ts` and the diff pane, L4 `src/lib/themes/`, Q35 and D13 the source tab, Q66 the views that re-read, all in X3b's paths; then Q77 alone (it changes the verification tooling), then X3a, X3c and L4
+dispatch:      # X3b in flight (repair round 1); Q76 landed 2026-09-26; Q78 beside X3b once specced. Nothing else is dispatched until X3b lands: X3a needs `server/core/git.ts` and the diff pane, L4 `src/lib/themes/`, Q35 and D13 the source tab, Q66 the views that re-read, all in X3b's paths; then Q77 alone (it changes the verification tooling), then X3a, X3c and L4
 - step: X3b
   executor: agent
   worker: claude:opus (native Agent, general-purpose)
@@ -42,18 +42,6 @@ dispatch:      # X3b in flight (repair round 1) and Q76 beside it (disjoint path
   refuter: agents/reviews/X3b-refuter.md (claude:opus, native Agent a8689ea922c90a936, 268,477 tokens, 101 tool uses, 57 min)
   landing: not-started
   round: 1  # sent 2026-09-26 over the uncommitted worktree tree at a8848c49: the refuter's 16 findings, each with its ruling, all inside the brief
-- step: Q76
-  executor: agent
-  worker: claude:opus (native Agent, general-purpose)
-  session_id: a2aa629ad1f8dd2f7
-  worktree: .agents/worktrees/Q76
-  base: c2e6dedc
-  launched: 2026-09-26
-  report: tools/oculus/.scratch/migration/agents/reviews/Q76-report.md (back 2026-09-26: 296,689 tokens, 128 tool uses, 6,794 s)
-  refuter: agents/reviews/Q76-refuter.md (claude:opus, native Agent a5533058c74485625, 172,955 tokens, 48 tool uses, 41 min; review earned: the step changes a state layer, a server module and a wire shape)
-  landing: not-started
-  round: 1  # sent 2026-09-26 over the uncommitted worktree tree at c2e6dedc: 7 findings of the refuter, each with its ruling, all inside the brief
-  round 1 report: back 2026-09-26 (in Q76-report.md, 333,796 tokens and 4,450 s cumulative for the builder); refuter over the round: claude:opus, native Agent a0e4c24b1d98c1f3c, dispatched 2026-09-26
 ```
 
 ## The standing demands (from Axel, in force)
@@ -309,6 +297,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-09-26. Q76 landed through /spec, /refute and /land, built by an Opus agent, one repair round, the run over the round refuted again and its six findings fixed at landing: document re-reads keep what is shown and answer 304 when unchanged, a write re-reads only the documents its root holds, a stale doc tab follows its entry or closes into the tab holding it; the moved documents' figure links fixed. Next: X3b's round report and its refutation; Q78 (the `[TOC]` line) waits on Axel's answer about libraries; then Q77 alone, then X3a, X3c and L4.
 - 2026-09-26. S2 landed through /spec, /refute and /land, built by an Opus agent, one repair round, the run over the round refuted again and its seven findings fixed at landing: the composer with its pickers from `config/catalogs/agents.yml` and the prompt passed after `--`, steer and Stop, the sessions list, Customizations, the Sessions page with its Files tab following the session (`state: { follow: true }` in `layout.yml`, Axel's ruling). The look on TEST under light and mocha found three things, fixed at landing: the composer's prompt box had no placeholder, a Files tab following nothing still said it had no roots and kept a stale breadcrumb, and the sessions search box cut its placeholder. On main: `npx vitest run` 5,134 passed in 330 files; `npm run check` 1,458 files 0 errors 0 warnings; build; `format:check`; `lint`; the ASCII gate prints nothing; size and folder checks exit 0; diagrams stable; `npx playwright test` 407 passed (6.7m); every revert directive of the changed tests red. S2's and Q67's builders stopped (`ListAgents`: killed). Next: X3a specced into the freed slot; X3b's repair round is running.
 - 2026-09-26. Q67 landed through /spec, /refute and /land, built by an Opus agent, one repair round, the run over the round refuted again and its findings fixed at landing: Add account and Remove in the Calendar and the Inbox, writing `local.yml` with its comments kept and read again live, an Account setup view per provider whose Save writes one client half under `~/.oculus/connect/` for every account, the Personal group on the chord `p` and `open_bin` in `local.yml` (Axel's rulings of 2026-09-26). Fixed at landing: the Inbox's and the Calendar's commands say a refusal, a missing answer and an unreadable one in catalog sentences (the Calendar gains a said line), an Add into an emptied flow list keeps a comment inside its brackets, the browser helper that deletes a served-home file asserts the home is inside the temporary directory, Q67's Doc text applied to HELP.md and DESIGN.md and the Config view's `local.yml` sentence to match. The `add` icon the Doc text proposed was not added: the Add control keeps `expand`, as the Memories wall's Add does. Next: S2's landing, then X3a into the freed slot.
 - 2026-09-25. Q75 (the channels diagram) stopped on Axel's order before its builder reported; its worktree and branch removed; the finding carried to Q72. Next: S2.
@@ -614,6 +603,9 @@ The plan.md lines shortened on 2026-09-25 (P1 the parity audit, S2, and Q67's St
 
 ## Usage
 
+- Q76, builder claude:opus, a native background agent: first run 296,689 tokens, 128 tool uses, 6,794 s; repair round 333,796 tokens, 40 tool uses, 4,450 s (the runner's cumulative figures); one repair round; first report did not pass its bar (a colliding restate, a transport failure dropping a drawn document, unnormalised roots, the Doc text short one rule); six fixes at landing; +1582 -538 over 23 files with the landing fixes and the docs links.
+- Q76, reviewers claude:opus read-only: the review through /refute 172,955 tokens, 48 tool uses, 2,470 s; the run over round 1 121,658 tokens, 31 tool uses, 1,795 s.
+- Q76 landing, orchestrator claude:opus (this session), `land/templates/usage.py` from S2's landing to the booking: 198 messages, 103,991 output tokens, 344,648 cache-write tokens, 48,481,841 cache-read tokens, 438 fresh input tokens, 335 minutes; shared with X3b's round, Q77's booking and Axel's questions.
 - Q70, builder claude:opus, a native background agent: first run 387,740 tokens, 204 tool uses, 10,675 s; repair round 411,822 tokens, 49 tool uses, 2,010 s; one repair round; first report did not pass its bar (the ctime rule dropped a symlink, a failed read counted as a read, the stale boot config left as a limitation, a diagram edge lost); fixes at landing 7 (the reconnect bound and the entities store's first message after a reconnect, the seed carrying its read only when stale, the seed cases' reverts and the page load's case, the server seed cases moved, the comments on the newest answered read, a duplicated helper and a folder over ten, the Doc text); +2,108 -1,317 over 22 files at the cherry-pick, +142 -93 over 12 files at landing.
 - Q70, reviewers claude:opus read-only: the review through /refute 162,292 tokens, 45 tool uses, 1,813 s; the run over round 1 157,579 tokens, 52 tool uses, 2,036 s.
 - Q70 landing, orchestrator claude:opus (this session), `land/templates/usage.py` from Q69's landing (2026-09-25T00:08:29) to the booking: 67 messages, 47,882 output tokens, 946,850 cache-write tokens, 60,372,935 cache-read tokens, 142 fresh input tokens, 303 minutes.
