@@ -30,7 +30,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:      # X3b in flight (repair round 1); Q76 landed 2026-09-26; Q78 beside X3b once specced. Nothing else is dispatched until X3b lands: X3a needs `server/core/git.ts` and the diff pane, L4 `src/lib/themes/`, Q35 and D13 the source tab, Q66 the views that re-read, all in X3b's paths; then Q77 alone (it changes the verification tooling), then X3a, X3c and L4
+dispatch:      # X3b in flight (repair round 1); Q76 landed 2026-09-26. The library audit in flight since 2026-09-26 (brief agents/briefs/library-audit.md), seven read-only claude:opus native agents, reports to agents/reviews/library-audit-<A..G>.md: A ui/shell/themes/routes af49fd0a79accb028, B views sources/shared/sessions a51132715a5e54a5e, C the other views a65bad722e0eb6ae9, D state acd26dc8f3faabb69, E server accounts/content/core/edit/files and data adcd0a7bd2b76bf8a, F server git/machine/root/sessions/transcripts aec8e578e84d203dd, G bin, checks, fixtures, helpers, root files ae036f85ae5791ee4. No step is specced or dispatched until the audit is ruled. Nothing else is dispatched until X3b lands: X3a needs `server/core/git.ts` and the diff pane, L4 `src/lib/themes/`, Q35 and D13 the source tab, Q66 the views that re-read, all in X3b's paths; then Q77 alone (it changes the verification tooling), then X3a, X3c and L4
 - step: X3b
   executor: agent
   worker: claude:opus (native Agent, general-purpose)
