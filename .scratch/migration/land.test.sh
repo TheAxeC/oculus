@@ -45,8 +45,7 @@ write_tool_stub() {
         "check": "echo check-stub",
         "build": "echo build-stub",
         "format:check": "echo format-stub",
-        "lint": "echo lint-stub",
-        "test:browser": "echo browser-stub"
+        "lint": "echo lint-stub"
     }
 }
 JSON
@@ -124,7 +123,7 @@ write_events "$clean_runs"
 
 (
     cd "$clean_repo" || exit 1
-    sh "$land_script" clean "$clean_base" "$clean_runs" --no-browser --session "$clean_runs/session.jsonl" --since 2026-09-16T12:00:00+02:00
+    sh "$land_script" clean "$clean_base" "$clean_runs" --session "$clean_runs/session.jsonl" --since 2026-09-16T12:00:00+02:00
 ) >"$test_root/clean.out" 2>&1
 clean_status=$?
 clean_output=$(cat "$test_root/clean.out")
@@ -182,7 +181,7 @@ mkdir -p "$conflict_runs"
 
 (
     cd "$conflict_repo" || exit 1
-    sh "$land_script" conflict "$conflict_base" "$conflict_runs" --no-browser
+    sh "$land_script" conflict "$conflict_base" "$conflict_runs"
 ) >"$test_root/conflict.out" 2>&1
 conflict_status=$?
 conflict_output=$(cat "$test_root/conflict.out")

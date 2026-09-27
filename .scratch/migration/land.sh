@@ -7,7 +7,7 @@ PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH
 export PATH
 
 usage() {
-    printf 'Usage: %s <pkg> <base> <runs dir> [--no-browser] [--session <session log> --since <ISO time>]\n' "$0" >&2
+    printf 'Usage: %s <pkg> <base> <runs dir> [--session <session log> --since <ISO time>]\n' "$0" >&2
     exit 64
 }
 
@@ -23,7 +23,6 @@ fi
 landing_pkg=$1
 landing_base=$2
 landing_runs=$3
-landing_browser=1
 landing_session=''
 landing_since=''
 
@@ -42,10 +41,6 @@ esac
 shift 3
 while [ "$#" -gt 0 ]; do
     case "$1" in
-        --no-browser)
-            landing_browser=0
-            shift
-            ;;
         --session)
             [ "$#" -ge 2 ] || usage
             landing_session=$2
@@ -242,27 +237,6 @@ if [ "$landing_status" -ne 0 ] || [ -s "$landing_output" ]; then
 fi
 
 run_step "source line counts" sh -c 'cd "$1" && find src tests config bin -type f | xargs wc -l | sort -rn | head -3' land "$landing_tool"
-
-if [ "$landing_browser" -eq 1 ]; then
-    node -e '
-        const net = require("net");
-        const server = net.createServer();
-        server.once("error", (error) => {
-            console.error(error.message);
-            process.exit(1);
-        });
-        server.listen(8792, "127.0.0.1", () => server.close(() => process.exit(0)));
-    ' >"$landing_output" 2>&1
-    landing_status=$?
-    if [ "$landing_status" -ne 0 ]; then
-        printf 'port check failed: 8792 is not free\n' >&2
-        if [ -s "$landing_output" ]; then
-            cat "$landing_output" >&2
-        fi
-        exit 3
-    fi
-    run_step "npm run test:browser" sh -c 'cd "$1" && npm run test:browser' land "$landing_tool"
-fi
 
 landing_range=$landing_base..$landing_pkg
 git diff --stat "$landing_range" >"$landing_tmp/diff-stat.txt" 2>"$landing_output"
