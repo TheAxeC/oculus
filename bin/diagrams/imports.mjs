@@ -1,6 +1,6 @@
 // Layer 4, tool. The one reader of a module's imports, which the import checks under
 // tests/checks/imports/ and the diagrams of bin/diagrams/ both call, so the two cannot read a
-// module apart.
+// module apart; bin/revert-check/base.mjs reuses its parsed() to find the cases of a test file.
 //
 // A module is read by the parsers the project already builds with, never by a pattern over its
 // text: a TypeScript or JavaScript module by the TypeScript compiler's own parse, and a component

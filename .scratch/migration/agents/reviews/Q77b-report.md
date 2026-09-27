@@ -57,3 +57,46 @@ Everything in the brief is done. One exception is a verdict of the brief's first
 - A case named by a template with substitutions is never found by the parse, so it is always proven. Its directives are safe, but they cost a run.
 - A test file with two cases of one name is always proven, including the case with no directive, which is listed as `unchecked` as before.
 - No new dependency. No git command was run.
+
+## Round 1
+
+Everything in the round is done. One change goes beyond the seven items: a timeout on ten test cases, described after the item list.
+
+## Per item
+
+1. **Syntax errors through the public API.** `bin/revert-check/base.mjs:67-68`: `const options = { fileName: file, reportDiagnostics: true, compilerOptions: {} };` then `if (ts.transpileModule(text, options).diagnostics.length > 0) return null;`. `parsed()` is still what finds the cases, at `:69`. The head comment (`:11`) and the `casesOf` doc comment now say "the compiler reports a syntax error". Probe on the worktree: `expect(1 });` gives codes `[1005, 1128, 1128]`; a clean `.js` or `.ts` case gives `[]`. The test "proves a directive of a file the parse cannot read..." now names this line (red at `base.mjs:68`).
+2. **Dynamic import.** The static import is gone. `bin/revert-check/revert-check.mjs:178-180` imports `./base.mjs` only when a `--base` is given. Checked with a resolve hook registered through `node --import` over `revert-check.mjs README.md`:
+   - Without `--base`, no module is logged.
+   - With `--base`, it logs `loaded bin/revert-check/base.mjs`, `typescript/lib/typescript.js`, `@sveltejs/acorn-typescript/index.js` and `phases/1-parse/remove_typescript_nodes.js`.
+3. **Callers in the head comment of `bin/diagrams/imports.mjs`.** Only `:3` changed: "module apart; bin/revert-check/base.mjs reuses its parsed() to find the cases of a test file."
+4. **Comment width.** The head comment of `base.mjs` (`:6-14`) is rewrapped. `awk 'length > 100 && /\/\// && !/revert:/'` over `bin/revert-check/*.mjs`, `bin/diagrams/imports.mjs` and `revert-base.test.ts` prints nothing.
+5. **`--base` twice, or naming the tree checked.**
+   - `readArgs()` at `revert-check.mjs:93` now collects every `--base` into `bases`.
+   - `badBase(tree, bases)` at `:122-127` refuses a second `--base` (`:124`), a path that is not a folder, and the same real path as the tree (`:126`, `real()` from `directives.mjs`, which wraps `realpathSync`). `main()` calls it at `:170`.
+   - The head comment at `:73-75` says so.
+   - New tests: "answers a --base given twice with the usage" (revert `:124`) and "answers a --base naming the tree checked, by its path or through a link, with the usage" (revert `:126`; it tries the path itself and a symlink to it).
+   - The existing usage test's directive now names `if (files.length === 0 || badBase(tree, bases)) {`.
+6. **Unchecked listing under `--base`.** New tests:
+   - "lists a case with no directive whose body changed": revert `base.mjs:126`, `caseUnchanged` => `() => true`.
+   - "lists a case with no directive in a file whose text outside its cases changed": revert on the unchecked loop, `revert-check.mjs:206` => `if (same !== null) continue;`.
+   - Each asserts `unchecked tests/rule.test.js :: answers a size over the limit`, then `0 reverts, 0 unproven, 1 unchecked, 0 unchanged`, exit 1.
+7. **`<commit>` in the head comment.** `revert-check.mjs:78` now reads "`git diff --name-only <commit>` prints".
+
+## Beyond the items: timeout on ten cases
+
+- **Why:** the first run of `revert-base.test.ts` this round gave `Tests  1 failed | 16 passed (17)`. The next four runs gave 17 of 17, and I did not keep the first run's failure output.
+- **Evidence for the cause:** the verbose reporter shows "proves the directives of two cases that share a name" at 4297ms and the parse case at 2673ms. The vitest default timeout is 5s, and neither `vite.config.ts` nor the file set one.
+- **Change:** the ten cases that start Vitest over a fixture now take `LONG = { timeout: 60000 }` (`revert-base.test.ts`, after `afterEach`). This is the tree's own pattern (`revert-check.test.ts` has `LONG = { timeout: 180000 }`). No assertion changed.
+- **Not verified:** that the timeout was what failed, because the failure did not recur. If you want only the seven items, this is the change to drop.
+
+## Checks, once each, from the worktree's tools/oculus
+
+- `npx vitest run tests/checks/bin --reporter=dot`: `Test Files  9 passed (9)` / `Tests  105 passed (105)`
+- `npm run check`: `COMPLETED 1516 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS`
+- `npm run format:check`: `All matched files use Prettier code style!`
+- `npm run lint`: exit 0
+- ASCII gate (the perl form): no output
+- `sh bin/size-check.sh`: exit 0. `sh bin/folder-check.sh`: exit 0
+- `node bin/revert-check/revert-check.mjs tests/checks/bin/revert-base.test.ts`: 17 lines `red`, `17 reverts, 0 unproven, 0 unchecked`, exit 0. `94.97 real`, load averages 2.91 before and 6.55 after.
+
+File sizes (`wc -l`): `base.mjs` 143, `revert-check.mjs` 217, `revert-base.test.ts` 297. No git command was run, and nothing was written to the ledger.

@@ -113,18 +113,35 @@ export function withLockingCase(dir: string): string {
     return `chmodSync(${JSON.stringify(full)}, 0);`;
 }
 
+/** The check with the arguments given, under the environment given. */
+export function runArgs(
+    args: string[],
+    env: NodeJS.ProcessEnv = process.env
+): { out: string; status: number | null } {
+    const held = spawnSync('node', ['bin/revert-check/revert-check.mjs', ...args], {
+        cwd: process.cwd(),
+        encoding: 'utf8',
+        env
+    });
+    return { out: held.stdout, status: held.status };
+}
+
 /** The check over the fixture, as the verification list runs it, with the environment given. */
 export function run(
     dir: string,
     files: string[],
     env: NodeJS.ProcessEnv = process.env
 ): { out: string; status: number | null } {
-    const held = spawnSync('node', ['bin/revert-check/revert-check.mjs', '--root', dir, ...files], {
-        cwd: process.cwd(),
-        encoding: 'utf8',
-        env
-    });
-    return { out: held.stdout, status: held.status };
+    return runArgs(['--root', dir, ...files], env);
+}
+
+/** The check over the fixture, with the folder of the tree its change starts from. */
+export function runOver(
+    dir: string,
+    base: string,
+    files: string[]
+): { out: string; status: number | null } {
+    return runArgs(['--root', dir, '--base', base, ...files]);
 }
 
 /** Where directives() resolves one directive to, or the problem that leaves it unproven. */

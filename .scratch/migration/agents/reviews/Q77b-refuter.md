@@ -90,3 +90,94 @@ Verification lines (run from the worktree's `tools/oculus`):
 - Check 8 (`revert-check.mjs tests/checks/bin/revert-base.test.ts` without `--base`): I proved three directives by hand only.
 - The whole unit suite, `npm test`, `npm run build` and the browser suite.
 - Whether any caller outside the tree passes an argument named `--base` as a file. Inside the tree, grep finds no caller of revert-check with arguments other than the fixture helpers.
+
+## Repair round 1, refuted
+
+Verification lines, verbatim, run from the worktree's `tools/oculus`:
+
+- `npx vitest run tests/checks/bin --reporter=dot`: `Test Files  9 passed (9)` / `Tests  105 passed (105)`
+- `npm run check`: `COMPLETED 1516 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS`
+- `npm run format:check`: `All matched files use Prettier code style!`
+- `npm run lint`: `lint exit 0`
+- ASCII gate (the rules file's perl form): no output, `ascii exit 0`
+- `sh bin/size-check.sh`: `size exit 0`. `sh bin/folder-check.sh`: `folder exit 0`
+- `node bin/revert-check/revert-check.mjs --base . --base . tests/checks/bin/revert-base.test.ts`: `usage: node bin/revert-check/revert-check.mjs [--root <dir>] [--base <dir>] <file> [<file> ...]`, `exit 2`
+- `node bin/revert-check/revert-check.mjs --base . tests/checks/bin/revert-base.test.ts`: `usage: node bin/revert-check/revert-check.mjs [--root <dir>] [--base <dir>] <file> [<file> ...]`, `exit 2`
+- `node bin/revert-check/revert-check.mjs tests/checks/bin/revert-base.test.ts`: 17 lines `red`, then `17 reverts, 0 unproven, 0 unchecked`, `exit 0`, `real 82.84` (load averages 2.95 before, 5.88 after).
+- `git status --short` at the end: the same five paths as at the start (3 `M`, 2 `??`).
+
+## Closures
+
+1. **Syntax errors from `transpileModule`: closed.** At `base.mjs:67-68`: `const options = { fileName: file, reportDiagnostics: true, compilerOptions: {} };` / `if (ts.transpileModule(text, options).diagnostics.length > 0) return null;`. A probe with `ts.transpileModule` (typescript `6.0.3`):
+   - `it("x", () => { expect(1 }); });` as `.js` gives `[ 1005, 1128, 1128 ]`.
+   - A clean `.js` or `.ts` case gives `[]`.
+   - A type error (`const x: number = "s"`) gives `[]`, so no semantic check leaks in.
+   - Over all 408 `*.test.ts`, `*.spec.ts` and `*.test.js` files under `tests`, `408 files 0 with diagnostics`, so no current test file is newly treated as unparsable.
+   - The case's directive at `base.mjs:68` reverts red in the run above.
+2. **Dynamic import: closed.**
+   - `grep` of the imports: `revert-check.mjs:82-87` imports only `node:*`, `./directives.mjs`, `./copy.mjs` and `./memory.mjs`. `base.mjs` is loaded only at `:180`, `(await import('./base.mjs'))`, when `bases.length !== 0`.
+   - No other module imports `base.mjs`.
+   - `/usr/bin/time -p node bin/revert-check/revert-check.mjs README.md` gives `real 0.04`, `0.02` and `0.02`. The first review measured 0.33 s for loading `base.mjs` alone.
+3. **Head comment of `imports.mjs`: closed.** `:3` reads `module apart; bin/revert-check/base.mjs reuses its parsed() to find the cases of a test file.`
+4. **Rewrap of the `base.mjs` head comment: closed for the head comment** (`:1-14`, every line 100 or less). The builder's width proof does not hold for the file as a whole: see Standards 1.
+5. **`--base` twice, or naming the tree: closed.**
+   - `badBase()` is at `revert-check.mjs:122-127` and is called at `:170`.
+   - My two runs above give the usage line and exit 2.
+   - Test "answers a --base given twice with the usage": the revert `if (bases.length > 1) return true;` => delete lets the run proceed with the one folder. `UNDER` is the same in both fixtures, so the directive prints `unchanged` and no usage appears. Red, confirmed by the run (`revert-check.mjs:124`).
+   - Test "answers a --base naming the tree checked, by its path or through a link": the revert `return real(bases[0]) === real(tree);` => `return false;` compares the tree with itself, so every line is `unchanged` and there is no usage. Red, confirmed (`:126`). The symlink variant exercises `realpathSync` through `real()` (`directives.mjs:250-253`).
+6. **Two tests of the unchecked listing: closed.**
+   - "lists a case with no directive whose body changed": the revert `caseUnchanged: () => true` skips the changed case, so the expected `unchecked` line is missing. Red (`base.mjs:126`).
+   - "lists a case with no directive in a file whose text outside its cases changed": the revert `if (same !== null) continue;` skips every case without a directive. Red (`revert-check.mjs:206`).
+   - I also checked the second test against a deletion of the `outside` comparison at `base.mjs:116`. The case's full text is `"\n\nit(..."` in both fixtures, so the case compares equal, it goes unlisted, and the test is red there too.
+7. **`<commit>`: closed.** `revert-check.mjs:78` reads "`git diff --name-only <commit>` prints".
+8. **Timeout: acceptable, not a loosening.**
+   - `vite.config.ts` sets no `testTimeout` (grep prints nothing), so the Vitest default of 5 s applies. The builder reports 4297 ms for one case; I did not re-measure it.
+   - It is the tree's pattern: `revert-check.test.ts:53` has `const LONG = { timeout: 180000 };`, with `{ timeout: 60000 }` at `:230` and `{ timeout: 120000 }` at several other cases.
+   - `grep -c ", LONG, "` gives `10`. The seven cases without it (`:184, 202, 222, 258, 271, 279, 287`) are exactly those that start no Vitest run: usage, refusal, a directive printed `unchanged`, or no directive.
+   - It bounds run time only. No assertion or predicate changed.
+   - The builder's cause (a 5 s timeout on the one failed run) is not verified, as the report says.
+
+## Spec
+None. The round's changes are the seven items plus the timeout. `bin/diagrams/imports.mjs` is outside the brief's path list, but the round's item 3 asked for that change.
+
+## Proof
+None. All 17 directives are red in the revert-check run above, including the four new ones (`revert-check.mjs:124`, `:126`, `:206` and `base.mjs:126`) and the retargeted ones (`base.mjs:68`, `revert-check.mjs:170`).
+
+## Standards
+1. **`bin/revert-check/base.mjs:63` is 109 characters**, a comment line this round wrote when it reworded the `casesOf` doc comment for item 1: `     * every case taken out; null where the compiler reports a syntax error. A case is not walked into, so a call`. The brief's Conventions require comments to "end by the hundredth column".
+   - The builder's width proof, `awk 'length > 100 && /\/\// && !/revert:/'`, only matches `//` lines, so it cannot see a JSDoc line, and its "prints nothing" does not cover this file.
+   - `awk 'length > 100'` finds the line.
+   - Other lines over 100 in the diff:
+     - revert directives, which the tree keeps on one line;
+     - `revert-base.test.ts:287` (101), a code line that Prettier (printWidth 100) produces and passes.
+2. Otherwise none. Checked:
+   - ASCII gate clean.
+   - Sizes (`wc -l`): `base.mjs` 143, `revert-check.mjs` 217, `revert-base.test.ts` 297, `revert-fixture.ts` 403.
+   - Folders: `tests/checks/bin` holds 10 entries and `bin/revert-check` holds 5; folder-check passes.
+   - No history in comments.
+   - The head comments of `revert-check.mjs:73-75` and `revert-base.test.ts:5-7` name the new refusals. No sentence I read is made false.
+
+## Behaviour
+None that is a defect.
+- `casesOf` now parses each file twice: once inside `transpileModule` and once through `parsed()`.
+- On `revert-check.test.ts` (898 lines), `transpileModule` takes 44.5, 12.9 and 9.1 ms against 2.7, 1.8 and 1.5 ms for `createSourceFile`, once per file per folder per run. This is noted, not a finding.
+- `transpileModule` also reports TypeScript-only syntax in a `.js` file (code 8010 class) as a syntax error. Such a file is then proven, never left out, which is the safe direction.
+
+## Not checked
+- The whole unit suite, `npm test`, `npm run build` and the browser suite.
+- The brief's Case 1 and Case 2 runs over `revert-check.test.ts`, with and without `--base`.
+- Whether the builder's single failed run was a timeout.
+- One incident: during a probe, a command of mine copied a scratch script to `tools/oculus/.probe-review.mjs` in the worktree. I deleted it straight away; `ls -a | grep -c probe-review` gives `0`, and `git status --short` shows the same five paths as at the start.
+
+## Closed
+
+- First review, Spec 2 and 3 (the builder's two added conditions): accepted as built; they only prove more.
+- First review, Spec 4 and Behaviour 1 (svelte/compiler on every run; the imports.mjs head comment): closed in round 1 (items 2 and 3).
+- First review, Spec 6 (parseDiagnostics): closed in round 1 (item 1).
+- First review, Proof 2 (unchecked listing untested): closed in round 1 (item 6).
+- First review, Standards 1 (base.mjs:7 width): closed in round 1 (item 4).
+- First review, Standards 2 and Behaviour 2 (--base twice, --base naming the tree): closed in round 1 (item 5).
+- First review, Standards 3 (base in the git sentence): closed in round 1 (item 7).
+- First review, Spec 5 (Case 1 cannot print 42 unchanged): the brief was wrong; 39 unchanged and 3 red is correct.
+- First review, Behaviour 3 and 4: the usage line change is item 4; the imported-helper limit is stated in the head comment, as the brief asked.
+- Round review, Standards 1 (base.mjs:63 at 109 columns): fixed at landing.

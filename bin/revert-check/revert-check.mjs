@@ -59,29 +59,71 @@
 // exit status, since a case nothing proves is what this exists to find; the argument list is what
 // the caller vouches for, so a file whose cases the caller does not own is left off it.
 //
-// It runs no git command: the files to read are the argument list, which is what
-// `git diff --name-only <base>` prints. Usage:
+// With `--base <dir>`, a folder holding the tree the change starts from, the check proves only what
+// the change added or changed. A directive is left out, its line `unchanged`, where the base holds
+// its test file and its target, the target's text is the same, the file holds one case of the
+// directive's case name in each folder with the same text, the directive's line inside it, and the
+// file's text with every case taken out is the same: such a directive was proven on the base, and
+// nothing that decides its run has changed since. A case with no directive that is unchanged from
+// the base by the same rules is not listed as unchecked. A refused directive, a file that does not
+// parse and a case the parse does not find are proven as without a base. The rule compares the
+// case, the file around the cases and the target only: a change to a module the case imports other
+// than the target leaves the directive out all the same. The base is read, never run, copied or
+// written, and the summary line gains the count of directives left out; without the flag every
+// line is as it was. A `--base` given twice, naming no folder or naming the tree checked itself,
+// where every directive would read unchanged and nothing would be proven, prints the usage. The
+// comparison lives in base.mjs, loaded only when the flag is given.
 //
-//     node bin/revert-check/revert-check.mjs [--root <dir>] <file> [<file> ...]
+// It runs no git command: the files to read are the argument list, which is what
+// `git diff --name-only <commit>` prints. Usage:
+//
+//     node bin/revert-check/revert-check.mjs [--root <dir>] [--base <dir>] <file> [<file> ...]
 
-import { readFileSync } from 'node:fs';
+import { readFileSync, statSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { applied, caseNames, directives, real } from './directives.mjs';
 import { checkOne, editRefusal, isBrowserCase, refusal, unproven, whereOf } from './copy.mjs';
 import { memoryRun } from './memory.mjs';
 
-/** The arguments: an optional root, then the files whose directives are read. */
+/**
+ * The arguments: an optional root, every base given, then the files whose directives are read. A
+ * `--base` with nothing after it is read as the empty path, which names no folder.
+ */
 export function readArgs(argv) {
     const files = [];
+    const bases = [];
     let root = null;
     for (let at = 0; at < argv.length; at += 1) {
         if (argv[at] === '--root') {
             root = argv[at + 1] ?? null;
             at += 1;
+        } else if (argv[at] === '--base') {
+            bases.push(argv[at + 1] ?? '');
+            at += 1;
         } else files.push(argv[at]);
     }
-    return { root, files };
+    return { root, bases, files };
+}
+
+/** Whether a path names a folder. */
+function isFolder(path) {
+    try {
+        return statSync(path).isDirectory();
+    } catch {
+        return false;
+    }
+}
+
+/**
+ * Whether the bases given leave the run without one base to compare with: a `--base` given twice,
+ * one naming no folder, or one naming the tree checked, against which nothing would be proven.
+ */
+function badBase(tree, bases) {
+    if (bases.length === 0) return false;
+    if (bases.length > 1) return true;
+    if (!isFolder(bases[0])) return true;
+    return real(bases[0]) === real(tree);
 }
 
 /**
@@ -114,26 +156,44 @@ async function checkUnit(root, directive, memory) {
     return checkOne(root, directive, parsed);
 }
 
+/**
+ * Whether a directive is left out of the run: one the base holds unchanged and that is not refused
+ * before any run, since a refused directive was never proven on the base either.
+ */
+function leftOut(tree, directive, same) {
+    return same !== null && refusal(tree, directive) === null && same.directiveUnchanged(directive);
+}
+
 async function main() {
-    const { root, files } = readArgs(process.argv.slice(2));
-    const base = resolve(root ?? join(dirname(fileURLToPath(import.meta.url)), '..', '..'));
-    if (files.length === 0) {
+    const { root, bases, files } = readArgs(process.argv.slice(2));
+    const tree = resolve(root ?? join(dirname(fileURLToPath(import.meta.url)), '..', '..'));
+    if (files.length === 0 || badBase(tree, bases)) {
         process.stdout.write(
-            'usage: node bin/revert-check/revert-check.mjs [--root <dir>] <file> [<file> ...]\n'
+            'usage: node bin/revert-check/revert-check.mjs [--root <dir>] [--base <dir>]' +
+                ' <file> [<file> ...]\n'
         );
         process.exitCode = 2;
         return;
     }
-    const found = directives(base, files);
+    // The comparison loads the TypeScript and Svelte parsers, which a run with no base never needs.
+    const same =
+        bases.length === 0 ? null : (await import('./base.mjs')).baseline(tree, resolve(bases[0]));
+    const found = directives(tree, files);
     const covered = new Set(found.map((one) => `${one.file}::${one.caseName}`));
     let bad = 0;
+    let unchanged = 0;
     let run = null;
-    const memory = () => (run ??= memoryRun(base));
+    const memory = () => (run ??= memoryRun(tree));
     try {
         for (const directive of found) {
+            if (leftOut(tree, directive, same)) {
+                unchanged += 1;
+                process.stdout.write(`unchanged ${whereOf(directive)}\n`);
+                continue;
+            }
             const result = isBrowserCase(directive.file)
-                ? checkOne(base, directive)
-                : await checkUnit(base, directive, memory);
+                ? checkOne(tree, directive)
+                : await checkUnit(tree, directive, memory);
             if (!result.ok) bad += 1;
             process.stdout.write(`${result.line}\n`);
         }
@@ -141,12 +201,16 @@ async function main() {
         if (run !== null) await run.close();
     }
     let unchecked = 0;
-    for (const one of caseNames(base, files)) {
+    for (const one of caseNames(tree, files)) {
         if (covered.has(`${one.file}::${one.caseName}`)) continue;
+        if (same !== null && same.caseUnchanged(one.file, one.caseName)) continue;
         unchecked += 1;
         process.stdout.write(`unchecked ${one.file} :: ${one.caseName}\n`);
     }
-    process.stdout.write(`${found.length} reverts, ${bad} unproven, ${unchecked} unchecked\n`);
+    const kept = same === null ? '' : `, ${unchanged} unchanged`;
+    process.stdout.write(
+        `${found.length} reverts, ${bad} unproven, ${unchecked} unchecked${kept}\n`
+    );
     process.exitCode = bad === 0 && unchecked === 0 ? 0 : 1;
 }
 
