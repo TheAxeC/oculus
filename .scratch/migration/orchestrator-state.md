@@ -30,7 +30,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:      # Q77d in flight (at its landing, Q77c's converter reruns over its changed tests); then Q77a, Q77b and Q77e after Q77d lands, then L7, Q89, Q79, Q80, then the queue of plan.md.
+dispatch:      # Q77d and Q90 in flight (Q90 writes no path of Q77d's and reads none of its code, so either lands on the other with nothing to merge) (at its landing, Q77c's converter reruns over its changed tests); then Q77a, Q77b and Q77e after Q77d lands, then L7, Q89, Q79, Q80, then the queue of plan.md.
 - step: Q77d
   executor: agent
   worker: claude:opus
@@ -41,6 +41,16 @@ dispatch:      # Q77d in flight (at its landing, Q77c's converter reruns over it
   report: tools/oculus/.scratch/migration/agents/reviews/Q77d-report.md
   landing: not-started
   worktree_commits: dec8dc4b (part 1's report); parts 2 to 4 added to the brief (4759c0b1, dee62e79, 25130948) and sent to the same builder
+  round: 0
+- step: Q90
+  executor: agent
+  worker: claude:opus
+  session_id: acfd70dfe9106518e
+  worktree: .agents/worktrees/Q90
+  base: 6283272e
+  launched: 2026-09-27T12:44
+  report: tools/oculus/.scratch/migration/agents/reviews/Q90-report.md
+  landing: not-started
   round: 0
 ```
 
