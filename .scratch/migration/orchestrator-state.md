@@ -32,7 +32,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 dispatch:      # Q93 and L7 in flight side by side (Axel, 2026-09-28); Q93 lands first, then L7 on Q93's head; next Q92, Q89, Q79, Q80, then the queue of plan.md.
 - step: Q93
   executor: agent
-  worker: claude:opus, agent af1bae095499172e3
+  worker: claude:opus, agent af1bae095499172e3; reported 2026-09-28 (agents/reviews/Q93-report.md: everything built; lock file keeps 2 vitest peer lines; demo/hpc and demo/sessions deleted outside the brief; a duplication-check defect found, not fixed). Reviewer claude:opus, agent adb5b2f31e8d44431
   worktree: .agents/worktrees/Q93
   base: 7bb7d2bc
   launched: 2026-09-28
