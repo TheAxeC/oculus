@@ -2,7 +2,11 @@
 
 Oculus is the private working surface for the research hub: one page in a browser on this machine, reading the hub's own YAML and Markdown from disk and showing it as boards, lists and documents. It writes only where a control says it writes, and only back into the same files. This page is the manual; the Config view beside it shows the files every one of these surfaces is configured by.
 
+## Contents
+
 [TOC]
+
+---
 
 ## The window
 
