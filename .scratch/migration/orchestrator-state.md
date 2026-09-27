@@ -30,7 +30,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:      # Q77c in flight; Q77d stopped at its premise (open item Z5); then Q77a and Q77b after Q77c lands, then L7, Q89, Q79, Q80, then the queue of plan.md.
+dispatch:      # Q77c and Q77d in flight (they merge by rerunning Q77c's converter); then Q77a and Q77b after Q77c lands, then Q77e, L7, Q89, Q79, Q80, then the queue of plan.md.
 - step: Q77c
   executor: agent
   worker: claude:opus
@@ -39,6 +39,16 @@ dispatch:      # Q77c in flight; Q77d stopped at its premise (open item Z5); the
   base: aac420c6
   launched: 2026-09-27T11:24
   report: tools/oculus/.scratch/migration/agents/reviews/Q77c-report.md
+  landing: not-started
+  round: 0
+- step: Q77d
+  executor: agent
+  worker: claude:opus
+  session_id: a7f9ccb32c0537a76
+  worktree: .agents/worktrees/Q77d
+  base: fa59cab3
+  launched: 2026-09-27T11:36
+  report: tools/oculus/.scratch/migration/agents/reviews/Q77d-report.md
   landing: not-started
   round: 0
 ```
