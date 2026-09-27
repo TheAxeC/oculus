@@ -34,7 +34,7 @@ dispatch:      # Q77e and Q77a in flight side by side (it changes bin/revert-che
 - step: Q77e
   executor: agent
   worker: claude:opus
-  session_id: a1224c827c5cba8ec
+  session_id: a7345751b970549b5 (continuation; a1224c827c5cba8ec stopped 2026-09-27T15:53 by an interrupt)
   worktree: .agents/worktrees/Q77e
   base: 15a88e95
   launched: 2026-09-27T15:06
@@ -45,7 +45,7 @@ dispatch:      # Q77e and Q77a in flight side by side (it changes bin/revert-che
 - step: Q77a
   executor: agent
   worker: claude:opus
-  session_id: aec044048b03bc07d
+  session_id: a949191600197043d (continuation; aec044048b03bc07d stopped 2026-09-27T15:53 by an interrupt)
   worktree: .agents/worktrees/Q77a
   base: 8ca4ca00
   launched: 2026-09-27T15:33
