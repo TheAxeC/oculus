@@ -108,6 +108,7 @@ None. Axel lifted it on 2026-09-23 with `/plan-orchestration oculus/migration` a
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is booked as its own step in `plan.md` and carried in the Booked section below, since it needs no ruling from him.
 
+- Z7, two unit cases stay over 5 s after Q77d's known fixes (raised 2026-09-27 while briefing Q77d). The diagram checks' case "are named stale, every one at once..." (`tests/checks/diagrams/diagrams.test.ts:79`, 8.1 s) copies the tree and generates every drawing for the copy, and one generation takes 6.4 to 7 s (`node` timing of `generate()` twice, 7084 and 6424 ms); a CPU profile shows the time spread over reading and parsing every source file (TypeScript scanner, acorn, the import walk), with no single hot spot. The same generation runs once per diagram test file for the engine (Q77d part 2). No change inside the tests gets that case under 5 s. Options: (a) a step that makes `bin/diagrams` generate incrementally, caching each source file's parsed imports by its content hash, so a copy with one changed file parses one file; (b) accept this one case at about 8 s. Recommended (a): the same generation runs in `npm run diagrams` at every landing, so it pays there too. (b) is the lazy option.
 
 
 ## Time per step (Axel asked 2026-09-27 for how it evolves with Q77; measured from each builder's transcript: each tool call from call to result, each background wait from the builder stopping to the run waking it)
