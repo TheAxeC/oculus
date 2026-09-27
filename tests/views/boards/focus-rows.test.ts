@@ -54,7 +54,7 @@ describe('the button a row keeps drawn', () => {
         const secondId = before.row(second, '').id;
         const after = rowMaker('r');
 
-        // revert: src/lib/views/boards/focus/rows.ts:162 => const identity = String(at++);
+        // revert: src/lib/views/boards/focus/rows.ts "const identity = line.target === undefined ? String(at++) : targetId(line.target);" => const identity = String(at++);
         // Number rows by their current place and the second line inherits the removed first line's
         // id instead of keeping its own.
         expect(after.row(second, '').id).toBe(secondId);

@@ -299,7 +299,7 @@ describe('the ssh runner under a stub cluster', () => {
     it('rejects a command that never returns at the budget and leaves no child behind', async () => {
         const dir = caseDir();
         const cost = await machineCost(dir);
-        // revert: src/lib/server/machine/hpc/ssh.ts:39-42 => force = null;
+        // revert: src/lib/server/machine/hpc/ssh.ts "child.kill('SIGTERM');" .. "}, KILL_GRACE_MS);" => force = null;
         const kill = await killAfterBudget(dir, (pidFile) => recordsPid(pidFile, false), cost);
         expect(kill.seen).toBe(true);
         expect(kill.afterMs).toBeLessThanOrEqual(killBound(cost, kill));
@@ -309,7 +309,7 @@ describe('the ssh runner under a stub cluster', () => {
     // the escalation ends it, and the bound it is held to is the one a green is worth something at.
     it('rejects a command that ignores SIGTERM at the budget and ends it within the grace', async () => {
         const dir = caseDir();
-        // revert: src/lib/server/machine/hpc/ssh.ts:42 => }, KILL_GRACE_MS * 1.1);
+        // revert: src/lib/server/machine/hpc/ssh.ts "}, KILL_GRACE_MS);" => }, KILL_GRACE_MS * 1.1);
         const proven = await provenKill(dir, (pidFile) => recordsPid(pidFile, true));
         expect(proven.kill.seen).toBe(true);
         expect(proven.kill.afterMs).toBeLessThanOrEqual(proven.bound);
@@ -349,7 +349,7 @@ describe('the measurement the kill cases bound themselves by', () => {
         const meter = slackMeter(STEP_MS);
         const until = performance.now() + STEP_MS * 3;
         let spins = 0;
-        // revert: tests/server/machine/hpc/ssh.test.ts:125 => worst = 0;
+        // revert: tests/server/machine/hpc/ssh.test.ts "if (late > worst) worst = late;" => worst = 0;
         while (performance.now() < until) spins += 1;
         await new Promise<void>((go) => {
             setTimeout(go, STEP_MS);
@@ -362,7 +362,7 @@ describe('the measurement the kill cases bound themselves by', () => {
     it('gives up looking for a kill that never comes at the ceiling it was given', async () => {
         const dir = caseDir();
         const from = performance.now();
-        // revert: tests/server/machine/hpc/ssh.test.ts:169 => let seen = true;
+        // revert: tests/server/machine/hpc/ssh.test.ts "let seen = gone(pidFile);" => let seen = true;
         const kill = await killSeen(join(dir, 'pid'), from, STEP_MS * 3);
         expect(kill.seen).toBe(false);
         expect(kill.afterMs).toBeGreaterThanOrEqual(STEP_MS * 3);
@@ -371,7 +371,7 @@ describe('the measurement the kill cases bound themselves by', () => {
     it('waits for a stub to record its pid, and says so where none did', async () => {
         const dir = caseDir();
         const pidFile = join(dir, 'up-pid');
-        // revert: tests/server/machine/hpc/ssh.test.ts:158 => return true;
+        // revert: tests/server/machine/hpc/ssh.test.ts "return existsSync(pidFile);" => return true;
         expect(await pidUp(join(dir, 'nothing'), STEP_MS * 3)).toBe(false);
         const child = spawn(stubFile(dir, 'up', recordsPid(pidFile, false)));
         expect(await pidUp(pidFile)).toBe(true);
@@ -382,7 +382,7 @@ describe('the measurement the kill cases bound themselves by', () => {
         const dir = caseDir();
         const pidFile = join(dir, 'probe-pid');
         writeFileSync(pidFile, '999999999');
-        // revert: tests/server/machine/hpc/ssh.test.ts:191 => delete
+        // revert: tests/server/machine/hpc/ssh.test.ts "rmSync(pidFile, { force: true });" => delete
         const cost = await machineCost(dir);
         expect(cost.execMs).toBeGreaterThan(0);
         expect(cost.reapMs).toBeLessThan(WATCH_MS);
@@ -394,7 +394,7 @@ describe('the measurement the kill cases bound themselves by', () => {
         const dir = caseDir();
         const mark = join(dir, 'mark');
         const cost = await machineCost(dir);
-        // revert: tests/server/machine/hpc/ssh.test.ts:226 => break;
+        // revert: tests/server/machine/hpc/ssh.test.ts "if (existsSync(pidFile)) return { ...(await killSeen(pidFile, from)), attempts: attempt };" => break;
         const kill = await killAfterBudget(
             dir,
             (pidFile) => [
@@ -410,7 +410,7 @@ describe('the measurement the kill cases bound themselves by', () => {
 
     it('gives up where every bound the machine allowed cost more than a green is worth', async () => {
         const dir = caseDir();
-        // revert: tests/server/machine/hpc/ssh.test.ts:265 => return { kill, cost, bound };
+        // revert: tests/server/machine/hpc/ssh.test.ts "over = bound - KILL_GRACE_MS;" => return { kill, cost, bound };
         await expect(
             provenKill(dir, (pidFile) => recordsPid(pidFile, false), -1, 1)
         ).rejects.toThrow('too loaded');
@@ -419,7 +419,7 @@ describe('the measurement the kill cases bound themselves by', () => {
     it('writes a stub the machine runs, with the body it was given', async () => {
         const dir = caseDir();
         const mark = join(dir, 'ran');
-        // revert: tests/server/machine/hpc/ssh.test.ts:78 => writeFileSync(file, ['#!/bin/sh', ...body, ''].join('\n'), { mode: 0o644 });
+        // revert: tests/server/machine/hpc/ssh.test.ts "writeFileSync(file, ['#!/bin/sh', ...body, ''].join('\\n'), { mode: 0o755 });" => writeFileSync(file, ['#!/bin/sh', ...body, ''].join('\n'), { mode: 0o644 });
         const file = stubFile(dir, 'runs', [`echo ran > ${JSON.stringify(mark)}`]);
         const child = spawn(file);
         await new Promise<void>((go) => {
@@ -433,7 +433,7 @@ describe('the measurement the kill cases bound themselves by', () => {
         const dir = caseDir();
         const trapped = join(dir, 'trapped-pid');
         const plain = join(dir, 'plain-pid');
-        // revert: tests/server/machine/hpc/ssh.test.ts:91 => return lines;
+        // revert: tests/server/machine/hpc/ssh.test.ts "return ignoresTerm ? [\"trap '' TERM\", ...lines] : lines;" => return lines;
         const one = spawn(stubFile(dir, 'trapped', recordsPid(trapped, true)));
         const two = spawn(stubFile(dir, 'plain', recordsPid(plain, false)));
         expect(await pidUp(trapped)).toBe(true);

@@ -359,14 +359,14 @@ describe("oculus's own config directory", () => {
     });
 
     it('holds exactly the expected top-level keys, and no more', () => {
-        // revert: config/layout.yml:9 => rails:
+        // revert: config/layout.yml "rail:" => rails:
         const { config } = loadConfig(engineDir());
         const expected = [...new Set([...Object.values(EXPECTED).flat(), 'text'])].sort();
         expect(Object.keys(config).sort()).toEqual(expected);
     });
 
     it('reads one catalog file per owner and no legacy catalog file', () => {
-        // revert: config/text/views/system/workbench.yml:1 => delete
+        // revert: config/text/views/system/workbench.yml "# Oculus text owned by the workbench views: the Views catalogue, the Settings view and the Pages view." => delete
         const { config } = loadConfig(engineDir());
         const dir = join(engineDir(), 'config', 'text');
         const names = [
@@ -470,7 +470,7 @@ describe("oculus's own config directory", () => {
         expect(config.wallpaper).toMatchObject({ dir: 'tools/oculus/assets/wallpaper' });
     });
 
-    // revert: config/catalogs/vocab.yml:76 => - { key: submitted, icon: nonesuch, label: "submitted" }
+    // revert: config/catalogs/vocab.yml "- { key: submitted,       icon: brown, label: \"submitted / under review\" }" => - { key: submitted, icon: nonesuch, label: "submitted" }
     it('uses glyph names for every configured icon', () => {
         const { config } = loadConfig(engineDir());
         const glyphs = glyphCatalog(config);
@@ -495,21 +495,21 @@ describe("oculus's own config directory", () => {
         expect(icons.filter((name) => !(name in glyphs))).toEqual([]);
     });
 
-    // revert: config/catalogs/icons.yml:69 => delete
+    // revert: config/catalogs/icons.yml "pin: pin" => delete
     it('names one icon for every glyph and for nothing but a glyph', () => {
         const { config } = loadConfig(engineDir());
         expect(Object.keys(iconCatalog(config))).toEqual(Object.keys(glyphCatalog(config)));
         expect(iconFindings(engineDir(), config)).toEqual([]);
     });
 
-    // revert: config/catalogs/glyphs.yml:11 => orphan_probe: "(o)"
+    // revert: config/catalogs/glyphs.yml "darkmode: \"(o)\"" => orphan_probe: "(o)"
     it('names a glyph only where the source or another config file reads it', () => {
         const { config } = loadConfig(engineDir());
         const read = glyphReaders(engineDir());
         expect(Object.keys(glyphCatalog(config)).filter((name) => !read.has(name))).toEqual([]);
     });
 
-    // revert: config/catalogs/glyphs.yml:14 => crt: "\u259A"
+    // revert: config/catalogs/glyphs.yml "crt: \"[/]\"" => crt: "\u259A"
     it('gives every glyph name a stand-in of printable ASCII, and holds no other map', () => {
         const { config } = loadConfig(engineDir());
         const raw = config.glyphs as Record<string, unknown>;
@@ -520,7 +520,7 @@ describe("oculus's own config directory", () => {
         expect(config.ascii).toBe(undefined);
     });
 
-    // revert: config/catalogs/glyphs.yml:82 => changes: "[><]"
+    // revert: config/catalogs/glyphs.yml "changes: \"+/-\"" => changes: "[><]"
     it('holds every stand-in to three characters, the box a terminal theme draws it in', () => {
         const { config } = loadConfig(engineDir());
         const wide = Object.entries(glyphCatalog(config)).filter(
@@ -529,7 +529,7 @@ describe("oculus's own config directory", () => {
         expect(wide.map(([name, standIn]) => `${name}: ${standIn}`)).toEqual([]);
     });
 
-    // revert: src/lib/data/sources/config/catalogs.ts:109 => continue;
+    // revert: src/lib/data/sources/config/catalogs.ts "if (typeof standIn === 'string' && STAND_IN.test(standIn)) continue;" => continue;
     it('reports a glyph whose stand-in is empty, not text, wider than three, or not ASCII', () => {
         const drifted = {
             glyphs: { pin: 'P', blank: '', count: 3, mark: '\u25C6', wide: '[><]' },
@@ -582,8 +582,8 @@ describe("oculus's own config directory", () => {
     });
 
     it('reads glyph and icon names as own keys, so a name like constructor is no name', () => {
-        // revert: src/lib/data/sources/config/catalogs.ts:118 => if (name in map) continue;
-        // revert: src/lib/data/sources/config/catalogs.ts:126 => if (!(name in glyphs)) {
+        // revert: src/lib/data/sources/config/catalogs.ts "if (Object.hasOwn(map, name)) continue;" => if (name in map) continue;
+        // revert: src/lib/data/sources/config/catalogs.ts "if (!Object.hasOwn(glyphs, name)) {" => if (!(name in glyphs)) {
         const inherited = {
             glyphs: { pin: 'P', toString: 'T' },
             icons: { pin: 'pin', constructor: 'circle' },
@@ -597,8 +597,8 @@ describe("oculus's own config directory", () => {
     });
 
     it('configures one lowercase chord and a glyph on every group reached by a chord of its own', () => {
-        // revert: config/layout.yml:29 => sessions: { label: "Sessions", glyph: live }
-        // revert: config/layout.yml:33 => personal: { label: "Personal" }
+        // revert: config/layout.yml "sessions: { label: \"Sessions\", glyph: live, chord: m }" => sessions: { label: "Sessions", glyph: live }
+        // revert: config/layout.yml "personal: { label: \"Personal\", glyph: memories, chord: p }" => personal: { label: "Personal" }
         const { config } = loadConfig(engineDir());
         registerAll(client.registry);
         registerCollections(client.registry, collectionKeys(config));
@@ -645,7 +645,7 @@ describe("oculus's own config directory", () => {
     });
 
     it('reads each file on its own and finds its own keys there and nowhere else', () => {
-        // revert: config/layout.yml:9 => rails:
+        // revert: config/layout.yml "rail:" => rails:
         const dir = join(engineDir(), 'config');
         const seen: Record<string, string> = {};
         for (const [name, keys] of Object.entries(EXPECTED)) {

@@ -87,7 +87,7 @@ const VIEWS = sources({
 });
 
 describe('a layer diagram', () => {
-    // revert: bin/diagrams/graphs.mjs:271 => boxes.push(`    ${node.line}`);
+    // revert: bin/diagrams/graphs.mjs "inside.push(node.line);" => boxes.push(`    ${node.line}`);
     it('draws a count between two folders, and its arrow, inside the layer box', async () => {
         const svg = await renderSvg(layerDot(VIEWS, LAYERS, 'views', ['views/a', 'views/b']));
         const layer = boxOf(points(groups(svg, 'cluster').get('cluster_views') ?? '', 'points'));
@@ -102,8 +102,8 @@ describe('a layer diagram', () => {
         }
     }, 30_000);
 
-    // revert: bin/diagrams/graphs.mjs:277 => const box = to;
-    // revert: bin/diagrams/graphs.mjs:281 => const same = [node.id, box];
+    // revert: bin/diagrams/graphs.mjs "const box = `${to} from ${from}`;" => const box = to;
+    // revert: bin/diagrams/graphs.mjs "const same = row === 0 ? [from, node.id, box] : [node.id, box];" => const same = [node.id, box];
     it('ends each folder arrow into another layer at a box of its own, the count on its row', async () => {
         const svg = await renderSvg(layerDot(VIEWS, LAYERS, 'views', ['views/a', 'views/b']));
         const nodes = groups(svg, 'node');
@@ -127,7 +127,7 @@ describe('a layer diagram', () => {
 });
 
 describe('a count between two folders further apart', () => {
-    // revert: bin/diagrams/graphs.mjs:262 => const below = from;
+    // revert: bin/diagrams/graphs.mjs "const below = last > first ? middle : from;" => const below = from;
     it('stands halfway along its arrow, under the folder row between its ends', async () => {
         const four = sources({
             'lib/views/a/A.ts': "import { d } from '../d/D';\n",
@@ -156,7 +156,7 @@ describe('the measure of arrows that run along each other', () => {
     const node = (title: string) =>
         `<g id="node${title.length}" class="node">\n<title>${title}</title>\n<polygon points="0,0 1,0 1,1 0,1 0,0"/>\n</g>`;
 
-    // revert: bin/diagrams/labels.mjs:441 => if (false) {
+    // revert: bin/diagrams/labels.mjs "if (length > ALONG) {" => if (false) {
     it('names two arrows that run within 1.5 pt of each other for more than 40 pt', () => {
         const svg = (length: number) =>
             [
@@ -170,7 +170,7 @@ describe('the measure of arrows that run along each other', () => {
         expect(arrowsAlong(svg(30))).toEqual([]);
     });
 
-    // revert: bin/diagrams/labels.mjs:407 => const name = title;
+    // revert: bin/diagrams/labels.mjs "const name = ends.find((end) => nodes.has(end)) ?? title;" => const name = title;
     it('takes the two halves through a node of words as one arrow', () => {
         const svg = [
             '<svg>',
@@ -188,7 +188,7 @@ describe('the measure of arrows that run along each other', () => {
 describe('the drawings the source gives', () => {
     const NAMES = ['layers', ...LAYER_NAMES.map((layer) => `layer-${layer}`)];
 
-    // revert: bin/diagrams/graphs.mjs:277 => const box = to;
+    // revert: bin/diagrams/graphs.mjs "const box = `${to} from ${from}`;" => const box = to;
     it('have no two arrows running along each other in the overview and the layer diagrams', async () => {
         const drawn = (await generate(ENGINE)).filter((one) => NAMES.includes(one.name));
         expect(drawn.map((one) => one.name)).toEqual(NAMES);
@@ -221,7 +221,7 @@ describe('the drawings the source gives', () => {
     ].join('\n');
     const ROUTE_ONLY = new Map([['routes/api/write/+server.ts', 'export const POST = () => 1;\n']]);
 
-    // revert: bin/diagrams/writes.mjs:478 => return { dot, svg };
+    // revert: bin/diagrams/writes.mjs "if (pair === undefined || next >= PORTS.length) return { dot, svg };" => return { dot, svg };
     it('draws the write diagram again with a tail port while two arrows of one module run together', () => {
         let draws = 0;
         const drawn = writesDrawn(ROUTE_ONLY, () => {
@@ -233,7 +233,7 @@ describe('the drawings the source gives', () => {
         expect(arrowsAlong(drawn.svg)).toEqual([]);
     });
 
-    // revert: bin/diagrams/writes.mjs:478 => if (pair === undefined || next >= PORTS.length - 1) return { dot, svg };
+    // revert: bin/diagrams/writes.mjs "if (pair === undefined || next >= PORTS.length) return { dot, svg };" => if (pair === undefined || next >= PORTS.length - 1) return { dot, svg };
     it('stops once the arrow has tried every port, and leaves the pair for the check to name', () => {
         let draws = 0;
         const drawn = writesDrawn(ROUTE_ONLY, () => {
@@ -245,7 +245,7 @@ describe('the drawings the source gives', () => {
         expect(arrowsAlong(drawn.svg)).toEqual(['m->a along m->b for 64']);
     });
 
-    // revert: bin/diagrams/writes.mjs:428 => const tail = '';
+    // revert: bin/diagrams/writes.mjs "const tail = port === undefined ? '' : `tailport=${port}`;" => const tail = '';
     it('have no two arrows running along each other in the write diagram', async () => {
         const drawn = (await generate(ENGINE)).find((one) => one.name === 'writes');
         const committed = readFileSync(resolve(ENGINE, 'docs/diagrams/writes.svg'), 'utf8');
@@ -257,7 +257,7 @@ describe('the drawings the source gives', () => {
 });
 
 describe('the channel and write readers', () => {
-    // revert: bin/diagrams/graphs.mjs:452 => const text = raw.replace(/\/\*[\s\S]*?\*\//g, (b) => b.replace(/[^\n]/g, ' '));
+    // revert: bin/diagrams/graphs.mjs "const text = codeOf(path, raw);" => const text = raw.replace(/\/\*[\s\S]*?\*\//g, (b) => b.replace(/[^\n]/g, ' '));
     it('read a call between two strings that hold the marks of a comment', () => {
         const dot = channelsDot(
             sources({
@@ -267,7 +267,7 @@ describe('the channel and write readers', () => {
         expect(dot).toContain('"server/watch/w" -> "ch a";');
     });
 
-    // revert: bin/diagrams/writes.mjs:174 => const text = (sources.get(path) ?? '').replace(/(^|[^:'"`\\])\/\/[^\n]*/g, '$1');
+    // revert: bin/diagrams/writes.mjs "const text = codeOf(path, sources.get(path) ?? '');" => const text = (sources.get(path) ?? '').replace(/(^|[^:'"`\\])\/\/[^\n]*/g, '$1');
     it('read a call after a regular expression that holds two slashes', () => {
         const dot = writesDot(
             sources({
@@ -282,8 +282,8 @@ describe('the channel and write readers', () => {
         );
     });
 
-    // revert: bin/diagrams/code.mjs:116 => delete
-    // revert: bin/diagrams/code.mjs:115 => delete
+    // revert: bin/diagrams/code.mjs "htmlComments(tree.fragment, ranges);" => delete
+    // revert: bin/diagrams/code.mjs "ranges.push(...(listed ?? []).map(({ start, end }) => ({ start, end })));" => delete
     it('blank the comments of a component and keep its markup', () => {
         const text = [
             '<script>',
@@ -303,19 +303,19 @@ describe('the channel and write readers', () => {
         expect(code).not.toMatch(/in the (script|markup)|in an expression/);
     });
 
-    // revert: bin/diagrams/code.mjs:53 => if (children.length === 0) {
+    // revert: bin/diagrams/code.mjs "if (children.every(isJSDoc)) {" => if (children.length === 0) {
     it('blank a JSDoc that ends a script', () => {
         const text = "const a = 1;\n/** hub.publish('x', y) */\n";
         expect(codeOf('lib/data/a.ts', text)).toBe(`const a = 1;\n${' '.repeat(26)}\n`);
     });
 
-    // revert: bin/diagrams/code.mjs:51 => delete
+    // revert: bin/diagrams/code.mjs "if (isJSDoc(node)) return;" => delete
     it('read no trivia inside a JSDoc, so the code after it on its line is kept', () => {
         const text = "/** @param x // */ hub.publish('a', 1);\n";
         expect(codeOf('lib/server/a.ts', text)).toBe(`${' '.repeat(19)}hub.publish('a', 1);\n`);
     });
 
-    // revert: bin/diagrams/code.mjs:117 => delete
+    // revert: bin/diagrams/code.mjs "if (tree.css !== null && tree.css !== undefined) ranges.push(tree.css.content);" => delete
     it('blank the style block of a component', () => {
         const text = '<p>x</p>\n<style>p::after { content: "message(\'s\')"; }</style>\n';
         const code = codeOf('lib/ui/A.svelte', text);
@@ -324,7 +324,7 @@ describe('the channel and write readers', () => {
         expect(code).toContain('<p>x</p>');
     });
 
-    // revert: bin/diagrams/code.mjs:100 => delete
+    // revert: bin/diagrams/code.mjs "ranges.push(...scriptComments(name, text, 0));" => delete
     it('blank the comments of a script and keep its strings and regular expressions', () => {
         const text = "/* a */ const s = '/*'; // b\nconst r = /[//]/; const t = `*/`;\n";
         const code = codeOf('lib/state/a.ts', text);
@@ -333,7 +333,7 @@ describe('the channel and write readers', () => {
 });
 
 describe('the title of an arrow that leaves by a port', () => {
-    // revert: bin/diagrams/diagrams.mjs:119 => delete
+    // revert: bin/diagrams/diagrams.mjs ".replace(/(<title>[^<]*?):(?:n|ne|e|se|s|sw|w|nw)(?=&#45;&gt;)/g, '$1')" => delete
     it('names the two modules alone', async () => {
         const svg = await renderSvg('digraph g {\n    "a" -> "b" [tailport=se];\n}\n');
         expect(svg).toContain('<title>a&#45;&gt;b</title>');

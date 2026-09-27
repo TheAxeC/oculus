@@ -147,8 +147,8 @@ async function railShape(page: Page): Promise<{
 test('the rail is 48 px wide with square items and at most one badge, inside its button, under every kind of theme', async ({
     page
 }) => {
-    // revert: src/lib/themes/tokens.css:90 => --rail-width: 98px;
-    // revert: src/lib/shell/rail/RailPages.svelte:256 => top: 40px;
+    // revert: src/lib/themes/tokens.css "--rail-width: 48px;" => --rail-width: 98px;
+    // revert: src/lib/shell/rail/RailPages.svelte "top: 24px;" => top: 40px;
     await boot(page);
     for (const theme of ['light', 'dark', 'mocha']) {
         await pickTheme(page, theme);
@@ -173,7 +173,7 @@ test('the rail is 48 px wide with square items and at most one badge, inside its
 test('a page button is its icon alone, named by its page, with its name and digit on hover', async ({
     page
 }) => {
-    // revert: src/lib/shell/rail/RailPages.svelte:198 => label={entry.page}
+    // revert: src/lib/shell/rail/RailPages.svelte "<ToolButton" +1 => label={entry.page}
     await boot(page);
     const projects = page.locator('nav').getByRole('button', { name: 'Projects', exact: true });
     await expect(projects).toHaveCount(1);
@@ -190,7 +190,7 @@ test('a page button is its icon alone, named by its page, with its name and digi
 test('a rail tooltip opens beside its button, centred on the button as VS Code centres its hover', async ({
     page
 }) => {
-    // revert: src/lib/ui/menu/Tooltip.svelte:114 => delete
+    // revert: src/lib/ui/menu/Tooltip.svelte "if (placement === 'beside') void tick().then(centre);" => delete
     await boot(page);
     const button = railButton(page, 'projects');
     await page.mouse.move(700, 400);
@@ -206,7 +206,7 @@ test('a rail tooltip opens beside its button, centred on the button as VS Code c
 test('a rail button tooltip and the Settings theme list paint over what is beside them', async ({
     page
 }) => {
-    // revert: src/lib/ui/frame/on-body.ts:14 => void node;
+    // revert: src/lib/ui/frame/on-body.ts "document.body.append(node);" => void node;
     await board(page);
 
     await railButton(page, 'projects').hover();
@@ -226,8 +226,8 @@ test('a rail button tooltip and the Settings theme list paint over what is besid
 test('a rail button under a terminal palette is its stand-in whole inside the square, clear of its badge, with no brackets', async ({
     page
 }) => {
-    // revert: src/lib/ui/controls/ToolButton.svelte:384 => font-size: var(--fs-3xl);
-    // revert: src/lib/shell/rail/RailPages.svelte:281 => top: 24px;
+    // revert: src/lib/ui/controls/ToolButton.svelte ":global(body.rice) .tool.rail-control :global(.glyph:not(:has(svg))) {" +1 => font-size: var(--fs-3xl);
+    // revert: src/lib/shell/rail/RailPages.svelte "top: 31px;" => top: 24px;
     await board(page);
 
     const shape = await railButton(page, 'projects').evaluate((el) => {
@@ -302,7 +302,7 @@ test('a tooltip inside an overlay is drawn over it', async ({ page }) => {
 test('the Bookmarks menu lists the bookmarks by name over the panes, opens one, and takes one Files adds', async ({
     page
 }) => {
-    // revert: src/lib/shell/rail/RailFoot.svelte:62 => items={[]}
+    // revert: src/lib/shell/rail/RailFoot.svelte "{items}" => items={[]}
     await board(page);
     // The bookmarks are the menu's choices and no longer buttons of the rail's list.
     await expect(page.locator('nav button[data-bookmark]')).toHaveCount(0);
@@ -344,7 +344,7 @@ test('the Bookmarks menu lists the bookmarks by name over the panes, opens one, 
 test('a bookmark written into the file from outside joins the open menu without a reload', async ({
     page
 }) => {
-    // revert: src/lib/state/sources/fs.svelte.ts:368 => delete
+    // revert: src/lib/state/sources/fs.svelte.ts "if (named === true && message.version > onDisk) onDisk = message.version;" => delete
     // What the socket carried on the `files` channel, in order, read off the wire.
     const files: { root?: string; bookmarks?: boolean }[] = [];
     page.on('websocket', (socket) => {
@@ -380,7 +380,7 @@ test('a bookmark written into the file from outside joins the open menu without 
 });
 
 test('the Bookmarks menu says there is none when the file holds none', async ({ page }) => {
-    // revert: src/lib/shell/rail/rail.ts:36 => return [];
+    // revert: src/lib/shell/rail/rail.ts "return [{ id: 'none', label: t('ui.bookmarks_none'), title: t('ui.bookmarks_none_tip') }];" => return [];
     const file = join(servedHomeDir(), '.oculus', 'bookmarks.yml');
     const held = readFileSync(file, 'utf8');
     try {
@@ -423,8 +423,8 @@ async function undoNewest(page: Page): Promise<void> {
 test('a page button dragged above another moves its entry there in layout.yml, the rail follows, and History undoes it', async ({
     page
 }) => {
-    // revert: src/lib/shell/rail/RailPages.svelte:137 => delete
-    // revert: src/lib/server/edit/writes/undo.ts:227 => const outcome = writeRail(into.layoutFile, railRows(change.after) ?? [], into.glyphs);
+    // revert: src/lib/shell/rail/RailPages.svelte "onmove(held.page, pages.at(held.at)?.page ?? null);" => delete
+    // revert: src/lib/server/edit/writes/undo.ts "const outcome = writeRail(into.layoutFile, railRows(change.before) ?? [], into.glyphs);" => const outcome = writeRail(into.layoutFile, railRows(change.after) ?? [], into.glyphs);
     const before = readEngineFile(LAYOUT);
     const order = fileOrder();
     try {
@@ -460,8 +460,8 @@ test('a page button dragged above another moves its entry there in layout.yml, t
 test('Hide in a page button right-click menu takes its entry out of layout.yml, and History puts it back', async ({
     page
 }) => {
-    // revert: src/lib/shell/rail/ActivityRail.svelte:102 => void write((rail) => rail);
-    // revert: src/lib/server/edit/writes/undo.ts:227 => const outcome = writeRail(into.layoutFile, railRows(change.after) ?? [], into.glyphs);
+    // revert: src/lib/shell/rail/ActivityRail.svelte "void write((rail) => railHidden(rail, page));" => void write((rail) => rail);
+    // revert: src/lib/server/edit/writes/undo.ts "const outcome = writeRail(into.layoutFile, railRows(change.before) ?? [], into.glyphs);" => const outcome = writeRail(into.layoutFile, railRows(change.after) ?? [], into.glyphs);
     const before = readEngineFile(LAYOUT);
     const order = fileOrder();
     try {
@@ -495,7 +495,7 @@ test.describe('Settings from a page button menu', () => {
     test('the keyboard opens the menu, and Settings shows the rail list scrolled into view', async ({
         page
     }) => {
-        // revert: src/lib/views/system/workbench/RailEditor.svelte:67 => delete
+        // revert: src/lib/views/system/workbench/RailEditor.svelte "section.scrollIntoView({ block: 'start' });" => delete
         await boot(page);
         await railButton(page, 'projects').focus();
         await page.keyboard.press('Shift+F10');
@@ -523,7 +523,7 @@ test.describe('Settings from a page button menu', () => {
 test('the rail draws no BOOKMARKS group: the bookmarks are the choices of the menu at its foot', async ({
     page
 }) => {
-    // revert: src/lib/shell/rail/ActivityRail.svelte:259 => <RailPages {pages} {stopIndex} {ringKeys} onmove={moved} onmenu={menuPick} /><p class="group">{t('ui.docs')}</p>
+    // revert: src/lib/shell/rail/ActivityRail.svelte "<RailPages {pages} {stopIndex} {ringKeys} onmove={moved} onmenu={menuPick} />" => <RailPages {pages} {stopIndex} {ringKeys} onmove={moved} onmenu={menuPick} /><p class="group">{t('ui.docs')}</p>
     await boot(page);
     // No button of the list draws a bookmark: they are menu choices, drawn when it opens.
     await expect(page.locator('nav button[data-bookmark]')).toHaveCount(0);
@@ -549,9 +549,9 @@ async function resolved(page: Page, token: string): Promise<string> {
 test('every rail badge is one colour, the accent with its own ink, in the UI face at 9 px, though the views it counts carry different tones', async ({
     page
 }) => {
-    // revert: src/lib/shell/rail/RailPages.svelte:210 => <span class="badge" aria-hidden="true" data-rail-badge style={badge.tone === undefined ? undefined : `background: var(--c-${badge.tone})`}>
-    // revert: src/lib/shell/rail/RailPages.svelte:267 => font-family: var(--font-num);
-    // revert: src/lib/shell/rail/RailPages.svelte:268 => font-size: var(--fs-sm);
+    // revert: src/lib/shell/rail/RailPages.svelte "<span class=\"badge\" aria-hidden=\"true\" data-rail-badge>" => <span class="badge" aria-hidden="true" data-rail-badge style={badge.tone === undefined ? undefined : `background: var(--c-${badge.tone})`}>
+    // revert: src/lib/shell/rail/RailPages.svelte "font-family: var(--font-ui);" => font-family: var(--font-num);
+    // revert: src/lib/shell/rail/RailPages.svelte "font-size: var(--rail-badge-text);" => font-size: var(--fs-sm);
     await boot(page);
     await showRailPage(page, 'views');
     // The catalogue draws each view's badge in its view's tone, and the demo hub has more than one.
@@ -589,8 +589,8 @@ test('every rail badge is one colour, the accent with its own ink, in the UI fac
 test("the rail is drawn in the ground's colour with a border on its right, as VS Code's Modern themes draw their activity bar", async ({
     page
 }) => {
-    // revert: src/lib/shell/rail/ActivityRail.svelte:277 => background: var(--panel);
-    // revert: src/lib/shell/rail/ActivityRail.svelte:278 => box-shadow: none;
+    // revert: src/lib/shell/rail/ActivityRail.svelte "background: var(--bg);" => background: var(--panel);
+    // revert: src/lib/shell/rail/ActivityRail.svelte "box-shadow: inset -1px 0 0 var(--line);" => box-shadow: none;
     await boot(page);
     // VS Code's own theme files: activityBar.background and activityBar.border.
     const vscode = {
@@ -612,9 +612,9 @@ test("the rail is drawn in the ground's colour with a border on its right, as VS
 test('a rail tooltip points at its item, and none opens during a drag or on a focus a closing menu gives back', async ({
     page
 }) => {
-    // revert: src/lib/ui/menu/Tooltip.svelte:246 => delete
-    // revert: src/lib/ui/menu/Tooltip.svelte:146 => if (text === '') return;
-    // revert: src/lib/ui/menu/Tooltip.svelte:173 => if (!(target instanceof Element)) return;
+    // revert: src/lib/ui/menu/Tooltip.svelte "class:beside={placement === 'beside'}" => delete
+    // revert: src/lib/ui/menu/Tooltip.svelte "if (text === '' || event.buttons !== 0) return;" => if (text === '') return;
+    // revert: src/lib/ui/menu/Tooltip.svelte "if (!(target instanceof Element) || target.closest(`[${QUIET_FOCUS}]`) !== null) return;" => if (!(target instanceof Element)) return;
     await boot(page);
     const bubble = page.locator('[role="tooltip"]:not([hidden])');
     await page.mouse.move(700, 400);
@@ -659,7 +659,7 @@ test('a rail tooltip points at its item, and none opens during a drag or on a fo
 });
 
 test('the Bookmarks menu opens upward from the star, inside the window', async ({ page }) => {
-    // revert: src/lib/ui/menu/Menu.svelte:188 => delete
+    // revert: src/lib/ui/menu/Menu.svelte "rise={onBody}" => delete
     await boot(page);
     const star = page.locator('nav').getByRole('button', { name: t('ui.docs'), exact: true });
     await star.click();
@@ -678,7 +678,7 @@ test('the Bookmarks menu opens upward from the star, inside the window', async (
 test('the Bookmarks menu in a window too short for it ends on the star and scrolls', async ({
     page
 }) => {
-    // revert: src/lib/ui/menu/MenuList.svelte:110-112 => (rise ? '' : '') +
+    // revert: src/lib/ui/menu/MenuList.svelte "(rise" .. ": '') +" => (rise ? '' : '') +
     // The foot's three icons fill the rail's lowest 144 px, so the star's bottom is 64 px down, and
     // the two bookmarks' list is taller than the 56 px above that.
     await page.setViewportSize({ width: 1280, height: 160 });
@@ -696,7 +696,7 @@ test('the Bookmarks menu in a window too short for it ends on the star and scrol
 });
 
 test('the icon stays 24 px at a larger text scale, clear of the badge', async ({ page }) => {
-    // revert: src/lib/themes/tokens.css:93 => --rail-icon: calc(24px * var(--text-scale, 1));
+    // revert: src/lib/themes/tokens.css "--rail-icon: 24px;" => --rail-icon: calc(24px * var(--text-scale, 1));
     await boot(page);
     await page.evaluate(() => document.documentElement.style.setProperty('--text-scale', '1.5'));
     const icon = await railButton(page, 'projects').locator('.glyph svg').boundingBox();

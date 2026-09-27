@@ -409,7 +409,7 @@ describe('registered board badge descriptors', () => {
 });
 
 describe('a badge that is a mark', () => {
-    // revert: src/lib/state/workbench/navigation/registry.ts:140 => const words = marked ? mark : text;
+    // revert: src/lib/state/workbench/navigation/registry.ts "const words = marked && means !== undefined ? lookup(means) : text;" => const words = marked ? mark : text;
     it('says on hover what the mark means, in words from the catalog, and never the mark', () => {
         const catalog = textCatalog(config);
         client.registry.registerView({
@@ -425,7 +425,7 @@ describe('a badge that is a mark', () => {
         expect(badge.title).not.toContain(glyphCatalog(config).bang);
     });
 
-    // revert: src/lib/state/workbench/navigation/registry.ts:140 => const words = marked ? lookup(means ?? '') : text;
+    // revert: src/lib/state/workbench/navigation/registry.ts "const words = marked && means !== undefined ? lookup(means) : text;" => const words = marked ? lookup(means ?? '') : text;
     it('hovers a mark whose registration names no words by the view name, and does not throw', () => {
         const catalog = textCatalog(config);
         const { badgeMark, ...unworded } = present(viewFor('linkedin'), 'linkedin view');
@@ -440,7 +440,7 @@ describe('a badge that is a mark', () => {
         expect(badge.title).toBe(catalog['views.linkedin']);
     });
 
-    // revert: src/lib/views/feeds/linkedin/Linkedin.svelte:11 => delete
+    // revert: src/lib/views/feeds/linkedin/Linkedin.svelte "badgeMark: 'views.linkedin_badge_mark'," => delete
     it('names its words in every registration that can draw one', () => {
         const catalog = textCatalog(config);
         const marked = client.registry.views().filter((view) => view.badgeGlyph !== undefined);

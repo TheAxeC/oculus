@@ -258,17 +258,17 @@ function block(differs = ''): string {
 
 describe('a rule written twice', () => {
     it('is not held anywhere under src/lib', () => {
-        // revert: tests/checks/tree/allow-duplication.txt:12 => delete
+        // revert: tests/checks/tree/allow-duplication.txt "src/lib/data/helpers/opens-in-program.ts src/lib/state/sources/fs.ts 3f5da9c7a4e9 the same 8 lines at 36 and 97, to fold into one place" => delete
         expect(findCopies(ROOT, 'src/lib')).toEqual([]);
     });
 
     it('is not held anywhere under tests', () => {
-        // revert: tests/checks/tree/allow-duplication.txt:74 => delete
+        // revert: tests/checks/tree/allow-duplication.txt "tests/data/sources/collections.test.ts tests/data/sources/registries.test.ts 606e1552e4e1 the same 8 lines at 30 and 19, to fold into one place" => delete
         expect(findCopies(ROOT, 'tests')).toEqual([]);
     });
 
     it('catches a window of eight lines held in two files', () => {
-        // revert: tests/checks/tree/duplication.test.ts:71 => const WINDOW = 999;
+        // revert: tests/checks/tree/duplication.test.ts "const WINDOW = 8;" => const WINDOW = 999;
         const dir = scratch({ 'group/one.ts': block(), 'group/two.ts': block() });
         expect(findCopies(dir, 'group', [])).toEqual([
             `group/one.ts:1 and group/two.ts:1 hold the same 8 lines (${markOfBlock()})`
@@ -276,7 +276,7 @@ describe('a rule written twice', () => {
     });
 
     it('reports a copy longer than the window once, at the line it starts on', () => {
-        // revert: tests/checks/tree/duplication.test.ts:190 => delete
+        // revert: tests/checks/tree/duplication.test.ts "if (pairs.has(before)) continue;" => delete
         const long = `${block()}\n${block(' held += 1;')}`;
         const dir = scratch({ 'group/one.ts': long, 'group/two.ts': long });
         expect(findCopies(dir, 'group', [])).toEqual([
@@ -285,7 +285,7 @@ describe('a rule written twice', () => {
     });
 
     it('passes two files that differ inside the window, and a copy of seven lines', () => {
-        // revert: tests/checks/tree/duplication.test.ts:71 => const WINDOW = 4;
+        // revert: tests/checks/tree/duplication.test.ts "const WINDOW = 8;" => const WINDOW = 4;
         const differing = scratch({
             'group/one.ts': block(),
             'group/two.ts': block(' held += 1;')
@@ -297,7 +297,7 @@ describe('a rule written twice', () => {
     });
 
     it('drops an import list and a style block before it compares', () => {
-        // revert: tests/checks/tree/duplication.test.ts:92 => if (false) {
+        // revert: tests/checks/tree/duplication.test.ts "if (/^\\s*import\\b/.test(line)) {" => if (false) {
         const head = [
             "import { join } from 'node:path';",
             "import { tmpdir } from 'node:os';",
@@ -327,7 +327,7 @@ describe('a rule written twice', () => {
     });
 
     it('drops comments and whitespace before it compares, and the allow list silences a pair', () => {
-        // revert: tests/checks/tree/duplication.test.ts:107-110 => const code = line;
+        // revert: tests/checks/tree/duplication.test.ts "const code = line" .. ".trim();" => const code = line;
         const commented = block().replace('let held = 0;', 'let  held  =  0; // the running sum');
         const dir = scratch({ 'group/one.ts': block(), 'group/two.ts': commented });
         expect(findCopies(dir, 'group', [])).toEqual([
@@ -351,7 +351,7 @@ describe('a rule written twice', () => {
     });
 
     it('holds every entry of both lists to a reason', () => {
-        // revert: tests/checks/tree/duplication.test.ts:60 => why: 'x'
+        // revert: tests/checks/tree/duplication.test.ts "why: part.slice(3).join(' ')" => why: 'x'
         const bare = [...DELIBERATE, ...HELD].filter((one) => !isReason(one.why));
         expect(bare.map((one) => `${one.a} and ${one.b}`)).toEqual([]);
         expect(readHeld('a.ts b.ts abc123\n')[0].why).toBe('');
@@ -364,7 +364,7 @@ describe('a rule written twice', () => {
     });
 
     it('holds the lists to pairs that still share, so a repaired copy takes its entry with it', () => {
-        // revert: tests/checks/tree/duplication.test.ts:210 => delete
+        // revert: tests/checks/tree/duplication.test.ts "for (const one of copies(root, group, [])) found.add(`${one.left}|${one.right}|${one.mark}`);" => delete
         const sharing = new Set([...sharedPairs(ROOT, 'src/lib'), ...sharedPairs(ROOT, 'tests')]);
         const stale = [...DELIBERATE, ...HELD]
             .filter(

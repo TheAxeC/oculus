@@ -77,7 +77,7 @@ async function post(body: Record<string, unknown>, recordFor = source()) {
 }
 
 describe('POST /api/terminal, the compose action', () => {
-    // revert: src/lib/server/machine/pty/routes.ts:225 => options
+    // revert: src/lib/server/machine/pty/routes.ts "composed.argv === null ? options : { ...options, argv: composed.argv }" => options
     it('starts the agent with its picks and the prompt as one argument, in the workspace', async () => {
         const prompt = `$(touch x); echo "q' ; rm -rf ~"`;
         const { response, started, argv } = await post({
@@ -107,7 +107,7 @@ describe('POST /api/terminal, the compose action', () => {
         expect(terminal.id.endsWith('-claude')).toBe(true);
     });
 
-    // revert: src/lib/server/machine/pty/routes.ts:223 => env: {}
+    // revert: src/lib/server/machine/pty/routes.ts "env: composed.env" => env: {}
     it("passes a second account's folder with tmux's -e, and not the tool's own", async () => {
         const { started, argv } = await post({
             action: 'compose',
@@ -123,7 +123,7 @@ describe('POST /api/terminal, the compose action', () => {
         expect(argv[0]).toBe(BIN);
     });
 
-    // revert: src/lib/server/machine/pty/routes.ts:227 => if (composed.keys.trim() === 'never') await steerTerminal(id, composed.keys, options);
+    // revert: src/lib/server/machine/pty/routes.ts "if (composed.keys.trim() !== '') await steerTerminal(id, composed.keys, options);" => if (composed.keys.trim() === 'never') await steerTerminal(id, composed.keys, options);
     it('starts a shell with no argument vector and types its prompt into it as keys, then Enter', async () => {
         const { response, calls, argv } = await post({
             action: 'compose',
@@ -143,7 +143,7 @@ describe('POST /api/terminal, the compose action', () => {
         expect(quiet.calls.filter((args) => args[0] === 'send-keys')).toEqual([]);
     });
 
-    // revert: src/lib/server/machine/pty/compose.ts:105 => if (found === undefined) return own[0] ?? null;
+    // revert: src/lib/server/machine/pty/compose.ts "if (found === undefined) throw new Error(`account is not a ${agent} account: ${label}`);" => if (found === undefined) return own[0] ?? null;
     it('refuses a pick the catalog does not offer, an account it does not hold and a cwd that is not a folder, before tmux runs', async () => {
         for (const body of [
             { picks: { model: 'gpt' } },
@@ -167,7 +167,7 @@ describe('POST /api/terminal, the compose action', () => {
 describe('POST /api/terminal, the steer and interrupt actions', () => {
     const ID = 'a1b2c3-claude';
 
-    // revert: src/lib/server/machine/pty/sessions.ts:429 => return [sendKeysArgs(id, { key: text }), sendKeysArgs(id, { key: 'Enter' })];
+    // revert: src/lib/server/machine/pty/sessions.ts "return [sendKeysArgs(id, { literal: text }), sendKeysArgs(id, { key: 'Enter' })];" => return [sendKeysArgs(id, { key: text }), sendKeysArgs(id, { key: 'Enter' })];
     it('types the message as literal keys after `--`, then Enter', async () => {
         const text = '-n two\nlines "$HOME"';
         const { response, calls } = await post({ action: 'steer', id: ID, text });
@@ -178,7 +178,7 @@ describe('POST /api/terminal, the steer and interrupt actions', () => {
         ]);
     });
 
-    // revert: src/lib/server/machine/pty/sessions.ts:443 => if (/[\u0000-\u0008]/.test(text)) {
+    // revert: src/lib/server/machine/pty/sessions.ts "if (/[\\u0000-\\u0008\\u000b-\\u001f\\u007f]/.test(text)) {" => if (/[\u0000-\u0008]/.test(text)) {
     it('refuses a message holding a key of its own, an empty one and a session oculus did not start', async () => {
         for (const body of [
             { id: ID, text: 'stop\u001b' },
@@ -194,7 +194,7 @@ describe('POST /api/terminal, the steer and interrupt actions', () => {
         }
     });
 
-    // revert: src/lib/server/machine/pty/sessions.ts:455 => await (options.run ?? run)(sendKeysArgs(id, { key: 'C-c' }), options);
+    // revert: src/lib/server/machine/pty/sessions.ts "await (options.run ?? run)(sendKeysArgs(id, { key: 'Escape' }), options);" => await (options.run ?? run)(sendKeysArgs(id, { key: 'C-c' }), options);
     it('interrupts with Escape, and refuses a session oculus did not start', async () => {
         const { response, calls } = await post({ action: 'interrupt', id: ID });
         expect(response.status).toBe(200);
@@ -208,7 +208,7 @@ describe('POST /api/terminal, the steer and interrupt actions', () => {
 describe('POST /api/terminal, the fork action', () => {
     const live = record(SESSION, { live: true, state: 'working', cwd: HERE, title: 'A run' });
 
-    // revert: src/lib/server/machine/pty/routes.ts:167 => if (resume.tool === 'claude') return args;
+    // revert: src/lib/server/machine/pty/routes.ts "if (resume.tool === 'claude') return [...args, '--fork-session'];" => if (resume.tool === 'claude') return args;
     it('forks a Claude session, live or not, with --fork-session in its own folder', async () => {
         const { response, argv, started } = await post(
             { action: 'fork', tool: 'claude', id: SESSION },
@@ -229,14 +229,14 @@ describe('POST /api/terminal, the fork action', () => {
         expect(terminal.name).toBe('fork of A run');
     });
 
-    // revert: src/lib/server/machine/pty/routes.ts:168 => return ['codex', 'resume', resume.id];
+    // revert: src/lib/server/machine/pty/routes.ts "return ['codex', 'fork', resume.id];" => return ['codex', 'resume', resume.id];
     it('forks a Codex session with codex fork', async () => {
         const codex = record(SESSION, { tool: 'codex', live: false, cwd: HERE });
         const { argv } = await post({ action: 'fork', tool: 'codex', id: SESSION }, source(codex));
         expect(argv).toEqual(['env', '-u', 'CODEX_HOME', 'codex', 'fork', SESSION]);
     });
 
-    // revert: src/lib/server/machine/pty/compose.ts:142 => return null;
+    // revert: src/lib/server/machine/pty/compose.ts "return accounts.find((one) => one.tool === agent && inside(path, one.dir)) ?? null;" => return null;
     it('starts a fork under the account whose folder holds the transcript', async () => {
         const second = record(SESSION, {
             live: false,
@@ -251,7 +251,7 @@ describe('POST /api/terminal, the fork action', () => {
         expect(argv[0]).toBe('claude');
     });
 
-    // revert: src/lib/server/machine/pty/routes.ts:178 => if (record === null) return json(400, { error: UNKNOWN });
+    // revert: src/lib/server/machine/pty/routes.ts "if (record?.tool !== resume.tool) return json(400, { error: UNKNOWN });" => if (record === null) return json(400, { error: UNKNOWN });
     it('refuses a session it does not hold, one of the other tool, and an id of the wrong shape', async () => {
         const codex = record(SESSION, { tool: 'codex', cwd: HERE });
         for (const [body, held] of [

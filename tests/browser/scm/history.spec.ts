@@ -26,7 +26,7 @@ keepServedFiles();
 
 test.afterAll(sweepScratch);
 
-// revert: src/lib/views/sources/repositories/graph/Graph.svelte:232 => {#if false}
+// revert: src/lib/views/sources/repositories/graph/Graph.svelte "{#if incoming.length > 0}" => {#if false}
 test('draws the graph with an incoming commit once the upstream is fetched', async ({ page }) => {
     const dir = repository({ 'a.txt': 'one\n' });
     const bare = origin(dir);
@@ -58,7 +58,7 @@ test('draws the graph with an incoming commit once the upstream is fetched', asy
     );
 });
 
-// revert: src/lib/views/sources/source/Source.svelte:340 => onclick={() => undefined}
+// revert: src/lib/views/sources/source/Source.svelte "onclick={() => toggleSourceBlame(instance.id)}" => onclick={() => undefined}
 test('turns blame on in a source tab, and a blamed line opens its commit in the graph', async ({
     page
 }) => {
@@ -91,7 +91,7 @@ test('turns blame on in a source tab, and a blamed line opens its commit in the 
     await expect(opened.getByRole('treeitem')).toHaveAttribute('aria-expanded', 'true');
 });
 
-// revert: src/lib/views/sources/repositories/graph/Graph.svelte:284 => onclick={() => undefined}
+// revert: src/lib/views/sources/repositories/graph/Graph.svelte "onclick={() => void load(commits.length)}" => onclick={() => undefined}
 test('draws the next page of the graph by Load More', async ({ page }) => {
     const dir = repository({ 'a.txt': 'one\n' });
     // Fifty-four commits after the first: one page of fifty, and four more behind Load More.
@@ -114,7 +114,7 @@ test('draws the next page of the graph by Load More', async ({ page }) => {
     await expect(graph.locator(`[data-commit="${first}"]`)).toHaveCount(1);
 });
 
-// revert: src/lib/views/sources/repositories/graph/CommitFiles.svelte:90 => onclick={() => undefined}
+// revert: src/lib/views/sources/repositories/graph/CommitFiles.svelte "onclick={() => opened(file)}" => onclick={() => undefined}
 test("opens a file of a commit in the graph as that commit's diff", async ({ page }) => {
     const dir = repository({ 'a.txt': 'one\n' });
     writeFileSync(join(dir, 'a.txt'), 'one\ntwo\n');
@@ -133,7 +133,7 @@ test("opens a file of a commit in the graph as that commit's diff", async ({ pag
     await expect(diff.locator('.cell.added')).toContainText('two');
 });
 
-// revert: src/lib/views/sources/repositories/graph/Graph.svelte:101 => delete
+// revert: src/lib/views/sources/repositories/graph/Graph.svelte "if (hash === commit) ids.push(...fileRows);" => delete
 test("reaches an open commit's files by the arrow keys, and Enter opens one's diff", async ({
     page
 }) => {
@@ -156,7 +156,7 @@ test("reaches an open commit's files by the arrow keys, and Enter opens one's di
     await expect(diffPane(page).locator('[data-diff-file="a.txt"]')).toBeVisible();
 });
 
-// revert: src/lib/views/sources/repositories/graph/Graph.svelte:146 => void navigator.clipboard.writeText(one.subject);
+// revert: src/lib/views/sources/repositories/graph/Graph.svelte "void navigator.clipboard.writeText(id === 'id' ? one.hash : one.message);" => void navigator.clipboard.writeText(one.subject);
 test("copies a commit's id and its whole message from its menu", async ({ page }) => {
     await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
     const dir = repository({ 'a.txt': 'one\n' });

@@ -47,7 +47,7 @@ function centre(page: Page) {
     return page.locator('[data-notice-centre]');
 }
 
-// revert: src/lib/shell/rail/ActivityRail.svelte:84 => if (refused === '' || refused !== '') return;
+// revert: src/lib/shell/rail/ActivityRail.svelte "if (refused === '') return;" => if (refused === '' || refused !== '') return;
 test('a rail write the server refuses posts a notification, and no line is drawn beside the rail', async ({
     page
 }) => {
@@ -70,9 +70,9 @@ test('a rail write the server refuses posts a notification, and no line is drawn
     );
 });
 
-// revert: src/lib/shell/status/Toast.svelte:23 => const timer = setTimeout(() => settle(id), 60_000);
-// revert: src/lib/shell/status/Bell.svelte:98 => left: 8px;
-// revert: src/lib/shell/status/NoticeCentre.svelte:112 => left: 8px;
+// revert: src/lib/shell/status/Toast.svelte "const timer = setTimeout(() => settle(id), TOAST_MS);" => const timer = setTimeout(() => settle(id), 60_000);
+// revert: src/lib/shell/status/Bell.svelte "right: 8px;" => left: 8px;
+// revert: src/lib/shell/status/NoticeCentre.svelte "right: 8px;" => left: 8px;
 test('a toast goes after eight seconds, the bell counts it, and the centre lists it until it is cleared', async ({
     page
 }) => {
@@ -133,7 +133,7 @@ test('a toast goes after eight seconds, the bell counts it, and the centre lists
     await expect(button(page, 'bell')).toBeFocused();
 });
 
-// revert: src/lib/shell/status/NoticeEntry.svelte:46 => <ToolButton label={action.label} onclick={() => undefined} />
+// revert: src/lib/shell/status/NoticeEntry.svelte "<ToolButton label={action.label} onclick={action.run} />" => <ToolButton label={action.label} onclick={() => undefined} />
 test("a notification's action does what it names, from its toast", async ({ page }) => {
     await refuseRailWrites(page);
     await boot(page);
@@ -146,7 +146,7 @@ test("a notification's action does what it names, from its toast", async ({ page
     await expect(toasts(page)).toHaveCount(0);
 });
 
-// revert: src/lib/state/client/context.ts:248 => delete
+// revert: src/lib/state/client/context.ts "writes.onUnwritten(sources.unwritten);" => delete
 test('a write the server refuses from a view posts a notification beside the line the view draws', async ({
     page
 }) => {
@@ -165,7 +165,7 @@ test('a write the server refuses from a view posts a notification beside the lin
     await expect(button(page, 'bell')).toHaveText('1');
 });
 
-// revert: src/lib/state/workbench/navigation/notices.svelte.ts:71 => toast: true
+// revert: src/lib/state/workbench/navigation/notices.svelte.ts "toast: !ui.statusQuiet()" => toast: true
 test('Do Not Disturb stops the toast and keeps the entry, and is still on after a reload', async ({
     page
 }) => {

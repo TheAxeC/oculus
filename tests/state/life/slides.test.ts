@@ -169,14 +169,14 @@ describe('saveMessage', () => {
 });
 
 describe('the slides in the deck order', () => {
-    // revert: src/lib/state/life/slides.ts:131 => return row === undefined ? [{ key } as T] : [row];
+    // revert: src/lib/state/life/slides.ts "return row === undefined ? [] : [row];" => return row === undefined ? [{ key } as T] : [row];
     it('are the catalog rows by key in the order given, a key the catalog lacks left out', () => {
         const rows = [{ key: 'a' }, { key: 'b' }, { key: 'c' }];
         expect(slidesInOrder(rows, ['c', 'gone', 'a']).map((one) => one.key)).toEqual(['c', 'a']);
     });
 
-    // revert: src/lib/state/life/slides.ts:137 => return rows.map((row) => row.title);
-    // revert: src/lib/state/life/slides.ts:143 => return row === undefined ? key : row.title;
+    // revert: src/lib/state/life/slides.ts "return rows.map((row) => row.key);" => return rows.map((row) => row.title);
+    // revert: src/lib/state/life/slides.ts "return row === undefined || row.title === '' ? key : row.title;" => return row === undefined ? key : row.title;
     it('are keyed and named out of the catalog, a slide with no title named by its key', () => {
         const rows = [
             { key: 'a', title: 'Alpha' },

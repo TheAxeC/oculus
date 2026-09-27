@@ -64,7 +64,7 @@ test('a feed title carrying a script and a handler is drawn as words', async ({ 
 });
 
 test('a document handler and a javascript link are drawn without either', async ({ page }) => {
-    // revert: src/lib/views/shared/prose/Markdown.svelte:48 => {@html doc.html}
+    // revert: src/lib/views/shared/prose/Markdown.svelte "{@html sanitise(doc.html)}" => {@html doc.html}
     const seen = dialogs(page);
     const document = await openDocument(page);
 

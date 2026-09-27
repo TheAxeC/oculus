@@ -107,7 +107,7 @@ describe('pillar joins', () => {
 });
 
 describe('the lines in the order their file lists them', () => {
-    // revert: src/lib/state/boards/structure/lines.ts:106 => return ordered;
+    // revert: src/lib/state/boards/structure/lines.ts "return [...ordered, ...lines.filter((line) => !seen.has(line.id))];" => return ordered;
     it('are the listed ones in the file order, then every unlisted one in registry order', () => {
         const lines = [{ id: 'a' }, { id: 'b' }, { id: 'c' }];
         expect(
@@ -116,7 +116,7 @@ describe('the lines in the order their file lists them', () => {
         expect(inEntryOrder(lines, []).map((one) => one.id)).toEqual(['a', 'b', 'c']);
     });
 
-    // revert: src/lib/state/boards/structure/lines.ts:129 => return Object.values(held);
+    // revert: src/lib/state/boards/structure/lines.ts "return inEntryOrder(Object.values(held), entries);" => return Object.values(held);
     it("are the portfolio's domains or pillars in their file's order, and none before it", () => {
         const snapshot = {
             entities: { domains: { a: { id: 'a' }, b: { id: 'b' } }, pillars: { p: { id: 'p' } } }
@@ -127,7 +127,7 @@ describe('the lines in the order their file lists them', () => {
         expect(registryLines(null, 'domains', [])).toEqual([]);
     });
 
-    // revert: src/lib/state/boards/structure/lines.ts:140 => ;
+    // revert: src/lib/state/boards/structure/lines.ts ".filter((item) => item.projects.length > 0);" => ;
     it('leave out a domain no real project names', () => {
         const domains = [{ id: 'eeg' }, { id: 'ecg' }] as Domain[];
         const projects = [
@@ -138,7 +138,7 @@ describe('the lines in the order their file lists them', () => {
         expect(shown[0].projects.map((one) => one.id)).toEqual(['p']);
     });
 
-    // revert: src/lib/state/boards/structure/lines.ts:151 => provisional: [],
+    // revert: src/lib/state/boards/structure/lines.ts "provisional: lines.filter((line) => line.kind === 'provisional')," => provisional: [],
     it('split into the pillars, the provisional lines and the off-pillar ones', () => {
         const lines = [
             { id: 'a' },
@@ -154,7 +154,7 @@ describe('the lines in the order their file lists them', () => {
 });
 
 describe('the venue tiers the config names', () => {
-    // revert: src/lib/state/boards/structure/lines.ts:169 => ;
+    // revert: src/lib/state/boards/structure/lines.ts ".filter((row) => row.key !== '');" => ;
     it('keep a keyed row with its label and colour, label a bare key by itself, and drop the rest', () => {
         expect(
             venueTiers([
@@ -171,7 +171,7 @@ describe('the venue tiers the config names', () => {
         expect(venueTiers(undefined)).toEqual([]);
     });
 
-    // revert: src/lib/state/boards/structure/lines.ts:174 => return groups.length;
+    // revert: src/lib/state/boards/structure/lines.ts "return groups.reduce((sum, group) => sum + group.count, 0);" => return groups.length;
     it('count the archived projects of every group together', () => {
         expect(
             archivedCount([

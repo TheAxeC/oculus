@@ -29,7 +29,7 @@ function railButton(page: Page, key: string): Locator {
 test('a browser with no saved layout opens on the first rail page, and digit 1 shows it again', async ({
     page
 }) => {
-    // revert: src/lib/shell/Workbench.svelte:174 => if (false) client.layout.startOnRailPage(first.page, first.label, first.node);
+    // revert: src/lib/shell/Workbench.svelte "if (first !== undefined) client.layout.startOnRailPage(first.page, first.label, first.node);" => if (false) client.layout.startOnRailPage(first.page, first.label, first.node);
     await bootFresh(page);
     await expect(railButton(page, 'focus')).toHaveClass(/\bactive\b/);
     await expect(page.getByRole('tab', { name: t('views.focus') })).toBeVisible();
@@ -44,7 +44,7 @@ test('a browser with no saved layout opens on the first rail page, and digit 1 s
 test('a browser with no saved layout draws no page before its first rail page', async ({
     page
 }) => {
-    // revert: src/lib/shell/Workbench.svelte:275 => {#if false}
+    // revert: src/lib/shell/Workbench.svelte "{#if client.layout.startingFresh()}" => {#if false}
     // Every tab name drawn from the first paint on, so a page drawn and replaced is seen too.
     await page.addInitScript(() => {
         const seen: string[] = [];
@@ -65,7 +65,7 @@ test('a browser with no saved layout draws no page before its first rail page', 
 test('a rail page button draws one badge, the count of the first view of its page that counts anything', async ({
     page
 }) => {
-    // revert: src/lib/shell/rail/RailPages.svelte:70 => return badges.at(-1) ?? null;
+    // revert: src/lib/shell/rail/RailPages.svelte "return firstBadge(badges);" => return badges.at(-1) ?? null;
     await boot(page);
     await showRailPage(page, 'views');
     // The Projects page holds Projects, Coauthor and Archive in that tab order; the catalogue draws
@@ -89,7 +89,7 @@ test('a rail page button draws one badge, the count of the first view of its pag
 test('a rail button shows its page, and a second press shows it as it was left', async ({
     page
 }) => {
-    // revert: src/lib/state/workbench/layout.svelte.ts:305 => const found = undefined;
+    // revert: src/lib/state/workbench/layout.svelte.ts "const found = held.find((page) => page.rail === key);" => const found = undefined;
     await boot(page);
     await showRailPage(page, 'projects');
     for (const view of ['views.projects', 'views.coauthor', 'views.archive']) {
@@ -109,7 +109,7 @@ test('a rail button shows its page, and a second press shows it as it was left',
 });
 
 test('a rail page the reader rearranged is the same page after a reload', async ({ page }) => {
-    // revert: src/lib/state/workbench/layout/saved/saved.ts:298 => delete
+    // revert: src/lib/state/workbench/layout/saved/saved.ts "if (rail !== null) page.rail = rail;" => delete
     await boot(page);
     await showRailPage(page, 'projects');
     await openView(page, 'help', t('views.help'));
@@ -132,7 +132,7 @@ test('a rail page the reader rearranged is the same page after a reload', async 
 });
 
 test('no strip of pages is drawn over the panes', async ({ page }) => {
-    // revert: src/lib/shell/Workbench.svelte:270 => <div class="area"><div role="tablist" aria-label="Pages"></div>
+    // revert: src/lib/shell/Workbench.svelte "<div class=\"area\">" => <div class="area"><div role="tablist" aria-label="Pages"></div>
     await boot(page);
     // The page on screen is one pane, and its strip is the only list of tabs in the window.
     await expect(page.getByRole('tablist')).toHaveCount(1);
@@ -141,7 +141,7 @@ test('no strip of pages is drawn over the panes', async ({ page }) => {
 });
 
 test('the Pages view makes a page, renames it, shows another and closes one', async ({ page }) => {
-    // revert: src/lib/views/system/workbench/Pages.svelte:108 => if (typed !== '') renamePage(renaming.id, 'Other');
+    // revert: src/lib/views/system/workbench/Pages.svelte "if (typed !== '') renamePage(renaming.id, typed);" => if (typed !== '') renamePage(renaming.id, 'Other');
     await boot(page);
     await showRailPage(page, 'views');
     const pages = page.locator(`${SHOWN_VIEW} [data-pages]`);
@@ -190,7 +190,7 @@ test('the Pages view makes a page, renames it, shows another and closes one', as
 test('closing a page of several tabs asks first: cancel keeps it, confirm removes it', async ({
     page
 }) => {
-    // revert: src/lib/views/system/workbench/Pages.svelte:73 => const asks = 'none';
+    // revert: src/lib/views/system/workbench/Pages.svelte "const asks = closeQuestion(ids, unsaved);" => const asks = 'none';
     await boot(page);
     await showRailPage(page, 'projects');
     await showRailPage(page, 'views');

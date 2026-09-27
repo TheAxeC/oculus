@@ -55,21 +55,21 @@ describe('the session folds', () => {
         workspace('w2', [row('c', false)])
     ];
 
-    // revert: src/lib/state/sessions/folds.ts:20 => return tree.flatMap((workspace) => workspace.areas[0].sessions);
+    // revert: src/lib/state/sessions/folds.ts "return tree.flatMap((workspace) => workspace.areas.flatMap((area) => area.sessions));" => return tree.flatMap((workspace) => workspace.areas[0].sessions);
     it('list every row of the tree and count them per workspace', () => {
         expect(sessionRows(tree).map((one) => one.id)).toEqual(['a', 'b', 'c']);
         expect(sessionCount(tree[0])).toBe(2);
         expect(liveCount(sessionRows(tree))).toBe(1);
     });
 
-    // revert: src/lib/state/sessions/folds.ts:30 => areas.push({ ...area, sessions });
+    // revert: src/lib/state/sessions/folds.ts "if (sessions.length > 0) areas.push({ ...area, sessions });" => areas.push({ ...area, sessions });
     it('cut the tree to the rows kept, an area or a workspace left empty dropped', () => {
         const kept = pruneTree(tree, (one) => one.live);
         expect(kept.map((one) => one.key)).toEqual(['w1']);
         expect(kept[0].areas.map((area) => area.key)).toEqual(['w1/a']);
     });
 
-    // revert: src/lib/state/sessions/folds.ts:54 => ended: rows.filter((row) => !row.live).length
+    // revert: src/lib/state/sessions/folds.ts "ended: rows.filter((row) => !row.live && !hidden(row)).length" => ended: rows.filter((row) => !row.live).length
     it('count the dismissed rows and the ended rows still shown', () => {
         expect(hiddenCounts(sessionRows(tree), (one) => one.hidden)).toEqual({
             dismissed: 1,
@@ -77,13 +77,13 @@ describe('the session folds', () => {
         });
     });
 
-    // revert: src/lib/state/sessions/folds.ts:60 => return [hub, ...tree.map((one) => one.key)];
+    // revert: src/lib/state/sessions/folds.ts "return [...new Set([hub, ...tree.map((one) => one.key)])].filter((key) => key !== '').sort();" => return [hub, ...tree.map((one) => one.key)];
     it('offer the hub and every workspace as a place to start a terminal, once each, by name', () => {
         expect(terminalPlaces('w2', tree)).toEqual(['w1', 'w2']);
         expect(terminalPlaces('', [])).toEqual([]);
     });
 
-    // revert: src/lib/state/sessions/folds.ts:69 => return [...agents];
+    // revert: src/lib/state/sessions/folds.ts "return [...agents].sort((a, b) => (b.started ?? '').localeCompare(a.started ?? ''));" => return [...agents];
     it('put the agents newest first, one with no stamp last, and say whether any runs', () => {
         const agents = [
             { id: 'old', started: '2026-09-01T00:00:00Z', status: 'done' },
@@ -119,18 +119,18 @@ function listed(id: string, over: Record<string, unknown> = {}): GroupedSession 
 const ASK = { session: 'x', event: 'notification', at: null };
 
 describe("the sessions list's rows", () => {
-    // revert: src/lib/state/sessions/folds.ts:113 => return row.live;
+    // revert: src/lib/state/sessions/folds.ts "return row.live && row.hook?.event === 'notification';" => return row.live;
     it('say a live session waits on the reader only when its latest hook is a notification', () => {
         expect(rowState(listed('a', { hook: ASK }), false)).toBe('input');
         expect(rowState(listed('a', { hook: { ...ASK, event: 'stop' } }), false)).toBe('idle');
         expect(rowState(listed('a', { hook: ASK, live: false }), false)).toBe('ended');
-        // revert: src/lib/state/sessions/folds.ts:122 => if (archived && false) return 'archived';
+        // revert: src/lib/state/sessions/folds.ts "if (archived) return 'archived';" => if (archived && false) return 'archived';
         expect(rowState(listed('a', { hook: ASK }), true)).toBe('archived');
         expect(rowState(listed('a', { state: 'working' }), false)).toBe('working');
         expect(rowState(listed('a', { liveStatus: 'busy' }), false)).toBe('working');
     });
 
-    // revert: src/lib/state/sessions/folds.ts:103 => return { states, agents, query: '' };
+    // revert: src/lib/state/sessions/folds.ts "return { states, agents, query: typeof held.query === 'string' ? held.query : '' };" => return { states, agents, query: '' };
     it('read the filter out of the instance state, anything malformed as unset', () => {
         expect(
             listFilterOf({ states: ['ended', 'bogus'], agents: ['codex', 3], query: 'x' })
@@ -146,7 +146,7 @@ describe("the sessions list's rows", () => {
         expect(toggled(['a', 'b'], 'a')).toEqual(['b']);
     });
 
-    // revert: src/lib/state/sessions/folds.ts:133 => const haystack = [row.title];
+    // revert: src/lib/state/sessions/folds.ts "const haystack = [row.title, row.lastPrompt, ...prompts, row.workspace, row.branch ?? ''];" => const haystack = [row.title];
     it('find the search text in the title, the prompts, the workspace or the branch, in any case', () => {
         const row = listed('a', {
             title: 'Refactor',
@@ -161,7 +161,7 @@ describe("the sessions list's rows", () => {
         expect(matchesSearch(row, 'nothing')).toBe(false);
     });
 
-    // revert: src/lib/state/sessions/folds.ts:148 => return matchesSearch(row, filter.query);
+    // revert: src/lib/state/sessions/folds.ts "if (filter.agents.length > 0 && !filter.agents.includes(row.tool)) return false;" => return matchesSearch(row, filter.query);
     it('keep every state but archived with none picked, and only the agents picked', () => {
         const none = listFilterOf({});
         expect(keptByFilter(listed('a'), false, none)).toBe(true);
@@ -176,7 +176,7 @@ describe("the sessions list's rows", () => {
         ).toBe(true);
     });
 
-    // revert: src/lib/state/sessions/folds.ts:178 => (top(row) ? 0 : 0) + (needsInput(row) ? 0 : 1);
+    // revert: src/lib/state/sessions/folds.ts "(top(row) ? 0 : 2) + (needsInput(row) ? 0 : 1);" => (top(row) ? 0 : 0) + (needsInput(row) ? 0 : 1);
     it('group the rows by workspace, pinned first, then waiting on the reader, then newest', () => {
         const old = listed('old', { lastActivity: '2026-09-01T00:00:00.000Z' });
         const fresh = listed('fresh', { lastActivity: '2026-09-12T00:00:00.000Z' });
@@ -204,7 +204,7 @@ describe("the sessions list's rows", () => {
             (row) => row.id === 'old'
         );
         expect(both[0].rows.map((row) => row.id)).toEqual(['old', 'asking', 'fresh']);
-        // revert: src/lib/state/sessions/folds.ts:241 => return row.top !== undefined;
+        // revert: src/lib/state/sessions/folds.ts "return row.top === true;" => return row.top !== undefined;
         expect(isTop(listed('a', { top: 'yes' }))).toBe(false);
     });
 });
@@ -212,7 +212,7 @@ describe("the sessions list's rows", () => {
 describe('the time a row says it last moved', () => {
     const NOW = Date.parse('2026-09-10T12:00:00.000Z');
 
-    // revert: src/lib/state/sessions/folds.ts:204 => if (secs < HOUR_S) return { unit: 'm', count: secs };
+    // revert: src/lib/state/sessions/folds.ts "if (secs < HOUR_S) return { unit: 'm', count: Math.floor(secs / MINUTE_S) };" => if (secs < HOUR_S) return { unit: 'm', count: secs };
     it('is now under a minute, then the largest unit that fits', () => {
         const at = (iso: string) => ago(iso, NOW);
         expect(at('2026-09-10T11:59:30.000Z')).toEqual({ unit: 'now', count: 0 });
@@ -223,7 +223,7 @@ describe('the time a row says it last moved', () => {
         expect(at('2026-09-10T12:00:20.000Z')).toEqual({ unit: 'now', count: 0 });
     });
 
-    // revert: src/lib/state/sessions/folds.ts:202 => if (secs < -MINUTE_S * 999) return null;
+    // revert: src/lib/state/sessions/folds.ts "if (secs < -MINUTE_S) return null;" => if (secs < -MINUTE_S * 999) return null;
     it('is nothing for a stamp it cannot read, an empty one, or one well in the future', () => {
         expect(ago(null, NOW)).toBe(null);
         expect(ago('', NOW)).toBe(null);
@@ -235,7 +235,7 @@ describe('the time a row says it last moved', () => {
 describe('a timeline cut into turns', () => {
     const event = (kind: string, ts: string, text = kind): SessionEvent => ({ kind, ts, text });
 
-    // revert: src/lib/state/sessions/folds.ts:227 => if (turns.length === 0) turns.push({ at: event.ts, prompt: null, events: [event] });
+    // revert: src/lib/state/sessions/folds.ts "if (turns.length === 0) turns.push({ at: event.ts, prompt: null, events: [] });" => if (turns.length === 0) turns.push({ at: event.ts, prompt: null, events: [event] });
     it('opens a turn at each prompt, timed by it, and puts a resumed tail in a turn of its own', () => {
         const turns = timelineTurns([
             event('edit', 't0'),
@@ -260,7 +260,7 @@ describe('a timeline cut into turns', () => {
 });
 
 describe("an agent's tokens", () => {
-    // revert: src/lib/state/sessions/folds.ts:236 => return typeof tokens === 'number' ? tokens : null;
+    // revert: src/lib/state/sessions/folds.ts "return typeof tokens === 'number' && Number.isFinite(tokens) && tokens >= 0 ? tokens : null;" => return typeof tokens === 'number' ? tokens : null;
     it('are the count its result reports, and nothing for a count that is not one', () => {
         const agent = (tokens: unknown) => ({ id: 'a', tokens }) as unknown as SessionAgent;
         expect(agentTokens(agent(48200))).toBe(48200);
@@ -288,7 +288,7 @@ describe("the Terminal view's picker", () => {
         { id: 'live-one', title: '', pid: 13 }
     ];
 
-    // revert: src/lib/state/sessions/folds.ts:264 => false ||
+    // revert: src/lib/state/sessions/folds.ts "one.resumes?.id === row.id ||" => false ||
     it('names each terminal after the session running in it, by its resume, else its process', () => {
         expect(terminalChoices([shell, resumed, started], sessions)).toEqual([
             { id: 'a1b2c3-shell', terminal: 'a1b2c3-shell', label: 'zsh' },
@@ -297,7 +297,7 @@ describe("the Terminal view's picker", () => {
         ]);
     });
 
-    // revert: src/lib/state/sessions/folds.ts:260 => .filter(() => true)
+    // revert: src/lib/state/sessions/folds.ts ".filter((one) => one.foreign !== true)" => .filter(() => true)
     it('offers no terminal oculus did not start, since the tab cannot attach to one', () => {
         expect(terminalChoices([outside, shell], sessions).map((one) => one.terminal)).toEqual([
             'a1b2c3-shell'

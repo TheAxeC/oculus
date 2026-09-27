@@ -39,7 +39,7 @@ function project(deadlineValue?: string): Project {
 }
 
 describe('card file helpers', () => {
-    // revert: src/lib/views/shared/card/card.ts:31 => return path;
+    // revert: src/lib/views/shared/card/card.ts "return at < 0 ? path : path.slice(at + 1);" => return path;
     it('audits that a path splits into its visible parts', () => {
         expect(nameOf('code/run.py')).toBe('run.py');
         expect(subOf('code/run.py')).toBe('code');

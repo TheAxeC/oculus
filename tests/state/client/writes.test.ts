@@ -28,13 +28,13 @@ function silent(): void {
 }
 
 describe('the time a write waits', () => {
-    // revert: src/lib/state/client/writes.svelte.ts:53 => ? seconds
+    // revert: src/lib/state/client/writes.svelte.ts "? seconds * 1000" => ? seconds
     it('is the positive number of seconds the configuration names, in milliseconds', () => {
         expect(writeTimeout({ writes: { timeout_seconds: 30 } })).toBe(30000);
         expect(writeTimeout({ writes: { timeout_seconds: 0.5 } })).toBe(500);
     });
 
-    // revert: src/lib/state/client/writes.svelte.ts:52 => return typeof seconds === 'number'
+    // revert: src/lib/state/client/writes.svelte.ts "return typeof seconds === 'number' && Number.isFinite(seconds) && seconds > 0" => return typeof seconds === 'number'
     it('is none for a configuration that names no positive number', () => {
         expect(writeTimeout(null)).toBeNull();
         expect(writeTimeout({})).toBeNull();
@@ -50,7 +50,7 @@ describe('a write that no answer reaches', () => {
         'is given up once the configured time has passed, and says so',
         { timeout: 5000 },
         async () => {
-            // revert: src/lib/state/client/writes.svelte.ts:376 => const wait = null;
+            // revert: src/lib/state/client/writes.svelte.ts "const wait = writeTimeout(settings());" => const wait = null;
             silent();
             const writes = createWrites(() => ({ writes: { timeout_seconds: 0.05 } }));
             const answer = writes.send({ action: 'set', collection: 'tasks' });
@@ -66,7 +66,7 @@ describe('a write that no answer reaches', () => {
         }
     );
 
-    // revert: src/lib/state/client/writes.svelte.ts:376 => const wait = 60000;
+    // revert: src/lib/state/client/writes.svelte.ts "const wait = writeTimeout(settings());" => const wait = 60000;
     it('reads the time at each write, so a changed configuration holds for the next one', async () => {
         silent();
         let seconds = 60;

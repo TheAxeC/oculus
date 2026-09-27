@@ -113,7 +113,7 @@ test('a diagram panel is laid out as the grid the slide wrote', async ({ page })
 test('a contents entry in a slide narrative scrolls inside the deck and leaves the address alone', async ({
     page
 }) => {
-    // revert: src/lib/views/academic/present/parts/Words.svelte:28 => <div class="block">{@html html}</div>
+    // revert: src/lib/views/academic/present/parts/Words.svelte "<div class=\"block\" onclick={jump}>{@html html}</div>" => <div class="block">{@html html}</div>
     // A project whose PRESENT.md declares no slide is drawn as its narrative, so graph-transfer
     // gains one for this case. It runs before the cases that save a selection, since a saved
     // selection places no new project slide, and it waits for the deck to drop the slide again once

@@ -182,7 +182,7 @@ describe('the workbench', () => {
     });
 
     it('draws one rail button per rail page and none per view', () => {
-        // revert: src/lib/shell/Workbench.svelte:263 => delete
+        // revert: src/lib/shell/Workbench.svelte "{pages}" => delete
         const rail = [...whole.matchAll(/data-rail-page="([^"]*)"/g)].map((match) => match[1]);
         expect(rail).toEqual(['first', 'second']);
         expect(whole).not.toContain('data-view=');
@@ -198,7 +198,7 @@ describe('the workbench', () => {
 
     // Three strips for three panes: no strip of pages is drawn over the area.
     it('draws a tab strip over every pane of the tree', () => {
-        // revert: src/lib/shell/Workbench.svelte:270 => <div class="area"><div role="tablist"><div role="tab"></div></div>
+        // revert: src/lib/shell/Workbench.svelte "<div class=\"area\">" => <div class="area"><div role="tablist"><div role="tab"></div></div>
         expect([...whole.matchAll(/role="tablist"/g)]).toHaveLength(3);
         expect([...whole.matchAll(/role="tab"/g)]).toHaveLength(3);
     });
@@ -209,7 +209,7 @@ describe('the workbench', () => {
     });
 
     it('draws the status bar after the area with the words the page hands it, and no strip of pages', () => {
-        // revert: src/lib/shell/Workbench.svelte:301 => delete
+        // revert: src/lib/shell/Workbench.svelte "<StatusBar {status} {git} onpalette={openPalette} />" => delete
         const withStatus = render(Workbench, {
             context: clientContext(client),
             props: { pages: PAGES, status: STATUS }
@@ -266,7 +266,7 @@ describe('the workbench', () => {
     });
 
     it('draws a folded pane as a strip with its expand control and the name of its tab', () => {
-        // revert: src/lib/shell/Workbench.svelte:270 => <div class="area"><div role="tablist"><div role="tab"></div></div>
+        // revert: src/lib/shell/Workbench.svelte "<div class=\"area\">" => <div class="area"><div role="tablist"><div role="tab"></div></div>
         const collapsed = html([0]);
         expect(collapsed).toContain('data-fold');
         expect(collapsed).toMatch(/data-fold-label[^>]*>Status</);
@@ -279,7 +279,7 @@ describe('the workbench', () => {
     });
 
     it('draws a folded split as the strip with its control alone: it has no one tab to name', () => {
-        // revert: src/lib/shell/Workbench.svelte:270 => <div class="area"><div role="tablist"><div role="tab"></div></div>
+        // revert: src/lib/shell/Workbench.svelte "<div class=\"area\">" => <div class="area"><div role="tablist"><div role="tab"></div></div>
         const collapsed = html([1]);
         expect(collapsed).toContain('aria-label="Expand pane"');
         expect(collapsed).not.toContain('data-fold-label');
@@ -293,7 +293,7 @@ describe('the workbench', () => {
     // maximise, the fold and the two splits) are not in this HTML. They are checked in the
     // browser, where the menu can be opened.
     it('puts a pane menu at the right of every tab strip', () => {
-        // revert: src/lib/shell/Workbench.svelte:270 => <div class="area"><button aria-haspopup="menu">x</button>
+        // revert: src/lib/shell/Workbench.svelte "<div class=\"area\">" => <div class="area"><button aria-haspopup="menu">x</button>
         expect([...whole.matchAll(/aria-label="Pane"/g)]).toHaveLength(3);
         // The three pane menus and the rail's Bookmarks menu, and no other: the window draws none.
         expect([...whole.matchAll(/aria-haspopup="menu"/g)]).toHaveLength(4);
@@ -316,7 +316,7 @@ describe('the workbench', () => {
     });
 
     // Revert: point PaneView.svelte's menu at `ui.pane_menu_glyph`, or its button at another glyph.
-    // revert: src/lib/shell/panes/PaneView.svelte:391 => glyph={t('ui.pane_more_glyph')}
+    // revert: src/lib/shell/panes/PaneView.svelte "glyph={t('ui.split_right_glyph')}" => glyph={t('ui.pane_more_glyph')}
     it('draws the split button with the split glyph and the pane menu opener with the more glyph', () => {
         // The stand-ins are the text a glyph is drawn as, so the ASCII mode names the glyph drawn.
         setGlyphMode('ascii');
@@ -399,7 +399,7 @@ describe('a maximised pane', () => {
     });
 
     it('draws the focused pane and no other', () => {
-        // revert: src/lib/shell/Workbench.svelte:270 => <div class="area"><div role="tablist"><div role="tab"></div></div>
+        // revert: src/lib/shell/Workbench.svelte "<div class=\"area\">" => <div class="area"><div role="tablist"><div role="tab"></div></div>
         expect(one).toContain('data-beta="two"');
         expect(one).not.toContain('data-alpha="one"');
         expect(one).not.toContain('data-beta="three"');
@@ -421,7 +421,7 @@ describe('a maximised pane', () => {
     });
 
     it('draws the whole workbench again when the focus names no pane', () => {
-        // revert: src/lib/shell/Workbench.svelte:270 => <div class="area"><div role="tablist"><div role="tab"></div></div>
+        // revert: src/lib/shell/Workbench.svelte "<div class=\"area\">" => <div class="area"><div role="tablist"><div role="tab"></div></div>
         // [0, 0] is inside a pane, which is no node at all, and the arrangement is drawn whole.
         const stale = zoomed([0, 0]);
         expect([...stale.matchAll(/role="tablist"/g)]).toHaveLength(3);
@@ -701,7 +701,7 @@ describe('the views the application registers', () => {
     );
 
     it('renders HPC cells without a pane count pill and hides both when the queue is empty', () => {
-        // revert: src/lib/ui/tabs/TabFace.svelte:122 => {#if false}
+        // revert: src/lib/ui/tabs/TabFace.svelte "{#if tab.cells !== undefined && tab.cells.length > 0}" => {#if false}
         for (const total of [3, 0]) {
             receive({
                 channel: 'hpc',
@@ -821,7 +821,7 @@ describe('a page shown inside another', () => {
 
     // Answer with the active instance of the page the strip is on and the pane inside the leaf
     // never draws its strip focused, wherever the reader is.
-    // revert: src/lib/state/workbench/layout.svelte.ts:498 => return instances.activeInstance();
+    // revert: src/lib/state/workbench/layout.svelte.ts "return instances.activeInstance(attention.touched().id);" => return instances.activeInstance();
     it('draws the strip of the one pane a view opens into, on whichever page the reader is in', () => {
         const { host, shown } = nested();
         /**

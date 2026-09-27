@@ -25,7 +25,7 @@ const PARTS = { text: {}, icons: {}, host: HOST };
 
 describe("the server's seed", () => {
     it('is at least as new as the held push when that push is another configuration, and carries the read', () => {
-        // revert: src/lib/server/root/config-seed.ts:40 => return { payload, through: held.version - 1 };
+        // revert: src/lib/server/root/config-seed.ts "return { payload, through: held.version };" => return { payload, through: held.version - 1 };
         const hub = new Hub();
         hub.publish('config', pushed(30));
         hub.publish('config', pushed(30));
@@ -35,7 +35,7 @@ describe("the server's seed", () => {
     });
 
     it('lets the held push in when it is the same configuration, and carries no read', () => {
-        // revert: src/lib/server/root/config-seed.ts:38 => if (same) return { payload: { config: read.config, findings: read.findings, ...parts }, through: held.version };
+        // revert: src/lib/server/root/config-seed.ts "if (same) return { through: held.version - 1 };" => if (same) return { payload: { config: read.config, findings: read.findings, ...parts }, through: held.version };
         const hub = new Hub();
         hub.publish('config', pushed(1));
         const seed = configSeed(hub, read(1), PARTS);
@@ -45,7 +45,7 @@ describe("the server's seed", () => {
     });
 
     it('takes every push on a hub that holds none yet, and carries no read', () => {
-        // revert: src/lib/server/root/config-seed.ts:35 => if (held === undefined) return { payload: { config: read.config, findings: read.findings, ...parts }, through: 1 };
+        // revert: src/lib/server/root/config-seed.ts "if (held === undefined) return { through: 0 };" => if (held === undefined) return { payload: { config: read.config, findings: read.findings, ...parts }, through: 1 };
         const seed = configSeed(new Hub(), read(1), PARTS);
         expect(seed.through).toBe(0);
         // The first push the watcher makes is what the page takes.

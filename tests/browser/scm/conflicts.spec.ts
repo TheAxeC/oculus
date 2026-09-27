@@ -52,7 +52,7 @@ async function confirm(page: Page): Promise<void> {
     await page.getByRole('button', { name: t('ui.confirm_ok'), exact: true }).click();
 }
 
-// revert: src/lib/views/sources/repositories/merge/Merge.svelte:134 => if (false) {
+// revert: src/lib/views/sources/repositories/merge/Merge.svelte "if (sides !== null && takesDeletion(sides.deleted, result)) {" => if (false) {
 test('takes the deletion both sides made by Complete Merge over the empty Result', async ({
     page
 }) => {
@@ -74,7 +74,7 @@ test('takes the deletion both sides made by Complete Merge over the empty Result
     expect(existsSync(join(dir, DELETED.both))).toBe(false);
 });
 
-// revert: src/lib/views/sources/repositories/merge/Merge.svelte:143 => done = true;
+// revert: src/lib/views/sources/repositories/merge/Merge.svelte "if (await repositories.acceptDeletion(root, path)) done = true;" => done = true;
 test('takes the deletion the current branch made by Accept Deletion, after a confirm', async ({
     page
 }) => {
@@ -95,8 +95,8 @@ test('takes the deletion the current branch made by Accept Deletion, after a con
     expect(existsSync(join(dir, DELETED.ours))).toBe(false);
 });
 
-// revert: src/lib/views/sources/repositories/merge/Merge.svelte:156 => {#if false}
-// revert: src/lib/views/sources/repositories/merge/Merge.svelte:134 => if (sides !== null && sides.deleted !== '') {
+// revert: src/lib/views/sources/repositories/merge/Merge.svelte "{#if sides !== null && sides.deleted !== ''}" => {#if false}
+// revert: src/lib/views/sources/repositories/merge/Merge.svelte "if (sides !== null && takesDeletion(sides.deleted, result)) {" => if (sides !== null && sides.deleted !== '') {
 test('keeps the side the other branch deleted by Accept Current and Complete Merge', async ({
     page
 }) => {
@@ -120,7 +120,7 @@ test('keeps the side the other branch deleted by Accept Current and Complete Mer
     expect(gitOut(dir, 'show', `:${DELETED.theirs}`)).toBe('changed by this side\n');
 });
 
-// revert: src/lib/views/sources/repositories/Changes.svelte:238 => ? undefined
+// revert: src/lib/views/sources/repositories/Changes.svelte "? repositories.markResolved(root, entry.path)" => ? undefined
 test('marks every conflict of a deletion resolved from its row, leaving nothing unmerged', async ({
     page
 }) => {
@@ -160,7 +160,7 @@ function diverged(): string {
     return dir;
 }
 
-// revert: src/lib/views/sources/repositories/Repo.svelte:102 => delete
+// revert: src/lib/views/sources/repositories/Repo.svelte "void repositories.abortMerge(root);" => delete
 test('aborts a merge that stopped on a conflict, after a confirm', async ({ page }) => {
     const dir = diverged();
     expect(gitTry(dir, 'merge', '--no-edit', 'other')).toBe(1);
@@ -177,7 +177,7 @@ test('aborts a merge that stopped on a conflict, after a confirm', async ({ page
     expect(gitOut(dir, 'status', '--porcelain')).toBe('');
 });
 
-// revert: src/lib/views/sources/repositories/Repo.svelte:108 => delete
+// revert: src/lib/views/sources/repositories/Repo.svelte "void repositories.continueRebase(root);" => delete
 test('carries a rebase on once its conflict is resolved, by Continue after a confirm', async ({
     page
 }) => {

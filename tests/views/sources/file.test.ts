@@ -188,7 +188,7 @@ describe('the control that opens a file in its program', () => {
         return body.split(`<span class="label">${catalog['file.open_program']}</span>`).length - 1;
     }
 
-    // revert: src/lib/views/shared/links/ProgramButton.svelte:53 => glyph="copy"
+    // revert: src/lib/views/shared/links/ProgramButton.svelte "glyph={t('file.open_program_glyph')}" => glyph="copy"
     it('draws it in the toolbar and beside the download for a .docx, as ui/controls/ToolButton', async () => {
         const body = await held('drafts/report.docx', false);
 

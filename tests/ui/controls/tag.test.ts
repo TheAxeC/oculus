@@ -55,7 +55,7 @@ describe('the tag primitive', () => {
         expect(body).toContain('>DATA-1</span>');
     });
 
-    // revert: src/lib/ui/controls/Tag.svelte:42 => delete
+    // revert: src/lib/ui/controls/Tag.svelte "<Glyph name={glyph} />" => delete
     it('draws the glyph it is given before them, and none when it is given none', () => {
         const withGlyph = render(Tag, { props: { label: 'DATA-1', glyph: 'data' } }).body;
         expect(withGlyph).toContain('class="glyph');
@@ -88,7 +88,7 @@ describe('the tag primitive', () => {
         expect(plain).not.toContain('toned');
     });
 
-    // revert: src/lib/state/shared/words/text.ts:114 => return false;
+    // revert: src/lib/state/shared/words/text.ts "return drawn.startsWith('[') && drawn.endsWith(']');" => return false;
     it('is bracketed under a terminal palette, and not when its stand-in brackets itself', () => {
         const rice = rules(TAG).filter((rule) => rule.selector.includes('body.rice'));
         expect(rice.map((rule) => rule.selector)).toEqual([

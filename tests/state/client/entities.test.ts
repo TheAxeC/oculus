@@ -32,7 +32,7 @@ function snapshot(version: number, projects: string[]): Snapshot {
 
 describe('receive', () => {
     it('takes the first message of a channel after a reconnect whatever its version, then orders again', () => {
-        // revert: src/lib/state/client/entities.svelte.ts:49 => const first = false;
+        // revert: src/lib/state/client/entities.svelte.ts "const first = fresh.delete(message.channel);" => const first = false;
         receive({ channel: 'config', version: 7, payload: { config: { a: 1 } } });
         // A restarted server numbers its channels from the start again.
         client.entities.reconnected();

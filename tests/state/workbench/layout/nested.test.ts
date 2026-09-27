@@ -326,7 +326,7 @@ describe('the store over nested pages', () => {
     });
 
     it('names the view of a tab on whichever page holds it, and none for a tab no page holds', () => {
-        // revert: src/lib/state/workbench/layout/instances.ts:88 => return undefined;
+        // revert: src/lib/state/workbench/layout/instances.ts "return held(id)?.view;" => return undefined;
         const store = load(chain());
         store.moveInstanceToPage('a', 'three');
         expect(store.instanceView('a')).toBe('projects');

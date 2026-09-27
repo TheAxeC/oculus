@@ -80,7 +80,7 @@ test('the folded state survives a reload', async ({ page }) => {
 test('shift-clicking a catalogue entry opens the view in a pane of its own, and the next joins it', async ({
     page
 }) => {
-    // revert: src/lib/views/system/workbench/Catalogue.svelte:118 => if (event.shiftKey) openView(view, state);
+    // revert: src/lib/views/system/workbench/Catalogue.svelte "if (event.shiftKey) openBeside(view, state);" => if (event.shiftKey) openView(view, state);
     await boot(page);
     // The page boot() starts on is one pane; the catalogue opens onto it, the page the reader
     // came from.

@@ -242,7 +242,7 @@ describe('watchGit', () => {
         // Nine commands make one read of the first root (the repository check, the status four,
         // the log, the one ref listing, the worktree listing, and the remotes, since its branch
         // tracks nothing and no stash is kept), and the second root was not read at all.
-        // revert: src/lib/server/core/git.ts:432 => delete
+        // revert: src/lib/server/core/git.ts "upstream(root, found, timeout);" => delete
         expect(reads(first) - before.first).toBe(9);
         expect(reads(second) - before.second).toBe(0);
     });
@@ -277,13 +277,13 @@ describe('watchGit', () => {
         expect(named.map((message) => (message.payload as FilesPayload).root)).toEqual([first]);
         // The cost of one write under one watched root: nine git commands, none for the other
         // root.
-        // revert: src/lib/server/core/git.ts:432 => delete
+        // revert: src/lib/server/core/git.ts "upstream(root, found, timeout);" => delete
         expect(reads(first) - before.first).toBe(9);
         expect(reads(second) - before.second).toBe(0);
     });
 
     it('reads a symbolic link made after the watch opened to a file older than the read', async () => {
-        // revert: src/lib/server/root/watch/git.ts:46 => import { existsSync, statSync as lstatSync, watch } from 'node:fs';
+        // revert: src/lib/server/root/watch/git.ts "import { existsSync, lstatSync, watch } from 'node:fs';" => import { existsSync, statSync as lstatSync, watch } from 'node:fs';
         const root = repository('one');
         const hub = new Hub();
         const client = recording();
@@ -304,7 +304,7 @@ describe('watchGit', () => {
     });
 
     it('reads a tracked symbolic link pointed at another old file after the watch opened', async () => {
-        // revert: src/lib/server/root/watch/git.ts:46 => import { existsSync, statSync as lstatSync, watch } from 'node:fs';
+        // revert: src/lib/server/root/watch/git.ts "import { existsSync, lstatSync, watch } from 'node:fs';" => import { existsSync, statSync as lstatSync, watch } from 'node:fs';
         const root = repository('one');
         put(root, 'other.txt', 'two\n');
         symlinkSync('kept.txt', join(root, 'link'));

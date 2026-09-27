@@ -71,14 +71,14 @@ describe('the server hook', () => {
     });
 
     it('reads the configuration for no request that never asks for it', async () => {
-        // revert: src/hooks.server.ts:19 => event.locals.token = context.token; loadConfig('.');
+        // revert: src/hooks.server.ts "event.locals.token = context.token;" => event.locals.token = context.token; loadConfig('.');
         const read = vi.spyOn(config, 'loadConfig');
         await through(vi.fn(() => Promise.resolve(new Response('{}'))));
         expect(read).not.toHaveBeenCalled();
     });
 
     it('reads it once for a page, whose title and load function share the read', async () => {
-        // revert: src/hooks.server.ts:22 => delete
+        // revert: src/hooks.server.ts "if (read !== undefined) return read;" => delete
         const read = vi.spyOn(config, 'loadConfig');
         let html: string | undefined;
         await through(async ({ locals }, options) => {

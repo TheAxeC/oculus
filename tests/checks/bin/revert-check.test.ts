@@ -1,7 +1,10 @@
 // Layer 4, test. The revert check over a tree of its own: a case whose named revert turns it red, a
 // case that stays green with its revert applied, a case that names no revert at all, the four
 // shapes in which a revert proves nothing and must say so rather than call itself red, and the
-// port a browser case waits for, with the report that says another run held it.
+// port a browser case waits for, with the report that says another run held it. A directive names
+// its target line by the line's text: an anchor, an offset below it and a range resolve to their
+// lines, and an anchor that matches no line or several, an offset past the end, a target line that
+// went, and a directive that names its line by number are unproven, never resolved to a guess.
 //
 // The fixture is a whole little project, since the check copies the tree it is given and runs one
 // case inside the copy; the dependencies are reached by a link to this project's node_modules, so a
@@ -47,12 +50,12 @@ const CASES = [
     "import { allowed } from '../src/rule.mjs';",
     '',
     "it('refuses a size under the limit', () => {",
-    `    ${DIRECTIVE} src/rule.mjs:2 => return true;`,
+    `    ${DIRECTIVE} src/rule.mjs "return size > 2;" => return true;`,
     '    expect(allowed(1)).toBe(false);',
     '});',
     '',
     "it('answers a size over the limit with a boolean', () => {",
-    `    ${DIRECTIVE} src/rule.mjs:2 => return true;`,
+    `    ${DIRECTIVE} src/rule.mjs "return size > 2;" => return true;`,
     '    expect(typeof allowed(3)).toBe("boolean");',
     '});',
     '',
@@ -94,12 +97,117 @@ function run(dir: string, files: string[]): { out: string; status: number | null
     return { out: held.stdout, status: held.status };
 }
 
+/** Where directives() resolves one directive to, or the problem that leaves it unproven. */
+type Resolved = { first: number; last: number; problem: string };
+
+/** The lines directives() resolves each directive of one fixture file to, with its problem. */
+function resolved(dir: string, file: string): Resolved[] {
+    const call = `const m = await import('./bin/revert-check.mjs'); process.stdout.write(JSON.stringify(m.directives(process.argv[1], [process.argv[2]]).map(({ first, last, problem }) => ({ first, last, problem }))));`;
+    const done = spawnSync(process.execPath, ['--input-type=module', '-e', call, dir, file], {
+        cwd: process.cwd(),
+        encoding: 'utf8'
+    });
+    expect(done.status, done.stderr).toBe(0);
+    return JSON.parse(done.stdout) as Resolved[];
+}
+
+/** The fixture with one case holding the given directive lines. */
+function caseWith(...lines: string[]): string {
+    const body = [
+        "it('the case', () => {",
+        ...lines.map((one) => `    ${DIRECTIVE} ${one}`),
+        '});'
+    ];
+    return withFile(fixture(), 'tests/rule.test.js', [...body, ''].join('\n'));
+}
+
+describe('a directive names its target line by the text of the line', () => {
+    it('reads an anchor as the one line whose trimmed text equals it', () => {
+        // revert: bin/revert-check.mjs "at = one + 1;" => at = one;
+        const dir = caseWith('src/rule.mjs "return size > 2;" => return true;');
+        expect(resolved(dir, 'tests/rule.test.js')).toEqual([{ first: 2, last: 2, problem: '' }]);
+    });
+
+    it('counts an offset down from its anchor', () => {
+        // revert: bin/revert-check.mjs "const line = at + anchor.offset;" => const line = at;
+        const dir = caseWith('src/rule.mjs "export function allowed(size) {" +1 => return true;');
+        expect(resolved(dir, 'tests/rule.test.js')).toEqual([{ first: 2, last: 2, problem: '' }]);
+    });
+
+    it('reads a range as its first line and its last', () => {
+        // revert: bin/revert-check.mjs "const last = match[4] === undefined ? first : anchorOf(match[4], match[5]);" => const last = first;
+        const dir = caseWith('src/rule.mjs "export function allowed(size) {" .. "}" => delete');
+        expect(resolved(dir, 'tests/rule.test.js')).toEqual([{ first: 1, last: 3, problem: '' }]);
+    });
+
+    it('calls an anchor matching no line or two unproven, with the count it found', () => {
+        // revert: bin/revert-check.mjs "if (found !== 1) return { line: 0, why: `which matches ${found} lines` };" => if (found === 0) return { line: 0, why: 'which matches 0 lines' };
+        const dir = caseWith(
+            'src/rule.mjs "return size > 3;" => return true;',
+            'src/twice.mjs "x();" => delete'
+        );
+        withFile(dir, 'src/twice.mjs', 'x();\nx();\n');
+        const held = run(dir, ['tests/rule.test.js']);
+        expect(held.out).toContain(
+            'unproven  tests/rule.test.js:2 names src/rule.mjs "return size > 3;", which matches 0 lines'
+        );
+        expect(held.out).toContain(
+            'unproven  tests/rule.test.js:3 names src/twice.mjs "x();", which matches 2 lines'
+        );
+        expect(held.out).toContain('2 reverts, 2 unproven');
+        expect(held.status).toBe(1);
+    });
+
+    it('calls an offset that runs past the end of the file unproven', () => {
+        // revert: bin/revert-check.mjs "if (line > lines.length) {" => if (false) {
+        const dir = caseWith('src/rule.mjs "}" +3 => return true;');
+        const held = run(dir, ['tests/rule.test.js']);
+        expect(held.out).toContain(
+            'unproven  tests/rule.test.js:2 names src/rule.mjs "}" +3, which runs to line 6 of 4'
+        );
+        expect(held.status).toBe(1);
+    });
+
+    it('calls a directive whose target line went unproven, and never reverts another line', () => {
+        // revert: bin/revert-check.mjs "if (lines[one].trim() !== anchor.text) continue;" => if (!lines[one].includes(anchor.text.slice(0, 11))) continue;
+        const dir = caseWith('src/rule.mjs "return size > 2;" => return true;');
+        withFile(dir, 'src/rule.mjs', RULE.replace('size > 2', 'size >= 3'));
+        const held = run(dir, ['tests/rule.test.js']);
+        expect(held.out).toContain(
+            'unproven  tests/rule.test.js:2 names src/rule.mjs "return size > 2;", which matches 0 lines'
+        );
+        expect(held.out).not.toContain('red ');
+        expect(held.status).toBe(1);
+    });
+
+    it('calls a directive whose quoted text is not a JSON string unproven', () => {
+        // revert: bin/revert-check.mjs "return { problem: `names ${match[1]} by a text that is not a JSON string` };" => return null;
+        const dir = caseWith('src/rule.mjs "x\\q" => return true;');
+        const held = run(dir, ['tests/rule.test.js']);
+        expect(held.out).toContain(
+            'unproven  tests/rule.test.js:2 names src/rule.mjs by a text that is not a JSON string'
+        );
+        expect(held.status).toBe(1);
+    });
+
+    it('refuses a directive that names its line by number, and says to convert it', () => {
+        // revert: bin/revert-check.mjs "return NUMBERED.test(line) ? { problem: 'names a line number; convert it' } : null;" => return null;
+        const dir = caseWith('src/rule.mjs:2 => return true;');
+        const held = run(dir, ['tests/rule.test.js']);
+        expect(held.out).toContain(
+            'unproven  tests/rule.test.js:2 names a line number; convert it'
+        );
+        expect(held.out).toContain('1 reverts, 1 unproven, 0 unchecked');
+        expect(held.status).toBe(1);
+    });
+});
+
 describe('the revert check', () => {
     it(
         'calls a case red when its revert breaks it and GREEN when it does not',
         { timeout: 120000 },
         () => {
-            // revert: bin/revert-check.mjs:504 => if (run.green) return { ok: true, line: `red       ${where}` };
+            // revert: bin/revert-check.mjs "if (run.green) return { ok: false, line: `GREEN     ${where}` };" => if (run.green) return { ok: true, line: `red       ${where}` };
             const dir = fixture();
             const held = run(dir, ['tests/rule.test.js']);
             expect(held.out).toContain(
@@ -114,7 +222,7 @@ describe('the revert check', () => {
     );
 
     it('lists a case with no machine-readable revert as unchecked, never as passed', () => {
-        // revert: bin/revert-check.mjs:539 => delete
+        // revert: bin/revert-check.mjs "process.stdout.write(`unchecked ${one.file} :: ${one.caseName}\\n`);" => delete
         const dir = fixture();
         writeFileSync(
             join(dir, 'tests', 'rule.test.js'),
@@ -132,25 +240,27 @@ describe('the revert check', () => {
         expect(held.status).toBe(1);
     });
 
-    it('refuses a directive whose file or line the tree does not hold', () => {
-        // revert: bin/revert-check.mjs:220 => if (false) {
+    it('refuses a directive whose file the tree does not hold, or whose range runs backwards', () => {
+        // revert: bin/revert-check.mjs "if (first < 1 || last > lines.length || last < first) {" => if (false) {
         const dir = fixture();
         writeFileSync(
             join(dir, 'tests', 'rule.test.js'),
             [
                 "it('names a line past the end', () => {",
-                `    ${DIRECTIVE} src/rule.mjs:99 => return true;`,
+                `    ${DIRECTIVE} src/rule.mjs "return size > 2;" .. "export function allowed(size) {" => return true;`,
                 '    expect(1).toBe(1);',
                 '});',
                 "it('names a file that is not there', () => {",
-                `    ${DIRECTIVE} src/gone.mjs:1 => return true;`,
+                `    ${DIRECTIVE} src/gone.mjs "return size > 2;" => return true;`,
                 '    expect(1).toBe(1);',
                 '});',
                 ''
             ].join('\n')
         );
         const held = run(dir, ['tests/rule.test.js']);
-        expect(held.out).toContain('no line   tests/rule.test.js:2 names src/rule.mjs:lines 99-99');
+        expect(held.out).toContain(
+            'no line   tests/rule.test.js:2 names src/rule.mjs:lines 2-1 of 4'
+        );
         expect(held.out).toContain('no file   tests/rule.test.js:6 names src/gone.mjs');
         expect(held.status).toBe(1);
     });
@@ -160,7 +270,7 @@ describe('the revert check', () => {
         'calls a case whose name holds a bracket by that name, and not by it as a pattern',
         { timeout: 120000 },
         () => {
-            // revert: bin/revert-check.mjs:308 => const escaped = caseName;
+            // revert: bin/revert-check.mjs "const escaped = caseName.replace(/[.*+?^${}()|[\\]\\\\]/g, (one) => `\\\\${one}`);" => const escaped = caseName;
             const dir = fixture();
             withFile(
                 dir,
@@ -170,7 +280,7 @@ describe('the revert check', () => {
                     "import { allowed } from '../src/rule.mjs';",
                     '',
                     "it('a name with a bracket (like this one', () => {",
-                    `    ${DIRECTIVE} src/rule.mjs:2 => return true;`,
+                    `    ${DIRECTIVE} src/rule.mjs "return size > 2;" => return true;`,
                     '    expect(allowed(5)).toBe(true);',
                     '});',
                     ''
@@ -186,7 +296,7 @@ describe('the revert check', () => {
     );
 
     it('calls a revert the build refused unproven, never red', { timeout: 60000 }, () => {
-        // revert: bin/revert-check.mjs:381 => if (built.status !== 0) return { ran: true, green: false };
+        // revert: bin/revert-check.mjs "if (built.status !== 0) return { ran: false, why: 'the build refused the revert' };" => if (built.status !== 0) return { ran: true, green: false };
         const dir = fixture();
         writeFileSync(
             join(dir, 'package.json'),
@@ -199,7 +309,7 @@ describe('the revert check', () => {
                 "import { expect, test } from '@playwright/test';",
                 '',
                 "test('a look the build has to serve', () => {",
-                `    ${DIRECTIVE} src/rule.mjs:2 => return true;`,
+                `    ${DIRECTIVE} src/rule.mjs "return size > 2;" => return true;`,
                 '    expect(1).toBe(1);',
                 '});',
                 ''
@@ -219,7 +329,7 @@ describe('the revert check', () => {
         'calls a replacement that leaves the file unparsable unproven, never red',
         { timeout: 120000 },
         () => {
-            // revert: bin/revert-check.mjs:361 => if (held.length === 0) return { ran: true, green: false };
+            // revert: bin/revert-check.mjs "if (held.length === 0) return { ran: false, why: 'the case did not run' };" => if (held.length === 0) return { ran: true, green: false };
             // A TypeScript module, which node cannot parse on its own, so the run itself is what
             // finds it broken.
             const dir = withFile(
@@ -235,7 +345,7 @@ describe('the revert check', () => {
                     "import { allowed } from '../src/rule.ts';",
                     '',
                     "it('refuses a size under the limit', () => {",
-                    `    ${DIRECTIVE} src/rule.ts:2 => return (;`,
+                    `    ${DIRECTIVE} src/rule.ts "return size > 2;" => return (;`,
                     '    expect(allowed(1)).toBe(false);',
                     '});',
                     ''
@@ -255,7 +365,7 @@ describe('the revert check', () => {
         'names a directive whose target a copy leaves behind, and runs the ones after it',
         { timeout: 120000 },
         () => {
-            // revert: bin/revert-check.mjs:443 => if (false) {
+            // revert: bin/revert-check.mjs "if (SKIPPED.includes(directive.target.split('/')[0])) {" => if (false) {
             const dir = fixture();
             withFile(dir, '.scratch/plan.md', 'a plan the copy leaves behind\n');
             withFile(
@@ -266,12 +376,12 @@ describe('the revert check', () => {
                     "import { allowed } from '../src/rule.mjs';",
                     '',
                     "it('names a target the copy leaves behind', () => {",
-                    `    ${DIRECTIVE} .scratch/plan.md:1 => changed`,
+                    `    ${DIRECTIVE} .scratch/plan.md "a plan the copy leaves behind" => changed`,
                     '    expect(allowed(1)).toBe(false);',
                     '});',
                     '',
                     "it('refuses a size under the limit', () => {",
-                    `    ${DIRECTIVE} src/rule.mjs:2 => return true;`,
+                    `    ${DIRECTIVE} src/rule.mjs "return size > 2;" => return true;`,
                     '    expect(allowed(1)).toBe(false);',
                     '});',
                     ''
@@ -288,7 +398,7 @@ describe('the revert check', () => {
     );
 
     it('calls a skipped case unproven, and one another case excludes', { timeout: 120000 }, () => {
-        // revert: bin/revert-check.mjs:364 => if (held[0] === 'skipped') return { ran: true, green: false };
+        // revert: bin/revert-check.mjs "if (held[0] === 'skipped') return { ran: false, why: 'the case was skipped' };" => if (held[0] === 'skipped') return { ran: true, green: false };
         const dir = fixture();
         withFile(
             dir,
@@ -298,12 +408,12 @@ describe('the revert check', () => {
                 "import { allowed } from '../src/rule.mjs';",
                 '',
                 "it.skip('a case skipped by itself', () => {",
-                `    ${DIRECTIVE} src/rule.mjs:2 => return true;`,
+                `    ${DIRECTIVE} src/rule.mjs "return size > 2;" => return true;`,
                 '    expect(allowed(1)).toBe(false);',
                 '});',
                 '',
                 "it('a case another case excludes', () => {",
-                `    ${DIRECTIVE} src/rule.mjs:2 => return true;`,
+                `    ${DIRECTIVE} src/rule.mjs "return size > 2;" => return true;`,
                 '    expect(allowed(1)).toBe(false);',
                 '});',
                 '',
@@ -329,7 +439,7 @@ describe('the revert check', () => {
         'calls a title two cases share unproven, however the siblings ran',
         { timeout: 120000 },
         () => {
-            // revert: bin/revert-check.mjs:362 => if (held.length > 99)
+            // revert: bin/revert-check.mjs "if (held.length > 1)" => if (held.length > 99)
             const dir = fixture();
             withFile(
                 dir,
@@ -339,7 +449,7 @@ describe('the revert check', () => {
                     "import { allowed } from '../src/rule.mjs';",
                     '',
                     "it('one name, two cases', () => {",
-                    `    ${DIRECTIVE} src/rule.mjs:2 => return true;`,
+                    `    ${DIRECTIVE} src/rule.mjs "return size > 2;" => return true;`,
                     '    expect(allowed(5)).toBe(true);',
                     '});',
                     '',
@@ -357,7 +467,7 @@ describe('the revert check', () => {
     );
 
     it('calls a revert that changes nothing unproven', () => {
-        // revert: bin/revert-check.mjs:204 => if (false) {
+        // revert: bin/revert-check.mjs "if (named.every(inert)) {" => if (false) {
         const dir = fixture();
         withFile(
             dir,
@@ -378,12 +488,12 @@ describe('the revert check', () => {
                 "import { allowed } from '../src/rule.mjs';",
                 '',
                 "it('names the comment above the rule', () => {",
-                `    ${DIRECTIVE} src/rule.mjs:1 => // another comment`,
+                `    ${DIRECTIVE} src/rule.mjs "// the limit a size is held to" => // another comment`,
                 '    expect(allowed(1)).toBe(false);',
                 '});',
                 '',
                 "it('names the rule and writes it back', () => {",
-                `    ${DIRECTIVE} src/rule.mjs:3 => return size > 2;`,
+                `    ${DIRECTIVE} src/rule.mjs "return size > 2;" => return size > 2;`,
                 '    expect(allowed(1)).toBe(false);',
                 '});',
                 ''
@@ -398,7 +508,7 @@ describe('the revert check', () => {
     });
 
     it('refuses a target that escapes the tree, and writes nothing outside the copy', () => {
-        // revert: bin/revert-check.mjs:431 => if (false) {
+        // revert: bin/revert-check.mjs "if (!inside(root, target)) {" => if (false) {
         const dir = fixture();
         const outside = join(dir, '..', `escape-target-${basename(dir)}.txt`);
         writeFileSync(outside, 'the file a directive must not reach\n');
@@ -411,7 +521,7 @@ describe('the revert check', () => {
                 "import { allowed } from '../src/rule.mjs';",
                 '',
                 "it('names a path outside the tree', () => {",
-                `    ${DIRECTIVE} ../escape-target-${basename(dir)}.txt:1 => changed`,
+                `    ${DIRECTIVE} ../escape-target-${basename(dir)}.txt "the file a directive must not reach" => changed`,
                 '    expect(allowed(1)).toBe(false);',
                 '});',
                 ''
@@ -427,7 +537,7 @@ describe('the revert check', () => {
     // Revert: in real of bin/revert-check.mjs, compare the path as written instead of following the
     // links on it, and a symlink inside the tree carries the edit to the file it names outside.
     it('names a directive whose target is a symlink out of the tree', { timeout: 120000 }, () => {
-        // revert: bin/revert-check.mjs:248 => return held;
+        // revert: bin/revert-check.mjs "return realpathSync(held);" => return held;
         const dir = fixture();
         const outside = join(dir, '..', `link-target-${basename(dir)}.txt`);
         writeFileSync(outside, 'the file a link must not reach\n');
@@ -441,7 +551,7 @@ describe('the revert check', () => {
                 "import { allowed } from '../src/rule.mjs';",
                 '',
                 "it('names a symlink that leaves the tree', () => {",
-                `    ${DIRECTIVE} tests/link.txt:1 => changed by the directive`,
+                `    ${DIRECTIVE} tests/link.txt "the file a link must not reach" => changed by the directive`,
                 '    expect(allowed(1)).toBe(false);',
                 '});',
                 ''
@@ -455,7 +565,7 @@ describe('the revert check', () => {
     });
 
     it('reads a directive on the line above a case as that case', { timeout: 120000 }, () => {
-        // revert: bin/revert-check.mjs:165 => const under = null;
+        // revert: bin/revert-check.mjs "const under = next < lines.length ? caseName(lines, next) : null;" => const under = null;
         const dir = fixture();
         withFile(
             dir,
@@ -468,7 +578,7 @@ describe('the revert check', () => {
                 '    expect(allowed(5)).toBe(true);',
                 '});',
                 '',
-                `${DIRECTIVE} src/rule.mjs:2 => return true;`,
+                `${DIRECTIVE} src/rule.mjs "return size > 2;" => return true;`,
                 "it('the case the directive opens', () => {",
                 '    expect(allowed(1)).toBe(false);',
                 '});',
@@ -484,7 +594,7 @@ describe('the revert check', () => {
     });
 
     it('leaves nothing a case made in the temporary directory', { timeout: 120000 }, () => {
-        // revert: bin/revert-check.mjs:418 => const env = { ...process.env, CI: '1' };
+        // revert: bin/revert-check.mjs "const env = { ...process.env, CI: '1', TMPDIR: temp, NODE_DISABLE_COMPILE_CACHE: '1' };" => const env = { ...process.env, CI: '1' };
         const dir = fixture();
         const probe = `oculus-leak-probe-${basename(dir)}-`;
         withFile(
@@ -498,7 +608,7 @@ describe('the revert check', () => {
                 "import { allowed } from '../src/rule.mjs';",
                 '',
                 "it('makes a folder it never removes', () => {",
-                `    ${DIRECTIVE} src/rule.mjs:2 => return true;`,
+                `    ${DIRECTIVE} src/rule.mjs "return size > 2;" => return true;`,
                 `    mkdtempSync(join(tmpdir(), '${probe}'));`,
                 '    expect(allowed(1)).toBe(false);',
                 '});',
@@ -518,7 +628,7 @@ describe('the revert check', () => {
         'removes its copy of the tree when it is stopped by a signal',
         { timeout: 120000 },
         async () => {
-            // revert: bin/revert-check.mjs:458 => delete
+            // revert: bin/revert-check.mjs "for (const signal of SIGNALS) process.once(signal, stopped);" => delete
             const dir = fixture();
             const temp = scratchDir('oculus-revert-signal-');
             expect(resolve(temp).startsWith(resolve(tmpdir()) + sep)).toBe(true);
@@ -530,7 +640,7 @@ describe('the revert check', () => {
                     "import { allowed } from '../src/rule.mjs';",
                     '',
                     "it('takes a few seconds', async () => {",
-                    `    ${DIRECTIVE} src/rule.mjs:2 => return true;`,
+                    `    ${DIRECTIVE} src/rule.mjs "return size > 2;" => return true;`,
                     '    await new Promise((done) => setTimeout(done, 3000));',
                     '    expect(allowed(1)).toBe(false);',
                     '});',
@@ -562,7 +672,7 @@ describe('the revert check', () => {
             timeout: 120000
         },
         () => {
-            // revert: bin/revert-check.mjs:492 => if (false) {
+            // revert: bin/revert-check.mjs "if (/\\.(mjs|cjs|js)$/.test(directive.target)) {" => if (false) {
             const dir = fixture();
             withFile(dir, 'src/tool.mjs', "console.log('ran');\n");
             withFile(
@@ -573,7 +683,7 @@ describe('the revert check', () => {
                     "import { expect, it } from 'vitest';",
                     '',
                     "it('runs the tool to its end', () => {",
-                    `    ${DIRECTIVE} src/tool.mjs:1 => console.log('ran';`,
+                    `    ${DIRECTIVE} src/tool.mjs "console.log('ran');" => console.log('ran';`,
                     "    expect(spawnSync('node', ['src/tool.mjs']).status).toBe(0);",
                     '});',
                     ''
@@ -590,7 +700,7 @@ describe('the revert check', () => {
         'reads a directive above the prose revert of a case as that case',
         { timeout: 120000 },
         () => {
-            // revert: bin/revert-check.mjs:164 => delete
+            // revert: bin/revert-check.mjs "while (next < lines.length && COMMENT.test(lines[next])) next += 1;" => delete
             const dir = fixture();
             withFile(
                 dir,
@@ -603,7 +713,7 @@ describe('the revert check', () => {
                     '    expect(allowed(5)).toBe(true);',
                     '});',
                     '',
-                    `${DIRECTIVE} src/rule.mjs:2 => return true;`,
+                    `${DIRECTIVE} src/rule.mjs "return size > 2;" => return true;`,
                     '// Revert: let every size through in allowed of src/rule.mjs.',
                     "it('the case under the prose', () => {",
                     '    expect(allowed(1)).toBe(false);',
@@ -622,7 +732,7 @@ describe('the revert check', () => {
 
 describe("a case's copy, on its way out", () => {
     it('is said and not thrown over when the case left it unremovable', { timeout: 120000 }, () => {
-        // revert: bin/revert-check.mjs:65-84 => rmSync(dir, { recursive: true, force: true });
+        // revert: bin/revert-check.mjs "for (let pass = 0; pass < 5; pass += 1) {" .. "process.stdout.write(`kept      ${dir}\\n`);" +2 => rmSync(dir, { recursive: true, force: true });
         const dir = fixture();
         withFile(
             dir,
@@ -633,7 +743,7 @@ describe("a case's copy, on its way out", () => {
                 "import { expect, it } from 'vitest';",
                 "import { allowed } from '../src/rule.mjs';",
                 '',
-                `${DIRECTIVE} src/rule.mjs:2 => return true;`,
+                `${DIRECTIVE} src/rule.mjs "return size > 2;" => return true;`,
                 "it('the case', () => {",
                 // The case takes the write bit off a folder of its own copy, which is what a child
                 // still writing into the copy does to the removal that follows the case.
@@ -656,7 +766,7 @@ describe("a case's copy, on its way out", () => {
 
 describe('a case the check runs', () => {
     it('runs with the compile cache off, so no child writes into its copy as it exits', () => {
-        // revert: bin/revert-check.mjs:418 => const env = { ...process.env, CI: '1', TMPDIR: temp };
+        // revert: bin/revert-check.mjs "const env = { ...process.env, CI: '1', TMPDIR: temp, NODE_DISABLE_COMPILE_CACHE: '1' };" => const env = { ...process.env, CI: '1', TMPDIR: temp };
         const dir = fixture();
         const held = spawnSync(
             process.execPath,
@@ -694,7 +804,7 @@ describe('a browser case and the port its server takes', () => {
         return done.stdout;
     }
 
-    // revert: bin/revert-check.mjs:289 => return 0;
+    // revert: bin/revert-check.mjs "return Number(spawnSync(process.execPath, ['-e', probe], { encoding: 'utf8' }).stdout);" => return 0;
     it('hands each run a port nothing listens on, which a server can then take', () => {
         const port = Number(answer('freePort'));
         expect(Number.isInteger(port) && port > 0 && port < 65536).toBe(true);
@@ -703,7 +813,7 @@ describe('a browser case and the port its server takes', () => {
         expect(spawnSync(process.execPath, ['-e', listen]).status).toBe(0);
     });
 
-    // revert: bin/revert-check.mjs:294 => return { ...env, PLAYWRIGHT_JSON_OUTPUT_NAME: report };
+    // revert: bin/revert-check.mjs "return { ...env, PLAYWRIGHT_JSON_OUTPUT_NAME: report, OCULUS_BROWSER_PORT: String(port) };" => return { ...env, PLAYWRIGHT_JSON_OUTPUT_NAME: report };
     it('names the port to the case run, beside its report file', () => {
         expect(JSON.parse(answer('browserEnv', { KEPT: '1' }, 'report.json', 43121))).toEqual({
             KEPT: '1',
@@ -712,7 +822,7 @@ describe('a browser case and the port its server takes', () => {
         });
     });
 
-    // revert: bin/revert-check.mjs:300 => /EADDRINUSE/.test(one.message ?? '')
+    // revert: bin/revert-check.mjs "/is already used|EADDRINUSE/.test(one.message ?? '')" => /EADDRINUSE/.test(one.message ?? '')
     it('tells a run whose server found the port taken from one that ran', () => {
         const taken = {
             errors: [

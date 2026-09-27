@@ -238,7 +238,7 @@ test('a root added in the page serves its own files, each in the view its name a
 test("a file is bookmarked from its own tab, and the rail's Bookmarks menu lists the reader's own bookmark", async ({
     page
 }) => {
-    // revert: src/lib/shell/rail/rail.ts:41 => title: mark.label
+    // revert: src/lib/shell/rail/rail.ts "title: `${mark.root}/${mark.path}`" => title: mark.label
     await boot(page);
     await openView(page, 'files', t('views.files'));
     await row(page, 'hub').click();
@@ -294,7 +294,7 @@ test('the file browser tints its box over a wallpaper and its form paints nothin
 test('the first bookmark is made from the form, and an HTML one is one tab from either place', async ({
     page
 }) => {
-    // revert: src/lib/shell/rail/rail.ts:41 => title: mark.label
+    // revert: src/lib/shell/rail/rail.ts "title: `${mark.root}/${mark.path}`" => title: mark.label
     const dir = scratch();
     const key = dir.split(sep).at(-1) ?? '';
 
@@ -532,8 +532,8 @@ test('a breadcrumb segment selects the folder it names, and the path follows the
     await expect(crumbs.getByRole('button')).toHaveText([key, 'sub']);
 });
 
-// revert: src/lib/views/sources/files/Files.svelte:196 => crumbsOf(view.selected)
-// revert: src/lib/views/sources/files/Files.svelte:458 => {#if true}
+// revert: src/lib/views/sources/files/Files.svelte "follow.roots.some((root) => root.key === view.selected?.root) ? crumbsOf(view.selected) : []" => crumbsOf(view.selected)
+// revert: src/lib/views/sources/files/Files.svelte "{#if !follow.following || follow.found !== null}" => {#if true}
 test('a tab turned to follow nothing drops the path of a row its tree no longer draws, and says why it is empty', async ({
     page
 }) => {
@@ -598,7 +598,7 @@ test('the tree is one stop from the filter box, and the focused row hands Tab to
 test("a row's controls appear on hover, and bookmark the file and open it in a kept tab", async ({
     page
 }) => {
-    // revert: src/lib/shell/rail/rail.ts:41 => title: mark.label
+    // revert: src/lib/shell/rail/rail.ts "title: `${mark.root}/${mark.path}`" => title: mark.label
     await boot(page);
     await openView(page, 'files', t('views.files'));
     const { key } = await nestedRoot(page);
@@ -631,7 +631,7 @@ test("a row's controls appear on hover, and bookmark the file and open it in a k
 
 // Revert: in ui/tree/TreeItem.svelte, leave the tooltip describing the button, which a tree never
 // focuses.
-// revert: src/lib/ui/tree/TreeItem.svelte:215-220 => <Tooltip text={title ?? ''} block>
+// revert: src/lib/ui/tree/TreeItem.svelte "<Tooltip" .. "over={box}" +1 => <Tooltip text={title ?? ''} block>
 test("a tree row gives a screen reader its tooltip's words as its description", async ({
     page
 }) => {
@@ -650,7 +650,7 @@ test("a tree row gives a screen reader its tooltip's words as its description", 
 
 // Revert: in ui/tree/TreeItem.svelte, drop the rule that draws a row's controls on a screen whose
 // pointer does not hover.
-// revert: src/lib/ui/tree/TreeItem.svelte:439 => opacity: 0;
+// revert: src/lib/ui/tree/TreeItem.svelte "@media (hover: none) {" +2 => opacity: 0;
 test("a row's controls are drawn on a screen that has no hover, with no pointer over them", async ({
     browser
 }) => {
@@ -750,7 +750,7 @@ test('a row is 22 pixels at 13-pixel names under 11-pixel heads, a selected row 
 
 // Revert: call remove(key) straight from the head's control in views/sources/files/Files.svelte,
 // with no confirm.
-// revert: src/lib/views/sources/files/Files.svelte:513 => void remove(removing);
+// revert: src/lib/views/sources/files/Files.svelte "void remove(key);" => void remove(removing);
 test('removing a root the reader added asks first, and a cancel keeps it', async ({ page }) => {
     await boot(page);
     await openView(page, 'files', t('views.files'));
@@ -807,7 +807,7 @@ test('a second file of the same name is bookmarked under its path from the row s
     await expect(page.locator('[data-fs-bookmark="README.md"]')).toHaveCount(0);
 });
 
-// revert: src/lib/state/sources/fs.svelte.ts:645 => answered(BOOKMARKS, at);
+// revert: src/lib/state/sources/fs.svelte.ts "schema?: unknown;" +5 => answered(BOOKMARKS, at);
 test('a bookmarks read that failed is asked again by its own control, without a reload', async ({
     page
 }) => {
@@ -840,7 +840,7 @@ test('a bookmarks read that failed is asked again by its own control, without a 
     await expect(again).toHaveCount(0);
 });
 
-// revert: src/lib/server/root/watch/bookmarks.ts:83 => () => undefined
+// revert: src/lib/server/root/watch/bookmarks.ts "queue" => () => undefined
 test('a bookmark written by one page reaches a second page that wrote nothing', async ({
     page
 }) => {

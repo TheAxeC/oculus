@@ -393,7 +393,7 @@ describe('the journal section and venue card', () => {
 });
 
 describe('the indexing marks of a venue card', () => {
-    // revert: src/lib/views/sources/venues/VenueCard.svelte:88 => return { label };
+    // revert: src/lib/views/sources/venues/VenueCard.svelte "return { label, glyph: mark === 'yes' ? 'check' : 'cross' };" => return { label };
     it('draws a yes as the check glyph and a no as the cross glyph beside the words', () => {
         const indexed: Venue = {
             id: 'indexed',
@@ -419,7 +419,7 @@ describe('the indexing marks of a venue card', () => {
 });
 
 describe('the conference section and ribbon', () => {
-    // revert: src/lib/views/sources/venues/Ribbon.svelte:73 => delete
+    // revert: src/lib/views/sources/venues/Ribbon.svelte "<rect x={at + 0.1} y={SPARK_HEIGHT - height} width=\"0.8\" {height} fill=\"currentColor\" />" => delete
     it('draws the deadline density line as one SVG bar per month and no character', () => {
         const body = html();
         const spark = body.slice(body.indexOf('class="spark'), body.indexOf('class="legend'));
@@ -434,7 +434,7 @@ describe('the conference section and ribbon', () => {
         expect(spark).not.toMatch(/[^\t\n\r\x20-\x7E]/);
     });
 
-    // revert: src/lib/views/sources/venues/Ribbon.svelte:167 => color: var(--accent-txt, var(--accent));
+    // revert: src/lib/views/sources/venues/Ribbon.svelte "color: var(--ink-txt, var(--ink));" => color: var(--accent-txt, var(--accent));
     it('audits that the density bars are painted in the text colour, which they take through currentColor', () => {
         expect(html()).toContain('<svg class="bars');
         // The bars fill with currentColor, so the rule on the line is the colour they are drawn in.

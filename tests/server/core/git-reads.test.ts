@@ -70,7 +70,7 @@ function conflict(): void {
 }
 
 describe('the state beside the changes', () => {
-    // revert: src/lib/server/core/git-parse.ts:175 => annotated: false,
+    // revert: src/lib/server/core/git-parse.ts "annotated: peeled !== ''," => annotated: false,
     it('lists each tag with the commit it points at, and whether it is annotated', () => {
         const head = git(repo, 'rev-parse', 'HEAD').trim();
         git(repo, 'tag', 'light');
@@ -85,7 +85,7 @@ describe('the state beside the changes', () => {
         });
     });
 
-    // revert: src/lib/server/core/git-parse.ts:197 => message: '',
+    // revert: src/lib/server/core/git-parse.ts "message: parts.slice(2, -1).join(UNIT)," => message: '',
     it('lists each stash newest first by the name git gives it', () => {
         write('kept.txt', 'one\nstashed\nthree\n');
         git(repo, 'stash', 'push', '--message=first stash');
@@ -98,13 +98,13 @@ describe('the state beside the changes', () => {
         expect(value(stashDiff(repo, 'stash@{1}'))).toContain('+stashed');
     });
 
-    // revert: src/lib/server/core/git.ts:519 => return [];
+    // revert: src/lib/server/core/git.ts "return done.ok ? capped(done.text.split('\\n').filter((one) => one.trim() !== '')) : [];" => return [];
     it('names the remotes of the repository', () => {
         git(repo, 'remote', 'add', 'origin', join(dir, 'nowhere.git'));
         expect(state().remotes).toEqual(['origin']);
     });
 
-    // revert: src/lib/server/core/git.ts:615 => delete
+    // revert: src/lib/server/core/git.ts "found.conflicted.push(entry(path, `${index}${work}`, undefined));" => delete
     it('puts an unmerged path in its own list with its pair, and says a merge is in progress', () => {
         conflict();
         const held = state();
@@ -116,7 +116,7 @@ describe('the state beside the changes', () => {
         expect(held.mergeMessage).not.toContain('#');
     });
 
-    // revert: src/lib/server/core/git.ts:531 => sequence = '';
+    // revert: src/lib/server/core/git.ts "sequence = 'rebasing';" => sequence = '';
     it('says a rebase that stopped is in progress', () => {
         git(repo, 'switch', '-c', 'other');
         write('kept.txt', 'one\nTWO FROM OTHER\nthree\n');
@@ -130,7 +130,7 @@ describe('the state beside the changes', () => {
         expect(held.conflicted.map((one) => one.path)).toEqual(['kept.txt']);
     });
 
-    // revert: src/lib/server/core/git.ts:529 => let sequence: GitSequence = 'merging';
+    // revert: src/lib/server/core/git.ts "let sequence: GitSequence = '';" => let sequence: GitSequence = 'merging';
     it('says nothing is in progress in a quiet repository', () => {
         expect(state().sequence).toBe('');
         expect(state().conflicted).toEqual([]);
@@ -138,7 +138,7 @@ describe('the state beside the changes', () => {
 });
 
 describe('the reads on demand', () => {
-    // revert: src/lib/server/core/git-parse.ts:125 => delete
+    // revert: src/lib/server/core/git-parse.ts "refs.push(name.slice('HEAD -> '.length));" => delete
     it('reads a page of the graph with each commit, its parents, its names and the head', () => {
         git(repo, 'tag', 'first-tag');
         write('kept.txt', 'one\ntwo\nthree\nfour\n');
@@ -161,7 +161,7 @@ describe('the reads on demand', () => {
         expect(page.outgoing).toEqual([]);
     });
 
-    // revert: src/lib/server/core/git.ts:257 => more: false,
+    // revert: src/lib/server/core/git.ts "more: rows.length > GRAPH_PAGE," => more: false,
     it('reads the graph a page at a time, saying where more follow', () => {
         // The page and one more empty commit, made in one fast-import run, not a process each.
         const branch = git(repo, 'rev-parse', '--abbrev-ref', 'HEAD').trim();
@@ -187,7 +187,7 @@ describe('the reads on demand', () => {
         expect(second.more).toBe(false);
     });
 
-    // revert: src/lib/server/core/git.ts:258 => incoming: [],
+    // revert: src/lib/server/core/git.ts "incoming: from === 0 ? between(root, 'HEAD..@{upstream}', ms) : []," => incoming: [],
     it('reads what the upstream holds that HEAD does not, and the other way round', () => {
         const origin = join(dir, 'origin');
         const done = spawnSync('git', ['clone', '--quiet', repo, origin], { encoding: 'utf8' });
@@ -206,7 +206,7 @@ describe('the reads on demand', () => {
         expect(page.outgoing.map((one) => one.subject)).toEqual(['from here']);
     });
 
-    // revert: src/lib/server/core/git-parse.ts:229 => delete
+    // revert: src/lib/server/core/git-parse.ts "if (path !== '') rows.push({ status: letter, path, from: '' });" => delete
     it("reads one commit's files and its diff of one of them", () => {
         write('added.txt', 'new\n');
         write('kept.txt', 'one\n2\nthree\n');
@@ -225,7 +225,7 @@ describe('the reads on demand', () => {
         expect(text).toContain(' three');
     });
 
-    // revert: src/lib/server/core/git.ts:230 => return true;
+    // revert: src/lib/server/core/git.ts "return full === base || full.startsWith(base + sep);" => return true;
     it('refuses a commit that is not a hash and a path outside the repository', () => {
         expect(commitFiles(repo, 'HEAD~1').ok).toBe(false);
         expect(commitFiles(repo, '--all').ok).toBe(false);
@@ -241,7 +241,7 @@ describe('the reads on demand', () => {
         expect(pathInside(repo, 'sub/../kept.txt')).toBe(true);
     });
 
-    // revert: src/lib/server/core/git-parse.ts:255 => uncommitted: false
+    // revert: src/lib/server/core/git-parse.ts "uncommitted: hash === UNCOMMITTED" => uncommitted: false
     it('blames each line on its commit, and a line no commit holds on nobody yet', () => {
         write('kept.txt', 'one\nchanged here\nthree\n');
         const lines = value(blameOf(repo, 'kept.txt'));
@@ -253,7 +253,7 @@ describe('the reads on demand', () => {
         expect(lines[1].uncommitted).toBe(true);
     });
 
-    // revert: src/lib/server/core/git-parse.ts:289 => marks.push({ kind: 'deleted', line: start, count: 0 });
+    // revert: src/lib/server/core/git-parse.ts "marks.push({ kind: 'deleted', line: start + 1, count: 0 });" => marks.push({ kind: 'deleted', line: start, count: 0 });
     it('marks the lines the worktree added, changed and took out against the index', () => {
         write('kept.txt', 'one\ntwo\nthree\nfour\nfive\nsix\nseven\n');
         git(repo, 'commit', '-am', 'seven');
@@ -268,7 +268,7 @@ describe('the reads on demand', () => {
         expect(value(lineMarks(repo, 'kept.txt'))).toEqual([]);
     });
 
-    // revert: src/lib/server/core/git.ts:373 => const [base, ours, theirs] = [side(1), side(3), side(2)];
+    // revert: src/lib/server/core/git.ts "const [base, ours, theirs] = [side(1), side(2), side(3)];" => const [base, ours, theirs] = [side(1), side(3), side(2)];
     it('reads the base, ours and theirs of a conflicted path', () => {
         conflict();
         const sides = value(mergeSides(repo, 'kept.txt'));
@@ -278,7 +278,7 @@ describe('the reads on demand', () => {
         expect(sides.deleted).toBe('');
     });
 
-    // revert: src/lib/server/core/git.ts:377-385 => const deleted = '';
+    // revert: src/lib/server/core/git.ts "const deleted = !base.held" .. ": '';" => const deleted = '';
     it('says which side deleted a path in conflict: both, ours or theirs', () => {
         deletionConflicts(repo, git, 'work');
         const both = value(mergeSides(repo, DELETED.both));
@@ -293,7 +293,7 @@ describe('the reads on demand', () => {
         expect(theirs.theirs).toBe('');
     });
 
-    // revert: src/lib/server/core/git.ts:377 => const deleted = false
+    // revert: src/lib/server/core/git.ts "const deleted = !base.held" => const deleted = false
     it('reads no deletion on a path one side added, which has no base (git AU and UA)', () => {
         deletionConflicts(repo, git, 'work');
         const here = value(mergeSides(repo, 'renamed-here.txt'));
@@ -307,7 +307,7 @@ describe('the reads on demand', () => {
         expect(there.theirs).toBe('the same lines on both sides\nof the rename\n');
     });
 
-    // revert: src/lib/server/core/git.ts:374 => delete
+    // revert: src/lib/server/core/git.ts "if (!base.held && !ours.held && !theirs.held) return refused(`${path} is not in conflict`);" => delete
     it('refuses the sides of a path in no conflict', () => {
         const read = mergeSides(repo, 'kept.txt');
         expect(read.ok).toBe(false);

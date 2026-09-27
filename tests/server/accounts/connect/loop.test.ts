@@ -53,7 +53,7 @@ async function settle(): Promise<void> {
 }
 
 describe('an account list the machine file changes', () => {
-    // revert: src/lib/server/accounts/connect/loop.ts:186 => else schedule();
+    // revert: src/lib/server/accounts/connect/loop.ts "else void run(false);" => else schedule();
     it('reads an added account at once, and only that one', async () => {
         const { loop, reads, publish } = recorded([WORK]);
         await loop.run(true);
@@ -68,7 +68,7 @@ describe('an account list the machine file changes', () => {
         expect(publish).toHaveBeenCalled();
     });
 
-    // revert: src/lib/server/accounts/connect/loop.ts:177 => delete
+    // revert: src/lib/server/accounts/connect/loop.ts "for (const map of options.held) map.delete(key);" => delete
     it('forgets a removed account and publishes without it', async () => {
         const { loop, held, publish } = recorded([WORK, UNI]);
         await loop.run(true);
@@ -82,7 +82,7 @@ describe('an account list the machine file changes', () => {
         expect(publish).toHaveBeenCalledTimes(1);
     });
 
-    // revert: src/lib/server/accounts/connect/loop.ts:172 => delete
+    // revert: src/lib/server/accounts/connect/loop.ts "return;" => delete
     it('changes nothing for the same list in the same order and folder', async () => {
         const { loop, reads, publish } = recorded([WORK, UNI]);
         await loop.run(true);
@@ -96,7 +96,7 @@ describe('an account list the machine file changes', () => {
         expect(publish).not.toHaveBeenCalled();
     });
 
-    // revert: src/lib/server/accounts/connect/loop.ts:181 => delete
+    // revert: src/lib/server/accounts/connect/loop.ts "if (moved) options.moved?.(dir);" => delete
     it('reads every account again from a new folder, and says it moved', async () => {
         const { loop, reads, moves, held } = recorded([WORK, UNI]);
         await loop.run(true);
@@ -112,7 +112,7 @@ describe('an account list the machine file changes', () => {
         expect(held.size).toBe(0);
     });
 
-    // revert: src/lib/server/accounts/connect/loop.ts:99 => !closed;
+    // revert: src/lib/server/accounts/connect/loop.ts "!closed && from === dir && accounts.some((one) => connectKey(one) === connectKey(account));" => !closed;
     it('answers a read in flight for an account that left as no longer live', async () => {
         let release = (): void => undefined;
         const lives: boolean[] = [];
@@ -144,7 +144,7 @@ describe('an account list the machine file changes', () => {
         expect(lives).toEqual([false]);
     });
 
-    // revert: src/lib/server/accounts/connect/loop.ts:185 => if (false) schedule();
+    // revert: src/lib/server/accounts/connect/loop.ts "if (accounts.length === 0) schedule();" => if (false) schedule();
     it('holds no timer once the last account has left', async () => {
         vi.useFakeTimers();
         const { loop } = recorded([WORK]);

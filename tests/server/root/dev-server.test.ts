@@ -184,7 +184,7 @@ const SSR_PROBE = [
 ].join('\n');
 
 describe('the development server of the dev script', () => {
-    // revert: vite.config.ts:15 => delete
+    // revert: vite.config.ts "componentBeforeStyle()," => delete
     it(
         'serves a style module asked for before its component as compiled CSS, and again after it, and leaves no process on stop',
         async () => {
@@ -219,7 +219,7 @@ describe('the development server of the dev script', () => {
         START_MS + 30_000
     );
 
-    // revert: vite.config.ts:15 => delete
+    // revert: vite.config.ts "componentBeforeStyle()," => delete
     it(
         'loads a style module asked for before its component as compiled CSS on the SSR path',
         async () => {

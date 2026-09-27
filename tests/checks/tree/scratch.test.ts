@@ -226,7 +226,7 @@ export function findOwnScratch(allow: string[] = OWN, root = TESTS): string[] {
 
 describe('a scratch directory', () => {
     it('is made inside the temporary directory and swept away again', () => {
-        // revert: tests/fixtures/scratch.ts:48 => return;
+        // revert: tests/fixtures/scratch.ts "for (const dir of made.splice(0)) rmSync(dir, { recursive: true, force: true });" => return;
         const dir = scratchDir('oculus-scratch-case-');
         expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
         expect(scratchMade()).toContain(dir);
@@ -235,7 +235,7 @@ describe('a scratch directory', () => {
         expect(scratchMade()).toEqual([]);
     });
 
-    // revert: tests/fixtures/scratch.ts:37 => if (false) {
+    // revert: tests/fixtures/scratch.ts "if (!resolve(full).startsWith(resolve(dir) + sep)) {" => if (false) {
     it('is planted with the files given, and refuses one whose path leaves it', () => {
         const dir = plantScratch('oculus-scratch-plant-', { 'a/b.txt': 'held' });
         expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
@@ -248,17 +248,17 @@ describe('a scratch directory', () => {
     });
 
     it('is the only way a test file makes one', () => {
-        // revert: tests/checks/tree/scratch.test.ts:208 => if (false) continue;
+        // revert: tests/checks/tree/scratch.test.ts "if (allow.includes(rel)) continue;" => if (false) continue;
         expect(findOwnScratch()).toEqual([]);
     });
 
     it('is swept by every file under tests that takes one', () => {
-        // revert: tests/checks/tree/scratch.test.ts:163 => if (one.registers) return false;
+        // revert: tests/checks/tree/scratch.test.ts "if (one.registers) return true;" => if (one.registers) return false;
         expect(findUnswept()).toEqual([]);
     });
 
     it('reads a registration from code, never from a comment or a string', () => {
-        // revert: tests/checks/tree/scratch.test.ts:108 => const lines = text.split('\\n');
+        // revert: tests/checks/tree/scratch.test.ts "const lines = codeOnly(text).split('\\n');" => const lines = text.split('\\n');
         const dir = scratchDir('oculus-prose-');
         const write = (rel: string, body: string) => {
             const full = join(dir, rel);
@@ -297,7 +297,7 @@ describe('a scratch directory', () => {
     });
 
     it('catches the three shapes in a tree of its own', () => {
-        // revert: tests/checks/tree/scratch.test.ts:185 => if (suite && false) {
+        // revert: tests/checks/tree/scratch.test.ts "if (suite && !swept(rel)) {" => if (suite && false) {
         const dir = scratchDir('oculus-unswept-');
         const write = (rel: string, body: string) => {
             const full = join(dir, rel);
@@ -340,7 +340,7 @@ describe('a scratch directory', () => {
     });
 
     it('catches a suite, a hand-run file and a module-scope call that sweep nothing', () => {
-        // revert: tests/checks/tree/scratch.test.ts:113 => if (registersAt === -1 && false) {
+        // revert: tests/checks/tree/scratch.test.ts "if (registersAt === -1 && /(afterAll|process\\.on)\\([^)]*sweepScratch/.test(line)) {" => if (registersAt === -1 && false) {
         const plain = "import { scratchDir } from '../scratch.ts';\n";
         expect(shapeOf(plain).registersAt).toBe(-1);
         expect(shapeOf('const held = scratchDir("x-");\n').callsAt).toBe(0);
@@ -356,7 +356,7 @@ describe('a scratch directory', () => {
     });
 
     it('reads a dynamic import and a double-quoted one as reaching the helper', () => {
-        // revert: tests/checks/tree/scratch.test.ts:92 => return [...text.matchAll(/from '(\.[^']+)'/g)]
+        // revert: tests/checks/tree/scratch.test.ts "return [...withoutComments(text).matchAll(/(?:from|import)\\s*\\(?\\s*['\"](\\.[^'\"]+)['\"]/g)]" => return [...text.matchAll(/from '(\.[^']+)'/g)]
         const known = new Set([HELPER, 'one.test.ts']);
         expect(importsIn('one.test.ts', "import { x } from '../one.test.ts';", known)).toEqual([]);
         expect(
@@ -371,7 +371,7 @@ describe('a scratch directory', () => {
     });
 
     it('catches a file that makes one of its own', () => {
-        // revert: tests/checks/tree/scratch.test.ts:222 => `tests/${rel} takes a scratch directory, and that is fine`
+        // revert: tests/checks/tree/scratch.test.ts "found.push(`tests/${rel} makes a temporary directory of its own`);" => `tests/${rel} takes a scratch directory, and that is fine`
         expect(findOwnScratch([])).toEqual([
             'tests/browser/helpers/serve.ts makes a temporary directory of its own',
             'tests/fixtures/scratch.ts makes a temporary directory of its own'
@@ -382,7 +382,7 @@ describe('a scratch directory', () => {
     // by name, and a file that takes its directory the promise way, or by making one at a path it
     // builds from the system temporary directory, is not seen at all.
     it('catches a directory taken the promise way and one made at a path built by hand', () => {
-        // revert: tests/checks/tree/scratch.test.ts:213 => const takes = bare.includes(CALLS[0]);
+        // revert: tests/checks/tree/scratch.test.ts "const takes =" => const takes = bare.includes(CALLS[0]);
         const dir = scratchDir('oculus-scratch-shapes-');
         expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
         mkdirSync(join(dir, 'views'), { recursive: true });

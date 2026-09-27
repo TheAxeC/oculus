@@ -177,7 +177,7 @@ describe('the write endpoint', () => {
         expect(overridesOf(into)).toEqual({ sessions: {} });
     });
 
-    // revert: src/lib/server/edit/writes.ts:261 => for (const flag of ['hidden'] as const) {
+    // revert: src/lib/server/edit/writes.ts "for (const flag of ['hidden', 'top'] as const) {" => for (const flag of ['hidden'] as const) {
     it('pins a session to the top of its group through the route, and takes it off', async () => {
         const into = target();
         const pin = { kind: 'session', id: 'sess-1', top: true, title: 'my name' };
@@ -194,7 +194,7 @@ describe('the write endpoint', () => {
         expect((await handleWrite(request(off), TOKEN, into)).status).toBe(200);
         expect(overridesOf(into)).toEqual({ sessions: { 'sess-1': { title: 'my name' } } });
         // A top that is no boolean refuses the whole body, the valid title beside it included.
-        // revert: src/lib/server/edit/writes/bodies.ts:139 => if (typeof value !== 'boolean') continue;
+        // revert: src/lib/server/edit/writes/bodies.ts "if (typeof value !== 'boolean') return null;" => if (typeof value !== 'boolean') continue;
         const wrong = { kind: 'session', id: 'sess-1', top: 'yes', title: 'other' };
         expect((await handleWrite(request(wrong), TOKEN, into)).status).toBe(400);
         expect(overridesOf(into)).toEqual({ sessions: { 'sess-1': { title: 'my name' } } });

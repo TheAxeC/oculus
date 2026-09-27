@@ -159,9 +159,9 @@ describe('the wallpaper rule', () => {
                 .map((selector) => `${file} ${selector}`);
         });
 
-    // revert: src/lib/ui/tabs/TabFace.svelte:258 => delete
-    // revert: src/lib/views/sessions/terminal/Composer.svelte:411 => background: var(--bg);
-    // revert: src/lib/views/shared/sessions/SteerBox.svelte:164 => background: var(--bg);
+    // revert: src/lib/ui/tabs/TabFace.svelte "background: var(--chip);" => delete
+    // revert: src/lib/views/sessions/terminal/Composer.svelte "background: transparent;" => background: var(--bg);
+    // revert: src/lib/views/shared/sessions/SteerBox.svelte "background: transparent;" => background: var(--bg);
     it('answers every surface a component paints, or names it as solid with its reason', () => {
         expect([...new Set(unpaired)].sort()).toEqual(Object.keys(SOLID).sort());
     });

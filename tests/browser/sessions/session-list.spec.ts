@@ -54,7 +54,7 @@ async function rowMenu(page: Page, title: string, entry: string): Promise<void> 
     await page.getByRole('menuitem', { name: entry, exact: true }).click();
 }
 
-// revert: src/lib/state/sessions/folds.ts:133 => const haystack = [row.lastPrompt];
+// revert: src/lib/state/sessions/folds.ts "const haystack = [row.title, row.lastPrompt, ...prompts, row.workspace, row.branch ?? ''];" => const haystack = [row.lastPrompt];
 test('the search and the filter narrow the rows, and stay with the tab across a reload', async ({
     page
 }) => {
@@ -85,7 +85,7 @@ test('the search and the filter narrow the rows, and stay with the tab across a 
     await expect(row(page, 'List spec alpha')).toHaveCount(1, { timeout: 15000 });
 });
 
-// revert: src/lib/views/sessions/session-list/SessionList.svelte:200 => if (id === 'top') void mark(row, 'hidden', !top(row));
+// revert: src/lib/views/sessions/session-list/SessionList.svelte "if (id === 'top') void mark(row, 'top', !top(row));" => if (id === 'top') void mark(row, 'hidden', !top(row));
 test('a row is renamed, pinned to the top of its group and archived from its menu', async ({
     page
 }) => {
@@ -117,7 +117,7 @@ test('a row is renamed, pinned to the top of its group and archived from its men
     await expect(row(page, 'List spec newer')).toHaveCount(0);
 });
 
-// revert: src/lib/views/sessions/session-list/SessionList.svelte:182 => failure = field === 'hidden' ? t('sessions.top_failed') : t('sessions.top_failed');
+// revert: src/lib/views/sessions/session-list/SessionList.svelte "failure = field === 'hidden' ? t('sessions.archive_failed') : t('sessions.top_failed');" => failure = field === 'hidden' ? t('sessions.top_failed') : t('sessions.top_failed');
 test('an archive the server does not save puts the row back and says the archive failed', async ({
     page
 }) => {
@@ -137,7 +137,7 @@ test('an archive the server does not save puts the row back and says the archive
     await expect(row(page, 'List spec kept')).not.toHaveAttribute('data-state', 'archived');
 });
 
-// revert: src/lib/views/sessions/session-list/SessionList.svelte:78 => const now = Date.now();
+// revert: src/lib/views/sessions/session-list/SessionList.svelte "const now = $derived(minuteNow());" => const now = Date.now();
 test('a row ages while the page stays open, on the minute clock', async ({ page }) => {
     await page.clock.install({ time: new Date() });
     writeTranscript(store(), 'List spec aging', hubDir(), { asked: 'Age.', answered: 'Read.' });

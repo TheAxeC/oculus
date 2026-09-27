@@ -78,7 +78,7 @@ async function paint(
 test('the manual draws every diagram in the colour of its prose, light and dark', async ({
     page
 }) => {
-    // revert: src/lib/views/system/help/Diagram.svelte:78 => color: black;
+    // revert: src/lib/views/system/help/Diagram.svelte "color: var(--ink-txt, var(--ink));" => color: black;
     await boot(page);
     const colours: string[] = [];
     for (const theme of ['light', 'dark']) {
@@ -102,7 +102,7 @@ test('the manual draws every diagram in the colour of its prose, light and dark'
 test('a diagram file carrying a script and a handler is drawn as a drawing alone', async ({
     page
 }) => {
-    // revert: src/lib/views/system/help/Diagram.svelte:69 => {@html shown.svg}
+    // revert: src/lib/views/system/help/Diagram.svelte "{@html sanitiseGraph(shown.svg)}" => {@html shown.svg}
     const seen: string[] = [];
     page.on('dialog', (dialog) => {
         seen.push(dialog.message());
@@ -132,8 +132,8 @@ test('a diagram file carrying a script and a handler is drawn as a drawing alone
 test('a write edge names the functions it calls on hover, and no style of the file is drawn', async ({
     page
 }) => {
-    // revert: src/lib/ui/html.ts:268 => export const GRAPH_TAGS = ['svg', 'g', 'polygon', 'polyline', 'path', 'ellipse', 'text'];
-    // revert: src/lib/ui/html.ts:268 => export const GRAPH_TAGS = ['svg', 'style', 'g', 'title', 'polygon', 'polyline', 'path', 'ellipse', 'text'];
+    // revert: src/lib/ui/html.ts "export const GRAPH_TAGS = ['svg', 'g', 'title', 'polygon', 'polyline', 'path', 'ellipse', 'text'];" => export const GRAPH_TAGS = ['svg', 'g', 'polygon', 'polyline', 'path', 'ellipse', 'text'];
+    // revert: src/lib/ui/html.ts "export const GRAPH_TAGS = ['svg', 'g', 'title', 'polygon', 'polyline', 'path', 'ellipse', 'text'];" => export const GRAPH_TAGS = ['svg', 'style', 'g', 'title', 'polygon', 'polyline', 'path', 'ellipse', 'text'];
     await boot(page);
     await openView(page, 'help', t('views.help'));
     const figure = page.locator('[data-diagram="writes"]');
@@ -167,7 +167,7 @@ async function closeHelp(page: Page): Promise<void> {
 test('a diagram whose view closes with its answer held back stops its fetch, and nothing lands', async ({
     page
 }) => {
-    // revert: src/lib/views/system/help/Diagram.svelte:58 => void ask((signal) => load(asked, signal));
+    // revert: src/lib/views/system/help/Diagram.svelte "return ask((signal) => load(asked, signal));" => void ask((signal) => load(asked, signal));
     const errors: string[] = [];
     page.on('pageerror', (error) => errors.push(error.message));
     const failed: Request[] = [];
@@ -221,7 +221,7 @@ test('a diagram whose view closes with its answer held back stops its fetch, and
 test('a diagram says it is drawing while its answer is out, and a view closed then opens whole', async ({
     page
 }) => {
-    // revert: src/lib/views/system/help/Diagram.svelte:64 => delete
+    // revert: src/lib/views/system/help/Diagram.svelte "<p class=\"note\">{t('help.diagram_loading', name)}</p>" => delete
     const errors: string[] = [];
     page.on('pageerror', (error) => errors.push(error.message));
     let release: () => void = () => undefined;
@@ -249,7 +249,7 @@ test('a diagram says it is drawing while its answer is out, and a view closed th
 });
 
 test('the diagram route serves only the svg files of docs/diagrams', async ({ page }) => {
-    // revert: src/lib/server/content/diagrams.ts:27 => export const DIAGRAM_NAME = /\.(svg|dot|json)$/;
+    // revert: src/lib/server/content/diagrams.ts "export const DIAGRAM_NAME = /^[a-z0-9][a-z0-9-]*\\.svg$/;" => export const DIAGRAM_NAME = /\.(svg|dot|json)$/;
     await boot(page);
     const served = await page.request.get('/api/diagrams/layers.svg');
     expect(served.status()).toBe(200);
@@ -325,7 +325,7 @@ test('the machine own file is the last card and opens in a source tab', async ({
 test('every configuration card is as tall as what it holds, and the list scrolls', async ({
     page
 }) => {
-    // revert: src/lib/views/system/config/Config.svelte:150 => delete
+    // revert: src/lib/views/system/config/Config.svelte "grid-auto-rows: max-content;" => delete
     await boot(page);
     await openView(page, 'config', t('views.config'));
     await expect(card(page, 'local.yml').locator('button[aria-expanded]')).toBeVisible();
@@ -360,7 +360,7 @@ test('a hub document opens from its group in the catalogue', async ({ page }) =>
 test('a hub document keeps its drawn heading while writes under the hub are read', async ({
     page
 }) => {
-    // revert: src/lib/state/system/docs.svelte.ts:171 => return askedAt[key] !== (marks[key] ?? 0) ? PENDING : (doc ?? PENDING);
+    // revert: src/lib/state/system/docs.svelte.ts "return doc ?? PENDING;" => return askedAt[key] !== (marks[key] ?? 0) ? PENDING : (doc ?? PENDING);
     writeHubFile(HPC.path, HOWTO);
     try {
         const rereads: number[] = [];
@@ -483,7 +483,7 @@ async function savedDocState(page: Page): Promise<unknown> {
 test('a saved document tab whose path left the list follows the entry carrying its label', async ({
     page
 }) => {
-    // revert: src/lib/views/sources/doc/Doc.svelte:70 => delete
+    // revert: src/lib/views/sources/doc/Doc.svelte "restateInstance(instance.id, { ...held(instance.state), ...docState(entry) });" => delete
     const stale = HPC.path.slice(HPC.path.lastIndexOf('/') + 1);
     expect(stale).not.toBe(HPC.path);
     writeHubFile(HPC.path, HOWTO);
@@ -500,7 +500,7 @@ test('a saved document tab whose path left the list follows the entry carrying i
 });
 
 test('a saved document tab matching no entry names the path it asked for', async ({ page }) => {
-    // revert: src/lib/views/sources/doc/Doc.svelte:105 => <Empty message={t('doc.none')} glyph={t('doc.none_glyph')} />
+    // revert: src/lib/views/sources/doc/Doc.svelte "<Empty message={t('doc.unlisted', path)} glyph={t('doc.none_glyph')} />" => <Empty message={t('doc.none')} glyph={t('doc.none_glyph')} />
     await bootWithDocTab(page, { id: 'GONE.md', path: 'GONE.md', label: 'Gone' });
 
     await expect(page.getByText(t('doc.unlisted', 'GONE.md'))).toBeVisible();
@@ -530,7 +530,7 @@ async function savedDocTabs(page: Page): Promise<Record<string, unknown>> {
 test('a saved document tab whose entry another tab already shows closes into that tab', async ({
     page
 }) => {
-    // revert: src/lib/views/sources/doc/Doc.svelte:68 => const open = openElsewhere('');
+    // revert: src/lib/views/sources/doc/Doc.svelte "const open = openElsewhere(entry.path);" => const open = openElsewhere('');
     const stale = HPC.path.slice(HPC.path.lastIndexOf('/') + 1);
     expect(stale).not.toBe(HPC.path);
     const current = { id: HPC.path, path: HPC.path, label: HPC.label };
@@ -538,7 +538,7 @@ test('a saved document tab whose entry another tab already shows closes into tha
     try {
         // The Status tab sits between the two, so the pane settling on a neighbour after the close
         // would show Status: the document drawn means the other tab was made active.
-        // revert: src/lib/views/sources/doc/Doc.svelte:75 => delete
+        // revert: src/lib/views/sources/doc/Doc.svelte "activateInstance(open);" => delete
         await bootWithDocTab(
             page,
             { id: stale, path: stale, label: HPC.label },
@@ -562,7 +562,7 @@ test('a saved document tab whose entry another tab already shows closes into tha
 test("a saved document tab whose entry a tab on another page shows closes, and that tab becomes its page's active one", async ({
     page
 }) => {
-    // revert: src/lib/views/sources/doc/Doc.svelte:75 => delete
+    // revert: src/lib/views/sources/doc/Doc.svelte "activateInstance(open);" => delete
     const stale = HPC.path.slice(HPC.path.lastIndexOf('/') + 1);
     const current = { id: HPC.path, path: HPC.path, label: HPC.label };
     writeHubFile(HPC.path, HOWTO);

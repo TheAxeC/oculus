@@ -44,7 +44,7 @@ afterEach(() => {
 });
 
 describe('a read of the agents answer', () => {
-    // revert: src/lib/state/sessions/agents.svelte.ts:70 => if (false) return;
+    // revert: src/lib/state/sessions/agents.svelte.ts "if (inflight.has(key)) return;" => if (false) return;
     it('is pending until it lands, and is asked for once however often it is read', async () => {
         expect(agents.agentChoices()).toEqual({ value: null, pending: true, error: '' });
         expect(agents.agentChoices().pending).toBe(true);
@@ -60,7 +60,7 @@ describe('a read of the agents answer', () => {
         expect(asked).toHaveLength(1);
     });
 
-    // revert: src/lib/state/sessions/agents.svelte.ts:112 => const query = '';
+    // revert: src/lib/state/sessions/agents.svelte.ts "const query = account === '' ? '' : `?${new URLSearchParams({ account }).toString()}`;" => const query = '';
     it('names the account it is for in the query and in its key', async () => {
         agents.agentChoices('Uni');
         agents.agentChoices();
@@ -68,7 +68,7 @@ describe('a read of the agents answer', () => {
         expect(asked.map((one) => one.url)).toEqual(['/api/agents?account=Uni', '/api/agents']);
     });
 
-    // revert: src/lib/state/sessions/agents.svelte.ts:87 => ? String(response.status)
+    // revert: src/lib/state/sessions/agents.svelte.ts "? body.error" => ? String(response.status)
     it("reads a refusal as the server's error, a bare one as its status, and a thrown fetch as its message", async () => {
         agents.agentChoices('a');
         agents.agentChoices('b');
@@ -89,7 +89,7 @@ describe('a read of the agents answer', () => {
 });
 
 describe('the Customizations reads', () => {
-    // revert: src/lib/state/sessions/agents.svelte.ts:97 => if (false) return;
+    // revert: src/lib/state/sessions/agents.svelte.ts "if (generation.get(key) !== mine) return;" => if (false) return;
     it('keep the refreshed answer when the one it superseded lands after it', async () => {
         agents.customizations(SCOPE);
         await settle();
@@ -103,7 +103,7 @@ describe('the Customizations reads', () => {
         expect(agents.customizations(SCOPE).value).toEqual({ rows: ['new'] });
     });
 
-    // revert: src/lib/state/sessions/agents.svelte.ts:122 => const query = scopeQuery(scope);
+    // revert: src/lib/state/sessions/agents.svelte.ts "const query = `${scopeQuery(scope)}&${new URLSearchParams({ file: path }).toString()}`;" => const query = scopeQuery(scope);
     it('ask a file under its scope and its path, apart from the rows', async () => {
         agents.customizations(SCOPE);
         agents.customizationText(SCOPE, '/w a/CLAUDE.md');
@@ -114,7 +114,7 @@ describe('the Customizations reads', () => {
         ]);
     });
 
-    // revert: src/lib/state/sessions/agents.svelte.ts:53 => workspace: ''
+    // revert: src/lib/state/sessions/agents.svelte.ts "workspace: scope.workspace" => workspace: ''
     it('key a scope by its agent, account and workspace, and save an export as Markdown', () => {
         expect(scopeQuery({ agent: 'codex', account: '', workspace: '/x' })).toBe(
             'agent=codex&account=&workspace=%2Fx'
@@ -122,7 +122,7 @@ describe('the Customizations reads', () => {
         expect(exportUrl('s 1')).toBe('/api/transcript?id=s+1&format=markdown');
     });
 
-    // revert: src/lib/state/sessions/agents.svelte.ts:139 => if (id === '') return false;
+    // revert: src/lib/state/sessions/agents.svelte.ts "if (typeof document === 'undefined' || id === '') return false;" => if (id === '') return false;
     it('save nothing where there is no document to click in', () => {
         expect(agents.exportSession('s1')).toBe(false);
     });

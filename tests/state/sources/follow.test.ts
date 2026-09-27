@@ -30,7 +30,7 @@ const OTHER: FsRoot = { key: 'r2', dir: '/elsewhere', fixed: false };
 const ROOTS = [HUB, TOOL, OTHER];
 
 describe('the root a folder lies in', () => {
-    // revert: src/lib/state/sources/fs.ts:784 => if (best === null) best = { root, path: inside };
+    // revert: src/lib/state/sources/fs.ts "if (best === null || base.length > best.root.dir.length) best = { root, path: inside };" => if (best === null) best = { root, path: inside };
     it('is the deepest root holding it, with the path inside that root', () => {
         expect(rootHolding(ROOTS, '/hub/tools/oculus')).toEqual({ root: TOOL, path: 'oculus' });
         expect(rootHolding(ROOTS, '/hub/projects/')).toEqual({ root: HUB, path: 'projects' });
@@ -38,7 +38,7 @@ describe('the root a folder lies in', () => {
         expect(rootHolding(ROOTS, '/hub/tools')).toEqual({ root: TOOL, path: '' });
     });
 
-    // revert: src/lib/state/sources/fs.ts:780 => : wanted.startsWith(base)
+    // revert: src/lib/state/sources/fs.ts ": wanted.startsWith(`${base}/`)" => : wanted.startsWith(base)
     it('is none for a folder no root holds, or one that only shares a prefix', () => {
         expect(rootHolding(ROOTS, '/hubby/x')).toBe(null);
         expect(rootHolding(ROOTS, '/')).toBe(null);
@@ -48,7 +48,7 @@ describe('the root a folder lies in', () => {
 });
 
 describe("a Files tab's follow mode", () => {
-    // revert: src/lib/state/sources/fs.ts:798 => (state as Record<string, unknown>).follow !== false
+    // revert: src/lib/state/sources/fs.ts "(state as Record<string, unknown>).follow === true" => (state as Record<string, unknown>).follow !== false
     it('is on only for layout state that says so', () => {
         expect(followsSession({ follow: true })).toBe(true);
         for (const state of [{}, { follow: 'yes' }, { follow: false }, null, [], 'follow']) {
@@ -56,7 +56,7 @@ describe("a Files tab's follow mode", () => {
         }
     });
 
-    // revert: src/lib/state/sources/fs.ts:844 => top: { path: '', name: folderName(dir) }
+    // revert: src/lib/state/sources/fs.ts "top: { path: found.path, name: folderName(dir) }" => top: { path: '', name: folderName(dir) }
     it('is rooted at the followed folder inside the root holding it, at nothing when no root holds it, and every root when off', () => {
         expect(followView({ follow: true }, ROOTS, '/hub/tools/oculus')).toEqual({
             following: true,
@@ -89,7 +89,7 @@ describe("a Files tab's follow mode", () => {
         });
     });
 
-    // revert: src/lib/state/sources/fs.ts:859 => ? ''
+    // revert: src/lib/state/sources/fs.ts "? (session.cwd ?? '')" => ? ''
     it("follows a session's workspace, else its folder, else the selected terminal's folder", () => {
         expect(followedDirOf({ workspace: '/w', cwd: '/w/sub' }, { cwd: '/t' })).toBe('/w');
         expect(followedDirOf({ workspace: '', cwd: '/w/sub' }, null)).toBe('/w/sub');
@@ -99,14 +99,14 @@ describe("a Files tab's follow mode", () => {
         expect(followedDirOf(null, null)).toBe(null);
     });
 
-    // revert: src/lib/state/sources/fs.ts:868 => return { follow: on };
+    // revert: src/lib/state/sources/fs.ts "return { ...kept, follow: on };" => return { follow: on };
     it('is set on or off with the rest of the layout state kept', () => {
         expect(withFollow({ id: 'x', follow: true }, false)).toEqual({ id: 'x', follow: false });
         expect(withFollow(null, true)).toEqual({ follow: true });
         expect(withFollow(['x'], true)).toEqual({ follow: true });
     });
 
-    // revert: src/lib/state/sources/fs.ts:883 => const key = treeKey(found.root.key, '');
+    // revert: src/lib/state/sources/fs.ts "const key = treeKey(found.root.key, found.path);" => const key = treeKey(found.root.key, '');
     it('opens the followed folder, the head of its tree, and keeps the rest of the tab', () => {
         const opened = filesViewOf(
             followRevealed({ filter: 'x' }, { root: TOOL, path: 'oculus/src' })
@@ -117,7 +117,7 @@ describe("a Files tab's follow mode", () => {
         expect(atRoot.expanded).toEqual(['r1:']);
     });
 
-    // revert: src/lib/state/sources/fs.ts:878 => return kept;
+    // revert: src/lib/state/sources/fs.ts "return session === null ? kept : { ...kept, session };" => return kept;
     it('is pinned to one session and let go again, follow mode kept on both ways', () => {
         expect(withFollowPin({ follow: false, id: 'x' }, 'sess-1')).toEqual({
             follow: true,
@@ -141,7 +141,7 @@ describe('a tree rooted at a folder inside its root', () => {
     const entriesOf = (root: string, path: string): FsEntry[] => listed[`${root}:${path}`] ?? [];
     const top = { path: 'oculus', name: 'oculus' };
 
-    // revert: src/lib/state/sources/fs.ts:741 => const path = '';
+    // revert: src/lib/state/sources/fs.ts "if (open) walk(root, child, depth + 1);" +4 => const path = '';
     it('draws the folder as its head and what is in it below, with the paths inside the root', () => {
         const rows = treeRows([TOOL], entriesOf, ['r1:oculus', 'r1:oculus/src'], top);
         expect(rows.map((row) => [row.path, row.name, row.depth])).toEqual([
@@ -154,7 +154,7 @@ describe('a tree rooted at a folder inside its root', () => {
         expect(treeRows([TOOL], entriesOf, ['r1:'], top)).toHaveLength(1);
     });
 
-    // revert: src/lib/state/sources/fs.ts:606 => const path = '';
+    // revert: src/lib/state/sources/fs.ts "return roots.flatMap((root) => {" +1 => const path = '';
     it('filters inside the folder only, under the folder as its head', () => {
         const held = (root: string, path: string): FsEntry[] | null =>
             listed[`${root}:${path}`] ?? null;
@@ -162,7 +162,7 @@ describe('a tree rooted at a folder inside its root', () => {
         expect(rows.map((row) => row.path)).toEqual(['oculus', 'oculus/src', 'oculus/src/b.ts']);
     });
 
-    // revert: src/lib/state/sources/fs.ts:640 => const parent = parentOf(row);
+    // revert: src/lib/state/sources/fs.ts "const parent = row.depth === 0 ? null : parentOf(row);" => const parent = parentOf(row);
     it('gives the head no parent for the keyboard, and its entries the head', () => {
         const rows = treeRows([TOOL], entriesOf, ['r1:oculus'], top);
         expect(treeKeyRows(rows, false).map((row) => row.parent)).toEqual([
@@ -174,7 +174,7 @@ describe('a tree rooted at a folder inside its root', () => {
 });
 
 describe("a file row's drag", () => {
-    // revert: src/lib/state/sources/fs.ts:895 => return `${base}/${path}`;
+    // revert: src/lib/state/sources/fs.ts "return path === '' ? base : `${base}/${path}`;" => return `${base}/${path}`;
     it('carries the absolute path of the row, the root folder itself for its own line', () => {
         expect(absoluteOf('/hub/tools/', 'oculus/a.ts')).toBe('/hub/tools/oculus/a.ts');
         expect(absoluteOf('/hub', 'a.ts')).toBe('/hub/a.ts');

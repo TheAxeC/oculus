@@ -30,19 +30,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:      # Q77c and Q77d in flight (they merge by rerunning Q77c's converter); then Q77a, Q77b and Q77e after Q77c and Q77d land, then L7, Q89, Q79, Q80, then the queue of plan.md.
-- step: Q77c
-  executor: agent
-  worker: claude:opus
-  session_id: a9501ae3157a5e6ea
-  worktree: .agents/worktrees/Q77c
-  base: aac420c6
-  launched: 2026-09-27T11:24
-  report: tools/oculus/.scratch/migration/agents/reviews/Q77c-report.md
-  landing: not-started
-  worktree_commits: 85eff0c1 (the first report's state)
-  reviewer: claude:opus a4a01eea33f924cba (sampled, over the first report)
-  round: 0
+dispatch:      # Q77d in flight (at its landing, Q77c's converter reruns over its changed tests); then Q77a, Q77b and Q77e after Q77d lands, then L7, Q89, Q79, Q80, then the queue of plan.md.
 - step: Q77d
   executor: agent
   worker: claude:opus
@@ -115,6 +103,7 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 
 ## Time per step (Axel asked 2026-09-27 for how it evolves with Q77; measured from each builder's transcript: each tool call from call to result, each background wait from the builder stopping to the run waking it)
 
+- Q77c (the first step under the rules of 2026-09-27: known fixes only, scoped checks, one sampled review), from its dispatch (09:24 UTC) to its booking (10:29 UTC), 1 h 5 min of wall time. Builder 33.8 minutes (revert-check 15.3, scoped unit runs 10.1, reading and writing 8.2), no repair round. Reviewer 10.0 minutes (revert-check 3.0, scoped unit 1.7, other checks 1.3, reading 3.7). Landing: `land.sh` 15.4 minutes (the whole unit suite, the checks and the browser suite, 10.3 minutes of it), the three landing fixes with revert-check over their two files 2.6 minutes. Q78 before it took 3 h 52 min. From `steptime.py` over each agent's transcript and `/usr/bin/time` on `land.sh`.
 - Q78 (before Q77), from its dispatch (20:23 UTC) to its booking (00:15 UTC, 2026-09-27), 3 h 52 min of wall time. Builder (first run 20:23 to 21:04, repair round 21:21 to 22:56): 136 minutes working, of which revert-check 80.5 (59%), the whole unit suite 13.0 over its runs, scoped unit runs 4.5, browser runs 4.5, type check, lint, format and diagrams 2.7, other tools 5.6, and reading and writing 25.5 (19%); revert-check was started four times against the ruling of once. Reviewers: the first 15.6 minutes (revert-check 3.7, whole unit suite 3.0, checks 1.9, browser 0.8, reading 5.5), the run over the round 14.3 minutes (revert-check 4.0, whole unit suite 2.6, checks 2.1, browser 0.7, other tools 3.1, reading 1.7). Landing on main: `land.sh` 5.7 minutes (its unit run), the whole check list 16.6 minutes (the browser suite 9.9 of it), then the landing fixes' own checks (type check, lint, format, build, the affected unit files and four spec files) 4 minutes, and revert-check over the ten test files whose directives the landing added or re-pointed, two runs side by side: 27 browser and node reverts in 10.3 minutes and 63 unit reverts in 11.1 minutes. Between these, about 60 minutes of the orchestrator reading, fixing and booking. Measured with the ledger's `steptime.py` over each agent's transcript (the Claude Code subagent log under the session's `subagents/` folder): a foreground call from call to result, a background wait from the agent's last record to the notification.
 
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)
@@ -336,6 +325,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-09-27. Q77c landed through /spec, /refute and /land, built by an Opus agent, no repair round, a sampled review: every revert directive names its target line by the line's text, and the numbered form is refused. Q77d in flight; then Q77a, Q77b and Q77e; then L7.
 - 2026-09-27. Q78 landed through /spec, /refute and /land, built by an Opus agent, one repair round, the run over the round refuted again: a `[TOC]` line draws the document's contents in every drawn document (doc view, manual, project documents, source preview, slide narratives), headings carry `user-content-` ids from `marked-gfm-heading-id`, a press on a `#` link scrolls inside its own view and never changes the address, and a document's ETag carries the server process. Fixed at landing: R1 (a), tree rows' controls and letters at the pane's right edge (Axel's ruling); slide narratives' `#` links through the shared `jump.ts`; the head comment and two DESIGN.md sentences the round made false; directives re-pointed. Booked: one tooltip at a time on Q81's line. Measured the time per step for Q77's comparison (the Time per step section, `steptime.py` in the ledger). Next: Q77 alone, then L7, Q89, Q79, Q80.
 - 2026-09-26. X3b landed through /spec, /refute and /land, built by an Opus agent, one repair round, the round refuted by a sampled reviewer under Axel's option (b): VS Code's Source Control in the Repositories view, its diff and merge editor, and the source tab's quick diff and blame. The cherry-pick onto main's head conflicted in 18 files (docs, diagrams, TextArea, the browser layer and five directive lines), resolved in the worktree. Fixed at landing: the refutation's findings (AU/UA read as no deletion, the Cmd+Enter and UD Complete Merge proofs, the comments and titles, the three branch parsers made one, the source-text port case replaced), an empty merge's typing, the side-by-side diff held to the pane, the blame age's singular, the accounts spec's hardcoded port, `primitives.test.ts` split under the size line, stale allow entries and directives. Open item R1 raised (the tree row's letter column). Next: Q78 and Q77.
 - 2026-09-26. Q76 landed through /spec, /refute and /land, built by an Opus agent, one repair round, the run over the round refuted again and its six findings fixed at landing: document re-reads keep what is shown and answer 304 when unchanged, a write re-reads only the documents its root holds, a stale doc tab follows its entry or closes into the tab holding it; the moved documents' figure links fixed. Next: X3b's round report and its refutation; Q78 (the `[TOC]` line) waits on Axel's answer about libraries; then Q77 alone, then X3a, X3c and L4.
@@ -644,6 +634,9 @@ The plan.md lines shortened on 2026-09-25 (P1 the parity audit, S2, and Q67's St
 
 ## Usage
 
+- Q77c, builder claude:opus, a native background agent (`a9501ae3157a5e6ea`): 178,458 tokens, 38 tool uses, 33.8 minutes (the runner's result); no repair round; first report passed its bar (three small findings, fixed at landing); 240 files, +2,305 -1,781 before the landing fixes.
+- Q77c, reviewer claude:opus (`a4a01eea33f924cba`), sampled: 133,997 tokens, 25 tool uses, 10.0 minutes.
+- Q77c landing, orchestrator claude:opus (this session), `usage.py` from Q78's landing (2026-09-27T02:24:26+02:00) to the booking: 239 messages, 178,132 output tokens, 710,500 cache-write tokens, 56,463,867 cache-read tokens, 522 fresh input tokens, 604 minutes; shared with the deleted first attempt at Q77, its removal, Axel's rulings Z4 to Z7, and Q77d's briefs and diagnosis; 3 fixes at landing.
 - Q78, builder claude:opus, a native background agent (`a5f479725321927ca`): 177 messages, 179 tool uses, 35,044,333 cache-read tokens, 1,194,096 cache-write tokens over the first run (41 minutes) and the repair round (95 minutes), from its transcript through `usage.py`; one repair round; first report did not pass its bar (ten findings sent back); 44 files, 1,648 lines added and 681 removed as landed, the landing fixes included.
 - Q78, reviewers claude:opus read-only: the review through /refute (`a4e9f46c3ef0c954a`) 42 messages, 42 tool uses, 15.6 minutes; the run over round 1 (`ab8486ac284a14abd`) 34 messages, 35 tool uses, 14.3 minutes.
 - Q78 landing, orchestrator claude:opus (this session), `land/templates/usage.py` from X3b's landing (2026-09-26T22:20:20+02:00) to the booking: 312 messages, 190,774 output tokens, 491,071 cache-write tokens, 67,205,423 cache-read tokens, 642 fresh input tokens, 230 minutes (measured before the last browser run); shared with Q78's dispatch, reviews and round, the rail rulings for L7, Q77's brief and Axel's questions; 4 fixes at landing, listed in `agents/reviews/Q78-landing.md`.

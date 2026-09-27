@@ -290,8 +290,8 @@ test('the close control and a press outside the picture both put it away', async
 test('a picture that failed is drawn once it is rewritten and the folder answers again', async ({
     page
 }) => {
-    // revert: src/lib/views/personal/memories/Memories.svelte:76 => delete
-    // revert: src/lib/views/personal/memories/Memories.svelte:77-80 => delete
+    // revert: src/lib/views/personal/memories/Memories.svelte "arrived = Object.fromEntries(Object.entries(known).filter(([, one]) => one !== 'failed'));" => delete
+    // revert: src/lib/views/personal/memories/Memories.svelte "retried = {" .. "...Object.fromEntries(failed.map((name) => [name, answers]))" +1 => delete
     const BROKEN = 'mem-00c.png';
     const ADDED = 'mem-00d.png';
     writeHubFile(join(FOLDER, BROKEN), 'not a picture yet');

@@ -19,7 +19,7 @@ keepServedFiles();
 
 test.afterAll(sweepScratch);
 
-// revert: src/lib/views/sources/repositories/Repositories.svelte:202 => delete
+// revert: src/lib/views/sources/repositories/Repositories.svelte "void repositories.stash(root, mode, message);" => delete
 test('makes a stash with a message and pops it again', async ({ page }) => {
     const dir = repository({ 'a.txt': 'one\n' });
     writeFileSync(join(dir, 'a.txt'), 'two\n');
@@ -45,7 +45,7 @@ test('makes a stash with a message and pops it again', async ({ page }) => {
     expect(gitOut(dir, 'stash', 'list')).toBe('');
 });
 
-// revert: src/lib/views/sources/repositories/Repositories.svelte:218 => delete
+// revert: src/lib/views/sources/repositories/Repositories.svelte "void repositories.createTag(root, name.trim(), message);" => delete
 test('creates an annotated tag at the head and lists it under Tags', async ({ page }) => {
     const dir = repository({ 'a.txt': 'one\n' });
     await boot(page);
@@ -88,7 +88,7 @@ async function confirmed(page: Page, question: string): Promise<void> {
     await page.getByRole('button', { name: t('ui.confirm_ok'), exact: true }).click();
 }
 
-// revert: src/lib/views/sources/repositories/refs/Stashes.svelte:72 => onclick={() => undefined}
+// revert: src/lib/views/sources/repositories/refs/Stashes.svelte "onclick={() => void repositories.stashAct(root, 'apply', stash.ref)}" => onclick={() => undefined}
 test('applies a stash and keeps it', async ({ page }) => {
     const dir = stashed();
     await boot(page);
@@ -100,7 +100,7 @@ test('applies a stash and keeps it', async ({ page }) => {
     await expect(shown.locator('[data-stash="stash@{0}"]')).toBeVisible();
 });
 
-// revert: src/lib/views/sources/repositories/refs/Stashes.svelte:88 => onclick={() => undefined}
+// revert: src/lib/views/sources/repositories/refs/Stashes.svelte "onclick={() => drop(stash)}" => onclick={() => undefined}
 test('drops a stash after a confirm, and leaves the worktree as it is', async ({ page }) => {
     const dir = stashed();
     await boot(page);
@@ -113,7 +113,7 @@ test('drops a stash after a confirm, and leaves the worktree as it is', async ({
     expect(readFileSync(join(dir, 'a.txt'), 'utf8')).toBe('one\n');
 });
 
-// revert: src/lib/views/sources/repositories/refs/Stashes.svelte:60 => onclick={() => undefined}
+// revert: src/lib/views/sources/repositories/refs/Stashes.svelte "onclick={() => view(stash)}" => onclick={() => undefined}
 test('shows what a stash holds as its diff, from its row', async ({ page }) => {
     const dir = stashed();
     await boot(page);
@@ -126,7 +126,7 @@ test('shows what a stash holds as its diff, from its row', async ({ page }) => {
     await expect(file.locator('.cell.added')).toContainText('two');
 });
 
-// revert: src/lib/views/sources/repositories/refs/Tags.svelte:26 => delete
+// revert: src/lib/views/sources/repositories/refs/Tags.svelte "void repositories.deleteTag(root, tag.name);" => delete
 test('deletes a tag after a confirm', async ({ page }) => {
     const dir = repository({ 'a.txt': 'one\n' });
     gitIn(dir, 'tag', 'v1');
@@ -139,7 +139,7 @@ test('deletes a tag after a confirm', async ({ page }) => {
     expect(gitOut(dir, 'tag', '-l')).toBe('');
 });
 
-// revert: src/lib/views/sources/repositories/refs/Tags.svelte:55 => onclick={() => undefined}
+// revert: src/lib/views/sources/repositories/refs/Tags.svelte "onclick={() => repositories.openCommit(root, tag.commit)}" => onclick={() => undefined}
 test("opens a tag's commit in the graph from its row", async ({ page }) => {
     const dir = repository({ 'a.txt': 'one\n' });
     const first = gitOut(dir, 'rev-parse', 'HEAD').trim();
@@ -155,7 +155,7 @@ test("opens a tag's commit in the graph from its row", async ({ page }) => {
     await expect(shown.locator('[data-commit-file="a.txt"]')).toBeVisible();
 });
 
-// revert: src/lib/views/sources/repositories/Repositories.svelte:151 => delete
+// revert: src/lib/views/sources/repositories/Repositories.svelte "void repositories.pushTags(root);" => delete
 test('pushes every tag to the remote from the menu, after a confirm', async ({ page }) => {
     const dir = repository({ 'a.txt': 'one\n' });
     const bare = origin(dir);

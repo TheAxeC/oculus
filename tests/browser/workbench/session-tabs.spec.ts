@@ -44,7 +44,7 @@ test.afterEach(() => {
     }
 });
 
-// revert: src/lib/views/sessions/session-list/SessionList.svelte:209 => openView('transcript');
+// revert: src/lib/views/sessions/session-list/SessionList.svelte "openView('transcript', { session: row.id, label: row.title });" => openView('transcript');
 test('the Transcript item of two sessions opens two Transcript tabs, one per session', async ({
     page
 }) => {
@@ -66,7 +66,7 @@ test('the Transcript item of two sessions opens two Transcript tabs, one per ses
     }
 });
 
-// revert: src/lib/views/sessions/terminal/Terminal.svelte:214 => delete
+// revert: src/lib/views/sessions/terminal/Terminal.svelte "openView('terminal', { id: crypto.randomUUID() });" => delete
 test('the new terminal control opens another Terminal tab showing the composer', async ({
     page
 }) => {
@@ -86,7 +86,7 @@ test('the new terminal control opens another Terminal tab showing the composer',
 
 // The start is answered here, as the endpoint answers a start that worked; the terminal named is
 // one no pane holds, and what is checked is the tab.
-// revert: src/lib/views/sessions/terminal/Terminal.svelte:209 => delete
+// revert: src/lib/views/sessions/terminal/Terminal.svelte "restateInstance(owner, { session: made, label });" => delete
 test('a start from a new Terminal tab makes the terminal that tab its own, and leaves the other tab', async ({
     page
 }) => {
@@ -124,8 +124,8 @@ function sessionsTab(page: Page): Locator {
 test('a session view with no session picked names the Sessions view and opens it', async ({
     page
 }) => {
-    // revert: src/lib/views/shared/sessions/PickSession.svelte:31 => onclick={() => undefined}
-    // revert: config/text/views/sessions/session-list.yml:13 => detail_empty: Pick a session in the rail.
+    // revert: src/lib/views/shared/sessions/PickSession.svelte "onclick={() => openView('session-list')}" => onclick={() => undefined}
+    // revert: config/text/views/sessions/session-list.yml "detail_empty: No session is picked. Pick one with the session control on this view's bar, or in the Sessions list." => detail_empty: Pick a session in the rail.
     await boot(page);
     await openView(page, 'agents', t('sessions.view_agents'));
     const shown = page.locator(SHOWN_VIEW);
@@ -151,29 +151,29 @@ async function pickFrom(page: Page, view: string, label: string): Promise<void> 
 }
 
 test('the Transcript view with no session picked offers the Sessions view', async ({ page }) => {
-    // revert: src/lib/views/sessions/transcript/Transcript.svelte:154 => <Empty
+    // revert: src/lib/views/sessions/transcript/Transcript.svelte "<PickSession" => <Empty
     await pickFrom(page, 'transcript', t('sessions.view_transcript'));
 });
 
 test('the Changes view with no session picked offers the Sessions view', async ({ page }) => {
-    // revert: src/lib/views/sessions/changes/Changes.svelte:181 => <p>{t('sessions.detail_empty')}</p>
+    // revert: src/lib/views/sessions/changes/Changes.svelte "<PickSession message={t('sessions.detail_empty')} glyph={t('sessions.empty_glyph')} />" => <p>{t('sessions.detail_empty')}</p>
     await pickFrom(page, 'changes', t('sessions.view_changes'));
 });
 
 test('the Timeline view with no session picked offers the Sessions view', async ({ page }) => {
-    // revert: src/lib/views/sessions/timeline/Timeline.svelte:127 => <Empty message={t('sessions.detail_empty')} glyph={t('sessions.empty_glyph')} />
+    // revert: src/lib/views/sessions/timeline/Timeline.svelte "<PickSession message={t('sessions.detail_empty')} glyph={t('sessions.empty_glyph')} />" => <Empty message={t('sessions.detail_empty')} glyph={t('sessions.empty_glyph')} />
     await pickFrom(page, 'timeline', t('sessions.view_timeline'));
 });
 
 test('the Session view with no session picked offers the Sessions view', async ({ page }) => {
-    // revert: src/lib/views/sessions/session-detail/SessionDetail.svelte:258 => <p>{t('sessions.detail_empty')}</p>
+    // revert: src/lib/views/sessions/session-detail/SessionDetail.svelte "<PickSession message={t('sessions.detail_empty')} glyph={t('sessions.empty_glyph')} />" => <p>{t('sessions.detail_empty')}</p>
     await pickFrom(page, 'session-detail', t('sessions.detail_title'));
 });
 
 test('a Terminal tab over a session that runs in no terminal of oculus draws its steer box disabled, and New brings the composer', async ({
     page
 }) => {
-    // revert: src/lib/views/sessions/terminal/Terminal.svelte:364 => {#if false}
+    // revert: src/lib/views/sessions/terminal/Terminal.svelte "{#if id === null && selectedSession !== null}" => {#if false}
     const title = 'Session tabs spec elsewhere';
     session(title);
     await boot(page);
@@ -195,7 +195,7 @@ test('a Terminal tab over a session that runs in no terminal of oculus draws its
     await expect(shown.locator('[data-composer]')).toBeVisible();
 });
 
-// revert: src/lib/views/sessions/session-detail/SessionDetail.svelte:183 => openView('transcript');
+// revert: src/lib/views/sessions/session-detail/SessionDetail.svelte "openView('transcript', { session: record.id, label: record.title });" => openView('transcript');
 test("a session's detail tab opens that session's own Transcript tab", async ({ page }) => {
     const title = 'Session tabs spec detail';
     session(title);
@@ -213,7 +213,7 @@ test("a session's detail tab opens that session's own Transcript tab", async ({ 
     await expect(named).toHaveCount(2);
 });
 
-// revert: src/lib/views/shared/card/CardSessions.svelte:60 => openBeside('session-detail');
+// revert: src/lib/views/shared/card/CardSessions.svelte "openBeside('session-detail', { session: entry.id, label: entry.title });" => openBeside('session-detail');
 test('a session pressed on a project card opens that session in a detail tab of its own', async ({
     page
 }) => {

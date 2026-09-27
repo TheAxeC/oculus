@@ -60,7 +60,7 @@ async function openIn(page: Page, work: string): Promise<void> {
     });
 }
 
-// revert: src/lib/shell/status/RepoItems.svelte:64 => act: () => undefined
+// revert: src/lib/shell/status/RepoItems.svelte "act: () => void git.switchBranch(root, name)" => act: () => undefined
 test('the branch item lists the branches of the tab repository, and a choice checks it out after the confirm', async ({
     page
 }) => {
@@ -82,7 +82,7 @@ test('the branch item lists the branches of the tab repository, and a choice che
     expect(readFileSync(join(work, '.git', 'HEAD'), 'utf8').trim()).toBe('ref: refs/heads/draft');
 });
 
-// revert: src/lib/shell/status/RepoItems.svelte:75 => act: () => undefined
+// revert: src/lib/shell/status/RepoItems.svelte "act: () => void git.push(root)" => act: () => undefined
 test('the sync item draws how far the branch is from its upstream, and pushes a branch only ahead after the confirm', async ({
     page
 }) => {
@@ -103,7 +103,7 @@ test('the sync item draws how far the branch is from its upstream, and pushes a 
     expect(pushed).toBe(local);
 });
 
-// revert: src/lib/shell/status/RepoItems.svelte:81 => act: () => undefined
+// revert: src/lib/shell/status/RepoItems.svelte "act: () => void git.sync(root)" => act: () => undefined
 test('the sync item pulls and then pushes a branch behind its upstream, after the confirm', async ({
     page
 }) => {
@@ -138,7 +138,7 @@ test('the sync item pulls and then pushes a branch behind its upstream, after th
     expect(readFileSync(join(work, 'b.txt'), 'utf8')).toBe('b\n');
 });
 
-// revert: src/lib/shell/status/RepoItems.svelte:92 => act: () => undefined
+// revert: src/lib/shell/status/RepoItems.svelte "act: () => void git.publish(root, remote)" => act: () => undefined
 test('a branch with no upstream draws Publish Branch, which pushes it and tracks it after the confirm', async ({
     page
 }) => {

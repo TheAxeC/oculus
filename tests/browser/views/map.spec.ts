@@ -220,7 +220,7 @@ function overlapping(page: Page): Promise<string[]> {
 // Revert: in views/structure/map/Graph.svelte, leave the labels unmeasured when the text grows, so
 // the overlap rule reads no box for any of them and draws them all.
 test('the labels drawn after the text grows overlap none of each other', async ({ page }) => {
-    // revert: src/lib/views/structure/map/Graph.svelte:126 => delete
+    // revert: src/lib/views/structure/map/Graph.svelte "void tick().then(measure);" => delete
     await filters(page);
     await settled(page);
     expect(await overlapping(page)).toEqual([]);
@@ -244,7 +244,7 @@ test('the labels drawn after the text grows overlap none of each other', async (
 // A pane keeps the Map's view mounted and hidden while another tab is shown, and a hidden label
 // measures at no size; the text grows while it is hidden, and the labels drawn when it is shown
 // again are measured at the size they are drawn at.
-// revert: src/lib/ui/shown.ts:14 => if (element.clientWidth < 0) shown();
+// revert: src/lib/ui/shown.ts "if (hidden && element.clientWidth > 0) shown();" => if (element.clientWidth < 0) shown();
 test('the labels drawn after the text grew while the Map was hidden overlap none of each other', async ({
     page
 }) => {

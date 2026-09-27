@@ -310,7 +310,7 @@ describe('the changes view', () => {
         expect(body).toContain(catalog['git.branch_new']);
     });
 
-    // revert: src/lib/views/shared/changes/ChangeGroups.svelte:81 => {:else if false}
+    // revert: src/lib/views/shared/changes/ChangeGroups.svelte "{:else if kind === 'changed' && entries.length > 0}" => {:else if false}
     it('draws on each group head what acts on the whole group, as the Repositories view does', () => {
         select('live-one');
         const body = html(Changes);
@@ -324,7 +324,7 @@ describe('the changes view', () => {
         expect(head('untracked')).toContain(`aria-label="${catalog['git.stage_all_untracked']}"`);
     });
 
-    // revert: src/lib/views/shared/changes/ChangeGroups.svelte:67 => delete
+    // revert: src/lib/views/shared/changes/ChangeGroups.svelte "if (kind === 'untracked') return t('repositories.open_file');" => delete
     it('offers on each row what opens it: the diff for a staged or changed path, the file for an untracked one', () => {
         select('live-one');
         const body = html(Changes);
@@ -332,7 +332,7 @@ describe('the changes view', () => {
         expect(body.split(`aria-label="${catalog['repositories.open_file']}"`)).toHaveLength(2);
     });
 
-    // revert: src/lib/views/shared/changes/ChangeGroups.svelte:176 => {#if false}
+    // revert: src/lib/views/shared/changes/ChangeGroups.svelte "{#if conflicted.length > 0}" => {#if false}
     it('draws Merge Changes first while a merge left a path in conflict, its row opening the merge editor', () => {
         const other = git({ branch: '', repository: false, error: 'not a git repository' });
         const merging = {
@@ -352,7 +352,7 @@ describe('the changes view', () => {
         receive({ channel: 'git', version: 6, payload: { [HUB]: HUB_GIT, '/other': other } });
     });
 
-    // revert: src/lib/views/sessions/changes/ChangesRepo.svelte:108 => delete
+    // revert: src/lib/views/sessions/changes/ChangesRepo.svelte "<CommitBox {root} git={state} />" => delete
     it('draws the one commit box the Repositories view draws, with Commit and its list of ways', () => {
         select('live-one');
         const body = html(Changes);

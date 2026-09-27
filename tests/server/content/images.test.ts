@@ -500,8 +500,8 @@ describe('how far into a file the size is read', () => {
     });
 
     it('turns a PNG whose eXIf chunk is the last the walk reaches, and not one a chunk later', () => {
-        // revert: src/lib/server/content/images.ts:122 => for (let passed = 0; passed <= SEGMENTS; passed += 1) {
-        // revert: src/lib/server/content/images.ts:122 => for (let passed = 1; passed < SEGMENTS; passed += 1) {
+        // revert: src/lib/server/content/images.ts "function pngOrientation(read: ReadAt, at: number): number {" +1 => for (let passed = 0; passed <= SEGMENTS; passed += 1) {
+        // revert: src/lib/server/content/images.ts "function pngOrientation(read: ReadAt, at: number): number {" +1 => for (let passed = 1; passed < SEGMENTS; passed += 1) {
         const before = (count: number): Uint8Array[] =>
             Array.from({ length: count }, () => chunk('tEXt', ascii('k\0v')));
         const inside = pngWith(400, 300, ...before(SEGMENTS - 1), chunk('eXIf', tiff(6, 'MM')));
@@ -511,8 +511,8 @@ describe('how far into a file the size is read', () => {
     });
 
     it('sizes a JPEG whose frame is the last segment the walk reaches, and not one a segment later', () => {
-        // revert: src/lib/server/content/images.ts:214 => for (let passed = 0; passed <= SEGMENTS; passed += 1) {
-        // revert: src/lib/server/content/images.ts:214 => for (let passed = 1; passed < SEGMENTS; passed += 1) {
+        // revert: src/lib/server/content/images.ts "let turn = 0;" +1 => for (let passed = 0; passed <= SEGMENTS; passed += 1) {
+        // revert: src/lib/server/content/images.ts "let turn = 0;" +1 => for (let passed = 1; passed < SEGMENTS; passed += 1) {
         const before = (count: number): number[][] =>
             Array.from({ length: count }, () => segment(0xfe, ascii('a comment')));
         expect(readSize(counted(jpeg(...before(SEGMENTS - 1), frame(640, 480))).read)).toEqual({

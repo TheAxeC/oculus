@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { laneRows } from '../../../../src/lib/state/sources/repositories/graph-lanes.ts';
 
 describe('the lanes of the graph', () => {
-    // revert: src/lib/state/sources/repositories/graph-lanes.ts:61 => delete
+    // revert: src/lib/state/sources/repositories/graph-lanes.ts "if (first !== undefined) lines.push({ x1: lane, y1: 0.5, x2: lane, y2: 1, lane });" => delete
     it('keeps a straight history in one lane, a line down from each commit to its parent', () => {
         const rows = laneRows([
             { hash: 'c', parents: ['b'] },
@@ -21,7 +21,7 @@ describe('the lanes of the graph', () => {
         expect(rows[2].lines).toEqual([{ x1: 0, y1: 0, x2: 0, y2: 0.5, lane: 0 }]);
     });
 
-    // revert: src/lib/state/sources/repositories/graph-lanes.ts:68 => delete
+    // revert: src/lib/state/sources/repositories/graph-lanes.ts "lines.push({ x1: lane, y1: 0.5, x2: into, y2: 1, lane: into });" => delete
     it('opens a second lane for a merge parent and joins it back where the branch began', () => {
         const rows = laneRows([
             { hash: 'm', parents: ['a2', 'b1'] },
@@ -37,7 +37,7 @@ describe('the lanes of the graph', () => {
         expect(rows[3].width).toBe(2);
     });
 
-    // revert: src/lib/state/sources/repositories/graph-lanes.ts:40 => lane = 0;
+    // revert: src/lib/state/sources/repositories/graph-lanes.ts "lane = freeLane(lanes, -1);" => lane = 0;
     it('starts a head no lane waits for in a free lane of its own', () => {
         const rows = laneRows([
             { hash: 'x', parents: ['a'] },

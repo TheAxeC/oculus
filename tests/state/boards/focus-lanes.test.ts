@@ -213,7 +213,7 @@ describe('manifestsBehind', () => {
 });
 
 describe('the items of the band stages', () => {
-    // revert: src/lib/state/boards/focus-lanes.ts:188 => return stages.length;
+    // revert: src/lib/state/boards/focus-lanes.ts "return stages.reduce((sum, stage) => sum + stage.items.length, 0);" => return stages.length;
     it('are counted over every stage together', () => {
         const stages = [
             { label: 'a', color: '', items: [{}, {}] },
@@ -224,7 +224,7 @@ describe('the items of the band stages', () => {
 });
 
 describe('whether the band holds a card', () => {
-    // revert: src/lib/state/boards/focus-lanes.ts:193 => return band.funding.length > 0;
+    // revert: src/lib/state/boards/focus-lanes.ts "return band.funding.length + band.applications.length + band.education.length > 0;" => return band.funding.length > 0;
     it('is whether any of its three rows holds one', () => {
         const band = (funding: number, applications: number, education: number) =>
             ({

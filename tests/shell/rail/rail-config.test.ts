@@ -27,7 +27,7 @@ beforeEach(() => {
 
 describe('the rail of the real config', () => {
     it('draws the thirteen pages of layout.yml in their order, Views and Settings last', () => {
-        // revert: src/lib/shell/rail/RailPages.svelte:181 => {#each pages.slice(1) as entry, index (entry.page)}
+        // revert: src/lib/shell/rail/RailPages.svelte "{#each pages as entry, index (entry.page)}" => {#each pages.slice(1) as entry, index (entry.page)}
         const body = render(ActivityRail, {
             context: clientContext(client),
             props: { pages: railPages(config) }
@@ -50,7 +50,7 @@ describe('the rail of the real config', () => {
     });
 
     it("draws each page's glyph from the vocabulary", () => {
-        // revert: src/lib/shell/rail/RailPages.svelte:200 => glyph="compass"
+        // revert: src/lib/shell/rail/RailPages.svelte "glyph={entry.glyph}" => glyph="compass"
         // The glyph is named by its stand-in, the text the ASCII mode draws it as.
         const pages = railPages(config);
         setGlyphMode('ascii');
@@ -75,7 +75,7 @@ describe('the rail of the real config', () => {
 
 describe('a bookmark opened as a document tab', () => {
     it('carries the bookmark label in the instance state, which is what the tab strip draws', () => {
-        // revert: src/lib/state/workbench/layout/instance.ts:61 => label: mark.path
+        // revert: src/lib/state/workbench/layout/instance.ts "label: mark.label" => label: mark.path
         const state = documentState({ label: 'cathedra manual', root: 'cathedra', path: 'a.html' });
         expect(state).toEqual({
             id: 'cathedra/a.html',
@@ -86,7 +86,7 @@ describe('a bookmark opened as a document tab', () => {
     });
 
     it('gives two manuals two identities, so each opens as its own tab', () => {
-        // revert: src/lib/state/workbench/layout/instance.ts:58 => id: mark.root,
+        // revert: src/lib/state/workbench/layout/instance.ts "id: `${mark.root}/${mark.path}`," => id: mark.root,
         const one = documentState({ label: 'One', root: 'cathedra', path: 'a.html' });
         const two = documentState({ label: 'Two', root: 'cathedra', path: 'b.html' });
         expect(one.id).not.toBe(two.id);
@@ -105,7 +105,7 @@ describe("the Bookmarks menu's choices", () => {
     const script: Bookmark = { label: 'run.py', root: 'hub', path: 'code/run.py', view: 'file' };
 
     it('are the bookmarks by label in the order the file holds them, each naming its file', () => {
-        // revert: src/lib/shell/rail/rail.ts:38 => return [...saved].reverse().map((mark, at) => ({
+        // revert: src/lib/shell/rail/rail.ts "return saved.map((mark, at) => ({" => return [...saved].reverse().map((mark, at) => ({
         expect(bookmarkChoices([manual, script])).toEqual([
             { id: 'mark:0', label: 'cathedra manual', title: 'cathedra/docs/user/manual.html' },
             { id: 'mark:1', label: 'run.py', title: 'hub/code/run.py' }
@@ -113,7 +113,7 @@ describe("the Bookmarks menu's choices", () => {
     });
 
     it('are two choices for two bookmarks on one file, under their two labels', () => {
-        // revert: src/lib/shell/rail/rail.ts:48 => return saved.at(0) ?? null;
+        // revert: src/lib/shell/rail/rail.ts "return saved.at(Number(id.slice(MARK.length))) ?? null;" => return saved.at(0) ?? null;
         const first = { ...script, label: 'first' };
         const second = { ...script, label: 'second' };
         const choices = bookmarkChoices([first, second]);
@@ -123,7 +123,7 @@ describe("the Bookmarks menu's choices", () => {
     });
 
     it('say there is none when there is none, and that choice opens nothing', () => {
-        // revert: src/lib/shell/rail/rail.ts:35 => if (saved.length < 0) {
+        // revert: src/lib/shell/rail/rail.ts "if (saved.length === 0) {" => if (saved.length < 0) {
         const choices = bookmarkChoices([]);
         expect(choices.map((one) => one.label)).toEqual([catalog['ui.bookmarks_none']]);
         expect(bookmarkPicked([], choices[0].id)).toBeNull();

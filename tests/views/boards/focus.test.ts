@@ -69,7 +69,7 @@ describe('the Live HPC pill', () => {
         expect(body).not.toContain('HPC job');
     });
 
-    // revert: src/lib/views/boards/focus/CommandCenterView.svelte:119 => delete
+    // revert: src/lib/views/boards/focus/CommandCenterView.svelte "glyph=\"hpc\"" => delete
     it('is present with counts from the shared HPC state, its glyph beside the words', () => {
         receive({
             channel: 'hpc',
@@ -135,7 +135,7 @@ describe('the board', () => {
     });
 
     it('draws a column whose tone the palette lacks, or that names none, and its header in the unknown tone', () => {
-        // revert: src/lib/state/shared/words/tones.ts:108 => return tone;
+        // revert: src/lib/state/shared/words/tones.ts "return Object.values(palette).includes(`c-${tone}`) ? tone : UNKNOWN_TONE;" => return tone;
         receive({
             channel: 'config',
             version: 2,
@@ -160,7 +160,7 @@ describe('the board', () => {
         expect(drawn.split(grey).length - 1).toBeGreaterThanOrEqual(2);
     });
 
-    // revert: src/lib/views/boards/focus/lanes/LaneHead.svelte:40 => <span class="count">{count + 1}</span>
+    // revert: src/lib/views/boards/focus/lanes/LaneHead.svelte "<span class=\"count\">{count}</span>" => <span class="count">{count + 1}</span>
     it('counts what sits on a lane', () => {
         const run = body.slice(body.indexOf('>Run<'));
         expect(run.slice(0, 200)).toContain('>3<');
@@ -178,7 +178,7 @@ describe('the board', () => {
 });
 
 describe('a card', () => {
-    // revert: src/lib/views/boards/focus/lanes/LaneCard.svelte:89 => delete
+    // revert: src/lib/views/boards/focus/lanes/LaneCard.svelte "<Glyph name={t('focus.fire_glyph')} />" => delete
     it('draws the short handle, the priority flames and the first sentence of next', () => {
         expect(body).toContain('Alpha');
         expect(body).toContain('Run the sweep.');
@@ -359,7 +359,7 @@ describe('the strip and the band', () => {
         expect(body).toContain(catalog['focus.wait_hosts']);
     });
 
-    // revert: src/lib/views/boards/focus/Band.svelte:158 => t('focus.jobs_lane'),
+    // revert: src/lib/views/boards/focus/Band.svelte "t('focus.teaching_lane')," => t('focus.jobs_lane'),
     it('stacks the grants by stage and names the teaching column', () => {
         expect(body).toContain(catalog['focus.cards_group']);
         expect(body).toContain('A grant in prep');
@@ -368,7 +368,7 @@ describe('the strip and the band', () => {
         expect(body).toContain('A course');
     });
 
-    // revert: src/lib/views/boards/focus/Band.svelte:127 => delete
+    // revert: src/lib/views/boards/focus/Band.svelte "glyph={t('focus.funding_glyph')}" => delete
     it('draws each column glyph before the column words, and no character in the words', () => {
         const heads = [...body.matchAll(/<div class="lane-h[\s\S]*?<\/div>/g)].map((one) => one[0]);
         for (const key of ['funding', 'jobs', 'teaching']) {

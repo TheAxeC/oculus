@@ -64,7 +64,7 @@ test('the build control reaches the endpoint and the panel says what came back',
     await panel.getByRole('button', { name: t('project.latex.build') }).click();
 
     // The build runs in a terminal of its own, which the page opens.
-    // revert: src/lib/server/machine/pty/routes.ts:320 => return `latexmk -pdf ${shellWord(main)}`;
+    // revert: src/lib/server/machine/pty/routes.ts "return `latexmk -pdf -interaction=nonstopmode -file-line-error ${shellWord(main)}`;" => return `latexmk -pdf ${shellWord(main)}`;
     await expect
         .poll(() => startedWith('latexmk'), { timeout: 15000 })
         .toEqual([['-pdf', '-interaction=nonstopmode', '-file-line-error', MAIN]]);

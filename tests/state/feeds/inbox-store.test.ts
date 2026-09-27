@@ -40,7 +40,7 @@ describe('what the inbox store commands answer', () => {
     });
 
     it('answers a refusal in the catalog sentence carrying its code', async () => {
-        // revert: src/lib/state/feeds/inbox.svelte.ts:32 => delete
+        // revert: src/lib/state/feeds/inbox.svelte.ts "if (typeof code === 'string') return t('inbox.refused', code);" => delete
         vi.stubGlobal('fetch', () =>
             Promise.resolve(
                 new Response(JSON.stringify({ error: 'no such thread' }), { status: 400 })
@@ -53,8 +53,8 @@ describe('what the inbox store commands answer', () => {
     });
 
     it('answers a command no answer came back for, and one whose answer was not JSON, in words', async () => {
-        // revert: src/lib/state/feeds/inbox.svelte.ts:33 => delete
-        // revert: src/lib/state/feeds/inbox.svelte.ts:34 => delete
+        // revert: src/lib/state/feeds/inbox.svelte.ts "if (failed === 'unreachable') return t('accounts.unreachable');" => delete
+        // revert: src/lib/state/feeds/inbox.svelte.ts "if (failed === 'unreadable') return t('accounts.unreadable');" => delete
         vi.stubGlobal('fetch', () => Promise.reject(new TypeError('Failed to fetch')));
         expect(await client.inbox.triage(THREAD, { triaged: true })).toEqual({
             ok: false,

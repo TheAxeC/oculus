@@ -65,7 +65,7 @@ test('a task control reaches the endpoint with no confirmation in front of it', 
     });
 
     // The task runs in a terminal of its own, which the page opens as the tray closes.
-    // revert: src/lib/server/machine/pty/routes.ts:279 => argv.push(`/research-cockpit`);
+    // revert: src/lib/server/machine/pty/routes.ts "argv.push(`/research-cockpit ${kind}`);" => argv.push(`/research-cockpit`);
     await expect
         .poll(() => startedWith('claude'), { timeout: 15000 })
         .toEqual([['/research-cockpit litwatch']]);
@@ -124,7 +124,7 @@ test('with the setting on a press asks first, and the confirmation starts the ta
         await expect(page.getByRole('alertdialog')).toHaveCount(0);
 
         // The setting puts the flag back in front of the task's own words.
-        // revert: src/lib/server/machine/pty/routes.ts:278 => delete
+        // revert: src/lib/server/machine/pty/routes.ts "if (skip) argv.push('--dangerously-skip-permissions');" => delete
         await expect
             .poll(() => startedWith('claude'), { timeout: 15000 })
             .toEqual([['--dangerously-skip-permissions', '/research-cockpit litwatch']]);

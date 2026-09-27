@@ -282,9 +282,9 @@ describe('the agents view', () => {
 });
 
 describe('the terminal view with nothing selected', () => {
-    // revert: src/lib/views/sessions/terminal/Terminal.svelte:373 => <p>{owner}</p>
-    // revert: src/lib/views/sessions/terminal/Composer.svelte:238 => delete
-    // revert: src/lib/ui/forms/TextArea.svelte:62 => delete
+    // revert: src/lib/views/sessions/terminal/Terminal.svelte "<Composer owner={instance.id} onstarted={started} />" => <p>{owner}</p>
+    // revert: src/lib/views/sessions/terminal/Composer.svelte "placeholder={agent === 'shell' ? t('composer.command') : t('composer.prompt')}" => delete
+    // revert: src/lib/ui/forms/TextArea.svelte "{placeholder}" => delete
     it('draws the composer: the prompt box, its foot with the attach control, the pickers and Start', () => {
         select(null);
         const body = html(Terminal);
@@ -302,8 +302,8 @@ describe('the terminal view with nothing selected', () => {
         expect(body).toContain(catalog['sessions.terminal_reset']);
     });
 
-    // revert: src/lib/views/sessions/terminal/Composer.svelte:237 => label={t('composer.prompt')}
-    // revert: src/lib/views/sessions/terminal/Composer.svelte:238 => placeholder={t('composer.prompt')}
+    // revert: src/lib/views/sessions/terminal/Composer.svelte "label={agent === 'shell' ? t('composer.command') : t('composer.prompt')}" => label={t('composer.prompt')}
+    // revert: src/lib/views/sessions/terminal/Composer.svelte "placeholder={agent === 'shell' ? t('composer.command') : t('composer.prompt')}" => placeholder={t('composer.prompt')}
     it('draws a Shell composer without the agent lists, its box asking for a command', () => {
         select(null);
         const body = html(Terminal, { composer: { agent: 'shell' } });
@@ -316,7 +316,7 @@ describe('the terminal view with nothing selected', () => {
         expect(body).not.toContain('data-picker="model"');
     });
 
-    // revert: src/lib/views/sessions/terminal/Terminal.svelte:364 => {#if false}
+    // revert: src/lib/views/sessions/terminal/Terminal.svelte "{#if id === null && selectedSession !== null}" => {#if false}
     it('draws the steer box disabled with its sentence for a selected session running outside oculus', () => {
         select('ended-one');
         const body = html(Terminal);
@@ -329,7 +329,7 @@ describe('the terminal view with nothing selected', () => {
         select(null);
     });
 
-    // revert: src/lib/views/sessions/terminal/Terminal.svelte:112 => const fresh = false;
+    // revert: src/lib/views/sessions/terminal/Terminal.svelte "const fresh = $derived(pinned === null && stateId(instanceLayoutState(instance.id)) !== null);" => const fresh = false;
     it('draws the composer in the tab New put it in, whatever session is selected', () => {
         select('ended-one');
         const body = html(Terminal, { id: 'new-from-the-list', follow: true });
@@ -339,7 +339,7 @@ describe('the terminal view with nothing selected', () => {
         select(null);
     });
 
-    // revert: src/lib/views/sessions/terminal/Composer.svelte:265 => {#if false}
+    // revert: src/lib/views/sessions/terminal/Composer.svelte "{#if branch !== ''}" => {#if false}
     it('shows the branch of the workspace a new session starts in, read only', () => {
         select(null);
         const body = html(Terminal, { composer: { workspace: HUB } });
@@ -351,7 +351,7 @@ describe('the terminal view with nothing selected', () => {
 describe('the terminal toolbar pin', () => {
     // The label follows the pinned terminal's name through an $effect, which no server render runs;
     // the write it makes is read off the source and the browser suite presses the rename itself.
-    // revert: src/lib/views/sessions/terminal/Terminal.svelte:335 => glyph="dismiss"
+    // revert: src/lib/views/sessions/terminal/Terminal.svelte "glyph={t('sessions.pin_glyph')}" => glyph="dismiss"
     it('is a glyph button among the glyph buttons, not a word among them', () => {
         select(null);
         const body = html(Terminal, { session: 'abc123-shell' });
@@ -453,17 +453,17 @@ describe('a hook event on a session', () => {
         return result;
     }
 
-    // revert: src/lib/state/sessions/folds.ts:113 => return false;
+    // revert: src/lib/state/sessions/folds.ts "return row.live && row.hook?.event === 'notification';" => return false;
     it('draws a live session a notification waits on as needing input, the message its tooltip', () => {
         const body = withHooks(() => html(SessionList));
         expect(body).toMatch(/data-session-row="waiting-one"[^>]*data-state="input"/);
         expect(body).toContain(catalog['sessions.state_input']);
-        // revert: src/lib/views/sessions/session-list/SessionWorkspace.svelte:140 => <span class="mark"
+        // revert: src/lib/views/sessions/session-list/SessionWorkspace.svelte "<span class=\"mark\" title={entry.hook?.message ?? undefined}" => <span class="mark"
         expect(body).toContain('title="may I edit main.py?"');
     });
 
     it('draws a stopped session as ended, and not as waiting on the reader', () => {
-        // revert: src/lib/state/sessions/folds.ts:124 => if (!row.live) return 'idle';
+        // revert: src/lib/state/sessions/folds.ts "if (!row.live) return 'ended';" => if (!row.live) return 'idle';
         const body = withHooks(() => html(SessionList));
         expect(body).toMatch(/data-session-row="stopped-one"[^>]*data-state="ended"/);
         // a row needing input is drawn first in its group
@@ -509,12 +509,12 @@ describe('a terminal in the payload', () => {
         expect(body).toContain(`data-terminal="${pane.id}"`);
         // the grid is the selection, so no composer is drawn; the steer box sits under the grid
         expect(body).not.toContain('data-composer');
-        // revert: src/lib/views/sessions/terminal/Terminal.svelte:377 => delete
+        // revert: src/lib/views/sessions/terminal/Terminal.svelte "<SteerBox {terminal} />" => delete
         expect(body).toContain(catalog['composer.steer']);
         select(null);
     });
 
-    // revert: src/lib/views/sessions/terminal/Terminal.svelte:112 => const fresh = false;
+    // revert: src/lib/views/sessions/terminal/Terminal.svelte "const fresh = $derived(pinned === null && stateId(instanceLayoutState(instance.id)) !== null);" => const fresh = false;
     it('shows the composer in a tab opened for a terminal of its own, whatever the rail selected', () => {
         const body = withTerminals(() => {
             select(pane.id);

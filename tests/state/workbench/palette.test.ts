@@ -189,7 +189,7 @@ describe('commands', () => {
     const list = commands({ themes: [{ name: 'light' }, { name: 'nord' }] });
 
     it('lists the eight commands, theme names and the three unavailable with no source tab', () => {
-        // revert: src/lib/state/workbench/palette.ts:192 => delete
+        // revert: src/lib/state/workbench/palette.ts "{ name: 'language', hint: '<language>', available: source }," => delete
         expect(list.map((command) => command.name)).toEqual([
             'theme',
             'crt',
@@ -207,7 +207,7 @@ describe('commands', () => {
     });
 
     it('offers the language list only while a source tab is on screen', () => {
-        // revert: src/lib/state/workbench/palette.ts:192 => { name: 'language', hint: '<language>', available: true },
+        // revert: src/lib/state/workbench/palette.ts "{ name: 'language', hint: '<language>', available: source }," => { name: 'language', hint: '<language>', available: true },
         const language = (source: boolean) =>
             commands({}, source).find((command) => command.name === 'language');
         expect(language(true)?.available).toBe(true);
@@ -215,7 +215,7 @@ describe('commands', () => {
     });
 
     it('reads a colon and a whole number as a line to go to, and nothing else as one', () => {
-        // revert: src/lib/state/workbench/palette.ts:169 => if (parsed === null) return null;
+        // revert: src/lib/state/workbench/palette.ts "if (parsed?.argument !== '' || !/^\\d+$/.test(parsed.name)) return null;" => if (parsed === null) return null;
         expect(lineQuery(parseCommand(':12'))).toBe(12);
         expect(lineQuery(parseCommand(': 7'))).toBe(7);
         expect(lineQuery(parseCommand(':0'))).toBe(null);

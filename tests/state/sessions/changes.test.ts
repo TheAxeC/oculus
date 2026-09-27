@@ -150,7 +150,7 @@ describe('the change store', () => {
 });
 
 describe('the rows a filter keeps', () => {
-    // revert: src/lib/state/sessions/changes.svelte.ts:52 => return `${row.file} ${row.key} ${row.field} ${String(row.after)}`.toLowerCase();
+    // revert: src/lib/state/sessions/changes.svelte.ts "return `${row.file} ${row.key} ${row.field}`.toLowerCase();" => return `${row.file} ${row.key} ${row.field} ${String(row.after)}`.toLowerCase();
     it('are matched against the file, the key and the field, and nothing else', () => {
         const rows = [
             change('a', { after: 'a new line' }),

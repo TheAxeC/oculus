@@ -185,7 +185,7 @@ wait_for_index "$landing_worktree"
 run_step "worktree git add" sh -c 'cd "$1" && git add -A .' land "$landing_worktree"
 
 wait_for_index "$landing_worktree"
-run_step "worktree git commit" sh -c 'cd "$1" && git commit -q -m wip' land "$landing_worktree"
+run_step "worktree git commit" sh -c 'cd "$1" && { git diff --cached --quiet || git commit -q -m wip; }' land "$landing_worktree"
 
 wait_for_index "$landing_worktree"
 run_step "worktree git checkout" sh -c 'cd "$1" && git checkout -b "$2-land" main' land "$landing_worktree" "$landing_pkg"

@@ -70,12 +70,12 @@ function copyOfTree(): string {
 
 describe('the committed diagrams', () => {
     it('are what the source gives now, each file byte for byte', async () => {
-        // revert: bin/diagrams/source.mjs:160 => `    node [shape=ellipse];`,
+        // revert: bin/diagrams/source.mjs "`    node [shape=box, color=\"black\", fontcolor=\"black\", fontname=\"${FONT}\", fontsize=10, height=0.3, margin=\"0.12,0.04\"];`," => `    node [shape=ellipse];`,
         expect(await staleFiles(ENGINE), 'run npm run diagrams').toEqual([]);
     }, 60_000);
 
     it('are named stale, every one at once, when an import and a publish are added', async () => {
-        // revert: bin/diagrams/diagrams.mjs:169 => if (!existsSync(path)) stale.push(file);
+        // revert: bin/diagrams/diagrams.mjs "if (!existsSync(path) || readFileSync(path, 'utf8') !== text) stale.push(file);" => if (!existsSync(path)) stale.push(file);
         const dir = copyOfTree();
         appendFileSync(join(dir, 'src/lib/ui/html.ts'), "import '../server/core/auth.ts';\n");
         appendFileSync(
@@ -93,7 +93,7 @@ describe('the committed diagrams', () => {
     }, 60_000);
 
     it('are the overview, one diagram per layer the order names, and the channels and writes', () => {
-        // revert: bin/diagrams/diagrams.mjs:57 => ...LAYER_NAMES.slice(1).map((layer) => `layer-${layer}`),
+        // revert: bin/diagrams/diagrams.mjs "...LAYER_NAMES.map((layer) => `layer-${layer}`)," => ...LAYER_NAMES.slice(1).map((layer) => `layer-${layer}`),
         const order = readOrder(readFileSync(join(ENGINE, ORDERING), 'utf8'));
         expect(NAMES).toEqual([
             'layers',
@@ -104,21 +104,21 @@ describe('the committed diagrams', () => {
     });
 
     it('reads the layer rows from the boundary test and refuses a test that names none', () => {
-        // revert: bin/diagrams/source.mjs:69 => if (found === null) return [];
+        // revert: bin/diagrams/source.mjs "if (found === null) throw new Error(`${BOUNDARIES} declares no LAYERS list`);" => if (found === null) return [];
         const text = readFileSync(join(ENGINE, BOUNDARIES), 'utf8');
         expect(readLayers(text)).toContain('server/transcripts');
         expect(() => readLayers('const OTHER = [];')).toThrow(/declares no LAYERS list/);
     });
 
     it('reads the folder order the checks declare and refuses a file that declares none', () => {
-        // revert: bin/diagrams/source.mjs:83 => if (found === null) return new Map();
+        // revert: bin/diagrams/source.mjs "if (found === null) throw new Error(`${ORDERING} declares no ORDER`);" => if (found === null) return new Map();
         const text = readFileSync(join(ENGINE, ORDERING), 'utf8');
         expect(readOrder(text).get('ui')?.at(-1)).toBe('ui');
         expect(readOrder(text).get('server')?.[0]).toBe('server/root');
         expect(() => readOrder('const OTHER = {};')).toThrow(/declares no ORDER/);
     });
 
-    // revert: bin/diagrams/diagrams.mjs:48 => export const importsOf = () => []; export { augmentationsOf, moduleAt } from './imports.mjs';
+    // revert: bin/diagrams/diagrams.mjs "export { augmentationsOf, importsOf, moduleAt } from './imports.mjs';" => export const importsOf = () => []; export { augmentationsOf, moduleAt } from './imports.mjs';
     it('reads imports with the one reader the import checks read them with', () => {
         // The diagrams and the checks both call bin/diagrams/imports.mjs, so they read alike.
         expect(drawnImports).toBe(importsOf);
@@ -134,7 +134,7 @@ describe('the layer readers', () => {
     const ORDER = ['state', 'state/shared'];
 
     it('draws one arrow per pair of layers, labelled with its runtime imports', () => {
-        // revert: bin/diagrams/graphs.mjs:115 => edges.set(`${a}\n${b}`, 1);
+        // revert: bin/diagrams/graphs.mjs "edges.set(`${a}\\n${b}`, (edges.get(`${a}\\n${b}`) ?? 0) + 1);" => edges.set(`${a}\n${b}`, 1);
         const before = layersDot(sources(base), LAYERS);
         // The base's one import stays inside the state layer, which the overview does not draw.
         expect(before).not.toContain('-> "data"');
@@ -151,7 +151,7 @@ describe('the layer readers', () => {
     });
 
     it('leaves a type-only import out of every count', () => {
-        // revert: bin/diagrams/graphs.mjs:133 => if (false) continue;
+        // revert: bin/diagrams/graphs.mjs "if (one.typeOnly) continue;" => if (false) continue;
         const dot = layersDot(
             sources({ ...base, 'lib/ui/a.ts': "import type { Model } from '../data/model.ts';\n" }),
             LAYERS
@@ -160,7 +160,7 @@ describe('the layer readers', () => {
         expect(dot).not.toContain('"ui to data"');
     });
 
-    // revert: bin/diagrams/graphs.mjs:132 => for (const one of importsOf(path, text.replace(/\/\/ ?|\/\*|\*\//g, ''))) {
+    // revert: bin/diagrams/graphs.mjs "for (const one of importsOf(path, text)) {" => for (const one of importsOf(path, text.replace(/\/\/ ?|\/\*|\*\//g, ''))) {
     it('counts no import a comment names, above a type-only import or in a block', () => {
         const dot = layersDot(
             sources({
@@ -174,7 +174,7 @@ describe('the layer readers', () => {
         expect(dot).not.toContain('"ui to data"');
     });
 
-    // revert: bin/diagrams/imports.mjs:199 => false
+    // revert: bin/diagrams/imports.mjs "urls.has(argument.text)" => false
     it('draws the entry loading the built app as its arrow to the routes, with no lost box', () => {
         const dot = layersDot(
             sources({
@@ -192,7 +192,7 @@ describe('the layer readers', () => {
     });
 
     it('names a module no layer row places that an import joins, in a group that says so', () => {
-        // revert: bin/diagrams/graphs.mjs:55 => if (layer === undefined) return { layer: 'data', node: 'data' };
+        // revert: bin/diagrams/graphs.mjs "if (layer === undefined) return { layer: UNPLACED, node: parts[1] };" => if (layer === undefined) return { layer: 'data', node: 'data' };
         const dot = layersDot(
             sources({
                 ...base,
@@ -206,8 +206,8 @@ describe('the layer readers', () => {
     });
 
     it('draws no node that no import joins, an asset by its folder, and one entry node', () => {
-        // revert: bin/diagrams/graphs.mjs:177 => const nodes = new Set([...sources.keys()].map(end).filter((one) => one !== null));
-        // revert: bin/diagrams/graphs.mjs:171 => if (!sources.has(path) && !/\.(ts|js|svelte)$/.test(path)) return null;
+        // revert: bin/diagrams/graphs.mjs "const nodes = new Set([...joined, ...lost.map((one) => String(one.from))]);" => const nodes = new Set([...sources.keys()].map(end).filter((one) => one !== null));
+        // revert: bin/diagrams/graphs.mjs "if (!sources.has(path) && !/\\.(ts|js|svelte)$/.test(path)) return `${filePrefix}${folder}`;" => if (!sources.has(path) && !/\.(ts|js|svelte)$/.test(path)) return null;
         const dot = layersDot(
             sources({
                 ...base,
@@ -232,8 +232,8 @@ describe('the layer readers', () => {
     });
 
     it('names an import it cannot follow with its file and line, joined to its own layer', () => {
-        // revert: bin/diagrams/graphs.mjs:141 => delete
-        // revert: bin/diagrams/graphs.mjs:199 => lines.push('');
+        // revert: bin/diagrams/graphs.mjs "lost.push({ ...lostOne, from: end(path) });" => delete
+        // revert: bin/diagrams/graphs.mjs "lines.push(`    ${quote(String(one.from))} -> ${quote(one.id)} [style=dashed];`);" => lines.push('');
         const dot = layersDot(
             sources({ ...base, 'lib/state/lazy.ts': 'const x = 1;\nawait import(where);\n' }),
             LAYERS
@@ -248,7 +248,7 @@ describe('the layer readers', () => {
     });
 
     it('names an import through a template literal with its file and line', () => {
-        // revert: bin/diagrams/imports.mjs:194 => if (argument !== undefined && (ts.isStringLiteralLike(argument) || ts.isTemplateExpression(argument))) {
+        // revert: bin/diagrams/imports.mjs "if (argument !== undefined && ts.isStringLiteralLike(argument)) {" => if (argument !== undefined && (ts.isStringLiteralLike(argument) || ts.isTemplateExpression(argument))) {
         const dot = layersDot(
             sources({ ...base, 'lib/state/lazy.ts': 'const a = 1;\nawait import(`./x/${a}`);\n' }),
             LAYERS
@@ -257,7 +257,7 @@ describe('the layer readers', () => {
     });
 
     it('draws an arrow to the layer a glob imports', () => {
-        // revert: bin/diagrams/imports.mjs:182 => false &&
+        // revert: bin/diagrams/imports.mjs "node.expression.getText(source) === 'import.meta.glob' &&" => false &&
         const dot = layersDot(
             sources({
                 ...base,
@@ -270,7 +270,7 @@ describe('the layer readers', () => {
     });
 
     it('draws a layer folders top down in their order, their imports and what each reaches outside', () => {
-        // revert: bin/diagrams/graphs.mjs:287 => const [above, below] = [order[at], order[at - 1]].map((one) => `folder ${one}`);
+        // revert: bin/diagrams/graphs.mjs "const [above, below] = [order[at - 1], order[at]].map((one) => `folder ${one}`);" => const [above, below] = [order[at], order[at - 1]].map((one) => `folder ${one}`);
         const dot = layerDot(
             sources({
                 ...base,
@@ -316,7 +316,7 @@ describe('the channel reader', () => {
     };
 
     it('finds a new channel, the module that publishes it and the view that reads it', () => {
-        // revert: bin/diagrams/graphs.mjs:455 => for (const match of text.matchAll(/\.publishes\(\s*('[^']*'|\w+\([^)]*\)|[^,)]+)/g)) {
+        // revert: bin/diagrams/graphs.mjs "for (const match of text.matchAll(/\\.publish\\(\\s*('[^']*'|\\w+\\([^)]*\\)|[^,)]+)/g)) {" => for (const match of text.matchAll(/\.publishes\(\s*('[^']*'|\w+\([^)]*\)|[^,)]+)/g)) {
         const before = channelsDot(sources(base));
         expect(before).not.toContain('ch fresh');
         const after = channelsDot(
@@ -335,7 +335,7 @@ describe('the channel reader', () => {
     });
 
     it('names a publish it cannot follow with its file and line', () => {
-        // revert: bin/diagrams/graphs.mjs:465 => continue;
+        // revert: bin/diagrams/graphs.mjs "const one = unfollowed(`src/${path}`, text, match.index, `publish(${match[1]})`);" => continue;
         const dot = channelsDot(
             sources({
                 ...base,
@@ -348,7 +348,7 @@ describe('the channel reader', () => {
     });
 
     it('names a read through a channel that is not a literal with its file and line', () => {
-        // revert: bin/diagrams/graphs.mjs:386 => delete
+        // revert: bin/diagrams/graphs.mjs "const literal = /^'([^']+)'$/.exec(match[1].trim());" +2 => delete
         const dot = channelsDot(
             sources({
                 ...base,
@@ -363,7 +363,7 @@ describe('the channel reader', () => {
     });
 
     it('names a comparison with a channel that is not a literal with its file and line', () => {
-        // revert: bin/diagrams/graphs.mjs:390 => delete
+        // revert: bin/diagrams/graphs.mjs "if (match[1] !== undefined) read(match[1]);" +1 => delete
         const dot = channelsDot(
             sources({
                 ...base,
@@ -374,7 +374,7 @@ describe('the channel reader', () => {
     });
 
     it('reads a literal case of a switch on the channel and names one that is not a literal', () => {
-        // revert: bin/diagrams/graphs.mjs:396 => delete
+        // revert: bin/diagrams/graphs.mjs "else lost.push({ at: match.index, what: `case ${one[1].trim()}` });" => delete
         const dot = channelsDot(
             sources({
                 ...base,
@@ -387,7 +387,7 @@ describe('the channel reader', () => {
     });
 
     it('names a listen with no naming function with its file and line', () => {
-        // revert: bin/diagrams/graphs.mjs:410 => delete
+        // revert: bin/diagrams/graphs.mjs "if (builds.length === 0) lost.push({ at: match.index, what: match[0] });" => delete
         const dot = channelsDot(
             sources({ ...base, 'lib/state/client/s.ts': 'socket.listen(handler);\n' })
         );
@@ -395,7 +395,7 @@ describe('the channel reader', () => {
     });
 
     it('names an entry of the connect list that is not a literal with its file and line', () => {
-        // revert: bin/diagrams/graphs.mjs:417 => else if (false)
+        // revert: bin/diagrams/graphs.mjs "else if (part.trim() !== '')" => else if (false)
         const dot = channelsDot(
             sources({ ...base, 'lib/state/client/s.ts': "connect(['old', which]);\n" })
         );
@@ -428,7 +428,7 @@ describe('the write reader', () => {
     };
 
     it('follows the route to a new write module and on to the disk', () => {
-        // revert: bin/diagrams/writes.mjs:372 => if (false) edge(path, DISK, real);
+        // revert: bin/diagrams/writes.mjs "if (FS_WRITE.test(real)) edge(path, DISK, real);" => if (false) edge(path, DISK, real);
         const before = writesDot(sources(base));
         expect(before).not.toContain('lib/server/edit/fresh.ts');
         const after = writesDot(
@@ -451,7 +451,7 @@ describe('the write reader', () => {
     });
 
     it('draws a call in a condition that answers 4xx as a refusal', () => {
-        // revert: bin/diagrams/writes.mjs:375 => if (held.imports.names.has(name)) follow(name, 'calls');
+        // revert: bin/diagrams/writes.mjs "if (held.imports.names.has(name)) follow(name, refused.has(name) ? 'refuses' : 'calls');" => if (held.imports.names.has(name)) follow(name, 'calls');
         expect(writesDot(sources(base))).toContain(
             arrow(
                 'lib/server/edit/writes.ts',
@@ -464,7 +464,7 @@ describe('the write reader', () => {
     });
 
     it('draws the modules on a path to the disk and the checks a refusal calls, and no other', () => {
-        // revert: bin/diagrams/writes.mjs:402 => if (path === DISK || path.startsWith('? ')) continue;
+        // revert: bin/diagrams/writes.mjs "if (path === DISK || path.startsWith('? ') || !writing.has(path)) continue;" => if (path === DISK || path.startsWith('? ')) continue;
         const dot = writesDot(sources(base));
         expect(dot).toContain('"lib/server/core/auth.ts" [label="auth.ts"];');
         // The guard the write calls writes nothing and refuses nothing, so it is left out whole.
@@ -474,7 +474,7 @@ describe('the write reader', () => {
     });
 
     it('follows a dispatch table to its writer and names the call it cannot follow', () => {
-        // revert: bin/diagrams/writes.mjs:148 => const COMPUTED = /(?!)/g;
+        // revert: bin/diagrams/writes.mjs "const COMPUTED = /(?<![\\w$.])([\\w$]+(?:\\.[\\w$]+)*\\[[^\\]\\n]*\\])\\s*\\(/g;" => const COMPUTED = /(?!)/g;
         const dot = writesDot(
             sources({
                 ...base,
@@ -501,7 +501,7 @@ describe('the write reader', () => {
     });
 
     it('follows a write through a namespace import of node:fs to the disk', () => {
-        // revert: bin/diagrams/writes.mjs:346 => if (false) edge(path, DISK, name);
+        // revert: bin/diagrams/writes.mjs "if (FS_WRITE.test(name)) edge(path, DISK, name);" => if (false) edge(path, DISK, name);
         const dot = writesDot(
             sources({
                 ...base,
@@ -515,7 +515,7 @@ describe('the write reader', () => {
     });
 
     it('names a re-export of a whole module with its file and line', () => {
-        // revert: bin/diagrams/writes.mjs:185 => continue;
+        // revert: bin/diagrams/writes.mjs "if (whole.whole !== true || whole.typeOnly) continue;" => continue;
         const dot = writesDot(
             sources({
                 ...base,
@@ -534,7 +534,7 @@ describe('the write reader', () => {
         arrow('lib/server/edit/old.ts', 'file on disk', name, '', 'calls');
 
     it('follows a write through a local alias of a node:fs call to the disk', () => {
-        // revert: bin/diagrams/writes.mjs:319 => const callee = site.name;
+        // revert: bin/diagrams/writes.mjs "const callee = named(site.name);" => const callee = site.name;
         const dot = withOld(
             [
                 "import { writeFile } from 'node:fs';",
@@ -549,8 +549,8 @@ describe('the write reader', () => {
     });
 
     it('follows a write through a destructured member of node:fs and a module-level alias', () => {
-        // revert: bin/diagrams/calls.mjs:148 => delete
-        // revert: bin/diagrams/writes.mjs:179 => delete
+        // revert: bin/diagrams/calls.mjs "found.set(name, `${match[3]}.${bound[1]}`);" => delete
+        // revert: bin/diagrams/writes.mjs "if (target !== undefined) aliases.set(name, target);" => delete
         const dot = withOld(
             [
                 "import * as fs from 'node:fs';",
@@ -568,7 +568,7 @@ describe('the write reader', () => {
     });
 
     it('follows an imported name that is a module-level alias of a node:fs call to the disk', () => {
-        // revert: bin/diagrams/writes.mjs:331 => delete
+        // revert: bin/diagrams/writes.mjs "if (aliased !== undefined) call(unalias(aliased, held.aliases), 0);" => delete
         const dot = withOld(
             "import { writeFileSync } from 'node:fs';\nexport const saveOld = writeFileSync;\n"
         );
@@ -577,7 +577,7 @@ describe('the write reader', () => {
     });
 
     it('follows a function passed by name to a function of the module that calls it', () => {
-        // revert: bin/diagrams/writes.mjs:326 => delete
+        // revert: bin/diagrams/writes.mjs "call(named(argument), site.at, `${site.name}(`);" => delete
         const dot = withOld(
             [
                 "import { writeFileSync } from 'node:fs';",
@@ -594,7 +594,7 @@ describe('the write reader', () => {
     });
 
     it('follows a passed function through an alias and a second function of the module', () => {
-        // revert: bin/diagrams/writes.mjs:275 => delete
+        // revert: bin/diagrams/writes.mjs "if (callsParameter(target.path, target.name, at, seen)) return true;" => delete
         const dot = withOld(
             [
                 "import { copyFileSync, renameSync, writeFileSync } from 'node:fs';",
@@ -623,7 +623,7 @@ describe('the write reader', () => {
     });
 
     it('draws an imported function passed to a function of the module that calls it as a call', () => {
-        // revert: bin/diagrams/writes.mjs:270 => delete
+        // revert: bin/diagrams/writes.mjs "if (callee === parameter) return true;" => delete
         const dot = writesDot(
             sources({
                 ...base,
@@ -646,8 +646,8 @@ describe('the write reader', () => {
     });
 
     it('follows a function passed by name to a function of another module that calls it', () => {
-        // revert: bin/diagrams/writes.mjs:321 => const target = held.decls.has(callee) ? { path, name: callee } : null;
-        // revert: bin/diagrams/writes.mjs:232 => return null;
+        // revert: bin/diagrams/writes.mjs "if (!site.name.includes('.')) call(callee, site.at, `${site.name}(`);" +1 => const target = held.decls.has(callee) ? { path, name: callee } : null;
+        // revert: bin/diagrams/writes.mjs "return read(target.path).decls.has(target.name) ? target : null;" => return null;
         const dot = writesDot(
             sources({
                 ...base,
@@ -679,7 +679,7 @@ describe('the write reader', () => {
     });
 
     it('names a method call on an imported value with its file and line', () => {
-        // revert: bin/diagrams/writes.mjs:353 => } else if (false) {
+        // revert: bin/diagrams/writes.mjs "} else if (held.imports.names.has(owner)) {" => } else if (false) {
         const dot = writesDot(
             sources({
                 ...base,
@@ -732,7 +732,7 @@ describe('where the words of an arrow land', () => {
         '</svg>'
     ].join('\n');
 
-    // revert: bin/diagrams/labels.mjs:151 => if (depth >= 3) return [a, d].some(([x, y]) => x >= box.x0 && x <= box.x1 && y >= box.y0 && y <= box.y1); if (false) {
+    // revert: bin/diagrams/labels.mjs "if (depth > 30 || (offLine(b, a, d) <= FLAT && offLine(c, a, d) <= FLAT)) {" => if (depth >= 3) return [a, d].some(([x, y]) => x >= box.x0 && x <= box.x1 && y >= box.y0 && y <= box.y1); if (false) {
     it('names a count a curve runs through, testing each segment of the curve exactly', () => {
         expect(labelsAcross(SERVER)).toEqual([
             'folder server/edit->folder server/files label 2 across folder server/machine->folder server/core'
@@ -742,7 +742,7 @@ describe('where the words of an arrow land', () => {
         ]);
     });
 
-    // revert: bin/diagrams/labels.mjs:254 => const ends = title.split(':')[0];
+    // revert: bin/diagrams/labels.mjs "const ends = title;" => const ends = title.split(':')[0];
     it('takes the halves through a word node as its own when the names hold a colon', () => {
         const svg = [
             '<svg>',
@@ -761,7 +761,7 @@ describe('where the words of an arrow land', () => {
         expect(labelsAcross(svg)).toEqual([]);
     });
 
-    // revert: bin/diagrams/labels.mjs:175 => return false;
+    // revert: bin/diagrams/labels.mjs "return holds(points, [box.x0, box.y0]);" => return false;
     it('names a count that lies wholly inside the head of another arrow', () => {
         const svg = [
             '<svg>',
@@ -781,7 +781,7 @@ describe('where the words of an arrow land', () => {
         expect(labelsAcross(svg)).toEqual(['a->b label 7 across c->d']);
     });
 
-    // revert: bin/diagrams/labels.mjs:270 => const own = false;
+    // revert: bin/diagrams/labels.mjs "const own =" => const own = false;
     it('reads a label node by the box Graphviz drew for it, the two halves through it its own', async () => {
         const dot = [
             'digraph g {',
@@ -805,7 +805,7 @@ describe('where the words of an arrow land', () => {
         ]);
     }, 30_000);
 
-    // revert: bin/diagrams/labels.mjs:84 => return [`    ${quote(from)} -> ${quote(to)} [label=${quote(words)}]`];
+    // revert: bin/diagrams/labels.mjs "return [`    ${node.line}`, ...halves(from, node.id, to, attrs)];" => return [`    ${quote(from)} -> ${quote(to)} [label=${quote(words)}]`];
     it('draws an arrow with words in two halves in its own style through a node of the words', () => {
         const lines = labelledEdge('x', 'y', '5', 'style=dashed', 'refuses');
         expect(lines[0]).toContain('"x to y (refuses)" [label="5", ');
@@ -813,7 +813,7 @@ describe('where the words of an arrow land', () => {
         expect(lines[2]).toBe('    "x to y (refuses)" -> "y" [style=dashed];');
     });
 
-    // revert: bin/diagrams/writes.mjs:425 => lines.push(`    ${quote(from)} -> ${quote(to)} [label=${quote(names)}${style === '' ? '' : `, ${style}`}];`);
+    // revert: bin/diagrams/writes.mjs "lines.push(...labelledEdge(from, to, names, style, kind));" => lines.push(`    ${quote(from)} -> ${quote(to)} [label=${quote(names)}${style === '' ? '' : `, ${style}`}];`);
     it('are clear of every other arrow in every drawing the source gives', async () => {
         const drawn = await generate(ENGINE);
         expect(drawn.map((one) => one.name)).toEqual(NAMES);
@@ -827,7 +827,7 @@ describe('where the words of an arrow land', () => {
 
 describe('the rendered drawing', () => {
     it('has no colour of its own and nothing opaque behind it', async () => {
-        // revert: bin/diagrams/diagrams.mjs:120 => .replace(/(stroke|fill)="none"/g, '$1="currentColor"')
+        // revert: bin/diagrams/diagrams.mjs ".replace(/(stroke|fill)=\"black\"/g, '$1=\"currentColor\"')" => .replace(/(stroke|fill)="none"/g, '$1="currentColor"')
         const svg = await renderSvg(
             layersDot(sources({ 'lib/ui/a.ts': "import '../data/b';\n" }), LAYERS)
         );
@@ -838,7 +838,7 @@ describe('the rendered drawing', () => {
     }, 30_000);
 
     it('carries its own grey for a light and a dark viewer outside oculus', async () => {
-        // revert: bin/diagrams/diagrams.mjs:113 => delete
+        // revert: bin/diagrams/diagrams.mjs ".replace(/^(<svg[^>]*>)/, `$1\\n<style>${STANDALONE}</style>`)" => delete
         const svg = await renderSvg(layersDot(sources({ 'lib/ui/a.ts': '' }), LAYERS));
         expect(svg).toMatch(
             /^<svg[^>]*>\n<style>svg \{ color: #333333; \} @media \(prefers-color-scheme: dark\) \{ svg \{ color: #cccccc; background: #1e1e1e; \} \}<\/style>/
@@ -846,7 +846,7 @@ describe('the rendered drawing', () => {
     }, 30_000);
 
     it('carries the functions a write edge calls in the edge title, with no link around it', async () => {
-        // revert: bin/diagrams/diagrams.mjs:115 => /(?!)/g,
+        // revert: bin/diagrams/diagrams.mjs "/<title>([^<]*)<\\/title>\\n<g id=\"a_[^\"]*\"><a xlink:title=\"([^\"]*)\">\\n([\\s\\S]*?)<\\/a>\\n<\\/g>\\n/g," => /(?!)/g,
         const svg = await renderSvg(
             writesDot(
                 sources({

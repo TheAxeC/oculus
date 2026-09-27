@@ -818,7 +818,7 @@ describe('attention and refresh', () => {
 });
 
 describe('the Focus board folds', () => {
-    // revert: src/lib/state/boards/focus.ts:321 => return projects;
+    // revert: src/lib/state/boards/focus.ts "return projects.filter((one) => ['ideas', 'active', 'manuscripts'].includes(one.tier));" => return projects;
     it('let quick add write to the projects of the three live tiers', () => {
         const projects = ['ideas', 'active', 'manuscripts', 'archive'].map((tier) => ({
             id: tier,
@@ -831,7 +831,7 @@ describe('the Focus board folds', () => {
         ]);
     });
 
-    // revert: src/lib/state/boards/focus.ts:330 => const climbing = [...levels];
+    // revert: src/lib/state/boards/focus.ts "const climbing = [...levels].sort((a, b) => a.flames - b.flames);" => const climbing = [...levels];
     it('cycle a priority from unset through the fewest flames to the most and back', () => {
         const levels: Priority[] = [
             { key: 'high', label: 'High', flames: 3 },
@@ -844,7 +844,7 @@ describe('the Focus board folds', () => {
         expect(nextPriority(levels, 'unknown')).toBe('');
     });
 
-    // revert: src/lib/state/boards/focus.ts:338 => return board;
+    // revert: src/lib/state/boards/focus.ts "return board.filter((one) => one.cluster === cluster);" => return board;
     it('draw the lanes of one cluster in the board order', () => {
         const board = [
             { key: 'a', cluster: 'now' },
@@ -859,7 +859,7 @@ describe('the ticker lines the command center groups', () => {
     const line = (kind: string, label: string) =>
         ({ kind, label, glyph: '', days: null }) as TickerItem;
 
-    // revert: src/lib/state/boards/ticker.ts:558 => if (held !== null) runs.push({ kind: line.kind, lines: [line] });
+    // revert: src/lib/state/boards/ticker.ts "if (held?.kind !== line.kind) runs.push({ kind: line.kind, lines: [line] });" => if (held !== null) runs.push({ kind: line.kind, lines: [line] });
     it('run by kind in the order given, a kind met again opening a run of its own', () => {
         const lines = [line('a', '1'), line('a', '2'), line('b', '3'), line('a', '4')];
         expect(runsByKind(lines).map((run) => [run.kind, run.lines.length])).toEqual([
@@ -869,7 +869,7 @@ describe('the ticker lines the command center groups', () => {
         ]);
     });
 
-    // revert: src/lib/state/boards/ticker.ts:574 => ;
+    // revert: src/lib/state/boards/ticker.ts ".filter((one) => one.lines.length > 0);" => ;
     it('group the deadlines by category in the categories order, an empty category left out', () => {
         const lines = [line('funding', 'f'), line('paper', 'p'), line('funding', 'g')];
         expect(

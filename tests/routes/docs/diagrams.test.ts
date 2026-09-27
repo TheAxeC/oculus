@@ -43,7 +43,7 @@ function local(): Headers {
 
 describe('the diagram route', () => {
     it('serves a diagram of the folder as an SVG image that loads and runs nothing', async () => {
-        // revert: src/lib/server/content/diagrams.ts:31 => 'content-type': 'text/html',
+        // revert: src/lib/server/content/diagrams.ts "'content-type': 'image/svg+xml'," => 'content-type': 'text/html',
         const served = serveDiagram(engine(['layers.svg']), 'layers.svg', local());
         expect(served.status).toBe(200);
         expect(served.headers.get('content-type')).toBe('image/svg+xml');
@@ -53,7 +53,7 @@ describe('the diagram route', () => {
     });
 
     it('refuses every name that is not an svg file of the folder', () => {
-        // revert: src/lib/server/content/diagrams.ts:27 => export const DIAGRAM_NAME = /\.(svg|dot)$/;
+        // revert: src/lib/server/content/diagrams.ts "export const DIAGRAM_NAME = /^[a-z0-9][a-z0-9-]*\\.svg$/;" => export const DIAGRAM_NAME = /\.(svg|dot)$/;
         const dir = engine(['layers.svg', 'layers.dot', '.hidden.svg']);
         for (const name of [
             'layers.dot',
@@ -70,7 +70,7 @@ describe('the diagram route', () => {
     });
 
     it('refuses a link in the folder that leads out of it', () => {
-        // revert: src/lib/server/content/diagrams.ts:47 => if (dirname(real) === '') return null;
+        // revert: src/lib/server/content/diagrams.ts "if (dirname(real) !== folder) return null;" => if (dirname(real) === '') return null;
         const dir = engine([]);
         symlinkSync(join(dir, 'outside.svg'), join(dir, DIAGRAM_DIR, 'away.svg'));
         expect(diagramPath(dir, 'away.svg')).toBeNull();
@@ -78,7 +78,7 @@ describe('the diagram route', () => {
     });
 
     it('refuses a docs or a diagrams folder that is a link out of the engine directory', () => {
-        // revert: src/lib/server/content/diagrams.ts:45 => const folder = realpathSync(join(engine, DIAGRAM_DIR));
+        // revert: src/lib/server/content/diagrams.ts "const folder = join(realpathSync(engine), DIAGRAM_DIR);" => const folder = realpathSync(join(engine, DIAGRAM_DIR));
         const away = engine(['layers.svg']);
         for (const linked of [DIAGRAM_DIR, 'docs']) {
             const dir = scratchDir('oculus-diagrams-linked-');
@@ -92,7 +92,7 @@ describe('the diagram route', () => {
     });
 
     it('refuses a folder that is not a file, and an engine with no diagrams folder', () => {
-        // revert: src/lib/server/content/diagrams.ts:48 => return real;
+        // revert: src/lib/server/content/diagrams.ts "return statSync(real).isFile() ? real : null;" => return real;
         const dir = engine([]);
         mkdirSync(join(dir, DIAGRAM_DIR, 'nested.svg'));
         expect(serveDiagram(dir, 'nested.svg', local()).status).toBe(404);
@@ -102,7 +102,7 @@ describe('the diagram route', () => {
     });
 
     it('refuses a request from another origin', () => {
-        // revert: src/lib/server/content/diagrams.ts:56 => delete
+        // revert: src/lib/server/content/diagrams.ts "if (!sameOrigin(headers)) return new Response(null, { status: 403 });" => delete
         const other = new Headers({
             origin: 'https://example.com',
             'sec-fetch-site': 'cross-site'

@@ -53,7 +53,7 @@ function walk(dir: string): string[] {
 
 describe('a comment line', () => {
     it('ends by the hundredth column everywhere under src, tests and bin', () => {
-        // revert: tests/checks/source/code.ts:12 => // A line of a comment written past the hundredth column, which the formatter leaves as it is written.
+        // revert: tests/checks/source/code.ts "export type Kind = 'code' | 'string' | 'comment';" => // A line of a comment written past the hundredth column, which the formatter leaves as it is written.
         const found = ['src', 'tests', 'bin'].flatMap((top) =>
             walk(join(ENGINE, top)).flatMap((file) =>
                 tooWide(file, readFileSync(file, 'utf8')).map(
@@ -65,7 +65,7 @@ describe('a comment line', () => {
     });
 
     it('is found in each language the tree is written in', () => {
-        // revert: tests/checks/source/code.ts:109 => delete
+        // revert: tests/checks/source/code.ts "if (name.endsWith('.sh')) return shellKinds(text);" => delete
         const long = `${'word '.repeat(22)}end`;
         expect(tooWide('a.ts', `const a = 1;\n// ${long}\n`)).toEqual([2]);
         expect(tooWide('a.ts', `/**\n * ${long}\n */\n`)).toEqual([2]);

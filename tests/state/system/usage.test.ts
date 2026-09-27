@@ -8,7 +8,7 @@ import { orderedWindows, usageTotals } from '../../../src/lib/state/system/usage
 import { hasUsageStatus, nextRefresh, usageRows } from '../../../src/lib/state/system/usage.ts';
 
 describe('the usage folds', () => {
-    // revert: src/lib/state/system/usage.ts:20 => return [...windows];
+    // revert: src/lib/state/system/usage.ts "return [...windows].sort((left, right) => WINDOW_ORDER[left.name] - WINDOW_ORDER[right.name]);" => return [...windows];
     it('order an account windows from the shortest', () => {
         const windows = ['weekly_model', 'seven_day', 'five_hour'].map((name) => ({
             name
@@ -20,7 +20,7 @@ describe('the usage folds', () => {
         ]);
     });
 
-    // revert: src/lib/state/system/usage.ts:30 => cacheRead: 0,
+    // revert: src/lib/state/system/usage.ts "cacheRead: rows.reduce((sum, row) => sum + row.cacheRead, 0)," => cacheRead: 0,
     it('sum the token counts of the day rows', () => {
         const rows = [
             { input: 1, output: 2, cacheRead: 3, cacheCreation: 4 },
@@ -36,7 +36,7 @@ describe('the usage folds', () => {
 });
 
 describe('whether an account has anything to say of its limits', () => {
-    // revert: src/lib/state/system/usage.ts:40 => return account.windows.length > 0;
+    // revert: src/lib/state/system/usage.ts "return account.windows.length > 0 || account.live.length > 0;" => return account.windows.length > 0;
     it('is a rate window or a live session', () => {
         expect(hasUsageStatus({ windows: [], live: [{}] })).toBe(true);
         expect(hasUsageStatus({ windows: [{}], live: [] })).toBe(true);
@@ -45,8 +45,8 @@ describe('whether an account has anything to say of its limits', () => {
 });
 
 describe('the usage history rows and the next refresh', () => {
-    // revert: src/lib/state/system/usage.ts:54 => rowKey: row.day
-    // revert: src/lib/state/system/usage.ts:56 => if (rows.length < 0) return shown;
+    // revert: src/lib/state/system/usage.ts "rowKey: [row.tool, row.account, row.day, row.model].join(':')" => rowKey: row.day
+    // revert: src/lib/state/system/usage.ts "if (rows.length === 0) return shown;" => if (rows.length < 0) return shown;
     it('key each day row by its tool, account, day and model, and total them under the word given', () => {
         const days = [
             {
@@ -87,7 +87,7 @@ describe('the usage history rows and the next refresh', () => {
         expect(usageRows([], 'Total')).toEqual([]);
     });
 
-    // revert: src/lib/state/system/usage.ts:69 => return new Date(last + minutes * 1000).toISOString();
+    // revert: src/lib/state/system/usage.ts "return new Date(last + minutes * 60_000).toISOString();" => return new Date(last + minutes * 1000).toISOString();
     it('is the last refresh plus the cadence, and nothing while either is unknown', () => {
         expect(nextRefresh('2026-09-25T10:00:00.000Z', 15)).toBe('2026-09-25T10:15:00.000Z');
         // Before the first refresh, before the cadence arrives, or over a time that does not parse,

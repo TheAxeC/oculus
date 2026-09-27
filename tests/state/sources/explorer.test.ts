@@ -185,13 +185,13 @@ describe('the explorer over the rows', () => {
         expect(collapseRoot([...open, 'hubby:x'], 'hub')).toEqual(['hub:', 'notes:', 'hubby:x']);
     });
 
-    // revert: src/lib/state/sources/fs.ts:708 => const under = own;
+    // revert: src/lib/state/sources/fs.ts "const under = from === '' ? own : `${own}/`;" => const under = own;
     it('closes only the folders under the followed folder, leaving it and its neighbours open', () => {
         const held = ['hub:', 'hub:a', 'hub:a/b', 'hub:a/b/c', 'hub:ab', 'hub:z'];
         expect(collapseRoot(held, 'hub', 'a')).toEqual(['hub:', 'hub:a', 'hub:ab', 'hub:z']);
     });
 
-    // revert: src/lib/state/sources/fs.ts:316 => hidden: false,
+    // revert: src/lib/state/sources/fs.ts "hidden: map.hidden === true," => hidden: false,
     it('reads the two toggles an instance keeps, and false for anything that is not true', () => {
         expect(filesViewOf({ hidden: true, ignored: true })).toMatchObject({
             hidden: true,
@@ -376,7 +376,7 @@ describe('the forms of the file browser', () => {
         expect(editedGone(NO_FORM, loaded, false)).toBe(false);
     });
 
-    // revert: src/lib/state/sources/fs.ts:518 => return { ...part };
+    // revert: src/lib/state/sources/fs.ts "return { ...held, ...part };" => return { ...part };
     // Revert: in patchedFilesView of state/sources/fs.ts, write the part over nothing.
     it('writes part of a file browser over whatever else its record holds', () => {
         expect(patchedFilesView({ filter: 'x', form: 'root' }, { form: 'bookmark' })).toEqual({
@@ -389,7 +389,7 @@ describe('the forms of the file browser', () => {
         expect(patchedFilesView('a word', { editing: 'one' })).toEqual({ editing: 'one' });
     });
 
-    // revert: src/lib/state/sources/fs.ts:504 => if (marks.loading || marks.error !== '') return false;
+    // revert: src/lib/state/sources/fs.ts "if (marks.loading || marks.error !== '' || saving) return false;" => if (marks.loading || marks.error !== '') return false;
     // Revert: in editedGone of state/sources/fs.ts, drop `saving` from the line that answers false.
     it('leaves the form a save of its own is out from until that answer lands', () => {
         const loaded = { entries: [{ id: 'the manual renamed' }], loading: false, error: '' };

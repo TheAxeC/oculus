@@ -22,7 +22,7 @@ async function openReadme(page: Page): Promise<void> {
     await expect(page.locator('[data-source-editor="README.md"]')).toBeVisible();
 }
 
-// revert: src/lib/shell/panes/PaneView.svelte:127 => const kept = $derived(instances.filter((one) => one.id === active));
+// revert: src/lib/shell/panes/PaneView.svelte "const kept = $derived(instances.filter((one) => one.id === active || seen.includes(one.id)));" => const kept = $derived(instances.filter((one) => one.id === active));
 test('a tab switched away from and back keeps its view, built once, and reads its file once', async ({
     page
 }) => {
@@ -50,7 +50,7 @@ test('a tab switched away from and back keeps its view, built once, and reads it
     expect(reads).toHaveLength(before);
 });
 
-// revert: src/lib/shell/panes/PaneView.svelte:127 => const kept = $derived(instances);
+// revert: src/lib/shell/panes/PaneView.svelte "const kept = $derived(instances.filter((one) => one.id === active || seen.includes(one.id)));" => const kept = $derived(instances);
 test('a tab never shown mounts no view, and a closed tab takes its view with it', async ({
     page
 }) => {
@@ -77,7 +77,7 @@ test('a tab never shown mounts no view, and a closed tab takes its view with it'
     await expect(page.locator(`[data-tab-view="${id}"]`)).toHaveCount(0);
 });
 
-// revert: src/lib/shell/keys/key-dom.ts:20 => const search = pane?.querySelector<HTMLInputElement>('input[data-search]');
+// revert: src/lib/shell/keys/key-dom.ts "const search = shownView(pane)?.querySelector<HTMLInputElement>('input[data-search]');" => const search = pane?.querySelector<HTMLInputElement>('input[data-search]');
 test('the search key reaches the search of the view the pane shows, not a hidden one', async ({
     page
 }) => {
@@ -91,7 +91,7 @@ test('the search key reaches the search of the view the pane shows, not a hidden
     await expect(shown).toBeFocused();
 });
 
-// revert: src/lib/views/boards/focus/QuickAdd.svelte:56 => if (event.key === 'Escape' && field !== null) close();
+// revert: src/lib/views/boards/focus/QuickAdd.svelte "if (event.key === 'Escape' && field !== null && box?.checkVisibility() === true) close();" => if (event.key === 'Escape' && field !== null) close();
 test('Escape pressed while another tab is shown leaves a hidden Quick add form open', async ({
     page
 }) => {
@@ -114,7 +114,7 @@ test('Escape pressed while another tab is shown leaves a hidden Quick add form o
     await expect(form).toHaveCount(0);
 });
 
-// revert: src/lib/views/shared/forms/NewIdeaForm.svelte:36 => if (event.key === 'Escape') onclose();
+// revert: src/lib/views/shared/forms/NewIdeaForm.svelte "if (event.key === 'Escape' && box?.checkVisibility() === true) onclose();" => if (event.key === 'Escape') onclose();
 test('Escape pressed while another tab is shown leaves a hidden new-idea form open', async ({
     page
 }) => {
@@ -134,7 +134,7 @@ test('Escape pressed while another tab is shown leaves a hidden new-idea form op
     await expect(field).toBeVisible();
 });
 
-// revert: src/lib/shell/keys/workbench-keys.svelte.ts:264 => (one) => one !== null
+// revert: src/lib/shell/keys/workbench-keys.svelte.ts "(one) => one.closest('[data-tab-view][hidden]') === null" => (one) => one !== null
 test('a confirm left open in a hidden tab holds no key: Ctrl and a bracket still cycle the tabs', async ({
     page
 }) => {
@@ -159,7 +159,7 @@ test('a confirm left open in a hidden tab holds no key: Ctrl and a bracket still
     await expect(status).toHaveAttribute('aria-selected', 'false');
 });
 
-// revert: src/lib/ui/controls/Confirm.svelte:48 => delete
+// revert: src/lib/ui/controls/Confirm.svelte "$effect(() => (box === undefined ? undefined : onShown(box, () => yes?.focus())));" => delete
 test('a confirm left open in a hidden tab takes the keyboard again when its tab shows', async ({
     page
 }) => {

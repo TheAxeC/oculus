@@ -94,7 +94,7 @@ async function typeManifest(page: Page): Promise<Locator> {
     return tab;
 }
 
-// revert: src/lib/state/workbench/ui.svelte.ts:288 => delete
+// revert: src/lib/state/workbench/ui.svelte.ts "backing.setItem(UI_KEY, JSON.stringify({ version: UI_VERSION, ...next }));" => delete
 test('text typed into an add form is there, in the open form, after a tab switch and a reload', async ({
     page
 }) => {
@@ -113,7 +113,7 @@ test('text typed into an add form is there, in the open form, after a tab switch
     expect(readHubFile(TASKS)).toBe(before);
 });
 
-// revert: src/lib/state/workbench/ui.svelte.ts:288 => delete
+// revert: src/lib/state/workbench/ui.svelte.ts "backing.setItem(UI_KEY, JSON.stringify({ version: UI_VERSION, ...next }));" => delete
 test("text typed into a card's edit form is there, in the open form, after a reload", async ({
     page
 }) => {
@@ -295,7 +295,7 @@ test('a delete from the edit form takes its draft away', async ({ page }) => {
     }
 });
 
-// revert: src/lib/state/workbench/ui.svelte.ts:288 => delete
+// revert: src/lib/state/workbench/ui.svelte.ts "backing.setItem(UI_KEY, JSON.stringify({ version: UI_VERSION, ...next }));" => delete
 test('an edit typed into the manifest editor is there after a reload', async ({ page }) => {
     await boot(page);
     const tab = await typeManifest(page);
@@ -342,7 +342,7 @@ test('a manifest editor with an edit asks before it closes, and a save clears th
 test('a save no answer reaches is given up after the configured time, said on its form, and Save is pressable again', async ({
     page
 }) => {
-    // revert: src/lib/state/client/writes.svelte.ts:376 => const wait = null;
+    // revert: src/lib/state/client/writes.svelte.ts "const wait = writeTimeout(settings());" => const wait = null;
     const behavior = 'config/behavior.yml';
     const held = readEngineFile(behavior);
     const short = held.replace('timeout_seconds: 30', 'timeout_seconds: 1');
@@ -406,7 +406,7 @@ test('an edit form keeps a value typed while its save was on its way, open over 
 test('an add form nothing touched while its save was out closes once its entry is added', async ({
     page
 }) => {
-    // revert: src/lib/views/shared/forms/EntryForm.svelte:267 => const took = (into.taken(which, sent), false);
+    // revert: src/lib/views/shared/forms/EntryForm.svelte "const took = into.taken(which, sent);" => const took = (into.taken(which, sent), false);
     // Revert: EntryForm leaving the add form open on every answer, or not clearing its draft.
     const before = readHubFile(TASKS);
     try {
@@ -425,7 +425,7 @@ test('an add form nothing touched while its save was out closes once its entry i
 test('an add form keeps a value typed while its save was on its way, open over it', async ({
     page
 }) => {
-    // revert: src/lib/views/shared/forms/EntryForm.svelte:267 => const took = (into.clear(which), true);
+    // revert: src/lib/views/shared/forms/EntryForm.svelte "const took = into.taken(which, sent);" => const took = (into.clear(which), true);
     // Revert: EntryForm clearing the add form's draft and closing it on every answer, through
     // into.clear(which) in place of into.taken(which, sent).
     const before = readHubFile(TASKS);
@@ -448,7 +448,7 @@ test('an add form keeps a value typed while its save was on its way, open over i
 test('an add form closed and opened again while its save was out keeps its new text', async ({
     page
 }) => {
-    // revert: src/lib/views/shared/forms/EntryForm.svelte:267 => const took = (into.clear(which), true);
+    // revert: src/lib/views/shared/forms/EntryForm.svelte "const took = into.taken(which, sent);" => const took = (into.clear(which), true);
     // Revert: EntryForm clearing the add form's draft and closing it on every answer, through
     // into.clear(which) in place of into.taken(which, sent).
     const before = readHubFile(TASKS);
@@ -485,7 +485,7 @@ function entriesTitled(title: string): Record<string, unknown>[] {
 test('an add form left open by its answer writes the entry it added, not a second one', async ({
     page
 }) => {
-    // revert: src/lib/views/shared/forms/EntryForm.svelte:257 => const addressed = entry === null ? '' : entry.id;
+    // revert: src/lib/views/shared/forms/EntryForm.svelte "const addressed = entry === null ? (made?.value === value ? made.id : '') : entry.id;" => const addressed = entry === null ? '' : entry.id;
     // Revert: in save() of views/shared/forms/EntryForm.svelte, add through addFromForm whatever
     // the form has already made, by dropping the entry it made from what the write is addressed to.
     const before = readHubFile(TASKS);
@@ -510,7 +510,7 @@ test('an add form left open by its answer writes the entry it added, not a secon
 test('a second save from the add form that added an entry adds no second entry', async ({
     page
 }) => {
-    // revert: src/lib/views/shared/forms/EntryForm.svelte:257 => const addressed = entry === null ? '' : entry.id;
+    // revert: src/lib/views/shared/forms/EntryForm.svelte "const addressed = entry === null ? (made?.value === value ? made.id : '') : entry.id;" => const addressed = entry === null ? '' : entry.id;
     // Revert: in save() of views/shared/forms/EntryForm.svelte, add through addFromForm whatever
     // the form has already made, which makes the second save a second add and the file refuse it.
     const before = readHubFile(TASKS);
@@ -537,7 +537,7 @@ test('a second save from the add form that added an entry adds no second entry',
 test('the Save control is not pressable while its own save is out, and adds nothing twice', async ({
     page
 }) => {
-    // revert: src/lib/views/shared/forms/EntryForm.svelte:222 => if (false) return;
+    // revert: src/lib/views/shared/forms/EntryForm.svelte "if (busy) return;" => if (false) return;
     // Revert: in views/shared/forms/EntryForm.svelte, drop `disabled={busy}` from the Save control
     // and the `if (busy) return;` at the top of save().
     const before = readHubFile(TASKS);
@@ -570,7 +570,7 @@ test('the Save control is not pressable while its own save is out, and adds noth
 test('an add form whose tab was switched away before its answer still writes the entry it added', async ({
     page
 }) => {
-    // revert: src/lib/state/forms/form-drafts.svelte.ts:273 => return null;
+    // revert: src/lib/state/forms/form-drafts.svelte.ts "return added(instance)[form] ?? null;" => return null;
     // Revert: in formAdded of state/forms/form-drafts.svelte.ts, answer that no form has made an
     // entry, which is what a form keeping it in the component comes to across a tab switch.
     const before = readHubFile(TASKS);
@@ -599,7 +599,7 @@ test('an add form whose tab was switched away before its answer still writes the
 test('an add form typed away from the entry it added adds another, it does not rename it', async ({
     page
 }) => {
-    // revert: src/lib/views/shared/forms/EntryForm.svelte:257 => const addressed = entry === null ? (made?.id ?? '') : entry.id;
+    // revert: src/lib/views/shared/forms/EntryForm.svelte "const addressed = entry === null ? (made?.value === value ? made.id : '') : entry.id;" => const addressed = entry === null ? (made?.id ?? '') : entry.id;
     // Revert: in save() of views/shared/forms/EntryForm.svelte, write the entry the form made
     // whatever its identity field now says, which renames that entry instead of adding the one
     // meant.
@@ -623,7 +623,7 @@ test('an add form typed away from the entry it added adds another, it does not r
     }
 });
 
-// revert: src/lib/state/workbench/ui.svelte.ts:288 => delete
+// revert: src/lib/state/workbench/ui.svelte.ts "backing.setItem(UI_KEY, JSON.stringify({ version: UI_VERSION, ...next }));" => delete
 test("the Venues add form is kept across a reload, and its Add and a card's Edit toggles forget what was typed", async ({
     page
 }) => {

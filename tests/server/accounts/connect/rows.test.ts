@@ -25,13 +25,13 @@ function text(edit: { text: string } | { reason: string }): string {
 }
 
 describe('an account row added', () => {
-    // revert: src/lib/server/accounts/connect/rows.ts:93 => return { text: `${list}:\n  - ${rowText(row)}\n` };
+    // revert: src/lib/server/accounts/connect/rows.ts "return { text: `${text}${lead}${list}:\\n  - ${rowText(row)}\\n` };" => return { text: `${list}:\n  - ${rowText(row)}\n` };
     it('writes the list key under the file it was not in, keeping every line before it', () => {
         const after = text(addAccountRow(HEAD, 'calendars', WORK, FILE));
         expect(after).toBe(`${HEAD}calendars:\n  - { provider: google, label: work }\n`);
     });
 
-    // revert: src/lib/server/accounts/connect/rows.ts:119 => return { text: `${text.slice(0, end)}\n- ${rowText(row)}${text.slice(end)}` };
+    // revert: src/lib/server/accounts/connect/rows.ts "return { text: `${text.slice(0, end)}\\n${indent}- ${rowText(row)}${text.slice(end)}` };" => return { text: `${text.slice(0, end)}\n- ${rowText(row)}${text.slice(end)}` };
     it('extends a block list at the indent of its first row, with the comments between kept', () => {
         const before = `${HEAD}mail:\n    # the university box\n    - provider: microsoft\n      label: uni\ncalendar_dir: /x\n`;
         const after = text(addAccountRow(before, 'mail', WORK, FILE));
@@ -40,7 +40,7 @@ describe('an account row added', () => {
         );
     });
 
-    // revert: src/lib/server/accounts/connect/rows.ts:114 => return { text: `${text.slice(0, last)}${rowText(row)}${text.slice(last)}` };
+    // revert: src/lib/server/accounts/connect/rows.ts "return { text: `${text.slice(0, last)}, ${rowText(row)}${text.slice(last)}` };" => return { text: `${text.slice(0, last)}${rowText(row)}${text.slice(last)}` };
     it('extends a flow list after its last row', () => {
         const before = `${HEAD}calendars: [{ provider: microsoft, label: uni }] # both\n`;
         const after = text(addAccountRow(before, 'calendars', WORK, FILE));
@@ -49,7 +49,7 @@ describe('an account row added', () => {
         );
     });
 
-    // revert: src/lib/server/accounts/connect/rows.ts:111 => return { text: `${text.slice(0, end - 1)}${text.slice(end)}` };
+    // revert: src/lib/server/accounts/connect/rows.ts "return { text: `${text.slice(0, end - 1)}${rowText(row)}]${text.slice(end)}` };" => return { text: `${text.slice(0, end - 1)}${text.slice(end)}` };
     it('fills an empty flow list, and one written as a null', () => {
         const empty = text(addAccountRow(`${HEAD}mail: []\n`, 'mail', WORK, FILE));
         expect(empty).toBe(`${HEAD}mail: [{ provider: google, label: work }]\n`);
@@ -57,7 +57,7 @@ describe('an account row added', () => {
         expect(tilde).toBe(`${HEAD}mail: [{ provider: google, label: work }] # none yet\n`);
     });
 
-    // revert: src/lib/server/accounts/connect/rows.ts:111 => return { text: `${text.slice(0, text.lastIndexOf('[', end))}[${rowText(row)}]${text.slice(end)}` };
+    // revert: src/lib/server/accounts/connect/rows.ts "return { text: `${text.slice(0, end - 1)}${rowText(row)}]${text.slice(end)}` };" => return { text: `${text.slice(0, text.lastIndexOf('[', end))}[${rowText(row)}]${text.slice(end)}` };
     it('fills an empty flow list keeping a comment inside its brackets', () => {
         const before = `${HEAD}calendars: [ # c\n  { provider: google, label: work } ] # k\n`;
         const emptied = text(removeAccountRow(before, 'calendars', WORK, FILE));
@@ -67,13 +67,13 @@ describe('an account row added', () => {
         expect((parse(after) as { calendars: unknown }).calendars).toEqual([WORK]);
     });
 
-    // revert: src/lib/server/accounts/connect/rows.ts:105 => return { text: `${text.slice(0, end)}  - ${rowText(row)}${text.slice(end)}` };
+    // revert: src/lib/server/accounts/connect/rows.ts "return { text: `${text.slice(0, end)}\\n  - ${rowText(row)}${text.slice(end)}` };" => return { text: `${text.slice(0, end)}  - ${rowText(row)}${text.slice(end)}` };
     it('fills a key written with nothing under it', () => {
         const after = text(addAccountRow(`${HEAD}calendars:\nmail: []\n`, 'calendars', WORK, FILE));
         expect(after).toBe(`${HEAD}calendars:\n  - { provider: google, label: work }\nmail: []\n`);
     });
 
-    // revert: src/lib/server/accounts/connect/rows.ts:28 => const label = row.label;
+    // revert: src/lib/server/accounts/connect/rows.ts "const label = parse(row.label) === row.label ? row.label : JSON.stringify(row.label);" => const label = row.label;
     it('quotes a label YAML would read as another type, so the row reads back as written', () => {
         const after = text(
             addAccountRow(HEAD, 'mail', { provider: 'google', label: '2026' }, FILE)
@@ -84,20 +84,20 @@ describe('an account row added', () => {
         ]);
     });
 
-    // revert: src/lib/server/accounts/connect/rows.ts:88 => const empty = false;
+    // revert: src/lib/server/accounts/connect/rows.ts "const empty = root === null || (isScalar(root) && root.value === null);" => const empty = false;
     it('makes the file from nothing when the machine has none', () => {
         expect(text(addAccountRow('', 'mail', WORK, FILE))).toBe(
             'mail:\n  - { provider: google, label: work }\n'
         );
     });
 
-    // revert: src/lib/server/accounts/connect/rows.ts:181 => const refusal = null;
+    // revert: src/lib/server/accounts/connect/rows.ts "const refusal = checkLocal(edit.text, file);" => const refusal = null;
     it('refuses a row the machine file would refuse, naming the reason', () => {
         const edit = addAccountRow(`${HEAD}port: not-a-port\n`, 'mail', WORK, FILE);
         expect('reason' in edit && edit.reason).toContain('port');
     });
 
-    // revert: src/lib/server/accounts/connect/rows.ts:107 => if (!isSeq(value)) return added(text.replace(/mail: .*/, 'mail: []'), list, row);
+    // revert: src/lib/server/accounts/connect/rows.ts "if (!isSeq(value)) return { reason: `${list} is not a list` };" => if (!isSeq(value)) return added(text.replace(/mail: .*/, 'mail: []'), list, row);
     it('refuses a list key that holds something other than a list', () => {
         const edit = addAccountRow(`${HEAD}mail: a-word\n`, 'mail', WORK, FILE);
         expect(edit).toEqual({ reason: 'mail is not a list' });
@@ -105,7 +105,7 @@ describe('an account row added', () => {
 });
 
 describe('an account row removed', () => {
-    // revert: src/lib/server/accounts/connect/rows.ts:146 => const to = lineEnd(text, end);
+    // revert: src/lib/server/accounts/connect/rows.ts "const to = Math.min(lineEnd(text, end) + 1, text.length);" => const to = lineEnd(text, end);
     it('takes one row of a block list and every line of it, keeping the rest', () => {
         const before = `${HEAD}calendars:\n  - provider: google\n    label: work\n  # the university\n  - { provider: microsoft, label: uni }\nport: 8787\n`;
         const after = text(removeAccountRow(before, 'calendars', WORK, FILE));
@@ -114,7 +114,7 @@ describe('an account row removed', () => {
         );
     });
 
-    // revert: src/lib/server/accounts/connect/rows.ts:140 => : [rangeOf(items[at - 1])[0], rangeOf(items[at])[1]];
+    // revert: src/lib/server/accounts/connect/rows.ts ": [rangeOf(items[at - 1])[1], rangeOf(items[at])[1]];" => : [rangeOf(items[at - 1])[0], rangeOf(items[at])[1]];
     it('takes one row of a flow list with its comma', () => {
         const before = `${HEAD}mail: [{ provider: microsoft, label: uni }, { provider: google, label: work }]\n`;
         expect(text(removeAccountRow(before, 'mail', WORK, FILE))).toBe(
@@ -125,7 +125,7 @@ describe('an account row removed', () => {
         );
     });
 
-    // revert: src/lib/server/accounts/connect/rows.ts:152 => return { text: `${text.slice(0, colon)}${text.slice(colon, from)}${text.slice(to)}` };
+    // revert: src/lib/server/accounts/connect/rows.ts "return { text: `${text.slice(0, colon)} []${text.slice(colon, from)}${text.slice(to)}` };" => return { text: `${text.slice(0, colon)}${text.slice(colon, from)}${text.slice(to)}` };
     it("leaves the last row's block list written empty rather than a key with nothing under it", () => {
         const before = `${HEAD}mail:\n  - { provider: google, label: work }\nport: 8787\n`;
         const after = text(removeAccountRow(before, 'mail', WORK, FILE));
@@ -133,7 +133,7 @@ describe('an account row removed', () => {
         expect((parse(after) as { mail: unknown }).mail).toEqual([]);
     });
 
-    // revert: src/lib/server/accounts/connect/rows.ts:152 => return { text: `${text.slice(0, colon)} []${text.slice(from)}` };
+    // revert: src/lib/server/accounts/connect/rows.ts "return { text: `${text.slice(0, colon)} []${text.slice(colon, from)}${text.slice(to)}` };" => return { text: `${text.slice(0, colon)} []${text.slice(from)}` };
     it("keeps the comment beside the list's key when its last row goes", () => {
         const before = `${HEAD}calendars: # my calendars\n  - { provider: google, label: work } # uni\nport: 8790\n`;
         expect(text(removeAccountRow(before, 'calendars', WORK, FILE))).toBe(
@@ -141,7 +141,7 @@ describe('an account row removed', () => {
         );
     });
 
-    // revert: src/lib/server/accounts/connect/rows.ts:152 => return { text: `${text.slice(0, colon)} []${text.slice(colon, lineEnd(text, colon))}${text.slice(to)}` };
+    // revert: src/lib/server/accounts/connect/rows.ts "return { text: `${text.slice(0, colon)} []${text.slice(colon, from)}${text.slice(to)}` };" => return { text: `${text.slice(0, colon)} []${text.slice(colon, lineEnd(text, colon))}${text.slice(to)}` };
     it('keeps the comment lines inside the list when its last row goes, and drops only its own', () => {
         const before = `${HEAD}calendars: # my calendars\n  # the work one\n  - { provider: google, label: work } # uni\nport: 8790\n`;
         const after = text(removeAccountRow(before, 'calendars', WORK, FILE));
@@ -150,7 +150,7 @@ describe('an account row removed', () => {
         expect(after).not.toContain('# uni');
     });
 
-    // revert: src/lib/server/accounts/connect/rows.ts:134 => delete
+    // revert: src/lib/server/accounts/connect/rows.ts "return { text: `${text.slice(0, start)}${text.slice(end)}` };" => delete
     it("leaves the last row's flow list with its brackets and the comment beside it", () => {
         const before = `${HEAD}calendars: [{ provider: google, label: work }] # mine\nport: 8790\n`;
         expect(text(removeAccountRow(before, 'calendars', WORK, FILE))).toBe(
@@ -158,7 +158,7 @@ describe('an account row removed', () => {
         );
     });
 
-    // revert: src/lib/server/accounts/connect/rows.ts:129 => if (at < 0) return { text };
+    // revert: src/lib/server/accounts/connect/rows.ts "if (at < 0) return { reason: `${list} holds no such account` };" => if (at < 0) return { text };
     it('refuses an account the list does not hold', () => {
         const before = `${HEAD}mail: [{ provider: microsoft, label: uni }]\n`;
         expect(removeAccountRow(before, 'mail', WORK, FILE)).toEqual({
@@ -166,7 +166,7 @@ describe('an account row removed', () => {
         });
     });
 
-    // revert: src/lib/server/accounts/connect/rows.ts:178 => if (false) {
+    // revert: src/lib/server/accounts/connect/rows.ts "if (JSON.stringify(after) !== JSON.stringify(expected)) {" => if (false) {
     it('refuses an edit that would change more than the one row', () => {
         // The same row written twice: the edit takes one, the list the reader wants has neither.
         const before = `${HEAD}mail:\n  - { provider: google, label: work }\n  - { provider: google, label: work }\n`;

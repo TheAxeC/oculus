@@ -33,7 +33,7 @@ async function outsideAscii(texts: Locator): Promise<string[]> {
     return all.flatMap((text) => text.replace(/[\n\t]/g, ' ').match(/[^\x20-\x7E]/g) ?? []);
 }
 
-// revert: src/lib/ui/display/Glyph.svelte:35 => : { text: standIn, svg: '' };
+// revert: src/lib/ui/display/Glyph.svelte ": { text: '', svg: iconSvg(name) ?? '' };" => : { text: standIn, svg: '' };
 test('every glyph in the rail is a line icon and none of them carries anything that runs', async ({
     page
 }) => {
@@ -63,7 +63,7 @@ test('every glyph in the rail is a line icon and none of them carries anything t
     expect(handlers).toEqual([]);
 });
 
-// revert: src/lib/ui/display/Glyph.svelte:44 => {@html drawn.svg.replace('currentColor', 'red')}
+// revert: src/lib/ui/display/Glyph.svelte "{@html sanitiseSvg(drawn.svg)}" => {@html drawn.svg.replace('currentColor', 'red')}
 test('an icon is drawn in the colour of the control it sits in', async ({ page }) => {
     await boot(page);
     const icon = page.locator('nav .glyph svg').first();
@@ -78,7 +78,7 @@ test('an icon is drawn in the colour of the control it sits in', async ({ page }
 test('a terminal theme draws the ASCII stand-in and no icon, until the icons are asked for', async ({
     page
 }) => {
-    // revert: src/lib/views/system/workbench/Appearance.svelte:122 => onclick={() => setIcons(icons())}
+    // revert: src/lib/views/system/workbench/Appearance.svelte "onclick={() => setIcons(!icons())}" => onclick={() => setIcons(icons())}
     await boot(page);
     await pickTheme(page, 'mocha');
     // a terminal theme draws the ASCII stand-in, so no icon is drawn until the icons are asked for
@@ -91,8 +91,8 @@ test('a terminal theme draws the ASCII stand-in and no icon, until the icons are
     await expect(page.locator('nav .glyph svg').first()).toBeVisible();
 });
 
-// revert: config/appearance.yml:10 => - { name: light, glyph: theme_base, label: "\u25d0 light" }
-// revert: src/lib/views/system/workbench/Appearance.svelte:35 => glyph: undefined,
+// revert: config/appearance.yml "- { name: light,        class: \"\",                   glyph: theme_base, label: \"light\" }" => - { name: light, glyph: theme_base, label: "\u25d0 light" }
+// revert: src/lib/views/system/workbench/Appearance.svelte "glyph: entry.glyph === '' ? undefined : entry.glyph," => glyph: undefined,
 test('the Settings theme menu draws each theme with an icon and no character outside ASCII', async ({
     page
 }) => {
@@ -118,7 +118,7 @@ test('the Settings theme menu draws each theme with an icon and no character out
     }
 });
 
-// revert: config/text/views/boards/focus.yml:87 => funding_lane: "\u25c6 Funding"
+// revert: config/text/views/boards/focus.yml "funding_lane: Funding" => funding_lane: "\u25c6 Funding"
 test('the Focus board draws its column glyphs as icons and no character outside ASCII', async ({
     page
 }) => {
@@ -161,7 +161,7 @@ async function columnGlyphs(page: Page): Promise<void> {
     }
 }
 
-// revert: src/lib/data/snapshot/normalise.ts:331 => wos: str(entry.wos),
+// revert: src/lib/data/snapshot/normalise.ts "wos: wos.words === '' ? undefined : wos.words," => wos: str(entry.wos),
 test('a Venues card draws a check or cross of the registry as its icon and no character', async ({
     page
 }) => {

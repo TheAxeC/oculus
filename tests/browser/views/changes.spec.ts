@@ -212,7 +212,7 @@ test.describe('the Changes panel', () => {
         return repo;
     }
 
-    // revert: src/lib/views/shared/changes/ChangeGroups.svelte:137 => onclick={() => undefined}
+    // revert: src/lib/views/shared/changes/ChangeGroups.svelte "onclick={() => onopen(entry.path, kind)}" => onclick={() => undefined}
     test("opens a changed row's diff from the panel", async ({ page }) => {
         const repo = committedRepo('opened');
         writeFileSync(inside(join(repo, 'kept.txt')), 'kept\nand more\n');
@@ -234,7 +234,7 @@ test.describe('the Changes panel', () => {
         await expect(file.locator('.cell.added')).toContainText('and more');
     });
 
-    // revert: src/lib/views/shared/changes/ChangeGroups.svelte:151 => onclick={() => undefined}
+    // revert: src/lib/views/shared/changes/ChangeGroups.svelte "onclick={() => onresolve(entry.path)}" => onclick={() => undefined}
     test('marks a conflicted path resolved from the Merge Changes group', async ({ page }) => {
         const repo = committedRepo('conflicted');
         gitIn(repo, 'checkout', '--quiet', '-b', 'other');

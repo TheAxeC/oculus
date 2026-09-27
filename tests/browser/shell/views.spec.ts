@@ -50,7 +50,7 @@ async function projectCard(page: Page): Promise<Locator> {
 test('the catalogue opens a view on the page the reader came from, and a chord and a digit on the page on screen', async ({
     page
 }) => {
-    // revert: src/lib/views/system/workbench/Catalogue.svelte:117 => delete
+    // revert: src/lib/views/system/workbench/Catalogue.svelte "showTarget();" => delete
     await boot(page);
     await showRailPage(page, 'projects');
     await showRailPage(page, 'views');
@@ -98,7 +98,7 @@ test('the catalogue opens a view on the page the reader came from, and a chord a
     await expect(page.locator('nav [data-rail-page="views"] button')).toHaveClass(/\bactive\b/);
 });
 
-// revert: src/lib/views/system/workbench/Catalogue.svelte:101 => delete
+// revert: src/lib/views/system/workbench/Catalogue.svelte "if (!onCataloguePage(currentPage().rail, railPages(merged), registration.id)) return;" => delete
 test("a catalogue moved onto a page of the reader's own opens a view on that page", async ({
     page
 }) => {
@@ -116,7 +116,7 @@ test("a catalogue moved onto a page of the reader's own opens a view on that pag
 test('a catalogue press after a load straight onto its page opens the view on the first rail page', async ({
     page
 }) => {
-    // revert: src/lib/views/system/workbench/Catalogue.svelte:108 => delete
+    // revert: src/lib/views/system/workbench/Catalogue.svelte "if (first !== undefined) openRailPage(first.page, first.label, first.node);" => delete
     await boot(page);
     await showRailPage(page, 'views');
     // The reload puts the Views and Settings page on screen with no page shown before it.
@@ -131,7 +131,7 @@ test('a catalogue press after a load straight onto its page opens the view on th
 test('a catalogue press on a hub document opens it on the page the reader came from', async ({
     page
 }) => {
-    // revert: src/lib/views/system/workbench/Catalogue.svelte:117 => delete
+    // revert: src/lib/views/system/workbench/Catalogue.svelte "showTarget();" => delete
     await boot(page);
     await showRailPage(page, 'projects');
     await showRailPage(page, 'views');
@@ -145,7 +145,7 @@ test('a catalogue press on a hub document opens it on the page the reader came f
 test('a shift-press after a load straight onto the catalogue opens beside on the first rail page', async ({
     page
 }) => {
-    // revert: src/lib/views/system/workbench/Catalogue.svelte:118 => if (event.shiftKey) openView(view, state);
+    // revert: src/lib/views/system/workbench/Catalogue.svelte "if (event.shiftKey) openBeside(view, state);" => if (event.shiftKey) openView(view, state);
     await boot(page);
     await showRailPage(page, 'views');
     await page.reload();
@@ -166,7 +166,7 @@ test('a shift-press after a load straight onto the catalogue opens beside on the
 test('a catalogue entry dragged onto a pane of its own page opens there, and that page stays on screen', async ({
     page
 }) => {
-    // revert: src/lib/state/workbench/drag.svelte.ts:290 => const id = held.id;
+    // revert: src/lib/state/workbench/drag.svelte.ts "const id = held.kind === 'view' ? sink.open(held.id, held.state, drop.page) : held.id;" => const id = held.id;
     await boot(page);
     await showRailPage(page, 'views');
     const entry = page.locator(`${SHOWN_VIEW} [data-catalogue] button[data-view="help"]`);
@@ -200,8 +200,8 @@ function cataloguePane(page: Page): Locator {
 test("a catalogue entry's right-click menu opens it on this page clear of the catalogue, or beside it", async ({
     page
 }) => {
-    // revert: src/lib/state/workbench/layout/open/away.ts:75 => if (false) {
-    // revert: src/lib/views/system/workbench/Catalogue.svelte:136 => if (pick === BESIDE) openAway(view, state, page, instance.id);
+    // revert: src/lib/state/workbench/layout/open/away.ts "if (at !== null && samePath(at.path, own.path)) {" => if (false) {
+    // revert: src/lib/views/system/workbench/Catalogue.svelte "if (pick === BESIDE) openNextTo(view, state, page, instance.id);" => if (pick === BESIDE) openAway(view, state, page, instance.id);
     await boot(page);
     await showRailPage(page, 'projects');
     await showRailPage(page, 'views');
@@ -237,7 +237,7 @@ test("a catalogue entry's right-click menu opens it on this page clear of the ca
 test('Open beside on this page leaves a view already open in another pane of the page where it is', async ({
     page
 }) => {
-    // revert: src/lib/state/workbench/layout/open/away.ts:53 => if (false) return id;
+    // revert: src/lib/state/workbench/layout/open/away.ts "if (open.has(id) && at !== null && !samePath(at.path, own.path)) return id;" => if (false) return id;
     await boot(page);
     await showRailPage(page, 'views');
     const settings = page.locator('[data-pane]', {
@@ -269,7 +269,7 @@ test('Open beside on this page leaves a view already open in another pane of the
 test('Open on this page opens beside a catalogue whose pane is the page only one', async ({
     page
 }) => {
-    // revert: src/lib/state/workbench/layout/open/away.ts:68 => if (other === undefined) return openView(view, state, page);
+    // revert: src/lib/state/workbench/layout/open/away.ts "if (other === undefined) return openNextTo(view, state, page, avoid);" => if (other === undefined) return openView(view, state, page);
     await boot(page);
     await openView(page, 'catalogue', t('views.catalogue'));
     await expect(page.locator('[data-pane]')).toHaveCount(1);
@@ -310,7 +310,7 @@ async function openFromMenu(page: Page, view: string, label: string, item: strin
 test("Open on this page moves a view out of the catalogue's only pane and leaves the catalogue shown", async ({
     page
 }) => {
-    // revert: src/lib/state/workbench/layout/open/away.ts:55 => delete
+    // revert: src/lib/state/workbench/layout/open/away.ts "uncover(beside, page);" => delete
     await catalogueBesideHelp(page);
     await expect(page.locator('[data-pane]')).toHaveCount(1);
     await openFromMenu(page, 'help', t('views.help'), t('workbench.catalogue_open_here'));
@@ -329,7 +329,7 @@ test("Open on this page moves a view out of the catalogue's only pane and leaves
 test("Open on this page moves a view out of the catalogue's pane into the pane beside it and leaves the catalogue shown", async ({
     page
 }) => {
-    // revert: src/lib/state/workbench/layout/open/away.ts:77 => delete
+    // revert: src/lib/state/workbench/layout/open/away.ts "uncover(avoid, page);" => delete
     await catalogueBesideHelp(page);
     await openFromMenu(page, 'usage', t('views.usage'), t('workbench.catalogue_open_beside'));
     await expect(page.locator('[data-pane]')).toHaveCount(2);
@@ -351,7 +351,7 @@ test("Open on this page moves a view out of the catalogue's pane into the pane b
 test("a catalogue entry dropped on the catalogue's own pane opens in another pane of the page", async ({
     page
 }) => {
-    // revert: src/lib/state/workbench/drag.svelte.ts:284 => if (false) {
+    // revert: src/lib/state/workbench/drag.svelte.ts "if (from !== undefined && drop.kind !== 'edge' && sink.holds(drop.path, from, drop.page)) {" => if (false) {
     await boot(page);
     await showRailPage(page, 'views');
     const entry = page.locator(`${SHOWN_VIEW} [data-catalogue] button[data-view="help"]`);
@@ -372,7 +372,7 @@ test("a catalogue entry dropped on the catalogue's own pane opens in another pan
 test("a catalogue entry dropped on an edge of the catalogue's own pane opens in a new pane beside it", async ({
     page
 }) => {
-    // revert: src/lib/state/workbench/drag.svelte.ts:294 => else sink.transfer(id, drop.path, AT_END, drop.page);
+    // revert: src/lib/state/workbench/drag.svelte.ts "else sink.split(id, drop.path, drop.edge, drop.page);" => else sink.transfer(id, drop.path, AT_END, drop.page);
     await boot(page);
     await showRailPage(page, 'views');
     const panes = await page.locator('[data-pane]').count();
@@ -395,7 +395,7 @@ test("a catalogue entry dropped on an edge of the catalogue's own pane opens in 
 test("the keyboard opens a catalogue entry's menu with Shift+F10, and its choice opens the view", async ({
     page
 }) => {
-    // revert: src/lib/ui/menu/ContextMenu.svelte:71 => return;
+    // revert: src/lib/ui/menu/ContextMenu.svelte "if (event.key !== 'ContextMenu' && !(event.shiftKey && event.key === 'F10')) return;" => return;
     await boot(page);
     await showRailPage(page, 'views');
     const help = page.locator(`${SHOWN_VIEW} [data-catalogue] button[data-view="help"]`);
@@ -490,7 +490,7 @@ test('an intro filters a hub value and draws a catalog line as it is written', a
     expect(alerts).toEqual([]);
 });
 
-// revert: src/lib/ui/tree/TreeItem.svelte:275 => flex: 0 1 auto;
+// revert: src/lib/ui/tree/TreeItem.svelte ".main {" +2 => flex: 0 1 auto;
 test("a tree row's controls sit at the pane's right edge, one column down the list", async ({
     page
 }) => {
@@ -520,7 +520,7 @@ test("a tree row's controls sit at the pane's right edge, one column down the li
     expect(one.row - one.controls).toBeLessThan(24);
 });
 
-// revert: src/lib/ui/tree/TreeItem.svelte:219 => over={undefined}
+// revert: src/lib/ui/tree/TreeItem.svelte "over={box}" => over={undefined}
 test("a tree row's words open while the pointer is anywhere over the row", async ({ page }) => {
     await boot(page);
     await openView(page, 'files', t('views.files'));
@@ -536,7 +536,7 @@ test("a tree row's words open while the pointer is anywhere over the row", async
     await expect(page.locator('span.bubble:not([hidden])')).toHaveCount(1);
 });
 
-// revert: src/lib/ui/tree/TreeItem.svelte:190 => delete
+// revert: src/lib/ui/tree/TreeItem.svelte "onclick={pressedRow}" => delete
 test("a press on a tree row's own space opens it, as a press on its name does", async ({
     page
 }) => {

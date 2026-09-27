@@ -279,7 +279,7 @@ test('a lane header paints its lane tokens at full opacity, in light and in a te
     }
 });
 
-// revert: src/lib/views/boards/focus/lanes/LaneHead.svelte:52 => color: var(--lane);
+// revert: src/lib/views/boards/focus/lanes/LaneHead.svelte "color: var(--lane-txt);" => color: var(--lane);
 test('every word of every lane and column header sits on its own lane surface, readable, with and without the wallpaper', async ({
     page
 }) => {

@@ -198,7 +198,7 @@ test.describe('the rail foot', () => {
     test('Bookmarks, Search and Update are icons named by their words, each a drawing of its own', async ({
         page
     }) => {
-        // revert: src/lib/shell/rail/RailFoot.svelte:73 => glyph="refresh"
+        // revert: src/lib/shell/rail/RailFoot.svelte "glyph=\"cmd\"" => glyph="refresh"
         await boot(page);
         const foot = page.locator('nav [data-foot]');
         for (const key of ['ui.docs', 'app.search', 'app.update']) {
@@ -223,7 +223,7 @@ test.describe('the arrow keys along the rail', () => {
     test('up and down move along the pages and the foot, wrapping at the ends', async ({
         page
     }) => {
-        // revert: src/lib/shell/rail/rail.ts:88 => const next = nextStop(key, ring.indexOf(current), ring.length, 'row');
+        // revert: src/lib/shell/rail/rail.ts "const next = nextStop(key, ring.indexOf(current), ring.length, 'column');" => const next = nextStop(key, ring.indexOf(current), ring.length, 'row');
         await boot(page);
         const rail = page.locator('nav.rail');
         const stop = (name: string): Locator => rail.locator(`[data-stop="${name}"]`);
@@ -585,7 +585,7 @@ test.describe('the rail buttons', () => {
     test('under a light, a dark and a terminal theme a button is muted, the hovered one and the one in force are bright, and only the one in force carries the accent bar', async ({
         page
     }) => {
-        // revert: src/lib/ui/controls/ToolButton.svelte:328 => box-shadow: none;
+        // revert: src/lib/ui/controls/ToolButton.svelte "box-shadow: inset 2px 0 0 var(--accent);" => box-shadow: none;
         await boot(page);
         for (const pick of ['light', 'dark', 'mocha'] as const) {
             await theme(page, pick);

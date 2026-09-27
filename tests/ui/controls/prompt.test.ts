@@ -24,7 +24,7 @@ function prompt(request = REQUEST): string {
 }
 
 describe('Prompt', () => {
-    // revert: src/lib/ui/forms/Prompt.svelte:58 =>     <div class="box" bind:this={box}>
+    // revert: src/lib/ui/forms/Prompt.svelte "<div class=\"box\" bind:this={box} role=\"dialog\" aria-modal=\"true\" aria-label={request.message}>" =>     <div class="box" bind:this={box}>
     it('reports itself as a modal dialog named by what it asks', () => {
         const body = prompt();
         expect(body).toContain('role="dialog"');
@@ -32,7 +32,7 @@ describe('Prompt', () => {
         expect(body).toContain('aria-label="Create Tag"');
     });
 
-    // revert: src/lib/ui/forms/Prompt.svelte:68 => value=""
+    // revert: src/lib/ui/forms/Prompt.svelte "value={values[at]}" => value=""
     it('draws each field by its label with the text it begins with, and its yes and its cancel', () => {
         const body = prompt();
         expect(body).toContain('aria-label="Tag name"');
@@ -43,7 +43,7 @@ describe('Prompt', () => {
         expect(body).toContain('A tag names the commit checked out.');
     });
 
-    // revert: src/lib/ui/forms/Prompt.svelte:61 => {#if true}
+    // revert: src/lib/ui/forms/Prompt.svelte "{#if (request.detail ?? '') !== ''}" => {#if true}
     it('leaves the detail line out when there is none', () => {
         const body = prompt({ ...REQUEST, detail: '' });
         expect(body.match(/class="detail/g)).toBeNull();
@@ -51,7 +51,7 @@ describe('Prompt', () => {
 });
 
 describe('TextArea', () => {
-    // revert: src/lib/ui/forms/TextArea.svelte:59 => delete
+    // revert: src/lib/ui/forms/TextArea.svelte "wrap={code ? 'off' : undefined}" => delete
     it('sets source text in the code font on one line each, and leaves prose to wrap', () => {
         const props = { value: 'a', label: 'Result', oninput: () => undefined };
         const code = render(TextArea, { props: { ...props, code: true } }).body;

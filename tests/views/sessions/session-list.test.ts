@@ -45,7 +45,7 @@ function receive(version: number, held: unknown[]): void {
 
 describe('the session list', () => {
     it('audits that offers a labelled pinned pane action for sessions and terminals', () => {
-        // revert: src/lib/views/sessions/session-list/session-list.ts:42 => title: t('sessions.open_pinned')
+        // revert: src/lib/views/sessions/session-list/session-list.ts "glyph: 'page'" +5 => title: t('sessions.open_pinned')
         const marks = { top: false, archived: false };
         const session = sessionRowItems(live, '', marks).find((item) => item.id === 'pinned');
         const terminal = terminalRowItems().find((item) => item.id === 'pinned');
@@ -57,13 +57,13 @@ describe('the session list', () => {
         expect(terminal).toEqual(session);
     });
 
-    // revert: src/lib/views/sessions/session-list/session-list.ts:32 => { id: 'delete', label: t('sessions.fork'), glyph: 'branch' },
+    // revert: src/lib/views/sessions/session-list/session-list.ts "{ id: 'fork', label: t('sessions.fork'), title: t('sessions.fork_tip'), glyph: 'branch' }," => { id: 'delete', label: t('sessions.fork'), glyph: 'branch' },
     it('audits that offers pin, rename, fork and export on every row, archive and resume on an ended one, and no delete', () => {
         const ids = (row: typeof live, marks = { top: false, archived: false }) =>
             sessionRowItems(row, '', marks).map((item) => item.id);
-        // revert: src/lib/views/sessions/session-list/session-list.ts:50 => if (true) {
+        // revert: src/lib/views/sessions/session-list/session-list.ts "if (!row.live) {" => if (true) {
         expect(ids(live)).toEqual(['top', 'rename', 'fork', 'export', 'pinned', 'transcript']);
-        // revert: src/lib/views/sessions/session-list/session-list.ts:50 => if (row.live) {
+        // revert: src/lib/views/sessions/session-list/session-list.ts "if (!row.live) {" => if (row.live) {
         expect(ids(gone)).toEqual([...ids(live), 'archive', 'resume']);
         // the transcript is the agent's own file, which oculus reads and never removes
         expect(ids(gone)).not.toContain('delete');
@@ -72,14 +72,14 @@ describe('the session list', () => {
     it('audits that names the pin and the archive after the marks the row carries', () => {
         const labels = (marks: { top: boolean; archived: boolean }) =>
             sessionRowItems(gone, '', marks).map((item) => item.label);
-        // revert: src/lib/views/sessions/session-list/session-list.ts:28 => label: t('sessions.pin_top'),
+        // revert: src/lib/views/sessions/session-list/session-list.ts "label: marks.top ? t('sessions.unpin_top') : t('sessions.pin_top')," => label: t('sessions.pin_top'),
         expect(labels({ top: true, archived: false })).toContain(catalog['sessions.unpin_top']);
         expect(labels({ top: false, archived: false })).toContain(catalog['sessions.pin_top']);
         expect(labels({ top: false, archived: true })).toContain(catalog['sessions.unarchive']);
         expect(labels({ top: false, archived: false })).toContain(catalog['sessions.archive']);
     });
 
-    // revert: src/lib/views/sessions/session-list/SessionWorkspace.svelte:183 => <section class="group">
+    // revert: src/lib/views/sessions/session-list/SessionWorkspace.svelte "<section class=\"group\" data-session-group={group.key}>" => <section class="group">
     it('groups the rows by workspace under a header with the name and the count', () => {
         const body = html();
         expect(body).toContain(`data-session-group="${HUB}"`);
@@ -88,7 +88,7 @@ describe('the session list', () => {
         expect(body.match(/data-session-row=/g)).toHaveLength(5);
     });
 
-    // revert: src/lib/views/sessions/session-list/SessionWorkspace.svelte:145 => <span class="line">
+    // revert: src/lib/views/sessions/session-list/SessionWorkspace.svelte "<span class=\"line two\">" => <span class="line">
     it('draws each row as two lines: the state and the title, then the agent, the model, the age, the files and the prompts', () => {
         select('live-one');
         const body = html();
@@ -99,7 +99,7 @@ describe('the session list', () => {
         expect(body).toContain(catalog['sessions.prompts_n'].replace('{0}', '4'));
     });
 
-    // revert: src/lib/views/sessions/session-list/SessionWorkspace.svelte:108 => data-state="idle"
+    // revert: src/lib/views/sessions/session-list/SessionWorkspace.svelte "data-state={state}" => data-state="idle"
     it('marks each row with its state', () => {
         const body = html();
         const state = (id: string) =>
@@ -110,7 +110,7 @@ describe('the session list', () => {
         expect(state('bare-one')).toBe('ended');
     });
 
-    // revert: src/lib/state/sessions/folds.ts:145 => ? LIST_STATES
+    // revert: src/lib/state/sessions/folds.ts "? LIST_STATES.filter((one) => one !== 'archived')" => ? LIST_STATES
     it('keeps the archived rows out until the filter asks for them, and then shows only them', () => {
         // no state is picked, which keeps every state but archived
         expect(html()).not.toContain('The dismissed one');
@@ -119,31 +119,31 @@ describe('the session list', () => {
         expect(archived.match(/data-session-row=/g)).toHaveLength(1);
     });
 
-    // revert: src/lib/state/sessions/folds.ts:148 => if (filter.agents.length > 99 && !filter.agents.includes(row.tool)) return false;
+    // revert: src/lib/state/sessions/folds.ts "if (filter.agents.length > 0 && !filter.agents.includes(row.tool)) return false;" => if (filter.agents.length > 99 && !filter.agents.includes(row.tool)) return false;
     it('keeps only the agents the filter names', () => {
         const codex = html({ agents: ['codex'] });
         expect(codex).toContain('The other live one');
         expect(codex.match(/data-session-row=/g)).toHaveLength(1);
     });
 
-    // revert: src/lib/state/sessions/folds.ts:134 => return true;
+    // revert: src/lib/state/sessions/folds.ts "return haystack.some((one) => one.toLowerCase().includes(wanted));" => return true;
     it('keeps only the rows the search text is in, and says so when none is', () => {
         const found = html({ query: 'PINNED' });
         expect(found).toContain('The pinned one');
         expect(found.match(/data-session-row=/g)).toHaveLength(1);
-        // revert: src/lib/views/sessions/session-list/SessionList.svelte:255 => message={t('sessions.state_empty')}
+        // revert: src/lib/views/sessions/session-list/SessionList.svelte "message={filtered ? t('sessions.filter_empty') : t('sessions.state_empty')}" => message={t('sessions.state_empty')}
         expect(html({ query: 'no row holds this' })).toContain(catalog['sessions.filter_empty']);
     });
 
     it('reads a filter kept in the instance state, and drops what is not a filter', () => {
-        // revert: src/lib/state/sessions/folds.ts:103 => return { states, agents, query: String(held.query ?? '') };
+        // revert: src/lib/state/sessions/folds.ts "return { states, agents, query: typeof held.query === 'string' ? held.query : '' };" => return { states, agents, query: String(held.query ?? '') };
         const body = html({ states: ['bogus', 'ended'], agents: [7], query: 3 });
         expect(body.match(/data-session-row=/g)).toHaveLength(2);
         expect(body).toContain('The ended one');
         expect(body).toContain('The bare one');
     });
 
-    // revert: src/lib/views/sessions/session-list/SessionWorkspace.svelte:101 => {@const top = false}
+    // revert: src/lib/views/sessions/session-list/SessionWorkspace.svelte "{@const top = topOf(entry)}" => {@const top = false}
     it('puts a row pinned to the top first in its group, with the mark', () => {
         const high = record('high-one', {
             title: 'The high one',
@@ -161,7 +161,7 @@ describe('the session list', () => {
         expect(body.split(catalog['sessions.top_mark']).length - 1).toBe(1);
     });
 
-    // revert: src/lib/views/sessions/session-list/SessionWorkspace.svelte:104 => class:on={false}
+    // revert: src/lib/views/sessions/session-list/SessionWorkspace.svelte "class:on={entry.id === selected()}" => class:on={false}
     it('marks the selected row', () => {
         select('live-one');
         const body = html();
@@ -170,7 +170,7 @@ describe('the session list', () => {
         expect(body.match(/class="row[^"]*\bon\b/g)).toHaveLength(1);
     });
 
-    // revert: src/lib/views/sessions/session-list/SessionList.svelte:218 => title={t('sessions.new_session')}
+    // revert: src/lib/views/sessions/session-list/SessionList.svelte "title={t('sessions.new_session_title')}" => title={t('sessions.new_session')}
     it('carries New with its shortcut, the filter menu and the search box in its header', () => {
         const body = html();
         expect(body).toContain(catalog['sessions.new_session_title']);
@@ -179,7 +179,7 @@ describe('the session list', () => {
     });
 
     it('shows its empty state when the payload holds nothing', () => {
-        // revert: src/lib/views/sessions/session-list/SessionList.svelte:255 => message={t('sessions.filter_empty')}
+        // revert: src/lib/views/sessions/session-list/SessionList.svelte "message={filtered ? t('sessions.filter_empty') : t('sessions.state_empty')}" => message={t('sessions.filter_empty')}
         receive(2, []);
         expect(html()).toContain(catalog['sessions.state_empty']);
         receive(3, tree);

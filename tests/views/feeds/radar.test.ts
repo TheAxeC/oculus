@@ -132,7 +132,7 @@ describe('the Lit Watch view', () => {
         // every glyph is filled in from the catalog, so no placeholder is left in the words
         expect(body).not.toContain('{G.');
         expect(body).toContain(catalog['radar.search']);
-        // revert: src/lib/views/shared/forms/posting.ts:15 => const href = held;
+        // revert: src/lib/views/shared/forms/posting.ts "const href = hrefOf(held);" => const href = held;
         // Revert: in posting of views/shared/forms/posting.ts, draw only a value that already
         // carries its scheme, and a paper written as `papers.example.org/x` draws no link at all.
         expect(body).toContain('href="https://papers.example.org/risk"');
@@ -152,7 +152,7 @@ describe('the Lit Watch view', () => {
         expect(body).not.toContain('Dismissed paper');
     });
 
-    // revert: src/lib/views/feeds/radar/RadarIntro.svelte:59 => delete
+    // revert: src/lib/views/feeds/radar/RadarIntro.svelte "{@render mark('red')}" => delete
     it('draws the intro legend as bucket glyphs in their hues beside the catalog words', () => {
         receive({
             channel: 'portfolio',
@@ -195,8 +195,8 @@ describe('the Lit Watch view', () => {
         expect(intro).not.toMatch(/[^\t\n\r\x20-\x7E]/);
     });
 
-    // revert: config/text/views/feeds/radar.yml:16 => intro_preempt: pre-emption |
-    // revert: src/lib/views/feeds/radar/RadarIntro.svelte:63 => delete
+    // revert: config/text/views/feeds/radar.yml "intro_preempt: pre-emption" => intro_preempt: pre-emption |
+    // revert: src/lib/views/feeds/radar/RadarIntro.svelte "{t('radar.intro_preempt')}" +3 => delete
     it('draws the intro separators from its markup, so every intro line holds words alone', () => {
         receive({ channel: 'portfolio', version: 304, payload: { version: 304, entities: {} } });
         serve({

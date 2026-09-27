@@ -81,7 +81,7 @@ test("a card's controls are drawn under the pointer and on Tab, and its title al
 
 // No view draws a card inside another today, so the case puts one there: the second card of the
 // board is moved into the first, and the pointer rests on the first card's title beside it.
-// revert: src/lib/ui/frame/Card.svelte:103 => delete
+// revert: src/lib/ui/frame/Card.svelte "--card-reveal: 0;" => delete
 test("a card's controls are drawn for its own card, not for a card around it", async ({ page }) => {
     await boot(page);
     await openView(page, 'projects', t('views.projects'));
@@ -563,7 +563,7 @@ test('a long unbroken title and folder stay inside the card', async ({ page }) =
     }
 });
 
-// revert: src/lib/views/boards/collection/EntryCard.svelte:424 => overflow-wrap: normal;
+// revert: src/lib/views/boards/collection/EntryCard.svelte ".slot > :global(.card .title) {" +1 => overflow-wrap: normal;
 test('a long unbroken title stays inside a collection entry card', async ({ page }) => {
     const title = `An-Unbroken-Task-Title-${'Z'.repeat(80)}`;
     const before = readHubFile('tasks/tasks.yml');

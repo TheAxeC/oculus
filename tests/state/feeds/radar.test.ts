@@ -101,7 +101,7 @@ describe('radar selectors', () => {
 });
 
 describe('the radar entries split and bucketed', () => {
-    // revert: src/lib/state/feeds/radar.ts:136 => live: entries,
+    // revert: src/lib/state/feeds/radar.ts "live: entries.filter((entry) => !isDismissed(entry))," => live: entries,
     it('split into the live and the dismissed, each in the order given', () => {
         const entries = [{ title: 'a' }, { title: 'b', dismissed: true }, { title: 'c' }];
         const split = dismissedSplit(entries);
@@ -109,7 +109,7 @@ describe('the radar entries split and bucketed', () => {
         expect(split.dismissed.map((one) => one.title)).toEqual(['b']);
     });
 
-    // revert: src/lib/state/feeds/radar.ts:143 => return bucketsOf(entries, buckets);
+    // revert: src/lib/state/feeds/radar.ts "return bucketsOf(entries, buckets).filter((group) => group.entries.length > 0);" => return bucketsOf(entries, buckets);
     it('fall into the buckets that hold any, an empty bucket left out', () => {
         const buckets = [
             { key: 'read', glyph: '', label: 'Read', color: '' },

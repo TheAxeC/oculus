@@ -16,7 +16,7 @@ import { t } from '../../helpers/words.ts';
 test('the configured mail account is drawn not connected, with its Connect control and no threads', async ({
     page
 }) => {
-    // revert: src/lib/views/shared/accounts/AccountList.svelte:112 => {:else if false}
+    // revert: src/lib/views/shared/accounts/AccountList.svelte "{:else if row.status !== 'connected'}" => {:else if false}
     await boot(page);
     await openView(page, 'inbox', t('views.inbox'));
 

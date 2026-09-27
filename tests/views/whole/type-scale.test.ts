@@ -306,7 +306,7 @@ const PASS_THROUGH: Record<string, string> = {
 
 describe('the view type scale', () => {
     it('lists every view file in the audit', () => {
-        // revert: tests/views/whole/type-scale.test.ts:66 => delete
+        // revert: tests/views/whole/type-scale.test.ts "'system/help/Diagram.svelte': '.note=fs-md'," => delete
         expect(
             files(ROOT)
                 .map((file) => file.slice(`${ROOT}/`.length))
@@ -314,7 +314,7 @@ describe('the view type scale', () => {
         ).toEqual(Object.keys(VIEWS).sort());
     });
 
-    // revert: tests/views/whole/type-scale.test.ts:291 => delete
+    // revert: tests/views/whole/type-scale.test.ts "'src/lib/ui/tree/TreeItem.svelte': '.detail, .count, .end=fs-sm'," => delete
     it('audits that every ui component is listed in the pass-through audit', () => {
         const ui = 'src/lib/ui';
         expect(files(ui).sort()).toEqual(

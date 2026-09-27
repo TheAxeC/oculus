@@ -23,7 +23,7 @@ async function press(page: Page, key: string): Promise<void> {
 }
 
 test('a bare digit shows the rail page of its place', async ({ page }) => {
-    // revert: src/lib/shell/keys/workbench-keys.svelte.ts:199 => return options.railPage(action.index + 1);
+    // revert: src/lib/shell/keys/workbench-keys.svelte.ts "return options.railPage(action.index);" => return options.railPage(action.index + 1);
     await boot(page);
     await press(page, '2');
     await expect(page.locator('nav [data-rail-page="projects"] button')).toHaveClass(/\bactive\b/);
@@ -269,7 +269,7 @@ test('Delete closes the focused tab and the keyboard lands on the tab that takes
 test('a rail page taken out of the list under the focus hands the stop to its neighbour', async ({
     page
 }) => {
-    // revert: src/lib/shell/rail/ActivityRail.svelte:161 => delete
+    // revert: src/lib/shell/rail/ActivityRail.svelte "if (holding) recoverStop(moved);" => delete
     await boot(page);
     const rail = page.locator('[data-rail]');
     const inbox = rail.locator('[data-stop="page:inbox"]');

@@ -74,7 +74,7 @@ test.describe('the Repositories view', () => {
             timeout: 20_000
         });
 
-        // revert: src/lib/views/sources/repositories/RepoList.svelte:81 => style={`--tone-txt: var(--c-grey-txt)`}
+        // revert: src/lib/views/sources/repositories/RepoList.svelte "style={`--tone-txt: var(--c-${shapeBadgeTone(shape) ?? 'grey'}-txt)`}" => style={`--tone-txt: var(--c-grey-txt)`}
         await expect(badge(labels.missing)).toHaveAttribute(
             'style',
             /--tone-txt: var\(--c-red-txt\)/
@@ -89,7 +89,7 @@ test.describe('the Repositories view', () => {
         );
     });
 
-    // revert: src/lib/views/sources/repositories/graph/Graph.svelte:162 => label={one.short}
+    // revert: src/lib/views/sources/repositories/graph/Graph.svelte "label={one.subject}" => label={one.short}
     test('draws the served hub with its branch line and its graph', async ({ page }) => {
         await boot(page);
         await openView(page, 'repositories', t('views.repositories'));
@@ -123,7 +123,7 @@ test.describe('the Repositories view', () => {
         await expect(page.getByRole('region', { name: CHANGED })).toContainText('deadline');
     });
 
-    // revert: src/lib/state/sources/repositories/repositories.svelte.ts:219 => delete
+    // revert: src/lib/state/sources/repositories/repositories.svelte.ts "layout.openView('terminal', { session: answer.id, label });" => delete
     test('makes a worktree, lists it, and takes it away again', async ({ page }) => {
         await boot(page);
         await openView(page, 'repositories', t('views.repositories'));
@@ -160,7 +160,7 @@ test.describe('the Repositories view', () => {
     // filter by `stateOf(root)?.repository === true` in pickerRoots of
     // state/sources/repositories/repositories.ts; the folder that is no repository then carries no
     // badge, or leaves the list entirely.
-    // revert: src/lib/views/shared/changes/repo-shape.ts:18 => delete
+    // revert: src/lib/views/shared/changes/repo-shape.ts "if (shape === 'none') return t('repositories.pick_norepo');" => delete
     test('lists every root, the folder that is no repository saying so on its row', async ({
         page
     }) => {
@@ -222,7 +222,7 @@ test.describe('the Repositories view', () => {
     // Revert: filter by `stateOf(root)?.repository === true` in pickerRoots of
     // state/sources/repositories/repositories.ts; the deleted root leaves the list and the view
     // hands itself to the hub, so the row this case waits for never appears.
-    // revert: src/lib/state/sources/repositories/repositories.ts:210 => return roots.filter((root) => stateOf(root)?.repository === true);
+    // revert: src/lib/state/sources/repositories/repositories.ts "return roots.filter((root) => stateOf(root) !== null);" => return roots.filter((root) => stateOf(root)?.repository === true);
     test('keeps a root whose folder the reader deleted, saying it is gone', async ({ page }) => {
         const doomed = scratchDir('oculus-repositories-doomed-');
         expect(resolve(doomed).startsWith(resolve(tmpdir()) + sep)).toBe(true);
@@ -272,7 +272,7 @@ test.describe('the Repositories view', () => {
 
     // Revert: drop the `symbolic-ref --short HEAD` read from state() in server/core/git.ts, so the
     // repository with no commit is drawn as its error row rather than its branch and its files.
-    // revert: src/lib/views/sources/repositories/graph/Graph.svelte:84 => if (false) {
+    // revert: src/lib/views/sources/repositories/graph/Graph.svelte "if (untrack(() => noCommitYet(git))) {" => if (false) {
     test('lists a repository with no commit yet and switches to it', async ({ page }) => {
         const fresh = scratchDir('oculus-repositories-fresh-');
         expect(resolve(fresh).startsWith(resolve(tmpdir()) + sep)).toBe(true);
@@ -304,7 +304,7 @@ test.describe('the Repositories view', () => {
 
     // Revert: disable the create control of views/sources/repositories/Branches.svelte whenever the
     // repository has no commit yet.
-    // revert: src/lib/views/sources/repositories/Branches.svelte:106 => disabled={busy || unborn}
+    // revert: src/lib/views/sources/repositories/Branches.svelte "glyph=\"check\"" +2 => disabled={busy || unborn}
     test('creates a branch in a repository with no commit yet and checks it out', async ({
         page
     }) => {
@@ -340,7 +340,7 @@ test.describe('the Repositories view', () => {
     // Revert: in repositories/Repo.svelte write the row's attribute as a bare attribute of its own
     // rather than `data-repo={shape}`; the spelling the two git views share for one fact is then
     // gone and the selector below resolves to nothing.
-    // revert: src/lib/views/sources/repositories/Repo.svelte:133 => <div data-failed title={git.error ?? undefined}>
+    // revert: src/lib/views/sources/repositories/Repo.svelte "<div data-repo={shape} title={git.error ?? undefined}>" => <div data-failed title={git.error ?? undefined}>
     test('draws a repository whose read fails as one row under the failed spelling', async ({
         page
     }) => {
@@ -386,7 +386,7 @@ test.describe('the Repositories view', () => {
 
     // Revert: read `open` as true whatever `collapsed` holds for the graph in
     // repositories/Repo.svelte.
-    // revert: src/lib/views/sources/repositories/Repo.svelte:169 => open={true}
+    // revert: src/lib/views/sources/repositories/Repo.svelte "open={!collapsed.includes('graph')}" => open={true}
     test('closes a section from its head, and keeps it closed after a tab switch', async ({
         page
     }) => {
@@ -413,7 +413,7 @@ test.describe('the Repositories view', () => {
     });
 
     // Revert: make every row's tabindex 0 in ui/tree/TreeView.svelte's nav.
-    // revert: src/lib/ui/tree/TreeView.svelte:45 => tabindex: () => 0,
+    // revert: src/lib/ui/tree/TreeView.svelte "tabindex: (id: string) => (id === stop ? 0 : -1)," => tabindex: () => 0,
     test("is one stop the arrow keys move along, with a row's controls one Tab from it", async ({
         page
     }) => {

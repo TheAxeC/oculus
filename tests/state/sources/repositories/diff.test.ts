@@ -53,7 +53,7 @@ function kinds(spec: string): DiffLine[] {
 }
 
 describe('a unified diff read into rows', () => {
-    // revert: src/lib/state/sources/repositories/diff-rows.ts:118 => file.lines.push({ kind: 'added', old: null, new: old, text: body, eof: false });
+    // revert: src/lib/state/sources/repositories/diff-rows.ts "file.lines.push({ kind: 'added', old: null, new: fresh, text: body, eof: false });" => file.lines.push({ kind: 'added', old: null, new: old, text: body, eof: false });
     it('numbers each row on both sides, and leaves the side that does not hold it empty', () => {
         const [file] = parseDiff(twenty());
         expect(file.oldPath).toBe('a.txt');
@@ -83,7 +83,7 @@ describe('a unified diff read into rows', () => {
         });
     });
 
-    // revert: src/lib/state/sources/repositories/diff-rows.ts:113 => delete
+    // revert: src/lib/state/sources/repositories/diff-rows.ts "if (last !== undefined) last.eof = true;" => delete
     it('marks a line with no newline at its end, a new file, and a binary file', () => {
         const created = [
             'diff --git a/n.txt b/n.txt',
@@ -106,7 +106,7 @@ describe('a unified diff read into rows', () => {
 });
 
 describe('the hunks and folds of a file', () => {
-    // revert: src/lib/state/sources/repositories/diff-rows.ts:147 => if (false) {
+    // revert: src/lib/state/sources/repositories/diff-rows.ts "if (last !== undefined && at - last.last - 1 <= 2 * context) {" => if (false) {
     it('joins changes closer than twice the context into one hunk, three rows of context each side', () => {
         expect(hunksOf(kinds('          -+          '))).toEqual([
             { start: 7, end: 15, first: 10, last: 11 }
@@ -116,7 +116,7 @@ describe('the hunks and folds of a file', () => {
         expect(hunksOf(kinds('   -       +   '))).toHaveLength(2);
     });
 
-    // revert: src/lib/state/sources/repositories/diff-rows.ts:181 => if (end - at > 0) {
+    // revert: src/lib/state/sources/repositories/diff-rows.ts "if (end - at > longer) {" => if (end - at > 0) {
     it('folds an unchanged run over six rows, keeping three rows beside each change', () => {
         const [file] = parseDiff(twenty());
         // Rows 0-8 lead to the change at 9, rows 11-20 follow it.
@@ -133,7 +133,7 @@ describe('the hunks and folds of a file', () => {
         expect(foldsOf(kinds('       -'))).toEqual([{ from: 0, to: 4 }]);
     });
 
-    // revert: src/lib/state/sources/repositories/diff-rows.ts:206 => delete
+    // revert: src/lib/state/sources/repositories/diff-rows.ts "if (opened.includes(fold.from)) continue;" => delete
     it('draws the rows between folds, and a fold the reader opened as rows', () => {
         const folds = [
             { from: 0, to: 6 },
@@ -150,7 +150,7 @@ describe('the hunks and folds of a file', () => {
         ]);
     });
 
-    // revert: src/lib/state/sources/repositories/diff-rows.ts:261 => rows.push({ left: removed.at(n) ?? null, right: null });
+    // revert: src/lib/state/sources/repositories/diff-rows.ts "rows.push({ left: removed.at(n) ?? null, right: added.at(n) ?? null });" => rows.push({ left: removed.at(n) ?? null, right: null });
     it('pairs a removed row with the added row that replaced it, side by side', () => {
         const lines = kinds(' --+ ');
         expect(sideRows(lines, 0, lines.length)).toEqual([
@@ -165,7 +165,7 @@ describe('the hunks and folds of a file', () => {
         ]);
     });
 
-    // revert: src/lib/state/sources/repositories/diff-rows.ts:281 => delete
+    // revert: src/lib/state/sources/repositories/diff-rows.ts "if (numbers.some((number) => number >= line)) return at;" => delete
     it('finds the hunk a row is in, and the hunk nearest a line the gutter opened', () => {
         const lines = kinds('   -          +   ');
         const hunks = hunksOf(lines);
@@ -180,7 +180,7 @@ describe('the hunks and folds of a file', () => {
 });
 
 describe('the patch a hunk or a line is applied with', () => {
-    // revert: src/lib/state/sources/repositories/diff-patch.ts:51 => else if (line.kind === 'removed') mark = taken ? '-' : null;
+    // revert: src/lib/state/sources/repositories/diff-patch.ts "else if (line.kind === 'removed') mark = taken ? '-' : forward ? ' ' : null;" => else if (line.kind === 'removed') mark = taken ? '-' : null;
     it('stages a whole hunk as git would, and one line of it with the rest kept as it was', () => {
         const [file] = parseDiff(twenty());
         const [hunk] = hunksOf(file.lines);
@@ -232,7 +232,7 @@ describe('the patch a hunk or a line is applied with', () => {
         );
     });
 
-    // revert: src/lib/state/sources/repositories/diff-patch.ts:52 => else mark = taken ? '+' : null;
+    // revert: src/lib/state/sources/repositories/diff-patch.ts "else mark = taken ? '+' : forward ? null : ' ';" => else mark = taken ? '+' : null;
     it('unstages one line in reverse, an added line not chosen kept as context', () => {
         const [file] = parseDiff(twenty());
         const [hunk] = hunksOf(file.lines);
@@ -255,7 +255,7 @@ describe('the patch a hunk or a line is applied with', () => {
         expect(chosenIn(hunk, new Set([10, 2, 9]))).toEqual([9, 10]);
     });
 
-    // revert: src/lib/state/sources/repositories/diff-patch.ts:58 => delete
+    // revert: src/lib/state/sources/repositories/diff-patch.ts "if (line.eof) body.push(NO_NEWLINE);" => delete
     it('carries the missing newline mark of a last line into the patch', () => {
         const [file] = parseDiff(
             [
@@ -284,7 +284,7 @@ describe('the patch a hunk or a line is applied with', () => {
 });
 
 describe('the words a changed line marks', () => {
-    // revert: src/lib/state/sources/repositories/diff-words.ts:112 => [{ text: after, changed: true }]
+    // revert: src/lib/state/sources/repositories/diff-words.ts "piecesFrom(right, new Set(pairs.map(([, at]) => at)))" => [{ text: after, changed: true }]
     it('marks only the words that changed, on each side', () => {
         expect(wordsOf('a  b.c')).toEqual(['a', '  ', 'b', '.', 'c']);
         expect(wordDiff('let total = 1;', 'let count = 1;')).toEqual([
@@ -301,7 +301,7 @@ describe('the words a changed line marks', () => {
         ]);
     });
 
-    // revert: src/lib/state/sources/repositories/diff-words.ts:36 => while (false) {
+    // revert: src/lib/state/sources/repositories/diff-words.ts "while (x < n && y < m && a[x] === b[y]) {" => while (false) {
     it('finds the shared items of two lists in order, and gives up past the edit limit', () => {
         expect(common(['a', 'b', 'c', 'd'], ['a', 'x', 'c', 'd', 'e'])).toEqual([
             [0, 0],
@@ -314,7 +314,7 @@ describe('the words a changed line marks', () => {
         expect(common(many, other)).toBeNull();
     });
 
-    // revert: src/lib/state/sources/repositories/diff-words.ts:129 => held.set(other, before);
+    // revert: src/lib/state/sources/repositories/diff-words.ts "held.set(other, after);" => held.set(other, before);
     it('gives each row of a replaced pair its own side of the word marks', () => {
         const [file] = parseDiff(twenty());
         const words = pairedWords(file.lines, partnersOf(file.lines));
@@ -331,14 +331,14 @@ describe('the words a changed line marks', () => {
 });
 
 describe('Previous Change and Next Change', () => {
-    // revert: src/lib/state/sources/repositories/diff-rows.ts:293 => delete
+    // revert: src/lib/state/sources/repositories/diff-rows.ts "if (at < 0) return by === 1 ? 0 : count - 1;" => delete
     it('goes to the first change by Next and the last by Previous while no change is current', () => {
         expect(stepChange(-1, 3, 1)).toBe(0);
         expect(stepChange(-1, 3, -1)).toBe(2);
         expect(stepChange(-1, 1, -1)).toBe(0);
     });
 
-    // revert: src/lib/state/sources/repositories/diff-rows.ts:294 => return at + by;
+    // revert: src/lib/state/sources/repositories/diff-rows.ts "return (at + by + count) % count;" => return at + by;
     it('moves one change either way, round from the last to the first and back', () => {
         expect(stepChange(0, 3, 1)).toBe(1);
         expect(stepChange(2, 3, 1)).toBe(0);
@@ -346,7 +346,7 @@ describe('Previous Change and Next Change', () => {
         expect(stepChange(1, 3, -1)).toBe(0);
     });
 
-    // revert: src/lib/state/sources/repositories/diff-rows.ts:292 => delete
+    // revert: src/lib/state/sources/repositories/diff-rows.ts "if (count === 0) return -1;" => delete
     it('goes nowhere in a diff with no change', () => {
         expect(stepChange(-1, 0, 1)).toBe(-1);
         expect(stepChange(-1, 0, -1)).toBe(-1);

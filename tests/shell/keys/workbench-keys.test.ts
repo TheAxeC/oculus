@@ -344,7 +344,7 @@ describe('Escape while the update tray is open', () => {
 
 describe('a bare digit', () => {
     it('shows the rail page of its place, and is swallowed only when there was one', () => {
-        // revert: src/lib/shell/keys/workbench-keys.svelte.ts:199 => return options.railPage(action.index + 1);
+        // revert: src/lib/shell/keys/workbench-keys.svelte.ts "return options.railPage(action.index);" => return options.railPage(action.index + 1);
         const asked: number[] = [];
         const keys = handler(
             '1',
@@ -379,7 +379,7 @@ describe('the n key', () => {
         });
     }
 
-    // revert: src/lib/shell/keys/workbench-keys.svelte.ts:173 => delete
+    // revert: src/lib/shell/keys/workbench-keys.svelte.ts "options.layout.restateInstance(target, state);" => delete
     it("shows a fresh composer in the page's Terminal tab that follows the selection", () => {
         withTerminal(null);
         const keys = handler('');
@@ -391,7 +391,7 @@ describe('the n key', () => {
         expect(client.layout.activeInstance()?.id).toBe('t');
     });
 
-    // revert: src/lib/shell/keys/workbench-keys.svelte.ts:170 => delete
+    // revert: src/lib/shell/keys/workbench-keys.svelte.ts "options.layout.openView('terminal', state, page);" => delete
     it('opens a new Terminal tab when the only one there is pinned to a terminal', () => {
         withTerminal({ session: 'a1b2c3-shell' });
         const keys = handler('');

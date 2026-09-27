@@ -3,13 +3,24 @@
 //
 // A case carries its revert beside the prose one, in the shape
 //
-//     // revert: <path>:<line> => <replacement text>
-//     // revert: <path>:<line> => delete
+//     // revert: <path> "<the target line's text>" => <replacement text>
+//     // revert: <path> "<the target line's text>" => delete
 //
-// and a range `<path>:<first>-<last>` stands for every line of it. The replacement is the content
-// of the line; the line's own indentation is kept, so a directive stays one short line that the
-// formatter does not wrap. A directive on the line above a case belongs to that case; anywhere else
-// it belongs to the case whose body it sits in.
+// and names its target line by that line's whole text, indentation trimmed, which has to equal the
+// trimmed text of exactly one line of the file. The text is a JSON string, so a quote or a
+// backslash in it is written with JSON escapes, and a `=>` inside the quotes is never read as the
+// start of the replacement. Where the target line's own text is not
+// unique in its file, the directive names the nearest line above it whose text is, followed by
+// `+<n>`, the count of lines down from that line to the target. A range names its first line and
+// its last, each by the same rule: `"<first>" [+<n>] .. "<last>" [+<n>]`. A text that matches no
+// line or several, and an offset that runs past the end of the file, leave the directive unproven,
+// never resolved to a guess, so a target line that changed or went is found rather than another
+// line reverted in its place. A directive that names its line by number, `<path>:<line>`, is not
+// read: it is unproven and says to convert it, which bin/migrations/revert-anchors.mjs does.
+//
+// The replacement is the content of the line; the line's own indentation is kept, so a directive
+// stays one line that the formatter does not wrap. A directive on the line above a case belongs to
+// that case; anywhere else it belongs to the case whose body it sits in.
 //
 // For each directive this copies the tree to a scratch directory, applies the edit there, runs that
 // one case, and fails when the case stays green: a case that passes with its named revert applied
@@ -87,7 +98,21 @@ function removeCopy(dir) {
 /** What a copy of the tree leaves behind: generated output, dependencies and the plan's folder. */
 const SKIPPED = ['node_modules', '.svelte-kit', 'build', '.git', '.scratch', 'test-results'];
 
-const DIRECTIVE = /\/\/\s*revert:\s*([^\s:]+):(\d+)(?:-(\d+))?\s*=>\s*(.+?)\s*$/;
+/** One quoted text of a directive: a JSON string literal. */
+const TEXT = String.raw`"(?:[^"\\]|\\.)*"`;
+
+/**
+ * A directive: the target's path, the text of its first line with the offset from it, the text of
+ * its last line with its offset where it names a range, and the replacement. The quoted text comes
+ * before the `=>`, so a `=>` inside it is never read as the start of the replacement.
+ */
+const DIRECTIVE = new RegExp(
+    String.raw`\/\/\s*revert:\s*(\S+)\s+(${TEXT})(?:\s+\+(\d+))?(?:\s+\.\.\s+(${TEXT})(?:\s+\+(\d+))?)?\s*=>\s*(.+?)\s*$`
+);
+
+/** A directive that names its target line by number, which is refused. */
+export const NUMBERED = /\/\/\s*revert:\s*([^\s:]+):(\d+)(?:-(\d+))?\s*=>\s*(.+?)\s*$/;
+
 const CASE = /^\s*(?:it|test)(?:\.\w+)?\s*\(/;
 const NAME = /(['"`])([\s\S]*?)\1/;
 
@@ -119,8 +144,88 @@ export function readArgs(argv) {
     return { root, files };
 }
 
+/** The text and offset of one anchor, or null where the quoted text is not a JSON string. */
+function anchorOf(quoted, offset) {
+    try {
+        return { text: JSON.parse(quoted), offset: Number(offset ?? 0) };
+    } catch {
+        return null;
+    }
+}
+
 /**
- * Every directive the given files hold, each with the case it sits in.
+ * One line read as a directive: its target, its anchors and its replacement, or the problem that
+ * leaves it unproven, or null where the line holds no directive. The anchored form is read first,
+ * so an anchor whose text holds a numbered directive is read as the anchor it is.
+ */
+export function parseDirective(line) {
+    const match = DIRECTIVE.exec(line);
+    if (match === null) {
+        return NUMBERED.test(line) ? { problem: 'names a line number; convert it' } : null;
+    }
+    const first = anchorOf(match[2], match[3]);
+    const last = match[4] === undefined ? first : anchorOf(match[4], match[5]);
+    if (first === null || last === null) {
+        return { problem: `names ${match[1]} by a text that is not a JSON string` };
+    }
+    return { target: match[1], first, last, replacement: match[6], problem: '' };
+}
+
+/**
+ * The line an anchor names in a file's lines, counted from 1, or the reason it names none: a text
+ * that equals no trimmed line or several, or an offset past the end.
+ */
+export function resolveAnchor(lines, anchor) {
+    let found = 0;
+    let at = 0;
+    for (let one = 0; one < lines.length; one += 1) {
+        if (lines[one].trim() !== anchor.text) continue;
+        found += 1;
+        at = one + 1;
+    }
+    if (found !== 1) return { line: 0, why: `which matches ${found} lines` };
+    const line = at + anchor.offset;
+    if (line > lines.length) {
+        return { line: 0, why: `which runs to line ${line} of ${lines.length}` };
+    }
+    return { line, why: '' };
+}
+
+/** An anchor as a directive writes it: the quoted text, then the offset where there is one. */
+export function spelled(anchor) {
+    const text = JSON.stringify(anchor.text);
+    return anchor.offset === 0 ? text : `${text} +${anchor.offset}`;
+}
+
+/**
+ * The first and last line a directive's anchors name in its target, or the problem that leaves it
+ * unproven. A target outside the tree or missing from it is not read here: the check says so of
+ * it by name.
+ */
+function located(root, read) {
+    const full = join(root, read.target);
+    if (!inside(root, full) || !existsSync(full)) return { first: 0, last: 0, problem: '' };
+    const lines = readFileSync(full, 'utf8').split('\n');
+    const first = resolveAnchor(lines, read.first);
+    const last = resolveAnchor(lines, read.last);
+    for (const [anchor, held] of [
+        [read.first, first],
+        [read.last, last]
+    ]) {
+        if (held.why !== '') {
+            return {
+                first: 0,
+                last: 0,
+                problem: `names ${read.target} ${spelled(anchor)}, ${held.why}`
+            };
+        }
+    }
+    return { first: first.line, last: last.line, problem: '' };
+}
+
+/**
+ * Every directive the given files hold, each with the case it sits in and the lines its anchors
+ * resolve to.
  *
  * The case is the nearest `it(` or `test(` above the directive line, which is where a revert is
  * written: inside the body it belongs to, or on the line above the case it opens.
@@ -132,16 +237,21 @@ export function directives(root, files) {
         if (!existsSync(full)) continue;
         const lines = readFileSync(full, 'utf8').split('\n');
         for (let at = 0; at < lines.length; at += 1) {
-            const match = DIRECTIVE.exec(lines[at]);
-            if (match === null) continue;
+            const read = parseDirective(lines[at]);
+            if (read === null) continue;
+            const where =
+                read.problem === ''
+                    ? located(root, read)
+                    : { first: 0, last: 0, problem: read.problem };
             found.push({
                 file,
                 line: at + 1,
                 caseName: caseAbove(lines, at),
-                target: match[1],
-                first: Number(match[2]),
-                last: Number(match[3] ?? match[2]),
-                replacement: match[4]
+                target: read.target ?? '',
+                first: where.first,
+                last: where.last,
+                replacement: read.replacement ?? '',
+                problem: where.problem
             });
         }
     }
@@ -424,6 +534,12 @@ export function caseEnv(dir) {
 
 /** One directive, proven or not, with the line of report it earns. */
 export function checkOne(root, directive) {
+    if (directive.problem !== '') {
+        return {
+            ok: false,
+            line: `unproven  ${directive.file}:${directive.line} ${directive.problem}`
+        };
+    }
     if (directive.caseName === null) {
         return { ok: false, line: `no case   ${directive.file}:${directive.line}` };
     }

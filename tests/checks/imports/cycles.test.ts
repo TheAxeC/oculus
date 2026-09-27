@@ -29,16 +29,16 @@ function plant(files: Record<string, string>): string {
 }
 
 describe('the runtime import graph of src', () => {
-    // revert: src/lib/data/sources/config/local.ts:16 => import { configDir } from './folder.ts'; import './merge.ts';
-    // revert: src/lib/state/boards/focus-lanes.ts:6 => import { numericSetting } from '../workbench/rail-badges.ts';
+    // revert: src/lib/data/sources/config/local.ts "import { configDir } from './folder.ts';" => import { configDir } from './folder.ts'; import './merge.ts';
+    // revert: src/lib/state/boards/focus-lanes.ts "import { isMap, byKey, numericSetting, text as str } from '../../data/helpers/guards.ts';" => import { numericSetting } from '../workbench/rail-badges.ts';
     it('holds no cycle', () => {
         // Every cycle the tree had was broken by moving what its two sides shared to a module
         // both may import, so the list of cycles is empty, and a new one is named here.
         expect(findCycles(importGraph(SRC, 'lib/'))).toEqual([]);
     });
 
-    // revert: tests/checks/imports/graph.ts:65 => if (one.spec === null || one.glob === true) continue;
-    // revert: tests/checks/imports/graph.ts:174 => for (const to of [...next(module)].reverse()) {
+    // revert: tests/checks/imports/graph.ts "if (one.spec === null || one.glob === true || (!types && one.typeOnly)) continue;" => if (one.spec === null || one.glob === true) continue;
+    // revert: tests/checks/imports/graph.ts "const step = (module: string): boolean => {" +1 => for (const to of [...next(module)].reverse()) {
     it('names the modules of a planted cycle in order, and passes a type-only import back', () => {
         // A component importing itself draws itself recursively and is no cycle between modules.
         // The first module of the cycle imports two modules that both lead back to it, and the walk
@@ -60,7 +60,7 @@ describe('the runtime import graph of src', () => {
 });
 
 describe('the import reader', () => {
-    // revert: bin/diagrams/imports.mjs:146 => const source = parsed(name, code.replace(/\/\/ ?|\/\*|\*\//g, ''));
+    // revert: bin/diagrams/imports.mjs "const source = parsed(name, code);" => const source = parsed(name, code.replace(/\/\/ ?|\/\*|\*\//g, ''));
     it('reads no runtime import out of a comment above a type-only import', () => {
         const dir = plant({
             'lib/p.ts':
@@ -83,7 +83,7 @@ describe('the import reader', () => {
         ).toEqual([2]);
     });
 
-    // revert: bin/diagrams/imports.mjs:146 => const source = parsed(name, code.replace(/\/\/ ?|\/\*|\*\//g, ''));
+    // revert: bin/diagrams/imports.mjs "const source = parsed(name, code);" => const source = parsed(name, code.replace(/\/\/ ?|\/\*|\*\//g, ''));
     it('reads no import out of a comment after a division a pattern reader would take for a regex', () => {
         const text = [
             "let i = 0; i++ / 2; // import { z } from './zz.ts';",
@@ -95,7 +95,7 @@ describe('the import reader', () => {
         ]);
     });
 
-    // revert: bin/diagrams/imports.mjs:146 => const source = parsed(name, code.replace(/\/\/.*$/gm, ''));
+    // revert: bin/diagrams/imports.mjs "const source = parsed(name, code);" => const source = parsed(name, code.replace(/\/\/.*$/gm, ''));
     it('reads the imports after a string, a template and a pattern that hold a quote or two slashes', () => {
         const text = [
             'const s = "it\'s // no comment";',
@@ -109,7 +109,7 @@ describe('the import reader', () => {
         ]);
     });
 
-    // revert: bin/diagrams/imports.mjs:216 => const tree = parse(text.replace(/<!--|-->/g, (mark) => ' '.repeat(mark.length)), { modern: true });
+    // revert: bin/diagrams/imports.mjs "const tree = parse(text, { modern: true });" => const tree = parse(text.replace(/<!--|-->/g, (mark) => ' '.repeat(mark.length)), { modern: true });
     it('reads no script out of an HTML comment of a component', () => {
         const text =
             "<!-- <script>import { h } from './html-comment.ts';</script> -->\n<p>words</p>\n";
@@ -117,7 +117,7 @@ describe('the import reader', () => {
         expect(runtimeImports('lib/A.svelte', text, '', true)).toEqual([]);
     });
 
-    // revert: bin/diagrams/imports.mjs:275 => delete
+    // revert: bin/diagrams/imports.mjs "markupImports(tree.fragment, text, found);" => delete
     it('reads an import() written in the markup of a component', () => {
         const text =
             "<script>\n    import { a } from './a.ts';\n</script>\n{#await import('./markup.svelte') then M}\n    <M.default />\n{/await}\n";

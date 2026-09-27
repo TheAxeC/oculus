@@ -35,7 +35,7 @@ const VIEWS = { label: 'Views', glyph: 'sliders', page: 'views' };
 
 describe('the rule over the rail list', () => {
     it('keeps an entry of three strings whose page is an arrangement, in list order', () => {
-        // revert: src/lib/data/sources/config/rail.ts:106 => delete
+        // revert: src/lib/data/sources/config/rail.ts "entries.push({ label, glyph, page });" => delete
         expect(readRail([VIEWS, FOCUS], PAGES, GLYPHS)).toEqual({
             entries: [VIEWS, FOCUS],
             problems: []
@@ -43,7 +43,7 @@ describe('the rule over the rail list', () => {
     });
 
     it('refuses an entry with an empty or a blank label, glyph or page', () => {
-        // revert: src/lib/data/sources/config/rail.ts:40 => return typeof value === 'string' ? value : null;
+        // revert: src/lib/data/sources/config/rail.ts "return typeof value === 'string' && value.trim() !== '' ? value : null;" => return typeof value === 'string' ? value : null;
         const read = readRail(
             [
                 { ...FOCUS, label: '' },
@@ -58,14 +58,14 @@ describe('the rule over the rail list', () => {
     });
 
     it('keeps the first of two entries naming one page and refuses the second', () => {
-        // revert: src/lib/data/sources/config/rail.ts:101 => } else if (false) {
+        // revert: src/lib/data/sources/config/rail.ts "} else if (entries.some((entry) => entry.page === page)) {" => } else if (false) {
         const read = readRail([FOCUS, { ...FOCUS, label: 'Again' }], PAGES, GLYPHS);
         expect(read.entries).toEqual([FOCUS]);
         expect(read.problems).toEqual([{ index: 1, why: 'repeated', page: 'focus' }]);
     });
 
     it('refuses a page key no arrangement holds, a reserved-looking one included', () => {
-        // revert: src/lib/data/sources/config/rail.ts:99 => else if (false) {
+        // revert: src/lib/data/sources/config/rail.ts "else if (!arrangements.includes(page)) {" => else if (false) {
         const read = readRail(
             [
                 { ...FOCUS, page: 'nowhere' },
@@ -84,7 +84,7 @@ describe('the rule over the rail list', () => {
     });
 
     it('refuses a glyph the vocabulary does not hold only when it is given one', () => {
-        // revert: src/lib/data/sources/config/rail.ts:103 => } else if (false) {
+        // revert: src/lib/data/sources/config/rail.ts "} else if (glyphs !== undefined && !glyphs.includes(glyph)) {" => } else if (false) {
         const odd = { ...FOCUS, glyph: 'nonesuch' };
         expect(readRail([odd], PAGES, GLYPHS).problems).toEqual([
             { index: 0, why: 'glyph_unknown', page: 'focus' }
@@ -93,7 +93,7 @@ describe('the rule over the rail list', () => {
     });
 
     it('refuses an item that is not a map and reads no list as no entries', () => {
-        // revert: src/lib/data/sources/config/rail.ts:89 => problems.push({ index, why: 'label', page: '' });
+        // revert: src/lib/data/sources/config/rail.ts "problems.push({ index, why: 'shape', page: '' });" => problems.push({ index, why: 'label', page: '' });
         expect(readRail(['focus', FOCUS], PAGES, GLYPHS)).toEqual({
             entries: [FOCUS],
             problems: [{ index: 0, why: 'shape', page: '' }]
@@ -107,7 +107,7 @@ describe('the findings of a hand edit', () => {
     const FILE = '/engine/config/layout.yml';
 
     it('reports each refused entry in the catalog words, keyed by its place', () => {
-        // revert: src/lib/data/sources/config/rail.ts:130 => key: 'rail',
+        // revert: src/lib/data/sources/config/rail.ts "key: `rail[${problem.index}]`," => key: 'rail',
         const found = railFindings(
             {
                 arrangements: { focus: {} },
@@ -132,7 +132,7 @@ describe('the findings of a hand edit', () => {
     });
 
     it('reports a rail that is not a list, and nothing for a config without the key', () => {
-        // revert: src/lib/data/sources/config/rail.ts:124 => if (false) {
+        // revert: src/lib/data/sources/config/rail.ts "if (!Array.isArray(raw)) {" => if (false) {
         expect(railFindings({ rail: 'focus' }, FILE, catalog)).toEqual([
             { file: FILE, key: 'rail', message: catalog['findings.rail.not_a_list'] }
         ]);
@@ -140,14 +140,14 @@ describe('the findings of a hand edit', () => {
     });
 
     it('finds nothing wrong with the shipped rail list', () => {
-        // revert: config/layout.yml:10 => - { label: "Focus", glyph: nonesuch, page: focus }
+        // revert: config/layout.yml "- { label: \"Focus\", glyph: compass, page: focus }" => - { label: "Focus", glyph: nonesuch, page: focus }
         expect(railFindings(config, FILE, catalog)).toEqual([]);
     });
 });
 
 describe('the rail pages the page hands the shell', () => {
     it('pairs each kept entry with the arrangement its page names', () => {
-        // revert: src/lib/state/workbench/navigation/rail.ts:40 => node: null
+        // revert: src/lib/state/workbench/navigation/rail.ts "node: arrangements[entry.page]" => node: null
         const node = { root: { kind: 'pane', view: 'focus' } };
         expect(
             railPages({ arrangements: { focus: node }, rail: [FOCUS, { ...FOCUS, page: 'x' }] })
@@ -156,7 +156,7 @@ describe('the rail pages the page hands the shell', () => {
     });
 
     it('leaves out an entry whose glyph the vocabulary does not hold, as its finding says', () => {
-        // revert: src/lib/state/workbench/navigation/rail.ts:37 => const read = readRail(config.rail, arrangementKeys(arrangements));
+        // revert: src/lib/state/workbench/navigation/rail.ts "const read = readRail(config.rail, arrangementKeys(arrangements), glyphNames(config));" => const read = readRail(config.rail, arrangementKeys(arrangements));
         const node = { root: { kind: 'pane', view: 'focus' } };
         const held = {
             arrangements: { focus: node, views: node },
@@ -174,7 +174,7 @@ describe('the rail pages the page hands the shell', () => {
     });
 
     it('reads the shipped list in its order, Views and Settings last', () => {
-        // revert: config/layout.yml:22 => - { label: "Views and Settings", glyph: sliders, page: focus }
+        // revert: config/layout.yml "- { label: \"Views and Settings\", glyph: sliders, page: views }" => - { label: "Views and Settings", glyph: sliders, page: focus }
         const pages = railPages(config);
         expect(pages.map((one) => one.label)).toEqual([
             'Focus',
@@ -197,7 +197,7 @@ describe('the rail pages the page hands the shell', () => {
 
 describe('the rail list a Settings tab is editing', () => {
     it('reads what the tab holds as three strings per row, and nothing for no list', () => {
-        // revert: src/lib/data/sources/config/rail.ts:54 => return { label: String(one.label), glyph: text(one.glyph), page: text(one.page) };
+        // revert: src/lib/data/sources/config/rail.ts "return { label: text(one.label), glyph: text(one.glyph), page: text(one.page) };" => return { label: String(one.label), glyph: text(one.glyph), page: text(one.page) };
         expect(railDraft({ rail: [{ label: 3, glyph: 'compass' }] })).toEqual([
             { label: '', glyph: 'compass', page: '' }
         ]);
@@ -206,14 +206,14 @@ describe('the rail list a Settings tab is editing', () => {
     });
 
     it('sets the list beside what else the tab holds, and takes it away on null', () => {
-        // revert: src/lib/state/workbench/navigation/rail.ts:63 => if (rail === null) held.rail = [];
+        // revert: src/lib/state/workbench/navigation/rail.ts "if (rail === null) delete held.rail;" => if (rail === null) held.rail = [];
         const set = withRailDraft({ keep: true }, [FOCUS]);
         expect(set).toEqual({ keep: true, rail: [FOCUS] });
         expect(withRailDraft(set, null)).toEqual({ keep: true });
     });
 
     it('holds unsaved text only in a Settings tab whose list differs from the file', () => {
-        // revert: src/lib/state/workbench/navigation/rail.ts:92 => return draft !== null;
+        // revert: src/lib/state/workbench/navigation/rail.ts "return draft !== null && !sameRail(draft, saved);" => return draft !== null;
         const state = { rail: [FOCUS] };
         expect(railTyped(SETTINGS_VIEW, state, [FOCUS])).toBe(false);
         expect(railTyped(SETTINGS_VIEW, state, [VIEWS])).toBe(true);
@@ -223,14 +223,14 @@ describe('the rail list a Settings tab is editing', () => {
     });
 
     it('moves a row one place and leaves the list as it is at either end', () => {
-        // revert: src/lib/state/workbench/navigation/rail.ts:98 => if (at < 0 || at >= rail.length) return [...rail];
+        // revert: src/lib/state/workbench/navigation/rail.ts "if (at < 0 || at >= rail.length || to < 0 || to >= rail.length) return [...rail];" => if (at < 0 || at >= rail.length) return [...rail];
         expect(moveRailEntry([FOCUS, VIEWS], 1, -1)).toEqual([VIEWS, FOCUS]);
         expect(moveRailEntry([FOCUS, VIEWS], 0, -1)).toEqual([FOCUS, VIEWS]);
         expect(moveRailEntry([FOCUS, VIEWS], 1, 1)).toEqual([FOCUS, VIEWS]);
     });
 
     it('reads the file list whole, a broken entry included, for the reader to mend', () => {
-        // revert: src/lib/state/workbench/navigation/rail.ts:109 => return railDraft({ rail: [] }) ?? [];
+        // revert: src/lib/state/workbench/navigation/rail.ts "return railRows(config?.rail) ?? [];" => return railDraft({ rail: [] }) ?? [];
         expect(configRail({ rail: [FOCUS, { label: 'Broken' }] })).toEqual([
             FOCUS,
             { label: 'Broken', glyph: '', page: '' }

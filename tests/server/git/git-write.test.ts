@@ -499,7 +499,7 @@ describe('the merge back', () => {
         expect(readFileSync(join(repo, 'inside.txt'), 'utf8')).toBe('made in the worktree\n');
     });
 
-    // revert: src/lib/server/git/git-write.ts:520 => return done;
+    // revert: src/lib/server/git/git-write.ts "return stoppedOn(root, done, 'the merge');" => return done;
     it('leaves a conflicted merge in progress and names what conflicted', async () => {
         git(repo, 'branch', 'other');
         git(repo, 'switch', '-q', 'other');
@@ -558,7 +558,7 @@ describe('the merge back', () => {
 });
 
 describe('the gate over what this module can run', () => {
-    // revert: src/lib/server/git/git-write.ts:584 => return run(root, ['fetch'], PUSH_TIMEOUT_MS);
+    // revert: src/lib/server/git/git-write.ts "return run(root, ['pull'], PUSH_TIMEOUT_MS);" => return run(root, ['fetch'], PUSH_TIMEOUT_MS);
     it('names each allowed subcommand at exactly one call site', () => {
         const source = readFileSync(MODULE, 'utf8');
         const calls = [...source.matchAll(/\brun\(\s*root\s*,\s*\[\s*'([a-z-]+)'/g)].map(
@@ -567,7 +567,7 @@ describe('the gate over what this module can run', () => {
         expect(calls.sort()).toEqual([...ALLOWED].sort());
     });
 
-    // revert: src/lib/server/git/git-remote.ts:95 => return pushTo(root, ['--tags', '--force']);
+    // revert: src/lib/server/git/git-remote.ts "return pushTo(root, ['--tags']);" => return pushTo(root, ['--tags', '--force']);
     it('never names --force, here or in a module beside it', () => {
         for (const file of [MODULE, ...SIBLINGS]) {
             expect(readFileSync(file, 'utf8'), file).not.toContain('--force');
@@ -576,7 +576,7 @@ describe('the gate over what this module can run', () => {
 
     // The modules beside git-write.ts reach git through its call sites and never run a process of
     // their own, so the call-site count above is the whole of what they can run.
-    // revert: src/lib/server/git/git-refs.ts:12 => import { STASH_REF } from '../core/git-parse.ts'; import 'node:child_process';
+    // revert: src/lib/server/git/git-refs.ts "import { STASH_REF } from '../core/git-parse.ts';" => import { STASH_REF } from '../core/git-parse.ts'; import 'node:child_process';
     it('leaves the modules beside it no subprocess of their own', () => {
         for (const file of SIBLINGS) {
             const source = readFileSync(file, 'utf8');
@@ -585,7 +585,7 @@ describe('the gate over what this module can run', () => {
         }
     });
 
-    // revert: src/lib/server/git/git-write.ts:560 => return run(root, ['add', '--force', ...args], TIMEOUT_MS);
+    // revert: src/lib/server/git/git-write.ts "return run(root, ['add', ...args], TIMEOUT_MS);" => return run(root, ['add', '--force', ...args], TIMEOUT_MS);
     it('ran nothing but those subcommands over this whole file', async () => {
         // A stage runs here, so the case has a command to judge when it runs alone as well as
         // after the rest of the file.

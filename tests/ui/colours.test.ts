@@ -498,7 +498,7 @@ describe('the surfaces a component may fill and paint on', () => {
         ).toEqual([]);
     });
 
-    // revert: src/lib/themes/themes.css:54 => delete
+    // revert: src/lib/themes/themes.css "--c-scm-added: #81b88b;" => delete
     it('defines the four Source Control hues in the root and in every theme block', () => {
         const scm = ['--c-scm-added', '--c-scm-modified', '--c-scm-deleted', '--c-scm-conflict'];
         const themed = Object.entries(blocks).filter(

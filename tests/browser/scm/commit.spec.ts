@@ -45,7 +45,7 @@ function subjects(dir: string, ref = 'HEAD'): string[] {
     return gitOut(dir, 'log', '--format=%s', ref).trim().split('\n');
 }
 
-// revert: src/lib/views/sources/repositories/Repositories.svelte:160 => delete
+// revert: src/lib/views/sources/repositories/Repositories.svelte "void repositories.pull(root);" => delete
 test('pulls what the upstream holds from the menu, after a confirm', async ({ page }) => {
     const dir = repository({ 'a.txt': 'one\n' });
     const bare = origin(dir);
@@ -60,7 +60,7 @@ test('pulls what the upstream holds from the menu, after a confirm', async ({ pa
     expect(readFileSync(join(dir, 'b.txt'), 'utf8')).toBe('b.txt\n');
 });
 
-// revert: src/lib/views/shared/changes/CommitBox.svelte:140 => onpick={() => commit('commit')}
+// revert: src/lib/views/shared/changes/CommitBox.svelte "onpick={(id: string) => commit(id as CommitHow)}" => onpick={() => commit('commit')}
 test('amends the last commit by Commit (Amend), with the message typed', async ({ page }) => {
     const dir = repository({ 'a.txt': 'one\n' });
     writeFileSync(join(dir, 'a.txt'), 'two\n');
@@ -75,7 +75,7 @@ test('amends the last commit by Commit (Amend), with the message typed', async (
     expect(gitOut(dir, 'show', 'HEAD:a.txt')).toBe('two\n');
 });
 
-// revert: src/lib/state/sources/repositories/repositories.svelte.ts:245 => delete
+// revert: src/lib/state/sources/repositories/repositories.svelte.ts "if (how === 'push') return act(root, 'push', {}, true);" => delete
 test('commits and pushes by Commit and Push', async ({ page }) => {
     const dir = repository({ 'a.txt': 'one\n' });
     const bare = origin(dir);
@@ -91,7 +91,7 @@ test('commits and pushes by Commit and Push', async ({ page }) => {
     expect(gitOut(bare, 'rev-parse', 'main')).toBe(gitOut(dir, 'rev-parse', 'HEAD'));
 });
 
-// revert: src/lib/state/sources/repositories/repositories.svelte.ts:246 => delete
+// revert: src/lib/state/sources/repositories/repositories.svelte.ts "if (how === 'sync') return act(root, 'sync', {}, true);" => delete
 test('commits, pulls and pushes by Commit and Sync', async ({ page }) => {
     const dir = repository({ 'a.txt': 'one\n' });
     const bare = origin(dir);
@@ -111,7 +111,7 @@ test('commits, pulls and pushes by Commit and Sync', async ({ page }) => {
     expect(gitOut(dir, 'merge-base', '--is-ancestor', incoming, 'HEAD')).toBe('');
 });
 
-// revert: src/lib/views/shared/changes/CommitBox.svelte:104 => return;
+// revert: src/lib/views/shared/changes/CommitBox.svelte "if (event.key !== 'Enter' || !(event.ctrlKey || event.metaKey)) return;" => return;
 test('commits by Ctrl+Enter in the message field, after a confirm', async ({ page }) => {
     const dir = repository({ 'a.txt': 'one\n' });
     writeFileSync(join(dir, 'a.txt'), 'two\n');
@@ -125,7 +125,7 @@ test('commits by Ctrl+Enter in the message field, after a confirm', async ({ pag
     await expect.poll(() => subjects(dir)).toEqual(['By the keys', 'First']);
 });
 
-// revert: src/lib/views/shared/changes/CommitBox.svelte:104 => if (event.key !== 'Enter' || !event.ctrlKey) return;
+// revert: src/lib/views/shared/changes/CommitBox.svelte "if (event.key !== 'Enter' || !(event.ctrlKey || event.metaKey)) return;" => if (event.key !== 'Enter' || !event.ctrlKey) return;
 test('commits by Cmd+Enter in the message field, after a confirm', async ({ page }) => {
     const dir = repository({ 'a.txt': 'one\n' });
     writeFileSync(join(dir, 'a.txt'), 'two\n');
@@ -151,9 +151,9 @@ function staged(dir: string): string {
     return gitOut(dir, 'diff', '--cached', '--name-only');
 }
 
-// revert: src/lib/views/sources/repositories/Changes.svelte:142 => onclick={() => undefined}
-// revert: src/lib/views/sources/repositories/Changes.svelte:151 => onclick={() => undefined}
-// revert: src/lib/views/sources/repositories/Changes.svelte:125 => onclick={() => undefined}
+// revert: src/lib/views/sources/repositories/Changes.svelte "onclick={() => void repositories.stageAll(root, 'changed')}" => onclick={() => undefined}
+// revert: src/lib/views/sources/repositories/Changes.svelte "onclick={() => void repositories.stageAll(root, 'untracked')}" => onclick={() => undefined}
+// revert: src/lib/views/sources/repositories/Changes.svelte "onclick={() => void repositories.unstageAll(root)}" => onclick={() => undefined}
 test('stages every change, then every untracked file, then unstages them all', async ({ page }) => {
     const dir = repository({ 'a.txt': 'one\n', 'b.txt': 'one\n' });
     writeFileSync(join(dir, 'a.txt'), 'two\n');
@@ -171,7 +171,7 @@ test('stages every change, then every untracked file, then unstages them all', a
     expect(gitOut(dir, 'status', '--porcelain')).toBe(' M a.txt\n M b.txt\n?? c.txt\n');
 });
 
-// revert: src/lib/views/sources/repositories/Changes.svelte:90 => delete
+// revert: src/lib/views/sources/repositories/Changes.svelte "void repositories.discardAll(root);" => delete
 test('discards every tracked change after a confirm, and keeps the untracked file', async ({
     page
 }) => {

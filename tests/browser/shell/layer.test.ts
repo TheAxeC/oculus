@@ -151,7 +151,7 @@ describe('the cleanup', () => {
         expect(removeLeftovers(join(dir, 'never-there'), 'oculus-browser-')).toEqual([]);
     });
 
-    // revert: tests/browser/helpers/layer.ts:191 => delete
+    // revert: tests/browser/helpers/layer.ts "spawnSync(tmux, ['-S', socket, 'kill-server'], { timeout: 10000 });" => delete
     it.skipIf(!TMUX)('ends the tmux server an earlier run left on its socket, and no other', () => {
         const old = join(dir, 'ob-old', 'tmux.sock');
         const other = join(dir, 'other', 'tmux.sock');
@@ -200,7 +200,7 @@ describe('the cleanup', () => {
 });
 
 describe('the port', () => {
-    // revert: tests/browser/helpers/layer.ts:30 => const named = Number(undefined);
+    // revert: tests/browser/helpers/layer.ts "const named = Number(env.OCULUS_BROWSER_PORT);" => const named = Number(undefined);
     it('is 8792, or the one OCULUS_BROWSER_PORT names when that is a port', () => {
         expect(layerPort({})).toBe(8792);
         expect(layerPort({ OCULUS_BROWSER_PORT: '43121' })).toBe(43121);
@@ -208,7 +208,7 @@ describe('the port', () => {
         expect(layerPort({ OCULUS_BROWSER_PORT: '70000' })).toBe(8792);
     });
 
-    // revert: playwright.config.ts:22 => const PORT = 8792;
+    // revert: playwright.config.ts "const PORT = layerPort();" => const PORT = 8792;
     it('is the one the Playwright configuration asks the server and the browser for', () => {
         const read =
             "const c = (await import('./playwright.config.ts')).default;" +
@@ -227,7 +227,7 @@ describe('the port', () => {
 });
 
 describe('a git read of a spec', () => {
-    // revert: tests/browser/helpers/git.ts:27 => delete
+    // revert: tests/browser/helpers/git.ts "'--no-optional-locks'," => delete
     it('leaves the index as it was, so it never holds the lock a write of the server needs', () => {
         gitIn(dir, 'init', '--quiet');
         writeFileSync(join(dir, 'a.txt'), 'one\n');

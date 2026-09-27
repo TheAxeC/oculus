@@ -27,14 +27,14 @@ function ask(ownHalf: boolean): string {
 }
 
 describe("an account row's Remove question", () => {
-    // revert: src/lib/views/shared/accounts/RemoveAccount.svelte:27 => : t('accounts.remove_confirm_own', label)}
+    // revert: src/lib/views/shared/accounts/RemoveAccount.svelte ": t('accounts.remove_confirm', label)}" => : t('accounts.remove_confirm_own', label)}
     it('says the provider stays set up when the account holds a token alone', () => {
         const body = ask(false);
         expect(body).toContain(catalog['accounts.remove_confirm'].replace('{0}', 'home'));
         expect(body).toContain('Google');
     });
 
-    // revert: src/lib/views/shared/accounts/RemoveAccount.svelte:26 => ? t('accounts.remove_confirm', label)
+    // revert: src/lib/views/shared/accounts/RemoveAccount.svelte "? t('accounts.remove_confirm_own', label)" => ? t('accounts.remove_confirm', label)
     it("says the account's own client id is deleted with its file when the file carries one", () => {
         const body = ask(true);
         expect(body).toContain(catalog['accounts.remove_confirm_own'].replace('{0}', 'home'));

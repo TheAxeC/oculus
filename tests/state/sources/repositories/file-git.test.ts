@@ -38,7 +38,7 @@ function blamed(line: number, hash: string): GitBlameLine {
 }
 
 describe('the repository of a file and the tab of a repository file', () => {
-    // revert: src/lib/state/sources/repositories/file-git.ts:53 => .sort(() => 0);
+    // revert: src/lib/state/sources/repositories/file-git.ts ".sort((left, right) => right.root.length - left.root.length);" => .sort(() => 0);
     it('gives a tab file to the deepest repository that holds it, and none when none does', () => {
         const repositories = ['/hub', '/hub/tools/oculus'];
         expect(repoOfFile(SERVED, { root: 'tool', path: 'src/a.ts' }, repositories)).toEqual({
@@ -53,7 +53,7 @@ describe('the repository of a file and the tab of a repository file', () => {
         expect(repoOfFile(SERVED, { root: 'hub', path: 'a' }, ['/elsewhere'])).toBeNull();
     });
 
-    // revert: src/lib/state/sources/repositories/file-git.ts:66 => .sort(() => 0);
+    // revert: src/lib/state/sources/repositories/file-git.ts ".sort((left, right) => right.dir.length - left.dir.length);" => .sort(() => 0);
     it('opens a repository file under the served root that holds it most closely', () => {
         expect(tabOfFile(SERVED, { root: '/hub/tools/oculus', path: 'src/a.ts' })).toEqual({
             root: 'tool',
@@ -70,8 +70,8 @@ describe('the repository of a file and the tab of a repository file', () => {
 describe('the words a blamed line carries', () => {
     const NOW = Date.parse('2026-09-25T12:00:00Z');
 
-    // revert: src/lib/state/sources/repositories/file-git.ts:86 => delete
-    // revert: src/lib/state/sources/repositories/file-git.ts:104 => return t('repositories.ago_days', count);
+    // revert: src/lib/state/sources/repositories/file-git.ts "if (seconds < WEEK) return counted('day', Math.floor(seconds / DAY));" => delete
+    // revert: src/lib/state/sources/repositories/file-git.ts "return count === 1 ? t('repositories.ago_day') : t('repositories.ago_days', count);" => return t('repositories.ago_days', count);
     it('says how long ago in the largest unit that is at least one', () => {
         expect(ago('2026-09-25T11:59:30Z', NOW)).toBe('just now');
         expect(ago('2026-09-25T11:00:00Z', NOW)).toBe('1 hour ago');
@@ -83,7 +83,7 @@ describe('the words a blamed line carries', () => {
         expect(ago('not a date', NOW)).toBe('');
     });
 
-    // revert: src/lib/state/sources/repositories/file-git.ts:133 => delete
+    // revert: src/lib/state/sources/repositories/file-git.ts "if (line.uncommitted) return t('repositories.blame_uncommitted');" => delete
     it('names the author, the age and the subject, and Not Committed Yet for a line no commit holds', () => {
         const line = blamed(3, 'abcdef123');
         expect(blameWords(line, NOW)).toEqual({
@@ -96,7 +96,7 @@ describe('the words a blamed line carries', () => {
         expect(blameStatus(undefined, NOW)).toBe('');
     });
 
-    // revert: src/lib/state/sources/repositories/file-git.ts:171 => starts.add(line.line);
+    // revert: src/lib/state/sources/repositories/file-git.ts "if (line.line === 1 || key !== before || starts.size === 0) starts.add(line.line);" => starts.add(line.line);
     it('writes the words on the first line of each run of one commit', () => {
         const lines = [
             blamed(1, 'a'),
@@ -110,7 +110,7 @@ describe('the words a blamed line carries', () => {
 });
 
 describe('the gutter mark of each line', () => {
-    // revert: src/lib/state/sources/repositories/file-git.ts:150 => const line = mark.line;
+    // revert: src/lib/state/sources/repositories/file-git.ts "const line = Math.min(Math.max(1, mark.line), Math.max(1, lines));" => const line = mark.line;
     it('marks each line of an added or modified run, and a deletion on the line it sits before', () => {
         const byLine = marksByLine(
             [

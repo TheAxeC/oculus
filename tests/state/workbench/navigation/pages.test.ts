@@ -28,7 +28,7 @@ function page(id: string, label: string, root = pane([])): Page {
 
 describe('what a page is called', () => {
     it('is its own name, or its place in the page list when it has none', () => {
-        // revert: src/lib/state/workbench/navigation/pages.ts:19 => return page.label;
+        // revert: src/lib/state/workbench/navigation/pages.ts "return page.label === '' ? t('ui.page_default', index + 1) : page.label;" => return page.label;
         const pages = [page('one', 'Writing'), page('two', '')];
         expect(pageName(pages[0], 0)).toBe('Writing');
         expect(pageName(pages[1], 1)).toBe(t('ui.page_default', 2));
@@ -36,7 +36,7 @@ describe('what a page is called', () => {
     });
 
     it('is nothing for an id the list does not hold', () => {
-        // revert: src/lib/state/workbench/navigation/pages.ts:25 => return found === null ? pageName(pages[0], 0) : pageName(found.page, found.at);
+        // revert: src/lib/state/workbench/navigation/pages.ts "return found === null ? '' : pageName(found.page, found.at);" => return found === null ? pageName(pages[0], 0) : pageName(found.page, found.at);
         expect(pageNameOf([page('one', 'Writing')], 'gone')).toBe('');
     });
 });
@@ -47,24 +47,24 @@ describe('the question a close asks', () => {
     const dirty = (id: string): boolean => id === 'unsaved';
 
     it('asks nothing over one instance with nothing unsaved in it', () => {
-        // revert: src/lib/state/workbench/navigation/pages.ts:49 => return 'dirty';
+        // revert: src/lib/state/workbench/navigation/pages.ts "return ids.some((id) => unsaved(id)) ? 'dirty' : 'none';" => return 'dirty';
         expect(closeQuestion(['saved'], dirty)).toBe('none');
         expect(closeQuestion([], dirty)).toBe('none');
     });
 
     it('asks about the text over one instance holding unsaved text', () => {
-        // revert: src/lib/state/workbench/navigation/pages.ts:49 => return 'none';
+        // revert: src/lib/state/workbench/navigation/pages.ts "return ids.some((id) => unsaved(id)) ? 'dirty' : 'none';" => return 'none';
         expect(closeQuestion(['unsaved'], dirty)).toBe('dirty');
     });
 
     it("asks the caller's own question over more than one, unsaved or not", () => {
-        // revert: src/lib/state/workbench/navigation/pages.ts:48 => delete
+        // revert: src/lib/state/workbench/navigation/pages.ts "if (ids.length > 1) return 'many';" => delete
         expect(closeQuestion(['saved', 'other'], dirty)).toBe('many');
         expect(closeQuestion(['saved', 'unsaved'], dirty)).toBe('many');
     });
 
     it("lists every instance of every pane of a page, in the tree's own order", () => {
-        // revert: src/lib/state/workbench/navigation/pages.ts:33 => return tabsOf(page.workbench.root).map((instance) => instance.id).reverse();
+        // revert: src/lib/state/workbench/navigation/pages.ts "return tabsOf(page.workbench.root).map((instance) => instance.id);" => return tabsOf(page.workbench.root).map((instance) => instance.id).reverse();
         const two = split('row', [0.5, 0.5], [pane(['a']), pane(['b', 'c'])]);
         expect(pageInstanceIds(page('p', '', pane(['a', 'b'])))).toEqual(['a', 'b']);
         expect(pageInstanceIds(page('p', '', two))).toEqual(['a', 'b', 'c']);
@@ -79,14 +79,14 @@ describe('the tabs holding unsaved text, across every page', () => {
     ];
 
     it('counts every unsaved tab on every page', () => {
-        // revert: src/lib/state/workbench/navigation/pages.ts:69 => return pageInstanceIds(pages[0] ?? page('', '')).filter(unsaved).length;
+        // revert: src/lib/state/workbench/navigation/pages.ts "return pages.reduce((sum, page) => sum + pageInstanceIds(page).filter(unsaved).length, 0);" => return pageInstanceIds(pages[0] ?? page('', '')).filter(unsaved).length;
         expect(unsavedCount(pages, (id) => id === 'b' || id === 'd')).toBe(2);
         expect(unsavedCount(pages, () => false)).toBe(0);
         expect(unsavedCount([], () => true)).toBe(0);
     });
 
     it('finds the first one in page order and then tree order, with its page', () => {
-        // revert: src/lib/state/workbench/navigation/pages.ts:62 => if (found !== undefined) return { page: pages[0].id, instance: found };
+        // revert: src/lib/state/workbench/navigation/pages.ts "if (found !== undefined) return { page: page.id, instance: found };" => if (found !== undefined) return { page: pages[0].id, instance: found };
         expect(firstUnsaved(pages, (id) => id === 'd' || id === 'c')).toEqual({
             page: 'two',
             instance: 'c'
@@ -106,7 +106,7 @@ function viewed(views: string[]): ReturnType<typeof pane> {
 
 describe('the views a rail button draws the badges of', () => {
     it('are the tabs of the page carrying its key, in tree order and each once', () => {
-        // revert: src/lib/state/workbench/navigation/pages.ts:80 => const root = parseArrangement(node)?.root;
+        // revert: src/lib/state/workbench/navigation/pages.ts "const root = made?.workbench.root ?? parseArrangement(node)?.root;" => const root = parseArrangement(node)?.root;
         const held: Page = {
             ...page(
                 'one',
@@ -120,7 +120,7 @@ describe('the views a rail button draws the badges of', () => {
     });
 
     it('are the views of the arrangement before the page is made, and none for a broken one', () => {
-        // revert: src/lib/state/workbench/navigation/pages.ts:80 => const root = made?.workbench.root;
+        // revert: src/lib/state/workbench/navigation/pages.ts "const root = made?.workbench.root ?? parseArrangement(node)?.root;" => const root = made?.workbench.root;
         const node = { root: { kind: 'pane', view: ['status', 'audit'] } };
         expect(railPageViews([], 'info', node)).toEqual(['status', 'audit']);
         expect(railPageViews([], 'info', { root: 'nothing' })).toEqual([]);
@@ -128,7 +128,7 @@ describe('the views a rail button draws the badges of', () => {
 });
 
 describe('whether a page holds unsaved text', () => {
-    // revert: src/lib/state/workbench/navigation/pages.ts:87 => return false;
+    // revert: src/lib/state/workbench/navigation/pages.ts "return pageInstanceIds(page).some(unsaved);" => return false;
     it('is whether any of its tabs does', () => {
         const held = page('p', '', pane(['a', 'b']));
         expect(pageUnsaved(held, (id) => id === 'b')).toBe(true);
@@ -138,7 +138,7 @@ describe('whether a page holds unsaved text', () => {
 });
 
 describe('where a page sits in the page list', () => {
-    // revert: src/lib/state/workbench/navigation/pages.ts:93 => return at < 0 ? null : { page: pages[0], at };
+    // revert: src/lib/state/workbench/navigation/pages.ts "return at < 0 ? null : { page: pages[at], at };" => return at < 0 ? null : { page: pages[0], at };
     it('is the page of that id with its place, and nothing for an id the list lacks', () => {
         const pages = [page('a', 'One'), page('b', '')];
         expect(pageAt(pages, 'b')).toEqual({ page: pages[1], at: 1 });

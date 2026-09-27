@@ -17,7 +17,7 @@ keepServedFiles();
 
 test.afterAll(sweepScratch);
 
-// revert: src/lib/views/sources/repositories/merge/Merge.svelte:138 => done = true;
+// revert: src/lib/views/sources/repositories/merge/Merge.svelte "if (await repositories.resolve(root, path, result)) done = true;" => done = true;
 test('resolves a conflicting merge in the merge editor and commits it', async ({ page }) => {
     const dir = repository({ 'a.txt': 'one\ntwo\nthree\n' });
     gitIn(dir, 'checkout', '--quiet', '-b', 'other');

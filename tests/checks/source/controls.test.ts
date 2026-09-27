@@ -40,9 +40,9 @@ function rawControls(file: string): string[] {
 }
 
 describe('the Source Control views draw their controls with ui/ primitives', () => {
-    // revert: src/lib/views/sources/source/Gutter.svelte:70 => <button type="button" class="blame" onclick={() => onblame(held)}>x</button>
-    // revert: src/lib/views/sources/source/Gutter.svelte:91 => <button type="button" class="mark" onclick={() => onmark(mark.start)}></button>
-    // revert: src/lib/views/sources/repositories/diff/DiffFile.svelte:122 => <button type="button" onclick={() => onchoose(row)}>x</button>
+    // revert: src/lib/views/sources/source/Gutter.svelte "class:uncommitted={held.uncommitted}" +2 => <button type="button" class="blame" onclick={() => onblame(held)}>x</button>
+    // revert: src/lib/views/sources/source/Gutter.svelte "class:foot={mark.kind === 'deleted' && mark.start > line}" +2 => <button type="button" class="mark" onclick={() => onmark(mark.start)}></button>
+    // revert: src/lib/views/sources/repositories/diff/DiffFile.svelte "<span class=\"num pick\" class:chosen={chosen.includes(row)}>" +1 => <button type="button" onclick={() => onchoose(row)}>x</button>
     it('draws no raw button, input or select', () => {
         const files = FOLDERS.flatMap((folder) => svelteFiles(join(VIEWS, folder)));
         expect(files.length).toBeGreaterThan(20);

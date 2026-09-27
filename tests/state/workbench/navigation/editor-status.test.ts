@@ -23,7 +23,7 @@ const SAID: EditorStatus = {
 
 describe('the editor status store', () => {
     it('keeps what each tab said apart, and forgets a tab that goes', () => {
-        // revert: src/lib/state/workbench/navigation/editor-status.svelte.ts:82 => return;
+        // revert: src/lib/state/workbench/navigation/editor-status.svelte.ts "held.entries = { ...untrack(() => held.entries), [instance]: status };" => return;
         const store = createEditorStatus();
         store.publish('one', SAID);
         store.publish('two', { ...SAID, language: 'yaml' });
@@ -38,7 +38,7 @@ describe('the editor status store', () => {
     });
 
     it('asks a tab that has said something, numbering each ask, and no other tab', () => {
-        // revert: src/lib/state/workbench/navigation/editor-status.svelte.ts:99 => held.last = { ...change, instance, seq: 1 };
+        // revert: src/lib/state/workbench/navigation/editor-status.svelte.ts "held.last = { ...change, instance, seq: (held.last?.seq ?? 0) + 1 };" => held.last = { ...change, instance, seq: 1 };
         const store = createEditorStatus();
         expect(store.ask('one', { kind: 'goto', line: 3 })).toBe(false);
         expect(store.asked('one')).toBe(null);
@@ -56,7 +56,7 @@ describe('the editor status store', () => {
     });
 
     it('finds the source tab on screen that has said something, and no other tab', () => {
-        // revert: src/lib/state/workbench/navigation/editor-status.svelte.ts:67 => if (tab === null) return null;
+        // revert: src/lib/state/workbench/navigation/editor-status.svelte.ts "if (tab?.view !== 'source') return null;" => if (tab === null) return null;
         const store = createEditorStatus();
         store.publish('one', SAID);
         expect(sourceOnScreen({ id: 'one', view: 'source' }, store.statusOf)).toEqual({

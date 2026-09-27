@@ -70,7 +70,7 @@ function real(): unknown {
 
 describe('parseArrangement', () => {
     it('turns the shipped sessions arrangement into one tree that checks out', () => {
-        // revert: src/lib/state/workbench/navigation/arrangement.ts:51 => return { kind: 'split', dir, sizes, children: children.reverse() };
+        // revert: src/lib/state/workbench/navigation/arrangement.ts "return { kind: 'split', dir, sizes, children };" => return { kind: 'split', dir, sizes, children: children.reverse() };
         const parsed = parseArrangement(real());
         expect(parsed).not.toBe(null);
         const made = present(parsed, 'arrangement');
@@ -89,14 +89,14 @@ describe('parseArrangement', () => {
     });
 
     it('reads the sessions arrangement as three columns, its Files tab following the selection', () => {
-        // revert: config/layout.yml:63 => sizes: [0.3, 0.4, 0.3]
+        // revert: config/layout.yml "sizes: [0.22, 0.5, 0.28]" => sizes: [0.3, 0.4, 0.3]
         const made = present(parseArrangement(real()), 'arrangement');
         const root = made.root;
         expect(root.kind === 'split' ? root.sizes : []).toEqual([0.22, 0.5, 0.28]);
         const files = panes(root)
             .flatMap(({ pane: node }) => node.tabs)
             .find((tab) => tab.view === 'files');
-        // revert: src/lib/state/workbench/navigation/arrangement.ts:79 => return isRecord(state) ? newInstance(view) : null;
+        // revert: src/lib/state/workbench/navigation/arrangement.ts "return isRecord(state) ? newInstance(view, { ...state }) : null;" => return isRecord(state) ? newInstance(view) : null;
         expect(files?.state).toEqual({ follow: true });
     });
 
@@ -107,19 +107,19 @@ describe('parseArrangement', () => {
         expect([opened.view, opened.state]).toEqual(['files', { follow: true }]);
         const bare = present(tab({ view: 'files' }), 'arrangement');
         expect(panes(bare.root)[0].pane.tabs[0].state).toEqual({});
-        // revert: src/lib/state/workbench/navigation/arrangement.ts:79 => return newInstance(view, isRecord(state) ? { ...state } : {});
+        // revert: src/lib/state/workbench/navigation/arrangement.ts "return isRecord(state) ? newInstance(view, { ...state }) : null;" => return newInstance(view, isRecord(state) ? { ...state } : {});
         expect(tab({ view: 'files', state: 'follow' })).toBe(null);
         expect(tab({ view: 'files', state: [true] })).toBe(null);
-        // revert: src/lib/state/workbench/navigation/arrangement.ts:77 => if (typeof view !== 'string') return null;
+        // revert: src/lib/state/workbench/navigation/arrangement.ts "if (typeof view !== 'string' || view === '') return null;" => if (typeof view !== 'string') return null;
         expect(tab({ view: '', state: {} })).toBe(null);
         expect(tab({ state: {} })).toBe(null);
-        // revert: src/lib/state/workbench/navigation/arrangement.ts:74 => if (typeof value === 'string') return newInstance(value);
+        // revert: src/lib/state/workbench/navigation/arrangement.ts "if (typeof value === 'string') return value === '' ? null : newInstance(value);" => if (typeof value === 'string') return newInstance(value);
         expect(tab('')).toBe(null);
         expect(tab(7)).toBe(null);
     });
 
     it('mints a fresh instance id for every tab, so two applications never collide', () => {
-        // revert: src/lib/state/workbench/navigation/arrangement.ts:74 => if (typeof value === 'string') return value === '' ? null : { id: value, view: value, state: {} };
+        // revert: src/lib/state/workbench/navigation/arrangement.ts "if (typeof value === 'string') return value === '' ? null : newInstance(value);" => if (typeof value === 'string') return value === '' ? null : { id: value, view: value, state: {} };
         const first = present(parseArrangement(real()), 'arrangement');
         const second = present(parseArrangement(real()), 'arrangement');
         const ids = (made: Workbench): string[] =>
@@ -129,7 +129,7 @@ describe('parseArrangement', () => {
     });
 
     it('takes a pane naming one view as well as a pane naming several', () => {
-        // revert: src/lib/state/workbench/navigation/arrangement.ts:61 => const names = Array.isArray(view) ? view : null;
+        // revert: src/lib/state/workbench/navigation/arrangement.ts "const names = typeof view === 'string' ? [view] : Array.isArray(view) ? view : null;" => const names = Array.isArray(view) ? view : null;
         const one = present(
             parseArrangement({ root: { kind: 'pane', view: 'timeline' } }),
             'arrangement'
@@ -143,7 +143,7 @@ describe('parseArrangement', () => {
     });
 
     it('refuses a tree that is not a tree, and one naming no root', () => {
-        // revert: src/lib/state/workbench/navigation/arrangement.ts:62 => if (names === null) return null;
+        // revert: src/lib/state/workbench/navigation/arrangement.ts "if (names === null || names.length === 0) return null;" => if (names === null) return null;
         expect(parseArrangement(null)).toBe(null);
         expect(parseArrangement({ main: { kind: 'pane', view: 'timeline' } })).toBe(null);
         expect(parseArrangement({ root: { kind: 'box' } })).toBe(null);
@@ -151,7 +151,7 @@ describe('parseArrangement', () => {
     });
 
     it('refuses a split whose sizes do not add up, or take a child under the minimum', () => {
-        // revert: src/lib/state/workbench/navigation/arrangement.ts:27 => return workbench;
+        // revert: src/lib/state/workbench/navigation/arrangement.ts "return checkWorkbench(workbench).length === 0 ? workbench : null;" => return workbench;
         const made = (sizes: number[]): unknown => ({
             root: {
                 kind: 'split',
@@ -170,7 +170,7 @@ describe('parseArrangement', () => {
     });
 
     it('refuses a split with a direction or a size that is not one', () => {
-        // revert: src/lib/state/workbench/navigation/arrangement.ts:23-27 => return isRecord(value) ? ({ root: readArrangement(value.root) } as Workbench) : null;
+        // revert: src/lib/state/workbench/navigation/arrangement.ts "export function parseArrangement(value: unknown): Workbench | null {" +1 .. "return checkWorkbench(workbench).length === 0 ? workbench : null;" => return isRecord(value) ? ({ root: readArrangement(value.root) } as Workbench) : null;
         const bad = (over: Record<string, unknown>): unknown => ({
             root: {
                 kind: 'split',
@@ -218,7 +218,7 @@ describe('the store: a rail page', () => {
     const LABEL = 'Sessions';
 
     it('makes the page from its arrangement the first time, tied to the key, and shows it', () => {
-        // revert: src/lib/state/workbench/layout.svelte.ts:322 => addPage(newPage(label, next));
+        // revert: src/lib/state/workbench/layout.svelte.ts "addPage(newPage(label, next, key));" => addPage(newPage(label, next));
         loadLayout(fakeStorage(saveOwn()));
         expect(openRailPage(KEY, LABEL, ARRANGEMENT)).toBe(true);
         expect(pages().map((page) => page.label)).toEqual(['Page 1', LABEL]);
@@ -227,14 +227,14 @@ describe('the store: a rail page', () => {
     });
 
     it('leaves the workbench that was on screen on the page it was on', () => {
-        // revert: src/lib/state/workbench/layout.svelte.ts:322 => savePages({ pages: [newPage(label, next, key)], current: '' });
+        // revert: src/lib/state/workbench/layout.svelte.ts "addPage(newPage(label, next, key));" => savePages({ pages: [newPage(label, next, key)], current: '' });
         loadLayout(fakeStorage(saveOwn()));
         openRailPage(KEY, LABEL, ARRANGEMENT);
         expect(pages()[0].workbench).toEqual(own());
     });
 
     it('shows the page the reader rearranged on the next press, rather than the arrangement', () => {
-        // revert: src/lib/state/workbench/layout.svelte.ts:305 => const found = undefined;
+        // revert: src/lib/state/workbench/layout.svelte.ts "const found = held.find((page) => page.rail === key);" => const found = undefined;
         loadLayout(fakeStorage(saveOwn()));
         openRailPage(KEY, LABEL, ARRANGEMENT);
         const made = currentPage().id;
@@ -247,7 +247,7 @@ describe('the store: a rail page', () => {
     });
 
     it('keeps the page when the button is renamed, since the key ties them', () => {
-        // revert: src/lib/state/workbench/layout.svelte.ts:305 => const found = held.find((page) => page.label === label);
+        // revert: src/lib/state/workbench/layout.svelte.ts "const found = held.find((page) => page.rail === key);" => const found = held.find((page) => page.label === label);
         loadLayout(fakeStorage(saveOwn()));
         openRailPage(KEY, LABEL, ARRANGEMENT);
         const made = currentPage().id;
@@ -258,7 +258,7 @@ describe('the store: a rail page', () => {
     });
 
     it('takes a page no button holds whose name is the label, and not one a button holds', () => {
-        // revert: src/lib/state/workbench/layout.svelte.ts:310 => const named = undefined;
+        // revert: src/lib/state/workbench/layout.svelte.ts "const named = held.find((page) => page.rail === undefined && page.label === label);" => const named = undefined;
         loadLayout(fakeStorage(saveOwn()));
         openPage(LABEL);
         const mine = currentPage().id;
@@ -273,14 +273,14 @@ describe('the store: a rail page', () => {
     });
 
     it('changes nothing for an empty key', () => {
-        // revert: src/lib/state/workbench/layout.svelte.ts:303 => delete
+        // revert: src/lib/state/workbench/layout.svelte.ts "if (key === '') return false;" => delete
         loadLayout(fakeStorage(saveOwn()));
         expect(openRailPage('', LABEL, ARRANGEMENT)).toBe(false);
         expect(pages()).toHaveLength(1);
     });
 
     it('changes nothing on an arrangement that does not parse', () => {
-        // revert: src/lib/state/workbench/layout.svelte.ts:320 => delete
+        // revert: src/lib/state/workbench/layout.svelte.ts "if (next === null) return false;" => delete
         loadLayout(fakeStorage(saveOwn()));
         expect(openRailPage('broken', 'Broken', { root: { kind: 'box' } })).toBe(false);
         expect(pages()).toHaveLength(1);
@@ -288,7 +288,7 @@ describe('the store: a rail page', () => {
     });
 
     it('saves the key with the page, so a reload finds the same page behind the button', () => {
-        // revert: src/lib/state/workbench/layout/saved/saved.ts:298 => delete
+        // revert: src/lib/state/workbench/layout/saved/saved.ts "if (rail !== null) page.rail = rail;" => delete
         const storage = fakeStorage(saveOwn());
         loadLayout(storage);
         openRailPage(KEY, LABEL, ARRANGEMENT);
@@ -305,7 +305,7 @@ describe('the store: a rail page', () => {
     });
 
     it('renames the page without untying it from its button', () => {
-        // revert: src/lib/state/workbench/layout.svelte.ts:305 => const found = held.find((page) => page.label === label && page.rail === key);
+        // revert: src/lib/state/workbench/layout.svelte.ts "const found = held.find((page) => page.rail === key);" => const found = held.find((page) => page.label === label && page.rail === key);
         loadLayout(fakeStorage(saveOwn()));
         openRailPage(KEY, LABEL, ARRANGEMENT);
         const made = currentPage().id;
@@ -317,7 +317,7 @@ describe('the store: a rail page', () => {
     });
 
     it('makes every rail page of the shipped config from its arrangement', () => {
-        // revert: config/layout.yml:44 => root: { kind: pane, view: [] }
+        // revert: config/layout.yml "root: { kind: pane, view: focus }" => root: { kind: pane, view: [] }
         const rail = railPages(loadConfig(engineDir()).config);
         expect(rail.length).toBeGreaterThan(0);
         loadLayout(fakeStorage());

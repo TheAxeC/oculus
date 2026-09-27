@@ -162,21 +162,21 @@ describe('the hue of a status mark', () => {
 });
 
 describe('the chip legend', () => {
-    // revert: src/lib/state/shared/words/tones.ts:163 => return '';
+    // revert: src/lib/state/shared/words/tones.ts "return legend[chip]?.icon ?? '';" => return '';
     it('resolves a chip glyph name and gives the chip its words', () => {
         synthetic();
         expect(chipGlyphName('submitted')).toBe('check');
         expect(chipLabel('submitted')).toBe('submitted / under review');
     });
 
-    // revert: src/lib/state/shared/words/tones.ts:163 => return legend[chip]?.icon || 'x';
+    // revert: src/lib/state/shared/words/tones.ts "return legend[chip]?.icon ?? '';" => return legend[chip]?.icon || 'x';
     it('gives an unknown chip the chip word itself and no glyph', () => {
         synthetic();
         expect(chipGlyphName('nonesuch')).toBe('');
         expect(chipLabel('nonesuch')).toBe('nonesuch');
     });
 
-    // revert: src/lib/state/shared/words/tones.ts:163 => return legend[chip]?.icon || 'x';
+    // revert: src/lib/state/shared/words/tones.ts "return legend[chip]?.icon ?? '';" => return legend[chip]?.icon || 'x';
     it('gives no glyph to a row that carries none', () => {
         synthetic();
         expect(chipGlyphName('bare')).toBe('');
@@ -237,7 +237,7 @@ describe('the real config/catalogs/vocab.yml', () => {
         expect(domainTone('heart')).toBe('crimson');
     });
 
-    // revert: src/lib/state/shared/words/tones.ts:163 => return '';
+    // revert: src/lib/state/shared/words/tones.ts "return legend[chip]?.icon ?? '';" => return '';
     it('gives every chip in the legend a label and a glyph name', () => {
         setGlyphs(GLYPHS);
         setGlyphMode('icon');
@@ -261,7 +261,7 @@ describe('the real config/catalogs/vocab.yml', () => {
 });
 
 describe('the hues the chips of the vocabulary wear', () => {
-    // revert: src/lib/state/shared/words/tones.ts:215 => return type;
+    // revert: src/lib/state/shared/words/tones.ts "return type === UNKNOWN_TONE ? statusTone(key) : type;" => return type;
     it('is the project type hue, else the status hue', () => {
         synthetic();
         expect(chipTone('manuscript')).toBe('teal');
@@ -269,7 +269,7 @@ describe('the hues the chips of the vocabulary wear', () => {
         expect(chipTone('nothing')).toBe('grey');
     });
 
-    // revert: src/lib/state/shared/words/tones.ts:230 => else held.count = 1;
+    // revert: src/lib/state/shared/words/tones.ts "else held.count += 1;" => else held.count = 1;
     it('groups the chips by hue in the order hues first occur, each with its first chip and count', () => {
         synthetic();
         expect(chipsByTone(['manuscript', 'idea', 'submitted', 'nothing'])).toEqual([

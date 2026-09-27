@@ -40,7 +40,7 @@ function picker(flag: string, fallback: string, values: string[]): string[] {
 }
 
 describe('the shipped agents catalog', () => {
-    // revert: config/catalogs/agents.yml:13 => - { id: cli, label: 'CLI default', pass: -x }
+    // revert: config/catalogs/agents.yml "- { id: opus, label: Opus, pass: opus }" => - { id: cli, label: 'CLI default', pass: -x }
     it('seeds the composer with both agents, their pickers and no finding', () => {
         const read = parseAgents(shipped());
         expect(read.findings).toEqual([]);
@@ -54,7 +54,7 @@ describe('the shipped agents catalog', () => {
         expect(codexModel.cache).toBe('models_cache.json');
     });
 
-    // revert: src/lib/data/sources/config/agents.ts:252 => args.push(list.flag, value.pass ?? '');
+    // revert: src/lib/data/sources/config/agents.ts "if (value.pass !== null) args.push(list.flag, value.pass);" => args.push(list.flag, value.pass ?? '');
     it('starts each agent with its defaults: the flags that pass something, and no others', () => {
         const [claude, codex] = parseAgents(shipped()).agents;
         expect(choiceArgs(claude, {})).toEqual(['--permission-mode', 'manual']);
@@ -77,7 +77,7 @@ describe('the shipped agents catalog', () => {
         ]);
     });
 
-    // revert: src/lib/data/sources/config/agents.ts:251 => if (value === undefined) continue;
+    // revert: src/lib/data/sources/config/agents.ts "if (value === undefined) throw new Error(`${list.key} has no choice ${id}`);" => if (value === undefined) continue;
     it('refuses a pick naming a value its picker does not hold, empty or made up', () => {
         const [claude] = parseAgents(shipped()).agents;
         expect(() => choiceArgs(claude, { model: 'gpt' })).toThrow('model has no choice gpt');
@@ -89,7 +89,7 @@ describe('the shipped agents catalog', () => {
 });
 
 describe('a refusal in the agents catalog', () => {
-    // revert: src/lib/data/sources/config/agents.ts:174 => if (flag === '') {
+    // revert: src/lib/data/sources/config/agents.ts "if (!AGENT_FLAGS[agent].includes(flag)) {" => if (flag === '') {
     it('names a flag the agent does not take, on the flag line, and leaves the picker out', () => {
         const text = one(
             'claude',
@@ -102,7 +102,7 @@ describe('a refusal in the agents catalog', () => {
         expect(read.agents[0].lists).toEqual([]);
     });
 
-    // revert: src/lib/data/sources/config/agents.ts:67 => if (closed !== undefined) return true;
+    // revert: src/lib/data/sources/config/agents.ts "if (closed !== undefined) return closed.includes(pass);" => if (closed !== undefined) return true;
     it('names a value outside the flag closed set on its own line, and keeps the rest', () => {
         const text = one(
             'claude',
@@ -116,7 +116,7 @@ describe('a refusal in the agents catalog', () => {
         expect(read.agents[0].lists[0].values.map((value) => value.id)).toEqual(['low']);
     });
 
-    // revert: src/lib/data/sources/config/agents.ts:60 => return word !== '';
+    // revert: src/lib/data/sources/config/agents.ts "return word !== '' && !word.startsWith('-') && !/[\\s\\u0000-\\u001f\\u007f]/.test(word);" => return word !== '';
     it('refuses a value that would read as an option, or holds whitespace or a control character', () => {
         const text = one(
             'claude',
@@ -141,7 +141,7 @@ describe('a refusal in the agents catalog', () => {
         expect(passable('a\u0000b')).toBe(false);
     });
 
-    // revert: src/lib/data/sources/config/agents.ts:70 => return at > 0;
+    // revert: src/lib/data/sources/config/agents.ts "return at > 0 && CONFIG_KEYS.includes(pass.slice(0, at)) && at < pass.length - 1;" => return at > 0;
     it('lets a Codex -c pair set only the reasoning effort, and only to a value', () => {
         const text = one(
             'codex',
@@ -158,7 +158,7 @@ describe('a refusal in the agents catalog', () => {
         ]);
     });
 
-    // revert: src/lib/data/sources/config/agents.ts:226 => if (held.some((one) => one.id === id && false)) {
+    // revert: src/lib/data/sources/config/agents.ts "if (held.some((one) => one.id === id)) {" => if (held.some((one) => one.id === id && false)) {
     it('refuses a value id that is empty or repeated, keeping the first of a repeat', () => {
         const text = one(
             'claude',
@@ -176,7 +176,7 @@ describe('a refusal in the agents catalog', () => {
         expect(read.agents[0].lists[0].values).toEqual([{ id: 'a', label: 'A', pass: 'opus' }]);
     });
 
-    // revert: src/lib/data/sources/config/agents.ts:197 => if (values.length === 0) {
+    // revert: src/lib/data/sources/config/agents.ts "if (!values.some((one) => one.id === fallback)) {" => if (values.length === 0) {
     it('leaves a picker out whose default it does not offer, or that names none', () => {
         const missing = parseAgents(one('claude', picker('--model', 'z', ['{ id: a, label: A }'])));
         expect(missing.findings).toEqual([{ line: 8, why: 'default_missing', what: 'z' }]);
@@ -185,11 +185,11 @@ describe('a refusal in the agents catalog', () => {
             '                default: a\n',
             ''
         );
-        // revert: src/lib/data/sources/config/agents.ts:193 => if (fallback === null && false) {
+        // revert: src/lib/data/sources/config/agents.ts "if (fallback === null) {" => if (fallback === null && false) {
         expect(parseAgents(text).findings).toEqual([{ line: 5, why: 'no_default', what: 'probe' }]);
     });
 
-    // revert: src/lib/data/sources/config/agents.ts:141 => if (name === '') {
+    // revert: src/lib/data/sources/config/agents.ts "if (!AGENTS.includes(name as AgentId)) {" => if (name === '') {
     it('refuses an agent it does not know, the shell among them, and reads the others', () => {
         const text = [
             'agents:',
@@ -204,7 +204,7 @@ describe('a refusal in the agents catalog', () => {
         expect(read.agents.map((agent) => agent.agent)).toEqual(['claude']);
     });
 
-    // revert: src/lib/data/sources/config/agents.ts:135 => if (!known.includes(key) && false) say(pair, 'unknown_key', key);
+    // revert: src/lib/data/sources/config/agents.ts "if (!known.includes(key)) say(pair, 'unknown_key', key);" => if (!known.includes(key) && false) say(pair, 'unknown_key', key);
     it('names every key the rule does not know, and a top key other than agents', () => {
         const text = [
             'agents:',
@@ -220,7 +220,7 @@ describe('a refusal in the agents catalog', () => {
         ]);
     });
 
-    // revert: src/lib/data/sources/config/agents.ts:179 => if (cache !== null && false) {
+    // revert: src/lib/data/sources/config/agents.ts "if (cache !== null && (agent !== 'codex' || flag !== '-m' || !passable(cache))) {" => if (cache !== null && false) {
     it('takes a cache only on the Codex model picker', () => {
         const list = picker('--model', 'a', ['{ id: a, label: A, pass: opus }']);
         list.splice(3, 0, '                cache: models_cache.json');
@@ -229,7 +229,7 @@ describe('a refusal in the agents catalog', () => {
         expect(read.agents[0].lists[0].cache).toBe(undefined);
     });
 
-    // revert: src/lib/data/sources/config/agents.ts:92 => if (doc.errors.length > 99) return { agents: [], findings };
+    // revert: src/lib/data/sources/config/agents.ts "if (doc.errors.length > 0) return { agents: [], findings };" => if (doc.errors.length > 99) return { agents: [], findings };
     it('says a file that does not parse, by the line, and offers nothing from it', () => {
         const read = parseAgents('agents:\n    claude: [\n');
         expect(read.agents).toEqual([]);
@@ -242,7 +242,7 @@ describe('a refusal in the agents catalog', () => {
 });
 
 describe("a Codex account's model cache", () => {
-    // revert: src/lib/data/sources/config/agents.ts:287 => if (slug === '') continue;
+    // revert: src/lib/data/sources/config/agents.ts "if (!passable(slug) || found.some((one) => one.id === slug)) continue;" => if (slug === '') continue;
     it('reads a list or a map holding one, each model by its slug and its display name', () => {
         expect(
             cacheModels({
@@ -266,7 +266,7 @@ describe("a Codex account's model cache", () => {
         expect(cacheModels({ models: 'none' })).toEqual([]);
     });
 
-    // revert: src/lib/data/sources/config/agents.ts:305 => const values = [...models];
+    // revert: src/lib/data/sources/config/agents.ts "const values = [...list.values.filter((one) => one.pass === null), ...models];" => const values = [...models];
     it('puts the cached models in place of the file list, the CLI default kept in front', () => {
         const codex = parseAgents(shipped()).agents[1];
         const merged = withCacheModels(codex, [{ id: 'm1', label: 'M1', pass: 'm1' }]);

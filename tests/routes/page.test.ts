@@ -38,8 +38,8 @@ function pageData() {
 }
 
 describe('the page load', () => {
-    // revert: src/routes/+page.ts:23 => delete
-    // revert: src/routes/+page.ts:29 => return { collections: data.collections, token: data.token };
+    // revert: src/routes/+page.ts "setCatalog(data.text);" => delete
+    // revert: src/routes/+page.ts "return { collections: data.collections, seed: data.seed, token: data.token };" => return { collections: data.collections, token: data.token };
     it('installs the catalogs the server shipped and raises the generation once', () => {
         const before = configGeneration();
         const result = load({ data: pageData() } as unknown as Parameters<typeof load>[0]);
@@ -128,7 +128,7 @@ describe('the page effect that follows a config push', () => {
 });
 
 describe('the page server load', () => {
-    // revert: src/routes/+page.server.ts:42 => host: { name: '', address: '' }
+    // revert: src/routes/+page.server.ts "host: locals.server.host" => host: { name: '', address: '' }
     it('ships the host the server context holds on locals', () => {
         const hub = new Hub();
         // A held push of another configuration is what makes the seed carry the read and its host.

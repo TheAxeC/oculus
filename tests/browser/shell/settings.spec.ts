@@ -25,7 +25,7 @@ function item(page: Page, name: string): ReturnType<Page['locator']> {
 }
 
 test('the Settings view changes the theme', async ({ page }) => {
-    // revert: src/lib/views/system/workbench/Appearance.svelte:64 => onpick={(name: string) => setTheme('light')}
+    // revert: src/lib/views/system/workbench/Appearance.svelte "onpick={(name: string) => setTheme(name)}" => onpick={(name: string) => setTheme('light')}
     await boot(page);
     await showRailPage(page, 'views');
     await settings(page)
@@ -37,7 +37,7 @@ test('the Settings view changes the theme', async ({ page }) => {
 });
 
 test('the Settings view puts the CRT overlay on and takes it off', async ({ page }) => {
-    // revert: src/lib/views/system/workbench/Appearance.svelte:104 => onclick={() => setCrt(crt())}
+    // revert: src/lib/views/system/workbench/Appearance.svelte "onclick={() => setCrt(!crt())}" => onclick={() => setCrt(crt())}
     await boot(page);
     await showRailPage(page, 'views');
     const toggle = settings(page).getByRole('button', { name: t('ui.crt_on'), exact: true });
@@ -50,7 +50,7 @@ test('the Settings view puts the CRT overlay on and takes it off', async ({ page
 });
 
 test('the Settings view keeps the icons on a terminal theme', async ({ page }) => {
-    // revert: src/lib/views/system/workbench/Appearance.svelte:122 => onclick={() => setIcons(icons())}
+    // revert: src/lib/views/system/workbench/Appearance.svelte "onclick={() => setIcons(!icons())}" => onclick={() => setIcons(icons())}
     await boot(page);
     await pickTheme(page, 'mocha');
     const mark = page.locator('nav [data-rail-page="focus"] .glyph');
@@ -68,7 +68,7 @@ test('the Settings view keeps the icons on a terminal theme', async ({ page }) =
 test('the Settings view edits the rail list, its typing is unsaved, and the rail follows', async ({
     page
 }) => {
-    // revert: src/lib/views/system/workbench/RailEditor.svelte:111 => const answer = { ok: true, changed: [], refused: [] };
+    // revert: src/lib/views/system/workbench/RailEditor.svelte "const answer = await writeRail(sent);" => const answer = { ok: true, changed: [], refused: [] };
     const before = readEngineFile(LAYOUT);
     try {
         await boot(page);
@@ -104,7 +104,7 @@ test('the Settings view edits the rail list, its typing is unsaved, and the rail
 test('a rail entry hand-edited to a glyph the vocabulary does not hold draws no button', async ({
     page
 }) => {
-    // revert: src/lib/state/workbench/navigation/rail.ts:37 => const read = readRail(config.rail, arrangementKeys(arrangements));
+    // revert: src/lib/state/workbench/navigation/rail.ts "const read = readRail(config.rail, arrangementKeys(arrangements), glyphNames(config));" => const read = readRail(config.rail, arrangementKeys(arrangements));
     const before = readEngineFile(LAYOUT);
     const entry = '  - { label: "Projects", glyph: paper, page: projects }\n';
     expect(before).toContain(entry);
@@ -122,8 +122,8 @@ test('a rail entry hand-edited to a glyph the vocabulary does not hold draws no 
 });
 
 test('each status bar item opens its view', async ({ page }) => {
-    // revert: src/lib/shell/status/StatusBar.svelte:145 => onclick={() => openView('help')}
-    // revert: src/lib/shell/status/StatusBar.svelte:110 => onclick={() => openView('audit')}
+    // revert: src/lib/shell/status/StatusBar.svelte "title={t('statusbar.server_tip', status.socket)}" +2 => onclick={() => openView('help')}
+    // revert: src/lib/shell/status/StatusBar.svelte "onclick={() => openView('findings')}" => onclick={() => openView('audit')}
     await boot(page);
     await expect(item(page, 'server')).toHaveText(t('statusbar.server_open'));
     await openView(page, 'help', t('views.help'));
@@ -159,8 +159,8 @@ test('each status bar item opens its view', async ({ page }) => {
     );
 });
 
-// revert: src/routes/+page.svelte:122 => findings: 0,
-// revert: src/lib/state/workbench/navigation/status.ts:205 => return snapshot?.findings?.length ?? 0;
+// revert: src/routes/+page.svelte "findings: findingsCount(portfolio(), config())," => findings: 0,
+// revert: src/lib/state/workbench/navigation/status.ts "return allFindings(snapshot, config).length;" => return snapshot?.findings?.length ?? 0;
 test("the findings item counts the Findings view's list, the hub's and the configuration's", async ({
     page
 }) => {
@@ -176,7 +176,7 @@ test("the findings item counts the Findings view's list, the hub's and the confi
 });
 
 test('the unsaved count opens the first unsaved tab on its own page', async ({ page }) => {
-    // revert: src/lib/shell/status/StatusBar.svelte:79 => delete
+    // revert: src/lib/shell/status/StatusBar.svelte "switchPage(found.page);" => delete
     await boot(page);
     await expect(item(page, 'unsaved')).toBeDisabled();
     await showRailPage(page, 'views');

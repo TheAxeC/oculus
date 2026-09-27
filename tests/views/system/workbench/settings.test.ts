@@ -43,7 +43,7 @@ function why(key: string, place: number): string {
 
 describe('the appearance half', () => {
     it('draws the theme menu, the text steps and the three toggles by their names', () => {
-        // revert: src/lib/views/system/workbench/Appearance.svelte:117 => label={t('ui.crt_on')}
+        // revert: src/lib/views/system/workbench/Appearance.svelte "label={t('ui.icons')}" => label={t('ui.crt_on')}
         const body = draw();
         for (const key of ['ui.theme', 'app.text_smaller', 'app.text_larger', 'ui.crt_on']) {
             expect(buttonNamed(body, catalog[key])).not.toBe('');
@@ -51,7 +51,7 @@ describe('the appearance half', () => {
         expect(buttonNamed(body, catalog['ui.icons'])).toContain('aria-pressed="false"');
     });
 
-    // revert: src/lib/views/system/workbench/Appearance.svelte:68 => delete
+    // revert: src/lib/views/system/workbench/Appearance.svelte "<Glyph name={current.glyph} />" => delete
     it('draws the theme in force with its glyph beside plain words', () => {
         const body = draw();
         const from = body.indexOf('data-theme-name');
@@ -61,7 +61,7 @@ describe('the appearance half', () => {
         expect(shown).not.toMatch(/[^\t\n\r\x20-\x7E]/);
     });
 
-    // revert: src/lib/views/system/workbench/Appearance.svelte:35 => glyph: entry.glyph,
+    // revert: src/lib/views/system/workbench/Appearance.svelte "glyph: entry.glyph === '' ? undefined : entry.glyph," => glyph: entry.glyph,
     it('draws a theme whose glyph the vocabulary lacks with its words alone, and does not throw', () => {
         setAppearance({
             ...config,
@@ -80,7 +80,7 @@ describe('the appearance half', () => {
     });
 
     it('offers the reset only once the text size was changed, and no step past its end', () => {
-        // revert: src/lib/views/system/workbench/Appearance.svelte:53 => const canReset = $derived(true);
+        // revert: src/lib/views/system/workbench/Appearance.svelte "const canReset = $derived(textScale() !== null);" => const canReset = $derived(true);
         expect(buttonNamed(draw(), catalog['app.text_reset'])).toMatch(/\sdisabled/);
         client.ui.setTextScale(1.6);
         const grown = draw();
@@ -89,7 +89,7 @@ describe('the appearance half', () => {
     });
 
     it('offers the wallpaper toggle under a theme that has one and not under another', () => {
-        // revert: src/lib/views/system/workbench/Appearance.svelte:106 => {#if true}
+        // revert: src/lib/views/system/workbench/Appearance.svelte "{#if offersWallpaper}" => {#if true}
         client.ui.setTheme('light');
         expect(buttonNamed(draw(), catalog['ui.wallpaper'])).toBe('');
         client.ui.setTheme('mocha');
@@ -99,14 +99,14 @@ describe('the appearance half', () => {
 
 describe('the rail half', () => {
     it('draws one row per button of the file, holding its label', () => {
-        // revert: src/lib/views/system/workbench/RailEditor.svelte:49 => const rows = $derived(draft ?? []);
+        // revert: src/lib/views/system/workbench/RailEditor.svelte "const rows = $derived(draft ?? saved);" => const rows = $derived(draft ?? []);
         const body = draw();
         expect([...body.matchAll(/data-rail-row="/g)]).toHaveLength(13);
         expect(body).toContain('value="Views and Settings"');
     });
 
     it('draws the list being typed rather than the file, and Save offered for it', () => {
-        // revert: src/lib/views/system/workbench/RailEditor.svelte:199 => disabled={true}
+        // revert: src/lib/views/system/workbench/RailEditor.svelte "disabled={!dirty || sending || problems.length > 0}" => disabled={true}
         client.ui.setInstanceState(
             instance.id,
             withRailDraft({}, [{ label: 'Only', glyph: 'compass', page: 'focus' }])
@@ -118,7 +118,7 @@ describe('the rail half', () => {
     });
 
     it('names a row the rule refuses and holds Save back for it', () => {
-        // revert: src/lib/views/system/workbench/RailEditor.svelte:183 => {#if false}
+        // revert: src/lib/views/system/workbench/RailEditor.svelte "{#if problems.length > 0}" => {#if false}
         client.ui.setInstanceState(
             instance.id,
             withRailDraft({}, [
@@ -134,14 +134,14 @@ describe('the rail half', () => {
     });
 
     it('holds Save and Revert back while nothing is being typed', () => {
-        // revert: src/lib/views/system/workbench/RailEditor.svelte:205 => disabled={sending}
+        // revert: src/lib/views/system/workbench/RailEditor.svelte "disabled={draft === null || sending}" => disabled={sending}
         const body = draw();
         expect(buttonNamed(body, catalog['workbench.rail_save'])).toMatch(/\sdisabled/);
         expect(buttonNamed(body, catalog['workbench.rail_revert'])).toMatch(/\sdisabled/);
     });
 
     it('names each control of a row by the place of its button', () => {
-        // revert: src/lib/views/system/workbench/RailEditor.svelte:176 => label={t('workbench.rail_remove', 1)}
+        // revert: src/lib/views/system/workbench/RailEditor.svelte "label={t('workbench.rail_remove', at + 1)}" => label={t('workbench.rail_remove', 1)}
         const body = draw();
         expect(buttonNamed(body, why('workbench.rail_remove', 13))).not.toBe('');
         expect(buttonNamed(body, why('workbench.rail_up', 1))).toMatch(/\sdisabled/);

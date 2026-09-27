@@ -65,7 +65,7 @@ function start(over: Partial<ComposeStart>): ComposeStart {
 }
 
 describe('a composed start', () => {
-    // revert: src/lib/server/machine/pty/compose.ts:182 => if (prompt.trim() !== '') argv.push(prompt);
+    // revert: src/lib/server/machine/pty/compose.ts "if (prompt.trim() !== '') argv.push('--', prompt);" => if (prompt.trim() !== '') argv.push(prompt);
     it('runs the agent with its picks, `--` and the prompt as one last word', () => {
         const composed = compose(
             start({ picks: { model: 'opus', mode: 'plan' }, prompt: '-p a "quoted" $HOME' }),
@@ -91,7 +91,7 @@ describe('a composed start', () => {
         });
     });
 
-    // revert: src/lib/server/machine/pty/compose.ts:130 => if (account === null) {
+    // revert: src/lib/server/machine/pty/compose.ts "if (account === null || sameDir(account.dir, defaultAccountDir(agent))) {" => if (account === null) {
     it("passes a second account's folder through the environment, and takes the default's away", () => {
         const second = compose(start({ account: 'University' }), CHOICES, ACCOUNTS, BIN);
         expect(second.env).toEqual({ CLAUDE_CONFIG_DIR: SECOND });
@@ -102,7 +102,7 @@ describe('a composed start', () => {
         expect(accountEnv('codex', null)).toEqual({ prefix: ['env', '-u', 'CODEX_HOME'], env: {} });
     });
 
-    // revert: src/lib/server/machine/pty/compose.ts:105 => if (found === undefined) return own[0] ?? null;
+    // revert: src/lib/server/machine/pty/compose.ts "if (found === undefined) throw new Error(`account is not a ${agent} account: ${label}`);" => if (found === undefined) return own[0] ?? null;
     it('takes the first account of the agent for an empty label, and refuses one it does not hold', () => {
         expect(accountFor('claude', '', ACCOUNTS)?.label).toBe('Home');
         expect(accountFor('codex', '', ACCOUNTS)?.label).toBe('Work');
@@ -112,7 +112,7 @@ describe('a composed start', () => {
         expect(accountFor('claude', '', [])).toBe(null);
     });
 
-    // revert: src/lib/server/machine/pty/compose.ts:180 => argv.push(image);
+    // revert: src/lib/server/machine/pty/compose.ts "argv.push('-i', image);" => argv.push(image);
     it('attaches a Codex image with -i before the prompt, and only one inside the workspace', () => {
         const image = join(WORK, 'shot.png');
         const codex = compose(
@@ -123,7 +123,7 @@ describe('a composed start', () => {
         );
         expect(codex.argv).toEqual(['codex', '-s', 'workspace-write', '-i', image, '--', 'look']);
         expect(codex.env).toEqual({ CODEX_HOME: SECOND });
-        // revert: src/lib/server/machine/pty/compose.ts:177 => if (typeof image !== 'string') {
+        // revert: src/lib/server/machine/pty/compose.ts "if (typeof image !== 'string' || !isAbsolute(image) || !inside(image, request.cwd)) {" => if (typeof image !== 'string') {
         expect(() =>
             compose(start({ agent: 'codex', images: ['/etc/hosts'] }), CHOICES, ACCOUNTS, BIN)
         ).toThrow('image must be a file inside the workspace: /etc/hosts');
@@ -133,7 +133,7 @@ describe('a composed start', () => {
         expect(() =>
             compose(start({ agent: 'codex', images: [WORK] }), CHOICES, ACCOUNTS, BIN)
         ).toThrow('image must be a file inside the workspace');
-        // revert: src/lib/server/machine/pty/compose.ts:174 => if (images.length > 0 && agent === 'shell') throw new Error('images are attached for codex');
+        // revert: src/lib/server/machine/pty/compose.ts "if (images.length > 0 && agent !== 'codex') throw new Error('images are attached for codex');" => if (images.length > 0 && agent === 'shell') throw new Error('images are attached for codex');
         expect(() => compose(start({ images: [image] }), CHOICES, ACCOUNTS, BIN)).toThrow(
             'images are attached for codex'
         );
@@ -143,14 +143,14 @@ describe('a composed start', () => {
         ).toThrow(`at most ${IMAGES_MAX} images`);
     });
 
-    // revert: src/lib/server/machine/pty/compose.ts:162 => if (/[\u0000-\u0008]/.test(prompt)) {
+    // revert: src/lib/server/machine/pty/compose.ts "if (/[\\u0000-\\u0008\\u000b-\\u001f\\u007f]/.test(prompt)) {" => if (/[\u0000-\u0008]/.test(prompt)) {
     it('refuses a prompt holding a control character, keeps a line break and a tab, and caps its size', () => {
         expect(() => compose(start({ prompt: 'a\u001bb' }), CHOICES, ACCOUNTS, BIN)).toThrow(
             'prompt must not hold control characters'
         );
         const kept = compose(start({ prompt: 'one\n\ttwo' }), CHOICES, ACCOUNTS, BIN);
         expect(kept.argv?.at(-1)).toBe('one\n\ttwo');
-        // revert: src/lib/server/machine/pty/compose.ts:160 => if (prompt.length > PROMPT_MAX * 2) throw new Error(`prompt must be at most ${PROMPT_MAX} chars`);
+        // revert: src/lib/server/machine/pty/compose.ts "if (prompt.length > PROMPT_MAX) throw new Error(`prompt must be at most ${PROMPT_MAX} chars`);" => if (prompt.length > PROMPT_MAX * 2) throw new Error(`prompt must be at most ${PROMPT_MAX} chars`);
         expect(() =>
             compose(start({ prompt: 'x'.repeat(PROMPT_MAX + 1) }), CHOICES, ACCOUNTS, BIN)
         ).toThrow(`prompt must be at most ${PROMPT_MAX} chars`);
@@ -159,7 +159,7 @@ describe('a composed start', () => {
         ).toHaveLength(PROMPT_MAX);
     });
 
-    // revert: src/lib/server/machine/pty/compose.ts:182 => argv.push('--', prompt);
+    // revert: src/lib/server/machine/pty/compose.ts "if (prompt.trim() !== '') argv.push('--', prompt);" => argv.push('--', prompt);
     it('starts an agent with no prompt as the agent alone, with no `--`', () => {
         const bare = compose(start({ prompt: '   ' }), CHOICES, ACCOUNTS, BIN);
         expect(bare.argv).toEqual([
@@ -172,14 +172,14 @@ describe('a composed start', () => {
         ]);
     });
 
-    // revert: src/lib/server/machine/pty/compose.ts:165 => if (request.agent === 'shell') return { argv: null, env: {}, keys: '' };
+    // revert: src/lib/server/machine/pty/compose.ts "if (request.agent === 'shell') return { argv: null, env: {}, keys: prompt };" => if (request.agent === 'shell') return { argv: null, env: {}, keys: '' };
     it('starts a shell with no argument vector, its prompt the keys typed into it', () => {
         expect(
             compose(start({ agent: 'shell', prompt: 'ls -la' }), CHOICES, ACCOUNTS, BIN)
         ).toEqual({ argv: null, env: {}, keys: 'ls -la' });
     });
 
-    // revert: src/lib/server/machine/pty/compose.ts:168 => if (own === undefined) return { argv: null, env: {}, keys: prompt };
+    // revert: src/lib/server/machine/pty/compose.ts "if (own === undefined) throw new Error(`agents.yml offers no ${agent}`);" => if (own === undefined) return { argv: null, env: {}, keys: prompt };
     it('refuses an agent the catalog does not offer, and a pick its picker does not hold', () => {
         expect(() => compose(start({}), [], ACCOUNTS, BIN)).toThrow('agents.yml offers no claude');
         expect(() => compose(start({ picks: { model: 'gpt' } }), CHOICES, ACCOUNTS, BIN)).toThrow(
@@ -187,7 +187,7 @@ describe('a composed start', () => {
         );
     });
 
-    // revert: src/lib/server/machine/pty/compose.ts:197 => agent: agent as ComposeStart['agent'],
+    // revert: src/lib/server/machine/pty/compose.ts "agent: agent === 'claude' || agent === 'codex' ? agent : 'shell'," => agent: agent as ComposeStart['agent'],
     it('reads a request body with every field of the wrong type as missing', () => {
         expect(
             composeRequest({
@@ -211,7 +211,7 @@ describe('a composed start', () => {
 });
 
 describe("a Codex account's models", () => {
-    // revert: src/lib/server/machine/pty/compose.ts:93 => return choices;
+    // revert: src/lib/server/machine/pty/compose.ts "return withCacheModels(choices, cacheModels(readJsonFile(join(account.dir, cached))));" => return choices;
     it('come from the account folder models_cache.json, and the catalog list stands without one', () => {
         const folder = scratchDir('oculus-codex-');
         writeFileSync(
@@ -236,7 +236,7 @@ describe('GET /api/agents', () => {
 
     const local = { ...localDefaults(ENGINE), accounts: ACCOUNTS };
 
-    // revert: src/lib/server/machine/pty/compose.ts:235 => const answer: AgentsAnswer = { agents, accounts: [], findings: read.findings };
+    // revert: src/lib/server/machine/pty/compose.ts "const answer: AgentsAnswer = { agents, accounts, findings: read.findings };" => const answer: AgentsAnswer = { agents, accounts: [], findings: read.findings };
     it('answers the catalog, the accounts and the findings', async () => {
         const response = handleAgents(asked(), ENGINE, local);
         expect(response.status).toBe(200);
@@ -246,12 +246,12 @@ describe('GET /api/agents', () => {
         expect(answer.findings).toEqual([]);
     });
 
-    // revert: src/lib/server/machine/pty/compose.ts:225 => if (false) {
+    // revert: src/lib/server/machine/pty/compose.ts "if (!sameOrigin(request, request.headers.get('host') ?? '')) {" => if (false) {
     it('refuses a request from another origin', () => {
         expect(handleAgents(asked('', 'http://evil.test'), ENGINE, local).status).toBe(403);
     });
 
-    // revert: src/lib/server/machine/pty/compose.ts:233 => return accountChoices(one, own.at(0) ?? null);
+    // revert: src/lib/server/machine/pty/compose.ts "return accountChoices(one, own.find((held) => held.label === asked) ?? own.at(0) ?? null);" => return accountChoices(one, own.at(0) ?? null);
     it("reads the model list of the Codex account it names, and the first account's for a name it does not hold", async () => {
         const folder = scratchDir('oculus-codex-');
         writeFileSync(join(folder, 'models_cache.json'), JSON.stringify([{ slug: 'gpt-8' }]));
@@ -326,7 +326,7 @@ describe('a composed start in a real tmux', () => {
         }
     }
 
-    // revert: src/lib/server/machine/pty/sessions.ts:323 => ...(typeof command === 'string' ? [command] : [command.join(' ')])
+    // revert: src/lib/server/machine/pty/sessions.ts "...(typeof command === 'string' ? [command] : vector(command))" => ...(typeof command === 'string' ? [command] : [command.join(' ')])
     it.skipIf(!TMUX)(
         'hands the prompt to the agent as one argument that no shell reads',
         async () => {
@@ -349,7 +349,7 @@ describe('a composed start in a real tmux', () => {
         }
     );
 
-    // revert: src/lib/server/machine/pty/sessions.ts:300 => return command;
+    // revert: src/lib/server/machine/pty/sessions.ts "return command.length === 1 ? ['env', ...command] : command;" => return command;
     it.skipIf(!TMUX)(
         'runs an agent of one word through `env`, so no shell reads the binary it names',
         async () => {

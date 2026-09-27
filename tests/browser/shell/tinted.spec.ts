@@ -72,8 +72,8 @@ async function wrappedSpan(
 test('a wrapped code span of the manual paints no layer of its own over a wallpaper', async ({
     page
 }) => {
-    // revert: src/lib/views/shared/prose/Markdown.svelte:150 => backdrop-filter: blur(var(--wall-blur));
-    // revert: src/lib/views/system/help/Help.svelte:53 => <Pane title={t('views.help')}>
+    // revert: src/lib/views/shared/prose/Markdown.svelte ":global(body.wall) .doc :global(code) {" +1 => backdrop-filter: blur(var(--wall-blur));
+    // revert: src/lib/views/system/help/Help.svelte "<Pane title={t('views.help')} tinted>" => <Pane title={t('views.help')}>
     await boot(page);
     await pickTheme(page, 'mocha');
     await expect(page.locator('.wallpaper')).toHaveCount(1);
@@ -101,7 +101,7 @@ test('a wrapped code span of the manual paints no layer of its own over a wallpa
 test('a code span of a project document paints no fill of its own over a wallpaper', async ({
     page
 }) => {
-    // revert: src/lib/views/shared/prose/Markdown.svelte:150 => background: color-mix(in srgb, var(--chip) var(--wall-panel), transparent);
+    // revert: src/lib/views/shared/prose/Markdown.svelte ":global(body.wall) .doc :global(code) {" +1 => background: color-mix(in srgb, var(--chip) var(--wall-panel), transparent);
     await boot(page);
     await pickTheme(page, 'mocha');
     await expect(page.locator('.wallpaper')).toHaveCount(1);
@@ -135,8 +135,8 @@ async function blockPaint(scope: Locator): Promise<{ fill: number; filter: strin
 test('a fenced block keeps a surface in a project document and paints none in a hub document', async ({
     page
 }) => {
-    // revert: src/lib/views/shared/prose/Markdown.svelte:46 => <div class="doc" onclick={jump}>
-    // revert: src/lib/views/shared/prose/Markdown.svelte:159 => :global(body.wall) .doc :global(pre) {
+    // revert: src/lib/views/shared/prose/Markdown.svelte "<div class=\"doc\" class:surfaced={surface} onclick={jump}>" => <div class="doc" onclick={jump}>
+    // revert: src/lib/views/shared/prose/Markdown.svelte ":global(body.wall) .doc.surfaced :global(pre) {" => :global(body.wall) .doc :global(pre) {
     const path = 'docs/HPC-UTwente-howto.md';
     writeHubFile(path, '# The cluster\n\n```\nsbatch job.slurm\n```\n');
     try {

@@ -28,7 +28,7 @@ function rewritten(lines: Record<number, string>): string {
     return Array.from({ length: 20 }, (_, at) => `${lines[at + 1] ?? `line ${at + 1}`}\n`).join('');
 }
 
-// revert: src/lib/views/sources/repositories/diff/Diff.svelte:226 => return;
+// revert: src/lib/views/sources/repositories/diff/Diff.svelte "void apply(file, hunk, mode, rows);" => return;
 test('stages a hunk from the side-by-side diff', async ({ page }) => {
     const dir = repository({ 'a.txt': TWENTY });
     writeFileSync(join(dir, 'a.txt'), rewritten({ 10: 'line ten' }));
@@ -61,8 +61,8 @@ test('stages a hunk from the side-by-side diff', async ({ page }) => {
     await expect(pane).toContainText(t('repositories.diff_empty'));
 });
 
-// revert: src/lib/views/sources/repositories/diff/DiffFile.svelte:273 => min-width: max-content;
-// revert: src/lib/views/sources/repositories/diff/DiffFile.svelte:277 => white-space: pre;
+// revert: src/lib/views/sources/repositories/diff/DiffFile.svelte "min-width: 0;" => min-width: max-content;
+// revert: src/lib/views/sources/repositories/diff/DiffFile.svelte "white-space: pre-wrap;" => white-space: pre;
 test('keeps both sides of a long line in the pane, the line wrapped in its own column', async ({
     page
 }) => {
@@ -94,9 +94,9 @@ test('keeps both sides of a long line in the pane, the line wrapped in its own c
     expect(fits).toEqual({ within: true, wrapped: true });
 });
 
-// revert: src/lib/views/sources/repositories/diff/Diff.svelte:205 => return;
+// revert: src/lib/views/sources/repositories/diff/Diff.svelte "if (event.key !== 'F5' || !event.altKey) return;" => return;
 test('moves to the next change by Alt+F5 and back by Shift+Alt+F5', async ({ page }) => {
-    // revert: src/lib/views/sources/repositories/diff/Diff.svelte:207 => go(stepChange(at, changes.length, 1));
+    // revert: src/lib/views/sources/repositories/diff/Diff.svelte "go(stepChange(at, changes.length, event.shiftKey ? -1 : 1));" => go(stepChange(at, changes.length, 1));
     const dir = repository({ 'a.txt': TWENTY });
     // Three changes seven unchanged lines apart, so each is a hunk of its own.
     writeFileSync(join(dir, 'a.txt'), rewritten({ 2: 'line two', 10: 'line ten', 18: 'line 18!' }));
@@ -109,7 +109,7 @@ test('moves to the next change by Alt+F5 and back by Shift+Alt+F5', async ({ pag
         .click();
     const file = diffPane(page).locator('[data-diff-file="a.txt"]');
     await expect(file.locator('.bar')).toHaveCount(3);
-    // revert: src/lib/views/sources/repositories/diff/Diff.svelte:185 => const shownAt = $derived(changes.at(at));
+    // revert: src/lib/views/sources/repositories/diff/Diff.svelte "const shownAt = $derived(at >= 0 ? changes.at(at) : undefined);" => const shownAt = $derived(changes.at(at));
     const current = file.locator('.bar.current');
     // No change is the current one until the keys move to one.
     await expect(current).toHaveCount(0);
@@ -123,7 +123,7 @@ test('moves to the next change by Alt+F5 and back by Shift+Alt+F5', async ({ pag
     await expect(current).toHaveAttribute('data-hunk', '0');
 });
 
-// revert: src/lib/views/sources/repositories/diff/DiffFile.svelte:161 => onclick={() => onhunk(hunk, 'unstage', null)}
+// revert: src/lib/views/sources/repositories/diff/DiffFile.svelte "onclick={() => onhunk(hunk, 'unstage', picked.length > 0 ? picked : null)}" => onclick={() => onhunk(hunk, 'unstage', null)}
 test('unstages the chosen lines of a staged hunk and keeps the rest staged', async ({ page }) => {
     const dir = repository({ 'a.txt': TWENTY });
     writeFileSync(join(dir, 'a.txt'), rewritten({ 5: 'line five', 6: 'line six' }));
@@ -150,7 +150,7 @@ test('unstages the chosen lines of a staged hunk and keeps the rest staged', asy
     expect(gitOut(dir, 'diff', '--name-only')).toBe('a.txt\n');
 });
 
-// revert: src/lib/views/sources/source/Gutter.svelte:96 => onclick={() => undefined}
+// revert: src/lib/views/sources/source/Gutter.svelte "onclick={() => onmark(mark.start)}" => onclick={() => undefined}
 test("a mark in a source tab's gutter opens the diff at that change", async ({ page }) => {
     const dir = repository({ 'a.txt': TWENTY });
     writeFileSync(join(dir, 'a.txt'), rewritten({ 3: 'line three' }));
@@ -185,7 +185,7 @@ async function confirmed(page: Page, question: string): Promise<void> {
     await page.getByRole('button', { name: t('ui.confirm_ok'), exact: true }).click();
 }
 
-// revert: src/lib/views/sources/repositories/diff/Diff.svelte:234 => act: () => undefined
+// revert: src/lib/views/sources/repositories/diff/Diff.svelte "act: () => void apply(file, hunk, mode, rows)" => act: () => undefined
 test('reverts one block in the worktree after a confirm, and leaves the other', async ({
     page
 }) => {
@@ -206,7 +206,7 @@ test('reverts one block in the worktree after a confirm, and leaves the other', 
     expect(gitOut(dir, 'diff', '--cached', '--name-only')).toBe('');
 });
 
-// revert: src/lib/views/sources/repositories/diff/DiffFile.svelte:178 => onclick={() => onhunk(hunk, 'revert', null)}
+// revert: src/lib/views/sources/repositories/diff/DiffFile.svelte "onclick={() => onhunk(hunk, 'revert', picked.length > 0 ? picked : null)}" => onclick={() => onhunk(hunk, 'revert', null)}
 test('reverts the chosen lines of a block after a confirm, and keeps the rest', async ({
     page
 }) => {
@@ -228,7 +228,7 @@ test('reverts the chosen lines of a block after a confirm, and keeps the rest', 
         .toBe(rewritten({ 6: 'line six' }));
 });
 
-// revert: src/lib/views/sources/repositories/diff/Diff.svelte:268 => onclick={() => setMode('side')}
+// revert: src/lib/views/sources/repositories/diff/Diff.svelte "onclick={() => setMode('inline')}" => onclick={() => setMode('side')}
 test('lays the diff out inline by the toggle, one row per line with both numbers', async ({
     page
 }) => {
@@ -250,7 +250,7 @@ test('lays the diff out inline by the toggle, one row per line with both numbers
     await expect(file.locator('.line').filter({ hasText: 'line ten' })).toHaveCount(1);
 });
 
-// revert: src/lib/views/sources/repositories/diff/Diff.svelte:243 => const change = changes.at(at);
+// revert: src/lib/views/sources/repositories/diff/Diff.svelte "const change = shownAt;" => const change = changes.at(at);
 test('opens the file at its top by Open File while no change is current', async ({ page }) => {
     const dir = repository({ 'a.txt': TWENTY });
     writeFileSync(join(dir, 'a.txt'), rewritten({ 18: 'line 18!' }));
@@ -268,7 +268,7 @@ test('opens the file at its top by Open File while no change is current', async 
     await expect(editor).not.toHaveAttribute('data-source-line', /.*/);
 });
 
-// revert: src/lib/views/sources/repositories/diff/Diff.svelte:246 => return 0;
+// revert: src/lib/views/sources/repositories/diff/Diff.svelte "return lines.find((line) => line.new !== null)?.new ?? lines.at(0)?.old ?? 0;" => return 0;
 test('opens the file at the current change by Open File', async ({ page }) => {
     const dir = repository({ 'a.txt': TWENTY });
     writeFileSync(join(dir, 'a.txt'), rewritten({ 18: 'line 18!' }));
@@ -288,7 +288,7 @@ test('opens the file at the current change by Open File', async ({ page }) => {
     );
 });
 
-// revert: src/lib/views/sources/repositories/diff/Diff.svelte:276 => onclick={() => go(at - 1)}
+// revert: src/lib/views/sources/repositories/diff/Diff.svelte "onclick={() => go(stepChange(at, changes.length, -1))}" => onclick={() => go(at - 1)}
 test('goes to the last change by Previous Change and the first by Next while none is current', async ({
     page
 }) => {
@@ -307,7 +307,7 @@ test('goes to the last change by Previous Change and the first by Next while non
     await expect(current).toHaveAttribute('data-hunk', '0');
 });
 
-// revert: src/lib/views/sources/repositories/diff/Diff.svelte:128 => delete
+// revert: src/lib/views/sources/repositories/diff/Diff.svelte "const body = (await response.json()) as { output?: string; error?: string };" +1 => delete
 test('drops the answer of an older read that lands after a newer one', async ({ page }) => {
     const dir = repository({ 'a.txt': TWENTY });
     writeFileSync(join(dir, 'a.txt'), rewritten({ 10: 'line ten' }));
@@ -349,7 +349,7 @@ test('drops the answer of an older read that lands after a newer one', async ({ 
     await expect(pane).not.toContainText('line ten');
 });
 
-// revert: src/lib/views/sources/repositories/diff/Diff.svelte:141 => delete
+// revert: src/lib/views/sources/repositories/diff/Diff.svelte "if (next !== text) chosen = {};" => delete
 test('drops the chosen lines when a read moves the lines, so no other line is staged', async ({
     page
 }) => {

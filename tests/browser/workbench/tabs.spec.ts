@@ -201,7 +201,7 @@ test.describe('the look', () => {
     // `.tab.current`, or the muted colour off `.tab`, in ui/tabs/TabFace.svelte; take the
     // `.tabs::after` filler out of ui/tabs/Tabs.svelte; or drop the `.tab.current .close` or
     // `.tab:hover .close` selector.
-    // revert: src/lib/ui/tabs/TabFace.svelte:169 => border-top-color: transparent;
+    // revert: src/lib/ui/tabs/TabFace.svelte "border-top-color: var(--accent);" => border-top-color: transparent;
     test('a tab stands at the editor tab height, the shown one on an accent line over a gap, its close control where it is pressed', async ({
         page
     }) => {
@@ -266,7 +266,7 @@ test.describe('the look', () => {
 
     // Revert: drop `focused={activePane}` from shell/panes/PaneView.svelte, or the
     // `:global(.strip.unfocused) .tab.current` rule from ui/tabs/TabFace.svelte.
-    // revert: src/lib/ui/tabs/TabFace.svelte:177 => border-top-color: var(--accent);
+    // revert: src/lib/ui/tabs/TabFace.svelte "border-top-color: var(--line);" => border-top-color: var(--accent);
     test("only the active pane's shown tab carries the accent line; another pane's draws it in the line colour", async ({
         page
     }) => {
@@ -292,7 +292,7 @@ test.describe('the look', () => {
 
     // Revert: drop `dirty: unsaved(instance.id)` from shell/panes/PaneView.svelte, drop the tab
     // face's `aria-label` or the `.tab.dirty:not(:hover) .dot` rule from ui/tabs/TabFace.svelte.
-    // revert: src/lib/ui/tabs/TabFace.svelte:290 => display: none;
+    // revert: src/lib/ui/tabs/TabFace.svelte ".tab.dirty:not(:hover) .dot {" +1 => display: none;
     test('a tab holding unsaved text shows a dot in the close control place until hovered, says so in its name, and the Pages view names its page', async ({
         page
     }) => {
@@ -597,7 +597,7 @@ test.describe('the look', () => {
 // two CSS pixels before the left pane's edge to two after the right pane's is pointed at; the
 // handle is caught on every column of the two borders and on none of either pane. A column's
 // position is its index over the ratio, so no sum of fractions drifts across an edge.
-// revert: src/lib/ui/frame/Sash.svelte:135 => left: calc(-1 * var(--sash-reach));
+// revert: src/lib/ui/frame/Sash.svelte "left: calc(-1 * var(--sash-reach-start));" => left: calc(-1 * var(--sash-reach));
 test("a split's handle is caught on the panes' borders alone at every device pixel", async ({
     browser
 }) => {
@@ -657,7 +657,7 @@ test.describe('the one accent line', () => {
 
     // Answer with the active instance of the page on screen and the accent never follows the
     // reader into the page drawn inside it.
-    // revert: src/lib/state/workbench/layout.svelte.ts:498 => return instances.activeInstance();
+    // revert: src/lib/state/workbench/layout.svelte.ts "return instances.activeInstance(attention.touched().id);" => return instances.activeInstance();
     test('one shown tab carries it, and it follows the reader into a page drawn inside another', async ({
         page
     }) => {
@@ -693,7 +693,7 @@ test.describe('the one accent line', () => {
 
         // A press that activates no tab moves the reader all the same: the empty end of a strip
         // changes nothing about the arrangement, and the mark follows it.
-        // revert: src/lib/state/workbench/layout.svelte.ts:249 => const where: Touched = { page: null };
+        // revert: src/lib/state/workbench/layout.svelte.ts "const where: Touched = $state({ page: null });" => const where: Touched = { page: null };
         // Hold where the reader is outside a rune and a press that changes no tree redraws nothing,
         // so the mark stays on the pane the reader has left.
         await pressStrip(host);
@@ -704,7 +704,7 @@ test.describe('the one accent line', () => {
 
     // Leave the folded strip unmarked and the window says nowhere while the rail still opens into
     // the pane the strip stands for.
-    // revert: src/lib/shell/panes/FoldedPane.svelte:52 => const marked = $derived(false);
+    // revert: src/lib/shell/panes/FoldedPane.svelte "const marked = $derived(shown !== null && openingInstance()?.id === shown.id);" => const marked = $derived(false);
     test('a folded pane a view opens into carries it on its strip, and no shown tab does', async ({
         page
     }) => {
@@ -768,7 +768,7 @@ test.describe('a menu list over what is beside it', () => {
 
     // Leave the blurred strip at the depth of the pane body and the view's own blurred box, drawn
     // after the strip inside the pane, covers the list the pane menu opens.
-    // revert: src/lib/ui/tabs/Tabs.svelte:305 => z-index: auto;
+    // revert: src/lib/ui/tabs/Tabs.svelte "z-index: 1;" => z-index: auto;
     test('every opener draws a list that answers a press, in a pane, in the Settings view and on a card', async ({
         page
     }) => {

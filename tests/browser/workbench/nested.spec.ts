@@ -257,7 +257,7 @@ test('a page that would show itself is offered nowhere', async ({ page }) => {
 test('a row carried out of the Pages view onto a pane edge shows that page there', async ({
     page
 }) => {
-    // revert: src/lib/views/system/workbench/Pages.svelte:150 => delete
+    // revert: src/lib/views/system/workbench/Pages.svelte "startPage(held.id, name, { x: event.clientX, y: event.clientY });" => delete
     await boot(page);
     await twoPages(page);
     await openView(page, 'pages', t('views.pages'));

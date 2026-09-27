@@ -45,7 +45,7 @@ async function pick(page: Page, key: string, label: string): Promise<void> {
     await page.getByRole('menuitem', { name: label, exact: true }).click();
 }
 
-// revert: src/lib/server/machine/pty/routes.ts:227 => if (composed.keys.trim() === 'never') await steerTerminal(id, composed.keys, options);
+// revert: src/lib/server/machine/pty/routes.ts "if (composed.keys.trim() !== '') await steerTerminal(id, composed.keys, options);" => if (composed.keys.trim() === 'never') await steerTerminal(id, composed.keys, options);
 test('a Shell start hides the agent pickers and runs its prompt as the first command', async ({
     page
 }) => {
@@ -64,7 +64,7 @@ test('a Shell start hides the agent pickers and runs its prompt as the first com
     });
 });
 
-// revert: src/lib/server/machine/pty/compose.ts:182 => if (prompt.trim() !== '') argv.push('--', ...prompt.split(' '));
+// revert: src/lib/server/machine/pty/compose.ts "if (prompt.trim() !== '') argv.push('--', prompt);" => if (prompt.trim() !== '') argv.push('--', ...prompt.split(' '));
 test('a Claude start passes the picked flags and the prompt as one argument no shell reads', async ({
     page
 }) => {
@@ -87,7 +87,7 @@ test('a Claude start passes the picked flags and the prompt as one argument no s
     const flags = ['--model', 'opus', '--effort', 'high', '--permission-mode', 'manual'];
     expect(words).toEqual([...flags, '--', prompt]);
     expect(existsSync(marker)).toBe(false);
-    // revert: src/lib/server/machine/pty/compose.ts:131 => return { prefix: [], env: {} };
+    // revert: src/lib/server/machine/pty/compose.ts "return { prefix: ['env', '-u', variable], env: {} };" => return { prefix: [], env: {} };
     expect(startedEnv('claude')).toEqual([{}]);
     await expect(shown.locator('[data-terminal]')).toHaveCount(1);
 
@@ -99,14 +99,14 @@ test('a Claude start passes the picked flags and the prompt as one argument no s
     );
 });
 
-// revert: src/lib/server/machine/pty/compose.ts:133 => return { prefix: [], env: {} };
+// revert: src/lib/server/machine/pty/compose.ts "return { prefix: [], env: { [variable]: resolve(account.dir) } };" => return { prefix: [], env: {} };
 test('a Claude start with the second account and Plan runs in that account with that mode', async ({
     page
 }) => {
     const work = join(dirname(servedArgvDir()), 'accounts', 'claude-work');
     await composer(page);
     await pick(page, 'account', 'work');
-    // revert: src/lib/server/machine/pty/compose.ts:170 => const flags = choiceArgs(accountChoices(own, account), {});
+    // revert: src/lib/server/machine/pty/compose.ts "const flags = choiceArgs(accountChoices(own, account), request.picks);" => const flags = choiceArgs(accountChoices(own, account), {});
     await pick(page, 'mode', 'Plan');
     const shown = page.locator(SHOWN_VIEW);
     const box = shown.getByRole('textbox', { name: t('composer.prompt') });
@@ -118,7 +118,7 @@ test('a Claude start with the second account and Plan runs in that account with 
     expect(startedEnv('claude')).toEqual([{ CLAUDE_CONFIG_DIR: work }]);
 });
 
-// revert: src/lib/views/sessions/terminal/TerminalPicker.svelte:37 => else undefined;
+// revert: src/lib/views/sessions/terminal/TerminalPicker.svelte "else pinInstance(instance, choice.terminal, choice.label);" => else undefined;
 test('the Terminal bar picks among the terminals oculus runs, and pins a tab of its own to the pick', async ({
     page
 }) => {

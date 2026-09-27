@@ -144,7 +144,7 @@ describe('the files of a project', () => {
 });
 
 describe('the project files a filter keeps', () => {
-    // revert: src/lib/state/sources/files.svelte.ts:24 => return text === '' ? all : all.filter((row) => row.path.includes(text));
+    // revert: src/lib/state/sources/files.svelte.ts "return text === '' ? all : all.filter((row) => row.path.toLowerCase().includes(text));" => return text === '' ? all : all.filter((row) => row.path.includes(text));
     it('are the rows whose path holds the query, case and surrounding space aside', () => {
         const rows = [
             { path: 'manuscript/Main.tex', size: 10, mtime: 1 },

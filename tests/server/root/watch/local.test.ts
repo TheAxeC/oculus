@@ -36,7 +36,7 @@ function engine(): { root: string; config: string } {
     return { root, config };
 }
 
-// revert: src/lib/server/root/watch/local.ts:37 => if (closed) return;
+// revert: src/lib/server/root/watch/local.ts "if (closed || filename !== LOCAL_NAME) return;" => if (closed) return;
 it('calls once for a local.yml written by a rename, and never for another file', async () => {
     const { root, config } = engine();
     const changed = vi.fn();
@@ -53,7 +53,7 @@ it('calls once for a local.yml written by a rename, and never for another file',
     expect(changed).toHaveBeenCalledTimes(1);
 });
 
-// revert: src/lib/server/root/watch/local.ts:52 => delete
+// revert: src/lib/server/root/watch/local.ts "closed = true;" +1 => delete
 it('makes no call after it is closed', async () => {
     const { root, config } = engine();
     const changed = vi.fn();

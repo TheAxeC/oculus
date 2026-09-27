@@ -157,12 +157,12 @@ function scratch(body: string): string {
 
 describe('an absence asserted with no reason', () => {
     it('is held to the counts the tree had when the check landed', () => {
-        // revert: tests/checks/tree/allow-negatives.ts:13 => delete
+        // revert: tests/checks/tree/allow-negatives.ts "'browser/sources/files-forms.spec.ts': [" +1 => delete
         expect(findGrowth(TESTS, ['views', 'browser'])).toEqual([]);
     });
 
     it('catches each of the four shapes', () => {
-        // revert: tests/checks/tree/negatives.test.ts:35 => const ABSENCE = /\.not\.toContain\(/;
+        // revert: tests/checks/tree/negatives.test.ts "const ABSENCE = /\\.not\\.toContain\\(|\\.not\\.toHaveAttribute\\(|\\.not\\.toBeVisible\\(|toHaveCount\\(0\\)/;" => const ABSENCE = /\.not\.toContain\(/;
         const dir = scratch(
             [
                 "it('draws none of it', () => {",
@@ -182,7 +182,7 @@ describe('an absence asserted with no reason', () => {
     });
 
     it('passes an absence whose reason stands above it, in either comment shape', () => {
-        // revert: tests/checks/tree/negatives.test.ts:46 => return false;
+        // revert: tests/checks/tree/negatives.test.ts "if (!lines.every(commentLine)) return false;" => return false;
         const dir = scratch(
             [
                 "it('draws none of it', () => {",
@@ -197,7 +197,7 @@ describe('an absence asserted with no reason', () => {
     });
 
     it('refuses a comment that restates the assertion, and one too short to say anything', () => {
-        // revert: tests/fixtures/reason.ts:50 => if (words.length < 0) return false;
+        // revert: tests/fixtures/reason.ts "if (words.length < 4) return false;" => if (words.length < 0) return false;
         const dir = scratch(
             [
                 "it('draws none of it', () => {",
@@ -227,7 +227,7 @@ describe('an absence asserted with no reason', () => {
     });
 
     it('reads the literals of a line holding two strings, and not the gap between them', () => {
-        // revert: tests/fixtures/reason.ts:31 => if (held.length >= 8) found.push(text.slice(at + 1, end - 1));
+        // revert: tests/fixtures/reason.ts "if (held.length >= 8) found.push(held);" => if (held.length >= 8) found.push(text.slice(at + 1, end - 1));
         const line =
             "await expect(page.getByRole('tab', { name: 'literature-radar.yml' })).toHaveCount(0);";
         expect(literalsIn(line)).toEqual(['literature-radar.yml']);
@@ -247,7 +247,7 @@ describe('an absence asserted with no reason', () => {
     });
 
     it('holds one entry for one absence, so explaining one buys no room for another', () => {
-        // revert: tests/checks/tree/negatives.test.ts:127 => left.push(key);
+        // revert: tests/checks/tree/negatives.test.ts "left.splice(at, 1);" => left.push(key);
         const dir = scratch(
             [
                 "it('draws none of it', () => {",
@@ -276,12 +276,12 @@ describe('an absence asserted with no reason', () => {
         ]);
     });
 
-    // revert: tests/checks/tree/negatives.test.ts:75 => found[rel] = [...(found[rel] ?? []), literalsIn(lines[at]).join(' | ')];
+    // revert: tests/checks/tree/negatives.test.ts "else if (/\\.(test|spec)\\.ts$/.test(entry.name)) found.push(rel);" => found[rel] = [...(found[rel] ?? []), literalsIn(lines[at]).join(' | ')];
     // Revert: in bareAbsences of tests/checks/tree/negatives.test.ts, key an absence naming no
     // literal on the empty string, and two of them in one file become interchangeable: explaining
     // one frees the slot the other new one fills.
     it('tells two absences apart when neither names a literal to key on', () => {
-        // revert: tests/checks/tree/negatives.test.ts:98 => found[rel] = [...(found[rel] ?? []), ''];
+        // revert: tests/checks/tree/negatives.test.ts "found[rel] = [...(found[rel] ?? []), absenceKey(lines[at])];" => found[rel] = [...(found[rel] ?? []), ''];
         const dir = scratch(
             [
                 "it('draws none of it', () => {",
@@ -308,7 +308,7 @@ describe('an absence asserted with no reason', () => {
     // absence stands under, and the list keeps a line for an absence that gained its reason long
     // ago.
     it('says when an entry stands for an absence that is not there any more', () => {
-        // revert: tests/checks/tree/negatives.test.ts:130 => found.push('');
+        // revert: tests/checks/tree/negatives.test.ts "found.push(`${rel} lists an absence that is not there any more: ${stale}`);" => found.push('');
         const dir = scratch(
             [
                 "it('draws none of it', () => {",
@@ -326,13 +326,13 @@ describe('an absence asserted with no reason', () => {
     });
 
     it('holds the allow list to files the tree still has', () => {
-        // revert: tests/checks/tree/negatives.test.ts:75 => delete
+        // revert: tests/checks/tree/negatives.test.ts "else if (/\\.(test|spec)\\.ts$/.test(entry.name)) found.push(rel);" => delete
         const held = new Set([...testFiles(TESTS, 'views'), ...testFiles(TESTS, 'browser')]);
         expect(Object.keys(NEGATIVES).filter((rel) => !held.has(rel))).toEqual([]);
     });
 
     it('reads a reason written over two lines as one', () => {
-        // revert: tests/checks/tree/negatives.test.ts:65 => delete
+        // revert: tests/checks/tree/negatives.test.ts "while (from > 0 && commentLine(lines[from - 1])) from -= 1;" => delete
         const lines = [
             '    // the tab was closed before this ran, so what it drew',
             '    // is gone',

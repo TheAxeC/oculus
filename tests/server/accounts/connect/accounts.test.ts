@@ -99,7 +99,7 @@ async function body(answer: Response): Promise<Record<string, unknown>> {
 }
 
 describe('an account added from the page', () => {
-    // revert: src/lib/server/accounts/connect/actions.ts:192 => delete
+    // revert: src/lib/server/accounts/connect/actions.ts "writeAccountFile(target.dir, row);" +1 => delete
     it('writes its row with the comments kept, makes its file 0600 and opens its consent', async () => {
         const at = machine();
         writeProviderHalf(at.providerDir, {
@@ -128,7 +128,7 @@ describe('an account added from the page', () => {
         expect(new URL(opened[0]).searchParams.get('client_id')).toBe(GOOGLE_ID);
     });
 
-    // revert: src/lib/server/accounts/connect/actions.ts:184 => if (!providerReady(target.providerDir, row.provider)) return json(400, { error: 'x' });
+    // revert: src/lib/server/accounts/connect/actions.ts "if (!providerReady(target.providerDir, row.provider)) return json(400, { error: 'setup' });" => if (!providerReady(target.providerDir, row.provider)) return json(400, { error: 'x' });
     it('answers setup and writes nothing while its provider has no client half', async () => {
         const at = machine();
         const opened: string[] = [];
@@ -154,7 +154,7 @@ describe('an account added from the page', () => {
         expect(opened).toEqual([]);
     });
 
-    // revert: src/lib/server/accounts/connect/actions.ts:181 => if (false) return json(400, { error: refused });
+    // revert: src/lib/server/accounts/connect/actions.ts "if (refused !== null) return json(400, { error: refused });" => if (false) return json(400, { error: refused });
     it('refuses a label taken in the same list, and one of the wrong shape, writing nothing', async () => {
         const at = machine();
         writeProviderHalf(at.providerDir, { provider: 'microsoft', clientId: MS_ID });
@@ -174,7 +174,7 @@ describe('an account added from the page', () => {
         expect(readFileSync(at.file, 'utf8')).toBe(LOCAL);
     });
 
-    // revert: src/lib/server/accounts/connect/actions.ts:144 => if (credentials === null) return json(400, { error: 'x' });
+    // revert: src/lib/server/accounts/connect/actions.ts "if (credentials === null) return json(400, { error: 'setup' });" => if (credentials === null) return json(400, { error: 'x' });
     it('answers setup to a Connect press on an account with no client half anywhere', async () => {
         const at = machine();
         const opened: string[] = [];
@@ -188,7 +188,7 @@ describe('an account added from the page', () => {
 });
 
 describe('an account removed from the page', () => {
-    // revert: src/lib/server/accounts/connect/actions.ts:227 => delete
+    // revert: src/lib/server/accounts/connect/actions.ts "removeAccountFile(target.dir, account);" => delete
     it('drops its row and its file, and keeps the provider file for the other accounts', async () => {
         const at = machine();
         writeProviderHalf(at.providerDir, { provider: 'microsoft', clientId: MS_ID });
@@ -216,7 +216,7 @@ describe('an account removed from the page', () => {
 });
 
 describe('the credential files', () => {
-    // revert: src/lib/server/accounts/connect/store.ts:165 => let half = undefined;
+    // revert: src/lib/server/accounts/connect/store.ts "let half = halfIn(file, own, account.provider);" => let half = undefined;
     it("reads an account file's own half before its provider's", () => {
         const at = machine();
         writeProviderHalf(at.providerDir, {
@@ -238,7 +238,7 @@ describe('the credential files', () => {
         });
     });
 
-    // revert: src/lib/server/accounts/connect/store.ts:185 => delete
+    // revert: src/lib/server/accounts/connect/store.ts "if (existsSync(file)) chmodSync(file, MODE);" => delete
     it('writes a provider half at 0600 in a 0700 folder, tightening a file left readable', () => {
         const at = machine();
         writeProviderHalf(at.providerDir, { provider: 'microsoft', clientId: MS_ID });
@@ -256,7 +256,7 @@ describe('the credential files', () => {
         expect(statSync(at.providerDir).mode & 0o777).toBe(0o700);
     });
 
-    // revert: src/lib/server/accounts/connect/store.ts:214 => delete
+    // revert: src/lib/server/accounts/connect/store.ts "if (!existsSync(credentialFile(dir, account))) return;" => delete
     it('keeps a rotated refresh token, and writes none for an account whose file has gone', () => {
         const at = machine();
         const file = credentialFile(at.calendarDir, WORK);
@@ -269,7 +269,7 @@ describe('the credential files', () => {
         expect(JSON.parse(readFileSync(file, 'utf8'))).toEqual({ refresh_token: 'rotated' });
     });
 
-    // revert: src/lib/server/accounts/connect/oauth.ts:277 => delete
+    // revert: src/lib/server/accounts/connect/oauth.ts "keep?.(answer.refreshToken);" => delete
     it('hands a refresh token the provider rotates to the keeper, and only a new one', async () => {
         const answers = [
             { access_token: 'a', refresh_token: 'second' },
@@ -296,7 +296,7 @@ describe('the credential files', () => {
 });
 
 describe('the account setup page', () => {
-    // revert: src/lib/server/accounts/connect/setup.ts:58 => scopes: { calendar: { google: '', microsoft: '' }, mail: { google: '', microsoft: '' } }
+    // revert: src/lib/server/accounts/connect/setup.ts "scopes: SCOPE" => scopes: { calendar: { google: '', microsoft: '' }, mail: { google: '', microsoft: '' } }
     it('reads the redirects on the served port and the scopes the connect flow asks for', async () => {
         const at = machine();
         writeProviderHalf(at.providerDir, {
@@ -326,7 +326,7 @@ describe('the account setup page', () => {
         expect(text).not.toContain(SECRET);
     });
 
-    // revert: src/lib/server/accounts/connect/setup.ts:74 => if (false) return json(400, { error: checked.refused });
+    // revert: src/lib/server/accounts/connect/setup.ts "if ('refused' in checked) return json(400, { error: checked.refused });" => if (false) return json(400, { error: checked.refused });
     it('refuses a Google id of the wrong shape in a code, and writes nothing', async () => {
         const at = machine();
         const answer = await handleSetupWrite(
@@ -343,7 +343,7 @@ describe('the account setup page', () => {
         expect(existsSync(at.providerDir)).toBe(false);
     });
 
-    // revert: src/lib/server/accounts/connect/setup.ts:76 => delete
+    // revert: src/lib/server/accounts/connect/setup.ts "await chained(target.writes, () => writeProviderHalf(target.providerDir, checked.half));" => delete
     it('saves a half behind the token, reads every account again, and answers no field of it', async () => {
         const at = machine();
         const refresh = vi.fn(() => Promise.resolve());
@@ -384,7 +384,7 @@ function settle(): Promise<void> {
 }
 
 describe('the write chain', () => {
-    // revert: src/lib/server/accounts/connect/actions.ts:209 => const written = await addRow(LIST[kind], target, record);
+    // revert: src/lib/server/accounts/connect/actions.ts "const written = await chained(target.book.writes, () => addRow(LIST[kind], target, record));" => const written = await addRow(LIST[kind], target, record);
     it('holds two Adds behind a write in flight, then writes both in the order they came', async () => {
         const at = machine();
         writeProviderHalf(at.providerDir, {
@@ -413,7 +413,7 @@ describe('the write chain', () => {
         );
     });
 
-    // revert: src/lib/server/accounts/connect/actions.ts:246 => return removeRow(LIST[kind], target, account);
+    // revert: src/lib/server/accounts/connect/actions.ts "return chained(target.book.writes, () => removeRow(LIST[kind], target, account));" => return removeRow(LIST[kind], target, account);
     it('holds a Remove behind an Add in flight, so it edits the file the Add wrote', async () => {
         const at = machine();
         writeProviderHalf(at.providerDir, {
@@ -442,7 +442,7 @@ describe('the write chain', () => {
         );
     });
 
-    // revert: src/lib/server/accounts/connect/setup.ts:76 => writeProviderHalf(target.providerDir, checked.half);
+    // revert: src/lib/server/accounts/connect/setup.ts "await chained(target.writes, () => writeProviderHalf(target.providerDir, checked.half));" => writeProviderHalf(target.providerDir, checked.half);
     it('holds two Saves behind a write in flight, so the later one is the half that stays', async () => {
         const at = machine();
         const target = setupTarget(at);

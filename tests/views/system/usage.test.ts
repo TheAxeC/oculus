@@ -112,7 +112,7 @@ function cadence(minutes: number): void {
 }
 
 describe('Usage', () => {
-    // revert: src/lib/views/system/usage/Usage.svelte:131 => if (refresher.state !== 'down') {
+    // revert: src/lib/views/system/usage/Usage.svelte "if (refresher.state === 'refreshing') {" => if (refresher.state !== 'down') {
     it('renders the refreshing refresher state while a refresh runs, and only then', () => {
         expect(draw(refreshPayload('refreshing'))).toContain('refresher: refreshing');
         cadence(10);
@@ -121,7 +121,7 @@ describe('Usage', () => {
         expect(healthy).not.toContain('refreshing');
     });
 
-    // revert: src/lib/views/system/usage/Usage.svelte:153 => return t('usage.refresher_ok_last', last);
+    // revert: src/lib/views/system/usage/Usage.svelte "return t('usage.refresher_ok', last, clock(next));" => return t('usage.refresher_ok_last', last);
     it('names the last refresh and the next one, the next at the configured cadence', () => {
         cadence(10);
         const payload = refreshPayload('running', true, undefined, '2026-09-13T12:30:00Z');
@@ -130,19 +130,19 @@ describe('Usage', () => {
         expect(draw(payload)).toContain('refresher: ok, last 14:30, next 14:55');
     });
 
-    // revert: src/lib/views/system/usage/Usage.svelte:152 => delete
+    // revert: src/lib/views/system/usage/Usage.svelte "if (next === '') return t('usage.refresher_ok_last', last);" => delete
     it('names the last refresh alone before the cadence is delivered', () => {
         const html = draw(refreshPayload('running', true, undefined, '2026-09-13T12:30:00Z'));
         expect(html).toContain('refresher: ok, last 14:30<');
     });
 
-    // revert: src/lib/views/system/usage/Usage.svelte:150 => if (last === '') return t('usage.refresher_ok_last', last);
+    // revert: src/lib/views/system/usage/Usage.svelte "if (last === '') return t('usage.refresher_ok_bare');" => if (last === '') return t('usage.refresher_ok_last', last);
     it('says ok alone before a refresh has a time', () => {
         cadence(10);
         expect(draw(refreshPayload('running'))).toContain('refresher: ok<');
     });
 
-    // revert: src/lib/views/system/usage/Usage.svelte:135 => const stale = false;
+    // revert: src/lib/views/system/usage/Usage.svelte "const stale = !refresher.renewed && account.fetchedAt !== undefined;" => const stale = false;
     it('says when a refresh renewed nothing and when Claude Code renews the figures', () => {
         const html = draw(refreshPayload('running', false, '2026-09-13T12:34:00Z'));
         expect(html).toContain(

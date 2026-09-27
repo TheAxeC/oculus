@@ -92,7 +92,7 @@ async function removeRow(page: Page, kind: 'calendar' | 'mail', key: string): Pr
 test('the setup page lists both Microsoft redirect addresses on the served port', async ({
     page
 }) => {
-    // revert: src/lib/server/accounts/connect/setup.ts:56 => mail: callbackUrl(8787, 'mail')
+    // revert: src/lib/server/accounts/connect/setup.ts "mail: callbackUrl(target.port, 'mail')" => mail: callbackUrl(8787, 'mail')
     await boot(page);
     await openSetup(page);
     // The served local.yml names the port the server listens on, which is the one this run serves:
@@ -114,7 +114,7 @@ test('the setup page lists both Microsoft redirect addresses on the served port'
 test('the setup page saves a Google half at 0600, says it is set up and draws no secret', async ({
     page
 }) => {
-    // revert: src/lib/views/personal/account-setup/HalfForm.svelte:35 => delete
+    // revert: src/lib/views/personal/account-setup/HalfForm.svelte "clientSecret = '';" => delete
     clearGoogleHalf();
     await boot(page);
     await openSetup(page);
@@ -141,7 +141,7 @@ test('the setup page saves a Google half at 0600, says it is set up and draws no
 test('an Add with no Google half opens the setup page, and its Save adds the account', async ({
     page
 }) => {
-    // revert: src/lib/state/life/accounts.svelte.ts:192 => return '';
+    // revert: src/lib/state/life/accounts.svelte.ts "return add(held.kind, held.provider, held.label);" => return '';
     clearGoogleHalf();
     await boot(page);
     await openView(page, 'calendar', t('views.calendar'));
@@ -169,7 +169,7 @@ test('an Add with no Google half opens the setup page, and its Save adds the acc
 test('a calendar account added from the Calendar starts its consent with the saved client id', async ({
     page
 }) => {
-    // revert: src/lib/server/accounts/connect/actions.ts:211 => return json(200, { ok: true });
+    // revert: src/lib/server/accounts/connect/actions.ts "return startConsent(kind, target, written);" => return json(200, { ok: true });
     clearGoogleHalf();
     await boot(page);
     await setUpGoogle(page);
@@ -193,7 +193,7 @@ test('a calendar account added from the Calendar starts its consent with the sav
 test('a mail account added from the Inbox needs no second setup of the provider', async ({
     page
 }) => {
-    // revert: src/lib/server/accounts/connect/store.ts:169 => half = undefined;
+    // revert: src/lib/server/accounts/connect/store.ts "half = record === null ? undefined : halfIn(shared, record, account.provider);" => half = undefined;
     clearGoogleHalf();
     await boot(page);
     await setUpGoogle(page);
@@ -216,7 +216,7 @@ test('a mail account added from the Inbox needs no second setup of the provider'
 test('an account removed from its row menu loses its row and its file, and the half stays', async ({
     page
 }) => {
-    // revert: src/lib/views/shared/accounts/AccountList.svelte:153 => onconfirm={() => (asking = null)}
+    // revert: src/lib/views/shared/accounts/AccountList.svelte "onconfirm={() => void removeAsked()}" => onconfirm={() => (asking = null)}
     clearGoogleHalf();
     await boot(page);
     await setUpGoogle(page);
@@ -246,7 +246,7 @@ test('an account removed from its row menu loses its row and its file, and the h
 test("an account whose own file carries its client id says so in Remove's confirm, and loses it", async ({
     page
 }) => {
-    // revert: src/lib/server/accounts/calendar/poll.ts:167 => delete
+    // revert: src/lib/server/accounts/calendar/poll.ts "...(hasOwnHalf(dir, account) ? { ownHalf: true } : {})," => delete
     clearGoogleHalf();
     await boot(page);
     await setUpGoogle(page);

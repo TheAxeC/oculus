@@ -158,7 +158,7 @@ describe('item', () => {
 });
 
 describe('numericSetting', () => {
-    // revert: src/lib/data/helpers/guards.ts:78 => return typeof value === 'number' ? value : null;
+    // revert: src/lib/data/helpers/guards.ts "return typeof value === 'number' && Number.isFinite(value) ? value : null;" => return typeof value === 'number' ? value : null;
     it('is a finite number the config holds, and null for one it lacks or one that is not finite', () => {
         expect(numericSetting({ leads_badge_days: 14 }, 'leads_badge_days')).toBe(14);
         expect(numericSetting({}, 'leads_badge_days')).toBe(null);

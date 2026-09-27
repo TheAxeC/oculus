@@ -21,13 +21,13 @@ function withDocs(
 }
 
 describe('the documents of a project', () => {
-    // revert: src/lib/state/boards/board/items.ts:171 => return project.docs.some((doc) => doc.name === 'README.md');
+    // revert: src/lib/state/boards/board/items.ts "return project.docs.some((doc) => doc.name === 'README.md' && doc.present);" => return project.docs.some((doc) => doc.name === 'README.md');
     it('have a README to open only when it is there', () => {
         expect(hasReadme(withDocs([{ name: 'README.md', present: true }]))).toBe(true);
         expect(hasReadme(withDocs([{ name: 'README.md', present: false }]))).toBe(false);
     });
 
-    // revert: src/lib/state/boards/board/items.ts:180 => .filter((doc) => doc.name.endsWith('.md'))
+    // revert: src/lib/state/boards/board/items.ts ".filter((doc) => doc.present && doc.name.endsWith('.md'))" => .filter((doc) => doc.name.endsWith('.md'))
     it('draw the Markdown that is there, then the narrative when the project has one', () => {
         const docs = [
             { name: 'README.md', present: true },
@@ -42,7 +42,7 @@ describe('the documents of a project', () => {
         expect(absentDocs(withDocs(docs)).map((one) => one.name)).toEqual(['NOTES.md']);
     });
 
-    // revert: src/lib/state/boards/board/items.ts:193 => return new Date(newest).toISOString().slice(0, 10);
+    // revert: src/lib/state/boards/board/items.ts "return newest === 0 ? '' : new Date(newest).toISOString().slice(0, 10);" => return new Date(newest).toISOString().slice(0, 10);
     it('were last written on the day of the newest, and on no day when none says when', () => {
         const day = Date.UTC(2026, 8, 20, 12);
         expect(

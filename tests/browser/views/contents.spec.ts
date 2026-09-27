@@ -152,8 +152,8 @@ async function bootSplit(page: Page, path: string, label: string): Promise<void>
 test('a contents entry of a hub document scrolls its own box to the heading and nothing else', async ({
     page
 }) => {
-    // revert: src/lib/views/shared/prose/jump.ts:29 => const box = document.body;
-    // revert: src/lib/views/shared/prose/jump.ts:28 => delete
+    // revert: src/lib/views/shared/prose/jump.ts "const box = link.closest('[data-instance]');" => const box = document.body;
+    // revert: src/lib/views/shared/prose/jump.ts "event.preventDefault();" => delete
     if (HPC === undefined) throw new Error('config/layout.yml names no HPC document');
     writeHubFile(HPC.path, HOWTO);
     try {
@@ -190,7 +190,7 @@ test('a contents entry of a hub document scrolls its own box to the heading and 
 test('a link to a fragment no heading of the document carries changes nothing', async ({
     page
 }) => {
-    // revert: src/lib/views/shared/prose/jump.ts:28 => delete
+    // revert: src/lib/views/shared/prose/jump.ts "event.preventDefault();" => delete
     if (HPC === undefined) throw new Error('config/layout.yml names no HPC document');
     writeHubFile(HPC.path, HOWTO);
     try {
@@ -213,7 +213,7 @@ test('a link to a fragment no heading of the document carries changes nothing', 
 test('a contents entry of the manual reaches a heading drawn in a later run of its prose', async ({
     page
 }) => {
-    // revert: src/lib/views/shared/prose/jump.ts:29 => const box = link.closest('.doc');
+    // revert: src/lib/views/shared/prose/jump.ts "const box = link.closest('[data-instance]');" => const box = link.closest('.doc');
     const kept = readEngineFile('HELP.md');
     writeEngineFile('HELP.md', MANUAL);
     try {
@@ -247,7 +247,7 @@ test('a contents entry of the manual reaches a heading drawn in a later run of i
 test("a contents entry of a project's document scrolls the project tab to the heading", async ({
     page
 }) => {
-    // revert: src/lib/views/shared/prose/jump.ts:33 => const scroller = box as HTMLElement;
+    // revert: src/lib/views/shared/prose/jump.ts "const scroller = scrollerOf(heading, box);" => const scroller = box as HTMLElement;
     const readme = `${BANDITS}/README.md`;
     const kept = readHubFile(readme);
     writeHubFile(readme, ['[TOC]', kept, '## Deep in the readme', filler(80)].join('\n\n'));
@@ -275,8 +275,8 @@ test("a contents entry of a project's document scrolls the project tab to the he
 test('a heading named Method keeps its id and is reached from the list and from a link by hand', async ({
     page
 }) => {
-    // revert: src/lib/data/prose/markdown.ts:24 => export const HEADING_PREFIX = '';
-    // revert: src/lib/views/shared/prose/jump.ts:46 => const wanted = plain;
+    // revert: src/lib/data/prose/markdown.ts "export const HEADING_PREFIX = 'user-content-';" => export const HEADING_PREFIX = '';
+    // revert: src/lib/views/shared/prose/jump.ts "const wanted = [...plain, ...plain.map((one) => `${HEADING_ID_PREFIX}${one}`)];" => const wanted = plain;
     if (HPC === undefined) throw new Error('config/layout.yml names no HPC document');
     writeHubFile(HPC.path, METHOD);
     try {
@@ -305,7 +305,7 @@ test('a heading named Method keeps its id and is reached from the list and from 
 test('a document too short to scroll scrolls nothing of the shell around its pane', async ({
     page
 }) => {
-    // revert: src/lib/views/shared/prose/jump.ts:68 => const limit = document.documentElement;
+    // revert: src/lib/views/shared/prose/jump.ts "const limit = box.closest('[data-scroll]') ?? box;" => const limit = document.documentElement;
     if (HPC === undefined) throw new Error('config/layout.yml names no HPC document');
     writeHubFile(
         HPC.path,
@@ -354,7 +354,7 @@ test('a document too short to scroll scrolls nothing of the shell around its pan
 test("a contents entry of the source tab's preview scrolls the preview to the heading", async ({
     page
 }) => {
-    // revert: src/lib/ui/html.ts:332 => return sanitise(marked.parse(text, { async: false }));
+    // revert: src/lib/ui/html.ts "return sanitise(renderDocument(text));" => return sanitise(marked.parse(text, { async: false }));
     await boot(page);
     await openView(page, 'files', t('views.files'));
     await page.locator('[data-fs-row="hub:"]').getByRole('button').first().click();

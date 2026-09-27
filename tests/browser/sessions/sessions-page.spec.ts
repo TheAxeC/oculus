@@ -73,7 +73,7 @@ async function sessionsPage(page: Page, titles: string[]): Promise<void> {
     for (const title of titles) await expect(row(page, title)).toHaveCount(1, { timeout: 15000 });
 }
 
-// revert: src/lib/views/sessions/session-list/Customizations.svelte:204 => onclick={() => undefined}
+// revert: src/lib/views/sessions/session-list/Customizations.svelte "onclick={() => open(item)}" => onclick={() => undefined}
 test("an account's instructions open read only in the Customization viewer", async ({ page }) => {
     mkdirSync(join(servedHomeDir(), '.claude'), { recursive: true });
     writeFileSync(instructions(), '# The served account\n');
@@ -89,7 +89,7 @@ test("an account's instructions open read only in the Customization viewer", asy
     await expect(viewer.locator('textarea, [contenteditable="true"]')).toHaveCount(0);
 });
 
-// revert: src/lib/views/sessions/session-list/Customizations.svelte:90 => if (false) {
+// revert: src/lib/views/sessions/session-list/Customizations.svelte "if (served !== null && served.path !== '') {" => if (false) {
 test('an instructions file inside a served root opens in a source tab', async ({ page }) => {
     writeHubFile(HUB_INSTRUCTIONS, '# The served hub\n');
     const path = join(hubDir(), HUB_INSTRUCTIONS);
@@ -105,8 +105,8 @@ test('an instructions file inside a served root opens in a source tab', async ({
     await expect(page.locator(`[data-customization="${path}"]`)).toHaveCount(0);
 });
 
-// revert: src/lib/views/sources/files/Files.svelte:186 => null
-// revert: src/lib/views/sources/files/Files.svelte:458 => {#if true}
+// revert: src/lib/views/sources/files/Files.svelte "follow.top" => null
+// revert: src/lib/views/sources/files/Files.svelte "{#if !follow.following || follow.found !== null}" => {#if true}
 test("the page's Files tab is rooted at the workspace of the session it follows, its pin before the selection", async ({
     page
 }) => {
@@ -138,7 +138,7 @@ test("the page's Files tab is rooted at the workspace of the session it follows,
     await expect(head).toHaveClass(/\bhead\b/);
     await expect(head.getByRole('treeitem').first()).toHaveAccessibleName('page-spec');
     // Its collapse-all closes the folders under the workspace and is named by it.
-    // revert: src/lib/views/sources/files/tree/Tree.svelte:133 => title={t('files.collapse_all_title', row.root)}
+    // revert: src/lib/views/sources/files/tree/Tree.svelte "title={t('files.collapse_all_title', row.name)}" => title={t('files.collapse_all_title', row.root)}
     await expect(
         head.getByRole('button', { name: t('files.collapse_all'), exact: true })
     ).toHaveAccessibleDescription(t('files.collapse_all_title', 'page-spec'));
@@ -148,7 +148,7 @@ test("the page's Files tab is rooted at the workspace of the session it follows,
     // Pinned, the tab keeps the session it follows while the selection moves on.
     await files.getByRole('button', { name: t('files.follow_pin'), exact: true }).click();
     await row(page, 'Page spec outside').locator('button.row-button').click();
-    // revert: src/lib/views/sources/files/Files.svelte:170 => const followed = $derived(selected());
+    // revert: src/lib/views/sources/files/Files.svelte "const followed = $derived(pinnedSession(instanceLayoutState(instance.id)) ?? selected());" => const followed = $derived(selected());
     await expect(head).toBeVisible();
     // the pin holds the checkout, so the folder the selection names is not followed
     await expect(files.getByText(t('files.follow_unserved', tmpdir()))).toHaveCount(0);
@@ -176,8 +176,8 @@ async function measured(
     }, props);
 }
 
-// revert: src/lib/views/sessions/session-list/SessionWorkspace.svelte:261 => height: 26px;
-// revert: src/lib/views/sessions/session-list/SessionList.svelte:297 => delete
+// revert: src/lib/views/sessions/session-list/SessionWorkspace.svelte "gap: 4px;" +1 => height: 26px;
+// revert: src/lib/views/sessions/session-list/SessionList.svelte "flex: none;" +1 => delete
 test('a row is two lines of 22 px under a 22 px workspace header, and the composer is one box with its controls in its foot', async ({
     page
 }) => {
@@ -399,12 +399,12 @@ async function wallpaper(page: Page, on: boolean): Promise<void> {
     await showRailPage(page, 'sessions');
 }
 
-// revert: src/lib/views/sessions/session-list/SessionWorkspace.svelte:208 => color: var(--line);
-// revert: src/lib/views/sessions/session-list/SessionWorkspace.svelte:267 => color: var(--line);
-// revert: src/lib/ui/controls/RowButton.svelte:45 => color: var(--accent-bg);
-// revert: src/lib/views/sessions/session-list/Customizations.svelte:103 => <div class="customize" data-customizations style="opacity: 0.2">
-// revert: src/lib/views/sessions/terminal/Composer.svelte:381 => color: var(--line);
-// revert: src/lib/ui/menu/MenuOpener.svelte:138 => delete
+// revert: src/lib/views/sessions/session-list/SessionWorkspace.svelte "padding: 0 8px;" +1 => color: var(--line);
+// revert: src/lib/views/sessions/session-list/SessionWorkspace.svelte ".one .nm {" +1 => color: var(--line);
+// revert: src/lib/ui/controls/RowButton.svelte "color: var(--on-accent-bg, var(--ink));" => color: var(--accent-bg);
+// revert: src/lib/views/sessions/session-list/Customizations.svelte "<div class=\"customize\" data-customizations>" => <div class="customize" data-customizations style="opacity: 0.2">
+// revert: src/lib/views/sessions/terminal/Composer.svelte "color: var(--muted-txt, var(--muted));" => color: var(--line);
+// revert: src/lib/ui/menu/MenuOpener.svelte ".opener.bare.inherit {" +1 => delete
 test('the rows, the headers, the composer and the customizations read at 4.5:1, their glyphs at 3:1, under every theme with and without the wallpaper', async ({
     page
 }) => {

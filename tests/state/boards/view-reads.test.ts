@@ -35,7 +35,7 @@ describe('the tasks section, the awaiting strip and the portfolio projects', () 
             ...(subtask === undefined ? {} : { target: { kind: 'manifest', id: 'p', subtask } })
         }) as unknown as TickerItem;
 
-    // revert: src/lib/state/boards/ticker.ts:588 => if (false) groups.subtasks.push(line);
+    // revert: src/lib/state/boards/ticker.ts "if (line.target?.subtask !== undefined) groups.subtasks.push(line);" => if (false) groups.subtasks.push(line);
     it('groups a subtask by its own key, a follow-up by its kind, and the rest as tasks', () => {
         const groups = taskGroups([item('task'), item('followup'), item('task', 'k1')]);
         expect(groups.subtasks.map((one) => one.label)).toEqual(['task']);
@@ -45,7 +45,7 @@ describe('the tasks section, the awaiting strip and the portfolio projects', () 
         expect(hasTasks(taskGroups([]))).toBe(false);
     });
 
-    // revert: src/lib/state/boards/ticker.ts:615 => return rows > 0;
+    // revert: src/lib/state/boards/ticker.ts "return rows + (week?.behind === null || week?.behind === undefined ? 0 : 1) > 0;" => return rows > 0;
     it('says the command center has something to draw for any row, and for the projects behind', () => {
         const none = {
             overdue: [],
@@ -64,7 +64,7 @@ describe('the tasks section, the awaiting strip and the portfolio projects', () 
         expect(hasCommandRows({ ...none, overdue: ['o'] }, { behind: null })).toBe(true);
     });
 
-    // revert: src/lib/state/boards/focus.ts:352 => 0 +
+    // revert: src/lib/state/boards/focus.ts "strip.blocked +" => 0 +
     it('counts what the awaiting strip waits on, blocked cards included', () => {
         const strip = {
             people: [{ label: 'a', count: 1 }],
@@ -78,7 +78,7 @@ describe('the tasks section, the awaiting strip and the portfolio projects', () 
         expect(waitingTotal(null)).toBe(0);
     });
 
-    // revert: src/lib/state/boards/focus.ts:343 => return [];
+    // revert: src/lib/state/boards/focus.ts "return Object.values(snapshot?.entities.projects ?? {});" => return [];
     it('lists the portfolio projects, and none before it arrives', () => {
         const snapshot = {
             entities: { projects: { a: { id: 'a' }, b: { id: 'b' } } }
@@ -92,14 +92,14 @@ describe("a collection file's order and the statuses it offers", () => {
     const entry = (id: string, fields: Record<string, unknown> = {}) =>
         ({ id, title: '', fields }) as unknown as Entry;
 
-    // revert: src/lib/state/boards/collection.ts:419 => return entries.map((entry) => entry.id);
+    // revert: src/lib/state/boards/collection.ts "return entries.map((entry) => identityValue(entry, schema));" => return entries.map((entry) => entry.id);
     it("names every entry by its identity field's value, in the file's order", () => {
         const schema = [{ field: 'key', type: 'text' }];
         const entries = [entry('b', { key: 'K2' }), entry('a', { key: 'K1' })];
         expect(fileOrder(entries, schema)).toEqual(['K2', 'K1']);
     });
 
-    // revert: src/lib/state/boards/collection.ts:472 => return facets.map((facet) => facet.value);
+    // revert: src/lib/state/boards/collection.ts "return schema === undefined ? facets.map((facet) => facet.value) : [];" => return facets.map((facet) => facet.value);
     it('offers the statuses the entries use only to a file with no schema', () => {
         const facets: StatusFacet[] = [
             { value: 'draft', count: 2 },
@@ -109,7 +109,7 @@ describe("a collection file's order and the statuses it offers", () => {
         expect(offeredStatuses([], facets)).toEqual([]);
     });
 
-    // revert: src/lib/state/boards/collection.ts:723 => []
+    // revert: src/lib/state/boards/collection.ts "entries.map((entry) => entry.id)" => []
     it('counts a live project no entry of the funding file covers', () => {
         const project = (id: string, fundingIds: string[]) =>
             ({ id, type: 'active', fundingIds }) as unknown as Project;

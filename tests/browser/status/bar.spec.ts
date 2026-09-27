@@ -20,8 +20,8 @@ const TEXT = 'def f():\n    return 1\n';
 test.beforeEach(() => writeHubFile(FILE, TEXT));
 test.afterEach(() => removeFromHub(FILE));
 
-// revert: src/lib/themes/tokens.css:99 => --status-text: calc(12px * var(--text-scale, 1));
-// revert: src/lib/ui/controls/ToolButton.svelte:257 => height: auto;
+// revert: src/lib/themes/tokens.css "--status-text: 12px;" => --status-text: calc(12px * var(--text-scale, 1));
+// revert: src/lib/ui/controls/ToolButton.svelte "height: var(--status-height);" => height: auto;
 test('the bar is 22 px high and every item 22 px with 12 px words, at the largest text scale too', async ({
     page
 }) => {
@@ -49,7 +49,7 @@ test('the bar is 22 px high and every item 22 px with 12 px words, at the larges
     expect(Number.parseFloat(tab)).toBeGreaterThan(14);
 });
 
-// revert: src/lib/shell/Workbench.svelte:325 => flex-direction: row;
+// revert: src/lib/shell/Workbench.svelte ".workbench {" +2 => flex-direction: row;
 test("the bar runs the window's whole width, under the rail as well as the panes", async ({
     page
 }) => {
@@ -64,8 +64,8 @@ test("the bar runs the window's whole width, under the rail as well as the panes
     expect((rail?.y ?? 0) + (rail?.height ?? 0)).toBe(bar?.y);
 });
 
-// revert: src/lib/shell/status/StatusBar.svelte:101 => delete
-// revert: src/lib/shell/status/StatusBar.svelte:188 => delete
+// revert: src/lib/shell/status/StatusBar.svelte "<RepoItems repo={status.repo} {git} branch={shown('branch')} sync={shown('sync')} />" => delete
+// revert: src/lib/shell/status/StatusBar.svelte "<Bell drawn={shown('bell')} />" => delete
 test('the left group and the right group hold their items in VS Code order, the bell last', async ({
     page
 }) => {
@@ -97,7 +97,7 @@ test('the left group and the right group hold their items in VS Code order, the 
     );
 });
 
-// revert: src/lib/ui/controls/ToolButton.svelte:137 => placement={rail ? 'beside' : 'below'}
+// revert: src/lib/ui/controls/ToolButton.svelte "placement={rail ? 'beside' : status ? 'above' : 'below'}" => placement={rail ? 'beside' : 'below'}
 test('every item is reached by Tab, opens its tooltip over the bar, and opens what it names on Enter', async ({
     page
 }) => {
@@ -145,7 +145,7 @@ test('every item is reached by Tab, opens its tooltip over the bar, and opens wh
     );
 });
 
-// revert: src/lib/state/workbench/ui.svelte.ts:262-270 => statusHidden: [],
+// revert: src/lib/state/workbench/ui.svelte.ts "statusHidden: Array.isArray(held.statusHidden)" .. ": []," => statusHidden: [],
 test('a right-click lists every item, unchecking one hides it, and it stays hidden after a reload', async ({
     page
 }) => {
