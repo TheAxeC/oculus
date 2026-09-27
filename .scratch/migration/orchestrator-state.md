@@ -29,7 +29,17 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:      # L7 in flight, alone; next Q89, Q79, Q80, then the queue of plan.md.
+dispatch:      # Q93 in flight; L7 paused (no builder running) until Q93 lands, then moved onto Q93's head; next Q92, Q89, Q79, Q80, then the queue of plan.md.
+- step: Q93
+  executor: agent
+  worker: claude:opus, agent af1bae095499172e3
+  worktree: .agents/worktrees/Q93
+  base: 7bb7d2bc
+  launched: 2026-09-28
+  report: agents/reviews/Q93-report.md
+  landing: not-started
+  round: 0
+  shared_paths: L7's test files and 13 browser specs. L7 has no builder running; after Q93 lands, the orchestrator saves L7's worktree diff as a patch, makes L7's worktree again at the new head, applies the patch, drops its browser specs and strips its directives, before L7's continuation builder starts.
 - step: L7
   executor: agent
   worker: claude:opus, agent a646fd5818276f983, stopped by Axel 2026-09-28 for starting a second full revert-check run; continuation builder claude:opus, agent ad60ea6becf7aa4d7 (Axel: restart it)
