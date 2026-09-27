@@ -29,7 +29,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:      # Q93 in flight; L7 paused (no builder running) until Q93 lands, then moved onto Q93's head; next Q92, Q89, Q79, Q80, then the queue of plan.md.
+dispatch:      # Q93 and L7 in flight side by side (Axel, 2026-09-28); Q93 lands first, then L7 on Q93's head; next Q92, Q89, Q79, Q80, then the queue of plan.md.
 - step: Q93
   executor: agent
   worker: claude:opus, agent af1bae095499172e3
@@ -39,10 +39,10 @@ dispatch:      # Q93 in flight; L7 paused (no builder running) until Q93 lands, 
   report: agents/reviews/Q93-report.md
   landing: not-started
   round: 0
-  shared_paths: L7's test files and 13 browser specs. L7 has no builder running; after Q93 lands, the orchestrator saves L7's worktree diff as a patch, makes L7's worktree again at the new head, applies the patch, drops its browser specs and strips its directives, before L7's continuation builder starts.
+  shared_paths: 20 files with L7 (DESIGN.md, HELP.md, allow-duplication.txt and 17 unit test files). Both steps delete the same directive lines there; L7 undoes its changes under tests/browser/. What conflicts at L7's landing is a comment Q93 rewrote beside an L7 edit, resolved by hand then.
 - step: L7
   executor: agent
-  worker: claude:opus, agent a646fd5818276f983, stopped by Axel 2026-09-28 for starting a second full revert-check run; continuation builder claude:opus, agent ad60ea6becf7aa4d7 (Axel: restart it)
+  worker: claude:opus, agent a646fd5818276f983, stopped by Axel 2026-09-28 for starting a second full revert-check run; continuation builder claude:opus, agent ad60ea6becf7aa4d7 (Axel: restart it); stopped. Continuation builder claude:opus, agent a655bd95c87499049, launched 2026-09-28 under the brief without browser tests or directives (item 11)
   worktree: .agents/worktrees/L7
   base: 1712f075
   base_export: .agents/worktrees/L7-base (git archive of the base, read by revert-check --base; removed at landing)
