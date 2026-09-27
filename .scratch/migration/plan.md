@@ -181,6 +181,7 @@ One line per package: the status mark, the id, the title, and where the rest is 
 - ✅ Q77c a directive names its target by the target line's whole trimmed text instead of its number, and a converter rewrites every directive of the tree to that form, proving each still names the same line (Axel 2026-09-27, the split of Q77)
   - Booked 2026-09-27: every directive names its target by the line's text (1742 converted in 235 files, 0 refused; the review resolved all 1742 against the base, 0 mismatches); the numbered form is refused. 3 fixes at landing. Landing report `agents/reviews/Q77c-landing.md`.
 - Q77d the slow unit tests made fast, as measured on an idle machine (`dispatch-note.test.ts` many-writers case 125.9 s first, then `dev-server.test.ts`, the diagram checks, `git-ops.test.ts`, `portfolio.test.ts`, `git.test.ts`), each by a cause found before the brief; no case over 5 s; about 30 s for the suite is a direction, not a goal (Axel 2026-09-27, Z5)
+- Q90 the Audit's collection-entry link check reads a `link` that is a URL (a scheme such as `https:`) as a URL and never as a hub path, so the 63 venue links of `registries/venues.yml` stop showing as "link path missing"; a relative `link` is still checked on disk (Axel 2026-09-27, "fix the audit stuff")
 - Q77e `bin/diagrams` generates incrementally: each source file's parsed imports cached by its content hash, so a generation over a tree with one changed file parses that file alone; the diagram checks' changed-copy case under 5 s, and `npm run diagrams` faster at every landing (Axel 2026-09-27, Z7 (a))
 - L7 the rail and pages rebuilt to Axel's table: eleven buttons, every view on one page, Incoming, System, where opened tabs land, Reset all pages in Settings and Reset per page (Axel 2026-09-27, Z1; table and rulings in full in `agents/briefs/L7.md`)
 - Q89 the terminal as VS Code's terminal, from an inventory of VS Code's terminal panel: no message box under a shell (only under a Claude or Codex terminal), and the terminal picker replaced by VS Code's list of terminals, each named after what runs in it (Axel 2026-09-27: the box shows under a shell, and "Pick a terminal" says nothing)
@@ -279,7 +280,7 @@ One line per package: the status mark, the id, the title, and where the rest is 
 ## Could run in parallel
 
 - The feature stretch after R17, three in flight at all times, one dispatched at each landing (Axel 2026-09-14 17:50 and 2026-09-15 19:58; the steps that run alone and the order are in `orchestrator-state.md`, which holds this line whole)
-- The queue, in order: Q76; S2; X3b + Q78; Q77c + Q77d; Q77a + Q77b + Q77e; L7; Q89; Q79; Q80; Q87; Q81; Q82; Q88; D13; X3a + X3c; Q83; Q84; Q85; Q86; Q67; L4; Q66; Q35; D11 + D14; D23 + D15 + D17; D18 + D20 + D24; A1 + A2 + A3; M3 + E1; M4; then Q72, R2, O29, O30, X2, then O33 last.
+- The queue, in order: Q76; S2; X3b + Q78; Q77c + Q77d + Q90; Q77a + Q77b + Q77e; L7; Q89; Q79; Q80; Q87; Q81; Q82; Q88; D13; X3a + X3c; Q83; Q84; Q85; Q86; Q67; L4; Q66; Q35; D11 + D14; D23 + D15 + D17; D18 + D20 + D24; A1 + A2 + A3; M3 + E1; M4; then Q72, R2, O29, O30, X2, then O33 last.
 Independent of each other; two may run side by side under R9's rule when their briefs name disjoint paths and different views, else they run one at a time.
 - S1 with anything after R1.
 - O5 with O2 to O4.
