@@ -30,7 +30,16 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:      # none in flight; next Q77b (revert-check `--base`, in bin/revert-check/), then L7, Q89, Q79, Q80, then the queue of plan.md.
+dispatch:      # Q77b in flight; next L7, Q89, Q79, Q80, then the queue of plan.md.
+- step: Q77b
+  executor: agent
+  worker: claude:opus, agent a550405a4bf93bf72
+  worktree: .agents/worktrees/Q77b
+  base: 10754960
+  launched: 2026-09-27
+  report: agents/reviews/Q77b-report.md
+  landing: not-started
+  round: 0
 ```
 
 ## The standing demands (from Axel, in force)
