@@ -40,6 +40,8 @@ dispatch:      # Q77c and Q77d in flight (they merge by rerunning Q77c's convert
   launched: 2026-09-27T11:24
   report: tools/oculus/.scratch/migration/agents/reviews/Q77c-report.md
   landing: not-started
+  worktree_commits: 85eff0c1 (the first report's state)
+  reviewer: claude:opus a4a01eea33f924cba (sampled, over the first report)
   round: 0
 - step: Q77d
   executor: agent
@@ -50,6 +52,7 @@ dispatch:      # Q77c and Q77d in flight (they merge by rerunning Q77c's convert
   launched: 2026-09-27T11:36
   report: tools/oculus/.scratch/migration/agents/reviews/Q77d-report.md
   landing: not-started
+  worktree_commits: dec8dc4b (part 1's report); parts 2 to 4 added to the brief (4759c0b1, dee62e79, 25130948) and sent to the same builder
   round: 0
 ```
 
