@@ -3,21 +3,22 @@
 // The first case runs bin/diagrams/diagrams.mjs's staleFiles() in memory over this tree and fails,
 // naming every committed `.dot` and `.svg` that differs from what the source gives now, byte for
 // byte; the second shows it does so for a source change, over a copy of the tree with one import
-// and one publish added. The cases after them hand the readers a small source of their own and show
-// that each finds what a change adds (a new import, a new channel, a new write module), that the
-// overview and each layer's diagram count runtime imports and leave a type-only one out, and that
-// what a reader cannot place or follow is drawn, with its file and line, in a group that says so.
-// The last cases hold the rendered file to its colours, its edge titles and its standalone style.
+// and one publish added, and that the diagrams share one cache of parses: the engine's generation
+// parses each file once for its imports and once for its code, the copy's the two changed files
+// alone. The cases after them hand the readers a small source of their own and show that each finds
+// what a change adds (a new import, a new channel, a new write module), that the overview and each
+// layer's diagram count runtime imports and leave a type-only one out, and that what a reader
+// cannot place or follow is drawn, with its file and line, in a group that says so. The last cases
+// hold the rendered file to its colours, its edge titles and its standalone style.
 //
 // The copy of the tree is made under the system temporary directory and removed after the run;
 // nothing else is written. What this does not cover is the Help view drawing a diagram, which
 // tests/browser/workbench/system.spec.ts does.
 
-import { appendFileSync, cpSync, mkdirSync, readFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { dirname, join, resolve, sep } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { afterAll, describe, expect, it } from 'vitest';
+import { appendFileSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { afterAll, describe, expect, it, vi } from 'vitest';
+import { codeOf } from '../../../bin/diagrams/code.mjs';
 import {
     BOUNDARIES,
     NAMES,
@@ -33,22 +34,39 @@ import {
     layersDot,
     readLayers,
     readOrder,
+    readSources,
     renderSvg,
     staleFiles,
     writesDot
 } from '../../../bin/diagrams/diagrams.mjs';
 import { importsOf } from '../../../bin/diagrams/imports.mjs';
-import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
+import { sweepScratch } from '../../fixtures/scratch.ts';
+import { CountedCache, ENGINE, copyOfTree, parsedSince } from './tree.ts';
 
 afterAll(sweepScratch);
 
-const ENGINE = resolve(fileURLToPath(import.meta.url), '..', '..', '..', '..');
+// The two parsers wrapped in counters that call the real ones, so a case sees what was parsed.
+vi.mock('../../../bin/diagrams/imports.mjs', async (original) =>
+    (await import('./counted.ts')).counted(await original<Record<string, unknown>>(), 'importsOf')
+);
+vi.mock('../../../bin/diagrams/code.mjs', async (original) =>
+    (await import('./counted.ts')).counted(await original<Record<string, unknown>>(), 'codeOf')
+);
 
 // The engine's drawings take seconds to generate, so the cases over them share one generation,
-// made by the first of them that runs; a case that reads no engine drawing never waits for it.
+// made by the first of them that runs; a case that reads no engine drawing never waits for it. Its
+// parses, and the paths each of PARSERS was called with during it, are kept for the file's cases.
+const parses = new CountedCache<import('../../../bin/diagrams/parsed.mjs').Parsed>();
+const PARSERS = [importsOf, codeOf];
+const engineParsed: string[][] = [];
 let engineGenerated: ReturnType<typeof generate> | null = null;
 function engineDrawn(): ReturnType<typeof generate> {
-    engineGenerated ??= generate(ENGINE);
+    engineGenerated ??= (async () => {
+        const from = PARSERS.map((one) => parsedSince(one, 0).length);
+        const drawn = await generate(ENGINE, parses);
+        engineParsed.push(...PARSERS.map((one, at) => parsedSince(one, from[at])));
+        return drawn;
+    })();
     return engineGenerated;
 }
 
@@ -65,17 +83,6 @@ function sources(files: Record<string, string>): Map<string, string> {
     return new Map(Object.entries(files));
 }
 
-/** A copy of what the generator reads (src, the boundary test, the order, the diagrams). */
-function copyOfTree(): string {
-    const dir = scratchDir('oculus-diagrams-tree-');
-    expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
-    for (const part of ['src', BOUNDARIES, ORDERING, OUT]) {
-        mkdirSync(dirname(join(dir, part)), { recursive: true });
-        cpSync(join(ENGINE, part), join(dir, part), { recursive: true });
-    }
-    return dir;
-}
-
 describe('the committed diagrams', () => {
     it('are what the source gives now, each file byte for byte', async () => {
         // revert: bin/diagrams/source.mjs "`    node [shape=box, color=\"black\", fontcolor=\"black\", fontname=\"${FONT}\", fontsize=10, height=0.3, margin=\"0.12,0.04\"];`," => `    node [shape=ellipse];`,
@@ -84,13 +91,28 @@ describe('the committed diagrams', () => {
 
     it('are named stale, every one at once, when an import and a publish are added', async () => {
         // revert: bin/diagrams/diagrams.mjs "if (!existsSync(path) || readFileSync(path, 'utf8') !== text) stale.push(file);" => if (!existsSync(path)) stale.push(file);
+        // revert: bin/diagrams/diagrams.mjs "const read = parseReader(cache);" => const read = parseReader();
+        // revert: bin/diagrams/diagrams.mjs "const dots = new Map([['layers', layersDot(sources, layers, read)]]);" => const dots = new Map([['layers', layersDot(sources, layers, parseReader())]]);
+        // revert: bin/diagrams/diagrams.mjs "dots.set(`layer-${layer}`, layerDot(sources, layers, layer, folders, read));" => dots.set(`layer-${layer}`, layerDot(sources, layers, layer, folders, parseReader()));
+        // revert: bin/diagrams/diagrams.mjs "dots.set('channels', channelsDot(sources, read));" => dots.set('channels', channelsDot(sources, parseReader()));
+        // revert: bin/diagrams/diagrams.mjs "const writes = writesDrawn(sources, draw, WRITE_ROUTE, read);" => const writes = writesDrawn(sources, draw, WRITE_ROUTE, parseReader());
+        // revert: bin/diagrams/diagrams.mjs "for (const one of drawn ?? (await generate(engine, cache))) {" => for (const one of drawn ?? (await generate(engine))) {
+        await engineDrawn();
+        const files = [...readSources(ENGINE).keys()].sort();
+        expect([...parses.sets].sort()).toEqual(files);
+        expect(engineParsed).toEqual([files, files]);
         const dir = copyOfTree();
         appendFileSync(join(dir, 'src/lib/ui/html.ts'), "import '../server/core/auth.ts';\n");
         appendFileSync(
             join(dir, 'src/lib/server/root/watch/git.ts'),
             "hub.publish('brandnew', {});\n"
         );
-        expect(await staleFiles(dir)).toEqual([
+        const [sets, from] = [parses.sets.length, PARSERS.map((one) => parsedSince(one, 0).length)];
+        const stale = await staleFiles(dir, undefined, parses);
+        const changed = ['lib/server/root/watch/git.ts', 'lib/ui/html.ts'];
+        expect(parses.sets.slice(sets).sort()).toEqual(changed);
+        expect(PARSERS.map((one, at) => parsedSince(one, from[at]))).toEqual([changed, changed]);
+        expect(stale).toEqual([
             `${OUT}/layers.dot`,
             `${OUT}/layers.svg`,
             `${OUT}/layer-ui.dot`,
@@ -168,7 +190,7 @@ describe('the layer readers', () => {
         expect(dot).not.toContain('"ui to data"');
     });
 
-    // revert: bin/diagrams/graphs.mjs "for (const one of importsOf(path, text)) {" => for (const one of importsOf(path, text.replace(/\/\/ ?|\/\*|\*\//g, ''))) {
+    // revert: bin/diagrams/graphs.mjs "for (const one of read.imports(path, text)) {" => for (const one of read.imports(path, text.replace(/\/\/ ?|\/\*|\*\//g, ''))) {
     it('counts no import a comment names, above a type-only import or in a block', () => {
         const dot = layersDot(
             sources({
@@ -655,7 +677,7 @@ describe('the write reader', () => {
 
     it('follows a function passed by name to a function of another module that calls it', () => {
         // revert: bin/diagrams/writes.mjs "if (!site.name.includes('.')) call(callee, site.at, `${site.name}(`);" +1 => const target = held.decls.has(callee) ? { path, name: callee } : null;
-        // revert: bin/diagrams/writes.mjs "return read(target.path).decls.has(target.name) ? target : null;" => return null;
+        // revert: bin/diagrams/writes.mjs "return load(target.path).decls.has(target.name) ? target : null;" => return null;
         const dot = writesDot(
             sources({
                 ...base,

@@ -4,9 +4,8 @@
 // from the server module that publishes each to the client modules that read it.
 
 import { posix } from 'node:path';
-import { codeOf } from './code.mjs';
-import { importsOf } from './imports.mjs';
 import { halves, labelledEdge, wordNode } from './labels.mjs';
+import { parseReader } from './parsed.mjs';
 import {
     UNPLACED,
     cluster,
@@ -21,6 +20,7 @@ import {
 
 /**
  * @typedef {import('./source.mjs').Sources} Sources
+ * @typedef {import('./parsed.mjs').Reader} Reader
  * @typedef {{ channel: string, subscribes: boolean }} Read One channel a client module reads.
  */
 
@@ -98,9 +98,10 @@ const BUILT = '../build/';
  *
  * @param {Sources} sources
  * @param {(path: string) => string | null} end What a module is drawn as, or null for not at all.
+ * @param {Reader} [read] The parse of each file, shared with the other diagrams of a generation.
  * @returns {Imports}
  */
-export function runtimeImports(sources, end) {
+export function runtimeImports(sources, end, read = parseReader()) {
     /** @type {Map<string, number>} */
     const edges = new Map();
     /** @type {Lost[]} */
@@ -129,7 +130,7 @@ export function runtimeImports(sources, end) {
         return true;
     };
     for (const [path, text] of sources) {
-        for (const one of importsOf(path, text)) {
+        for (const one of read.imports(path, text)) {
             if (one.typeOnly) continue;
             if (one.glob === true && one.spec !== null) {
                 const folder = resolveSpec(path, one.spec.replace(/\/[^/]*$/, ''));
@@ -158,9 +159,10 @@ export function runtimeImports(sources, end) {
  *
  * @param {Sources} sources
  * @param {string[]} layers
+ * @param {Reader} [read] The parse of each file, shared with the other diagrams of a generation.
  * @returns {string}
  */
-export function layersDot(sources, layers) {
+export function layersDot(sources, layers, read = parseReader()) {
     const astrayPrefix = `${UNPLACED}: `;
     const filePrefix = 'files: ';
     /** @param {string} path */
@@ -171,7 +173,7 @@ export function layersDot(sources, layers) {
         if (!sources.has(path) && !/\.(ts|js|svelte)$/.test(path)) return `${filePrefix}${folder}`;
         return `${astrayPrefix}${folder}`;
     };
-    const { edges, lost: unread } = runtimeImports(sources, end);
+    const { edges, lost: unread } = runtimeImports(sources, end, read);
     const lost = unread.filter((one) => one.from !== null);
     const joined = [...edges.keys()].flatMap((key) => key.split('\n'));
     const nodes = new Set([...joined, ...lost.map((one) => String(one.from))]);
@@ -221,9 +223,10 @@ export function layersDot(sources, layers) {
  * @param {string[]} layers
  * @param {string} layer
  * @param {string[]} order The layer's folders from the top down.
+ * @param {Reader} [read] The parse of each file, shared with the other diagrams of a generation.
  * @returns {string}
  */
-export function layerDot(sources, layers, layer, order) {
+export function layerDot(sources, layers, layer, order, read = parseReader()) {
     /** @param {string} path */
     const end = (path) => {
         const folder = folderOf(path);
@@ -231,7 +234,7 @@ export function layerDot(sources, layers, layer, order) {
         const { layer: row } = placeOf(path, layers);
         return row === UNPLACED ? null : `layer ${row.split('/')[0]}`;
     };
-    const { edges } = runtimeImports(sources, end);
+    const { edges } = runtimeImports(sources, end, read);
     const place = (/** @type {string} */ key) => order.indexOf(key.split('\n')[0].slice(7));
     const keys = sorted(edges.keys())
         .filter((key) => key.startsWith('folder '))
@@ -427,9 +430,10 @@ function readsOf(text, accessors, named) {
  * edge is the page's subscription, a solid one a read.
  *
  * @param {Sources} sources
+ * @param {Reader} [read] The parse of each file, shared with the other diagrams of a generation.
  * @returns {string}
  */
-export function channelsDot(sources) {
+export function channelsDot(sources, read = parseReader()) {
     /** @type {Map<string, Set<string>>} */
     const groups = new Map();
     const edges = new Set();
@@ -449,7 +453,7 @@ export function channelsDot(sources) {
     /** @type {string[]} */
     const lost = [];
     for (const [path, raw] of sources) {
-        const text = codeOf(path, raw);
+        const text = read.code(path, raw);
         if (path.startsWith('lib/server/')) {
             const named = namers(text);
             for (const match of text.matchAll(/\.publish\(\s*('[^']*'|\w+\([^)]*\)|[^,)]+)/g)) {

@@ -190,9 +190,11 @@ describe('the drawings the source gives', () => {
 
     // The engine's drawings take seconds to generate, so the cases over them share one generation,
     // made by the first of them that runs; a case that reads no engine drawing never waits for it.
+    // The generation keeps its parses in a cache of this file's own.
+    const parses: Parameters<typeof generate>[1] = new Map();
     let engineGenerated: ReturnType<typeof generate> | null = null;
     function engineDrawn(): ReturnType<typeof generate> {
-        engineGenerated ??= generate(ENGINE);
+        engineGenerated ??= generate(ENGINE, parses);
         return engineGenerated;
     }
 
@@ -265,7 +267,7 @@ describe('the drawings the source gives', () => {
 });
 
 describe('the channel and write readers', () => {
-    // revert: bin/diagrams/graphs.mjs "const text = codeOf(path, raw);" => const text = raw.replace(/\/\*[\s\S]*?\*\//g, (b) => b.replace(/[^\n]/g, ' '));
+    // revert: bin/diagrams/graphs.mjs "const text = read.code(path, raw);" => const text = raw.replace(/\/\*[\s\S]*?\*\//g, (b) => b.replace(/[^\n]/g, ' '));
     it('read a call between two strings that hold the marks of a comment', () => {
         const dot = channelsDot(
             sources({
@@ -275,7 +277,7 @@ describe('the channel and write readers', () => {
         expect(dot).toContain('"server/watch/w" -> "ch a";');
     });
 
-    // revert: bin/diagrams/writes.mjs "const text = codeOf(path, sources.get(path) ?? '');" => const text = (sources.get(path) ?? '').replace(/(^|[^:'"`\\])\/\/[^\n]*/g, '$1');
+    // revert: bin/diagrams/writes.mjs "const text = read.code(path, sources.get(path) ?? '');" => const text = (sources.get(path) ?? '').replace(/(^|[^:'"`\\])\/\/[^\n]*/g, '$1');
     it('read a call after a regular expression that holds two slashes', () => {
         const dot = writesDot(
             sources({

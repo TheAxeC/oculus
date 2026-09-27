@@ -30,18 +30,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:      # Q77e and Q77a in flight side by side (it changes bin/revert-check.mjs, which Q77e does not touch, so either lands on the other with nothing to merge), then Q77b after Q77a (both rewrite bin/revert-check.mjs, so they run one after the other); then L7, Q89, Q79, Q80, then the queue of plan.md.
-- step: Q77e
-  executor: agent
-  worker: claude:opus
-  session_id: a7345751b970549b5 (continuation; a1224c827c5cba8ec stopped 2026-09-27T15:53 by an interrupt)
-  worktree: .agents/worktrees/Q77e
-  base: 15a88e95
-  launched: 2026-09-27T15:06
-  report: tools/oculus/.scratch/migration/agents/reviews/Q77e-report.md
-  reviewer: claude:opus (agent acf59eb8cf9993bfe), report agents/reviews/Q77e-refuter.md
-  landing: not-started
-  round: 1, sent 2026-09-27 from the worktree snapshot 6e390733: bin/diagrams/diagrams.mjs, bin/diagrams/parsed.mjs, tests/checks/diagrams/diagrams.test.ts
+dispatch:      # Q77a in flight (Q77e landed); then Q77b after Q77a (both rewrite bin/revert-check.mjs, so they run one after the other); then L7, Q89, Q79, Q80, then the queue of plan.md.
 - step: Q77a
   executor: agent
   worker: claude:opus
@@ -337,6 +326,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-09-27. Q77e landed through /spec, /refute and /land, built by an Opus agent and, after an interrupt stopped it inside its repair round, an Opus continuation builder; one repair round, refuted again with nothing to send back; one fix at landing: every diagram of a generation reads one parse per file, one generation of the engine 1.7 to 1.9 s where it took 6.4 to 7 s. Q77a built, its review next; then Q77b, then L7.
 - 2026-09-27. Q77d landed through /spec, /refute and /land, built by an Opus agent in four parts, no repair round, a sampled review: the whole unit suite on main in 75.85 s where it took 160.85 s idle. Next: Q77a, Q77b and Q77e, then L7.
 - 2026-09-27. Q90 landed through /spec, /refute and /land, built by an Opus agent, no repair round, review earned (a server module): the Audit reads a link that is a web address as an address, through the one rule the collection card uses, now in `data/hub-address.ts`; the 63 venue `link path missing` findings are gone. Q77d in its review; then Q77a, Q77b and Q77e; then L7.
 - 2026-09-27. Q77c landed through /spec, /refute and /land, built by an Opus agent, no repair round, a sampled review: every revert directive names its target line by the line's text, and the numbered form is refused. Q77d in flight; then Q77a, Q77b and Q77e; then L7.
@@ -648,6 +638,10 @@ The plan.md lines shortened on 2026-09-25 (P1 the parity audit, S2, and Q67's St
 
 ## Usage
 
+- Q77e, builder claude:opus (`a1224c827c5cba8ec`), first build and the start of round 1, stopped by an interrupt at 15:53: 62 tool uses, 15:07 to 15:53 (46 minutes); `usage.py` over its log: 59 messages, 2,185 output tokens, 442,339 cache-write tokens, 7,198,468 cache-read tokens.
+- Q77e, continuation builder claude:opus (`a7345751b970549b5`), round 1 finished: 127,965 tokens, 26 tool uses, 22.2 minutes. First report passed its bar only with the round (the review found the shared reader unproven); 10 files, +307 -70 as landed with the landing fix.
+- Q77e, reviewer claude:opus (`acf59eb8cf9993bfe`): 109,879 tokens, 18 tool uses, 13.0 minutes; round 1 reviewer claude:opus (`a95721b7f3ad48e8c`): 119,771 tokens, 23 tool uses, 15.6 minutes, ten reverts by hand.
+- Q77e landing, orchestrator claude:opus (this session), `usage.py` from Q77d's landing (2026-09-27T15:03:53+02:00) to the booking: 187 messages, 129,563 output tokens, 366,099 cache-write tokens, 39,846,720 cache-read tokens, 384 fresh input tokens, 124 minutes; shared with Q77a's brief and dispatch, the queue list and the handover to continuation builders; 1 fix at landing; `land.sh` stopped red on the duplication check (unit `Duration 103.18s`), the checks rerun by hand after the fix (unit `Duration 98.18s`, browser `467 passed (10.6m)`).
 - Q77d, builder claude:opus, a native background agent (`a7f9ccb32c0537a76`), four parts sent to the same agent: 193,397 tokens, 45 tool uses, 69.6 minutes for parts 2 to 4 (the runner's result; part 1 before it); no repair round; first report did not fully pass its bar (git-ops above its 12 s target, stated as NOT DONE with the measurement); 7 files, +114 -47 as landed.
 - Q77d, reviewer claude:opus (`ae53e90c150350a15`), sampled: 135,488 tokens, 40 tool uses, 112.0 minutes (its revert sample by hand in a scratch copy, one case per run).
 - Q77d landing, orchestrator claude:opus (this session), `usage.py` from Q90's landing (2026-09-27T13:22:53+02:00) to the booking: 26 messages, 11,717 output tokens, 235,858 cache-write tokens, 6,174,612 cache-read tokens, 60 fresh input tokens, 100 minutes (most of it waiting on the review); 3 fixes at landing; the replay onto main resolved three directive conflicts with Q77c by hand; unit `Duration 75.85s`, browser `467 passed (8.4m)`.

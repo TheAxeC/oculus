@@ -17,8 +17,8 @@
 // one reached through a computed member.
 
 import { posix } from 'node:path';
-import { importsOf as readImports } from './imports.mjs';
 import { arrowsAlong, labelledEdge } from './labels.mjs';
+import { parseReader } from './parsed.mjs';
 import {
     BARE,
     aliasesIn,
@@ -29,7 +29,6 @@ import {
     parametersOf,
     unalias
 } from './calls.mjs';
-import { codeOf } from './code.mjs';
 import {
     UNPLACED,
     cluster,
@@ -53,6 +52,7 @@ const FS_WRITE = /^(?:appendFile|copyFile|mkdir|rename|rm|unlink|writeFile)(?:Sy
 
 /**
  * @typedef {import('./source.mjs').Sources} Sources
+ * @typedef {import('./parsed.mjs').Reader} Reader
  * @typedef {{ from: string, name: string }} Origin Where an imported name comes from.
  * @typedef {{ names: Map<string, Origin>, spaces: Map<string, string>, fs: Set<string> }} Imports
  *     A module's value imports by local name, its namespace imports, and its node:fs names.
@@ -72,12 +72,13 @@ const FS_WRITE = /^(?:appendFile|copyFile|mkdir|rename|rm|unlink|writeFile)(?:Sy
 function importsOf(
     /** @type {Sources} */ sources,
     /** @type {string} */ path,
-    /** @type {string} */ text
+    /** @type {string} */ text,
+    /** @type {Reader} */ read
 ) {
     const names = new Map();
     const spaces = new Map();
     const fs = new Set();
-    for (const one of readImports(path, text)) {
+    for (const one of read.imports(path, text)) {
         if (one.typeOnly || one.bindings === undefined || one.spec === null) continue;
         const { spec, bindings } = one;
         if (spec === 'node:fs' || spec === 'node:fs/promises') {
@@ -162,16 +163,17 @@ const METHOD = /(?<![\w$.])([\w$]+)\.([\w$]+)\s*\(/g;
  * @param {Sources} sources
  * @param {string} [route]
  * @param {Map<string, string>} [ports]
+ * @param {Reader} [read] The parse of each file, shared with the other diagrams of a generation.
  * @returns {string}
  */
-export function writesDot(sources, route = WRITE_ROUTE, ports = new Map()) {
+export function writesDot(sources, route = WRITE_ROUTE, ports = new Map(), read = parseReader()) {
     if (!sources.has(route)) throw new Error(`the write route ${route} is not in the source`);
     /** @type {Map<string, Module>} */
     const modules = new Map();
-    const read = (/** @type {string} */ path) => {
+    const load = (/** @type {string} */ path) => {
         let held = modules.get(path);
         if (held === undefined) {
-            const text = codeOf(path, sources.get(path) ?? '');
+            const text = read.code(path, sources.get(path) ?? '');
             const decls = declarations(text);
             const aliases = new Map();
             for (const [name, declaration] of decls) {
@@ -179,9 +181,9 @@ export function writesDot(sources, route = WRITE_ROUTE, ports = new Map()) {
                 if (target !== undefined) aliases.set(name, target);
             }
             const raw = sources.get(path) ?? '';
-            held = { text, decls, aliases, imports: importsOf(sources, path, raw) };
+            held = { text, decls, aliases, imports: importsOf(sources, path, raw, read) };
             modules.set(path, held);
-            for (const whole of readImports(path, raw)) {
+            for (const whole of read.imports(path, raw)) {
                 if (whole.whole !== true || whole.typeOnly) continue;
                 const what = `export * from '${whole.spec ?? ''}'`;
                 const one = unfollowedAt(`src/${path}`, whole.line, what);
@@ -200,7 +202,7 @@ export function writesDot(sources, route = WRITE_ROUTE, ports = new Map()) {
      */
     const origin = (path, name) => {
         for (let hop = 0; hop < 8; hop += 1) {
-            const held = read(path);
+            const held = load(path);
             if (held.decls.has(name)) return { path, name };
             const via = held.imports.names.get(name);
             if (via === undefined) return { path, name };
@@ -217,19 +219,19 @@ export function writesDot(sources, route = WRITE_ROUTE, ports = new Map()) {
      * @returns {{ path: string, name: string } | null}
      */
     const declaredAt = (path, name) => {
-        const held = read(path);
+        const held = load(path);
         const dot = name.indexOf('.');
         if (dot > 0) {
             const space = held.imports.spaces.get(name.slice(0, dot));
             const member = name.slice(dot + 1);
-            return space !== undefined && read(space).decls.has(member)
+            return space !== undefined && load(space).decls.has(member)
                 ? { path: space, name: member }
                 : null;
         }
         if (held.decls.has(name)) return { path, name };
         if (!held.imports.names.has(name)) return null;
         const target = origin(path, name);
-        return read(target.path).decls.has(target.name) ? target : null;
+        return load(target.path).decls.has(target.name) ? target : null;
     };
     /**
      * Every call a text makes whose callee is a bare name or a member of a name (`lock.run(`), each
@@ -259,7 +261,7 @@ export function writesDot(sources, route = WRITE_ROUTE, ports = new Map()) {
         const key = `${path}#${fn}#${index}`;
         if (seen.has(key)) return false;
         seen.add(key);
-        const held = read(path);
+        const held = load(path);
         const text = held.decls.get(fn) ?? '';
         const parameter = parametersOf(text, fn).at(index) ?? '';
         if (parameter === '') return false;
@@ -300,7 +302,7 @@ export function writesDot(sources, route = WRITE_ROUTE, ports = new Map()) {
         const key = `${path}#${fn ?? ''}`;
         if (seen.has(key)) continue;
         seen.add(key);
-        const held = read(path);
+        const held = load(path);
         const whole = held.text.replace(STATEMENT, (statement) => statement.replace(/[^\n]/g, ' '));
         const body = fn === null ? whole : (held.decls.get(fn) ?? '');
         const offset = fn === null ? 0 : held.text.indexOf(body);
@@ -457,13 +459,14 @@ const PORTS = ['se', 's', 'ne', 'n'];
  * @param {Sources} sources
  * @param {(dot: string) => string} draw The renderer, DOT to SVG.
  * @param {string} [route]
+ * @param {Reader} [read] The parse of each file, read by every round of the search.
  * @returns {{ dot: string, svg: string }}
  */
-export function writesDrawn(sources, draw, route = WRITE_ROUTE) {
+export function writesDrawn(sources, draw, route = WRITE_ROUTE, read = parseReader()) {
     /** @type {Map<string, string>} */
     const ports = new Map();
     for (;;) {
-        const dot = writesDot(sources, route, ports);
+        const dot = writesDot(sources, route, ports, read);
         const svg = draw(dot);
         const pair = arrowsAlong(svg)
             .map((line) => /^(.*) along (.*) for \d+$/.exec(line)?.slice(1) ?? [])

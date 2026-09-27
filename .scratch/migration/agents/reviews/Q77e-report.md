@@ -92,3 +92,84 @@ Nothing wrong. The brief's path list includes `readable.test.ts` without saying 
 
 - new: `bin/diagrams/parsed.mjs` (51 lines), `tests/checks/diagrams/parsed.test.ts` (84 lines)
 - changed: `bin/diagrams/diagrams.mjs` (now 197 lines), `bin/diagrams/graphs.mjs` (515), `bin/diagrams/writes.mjs` (516), `tests/checks/diagrams/diagrams.test.ts` (877), `tests/checks/diagrams/readable.test.ts` (351)
+
+## Round 1 (continuation builder, after the first was stopped by an interrupt)
+
+Everything in round 1 is done.
+
+All four fixes are on disk in /Users/axelfaes/workspace/research-hub/.agents/worktrees/Q77e/tools/oculus. Every check in the brief's verification list passes, and I ran each one after the last edit.
+
+## Fixes
+
+| # | Fix | Status | Where |
+|---|---|---|---|
+| 1 | Counted-Map case in diagrams.test.ts, with revert directives | DONE | tests/checks/diagrams/diagrams.test.ts:49-72, 94-116 |
+| 2 | Head comment of diagrams.mjs within 100 columns | DONE | bin/diagrams/diagrams.mjs:2-28 |
+| 3 | "Parsed once" wording replaced | DONE | bin/diagrams/diagrams.mjs:14, :135-137; bin/diagrams/parsed.mjs:4-10 |
+| 4 | Unused parseReader re-export removed | DONE | bin/diagrams/diagrams.mjs:39-51 |
+| - | tree.ts meets the rules | DONE | tests/checks/diagrams/tree.ts |
+
+**Fix 1.** The changed-copy case "are named stale, every one at once, when an import and a publish are added" (diagrams.test.ts:94) now does all of the following:
+- The file's shared cache is `parses = new CountedCache<...Parsed>()` (:61). CountedCache records every `set`.
+- `engineDrawn()` (:65) generates the engine into that cache once. It records the paths `importsOf` and `codeOf` were called with during that generation.
+- The case asserts `[...parses.sets].sort()` equals `[...readSources(ENGINE).keys()].sort()`, so there is exactly one set per source file. It also asserts that `importsOf` and `codeOf` were each called once per file (`engineParsed` equals `[files, files]`).
+- It then runs `staleFiles(dir, undefined, parses)` over a copy with `lib/ui/html.ts` and `lib/server/root/watch/git.ts` changed. It asserts that the new sets are exactly those two paths, and that each parser was called for exactly those two.
+
+The parser counts are there because a set count alone stays green when only `layersDot` gets `parseReader()`: the `layerDot` calls still fill the shared Map.
+- The two parsers are wrapped by `vi.mock` at :49 and :53. Each wrapper calls the real function, so no drawing changes.
+- The file carries seven revert directives in all. The six new ones target diagrams.mjs lines 140, 144, 148, 150, 152 and 171:
+  - `parseReader(cache)` changed to `parseReader()` in `generate`;
+  - the reader passed to `layersDot`, `layerDot`, `channelsDot` and `writesDrawn` changed to `parseReader()`;
+  - `generate(engine, cache)` changed to `generate(engine)` in `staleFiles`.
+- revert-check shows all seven red.
+
+This engine-generation case used to be in parsed.test.ts and is no longer there. parsed.test.ts keeps its four reader cases, and its head comment points to diagrams.test.ts for the generation case.
+
+**Fix 2.** `awk 'length > 100 && /^ *\/\/ / && !/revert:/'` over bin/diagrams/*.mjs and tests/checks/diagrams/*.ts printed nothing. diagrams.mjs lines 70 and 117 are longer than 100, but they are code (a CSS string and a regex), not comments.
+
+**Fix 3.**
+- diagrams.mjs:14 reads "parsed.mjs computes each file's imports and its code once per generation for all of them".
+- The comment on `generate` (:135-137) reads "each file's imports and its code are each computed once".
+- parsed.mjs:5-6 reads "each file's imports and its code are each computed once per generation".
+- `grep -rn "parsed once\|parses each file once" bin tests` finds only diagrams.test.ts:7, which reads "parses each file once for its imports and once for its code". That is accurate.
+
+**Fix 4.** diagrams.mjs:35 imports `parseReader`, and the export block at :39-51 has no `parseReader` re-export.
+
+**tree.ts.** It is a helper used by diagrams.test.ts and meets the rules:
+- It has a Layer 4 head comment and no history, and it passes the ASCII gate.
+- It exports `ENGINE`, `copyOfTree`, `CountedCache` (:33) and `parsedSince` (:43).
+- Keeping it, rather than folding it back, is what keeps diagrams.test.ts under the size line: the file is 897 lines, against a line of 900.
+- `find tests/checks/diagrams -type f | wc -l` gives 4, and folder-check exits 0.
+
+## Checks
+
+| # | Check | Status | Output |
+|---|---|---|---|
+| 1 | `npx vitest run tests/checks/diagrams tests/checks/imports --reporter=verbose` | DONE | see below |
+| 2 | `npm run diagrams`, then `diff -r` | DONE | exit 0, no output |
+| 3 | `npm run check` | DONE | `COMPLETED 1513 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS` |
+| 4 | `npm run format:check` | DONE | `All matched files use Prettier code style!` |
+| 5 | `npm run lint` | DONE | exit 0 |
+| 6 | ASCII gate of spec.md | DONE | no output, exit 0 |
+| 7 | `sh bin/size-check.sh`, `sh bin/folder-check.sh` | DONE | exit 0 and exit 0 |
+| 8 | `node bin/revert-check.mjs` over parsed.test.ts and diagrams.test.ts | DONE | `61 reverts, 0 unproven, 0 unchecked`, exit 0 |
+
+**Check 1**, run at load 6.85 (8.08 after the run):
+- `Test Files  6 passed (6)` / `Tests  96 passed (96)` / `Duration  10.69s`.
+- The changed-copy case: `✓ ... are named stale, every one at once, when an import and a publish are added 1293ms`.
+- Per-file times from the json reporter: diagrams.test.ts 5324 ms, parsed.test.ts 7 ms, readable.test.ts 3689 ms, augments.test.ts 1997 ms, cycles.test.ts 1668 ms, order.test.ts 7836 ms.
+
+**Check 2.** The copy of docs/diagrams was taken in this round, before `npm run diagrams`, not before the stopped builder's changes. No file under bin/diagrams was changed after that copy was taken.
+
+**Check 8.** Running parsed.test.ts on its own gives `5 reverts, 0 unproven, 0 unchecked`.
+
+## Files changed in this round
+- tests/checks/diagrams/diagrams.test.ts: now 897 lines. The head comment is reflowed, the two parser counters, the counted cache and the engine parse record were added, and the case gained six directives and five asserts.
+- tests/checks/diagrams/parsed.test.ts: now 85 lines. The generation case, its helpers and its imports were removed.
+- tests/checks/diagrams/tree.ts: now 52 lines. `CountedCache` and `parsedSince` were added and the head comment updated.
+- bin/diagrams/diagrams.mjs and bin/diagrams/parsed.mjs: fixes 2 to 4 were already on disk from the stopped builder, and I confirmed them with the greps above.
+
+## Sharp edges
+- diagrams.test.ts is 897 lines against the 900 line, so there is little room for new cases there.
+- Every case in diagrams.test.ts now runs with `importsOf` and `codeOf` wrapped by `vi.fn` around the real functions. The case "reads imports with the one reader the import checks read them with" still holds, because both imports resolve to the same wrapper, and its revert is still red.
+- The engine's parse record depends on the changed-copy case being the only case that adds entries to the shared cache after the engine generation. That holds today.

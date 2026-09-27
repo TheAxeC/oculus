@@ -10,9 +10,10 @@
 // tests/checks/tree/boundaries.test.ts names and the folder order tests/checks/imports/order.ts
 // declares), the `publish(` calls and the reads of each channel on the page, and the calls made
 // inside the functions the write route reaches. graphs.mjs reads the imports and the channels,
-// writes.mjs the write chain, labels.mjs draws an arrow's words and checks where they land, and
-// source.mjs holds what they share. A module no layer row places is drawn in a dashed group
-// named "not placed"; so is, with its file and line, an import, a publish, a channel read or
+// writes.mjs the write chain, labels.mjs draws an arrow's words and checks where they land,
+// parsed.mjs computes each file's imports and its code once per generation for all of them, and
+// source.mjs holds what they share. A module no layer row places is drawn in a dashed group named
+// "not placed"; so is, with its file and line, an import, a publish, a channel read or
 // comparison, a re-export of a whole module, or a call the write reader cannot follow (writes.mjs
 // says which). The write diagram draws only the modules on a path to the disk or to a call it
 // cannot follow. Every count and every call list is a small node of words standing on its arrow
@@ -31,8 +32,9 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { channelsDot, layerDot, layersDot } from './graphs.mjs';
+import { parseReader } from './parsed.mjs';
 import { BOUNDARIES, ORDERING, readLayers, readOrder, readSources } from './source.mjs';
-import { writesDrawn } from './writes.mjs';
+import { WRITE_ROUTE, writesDrawn } from './writes.mjs';
 
 export { channelsDot, folderOf, layerDot, layersDot, placeOf } from './graphs.mjs';
 export {
@@ -124,25 +126,30 @@ async function drawer() {
 /**
  * Every diagram as the source gives it now, the write diagram drawn by writesDrawn(), which parts
  * the arrows of one module that would run along each other. A layer of LAYER_NAMES the order file
- * does not list is an error, since its diagram would have no folders to draw.
+ * does not list is an error, since its diagram would have no folders to draw. Every diagram reads
+ * the files through one reader over `cache`, so each file's imports and its code are each computed
+ * once; a caller that generates again over a tree that differs in a few files passes the same
+ * cache, and only those files are parsed again.
  *
  * @param {string} engine The engine directory.
+ * @param {Map<string, import('./parsed.mjs').Parsed>} [cache] The parses kept by path.
  * @returns {Promise<Diagram[]>}
  */
-export async function generate(engine) {
+export async function generate(engine, cache = new Map()) {
     const sources = readSources(engine);
+    const read = parseReader(cache);
     const layers = readLayers(readFileSync(join(engine, BOUNDARIES), 'utf8'));
     const order = readOrder(readFileSync(join(engine, ORDERING), 'utf8'));
     /** @type {Map<string, string>} */
-    const dots = new Map([['layers', layersDot(sources, layers)]]);
+    const dots = new Map([['layers', layersDot(sources, layers, read)]]);
     for (const layer of LAYER_NAMES) {
         const folders = order.get(layer);
         if (folders === undefined) throw new Error(`${ORDERING} gives no order for ${layer}`);
-        dots.set(`layer-${layer}`, layerDot(sources, layers, layer, folders));
+        dots.set(`layer-${layer}`, layerDot(sources, layers, layer, folders, read));
     }
-    dots.set('channels', channelsDot(sources));
+    dots.set('channels', channelsDot(sources, read));
     const draw = await drawer();
-    const writes = writesDrawn(sources, draw);
+    const writes = writesDrawn(sources, draw, WRITE_ROUTE, read);
     return NAMES.map((name) => {
         if (name === 'writes') return { name, ...writes };
         const dot = dots.get(name) ?? '';
@@ -156,11 +163,12 @@ export async function generate(engine) {
  *
  * @param {string} engine
  * @param {Diagram[]} [drawn] The drawings generate(engine) gave, when the caller has them already.
+ * @param {Map<string, import('./parsed.mjs').Parsed>} [cache] The parses generate() reads from.
  * @returns {Promise<string[]>}
  */
-export async function staleFiles(engine, drawn) {
+export async function staleFiles(engine, drawn, cache) {
     const stale = [];
-    for (const one of drawn ?? (await generate(engine))) {
+    for (const one of drawn ?? (await generate(engine, cache))) {
         for (const [kind, text] of [
             ['dot', one.dot],
             ['svg', one.svg]
