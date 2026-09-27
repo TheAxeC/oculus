@@ -161,3 +161,97 @@ On dispatch-note the new script is still no faster: most of its cases read from 
 
 - When a case writes into the run copy, the next in-memory run pays for a new copy and a new Vitest start (the reviewer measured the start at 1.25 s). The number of such remakes on the real suite is not measured.
 - The copy of main's script I placed in $TMPDIR is removed (`ls -A $TMPDIR | grep -c q77a` prints 0).
+
+## Round 2
+
+Everything in round 2 is done.
+
+Two things were added beyond the round's wording; both are needed for item 1 to work:
+- **Vitest gets a temporary directory of its own.** Vitest writes the modules it transformed into the temporary directory it was started under, and reads them again on later runs. A probe listed the case temporary directory before the second run: `["cWZxwNdz6xjoFeUlcWZWe","cWZxwNdz6xjoFeUlcWZWe/ssr",...]`. With that directory emptied before each run, the next run found no result (a probe printed `BASE []`). So Vitest now starts under `<run folder>/.vitest-tmp` (`bin/revert-check/memory.mjs:102`, `:128`), which is kept and left out of the listing. Each in-memory run uses a case directory `.case-tmp` that is emptied before it runs.
+- **The lock writer's module only reads the file.** Its revert adds the `chmod`. In a first version the module restored the file's mode on every call, so the writer's own no-revert run undid the lock and the case stayed green under its revert.
+
+A leftover folder: the orchestrator's stop interrupted my timing command, and it left one copy, `$TMPDIR/oculus-revert-3Sv8T8`, made at 18:49. Its `node_modules` link pointed at this worktree. I made it writable and removed it. After that, and after every run below, `ls -A $TMPDIR | grep oculus-revert` prints only `oculus-revert-vwIMNl`, which was there before this step.
+
+## DONE / NOT DONE
+
+| Item | Status | Proof (output verbatim) |
+| --- | --- | --- |
+| 1a. Empty case temporary directory for every in-memory run | DONE | "empties the temporary directory before each run in memory" is `red` under its revert (`bin/revert-check/memory.mjs:154`) |
+| 1b. Listing records mode and covers the whole run folder, except the two temporary directories and the copy's `node_modules` | DONE | "reads a file a case locked as a change to the copy" is `red` under its revert (`memory.mjs:68`) |
+| 1c. A restart clears the run folder before copying again | DONE | `memory.mjs:122-126`. No fixture case for it: a write outside the copy on the copy path lands in the system temporary directory |
+| 2. Split into `bin/revert-check/`, all references updated | DONE | `ls bin \| wc -l` prints `10`. `grep` for `revert: bin/revert-check.mjs` finds 0. The old path appears nowhere outside `.scratch` |
+| 3. Comment width | DONE | `awk` over every changed file prints no comment line over 100 columns |
+| 4. Head comment states what the code guarantees | DONE | `bin/revert-check/revert-check.mjs:37-40` |
+| 5. `withLockingCase` comment | DONE | `tests/checks/bin/revert-fixture.ts:104-109` |
+| `npx vitest run tests/checks/bin tests/views/whole/type-scale.test.ts --reporter=dot` | DONE | `Test Files  9 passed (9)`, `Tests  319 passed (319)` |
+| `npm run check` | DONE | `COMPLETED 1511 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS` |
+| `npm run format:check` | DONE | `All matched files use Prettier code style!` |
+| `npm run lint` | DONE | `lint exit 0` |
+| ASCII gate | DONE | no output |
+| `sh bin/size-check.sh`, `sh bin/folder-check.sh` | DONE | `size exit 0`, `folder exit 0` |
+| `node bin/revert-check/revert-check.mjs tests/checks/bin/revert-check.test.ts tests/checks/bin/revert-anchors.test.ts` | DONE | `49 reverts, 0 unproven, 0 unchecked`, 49 `red` lines, `197.38 real`, load 3.95 to 8.68 |
+| `node bin/migrations/revert-anchors.mjs --check` | DONE | `0 directives converted in 0 files written, 0 refused` |
+| diagrams, new against main's script | DONE | both `50 reverts, 0 unproven, 0 unchecked`, 50 `red` each, `diagrams DIFF EMPTY` |
+| dispatch-note, new against main's script | DONE | both `20 reverts, 0 unproven, 0 unchecked`, `dispatch DIFF EMPTY` |
+
+## Changes (file:line)
+
+**Item 1: `bin/revert-check/memory.mjs`**
+- `listing(dir, skipped)` (`:60`) walks the whole run folder and skips the paths it is given. Each line holds the path and its mode, and a file's line also holds its size and mtime (`:68`).
+- `own` (`:102`) is Vitest's own temporary directory. `skipped` (`:104`) lists the cases' temporary directory, `own.TMPDIR` and the copy's `node_modules`.
+- `emptyTemp()` (`:106`) removes and remakes the cases' temporary directory. It runs before every in-memory run (`:152-154`).
+- `start()` does `chmod -R u+rwx` on the run folder, removes everything in it (`:122-123`), then remakes both temporary directories and the copy. It takes the reference listing of the whole run folder once Vitest has started (`:140`, a comment now under 100 columns).
+- After each run, `if (listing(folder, skipped) !== run.listed) await restart();` (`:175`).
+- A probe over audit.test.ts and dispatch-note printed no restart across 23 directives.
+
+**Item 1: tests**
+- `revert-fixture.ts:205-330` holds the `Writer` shape, `NOTE_WRITER`, `TEMP_WRITER` (a folder left in `tmpdir()` because the revert deletes its `rmSync`) and `LOCK_WRITER` (the revert adds `chmodSync(path, 0)` on `data.txt`).
+- `afterWriter()` (`:288`) runs the clean, writer, clean files. It asserts the clean case's lines are `red`, `GREEN`, `red`, `GREEN`, the writer's line is `red`, and the summary is `5 reverts, 2 unproven, 0 unchecked`.
+- Three cases in `revert-check.test.ts` use it:
+  - `:756`, the note writer, with its two existing directives retargeted;
+  - `:763`, the temp writer, revert `"if (run === null) return null;" +2 => delete`, which takes out `emptyTemp()`;
+  - `:768`, the lock writer, revert: the mode taken out of the listing line.
+- `LONG` (`:51`) gives these three cases their timeout.
+
+**Item 2: the split**
+| File | Lines | Holds |
+| --- | --- | --- |
+| `bin/revert-check/revert-check.mjs` | 152 | entry: head comment, `readArgs`, `checkUnit`, `main` |
+| `bin/revert-check/directives.mjs` | 262 | parsing, anchors, `applied`, `inside`/`real` |
+| `bin/revert-check/copy.mjs` | 326 | the copy path, refusals, report lines, `caseEnv` |
+| `bin/revert-check/memory.mjs` | 214 | the in-memory path |
+
+- Each new module opens with a Layer 4 head comment. The entry's head comment names the three modules (`:44-46`).
+- The default root is now `'..', '..'` from the entry, and the usage line names the new path.
+- References updated:
+  - `bin/migrations/revert-anchors.mjs:3`, `:12` and the import at `:25`;
+  - `playwright.config.ts:16`;
+  - `tests/views/whole/type-scale.test.ts:335`;
+  - in `revert-fixture.ts`, the spawns in `run()` and `stoppedAt()` and the import in `resolved()`;
+  - in `revert-check.test.ts`, the imports of `caseEnv`, `freePort`, `browserEnv` and `portTaken` (now `copy.mjs`) and the prose revert comment of the symlink case.
+- 39 revert directives were retargeted to the module that now holds their line: 16 to `copy.mjs`, 14 to `directives.mjs`, 6 to `memory.mjs` (9 now, with the two new ones), and 3 to `revert-check.mjs`.
+
+**Item 4**
+- `revert-check.mjs:37-40` now says: each in-memory run starts with an empty temporary directory. A run after which a path of the run's folder outside it was added, removed, or changed in mode, size or time of change has the folder emptied and the copy and the instance made again. A write outside the run's folder, through an absolute path, is not seen.
+
+**Item 5**
+- The `withLockingCase` comment says the line locks the real fixture's file through its absolute path, outside the run's copy. That is why the lock reaches the fallback's copy: the check sees only what a case writes inside its own run folder.
+
+**Line counts**
+- `revert-check.test.ts` 879, `revert-fixture.ts` 333.
+
+## Timings (back to back, `--root` at the worktree's tools/oculus; main's `bin/revert-check.mjs` copied under $TMPDIR, `cmp` against main printed `orig = main`)
+
+| Run | Real | Load, start to end |
+| --- | --- | --- |
+| diagrams, new | 97.75 s | 2.94 to 4.34 |
+| diagrams, main | 294.29 s | 4.34 to 7.15 |
+| dispatch-note, new | 68.03 s | 7.15 to 7.23 |
+| dispatch-note, main | 68.05 s | 7.23 to 10.74 |
+
+## Limitations
+
+- A case that writes through an absolute path outside the run folder is still not seen. The head comment now says so.
+- If a case leaves something in its temporary directory that `rmSync` cannot remove, `emptyTemp()` throws. That directive and every later one then take the copy path. The verdicts stay right, but the speed-up is lost for the rest of the run.
+- `playwright.config.ts:2` and `:5` are over 100 columns; I did not change those lines.
+- The copy of main's script under $TMPDIR is removed (`ls -A $TMPDIR | grep -c q77a` prints 0).

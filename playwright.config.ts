@@ -13,8 +13,8 @@
 //
 // The server takes port 8792 unless OCULUS_BROWSER_PORT names another, read by layerPort of
 // tests/browser/helpers/layer.ts, which serve.ts reads too: a run that shares the machine with
-// another run of the layer, as bin/revert-check.mjs does, serves on a port of its own, so the
-// browser never presses a page the other run serves.
+// another run of the layer, as bin/revert-check/revert-check.mjs does, serves on a port of its
+// own, so the browser never presses a page the other run serves.
 
 import { defineConfig } from '@playwright/test';
 import { layerPort } from './tests/browser/helpers/layer.ts';

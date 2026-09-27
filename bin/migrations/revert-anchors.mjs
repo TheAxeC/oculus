@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Layer 4, test. Rewrite every revert directive under tests/ that names its target line by number
-// into the form bin/revert-check.mjs reads, which names the line by its text.
+// into the form bin/revert-check/revert-check.mjs reads, which names the line by its text.
 //
 // The anchor is the target line's whole text with its indentation trimmed, written as a JSON
 // string. Where that text is not unique in its file, the anchor is the nearest line above whose
@@ -9,10 +9,10 @@
 // the replacement after `=>` are kept byte for byte.
 //
 // Before a file is written, every directive rewritten in it is proven: the new line is read by the
-// parser of bin/revert-check.mjs and its anchors are resolved by that file's resolver, over every
-// file as it will stand after the run, and must give the same target, the same replacement and
-// exactly the lines the old number named. A directive that fails, or whose line no anchor can name,
-// is left as it was and printed as refused. Usage:
+// parser of bin/revert-check/directives.mjs and its anchors are resolved by that file's resolver,
+// over every file as it will stand after the run, and must give the same target, the same
+// replacement and exactly the lines the old number named. A directive that fails, or whose line no
+// anchor can name, is left as it was and printed as refused. Usage:
 //
 //     node bin/migrations/revert-anchors.mjs [--check] [--root <dir>]
 //
@@ -22,7 +22,7 @@
 import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { NUMBERED, parseDirective, resolveAnchor, spelled } from '../revert-check.mjs';
+import { NUMBERED, parseDirective, resolveAnchor, spelled } from '../revert-check/directives.mjs';
 
 /** Every file under a folder, as a path relative to the root, skipping installed dependencies. */
 function filesUnder(root, folder) {

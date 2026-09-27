@@ -181,3 +181,125 @@ Not checked:
 - A Svelte target served in memory.
 
 Reviewer usage: 17 tool uses, about 14 minutes.
+
+## Repair round 2, refuted
+```
+$TMPDIR before any run: oculus-revert-vwIMNl (there before this step). After every run below: the same single folder. `git status --short` in the worktree: empty at the end.
+
+npx vitest run tests/checks/bin tests/views/whole/type-scale.test.ts --reporter=dot
+  Test Files  9 passed (9) | Tests  319 passed (319) | real 36.04 | load 2.67 -> 4.59
+npm run check
+  COMPLETED 1511 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS   (load 4.31)
+npm run format:check
+  All matched files use Prettier code style!
+npm run lint
+  lint exit 0
+ASCII gate (spec.md perl form)
+  no output
+sh bin/size-check.sh / sh bin/folder-check.sh
+  size exit 0 / folder exit 0 (wc -l: copy.mjs 326, directives.mjs 262, memory.mjs 214, revert-check.mjs 152, revert-check.test.ts 879, revert-fixture.ts 337)
+node bin/migrations/revert-anchors.mjs --check
+  0 directives converted in 0 files written, 0 refused | exit 0
+grep -rn "bin/revert-check.mjs" --exclude-dir=node_modules --exclude-dir=.scratch .
+  no output (exit 1); the same grep over the whole worktree minus .git/.scratch: no output
+node bin/revert-check/revert-check.mjs tests/checks/bin/revert-check.test.ts tests/checks/bin/revert-anchors.test.ts
+  49 reverts, 0 unproven, 0 unchecked | 49 `red` lines | exit 0 | real 216.87 | load 4.51 -> 10.54
+  the 8 memory.mjs directives (output lines 28-35) all red
+diagrams, new entry:   50 reverts, 0 unproven, 0 unchecked | 50 red | real 103.49 | load 11.06 -> 4.90
+diagrams, main's script (copied to realpath $TMPDIR, --root worktree): 50 reverts, 0 unproven, 0 unchecked | real 322.52 | load 4.65 -> 8.53
+diagrams, new entry, right after main's: 50 reverts, 0 unproven, 0 unchecked | real 99.04 | load 8.53 -> 5.11
+diff new vs main output (both new runs): DIFF EMPTY
+```
+
+Main's script copied to `$TMPDIR` has to be run by its realpath (`/private/var/...`). Run as `/var/...`, its `process.argv[1] === fileURLToPath(import.meta.url)` guard is false, and it prints nothing in 0.05 s.
+
+Split, checked by command:
+- Every top-level function and const of `3c4dbb4e:bin/revert-check.mjs` was extracted and compared by name with the four new modules (a scratch script).
+  - Only `listing`, `memoryRun` and `main` changed.
+  - `main` changed only in the `'..', '..'` default root and the usage path.
+  - The head comment changed only at `:36-46` (item 4 and the module names) and in the usage line.
+- Retargeted directives: of the 38 `bin/revert-check.mjs` directives at 3c4dbb4e, 37 resolve (with `resolveAnchor`) to a byte-identical line range in the same enclosing function of the new module. The 38th follows its changed line (`listing(folder, skipped)`). The anchors test's one directive is also the same line.
+- Directives per module, counted with `grep -ho ... | uniq -c`: copy 16, directives 14, memory 8, revert-check 3. The report says "9 now" for memory.mjs; the count is 8.
+- Each new module's head comment matches its code: `directives.mjs` spawns nothing; `copy.mjs` holds the refusals and report lines both paths use.
+
+Probes. Each fixture ran `clean, writer, clean`, and in each the fixture root was untouched afterwards (`ls -A`):
+
+| Writer's revert | New entry, 4th clean line (harmless) | Main's script |
+| --- | --- | --- |
+| note.txt in cwd | GREEN | GREEN |
+| `new URL('../n.txt', import.meta.url)` | GREEN | GREEN |
+| folder left in `tmpdir()` | GREEN | GREEN |
+| chmod on data.txt | GREEN | GREEN |
+| write into `cwd/.svelte-kit` | GREEN | GREEN |
+| write into `join(tmpdir(), '..', '.vitest-tmp')` | **red** (`5 reverts, 1 unproven`) | GREEN (`2 unproven`) |
+| write into `join(process.cwd(), '..', 'up.txt')` | GREEN | **red**, and leaves `up.txt` in the system $TMPDIR |
+| transform cache: t2 red, t1 reverts b.mjs, then t2's harmless edit | GREEN | GREEN |
+
+### Spec
+- The two additions beyond the five items are needed:
+  - **Keeping `.vitest-tmp` out of the listing.** A scratch copy with `.vitest-tmp` put back into the listing printed `RESTART` after every in-memory run: 9 restarts over 5 directives on the fx-cache fixture.
+  - **The lock writer's module only reads the file.** This is test fixture shape; no check was loosened.
+- The rewrite of the note case into `afterWriter()` keeps every assertion of the old case: the four clean lines, the writer's `red`, `5 reverts, 2 unproven, 0 unchecked`, and `note.txt` absent. Nothing was loosened.
+- Orchestrator files still name the old path: `grep -ln "bin/revert-check.mjs"` prints `plan.md` and `orchestrator-state.md` under `tools/oculus/.scratch/migration/`. These are outside the builder's paths; they are to update at landing.
+
+### Proof
+- **Item 1c has no test, and the report's reason for that does not hold.**
+  - The report says "No fixture case for it: a write outside the copy on the copy path lands in the system temporary directory". The test does not need main's agreement.
+  - A writer whose revert writes `join(process.cwd(), '..', 'up.txt')`, with a clean case asserting `!existsSync('../up.txt')`, gives the harmless line `GREEN` with the current code.
+  - A scratch copy whose `memory.mjs:123` loop was replaced by `for (const one of ['tree', '.vitest-tmp']) rmSync(join(folder, one), { recursive: true, force: true });` gives that line `red` (`5 reverts, 1 unproven`).
+  - So the restart's clearing of the run folder can be proven red under a revert, and no case in the tree does it.
+- **The listing does not cover `.vitest-tmp`, so a case's write there reaches later directives.** It produced `red` where main prints GREEN (the probe table above). The path is contrived, since a case has to write through `tmpdir()/..`, but it is a residue inside the run folder that the check does not see.
+- Report figures not reproduced: `revert-fixture.ts` is 337 lines by `wc -l`, not the 333 the report gives. memory.mjs holds 8 directives, not 9.
+
+### Standards
+- **Item 3 is not met for the test files.** Comment lines over 100 columns that are not directive lines:
+  - `tests/views/whole/type-scale.test.ts:335` (111 columns, new this round; it was 98 at 8ca4ca00): `// bin/revert-check/revert-check.mjs, which resolves a case by its name: drop \`font-size: var(--fs-lg)\``
+  - `tests/checks/bin/revert-check.test.ts:467` (111 columns, new this round): `// Revert: in real of bin/revert-check/directives.mjs, compare the path as written instead of following the`
+  - `tests/checks/bin/revert-check.test.ts:789` (101 columns, from round 1 and not fixed): `// it; there, with the revert in the file, it takes the write bit off a folder of its`
+  - No comment line in `bin/revert-check/*.mjs` or `bin/migrations/revert-anchors.mjs` passes 100 columns (checked with `awk`).
+- **Item 4: the head comment still claims more than the code does.**
+  - `revert-check.mjs:37-40`: "a run after which a path of the run's folder outside it was added, removed, or changed ... has the folder emptied ...; a write outside the run's folder, through an absolute path, is not seen."
+  - `.vitest-tmp` is inside the run's folder and is skipped by the listing (`memory.mjs:104`), so a write there is not seen either. The `.vitest-tmp` probe above shows it.
+  - The comment names only writes outside the run folder as unseen.
+- No package ids, dates or history in the changed comments. The ASCII, format, lint, size and folder checks are clean.
+
+### Behaviour
+- **A case that leaves an unremovable folder in its temporary directory breaks the in-memory path for the rest of the run, leaves the run folder in the system $TMPDIR, and adds an output line that main does not print.**
+  - Probe: the writer's revert leaves `residue-*/f` in a folder of mode 0o500. On an instrumented scratch copy, every later directive printed `CAUGHT Error: ENOTEMPTY ... oculus-revert-run-.../.case-tmp` and took the copy. The verdicts matched main's.
+  - At the end, `close()` printed `kept      .../oculus-revert-run-z90eWq: Error: ENOTEMPTY ...`, and that folder stayed in $TMPDIR.
+  - Main's script over the same fixture prints one `kept` line, for its own copy. The new entry prints that line plus the `oculus-revert-run-` line.
+  - Cause: `emptyTemp()` (`memory.mjs:106-109`) and `close()` (`:208-212`) remove without the `chmod -R u+rwx` that `start()` does at `:122`. The report lists this as a limitation. The fix is the same one line, so it is a defect to repair, not a limitation.
+  - I removed the three leftover folders my probes made.
+- The cwd/.. probe: the new entry prints `GREEN` where main prints a spurious `red`, and main leaves `up.txt` in $TMPDIR. The new entry is the correct one here, but its output differs from main's on that fixture.
+- Timing: diagrams 99.04 s and 103.49 s against main's 322.52 s. Output identical.
+
+Not checked:
+- Case 1 of the brief (audit, venues, config-folder) and dispatch-note, which were not rerun this round.
+- Restart counts on real tree files other than diagrams. I checked only that the diagrams time did not regress.
+- Workers on a signal during an in-memory run.
+- A Svelte target served in memory.
+- chmod -R's handling of the node_modules link on Linux. I ran it on macOS only.
+
+Reviewer usage: 30 tool uses, about 22 minutes.
+
+## Closed
+
+First review:
+- Spec, the two wrong premises (the config-folder path, the case count): confirmed; both were errors of the brief, recorded in the booking.
+- Spec, the fixture's own `vitest.config.mjs`, the rewritten "unremovable" case, the browser spec in the copy-signal case, the sixth in-memory case: accepted, each needed.
+- Proof, a revert writing into the tree checked: closed in round 1 (one copy per run) and round 2 (the listing of the whole run folder), proven by the note, up and temporary-directory writer cases.
+- Proof, the swap left set after a throw: closed in round 1, the swap set inside the `try` (`bin/revert-check/memory.mjs`, `inMemory`).
+- Behaviour, the baseline run before the revert run: closed in round 1, the baseline runs only after a `failed`.
+- Behaviour, `node --check` run twice on a fallback: closed in round 1.
+
+Round 1, refuted:
+- The shared case temporary directory and the mode left out of the listing (both from the orchestrator's own brief and round text): closed in round 2, each with a writer case.
+- The 101-column line, the head comment claiming more than the code does, the `withLockingCase` comment: closed in round 2.
+
+Round 2, refuted:
+- A folder a case left locked in its temporary directory broke the in-memory path and left the run folder behind: fixed at landing, `unlock()` gives the owner's permissions back before every removal; the case "removes what a case left locked in its temporary directory" is red under its revert.
+- A write into Vitest's kept temporary directory went unseen: fixed at landing, that directory now sits beside the run's folder under one folder of the run, outside what a case reaches from its temporary directory, and the head comment says a write outside the run's folder is not seen.
+- The restart's clearing of the run folder had no test: fixed at landing, the case "empties its run folder of what a case wrote beside the copy" is red under its revert.
+- Three comment lines over 100 columns: fixed at landing.
+- The plan files named the old path: the live references updated at landing (the dispatch comment, L7's draft brief); the logs keep the path they were written with.
+- Two figures of the round 2 report are wrong (`memory.mjs` holds 8 directives, `revert-fixture.ts` 337 lines): recorded here; the code is unaffected.

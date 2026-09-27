@@ -332,9 +332,9 @@ describe('the view type scale', () => {
 
     for (const [file, expected] of Object.entries(PASS_THROUGH)) {
         // A case named from the loop, so the revert is run by hand rather than by
-        // bin/revert-check.mjs, which resolves a case by its name: drop `font-size: var(--fs-lg)`
-        // from `.face` in ui/tabs/TabFace.svelte, or put a font size on `.strip` in
-        // ui/tabs/Tabs.svelte.
+        // bin/revert-check/revert-check.mjs, which resolves a case by its name: drop
+        // `font-size: var(--fs-lg)` from `.face` in ui/tabs/TabFace.svelte, or put a font size on
+        // `.strip` in ui/tabs/Tabs.svelte.
         it(`sets every pass-through role in ${file}`, () => {
             expect(typeRules(file)).toBe(expected);
         });

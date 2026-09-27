@@ -99,7 +99,7 @@ describe('the revert anchor converter', () => {
     });
 
     it('writes a line holding quotes and an arrow as a JSON string', () => {
-        // revert: bin/revert-check.mjs "const text = JSON.stringify(anchor.text);" => const text = `"${anchor.text}"`;
+        // revert: bin/revert-check/directives.mjs "const text = JSON.stringify(anchor.text);" => const text = `"${anchor.text}"`;
         const dir = tree([`${DIRECTIVE} src/b.mjs:5 => const said = '';`]);
         expect(convert(dir).status).toBe(0);
         expect(written(dir)[0]).toBe(
