@@ -57,6 +57,7 @@
                 doc={shown}
                 loading={t('help.loading')}
                 failed={t('help.failed', shown.error)}
+                surface={false}
             />
         {:else}
             {#each parts as part, at (at)}
@@ -67,6 +68,7 @@
                         doc={prose(part)}
                         loading={t('help.loading')}
                         failed={t('help.failed', shown.error)}
+                        surface={false}
                     />
                 {/if}
             {/each}

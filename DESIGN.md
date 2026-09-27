@@ -50,7 +50,8 @@ tools/oculus/
       api/(<group>)/<route>/        the endpoints, in route groups that leave the URL as it is
     lib/
       data/                         LAYER 1, top down: index.ts, sources/, snapshot/, accounts/,
-                                    helpers/, model/ (model/index.ts the facade of every type)
+                                    helpers/, prose/, model/ (model/index.ts the facade of every
+                                    type)
       server/                       LAYER 2, server-pinned, top down: root/ (the composition root
                                     and the watchers), git/, edit/, machine/, content/, files/,
                                     sessions/, accounts/, transcripts/, core/ (what they all share)
@@ -104,7 +105,7 @@ type Snapshot = {
 }
 ```
 
-Flat, JSON-safe, small: the whole hub is a few hundred kilobytes. Documents are not in it; `api/docs` serves one when a view opens it. That is the reason the cockpit's page is 8.8 MB and this one is not. The one exception is a project's `PRESENT.md` front matter, and for a file that has none its narrative: the Present view draws a slide on a key press, so its slides ride in the snapshot rather than being fetched one at a time. A document answer carries an `ETag` of the file's size and modification time and the absolute path of the file read; the page sends the tag back in `If-None-Match` when it asks again, and an unchanged file is a `304` that keeps what the page holds, so a re-read renders nothing.
+Flat, JSON-safe, small: the whole hub is a few hundred kilobytes. Documents are not in it; `api/docs` serves one when a view opens it. That is the reason the cockpit's page is 8.8 MB and this one is not. The one exception is a project's `PRESENT.md` front matter, and for a file that has none its narrative: the Present view draws a slide on a key press, so its slides ride in the snapshot rather than being fetched one at a time. A document answer carries an `ETag` of the server process, the file's size and its modification time, and the absolute path of the file read; the page sends the tag back in `If-None-Match` when it asks again, and an unchanged file under the same process is a `304` that keeps what the page holds, so a re-read renders nothing and a restarted server renders once.
 
 ## Layer 2, code
 
@@ -163,7 +164,7 @@ Svelte 5 state modules (`.svelte.ts`). `entities` holds the latest payload per c
 
 | From | May import | May not import |
 |---|---|---|
-| `ui/` | `ui/`, `themes/`, `state/shared/words/text` | `state/*` otherwise, `views/`, `shell/`, `server/` |
+| `ui/` | `ui/`, `themes/`, `state/shared/words/text`, `data/prose/markdown` (the one Markdown document rule the server shares) | `state/*` otherwise, `views/`, `shell/`, `server/` |
 | `shell/` | `ui/`, `state/client/context`, `state/client/use`, `state/workbench/layout`, `state/workbench/drag`, `state/workbench/ui`, `state/shared/words/text`, `state/shared/words/appearance`, `state/workbench/palette`, `state/workbench/palette-source`, `state/workbench/selection`, `state/workbench/navigation` (the view registry among it), `state/sessions/terminals` | any view by name, `server/` |
 | `views/` | `ui/`, `state/`, `views/shared/`, its own folder `views/<group>/<name>/` | `shell/`, `server/`, other views and their partials, a sibling view of its group included |
 | `state/` | `data/model`, `data/sources/config/rail`, `data/helpers/guards`, `data/accounts/calendar`, `data/accounts/mail`, `data/helpers/dates`, `data/helpers/deck`, `data/accounts/leads`, `data/helpers/worktrees`, `data/helpers/text-kind`, `data/helpers/opens-in-program`, `data/helpers/tasks`, `data/helpers/editor`, `data/helpers/search`, `data/helpers/finding-text` | `server/`, anything of layer 3 |

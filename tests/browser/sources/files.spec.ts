@@ -650,7 +650,7 @@ test("a tree row gives a screen reader its tooltip's words as its description", 
 
 // Revert: in ui/tree/TreeItem.svelte, drop the rule that draws a row's controls on a screen whose
 // pointer does not hover.
-// revert: src/lib/ui/tree/TreeItem.svelte:440 => opacity: 0;
+// revert: src/lib/ui/tree/TreeItem.svelte:439 => opacity: 0;
 test("a row's controls are drawn on a screen that has no hover, with no pointer over them", async ({
     browser
 }) => {

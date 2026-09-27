@@ -31,18 +31,18 @@
     // among it, is the board's card unchanged.
     //
     // A document is fetched, not selected: the wire model keeps documents out of the snapshot, so
-    // state/system/docs.svelte.ts asks api/docs for the chosen one and this renders what comes
-    // back. The HTML is a file on disk turned into markup by marked, so it is drawn through
-    // ui/html.ts's sanitise and holds only what that profile allows.
+    // state/system/docs.svelte.ts asks api/docs for the chosen one and the shared Markdown partial
+    // draws what comes back, as the doc and help views draw theirs: one sanitised draw, one set of
+    // document styles and one press on a link to a heading for every document the page shows.
 
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Segment from '$lib/ui/controls/Segment.svelte';
     import type { SegmentItem } from '$lib/ui/controls/segment-items';
-    import { sanitise } from '$lib/ui/html';
     import Latex from './Latex.svelte';
     import ProjectCard from '../../shared/card/ProjectCard.svelte';
+    import Markdown from '../../shared/prose/Markdown.svelte';
     import { absentDocs, markdownDocNames, type BoardItem } from '$lib/state/boards/board';
     import { cardCursor } from '$lib/state/workbench/layout/instance';
     import { modelShort, stamp } from '$lib/state/shared/words/format';
@@ -208,14 +208,11 @@
                         value={chosen}
                         onchange={(name: string) => choose(name)}
                     />
-                    {#if shown.error !== ''}
-                        <p class="failed">{t('project.doc_failed', shown.error)}</p>
-                    {:else if shown.loading}
-                        <p class="failed">{t('project.doc_loading')}</p>
-                    {:else}
-                        <!-- eslint-disable-next-line svelte/no-at-html-tags -- the sanitiser writes this -->
-                        <div class="doc">{@html sanitise(shown.html)}</div>
-                    {/if}
+                    <Markdown
+                        doc={shown}
+                        loading={t('project.doc_loading')}
+                        failed={t('project.doc_failed', shown.error)}
+                    />
                 {/if}
             </section>
 
@@ -261,101 +258,9 @@
         color: var(--accent-txt, var(--accent));
     }
 
-    .said,
-    .failed {
+    .said {
         margin: 0;
         font-size: var(--fs-md);
-        color: var(--muted-txt, var(--muted));
-    }
-
-    /* The document. The Markdown reaches the DOM as HTML, so every rule below is :global. */
-    .doc {
-        font-size: var(--fs-md);
-        color: var(--ink-txt, var(--ink));
-        overflow-wrap: anywhere;
-    }
-
-    .doc :global(h1),
-    .doc :global(h2),
-    .doc :global(h3),
-    .doc :global(h4) {
-        margin: 12px 0 4px;
-        color: var(--ink-txt, var(--ink));
-    }
-
-    .doc :global(h1) {
-        font-size: var(--fs-3xl);
-    }
-
-    .doc :global(h2) {
-        font-size: var(--fs-2xl);
-    }
-
-    .doc :global(h3) {
-        font-size: var(--fs-xl);
-    }
-
-    .doc :global(h4) {
-        font-size: var(--fs-md);
-    }
-
-    .doc :global(p),
-    .doc :global(ul),
-    .doc :global(ol) {
-        margin: 6px 0;
-    }
-
-    .doc :global(a) {
-        color: var(--accent-txt, var(--accent));
-    }
-
-    .doc :global(code) {
-        font-family: var(--font-mono);
-        font-size: var(--fs-sm);
-        background: var(--chip);
-        border-radius: var(--radius-sm);
-        padding: 0 3px;
-    }
-
-    /* Over a wallpaper a code span paints nothing: a blur behind a span that wraps covers the whole
-       box around both of its halves, which blurs the prose between them. */
-    :global(body.wall) .doc :global(code) {
-        background: transparent;
-    }
-
-    .doc :global(pre) {
-        overflow-x: auto;
-        padding: 8px;
-        background: var(--chip);
-        border-radius: var(--radius-sm);
-    }
-
-    :global(body.wall) .doc :global(pre) {
-        background: color-mix(in srgb, var(--chip) var(--wall-panel), transparent);
-        backdrop-filter: blur(var(--wall-blur));
-    }
-
-    .doc :global(pre code) {
-        background: none;
-        padding: 0;
-    }
-
-    .doc :global(table) {
-        border-collapse: collapse;
-        font-size: var(--fs-md);
-    }
-
-    .doc :global(th),
-    .doc :global(td) {
-        border: 1px solid var(--line);
-        padding: 3px 6px;
-        text-align: left;
-    }
-
-    .doc :global(blockquote) {
-        margin: 6px 0;
-        padding-left: 8px;
-        border-left: 2px solid var(--line);
         color: var(--muted-txt, var(--muted));
     }
 

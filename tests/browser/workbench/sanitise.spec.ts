@@ -11,7 +11,7 @@
 
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { shortOf } from '../helpers/hub.ts';
-import { boot, openView } from '../helpers/rail.ts';
+import { boot, openProjectTab, openView } from '../helpers/rail.ts';
 import { t } from '../helpers/words.ts';
 
 const BANDITS = 'projects/active/graph-bandits';
@@ -38,14 +38,7 @@ function dialogs(page: Page): string[] {
  */
 async function openDocument(page: Page): Promise<Locator> {
     await boot(page);
-    await openView(page, 'projects', t('views.projects'));
-    const name = shortOf(BANDITS);
-    await page
-        .locator('.slot')
-        .filter({ hasText: name })
-        .first()
-        .getByRole('button', { name, exact: true })
-        .click();
+    await openProjectTab(page, shortOf(BANDITS));
     const document = page.locator('.project div.doc');
     await expect(document).toBeVisible();
     await expect(document).toContainText('carries markup on purpose');
@@ -71,6 +64,7 @@ test('a feed title carrying a script and a handler is drawn as words', async ({ 
 });
 
 test('a document handler and a javascript link are drawn without either', async ({ page }) => {
+    // revert: src/lib/views/shared/prose/Markdown.svelte:48 => {@html doc.html}
     const seen = dialogs(page);
     const document = await openDocument(page);
 

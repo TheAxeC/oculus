@@ -3,12 +3,21 @@
 // on the root element, so the answer is a computed style and not something an audit of the CSS
 // source can read: the source only says the box takes `--wall-panel` of `--panel`. The manual is
 // one such view, and a code span of its prose paints nothing in turn, which only a wrapped span in
-// a drawn page can show: a blur behind a wrapped span covers the prose between its two halves.
+// a drawn page can show: a blur behind a wrapped span covers the prose between its two halves. A
+// project's document is drawn on a box that is not tinted, so its fenced block keeps a surface of
+// its own there, while the same block in a hub document, on a tinted box, paints none.
 
-import { expect, test, type Page } from '@playwright/test';
-import { SHOWN_VIEW, boot, openView, pickTheme } from '../helpers/rail.ts';
+import { expect, test, type Locator, type Page } from '@playwright/test';
+import {
+    SHOWN_VIEW,
+    boot,
+    openProjectTab,
+    openView,
+    pickTheme,
+    showRailPage
+} from '../helpers/rail.ts';
 import { alphaOf } from '../helpers/style.ts';
-import { shortOf } from '../helpers/hub.ts';
+import { removeFromHub, shortOf, writeHubFile } from '../helpers/hub.ts';
 import { t } from '../helpers/words.ts';
 
 /** The alpha the box of one open view is painted at. */
@@ -63,7 +72,7 @@ async function wrappedSpan(
 test('a wrapped code span of the manual paints no layer of its own over a wallpaper', async ({
     page
 }) => {
-    // revert: src/lib/views/shared/prose/Markdown.svelte:107 => backdrop-filter: blur(var(--wall-blur));
+    // revert: src/lib/views/shared/prose/Markdown.svelte:150 => backdrop-filter: blur(var(--wall-blur));
     // revert: src/lib/views/system/help/Help.svelte:53 => <Pane title={t('views.help')}>
     await boot(page);
     await pickTheme(page, 'mocha');
@@ -92,7 +101,7 @@ test('a wrapped code span of the manual paints no layer of its own over a wallpa
 test('a code span of a project document paints no fill of its own over a wallpaper', async ({
     page
 }) => {
-    // revert: src/lib/views/boards/project/Project.svelte:323 => background: color-mix(in srgb, var(--chip) var(--wall-panel), transparent);
+    // revert: src/lib/views/shared/prose/Markdown.svelte:150 => background: color-mix(in srgb, var(--chip) var(--wall-panel), transparent);
     await boot(page);
     await pickTheme(page, 'mocha');
     await expect(page.locator('.wallpaper')).toHaveCount(1);
@@ -109,4 +118,45 @@ test('a code span of a project document paints no fill of its own over a wallpap
     });
     expect(alphaOf(painted.fill)).toBe(0);
     expect(painted.filter).toBe('none');
+});
+
+/** What a wallpaper paints under the first fenced block inside the element given. */
+async function blockPaint(scope: Locator): Promise<{ fill: number; filter: string }> {
+    const block = scope.locator('pre').first();
+    await expect(block).toBeVisible();
+    return block
+        .evaluate((node) => {
+            const style = getComputedStyle(node);
+            return { fill: style.backgroundColor, filter: style.backdropFilter };
+        })
+        .then((painted) => ({ fill: alphaOf(painted.fill), filter: painted.filter }));
+}
+
+test('a fenced block keeps a surface in a project document and paints none in a hub document', async ({
+    page
+}) => {
+    // revert: src/lib/views/shared/prose/Markdown.svelte:46 => <div class="doc" onclick={jump}>
+    // revert: src/lib/views/shared/prose/Markdown.svelte:159 => :global(body.wall) .doc :global(pre) {
+    const path = 'docs/HPC-UTwente-howto.md';
+    writeHubFile(path, '# The cluster\n\n```\nsbatch job.slurm\n```\n');
+    try {
+        await boot(page);
+        await pickTheme(page, 'mocha');
+        await expect(page.locator('.wallpaper')).toHaveCount(1);
+
+        // The project tab's box is not tinted, so the block is the one surface under its code.
+        await openProjectTab(page, shortOf('projects/active/graph-bandits'));
+        const project = await blockPaint(page.locator('[data-project] .doc'));
+        expect(project.fill).toBeGreaterThan(0);
+        expect(project.filter).not.toBe('none');
+
+        // The doc view's box is tinted, so the block in it paints nothing of its own.
+        await showRailPage(page, 'views');
+        await page.locator(`${SHOWN_VIEW} [data-catalogue] button[data-doc="${path}"]`).click();
+        const hub = await blockPaint(page.locator(`[data-instance][data-path="${path}"] .doc`));
+        expect(hub.fill).toBe(0);
+        expect(hub.filter).toBe('none');
+    } finally {
+        removeFromHub(path);
+    }
 });

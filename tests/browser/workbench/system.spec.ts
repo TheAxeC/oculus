@@ -132,8 +132,8 @@ test('a diagram file carrying a script and a handler is drawn as a drawing alone
 test('a write edge names the functions it calls on hover, and no style of the file is drawn', async ({
     page
 }) => {
-    // revert: src/lib/ui/html.ts:260 => export const GRAPH_TAGS = ['svg', 'g', 'polygon', 'polyline', 'path', 'ellipse', 'text'];
-    // revert: src/lib/ui/html.ts:260 => export const GRAPH_TAGS = ['svg', 'style', 'g', 'title', 'polygon', 'polyline', 'path', 'ellipse', 'text'];
+    // revert: src/lib/ui/html.ts:268 => export const GRAPH_TAGS = ['svg', 'g', 'polygon', 'polyline', 'path', 'ellipse', 'text'];
+    // revert: src/lib/ui/html.ts:268 => export const GRAPH_TAGS = ['svg', 'style', 'g', 'title', 'polygon', 'polyline', 'path', 'ellipse', 'text'];
     await boot(page);
     await openView(page, 'help', t('views.help'));
     const figure = page.locator('[data-diagram="writes"]');
@@ -457,17 +457,7 @@ async function bootWithDocTab(
         });
     }
     const saved = JSON.stringify({ version: 4, pages, current: 'doc-page' });
-    await page.addInitScript(
-        ({ key, value }) => {
-            try {
-                if (localStorage.getItem(key) === null) localStorage.setItem(key, value);
-            } catch {
-                // A storage the browser refuses leaves the page to start as a fresh one would.
-            }
-        },
-        { key: LAYOUT_KEY, value: saved }
-    );
-    await boot(page);
+    await boot(page, saved);
 }
 
 /** The state the saved layout holds for the seeded document tab, or null when it holds none. */

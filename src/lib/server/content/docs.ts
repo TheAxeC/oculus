@@ -21,19 +21,22 @@
 // process that has published no portfolio yet has no snapshot to ask, and the folder is then the
 // project's own folder under the hub's scan directories, found by the id it is named after.
 //
-// Every file answered carries an entity tag of its size and modification time, and a request that
-// sends the tag it holds back in If-None-Match is answered 304 while the file is unchanged. The
-// page asks again after every write that may concern a document, which on a busy hub is every few
-// seconds, so the stat is what keeps a re-read of an unchanged file from rendering it again.
+// Every file answered carries an entity tag of this server process, the file's size and its
+// modification time, and a request that sends the tag it holds back in If-None-Match is answered
+// 304 while the file is unchanged and the process is the one that rendered it. The page asks
+// again after every write that may concern a document, which on a busy hub is every few seconds,
+// so the stat is what keeps a re-read of an unchanged file from rendering it again.
 //
 // The HTML is rendered here and filtered on the page: ui/html.ts's sanitise runs over every body
-// this route answers with, before views/boards/project/Project.svelte draws it. One filter, at the
+// this route answers with, before views/shared/prose/Markdown.svelte draws it. One filter, at the
 // one place the markup becomes a document, so this route stays the reader of a file and nothing
 // else.
 
 import { existsSync, readdirSync, realpathSync, statSync } from 'node:fs';
 import { dirname, join, resolve, sep } from 'node:path';
-import { Marked } from 'marked';
+import { randomUUID } from 'node:crypto';
+import type { MarkedExtension, Tokens } from 'marked';
+import { escapeAttribute, renderDocument } from '../../data/prose/markdown.ts';
 import { configDir } from '../../data/sources/config.ts';
 import { PROJECT_DOCS, isFinding, readDoc } from '../../data/sources/docs.ts';
 import { PRESENT_DOC } from '../../data/sources/present.ts';
@@ -99,16 +102,24 @@ function json(status: number, body: unknown, tag = ''): Response {
 }
 
 /**
- * The entity tag of one file: its size and modification time, one stat and no read. The empty
- * string for a path that is not a file, which is then never answered 304. A tag changes whenever
- * either does, which is every write that can change the rendered text; a write that keeps both
- * (the same bytes rewritten within the clock's resolution) keeps what the page holds, which is
- * the same document.
+ * What this server process's tags start with, made once as the module loads and never changed. A
+ * rendered document is a function of the file and of the renderer the process runs, so a page
+ * still holding a tag from an earlier process (an earlier build's render) is answered with this
+ * process's render rather than a 304 over the old one.
+ */
+export const PROCESS_TAG = randomUUID();
+
+/**
+ * The entity tag of one file: the process's own stamp, the file's size and its modification time,
+ * one stat and no read. The empty string for a path that is not a file, which is then never
+ * answered 304. A tag changes whenever the size or the time does, which is every write that can
+ * change the rendered text; a write that keeps both (the same bytes rewritten within the clock's
+ * resolution) keeps what the page holds, which is the same document.
  */
 export function fileTag(path: string): string {
     try {
         const stat = statSync(path);
-        return stat.isFile() ? `"${String(stat.size)}-${String(stat.mtimeMs)}"` : '';
+        return stat.isFile() ? `"${PROCESS_TAG}-${String(stat.size)}-${String(stat.mtimeMs)}"` : '';
     } catch {
         return '';
     }
@@ -220,17 +231,6 @@ function climbs(path: string): boolean {
 }
 
 /**
- * An attribute value as markup, so a title or an alt carrying a quote stays inside its attribute.
- */
-function attribute(value: string): string {
-    return value
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-}
-
-/**
  * One document's Markdown as HTML, with a figure beside it drawn through the file route: a relative
  * image source is resolved against the document's own folder and addressed under `base.root`, which
  * is the one way a `<img src="figures/one.png">` in a hub document reaches the reader. An address
@@ -238,37 +238,35 @@ function attribute(value: string): string {
  * document with no folder to resolve against (the engine's own manual) keeps every source it
  * carries.
  *
- * The renderer is this call's own `Marked`, never `marked.use`, so nothing here changes how any
- * other reader of the package renders.
+ * Every heading carries an id and a `[TOC]` paragraph is drawn as the document's table of
+ * contents, by the document rule of data/prose/markdown.ts the page renders with too.
  */
 export function renderMarkdown(
     text: string,
     base: { root: string; folder: string } | null
 ): string {
-    if (base === null) return new Marked().parse(text, { async: false });
-    const reader = new Marked({
+    return base === null ? renderDocument(text) : renderDocument(text, figures(base));
+}
+
+/**
+ * The renderer that addresses a document's figures through the file route under `base.root`,
+ * resolved against the document's own folder.
+ */
+function figures(base: { root: string; folder: string }): MarkedExtension {
+    return {
         renderer: {
-            image({
-                href,
-                title,
-                text: alt
-            }: {
-                href: string;
-                title: string | null;
-                text: string;
-            }) {
+            image({ href, title, text: alt }: Tokens.Image) {
                 // A source that leaves the document's own root is left as the author wrote it,
                 // since the file route serves nothing outside a root; the browser then resolves it
                 // against the page.
                 const joined = join(base.folder, href);
                 const src =
                     ABSOLUTE.test(href) || climbs(joined) ? href : routeUrl(base.root, joined);
-                const name = title === null ? '' : ` title="${attribute(title)}"`;
-                return `<img src="${attribute(src)}" alt="${attribute(alt)}"${name}>`;
+                const name = title === null ? '' : ` title="${escapeAttribute(title)}"`;
+                return `<img src="${escapeAttribute(src)}" alt="${escapeAttribute(alt)}"${name}>`;
             }
         }
-    });
-    return reader.parse(text, { async: false });
+    };
 }
 
 /**

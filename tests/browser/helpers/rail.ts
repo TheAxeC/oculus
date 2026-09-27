@@ -2,11 +2,12 @@
 // with the first.
 //
 // boot() opens the application for a reader whose saved layout is one page holding the Status tab
-// alone, which is the neutral page a spec about anything else starts from, and bootFresh() for a
-// browser with no saved layout, which starts on the first rail page. Both wait for the server item
-// of the status bar to say the socket is up and for the rail's page buttons: the rail's pages are
-// drawn from the config the socket carries, so the rail on the server's HTML is not the rail the
-// reader ends up with, and a locator counted before then counts the wrong one.
+// alone, which is the neutral page a spec about anything else starts from, or the layout a spec
+// hands it; bootFresh() opens it for a browser with no saved layout, which starts on the first rail
+// page. Both wait for the server item of the status bar to say the socket is up and for the rail's
+// page buttons: the rail's pages are drawn from the config the socket carries, so the rail on the
+// server's HTML is not the rail the reader ends up with, and a locator counted before then counts
+// the wrong one.
 //
 // openView() opens a view in the page on screen through the palette's `:tab` command, which is the
 // path that opens any registered view where a view lands without leaving the page: the Views
@@ -14,7 +15,8 @@
 // have to switch to that page and back. pickTheme() puts a theme on through the palette's `:theme`
 // command for the same reason, and inSettings() is the way to the other appearance controls, which
 // the Settings view holds alone. bookmarkFiles() and openBookmark() read and open the rail's
-// Bookmarks menu, whose choices are drawn only while it is open.
+// Bookmarks menu, whose choices are drawn only while it is open. openProjectTab() opens a project's
+// tab from its card on the projects board.
 
 import { expect, type Locator, type Page } from '@playwright/test';
 import { t } from './words.ts';
@@ -67,11 +69,12 @@ async function settled(page: Page): Promise<void> {
 }
 
 /**
- * Open the application for a reader whose saved layout is the one Status page. The layout is put
- * in the browser's storage before the page's own script runs, on the first load alone, so a reload
- * reads what the page saved since.
+ * Open the application for a reader whose saved layout is the one Status page, or the layout a spec
+ * gives, which holds the Status tab on the page it shows. The layout is put in the browser's
+ * storage before the page's own script runs, on the first load alone, so a reload reads what the
+ * page saved since.
  */
-export async function boot(page: Page): Promise<void> {
+export async function boot(page: Page, saved: string = STATUS_PAGE): Promise<void> {
     await page.addInitScript(
         ({ key, value }) => {
             try {
@@ -80,7 +83,7 @@ export async function boot(page: Page): Promise<void> {
                 // A storage the browser refuses leaves the page to start as a fresh one would.
             }
         },
-        { key: LAYOUT_KEY, value: STATUS_PAGE }
+        { key: LAYOUT_KEY, value: saved }
     );
     await page.goto('/');
     await settled(page);
@@ -109,6 +112,20 @@ export async function openView(page: Page, view: string, label: string): Promise
     await box.press('Enter');
     await expect(box).toHaveCount(0);
     await expect(page.getByRole('tab', { name: label })).toBeVisible();
+}
+
+/**
+ * Open one project as its own tab: the projects board in the page on screen, then the card's own
+ * control named by the project's short name.
+ */
+export async function openProjectTab(page: Page, name: string): Promise<void> {
+    await openView(page, 'projects', t('views.projects'));
+    await page
+        .locator('.slot')
+        .filter({ hasText: name })
+        .first()
+        .getByRole('button', { name, exact: true })
+        .click();
 }
 
 /** Press the rail button of one page, by the arrangement key its `rail:` entry names. */

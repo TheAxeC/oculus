@@ -46,6 +46,7 @@
         "katex": "^0.18.7",
         "lucide-static": "1.46.0",
         "marked": "^18.0.12",
+        "marked-gfm-heading-id": "4.1.4",
         "ws": "^8.21.3",
         "yaml": "^2.9.0"
     }

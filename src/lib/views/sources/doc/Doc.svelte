@@ -108,6 +108,7 @@
                 doc={shown}
                 loading={t('doc.loading')}
                 failed={t('doc.failed', reading, shown.error)}
+                surface={false}
             />
         {/if}
     </div>

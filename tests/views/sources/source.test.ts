@@ -327,6 +327,7 @@ describe('the source editor', () => {
     });
 
     it('draws the rendered half beside a Markdown file and nothing beside a YAML one', () => {
+        // revert: src/lib/ui/html.ts:332 => return sanitise(marked.parse(text, { async: false }));
         const drawn = (path: string): string =>
             render(Editor, {
                 context: clientContext(client),
@@ -335,7 +336,7 @@ describe('the source editor', () => {
 
         const markdown = drawn('notes.md');
         expect(markdown).toContain('data-source-preview="notes.md"');
-        expect(markdown).toContain('<h1>A heading</h1>');
+        expect(markdown).toContain('<h1 id="user-content-a-heading">A heading</h1>');
 
         const yaml = drawn('notes.yml');
         // a .yml has no rendered form, so no preview is drawn for it
@@ -343,6 +344,7 @@ describe('the source editor', () => {
     });
 
     it('leaves a front matter block out of the rendered half and a relative image as written', () => {
+        // revert: src/lib/ui/html.ts:332 => return sanitise(marked.parse(text, { async: false }));
         const body = render(Editor, {
             context: clientContext(client),
             props: {
@@ -352,7 +354,7 @@ describe('the source editor', () => {
             }
         }).body;
         const preview = body.slice(body.indexOf('data-source-preview'));
-        expect(preview).toContain('<h1>Prose</h1>');
+        expect(preview).toContain('<h1 id="user-content-prose">Prose</h1>');
         // the front matter is the deck's own data, so the preview draws the prose alone
         expect(preview).not.toContain('title: A deck');
         // and no rule where the front matter ended
@@ -361,6 +363,7 @@ describe('the source editor', () => {
     });
 
     it('takes the rendered half away when the instance state says the toggle is off', async () => {
+        // revert: src/lib/ui/html.ts:332 => return sanitise(marked.parse(text, { async: false }));
         vi.stubGlobal(
             'fetch',
             vi.fn(() => Promise.resolve(new Response('# A heading\n')))
@@ -372,7 +375,7 @@ describe('the source editor', () => {
         };
         await loadSourceDraft(instance.id, 'hub', 'notes.md');
         const shown = render(Source, { context: clientContext(client), props: { instance } }).body;
-        expect(shown).toContain('<h1>A heading</h1>');
+        expect(shown).toContain('<h1 id="user-content-a-heading">A heading</h1>');
 
         toggleSourceRendered(instance.id);
         expect(instanceState(instance.id)).toMatchObject({ rendered: false });

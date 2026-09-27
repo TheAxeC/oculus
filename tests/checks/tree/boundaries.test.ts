@@ -62,6 +62,11 @@ const LAYERS = ['data', 'server', 'server/transcripts', 'state', 'ui', 'shell', 
 // all read, so the three agree on which entries are pages. The model's own concern modules
 // (`data/model-*`) are reached through the facade only, which is why they are not listed here.
 //
+// `data/prose/markdown` is in the primitives' row, the one module of layer 1 there: a Markdown
+// document is rendered by the document route on the server and by ui/html.ts on the page, and the
+// heading ids and the table of contents are one rule for both, so a document reads the same in the
+// doc view and in the source tab's preview. It holds no reader and no I/O.
+//
 // The shell's row names the state modules the workbench is made of, one at a time, and the folder
 // `state/workbench/navigation/`, whose modules (the rail's pages, the view catalogue and its keys,
 // what a page is called and what closing it asks) the shell and the views both read. The one drag
@@ -76,7 +81,7 @@ const LAYERS = ['data', 'server', 'server/transcripts', 'state', 'ui', 'shell', 
 // layer 3: the view registry is a state module, and the page root makes the primitives' tooltip
 // counter beside the client object, so the state row reaches no layer above it.
 const ALLOWED: Record<string, string[]> = {
-    ui: ['ui/**', 'themes/**', 'state/shared/words/text'],
+    ui: ['ui/**', 'themes/**', 'state/shared/words/text', 'data/prose/markdown'],
     shell: [
         'shell/**',
         'ui/**',
@@ -385,24 +390,24 @@ function scratch(name: string): string {
 
 describe('layer boundaries', () => {
     it('holds across src/lib', () => {
-        // revert: tests/checks/tree/boundaries.test.ts:97 => views: ['state/**'],
+        // revert: tests/checks/tree/boundaries.test.ts:102 => views: ['state/**'],
         // revert: src/lib/state/client/context.ts:21 => import { createRegistry, type RegistryStore } from '../../views/registry.ts';
         // revert: src/lib/state/client/context.ts:21 => import { createTipIds } from '../../ui/menu/tip-ids.ts';
         expect(findViolations(LIB)).toEqual([]);
     });
 
     it('holds no process-wide state under src', () => {
-        // revert: tests/checks/tree/boundaries.test.ts:236 => delete
+        // revert: tests/checks/tree/boundaries.test.ts:241 => delete
         expect(findGlobalState(SRC)).toEqual([]);
     });
 
     it('keeps every shell file to the stores its row names', () => {
-        // revert: tests/checks/tree/boundaries.test.ts:258 => delete
+        // revert: tests/checks/tree/boundaries.test.ts:263 => delete
         expect(findShellStores(LIB)).toEqual([]);
     });
 
     it('catches a shell file reading a store the shell may not read', () => {
-        // revert: tests/checks/tree/boundaries.test.ts:284 => delete
+        // revert: tests/checks/tree/boundaries.test.ts:289 => delete
         const dir = scratch('oculus-shell-stores-');
         mkdirSync(join(dir, 'shell'), { recursive: true });
         writeFileSync(
@@ -416,7 +421,7 @@ describe('layer boundaries', () => {
     });
 
     it('catches process-wide state outside app.d.ts', () => {
-        // revert: tests/checks/tree/boundaries.test.ts:196 => delete
+        // revert: tests/checks/tree/boundaries.test.ts:201 => delete
         const dir = scratch('oculus-global-state-');
         mkdirSync(join(dir, 'lib', 'server'), { recursive: true });
         writeFileSync(join(dir, 'bad.ts'), 'declare global {}\nconst held = globalThis.value;\n');
@@ -440,7 +445,7 @@ describe('layer boundaries', () => {
     });
 
     it('catches a violation of every row it can be shown one of', () => {
-        // revert: tests/checks/tree/boundaries.test.ts:161 => if (false) {
+        // revert: tests/checks/tree/boundaries.test.ts:166 => if (false) {
         const dir = scratch('oculus-boundaries-');
 
         const write = (rel: string, body: string) => {
@@ -483,7 +488,7 @@ describe('layer boundaries', () => {
         );
         // A sibling view of the same group is another view: the rule is the view's own folder,
         // never the group's.
-        // revert: tests/checks/tree/boundaries.test.ts:136 => return [`views/${parts[1]}/**`];
+        // revert: tests/checks/tree/boundaries.test.ts:141 => return [`views/${parts[1]}/**`];
         write(
             'views/boards/focus/CommandCenter.svelte',
             "<script>\nimport Row from './Row.svelte';\nimport Bad from '../projects/Projects.svelte';\n</script>"
@@ -513,7 +518,7 @@ describe('layer boundaries', () => {
         ]);
     });
 
-    // revert: tests/checks/tree/boundaries.test.ts:150 => return id === pattern || id === `${pattern}.svelte` || id.startsWith(`${pattern}/`);
+    // revert: tests/checks/tree/boundaries.test.ts:155 => return id === pattern || id === `${pattern}.svelte` || id.startsWith(`${pattern}/`);
     it('admits the index module of a folder a row names exactly, and no other module in it', () => {
         const dir = scratch('oculus-boundaries-index-');
         const full = join(dir, 'state', 'reads.ts');
@@ -531,7 +536,7 @@ describe('layer boundaries', () => {
 
     // revert: tests/checks/tree/allow-styling.ts:72 => line: 'views/sources/search/Results.svelte styles .label of ui/controls/Chip.svelte, ui/tabs/Tabs.svelte, ui/controls/Tag.svelte through .hit :global(.label)',
     it('lets no view or shell component style a primitive own class', () => {
-        // revert: tests/checks/tree/boundaries.test.ts:348 => delete
+        // revert: tests/checks/tree/boundaries.test.ts:353 => delete
         expect(
             findPrimitiveStyling(
                 LIB,
@@ -541,7 +546,7 @@ describe('layer boundaries', () => {
     });
 
     it('catches a view reaching into a primitive, and passes the theme class and its own', () => {
-        // revert: tests/checks/tree/boundaries.test.ts:344 => const owned = undefined;
+        // revert: tests/checks/tree/boundaries.test.ts:349 => const owned = undefined;
         const dir = scratch('oculus-primitive-styling-');
         const write = (rel: string, body: string) => {
             const full = join(dir, rel);
@@ -584,7 +589,7 @@ describe('layer boundaries', () => {
     });
 
     it('holds the styling lists to rules the tree still has', () => {
-        // revert: tests/checks/tree/boundaries.test.ts:349 => delete
+        // revert: tests/checks/tree/boundaries.test.ts:354 => delete
         const held = findPrimitiveStyling(LIB);
         expect(
             [...DELIBERATE, ...HELD]

@@ -1,6 +1,6 @@
 // Layer 4, view test. What a hub file, a feed or a transcript puts on the page passes the sanitiser
-// on the way: the title a card draws, the document body a project tab draws, and the assistant turn
-// a transcript draws.
+// on the way: the title a card draws, the document body the prose partial draws for a project tab,
+// and the assistant turn a transcript draws.
 //
 // What this does NOT cover: the filtering itself. DOMPurify needs a document and this suite runs in
 // node, so `sanitise` returns its argument here and no script is removed in this file; what is
@@ -76,11 +76,18 @@ describe('a title out of a feed', () => {
 });
 
 describe('a body rendered from a file on disk', () => {
-    it('is drawn through the sanitiser in the project tab', () => {
+    it("audits that the project tab draws its document through the prose partial's sanitised draw", () => {
+        // revert: src/lib/views/boards/project/Project.svelte:211 => {@html shown.html}
+        // revert: src/lib/views/shared/prose/Markdown.svelte:48 => {@html doc.html}
         const source = readFileSync(join(VIEWS, 'boards/project/Project.svelte'), 'utf8');
-        expect(source).toContain('{@html sanitise(shown.html)}');
+        expect(source).toContain('<Markdown');
+        expect(source).toContain('doc={shown}');
+        // the project tab draws no HTML of its own, so nothing it draws skips the partial's filter
+        expect(source).not.toContain('{@html');
+        const partial = readFileSync(join(VIEWS, 'shared/prose/Markdown.svelte'), 'utf8');
+        expect(partial).toContain('{@html sanitise(doc.html)}');
         // every rendered body goes through the sanitiser, so the raw one is never drawn
-        expect(source).not.toContain('{@html shown.html}');
+        expect(partial).not.toContain('{@html doc.html}');
     });
 
     it('is drawn through the sanitiser in the transcript', () => {

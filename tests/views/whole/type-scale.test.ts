@@ -82,8 +82,7 @@ const VIEWS: Record<string, string> = {
     'boards/person/Person.svelte': '.facts dt=fs-xxs | .block h3=fs-sm',
     'academic/present/Present.svelte': '.counter=fs-xs',
     'structure/pillars/Pillars.svelte': '.note=fs-md',
-    'boards/project/Project.svelte':
-        '.heading=fs-xs | .said, .failed=fs-md | .doc=fs-md | .doc :global(h1)=fs-3xl | .doc :global(h2)=fs-2xl | .doc :global(h3)=fs-xl | .doc :global(h4)=fs-md | .doc :global(code)=fs-sm | .doc :global(table)=fs-md | .nm=fs-md | .meta=fs-sm',
+    'boards/project/Project.svelte': '.heading=fs-xs | .said=fs-md | .nm=fs-md | .meta=fs-sm',
     'boards/projects/Projects.svelte': '.said=fs-md',
     'feeds/radar/Radar.svelte': '',
     'sources/repositories/Repositories.svelte': '',

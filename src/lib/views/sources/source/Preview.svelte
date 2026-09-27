@@ -51,7 +51,12 @@
 </script>
 
 <div class="preview" data-source-preview={path} bind:this={box}>
-    <Markdown {doc} loading={t('file.loading')} failed={t('source.cannot_open', path)} />
+    <Markdown
+        {doc}
+        loading={t('file.loading')}
+        failed={t('source.cannot_open', path)}
+        surface={false}
+    />
 </div>
 
 <style>

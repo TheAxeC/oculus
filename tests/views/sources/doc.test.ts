@@ -106,7 +106,7 @@ describe('a hub document as its own tab', () => {
     });
 
     it('says the document is being read while the first answer is still to come', () => {
-        // revert: src/lib/views/shared/prose/Markdown.svelte:27 => {:else if false}
+        // revert: src/lib/views/shared/prose/Markdown.svelte:40 => {:else if false}
         const body = drawn(docState(ENTRY), {
             html: '',
             frontmatter: null,
@@ -169,7 +169,7 @@ describe('a tab whose path the documents list no longer holds', () => {
 
 describe('the shared Markdown partial', () => {
     it('draws headings, lists, tables and figures as the server rendered them', () => {
-        // revert: src/lib/views/shared/prose/Markdown.svelte:31 => <div class="doc">{doc.html}</div>
+        // revert: src/lib/views/shared/prose/Markdown.svelte:48 => {doc.html}
         const html =
             '<h2>Two</h2><ul><li>one</li></ul><table><tr><td>a</td></tr></table>' +
             '<img src="/api/file/hub/notes/one.png" alt="one">';

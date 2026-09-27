@@ -23,6 +23,14 @@
 
 import DOMPurify from 'dompurify';
 import { marked } from 'marked';
+import { HEADING_PREFIX, renderDocument } from '../data/prose/markdown.ts';
+
+/**
+ * What every heading id of a rendered document starts with, which a press on a link to a fragment
+ * tries before the fragment as written reaches a heading: data/prose/markdown.ts's, handed on so a
+ * view reaches it through the one module of layer 3 that renders Markdown.
+ */
+export const HEADING_ID_PREFIX = HEADING_PREFIX;
 
 /**
  * The elements a rendered document, an assistant turn and one line of inline Markdown are made of:
@@ -315,10 +323,11 @@ export function inlineMarkdown(text: string): string {
 
 /**
  * A whole Markdown document as the HTML a view draws it with: headings, lists, tables and fenced
- * code, which the inline renderer above leaves as the text they were written as. The server renders
- * a README this way before it sends it; this is for the Markdown a view already holds, a slide's
- * narrative being the one. What the file holds is somebody's text, so the result is sanitised.
+ * code, which the inline renderer above leaves as the text they were written as. It is the
+ * document rule of data/prose/markdown.ts the server renders a README with, heading ids and the
+ * `[TOC]` list included, for the Markdown a view already holds: the source tab's preview and a
+ * slide's narrative. What the file holds is somebody's text, so the result is sanitised.
  */
 export function blockMarkdown(text: string): string {
-    return sanitise(marked.parse(text, { async: false }));
+    return sanitise(renderDocument(text));
 }

@@ -65,7 +65,7 @@ describe('the folder order of each layer', () => {
         expect(brokenIn('shell')).toEqual([]);
     });
 
-    // revert: tests/checks/imports/order.ts:72 => 'views/shared', 'views/academic',
+    // revert: tests/checks/imports/order.ts:80 => 'views/shared', 'views/academic',
     it('holds the views folders', () => {
         // Every view group imports only views/shared, and views/shared imports no group.
         expect(brokenIn('views')).toEqual([]);
@@ -73,8 +73,8 @@ describe('the folder order of each layer', () => {
 });
 
 describe('the order check', () => {
-    // revert: tests/checks/imports/order.ts:140 => return listed.indexOf(to) > listed.indexOf(from);
-    // revert: tests/checks/imports/order.ts:160 => for (const [fileRel, imports] of importGraph(libRoot)) {
+    // revert: tests/checks/imports/order.ts:148 => return listed.indexOf(to) > listed.indexOf(from);
+    // revert: tests/checks/imports/order.ts:168 => for (const [fileRel, imports] of importGraph(libRoot)) {
     it('names a planted upward import and a type-only one with their lines, and passes a downward one', () => {
         const dir = plant({
             'state/forms/text.ts': 'export const t = 1;\n',
@@ -90,7 +90,7 @@ describe('the order check', () => {
         ]);
     });
 
-    // revert: tests/checks/imports/order.ts:169 => if (true) continue;
+    // revert: tests/checks/imports/order.ts:177 => if (true) continue;
     it('names an import that climbs the inner order of a folder, and passes one that descends it', () => {
         const dir = plant({
             'state/shared/words/text.ts':
@@ -106,7 +106,7 @@ describe('the order check', () => {
         ]);
     });
 
-    // revert: tests/checks/imports/order.ts:126 => .filter(() => false)
+    // revert: tests/checks/imports/order.ts:134 => .filter(() => false)
     it('names a folder the order does not place and one the tree no longer holds', () => {
         const dir = plant({
             'ui/new/One.svelte': '<span></span>\n',
@@ -122,8 +122,8 @@ describe('the order check', () => {
     });
 
     it('places every folder of every layer the tree holds, and every sub-folder of an inner order', () => {
-        // revert: tests/checks/imports/order.ts:67 => 'ui/tabs',
-        // revert: tests/checks/imports/order.ts:89 => 'state/shared': ['state/shared/words']
+        // revert: tests/checks/imports/order.ts:75 => 'ui/tabs',
+        // revert: tests/checks/imports/order.ts:97 => 'state/shared': ['state/shared/words']
         expect(findUpward(LIB).filter((line) => line.includes(' placed'))).toEqual([]);
         expect(Object.keys(ORDER)).toEqual(['data', 'server', 'state', 'ui', 'shell', 'views']);
         expect(Object.keys(INNER)).toEqual(['state/shared']);

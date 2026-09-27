@@ -490,28 +490,34 @@ test('an intro filters a hub value and draws a catalog line as it is written', a
     expect(alerts).toEqual([]);
 });
 
-// revert: src/lib/ui/tree/TreeItem.svelte:276 => flex: 1 1 auto;
-test("a tree row's controls follow its name rather than the pane's edge", async ({ page }) => {
+// revert: src/lib/ui/tree/TreeItem.svelte:275 => flex: 0 1 auto;
+test("a tree row's controls sit at the pane's right edge, one column down the list", async ({
+    page
+}) => {
     await boot(page);
     await openView(page, 'files', t('views.files'));
-    const row = page.locator('[data-fs-row="hub:"] [role="treeitem"]').first();
-    await row.hover();
-    const name = row.locator('.name').first();
-    const actions = row.locator('.actions').first();
-    await expect(actions).toBeVisible();
-    const [rowBox, nameBox, actionBox] = await Promise.all([
-        row.boundingBox(),
-        name.boundingBox(),
-        actions.boundingBox()
-    ]);
-    expect(rowBox).not.toBeNull();
-    expect(nameBox).not.toBeNull();
-    expect(actionBox).not.toBeNull();
-    if (rowBox === null || nameBox === null || actionBox === null) return;
-    // the controls start beside the name
-    expect(actionBox.x - (nameBox.x + nameBox.width)).toBeLessThan(80);
-    // and the row still reaches far past them, which is the pane's own width
-    expect(rowBox.x + rowBox.width - (actionBox.x + actionBox.width)).toBeGreaterThan(200);
+    await page.locator('[data-fs-row="hub:"]').getByRole('button').first().click();
+    const file = page.locator('[data-fs-row="hub:README.md"] [role="treeitem"]');
+    const other = page.locator('[data-fs-row="hub:CAREER.yml"] [role="treeitem"]');
+    await expect(file).toBeVisible();
+    await expect(other).toBeVisible();
+
+    /** The right edge of a row's controls while the pointer rests on it, and of the row. */
+    async function edges(row: typeof file): Promise<{ controls: number; row: number }> {
+        await row.hover();
+        const actions = row.locator('.actions').first();
+        await expect(actions).toBeVisible();
+        const [rowBox, actionBox] = await Promise.all([row.boundingBox(), actions.boundingBox()]);
+        if (rowBox === null || actionBox === null) throw new Error('a row drew no box');
+        return { controls: actionBox.x + actionBox.width, row: rowBox.x + rowBox.width };
+    }
+
+    const one = await edges(file);
+    const two = await edges(other);
+    // the controls of both rows end at the same place, whatever the length of the name
+    expect(Math.abs(one.controls - two.controls)).toBeLessThan(2);
+    // and that place is the row's own right edge, the pane's width
+    expect(one.row - one.controls).toBeLessThan(24);
 });
 
 // revert: src/lib/ui/tree/TreeItem.svelte:219 => over={undefined}
@@ -524,8 +530,9 @@ test("a tree row's words open while the pointer is anywhere over the row", async
     expect(box).not.toBeNull();
     if (box === null) return;
 
-    // the space past the row's parts, which the name's own button no longer covers
-    await page.mouse.move(box.x + box.width - 20, box.y + box.height / 2);
+    // the row's own edge, outside the name's words: the name's button fills the row's free width,
+    // and the controls at the right edge carry words of their own
+    await page.mouse.move(box.x + 1, box.y + box.height / 2);
     await expect(page.locator('span.bubble:not([hidden])')).toHaveCount(1);
 });
 

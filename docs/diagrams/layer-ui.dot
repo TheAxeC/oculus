@@ -32,6 +32,7 @@ digraph layer_ui {
         "folder ui/frame to layer state" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder ui/display to folder ui" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder ui/display to layer state" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder ui to layer data" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder ui to layer themes" [label="4", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     }
     "layer state from folder ui/tabs" [label="state", style=dashed];
@@ -39,6 +40,7 @@ digraph layer_ui {
     "layer state from folder ui/menu" [label="state", style=dashed];
     "layer state from folder ui/frame" [label="state", style=dashed];
     "layer state from folder ui/display" [label="state", style=dashed];
+    "layer data from folder ui" [label="data", style=dashed];
     "layer themes from folder ui" [label="themes", style=dashed];
     "folder ui/tabs" -> "folder ui/tree" [style=invis, weight=10, minlen=2];
     "folder ui/tree" -> "folder ui/forms" [style=invis, weight=10, minlen=2];
@@ -92,7 +94,10 @@ digraph layer_ui {
     "folder ui/display" -> "folder ui/display to layer state" [arrowhead=none, style=dashed];
     "folder ui/display to layer state" -> "layer state from folder ui/display" [style=dashed];
     { rank=same; "folder ui/display"; "folder ui/display to layer state"; "layer state from folder ui/display"; }
-    "folder ui" -> "folder ui to layer themes" [arrowhead=none, style=dashed];
+    "folder ui" -> "folder ui to layer data" [arrowhead=none, style=dashed];
+    "folder ui to layer data" -> "layer data from folder ui" [style=dashed];
+    { rank=same; "folder ui"; "folder ui to layer data"; "layer data from folder ui"; }
+    "folder ui" -> "folder ui to layer themes" [arrowhead=none, style=dashed, minlen=1, weight=10];
     "folder ui to layer themes" -> "layer themes from folder ui" [style=dashed];
-    { rank=same; "folder ui"; "folder ui to layer themes"; "layer themes from folder ui"; }
+    { rank=same; "folder ui to layer themes"; "layer themes from folder ui"; }
 }

@@ -1,14 +1,20 @@
 <script lang="ts">
-    // Layer 3, shared view partial. One fetched Markdown document drawn as prose: the answer is
-    // still being read, it failed, or it is the HTML the server rendered.
+    // Layer 3, shared view partial. One Markdown document drawn as prose: the answer is still being
+    // read, it failed, or it is the HTML the document rule of data/prose/markdown.ts rendered. The
+    // doc, help and project views draw a fetched document with it, and the source tab's preview
+    // draws the text it renders on the page.
     //
-    // The HTML is a file on disk turned into markup by marked, so it is drawn through ui/html.ts's
-    // sanitise and holds only what that profile allows. The words for the two states the document
-    // is not in come from the view that owns the document, since each of them names what it is
-    // reading.
+    // The HTML is somebody's Markdown turned into markup by marked, so it is drawn through
+    // ui/html.ts's sanitise and holds only what that profile allows. The words for the two states
+    // the document is not in come from the view that owns the document, since each of them names
+    // what it is reading.
+    //
+    // A press on a link to a fragment is handled inside the view by jump.ts, never through the
+    // address.
 
     import { sanitise } from '$lib/ui/html';
     import type { DocState } from '$lib/state/system/docs.svelte';
+    import { jump } from './jump';
 
     type Props = {
         /** What state/system/docs.svelte.ts holds for this document. */
@@ -17,9 +23,16 @@
         loading: string;
         /** The line drawn when the read failed, already carrying the reason. */
         failed: string;
+        /**
+         * Whether the document keeps a surface of its own under a fenced block over a wallpaper,
+         * which a view drawing it on a box that paints nothing (the project view) needs. A view
+         * whose box is a translucent surface already (a tinted pane, the preview's frame) says
+         * false, since a second layer reads as a nearly solid one.
+         */
+        surface?: boolean;
     };
 
-    let { doc, loading, failed }: Props = $props();
+    let { doc, loading, failed, surface = true }: Props = $props();
 </script>
 
 {#if doc.error !== ''}
@@ -27,8 +40,13 @@
 {:else if doc.loading}
     <p class="note">{loading}</p>
 {:else}
-    <!-- eslint-disable-next-line svelte/no-at-html-tags -- the sanitiser writes this -->
-    <div class="doc">{@html sanitise(doc.html)}</div>
+    <!-- The press is the links' own: each link is a keyboard stop whose Enter is a click, and the
+         box only hears it bubble up, so the box itself takes no key and no focus. -->
+    <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
+    <div class="doc" class:surfaced={surface} onclick={jump}>
+        <!-- eslint-disable-next-line svelte/no-at-html-tags -- the sanitiser writes this -->
+        {@html sanitise(doc.html)}
+    </div>
 {/if}
 
 <style>
@@ -79,6 +97,31 @@
         color: var(--accent-txt, var(--accent));
     }
 
+    /* A table of contents: the document's own links, indented once per level, with no bullets,
+       since the indentation is what shows which heading an entry sits under. */
+    .doc :global(ul.toc),
+    .doc :global(ul.toc ul) {
+        list-style: none;
+        margin: 2px 0;
+        padding-left: 0;
+    }
+
+    .doc :global(ul.toc ul) {
+        padding-left: 16px;
+    }
+
+    .doc :global(ul.toc li) {
+        margin: 2px 0;
+    }
+
+    .doc :global(ul.toc a) {
+        text-decoration: none;
+    }
+
+    .doc :global(ul.toc a:hover) {
+        text-decoration: underline;
+    }
+
     .doc :global(img) {
         max-width: 100%;
     }
@@ -98,17 +141,24 @@
         border-radius: var(--radius-sm);
     }
 
-    /* Over a wallpaper the document is drawn on a translucent surface already: the box of a view
-       that draws it asks for the tint, and the source preview frames it in one. A code span or
-       block inside it paints nothing in turn, since a second layer reads as a nearly solid one,
-       and a blur behind a span that wraps covers the whole box around both of its halves, which
-       blurs the prose between them. */
+    /* Over a wallpaper a document drawn on a surface (a tinted pane, the source preview's frame)
+       paints nothing under a code span or block, since a second layer reads as a nearly solid
+       one. A code span paints nothing on a box that is not tinted either: a blur behind a span
+       that wraps covers the whole box around both of its halves, which blurs the prose between
+       them. */
     :global(body.wall) .doc :global(code) {
         background: transparent;
     }
 
     :global(body.wall) .doc :global(pre) {
         background: transparent;
+    }
+
+    /* A document drawn straight onto the wallpaper (a box that is not tinted) keeps the one surface
+       its fenced blocks would otherwise lack, so a block of code is read off a surface. */
+    :global(body.wall) .doc.surfaced :global(pre) {
+        background: color-mix(in srgb, var(--chip) var(--wall-panel), transparent);
+        backdrop-filter: blur(var(--wall-blur));
     }
 
     .doc :global(pre code) {

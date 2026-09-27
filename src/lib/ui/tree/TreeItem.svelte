@@ -267,13 +267,12 @@
         outline-offset: -1px;
     }
 
-    /* The row's parts follow its name rather than the pane's far edge: the name takes the width it
-       needs and no more, so a row's controls and count sit beside the name a reader is pointing at
-       however wide the pane is. The row itself still spans the pane, and a press on the space
-       beyond its parts opens it as a press on the name does. */
+    /* The name takes the row's free width, so a row's controls, count and status letter sit at the
+       pane's right edge and the letters of a list read down one column, as in VS Code's Explorer
+       and Source Control. */
     .main {
         display: flex;
-        flex: 0 1 auto;
+        flex: 1 1 auto;
         align-items: center;
         height: calc(var(--tree-row) * var(--text-scale, 1));
         min-width: 0;

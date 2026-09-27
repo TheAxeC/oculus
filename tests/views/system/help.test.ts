@@ -91,7 +91,7 @@ describe('the diagrams in the manual', () => {
     ].join('\n');
 
     it('draws a diagram of docs/diagrams from the route, with the prose around it', () => {
-        // revert: src/lib/views/system/help/Help.svelte:63 => {#if false}
+        // revert: src/lib/views/system/help/Help.svelte:64 => {#if false}
         const body = drawn({ html, frontmatter: null, error: '', loading: false });
         expect(body).toContain('data-diagram="layers"');
         expect(body).toContain('aria-label="The layers &amp; imports"');
@@ -119,7 +119,7 @@ describe('the diagrams in the manual', () => {
     });
 
     it('audits that an image written inside a code block is no diagram', () => {
-        // revert: src/lib/server/content/docs.ts:248 => if (base === null) return text.replace(/!\[([^\]]*)\]\(([^)]*)\)/g, '<img src="$2" alt="$1">');
+        // revert: src/lib/server/content/docs.ts:248 => return base === null ? text.replace(/!\[([^\]]*)\]\(([^)]*)\)/g, '<img src="$2" alt="$1">') : renderDocument(text, figures(base));
         const fenced = renderMarkdown('```\n![Layers](docs/diagrams/layers.svg)\n```\n', null);
         expect(diagramsOf(fenced)).toEqual([]);
         expect(diagramsOf(renderMarkdown('![Layers](docs/diagrams/layers.svg)\n', null))).toEqual([

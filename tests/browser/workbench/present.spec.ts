@@ -12,6 +12,7 @@
 // shipped deck. The others tick and move without saving, and each runs on its own page.
 
 import { expect, test, type Locator, type Page } from '@playwright/test';
+import { removeFromHub, writeHubFile } from '../helpers/hub.ts';
 import { boot, openView } from '../helpers/rail.ts';
 import { t } from '../helpers/words.ts';
 
@@ -107,6 +108,46 @@ test('a diagram panel is laid out as the grid the slide wrote', async ({ page })
 
     // The colour the slide wrote on the node survived the diagram profile of the sanitiser.
     await expect(nodes.nth(0)).toHaveCSS('border-top-color', 'rgb(37, 99, 235)');
+});
+
+test('a contents entry in a slide narrative scrolls inside the deck and leaves the address alone', async ({
+    page
+}) => {
+    // revert: src/lib/views/academic/present/parts/Words.svelte:28 => <div class="block">{@html html}</div>
+    // A project whose PRESENT.md declares no slide is drawn as its narrative, so graph-transfer
+    // gains one for this case. It runs before the cases that save a selection, since a saved
+    // selection places no new project slide, and it waits for the deck to drop the slide again once
+    // the file is removed, so the cases after it read the shipped deck.
+    const file = 'projects/active/graph-transfer/PRESENT.md';
+    const filler = Array.from({ length: 60 }, (_, at) => `Paragraph ${at} of the narrative.`);
+    writeHubFile(
+        file,
+        [
+            '# PRESENT, graph transfer',
+            '[TOC]',
+            '## Setting',
+            ...filler,
+            '## The deep heading',
+            'The end.'
+        ].join('\n\n')
+    );
+    try {
+        await openDeck(page);
+        await page.keyboard.press('o');
+        await page.getByRole('button', { name: 'Transfer learning across graph domains' }).click();
+        await expect.poll(() => slideKey(page)).toBe('graph-transfer');
+        const size = await deckSize(page);
+
+        const slide = page.locator('[data-slide="graph-transfer"]');
+        const address = page.url();
+        await slide.getByRole('link', { name: 'The deep heading' }).click();
+        await expect(slide.getByRole('heading', { name: 'The deep heading' })).toBeInViewport();
+        expect(page.url()).toBe(address);
+        removeFromHub(file);
+        await expect.poll(() => deckSize(page)).toBe(size - 1);
+    } finally {
+        removeFromHub(file);
+    }
 });
 
 /** How many slides the deck holds, off the toolbar's own counter. */

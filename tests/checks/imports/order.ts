@@ -32,7 +32,15 @@ import { join } from 'node:path';
 import { importGraph } from './graph.ts';
 
 export const ORDER: Record<string, string[]> = {
-    data: ['data', 'data/sources', 'data/snapshot', 'data/accounts', 'data/helpers', 'data/model'],
+    data: [
+        'data',
+        'data/sources',
+        'data/snapshot',
+        'data/accounts',
+        'data/helpers',
+        'data/prose',
+        'data/model'
+    ],
     server: [
         'server/root',
         'server/git',

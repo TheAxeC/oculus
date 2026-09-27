@@ -26,7 +26,7 @@ import {
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
-import { handleDocs } from '../../../src/lib/server/content/docs.ts';
+import { PROCESS_TAG, handleDocs } from '../../../src/lib/server/content/docs.ts';
 import { portfolioConfigFrom } from '../../../src/lib/data/index.ts';
 import {
     LOCAL_NAME,
@@ -101,44 +101,46 @@ function request(query: string, headers: Record<string, string> = {}): Request {
 
 describe('the document endpoint', () => {
     it('renders a README as HTML', async () => {
-        // revert: src/lib/server/content/docs.ts:294 => html: read.text,
+        // revert: src/lib/server/content/docs.ts:292 => html: read.text,
         const response = handleDocs(request('project=alpha&name=README.md'), target());
         expect(response.status).toBe(200);
         expect(response.headers.get('cache-control')).toBe('no-store');
         const body = (await response.json()) as { html: string; frontmatter: unknown };
-        expect(body.html).toContain('<h1>Alpha</h1>');
+        expect(body.html).toContain('<h1 id="user-content-alpha">Alpha</h1>');
         expect(body.html).toContain('<li>first</li>');
         expect(body.frontmatter).toBe(null);
     });
 
     it('gives back the frontmatter block, and renders what follows it', async () => {
-        // revert: src/lib/server/content/docs.ts:295 => frontmatter: null,
+        // revert: src/lib/server/content/docs.ts:293 => frontmatter: null,
         const into = target({ 'README.md': WITH_FRONTMATTER });
         const response = handleDocs(request('project=alpha&name=README.md'), into);
         expect(response.status).toBe(200);
         const body = (await response.json()) as { html: string; frontmatter: unknown };
         expect(body.frontmatter).toEqual({ stage: 'run' });
-        expect(body.html).toContain('<h1>Alpha</h1>');
+        expect(body.html).toContain('<h1 id="user-content-alpha">Alpha</h1>');
         expect(body.html).not.toContain('stage');
     });
 
     it('serves a document inside the project, not only the ones at its root', async () => {
-        // revert: src/lib/server/content/docs.ts:307 => if (name.includes('/')) {
+        // revert: src/lib/server/content/docs.ts:305 => if (name.includes('/')) {
         const into = target({ 'code/README.md': '# Deposit\n' });
         const response = handleDocs(request('project=alpha&name=code%2FREADME.md'), into);
         expect(response.status).toBe(200);
-        expect(fields(await response.json()).html).toContain('<h1>Deposit</h1>');
+        expect(fields(await response.json()).html).toContain(
+            '<h1 id="user-content-deposit">Deposit</h1>'
+        );
     });
 
     it('answers 404 for an id the reader does not know', async () => {
-        // revert: src/lib/server/content/docs.ts:311 => if (folder === null) return json(404, { error: 'no project' });
+        // revert: src/lib/server/content/docs.ts:309 => if (folder === null) return json(404, { error: 'no project' });
         const response = handleDocs(request('project=beta&name=README.md'), target());
         expect(response.status).toBe(404);
         expect(fields(await response.json()).error).toBe('no project with the id beta');
     });
 
     it("serves a project's PRESENT.md as its narrative, the front matter split off", async () => {
-        // revert: src/lib/server/content/docs.ts:68 => delete
+        // revert: src/lib/server/content/docs.ts:71 => delete
         const into = target({
             'README.md': README,
             'PRESENT.md': '---\npresent:\n  title: A headline\n---\n\n# PRESENT\n\nThe narrative.\n'
@@ -152,7 +154,7 @@ describe('the document endpoint', () => {
     });
 
     it('answers 404 for a name outside the list, a path of its own included', async () => {
-        // revert: src/lib/server/content/docs.ts:308 => return json(404, { error: 'refused' });
+        // revert: src/lib/server/content/docs.ts:306 => return json(404, { error: 'refused' });
         const into = target();
         for (const name of ['NOTES.md', 'manuscript/main.pdf', '../../etc/passwd']) {
             const response = handleDocs(
@@ -167,7 +169,7 @@ describe('the document endpoint', () => {
     });
 
     it('answers 404 for a document the project does not have', async () => {
-        // revert: src/lib/server/content/docs.ts:292 => if (isFinding(read)) return json(404, { error: 'missing', file });
+        // revert: src/lib/server/content/docs.ts:290 => if (isFinding(read)) return json(404, { error: 'missing', file });
         const into = target({ 'code/README.md': README });
         const response = handleDocs(request('project=alpha&name=README.md'), into);
         expect(response.status).toBe(404);
@@ -175,7 +177,7 @@ describe('the document endpoint', () => {
     });
 
     it('reads the folder from the portfolio the request carries, and no manifest at all', async () => {
-        // revert: src/lib/server/content/docs.ts:185 => delete
+        // revert: src/lib/server/content/docs.ts:196 => delete
         const into = target();
         // Nothing on this hub is a manifest any more, so a reader that scanned the tree would find
         // no project at all; the snapshot the server holds names the folder on its own.
@@ -186,11 +188,13 @@ describe('the document endpoint', () => {
         };
         const response = handleDocs(request('project=alpha&name=README.md'), held);
         expect(response.status).toBe(200);
-        expect(fields(await response.json()).html).toContain('<h1>Alpha</h1>');
+        expect(fields(await response.json()).html).toContain(
+            '<h1 id="user-content-alpha">Alpha</h1>'
+        );
     });
 
     it('finds the folder under a nested scan rule when no portfolio was published', async () => {
-        // revert: src/lib/server/content/docs.ts:189 => false
+        // revert: src/lib/server/content/docs.ts:200 => false
         const dir = scratchDir('oculus-docs-');
         expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
         const folder = join(dir, 'projects', 'coauthor', 'active', 'alpha');
@@ -206,11 +210,13 @@ describe('the document endpoint', () => {
         };
         const response = handleDocs(request('project=alpha&name=README.md'), into);
         expect(response.status).toBe(200);
-        expect(fields(await response.json()).html).toContain('<h1>Alpha</h1>');
+        expect(fields(await response.json()).html).toContain(
+            '<h1 id="user-content-alpha">Alpha</h1>'
+        );
     });
 
     it('answers 404 for an id that is a path rather than a folder name', async () => {
-        // revert: src/lib/server/content/docs.ts:186 => if (!isFolderName(id)) return 'projects/manuscripts/alpha';
+        // revert: src/lib/server/content/docs.ts:197 => if (!isFolderName(id)) return 'projects/manuscripts/alpha';
         const response = handleDocs(
             request(`project=${encodeURIComponent('../alpha')}&name=README.md`),
             target()
@@ -220,7 +226,7 @@ describe('the document endpoint', () => {
     });
 
     it('draws a figure beside a README through the file route', async () => {
-        // revert: src/lib/server/content/docs.ts:265 => ABSOLUTE.test(href) || climbs(joined) ? href : href;
+        // revert: src/lib/server/content/docs.ts:264 => ABSOLUTE.test(href) || climbs(joined) ? href : href;
         const response = handleDocs(
             request('project=alpha&name=README.md'),
             target({ 'README.md': '![one](figures/one.png)\n' })
@@ -232,7 +238,7 @@ describe('the document endpoint', () => {
     });
 
     it('refuses a project document reached through a link out of the hub', () => {
-        // revert: src/lib/server/content/docs.ts:314 => delete
+        // revert: src/lib/server/content/docs.ts:312 => delete
         const into = target();
         const outside = scratchDir('oculus-docs-outside-');
         expect(resolve(outside).startsWith(resolve(tmpdir()) + sep)).toBe(true);
@@ -247,7 +253,7 @@ describe('the document endpoint', () => {
     });
 
     it('refuses a request from another origin', async () => {
-        // revert: src/lib/server/content/docs.ts:454 => if (false) {
+        // revert: src/lib/server/content/docs.ts:452 => if (false) {
         const response = handleDocs(
             request('project=alpha&name=README.md', {
                 origin: 'http://example.test',
@@ -264,16 +270,18 @@ describe('a document of the hub', () => {
     const DOC = '# Approach\n\nA paragraph.\n';
 
     it('renders the Markdown the path names', async () => {
-        // revert: src/lib/server/content/docs.ts:332 => if (path === '' || !path.endsWith('.markdown')) {
+        // revert: src/lib/server/content/docs.ts:330 => if (path === '' || !path.endsWith('.markdown')) {
         const into = hubWith({ 'RESEARCH-APPROACH.md': DOC });
         const response = handleDocs(request('hub=RESEARCH-APPROACH.md'), into);
         expect(response.status).toBe(200);
         expect(response.headers.get('cache-control')).toBe('no-store');
-        expect(fields(await response.json()).html).toContain('<h1>Approach</h1>');
+        expect(fields(await response.json()).html).toContain(
+            '<h1 id="user-content-approach">Approach</h1>'
+        );
     });
 
     it('draws a figure beside it through the file route, under the hub root', async () => {
-        // revert: src/lib/server/content/docs.ts:337 => return answer(full, { root: 'engine', folder: dirname(path) }, into.config.text, held);
+        // revert: src/lib/server/content/docs.ts:335 => return answer(full, { root: 'engine', folder: dirname(path) }, into.config.text, held);
         const into = hubWith({ 'notes/one.md': '![a](pictures/one.png)\n' });
         const response = handleDocs(request(`hub=${encodeURIComponent('notes/one.md')}`), into);
         expect(fields(await response.json()).html).toContain(
@@ -282,7 +290,7 @@ describe('a document of the hub', () => {
     });
 
     it('leaves a figure source that climbs out of the hub as the author wrote it', async () => {
-        // revert: src/lib/server/content/docs.ts:265 => ABSOLUTE.test(href) ? href : routeUrl(base.root, joined);
+        // revert: src/lib/server/content/docs.ts:264 => ABSOLUTE.test(href) ? href : routeUrl(base.root, joined);
         const into = hubWith({ 'one.md': '![a](../x.png)\n' });
         const response = handleDocs(request('hub=one.md'), into);
         const html = String(fields(await response.json()).html);
@@ -291,7 +299,7 @@ describe('a document of the hub', () => {
     });
 
     it('resolves a figure beside a document in a folder, whatever it climbs on the way', async () => {
-        // revert: src/lib/server/content/docs.ts:263 => const joined = join(base.folder, '..', href);
+        // revert: src/lib/server/content/docs.ts:262 => const joined = join(base.folder, '..', href);
         const into = hubWith({ 'notes/deep/one.md': '![a](../pictures/one.png)\n' });
         const response = handleDocs(
             request(`hub=${encodeURIComponent('notes/deep/one.md')}`),
@@ -303,14 +311,14 @@ describe('a document of the hub', () => {
     });
 
     it('leaves an address the browser resolves itself alone', async () => {
-        // revert: src/lib/server/content/docs.ts:203 => const ABSOLUTE = /^(?:\/\/|\/|#)/i;
+        // revert: src/lib/server/content/docs.ts:214 => const ABSOLUTE = /^(?:\/\/|\/|#)/i;
         const into = hubWith({ 'one.md': '![a](https://example.test/one.png)\n' });
         const response = handleDocs(request('hub=one.md'), into);
         expect(fields(await response.json()).html).toContain('src="https://example.test/one.png"');
     });
 
     it('answers 404 for a path that climbs out of the hub', async () => {
-        // revert: src/lib/server/content/docs.ts:140 => delete
+        // revert: src/lib/server/content/docs.ts:151 => delete
         const response = handleDocs(
             request(`hub=${encodeURIComponent('../elsewhere.md')}`),
             target()
@@ -320,7 +328,7 @@ describe('a document of the hub', () => {
     });
 
     it('refuses a document the hub reaches only through a link out of it', () => {
-        // revert: src/lib/server/content/docs.ts:143 => return false;
+        // revert: src/lib/server/content/docs.ts:154 => return false;
         const into = hubWith({});
         const outside = scratchDir('oculus-docs-outside-');
         expect(resolve(outside).startsWith(resolve(tmpdir()) + sep)).toBe(true);
@@ -335,7 +343,7 @@ describe('a document of the hub', () => {
     });
 
     it('answers 404 for a file that is not Markdown, and for one that is not there', () => {
-        // revert: src/lib/server/content/docs.ts:332 => if (path === '') {
+        // revert: src/lib/server/content/docs.ts:330 => if (path === '') {
         const into = hubWith({ 'local.yml': 'hub: /elsewhere\n' });
         expect(handleDocs(request('hub=local.yml'), into).status).toBe(404);
         expect(handleDocs(request('hub=nothing.md'), into).status).toBe(404);
@@ -355,7 +363,7 @@ describe('a document of the hub', () => {
             ...into,
             config: { ...into.config, text }
         });
-        // revert: src/lib/server/content/docs.ts:292 => if (isFinding(read)) return json(404, { error: read.message });
+        // revert: src/lib/server/content/docs.ts:290 => if (isFinding(read)) return json(404, { error: read.message });
         expect(response.status).toBe(404);
         expect(await response.json()).toEqual({
             error: 'findings.docs.missing',
@@ -374,19 +382,21 @@ describe('a re-read of an unchanged file', () => {
         return tag ?? '';
     }
 
-    it('answers with a tag of the size and modification time, and the file it read', async () => {
-        // revert: src/lib/server/content/docs.ts:111 => return '';
+    it('answers with a tag of the process, the size and the modification time, and the file', async () => {
+        // revert: src/lib/server/content/docs.ts:122 => return '';
         const into = hubWith({ 'docs/one.md': DOC });
         const file = join(into.hub, 'docs', 'one.md');
         const stat = statSync(file);
         const response = handleDocs(request(`hub=${encodeURIComponent('docs/one.md')}`), into);
         expect(response.status).toBe(200);
-        expect(tagOf(response)).toBe(`"${String(stat.size)}-${String(stat.mtimeMs)}"`);
+        expect(tagOf(response)).toBe(
+            `"${PROCESS_TAG}-${String(stat.size)}-${String(stat.mtimeMs)}"`
+        );
         expect(fields(await response.json()).file).toBe(resolve(file));
     });
 
     it('answers 304 with no body to a request holding the current tag', async () => {
-        // revert: src/lib/server/content/docs.ts:288 => if (false) {
+        // revert: src/lib/server/content/docs.ts:286 => if (false) {
         const into = hubWith({ 'docs/one.md': DOC });
         const query = `hub=${encodeURIComponent('docs/one.md')}`;
         const tag = tagOf(handleDocs(request(query), into));
@@ -397,8 +407,25 @@ describe('a re-read of an unchanged file', () => {
         expect(await again.text()).toBe('');
     });
 
+    it('renders again for a tag an earlier server process answered with, the file unchanged', async () => {
+        // revert: src/lib/server/content/docs.ts:122 => return stat.isFile() ? `"${String(stat.size)}-${String(stat.mtimeMs)}"` : '';
+        const into = hubWith({ 'docs/one.md': DOC });
+        const query = `hub=${encodeURIComponent('docs/one.md')}`;
+        const stat = statSync(join(into.hub, 'docs', 'one.md'));
+        // What a page open across a restart holds: the tag of the same file, rendered by a
+        // process whose renderer may differ from this one's.
+        const earlier = `"${String(stat.size)}-${String(stat.mtimeMs)}"`;
+        const other = `"another-process-${String(stat.size)}-${String(stat.mtimeMs)}"`;
+        for (const held of [earlier, other]) {
+            const again = handleDocs(request(query, { 'if-none-match': held }), into);
+            expect(again.status).toBe(200);
+            expect(tagOf(again)).not.toBe(held);
+            expect(fields(await again.json()).html).toContain('Approach');
+        }
+    });
+
     it('renders again once the file changed under the tag the page holds', async () => {
-        // revert: src/lib/server/content/docs.ts:458 => const held = request.headers.get('etag') ?? '';
+        // revert: src/lib/server/content/docs.ts:456 => const held = request.headers.get('etag') ?? '';
         const into = hubWith({ 'docs/one.md': DOC });
         const query = `hub=${encodeURIComponent('docs/one.md')}`;
         const tag = tagOf(handleDocs(request(query), into));
@@ -418,7 +445,7 @@ describe('a re-read of an unchanged file', () => {
     });
 
     it('answers 304 for the manual and a project document the same way', () => {
-        // revert: src/lib/server/content/docs.ts:458 => const held = '';
+        // revert: src/lib/server/content/docs.ts:456 => const held = '';
         const into = target();
         for (const query of ['manual=1', 'project=alpha&name=README.md']) {
             const tag = tagOf(handleDocs(request(query), into));
@@ -427,7 +454,7 @@ describe('a re-read of an unchanged file', () => {
     });
 
     it('never answers 304 for a file that is not there, whatever tag is sent', async () => {
-        // revert: src/lib/server/content/docs.ts:288 => if (true) {
+        // revert: src/lib/server/content/docs.ts:286 => if (true) {
         const into = hubWith({});
         const response = handleDocs(request('hub=nothing.md', { 'if-none-match': '""' }), into);
         expect(response.status).toBe(404);
@@ -439,26 +466,28 @@ describe('a re-read of an unchanged file', () => {
 
 describe('the manual', () => {
     it('is the HELP.md of the engine directory, rendered', async () => {
-        // revert: src/lib/server/content/docs.ts:445 => return answer(join(into.engine, 'DESIGN.md'), null, into.config.text, held);
+        // revert: src/lib/server/content/docs.ts:443 => return answer(join(into.engine, 'DESIGN.md'), null, into.config.text, held);
         const response = handleDocs(request('manual=1'), target());
         expect(response.status).toBe(200);
         const body = fields(await response.json());
         expect(typeof body.html).toBe('string');
-        expect(body.html).toContain('<h1>Oculus</h1>');
+        expect(body.html).toContain('<h1 id="user-content-oculus">Oculus</h1>');
     });
 
     it('takes no path, so a path beside it changes nothing', async () => {
-        // revert: src/lib/server/content/docs.ts:459 => delete
+        // revert: src/lib/server/content/docs.ts:457 => delete
         const response = handleDocs(
             request(`manual=1&hub=${encodeURIComponent('../elsewhere.md')}`),
             target()
         );
         expect(response.status).toBe(200);
-        expect(fields(await response.json()).html).toContain('<h1>Oculus</h1>');
+        expect(fields(await response.json()).html).toContain(
+            '<h1 id="user-content-oculus">Oculus</h1>'
+        );
     });
 
     it('refuses a request for the manual from another origin', () => {
-        // revert: src/lib/server/content/docs.ts:454 => if (false) {
+        // revert: src/lib/server/content/docs.ts:452 => if (false) {
         const response = handleDocs(
             request('manual=1', { origin: 'http://example.test', 'sec-fetch-site': 'cross-site' }),
             target()

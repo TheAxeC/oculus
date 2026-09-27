@@ -100,7 +100,6 @@ tests/views/academic/present-markup.test.ts :: typesets a formula in each of the
 tests/views/academic/present-markup.test.ts :: typesets every formula of a string, not only the first | the case draws nothing and asserts over formulas(words('$a$ and $b$ and $c$'))
 tests/views/feeds/radar.test.ts :: opens its own feed file as a source tab and reuses the same file instance | the case draws nothing and asserts over findInstance(layout(), id)?.instance
 tests/views/whole/sanitise.test.ts :: is built with inlineMarkdown by every card that draws one | the case draws nothing and asserts over built.length
-tests/views/whole/sanitise.test.ts :: is drawn through the sanitiser in the project tab | the case draws nothing and asserts over source
 tests/views/whole/sanitise.test.ts :: is drawn through the sanitiser in the transcript | the case draws nothing and asserts over source
 tests/views/whole/sanitise.test.ts :: keeps the words of a document and the address of its links | the case draws nothing and asserts over drawn
 tests/views/sessions/sessions.test.ts :: updates the grid one frame before it fits and reports the measured size | the case draws nothing and asserts over order
