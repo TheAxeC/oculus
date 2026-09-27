@@ -37,9 +37,10 @@ dispatch:      # Q77b in flight; next L7, Q89, Q79, Q80, then the queue of plan.
   worktree: .agents/worktrees/Q77b
   base: 10754960
   launched: 2026-09-27
+  reviewer: claude:opus, agent aa8aa78c3c975cdf7
   report: agents/reviews/Q77b-report.md
   landing: not-started
-  round: 0
+  round: 1 (sent 2026-09-27, the worktree's uncommitted tree as the round's start)
 ```
 
 ## The standing demands (from Axel, in force)
