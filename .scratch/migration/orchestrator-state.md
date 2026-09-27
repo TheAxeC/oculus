@@ -30,7 +30,17 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:      # none in flight; next Q77a, Q77b and Q77e through /spec, then L7, Q89, Q79, Q80, then the queue of plan.md. (at its landing, Q77c's converter reruns over its changed tests); then Q77a, Q77b and Q77e after Q77d lands, then L7, Q89, Q79, Q80, then the queue of plan.md.
+dispatch:      # Q77e in flight; Q77a next beside it (it changes bin/revert-check.mjs, which Q77e does not touch, so either lands on the other with nothing to merge), then Q77b after Q77a (both rewrite bin/revert-check.mjs, so they run one after the other); then L7, Q89, Q79, Q80, then the queue of plan.md.
+- step: Q77e
+  executor: agent
+  worker: claude:opus
+  session_id: a1224c827c5cba8ec
+  worktree: .agents/worktrees/Q77e
+  base: 15a88e95
+  launched: 2026-09-27T15:06
+  report: tools/oculus/.scratch/migration/agents/reviews/Q77e-report.md
+  landing: not-started
+  round: 0
 ```
 
 ## The standing demands (from Axel, in force)
