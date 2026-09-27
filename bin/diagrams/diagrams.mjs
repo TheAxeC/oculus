@@ -155,11 +155,12 @@ export async function generate(engine) {
  * under the engine directory, so a failure names each one at once.
  *
  * @param {string} engine
+ * @param {Diagram[]} [drawn] The drawings generate(engine) gave, when the caller has them already.
  * @returns {Promise<string[]>}
  */
-export async function staleFiles(engine) {
+export async function staleFiles(engine, drawn) {
     const stale = [];
-    for (const one of await generate(engine)) {
+    for (const one of drawn ?? (await generate(engine))) {
         for (const [kind, text] of [
             ['dot', one.dot],
             ['svg', one.svg]

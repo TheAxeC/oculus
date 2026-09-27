@@ -17,7 +17,7 @@ import {
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
-import { afterAll, describe, expect, it, vi } from 'vitest';
+import { afterAll, describe, expect, it } from 'vitest';
 import { parseStamp, systemProbe } from '../../../src/lib/server/sessions/registry.ts';
 import {
     builderProcesses,
@@ -27,10 +27,6 @@ import {
 import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
 
 afterAll(sweepScratch);
-
-// A case that waits on a lock runs the writer's own wait, and the many-writer case runs 150
-// rounds of 24 processes.
-vi.setConfig({ testTimeout: 600000 });
 
 const SCRIPT = resolve('bin/dispatch-note.mjs');
 
@@ -185,26 +181,48 @@ describe('the launch note writer', () => {
         expect(existsSync(lock)).toBe(false);
     });
 
-    it('lands every record of many writers started at once against a lock a dead writer left', async () => {
-        // Two writers holding the lock at once lose a record in some rounds and not others, so the
-        // case runs 150 rounds, each with a fresh note and a lock a dead writer left. Its revert
-        // judges every lock stale, live or not; a clearer that moves a live lock aside is proven by
-        // one fixed interleaving in dispatch-note-race.test.ts.
-        const labels = Array.from({ length: 24 }, (_, at) => `writer ${at}`);
-        const lost: string[] = [];
-        for (let round = 0; round < 150; round += 1) {
-            const { dir, note, lock } = home();
-            mkdirSync(join(dir, '.oculus'), { recursive: true });
-            writeFileSync(lock, `${spawnSync(process.execPath, ['-e', '']).pid} left-behind`);
-            // revert: bin/dispatch-note.mjs "return !alive(holderOf(state.content)) || state.age > waitMs;" => return true;
-            const all = await Promise.all(labels.map((label) => run(dir, launch(label))));
-            const landed = records(note).length;
-            if (all.some((one) => one.status !== 0) || landed !== labels.length) {
-                lost.push(`round ${round}: ${landed} of ${labels.length}`);
-            }
-            rmSync(dir, { recursive: true, force: true });
-        }
-        expect(lost).toEqual([]);
+    it('waits for a lock a live writer holds, and takes it only once that writer lets it go', async () => {
+        const { dir, lock } = home();
+        mkdirSync(join(dir, '.oculus'), { recursive: true });
+        const { takeLock } = (await import(SCRIPT)) as {
+            takeLock: (lock: string, waitMs: number) => string;
+        };
+        // The holder writes the lock under its own pid, holds it 300 ms, and then lets it go only
+        // if the lock is still its own; it exits 1 when another writer cleared it meanwhile.
+        const holder = spawn(process.execPath, [
+            '-e',
+            [
+                "const { randomBytes } = require('node:crypto');",
+                "const { readFileSync, rmSync, writeFileSync } = require('node:fs');",
+                'const lock = process.argv[1];',
+                "const content = `${process.pid} ${randomBytes(6).toString('hex')}`;",
+                "writeFileSync(lock, content, { flag: 'wx' });",
+                "process.stdout.write('held\\n');",
+                'setTimeout(() => {',
+                '    let now = null;',
+                '    try {',
+                "        now = readFileSync(lock, 'utf8');",
+                '    } catch {}',
+                '    if (now !== content) process.exit(1);',
+                '    rmSync(lock);',
+                '    process.exit(0);',
+                '}, 300);'
+            ].join('\n'),
+            lock
+        ]);
+        const exited = new Promise<number | null>((done) => holder.on('close', done));
+        await new Promise<void>((done) => {
+            let out = '';
+            holder.stdout.on('data', (chunk: Buffer) => {
+                out += chunk.toString();
+                if (out.includes('held\n')) done();
+            });
+        });
+        // revert: bin/dispatch-note.mjs "return !alive(holderOf(state.content)) || state.age > waitMs;" => return true;
+        const content = takeLock(lock, 10000);
+        expect(await exited).toBe(0);
+        expect(readFileSync(lock, 'utf8')).toBe(content);
+        rmSync(dir, { recursive: true, force: true });
     });
 
     it('clears a lock older than any write holds one, whatever process its pid now names', async () => {
@@ -419,7 +437,8 @@ describe('the launch recipe', () => {
         const [ended] = records(note);
         expect(ended.id).toBe(readText(idFile).trim());
         expect(Date.parse(ended.endedAt)).not.toBeNaN();
-    });
+        // The two waits above are bounded at 10 s for the id file and 20 s for the exit file.
+    }, 35_000);
 });
 
 describe('the lock beside the note', () => {

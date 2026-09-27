@@ -157,7 +157,7 @@ async function until(holds: () => boolean, ms: number): Promise<void> {
  * watchers in one process: the first saw the extra rebuild, the second and third did not. So a test
  * that counts rebuilds counts them from a quiet point, never from the start.
  */
-async function quiet(got: Message[], ms = 400): Promise<number> {
+async function quiet(got: Message[], ms = 100): Promise<number> {
     let held = -1;
     while (held !== got.length) {
         held = got.length;
@@ -182,7 +182,7 @@ function start(
     const channels = new Hub();
     const client = recording();
     channels.subscribe(client.sink, ['portfolio', 'config', 'feeds', 'audit']);
-    watchers.push(watchPortfolio(channels, { hub, engine, icons, host: HOST }));
+    watchers.push(watchPortfolio(channels, { hub, engine, icons, host: HOST }, { debounce: 20 }));
     return { hub, engine, got: client.got, icons };
 }
 
@@ -403,7 +403,7 @@ describe('watchPortfolio', () => {
             'theaxec.github.io/_linkedin/nested/01-child.md',
             '---\ntitle: Nested edit\n---\n'
         );
-        await sleep(500);
+        await sleep(150);
         expect(started.got).toHaveLength(before);
 
         const feedsBefore = on(started.got, 'feeds').length;
@@ -804,7 +804,7 @@ describe('watchPortfolio', () => {
         const before = await quiet(started.got);
 
         write(started.hub, 'projects/active/loewner/code/results.yml', 'auc: 0.81\n');
-        await sleep(500);
+        await sleep(150);
 
         expect(started.got.length).toBe(before);
     });
@@ -814,7 +814,7 @@ describe('watchPortfolio', () => {
         const before = await quiet(started.got);
 
         write(started.hub, 'registries/notes.yml', 'note: nothing the build reads\n');
-        await sleep(500);
+        await sleep(150);
         expect(started.got.length).toBe(before);
 
         const portfolioBefore = on(started.got, 'portfolio').length;

@@ -8,10 +8,18 @@
 // one of the writing half's own subcommands, from a root in the temporary tree, never forced.
 
 import { execFileSync } from 'node:child_process';
-import { chmodSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import {
+    chmodSync,
+    cpSync,
+    existsSync,
+    mkdirSync,
+    readFileSync,
+    rmSync,
+    writeFileSync
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
-import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { allowedRoots, commit } from '../../../src/lib/server/git/git-write.ts';
 import { fetchAll, publish, pull, pushTags, sync } from '../../../src/lib/server/git/git-remote.ts';
 import {
@@ -119,8 +127,14 @@ function cloneAs(name: string): string {
     return path;
 }
 
-beforeEach(() => {
-    dir = scratchDir('oculus-git-ops-');
+/** The clones the template holds, each of which a case gets a copy of. */
+const CLONES = ['seed', 'repo', 'other'];
+
+/** The remote and its clones, built once; every case starts from a copy of this folder. */
+let template = '';
+
+beforeAll(() => {
+    dir = scratchDir('oculus-git-ops-template-');
     expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     remote = join(dir, 'remote.git');
     execFileSync('git', ['init', '-q', '--bare', '-b', 'main', remote]);
@@ -129,8 +143,21 @@ beforeEach(() => {
     git(seed, 'add', '.');
     git(seed, 'commit', '-q', '-m', 'First');
     git(seed, 'push', '-q', 'origin', 'main');
-    repo = cloneAs('repo');
-    other = cloneAs('other');
+    cloneAs('repo');
+    cloneAs('other');
+    template = dir;
+});
+
+beforeEach(() => {
+    // A copy of the template per case, its clones pointed at the copied remote, so every case
+    // starts from a remote and clones no other case has touched.
+    dir = scratchDir('oculus-git-ops-');
+    expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
+    cpSync(template, dir, { recursive: true });
+    remote = join(dir, 'remote.git');
+    for (const name of CLONES) git(join(dir, name), 'remote', 'set-url', 'origin', remote);
+    repo = join(dir, 'repo');
+    other = join(dir, 'other');
     ROOTS = allowedRoots([repo, other]);
 });
 

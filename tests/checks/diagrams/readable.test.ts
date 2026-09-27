@@ -188,9 +188,17 @@ describe('the measure of arrows that run along each other', () => {
 describe('the drawings the source gives', () => {
     const NAMES = ['layers', ...LAYER_NAMES.map((layer) => `layer-${layer}`)];
 
+    // The engine's drawings take seconds to generate, so the cases over them share one generation,
+    // made by the first of them that runs; a case that reads no engine drawing never waits for it.
+    let engineGenerated: ReturnType<typeof generate> | null = null;
+    function engineDrawn(): ReturnType<typeof generate> {
+        engineGenerated ??= generate(ENGINE);
+        return engineGenerated;
+    }
+
     // revert: bin/diagrams/graphs.mjs "const box = `${to} from ${from}`;" => const box = to;
     it('have no two arrows running along each other in the overview and the layer diagrams', async () => {
-        const drawn = (await generate(ENGINE)).filter((one) => NAMES.includes(one.name));
+        const drawn = (await engineDrawn()).filter((one) => NAMES.includes(one.name));
         expect(drawn.map((one) => one.name)).toEqual(NAMES);
         const along = drawn.flatMap((one) =>
             arrowsAlong(one.svg).map((line) => `${one.name}: ${line}`)
@@ -247,7 +255,7 @@ describe('the drawings the source gives', () => {
 
     // revert: bin/diagrams/writes.mjs "const tail = port === undefined ? '' : `tailport=${port}`;" => const tail = '';
     it('have no two arrows running along each other in the write diagram', async () => {
-        const drawn = (await generate(ENGINE)).find((one) => one.name === 'writes');
+        const drawn = (await engineDrawn()).find((one) => one.name === 'writes');
         const committed = readFileSync(resolve(ENGINE, 'docs/diagrams/writes.svg'), 'utf8');
         // The write chain draws every call once; two calls leaving one module stay apart.
         expect(arrowsAlong(drawn?.svg ?? '')).toEqual([]);

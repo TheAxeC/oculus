@@ -44,6 +44,14 @@ afterAll(sweepScratch);
 
 const ENGINE = resolve(fileURLToPath(import.meta.url), '..', '..', '..', '..');
 
+// The engine's drawings take seconds to generate, so the cases over them share one generation,
+// made by the first of them that runs; a case that reads no engine drawing never waits for it.
+let engineGenerated: ReturnType<typeof generate> | null = null;
+function engineDrawn(): ReturnType<typeof generate> {
+    engineGenerated ??= generate(ENGINE);
+    return engineGenerated;
+}
+
 /** The layer rows the synthetic sources are placed by, the shape of the boundary test's own. */
 const LAYERS = ['data', 'server', 'state', 'ui', 'views'];
 
@@ -71,7 +79,7 @@ function copyOfTree(): string {
 describe('the committed diagrams', () => {
     it('are what the source gives now, each file byte for byte', async () => {
         // revert: bin/diagrams/source.mjs "`    node [shape=box, color=\"black\", fontcolor=\"black\", fontname=\"${FONT}\", fontsize=10, height=0.3, margin=\"0.12,0.04\"];`," => `    node [shape=ellipse];`,
-        expect(await staleFiles(ENGINE), 'run npm run diagrams').toEqual([]);
+        expect(await staleFiles(ENGINE, await engineDrawn()), 'run npm run diagrams').toEqual([]);
     }, 60_000);
 
     it('are named stale, every one at once, when an import and a publish are added', async () => {
@@ -815,7 +823,7 @@ describe('where the words of an arrow land', () => {
 
     // revert: bin/diagrams/writes.mjs "lines.push(...labelledEdge(from, to, names, style, kind));" => lines.push(`    ${quote(from)} -> ${quote(to)} [label=${quote(names)}${style === '' ? '' : `, ${style}`}];`);
     it('are clear of every other arrow in every drawing the source gives', async () => {
-        const drawn = await generate(ENGINE);
+        const drawn = await engineDrawn();
         expect(drawn.map((one) => one.name)).toEqual(NAMES);
         const crossed = drawn.flatMap((one) =>
             labelsAcross(one.svg).map((line) => `${one.name}: ${line}`)

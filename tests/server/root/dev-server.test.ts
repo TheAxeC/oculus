@@ -117,13 +117,17 @@ async function body(url: string): Promise<{ status: number; text: string } | nul
     }
 }
 
-/** Wait until the page answers, or fail once the start has taken too long. */
+/**
+ * Wait until the server answers its client script, or fail once the start has taken too long. The
+ * client script answers about a second before the root page has rendered, and no request the cases
+ * make needs the page.
+ */
 async function started(base: string): Promise<void> {
     const until = Date.now() + START_MS;
     while (Date.now() < until) {
-        const page = await body(`${base}/`);
-        if (page?.status === 200) return;
-        await new Promise((done) => setTimeout(done, 250));
+        const client = await body(`${base}/@vite/client`);
+        if (client?.status === 200) return;
+        await new Promise((done) => setTimeout(done, 100));
     }
     throw new Error(`the development server did not answer at ${base}`);
 }

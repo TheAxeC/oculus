@@ -180,7 +180,6 @@ tests/server/sessions/stores/transcripts.test.ts tests/server/root/watch/session
 tests/server/sessions/stores/transcripts.test.ts tests/server/root/watch/sessions.test.ts e7734c6bf606 the same 8 lines at 80 and 56, to fold into one place
 tests/server/machine/usage/usage.test.ts tests/views/system/usage.test.ts 37f9ca200f14 the same 8 lines at 882 and 284, to fold into one place
 tests/server/machine/usage/usage.test.ts tests/views/system/usage.test.ts 578723f7b40b the same 8 lines at 435 and 193, to fold into one place
-tests/server/root/watch/sessions.test.ts tests/server/root/watch/portfolio.test.ts 820f2f2c8974 the same 8 lines at 224 and 148, to fold into one place
 tests/shell/keys/palette.test.ts tests/views/sources/source.test.ts cf6105d754c4 the same 8 lines at 33 and 53, to fold into one place
 tests/state/system/audit.test.ts tests/views/system/audit.test.ts f3976d0578ee the same 8 lines at 18 and 39, to fold into one place
 tests/state/boards/board/board-fixture.ts tests/state/boards/board/board-software.test.ts 3538d24336d3 the same 8 lines at 76 and 22, to fold into one place
