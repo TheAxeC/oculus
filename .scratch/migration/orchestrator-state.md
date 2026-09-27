@@ -30,7 +30,17 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:      # none in flight; next L7 (runs alone), then Q89, Q79, Q80, then the queue of plan.md.
+dispatch:      # L7 in flight, alone; next Q89, Q79, Q80, then the queue of plan.md.
+- step: L7
+  executor: agent
+  worker: claude:opus, agent a646fd5818276f983
+  worktree: .agents/worktrees/L7
+  base: 1712f075
+  base_export: .agents/worktrees/L7-base (git archive of the base, read by revert-check --base; removed at landing)
+  launched: 2026-09-27
+  report: agents/reviews/L7-report.md
+  landing: not-started
+  round: 0
 ```
 
 ## The standing demands (from Axel, in force)
