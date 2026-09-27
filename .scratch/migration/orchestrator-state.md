@@ -39,6 +39,7 @@ dispatch:      # Q77e in flight; Q77a next beside it (it changes bin/revert-chec
   base: 15a88e95
   launched: 2026-09-27T15:06
   report: tools/oculus/.scratch/migration/agents/reviews/Q77e-report.md
+  reviewer: claude:opus, dispatched 2026-09-27 (agent acf59eb8cf9993bfe)
   landing: not-started
   round: 0
 ```
