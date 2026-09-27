@@ -52,6 +52,8 @@ dispatch:      # Q77d and Q90 in flight (Q90 writes no path of Q77d's and reads 
   launched: 2026-09-27T12:44
   report: tools/oculus/.scratch/migration/agents/reviews/Q90-report.md
   landing: not-started
+  worktree_commits: 60f25936 (the report)
+  reviewer: claude:opus a9e667bfb1d4ee931, launched 2026-09-27T13:00 (review earned: a server module)
   round: 0
 ```
 
