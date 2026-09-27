@@ -42,7 +42,7 @@ dispatch:      # Q93 and L7 in flight side by side (Axel, 2026-09-28); Q93 lands
   shared_paths: 20 files with L7 (DESIGN.md, HELP.md, allow-duplication.txt and 17 unit test files). Both steps delete the same directive lines there; L7 undoes its changes under tests/browser/. What conflicts at L7's landing is a comment Q93 rewrote beside an L7 edit, resolved by hand then.
 - step: L7
   executor: agent
-  worker: claude:opus, agent a646fd5818276f983, stopped by Axel 2026-09-28 for starting a second full revert-check run; continuation builder claude:opus, agent ad60ea6becf7aa4d7 (Axel: restart it); stopped. Continuation builder claude:opus, agent a655bd95c87499049, launched 2026-09-28 under the brief without browser tests or directives (item 11)
+  worker: claude:opus, agent a646fd5818276f983, stopped by Axel 2026-09-28 for starting a second full revert-check run; continuation builder claude:opus, agent ad60ea6becf7aa4d7 (Axel: restart it); stopped. Continuation builder claude:opus, agent a655bd95c87499049, launched 2026-09-28 under the brief without browser tests or directives (item 11); reported 2026-09-28 (agents/reviews/L7-report.md: everything built, the full unit run red once in git-ops.test.ts and history.test.ts, both green alone). Reviewer claude:opus, agent a81cc1400af2f8d0b
   worktree: .agents/worktrees/L7
   base: 1712f075
   base_export: .agents/worktrees/L7-base (git archive of the base, read by revert-check --base; removed at landing)
