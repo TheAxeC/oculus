@@ -30,7 +30,17 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch: []   # nothing in flight; Q77a next, then Q77b, Q77c, Q77d, each alone (they change the verification tooling), then L7, Q89, Q79, Q80, then the queue of plan.md.
+dispatch:      # Q77c in flight; Q77d stopped at its premise (open item Z5); then Q77a and Q77b after Q77c lands, then L7, Q89, Q79, Q80, then the queue of plan.md.
+- step: Q77c
+  executor: agent
+  worker: claude:opus
+  session_id: a9501ae3157a5e6ea
+  worktree: .agents/worktrees/Q77c
+  base: aac420c6
+  launched: 2026-09-27T11:24
+  report: tools/oculus/.scratch/migration/agents/reviews/Q77c-report.md
+  landing: not-started
+  round: 0
 ```
 
 ## The standing demands (from Axel, in force)
