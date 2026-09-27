@@ -39,9 +39,10 @@ dispatch:      # Q77a in flight (Q77e landed); then Q77b after Q77a (both rewrit
   base: 8ca4ca00
   launched: 2026-09-27T15:33
   report: tools/oculus/.scratch/migration/agents/reviews/Q77a-report.md (snapshot 5c80dca9)
-  reviewer: claude:opus (agent aeba97353549a6652), report agents/reviews/Q77a-refuter.md
+  reviewer: claude:opus (agent aeba97353549a6652), report agents/reviews/Q77a-refuter.md; round 1 result 3c4dbb4e, its refutation claude:opus (agent a393a451a02ec0969)
   landing: not-started
   round: 1, sent 2026-09-27 from the snapshot 5c80dca9: bin/revert-check.mjs, tests/checks/bin/revert-check.test.ts, tests/checks/bin/revert-fixture.ts
+  round: 2, sent 2026-09-27 from the snapshot 3c4dbb4e under the one-round exception (the run over round 1 found the in-memory path still printing red where the copy path prints GREEN, through the shared case temporary directory and a mode change, which the brief's acceptance forbids; the fix needs the in-memory path moved out of a file at its 900-line limit, too large for landing): bin/revert-check.mjs becomes bin/revert-check/, and every live reference to its path
 ```
 
 ## The standing demands (from Axel, in force)

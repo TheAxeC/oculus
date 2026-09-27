@@ -99,3 +99,85 @@ The in-memory path adds about 1.0 s to each directive that falls back (16.13 s o
 - V8 without the fixture's `vitest.config.mjs`.
 
 Reviewer usage: 35 tool uses, about 23 minutes.
+
+## Repair round 1, refuted
+```
+$TMPDIR before any run: oculus-revert-vwIMNl (there before this round); after every run below: the same single folder. `git status --short` in the worktree: empty at the start and at the end.
+
+npx vitest run tests/checks/bin --reporter=dot
+  Test Files  8 passed (8) | Tests  84 passed (84) | 27.62 real | load 4.18 -> 6.40
+npm run check
+  COMPLETED 1511 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS   (load 6.52)
+npm run format:check
+  All matched files use Prettier code style!
+npm run lint
+  lint exit 0
+ASCII gate (spec.md perl form)
+  no output
+sh bin/size-check.sh / sh bin/folder-check.sh
+  size exit 0 / folder exit 0 (wc -l: bin/revert-check.mjs 900, revert-check.test.ts 885, revert-fixture.ts 257)
+node bin/revert-check.mjs tests/checks/bin/revert-check.test.ts
+  38 reverts, 0 unproven, 0 unchecked | exit 0 | 185.22 real | load 3.92 -> 10.58
+  output lines 9, 23, 26-33 (the changed and new directives, incl. both of "runs cases on a copy of its own..." at bin/revert-check.mjs:773 and :793) all `red`
+timed scratch copy of the new script, dispatch-note:  20 reverts, 0 unproven, 0 unchecked | 73.18 real | load 4.95 -> 7.41
+timed scratch copy of the new script, diagrams:      50 reverts, 0 unproven, 0 unchecked | 95.35 real | load 7.41 -> 7.21
+copy-only script (8ca4ca00, rebuilt by reverse patch, 661 lines), dispatch-note: 20 reverts, 0 unproven, 0 unchecked | 66.62 real | load 5.78 -> 9.77
+diff copy-only vs new, dispatch-note: DIFF EMPTY
+```
+
+Restart cost (timed scratch copy, never in the worktree):
+- dispatch-note: 1 start (2663 ms), 0 restarts, 24 listings, 1239 ms total, max 81 ms.
+- diagrams: 1 start (2095 ms), 0 restarts, 96 listings, 4745 ms total (5 percent of the run), max 304 ms.
+- One `listing()` of the run copy: 1701 entries, 43 to 49 ms right after the start.
+
+Probes, run over four scratch fixtures. Each ran `clean, writer, clean`, where `clean` holds one breaking and one harmless directive over `src/a.mjs` and asserts that the writer's residue is absent:
+
+| Writer's revert writes | New script, 4th clean line | Copy-only, 4th clean line |
+| --- | --- | --- |
+| into the working directory's copy through `new URL('../n.txt', import.meta.url)` | GREEN | GREEN |
+| into `join(process.cwd(), '.svelte-kit')` | GREEN | GREEN |
+| a folder left in `tmpdir()` (a reverted `rmSync` sweep) | **red** | GREEN |
+| `chmodSync('data.txt', 0)` on a copy file | **red** | GREEN |
+
+In all four, the fixture root was untouched afterwards (`ls -A`) on both scripts.
+
+### Spec
+- **Finding: the run copy closes finding 1 only for writes that change a path, size or mtime inside the copy. A write to the case's temporary directory, or a mode change, still reaches later directives and gives a `red` that the copy-only script calls GREEN.**
+  - `bin/revert-check.mjs:732` `const env = caseEnv(folder);` makes one TMPDIR (`<run folder>/.case-tmp`), outside `tree` and so outside the listing, and it is shared by every in-memory run. The copy path gives each directive a fresh one.
+  - `listing()` (`:696-711`) records `${full} ${held.size} ${held.mtimeMs}`. A chmod changes neither value.
+  - Mechanism: a directive whose case failed in memory caches a `passed` baseline (`red()`, `:819-823`). A later harmless directive of that case then fails on the residue and is called red.
+  - Real exposure: `tests/checks/bin/revert-check.test.ts:546` filters `readdirSync(tmpdir())` by prefix, and ten test files use `chmodSync` (`grep -rln chmodSync tests src`).
+- The four fixes are otherwise present. The swap is set inside the `try` (`:775-779`) and cleared in the `finally` (`:785-789`). The reverted run comes first and the baseline only after one `failed`, cached per case (`:816-823`). The second `node --check` is skipped only when the in-memory parse returned null (`checkUnit` `:853-855`, `checkOne` `:641`). A browser directive still calls `checkOne(base, directive)` with its own parse.
+- Beyond the four fixes:
+  - `failed()`, `unproven()` and `at()` (`:557-564`) and the removal of `outsideCopy()` print the same text, since both diffs are empty. Their only purpose is the 900-line limit.
+  - `withLockingCase` is needed. The run copy is made by `copyTree`, so a file locked beforehand would fail the in-memory start as well.
+  - The renamed directives follow the changed lines. All are red (V8 above).
+  - The listing taken after Vitest's start rather than after the copy is needed. The builder's probe shows SvelteKit writing `.svelte-kit/*` at start, and 0 restarts over 70 directives confirms that nothing else writes per run on these two files.
+
+### Proof
+- The new case "runs cases on a copy of its own, made again after a case wrote into it" (`revert-check.test.ts:753-777`) covers only a write into the working directory. No case covers the TMPDIR or mode residue above. Both probes turn red in the new script only.
+- `withLockingCase` (`revert-fixture.ts:108-112`) proves "red in memory where the copy cannot copy" by having the case chmod the real fixture file through an absolute path during the in-memory run. The test depends on a case writing outside the run copy, which is the behaviour the round exists to contain. It holds only because the listing does not cover the real tree. It is a valid test device, but a reader of `:104-106` is not told that this is why it works.
+- No test covers the swap being cleared after a throw (fix 2). The report says this was as instructed.
+
+### Standards
+- `bin/revert-check.mjs:759` is 101 columns, a new line in this round. The brief says comments end by the hundredth column:
+  `            // Listed once started, as the tree's plugins write their own output there as they start.`
+- The head comment `:37-38` states more than the code does: "a run after which the copy's files changed has it made again, so no case sees an earlier one's write". The TMPDIR and mode probes show a case that sees an earlier one's write.
+- What was cut or merged to fit 900 lines:
+  - `outsideCopy`'s doc comment (the link explanation) is gone from `checkOne`'s `!inside(dir, write)` path (`:638`). It survives only in `checkUnit`'s doc (`:833-835`).
+  - `within()`'s doc lost "as a case of the copy path runs".
+  - Nothing a reader needs to follow the logic is missing otherwise.
+- ASCII, format, lint and size are clean (above).
+
+### Behaviour
+- A run can still print `red` where the copy-only script prints GREEN, through the case's temporary directory or a mode change (probes above). Working-directory and `import.meta.url` writes into the tree, and `.svelte-kit` writes, now match the copy-only script and leave the tree clean.
+- Cost: 0 restarts on dispatch-note and diagrams. Listing adds about 50 ms per in-memory run, up to 304 ms, which is 5 percent of the diagrams run. On dispatch-note the new script is not faster than the copy-only one (73.18 s timed copy against 66.62 s, load 5 to 10).
+
+Not checked:
+- Case 1 of the brief (audit, venues, config-folder).
+- The restart count on any file other than dispatch-note and diagrams.
+- Workers on a signal during an in-memory run.
+- A write through a path outside both the copy and TMPDIR (such as `cwd/..`, which is the run folder in memory and the system temp directory on the copy path).
+- A Svelte target served in memory.
+
+Reviewer usage: 17 tool uses, about 14 minutes.
