@@ -30,7 +30,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:      # Q77d and Q90 in flight (Q90 writes no path of Q77d's and reads none of its code, so either lands on the other with nothing to merge) (at its landing, Q77c's converter reruns over its changed tests); then Q77a, Q77b and Q77e after Q77d lands, then L7, Q89, Q79, Q80, then the queue of plan.md.
+dispatch:      # Q77d in flight (at its landing, Q77c's converter reruns over its changed tests); then Q77a, Q77b and Q77e after Q77d lands, then L7, Q89, Q79, Q80, then the queue of plan.md.
 - step: Q77d
   executor: agent
   worker: claude:opus
@@ -42,18 +42,6 @@ dispatch:      # Q77d and Q90 in flight (Q90 writes no path of Q77d's and reads 
   landing: not-started
   worktree_commits: dec8dc4b (part 1's report); parts 2 to 4 added to the brief (4759c0b1, dee62e79, 25130948) and sent to the same builder; a2bd77ad (parts 2 to 4 report, saved to Q77d-report.md)
   reviewer: claude:opus ae53e90c150350a15, launched 2026-09-27T12:55
-  round: 0
-- step: Q90
-  executor: agent
-  worker: claude:opus
-  session_id: acfd70dfe9106518e
-  worktree: .agents/worktrees/Q90
-  base: 6283272e
-  launched: 2026-09-27T12:44
-  report: tools/oculus/.scratch/migration/agents/reviews/Q90-report.md
-  landing: not-started
-  worktree_commits: 60f25936 (the report)
-  reviewer: claude:opus a9e667bfb1d4ee931, launched 2026-09-27T13:00 (review earned: a server module)
   round: 0
 ```
 
@@ -338,6 +326,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-09-27. Q90 landed through /spec, /refute and /land, built by an Opus agent, no repair round, review earned (a server module): the Audit reads a link that is a web address as an address, through the one rule the collection card uses, now in `data/hub-address.ts`; the 63 venue `link path missing` findings are gone. Q77d in its review; then Q77a, Q77b and Q77e; then L7.
 - 2026-09-27. Q77c landed through /spec, /refute and /land, built by an Opus agent, no repair round, a sampled review: every revert directive names its target line by the line's text, and the numbered form is refused. Q77d in flight; then Q77a, Q77b and Q77e; then L7.
 - 2026-09-27. Q78 landed through /spec, /refute and /land, built by an Opus agent, one repair round, the run over the round refuted again: a `[TOC]` line draws the document's contents in every drawn document (doc view, manual, project documents, source preview, slide narratives), headings carry `user-content-` ids from `marked-gfm-heading-id`, a press on a `#` link scrolls inside its own view and never changes the address, and a document's ETag carries the server process. Fixed at landing: R1 (a), tree rows' controls and letters at the pane's right edge (Axel's ruling); slide narratives' `#` links through the shared `jump.ts`; the head comment and two DESIGN.md sentences the round made false; directives re-pointed. Booked: one tooltip at a time on Q81's line. Measured the time per step for Q77's comparison (the Time per step section, `steptime.py` in the ledger). Next: Q77 alone, then L7, Q89, Q79, Q80.
 - 2026-09-26. X3b landed through /spec, /refute and /land, built by an Opus agent, one repair round, the round refuted by a sampled reviewer under Axel's option (b): VS Code's Source Control in the Repositories view, its diff and merge editor, and the source tab's quick diff and blame. The cherry-pick onto main's head conflicted in 18 files (docs, diagrams, TextArea, the browser layer and five directive lines), resolved in the worktree. Fixed at landing: the refutation's findings (AU/UA read as no deletion, the Cmd+Enter and UD Complete Merge proofs, the comments and titles, the three branch parsers made one, the source-text port case replaced), an empty merge's typing, the side-by-side diff held to the pane, the blame age's singular, the accounts spec's hardcoded port, `primitives.test.ts` split under the size line, stale allow entries and directives. Open item R1 raised (the tree row's letter column). Next: Q78 and Q77.
@@ -647,6 +636,9 @@ The plan.md lines shortened on 2026-09-25 (P1 the parity audit, S2, and Q67's St
 
 ## Usage
 
+- Q90, builder claude:opus, a native background agent (`acfd70dfe9106518e`): 100,380 tokens, 24 tool uses, 7.3 minutes (the runner's result); no repair round; first report passed its bar (two findings fixed at landing); 13 files, +102 -43 as landed, the landing fixes included.
+- Q90, reviewer claude:opus (`a9e667bfb1d4ee931`), earned (a server module): 123,361 tokens, 39 tool uses, 14.0 minutes.
+- Q90 landing, orchestrator claude:opus (this session), `usage.py` from Q77c's landing (2026-09-27T12:29:52+02:00) to the landing script's end (2026-09-27T13:21:54+02:00): 77 messages, 41,419 output tokens, 196,809 cache-write tokens, 12,566,933 cache-read tokens, 162 fresh input tokens, 52 minutes; shared with the audit's manifest refresh and Q77d's report and review; 2 fixes at landing; `land.sh` 13 min 8 s (unit `Duration 136.86s`, browser `467 passed (8.5m)`).
 - Q77c, builder claude:opus, a native background agent (`a9501ae3157a5e6ea`): 178,458 tokens, 38 tool uses, 33.8 minutes (the runner's result); no repair round; first report passed its bar (three small findings, fixed at landing); 240 files, +2,305 -1,781 before the landing fixes.
 - Q77c, reviewer claude:opus (`a4a01eea33f924cba`), sampled: 133,997 tokens, 25 tool uses, 10.0 minutes.
 - Q77c landing, orchestrator claude:opus (this session), `usage.py` from Q78's landing (2026-09-27T02:24:26+02:00) to the booking: 239 messages, 178,132 output tokens, 710,500 cache-write tokens, 56,463,867 cache-read tokens, 522 fresh input tokens, 604 minutes; shared with the deleted first attempt at Q77, its removal, Axel's rulings Z4 to Z7, and Q77d's briefs and diagnosis; 3 fixes at landing.

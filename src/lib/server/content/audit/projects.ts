@@ -4,10 +4,11 @@
 // enough to stop being a glance, and a collection entry whose date or link wants doing.
 
 import { existsSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, resolve, sep } from 'node:path';
 import { stringify } from 'yaml';
 import { localDate } from '../../../data/helpers/dates.ts';
 import { byKey } from '../../../data/helpers/guards.ts';
+import { isHubPath } from '../../../data/hub-address.ts';
 import type { Project } from '../../../data/model/index.ts';
 import {
     printed,
@@ -461,8 +462,13 @@ export function collections(input: AuditInput, add: (f: Raised) => void): void {
                     ...sentence('audit.msg_entry_related', related)
                 });
             }
-            const link = scalar(entry.fields.link);
-            if (link !== '' && !existsSync(join(input.hub, link))) {
+            // A link is looked for on disk only when the card would open it as a file of the hub:
+            // trimmed as the card trims it, never a web address (the scan fetches nothing), and
+            // never a path that climbs out of the hub, which the card draws no file link for.
+            const link = scalar(entry.fields.link).trim();
+            const path = resolve(input.hub, link);
+            const inHub = path.startsWith(resolve(input.hub) + sep);
+            if (isHubPath(link) && inHub && !existsSync(path)) {
                 add({
                     scope: collection.id,
                     where: label,

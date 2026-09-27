@@ -59,8 +59,11 @@ const LAYERS = ['data', 'server', 'server/transcripts', 'state', 'ui', 'shell', 
 // string with and the one the server words every finding with before the snapshot carries it; and
 // `data/sources/config/rail`, the rule over the `rail:` list of config/layout.yml, which the page
 // drawing the rail, the Settings view editing it and the server writing it and wording its findings
-// all read, so the three agree on which entries are pages. The model's own concern modules
-// (`data/model-*`) are reached through the facade only, which is why they are not listed here.
+// all read, so the three agree on which entries are pages; and `data/hub-address`, the rule telling
+// a path of the hub from a web address, which the collection card reads to decide what a click
+// opens and the Audit reads to decide which links to look for on disk. The model's own concern
+// modules (`data/model-*`) are reached through the facade only, which is why they are not listed
+// here.
 //
 // `data/prose/markdown` is in the primitives' row, the one module of layer 1 there: a Markdown
 // document is rendered by the document route on the server and by ui/html.ts on the page, and the
@@ -117,7 +120,8 @@ const ALLOWED: Record<string, string[]> = {
         'data/helpers/editor',
         'data/helpers/search',
         'data/helpers/finding-text',
-        'data/sources/config/rail'
+        'data/sources/config/rail',
+        'data/hub-address'
     ],
     data: ['data/**'],
     server: ['server/**', 'data/**'],

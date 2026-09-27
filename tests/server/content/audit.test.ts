@@ -356,6 +356,41 @@ describe('the collection invariants', () => {
             'Waiting: status "submitted" but no date tracked'
         ]);
     });
+
+    // A link the card opens as a web page is not looked for on disk; one it opens as a file of the
+    // hub is, trimmed, and is reported only when nothing is there; one above the hub is not read.
+    // revert: src/lib/server/content/audit/projects.ts "if (isHubPath(link) && inHub && !existsSync(path)) {" => if (link !== '' && inHub && !existsSync(path)) {
+    // revert: src/lib/server/content/audit/projects.ts "const link = scalar(entry.fields.link).trim();" => const link = scalar(entry.fields.link);
+    // revert: src/lib/server/content/audit/projects.ts "if (isHubPath(link) && inHub && !existsSync(path)) {" => if (isHubPath(link) && !existsSync(path)) {
+    it('looks for a hub path on disk and leaves a web address alone', () => {
+        const hub = scratch();
+        write(hub, 'tasks/tasks.yml', 'title: Tasks\nentries: []\n');
+        folder(hub, 'network/flta-2025');
+        const entry = (index: number, title: string, link: string) => ({
+            id: `e${index}`,
+            title,
+            fields: { status: 'open', link },
+            file: join(hub, 'tasks/tasks.yml'),
+            index
+        });
+        const found = scan(
+            hub,
+            [],
+            [
+                collection(hub, {
+                    schema: [{ field: 'status', type: 'select' }],
+                    entries: [
+                        entry(0, 'Addressed', 'https://www.embs.org/jbhi/'),
+                        entry(1, 'On disk', 'network/flta-2025'),
+                        entry(2, 'Missing', 'nothing/here.md'),
+                        entry(3, 'Padded', ' network/flta-2025 '),
+                        entry(4, 'Above', '../outside.md')
+                    ]
+                })
+            ]
+        );
+        expect(lines(found, 'data')).toEqual(['Missing: link path missing: nothing/here.md']);
+    });
 });
 
 describe('the tier conformance', () => {

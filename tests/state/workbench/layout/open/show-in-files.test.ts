@@ -454,7 +454,7 @@ describe('a path told from an address', () => {
         expect(hubPathsOf({ link: 3, folder: ['a'] })).toEqual([]);
     });
 
-    // Revert: drop the `!HOSTED.test(value)` term from isHubPath of state/boards/collection.ts.
+    // Revert: drop the `!HOSTED.test(value)` term from isHubPath of data/hub-address.ts.
     it('takes no path from a `url` that is a web address written without a scheme', () => {
         expect(hubPathsOf({ url: 'github.com/x' })).toEqual([]);
         expect(hubPathsOf({ url: 'www.example.org' })).toEqual([]);

@@ -8,6 +8,7 @@
 // is how it is drawn, and that is decided by the field's name first and its type second, since the
 // seven hub files agree on the names (`status`, `tags`, `meta`, `note`) and use only six types.
 
+import { ADDRESSED, HOSTED, isHubPath } from '../../data/hub-address.ts';
 import type { Entry, Project, SchemaField, Subtask } from '../../data/model/index.ts';
 import { parseOpenForms, type OpenForms } from '../forms/open-forms.ts';
 import { HUB_ROOT, normalisePath } from '../sources/fs.ts';
@@ -16,6 +17,10 @@ import { realProjects } from '../sources/venues.ts';
 // The boundary table lets `views/` import `state/` and nothing of `data/`, so the types the view
 // names reach it from here, beside the functions that return them.
 export type { Collection, Entry, Project, SchemaField, Subtask } from '../../data/model/index.ts';
+
+// The address rule lives in the data layer, where the Audit reads it too; a view reaches it from
+// here, since the boundary table keeps `views/` out of `data/`.
+export { isHubPath };
 
 /** The entry of a collection by its id; null when there is no collection or no such entry. */
 export function entryById(
@@ -247,24 +252,6 @@ export function drawnFields(entry: Entry, schema: SchemaField[] | undefined): Dr
     return drawn;
 }
 
-/**
- * A value that already names where it goes: a scheme, or an absolute path of the page's own. With
- * HOSTED below it this is the whole rule: an address is a value carrying a scheme, a leading slash,
- * a `www.` first segment, or any other host with a path behind it. A lone dotted segment stays a
- * path inside the hub, since `github.com` and `README.md` are one shape and separating them would
- * take the hub root's own listing, which lands after the card is drawn and would take a control
- * away again.
- */
-const ADDRESSED = /^([a-z][a-z0-9+.-]*:|\/)/i;
-
-/**
- * A web address written without a scheme, told by its first segment being a host: a `www.` prefix,
- * or a dotted first segment ending in a letters-only suffix of two or more with an optional port
- * and a path behind it. A hub path's first segment holds a dot without being either (`README.md`,
- * `notes.v2/plan.md`), so it stays a path.
- */
-const HOSTED = /^(www\.[^/]+|[^/:]+\.[a-z]{2,}(:[0-9]+)?\/.*)$/i;
-
 /** The scheme put in front of a web address written without one. */
 const HOSTED_SCHEME = 'https://';
 
@@ -283,13 +270,6 @@ export function hrefOf(value: string): string {
         .filter((one) => one !== '')
         .map((one) => encodeURIComponent(one));
     return `/api/file/${HUB_ROOT}/${parts.join('/')}`;
-}
-
-/**
- * Whether a `link` or `url` value is a path inside the hub, which hrefOf serves through api/file.
- */
-export function isHubPath(value: string): boolean {
-    return value !== '' && !ADDRESSED.test(value) && !HOSTED.test(value);
 }
 
 /** The fields of an entry that hold a path of the hub when their value is not an address. */

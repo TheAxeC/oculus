@@ -332,8 +332,8 @@ describe('isHubPath', () => {
         }
     });
 
-    // Revert: drop the `!HOSTED.test(value)` term from isHubPath of state/boards/collection.ts, or
-    // the HOSTED branch from hrefOf beside it; either one turns this red.
+    // Revert: drop the `!HOSTED.test(value)` term from isHubPath of data/hub-address.ts, or the
+    // HOSTED branch from hrefOf of state/boards/collection.ts; either one turns this red.
     it('reads a host as a web address, and a first segment that merely holds a dot as a path', () => {
         const addresses = [
             'github.com/TheAxeC/x',
@@ -373,7 +373,7 @@ describe('hrefOf', () => {
         );
     });
 
-    // Revert: drop the `(:[0-9]+)?` group from HOSTED in state/boards/collection.ts. A host whose
+    // Revert: drop the `(:[0-9]+)?` group from HOSTED in data/hub-address.ts. A host whose
     // characters all fit a scheme is taken by ADDRESSED before HOSTED is reached; one carrying an
     // underscore is not, so the port is the group's work.
     it('reads a host carrying a port as an address when the host is no scheme', () => {
