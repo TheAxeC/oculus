@@ -40,7 +40,8 @@ dispatch:      # Q77d and Q90 in flight (Q90 writes no path of Q77d's and reads 
   launched: 2026-09-27T11:36
   report: tools/oculus/.scratch/migration/agents/reviews/Q77d-report.md
   landing: not-started
-  worktree_commits: dec8dc4b (part 1's report); parts 2 to 4 added to the brief (4759c0b1, dee62e79, 25130948) and sent to the same builder
+  worktree_commits: dec8dc4b (part 1's report); parts 2 to 4 added to the brief (4759c0b1, dee62e79, 25130948) and sent to the same builder; a2bd77ad (parts 2 to 4 report, saved to Q77d-report.md)
+  reviewer: claude:opus ae53e90c150350a15, launched 2026-09-27T12:55
   round: 0
 - step: Q90
   executor: agent
