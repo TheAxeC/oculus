@@ -39,9 +39,9 @@ dispatch:      # Q77e and Q77a in flight side by side (it changes bin/revert-che
   base: 15a88e95
   launched: 2026-09-27T15:06
   report: tools/oculus/.scratch/migration/agents/reviews/Q77e-report.md
-  reviewer: claude:opus, dispatched 2026-09-27 (agent acf59eb8cf9993bfe)
+  reviewer: claude:opus (agent acf59eb8cf9993bfe), report agents/reviews/Q77e-refuter.md
   landing: not-started
-  round: 0
+  round: 1, sent 2026-09-27 from the worktree snapshot 6e390733: bin/diagrams/diagrams.mjs, bin/diagrams/parsed.mjs, tests/checks/diagrams/diagrams.test.ts
 - step: Q77a
   executor: agent
   worker: claude:opus
