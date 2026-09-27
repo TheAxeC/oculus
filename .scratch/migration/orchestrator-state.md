@@ -33,7 +33,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 dispatch:      # L7 in flight, alone; next Q89, Q79, Q80, then the queue of plan.md.
 - step: L7
   executor: agent
-  worker: claude:opus, agent a646fd5818276f983
+  worker: claude:opus, agent a646fd5818276f983, stopped by Axel 2026-09-28 for starting a second full revert-check run; continuation builder claude:opus, agent ad60ea6becf7aa4d7 (Axel: restart it)
   worktree: .agents/worktrees/L7
   base: 1712f075
   base_export: .agents/worktrees/L7-base (git archive of the base, read by revert-check --base; removed at landing)
