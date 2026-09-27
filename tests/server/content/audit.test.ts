@@ -9,7 +9,7 @@
 
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { dirname, join, resolve, sep } from 'node:path';
+import { basename, dirname, join, resolve, sep } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
 import {
     auditFindings,
@@ -384,7 +384,8 @@ describe('the collection invariants', () => {
                         entry(1, 'On disk', 'network/flta-2025'),
                         entry(2, 'Missing', 'nothing/here.md'),
                         entry(3, 'Padded', ' network/flta-2025 '),
-                        entry(4, 'Above', '../outside.md')
+                        // A name above the hub no other run makes, so nothing is there to find.
+                        entry(4, 'Above', `../${basename(hub)}-above.md`)
                     ]
                 })
             ]
