@@ -30,7 +30,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:      # Q77e in flight; Q77a next beside it (it changes bin/revert-check.mjs, which Q77e does not touch, so either lands on the other with nothing to merge), then Q77b after Q77a (both rewrite bin/revert-check.mjs, so they run one after the other); then L7, Q89, Q79, Q80, then the queue of plan.md.
+dispatch:      # Q77e and Q77a in flight side by side (it changes bin/revert-check.mjs, which Q77e does not touch, so either lands on the other with nothing to merge), then Q77b after Q77a (both rewrite bin/revert-check.mjs, so they run one after the other); then L7, Q89, Q79, Q80, then the queue of plan.md.
 - step: Q77e
   executor: agent
   worker: claude:opus
@@ -40,6 +40,16 @@ dispatch:      # Q77e in flight; Q77a next beside it (it changes bin/revert-chec
   launched: 2026-09-27T15:06
   report: tools/oculus/.scratch/migration/agents/reviews/Q77e-report.md
   reviewer: claude:opus, dispatched 2026-09-27 (agent acf59eb8cf9993bfe)
+  landing: not-started
+  round: 0
+- step: Q77a
+  executor: agent
+  worker: claude:opus
+  session_id: aec044048b03bc07d
+  worktree: .agents/worktrees/Q77a
+  base: 8ca4ca00
+  launched: 2026-09-27T15:33
+  report: tools/oculus/.scratch/migration/agents/reviews/Q77a-report.md
   landing: not-started
   round: 0
 ```
