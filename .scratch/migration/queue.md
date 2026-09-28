@@ -2,7 +2,7 @@
 
 In flight:
 - Q92 (inbox and calendar): reviewed; repair round 1 sent.
-- Q79a (the library audit's server fixes): its brief is being written, in the slot Q80 left.
+- Q79a (the library audit's server fixes): building.
 - Q79c (the library audit's page fixes, with the 11 raw buttons): its brief is being written, in the slot Q89 left.
 Queued, in order:
 - Q79d, Q87 and Q81 (the shared helpers; the import-graph checks on dependency-cruiser; menus, context menus, tooltips and dialogs on bits-ui).

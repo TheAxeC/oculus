@@ -27,7 +27,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:      # Q92 of set 2 in repair round 1; two slots free for Q79a and Q79c, their briefs being written.
+dispatch:      # Q92 of set 2 in repair round 1; Q79a of set 3 building; one slot free for Q79c, its brief being written.
 - step: Q92
   executor: agent
   worker: claude:opus
@@ -40,6 +40,17 @@ dispatch:      # Q92 of set 2 in repair round 1; two slots free for Q79a and Q79
   reviewer_report: agents/reviews/Q92-refuter.md (reviewer ae7ef61fd1dab9cc6, 38 tool calls, 30 min)
   round: 1   # sent 2026-09-28 from worktree commit abe17f5f, agents/briefs/Q92-round1-sent.md
   shared_paths: package.json and package-lock.json with Q80 (Q80 adds cloc, Q92 adds @event-calendar/core, ical.js and entities and moves svelte; the later landing reruns npm install), HELP.md and DESIGN.md with Q80 and Q89 (different sentences: Q92's are the Inbox, the Calendar and the accounts at HELP.md:119, 137, 244, 246 and DESIGN.md:134, 298), docs/diagrams (a rerun of npm run diagrams), type-scale.test.ts (one entry each)
+- step: Q79a
+  executor: agent
+  worker: claude:opus
+  session_id: a80468c03d9af29d2
+  worktree: .agents/worktrees/Q79a
+  base: aad34cdd
+  launched: 2026-09-28
+  report: agents/reviews/Q79a-report.md
+  landing: not-started
+  round: 0
+  shared_paths: with Q92, server/accounts/connect/actions.ts (Q79a replaces its hand JSON answers, Q92 changes its add and remove rows: different lines, a hand merge), routes/api/(accounts)/calendar and mail route files (Q79a changes the config read and drops the origin calls, Q92 the ics provider: different lines), server/root/context.ts (Q79a may drop the config field, Q92 adds the ics account wiring: different lines), docs/diagrams (a rerun), DESIGN.md (the Auth paragraph against Q92's lines 134 and 298)
 ```
 
 ## The standing demands (from Axel, in force)
