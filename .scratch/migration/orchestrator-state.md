@@ -27,7 +27,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:      # Q99 in repair round 1; Q100 building.
+dispatch:      # Q99 in repair round 1; Q100 and Q79d building.
 - step: Q99
   executor: agent
   worker: claude:opus
@@ -51,6 +51,17 @@ dispatch:      # Q99 in repair round 1; Q100 building.
   landing: not-started
   round: 0
   shared_paths: with Q99, DESIGN.md (Q100 line 216, the wallpaper paragraph; Q99 line 264, the pty bridge: different paragraphs, a hand merge)
+- step: Q79d
+  executor: agent
+  worker: claude:opus
+  session_id: a48c8e50ef5865da4
+  worktree: .agents/worktrees/Q79d
+  base: 7487fbce
+  launched: 2026-09-28
+  report: agents/reviews/Q79d-report.md
+  landing: not-started
+  round: 0
+  shared_paths: with Q100, views/personal/calendar/Calendar.svelte (Q79d its script's localDay import and two calls, Q100 its style block: different lines, a hand merge); with Q99, docs/diagrams (a rerun of npm run diagrams)
 ```
 
 ## The standing demands (from Axel, in force)

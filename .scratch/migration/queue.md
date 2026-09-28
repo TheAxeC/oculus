@@ -3,9 +3,10 @@
 In flight:
 - Q99 (repair round 1 sent: the terminal and Pages defects from Axel's look: Claude interrupted by clicks, scrolls and pastes; an exited terminal's tab left open; a new shell's prompt at the bottom; the Pages view's large text), in the first free slot.
 - Q100 (the Calendar's fixed strips cover the rows under them over a wallpaper, Z42 (a)): building.
+- Q79d (the library audit's shared helpers, each written once): building.
 Queued, in order:
 - Q101 (each Terminal tab a terminal panel of its own, Z40 (d), once Q99 has landed).
-- Q79d, Q87 and Q81 (the shared helpers; the import-graph checks on dependency-cruiser; menus, context menus, tooltips and dialogs on bits-ui).
+- Q87 and Q81 (the import-graph checks on dependency-cruiser; menus, context menus, tooltips and dialogs on bits-ui).
 - Q79b (the tests, runs alone).
 - Q96 and Q88 (the Rail section's field labels and its icon dropdown on bits-ui, once Q81 has landed; right-click menus wherever vscode.dev gives one).
 - Q82, D13 and X3c (the tree on @zag-js/tree-view; the editor replaced by Monaco; the tab strip as VS Code's editor tabs).
