@@ -37,7 +37,8 @@ dispatch:      # Q98 and Q89 of set 2 in flight, Q98 under review; Q92 waits on 
   launched: 2026-09-28
   report: agents/reviews/Q98-report.md
   landing: not-started
-  round: 0
+  reviewer_report: agents/reviews/Q98-refuter.md (reviewer aeed9e709ec6a8e7f, about 24 tool calls, 15 min)
+  round: 1
 - step: Q89
   executor: agent
   worker: claude:opus
