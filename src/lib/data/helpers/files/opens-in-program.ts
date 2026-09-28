@@ -14,7 +14,7 @@
 // channel's first message lands, so no control is drawn before then; the server reads the map from
 // the configuration on disk at every request, so an edit reaches both.
 
-import { fields } from './guards.ts';
+import { fields } from '../guards.ts';
 
 /** An extension with its dot, lowercased, to the bundle id of the application that opens it. */
 export type ProgramApps = Record<string, string>;

@@ -1,7 +1,10 @@
 // Layer 2, server. Reading and editing subtask blocks lives here because checklist writes change
 // independently of collection entry fields.
+//
+// A parsed value is taken for a map by data/helpers/guards.ts's `isMap`, and the yaml library's own
+// node test is imported as `isYamlMap`.
 
-import { isMap, isSeq, parseDocument } from 'yaml';
+import { isMap as isYamlMap, isSeq, parseDocument } from 'yaml';
 import type { Node, Pair, Scalar, YAMLMap } from 'yaml';
 import { asFieldValue, sameValue } from '../yaml-edit.ts';
 import type { EditResult, FieldValue, Refusal } from '../yaml-edit.ts';
@@ -12,7 +15,6 @@ import {
     columnAt,
     document,
     indentOf,
-    isRecord,
     lastKeyLine,
     lastLineOf,
     lineAt,
@@ -27,6 +29,7 @@ import {
     type SubtaskBlock,
     type SubtaskLine
 } from './lines.ts';
+import { isMap } from '../../../data/helpers/guards.ts';
 
 function hostAt(source: string, range: LineRange | null): Host | null {
     const doc = document(source);
@@ -37,7 +40,7 @@ function hostAt(source: string, range: LineRange | null): Host | null {
     if (list === null) return null;
     for (let at = 0; at < list.seq.items.length; at += 1) {
         const node = list.seq.items[at] as Node;
-        if (!isMap(node)) continue;
+        if (!isYamlMap(node)) continue;
         const own = rangeOf(node);
         if (own !== null && lineAt(source, own[0]) === range.start) {
             return { node, path: [list.key, at] };
@@ -64,7 +67,7 @@ function blockOf(source: string, node: YAMLMap): SubtaskBlock {
             const own_ = rangeOf(item);
             if (own_ !== null) items.push({ key: String(at), line: lineAt(source, own_[0]) });
         });
-    } else if (value !== null && isMap(value)) {
+    } else if (value !== null && isYamlMap(value)) {
         map = true;
         for (const item of value.items as Pair<Scalar, Node>[]) {
             const at = rangeOf(item.key);
@@ -125,7 +128,7 @@ function flowLine(line: string): { lead: string; held: Record<string, FieldValue
     } catch {
         return null;
     }
-    if (!isRecord(parsed)) return null;
+    if (!isMap(parsed)) return null;
     const held: Record<string, FieldValue> = {};
     for (const [key, value] of Object.entries(parsed)) {
         const held_ = asFieldValue(value);

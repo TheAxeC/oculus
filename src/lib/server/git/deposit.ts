@@ -18,6 +18,9 @@
 // Every command runs through server/git/deposit-git.ts, which refuses any directory outside the
 // mirrors folder. Nothing here is reachable from a watcher, a timer or the socket: the one caller
 // is server/git/deposit-routes.ts, itself reached only from POST /api/deposit with the write token.
+//
+// Whether a path lies in a folder is read from server/core/paths.ts (`below`); the records of
+// `status --porcelain=v1 -z` are split by core/git-parse.ts's `statusRecords`.
 
 import {
     cpSync,
@@ -67,8 +70,9 @@ import {
     type Outcome,
     type Where
 } from './deposit-git.ts';
-import { REFS_FORMAT } from '../core/git-parse.ts';
+import { REFS_FORMAT, statusRecords } from '../core/git-parse.ts';
 import { target, writeManifest, type WriteTarget } from '../edit/writes.ts';
+import { below } from '../core/paths.ts';
 
 /** Names and suffixes that look like a credential, and the size above which a file is flagged. */
 const SECRET_HINTS = ['.secrets', '.env', '.netrc', 'id_rsa', 'credentials'];
@@ -95,7 +99,7 @@ const IGNORE_HEADER = '# Generated, cached, and dead-end files - not part of thi
 /** One thing the scan found. The words are the view's; this says what and where. */
 export type Finding = { kind: 'secret' | 'large' | 'readme'; path: string; mb: number };
 
-/** One path `git status --porcelain=v1` reported, with git's own two letters. */
+/** One path `git status --porcelain=v1 -z` reported, with git's own two letters. */
 export type Change = { path: string; letters: string };
 
 /** What a `plan` answers: what would ship, what moved, and what the scan objected to. */
@@ -651,7 +655,7 @@ function dropGone(deposit: Deposit, before: string[], after: string[]): void {
     for (const rel of before) {
         if (kept.has(rel)) continue;
         const full = resolve(join(deposit.code, rel));
-        if (!full.startsWith(root + sep)) continue;
+        if (!below(full, root)) continue;
         rmSync(full, { force: true });
         dropEmpty(dirname(full), root);
     }
@@ -698,14 +702,12 @@ function sizeOf(file: string): number {
     }
 }
 
-/** The rows of `status --porcelain=v1`, as the plan lists them. */
+/**
+ * The rows of `status --porcelain=v1 -z`, as the plan lists them: each path as it is, never quoted,
+ * and a rename by its new path.
+ */
 function changesIn(output: string): Change[] {
-    const changes: Change[] = [];
-    for (const line of output.split('\n')) {
-        if (line.length < 4) continue;
-        changes.push({ letters: line.slice(0, 2), path: line.slice(3) });
-    }
-    return changes;
+    return statusRecords(output).map((record) => ({ letters: record.code, path: record.path }));
 }
 
 // ---------------------------------------------------------------- small reads

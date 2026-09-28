@@ -4,7 +4,10 @@
 // screen), and the words the bar draws for the source tab's items, the caret, the indentation and
 // the language, from what the source tab publishes.
 //
-// The unsaved tabs are counted by the shell itself from the layout and ui stores it does read.
+// The unsaved tabs are counted by the shell itself from the layout and ui stores it does read. The
+// repository holding a tab's file is the deepest one holding it, read through deepestHolding of
+// data/helpers/files/paths.ts, the rule the source tab's gutter reads a repository by too, on the
+// file's whole path built by the same file's joinPath.
 
 import type {
     GitPayload,
@@ -14,6 +17,7 @@ import type {
     UsagePayload
 } from '../../../data/model/index.ts';
 import type { FsRoot } from '../../sources/fs.ts';
+import { deepestHolding, joinPath } from '../../../data/helpers/files/paths.ts';
 import { PLAIN, registered } from '../../shared/words/languages.ts';
 import { t } from '../../shared/words/text.ts';
 import type { Caret, Indent } from './editor-text.ts';
@@ -169,12 +173,11 @@ export function repoStatus(
     const dir = roots.find((root) => root.key === key)?.dir;
     if (dir === undefined) return null;
     const path = (file?.path ?? '').split('/').filter(Boolean).join('/');
-    const target = path === '' ? dir : `${dir.replace(/\/+$/, '')}/${path}`;
-    const holding = Object.keys(git)
-        .filter((root) => git[root].repository && git[root].error === null)
-        .filter((root) => target === root || target.startsWith(`${root.replace(/\/+$/, '')}/`))
-        .sort((left, right) => right.length - left.length);
-    const root = holding.at(0);
+    const target = joinPath(dir, path);
+    const repositories = Object.keys(git).filter(
+        (root) => git[root].repository && git[root].error === null
+    );
+    const root = deepestHolding(repositories, (one) => one, target)?.item;
     if (root === undefined) return null;
     const state = git[root];
     const current = state.branches.find((branch) => branch.current);

@@ -51,11 +51,14 @@
 // A repository on a slow mount must not stall a watcher, so the one call site takes a list argument
 // (never a shell string), carries a timeout, and collapses any failure into the empty shape with a
 // short reason. Data only, no rendered strings: the wording comes from the text catalog.
+//
+// Whether a path lies in a folder is read from server/core/paths.ts (`inside`); the records of
+// `status --porcelain=v1 -z` are split by core/git-parse.ts's `statusRecords`.
 
 import { scalar } from '../../data/helpers/guards.ts';
 import { spawnSync } from 'node:child_process';
 import { existsSync, lstatSync, readFileSync, realpathSync, statSync } from 'node:fs';
-import { isAbsolute, join, resolve, sep } from 'node:path';
+import { isAbsolute, join, sep } from 'node:path';
 import type {
     GitBlameLine,
     GitCommit,
@@ -86,8 +89,10 @@ import {
     parseStashes,
     parseRefs,
     parseWorktrees,
+    statusRecords,
     type RefRows
 } from './git-parse.ts';
+import { inside } from './paths.ts';
 
 export const GIT = 'git';
 /** Milliseconds one git command is given before it is given up on. */
@@ -108,8 +113,6 @@ const QUIET = [' ', UNTRACKED, '!'];
 const UNMERGED = ['DD', 'AU', 'UD', 'UA', 'DU', 'AA', 'UU'];
 /** A commit named on a request: a whole or abbreviated hash and nothing a revision could mean. */
 const HASH = /^[0-9a-f]{4,40}$/;
-/** A rename or a copy reports its old path as a second field. */
-const TWO_PATHS = ['R', 'C'];
 /**
  * The one refusal of git's that means the root holds no repository; it opens every wording of it.
  */
@@ -240,9 +243,7 @@ export function pathInside(root: string, path: string): boolean {
     if (typeof path !== 'string' || path === '' || path.startsWith('-') || isAbsolute(path)) {
         return false;
     }
-    const base = resolve(root);
-    const full = resolve(join(root, path));
-    return full === base || full.startsWith(base + sep);
+    return inside(join(root, path), root);
 }
 
 /**
@@ -663,25 +664,18 @@ function entry(
 // ---------------------------------------------------------------- git output
 
 /**
- * The porcelain rows, or null with a reason. `-z` output is NUL separated and never quoted, and a
- * rename carries its old path as a whole extra field.
+ * The porcelain rows, or null with a reason, read through statusRecords: `-z` output is NUL
+ * separated and never quoted, and the path of a rename is its new one, which is what the view
+ * shows.
  */
 function porcelain(root: string, timeout: number): { rows: Row[] | null; reason: string } {
     const done = run(root, ['status', '--porcelain=v1', '-z', '--untracked-files=normal'], timeout);
     if (!done.ok) return { rows: null, reason: done.text };
-    const fields = done.text.split('\0');
-    const rows: Row[] = [];
-    let i = 0;
-    while (i < fields.length) {
-        const field = fields[i];
-        i += 1;
-        if (field.length < 4) continue;
-        const index = field[0];
-        const work = field[1];
-        // Skip the old path; the new one is what the view shows.
-        if (TWO_PATHS.includes(index)) i += 1;
-        rows.push([index, work, field.slice(3)]);
-    }
+    const rows = statusRecords(done.text).map((record): Row => [
+        record.code[0],
+        record.code[1],
+        record.path
+    ]);
     return { rows, reason: '' };
 }
 

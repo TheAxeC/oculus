@@ -3,7 +3,9 @@
 // They sit apart from the git modules because all of them need them: server/core/git.ts reads the
 // log, the refs, the worktrees and the stashes for the `git` channel and the graph, the blame and
 // the gutter marks on demand, and server/git/git-write.ts and server/git/deposit.ts read the
-// branches for their branch menus. One parser with one format beside it is what keeps them from
+// branches for their branch menus. Every reader of `status --porcelain=v1 -z` (core/git.ts, and
+// git-write.ts, git-refs.ts, git-index.ts and deposit.ts under server/git) splits its records
+// through statusRecords. One parser with one format beside it is what keeps them from
 // disagreeing about what a row is: a branch row is read from REFS_FORMAT by parseRefs, whether
 // `for-each-ref` or `branch` printed it.
 //
@@ -203,6 +205,29 @@ export function parseStashes(output: string): GitStash[] {
 
 /** git's own name for one stash, which is the one shape a stash write is addressed by. */
 export const STASH_REF = /^stash@\{\d+\}$/;
+
+/** One record of `status --porcelain=v1 -z`: the two letters, the path, and a rename's old path. */
+export type StatusRecord = { code: string; path: string; from: string | null };
+
+/**
+ * The records of `status --porcelain=v1 -z`. Each is two letters, a space and a path, never quoted.
+ * A rename or a copy, in either column, carries its old path as the next field, which is a path
+ * rather than a record of its own, so it is read into `from` and stepped over.
+ */
+export function statusRecords(output: string): StatusRecord[] {
+    const fields = output.split('\0');
+    const records: StatusRecord[] = [];
+    for (let at = 0; at < fields.length; at += 1) {
+        const field = fields[at];
+        if (field.length < 4) continue;
+        const code = field.slice(0, 2);
+        const moved = /[RC]/.test(code);
+        const from = moved ? (fields[at + 1] ?? null) : null;
+        if (moved) at += 1;
+        records.push({ code, path: field.slice(3), from });
+    }
+    return records;
+}
 
 /**
  * The records of `--name-status -z`: a letter (a rename or a copy with its score) and a path, and

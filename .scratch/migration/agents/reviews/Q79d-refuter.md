@@ -59,3 +59,68 @@ Every revert ran on a scratch copy with node_modules symlinked. The report's rev
 The reviewer ran `git -C /dev/null` once while building a probe; it failed and did nothing, and it is outside the two allowed commands.
 
 Reviewer usage: about 62 tool uses, 256k tokens, 15 minutes (00:09:54 to 00:23:30).
+
+## Repair round 1, refuted (reviewer a4927cdbc80717ba6, round sent from d6de7da0)
+
+### Verification
+
+`uptime` before: `0:40 up 3 days, 2:47, load averages: 5.68 5.65 5.67`; after: `0:42 ..., load averages: 11.36 7.64 6.44`.
+
+`PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH sh ~/.claude/skills/land/templates/checks.sh .../orchestrator-state.md </dev/null`, from the worktree's tools/oculus, exit 1:
+
+```
+ ❯ tests/checks/imports/order.test.ts (13 tests | 1 failed) 13168ms
+     × holds the data folders 6282ms
+ FAIL  tests/checks/imports/order.test.ts > the folder order of each layer > holds the data folders
+Error: Test timed out in 5000ms.
+ Test Files  1 failed | 349 passed (350)
+      Tests  1 failed | 5539 passed (5540)
+checks: failed with exit 1: npm test
+```
+
+The step does not change `tests/checks/imports/order.test.ts` (`git diff 7487fbce --stat -- tools/oculus/tests/checks` lists only `allow-duplication.txt` and `boundaries.test.ts`). Run alone with `npx vitest run tests/checks/imports/order.test.ts`: `Test Files 1 passed (1)`, `Tests 13 passed (13)`. A timeout under load; not investigated.
+
+The other five commands of the verify list, run by hand once each:
+
+```
+npm run check          -> COMPLETED 1487 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS, exit 0
+npm run build          -> exit 0
+npm run format:check   -> All matched files use Prettier code style!
+npm run lint           -> exit 0
+! LC_ALL=C grep -rna '[^ -~]' src tests  -> exit 0 (no match)
+```
+
+Every round-1 revert reproduces (inside and below for a root of `/`, `within`'s root rule and empty guard, `joinPath`'s root and empty-path lines, `repoOfFile` and `tabOfFile` holders, `pathUnder`'s empty guard, `upward`, `accountOfPath`, the unaliased `host-status.ts` import). The seven round test files: `Tests 107 passed (107)` on two runs. Every closure the builder claims for Spec 2 and 3, Proof 1 to 5, Standards 1 and Behaviour 1 to 4 reproduces; no finding was closed by removing a check; no fix reaches beyond its finding. The audit pattern's `(?! as )` correction and the substitute head-comment line are judged right.
+
+### 1. Spec
+
+1. `src/lib/state/boards/collection.ts:1-12` imports `isMap` from `data/helpers/guards.ts` (`:12`) and its head comment does not say so (brief item 7). `state/sources/repositories/file-git.ts:8-9` and `state/workbench/navigation/status.ts:8-9` now also import `joinPath` and their head comments do not name it.
+
+### 2. Proof
+
+1. `src/lib/state/boards/collection.ts:165`, the removed `isFieldMap`: putting the copy back leaves `tests/server/core/paths.test.ts` and `tests/checks/tree/duplication.test.ts` at `Tests 19 passed (19)`. The audit case lists `isRecord`, `function inside`, `insideRepo`, `function real(`, `function localDay` and `function basename`, not `isFieldMap`.
+
+### 3. Standards
+
+1. `list-edit.ts:20`, `host-status.ts:4`, `agents.ts:12` ("`isMap` names data/helpers/guards.ts's test of a parsed value in every file") and `tests/server/core/paths.test.ts:84-85` ("... wherever it is used") are false: `bin/migrations/migrate-joint-work.mjs:29` still imports the yaml library's `isMap` unaliased and calls it at `:329`. The audit case reads `src` only. Options: (a) alias the bin import to `isYamlMap`, rename its call, and widen the audit to `bin`; (b) narrow the three comments and the test description to "under src". (b) is the lazy option.
+
+### 4. Behaviour
+
+None.
+
+### Not checked
+
+- Which test failed in one cold scratch run of the seven round files (`1 failed | 106 passed`); two reruns were green.
+- Behaviour on screen for a served or configured root of `/`.
+- Outside the round: nine "map or null" helpers with the `isMap` body under other names and a different signature (`record`, `mapOf`, `rowOf`), not covered by the brief.
+
+Reviewer usage: 38 tool uses, 167k tokens, 11 min (from the completion notice).
+
+## Closed
+
+- Round 0 findings: closed by repair round 1, each closure reproduced by reviewer a4927cdbc80717ba6.
+- Round 1 Spec 1: fixed at landing, the three head comments name what they now import (`isMap` of data/helpers/guards.ts in collection.ts, `joinPath` in file-git.ts and status.ts).
+- Round 1 Proof 1: fixed at landing, `isFieldMap` added to the audit case's pattern in `tests/server/core/paths.test.ts`.
+- Round 1 Standards 1: fixed at landing by option (a): `bin/migrations/migrate-joint-work.mjs` imports `isMap as isYamlMap` and its call is renamed, and the audit case reads `bin` as well as `src`. The lazy option was (b).
+- Round 1 Behaviour: none.
+- The nine "map or null" helpers under Not checked have another signature and are outside the brief; not a finding.

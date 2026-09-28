@@ -272,7 +272,7 @@ export async function handleGit(
     }
     const root = text(fields.root);
     const roots = (options.rootsFor ?? allowedRoots)();
-    if (!inside(root, roots)) {
+    if (!permitted(root, roots)) {
         return json(
             { error: 'that directory is not a workspace oculus knows' },
             { status: 400, headers: NO_STORE }
@@ -298,9 +298,4 @@ export async function handleGit(
     options.refresh?.(root);
     if (!outcome.ok) return json({ error: outcome.error }, { status: 400, headers: NO_STORE });
     return json({ ok: true, output: outcome.output }, { headers: NO_STORE });
-}
-
-/** Whether a root is one of the allowed ones, or a directory under one. git-write.ts's own rule. */
-function inside(root: string, roots: string[]): boolean {
-    return permitted(root, roots);
 }

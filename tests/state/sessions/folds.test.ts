@@ -10,7 +10,6 @@ import { setCatalog } from '../../../src/lib/state/shared/words/text.ts';
 
 import {
     agentTokens,
-    ago,
     anyRunning,
     hiddenCounts,
     isTop,
@@ -200,27 +199,6 @@ describe("the sessions list's rows", () => {
         );
         expect(both[0].rows.map((row) => row.id)).toEqual(['old', 'asking', 'fresh']);
         expect(isTop(listed('a', { top: 'yes' }))).toBe(false);
-    });
-});
-
-describe('the time a row says it last moved', () => {
-    const NOW = Date.parse('2026-09-10T12:00:00.000Z');
-
-    it('is now under a minute, then the largest unit that fits', () => {
-        const at = (iso: string) => ago(iso, NOW);
-        expect(at('2026-09-10T11:59:30.000Z')).toEqual({ unit: 'now', count: 0 });
-        expect(at('2026-09-10T11:55:00.000Z')).toEqual({ unit: 'm', count: 5 });
-        expect(at('2026-09-10T09:00:00.000Z')).toEqual({ unit: 'h', count: 3 });
-        expect(at('2026-09-07T12:00:00.000Z')).toEqual({ unit: 'd', count: 3 });
-        // a clock a few seconds ahead is still now
-        expect(at('2026-09-10T12:00:20.000Z')).toEqual({ unit: 'now', count: 0 });
-    });
-
-    it('is nothing for a stamp it cannot read, an empty one, or one well in the future', () => {
-        expect(ago(null, NOW)).toBe(null);
-        expect(ago('', NOW)).toBe(null);
-        expect(ago('yesterday', NOW)).toBe(null);
-        expect(ago('2026-09-10T13:00:00.000Z', NOW)).toBe(null);
     });
 });
 

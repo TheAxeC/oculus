@@ -7,9 +7,11 @@
 //
 // server/edit/writes.ts is the route and re-exports everything here, so an importer names either
 // file.
+//
+// Whether a path lies in a folder is read from server/core/paths.ts (`below`).
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { basename, dirname, join, resolve, sep } from 'node:path';
+import { basename, dirname, join, resolve } from 'node:path';
 import { parse } from 'yaml';
 import { isMap } from '../../../data/helpers/guards.ts';
 import { readManifests } from '../../../data/sources/manifests.ts';
@@ -20,6 +22,7 @@ import type { ChangeRecord } from '../../core/changes.ts';
 import type { FieldValue, Refusal } from '../yaml-edit.ts';
 import type { PortfolioConfig } from '../../../data/model/index.ts';
 import type { WriteOutcome } from '../writes.ts';
+import { below } from '../../core/paths.ts';
 
 /** The name of the manifest file, which is the only name this module ever writes. */
 const MANIFEST = 'project.yml';
@@ -127,7 +130,7 @@ export function manifestValue(
 export function insideHub(hub: string, config: PortfolioConfig, file: string): boolean {
     const path = resolve(file);
     if (basename(path) !== MANIFEST) return false;
-    return config.scan.some((rule) => path.startsWith(resolve(join(hub, rule.dir)) + sep));
+    return config.scan.some((rule) => below(path, join(hub, rule.dir)));
 }
 
 /**
@@ -243,7 +246,7 @@ export function createIdea(hub: string, fields: Record<string, unknown>): WriteO
         };
     }
     const folder = resolve(join(hub, IDEA_DIR, id));
-    if (!folder.startsWith(resolve(join(hub, IDEA_DIR)) + sep)) {
+    if (!below(folder, join(hub, IDEA_DIR))) {
         return {
             found: true,
             changed: [],

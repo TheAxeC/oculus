@@ -7,7 +7,7 @@ import {
     TEXT_SNIFF,
     TEXT_SNIFF_READ,
     isTextBytes
-} from '../../../src/lib/data/helpers/text-kind.ts';
+} from '../../../../src/lib/data/helpers/files/text-kind.ts';
 
 /** The bytes of one string, which is what a text file holds. */
 function bytes(text: string): Uint8Array {

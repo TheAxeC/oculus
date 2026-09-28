@@ -9,8 +9,10 @@
 // on the `config` channel. Every lookup is pure over what was last installed and reads the
 // configuration's generation, state/shared/words/generation.svelte.ts, so a component calling one
 // during its first render gets the page's data and draws again when a push replaces it.
+//
+// A parsed value is taken for a map by data/helpers/guards.ts's `isMap`.
 
-import { scalar } from '../../../data/helpers/guards.ts';
+import { isMap, scalar } from '../../../data/helpers/guards.ts';
 import { configGeneration } from './generation.svelte.ts';
 
 /** The tone anything unknown gets: a hue every theme defines and nothing means. */
@@ -31,13 +33,9 @@ let domainColor: Record<string, string | undefined> = {};
 let domainText: Record<string, string | undefined> = {};
 let dataAccess: Record<string, string | undefined> = {};
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-    return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
 /** The string at `key` of a record, or nothing. */
 function stringAt(node: unknown, key: string): string | undefined {
-    if (!isRecord(node)) return undefined;
+    if (!isMap(node)) return undefined;
     const value = node[key];
     return typeof value === 'string' ? value : undefined;
 }
@@ -49,7 +47,7 @@ function stringAt(node: unknown, key: string): string | undefined {
  */
 function stringMap(node: unknown, key: string | null): Record<string, string> {
     const map: Record<string, string> = {};
-    if (!isRecord(node)) return map;
+    if (!isMap(node)) return map;
     for (const [name, value] of Object.entries(node)) {
         const hex =
             key === null ? (typeof value === 'string' ? value : undefined) : stringAt(value, key);

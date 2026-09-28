@@ -3,6 +3,8 @@
 // disagree about which generated file or entry they address. The feed writes go through the entry
 // edits of server/edit and the write route reaches them from server/edit/writes.ts, so the module
 // sits in server/edit with both.
+//
+// Whether a path lies in a folder is read from server/core/paths.ts (`inside`).
 
 import {
     existsSync,
@@ -12,7 +14,7 @@ import {
     statSync,
     writeFileSync
 } from 'node:fs';
-import { basename, join, resolve, sep } from 'node:path';
+import { basename, join, resolve } from 'node:path';
 import { parse } from 'yaml';
 import { localDate } from '../../data/helpers/dates.ts';
 import { isMap, scalar } from '../../data/helpers/guards.ts';
@@ -32,6 +34,7 @@ import type { ChangeRecord } from '../core/changes.ts';
 import type { FieldValue, Refusal } from './yaml-edit.ts';
 import type { FeedData, FeedKind, FeedsPayload, PortfolioConfig } from '../../data/model/index.ts';
 import type { WriteOutcome } from './writes.ts';
+import { inside } from '../core/paths.ts';
 
 export type FeedRead = FeedData & { kind: FeedKind; file: string };
 
@@ -50,8 +53,7 @@ export function isFeedKind(value: string): value is FeedKind {
 /** Resolve one configured feed path only when it remains inside the hub. */
 export function feedFile(hub: string, config: PortfolioConfig, kind: FeedKind): string | null {
     const path = resolve(join(hub, config.feeds[kind]));
-    const root = resolve(hub);
-    return path === root || path.startsWith(root + sep) ? path : null;
+    return inside(path, hub) ? path : null;
 }
 
 /** Parse one feed, requiring its root, meta, and every entry to be maps. */

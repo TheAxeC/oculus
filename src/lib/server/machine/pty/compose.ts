@@ -17,11 +17,13 @@
 //
 // A shell takes no picks and no argv: it is the reader's own shell, and its prompt is the first
 // command, typed into it as keys once it has started.
+//
+// Whether a path lies in a folder is read from server/core/paths.ts (`below`).
 
 import { json } from '@sveltejs/kit';
 import { readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { isAbsolute, join, relative, resolve, sep } from 'node:path';
+import { isAbsolute, join, resolve } from 'node:path';
 import {
     cacheModels,
     choiceArgs,
@@ -36,6 +38,7 @@ import type {
     AgentsAnswer,
     ComposeStart
 } from '../../../data/model/index.ts';
+import { below } from '../../core/paths.ts';
 
 /** The catalog's path under the engine's config folder. */
 export const AGENTS_FILE = join('catalogs', 'agents.yml');
@@ -111,12 +114,6 @@ function sameDir(a: string, b: string): boolean {
     return resolve(a) === resolve(b);
 }
 
-/** Whether a path lies inside a folder. */
-function inside(path: string, dir: string): boolean {
-    const rest = relative(resolve(dir), resolve(path));
-    return rest !== '' && !rest.startsWith('..') && !isAbsolute(rest) && !rest.startsWith(sep);
-}
-
 /**
  * How one account reaches an agent's process: the `-e` pair of a folder that is not the tool's
  * default, or the `env -u` words in front of the command that take the variable away for the
@@ -139,7 +136,7 @@ export function accountOfPath(
     path: string,
     accounts: AgentAccount[]
 ): AgentAccount | null {
-    return accounts.find((one) => one.tool === agent && inside(path, one.dir)) ?? null;
+    return accounts.find((one) => one.tool === agent && below(path, one.dir)) ?? null;
 }
 
 /** What a composed start runs: the argv, the `-e` environment, and the first command of a shell. */
@@ -174,7 +171,7 @@ export function compose(
     if (images.length > 0 && agent !== 'codex') throw new Error('images are attached for codex');
     if (images.length > IMAGES_MAX) throw new Error(`at most ${IMAGES_MAX} images`);
     for (const image of images) {
-        if (typeof image !== 'string' || !isAbsolute(image) || !inside(image, request.cwd)) {
+        if (typeof image !== 'string' || !isAbsolute(image) || !below(image, request.cwd)) {
             throw new Error(`image must be a file inside the workspace: ${image}`);
         }
         argv.push('-i', image);

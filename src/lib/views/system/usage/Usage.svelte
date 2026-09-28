@@ -27,7 +27,8 @@
     import Table from '$lib/ui/display/Table.svelte';
     import type { Column } from '$lib/ui/display/table-rows';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import { basename, clock } from '$lib/state/shared/words/format';
+    import { clock } from '$lib/state/shared/words/format';
+    import { nameOf } from '$lib/state/sources/file-type';
     import { cardCursor } from '$lib/state/workbench/layout/instance';
     import { t } from '$lib/state/shared/words/text';
     import {
@@ -232,7 +233,7 @@
                                                     session.sessionId.slice(0, 8)
                                                 )}</span
                                             >
-                                            <span>{basename(session.cwd)}</span>
+                                            <span>{nameOf(session.cwd)}</span>
                                         </div>
                                     {/each}
                                 </section>

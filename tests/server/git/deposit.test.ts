@@ -391,6 +391,15 @@ describe('the push', () => {
         expect(sent.ok).toBe(true);
         expect(remoteCommits('alpha-code')).toEqual(['Change the run', 'Add the first files']);
     });
+
+    it('lists a changed path with a space as it is, without git quoting it', async () => {
+        write(codeOf('alpha'), 'a b.txt', 'spaced\n');
+        const planned = await sync('alpha', options());
+        expect(planned.plan?.changes).toEqual([{ letters: 'A ', path: 'a b.txt' }]);
+        rmSync(join(codeOf('alpha'), 'a b.txt'));
+        const cleared = await sync('alpha', options());
+        expect(cleared.plan?.changes).toEqual([]);
+    });
 });
 
 describe('the snapshot', () => {

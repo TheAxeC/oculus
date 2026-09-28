@@ -14,11 +14,15 @@
 // rather than read through, which is the rule server/files/files.ts applies to a root.
 //
 // Nothing here holds state between calls; the folder comes in from the caller.
+//
+// Whether a path lies in a folder and where a path really is are read from server/core/paths.ts
+// (`below`, `realPath`).
 
-import { existsSync, readFileSync, readdirSync, realpathSync, rmSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, rmSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { join, resolve, sep } from 'node:path';
+import { join, resolve } from 'node:path';
 import { writeTextAtomic } from '../../core/json.ts';
+import { below, realPath } from '../../core/paths.ts';
 
 /** The extension every note is written under. */
 const NOTE_SUFFIX = '.md';
@@ -34,15 +38,6 @@ export function defaultNotesDir(): string {
     return join(homedir(), '.oculus', 'notes');
 }
 
-/** The real path of a file or directory, or null when there is nothing there to resolve. */
-function real(path: string): string | null {
-    try {
-        return realpathSync(path);
-    } catch {
-        return null;
-    }
-}
-
 /**
  * The file one id names inside the folder, or null when the id is not one this folder holds. An id
  * is one name and no path: a separator or a pair of dots is refused rather than cleaned up and
@@ -56,11 +51,11 @@ function real(path: string): string | null {
 export function noteFile(dir: string, id: string): string | null {
     if (!/^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/.test(id)) return null;
     const path = resolve(join(dir, `${id}${NOTE_SUFFIX}`));
-    if (!path.startsWith(resolve(dir) + sep)) return null;
-    const folder = real(dir) ?? resolve(dir);
-    const found = real(path);
+    if (!below(path, dir)) return null;
+    const folder = realPath(dir) ?? resolve(dir);
+    const found = realPath(path);
     if (found === null) return path;
-    return found.startsWith(folder + sep) ? path : null;
+    return below(found, folder) ? path : null;
 }
 
 /** The title and the body of one note's text: the first line, and everything after it. */

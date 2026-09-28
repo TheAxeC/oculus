@@ -1,7 +1,8 @@
 // Layer 2, client state. The folds the session views draw from: the session rows of the tree the
 // selectors group, the tree cut to the rows a list keeps, how many rows a workspace or a list
 // holds, where a terminal may start, a session's agents newest first, the list's filter, search
-// and order, a relative time, a timeline cut into turns, and the rows of the Terminal view's list.
+// and order, a timeline cut into turns, and the rows of the Terminal view's list. The relative time
+// a row says it last moved is data/helpers/dates.ts's ago, handed on from here to the views.
 // Pure over the payloads they are handed, so every one is checked without a browser.
 
 import type {
@@ -15,6 +16,8 @@ import type {
     Workspace
 } from '../../data/model/index.ts';
 import { t } from '../shared/words/text.ts';
+
+export { ago } from '../../data/helpers/dates.ts';
 
 /** Every session row of the tree, workspace by workspace and area by area. */
 export function sessionRows(tree: Workspace[]): GroupedSession[] {
@@ -180,30 +183,6 @@ export function listGroups(
         groups.push({ key: workspace.key, name: workspace.name, rows });
     }
     return groups;
-}
-
-/** The seconds, minutes, hours and days a relative time is told in. */
-const MINUTE_S = 60;
-const HOUR_S = 3600;
-const DAY_S = 86_400;
-
-/**
- * How long ago a stamp was, as a count and its unit: `now` under a minute, else the largest unit
- * that fits. Null for a stamp that cannot be read or lies in the future by more than a minute.
- */
-export function ago(
-    iso: string | null,
-    now: number
-): { unit: 'now' | 'm' | 'h' | 'd'; count: number } | null {
-    if (iso === null || iso === '') return null;
-    const at = Date.parse(iso);
-    if (Number.isNaN(at)) return null;
-    const secs = Math.round((now - at) / 1000);
-    if (secs < -MINUTE_S) return null;
-    if (secs < MINUTE_S) return { unit: 'now', count: 0 };
-    if (secs < HOUR_S) return { unit: 'm', count: Math.floor(secs / MINUTE_S) };
-    if (secs < DAY_S) return { unit: 'h', count: Math.floor(secs / HOUR_S) };
-    return { unit: 'd', count: Math.floor(secs / DAY_S) };
 }
 
 /** One turn of a timeline: the prompt that opened it, when, and what followed. */

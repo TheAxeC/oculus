@@ -120,7 +120,7 @@
 <g id="node19" class="node">
 <title>folder server/git to folder server/core</title>
 <polygon fill="none" stroke="none" points="29.88,-498.92 16.12,-498.92 16.12,-486.44 29.88,-486.44 29.88,-498.92"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="23" y="-490.28" font-family="Helvetica,Arial,sans-serif" font-size="8.00">11</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="23" y="-490.28" font-family="Helvetica,Arial,sans-serif" font-size="8.00">16</text>
 </g>
 <!-- folder server/git&#45;&gt;folder server/git to folder server/core -->
 <g id="edge26" class="edge">
@@ -141,13 +141,13 @@
 <!-- folder server/git to layer data -->
 <g id="node21" class="node">
 <title>folder server/git to layer data</title>
-<polygon fill="none" stroke="none" points="162.88,-870.2 153.12,-870.2 153.12,-857.72 162.88,-857.72 162.88,-870.2"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="158" y="-861.56" font-family="Helvetica,Arial,sans-serif" font-size="8.00">8</text>
+<polygon fill="none" stroke="none" points="172.88,-870.2 163.12,-870.2 163.12,-857.72 172.88,-857.72 172.88,-870.2"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="168" y="-861.56" font-family="Helvetica,Arial,sans-serif" font-size="8.00">8</text>
 </g>
 <!-- folder server/git&#45;&gt;folder server/git to layer data -->
 <g id="edge30" class="edge">
 <title>folder server/git&#45;&gt;folder server/git to layer data</title>
-<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M128.61,-863.96C136.72,-863.96 144.84,-863.96 152.95,-863.96"/>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M129,-863.96C140.28,-863.96 151.55,-863.96 162.82,-863.96"/>
 </g>
 <!-- folder server/machine -->
 <g id="node4" class="node">
@@ -170,8 +170,8 @@
 <!-- folder server/edit to folder server/core -->
 <g id="node23" class="node">
 <title>folder server/edit to folder server/core</title>
-<polygon fill="none" stroke="none" points="65.88,-392.84 56.12,-392.84 56.12,-380.36 65.88,-380.36 65.88,-392.84"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="61" y="-384.2" font-family="Helvetica,Arial,sans-serif" font-size="8.00">7</text>
+<polygon fill="none" stroke="none" points="67.88,-392.84 54.12,-392.84 54.12,-380.36 67.88,-380.36 67.88,-392.84"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="61" y="-384.2" font-family="Helvetica,Arial,sans-serif" font-size="8.00">11</text>
 </g>
 <!-- folder server/edit&#45;&gt;folder server/edit to folder server/core -->
 <g id="edge34" class="edge">
@@ -204,7 +204,7 @@
 <g id="node26" class="node">
 <title>folder server/edit to layer data</title>
 <polygon fill="none" stroke="none" points="185.88,-764.12 172.12,-764.12 172.12,-751.64 185.88,-751.64 185.88,-764.12"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="179" y="-755.48" font-family="Helvetica,Arial,sans-serif" font-size="8.00">25</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="179" y="-755.48" font-family="Helvetica,Arial,sans-serif" font-size="8.00">26</text>
 </g>
 <!-- folder server/edit&#45;&gt;folder server/edit to layer data -->
 <g id="edge40" class="edge">
@@ -233,7 +233,7 @@
 <g id="node28" class="node">
 <title>folder server/machine to folder server/core</title>
 <polygon fill="none" stroke="none" points="279.88,-392.84 270.12,-392.84 270.12,-380.36 279.88,-380.36 279.88,-392.84"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="275" y="-384.2" font-family="Helvetica,Arial,sans-serif" font-size="8.00">7</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="275" y="-384.2" font-family="Helvetica,Arial,sans-serif" font-size="8.00">8</text>
 </g>
 <!-- folder server/machine&#45;&gt;folder server/machine to folder server/core -->
 <g id="edge44" class="edge">
@@ -277,7 +277,7 @@
 <g id="node32" class="node">
 <title>folder server/machine to layer data</title>
 <polygon fill="none" stroke="none" points="221.88,-658.04 208.12,-658.04 208.12,-645.56 221.88,-645.56 221.88,-658.04"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="215" y="-649.4" font-family="Helvetica,Arial,sans-serif" font-size="8.00">13</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="215" y="-649.4" font-family="Helvetica,Arial,sans-serif" font-size="8.00">14</text>
 </g>
 <!-- folder server/machine&#45;&gt;folder server/machine to layer data -->
 <g id="edge52" class="edge">
@@ -295,7 +295,7 @@
 <g id="node33" class="node">
 <title>folder server/content to folder server/core</title>
 <polygon fill="none" stroke="none" points="259.88,-286.76 250.12,-286.76 250.12,-274.28 259.88,-274.28 259.88,-286.76"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="255" y="-278.12" font-family="Helvetica,Arial,sans-serif" font-size="8.00">2</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="255" y="-278.12" font-family="Helvetica,Arial,sans-serif" font-size="8.00">6</text>
 </g>
 <!-- folder server/content&#45;&gt;folder server/content to folder server/core -->
 <g id="edge54" class="edge">
@@ -334,8 +334,8 @@
 <!-- folder server/files to folder server/core -->
 <g id="node36" class="node">
 <title>folder server/files to folder server/core</title>
-<polygon fill="none" stroke="none" points="195.88,-286.76 186.12,-286.76 186.12,-274.28 195.88,-274.28 195.88,-286.76"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="191" y="-278.12" font-family="Helvetica,Arial,sans-serif" font-size="8.00">9</text>
+<polygon fill="none" stroke="none" points="197.88,-286.76 184.12,-286.76 184.12,-274.28 197.88,-274.28 197.88,-286.76"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="191" y="-278.12" font-family="Helvetica,Arial,sans-serif" font-size="8.00">14</text>
 </g>
 <!-- folder server/files&#45;&gt;folder server/files to folder server/core -->
 <g id="edge60" class="edge">
@@ -364,7 +364,7 @@
 <g id="node38" class="node">
 <title>folder server/sessions to folder server/core</title>
 <polygon fill="none" stroke="none" points="83.88,-180.68 70.12,-180.68 70.12,-168.2 83.88,-168.2 83.88,-180.68"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="77" y="-172.04" font-family="Helvetica,Arial,sans-serif" font-size="8.00">11</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="77" y="-172.04" font-family="Helvetica,Arial,sans-serif" font-size="8.00">13</text>
 </g>
 <!-- folder server/sessions&#45;&gt;folder server/sessions to folder server/core -->
 <g id="edge64" class="edge">
@@ -472,8 +472,8 @@
 <!-- folder server/root to folder server/edit&#45;&gt;folder server/edit -->
 <g id="edge17" class="edge">
 <title>folder server/root to folder server/edit&#45;&gt;folder server/edit</title>
-<path fill="none" stroke="currentColor" d="M212.87,-910.41C196.84,-888.69 138.33,-809.45 112.92,-775.02"/>
-<polygon fill="currentColor" stroke="currentColor" points="114.73,-773.94 109.48,-770.36 111.35,-776.43 114.73,-773.94"/>
+<path fill="none" stroke="currentColor" d="M214.21,-910.6C208.4,-899.5 194.31,-873.43 180,-853.16 159.35,-823.91 131.86,-792.54 115.35,-774.37"/>
+<polygon fill="currentColor" stroke="currentColor" points="117.22,-773.3 111.62,-770.28 114.12,-776.13 117.22,-773.3"/>
 </g>
 <!-- folder server/root to folder server/files&#45;&gt;folder server/files -->
 <g id="edge19" class="edge">
@@ -490,8 +490,8 @@
 <!-- folder server/root to folder server/sessions&#45;&gt;folder server/sessions -->
 <g id="edge23" class="edge">
 <title>folder server/root to folder server/sessions&#45;&gt;folder server/sessions</title>
-<path fill="none" stroke="currentColor" d="M42.85,-698.28C41.77,-657.9 35.73,-410.58 49,-380.36 54.5,-367.84 65.22,-357.08 75.13,-349.15"/>
-<polygon fill="currentColor" stroke="currentColor" points="76.13,-351.03 79.63,-345.73 73.58,-347.69 76.13,-351.03"/>
+<path fill="none" stroke="currentColor" d="M42.8,-698.27C41.42,-657.89 33.52,-410.48 47,-380.36 52.71,-367.61 63.87,-356.83 74.21,-348.94"/>
+<polygon fill="currentColor" stroke="currentColor" points="75.29,-350.75 78.92,-345.53 72.83,-347.35 75.29,-350.75"/>
 </g>
 <!-- layer data from folder server/root -->
 <g id="node45" class="node">
@@ -508,8 +508,8 @@
 <!-- folder server/git to folder server/core&#45;&gt;folder server/core -->
 <g id="edge27" class="edge">
 <title>folder server/git to folder server/core&#45;&gt;folder server/core</title>
-<path fill="none" stroke="currentColor" d="M23.18,-486.04C23.68,-470.41 25,-425.19 25,-387.6 25,-387.6 25,-387.6 25,-120.4 25,-77.08 74.2,-51.59 110.61,-38.66"/>
-<polygon fill="currentColor" stroke="currentColor" points="111.28,-40.65 116.28,-36.73 109.92,-36.68 111.28,-40.65"/>
+<path fill="none" stroke="currentColor" d="M23,-486.04C23,-470.4 23,-425.18 23,-387.6 23,-387.6 23,-387.6 23,-120.4 23,-76.19 74,-50.75 111.1,-38.1"/>
+<polygon fill="currentColor" stroke="currentColor" points="111.37,-40.22 116.42,-36.35 110.06,-36.23 111.37,-40.22"/>
 </g>
 <!-- folder server/git to folder server/edit&#45;&gt;folder server/edit -->
 <g id="edge29" class="edge">
@@ -526,8 +526,8 @@
 <!-- folder server/git to layer data&#45;&gt;layer data from folder server/git -->
 <g id="edge31" class="edge">
 <title>folder server/git to layer data&#45;&gt;layer data from folder server/git</title>
-<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M163.1,-863.96C216.93,-863.96 270.76,-863.96 324.58,-863.96"/>
-<polygon fill="currentColor" stroke="currentColor" points="324.32,-866.06 330.32,-863.96 324.32,-861.86 324.32,-866.06"/>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M173.22,-863.96C223.6,-863.96 273.98,-863.96 324.35,-863.96"/>
+<polygon fill="currentColor" stroke="currentColor" points="324.27,-866.06 330.27,-863.96 324.27,-861.86 324.27,-866.06"/>
 </g>
 <!-- folder server/edit to folder server/content&#45;&gt;folder server/content -->
 <g id="edge33" class="edge">
@@ -634,7 +634,7 @@
 <!-- folder server/files to folder server/core&#45;&gt;folder server/core -->
 <g id="edge61" class="edge">
 <title>folder server/files to folder server/core&#45;&gt;folder server/core</title>
-<path fill="none" stroke="currentColor" d="M196.3,-276.74C206.54,-271.05 228.9,-257.05 239,-238.28 252.34,-213.49 247,-203.59 247,-175.44 247,-175.44 247,-175.44 247,-120.4 247,-83.02 208.86,-56.24 180.17,-41.38"/>
+<path fill="none" stroke="currentColor" d="M198.34,-275.59C209.26,-269.3 229.52,-255.89 239,-238.28 252.34,-213.49 247,-203.59 247,-175.44 247,-175.44 247,-175.44 247,-120.4 247,-83.02 208.86,-56.24 180.17,-41.38"/>
 <polygon fill="currentColor" stroke="currentColor" points="181.14,-39.52 174.83,-38.72 179.26,-43.28 181.14,-39.52"/>
 </g>
 <!-- layer data from folder server/files -->

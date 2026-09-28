@@ -1,7 +1,10 @@
 // Layer 2, server. Host-status updates live here because the registries/career.yml host shape
 // changes independently of collection entries and subtasks.
+//
+// `isMap` names data/helpers/guards.ts's test of a parsed value in every file, so the yaml
+// library's own node test is imported as `isYamlMap`.
 
-import { isMap, isScalar, isSeq } from 'yaml';
+import { isMap as isYamlMap, isScalar, isSeq } from 'yaml';
 import type { Node, Pair, Scalar, YAMLMap } from 'yaml';
 import { sameValue } from '../yaml-edit.ts';
 import type { EditResult } from '../yaml-edit.ts';
@@ -35,7 +38,7 @@ export function setHostStatus(source: string, name: string, status: string): Edi
     }
     for (let at = 0; at < seq.items.length; at += 1) {
         const node = seq.items[at] as Node;
-        if (!isMap(node)) continue;
+        if (!isYamlMap(node)) continue;
         const named = pairOf(node, 'name');
         if (named?.value == null || !isScalar(named.value)) continue;
         if (String(named.value.value) !== name) continue;

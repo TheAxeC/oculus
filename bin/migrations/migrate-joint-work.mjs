@@ -26,7 +26,10 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { parseArgs } from 'node:util';
-import { Document, isMap, isSeq, parse, stringify } from 'yaml';
+// `isMap` names data/helpers/guards.ts's test of a parsed value in every file, so the yaml
+// library's own node test is imported as `isYamlMap`.
+
+import { Document, isMap as isYamlMap, isSeq, parse, stringify } from 'yaml';
 
 /** Where each half of a collaborations entry goes. */
 const SOURCE = 'network/collaborations.yml';
@@ -326,7 +329,7 @@ function fileText(head, entries) {
     if (isSeq(list)) {
         list.items.forEach((item, at) => {
             if (at > 0) item.spaceBefore = true;
-            if (!isMap(item)) return;
+            if (!isYamlMap(item)) return;
             for (const pair of item.items) {
                 if (!isSeq(pair.value)) continue;
                 if (pair.key.value === 'meta') for (const row of pair.value.items) row.flow = true;

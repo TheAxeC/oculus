@@ -1,10 +1,12 @@
 // Layer 2, server. Stream the last seven days of Claude transcripts and Codex rollouts into
-// day-and-model token rows.
+// day-and-model token rows. A day is the machine's calendar day, data/helpers/dates.ts's localDate,
+// since the table answers "what did today cost".
 
 import { createReadStream, realpathSync } from 'node:fs';
 import { createInterface } from 'node:readline';
 import { join } from 'node:path';
 import type { UsageAccountConfig, UsageDay, UsageTool } from '../../../data/model/index.ts';
+import { localDate } from '../../../data/helpers/dates.ts';
 import { isMap } from '../../../data/helpers/guards.ts';
 import { claudeTranscripts, codexRollouts, type TranscriptFile } from '../../transcripts/stores.ts';
 import {
@@ -26,13 +28,6 @@ export type UsageFold = {
     readBytes: number;
 };
 
-/** Days are the machine's calendar days, since the table answers "what did today cost". */
-function localDay(date: Date): string {
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${date.getFullYear()}-${month}-${day}`;
-}
-
 function dayStart(now: number): number {
     const date = new Date(now);
     return new Date(
@@ -45,7 +40,7 @@ function dayStart(now: number): number {
 function dayOf(value: unknown): string {
     if (typeof value !== 'string' && typeof value !== 'number') return '';
     const date = new Date(value);
-    return Number.isNaN(date.getTime()) ? '' : localDay(date);
+    return Number.isNaN(date.getTime()) ? '' : localDate(date);
 }
 
 function add(rows: Map<string, UsageDay>, row: UsageDay): void {

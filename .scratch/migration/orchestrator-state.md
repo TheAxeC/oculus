@@ -27,7 +27,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:      # Q79d in repair round 1; Q101 building.
+dispatch:      # Q101 built, its review next.
 - step: Q101
   executor: agent
   worker: claude:opus
@@ -39,18 +39,6 @@ dispatch:      # Q79d in repair round 1; Q101 building.
   landing: not-started
   round: 0
   shared_paths: with Q79d, views/sessions/session-list/TerminalRows.svelte (Q79d its nameOf import and the folder line, Q101 the row press and the menu pick: different lines, a hand merge), DESIGN.md (Q79d lines 169 and 305, Q101 lines 266 and 273 and the terminal sentences: different lines), docs/diagrams (a rerun of npm run diagrams)
-- step: Q79d
-  executor: agent
-  worker: claude:opus
-  session_id: a48c8e50ef5865da4
-  worktree: .agents/worktrees/Q79d
-  base: 7487fbce
-  launched: 2026-09-28
-  report: agents/reviews/Q79d-report.md
-  landing: not-started
-  reviewer_report: agents/reviews/Q79d-refuter.md (reviewer a0f9a49e067ffa141, 62 tool uses, 256k tokens, 15 min; builder 162 tool uses, 356k tokens, 77 min, with the cases hand-back; the builder ran one git init in its scratchpad against the no-git rule)
-  round: 1   # sent 2026-09-29 from d6de7da0, agents/briefs/Q79d-round1-sent.md; the grep case ruled in agents/briefs/Q79d-cases.md, 2026-09-28
-  shared_paths: with Q100, views/personal/calendar/Calendar.svelte (Q79d its script's localDay import and two calls, Q100 its style block: different lines, a hand merge); with Q99, docs/diagrams (a rerun of npm run diagrams)
 ```
 
 ## The standing demands (from Axel, in force)
@@ -417,6 +405,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-09-29. Q79d landed through /spec, /refute and /land (the library audit's shared helpers, each written once); one repair round, refuted again; fixes at landing: the round review's three findings (head comments, `isFieldMap` and `bin` in the audit, the migration script's `isYamlMap`), the diagrams merge, and three defects Q100's landing left on main (the list-title rule written twice, three over-long comment lines, the type-scale expectation). Verify on main: `checks: 6 commands passed` (Test Files 351 passed, Tests 5597 passed). Q101's builder has reported. Next: Q101's report and `/refute` Q101, then `/spec` Q87 and Q81.
 - 2026-09-29. Q100 landed through /spec, /refute and /land (the Calendar's fixed strips over a wallpaper); one repair round, refuted again; fixes at landing: the library import rule, the pseudo-class comma, the strips at the popover mix (Z44 (b), Axel), the list titles at the Calendar's size (Axel), the DESIGN sentence. The git cap case tagged slow and left out of `npm test` (4390ffda, Axel). Next: Q79d's review, `/spec` Q101.
 - 2026-09-28. Q99 landed through /spec, /refute and /land (the terminal and Pages defects: input as `-H` bytes, a tab closing on its terminal's end, a new shell's prompt at the top, the Pages rows); one repair round, refuted again; fixes at landing: two compose test expectations, the HELP.md paste sentence, the diagrams merge. Verify on main: `verify: 6 commands passed` (Test Files 347 passed, Tests 5553 passed). Next: Q100's landing, `/spec` Q101, Q79d's report.
 - 2026-09-28. Q79a landed through /spec, /refute and /land (the server half of the library audit: `json()`, one `/api/` origin guard in `handle`); one repair round, refuted again; fixes at landing: the merge with Q92's `connect/actions.ts`, the migration's plain tags, the two `HEADERLESS` cases, three test titles and one comment. Verify on main: `verify: 6 commands passed` (Test Files 346 passed, Tests 5506 passed). Next: Q99's repair round 1, then `/spec` Q100 and Q101.

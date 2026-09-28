@@ -8,11 +8,13 @@
 // looked: a missing file counts nothing, and a file that is there and does not parse is a finding
 // on its row rather than a count of zero. The file served for one item is served only when it is
 // one of the paths the same listing gives, so the viewer cannot be asked for any other file.
+//
+// Whether a path lies in a folder is read from server/core/paths.ts (`inside`).
 
 import { json } from '@sveltejs/kit';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
+import { basename, dirname, isAbsolute, join, resolve } from 'node:path';
 import type {
     AgentId,
     CustomizationFinding,
@@ -21,6 +23,7 @@ import type {
     CustomizationRow,
     CustomizationsAnswer
 } from '../../../data/model/index.ts';
+import { inside } from '../../core/paths.ts';
 
 /** The rows in the order the section lists them. */
 export const CUSTOMIZATION_KINDS: CustomizationKind[] = [
@@ -63,12 +66,6 @@ function entries(dir: string): string[] {
     }
 }
 
-/** Whether a path lies inside a folder or is the folder. */
-function within(path: string, dir: string): boolean {
-    const rest = relative(resolve(dir), resolve(path));
-    return rest === '' || (!rest.startsWith('..') && !isAbsolute(rest) && !rest.startsWith(sep));
-}
-
 /**
  * The folders from the workspace up to the deepest root holding it, both included, nearest first.
  * A workspace no root holds is walked up to the filesystem's root, as the agents walk it.
@@ -77,7 +74,7 @@ export function upward(workspace: string, roots: string[]): string[] {
     const start = resolve(workspace);
     const holding = roots
         .map((one) => resolve(one))
-        .filter((one) => within(start, one))
+        .filter((one) => inside(start, one))
         .sort((a, b) => b.length - a.length)
         .at(0);
     const dirs: string[] = [];

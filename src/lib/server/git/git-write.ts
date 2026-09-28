@@ -51,17 +51,22 @@
 // names, so these writes reach a configured repository nobody has a session in. A path is refused
 // unless it is relative and stays inside the repository. Every operation answers
 // `{ ok, output, error }` and never throws.
+//
+// Whether a path lies in a folder and where a path really is are read from server/core/paths.ts
+// (`inside`, `realPath`); a path handed to git is checked by core/git.ts's `pathInside`; the
+// records of `status --porcelain=v1 -z` are split by core/git-parse.ts's `statusRecords`.
 
 import { execFile } from 'node:child_process';
-import { existsSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { basename, isAbsolute, join, resolve, sep } from 'node:path';
+import { basename, isAbsolute, join, resolve } from 'node:path';
 import { scalar } from '../../data/helpers/guards.ts';
 import type { GitBranch } from '../../data/model/index.ts';
 import { isWorktreePath, validName, worktreePath } from '../../data/helpers/worktrees.ts';
 import { defaultMirrorsDir } from './deposit-git.ts';
-import { REFS_FORMAT, WHOLE_FILE, parseBranches } from '../core/git-parse.ts';
-import { GIT } from '../core/git.ts';
+import { REFS_FORMAT, WHOLE_FILE, parseBranches, statusRecords } from '../core/git-parse.ts';
+import { GIT, pathInside } from '../core/git.ts';
+import { inside, realPath } from '../core/paths.ts';
 
 export { parseBranches };
 
@@ -148,23 +153,7 @@ export function allowedRoots(workspaces: string[] = [], hub?: string): string[] 
 /** Whether a root is one of the allowed ones, or a directory under one. */
 export function permitted(root: string, roots: string[] = allowedRoots()): boolean {
     if (typeof root !== 'string' || root === '' || !isAbsolute(root)) return false;
-    const full = resolve(root);
-    return roots.some((one) => {
-        const base = resolve(one);
-        return full === base || full.startsWith(base + sep);
-    });
-}
-
-/**
- * Whether a path is one this module will hand to git: relative to the repository, staying inside
- * it, and not a lone dash git would read as an option.
- */
-export function insideRepo(root: string, path: string): boolean {
-    if (typeof path !== 'string' || path === '' || path.startsWith('-')) return false;
-    if (isAbsolute(path)) return false;
-    const full = resolve(join(root, path));
-    const base = resolve(root);
-    return full === base || full.startsWith(base + sep);
+    return roots.some((one) => inside(root, one));
 }
 
 export function checkPaths(root: string, paths: unknown[], roots: string[]): string {
@@ -172,7 +161,7 @@ export function checkPaths(root: string, paths: unknown[], roots: string[]): str
     if (!Array.isArray(paths) || paths.length === 0) return 'no path was given';
     for (const path of paths) {
         const one = scalar(path);
-        if (one === '' || !insideRepo(root, one)) {
+        if (one === '' || !pathInside(root, one)) {
             return `the path ${one} is not inside the workspace`;
         }
     }
@@ -398,15 +387,6 @@ export async function worktreeDiff(
 /** What a request naming a path outside the root's worktrees folder is refused with. */
 export const OUTSIDE_WORKTREES = 'that path is not a worktree oculus made under this repository';
 
-/** The real path of a directory, or null when there is nothing there to resolve. */
-function real(path: string): string | null {
-    try {
-        return realpathSync(path);
-    } catch {
-        return null;
-    }
-}
-
 /**
  * Whether the path is a worktree this tool made under the root. Both sides go through realpath
  * first, so a `..` inside either is worked out and a symbolic link under the worktrees folder that
@@ -417,8 +397,8 @@ function real(path: string): string | null {
 function worktreeUnder(root: string, path: string): boolean {
     if (typeof path !== 'string' || path === '' || !isAbsolute(path)) return false;
     if (!validName(basename(resolve(path)))) return false;
-    const full = real(path);
-    const top = real(root);
+    const full = realPath(path);
+    const top = realPath(root);
     if (full === null || top === null) return false;
     return isWorktreePath(top, full);
 }
@@ -679,28 +659,16 @@ export function refFormat(root: string, args: string[]): Promise<Outcome> {
  * refuse every repository with a build folder in it.
  */
 function tracked(output: string): boolean {
-    for (const record of output.split('\0')) {
-        if (record.length < 4) continue;
-        if (!record.startsWith('??')) return true;
-    }
-    return false;
+    return statusRecords(output).some((record) => record.code !== '??');
 }
 
-/**
- * The paths `status --porcelain=v1 -z` reported as untracked. A rename names its old path in the
- * record after it, which is a path rather than a status line, so that record is stepped over.
- */
+/** The paths `status --porcelain=v1 -z` reported as untracked. */
 export function untrackedIn(output: string): Set<string> {
-    const loose = new Set<string>();
-    const records = output.split('\0');
-    for (let at = 0; at < records.length; at += 1) {
-        const record = records[at];
-        if (record.length < 4) continue;
-        const code = record.slice(0, 2);
-        if (code.startsWith('R') || code.startsWith('C')) at += 1;
-        if (code === '??') loose.add(record.slice(3));
-    }
-    return loose;
+    return new Set(
+        statusRecords(output)
+            .filter((record) => record.code === '??')
+            .map((record) => record.path)
+    );
 }
 
 function short(value: unknown): string {

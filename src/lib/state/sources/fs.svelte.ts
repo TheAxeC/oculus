@@ -56,7 +56,7 @@
 // second click on the same row ask the server once.
 
 import type { Entry, FilesPayload, SchemaField } from '../../data/model/index.ts';
-import { TEXT_SNIFF_READ } from '../../data/helpers/text-kind.ts';
+import { TEXT_SNIFF_READ } from '../../data/helpers/files/text-kind.ts';
 import type { EntitiesStore, WriteAnswer, WritesStore } from '../shared/stores/shapes.ts';
 import {
     LISTING_FORMS,

@@ -16,9 +16,11 @@
 // field of the entry in one call, so one bad value holds back itself and nothing else.
 //
 // server/edit/writes.ts is the route and re-exports the public half of this file.
+//
+// Whether a path lies in a folder is read from server/core/paths.ts (`below`).
 
 import { readFileSync, writeFileSync } from 'node:fs';
-import { join, resolve, sep } from 'node:path';
+import { join, resolve } from 'node:path';
 import { parse } from 'yaml';
 import { isMap, byKey, scalar } from '../../../data/helpers/guards.ts';
 import { collectionSchema } from '../../../data/snapshot/normalise.ts';
@@ -38,6 +40,7 @@ import type { ChangeRecord } from '../../core/changes.ts';
 import type { EditResult, FieldValue, Refusal } from '../yaml-edit.ts';
 import type { PortfolioConfig, SchemaField } from '../../../data/model/index.ts';
 import type { WriteOutcome } from '../writes.ts';
+import { below } from '../../core/paths.ts';
 
 /** Registries whose entry key is not the first field of their collection schema. */
 const REGISTRY_IDENTITY_FIELDS: Record<string, string> = { venues: 'id' };
@@ -68,7 +71,7 @@ export function collectionFile(
     const named = config.collections.find((one) => one.key === key)?.file;
     if (named === undefined) return null;
     const path = resolve(join(hub, named));
-    return path.startsWith(resolve(hub) + sep) ? path : null;
+    return below(path, hub) ? path : null;
 }
 
 /**

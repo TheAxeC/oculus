@@ -6,6 +6,10 @@
 // typed value is unsaved work, so a value the save would write unchanged (a space at the end, an
 // empty metalist row, "a,b" over "a, b" in a tags field, a raw field's JSON spaced differently) is
 // never counted as unsaved.
+//
+// A parsed value is taken for a map by data/helpers/guards.ts's `isMap`.
+
+import { isMap } from '../../data/helpers/guards.ts';
 
 /** Anything YAML writes under a raw block: a scalar, a list of them, or a map of them. */
 export type RawFieldValue =
@@ -60,15 +64,11 @@ export type FormValue = string | boolean | MetaRow[];
  */
 export type SavedValue = boolean | string | string[] | MetaRow[];
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-    return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
 /** One value of an entry as the control for its field holds it: a list is a line of commas. */
 export function controlValue(value: unknown, kind: string): FormValue {
     if (kind === 'checkbox') return value === true;
     if (kind === 'metalist' && Array.isArray(value)) {
-        return value.filter(isRecord).map((one) => ({
+        return value.filter(isMap).map((one) => ({
             label: typeof one.label === 'string' ? one.label : '',
             value: typeof one.value === 'string' ? one.value : ''
         }));

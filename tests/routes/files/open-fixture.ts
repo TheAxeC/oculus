@@ -7,7 +7,7 @@ import { tmpdir } from 'node:os';
 import { extname, join, resolve, sep } from 'node:path';
 import { expect } from 'vitest';
 import { stringify } from 'yaml';
-import type { ProgramApps } from '../../../src/lib/data/helpers/opens-in-program.ts';
+import type { ProgramApps } from '../../../src/lib/data/helpers/files/opens-in-program.ts';
 import { engineDir, loadConfig, openSettings } from '../../../src/lib/data/sources/config.ts';
 import { mintToken } from '../../../src/lib/server/core/auth.ts';
 import type { Root } from '../../../src/lib/server/files/files.ts';

@@ -2,7 +2,7 @@
 // calendar, the search, the open list, the mail, the change log's length and the usage tiers. Each
 // reads its block and falls back to the default the config file carries.
 
-import { programApps, type ProgramApps } from '../../helpers/opens-in-program.ts';
+import { programApps, type ProgramApps } from '../../helpers/files/opens-in-program.ts';
 
 /** The Live HPC settings of config/behavior.yml, every key required. */
 export type SlurmSettings = {

@@ -1,9 +1,12 @@
 // Layer 2, server. Collection entry field edits, insertion, reordering and deletion live here
 // because entry-list changes do not affect subtask or host-status edits.
+//
+// A parsed value is taken for a map by data/helpers/guards.ts's `isMap`, and the yaml library's own
+// node test is imported as `isYamlMap`.
 
 import { isDeepStrictEqual } from 'node:util';
-import { scalar } from '../../../data/helpers/guards.ts';
-import { isMap, isScalar, isSeq } from 'yaml';
+import { isMap, scalar } from '../../../data/helpers/guards.ts';
+import { isMap as isYamlMap, isScalar, isSeq } from 'yaml';
 import type { Node, YAMLMap } from 'yaml';
 import { NOT_A_FIELD_VALUE, asFieldValue, isBlockMap, sameValue } from '../yaml-edit.ts';
 import type { EditResult, Refusal } from '../yaml-edit.ts';
@@ -13,7 +16,6 @@ import {
     asJs,
     document,
     endOffset,
-    isRecord,
     lineAt,
     linesOf,
     listOf,
@@ -61,7 +63,7 @@ export function setEntryFields(
             Array.isArray(parsed) &&
             parsed.length === 0 &&
             Array.isArray(current[field]) &&
-            current[field].some(isRecord)
+            current[field].some(isMap)
                 ? null
                 : isBlockMap(parsed) && Object.keys(parsed).length === 0
                   ? null
@@ -129,7 +131,7 @@ export function startEntries(source: string, listKey: string, block: string): Ed
 
     const before = asJs(source);
     const after = asJs(text);
-    if (!isRecord(before) || !isRecord(after)) {
+    if (!isMap(before) || !isMap(after)) {
         return refuseAll(source, [listKey], 'the edit did not verify; nothing was written');
     }
     const has = after[listKey];
@@ -176,7 +178,7 @@ export function appendEntry(source: string, listKey: string, block: string): Edi
 
     const before = asJs(source);
     const after = asJs(text);
-    if (!isRecord(before) || !isRecord(after)) {
+    if (!isMap(before) || !isMap(after)) {
         return refuseAll(source, [listKey], 'the edit did not verify; nothing was written');
     }
     const had = before[listKey];
@@ -211,7 +213,7 @@ function placedEntries(source: string, ident: string): { list: string; items: Pl
     if (list === null) return null;
     const items: Placed[] = [];
     for (const node of list.seq.items as Node[]) {
-        if (!isMap(node)) return null;
+        if (!isYamlMap(node)) return null;
         const pair = pairOf(node, ident);
         if (pair?.value == null || !isScalar(pair.value)) return null;
         const range = linesOf(source, node);
@@ -261,9 +263,9 @@ export function reorderEntries(source: string, ident: string, order: string[]): 
 
     const before = asJs(source);
     const after = asJs(text);
-    const had = isRecord(before) ? before[placed.list] : undefined;
-    const has = isRecord(after) ? after[placed.list] : undefined;
-    if (!isRecord(before) || !isRecord(after) || !Array.isArray(had) || !Array.isArray(has)) {
+    const had = isMap(before) ? before[placed.list] : undefined;
+    const has = isMap(after) ? after[placed.list] : undefined;
+    if (!isMap(before) || !isMap(after) || !Array.isArray(had) || !Array.isArray(has)) {
         return refuseAll(source, [placed.list], 'the edit did not verify; nothing was written');
     }
     const wanted = order.map((value): unknown => had[values.indexOf(value)]);
@@ -292,11 +294,11 @@ export function deleteEntry(source: string, ident: string, value: string): EditR
 
     const before = asJs(source);
     const after = asJs(text);
-    const had = isRecord(before) ? before[found.list] : undefined;
+    const had = isMap(before) ? before[found.list] : undefined;
     // The last entry of a file leaves `entries:` with no items, which parses as null rather than as
     // an empty list; that is the one shape the list may take after a delete and not before it.
-    const has = isRecord(after) ? (after[found.list] ?? []) : undefined;
-    if (!isRecord(before) || !isRecord(after) || !Array.isArray(had) || !Array.isArray(has)) {
+    const has = isMap(after) ? (after[found.list] ?? []) : undefined;
+    if (!isMap(before) || !isMap(after) || !Array.isArray(had) || !Array.isArray(has)) {
         return refuseAll(source, [found.list], 'the edit did not verify; nothing was written');
     }
     const wanted = had.filter((_item, at) => at !== found.index);

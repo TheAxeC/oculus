@@ -105,11 +105,6 @@ export const PAGES_VERSION = 3;
  */
 export const WORKBENCH_VERSION = 2;
 
-/** Whether a value is an object with keys, which every saved shape is read through. */
-export function isRecord(value: unknown): value is Record<string, unknown> {
-    return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
 export function show(path: number[]): string {
     return `[${path.join(', ')}]`;
 }

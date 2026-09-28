@@ -31,17 +31,21 @@
 //
 // Nothing here holds state between calls: the path of the file, the roots and the write chain all
 // come in from the request's ServerContext, so two servers in one process read two files.
+//
+// Whether a path lies in a folder and where a path really is are read from server/core/paths.ts
+// (`inside`, `realPath`).
 
 import { json } from '@sveltejs/kit';
-import { readdirSync, realpathSync, statSync } from 'node:fs';
+import { readdirSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { basename, isAbsolute, join, sep } from 'node:path';
+import { basename, isAbsolute, join } from 'node:path';
 import { tokenedBody } from '../core/auth.ts';
 import { expandHome, HUB_ROOT, resolveRootPath, type Root } from './files.ts';
 import { readBookmarks } from './fs/bookmarks.ts';
 import { ignoredIn } from '../core/git.ts';
 import { deleteNote, listNotes, readNote, saveNote } from './fs/notes.ts';
 import { chained, isMap, readJson, writeJsonAtomic, type FsWrites } from '../core/json.ts';
+import { inside, realPath } from '../core/paths.ts';
 
 /** One entry of one directory, as the tree draws it. */
 export type Entry = { name: string; kind: 'file' | 'dir'; size: number; mtime: number };
@@ -262,15 +266,6 @@ function skipped(name: string): boolean {
     return name.startsWith('.') || SKIPPED.includes(name);
 }
 
-/** The real path of a file or directory, or null when there is nothing there to resolve. */
-function real(path: string): string | null {
-    try {
-        return realpathSync(path);
-    } catch {
-        return null;
-    }
-}
-
 /**
  * One entry of a listing, or null for one that is not there or is not a file or a folder. A link is
  * followed here, so what the tree shows is what opening the entry will give.
@@ -305,7 +300,7 @@ export function listDir(
     const found = resolveRootPath(list, key, path);
     if ('error' in found) return found;
     const root = list.find((one) => one.key === key);
-    const dir = root === undefined ? null : real(root.dir);
+    const dir = root === undefined ? null : realPath(root.dir);
     if (dir === null) return { error: 'outside' };
     let entries: Entry[];
     try {
@@ -314,7 +309,7 @@ export function listDir(
             .filter((entry) => hidden || !skipped(entry.name))
             .filter((entry) => {
                 if (!entry.isSymbolicLink()) return true;
-                const target = real(join(found.path, entry.name));
+                const target = realPath(join(found.path, entry.name));
                 return target !== null && inside(target, dir);
             })
             .map((entry) => described(found.path, entry.name))
@@ -354,11 +349,6 @@ export function listShown(
 /** What a listing request asks to see, from its query: `hidden=1` and `ignored=1`, each alone. */
 export function shownOf(query: URLSearchParams): Shown {
     return { hidden: query.get('hidden') === '1', ignored: query.get('ignored') === '1' };
-}
-
-/** Whether a real path is a real directory itself or something under it. */
-function inside(path: string, dir: string): boolean {
-    return path === dir || path.startsWith(dir + sep);
 }
 
 /** What every answer of this route carries besides its type: nothing of it is cached. */
@@ -455,7 +445,7 @@ function addRoot(saved: Saved, fields: Record<string, unknown>, into: FsTarget):
     const expanded = expandHome(typed);
     if (!isAbsolute(expanded))
         return json({ error: 'not-absolute' }, { status: 400, headers: NO_STORE });
-    const dir = real(expanded);
+    const dir = realPath(expanded);
     if (dir === null) return json({ error: 'no-such-dir' }, { status: 400, headers: NO_STORE });
     let directory: boolean;
     try {
@@ -467,7 +457,7 @@ function addRoot(saved: Saved, fields: Record<string, unknown>, into: FsTarget):
     const held = [...into.fixed, ...addedRoots(into.fixed, saved)];
     // The real paths are compared, so the same folder reached through a trailing slash or a link is
     // the root it already is rather than a second root under a second key.
-    if (held.some((one) => real(one.dir) === dir))
+    if (held.some((one) => realPath(one.dir) === dir))
         return json({ error: 'root-held' }, { status: 400, headers: NO_STORE });
     const workspace = currentOf(saved);
     const taken = [...held.map((one) => one.key), ...workspace.roots.map((one) => one.key)];

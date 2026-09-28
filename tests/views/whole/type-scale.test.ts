@@ -67,7 +67,8 @@ const VIEWS: Record<string, string> = {
     'system/help/Help.svelte': '',
     'system/history/History.svelte':
         '.when=fs-sm | .kind=fs-xs | .file, .lbl=fs-sm | .what, .value=fs-md | .empty, .said=fs-md | .raw=fs-sm',
-    'personal/calendar/Calendar.svelte': '.period=fs-md | footer=fs-sm | .grid :global(.ec)=fs-sm',
+    'personal/calendar/Calendar.svelte':
+        '.period=fs-md | footer=fs-sm | .grid :global(.ec)=fs-sm | .grid :global(.ec-list .ec-event-title)=fs-sm',
     'shared/accounts/AccountList.svelte': '.provider, .when, .hint=fs-sm | .said=fs-sm',
     'shared/accounts/ConnectorHead.svelte': '.meta=fs-sm',
     'system/hpc/Hpc.svelte': 'footer=fs-sm',

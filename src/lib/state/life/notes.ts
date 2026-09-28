@@ -4,7 +4,10 @@
 // The wait is a scheduler rather than a setTimeout in the view, so it is a thing a case can drive:
 // it is given the two timer calls and hands back a poke, so a fake clock proves that typing on and
 // on saves once and that the last text typed is the text saved. Nothing here reads a clock or a
-// timer of its own.
+// timer of its own. The day of a saved stamp is data/helpers/dates.ts's localDate, the one every
+// other local day is written by.
+
+import { localDate } from '../../data/helpers/dates.ts';
 
 /** Two digits, which is what every part of a note's id is except the milliseconds. */
 function pad(value: number, width = 2): string {
@@ -45,8 +48,7 @@ export function titleOf(body: string): string {
 export function stamp(when: number): string {
     if (!Number.isFinite(when) || when <= 0) return '';
     const at = new Date(when);
-    const day = `${at.getFullYear()}-${pad(at.getMonth() + 1)}-${pad(at.getDate())}`;
-    return `${day} ${pad(at.getHours())}:${pad(at.getMinutes())}`;
+    return `${localDate(at)} ${pad(at.getHours())}:${pad(at.getMinutes())}`;
 }
 
 /**

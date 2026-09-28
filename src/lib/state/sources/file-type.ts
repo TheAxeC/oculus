@@ -4,14 +4,15 @@
 // The formats a browser draws are read from the name: the server sends no type with a listing, the
 // same answer has to serve a tree drawn before anything is opened, and a name is what the reader
 // picks by. Whether anything else is text is the file's own first bytes, through
-// data/helpers/text-kind.ts, because a name says nothing reliable about that and a list of
+// data/helpers/files/text-kind.ts, because a name says nothing reliable about that and a list of
 // extensions is wrong about every name nobody put on it.
 
-import { isTextBytes } from '../../data/helpers/text-kind.ts';
-import { extensionOf } from '../../data/helpers/opens-in-program.ts';
+import { isTextBytes } from '../../data/helpers/files/text-kind.ts';
+import { extensionOf } from '../../data/helpers/files/opens-in-program.ts';
+import { nameOf } from '../../data/helpers/files/paths.ts';
 import { languageNamed, registered } from '../shared/words/languages.ts';
 
-export { extensionOf };
+export { extensionOf, nameOf };
 
 /** How a file opens: an HTML document, a code window, an image, a PDF, or a name and a link. */
 export type FileKind = 'html' | 'text' | 'image' | 'pdf' | 'other';
@@ -51,16 +52,6 @@ const IMAGES = ['.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp'];
 
 /** The extensions that open in the document view, which is the one type this view hands on. */
 const PAGES = ['.html', '.htm'];
-
-/** The last segment of a path, which is what a tab is labelled with. */
-export function nameOf(path: string): string {
-    return (
-        path
-            .split('/')
-            .filter((part) => part !== '')
-            .at(-1) ?? path
-    );
-}
 
 /**
  * The highlighter's name for a file's language: the one highlight.js resolves the extension to,

@@ -1,5 +1,7 @@
 // Layer 2, client state. Layout invariants and saved-form parsing live here because changes to the
 // persisted shape do not change workbench operations.
+//
+// A parsed value is taken for a map by data/helpers/guards.ts's `isMap`.
 
 import { tabsOf } from '../instance.ts';
 import {
@@ -7,7 +9,6 @@ import {
     MIN_SIZE,
     PAGES_VERSION,
     WORKBENCH_VERSION,
-    isRecord,
     newPage,
     pageLeaf,
     show,
@@ -21,6 +22,7 @@ import {
 import { refusedLeaves, settlePageLeaves, type Refusal } from '../nested.ts';
 import { normaliseSizes } from '../tree.ts';
 import { focusedPane, settleFocus } from '../workbench.ts';
+import { isMap } from '../../../../data/helpers/guards.ts';
 
 const SUM_EPS = 1e-6;
 const EPS = 1e-9;
@@ -61,7 +63,7 @@ function readNode(
     ids: Set<string>
 ): Layout | null {
     const where = `node at ${show(path)}`;
-    if (!isRecord(value)) {
+    if (!isMap(value)) {
         problems.push(`${where}: not an object`);
         return null;
     }
@@ -184,7 +186,7 @@ function readPane(
     }
     const tabs: Instance[] = [];
     for (const [index, raw] of rawTabs.entries()) {
-        if (!isRecord(raw) || typeof raw.id !== 'string' || raw.id === '') {
+        if (!isMap(raw) || typeof raw.id !== 'string' || raw.id === '') {
             problems.push(`${where}: tab ${index} has no id`);
             return null;
         }
@@ -294,7 +296,7 @@ export function parseLayout(
     if (!Array.isArray(saved) || typeof current !== 'string') return null;
     const pages: Page[] = [];
     for (const entry of saved) {
-        if (!isRecord(entry)) return null;
+        if (!isMap(entry)) return null;
         if (typeof entry.id !== 'string' || typeof entry.label !== 'string') return null;
         const workbench =
             version === LAYOUT_VERSION
@@ -329,7 +331,7 @@ function viewStates(
     value: unknown,
     known: (view: ViewId) => boolean
 ): Record<ViewId, unknown> | null {
-    if (!isRecord(value)) return null;
+    if (!isMap(value)) return null;
     const kept = Object.entries(value).filter(([view]) => view !== '' && known(view));
     return kept.length === 0 ? null : Object.fromEntries(kept);
 }
@@ -349,7 +351,7 @@ function asEnvelope(value: unknown): Record<string, unknown> | null {
             return null;
         }
     }
-    return isRecord(envelope) ? envelope : null;
+    return isMap(envelope) ? envelope : null;
 }
 
 /** Read one workbench from the envelope a browser held before a page was one tree. */
@@ -361,7 +363,7 @@ export function parseWorkbench(value: unknown): Workbench | null {
 
 /** Read one saved workbench after its envelope has been removed. */
 function readWorkbench(value: unknown): Workbench | null {
-    if (!isRecord(value)) return null;
+    if (!isMap(value)) return null;
     const problems: string[] = [];
     const root = readTree(value.root, 'root', problems, new Set<string>());
     if (root === null || problems.length > 0) return null;
@@ -381,7 +383,7 @@ const PANEL_SHARE = 0.3;
  * inside that hidden panel is not carried, since a folded child cannot be the one shown alone.
  */
 function readDockedWorkbench(value: unknown): Workbench | null {
-    if (!isRecord(value)) return null;
+    if (!isMap(value)) return null;
     const problems: string[] = [];
     const ids = new Set<string>();
     const main = readTree(value.main, 'main', problems, ids);
@@ -413,7 +415,7 @@ function readDockedWorkbench(value: unknown): Workbench | null {
 
 /** A saved focus of two trees: which tree it named and the path inside it. */
 function readDockedFocus(value: unknown): { target: 'main' | 'panel'; path: number[] } | null {
-    if (!isRecord(value)) return null;
+    if (!isMap(value)) return null;
     const target = value.target;
     if (target !== 'main' && target !== 'panel') return null;
     const path = readPath(value);
@@ -422,7 +424,7 @@ function readDockedFocus(value: unknown): { target: 'main' | 'panel'; path: numb
 
 /** A saved focus path: a list of whole, non-negative steps. */
 function readPath(value: unknown): number[] | null {
-    if (!isRecord(value)) return null;
+    if (!isMap(value)) return null;
     const path = value.path;
     if (!Array.isArray(path)) return null;
     if (!path.every((step) => typeof step === 'number' && Number.isInteger(step) && step >= 0)) {

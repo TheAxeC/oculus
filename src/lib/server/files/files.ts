@@ -12,13 +12,17 @@
 // realpath first, so a symbolic link pointing out of the root is refused rather than followed, and
 // the file is then required to be the directory itself or something under it. Where the request
 // came from is answered before any of that, by the origin guard in src/hooks.server.ts.
+//
+// Whether a path lies in a folder and where a path really is are read from server/core/paths.ts
+// (`inside`, `realPath`).
 
-import { createReadStream, realpathSync, statSync } from 'node:fs';
+import { createReadStream, statSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { dirname, extname, isAbsolute, join, relative, resolve, sep } from 'node:path';
+import { dirname, extname, isAbsolute, join, relative, resolve } from 'node:path';
 import { Readable } from 'node:stream';
 import { configDir } from '../../data/sources/config.ts';
 import type { Finding } from '../../data/model/index.ts';
+import { inside, realPath } from '../core/paths.ts';
 
 /**
  * A project folder from the snapshot, resolved beneath the configured hub root. Every action that
@@ -70,20 +74,6 @@ export function typeOf(name: string): string {
     return TYPES[extname(name).toLowerCase()] ?? FALLBACK;
 }
 
-/** Whether `path` is the directory itself or something under it. Both are already real paths. */
-function inside(path: string, dir: string): boolean {
-    return path === dir || path.startsWith(dir + sep);
-}
-
-/** The real path of a file or directory, or null when there is nothing there to resolve. */
-function real(path: string): string | null {
-    try {
-        return realpathSync(path);
-    } catch {
-        return null;
-    }
-}
-
 /** Resolve an existing file under a named root, refusing missing roots, directories and escapes. */
 export function resolveRootFile(list: Root[], key: string, path: string): string | null {
     const result = resolveRootFileResult(list, key, path);
@@ -119,16 +109,16 @@ export function resolveRootPath(
 ): { path: string } | { error: 'outside' | 'missing' } {
     const root = list.find((one) => one.key === key);
     if (root === undefined) return { error: 'outside' };
-    const dir = real(root.dir);
+    const dir = realPath(root.dir);
     if (dir === null) return { error: 'outside' };
     const candidate = resolve(dir, path);
-    const full = real(candidate);
+    const full = realPath(candidate);
     if (full === null) {
         if (!inside(candidate, dir)) return { error: 'outside' };
         // A missing child of a symlinked directory can still be outside the named root.
         let parent = dirname(candidate);
         while (inside(parent, dir)) {
-            const ancestor = real(parent);
+            const ancestor = realPath(parent);
             if (ancestor !== null) return { error: inside(ancestor, dir) ? 'missing' : 'outside' };
             const next = dirname(parent);
             if (next === parent) break;
@@ -186,7 +176,7 @@ export function readRoots(
             continue;
         }
         roots.push({ key: held.key, dir });
-        if (real(dir) === null) {
+        if (realPath(dir) === null) {
             findings.push({
                 file,
                 key: held.key,

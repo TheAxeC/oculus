@@ -31,39 +31,42 @@ const LAYERS = ['data', 'server', 'server/transcripts', 'state', 'ui', 'shell', 
 // it too and it may reach no other view's partials.
 //
 // `data/helpers/guards`, `data/accounts/calendar`, `data/accounts/mail`, `data/accounts/connect`,
-// `data/helpers/dates`, `data/helpers/deck`, `data/helpers/editor`, `data/accounts/leads`,
-// `data/helpers/worktrees`, `data/helpers/text-kind`, `data/helpers/opens-in-program`,
-// `data/helpers/tasks` and `data/helpers/search` and `data/helpers/finding-text` join `data/model`
-// in the state row as pure helpers with no reader and no I/O. `data/accounts/calendar` and
-// `data/accounts/mail` are there because how a connector account is named, and how old a thread is,
-// are read by the server that builds the credential file and reads the mailbox and by the page that
-// presses Connect and draws the age on a card; `data/accounts/connect` because the rule a new
-// account's label and a provider's client half are held to is read by the Add form and the setup
-// page before they send and by the server before it writes, and a copy on each side would let them
-// disagree; `data/helpers/deck` because the deck's placement rule has two readers, the Present view
-// and the write that saves a selection, and a copy of it on each side would let them disagree about
-// what a slide key is; `data/accounts/leads` for the same reason, since the statuses that close a
-// lead are read by the Position Leads view, its badge and the ticker on the client, and by the
-// summary the snapshot carries on the server; `data/helpers/worktrees` likewise, the Repositories
-// view naming the path a worktree will take and the write making it; `data/helpers/text-kind`, the
-// file browser deciding which tab a file opens in and the source route refusing a save over bytes
-// no editor could have read; `data/helpers/opens-in-program`, the open endpoint opening only a file
-// whose extension `open.program_ext` lists and the cards and the file view offering the control for
-// that name alone; `data/helpers/tasks`, the server building an update task's argv from the
-// `tasks:` block and the update tray asking that block whether the task it is about to start runs
-// unattended; `data/helpers/editor`, the server requiring `editor.paint_limit_kb` at start and the
-// source editor reading the same cap out of the configuration it was sent; and
-// `data/helpers/search`, the Search view refusing a query before it sends it and the search route
-// refusing the same query when it arrives, from one rule and one argument list; and
-// `data/helpers/finding-text`, whose placeholder rule is the one the client's t() fills a catalog
-// string with and the one the server words every finding with before the snapshot carries it; and
-// `data/sources/config/rail`, the rule over the `rail:` list of config/layout.yml, which the page
-// drawing the rail, the Settings view editing it and the server writing it and wording its findings
-// all read, so the three agree on which entries are pages; and `data/hub-address`, the rule telling
-// a path of the hub from a web address, which the collection card reads to decide what a click
-// opens and the Audit reads to decide which links to look for on disk. The model's own concern
-// modules (`data/model-*`) are reached through the facade only, which is why they are not listed
-// here.
+// `data/helpers/dates`, `data/helpers/files/paths`, `data/helpers/deck`, `data/helpers/editor`,
+// `data/accounts/leads`, `data/helpers/worktrees`, `data/helpers/files/text-kind`,
+// `data/helpers/files/opens-in-program`, `data/helpers/tasks` and `data/helpers/search` and
+// `data/helpers/finding-text` join `data/model` in the state row as pure helpers with no reader and
+// no I/O. `data/accounts/calendar` and `data/accounts/mail` are there because how a connector
+// account is named, and how old a thread is, are read by the server that builds the credential file
+// and reads the mailbox and by the page that presses Connect and draws the age on a card;
+// `data/accounts/connect` because the rule a new account's label and a provider's client half are
+// held to is read by the Add form and the setup page before they send and by the server before it
+// writes, and a copy on each side would let them disagree; `data/helpers/deck` because the deck's
+// placement rule has two readers, the Present view and the write that saves a selection, and a copy
+// of it on each side would let them disagree about what a slide key is; `data/accounts/leads` for
+// the same reason, since the statuses that close a lead are read by the Position Leads view, its
+// badge and the ticker on the client, and by the summary the snapshot carries on the server;
+// `data/helpers/worktrees` likewise, the Repositories view naming the path a worktree will take and
+// the write making it; `data/helpers/files/text-kind`, the file browser deciding which tab a file
+// opens in and the source route refusing a save over bytes no editor could have read;
+// `data/helpers/files/opens-in-program`, the open endpoint opening only a file whose extension
+// `open.program_ext` lists and the cards and the file view offering the control for that name
+// alone; `data/helpers/tasks`, the server building an update task's argv from the `tasks:` block
+// and the update tray asking that block whether the task it is about to start runs unattended;
+// `data/helpers/editor`, the server requiring `editor.paint_limit_kb` at start and the source
+// editor reading the same cap out of the configuration it was sent; and `data/helpers/search`, the
+// Search view refusing a query before it sends it and the search route refusing the same query when
+// it arrives, from one rule and one argument list; and `data/helpers/finding-text`, whose
+// placeholder rule is the one the client's t() fills a catalog string with and the one the server
+// words every finding with before the snapshot carries it; and `data/sources/config/rail`, the rule
+// over the `rail:` list of config/layout.yml, which the page drawing the rail, the Settings view
+// editing it and the server writing it and wording its findings all read, so the three agree on
+// which entries are pages; and `data/hub-address`, the rule telling a path of the hub from a web
+// address, which the collection card reads to decide what a click opens and the Audit reads to
+// decide which links to look for on disk. `data/helpers/files/paths` holds the `/` path rules (a
+// path's last name, the path under a folder, the deepest folder holding a target) that the file
+// browser, the source tab and the status bar read a root or a repository by, so the three agree on
+// which one holds a file. The model's own concern modules (`data/model-*`) are reached through the
+// facade only, which is why they are not listed here.
 //
 // `data/prose/markdown` is in the primitives' row, the one module of layer 1 there: a Markdown
 // document is rendered by the document route on the server and by ui/html.ts on the page, and the
@@ -111,11 +114,12 @@ const ALLOWED: Record<string, string[]> = {
         'data/accounts/mail',
         'data/accounts/connect',
         'data/helpers/dates',
+        'data/helpers/files/paths',
         'data/helpers/deck',
         'data/accounts/leads',
         'data/helpers/worktrees',
-        'data/helpers/text-kind',
-        'data/helpers/opens-in-program',
+        'data/helpers/files/text-kind',
+        'data/helpers/files/opens-in-program',
         'data/helpers/tasks',
         'data/helpers/editor',
         'data/helpers/search',

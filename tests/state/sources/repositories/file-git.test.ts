@@ -63,6 +63,31 @@ describe('the repository of a file and the tab of a repository file', () => {
         });
         expect(tabOfFile(SERVED, { root: '/other', path: 'x' })).toBeNull();
     });
+
+    it('leaves out a repository whose folder is the tab file itself', () => {
+        const served = [{ key: 'disk', dir: '/' }];
+        expect(
+            repoOfFile(served, { root: 'disk', path: 'work/repo' }, ['/work', '/work/repo'])
+        ).toEqual({ root: '/work', path: 'repo' });
+    });
+
+    it('leaves out a served root whose folder is the repository file itself', () => {
+        expect(tabOfFile(SERVED, { root: '/hub', path: 'tools/oculus' })).toEqual({
+            root: 'hub',
+            path: 'tools/oculus'
+        });
+    });
+
+    it('joins a file under a served root of the root folder without a doubled slash', () => {
+        const served = [{ key: 'disk', dir: '/' }];
+        expect(
+            repoOfFile(served, { root: 'disk', path: 'work/repo/a.txt' }, ['/work/repo'])
+        ).toEqual({ root: '/work/repo', path: 'a.txt' });
+    });
+
+    it('holds no file in a repository whose key is empty', () => {
+        expect(repoOfFile(SERVED, { root: 'hub', path: 'a.txt' }, [''])).toBeNull();
+    });
 });
 
 describe('the words a blamed line carries', () => {

@@ -15,12 +15,15 @@
 // The folder read is the reader's, never the request's: the id names a project the server already
 // holds in its portfolio snapshot, and the folder that project declares is joined to the hub and
 // checked against it again before anything is opened.
+//
+// Whether a path lies in a folder is read from server/core/paths.ts (`inside`).
 
 import { json } from '@sveltejs/kit';
 import { closeSync, openSync, readFileSync, readdirSync, readSync, statSync } from 'node:fs';
-import { join, relative, resolve, sep } from 'node:path';
+import { join, relative, sep } from 'node:path';
 import { projectDirectory } from '../files/files.ts';
 import type { Project } from '../../data/model/index.ts';
+import { inside } from '../core/paths.ts';
 
 /** The folder a project's main files sit directly under. */
 export const MANUSCRIPT = 'manuscript';
@@ -77,13 +80,6 @@ export type LatexTarget = {
 
 /** A build's files are read again whenever the panel asks, so nothing here is ever cached. */
 const NO_STORE = { 'cache-control': 'no-store' };
-
-/** Whether a path the log named is the build folder itself or sits inside it. */
-function inside(path: string, folder: string): boolean {
-    const full = resolve(path);
-    const root = resolve(folder);
-    return full === root || full.startsWith(root + sep);
-}
 
 /** When a file was last written, and null when it is not there or cannot be read. */
 function mtimeOf(path: string): number | null {

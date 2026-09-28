@@ -5,8 +5,10 @@
 // one `each` draws the whole tree and the view holds no recursion; and because the list is computed
 // from the listings the server answered and the set of open folders, what is on screen is state
 // rather than what some component last did to the DOM.
+//
+// The path rules come from data/helpers/files/paths.ts (`deepestHolding`).
 
-export { opensInProgram } from '../../data/helpers/opens-in-program.ts';
+export { opensInProgram } from '../../data/helpers/files/opens-in-program.ts';
 export {
     extensionOf,
     languageOf,
@@ -16,6 +18,7 @@ export {
     type FileKind,
     type FileType
 } from './file-type.ts';
+import { deepestHolding } from '../../data/helpers/files/paths.ts';
 
 /** The root api/file serves the hub itself under, for a link that is a path inside the hub. */
 export const HUB_ROOT = 'hub';
@@ -669,22 +672,8 @@ export function workspaceChoices(names: string[]): string[] {
  * session's workspace, and the composer's attach picker lists the workspace through the same root.
  */
 export function rootHolding(roots: FsRoot[], dir: string): { root: FsRoot; path: string } | null {
-    const wanted = dir.endsWith('/') && dir.length > 1 ? dir.slice(0, -1) : dir;
-    let best: { root: FsRoot; path: string } | null = null;
-    for (const root of roots) {
-        const base =
-            root.dir.endsWith('/') && root.dir.length > 1 ? root.dir.slice(0, -1) : root.dir;
-        if (base === '') continue;
-        const inside =
-            wanted === base
-                ? ''
-                : wanted.startsWith(`${base}/`)
-                  ? wanted.slice(base.length + 1)
-                  : null;
-        if (inside === null) continue;
-        if (best === null || base.length > best.root.dir.length) best = { root, path: inside };
-    }
-    return best;
+    const found = deepestHolding(roots, (root) => root.dir, dir);
+    return found === null ? null : { root: found.item, path: found.path };
 }
 
 /**

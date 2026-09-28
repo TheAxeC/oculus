@@ -13,7 +13,7 @@
 /** One thing the deposit's scan found. The words are the panel's; this says what and where. */
 export type Finding = { kind: string; path: string; mb: number };
 
-/** One path `git status --porcelain=v1` reported, with git's own two letters. */
+/** One path `git status --porcelain=v1 -z` reported, with git's own two letters. */
 export type Change = { path: string; letters: string };
 
 /** What a plan answers: what would ship, what moved, and what the scan objected to. */

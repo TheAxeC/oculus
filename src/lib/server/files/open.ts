@@ -18,19 +18,26 @@
 // four bytes, `mark`), or when its `com.apple.FinderInfo` attribute marks it as an alias, since
 // `open` follows an alias to wherever it points. The map is read at every request, so an edit to it
 // applies at once.
+//
+// Whether a path lies in a folder is read from server/core/paths.ts (`inside`).
 
 import { json } from '@sveltejs/kit';
 import { scalar } from '../../data/helpers/guards.ts';
 import { execFile } from 'node:child_process';
 import { closeSync, openSync, readSync, realpathSync, statSync } from 'node:fs';
-import { basename, isAbsolute, resolve, sep } from 'node:path';
-import { isBundleId, programFor, type ProgramApps } from '../../data/helpers/opens-in-program.ts';
+import { basename, isAbsolute, resolve } from 'node:path';
+import {
+    isBundleId,
+    programFor,
+    type ProgramApps
+} from '../../data/helpers/files/opens-in-program.ts';
 import { tokenedBody } from '../core/auth.ts';
 import { HUB_ROOT, resolveRootPath, type Root } from './files.ts';
 
 // The URL opener is declared beside the connect flow that is its other reader, and handed on here
 // with the path opener, so the composition root takes both from this module.
 import type { Opener } from '../accounts/connect/oauth.ts';
+import { inside } from '../core/paths.ts';
 
 export type { Opener };
 
@@ -79,11 +86,6 @@ const ALIAS_FLAG = 0x80;
 /** A refusal of one field of the body, in the shape the page's write answers read. */
 function refuse(status: number, field: string, reason: string): Response {
     return json({ error: reason, refused: [{ field, reason }] }, { status });
-}
-
-/** Whether a resolved path is the root itself or below it. */
-function inside(path: string, root: string): boolean {
-    return path === root || path.startsWith(root + sep);
 }
 
 /** Whether a real path is a directory or a regular file right now. */

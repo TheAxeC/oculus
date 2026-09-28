@@ -54,11 +54,11 @@
 
     /** How long ago the row last moved, in the list's own few words. */
     function since(row: GroupedSession): string {
-        const told = ago(row.lastActivity ?? row.started, now);
+        const told = ago(row.lastActivity ?? row.started, now, 'day');
         if (told === null) return '';
         if (told.unit === 'now') return t('sessions.ago_now');
-        if (told.unit === 'm') return t('sessions.ago_m', String(told.count));
-        if (told.unit === 'h') return t('sessions.ago_h', String(told.count));
+        if (told.unit === 'minute') return t('sessions.ago_m', String(told.count));
+        if (told.unit === 'hour') return t('sessions.ago_h', String(told.count));
         return t('sessions.ago_d', String(told.count));
     }
 

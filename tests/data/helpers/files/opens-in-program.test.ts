@@ -10,8 +10,8 @@ import {
     opensInProgram,
     programApps,
     programFor
-} from '../../../src/lib/data/helpers/opens-in-program.ts';
-import { engineDir, loadConfig, openSettings } from '../../../src/lib/data/sources/config.ts';
+} from '../../../../src/lib/data/helpers/files/opens-in-program.ts';
+import { engineDir, loadConfig, openSettings } from '../../../../src/lib/data/sources/config.ts';
 
 /** The map the checked-in config/behavior.yml holds. */
 const APPS = openSettings(loadConfig(engineDir()).config).programApps;

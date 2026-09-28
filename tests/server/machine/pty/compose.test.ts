@@ -18,6 +18,7 @@ import {
     accountChoices,
     accountEnv,
     accountFor,
+    accountOfPath,
     compose,
     composeRequest,
     handleAgents,
@@ -107,6 +108,13 @@ describe('a composed start', () => {
             'account is not a claude account: Work'
         );
         expect(accountFor('claude', '', [])).toBe(null);
+    });
+
+    it("names the account whose folder holds a transcript, and none for the folder's own path", () => {
+        const transcript = join(SECOND, 'projects', 'one.jsonl');
+        expect(accountOfPath('claude', transcript, ACCOUNTS)?.label).toBe('University');
+        expect(accountOfPath('codex', transcript, ACCOUNTS)?.label).toBe('Work');
+        expect(accountOfPath('claude', SECOND, ACCOUNTS)).toBe(null);
     });
 
     it('attaches a Codex image with -i before the prompt, and only one inside the workspace', () => {

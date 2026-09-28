@@ -7,8 +7,11 @@
 // field the entry carries that the schema does not name is drawn after them. What differs per field
 // is how it is drawn, and that is decided by the field's name first and its type second, since the
 // seven hub files agree on the names (`status`, `tags`, `meta`, `note`) and use only six types.
+//
+// A parsed value is taken for a map by data/helpers/guards.ts's `isMap`.
 
 import { ADDRESSED, HOSTED, isHubPath } from '../../data/hub-address.ts';
+import { isMap } from '../../data/helpers/guards.ts';
 import type { Entry, Project, SchemaField, Subtask } from '../../data/model/index.ts';
 import { parseOpenForms, type OpenForms } from '../forms/open-forms.ts';
 import { HUB_ROOT, normalisePath } from '../sources/fs.ts';
@@ -163,14 +166,9 @@ function textOf(value: unknown): string | undefined {
     return undefined;
 }
 
-/** Whether a value is a map: the one shape textOf has no line for. */
-function isFieldMap(value: unknown): value is Record<string, unknown> {
-    return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
 /** One chip per key of a map, the key and its line joined; a key with no line is no chip. */
 function mapPairs(value: unknown): string[] {
-    if (!isFieldMap(value)) return [];
+    if (!isMap(value)) return [];
     const chips: string[] = [];
     for (const [key, held] of Object.entries(value)) {
         const words = textOf(held);
@@ -636,7 +634,7 @@ export function extraRawFields(
     const found: FormField[] = [];
     for (const [field, value] of Object.entries(entry.fields)) {
         if (named.has(field) || field === TITLE_FIELD) continue;
-        if (!isFieldMap(value)) continue;
+        if (!isMap(value)) continue;
         found.push({ field, label: field, kind: 'raw', options: [], required: false });
     }
     return found;

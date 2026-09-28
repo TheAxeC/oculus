@@ -12,7 +12,6 @@ export {
     defaultPages,
     defaultWorkbench,
     emptyPane,
-    isRecord,
     newPage,
     pageLeaf,
     samePath

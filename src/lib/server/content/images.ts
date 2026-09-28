@@ -18,12 +18,15 @@
 // EXIF block and a PNG's `eXIf` chunk are read for an orientation that turns the picture a quarter,
 // and a WebP's is not, since the browser does not turn a WebP. A walk stops after SEGMENTS chunks,
 // so a picture whose orientation tag sits past that is drawn here at its stored shape.
+//
+// Whether a path lies in a folder is read from server/core/paths.ts (`inside`).
 
 import { closeSync, createReadStream, openSync, readdirSync, readSync, statSync } from 'node:fs';
-import { extname, join, resolve, sep } from 'node:path';
+import { extname, join, resolve } from 'node:path';
 import { Readable } from 'node:stream';
 import { byKey } from '../../data/helpers/guards.ts';
 import { loadLocalOrDefaults } from '../../data/sources/config.ts';
+import { inside } from '../core/paths.ts';
 
 /** The extensions a picture folder is filtered to, and the type each one is served as. */
 const TYPES: Record<string, string> = {
@@ -278,13 +281,6 @@ export function sizeOf(path: string): Size | null {
     } finally {
         closeSync(handle);
     }
-}
-
-/** Whether `path` is the directory itself or something under it, as a resolved path. */
-export function inside(path: string, dir: string): boolean {
-    const root = resolve(dir);
-    const full = resolve(path);
-    return full === root || full.startsWith(root + sep);
 }
 
 /** Whether a name is one file of a folder rather than a path reaching out of it. */

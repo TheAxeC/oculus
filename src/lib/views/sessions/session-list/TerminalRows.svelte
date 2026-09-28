@@ -8,6 +8,7 @@
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import Menu from '$lib/ui/menu/Menu.svelte';
     import { stamp } from '$lib/state/shared/words/format';
+    import { nameOf } from '$lib/state/sources/file-type';
     import type { Terminal, TerminalKind } from '$lib/state/sessions/terminals.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { terminalRowItems } from './session-list';
@@ -33,12 +34,6 @@
         if (kind === 'codex') return t('sessions.kind_codex_glyph');
         return t('sessions.kind_shell_glyph');
     }
-
-    /** The last segment of a terminal working directory. */
-    function basename(path: string): string {
-        const at = path.lastIndexOf('/');
-        return at < 0 ? path : path.slice(at + 1);
-    }
 </script>
 
 {#snippet row(entry: Terminal)}
@@ -55,7 +50,7 @@
                 <span class="nm">{entry.name}</span></span
             >
             <span class="meta"
-                ><span class="act">{basename(entry.cwd)}</span>
+                ><span class="act">{nameOf(entry.cwd)}</span>
                 <span class="sep">{t('sessions.meta_sep')}</span>
                 <span class="ts">{stamp(entry.created, now)}</span></span
             >

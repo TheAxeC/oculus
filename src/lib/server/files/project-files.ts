@@ -11,15 +11,18 @@
 // The folder walked is the reader's, never the request's: the id names a manifest readManifests
 // already found under the hub's own scan directories, and the folder is joined to the hub and
 // checked against it again before anything is read. A request naming anything else is a 404.
+//
+// Whether a path lies in a folder is read from server/core/paths.ts (`inside`).
 
 import { json } from '@sveltejs/kit';
 import { readdirSync, statSync } from 'node:fs';
-import { join, relative, resolve, sep } from 'node:path';
+import { join, relative, sep } from 'node:path';
 import { portfolioConfigFrom } from '../../data/index.ts';
 import { loadLocalOrDefaults } from '../../data/sources/config.ts';
 import { isMap } from '../../data/helpers/guards.ts';
 import { readManifests } from '../../data/sources/manifests.ts';
 import type { PortfolioConfig } from '../../data/model/index.ts';
+import { inside } from '../core/paths.ts';
 
 /**
  * What a file listing needs: the hub, its scan rules, and the merged config `file_index` sits in.
@@ -89,13 +92,6 @@ const DEFAULT_CAP = 400;
 
 /** A listing is walked again whenever a card is opened, so nothing here is ever cached. */
 const NO_STORE = { 'cache-control': 'no-store' };
-
-/** Whether a path is the folder itself or sits inside it. */
-function inside(path: string, folder: string): boolean {
-    const full = resolve(path);
-    const root = resolve(folder);
-    return full === root || full.startsWith(root + sep);
-}
 
 /**
  * The `file_index` block of the merged config: what is listed, how much of it, and whether at all.

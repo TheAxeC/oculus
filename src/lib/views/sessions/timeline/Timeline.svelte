@@ -13,7 +13,7 @@
 <script lang="ts">
     // Layer 3, view. What the session did, newest last, one group per turn under the prompt that
     // opened it and that prompt's time; each event a clock, what kind of thing it was, and the
-    // thing itself. A path is shown as its basename with the whole of it in the tooltip; a prompt
+    // thing itself. A path is shown as its last name with the whole of it in the tooltip; a prompt
     // keeps its words, because a slash in a prompt is not a path.
     //
     // Where it is scrolled to is the one piece of behaviour here. A fresh session, or a view just
@@ -26,7 +26,8 @@
     import PickSession from '$lib/views/shared/sessions/PickSession.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Toolbar from '$lib/ui/frame/Toolbar.svelte';
-    import { basename, clock, compactCount } from '$lib/state/shared/words/format';
+    import { clock, compactCount } from '$lib/state/shared/words/format';
+    import { nameOf } from '$lib/state/sources/file-type';
     import { timelineTurns } from '$lib/state/sessions/folds';
     import SessionPicker from '$lib/views/shared/sessions/SessionPicker.svelte';
     import type { SessionEvent } from '$lib/state/client/selectors.svelte';
@@ -91,7 +92,7 @@
         return kind;
     }
 
-    /** What the row reads: a turn as its length, a bust as its size, a path as its basename. */
+    /** What the row reads: a turn as its length, a bust as its size, a path as its last name. */
     function text(event: SessionEvent): string {
         const held = asText(event.text);
         if (event.kind === 'turn') {
@@ -100,7 +101,7 @@
         if (event.kind === 'bust') {
             return t('sessions.ev_bust', compactCount(Number(held) || 0));
         }
-        if (event.kind === 'tool' || event.kind === 'edit') return basename(held);
+        if (event.kind === 'tool' || event.kind === 'edit') return nameOf(held);
         return held;
     }
 
@@ -109,7 +110,7 @@
         const held = asText(event.text);
         if (event.kind === 'turn' || event.kind === 'bust') return undefined;
         if (event.kind === 'tool' || event.kind === 'edit') {
-            return basename(held) === held ? undefined : held;
+            return nameOf(held) === held ? undefined : held;
         }
         return held;
     }

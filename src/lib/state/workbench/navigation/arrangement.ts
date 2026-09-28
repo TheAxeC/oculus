@@ -1,16 +1,18 @@
 // Layer 2, client state. An arrangement, which is a saved layout written by hand: the
 // `arrangements:` of config/layout.yml read into the workbench state/workbench/layout holds. It is
 // its own module because it is its own concern and a hand-written shape read once.
+//
+// A parsed value is taken for a map by data/helpers/guards.ts's `isMap`.
 
 import {
     checkWorkbench,
     emptyPane,
-    isRecord,
     newInstance,
     type Instance,
     type Layout,
     type Workbench
 } from '../layout/index.ts';
+import { isMap } from '../../../data/helpers/guards.ts';
 
 /**
  * One arrangement of `arrangements:` in config/layout.yml as a workbench, with a fresh instance id
@@ -21,7 +23,7 @@ import {
  * does not add up leaves the workbench the user had rather than replacing it with a broken one.
  */
 export function parseArrangement(value: unknown): Workbench | null {
-    if (!isRecord(value)) return null;
+    if (!isMap(value)) return null;
     const root = readArrangement(value.root);
     if (root === null) return null;
     const workbench: Workbench = { root };
@@ -30,7 +32,7 @@ export function parseArrangement(value: unknown): Workbench | null {
 
 /** One node of an arrangement: a split with its children, or a pane with the views it holds. */
 function readArrangement(value: unknown): Layout | null {
-    if (!isRecord(value)) return null;
+    if (!isMap(value)) return null;
     if (value.kind === 'pane') return readArrangementPane(value.view);
     if (value.kind !== 'split') return null;
     const dir = value.dir;
@@ -75,9 +77,9 @@ function readArrangementPane(view: unknown): Layout | null {
 /** One tab of a pane: a view id, or a view id with the state its instance opens in. */
 function readArrangementTab(value: unknown): Instance | null {
     if (typeof value === 'string') return value === '' ? null : newInstance(value);
-    if (!isRecord(value)) return null;
+    if (!isMap(value)) return null;
     const { view, state } = value;
     if (typeof view !== 'string' || view === '') return null;
     if (state === undefined) return newInstance(view);
-    return isRecord(state) ? newInstance(view, { ...state }) : null;
+    return isMap(state) ? newInstance(view, { ...state }) : null;
 }

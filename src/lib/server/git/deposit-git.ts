@@ -21,12 +21,15 @@
 // Every operation answers `{ ok, output, error }` and never throws. Nothing here is reachable from
 // a watcher, a timer or the socket: the one caller is server/git/deposit.ts, itself reached only
 // from POST /api/deposit with the write token and the page's confirm.
+//
+// Whether a path lies in a folder is read from server/core/paths.ts (`inside`).
 
 import { scalar } from '../../data/helpers/guards.ts';
 import { execFile } from 'node:child_process';
 import { homedir } from 'node:os';
-import { isAbsolute, join, resolve, sep } from 'node:path';
+import { isAbsolute, join } from 'node:path';
 import { GIT } from '../core/git.ts';
+import { inside } from '../core/paths.ts';
 import { parseBranches } from '../core/git-parse.ts';
 
 export { parseBranches };
@@ -101,9 +104,7 @@ export function defaultMirrorsDir(): string {
 export function underMirrors(dir: string, mirrors: string): boolean {
     if (typeof dir !== 'string' || dir === '' || !isAbsolute(dir)) return false;
     if (typeof mirrors !== 'string' || mirrors === '' || !isAbsolute(mirrors)) return false;
-    const full = resolve(dir);
-    const base = resolve(mirrors);
-    return full === base || full.startsWith(base + sep);
+    return inside(dir, mirrors);
 }
 
 /** The real git, private to this module so the refusal below is the only way to it. */
@@ -192,9 +193,12 @@ export function lsFiles(at: Where): Promise<Outcome> {
     return run(at, ['ls-files']);
 }
 
-/** What changed against the mirror's last commit, in git's own letters. */
+/**
+ * What changed against the mirror's last commit, in git's own letters, NUL separated and never
+ * quoted, for core/git-parse.ts's statusRecords to read.
+ */
 export function porcelain(at: Where): Promise<Outcome> {
-    return run(at, ['status', '--porcelain=v1']);
+    return run(at, ['status', '--porcelain=v1', '-z']);
 }
 
 /** Commit what is staged, the message through a file as git-write.ts's commit does. */

@@ -8,8 +8,11 @@
 // offers a choice the start would then refuse. The flags each agent may be given are held here, and
 // a start builds its argv from the parsed file and nothing else: a pick is an id, and the words
 // that reach the command line are the file's.
+//
+// `isMap` names data/helpers/guards.ts's test of a parsed value in every file, so the yaml
+// library's own node test is imported as `isYamlMap`.
 
-import { LineCounter, isMap, isScalar, isSeq, parseDocument } from 'yaml';
+import { LineCounter, isMap as isYamlMap, isScalar, isSeq, parseDocument } from 'yaml';
 import type { Node, Pair, YAMLMap } from 'yaml';
 import type {
     AgentChoice,
@@ -91,7 +94,7 @@ export function parseAgents(text: string): AgentsRead {
     }
     if (doc.errors.length > 0) return { agents: [], findings };
     const root = doc.contents;
-    if (!isMap(root)) {
+    if (!isYamlMap(root)) {
         say(root, 'shape', 'agents');
         return { agents: [], findings };
     }
@@ -102,7 +105,7 @@ export function parseAgents(text: string): AgentsRead {
             say(pair, 'unknown_key', key);
             continue;
         }
-        if (!isMap(pair.value)) {
+        if (!isYamlMap(pair.value)) {
             say(pair, 'shape', key);
             continue;
         }
@@ -144,14 +147,14 @@ function readAgent(pair: Pair, say: Say): AgentChoices | null {
     }
     const agent = name as AgentId;
     const body = pair.value;
-    if (!isMap(body)) {
+    if (!isYamlMap(body)) {
         say(pair, 'shape', name);
         return null;
     }
     unknownKeys(body, AGENT_KEYS, say);
     const lists: AgentChoiceList[] = [];
     const rawLists = body.get('lists', true);
-    if (!isMap(rawLists)) {
+    if (!isYamlMap(rawLists)) {
         say(pair, 'shape', `${name}.lists`);
         return { agent, label: stringIn(body, 'label') ?? name, lists };
     }
@@ -165,7 +168,7 @@ function readAgent(pair: Pair, say: Say): AgentChoices | null {
 function readList(agent: AgentId, pair: Pair, say: Say): AgentChoiceList | null {
     const key = keyOf(pair);
     const body = pair.value;
-    if (key === '' || !isMap(body)) {
+    if (key === '' || !isYamlMap(body)) {
         say(pair, 'shape', key);
         return null;
     }
@@ -212,7 +215,7 @@ function readList(agent: AgentId, pair: Pair, say: Say): AgentChoiceList | null 
 }
 
 function readValue(flag: string, node: Node, held: AgentChoice[], say: Say): AgentChoice | null {
-    if (!isMap(node)) {
+    if (!isYamlMap(node)) {
         say(node, 'shape', 'value');
         return null;
     }

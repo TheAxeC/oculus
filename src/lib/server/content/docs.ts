@@ -31,9 +31,12 @@
 // this route answers with, before views/shared/prose/Markdown.svelte draws it. One filter, at the
 // one place the markup becomes a document, so this route stays the reader of a file and nothing
 // else.
+//
+// Whether a path lies in a folder and where a path really is are read from server/core/paths.ts
+// (`inside`, `realPath`).
 
 import { json } from '@sveltejs/kit';
-import { existsSync, readdirSync, realpathSync, statSync } from 'node:fs';
+import { existsSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join, resolve, sep } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { decodeHTML } from 'entities';
@@ -44,6 +47,7 @@ import { PROJECT_DOCS, isFinding, readDoc } from '../../data/sources/docs.ts';
 import { PRESENT_DOC } from '../../data/sources/present.ts';
 import { HUB_ROOT } from '../files/files.ts';
 import type { Finding, ManualPart, PortfolioConfig, Project } from '../../data/model/index.ts';
+import { inside, realPath } from '../core/paths.ts';
 
 /**
  * What a document read needs to know: which hub it is in, what its scan rules are, and how to reach
@@ -125,22 +129,6 @@ export function fileTag(path: string): string {
     }
 }
 
-/** Whether a path is the folder itself or sits inside it. */
-function inside(path: string, folder: string): boolean {
-    const full = resolve(path);
-    const root = resolve(folder);
-    return full === root || full.startsWith(root + sep);
-}
-
-/** The real path of a file or directory, or null when there is nothing there to resolve. */
-function real(path: string): string | null {
-    try {
-        return realpathSync(path);
-    } catch {
-        return null;
-    }
-}
-
 /**
  * Whether a path leaves the hub: as it is written, or once it and the hub are resolved, so a
  * symbolic link inside the hub pointing out of it is refused rather than followed. A path with
@@ -149,9 +137,9 @@ function real(path: string): string | null {
  */
 function escapes(path: string, hub: string): boolean {
     if (!inside(path, hub)) return true;
-    const full = real(path);
+    const full = realPath(path);
     if (full === null) return false;
-    return !inside(full, real(hub) ?? hub);
+    return !inside(full, realPath(hub) ?? hub);
 }
 
 /** Folders a project never sits under: a project's own deposit and its attic. */

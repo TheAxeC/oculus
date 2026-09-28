@@ -7,6 +7,8 @@
 // $derived(board(preset))` gets a derived that re-runs when the snapshot changes, exactly as if the
 // join were written in the component. A $derived created inside a function would be a second
 // derived per call and would say nothing more.
+//
+// The path rules come from data/helpers/files/paths.ts (`pathUnder`).
 
 import {
     BOARDS,
@@ -22,8 +24,9 @@ import {
 } from '../boards/board/index.ts';
 import type { EntitiesStore } from './entities.svelte.ts';
 import { byKey } from '../../data/helpers/guards.ts';
+import { pathUnder } from '../../data/helpers/files/paths.ts';
 import { paintLimit } from '../../data/helpers/editor.ts';
-import { programApps, type ProgramApps } from '../../data/helpers/opens-in-program.ts';
+import { programApps, type ProgramApps } from '../../data/helpers/files/opens-in-program.ts';
 import type { LayoutStore } from '../workbench/layout.svelte.ts';
 import { choicesFor, formFields, formSections } from '../forms/schema.ts';
 import { pinnedSession } from '../workbench/selection.svelte.ts';
@@ -67,10 +70,10 @@ export function folderOf(project: Project): string {
     return cut < 0 ? '' : project.file.slice(0, cut);
 }
 
-/** Whether a path is the folder itself or sits inside it. */
-function inside(path: string | null, folder: string): boolean {
+/** Whether a path is the folder itself or sits inside it; no path is in no folder. */
+function inFolder(path: string | null, folder: string): boolean {
     if (path === null || path === '') return false;
-    return path === folder || path.startsWith(`${folder}/`);
+    return pathUnder(folder, path) !== null;
 }
 
 /** The joins over what the socket delivered, for one client. */
@@ -451,7 +454,7 @@ export function createSelectors(
         if (folder === '') return [];
         return grouped().filter(
             (session) =>
-                !session.hidden && (inside(session.area, folder) || inside(session.cwd, folder))
+                !session.hidden && (inFolder(session.area, folder) || inFolder(session.cwd, folder))
         );
     }
 

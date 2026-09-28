@@ -10,9 +10,10 @@
 // tint, and a view that grows a card of its own fails until it stops asking.
 //
 // A strip that stays in place while rows of the same box scroll under it may carry a wall mix of
-// the panel's colour over the tint, so a wall rule whose selectors, `:global(...)` lists included, all end with
-// such a strip is no surface of the view's own. A strip counts only in a component that imports
-// the calendar library that draws it; anywhere else a rule naming its class is a surface.
+// the panel's colour over the tint, so a wall rule whose selectors, `:global(...)` lists included,
+// all end with such a strip is no surface of the view's own. A strip counts only in a component
+// that imports the calendar library that draws it; anywhere else a rule naming its class is a
+// surface.
 //
 // The audit is a function of the sources it is given, so the two sides of the rule are also driven
 // over a synthetic pair below rather than only over whatever the tree happens to hold.
@@ -41,9 +42,9 @@ const WALL = /:global\(body[^)]*\bwall\b[^)]*\)/;
  * header of the time grid and of the day grid, which the library makes sticky; `.ec-list
  * .ec-day-head` is the list view's date heading, which it makes sticky too. The day heading inside
  * a grid's header is not sticky itself, so `.ec-day-head` alone is not a strip. Such a strip may
- * carry a wall mix of the panel's colour over the tint, since the rows scrolled under it must not show through and it
- * covers only rows of its own box. A strip counts only in a component that imports `LIBRARY`, since
- * only there do these classes name the library's strips.
+ * carry a wall mix of the panel's colour over the tint, since the rows scrolled under it must not
+ * show through and it covers only rows of its own box. A strip counts only in a component that
+ * imports `LIBRARY`, since only there do these classes name the library's strips.
  */
 const STRIPS = ['.ec-header', '.ec-list .ec-day-head'];
 

@@ -21,15 +21,8 @@ src/lib/data/sources/feeds.ts src/lib/data/sources/registries.ts ab1d4e1b3ce4 th
 src/lib/data/sources/manifests.ts src/lib/data/sources/registries.ts 9d95463a045f the same 8 lines at 94 and 82, to fold into one place
 src/lib/server/git/deposit-git.ts src/lib/server/git/git-write.ts f6da88e69cee the same 8 lines at 307 and 704, to fold into one place
 src/lib/server/git/deposit.ts src/lib/state/system/deposit.svelte.ts d1ae18af96c8 the same 8 lines at 114 and 31, to fold into one place
-src/lib/server/content/docs.ts src/lib/server/files/files.ts 20b06154f5e8 the same 8 lines at 133 and 78, to fold into one place
-src/lib/server/content/docs.ts src/lib/server/files/fs.ts 20b06154f5e8 the same 8 lines at 133 and 262, to fold into one place
-src/lib/server/content/docs.ts src/lib/server/files/fs/notes.ts 20b06154f5e8 the same 8 lines at 133 and 35, to fold into one place
 src/lib/server/edit/entry-edit/lines.ts src/lib/server/edit/yaml-edit.ts a24957db905f the same 8 lines at 290 and 400, to fold into one place
-src/lib/server/files/files.ts src/lib/server/files/fs.ts 20b06154f5e8 the same 8 lines at 78 and 262, to fold into one place
-src/lib/server/files/files.ts src/lib/server/files/fs/notes.ts 20b06154f5e8 the same 8 lines at 78 and 35, to fold into one place
-src/lib/server/files/fs/notes.ts src/lib/server/files/fs.ts 20b06154f5e8 the same 8 lines at 35 and 262, to fold into one place
 src/lib/server/machine/pty/channel.ts src/lib/server/root/socket.ts 9d9d34a4a92f the same 8 lines at 102 and 53, to fold into one place
-src/lib/state/shared/words/appearance.ts src/lib/state/shared/words/tones.ts 6df64cd3fcbc the same 8 lines at 55 and 34, to fold into one place
 src/lib/state/sources/files.svelte.ts src/lib/state/sessions/latex.svelte.ts 044217652a12 the same 8 lines at 108 and 142, to fold into one place
 src/lib/state/workbench/layout/instance.ts src/lib/state/workbench/layout/tree.ts 056376e2a434 the same 8 lines at 133 and 59, to fold into one place
 src/lib/state/feeds/leads.ts src/lib/state/feeds/radar.ts 6221b48855a9 the same 8 lines at 146 and 83, to fold into one place

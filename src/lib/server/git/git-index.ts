@@ -9,16 +9,20 @@
 // the worktree for a revert. Every path the patch names is held to the repository before git sees
 // it, and a patch git refuses is answered with git's own line. Every call reaches git through the
 // one call site server/git/git-write.ts exports for its subcommand.
+//
+// A path handed to git is checked by core/git.ts's `pathInside`; the records of `status
+// --porcelain=v1 -z` are split by core/git-parse.ts's `statusRecords`.
 
 import { isAbsolute, join } from 'node:path';
 import { existsSync } from 'node:fs';
 import { writeTextAtomic } from '../core/json.ts';
+import { pathInside } from '../core/git.ts';
+import { statusRecords } from '../core/git-parse.ts';
 import {
     addTo,
     allowedRoots,
     applyPatch,
     failed,
-    insideRepo,
     permitted,
     porcelain,
     rebaseIn,
@@ -89,7 +93,7 @@ export async function applyHunk(
     }
     const paths = patchPaths(patch);
     if (paths.length === 0) return failed('the patch names no path');
-    const outside = paths.find((path) => !insideRepo(root, path));
+    const outside = paths.find((path) => !pathInside(root, path));
     if (outside !== undefined) return failed(`the path ${outside} is not inside the workspace`);
     return applyPatch(root, flags, patch.endsWith('\n') ? patch : `${patch}\n`);
 }
@@ -141,7 +145,7 @@ export async function resolveMerge(
     roots: string[] = allowedRoots()
 ): Promise<Outcome> {
     if (!permitted(root, roots)) return failed(UNKNOWN);
-    if (typeof path !== 'string' || !insideRepo(root, path)) {
+    if (typeof path !== 'string' || !pathInside(root, path)) {
         return failed(`the path ${path} is not inside the workspace`);
     }
     if (typeof content !== 'string') return failed('the merge result is not text');
@@ -163,16 +167,7 @@ const DELETIONS = ['DD', 'DU', 'UD'];
 async function pairOf(root: string, path: string): Promise<string> {
     const state = await porcelain(root);
     if (!state.ok) return '';
-    const records = state.output.split('\0');
-    for (let at = 0; at < records.length; at += 1) {
-        const record = records[at];
-        if (record.length < 4) continue;
-        const code = record.slice(0, 2);
-        if (record.slice(3) === path) return code;
-        // A rename or a copy names its old path in the record after it.
-        if (code.startsWith('R') || code.startsWith('C')) at += 1;
-    }
-    return '';
+    return statusRecords(state.output).find((record) => record.path === path)?.code ?? '';
 }
 
 /**
@@ -186,7 +181,7 @@ export async function acceptDeletion(
     roots: string[] = allowedRoots()
 ): Promise<Outcome> {
     if (!permitted(root, roots)) return failed(UNKNOWN);
-    if (typeof path !== 'string' || !insideRepo(root, path)) {
+    if (typeof path !== 'string' || !pathInside(root, path)) {
         return failed(`the path ${path} is not inside the workspace`);
     }
     if (!DELETIONS.includes(await pairOf(root, path))) {
@@ -207,7 +202,7 @@ export async function markResolved(
     roots: string[] = allowedRoots()
 ): Promise<Outcome> {
     if (!permitted(root, roots)) return failed(UNKNOWN);
-    if (typeof path !== 'string' || !insideRepo(root, path)) {
+    if (typeof path !== 'string' || !pathInside(root, path)) {
         return failed(`the path ${path} is not inside the workspace`);
     }
     const unmerged = await unmergedPaths(root);

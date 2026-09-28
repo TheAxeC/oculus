@@ -102,6 +102,7 @@ describe('the customizations of a Claude workspace', () => {
             join(ROOT, 'CLAUDE.md')
         ]);
         expect(upward(WORK, [ROOT])).toEqual([WORK, ROOT]);
+        expect(upward(ROOT, [ROOT])).toEqual([ROOT]);
     });
 
     it('counts the skills of the account and of the workspace, a folder with no SKILL.md not among them', () => {

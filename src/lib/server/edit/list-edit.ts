@@ -16,8 +16,11 @@
 // anything is written, through readBack and othersThan below: server/edit/deck-edit.ts for the
 // deck's two lists, server/edit/writes/audit-mute.ts for the audit's mute list and
 // server/edit/writes/rail.ts for the rail's list of pages.
+//
+// `isMap` names data/helpers/guards.ts's test of a parsed value in every file, so the yaml
+// library's own node test is imported as `isYamlMap`.
 
-import { isMap, isScalar, isSeq, parse, parseDocument } from 'yaml';
+import { isMap as isYamlMap, isScalar, isSeq, parse, parseDocument } from 'yaml';
 import type { Node, Pair } from 'yaml';
 
 /** The indentation a file with no nesting to read it from would be written at. */
@@ -112,13 +115,13 @@ export function setItems(
     items: string[]
 ): string {
     const root = parseDocument(source).contents;
-    if (!isMap(root)) return source;
+    if (!isYamlMap(root)) return source;
 
     let outerIndent = 0;
     let map = root;
     if (owner !== null) {
         const pair = root.items.find((one) => nameOf(one) === owner);
-        if (pair === undefined || !isMap(pair.value)) return source;
+        if (pair === undefined || !isYamlMap(pair.value)) return source;
         const key = rangeOf(pair.key);
         if (key === null) return source;
         outerIndent = indentAt(source, key[0]);

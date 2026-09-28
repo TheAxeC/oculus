@@ -10,11 +10,14 @@
 // the old document with exactly that row added or taken away, and it must read as a machine file
 // (checkLocal, the rule the start and the source tab apply). A text that fails any of the three is
 // a refusal with the reason, never a damaged file.
+//
+// A parsed value is taken for a map by data/helpers/guards.ts's `isMap`, and the yaml library's own
+// node test is imported as `isYamlMap`.
 
-import { isMap, isScalar, isSeq, parse, parseDocument } from 'yaml';
+import { isMap as isYamlMap, isScalar, isSeq, parse, parseDocument } from 'yaml';
 import type { Node, Pair, YAMLSeq } from 'yaml';
 import { checkLocal } from '../../../data/sources/config.ts';
-import { isMap as isRecord } from '../../../data/helpers/guards.ts';
+import { isMap } from '../../../data/helpers/guards.ts';
 import type { AccountRow } from '../../../data/model/index.ts';
 
 /** The two lists of config/local.yml an account row lives in. */
@@ -42,7 +45,7 @@ function lineEnd(text: string, at: number): number {
 
 /** The list's pair in the document's top map, or null when the file names no such key. */
 function listPair(root: unknown, list: AccountList): Pair | null {
-    if (!isMap(root)) return null;
+    if (!isYamlMap(root)) return null;
     return root.items.find((pair) => isScalar(pair.key) && pair.key.value === list) ?? null;
 }
 
@@ -66,7 +69,7 @@ function textEnd(text: string, node: Node): number {
 
 /** Whether a row names this account. */
 function same(item: unknown, account: AccountRow): boolean {
-    return isRecord(item) && item.provider === account.provider && item.label === account.label;
+    return isMap(item) && item.provider === account.provider && item.label === account.label;
 }
 
 /**
@@ -86,7 +89,7 @@ function added(text: string, list: AccountList, row: AccountRow): RowEdit {
     const doc = parseDocument(text);
     const root = doc.contents;
     const empty = root === null || (isScalar(root) && root.value === null);
-    if (!empty && !isMap(root)) return { reason: 'local.yml is not a map of keys' };
+    if (!empty && !isYamlMap(root)) return { reason: 'local.yml is not a map of keys' };
     const pair = empty ? null : listPair(root, list);
     if (pair === null) {
         const lead = text === '' || text.endsWith('\n') ? '' : '\n';
@@ -157,7 +160,7 @@ function valuesOf(text: string): Record<string, unknown> | null {
     const doc = parseDocument(text);
     if (doc.errors.length > 0) return null;
     const values: unknown = doc.toJS() ?? {};
-    return isRecord(values) ? values : null;
+    return isMap(values) ? values : null;
 }
 
 /**

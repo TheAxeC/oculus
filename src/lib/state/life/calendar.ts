@@ -8,12 +8,16 @@
 // for an all-day event, and a timed value the page reads in its own zone. A date is taken as it
 // stands, so an all-day event is never moved a day by a zone; a timed value is handed on as the
 // moment it names, since the library reads an offset of `Z` as a wall clock and would move it.
+// A moment's day in the page's own zone is data/helpers/dates.ts's localDate, handed on from here
+// to the view.
 
 import { calendarKey } from '../../data/accounts/calendar.ts';
 import { fillPlaceholders } from '../../data/helpers/finding-text.ts';
+import { localDate } from '../../data/helpers/dates.ts';
 import { isMap } from '../../data/helpers/guards.ts';
 import type { CalendarAccount, CalendarEvent, CalendarPayload } from '../../data/model/index.ts';
 export { calendarKey } from '../../data/accounts/calendar.ts';
+export { localDate } from '../../data/helpers/dates.ts';
 export type {
     CalendarAccount,
     CalendarEvent,
@@ -82,17 +86,11 @@ export type CalendarLibraryOptions = {
     noEventsContent: string;
 };
 
-/** A moment as `YYYY-MM-DD` in the page's own zone. */
-export function localDay(at: Date): string {
-    const pad = (value: number): string => String(value).padStart(2, '0');
-    return `${at.getFullYear()}-${pad(at.getMonth() + 1)}-${pad(at.getDate())}`;
-}
-
 /** The day an event belongs to: an all-day event's own date, or the local day of its start. */
 export function dayOf(event: CalendarEvent): string {
     if (event.allDay) return event.start.slice(0, 10);
     const at = new Date(event.start);
-    return Number.isNaN(at.getTime()) ? event.start.slice(0, 10) : localDay(at);
+    return Number.isNaN(at.getTime()) ? event.start.slice(0, 10) : localDate(at);
 }
 
 /**
@@ -185,8 +183,8 @@ function timeRange(event: CalendarEvent, words: CalendarViewWords): string {
     }
     const pad = (value: number): string => String(value).padStart(2, '0');
     const clock = (at: Date): string => `${pad(at.getHours())}:${pad(at.getMinutes())}`;
-    const sameDay = localDay(start) === localDay(end);
-    const shown = (at: Date): string => (sameDay ? clock(at) : `${localDay(at)} ${clock(at)}`);
+    const sameDay = localDate(start) === localDate(end);
+    const shown = (at: Date): string => (sameDay ? clock(at) : `${localDate(at)} ${clock(at)}`);
     return fillPlaceholders(words.timeRange, [shown(start), shown(end)]);
 }
 
@@ -206,8 +204,8 @@ export function calendarRange(payload: CalendarPayload): { start: string; end: s
     const at = new Date(payload.updated).getTime();
     if (Number.isNaN(at)) return null;
     return {
-        start: localDay(new Date(at - payload.daysBack * day)),
-        end: localDay(new Date(at + payload.daysAhead * day))
+        start: localDate(new Date(at - payload.daysBack * day)),
+        end: localDate(new Date(at + payload.daysAhead * day))
     };
 }
 
@@ -248,7 +246,7 @@ export function calendarOptions(
 
 /** How many of today's events have not ended yet, which is what the view's badge counts. */
 export function remainingToday(events: CalendarEvent[], now: Date): number {
-    const today = localDay(now);
+    const today = localDate(now);
     return events.filter(
         (event) => dayOf(event) === today && event.status !== 'cancelled' && ahead(event, now)
     ).length;

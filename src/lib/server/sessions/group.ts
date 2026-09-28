@@ -11,6 +11,8 @@
 //
 // The caller supplies the project folders; nothing here walks the hub, so it is cheap enough to
 // run on every push and testable without a repository.
+//
+// Whether a path lies in a folder is read from server/core/paths.ts (`inside`).
 
 import { existsSync } from 'node:fs';
 import { homedir } from 'node:os';
@@ -25,6 +27,7 @@ import type {
 } from '../../data/model/index.ts';
 import { isMap } from '../core/json.ts';
 import { overrides as readOverrides, type Override } from './overrides.ts';
+import { inside } from '../core/paths.ts';
 
 export const GENERAL = '(general)';
 export const UNKNOWN_NAME = '(unknown)';
@@ -156,7 +159,7 @@ function forcedWorkspace(
     roots: string[],
     resolved: Map<string, string>
 ): string {
-    if (!isAbsolute(forced) || inside(forced, workspace)) return workspace;
+    if (!isAbsolute(forced) || within(forced, workspace)) return workspace;
     return workspaceOf(forced, roots, resolved);
 }
 
@@ -189,7 +192,7 @@ function gitRoot(path: string): string {
 /** The first segment below the deepest configured root, so ~/workspace wins over ~. */
 function rootChild(path: string, roots: string[]): string {
     for (const root of roots) {
-        if (inside(path, root) && path !== root) {
+        if (within(path, root) && path !== root) {
             const rest = relative(root, path).split(sep);
             return join(root, rest[0]);
         }
@@ -244,7 +247,7 @@ function vote(
     points: number,
     stamp: unknown
 ): void {
-    if (!inside(area, workspace)) return;
+    if (!within(area, workspace)) return;
     const entry = scores.get(area) ?? { score: 0, last: '' };
     entry.score += points;
     if (typeof stamp === 'string' && stamp > entry.last) entry.last = stamp;
@@ -258,13 +261,13 @@ function vote(
  */
 function areaOf(path: string, folders: string[], isDir: boolean, workspace: string): string {
     for (const folder of folders) {
-        if (inside(path, folder)) return folder;
+        if (within(path, folder)) return folder;
     }
     return clamp(isDir ? path : dirname(path), workspace);
 }
 
 function clamp(folder: string, workspace: string): string {
-    if (!workspace || !inside(folder, workspace)) return folder;
+    if (!workspace || !within(folder, workspace)) return folder;
     const rest = relative(workspace, folder).split(sep);
     if (rest.length <= AREA_DEPTH || rest[0] === '..') return folder;
     return join(workspace, ...rest.slice(0, AREA_DEPTH));
@@ -304,7 +307,7 @@ function secondary(
             (area) =>
                 area !== primary &&
                 (scores.get(area)?.score ?? 0) >= SECONDARY_MIN_SCORE &&
-                inside(area, workspace)
+                within(area, workspace)
         )
         .sort();
     others.sort((a, b) => compareRank(scores, b, a));
@@ -322,7 +325,7 @@ function general(workspace: string): string {
 function shortLabel(area: string, workspace: string): string {
     if (area === general(workspace)) return GENERAL;
     if (area === workspace) return basename(workspace) || workspace;
-    if (inside(area, workspace)) return relative(workspace, area);
+    if (within(area, workspace)) return relative(workspace, area);
     return area;
 }
 
@@ -430,8 +433,12 @@ function clean(path: unknown): string {
     return normalize(path);
 }
 
-function inside(path: string, base: string): boolean {
+/**
+ * Whether a path is the base or lies below it. An empty path or base holds nothing, and a base of
+ * the separator alone holds every absolute path, which core `inside` refuses on purpose: a
+ * configured root of `/` still groups the sessions under it.
+ */
+function within(path: string, base: string): boolean {
     if (!path || !base) return false;
-    if (path === base) return true;
-    return path.startsWith(base.endsWith(sep) ? base : base + sep);
+    return base === sep ? path.startsWith(sep) : inside(path, base);
 }

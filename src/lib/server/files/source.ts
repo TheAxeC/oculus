@@ -14,7 +14,7 @@
 import { json } from '@sveltejs/kit';
 import { accessSync, closeSync, constants, openSync, readSync } from 'node:fs';
 import { LOCAL_NAME, checkLocal } from '../../data/sources/config.ts';
-import { TEXT_SNIFF_READ, isTextBytes } from '../../data/helpers/text-kind.ts';
+import { TEXT_SNIFF_READ, isTextBytes } from '../../data/helpers/files/text-kind.ts';
 import { tokenedBody } from '../core/auth.ts';
 import { ENGINE_ROOT, resolveRootFileResult, resolveRootPath, type Root } from './files.ts';
 import { writeTextAtomic } from '../core/json.ts';

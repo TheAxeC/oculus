@@ -12,11 +12,14 @@
 //
 // Nothing is thrown. A path this cannot write is a refusal with a reason, which is what the write
 // route hands back to the page.
+//
+// A parsed value is taken for a map by data/helpers/guards.ts's `isMap`, and the yaml library's own
+// node test is imported as `isYamlMap`.
 
 import { isDeepStrictEqual } from 'node:util';
-import { isMap, isScalar, isSeq, parseDocument, stringify } from 'yaml';
+import { isMap as isYamlMap, isScalar, isSeq, parseDocument, stringify } from 'yaml';
 import type { Node, Pair, Scalar, YAMLMap } from 'yaml';
-import { byKey } from '../../data/helpers/guards.ts';
+import { byKey, isMap } from '../../data/helpers/guards.ts';
 
 /** One row of a metalist: a flat map whose keys and values are strings. */
 export type FlatStringMap = Record<string, string>;
@@ -85,10 +88,6 @@ function fail(reason: string): Written {
     return { reason };
 }
 
-function isRecord(value: unknown): value is Parsed {
-    return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
 /** The document as plain values, or null when it does not parse or is not a map of keys. */
 function safeParse(text: string): Parsed | null {
     let parsed: unknown;
@@ -99,7 +98,7 @@ function safeParse(text: string): Parsed | null {
     } catch {
         return null;
     }
-    return isRecord(parsed) ? parsed : null;
+    return isMap(parsed) ? parsed : null;
 }
 
 /** The dotted name split into its segments, or null when it is not a name this can write. */
@@ -114,7 +113,7 @@ export function pathOf(field: string): string[] | null {
 function currentValue(data: Parsed, path: string[]): unknown {
     const top = data[path[0]];
     if (path.length === 1) return top;
-    return isRecord(top) ? top[path[1]] : undefined;
+    return isMap(top) ? top[path[1]] : undefined;
 }
 
 /** Whether a value is the one the manifest already holds; absent and null are one thing. */
@@ -132,8 +131,7 @@ export function asFieldValue(raw: unknown): FieldValue | undefined {
     if (
         Array.isArray(raw) &&
         raw.every(
-            (item) =>
-                isRecord(item) && Object.values(item).every((value) => typeof value === 'string')
+            (item) => isMap(item) && Object.values(item).every((value) => typeof value === 'string')
         )
     ) {
         return raw as FlatStringMap[];
@@ -164,12 +162,12 @@ function isBlockValue(value: unknown): value is BlockValue {
  * parses a raw field into exactly this, so a dataset's `retrieval:` block round-trips through it.
  */
 export function isBlockMap(value: unknown): value is BlockMap {
-    return isRecord(value) && Object.values(value).every(isBlockValue);
+    return isMap(value) && Object.values(value).every(isBlockValue);
 }
 
 /** Whether a non-empty list is the metalist shape rather than a list of strings. */
 export function isMetalist(value: Exclude<FieldValue, null>): value is FlatStringMap[] {
-    return Array.isArray(value) && value.length > 0 && isRecord(value[0]);
+    return Array.isArray(value) && value.length > 0 && isMap(value[0]);
 }
 
 /** One scalar in YAML, on one line. `style` keeps the quoting the file already had. */
@@ -323,7 +321,7 @@ function valueEnd(node: Node): number {
         const last = rangeOf(node.items[node.items.length - 1]);
         if (last !== null) return last[1];
     }
-    if (isMap(node) && node.flow !== true && node.items.length > 0) {
+    if (isYamlMap(node) && node.flow !== true && node.items.length > 0) {
         const last = rangeOf((node.items[node.items.length - 1] as Pair<Scalar, Node>).value);
         if (last !== null) return last[1];
     }
@@ -341,7 +339,7 @@ function pairEnd(pair: Pair<Scalar, Node>): number | null {
 function mapIndent(root: YAMLMap, text: string): number {
     for (const item of root.items) {
         const value = (item as Pair<Scalar, Node>).value;
-        if (value !== null && isMap(value) && value.flow !== true) {
+        if (value !== null && isYamlMap(value) && value.flow !== true) {
             const range = rangeOf(value);
             if (range !== null && range[0] > 0) return columnOf(text, range[0]);
         }
@@ -368,7 +366,7 @@ function replaceValue(text: string, node: Node, value: Exclude<FieldValue, null>
     const block = Array.isArray(value) && isSeq(node) && node.flow !== true && value.length > 0;
     let rendered: string;
     if (isBlockMap(value)) {
-        const block = isMap(node) && node.flow !== true;
+        const block = isYamlMap(node) && node.flow !== true;
         const indent = block
             ? columnOf(text, start)
             : text.slice(lineStart(text, start), start).length -
@@ -510,7 +508,7 @@ function applyOne(text: string, path: string[], value: FieldValue): Written {
     const doc = parseDocument(text);
     if (doc.errors.length > 0) return fail('the manifest does not parse');
     const root = doc.contents;
-    if (root === null || !isMap(root)) return fail('the manifest is not a map of keys');
+    if (root === null || !isYamlMap(root)) return fail('the manifest is not a map of keys');
 
     const top = pairOf(root, path[0]);
 
@@ -536,7 +534,7 @@ function applyOne(text: string, path: string[], value: FieldValue): Written {
     const holder = top.value;
     if (holder === null) return fail('the key has no value node');
 
-    if (isMap(holder)) {
+    if (isYamlMap(holder)) {
         const pair = pairOf(holder, child);
         if (value === null) {
             if (pair === undefined) return fail('the key is not there');
@@ -586,14 +584,14 @@ function expect(data: Parsed, path: string[], value: FieldValue): void {
     const [parent, child] = path;
     const held = data[parent];
     if (value === null) {
-        if (!isRecord(held)) return;
+        if (!isMap(held)) return;
         // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- a Map here would change the shape every reader of this record depends on
         delete held[child];
         // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- a Map here would change the shape every reader of this record depends on
         if (Object.keys(held).length === 0) delete data[parent];
         return;
     }
-    if (isRecord(held)) {
+    if (isMap(held)) {
         held[child] = value;
         return;
     }
@@ -625,7 +623,7 @@ export function renameKey(source: string, from: string, to: string): EditResult 
     const doc = parseDocument(source);
     if (doc.errors.length > 0) return refusal('the manifest does not parse');
     const root = doc.contents;
-    if (root === null || !isMap(root)) return refusal('the manifest is not a map of keys');
+    if (root === null || !isYamlMap(root)) return refusal('the manifest is not a map of keys');
     const pair = pairOf(root, from);
     if (pair === undefined) return { text: source, changed: [], refused: [] };
     if (pairOf(root, to) !== undefined) return refusal(`${to} is already a key of the manifest`);
@@ -687,7 +685,7 @@ export function setFields(source: string, fields: Record<string, unknown>): Edit
             Array.isArray(parsed) &&
             parsed.length === 0 &&
             Array.isArray(current) &&
-            current.some(isRecord)
+            current.some(isMap)
                 ? null
                 : isBlockMap(parsed) && Object.keys(parsed).length === 0
                   ? null

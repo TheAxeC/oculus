@@ -10,9 +10,12 @@
 // during its first render gets the page's data and draws again when a push replaces it. What the
 // viewer picked out of this list is state/workbench/ui.svelte.ts's, which is the store that
 // persists.
+//
+// A parsed value is taken for a map by data/helpers/guards.ts's `isMap`.
 
 import { configGeneration } from './generation.svelte.ts';
 import { hasGlyph } from './text.ts';
+import { isMap } from '../../../data/helpers/guards.ts';
 
 /**
  * One theme of the picker: the name the store saves, the body class, the glyph name drawn before
@@ -52,13 +55,9 @@ let paper: Wallpaper | null = null;
 let crt = false;
 let terminalFont: number | null = null;
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-    return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
 /** The string at `key` of a record, or nothing. */
 function stringAt(node: unknown, key: string): string | undefined {
-    if (!isRecord(node)) return undefined;
+    if (!isMap(node)) return undefined;
     const value = node[key];
     return typeof value === 'string' ? value : undefined;
 }
@@ -67,7 +66,7 @@ function stringAt(node: unknown, key: string): string | undefined {
  * The number at `key` of a record, clamped to `low`..`high`, or the fallback when it is not one.
  */
 function numberAt(node: unknown, key: string, fallback: number, low: number, high: number): number {
-    const value = isRecord(node) ? node[key] : undefined;
+    const value = isMap(node) ? node[key] : undefined;
     if (typeof value !== 'number' || !Number.isFinite(value)) return fallback;
     return Math.min(high, Math.max(low, value));
 }
@@ -90,7 +89,7 @@ function percent(fraction: number): number {
  */
 function readWallpaper(config: Record<string, unknown>): Wallpaper | null {
     const raw = config.wallpaper;
-    if (!isRecord(raw)) return null;
+    if (!isMap(raw)) return null;
     const panel = percent(numberAt(raw, 'panel_opacity', 0.86, 0, 1));
     const popover =
         typeof raw.popover_opacity === 'number'
@@ -118,7 +117,7 @@ export function setAppearance(config: Record<string, unknown>): void {
     list = [];
     byName = {};
     paper = readWallpaper(config);
-    crt = isRecord(config.crt) && config.crt.default === true;
+    crt = isMap(config.crt) && config.crt.default === true;
     terminalFont = readTerminalFont(config);
     const rows = config.themes;
     if (!Array.isArray(rows)) return;

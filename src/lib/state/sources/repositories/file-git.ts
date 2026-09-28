@@ -5,9 +5,14 @@
 // A source tab names its file by the key of the root the file routes serve it under and a path
 // under that root; the `git` channel names a repository by its folder. The repository holding a
 // file is the deepest one whose folder holds the file's folder, which is the rule the status bar's
-// branch item already reads a tab's repository by.
+// branch item already reads a tab's repository by: both read it through deepestHolding and
+// pathUnder of data/helpers/files/paths.ts, and build a file's whole path with its joinPath. How
+// long ago a commit was made is counted by data/helpers/dates.ts's ago, the one the session list
+// counts by, and worded here.
 
 import type { GitBlameLine, GitLineMark } from '../../../data/model/index.ts';
+import { ago as countAgo, type AgoUnit } from '../../../data/helpers/dates.ts';
+import { deepestHolding, joinPath, pathUnder } from '../../../data/helpers/files/paths.ts';
 import { t } from '../../shared/words/text.ts';
 
 /** A root the file routes serve: its key and the folder it is. */
@@ -19,27 +24,18 @@ export type RepoFile = { root: string; path: string };
 /** A file as a source tab names it: the served root's key and the path under it. */
 export type TabFile = { root: string; path: string };
 
-/** A folder with no trailing slash, so two spellings of one folder compare equal. */
-function bare(dir: string): string {
-    return dir.replace(/\/+$/, '');
-}
-
-/** A path under a folder, its slashes normalised, or null for one outside it. */
-function under(folder: string, target: string): string | null {
-    const base = bare(folder);
-    if (target === base) return '';
-    return target.startsWith(`${base}/`) ? target.slice(base.length + 1) : null;
-}
-
 /** The whole path of a tab's file, or null for a key no served root has. */
 function wholePath(served: readonly ServedRoot[], file: TabFile): string | null {
     const dir = served.find((root) => root.key === file.root)?.dir;
     if (dir === undefined) return null;
     const path = file.path.split('/').filter(Boolean).join('/');
-    return path === '' ? bare(dir) : `${bare(dir)}/${path}`;
+    return joinPath(dir, path);
 }
 
-/** The repository holding a tab's file and the file's path in it, or null for none. */
+/**
+ * The repository holding a tab's file and the file's path in it, or null for none. A file that is
+ * a repository's own folder is not a file of that repository, so that repository is left out.
+ */
 export function repoOfFile(
     served: readonly ServedRoot[],
     file: TabFile,
@@ -47,11 +43,9 @@ export function repoOfFile(
 ): RepoFile | null {
     const target = wholePath(served, file);
     if (target === null) return null;
-    const holding = repositories
-        .map((root) => ({ root, path: under(root, target) }))
-        .filter((one): one is RepoFile => one.path !== null && one.path !== '')
-        .sort((left, right) => right.root.length - left.root.length);
-    return holding.at(0) ?? null;
+    const holders = repositories.filter((root) => pathUnder(root, target) !== '');
+    const found = deepestHolding(holders, (root) => root, target);
+    return found === null ? null : { root: found.item, path: found.path };
 }
 
 /**
@@ -59,41 +53,26 @@ export function repoOfFile(
  * that root, or null when no served root holds it and the file routes could not read it.
  */
 export function tabOfFile(served: readonly ServedRoot[], file: RepoFile): TabFile | null {
-    const target = `${bare(file.root)}/${file.path}`;
-    const holding = served
-        .map((root) => ({ root: root.key, dir: root.dir, path: under(root.dir, target) }))
-        .filter((one) => one.path !== null && one.path !== '')
-        .sort((left, right) => right.dir.length - left.dir.length);
-    const found = holding.at(0);
-    return found === undefined ? null : { root: found.root, path: found.path ?? '' };
+    const target = joinPath(file.root, file.path);
+    const holders = served.filter((root) => pathUnder(root.dir, target) !== '');
+    const found = deepestHolding(holders, (root) => root.dir, target);
+    return found === null ? null : { root: found.item.key, path: found.path };
 }
 
-const MINUTE = 60;
-const HOUR = 60 * MINUTE;
-const DAY = 24 * HOUR;
-const WEEK = 7 * DAY;
-const MONTH = 30 * DAY;
-const YEAR = 365 * DAY;
-
-/** How long ago a moment was, in the largest unit that is at least one. */
+/**
+ * How long ago a moment was, in the largest unit that is at least one, counted by
+ * data/helpers/dates.ts's ago up to years. Nothing for a moment that cannot be read or lies more
+ * than a minute in the future.
+ */
 export function ago(iso: string, now: number = Date.now()): string {
-    const at = Date.parse(iso);
-    if (!Number.isFinite(at)) return '';
-    const seconds = Math.max(0, Math.round((now - at) / 1000));
-    if (seconds < MINUTE) return t('repositories.ago_now');
-    if (seconds < HOUR) return counted('minute', Math.floor(seconds / MINUTE));
-    if (seconds < DAY) return counted('hour', Math.floor(seconds / HOUR));
-    if (seconds < WEEK) return counted('day', Math.floor(seconds / DAY));
-    if (seconds < MONTH) return counted('week', Math.floor(seconds / WEEK));
-    if (seconds < YEAR) return counted('month', Math.floor(seconds / MONTH));
-    return counted('year', Math.floor(seconds / YEAR));
+    const told = countAgo(iso, now, 'year');
+    if (told === null) return '';
+    if (told.unit === 'now') return t('repositories.ago_now');
+    return counted(told.unit, told.count);
 }
 
 /** A count of one unit ago, in the unit's singular for one and its plural otherwise. */
-function counted(
-    unit: 'minute' | 'hour' | 'day' | 'week' | 'month' | 'year',
-    count: number
-): string {
+function counted(unit: Exclude<AgoUnit, 'now'>, count: number): string {
     if (unit === 'minute') {
         return count === 1 ? t('repositories.ago_minute') : t('repositories.ago_minutes', count);
     }

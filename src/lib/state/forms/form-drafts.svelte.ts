@@ -25,10 +25,13 @@
 // A form drawn outside any pane has no instance to keep its values for. It keeps them in a local
 // target (localDrafts) with the same shape, and draftTarget() is the one place a form is given one
 // or the other.
+//
+// A parsed value is taken for a map by data/helpers/guards.ts's `isMap`.
 
 import type { Collection, Entry, Snapshot } from '../../data/model/index.ts';
 import { controlValue, sameSaved, type FormValue } from './form-values.ts';
 import type { InstanceStates } from '../shared/stores/shapes.ts';
+import { isMap } from '../../data/helpers/guards.ts';
 
 /**
  * One typed field: what the control holds, its kind, and what the control held when it was typed.
@@ -81,17 +84,13 @@ export function parseFormKey(form: string): { collection: string; entry: string 
     return { collection, entry };
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-    return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
 /** One saved control value, or null when what was saved is not a shape a control holds. */
 function formValue(raw: unknown): FormValue | null {
     if (typeof raw === 'string' || typeof raw === 'boolean') return raw;
     if (!Array.isArray(raw)) return null;
     const rows: { label: string; value: string }[] = [];
     for (const one of raw) {
-        if (!isRecord(one) || typeof one.label !== 'string' || typeof one.value !== 'string') {
+        if (!isMap(one) || typeof one.label !== 'string' || typeof one.value !== 'string') {
             return null;
         }
         rows.push({ label: one.label, value: one.value });
@@ -101,13 +100,13 @@ function formValue(raw: unknown): FormValue | null {
 
 /** The drafts an instance saved, with anything that is not the shape above left out. */
 export function parseDrafts(raw: unknown): Drafts {
-    if (!isRecord(raw)) return {};
+    if (!isMap(raw)) return {};
     const drafts: Drafts = {};
     for (const [form, fields] of Object.entries(raw)) {
-        if (parseFormKey(form) === null || !isRecord(fields)) continue;
+        if (parseFormKey(form) === null || !isMap(fields)) continue;
         const kept: FormDraft = {};
         for (const [field, typed] of Object.entries(fields)) {
-            if (!isRecord(typed) || typeof typed.kind !== 'string') continue;
+            if (!isMap(typed) || typeof typed.kind !== 'string') continue;
             const value = formValue(typed.value);
             const base = formValue(typed.base);
             if (value !== null && base !== null) kept[field] = { value, kind: typed.kind, base };
@@ -132,10 +131,10 @@ type Added = Record<string, AddedEntry>;
 
 /** The added entries an instance saved, with anything that is not the shape above left out. */
 export function parseAdded(raw: unknown): Added {
-    if (!isRecord(raw)) return {};
+    if (!isMap(raw)) return {};
     const kept: Added = {};
     for (const [form, held] of Object.entries(raw)) {
-        if (parseFormKey(form) === null || !isRecord(held)) continue;
+        if (parseFormKey(form) === null || !isMap(held)) continue;
         if (typeof held.id !== 'string' || typeof held.value !== 'string') continue;
         if (held.id !== '') kept[form] = { id: held.id, value: held.value };
     }

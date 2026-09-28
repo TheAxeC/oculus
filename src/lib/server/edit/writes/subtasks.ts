@@ -7,9 +7,11 @@
 // resolves either into the file, its text and, for an entry, the lines of that entry inside it.
 //
 // server/edit/writes.ts is the route and re-exports everything here.
+//
+// Whether a path lies in a folder is read from server/core/paths.ts (`below`).
 
 import { readFileSync } from 'node:fs';
-import { join, resolve, sep } from 'node:path';
+import { join, resolve } from 'node:path';
 import { parse } from 'yaml';
 import { isMap } from '../../../data/helpers/guards.ts';
 import { readManifests } from '../../../data/sources/manifests.ts';
@@ -29,6 +31,7 @@ import type { EditResult } from '../yaml-edit.ts';
 import type { LineRange } from '../entry-edit/index.ts';
 import type { PortfolioConfig } from '../../../data/model/index.ts';
 import type { WriteOutcome } from '../writes.ts';
+import { below } from '../../core/paths.ts';
 
 /** What a subtask write hangs under: one manifest, or one entry of one collection. */
 export type SubtaskTarget = { id: string; collection?: string };
@@ -186,7 +189,7 @@ export function hostStatus(
     rules: CareerRules
 ): { found: boolean; value: unknown } {
     const file = resolve(join(hub, rules.file));
-    if (!file.startsWith(resolve(hub) + sep)) return { found: false, value: null };
+    if (!below(file, hub)) return { found: false, value: null };
     let data: unknown;
     try {
         data = parse(readFileSync(file, 'utf8'));
@@ -210,7 +213,7 @@ export function writeHost(
     rules: CareerRules
 ): WriteOutcome {
     const file = resolve(join(hub, rules.file));
-    if (!file.startsWith(resolve(hub) + sep)) return { found: false, changed: [], refused: [] };
+    if (!below(file, hub)) return { found: false, changed: [], refused: [] };
     let source: string;
     try {
         source = readFileSync(file, 'utf8');

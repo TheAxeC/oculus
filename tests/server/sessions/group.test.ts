@@ -115,6 +115,19 @@ describe('the workspace', () => {
         expect(workspace.name).toBe('hub');
     });
 
+    it('groups a session under a configured root of the separator alone', () => {
+        const { workspace } = one([record({ cwd: '/elsewhere/solo/deep' })], { roots: [sep] });
+        expect(workspace.key).toBe('/elsewhere');
+    });
+
+    it('scores no area for a session with an empty cwd', () => {
+        const file = join(process.cwd(), 'src', 'a.ts');
+        const { workspace, area } = one([record({ cwd: '', files: [[file, T1]] })]);
+        expect(workspace.key).toBe('');
+        expect(area.key).toBe(GENERAL);
+        expect(area.sessions[0].secondaryAreas).toEqual([]);
+    });
+
     it('uses a shorter root only when no longer one matches', () => {
         const { workspace } = one([record({ cwd: '/synthetic/loose/deep/inner' })]);
         expect(workspace.key).toBe('/synthetic/loose');

@@ -206,6 +206,18 @@ describe('the repository of the tab on screen', () => {
         expect(repoStatus({ root: 'paper', path: 'x.tex' }, ROOTS, off, 'hub')).toBe(null);
     });
 
+    it('finds the repository of a file on a served root of the root folder', () => {
+        const disk = [{ key: 'disk', dir: '/', fixed: false }];
+        const git: GitPayload = { '/work/hub': repo() };
+        expect(repoStatus({ root: 'disk', path: 'work/hub/a.md' }, disk, git, 'hub')?.root).toBe(
+            '/work/hub'
+        );
+    });
+
+    it('holds no file in a repository whose key is empty', () => {
+        expect(repoStatus({ root: 'hub', path: 'a.md' }, ROOTS, { '': repo() }, 'hub')).toBe(null);
+    });
+
     it('names the commit of a detached head, and says a branch with no upstream tracks none', () => {
         const detached = repoStatus(
             null,

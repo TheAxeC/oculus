@@ -9,7 +9,7 @@ import { execFileSync } from 'node:child_process';
 import { chmodSync, mkdirSync, realpathSync, statSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterAll, describe, expect, it, vi } from 'vitest';
-import type { ProgramApps } from '../../../src/lib/data/helpers/opens-in-program.ts';
+import type { ProgramApps } from '../../../src/lib/data/helpers/files/opens-in-program.ts';
 import type { Root } from '../../../src/lib/server/files/files.ts';
 import {
     handleOpen,

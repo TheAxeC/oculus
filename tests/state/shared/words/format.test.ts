@@ -8,9 +8,9 @@
 // pass in one timezone.
 
 import { describe, expect, it } from 'vitest';
+import { nameOf } from '../../../../src/lib/data/helpers/files/paths.ts';
 import {
     PATH_MAX,
-    basename,
     clock,
     compactCount,
     grouped,
@@ -116,12 +116,6 @@ describe('the names', () => {
         expect(modelShort(null)).toBe('');
     });
 
-    it('takes the last segment of a path, and leaves a bare name alone', () => {
-        expect(basename('/a/b/c.ts')).toBe('c.ts');
-        expect(basename('Bash')).toBe('Bash');
-        expect(basename(null)).toBe('');
-    });
-
     it('writes a path inside a workspace relative to it, and leaves any other alone', () => {
         expect(relativeTo('/ws/src/a.ts', '/ws')).toBe('src/a.ts');
         expect(relativeTo('/other/a.ts', '/ws')).toBe('/other/a.ts');
@@ -146,11 +140,11 @@ describe('elide', () => {
         expect(cut.length).toBe(PATH_MAX);
     });
 
-    it('never loses the basename, however long the basename is', () => {
+    it('never loses the last name, however long the last name is', () => {
         const name = 'a'.repeat(PATH_MAX + 10);
         const cut = elide(`/very/long/head/${name}`);
         expect(cut).toBe(`...${name}`);
-        expect(basename(cut)).toBe(`...${name}`);
+        expect(nameOf(cut)).toBe(`...${name}`);
     });
 
     it('takes the width it is given', () => {

@@ -2,9 +2,11 @@
 // a document, a manifest field a live project has not filled in, a folder that is not the one the
 // tier standard names, a status chip the project's own tier and type contradict, a field long
 // enough to stop being a glance, and a collection entry whose date or link wants doing.
+//
+// Whether a path lies in a folder is read from server/core/paths.ts (`below`).
 
 import { existsSync } from 'node:fs';
-import { join, resolve, sep } from 'node:path';
+import { join, resolve } from 'node:path';
 import { stringify } from 'yaml';
 import { localDate } from '../../../data/helpers/dates.ts';
 import { byKey } from '../../../data/helpers/guards.ts';
@@ -20,6 +22,7 @@ import {
     scalar,
     listOf
 } from './rules.ts';
+import { below } from '../../core/paths.ts';
 
 /** The markers a document is scanned for, as whole words where they are ordinary English. */
 const MARKERS = /%TODO|%VERIFY|%FIXME|\bTODO\b|\bFIXME\b|\bTBD\b|\bXXX\b/g;
@@ -467,7 +470,7 @@ export function collections(input: AuditInput, add: (f: Raised) => void): void {
             // never a path that climbs out of the hub, which the card draws no file link for.
             const link = scalar(entry.fields.link).trim();
             const path = resolve(input.hub, link);
-            const inHub = path.startsWith(resolve(input.hub) + sep);
+            const inHub = below(path, input.hub);
             if (isHubPath(link) && inHub && !existsSync(path)) {
                 add({
                     scope: collection.id,

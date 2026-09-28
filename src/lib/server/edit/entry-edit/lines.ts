@@ -1,7 +1,10 @@
 // Layer 2, server. Shared YAML line ranges and verified byte edits live here because every entry
 // writer must use the same source-position rules.
+//
+// A parsed value is taken for a map by data/helpers/guards.ts's `isMap`, and the yaml library's own
+// node test is imported as `isYamlMap`.
 import { isDeepStrictEqual } from 'node:util';
-import { isMap, isScalar, isSeq, parseDocument } from 'yaml';
+import { isMap as isYamlMap, isScalar, isSeq, parseDocument } from 'yaml';
 import type { Document, Node, Pair, Scalar, YAMLMap, YAMLSeq } from 'yaml';
 import {
     isBlockMap,
@@ -11,7 +14,7 @@ import {
     renderScalar
 } from '../yaml-edit.ts';
 import type { EditResult, FieldValue } from '../yaml-edit.ts';
-import { scalar } from '../../../data/helpers/guards.ts';
+import { isMap, scalar } from '../../../data/helpers/guards.ts';
 
 /** The collection list key whose entries the writers locate and edit. */
 export const LIST = 'entries';
@@ -61,10 +64,6 @@ export function fail(reason: string): Written {
     return { reason };
 }
 
-export function isRecord(value: unknown): value is Record<string, unknown> {
-    return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
 /** Every named field refused for the same reason, with the source unchanged. */
 export function refuseAll(source: string, fields: string[], reason: string): EditResult {
     const named = fields.length === 0 ? [''] : fields;
@@ -80,7 +79,7 @@ export function document(source: string): Document | null {
         return null;
     }
     if (doc.errors.length > 0) return null;
-    return doc.contents !== null && isMap(doc.contents) ? doc : null;
+    return doc.contents !== null && isYamlMap(doc.contents) ? doc : null;
 }
 
 /** The document as plain values, or undefined when it does not parse. */
@@ -112,7 +111,7 @@ export function endOffset(node: Node): number {
         const last = rangeOf(node.items[node.items.length - 1]);
         if (last !== null) return last[1];
     }
-    if (isMap(node) && node.flow !== true && node.items.length > 0) {
+    if (isYamlMap(node) && node.flow !== true && node.items.length > 0) {
         const last = (node.items[node.items.length - 1] as Pair<Scalar, Node>).value;
         const end = last === null ? null : rangeOf(last);
         if (end !== null) return end[1];
@@ -191,7 +190,7 @@ export function listOf(root: YAMLMap): { key: string; seq: YAMLSeq } | null {
         if (typeof name !== 'string' || name === 'schema') continue;
         const value = item.value;
         if (value === null || !isSeq(value)) continue;
-        if (value.items.length === 0 || isMap(value.items[0])) return { key: name, seq: value };
+        if (value.items.length === 0 || isYamlMap(value.items[0])) return { key: name, seq: value };
     }
     return null;
 }
@@ -215,7 +214,7 @@ export function locate(source: string, ident: string, value: unknown): Located |
     if (list === null) return null;
     for (let at = 0; at < list.seq.items.length; at += 1) {
         const node = list.seq.items[at] as Node;
-        if (!isMap(node)) continue;
+        if (!isYamlMap(node)) continue;
         const pair = pairOf(node, ident);
         if (pair?.value == null || !isScalar(pair.value)) continue;
         if (scalar(pair.value.value) !== scalar(value)) continue;
@@ -249,7 +248,7 @@ function applyChange(root: unknown, change: Change): boolean {
     let holder: unknown = root;
     for (const step of change.path.slice(0, -1)) {
         if (Array.isArray(holder) && typeof step === 'number') holder = holder[step];
-        else if (isRecord(holder) && typeof step === 'string') holder = holder[step];
+        else if (isMap(holder) && typeof step === 'string') holder = holder[step];
         else return false;
     }
     const last = change.path[change.path.length - 1];
@@ -258,7 +257,7 @@ function applyChange(root: unknown, change: Change): boolean {
         else holder[last] = change.value;
         return true;
     }
-    if (!isRecord(holder) || typeof last !== 'string') return false;
+    if (!isMap(holder) || typeof last !== 'string') return false;
     // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- a Map here would change the shape every reader of this record depends on
     if (change.remove === true) delete holder[last];
     else holder[last] = change.value;
@@ -273,7 +272,7 @@ export function replaceIn(text: string, node: Node, value: Exclude<FieldValue, n
     const end = endOffset(node);
     let rendered: string;
     if (isBlockMap(value)) {
-        const block = isMap(node) && node.flow !== true;
+        const block = isYamlMap(node) && node.flow !== true;
         const indent = block
             ? columnAt(text, start)
             : indentOf(text.split('\n')[lineAt(text, start)]) + 2;
@@ -286,7 +285,7 @@ export function replaceIn(text: string, node: Node, value: Exclude<FieldValue, n
         }
         rendered = renderFlowList(value, itemStyles(node));
     } else {
-        if (isMap(node) || isSeq(node)) return fail('the field is a block of its own');
+        if (isYamlMap(node) || isSeq(node)) return fail('the field is a block of its own');
         rendered = renderScalar(value, isScalar(node) ? node.type : undefined);
         if (rendered.includes('\n')) return fail('the value does not fit on one line');
     }

@@ -8,8 +8,10 @@
 // request can never hand the stash command a revision or an option. A stash applied or popped over
 // changes it conflicts with leaves the conflicts in the index, as git does, and the answer names
 // them: the view draws them under Merge Changes, and a popped stash that conflicted is kept.
+//
+// The records of `status --porcelain=v1 -z` are split by core/git-parse.ts's `statusRecords`.
 
-import { STASH_REF } from '../core/git-parse.ts';
+import { STASH_REF, statusRecords } from '../core/git-parse.ts';
 import {
     allowedRoots,
     failed,
@@ -39,15 +41,11 @@ const STASH_FLAGS: Record<StashMode, string[]> = {
  * with a sentence rather than git's own quiet success that made no stash.
  */
 function holds(output: string, mode: StashMode): boolean {
-    for (const record of output.split('\0')) {
-        if (record.length < 4) continue;
-        const index = record[0];
-        const code = record.slice(0, 2);
-        if (mode === 'staged' && index !== ' ' && index !== '?') return true;
-        if (mode === 'tracked' && code !== '??') return true;
-        if (mode === 'untracked') return true;
-    }
-    return false;
+    return statusRecords(output).some(({ code }) => {
+        if (mode === 'staged') return !code.startsWith(' ') && !code.startsWith('?');
+        if (mode === 'tracked') return code !== '??';
+        return true;
+    });
 }
 
 /** Stash the changes the mode names, with the message when one is given. */

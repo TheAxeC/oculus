@@ -15,7 +15,7 @@ import {
     calendarRange,
     dayOf,
     eventTooltip,
-    localDay,
+    localDate,
     parseCalendarState,
     remainingToday
 } from '../../../src/lib/state/life/calendar.ts';
@@ -32,7 +32,7 @@ const WORDS = {
 };
 
 const NOW = new Date('2031-03-02T12:00:00');
-const TODAY = localDay(NOW);
+const TODAY = localDate(NOW);
 
 function event(over: Partial<CalendarEvent>): CalendarEvent {
     return {
