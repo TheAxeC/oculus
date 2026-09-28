@@ -26,7 +26,7 @@ Q90, the Audit reads a link that is a web address as an address, one commit on m
 - `land.sh Q90 6283272e`, exit 0, 13 min 8 s: `Test Files  341 passed (341)` / `Tests  5348 passed (5348)` / `Duration  136.86s`; `COMPLETED 1510 FILES 0 ERRORS 0 WARNINGS`; `All matched files use Prettier code style!`; the browser suite `467 passed (8.5m)`.
 - In the worktree after the landing fixes: `npx vitest run tests/server/content/audit.test.ts tests/checks/diagrams tests/checks/tree/boundaries.test.ts` `122 passed`; `node bin/revert-check.mjs tests/server/content/audit.test.ts` `3 reverts, 0 unproven, 47 unchecked` (the 47 are cases carrying no directive).
 - The audit scan over the hub on main (`auditFindings` called as `portfolio.ts:325` calls it): 1 finding, `link path missing: 0`.
-- No look: the step changes no view code; the Audit view's rows come from the scan above. The server on port 8787 was not running (`curl` answered `000`), so the view was not opened.
+- The look was owed, since the Audit view draws the scan's rows. It was taken 2026-09-28 on the TEST page of Axel's Chrome on 8790: the Audit view lists one open item, the ISLES 2024 `%VERIFY` marker under data, and no `link path missing` row. Nothing found.
 
 ## Next
 
