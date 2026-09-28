@@ -61,7 +61,7 @@ Three holes in the audits scan (`tests/audits.test.ts`), booked into Q59 with th
 
 ## The look
 
-None owed: the step touches no markup, no attribute, no control name and no string. Its whole diff is under `bin/` and `tests/`.
+None owed: the step touches no markup, no attribute, no control name and no string. Its diff is under `bin/` and `tests/` except `src/lib/views/leads/LeadCard.svelte` and `src/lib/views/radar/RadarCard.svelte`, whose identical `posting` function moved into `src/lib/views/shared/posting.ts`, which draws nothing new (corrected 2026-09-28).
 
 ## Where the proof is
 

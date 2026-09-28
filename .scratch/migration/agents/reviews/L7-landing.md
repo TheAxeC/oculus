@@ -12,7 +12,7 @@ The builders and both reviewers had finished before the landing; `ListAgents` li
 
 ## NOT DONE
 
-Nothing of L7. The look was not on the TEST page of Axel's Chrome: the Chrome extension was not connected (`list_connected_browsers` returned an empty list), so it ran in headless Chrome with a scratch profile against a built server on port 8791 over an engine copy. Axel's server on 8790 was not touched.
+Nothing of L7. The check at landing ran in headless Chrome on a built server on 8791, which is not the look; the look was owed and was taken 2026-09-28 on the TEST page, under "The look owed" below.
 
 ## What landed
 
@@ -42,7 +42,7 @@ Nothing of L7. The look was not on the TEST page of Axel's Chrome: the Chrome ex
 
 `sh ~/.claude-work/skills/land/templates/verify.sh <state file>` from `tools/oculus`: Test Files 341 passed, Tests 5354 passed, `COMPLETED 1433 FILES 0 ERRORS 0 WARNINGS`, both builds, `All matched files use Prettier code style!`, `verify: 6 commands passed`. The per-tab case fails with the tab name removed from the question (1 failed, 43 passed); the key-table cases fail on a `y1-y9` row (2 failed) and on a `v1-v9` row (1 failed).
 
-## The look (light theme; the step changes no theme)
+## The headless check at landing (not the look; light theme)
 
 - Key sheet (`?`): the exact ranges above, no `v` row.
 - Views catalogue: System `y1`-`y6`, Help `h1`-`h5`, every entry keyed.
@@ -54,3 +54,16 @@ Nothing of L7. The look was not on the TEST page of Axel's Chrome: the Chrome ex
 ## Next
 
 `/spec Q94`, then Q92, Q89, Q79, Q80 and the queue of `plan.md`.
+
+## The look owed, done 2026-09-28
+
+On the TEST page of Axel's Chrome on 8790, light theme, unless a line says otherwise:
+
+- Key sheet (`?`): the exact ranges f1-f3, m1-m7, p1-p3, e1-e5, s1-s3, c1-c6, l1-l3, r1-r4, t1, y1-y6, h1-h5, w1-w4, and no `v` row.
+- Views catalogue (opened by `w1`): System y1-y6 (Status, Findings, Audit, History, Config, Gallery), Help h1-h5 (Help, Memories, Research approach, Agent approach, HPC how-to), Views and Settings w1-w4; every entry keyed.
+- Pages view (opened by `w4`): Reset shown only on rail pages; TEST and Page 1 carry none.
+- Position Leads (opened by `e3`): one `decline` per lead, "Show declined (35)", and `applied` on the first lead opening the Applications form beside it, marked unsaved, with the title, the institution, the URL and status `not applied`, as the brief sets. Cancel closed the form and the lead still offered `applied`.
+- On Axel's Incoming page, as he asked: the Applications form opened from a lead, then the rail's right-click Reset: "Reset Incoming to its arrangement?" with "Rebuilt: Incoming."; after Confirm, "Close this tab and lose its unsaved changes?" with "Tab: Applications, on Incoming."; Cancel left the page's tabs and the form as they were. The form was then cancelled and the Applications tab closed. The hub's `applications/` and `feeds/` show no change (`git status --short -- applications feeds`).
+- Reset of Incoming from the Pages view on TEST: the same first question; Cancel changed nothing.
+- The System and Explorer pages as built, on a second server over the demo hub on 8791 (its own browser storage), since Axel's saved System page keeps its old layout until reset: System left Status, Findings, Audit, History, Config, Gallery, Help, HPC how-to, right Research approach, Agent approach, Memories; Explorer's right pane empty, reading "Files and documents you open on this page appear here."; eleven rail buttons in the table's order.
+- Nothing found. On the demo hub the three document tabs draw their missing-file line, since the demo hub has no `docs/`, which `config/layout.yml` states as the designed behaviour.
