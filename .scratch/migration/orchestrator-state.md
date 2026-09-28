@@ -37,7 +37,7 @@ dispatch:      # Q92 of set 2, repair round 1 answered, its refutation next; Q79
   launched: 2026-09-28
   report: agents/reviews/Q92-report.md
   landing: not-started
-  reviewer_report: agents/reviews/Q92-refuter.md (reviewer ae7ef61fd1dab9cc6, 38 tool calls, 30 min)
+  reviewer_report: agents/reviews/Q92-refuter.md (reviewer ae7ef61fd1dab9cc6, 38 tool calls, 30 min); round 1 refuted by a5d9c213a64127d8d (30 tool calls, 11 min), appended to the same file
   round: 1   # sent 2026-09-28 from worktree commit abe17f5f, agents/briefs/Q92-round1-sent.md
   shared_paths: package.json and package-lock.json with Q80 (Q80 adds cloc, Q92 adds @event-calendar/core, ical.js and entities and moves svelte; the later landing reruns npm install), HELP.md and DESIGN.md with Q80 and Q89 (different sentences: Q92's are the Inbox, the Calendar and the accounts at HELP.md:119, 137, 244, 246 and DESIGN.md:134, 298), docs/diagrams (a rerun of npm run diagrams), type-scale.test.ts (one entry each)
 - step: Q79a
@@ -118,7 +118,12 @@ None. Axel lifted it on 2026-09-23 with `/plan-orchestration oculus/migration` a
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is booked as its own step in `plan.md` and carried in the Booked section below, since it needs no ruling from him.
 
-None.
+- Z40, what the Terminal view is (raised 2026-09-28, from Axel's look: "the side panel thingy for terminals are also kind of different panels? Maybe this is just a design mismatch?"). Seen on TEST: every terminal is a tab of its own (`8e90e6-shell`, `6bcd37-shell`), and every Terminal tab also draws a list of all terminals on its right (`views/sessions/terminal/TerminalList.svelte`, from two terminals on, `terminal-list.ts:72`); New terminal in the right pane opened its start form as a new tab in the left pane. So one terminal is both a tab somewhere and a row in each Terminal tab's list: two ways to the same thing, mixing VS Code's terminal panel (one panel, a list of terminals on its right, New terminal adds a row) with VS Code's terminal in the editor area (a tab per terminal, no list). Options:
+  - (a) The panel: one Terminal tab holds every terminal; its list switches the terminal the tab shows; New terminal adds a row to this tab and shows it; Split divides this tab's body between two terminals, as VS Code's split does; a terminal is no longer a tab of its own, and the pin goes. Pros: one place for terminals, as Q89 set out to draw VS Code's terminal panel. Cons: two terminals side by side in different panes of a page are no longer possible outside Split.
+  - (b) The editor tab: every terminal is a tab of its own, the list goes, New terminal opens a tab in the pane it was pressed in. Pros: panes place terminals freely. Cons: no list of terminals beside them; the Sessions view is the overview.
+  - (c) Keep both. This is the lazy option.
+  - Recommended (a): it is what Q89 was for, and the tab-per-terminal is the part that doubles it.
+- Z41, typed `;` and Return lost or late in a terminal (raised 2026-09-28, from the look of Axel's report). Through the Chrome tool on TEST, `echo x;echo y` arrived as `echo xecho y`, every `;` of a longer line was dropped, and a Return ran its line tens of seconds late. The server keeps one terminal's input in order (`server/machine/pty/channel.ts:370-377`) and a quoted `;` passes a scratch tmux control client whole (`a;b;c;;d` arrived as sent), so no cause is found, and the tool's synthetic key events may be the cause. What would settle it: Axel types `echo a;b` and Return by hand in a shell on the TEST page. If `;` is lost by hand too, the cause is found by reading xterm's key handling for that key and booked into Q99.
 
 ## Time per step (Axel asked 2026-09-27 for how it evolves with Q77; measured from each builder's transcript: each tool call from call to result, each background wait from the builder stopping to the run waking it)
 
@@ -127,6 +132,7 @@ None.
 
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)
 
+- Q99, the terminal and Pages defects Axel reported on the TEST page (2026-09-28): Claude interrupted by the Escape that `splitKeys` cuts from every xterm escape sequence, an exited terminal's tab left open, a new shell's prompt at the bottom from the capture's blank rows, and the Pages view's 16 px rows. Next in the queue, in the first free slot.
 - `plainTitle` in `src/lib/state/life/present.ts:61-117` keeps its own HTML entity table, which `entities` (added by Q92) would replace (found by Q92's builder, 2026-09-28): to be folded into Q92 at its landing if the review finds it inside the brief's Z35 (a) scope, else a step of its own.
 - The Ordo sentence "A step that touches a configuration file or a rule file runs alone" (`skills/plan-orchestration/SKILL.md:208`) reworded to name the plan's own configuration (`.agents/plan.yaml`, the verification block) and the rules file with its standards, as Z34 (a) reads it: a change in the Ordo repository, for its session.
 - Q72, the architecture re-read before the release (booked 2026-09-24 with Q71, on Axel's ruling that one package fixes the architecture and a re-read checks it at the end): the diagrams regenerated and read, Q71's import measures run again, and what moved since fixed as its own step; queued after M4, before R2 (`plan.md:176`).

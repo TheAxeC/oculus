@@ -92,3 +92,93 @@ To check the report's claims about repeating events (spec.md:58 edge cases), I r
 - Anything that needs a browser: the four views with events, the theming under each theme, the toolbar's disabling, the event click, the period title.
 
 Reviewer usage: 38 tool uses, about 30 minutes.
+
+## Repair round 1, refuted (worktree .agents/worktrees/Q92, round delta `git diff abe17f5f`, read against `git diff 09e58eb1`)
+
+```
+$ export PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH; sh /Users/axelfaes/.claude/skills/land/templates/verify.sh /Users/axelfaes/workspace/research-hub/tools/oculus/.scratch/migration/orchestrator-state.md
+RED: npm test
+exit status: 1
+ FAIL  tests/ui/colours.test.ts > the colour rule > holds in every component under ui, shell, views and routes
++   "lib/views/personal/calendar/Calendar.svelte: :global(body.wall) .grid :global(.ec-header), :global(body.wall) .grid :global(.ec-list .ec-day-head): background-color: color-mix(in srgb, var(--panel) var(--wall-panel), transparent) (raw colour)",
++   "lib/views/personal/calendar/Calendar.svelte: :global(body.wall) .grid :global(.ec-popup): background-color: color-mix(in srgb, var(--panel) var(--wall-popover), transparent) (raw colour)",
+ Test Files  1 failed | 339 passed (340)
+      Tests  1 failed | 5381 passed (5382)
+(the same single failure on two runs; exit 1)
+
+verify.sh stops at the first RED, so I ran the rest by hand, in its order:
+$ npm run check          -> COMPLETED 1463 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS, exit 0
+$ npm run build          -> exit 0
+$ npm run format:check   -> All matched files use Prettier code style!
+$ npm run lint           -> exit 0
+$ ! LC_ALL=C grep -rna '[^ -~]' src tests -> prints nothing (grep exit 1)
+$ the spec.md ASCII perl gate over src tests bin config -> prints nothing, exit 0
+
+The report's quoted runs, rerun in the same form:
+$ npx vitest run tests/server/accounts/calendar/poll.test.ts tests/server/accounts/mail/poll.test.ts tests/state/life/calendar.test.ts tests/state/life/present.test.ts tests/views/personal/calendar.test.ts
+ Test Files  5 passed (5)
+      Tests  115 passed (115)            (matches)
+$ npx vitest run tests/server/accounts
+ Test Files  13 passed (13)
+      Tests  145 passed (145)            (matches)
+$ grep -rn ENTITIES src tests            -> prints nothing, exit 1 (matches)
+$ grep -rn "console" src/lib/server/accounts/calendar/ics.ts -> prints nothing, exit 1 (matches)
+$ find . -name "*.mutbak" -not -path "./node_modules/*" -> prints nothing (matches)
+$ node -e (the old plainTitle beside decodeHTML) on 'Tom&nbsp;&amp;&nbsp;Jerry&#39;s <em>deck</em>' -> both "Tom & Jerry's deck" (matches)
+```
+
+The "seen failing with the change undone" quotes (item 8) were not reproduced, because my brief forbids editing files. Each one fits the code as I read it.
+
+### Spec
+
+- `src/lib/views/personal/calendar/Calendar.svelte:259-264`, `.calendar { ... height: 100%; min-height: 480px; ... }`. Round item 3 asks for "one scroll bar, whatever the pane's height". The 480px floor goes beyond the item and brings back two scroll bars (the pane's and the time grid's) in any pane shorter than 480px. The report states this at lines 372 and 394, so it is not silent, but the item asked for something else. Also, `.grid` has `min-height: 0` and the account rows, the Add form and the footer all share that column. In a pane of about 480px with several account rows, nothing gives the grid a usable minimum height. This last point is inference and not verified in a browser. Either the orchestrator accepts the floor or it is removed at landing.
+- The other reaches beyond the items, each judged:
+  - The fourth `hues` argument on `calendarOptions`: forced by the round's own ruling that state may not import `ui/`. Within the round.
+  - `calendar.time_range` (`'{0} to {1}'`): item 4's time range needs catalog words. Within the round.
+  - `calendarRange` answering null for an `updated` that does not parse: this is what item 5's "no validRange when the payload has no `updated`" case needs. Its effect on the view is that the toolbar and grid are hidden while `range` is null (`Calendar.svelte:213`, `&& range`). The server never publishes that payload: `poll.ts:162` always writes `now().toISOString()`. Within the round.
+  - The redrawn hour, half-hour and tick lines (`Calendar.svelte:797-845`): they follow from item 2. A transparent `--ec-bg-color` removes the background-colour stripes the library uses to dot or cut its gradient lines (`node_modules/@event-calendar/core/src/styles/days.css:17-40`, `sidebar.css:24-30`). Within the round.
+  - The header row and list date-heading surfaces: they follow from items 2 and 3 together. `.ec-header` is `position: sticky` (library `styles/index.css:50-56`), so a transparent header would show the rows scrolled under it. Within the round, but see Standards: the wallpaper forms of these rules and of the popup rule break the colour rule.
+
+### Proof
+
+- `src/lib/views/personal/calendar/Calendar.svelte:180-183` (`eventDidMount` sets `info.el.title`): no test reaches it. Delete the callback and the suite stays green. The five tooltip cases test only the pure `eventTooltip` and its carriage in `extendedProps`. So item 4's claim that the tooltip is on the event rests on reading the code. The report says hover is not verified in a browser (line 427), but its round table marks item 4 DONE with only the state tests as proof.
+- `Calendar.svelte:166-167` (`...calendarOptions(data, held.view, viewWords(), HUES)`): nothing asserts that the view passes `calendarOptions`' result through unchanged. Add `validRange: undefined` or `height: '600px'` after the spread and every test stays green: the options cases test the pure function, and the view audit reads only the CSS rules. The round's first refuter finding ("the `options` prop reaching the library is unasserted") therefore holds at the view level. It is closed only for the pure function.
+- `tests/views/personal/calendar.test.ts:218` is titled "audits that the library's box ... paints no surface of its own". The same round paints the header row, the list date headings and the popup with `--panel` (`Calendar.svelte:778-795`), so the title says something false about the view it audits.
+- The report's first line says "Everything in the brief and in repair round 1 ... is done". The verify list is red on a file of this round (below). The report says the colour test was not run in round 1 (line 430), but its round table has no row that is not DONE.
+
+### Standards
+
+- `src/lib/views/personal/calendar/Calendar.svelte:785-795`: two rules break the colour rule, `tests/ui/colours.test.ts:329-343` and `:422`:
+  - `:global(body.wall) .grid :global(.ec-header), :global(body.wall) .grid :global(.ec-list .ec-day-head) { background-color: color-mix(in srgb, var(--panel) var(--wall-panel), transparent); ... }`
+  - `:global(body.wall) .grid :global(.ec-popup) { background-color: color-mix(in srgb, var(--panel) var(--wall-popover), transparent); ... }`
+
+  The rule allows the wallpaper `color-mix` only on the `background` property (`if (one.property === 'background' && wallMix(one.value)) continue;`), so both are reported as raw colour, and `npm test` is RED. For the popup, `background:` fixes it. For the list date heading, the shorthand would also reset the `background-image` that `:782-784` sets for today's chip, so the fix has to keep that layer: put the image in the same `background` shorthand, or order the rules so the image is set after.
+- No other finding over the delta:
+  - no history in any added comment (grep of the added lines for round, step ids, dates, "no longer", "previously": nothing);
+  - ASCII gates clean;
+  - the new catalog keys `accounts.timed_out`, `calendar.tentative` and `calendar.time_range` each have a reader (`server/root/context.ts:317`, `:330`; `Calendar.svelte:109-110`);
+  - the largest changed files are within the limits (Calendar.svelte 410 lines, oauth.ts 340, poll.test.ts 896);
+  - HELP.md:137, :244 and DESIGN.md:134, :136 match the code as read.
+
+### Behaviour
+
+- `src/lib/state/life/present.ts:104` (`plainTitle` through `decodeHTML`):
+  - Named escapes without a semicolon are now decoded where the old table left them as written. `node -e` of the old function beside the new one: `'Q&amp A'` gives `"Q&amp A"` before and `"Q& A"` after; `'a &lt b'` gives `"a &lt b"` before and `"a < b"` after; `'R&D &copy 2026'` keeps `&copy` before and gives the copyright sign after.
+  - A numeric escape past the Unicode range (`&#99999999;`) used to throw a RangeError from `String.fromCodePoint` out of `plainTitle`. Now it becomes U+FFFD.
+  - Round item 6 said "the output is unchanged". The report corrects that for `&mdash;` and for letter case (line 429), but gives neither of these two changes with its before and after.
+- The rest of the round's user-visible changes are stated in the report's before and after section (lines 391-396): the tooltip, the provider control, the period title, the height, the wallpaper, the 30 s timeout.
+
+### Not checked
+
+- Anything that needs a browser, counted neither as a pass nor as a finding:
+  - the calendar over a wallpaper;
+  - whether the height chain (`.pane` 100%, `.body` flex 1, `.calendar` 100%, `.grid` flex 1, library `height: '100%'`) actually gives the time grid a definite height and one scroll bar;
+  - the tooltip on hover;
+  - the redrawn grid lines and ticks;
+  - the header's surface over scrolled rows;
+  - the popup.
+- The mutation quotes of item 8. Reproducing them needs file edits, which my brief forbids.
+- The `AbortSignal.any` branch of `timedFetcher` (`oauth.ts:262-265`), where the caller passes its own signal. No caller in `src/lib/server/accounts` passes one (grep for `signal` outside oauth.ts finds none), and no case exercises it.
+- Whether a legitimate read that takes longer than 30 s (a large published calendar on a slow link, a slow Graph page) occurs in practice. The limit covers the body too (`oauth.ts:273-294`).
+
+Reviewer usage: 27 tool calls, about 25 minutes (two full verify runs of about 2 minutes each included).
