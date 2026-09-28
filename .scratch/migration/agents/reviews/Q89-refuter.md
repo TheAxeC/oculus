@@ -212,3 +212,73 @@ None. Each of rulings 1 to 7 is built as ruled, and rulings 8 and 9 are in the r
 ### Usage
 
 Not measured. Roughly 70k tokens of context. One full verify run (about 6 minutes), one run of the report's vitest subset, and eight targeted vitest runs in the scratch copy.
+
+
+Reviewer aefceffa630f486a8, a fresh agent, over `git diff 8803f5b9` read against `git diff 36db3164`.
+
+## Repair round 2, refuted
+
+```
+sh /Users/axelfaes/.claude/skills/land/templates/verify.sh /Users/axelfaes/workspace/research-hub/tools/oculus/.scratch/migration/orchestrator-state.md   (from .agents/worktrees/Q89/tools/oculus), exit 1
+RED: npm test
+ FAIL  tests/server/core/git-reads.test.ts > the reads on demand > reads no deletion on a path one side added, which has no base (git AU and UA)
+Error: Hook timed out in 10000ms.
+ FAIL  tests/server/core/git.test.ts > the log, the branches and the worktrees > cuts every list it publishes at the cap
+AssertionError: expected +0 to be 200 // Object.is equality
+ FAIL  tests/server/core/git.test.ts > read only > ran every command without optional locks, so a read writes no index lock
+Error: Test timed out in 5000ms.
+ FAIL  tests/server/git/git-ops.test.ts > pull, fetch, sync and publish > pulls the repository's own way, rebasing where the repository says so
+Error: Test timed out in 5000ms.
+ FAIL  tests/server/git/git-ops.test.ts > through the endpoint, with the real operations > routes each action to its own operation with its own fields
+Error: Test timed out in 5000ms.
+ Test Files  3 failed | 336 passed (339)
+      Tests  5 failed | 5341 passed (5346)
+   Duration  207.16s
+```
+The five failures are in git-reads.test.ts, git.test.ts and git-ops.test.ts. Four are timeouts. The fifth is git.test.ts's cap case, whose state() read 0 branches under the same load. The step touches none of the three files or the code under them. verify.sh stops at the first red command, so I ran the other five commands of the list once each, in the same form:
+```
+npm run check         exit 0   1790613383132 COMPLETED 1431 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+npm run build         exit 0   built in 3.26s / built in 18.01s
+npm run format:check  exit 0   All matched files use Prettier code style!
+npm run lint          exit 0   (no output after eslint .)
+! LC_ALL=C grep -rna '[^ -~]' src tests   exit 0
+```
+Commands the report quotes as evidence, rerun:
+```
+npx vitest run tests/views/sessions tests/state/sessions tests/checks tests/views/whole tests/ui/wall.test.ts tests/ui/colours.test.ts tests/state/workbench/layout
+ Test Files  60 passed (60)
+      Tests  1146 passed (1146)                          (report: 60 / 1146, reproduced)
+spec perl ASCII gate over src tests bin config | wc -l   0  (reproduced)
+LC_ALL=C grep -n '[^ -~]' HELP.md DESIGN.md | wc -l      0  (reproduced)
+wc -l terminal-list.ts 151, Composer.svelte 423 (main 418), composer.ts 292 (main 259), composer.test.ts 367 (main 323), terminal.test.ts 340, Terminal.svelte 540, TerminalList.svelte 358   (all match the report's table)
+open items in the main state file: "None."                (matches the report)
+git status --short: the 11 modified paths of the round plus the untracked report, nothing else
+```
+
+### 1. Spec
+- `TerminalList.svelte:73-79` and `:150`: `stop` is `$derived` from `stopped`, `current` and `order`, but the arm is checked against it only in `keys()` after an arrow, Home or End move (`if (!armKept(arming, stopped, true)) arming = ''`). The stop also moves when `current` changes while `stopped` is `''`, or when the stopped row leaves `order`, and in both cases `arming` keeps the old row. Example: a keyboard reader arms row A with Delete (the stop is A because A is current), a keyboard action outside the list changes the selection, `current` becomes B, and focus stays on A's button. One more Delete on A then kills A. Round 2 item 2 asks that the arm be "cleared when the stop moves". The head comment `TerminalList.svelte:15-16` ("An armed Kill is disarmed when the stop moves") claims the same. Smallest fix: check the arm against `stop` where the kill happens (`kill()` fires only when `armKept(arming, stop, true)` for a keyboard kill), or clear `arming` in an effect on `stop`.
+- `armKept(armed, stop, focusInList)` (`terminal-list.ts:97`) has one caller, `TerminalList.svelte:150`, and it always passes `true`. The focus-leave half of the rule is done separately in `left()` (`:113-117`), which does not call `armKept`. Item 2 asks for "the arm-clearing rule as a pure function ... with its cases". The function exists, but the view does not apply its rule: the `focusInList` argument has no caller that passes `false`.
+- Z39 (a) says "listed first by its path". `WorkspacePicker.svelte:37-38` labels the split folder, like every other place, by its last segment (`code`), with the path only as its tooltip. The test name at `composer.test.ts` ("offers a split folder ... first, by its path") uses the same words. If the ruling meant the whole path as the label, this is not built. If it meant "identified by its path", it is built. The wording does not settle which; the orchestrator should read it against Axel's ruling.
+
+### 2. Proof
+- Split's wiring in the view is held by no case. Change `split()` at `TerminalList.svelte:99-105` back to write `{ ...COMPOSER_EMPTY, workspace: folder, agent: row.kind }` (no `split` field) and every test stays green (checked by reading: the only Split cases build the record by hand, `terminal.test.ts:254-265`, or call `splitRecord` directly). This is the same class as the named audits of round 1, and the look on TEST must split a shell that has `cd`ed outside every place.
+- The focus-leave clear is held by no case: removing `onfocusout={left}` (`:187`) leaves every test green, since `armKept('a','a',false)` tests an argument no caller passes (see Spec 2). The pointer-press focus hand-off (`pressed`, `pointed`, `focusing`) also has no case. The report says so.
+- The report's first-run quotes ("8 failed, 35 passed" on the round-1 code) and its eight single-case revert quotes are not reproduced; doing so needs file edits, which were outside what I may do. I checked two by reading. For "offers the places as they are to a composer no Split opened", the case goes red if `offeredPlaces` prepends `record.workspace`. For the view case `'>code<'`, removing `offeredPlaces` from `Composer.svelte:77-82` makes `composerWorkspace` return the hub, and the picker label is then `t('composer.hub')`. Both are consistent with the quoted failures.
+
+### 3. Standards
+- `src/lib/views/shared/sessions/WorkspacePicker.svelte:12`, `/** The folders offered, absolute, the hub first. */`, is made false by the round. `offeredPlaces` now puts the split folder before the hub, and `Composer.svelte:77-83` passes that list to the picker. The head comment at `:2-4` ("a menu of the hub, every root of every saved workspace and every workspace a session sits in") also no longer lists everything the menu can hold. The spec says a comment the change makes false is a defect of the change. The file is not on the step's path list, and the report does not name it.
+- `TerminalList.svelte:15-16`: the head comment's "disarmed when the stop moves" is not true for every move of the stop (Spec 1).
+- The round changes two things no item asks for, both in `Terminal.svelte`: `togglePanePin` is compacted (`:190-193`), and the grid's dragover handler moves to `fileOver` in `terminal-list.ts:114`. The report names both and gives the reason: to hold `Terminal.svelte` at 540 lines, the component limit, which it now sits at exactly. The move adds a `FILE_DRAG` import to a view helper, which changes the layer diagram counts (71 to 72, 568 to 569). The report states that too. Behaviour is unchanged by reading.
+- No comment carries history. The changed files are ASCII. No file is over its limit (Terminal.svelte 540 of 540).
+
+### 4. Behaviour
+- A Kill armed by the pointer is now disarmed when focus leaves the list. Before: a press on Kill armed it until the second press, wherever focus went in between. After: a press anywhere outside the list between the two Kill presses (for example into the grid) disarms it, so the next Kill press only arms again. The report states this for "tabbing out" and "focus leaves the list" in the keyboard context only, and gives no before and after for the pointer.
+- A tab opened by Split keeps offering the split folder in its composer for as long as the tab holds the composer record, including every later composer in that tab (report judgment call 1). This is user-visible, and the report states it as a judgment call, with no before and after.
+
+### Not checked
+- Anything that needs a DOM: the pointer-press focus hand-off, `event.detail` telling a pointer press from Space, `onfocusout` with `relatedTarget` in Chromium and Safari (Safari does not focus a button on click), the key repeat, the arm clearing, and the Split composer on screen.
+- The report's first-run and revert quotes, which need file edits (Proof 3).
+- The three failing git test files were not rerun, as instructed.
+- `npm run diagrams` was not rerun, since it writes files. The diagram checks inside the suite ran within the report's vitest subset and passed.
+
+Reviewer usage: 24 tool uses, about 30 minutes.

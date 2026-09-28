@@ -27,7 +27,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:      # Q89 of set 2, repair round 2 reported, its review running; Q92 of set 2 built, its review running; one slot free for Q79a.
+dispatch:      # Q89 of set 2, refuted over round 2, to land; Q92 of set 2 in repair round 1; one slot free for Q79a, its brief being written.
 - step: Q89
   executor: agent
   worker: claude:opus
@@ -39,7 +39,7 @@ dispatch:      # Q89 of set 2, repair round 2 reported, its review running; Q92 
   landing: not-started
   reviewer_report: agents/reviews/Q89-refuter.md (reviewer a116360e9ab07e528)
   reviewer_report_round1: agents/reviews/Q89-refuter.md "Repair round 1, refuted" (reviewer a38991e425707e8b4, 30 tool calls, 11 min)
-  reviewer_report_round2: agents/reviews/Q89-refuter.md "Repair round 2, refuted" (reviewer aefceffa630f486a8, running)
+  reviewer_report_round2: agents/reviews/Q89-refuter.md "Repair round 2, refuted" (reviewer aefceffa630f486a8, 28 tool calls, 12 min)
   round: 2
   shared_paths:
   - tools/oculus/HELP.md and tools/oculus/DESIGN.md: both steps correct only sentences their change makes false; Q98's are about catalog code words, the session title and the Calendar footer, Q89's about the Terminal view (HELP.md:123 and the picker), so they touch different lines and the second landing merges by hand if at all
@@ -53,8 +53,8 @@ dispatch:      # Q89 of set 2, repair round 2 reported, its review running; Q92 
   launched: 2026-09-28
   report: agents/reviews/Q92-report.md
   landing: not-started
-  reviewer_report: agents/reviews/Q92-refuter.md (reviewer ae7ef61fd1dab9cc6, running)
-  round: 0
+  reviewer_report: agents/reviews/Q92-refuter.md (reviewer ae7ef61fd1dab9cc6, 38 tool calls, 30 min)
+  round: 1   # sent 2026-09-28 from worktree commit abe17f5f, agents/briefs/Q92-round1-sent.md
   shared_paths: package.json and package-lock.json with Q80 (Q80 adds cloc, Q92 adds @event-calendar/core, ical.js and entities and moves svelte; the later landing reruns npm install), HELP.md and DESIGN.md with Q80 and Q89 (different sentences: Q92's are the Inbox, the Calendar and the accounts at HELP.md:119, 137, 244, 246 and DESIGN.md:134, 298), docs/diagrams (a rerun of npm run diagrams), type-scale.test.ts (one entry each)
 ```
 
