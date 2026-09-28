@@ -27,7 +27,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:      # Q101 built, its review next.
+dispatch:      # Q101 under review.
 - step: Q101
   executor: agent
   worker: claude:opus
@@ -37,6 +37,8 @@ dispatch:      # Q101 built, its review next.
   launched: 2026-09-29
   report: agents/reviews/Q101-report.md
   landing: not-started
+  builder_usage: 141 tool uses, 146k tokens, 40 min, with the cases hand-back
+  reviewer_report: agents/reviews/Q101-refuter.md (reviewer a1c2f1a2de69bc190, running)
   round: 0
   shared_paths: with Q79d, views/sessions/session-list/TerminalRows.svelte (Q79d its nameOf import and the folder line, Q101 the row press and the menu pick: different lines, a hand merge), DESIGN.md (Q79d lines 169 and 305, Q101 lines 266 and 273 and the terminal sentences: different lines), docs/diagrams (a rerun of npm run diagrams)
 ```
@@ -96,7 +98,11 @@ None. Axel lifted it on 2026-09-23 with `/plan-orchestration oculus/migration` a
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is booked as its own step in `plan.md` and carried in the Booked section below, since it needs no ruling from him.
 
-- None.
+- Z45, Q87's import-graph half cannot rest on dependency-cruiser as LA11 (a) assumed (raised 2026-09-29, by the orchestrator at `/spec` Q87). Probed on main at 703aec66 with dependency-cruiser 18.4.0 (MIT, 2026-09-20) in a scratch folder: it resolves `$lib` (with the alias given) and reads an `import()` in a component's markup as a dynamic import, as the plan asked to prove. But it compiles every `.svelte` file with the Svelte compiler before reading it (`src/extract/transpile/svelte-wrap.mjs`), so a component's type-only imports never reach it. Over `src/lib` the hand reader (`tests/checks/imports/graph.ts` `importGraph(..., true)`) finds 2877 import edges and dependency-cruiser finds every one of them except 199, all from `.svelte` files, 198 of them `import type` and one an inline `{ type Tab }` (`ui/tabs/TabFace.svelte:19`). The folder order (`order.ts`) and the boundary rows (`boundaries.test.ts`) read type-only imports, by DESIGN.md:174 ("a type a folder takes from a folder above it ties the two as an import does"). The runtime edges agree. `bin/diagrams/imports.mjs` stays whichever way, since `code.mjs` and `parsed.mjs` read comments and calls through its parses. The jscpd half works: jscpd 5.3.3 read 1255 files of `src/lib` in 1.6 s and found 132 clones at eight lines, a component split into its script, markup and style blocks. Options:
+  - (a) Keep the import checks hand-written (LA11 (c)), and Q87 is the duplication check on jscpd alone (LA12 (a)); Q72's measures run through the hand checks. Pros: every check keeps reading every import, types in components included, through one reader for the checks and the diagrams, as DESIGN.md:174 requires. Cons: about 740 lines of the import checks stay, among them the cycle finder (`graph.ts` `findCycles` and `walk`, about 75 lines).
+  - (b) dependency-cruiser for what reads runtime imports only (the cycle check and the diagrams' import edges), the hand reader for the folder order, the boundary rows and the augmentation check. Pros: the cycle finder goes, and the cycle rule is dependency-cruiser's `no-circular`. Cons: two readers and two resolvers of one module, which DESIGN.md:174 rules out so that the checks and the diagrams cannot read a module apart; about 75 lines removed against a new dependency and its configuration.
+  - Not offered: dependency-cruiser alone with the components' type-only imports left out of the folder order and the boundary rows, which drops 199 checked imports, a loosened check.
+  - Recommendation: (a). The library cannot see what the order and the boundary rows hold, and (b) buys the cycle finder's 75 lines with a second reader the design forbids. (a) is also the cheaper option; it is recommended because it keeps the checks whole, not for its cost.
 
 ## Time per step (Axel asked 2026-09-27 for how it evolves with Q77; measured from each builder's transcript: each tool call from call to result, each background wait from the builder stopping to the run waking it)
 
@@ -405,7 +411,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
-- 2026-09-29. Q79d landed through /spec, /refute and /land (the library audit's shared helpers, each written once); one repair round, refuted again; fixes at landing: the round review's three findings (head comments, `isFieldMap` and `bin` in the audit, the migration script's `isYamlMap`), the diagrams merge, and three defects Q100's landing left on main (the list-title rule written twice, three over-long comment lines, the type-scale expectation). Verify on main: `checks: 6 commands passed` (Test Files 351 passed, Tests 5597 passed). Q101's builder has reported. Next: Q101's report and `/refute` Q101, then `/spec` Q87 and Q81.
+- 2026-09-29. Q79d landed through /spec, /refute and /land (the library audit's shared helpers, each written once); one repair round, refuted again; fixes at landing: the round review's three findings (head comments, `isFieldMap` and `bin` in the audit, the migration script's `isYamlMap`), the diagrams merge, and three defects Q100's landing left on main (the list-title rule written twice, three over-long comment lines, the type-scale expectation). Verify on main: `checks: 6 commands passed` (Test Files 351 passed, Tests 5597 passed). Q101's builder has reported. Next: Q101's review; Q87 stopped at `/spec` on Z45; Q81 waits for Q101, whose terminal views it shares.
 - 2026-09-29. Q100 landed through /spec, /refute and /land (the Calendar's fixed strips over a wallpaper); one repair round, refuted again; fixes at landing: the library import rule, the pseudo-class comma, the strips at the popover mix (Z44 (b), Axel), the list titles at the Calendar's size (Axel), the DESIGN sentence. The git cap case tagged slow and left out of `npm test` (4390ffda, Axel). Next: Q79d's review, `/spec` Q101.
 - 2026-09-28. Q99 landed through /spec, /refute and /land (the terminal and Pages defects: input as `-H` bytes, a tab closing on its terminal's end, a new shell's prompt at the top, the Pages rows); one repair round, refuted again; fixes at landing: two compose test expectations, the HELP.md paste sentence, the diagrams merge. Verify on main: `verify: 6 commands passed` (Test Files 347 passed, Tests 5553 passed). Next: Q100's landing, `/spec` Q101, Q79d's report.
 - 2026-09-28. Q79a landed through /spec, /refute and /land (the server half of the library audit: `json()`, one `/api/` origin guard in `handle`); one repair round, refuted again; fixes at landing: the merge with Q92's `connect/actions.ts`, the migration's plain tags, the two `HEADERLESS` cases, three test titles and one comment. Verify on main: `verify: 6 commands passed` (Test Files 346 passed, Tests 5506 passed). Next: Q99's repair round 1, then `/spec` Q100 and Q101.
