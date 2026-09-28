@@ -27,7 +27,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:      # Q89 of set 2 under review, Q80 of set 3 building; Q92 of set 2 is prepared next.
+dispatch:      # Q89 of set 2 in repair round 1 (Z39 open), Q80 of set 3 building; Q92 of set 2 is prepared next.
 - step: Q89
   executor: agent
   worker: claude:opus
@@ -37,7 +37,8 @@ dispatch:      # Q89 of set 2 under review, Q80 of set 3 building; Q92 of set 2 
   launched: 2026-09-28
   report: agents/reviews/Q89-report.md
   landing: not-started
-  round: 0
+  reviewer_report: agents/reviews/Q89-refuter.md (reviewer a116360e9ab07e528)
+  round: 1
   shared_paths:
   - tools/oculus/HELP.md and tools/oculus/DESIGN.md: both steps correct only sentences their change makes false; Q98's are about catalog code words, the session title and the Calendar footer, Q89's about the Terminal view (HELP.md:123 and the picker), so they touch different lines and the second landing merges by hand if at all
   - tools/oculus/docs/diagrams/: a rerun of npm run diagrams on the second landing
@@ -107,7 +108,10 @@ None. Axel lifted it on 2026-09-23 with `/plan-orchestration oculus/migration` a
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is booked as its own step in `plan.md` and carried in the Booked section below, since it needs no ruling from him.
 
-None.
+- Z39, where Split starts a terminal whose folder no composer place holds (raised 2026-09-28 by Q89's review). Q89's brief says Split opens the composer beside "with the row's folder" (`agents/briefs/Q89.md:29`), and `HELP.md:123` says "in its folder". The composer offers only its places, the hub, every workspace root and every folder a session sits in (`composerPlaces`, `src/lib/state/sessions/composer.ts:119`), and turns any other value into the hub (`Composer.svelte:76-78`). So Split of a shell that has moved to `hub/projects/foo/code`, which no place names, starts at the hub, and one in `/tmp` also at the hub. The server's start takes any folder (`src/lib/server/machine/pty/routes.ts:410`), so nothing below the page stops the first option. Options:
+  - (a) The composer a Split opens holds the row's folder as a place of its own, listed first by its path, and starts there. Pros: Split does what it says, as VS Code's split starts in the terminal's folder. Cons: the composer's folder list can hold a folder that is not a workspace, for that tab only.
+  - (b) Split starts at the deepest place that holds the row's folder, the hub when none does, and `HELP.md:123` and the Split tooltip say so. Pros: nothing more to build. Cons: a split of a terminal in a subfolder lands somewhere else, and the reader must pick the folder again. This is the lazy option.
+  - Recommended: (a). Q89's round 1 is sent without this item; the landing makes the change once Axel rules.
 
 ## Time per step (Axel asked 2026-09-27 for how it evolves with Q77; measured from each builder's transcript: each tool call from call to result, each background wait from the builder stopping to the run waking it)
 
