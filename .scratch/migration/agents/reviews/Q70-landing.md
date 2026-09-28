@@ -54,3 +54,12 @@ On Axel's dev server, after one reload: a bookmark written into `~/.oculus/bookm
 ## What is next
 
 Q71: the architecture made sound and kept sound, through /spec.
+
+## The look owed, done 2026-09-28
+
+On the TEST page of Axel's Chrome on 8790, light theme.
+
+- Help carries the sentence that the server polls the file every half second.
+- A bookmark appended by hand to `~/.oculus/bookmarks.yml` appeared in the open page's Bookmarks without a reload; the file was then put back from a copy (`cmp` identical, 40 lines) and the bookmark left the page.
+- After a reload the page came back on TEST with its rail. The time the configuration seed takes was not measured.
+- Nothing found.

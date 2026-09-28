@@ -72,3 +72,11 @@ The one red in the full run is `tests/server/mail/poll.test.ts > republishes whe
 ## What is next
 
 Q54 lands on the head Q52 leaves; its review came back with no Spec and no Behaviour finding. Then Q53, which is in its repair round. Then Q56, whose brief was rechecked against `919a28bf` today and gained one premise: the workspaces section has no failure sentence at all, so it gets one.
+
+## The look owed, done 2026-09-28
+
+On the TEST page of Axel's Chrome on 8790, light theme.
+
+- The Repositories picker lists every root; Repositories and the session Changes panel both draw `main 14 ahead` with push.
+- Found: the Changes view had no session control on its bar, though its empty text names one (S2's brief, item 8: every session view picks a session through one control). Fixed on main: `Changes.svelte` draws `SessionPicker` first on its bar; the case "draws the session control on its bar that its empty state names" in `tests/views/sessions/changes.test.ts` failed before the fix (1 failed, 23 passed) and passes after it (24 passed). The page now shows "Pick a session" on the Changes bar.
+- Found outside the brief: four sessions started by a slash command are titled by their raw command markup in the Sessions list and the session picker (open item Z29).

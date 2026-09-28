@@ -21,3 +21,11 @@ Nothing of the step itself. What the landing did not close is named in the note 
 - Its review and the run over its repair round, with what was closed at landing: `agents/reviews/Q38-refuter.md`.
 - The builder's report and its repair round: `agents/reviews/Q38-report.md`.
 - The commands and their outputs are quoted in the note above.
+
+## The look owed, done 2026-09-28
+
+On the TEST page of Axel's Chrome on 8790, light theme.
+
+- The accent line sits on the active pane's shown tab, the tabs are square and edge to edge, the sash is transparent at rest, and an edited tab shows its unsaved dot.
+- The page strip Q38 styled is gone since L3.
+- Nothing found.
