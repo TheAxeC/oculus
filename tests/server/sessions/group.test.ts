@@ -288,7 +288,6 @@ describe('the overrides', () => {
         expect(session.secondaryAreas.map((entry) => entry.key)).toEqual([WS + '/tools']);
     });
 
-    // revert: src/lib/server/sessions/group.ts "top: override.top === true" => top: false
     it('carries the top mark of an override, and none for a session without one', () => {
         const { overrides } = fixture();
         writeFileSync(overrides, JSON.stringify({ sessions: { s1: { top: true } } }));

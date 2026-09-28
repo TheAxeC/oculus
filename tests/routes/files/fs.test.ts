@@ -5,7 +5,7 @@
 //
 // Every root and every workspaces file here is synthetic, under the system temporary directory, and
 // every path written is asserted to be inside it first. What this does NOT cover: the route module
-// reading the machine's own config/local.yml, which is exercised by the browser layer.
+// reading the machine's own config/local.yml.
 
 import { existsSync, mkdirSync, realpathSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';

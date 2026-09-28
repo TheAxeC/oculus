@@ -271,7 +271,6 @@ describe('source tab state', () => {
     });
 
     it('keeps the blame per instance, off until the toggle turns it on', () => {
-        // revert: src/lib/state/sessions/source.svelte.ts "updateDraft(id, { blame: !sourceDraft(id).blame });" => updateDraft(id, {});
         expect(sourceDraft('one').blame).toBe(false);
         client.source.toggleSourceBlame('one');
         expect(sourceDraft('one').blame).toBe(true);
@@ -283,7 +282,6 @@ describe('source tab state', () => {
     });
 
     it('keeps the language and the indentation chosen from the status bar per instance, and drops them for another file', async () => {
-        // revert: src/lib/state/sessions/source.svelte.ts "updateDraft(id, held.file === file ? { file } : { file, language: '', indent: null });" => updateDraft(id, { file });
         vi.stubGlobal('fetch', () => Promise.resolve(new Response('text\n')));
         expect(sourceDraft('one')).toMatchObject({ language: '', indent: null });
         client.source.setSourceLanguage('one', 'python');

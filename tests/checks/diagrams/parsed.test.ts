@@ -32,8 +32,6 @@ beforeEach(() => {
 
 describe('the parse reader', () => {
     it('parses a path asked twice with the same text once, and gives the same result', () => {
-        // revert: bin/diagrams/parsed.mjs "held.imports ??= importsOf(path, text);" => held.imports = importsOf(path, text);
-        // revert: bin/diagrams/parsed.mjs "held.code ??= codeOf(path, text);" => held.code = codeOf(path, text);
         const read = parseReader();
         const imports = read.imports(PATH, FIRST);
         const code = read.code(PATH, FIRST);
@@ -46,7 +44,6 @@ describe('the parse reader', () => {
     });
 
     it('parses a path again when the text given differs, and gives the new file', () => {
-        // revert: bin/diagrams/parsed.mjs "if (held !== undefined && held.text === text) return held;" => if (held !== undefined) return held;
         const read = parseReader();
         read.imports(PATH, FIRST);
         read.code(PATH, FIRST);
@@ -57,7 +54,6 @@ describe('the parse reader', () => {
     });
 
     it('shares its parses with another reader over the same cache', () => {
-        // revert: bin/diagrams/parsed.mjs "export function parseReader(cache = new Map()) {" => export function parseReader(given = new Map(), cache = new Map()) {
         const cache = new Map();
         const first = parseReader(cache);
         const imports = first.imports(PATH, FIRST);
@@ -71,7 +67,6 @@ describe('the parse reader', () => {
     });
 
     it('keeps a cache of its own when it is given none', () => {
-        // revert: bin/diagrams/parsed.mjs "export function parseReader(cache = new Map()) {" => export function parseReader(cache = (parseReader.shared ??= new Map())) {
         const first = parseReader();
         const imports = first.imports(PATH, FIRST);
         const second = parseReader();

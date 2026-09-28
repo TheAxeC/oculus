@@ -4,10 +4,8 @@
 //
 // The catalog and the glyphs are the real config; the rows are built by state/sources/fs.ts from
 // synthetic listings, so the tree is drawn without a server. What this does NOT cover: the fetches
-// state/sources/fs.svelte.ts makes, which need a server and are exercised by
-// tests/browser/sources/files.spec.ts; and pressing a control or a key, which no server rendering
-// runs and tests/browser/sources/files.spec.ts and tests/browser/sources/files-forms.spec.ts do.
-// Each case written for the explorer names the change that turns it red.
+// state/sources/fs.svelte.ts makes, which need a server; and pressing a control or a key, which no
+// server rendering runs.
 
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -287,7 +285,6 @@ describe('the workspaces section', () => {
         expect(body).not.toContain('aria-selected="true"');
     });
 
-    // revert: src/lib/views/sources/files/sections/Workspaces.svelte "{#if error !== ''}" => {#if false}
     it('says why the workspaces could not be read, with the control that reads them again', () => {
         const { body } = render(Workspaces, {
             context: clientContext(client),
@@ -311,7 +308,6 @@ describe('the workspaces section', () => {
         expect(body).toContain('aria-label="save as"');
     });
 
-    // revert: src/lib/views/sources/files/sections/Workspaces.svelte "const rows = $derived(error === '' ? workspaceChoices(names) : []);" => const rows = $derived(workspaceChoices(names));
     it('draws no workspace row at all over a read that failed, not even the configured roots', () => {
         const { body } = render(Workspaces, {
             context: clientContext(client),
@@ -385,7 +381,6 @@ describe('the form a root and a workspace are named in', () => {
 
 describe('the marks the tree draws', () => {
     // Revert: draw a folder row with the file glyph in Tree.svelte's glyphOf.
-    // revert: src/lib/views/sources/files/tree/Tree.svelte "if (row.kind === 'dir') return t('files.folder_glyph');" => if (row.kind === 'dir') return t('files.file_glyph');
     it('gives a folder row and the empty state different marks', () => {
         const { body } = render(Tree, { context: clientContext(client), props: treeProps() });
         const empty = render(Files, {
@@ -716,7 +711,6 @@ describe("the reader's own bookmarks and notes", () => {
         expect(held).toContain('The notes could not be read: origin');
     });
 
-    // revert: src/lib/views/sources/files/tree/Failed.svelte "label={t('files.read_again')}" => label={t('files.bookmarks_empty')}
     it('carries the control that reads it again on the line that says a read failed', async () => {
         vi.stubGlobal('window', {});
         vi.stubGlobal('fetch', (url: string) =>

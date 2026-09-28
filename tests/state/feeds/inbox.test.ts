@@ -112,7 +112,6 @@ describe('inbox selectors', () => {
 });
 
 describe('the threads still on the plate', () => {
-    // revert: src/lib/state/feeds/inbox.ts "return split.unsorted.length + split.replies.length + split.actions.length + split.info.length;" => return split.unsorted.length + split.replies.length + split.actions.length + split.info.length + split.triaged.length;
     it('are every section but the triaged one', () => {
         const one = [{}] as unknown as Parameters<typeof plateCount>[0]['unsorted'];
         expect(

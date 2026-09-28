@@ -420,8 +420,6 @@ describe('the Source Control actions', () => {
         ['createTag', { name: 'v1', message: '' }]
     ];
 
-    // revert: src/lib/server/git/git-routes.ts "'pushTags'" => delete
-    // revert: src/lib/server/git/git-routes.ts "export const CONFIRMED = [" +16 => delete
     it('refuses each asking action unconfirmed, and takes it confirmed with its fields', async () => {
         for (const [action, fields] of ASKING) {
             const into = options();
@@ -443,7 +441,6 @@ describe('the Source Control actions', () => {
         }
     });
 
-    // revert: src/lib/server/git/git-routes.ts "'pushTags'" => 'pushTags', 'fetch'
     it('takes each plain action with no confirm', async () => {
         for (const [action, fields] of PLAIN) {
             const into = options();
@@ -458,7 +455,6 @@ describe('the Source Control actions', () => {
         }
     });
 
-    // revert: src/lib/server/git/git-routes.ts "options.refresh?.(root);" => if (outcome.ok) options.refresh?.(root);
     it('reads the root again after a write git refused, since a stopped merge moved it', async () => {
         const read: string[] = [];
         const response = await handleGit(
@@ -521,7 +517,6 @@ describe('the reads on demand', () => {
         }
     };
 
-    // revert: src/lib/server/git/git-reads.ts "if (key === 'blame') return answer(reads.blame(root, path), 'lines');" => if (key === 'blame') return answer(reads.blame(root, path), 'blame');
     it('answers each read under its own key, with what the request named', async () => {
         const into = options({ reads: reads as never });
         asked.length = 0;
@@ -556,7 +551,6 @@ describe('the reads on demand', () => {
         ]);
     });
 
-    // revert: src/lib/server/git/git-reads.ts "return answer(reads.graph(root, Number.isInteger(skip) ? skip : 0), 'page');" => return answer(reads.graph(root, skip), 'page');
     it('answers a refused read with its reason, and reads a page from 0 when skip is not a number', async () => {
         const into = options({ reads: reads as never });
         asked.length = 0;
@@ -567,7 +561,6 @@ describe('the reads on demand', () => {
         expect(asked.at(-1)).toEqual(['graph', ROOT, 0]);
     });
 
-    // revert: src/lib/server/git/git-reads.ts "return root !== null && permitted(root, roots) ? root : null;" => return root;
     it('refuses every read of a root it was not given, before reading', async () => {
         const into = options({ reads: reads as never });
         asked.length = 0;

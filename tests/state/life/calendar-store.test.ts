@@ -107,7 +107,6 @@ describe('what the calendar store commands say', () => {
     });
 
     it('says a refusal in the catalog sentence carrying its code', async () => {
-        // revert: src/lib/state/life/calendar.svelte.ts "if (typeof code === 'string') return t('calendar.refused', code);" => delete
         vi.stubGlobal('fetch', () =>
             Promise.resolve(
                 new Response(JSON.stringify({ error: 'no such event' }), { status: 400 })
@@ -119,8 +118,6 @@ describe('what the calendar store commands say', () => {
     });
 
     it('says a command no answer came back for, and one whose answer was not JSON', async () => {
-        // revert: src/lib/state/life/calendar.svelte.ts "if (answer.failed === 'unreachable') return t('accounts.unreachable');" => delete
-        // revert: src/lib/state/life/calendar.svelte.ts "if (answer.failed === 'unreadable') return t('accounts.unreadable');" => delete
         vi.stubGlobal('fetch', () => Promise.reject(new TypeError('Failed to fetch')));
         expect(await client.calendar.refresh()).toBe(t('accounts.unreachable'));
         vi.stubGlobal('fetch', () => Promise.resolve(new Response('<html>', { status: 502 })));

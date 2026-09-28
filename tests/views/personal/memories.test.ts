@@ -5,7 +5,7 @@
 // The store is handed its list by hand, since a server rendering makes no fetch; the cases over the
 // answer the store reads stub the one fetch it makes and read the store back. What this does NOT
 // cover: the overlay opening and closing, and the box a tile's shape actually draws, which need a
-// browser and are tests/browser/views/memories.spec.ts.
+// browser.
 
 import { readFileSync } from 'node:fs';
 import { render } from 'svelte/server';

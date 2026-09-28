@@ -5,7 +5,6 @@ import { describe, expect, it } from 'vitest';
 import { createTipIds } from '../../../src/lib/ui/menu/tip-ids.ts';
 
 describe('the tooltip ids', () => {
-    // revert: src/lib/ui/menu/tip-ids.ts "counter += 1;" => counter = 1;
     it('number the bubbles of two pages apart', () => {
         const one = createTipIds();
         const two = createTipIds();

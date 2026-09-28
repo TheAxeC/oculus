@@ -199,7 +199,6 @@ describe('what a reorder and a cleared control send', () => {
     // The drop and the save are DOM events no server render fires, so the two rules are read off
     // the source: the order the drag writes, and the value an emptied control saves as. The pure
     // halves, movedOrder and clearedValue, are tested in tests/state/boards/collection.test.ts.
-    // revert: src/lib/views/boards/collection/Collection.svelte "if (from === '' || from === onto) return;" +1 => const order = fileOrder(entries, schema);
     it('audits that a reorder writes the file own order, never the pinned-first one', () => {
         const source = readFileSync('src/lib/views/boards/collection/Collection.svelte', 'utf8');
         // Both callers, the drop and the keyboard carry, take their order from state's fileOrder

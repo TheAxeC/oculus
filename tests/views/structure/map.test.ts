@@ -326,7 +326,7 @@ describe('the Map view', () => {
         expect(circles(held)).not.toEqual(circles(tuning));
 
         // There is no DOM in this suite, so onMount does not run and the callback cannot fire here:
-        // what it would be handed is the rule below, and the press itself is in tests/browser.
+        // what it would be handed is the rule below, and the press itself is not run here.
         expect(mapLayout(graph, null).tuned).toEqual(fresh.params);
         expect(mapLayout(graph, fresh.params).tuned).toBeNull();
     });

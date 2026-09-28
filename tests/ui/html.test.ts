@@ -7,7 +7,7 @@
 // script is dropped anywhere in this file. What is checked here is the data the browser is given
 // and the shape of the call: that `inlineMarkdown` is the sanitiser over marked's inline renderer,
 // and that the app still renders in the browser alone, which is what makes the node pass-through
-// harmless. The profile against real markup is tests/browser/workbench/sanitise.spec.ts, in Chrome.
+// harmless. The profile against real markup needs a DOM and is not run here.
 
 import { readFileSync } from 'node:fs';
 import { marked } from 'marked';

@@ -62,7 +62,6 @@ const ACCOUNTS: AgentAccount[] = [
 ];
 
 describe("a tab's composer record", () => {
-    // revert: src/lib/state/sessions/composer.ts "agent: agent === 'codex' || agent === 'shell' ? agent : 'claude'," => agent: agent === 'codex' ? agent : 'claude',
     it('reads the agent, the workspace, the accounts and the picks, anything malformed as unset', () => {
         const held = {
             other: 1,
@@ -85,7 +84,6 @@ describe("a tab's composer record", () => {
         expect(composerOf({ composer: { agent: 'rm' } }).agent).toBe('claude');
     });
 
-    // revert: src/lib/state/sessions/composer.ts "return { ...(mapOf(state) ?? {}), [COMPOSER_FIELD]: record };" => return { [COMPOSER_FIELD]: record };
     it('writes the record beside the rest of the tab state', () => {
         const next = withComposer({ id: 'x', follow: true }, { ...COMPOSER_EMPTY, agent: 'codex' });
         expect(next).toEqual({
@@ -96,7 +94,6 @@ describe("a tab's composer record", () => {
         expect(composerOf(next).agent).toBe('codex');
     });
 
-    // revert: src/lib/state/sessions/composer.ts "chosen !== undefined && list.values.some((one) => one.id === chosen)" => chosen !== undefined
     it('shows the tab choice where the catalog still offers it, and the default where it does not', () => {
         expect(picksFor(CLAUDE, { model: 'opus' })).toEqual({ model: 'opus' });
         expect(picksFor(CLAUDE, { model: 'gone' })).toEqual({ model: 'cli' });
@@ -104,7 +101,6 @@ describe("a tab's composer record", () => {
         expect(picksFor(null, { model: 'opus' })).toEqual({});
     });
 
-    // revert: src/lib/state/sessions/composer.ts "return held !== undefined && own.some((one) => one.label === held)" => return held !== undefined
     it('names the chosen account while it is configured, else the agent first, and none for a shell', () => {
         expect(accountsOf(ACCOUNTS, 'claude').map((one) => one.label)).toEqual(['Home', 'Uni']);
         expect(accountsOf(ACCOUNTS, 'shell')).toEqual([]);
@@ -115,7 +111,6 @@ describe("a tab's composer record", () => {
         expect(accountFor([], 'codex', 'Work')).toBe('');
     });
 
-    // revert: src/lib/state/sessions/composer.ts "rest.delete(hub);" => rest.add(hub);
     it('offers the hub first, then every root and every session workspace once, in order', () => {
         const tree = [{ key: '/w/b' }, { key: '/hub' }, { key: '' }] as unknown as Workspace[];
         const saved = [{ roots: [{ dir: '/hub' }, { dir: '/w/a' }] }, { roots: [{ dir: '/w/a' }] }];
@@ -125,7 +120,6 @@ describe("a tab's composer record", () => {
 });
 
 describe('a file put into the prompt', () => {
-    // revert: src/lib/state/sessions/composer.ts "if (base === '' || !file.startsWith(`${base}/`)) return null;" => if (base === '') return null;
     it('is a mention of its path inside the workspace, and nothing for a file outside it', () => {
         expect(relativeIn('/hub', '/hub/a/b.ts')).toBe('a/b.ts');
         expect(relativeIn('/hub/', '/hub/a.ts')).toBe('a.ts');
@@ -135,7 +129,6 @@ describe('a file put into the prompt', () => {
         expect(mention('a/b.ts')).toBe('@a/b.ts');
     });
 
-    // revert: src/lib/state/sessions/composer.ts "const lead = before === '' || /\\s$/.test(before) ? '' : ' ';" => const lead = '';
     it('goes in at the caret with a space on each side the text beside it lacks', () => {
         expect(insertMention('fix this', 3, '@a.ts')).toEqual({ text: 'fix @a.ts this', caret: 9 });
         expect(insertMention('', 0, '@a.ts')).toEqual({ text: '@a.ts ', caret: 6 });
@@ -144,7 +137,6 @@ describe('a file put into the prompt', () => {
         expect(insertMention('x', -5, '@a.ts')).toEqual({ text: '@a.ts x', caret: 6 });
     });
 
-    // revert: src/lib/state/sessions/composer.ts "return dot >= 0 && IMAGES.includes(path.slice(dot + 1).toLowerCase());" => return dot >= 0;
     it('is an image by its extension, in any case', () => {
         expect(['a.png', 'b.JPG', 'c.jpeg', 'd.gif', 'e.webp'].every(isImage)).toBe(true);
         expect(['a.ts', 'png', 'a.png.txt'].some(isImage)).toBe(false);
@@ -152,7 +144,6 @@ describe('a file put into the prompt', () => {
 });
 
 describe('the start the composer sends', () => {
-    // revert: src/lib/state/sessions/composer.ts "const images = agent === 'codex' ? [...new Set(attached.filter(isImage))] : [];" => const images = [...new Set(attached.filter(isImage))];
     it('attaches images for Codex only, once each, and nothing but the prompt for a shell', () => {
         const attached = ['/w/a.png', '/w/a.png', '/w/b.ts'];
         expect(composeStart('codex', '/w', 'Work', { model: 'cli' }, 'look', attached)).toEqual({
@@ -164,7 +155,6 @@ describe('the start the composer sends', () => {
             images: ['/w/a.png']
         });
         expect(composeStart('claude', '/w', 'Uni', {}, 'p', attached).images).toEqual([]);
-        // revert: src/lib/state/sessions/composer.ts "return { agent, cwd, account: '', picks: {}, prompt, images: [] };" => return { agent, cwd, account, picks, prompt, images: [] };
         expect(composeStart('shell', '/w', 'Uni', { model: 'opus' }, 'ls', attached)).toEqual({
             agent: 'shell',
             cwd: '/w',
@@ -175,7 +165,6 @@ describe('the start the composer sends', () => {
         });
     });
 
-    // revert: src/lib/state/sessions/composer.ts "if (event.key !== 'Enter' || event.shiftKey || event.isComposing === true) return 'type';" => if (event.key !== 'Enter' || event.isComposing === true) return 'type';
     it('starts on Enter, and types a new line on Shift+Enter or while a character is composed', () => {
         expect(promptKey({ key: 'Enter', shiftKey: false })).toBe('send');
         expect(promptKey({ key: 'Enter', shiftKey: true })).toBe('type');
@@ -185,7 +174,6 @@ describe('the start the composer sends', () => {
 });
 
 describe("the Customizations section's scope", () => {
-    // revert: src/lib/state/sessions/composer.ts "open: held?.open !== false," => open: held?.open === true,
     it('reads open by default, the agent, the account, the workspace and the rows opened', () => {
         expect(customizationScopeOf({})).toEqual({
             open: true,
@@ -213,7 +201,6 @@ describe("the Customizations section's scope", () => {
 });
 
 describe('the Terminal tab New shows its composer in', () => {
-    // revert: src/lib/state/sessions/terminals.svelte.ts "return identity(state) === null || mapOf(state)?.follow === true;" => return identity(state) === null;
     it('is the first that follows the selection, a tab pinned to a terminal left alone', () => {
         const tabs = [
             { id: 'files', view: 'files', state: {} },
@@ -252,7 +239,6 @@ describe('the posts the composer, the steer box and Fork make', () => {
         vi.unstubAllGlobals();
     });
 
-    // revert: src/lib/state/sessions/terminals.svelte.ts "return post({ action: 'compose', ...start, cols, rows });" => return post({ ...start, cols, rows });
     it('send the start, the message, the interrupt and the fork as their actions', async () => {
         const { composeTerminal, forkTerminal, interruptTerminal, steerTerminal } =
             client.terminals;
@@ -290,7 +276,6 @@ describe('the terminal a session runs in', () => {
         };
     }
 
-    // revert: src/lib/state/sessions/terminals.svelte.ts "all.find((one) => record.pid !== null && one.pid !== 0 && one.pid === record.pid) ??" => null ??
     it('is the one that resumed it, else the one whose process it is, and none for a foreign one', () => {
         const client = createClientState();
         client.entities.receive({
@@ -323,14 +308,12 @@ describe('the branch the composer shows', () => {
         '/hubs': { branch: 'other' }
     };
 
-    // revert: src/lib/state/sessions/composer.ts "if (holds && root.length > best.length) best = root;" => if (holds) best = root;
     it('is the branch of the deepest checkout holding the workspace', () => {
         expect(branchOf('/hub/projects/deep/src', git)).toBe('feature');
         expect(branchOf('/hub/projects', git)).toBe('main');
         expect(branchOf('/hub', git)).toBe('main');
     });
 
-    // revert: src/lib/state/sessions/composer.ts "const holds =" => const holds = workspace.startsWith(root);
     it('is none for a folder no checkout holds, a sibling whose name starts the same included', () => {
         expect(branchOf('/hubx', git)).toBe('');
         expect(branchOf('/elsewhere', git)).toBe('');

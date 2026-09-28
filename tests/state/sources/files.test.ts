@@ -3,8 +3,8 @@
 //
 // Nothing here touches the network or the real hub: `fetch` is a stub that records the URL it was
 // given and answers what the case wants. What this does NOT cover: the endpoint itself, which is
-// tests/routes/files/project-files.test.ts, and the view drawing the rows, which is the browser
-// suite's.
+// tests/routes/files/project-files.test.ts, and the view drawing the rows, which needs a DOM and
+// is not run here.
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createClientState, type ClientState } from '../../fixtures/client.ts';
@@ -144,7 +144,6 @@ describe('the files of a project', () => {
 });
 
 describe('the project files a filter keeps', () => {
-    // revert: src/lib/state/sources/files.svelte.ts "return text === '' ? all : all.filter((row) => row.path.toLowerCase().includes(text));" => return text === '' ? all : all.filter((row) => row.path.includes(text));
     it('are the rows whose path holds the query, case and surrounding space aside', () => {
         const rows = [
             { path: 'manuscript/Main.tex', size: 10, mtime: 1 },

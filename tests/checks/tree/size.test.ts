@@ -100,12 +100,10 @@ function planted(rel: string, lines: number): string {
 
 describe('a file over the size line', () => {
     it('is on the list with a count it has not passed', () => {
-        // revert: bin/size-allow.txt "# same rule." => src/lib/data/sources/config.ts 900
         expect(findOversize(ROOT, readFileSync(ALLOW, 'utf8'))).toEqual([]);
     });
 
     it('fails when a listed file grows past the count it was recorded at', () => {
-        // revert: tests/checks/tree/size.test.ts "if (count > cap[rel]) {" => if (false) {
         const dir = planted('src/one.ts', 958);
         expect(findOversize(dir, 'src/one.ts 957\n', ['src'])).toEqual([
             'src/one.ts is 958 lines, over the 957 it was recorded at'
@@ -114,7 +112,6 @@ describe('a file over the size line', () => {
     });
 
     it('fails on an allow line that carries no count', () => {
-        // revert: tests/checks/tree/size.test.ts "if (part.length !== 2 || !/^\\d+$/.test(part[1])) {" => if (false) {
         const dir = planted('src/one.ts', 958);
         expect(findOversize(dir, 'src/one.ts\n', ['src'])).toEqual([
             'no count on the allow line: src/one.ts',
@@ -123,7 +120,6 @@ describe('a file over the size line', () => {
     });
 
     it('fails on a listed file that is back under the line, and on one the tree has not', () => {
-        // revert: tests/checks/tree/size.test.ts "} else if (count <= line) {" => } else if (false) {
         const dir = planted('src/one.ts', 400);
         expect(findOversize(dir, 'src/one.ts 957\nsrc/gone.ts 950\n', ['src'])).toEqual([
             'src/one.ts is 400 lines, back under the line, so it comes off the list',
@@ -132,7 +128,6 @@ describe('a file over the size line', () => {
     });
 
     it('fails on a component over the component line and on a file over the file line', () => {
-        // revert: tests/checks/tree/size.test.ts "const line = rel.endsWith('.svelte') ? COMPONENT : LINES;" => const line = LINES;
         const big = planted('src/Big.svelte', 541);
         expect(findOversize(big, '', ['src'])).toEqual([
             'src/Big.svelte is 541 lines, over the line and not on the list'
@@ -142,7 +137,6 @@ describe('a file over the size line', () => {
     });
 
     it('audits the awk of the verification list against this rule, over the tree as it stands', () => {
-        // revert: bin/size-check.sh "exit bad" => exit 1
         const command = readFileSync(join(ROOT, 'bin', 'size-check.sh'), 'utf8');
         const held = spawnSync('sh', [join(ROOT, 'bin', 'size-check.sh')], {
             cwd: ROOT,
@@ -187,12 +181,10 @@ function eleven(folder: string): string[] {
 
 describe('a folder over ten items', () => {
     it('holds under the tree as it stands', () => {
-        // revert: bin/folder-check.sh "if (count[dir] > 10) {" => if (count[dir] > 0) {
         expect(folders(ROOT)).toEqual({ out: '', status: 0 });
     });
 
     it('refuses a folder of eleven, and a folder counts as one item of its parent', () => {
-        // revert: bin/folder-check.sh "if (count[dir] > 10) {" => if (count[dir] > 11) {
         const over = folderTree(eleven('src/lib'));
         expect(folders(over)).toEqual({
             out: 'src/lib holds 11 items, over the ten a folder may hold\n',
@@ -203,7 +195,6 @@ describe('a folder over ten items', () => {
     });
 
     it('does not count a file the repository ignores, nor a folder outside the four it reads', () => {
-        // revert: bin/folder-check.sh "git ls-files -co --exclude-standard -- src tests bin config | while IFS= read -r path; do" =>         git ls-files -co -- src tests bin config | while IFS= read -r path; do
         const ignored = folderTree(eleven('config'), ['config/file-10.ts']);
         expect(folders(ignored)).toEqual({ out: '', status: 0 });
         const outside = folderTree(eleven('assets'));
@@ -211,7 +202,6 @@ describe('a folder over ten items', () => {
     });
 
     it('counts a copy that is no git checkout by the files it holds', () => {
-        // revert: bin/folder-check.sh "find src tests bin config \\( -type f -o -type l \\) 2> /dev/null" => find src tests bin config -type d -name none 2> /dev/null
         const copy = folderTree(eleven('src/lib'), [], false);
         expect(folders(copy)).toEqual({
             out: 'src/lib holds 11 items, over the ten a folder may hold\n',

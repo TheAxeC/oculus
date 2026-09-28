@@ -3,8 +3,7 @@
 // The listing and the file text are synthetic, handed in through a doubled file-browser store, so
 // no case reads the engine's own folder through a server. The catalog is the real config, which is
 // what holds the descriptions the cards draw. What this does NOT cover: the fetch
-// state/sources/fs.svelte.ts makes and the click that opens a file, both exercised by
-// tests/browser/workbench/system.spec.ts.
+// state/sources/fs.svelte.ts makes and the click that opens a file.
 //
 // The refresh the view asks for on a config push is recorded by the double rather than followed:
 // what the store does with it is tests/state/sources/fs.test.ts's.

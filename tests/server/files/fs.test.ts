@@ -127,7 +127,6 @@ describe('one directory under a root', () => {
         expect(entriesOf([{ key: 'one', dir }], 'one', '')).toEqual(['src', 'keep.txt']);
     });
 
-    // revert: src/lib/server/files/fs.ts ".filter((entry) => hidden || !skipped(entry.name))" => .filter((entry) => !skipped(entry.name))
     it('lists dotfiles and the three build folders when hidden files are asked for', () => {
         const dir = folder({ '.env': 'x\n', 'keep.txt': 'k\n' }, [
             '.git',

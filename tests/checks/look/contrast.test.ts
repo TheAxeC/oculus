@@ -3,13 +3,13 @@
 // The pairs are the ones a component can actually produce: a `-txt` colour on the page, the panel
 // the card and the chip; a hue's `-txt` on its own tint; a hue's `-lane-txt` on its `-lane` and on
 // nothing else, since a Focus lane or column header is where it is painted. That every word of
-// those headers sits on its own lane surface is proved in the page by
-// tests/browser/boards/focus-look.spec.ts; the src/ reading case below only reports a lane text
-// token referenced outside the one shape the header uses; `--on-accent-bg` on the selected tree
-// row's surface `--accent-bg`; and the on-chip ink on its filled chip. A pair below the threshold
-// is printed with its ratio and fails. It is never fixed by loosening the threshold or by editing a
-// colour here: a colour is an authored value in tokens.css or themes.css, and a failure is a
-// finding about that value or about derive.ts, not something this file repairs.
+// those headers sits on its own lane surface in the page needs a DOM and is not run here; the src/
+// reading case below only reports a lane text token referenced outside the one shape the header
+// uses; `--on-accent-bg` on the selected tree row's surface `--accent-bg`; and the on-chip ink on
+// its filled chip. A pair below the threshold is printed with its ratio and fails. It is never
+// fixed by loosening the threshold or by editing a colour here: a colour is an authored value in
+// tokens.css or themes.css, and a failure is a finding about that value or about derive.ts, not
+// something this file repairs.
 
 import { readFileSync, readdirSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
@@ -216,11 +216,10 @@ describe('contrast', () => {
     // with a property set to `var(--c-X-lane)`, and each CSS block reading the first must fill its
     // background with the second; a `color:` set to it must share its block or line with that
     // background. It reads the text of each file on its own, so it finds a lane text token taken
-    // into a view the Focus browser case never opens. It does not see a later rule that overrides
-    // the header's background, a descendant with a background of its own, the wallpaper rules or a
-    // value built in code; the browser case in tests/browser/boards/focus-look.spec.ts covers the
-    // Focus headers for those. Revert: paint `--c-green-lane-txt` as `color` in any rule of a
-    // component whose background is `--panel`, and that line is printed.
+    // into any view. It does not see a later rule that overrides the header's background, a
+    // descendant with a background of its own, the wallpaper rules or a value built in code, and no
+    // case here covers the Focus headers for those. Revert: paint `--c-green-lane-txt` as `color`
+    // in any rule of a component whose background is `--panel`, and that line is printed.
     it('finds lane text painted only over its own lane surface under src/', () => {
         const all = sources(SRC).map(([file, text]) => offLane(file, text));
         expect(all.reduce((sum, one) => sum + one.places, 0)).toBeGreaterThan(0);

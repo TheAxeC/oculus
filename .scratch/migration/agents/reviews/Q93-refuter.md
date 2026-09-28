@@ -214,3 +214,20 @@ Reviewer usage: tokens not measured, about 45 tool uses, about 25 minutes.
 - The step's diff before 98100b22 was not re-read beyond what the round's findings name. The first refuter covered it.
 
 Reviewer usage: about 22 tool uses, about 9 minutes; tokens not measured.
+
+## Closed (the orchestrator's disposition of every finding above, 2026-09-28)
+
+First review:
+- demo/hpc and demo/sessions deleted, the scratch.ts comment, the colours fold: kept, the path list widened to them (round 1 item 8).
+- The duplicate claim unproven: nothing to change; the fold stands on the check passing.
+- scratch-count.sh red under load: two unit timeouts at load 9 to 19 in git.test.ts and git-ops.test.ts, green at load 9; not sent, since the cause is the machine's load; the whole suite passed on main at landing.
+- The 80-case drop: diagnosed by the orchestrator, all in the four deleted test files; written into the report by round 1.
+- The lock file's 2 playwright lines: the brief's expected value was wrong; vitest's optional peer entries.
+- Head comments made false, the two split pointers, .prettierignore, drag.test.ts, the "checked in a browser" phrases: round 1 items 1 to 4.
+- allow-duplication.txt reasons: round 1 item 6 for the files the step changed; the rest at landing (below).
+- The duplication-check defect: round 1 item 7.
+- The two history comments in channel.ts and Terminal.svelte: round 1 item 5.
+
+Repair round 1, refuted:
+- The new duplication case did not hold the line-comment branch: fixed at landing, its comment line now `// a folder ending in /**`; with the branch removed, `blockOpens` returns 22 on that line and the case fails.
+- 66 stale reasons outside the round's limit: fixed at landing by a copy of the check's own finder over main's tree, 67 corrected, 0 left, only the numbers changed.

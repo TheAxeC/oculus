@@ -149,7 +149,6 @@ describe('GET /api/transcript', () => {
 describe('GET /api/transcript?format=markdown', () => {
     const catalog = textCatalog(loadConfig(engineDir()).config);
 
-    // revert: src/lib/server/sessions/transcript-routes.ts "if (url.searchParams.get('format') === 'markdown') {" => if (url.searchParams.get('format') === 'md') {
     it('answers the whole conversation as a Markdown file to save, named from the title', async () => {
         const path = transcript();
         const held = record(SESSION, { path, tool: 'claude', title: 'Fix the loader: now!' });
@@ -169,13 +168,11 @@ describe('GET /api/transcript?format=markdown', () => {
         expect(text).toContain('Doing it.');
     });
 
-    // revert: src/lib/server/sessions/transcript-routes.ts "return `${stem === '' ? record.id : stem}.md`;" => return `${record.id}.md`;
     it('names a file after the id when the title holds no letter', () => {
         expect(exportName(record(SESSION, { title: '!!!' }))).toBe(`${SESSION}.md`);
         expect(exportName(record(SESSION, { title: 'a b' }))).toBe('a-b.md');
     });
 
-    // revert: src/lib/server/sessions/transcript-routes.ts "lines.push(...turn.text.split('\\n').map((line) => `> ${line}`.trimEnd()));" => lines.push(turn.text);
     it('quotes a user turn line by line, and writes a tool call as one line', () => {
         const text = transcriptMarkdown(
             record(SESSION, { title: '' }),
@@ -194,7 +191,6 @@ describe('GET /api/transcript?format=markdown', () => {
         expect(text).toContain('- Bash: ls (error)');
     });
 
-    // revert: src/lib/server/core/words.ts "if (template === undefined) throw new Error(`text key not in config: ${key}`);" => if (template === undefined) return key;
     it('refuses to word an export from a catalog that lacks its keys', () => {
         const turns: Turn[] = [];
         expect(() => transcriptMarkdown(record(SESSION, { title: 'x' }), turns, {})).toThrow(
@@ -202,7 +198,6 @@ describe('GET /api/transcript?format=markdown', () => {
         );
     });
 
-    // revert: src/lib/server/sessions/transcript-routes.ts "if (options.catalogFor === undefined) throw new Error('an export needs the text catalog');" => delete
     it('refuses an export when no text catalog is handed to it', () => {
         const held = record(SESSION, { path: transcript(), tool: 'claude', title: 'x' });
         expect(() =>

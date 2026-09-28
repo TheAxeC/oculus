@@ -34,7 +34,7 @@
 // the inline `style` a component writes for a tone, which is the one place a token name is built at
 // run time.
 
-import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -44,7 +44,7 @@ import { parseBlocks, resolveTheme } from '../../src/lib/themes/parse.ts';
 import { engineDir, loadConfig } from '../../src/lib/data/sources/config.ts';
 import { byKey } from '../../src/lib/data/helpers/guards.ts';
 import { setAppearance, themeClass, themes } from '../../src/lib/state/shared/words/appearance.ts';
-import { scratchDir, sweepScratch } from '../fixtures/scratch.ts';
+import { plantScratch, sweepScratch } from '../fixtures/scratch.ts';
 
 afterAll(sweepScratch);
 
@@ -498,7 +498,6 @@ describe('the surfaces a component may fill and paint on', () => {
         ).toEqual([]);
     });
 
-    // revert: src/lib/themes/themes.css "--c-scm-added: #81b88b;" => delete
     it('defines the four Source Control hues in the root and in every theme block', () => {
         const scm = ['--c-scm-added', '--c-scm-modified', '--c-scm-deleted', '--c-scm-conflict'];
         const themed = Object.entries(blocks).filter(
@@ -575,19 +574,8 @@ describe('the colour rule', () => {
     });
 
     it('refuses a raw colour, a hue as text, and a token nothing sets', () => {
-        const dir = scratchDir('oculus-colours-');
-        expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
-
-        const write = (rel: string, body: string) => {
-            const full = join(dir, rel);
-            expect(resolve(full).startsWith(resolve(dir) + sep)).toBe(true);
-            mkdirSync(dirname(full), { recursive: true });
-            writeFileSync(full, body);
-        };
-
-        write(
-            'ui/Good.svelte',
-            [
+        const dir = plantScratch('oculus-colours-', {
+            'ui/Good.svelte': [
                 '<span class="a" style="--tone: var(--c-teal)"></span>',
                 '<style>',
                 '    .a { color: var(--c-teal-txt); background: var(--tone); }',
@@ -597,30 +585,26 @@ describe('the colour rule', () => {
                 '    .e { background: color-mix(in srgb, var(--panel) var(--wall-panel), transparent); }',
                 '    .f { background: color-mix(in srgb, var(--panel) var(--wall-popover), transparent); }',
                 '</style>'
-            ].join('\n')
-        );
-        write('ui/Hex.svelte', '<style>\n    .a { color: #ff0000; }\n</style>');
-        write('ui/Named.svelte', '<style>\n    .a { border-color: rebeccapurple; }\n</style>');
-        write('ui/Hue.svelte', '<style>\n    .a { color: var(--c-teal); }\n</style>');
-        write('ui/Unset.svelte', '<style>\n    .a { background: var(--nonesuch); }\n</style>');
-        write(
-            'ui/Indirect.svelte',
-            '<span style="--tone: #ff0000"></span>\n<style>\n    .a { background: var(--tone); }\n</style>'
-        );
-        write('ui/Inline.svelte', '<span style="color: #00ff00"></span>');
-        // The allowance is the four surfaces and no other token: a hue or an edge colour mixed the
-        // same way is a colour the contrast test has no measurement for, and a `color-mix` as text
-        // is refused whatever it holds.
-        write(
-            'ui/Mix.svelte',
-            [
+            ].join('\n'),
+            'ui/Hex.svelte': '<style>\n    .a { color: #ff0000; }\n</style>',
+            'ui/Named.svelte': '<style>\n    .a { border-color: rebeccapurple; }\n</style>',
+            'ui/Hue.svelte': '<style>\n    .a { color: var(--c-teal); }\n</style>',
+            'ui/Unset.svelte': '<style>\n    .a { background: var(--nonesuch); }\n</style>',
+            'ui/Indirect.svelte':
+                '<span style="--tone: #ff0000"></span>\n<style>\n    .a { background: var(--tone); }\n</style>',
+            'ui/Inline.svelte': '<span style="color: #00ff00"></span>',
+            // The allowance is the four surfaces and no other token: a hue or an edge colour mixed
+            // the same way is a colour the contrast test has no measurement for, and a `color-mix`
+            // as text is refused whatever it holds.
+            'ui/Mix.svelte': [
                 '<style>',
                 '    .a { background: color-mix(in srgb, var(--c-teal) var(--wall-panel), transparent); }',
                 '    .b { color: color-mix(in srgb, var(--panel) var(--wall-panel), transparent); }',
                 '    .c { background: color-mix(in srgb, var(--accent) var(--wall-panel), transparent); }',
                 '</style>'
             ].join('\n')
-        );
+        });
+        expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
 
         expect(findColourViolations(dir, ['ui'])).toEqual([
             'ui/Hex.svelte: .a: color: #ff0000 (raw colour)',

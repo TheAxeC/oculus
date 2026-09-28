@@ -316,7 +316,6 @@ describe('text keys', () => {
         expect(missing).toEqual([]);
     });
 
-    // revert: tests/checks/source/keys.test.ts "if (registration.badgeMark !== undefined) allowed.add(registration.badgeMark);" => delete
     it('has a reader for every catalog key', () => {
         const allowed = new Set(found.flatMap((call) => (call.key === null ? [] : [call.key])));
         for (const registration of views()) {

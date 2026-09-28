@@ -242,7 +242,6 @@ describe('search, scroll, and sheet routing', () => {
         expect(press('g', first.state, 2000 + DOUBLE_G_MS).action).toBe(null);
     });
 
-    // revert: src/lib/shell/keys/keys.ts "if (event.key === 'n') return { action: { kind: 'new-session' }, state: cleared };" => delete
     it('starts a new session on n, and leaves n to a field being typed in', () => {
         expect(press('n').action).toEqual({ kind: 'new-session' });
         expect(press('n', initialKeyState(), 1000, { typing: true }).action).toBe(null);

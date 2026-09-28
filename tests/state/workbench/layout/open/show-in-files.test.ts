@@ -6,8 +6,7 @@
 // Nothing here touches the network or the real hub: the reader is a stub over synthetic listings,
 // and the store's fetch a stub that records what it was asked. What this does NOT cover: the effect
 // of views/sources/files/tree/ShowPath.svelte that runs the read and the scroll, and the controls
-// pressed on the cards, which need a DOM and are tests/browser/sources/show-in-files.spec.ts. Each
-// case names the change that turns it red.
+// pressed on the cards, which need a DOM. Each case names the change that turns it red.
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {

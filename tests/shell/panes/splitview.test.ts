@@ -5,7 +5,7 @@
 //
 // What this does NOT cover: the sash's pointer behaviour and the drag arithmetic. There is no DOM
 // in this suite, so a pointer drag cannot be simulated here; svelte-check and the page are what
-// exercise Sash, and the drag itself is checked in a browser.
+// exercise Sash, and the drag itself needs a DOM and is not run here.
 
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createRawSnippet } from 'svelte';

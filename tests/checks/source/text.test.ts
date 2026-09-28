@@ -63,7 +63,6 @@ describe('t', () => {
         expect(() => t('app.missing')).toThrow(/app\.missing/);
     });
 
-    // revert: src/lib/state/shared/words/text.ts "return value;" => return value.replace(/\{G\.\w+\}/g, 'X');
     it('draws a catalog line as written, with nothing filled into a glyph-shaped token', () => {
         setCatalog({ 'radar.head': '{G.litwatch} watch' });
         setGlyphs(GLYPHS);
@@ -78,7 +77,6 @@ const { config } = loadConfig(engineDir());
 const GLYPHS = glyphCatalog(config);
 
 describe('the catalog', () => {
-    // revert: config/text/ui.yml "confirm_cancel: Cancel" => confirm_cancel: '{G.cross} Cancel'
     it('carries no glyph token in any line, since every glyph is drawn beside the words', () => {
         const lines = Object.entries(textCatalog(config));
         expect(lines.filter(([, line]) => line.includes('{G.')).map(([key]) => key)).toEqual([]);
@@ -86,7 +84,6 @@ describe('the catalog', () => {
 });
 
 describe('glyph', () => {
-    // revert: src/lib/state/shared/words/text.ts "return standIn;" => return glyphMode() === 'ascii' ? standIn : name;
     it('answers the stand-in config/catalogs/glyphs.yml gives a name, in either mode', () => {
         setGlyphs(GLYPHS);
         setGlyphMode('icon');
@@ -97,14 +94,12 @@ describe('glyph', () => {
         expect(glyph('check')).toBe('+');
     });
 
-    // revert: config/catalogs/glyphs.yml "crt: \"[/]\"" => crt: ""
     it('holds a dedicated glyph with a stand-in for the three appearance toggles', () => {
         for (const name of ['crt', 'wallpaper', 'icons']) {
             expect(GLYPHS[name]).toMatch(/^[\x20-\x7E]+$/);
         }
     });
 
-    // revert: src/lib/state/shared/words/text.ts "if (standIn === undefined) throw new Error(`glyph not in config/catalogs/glyphs.yml: ${name}`);" => delete
     it('throws on a name config/catalogs/glyphs.yml does not hold, in either mode', () => {
         setGlyphs(GLYPHS);
         setGlyphMode('ascii');
@@ -115,7 +110,6 @@ describe('glyph', () => {
 });
 
 describe('bracketedGlyph', () => {
-    // revert: src/lib/state/shared/words/text.ts "if (glyphMode() !== 'ascii') return false;" => delete
     it('reads a bracketed stand-in as a tag only while the stand-ins are drawn', () => {
         setGlyphs(GLYPHS);
         setGlyphMode('ascii');

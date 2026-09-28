@@ -114,7 +114,6 @@ describe('the account folders', () => {
         const home = new Home();
         const work = home.dir('claude-work');
         const cli = home.dir('codex');
-        // revert: src/lib/server/sessions/folders.ts "stores: distinctFolders(claude.map((account) => join(account.dir, 'projects')))," => stores: distinctFolders(claude.map((account) => join(account.dir, 'sessions'))),
         expect(sessionFolders([claude(work, 'work'), codex(cli, 'codex')])).toEqual({
             stores: [join(work, 'projects')],
             registries: [join(work, 'sessions')],
@@ -126,7 +125,6 @@ describe('the account folders', () => {
         const home = new Home();
         const real = home.dir('claude');
         const other = join(home.root, 'linked');
-        // revert: src/lib/server/sessions/folders.ts "const real = realFolder(folder);" => const real = resolve(folder);
         symlinkSync(real, other);
         expect(distinctFolders([real, other, '', real])).toEqual([real]);
         expect(distinctFolders([other, real])).toEqual([other]);
@@ -139,7 +137,6 @@ describe('the stores read every account', () => {
         const first = home.dir('claude');
         const second = home.dir('claude-work');
         home.transcript('claude-work', SECOND, 'from the second account');
-        // revert: src/lib/server/sessions/folders.ts "registries: distinctFolders(claude.map((account) => join(account.dir, 'sessions')))," => registries: distinctFolders(claude.slice(0, 1).map((account) => join(account.dir, 'sessions'))),
         home.enrol('claude-work', SECOND, PID);
         const [record] = home.scan([claude(first, 'claude'), claude(second, 'work')]);
         expect(record.id).toBe(SECOND);
@@ -153,7 +150,6 @@ describe('the stores read every account', () => {
         const first = home.dir('claude');
         const second = home.dir('claude-work');
         home.transcript('claude', FIRST, 'first account');
-        // revert: src/lib/server/sessions/folders.ts "stores: distinctFolders(claude.map((account) => join(account.dir, 'projects')))," => stores: distinctFolders(claude.slice(0, 1).map((account) => join(account.dir, 'projects'))),
         home.transcript('claude-work', SECOND, 'second account');
         const ids = home.scan([claude(first, 'claude'), claude(second, 'work')]).map((r) => r.id);
         expect(ids.sort()).toEqual([FIRST, SECOND]);
@@ -164,7 +160,6 @@ describe('the stores read every account', () => {
         const first = home.dir('claude');
         const second = home.dir('claude-work');
         home.transcript('claude', FIRST, 'shared');
-        // revert: src/lib/server/sessions/folders.ts "const real = realFolder(folder);" => const real = resolve(folder);
         symlinkSync(join(first, 'projects'), join(second, 'projects'));
         const records = home.scan([claude(first, 'claude'), claude(second, 'work')]);
         expect(records.map((record) => record.id)).toEqual([FIRST]);
@@ -176,7 +171,6 @@ describe('the stores read every account', () => {
         const first = home.dir('codex');
         const second = home.dir('codex-work');
         home.rollout('codex', FIRST);
-        // revert: src/lib/server/sessions/folders.ts "codexStores: distinctFolders(codex.map((account) => join(account.dir, 'sessions')))" => codexStores: distinctFolders(codex.slice(0, 1).map((account) => join(account.dir, 'sessions')))
         home.rollout('codex-work', SECOND);
         const records = home.scan([codex(first, 'codex'), codex(second, 'work')]);
         expect(records.map((record) => record.id).sort()).toEqual([FIRST, SECOND]);

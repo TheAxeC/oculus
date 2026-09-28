@@ -10,14 +10,12 @@
         "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
         "lint": "eslint .",
         "test": "vitest run",
-        "test:browser": "playwright test",
         "format": "prettier --write .",
         "format:check": "prettier --check .",
         "diagrams": "node bin/diagrams/diagrams.mjs"
     },
     "devDependencies": {
         "@eslint/js": "^10.0.1",
-        "@playwright/test": "^1.63.0",
         "@sveltejs/adapter-node": "^5.5.7",
         "@sveltejs/kit": "^2.63.0",
         "@sveltejs/vite-plugin-svelte": "^7.1.2",

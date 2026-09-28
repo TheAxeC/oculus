@@ -92,7 +92,6 @@ function inertDependencies(): Partial<ContextDependencies> {
 }
 
 describe('ServerContext', () => {
-    // revert: src/lib/server/root/context.ts "usageRefresh.close();" => delete
     it('builds and closes each process-owned object once and carries its token', () => {
         const closes = Array.from({ length: 11 }, () => vi.fn());
         const hub = new Hub();
@@ -195,7 +194,6 @@ describe('ServerContext', () => {
             watchUsage
         });
 
-        // revert: src/lib/server/root/context.ts "registerFilesChannel(hub);" => delete
         expect(merge).toHaveBeenCalledWith('files', expect.any(Function));
         expect(context.token).toBe('context-token');
         for (const built of [
@@ -216,7 +214,6 @@ describe('ServerContext', () => {
         }
         // The sessions watcher reads every account local.yml names, so a session of the second
         // Claude account is read from that account's own registry and transcripts.
-        // revert: src/lib/server/root/context.ts "...sessionFolders(local.accounts)," => delete
         expect(watchSessions.mock.calls[0][1]).toMatchObject({
             stores: ['/machine/.claude/projects', '/machine/.claude-work/projects'],
             registries: ['/machine/.claude/sessions', '/machine/.claude-work/sessions'],
@@ -263,7 +260,6 @@ describe('ServerContext', () => {
         for (const close of closes) expect(close).toHaveBeenCalledTimes(1);
     });
 
-    // revert: src/lib/server/root/context.ts "onSessionsChange: sessions.onChange" => onSessionsChange: undefined
     it('keeps session rescan signals inside their owning context', () => {
         const rescans: (() => void)[] = [];
         const refreshes = [vi.fn(noopAsync), vi.fn(noopAsync)];
@@ -308,7 +304,6 @@ describe('ServerContext', () => {
         second.close();
     });
 
-    // revert: src/lib/server/root/context.ts "local.calendars = next.calendars;" => delete
     it('hands the account lists of a local.yml written again to both pollers and the routes', () => {
         let rows: LocalConfig['calendars'] = [];
         const changed: (() => void)[] = [];
@@ -349,7 +344,6 @@ describe('ServerContext', () => {
         context.close();
     });
 
-    // revert: src/lib/server/root/context.ts "opener: local.openBin === undefined ? macOpenAddress : addressOpener(local.openBin)," => opener: macOpenAddress,
     it('hands an address to the program open_bin names, and to macOS open when it names none', async () => {
         const dir = scratchDir('oculus-open-bin-');
         expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);

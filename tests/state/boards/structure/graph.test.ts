@@ -424,7 +424,6 @@ describe('the Map chips over a graph', () => {
         edges: base.edges.slice(0, 1)
     };
 
-    // revert: src/lib/state/boards/structure/graph.ts "const rest = names.filter((type) => !ordered.includes(type)).sort();" => const rest = names.filter((type) => !ordered.includes(type));
     it('list the configured types first, then the rest by name, each counted over the drawn graph', () => {
         expect(typeFilters(base, drawn, ['idea', 'none', 3], [])).toEqual([
             { type: 'idea', count: 0, shown: true },
@@ -445,7 +444,6 @@ describe('the Map chips over a graph', () => {
         ]);
     });
 
-    // revert: src/lib/state/boards/structure/graph.ts "...order.filter((id) => ids.includes(id))," => ...order.filter((id) => ids.includes(id)).reverse(),
     it('list the lines in registry order, each counted over the drawn graph', () => {
         const snapshot = {
             entities: { pillars: { L1: {}, L2: {} }, projects: {} }
@@ -456,7 +454,6 @@ describe('the Map chips over a graph', () => {
         ]);
     });
 
-    // revert: src/lib/state/boards/structure/graph.ts "if ((project.tier === 'archive' || project.tier === 'coauthor') && project.type) {" => if (project.type) {
     it('offer a toggle per archived or coauthor type, with the colour the config gives it', () => {
         const snapshot = {
             entities: {
@@ -474,7 +471,6 @@ describe('the Map chips over a graph', () => {
         expect(archiveStatuses(null, null)).toEqual([]);
     });
 
-    // revert: src/lib/state/boards/structure/graph.ts "(project) => project.pillarIds.length > 0 || project.relatedIds.length > 0" => (project) => project.pillarIds.length > 0
     it('say the graph has an edge when any project names a line or a related project', () => {
         const of = (projects: Record<string, unknown>) =>
             ({ entities: { projects } }) as unknown as Parameters<typeof hasRelationships>[0];

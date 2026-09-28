@@ -3,14 +3,12 @@
 // names, what one instance keeps, and which form a press or an answer leaves open. Where a key
 // moves is ui/tree/tree-keys.ts, tests/ui/tree/tree-keys.test.ts.
 //
-// What this does NOT cover: the rows drawn and the keys pressed, which are
-// tests/views/sources/files/files.test.ts and tests/browser/sources/files.spec.ts; and the forms
-// pressed, which is tests/browser/sources/files-forms.spec.ts: the bookmark and root forms kept
-// across a switch and a reload, the drafts forgotten by the add control, by a row's edit moving to
-// another bookmark and by the bookmark's removal, the form remounted when an edit form opens over
-// the add form, and a held root or bookmark answer landing after another form, the same root form
-// reopened or a tab switch. The close question over a typed root line is
-// tests/browser/workbench/unsaved-forms.spec.ts.
+// What this does NOT cover: the rows drawn, which are tests/views/sources/files/files.test.ts; the
+// keys pressed; and the forms pressed: the bookmark and root forms kept across a switch and a
+// reload, the drafts forgotten by the add control, by a row's edit moving to another bookmark and
+// by the bookmark's removal, the form remounted when an edit form opens over the add form, and a
+// held root or bookmark answer landing after another form, the same root form reopened or a tab
+// switch; nor the close question over a typed root line.
 
 import { beforeEach, describe, expect, it } from 'vitest';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
@@ -72,7 +70,6 @@ function root(key: string, fixed = true): FsRoot {
     return { key, dir: `/tmp/${key}`, fixed };
 }
 
-// Each case names the change to state/sources/fs.ts that turns it red.
 describe('the explorer over the rows', () => {
     const listings: Record<string, FsEntry[]> = {
         'hub:': [dir('code'), dir('docs'), file('README.md')],
@@ -185,13 +182,11 @@ describe('the explorer over the rows', () => {
         expect(collapseRoot([...open, 'hubby:x'], 'hub')).toEqual(['hub:', 'notes:', 'hubby:x']);
     });
 
-    // revert: src/lib/state/sources/fs.ts "const under = from === '' ? own : `${own}/`;" => const under = own;
     it('closes only the folders under the followed folder, leaving it and its neighbours open', () => {
         const held = ['hub:', 'hub:a', 'hub:a/b', 'hub:a/b/c', 'hub:ab', 'hub:z'];
         expect(collapseRoot(held, 'hub', 'a')).toEqual(['hub:', 'hub:a', 'hub:ab', 'hub:z']);
     });
 
-    // revert: src/lib/state/sources/fs.ts "hidden: map.hidden === true," => hidden: false,
     it('reads the two toggles an instance keeps, and false for anything that is not true', () => {
         expect(filesViewOf({ hidden: true, ignored: true })).toMatchObject({
             hidden: true,
@@ -376,7 +371,6 @@ describe('the forms of the file browser', () => {
         expect(editedGone(NO_FORM, loaded, false)).toBe(false);
     });
 
-    // revert: src/lib/state/sources/fs.ts "return { ...held, ...part };" => return { ...part };
     // Revert: in patchedFilesView of state/sources/fs.ts, write the part over nothing.
     it('writes part of a file browser over whatever else its record holds', () => {
         expect(patchedFilesView({ filter: 'x', form: 'root' }, { form: 'bookmark' })).toEqual({
@@ -389,7 +383,6 @@ describe('the forms of the file browser', () => {
         expect(patchedFilesView('a word', { editing: 'one' })).toEqual({ editing: 'one' });
     });
 
-    // revert: src/lib/state/sources/fs.ts "if (marks.loading || marks.error !== '' || saving) return false;" => if (marks.loading || marks.error !== '') return false;
     // Revert: in editedGone of state/sources/fs.ts, drop `saving` from the line that answers false.
     it('leaves the form a save of its own is out from until that answer lands', () => {
         const loaded = { entries: [{ id: 'the manual renamed' }], loading: false, error: '' };

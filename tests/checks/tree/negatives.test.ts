@@ -1,11 +1,11 @@
 // Layer 4, test. An assertion that something is absent, with nothing saying what makes the absence
 // right, is how a defect gets written down as the expected result.
 //
-// Every case under tests/views/ and tests/browser/ is read for the four shapes an absence is
-// asserted in: `.not.toContain(`, `.not.toHaveAttribute(`, `.not.toBeVisible(` and
-// `toHaveCount(0)`. Each one needs a comment directly above it saying why the thing is not there,
-// so that a reader meets the reason beside the assertion rather than reconstructing it from the
-// view; a comment of several lines is read as one reason.
+// Every case under tests/views/ is read for the four shapes an absence is asserted in:
+// `.not.toContain(`, `.not.toHaveAttribute(`, `.not.toBeVisible(` and `toHaveCount(0)`. Each one
+// needs a comment directly above it saying why the thing is not there, so that a reader meets the
+// reason beside the assertion rather than reconstructing it from the view; a comment of several
+// lines is read as one reason.
 //
 // A comment that restates the assertion is refused: it may not carry the literal the assertion
 // names, counting a literal of eight characters or more, since that is a selector, an attribute or
@@ -13,10 +13,10 @@
 // tell is a sentence that reads as a reason and says nothing about the fixture; that is the
 // reader's.
 //
-// Every file under those two folders carries a reason above each absence it asserts. The entries in
-// allow-negatives.ts are the exception, the absences of two files another step is holding open;
-// each entry stands for one absence and is keyed on what that absence asserts, so explaining one
-// buys no room for another, and an entry goes when its absence gains its reason.
+// Every file under that folder carries a reason above each absence it asserts. An entry in
+// allow-negatives.ts is an exception to that; each entry stands for one absence and is keyed on
+// what that absence asserts, so explaining one buys no room for another, and an entry goes when its
+// absence gains its reason.
 
 import { mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -157,12 +157,10 @@ function scratch(body: string): string {
 
 describe('an absence asserted with no reason', () => {
     it('is held to the counts the tree had when the check landed', () => {
-        // revert: tests/checks/tree/allow-negatives.ts "'browser/sources/files-forms.spec.ts': [" +1 => delete
-        expect(findGrowth(TESTS, ['views', 'browser'])).toEqual([]);
+        expect(findGrowth(TESTS, ['views'])).toEqual([]);
     });
 
     it('catches each of the four shapes', () => {
-        // revert: tests/checks/tree/negatives.test.ts "const ABSENCE = /\\.not\\.toContain\\(|\\.not\\.toHaveAttribute\\(|\\.not\\.toBeVisible\\(|toHaveCount\\(0\\)/;" => const ABSENCE = /\.not\.toContain\(/;
         const dir = scratch(
             [
                 "it('draws none of it', () => {",
@@ -182,7 +180,6 @@ describe('an absence asserted with no reason', () => {
     });
 
     it('passes an absence whose reason stands above it, in either comment shape', () => {
-        // revert: tests/checks/tree/negatives.test.ts "if (!lines.every(commentLine)) return false;" => return false;
         const dir = scratch(
             [
                 "it('draws none of it', () => {",
@@ -197,7 +194,6 @@ describe('an absence asserted with no reason', () => {
     });
 
     it('refuses a comment that restates the assertion, and one too short to say anything', () => {
-        // revert: tests/fixtures/reason.ts "if (words.length < 4) return false;" => if (words.length < 0) return false;
         const dir = scratch(
             [
                 "it('draws none of it', () => {",
@@ -227,7 +223,6 @@ describe('an absence asserted with no reason', () => {
     });
 
     it('reads the literals of a line holding two strings, and not the gap between them', () => {
-        // revert: tests/fixtures/reason.ts "if (held.length >= 8) found.push(held);" => if (held.length >= 8) found.push(text.slice(at + 1, end - 1));
         const line =
             "await expect(page.getByRole('tab', { name: 'literature-radar.yml' })).toHaveCount(0);";
         expect(literalsIn(line)).toEqual(['literature-radar.yml']);
@@ -247,7 +242,6 @@ describe('an absence asserted with no reason', () => {
     });
 
     it('holds one entry for one absence, so explaining one buys no room for another', () => {
-        // revert: tests/checks/tree/negatives.test.ts "left.splice(at, 1);" => left.push(key);
         const dir = scratch(
             [
                 "it('draws none of it', () => {",
@@ -276,12 +270,10 @@ describe('an absence asserted with no reason', () => {
         ]);
     });
 
-    // revert: tests/checks/tree/negatives.test.ts "else if (/\\.(test|spec)\\.ts$/.test(entry.name)) found.push(rel);" => found[rel] = [...(found[rel] ?? []), literalsIn(lines[at]).join(' | ')];
     // Revert: in bareAbsences of tests/checks/tree/negatives.test.ts, key an absence naming no
     // literal on the empty string, and two of them in one file become interchangeable: explaining
     // one frees the slot the other new one fills.
     it('tells two absences apart when neither names a literal to key on', () => {
-        // revert: tests/checks/tree/negatives.test.ts "found[rel] = [...(found[rel] ?? []), absenceKey(lines[at])];" => found[rel] = [...(found[rel] ?? []), ''];
         const dir = scratch(
             [
                 "it('draws none of it', () => {",
@@ -308,7 +300,6 @@ describe('an absence asserted with no reason', () => {
     // absence stands under, and the list keeps a line for an absence that gained its reason long
     // ago.
     it('says when an entry stands for an absence that is not there any more', () => {
-        // revert: tests/checks/tree/negatives.test.ts "found.push(`${rel} lists an absence that is not there any more: ${stale}`);" => found.push('');
         const dir = scratch(
             [
                 "it('draws none of it', () => {",
@@ -326,13 +317,11 @@ describe('an absence asserted with no reason', () => {
     });
 
     it('holds the allow list to files the tree still has', () => {
-        // revert: tests/checks/tree/negatives.test.ts "else if (/\\.(test|spec)\\.ts$/.test(entry.name)) found.push(rel);" => delete
-        const held = new Set([...testFiles(TESTS, 'views'), ...testFiles(TESTS, 'browser')]);
+        const held = new Set(testFiles(TESTS, 'views'));
         expect(Object.keys(NEGATIVES).filter((rel) => !held.has(rel))).toEqual([]);
     });
 
     it('reads a reason written over two lines as one', () => {
-        // revert: tests/checks/tree/negatives.test.ts "while (from > 0 && commentLine(lines[from - 1])) from -= 1;" => delete
         const lines = [
             '    // the tab was closed before this ran, so what it drew',
             '    // is gone',

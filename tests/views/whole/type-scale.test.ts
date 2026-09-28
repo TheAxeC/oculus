@@ -306,7 +306,6 @@ const PASS_THROUGH: Record<string, string> = {
 
 describe('the view type scale', () => {
     it('lists every view file in the audit', () => {
-        // revert: tests/views/whole/type-scale.test.ts "'system/help/Diagram.svelte': '.note=fs-md'," => delete
         expect(
             files(ROOT)
                 .map((file) => file.slice(`${ROOT}/`.length))
@@ -314,7 +313,6 @@ describe('the view type scale', () => {
         ).toEqual(Object.keys(VIEWS).sort());
     });
 
-    // revert: tests/views/whole/type-scale.test.ts "'src/lib/ui/tree/TreeItem.svelte': '.detail, .count, .end=fs-sm'," => delete
     it('audits that every ui component is listed in the pass-through audit', () => {
         const ui = 'src/lib/ui';
         expect(files(ui).sort()).toEqual(
@@ -331,10 +329,8 @@ describe('the view type scale', () => {
     }
 
     for (const [file, expected] of Object.entries(PASS_THROUGH)) {
-        // A case named from the loop, so the revert is run by hand rather than by
-        // bin/revert-check/revert-check.mjs, which resolves a case by its name: drop
-        // `font-size: var(--fs-lg)` from `.face` in ui/tabs/TabFace.svelte, or put a font size on
-        // `.strip` in ui/tabs/Tabs.svelte.
+        // A case of this loop goes red when `font-size: var(--fs-lg)` is dropped from `.face` in
+        // ui/tabs/TabFace.svelte, or a font size is put on `.strip` in ui/tabs/Tabs.svelte.
         it(`sets every pass-through role in ${file}`, () => {
             expect(typeRules(file)).toBe(expected);
         });

@@ -3,8 +3,8 @@
 //
 // The redraw itself is a browser fact and is not asserted here: vitest runs this suite in node,
 // where Svelte is compiled for the server and an $effect never runs, so the effect in +page.svelte
-// is read as source and its wiring is what is checked. What it does on screen is the browser
-// suite's.
+// is read as source and its wiring is what is checked. What it does on screen needs a DOM and is
+// not run here.
 
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -38,8 +38,6 @@ function pageData() {
 }
 
 describe('the page load', () => {
-    // revert: src/routes/+page.ts "setCatalog(data.text);" => delete
-    // revert: src/routes/+page.ts "return { collections: data.collections, seed: data.seed, token: data.token };" => return { collections: data.collections, token: data.token };
     it('installs the catalogs the server shipped and raises the generation once', () => {
         const before = configGeneration();
         const result = load({ data: pageData() } as unknown as Parameters<typeof load>[0]);
@@ -128,7 +126,6 @@ describe('the page effect that follows a config push', () => {
 });
 
 describe('the page server load', () => {
-    // revert: src/routes/+page.server.ts "host: locals.server.host" => host: { name: '', address: '' }
     it('ships the host the server context holds on locals', () => {
         const hub = new Hub();
         // A held push of another configuration is what makes the seed carry the read and its host.

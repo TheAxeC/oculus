@@ -3,8 +3,7 @@
 //
 // The catalog and the glyphs are the real config; the instance state is synthetic. What this does
 // NOT cover: the handing-on of a text file to the source tab. It runs in an effect over the file's
-// own first bytes, which a server rendering runs neither of; tests/browser/sources/files.spec.ts
-// opens a bookmark of a Markdown file in this view and waits for the source tab it becomes.
+// own first bytes, which a server rendering runs neither of.
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render } from 'svelte/server';
@@ -146,8 +145,7 @@ describe('one file as its own tab', () => {
 });
 
 // The control that hands the file to its program on this machine. What pressing it posts, and the
-// sentence a refusal leaves, need a DOM and a server: tests/browser/sources/open-file.spec.ts
-// presses it.
+// sentence a refusal leaves, need a DOM and a server, and no case here presses it.
 describe('the control that opens a file in its program', () => {
     afterEach(() => {
         vi.unstubAllGlobals();
@@ -188,7 +186,6 @@ describe('the control that opens a file in its program', () => {
         return body.split(`<span class="label">${catalog['file.open_program']}</span>`).length - 1;
     }
 
-    // revert: src/lib/views/shared/links/ProgramButton.svelte "glyph={t('file.open_program_glyph')}" => glyph="copy"
     it('draws it in the toolbar and beside the download for a .docx, as ui/controls/ToolButton', async () => {
         const body = await held('drafts/report.docx', false);
 

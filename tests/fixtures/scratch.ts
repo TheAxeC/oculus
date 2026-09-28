@@ -3,9 +3,8 @@
 //
 // Every scratch directory a test makes comes from here, so that a run leaves the temporary
 // directory with the count it found. The sweep is registered by the suite that uses it, with its
-// own runner: a vitest file calls afterAll(sweepScratch) and a browser spec calls
-// test.afterAll(sweepScratch), so one helper serves both layers and a red case takes its directory
-// with it either way.
+// own runner: a vitest file calls afterAll(sweepScratch), so a red case takes its directory with
+// it.
 //
 // The path is checked to be inside the system temporary directory before it is handed back, which
 // is what keeps a case that joins a path onto it from writing into the checkout or the hub.

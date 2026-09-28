@@ -61,7 +61,6 @@ async function send(into: WriteTarget, rail: unknown): Promise<Response> {
 
 describe('the rail write', () => {
     it('writes the list in its order and keeps every other line of the file', async () => {
-        // revert: src/lib/server/edit/writes/rail.ts "const edited = setItems(source, null, RAIL, wanted.map(itemText));" => const edited = setItems(source, null, RAIL, wanted.slice(0, 1).map(itemText));
         const into = railTarget();
         const response = await send(into, [INBOX, FOCUS]);
         expect(response.status).toBe(200);
@@ -75,7 +74,6 @@ describe('the rail write', () => {
     });
 
     it('refuses a page named twice and leaves the file as it was', async () => {
-        // revert: src/lib/server/edit/writes/rail.ts "if (read.problems.length > 0) return { error: 'invalid' };" => delete
         const into = railTarget();
         const response = await send(into, [FOCUS, { ...FOCUS, label: 'Again' }]);
         expect(response.status).toBe(400);
@@ -84,7 +82,6 @@ describe('the rail write', () => {
     });
 
     it('refuses a page no arrangement of the file holds, and an empty one', async () => {
-        // revert: src/lib/server/edit/writes/rail.ts "const read = readRail(rail, arrangementKeys(parsed.arrangements), glyphs);" => const read = readRail(rail, rail.map((one) => one.page), glyphs);
         const into = railTarget();
         expect((await send(into, [{ ...FOCUS, page: 'nowhere' }])).status).toBe(400);
         expect((await send(into, [{ ...FOCUS, page: '' }])).status).toBe(400);
@@ -92,14 +89,12 @@ describe('the rail write', () => {
     });
 
     it('refuses a glyph the vocabulary does not hold', async () => {
-        // revert: src/lib/server/edit/writes.ts "outcome = writeRail(into.layoutFile, rail.rail, into.glyphs);" => outcome = writeRail(into.layoutFile, rail.rail, [...into.glyphs, 'nonesuch']);
         const into = railTarget();
         expect((await send(into, [{ ...FOCUS, glyph: 'nonesuch' }])).status).toBe(400);
         expect(layoutOf(into)).toBe(LAYOUT);
     });
 
     it('reads no write in a body whose rows are not three strings', () => {
-        // revert: src/lib/server/edit/writes/bodies.ts "if (typeof label !== 'string' || typeof glyph !== 'string' || typeof page !== 'string') {" => if (typeof label !== 'string') {
         expect(railWrite({ kind: 'rail', rail: [FOCUS] })).toEqual({ kind: 'rail', rail: [FOCUS] });
         expect(railWrite({ kind: 'rail', rail: [{ ...FOCUS, page: 3 }] })).toBe(null);
         expect(railWrite({ kind: 'rail', rail: 'focus' })).toBe(null);
@@ -107,7 +102,6 @@ describe('the rail write', () => {
     });
 
     it('answers unwritable for a file that is not there, and writes nothing', async () => {
-        // revert: src/lib/server/edit/writes/rail.ts "source = readFileSync(file, 'utf8');" +2 => return { error: 'invalid' };
         const into = { ...railTarget(), layoutFile: `${railTarget().layoutFile}.gone` };
         const response = await send(into, [FOCUS]);
         expect(response.status).toBe(500);
@@ -115,8 +109,6 @@ describe('the rail write', () => {
     });
 
     it('writes nothing and records nothing for the list the file already holds', async () => {
-        // revert: src/lib/server/edit/writes/rail.ts "if (edited === source) return { changed: [], refused: [] };" => delete
-        // revert: src/lib/server/edit/list-edit.ts "const firstItem = isSeq(held?.value) ? rangeOf(held.value.items.at(0)) : null;" => const firstItem = null;
         const into = railTarget();
         const response = await send(into, [FOCUS]);
         expect(await response.json()).toEqual({ ok: true, changed: [], refused: [] });
@@ -124,7 +116,6 @@ describe('the rail write', () => {
     });
 
     it('records the change, and the undo puts the list back through the same writer', async () => {
-        // revert: src/lib/server/edit/writes/undo.ts "const outcome = writeRail(into.layoutFile, railRows(change.before) ?? [], into.glyphs);" => const outcome = writeRail(into.layoutFile, [], into.glyphs);
         const into = railTarget();
         expect((await send(into, [FOCUS, INBOX])).status).toBe(200);
         const [change] = changesOf(into);
@@ -142,7 +133,6 @@ describe('the rail write', () => {
     });
 
     it('refuses the undo once the list has been edited since', async () => {
-        // revert: src/lib/server/edit/writes/undo.ts "return rail === null ? { found: false, value: null } : { found: true, value: rail };" => return { found: true, value: change.after };
         const into = railTarget();
         await send(into, [FOCUS, INBOX]);
         const [change] = changesOf(into);

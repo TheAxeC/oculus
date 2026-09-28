@@ -6,7 +6,7 @@
 //
 // What this does NOT cover: how the page makes the words, which is
 // tests/state/workbench/navigation/status.test.ts's, and an item pressed, its size on screen and a
-// menu opened, which are tests/browser/status/'s.
+// menu opened.
 
 import { render } from 'svelte/server';
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -92,7 +92,6 @@ function sourceTab(said: EditorStatus = SOURCE): string {
 
 describe('the status bar', () => {
     it('draws the left group and the right group, every item in its place', () => {
-        // revert: src/lib/shell/status/status-items.ts "export const LEFT_ITEMS = ['host', 'branch', 'sync', 'findings', 'hpc', 'usage', 'server'] as const;" => export const LEFT_ITEMS = ['branch', 'host', 'sync', 'findings', 'hpc', 'usage', 'server'] as const;
         sourceTab({ ...SOURCE, blame: 'Ada, 2 days ago: Fix the reader' });
         const body = draw({ ...STATUS, repo: REPO });
         const left = body.slice(
@@ -115,7 +114,6 @@ describe('the status bar', () => {
     });
 
     it('draws the words the page hands it, each item a glyph, short words and long ones in its tooltip', () => {
-        // revert: src/lib/shell/status/StatusBar.svelte "title={t('statusbar.hpc_tip', status.hpc.long)}" => title={t('statusbar.hpc_tip', status.hpc.short)}
         const body = draw();
         expect(item(body, 'host')).toContain('data-glyph="host"');
         expect(item(body, 'host')).toContain('>desk</span>');
@@ -143,14 +141,12 @@ describe('the status bar', () => {
     });
 
     it('says the machine is not known yet before the first config push', () => {
-        // revert: src/lib/shell/status/StatusBar.svelte "label={status.host?.name ?? t('statusbar.host_waiting')}" => label={status.host?.name ?? ''}
         const body = draw({ ...STATUS, host: null });
         expect(item(body, 'host')).toContain(`>${t('statusbar.host_waiting')}</span>`);
         expect(body).toContain(t('statusbar.host_waiting_tip'));
     });
 
     it('draws the branch and how far it is behind and ahead, and no sync for a branch that tracks none', () => {
-        // revert: src/lib/shell/status/RepoItems.svelte "{#if sync && repo.tracked && !detached}" => {#if sync && !detached}
         const body = draw({ ...STATUS, repo: REPO });
         expect(item(body, 'branch')).toContain('data-glyph="branch"');
         expect(item(body, 'branch')).toMatch(/>\s*main\s*<\/span>/);
@@ -168,7 +164,6 @@ describe('the status bar', () => {
     });
 
     it('offers a push for a branch only ahead, and names the commit of a detached head', () => {
-        // revert: src/lib/shell/status/RepoItems.svelte "const pushes = $derived(repo.ahead > 0 && repo.behind === 0);" => const pushes = $derived(repo.ahead > 0);
         const ahead = draw({ ...STATUS, repo: { ...REPO, behind: 0 } });
         expect(ahead).toContain(t('statusbar.sync_tip_push', 2, 'origin/main'));
         // Ahead and behind at once is no push: the item syncs, a pull then a push.
@@ -185,7 +180,6 @@ describe('the status bar', () => {
     });
 
     it('draws Publish Branch where the sync item is for a branch that tracks none', () => {
-        // revert: src/lib/shell/status/RepoItems.svelte "{:else if sync && !detached && repo.remotes.length === 1}" => {:else if false}
         const lone = { ...REPO, tracked: false, upstream: '', ahead: 0, behind: 0 };
         const one = draw({ ...STATUS, repo: lone });
         expect(item(one, 'sync')).toBe('');
@@ -202,7 +196,6 @@ describe('the status bar', () => {
     });
 
     it('draws the caret line blame while the tab says one, and no blame item while it says none', () => {
-        // revert: src/lib/shell/status/SourceItems.svelte "{#if shown('blame') && status.blame !== ''}" => {#if false}
         sourceTab({ ...SOURCE, blame: 'Ada, 2 days ago: Fix the reader' });
         const body = draw();
         expect(item(body, 'blame')).toContain('data-glyph="blame"');
@@ -213,7 +206,6 @@ describe('the status bar', () => {
     });
 
     it('draws the source items while a source tab is on screen, and none for another tab', () => {
-        // revert: src/lib/state/workbench/navigation/editor-status.svelte.ts "if (tab?.view !== 'source') return null;" => if (tab === null) return null;
         expect(item(draw(), 'caret')).toBe('');
         const id = sourceTab();
         const body = draw();
@@ -234,7 +226,6 @@ describe('the status bar', () => {
     });
 
     it('draws no caret for a source tab that may not write its file, and says why its lists offer no change', () => {
-        // revert: src/lib/shell/status/SourceItems.svelte "{#if shown('caret') && status.caret !== null}" => {#if shown('caret')}
         sourceTab({ ...SOURCE, caret: null, writable: false });
         const body = draw();
         expect(item(body, 'caret')).toBe('');
@@ -244,7 +235,6 @@ describe('the status bar', () => {
     });
 
     it('draws no item the reader hid, and every other', () => {
-        // revert: src/lib/shell/status/StatusBar.svelte "return !hidden.includes(item);" => return true;
         sourceTab({ ...SOURCE, blame: 'Ada, 2 days ago: Fix the reader' });
         client.ui.setStatusHidden('host', true);
         client.ui.setStatusHidden('language', true);
@@ -258,7 +248,6 @@ describe('the status bar', () => {
     });
 
     it('counts the tabs holding unsaved text, and holds the item back at none', () => {
-        // revert: src/lib/shell/status/StatusBar.svelte "disabled={dirty === 0}" => disabled={false}
         const quiet = item(draw(), 'unsaved');
         expect(quiet).toContain(`aria-label="${t('statusbar.unsaved_name', 0)}"`);
         expect(quiet).toMatch(/\sdisabled/);
@@ -270,8 +259,6 @@ describe('the status bar', () => {
     });
 
     it('draws under a terminal palette no stand-in that reads as a separator between items', () => {
-        // revert: config/catalogs/glyphs.yml "caret: \"[I]\"" =>   caret: "|"
-        // revert: config/catalogs/glyphs.yml "branch: \"[Y]\"" =>   branch: "|-"
         sourceTab();
         client.notices.post('one');
         setGlyphMode('ascii');
@@ -295,7 +282,6 @@ describe('the status bar', () => {
     });
 
     it('counts on the bell what has not been seen, and draws its quiet face under Do Not Disturb', () => {
-        // revert: src/lib/shell/status/Bell.svelte "{count > 0 ? count : ''}" => {''}
         expect(item(draw(), 'bell')).toContain('data-glyph="bell"');
         client.notices.post('one');
         client.notices.post('two');

@@ -2,8 +2,7 @@
 // every listed view under its group's heading with the key that opens it, the hub documents after
 // a group's views, and a registration's live badge beside its button.
 //
-// What this does NOT cover: an entry pressed, which opens a view in the page the reader is in and
-// is tests/browser/shell/views.spec.ts's.
+// What this does NOT cover: an entry pressed, which opens a view in the page the reader is in.
 
 import { render } from 'svelte/server';
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -34,7 +33,6 @@ function button(body: string, attribute: string): string {
 
 describe('the Views catalogue', () => {
     it('draws every listed view once as a button, and no unlisted one', () => {
-        // revert: src/lib/views/system/workbench/Catalogue.svelte "const listed = $derived(listedViews(views()));" => const listed = $derived(views());
         const body = draw();
         const drawn = [...body.matchAll(/data-view="([^"]+)"/g)].map((found) => found[1]);
         const listed = client.registry
@@ -50,7 +48,6 @@ describe('the Views catalogue', () => {
     });
 
     it('draws each group under its heading, with its chord letter where it has one', () => {
-        // revert: src/lib/views/system/workbench/Catalogue.svelte "<span class=\"chord\">{section.chord}</span>" => <span class="chord">x</span>
         const body = draw();
         for (const label of ['Boards', 'Pillars', 'Sessions', 'Academic life', 'System']) {
             expect(body).toContain(`data-group="${label}"`);
@@ -60,7 +57,6 @@ describe('the Views catalogue', () => {
     });
 
     it('draws the key that opens an entry beside it, and none past the ninth', () => {
-        // revert: src/lib/views/system/workbench/Catalogue.svelte "onclick={(event: MouseEvent) => open(view.id, undefined, event)}" +2 => {#if true}
         const body = draw();
         const focus = body.slice(body.indexOf('data-view="focus"'));
         expect(focus).toMatch(/class="key[^"]*"[^>]*>v1</);
@@ -72,7 +68,6 @@ describe('the Views catalogue', () => {
     });
 
     it("lists a group's hub documents after its views, as buttons carrying their path", () => {
-        // revert: src/lib/views/system/workbench/Catalogue.svelte "dataDoc={entry.path}" => dataDoc={entry.label}
         const body = draw();
         expect(button(body, 'data-doc="docs/HPC-UTwente-howto.md"')).toContain('HPC how-to');
         expect(body.indexOf('data-view="history"')).toBeLessThan(
@@ -81,7 +76,6 @@ describe('the Views catalogue', () => {
     });
 
     it("draws a registration's toned badge beside its button, and nothing at zero", () => {
-        // revert: src/lib/views/system/workbench/Catalogue.svelte "{#if badge.glyph !== '' || badge.text !== ''}" => {#if false}
         const status = client.registry.viewFor('status');
         if (status === undefined) throw new Error('the status view is not registered');
         client.registry.registerView({
@@ -98,7 +92,6 @@ describe('the Views catalogue', () => {
     });
 
     it('names the key in the hover words of an entry a chord reaches', () => {
-        // revert: src/lib/views/system/workbench/Catalogue.svelte "return key === '' ? label : t('workbench.catalogue_key', label, key);" => return label;
         const body = draw();
         expect(body).toContain(words('workbench.catalogue_key', catalog['views.focus'], 'v1'));
         expect(body).toContain(`${catalog['views.focus']}, key v1`);

@@ -145,7 +145,6 @@ describe('dataset instance state and recovery command', () => {
 });
 
 describe('the projects a dataset names as its users', () => {
-    // revert: src/lib/state/sources/datasets.ts ".filter((project) => project !== undefined);" => ;
     it('are joined in the order named, an unknown id left out', () => {
         const projects = [{ id: 'a' }, { id: 'b' }] as unknown as Parameters<
             typeof datasetUsers

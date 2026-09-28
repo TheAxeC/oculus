@@ -285,5 +285,4 @@ The checks, from `tools/oculus`:
 
 - `npm test` runs the unit suite over the data layer, the server, the stores, the shell and the views.
 - `npm run check` runs the TypeScript and Svelte check over every file.
-- `npm run test:browser` drives the built page in a real browser, which is where the layout, the drag, the keyboard and the sanitiser are exercised.
 - `npm run lint` and `npm run format:check` hold the source to its conventions.

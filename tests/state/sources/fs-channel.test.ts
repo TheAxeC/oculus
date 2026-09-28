@@ -34,7 +34,6 @@ function countedReads(): () => number {
     return () => reads;
 }
 
-// revert: src/lib/server/files/files-channel.ts "hub.merge('files', mergeFiles);" => delete
 it('keeps a pending bookmark marker on the later root message and makes the page read again', async () => {
     const reads = countedReads();
     const client = createClientState();
@@ -87,8 +86,6 @@ it('keeps a pending bookmark marker on the later root message and makes the page
 });
 
 it('reads the bookmarks again after a root message replaced the one that named them', async () => {
-    // revert: src/lib/state/sources/fs.svelte.ts "const named = message.channel === 'files' && (message.payload as FilesPayload).bookmarks;" => const named = message.channel === 'files';
-    // revert: src/lib/state/sources/fs.svelte.ts "if (named === true && message.version > onDisk) onDisk = message.version;" => delete
     const reads = countedReads();
     const client = createClientState();
     client.fs.bookmarks();

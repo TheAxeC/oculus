@@ -2,8 +2,7 @@
 // muted section at the end, and the search that filters the cards.
 //
 // The scan is handed to the client as a message of its own, so nothing here reads the real hub.
-// What this does NOT cover: pressing mute, which posts a write and is
-// tests/browser/views/audit.spec.ts.
+// What this does NOT cover: pressing mute, which posts a write.
 
 import { readFileSync } from 'node:fs';
 import { render } from 'svelte/server';

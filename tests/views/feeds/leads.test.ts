@@ -248,7 +248,6 @@ describe('the Position Leads view', () => {
         expect(body).toContain(catalog['leads.posting']);
         // a posting link is drawn only for a scheme a browser opens, and ftp is not one
         expect(body).not.toContain('ftp://example.org/not-shown');
-        // revert: src/lib/views/shared/forms/posting.ts "const href = hrefOf(held);" => const href = held;
         // Revert: in posting of views/shared/forms/posting.ts, draw only a value that already
         // carries its scheme, and a posting written as `jobs.example.org/x` draws no link at all.
         expect(body).toContain('href="https://jobs.example.org/strong"');
@@ -286,7 +285,6 @@ describe('the Position Leads view', () => {
         expect(body).toContain('expired');
     });
 
-    // revert: src/lib/views/feeds/leads/LeadCard.svelte "<Glyph name=\"deadline\" />" => delete
     it('draws each card detail and only the actions allowed by that card status', () => {
         serve({
             ok: true,

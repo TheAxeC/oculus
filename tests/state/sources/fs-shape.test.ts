@@ -134,7 +134,6 @@ describe('the addresses the store reads', () => {
         expect(fileBytesUrl('hub', 'a/paper.pdf', 2)).toBe('/api/file/hub/a/paper.pdf?v=2');
     });
 
-    // revert: src/lib/state/sources/fs-transport.ts "return `${at}${shown.hidden ? '&hidden=1' : ''}${shown.ignored ? '&ignored=1' : ''}`;" => return at;
     it('asks for hidden and ignored files on the query only while their toggle is on', () => {
         expect(listingUrl('hub', 'a', { hidden: false, ignored: false })).toBe(
             '/api/fs?root=hub&path=a'
@@ -262,20 +261,17 @@ describe('the file browser lookups over what its store holds', () => {
         loading: false
     };
 
-    // revert: src/lib/state/sources/fs-transport.ts "return saved.workspaces.find((one) => one.name === saved.current) ?? { name: '', roots: [] };" => return saved.workspaces[0] ?? { name: '', roots: [] };
     it('find the current workspace, and an empty one for a name the state does not hold', () => {
         expect(currentWorkspace(saved).name).toBe('work');
         expect(currentWorkspace({ ...saved, current: 'gone' })).toEqual({ name: '', roots: [] });
         expect(fixedRootKeys(roots)).toEqual(['hub']);
     });
 
-    // revert: src/lib/state/sources/fs-transport.ts "return roots.filter((one) => following || one.fixed).map((one) => one.key);" => return roots.filter((one) => one.fixed).map((one) => one.key);
     it('fix every root while the tab follows a session, so none offers its removal', () => {
         expect(fixedRootKeys(roots, true)).toEqual(roots.map((one) => one.key));
         expect(fixedRootKeys(roots, true).length).toBeGreaterThan(fixedRootKeys(roots).length);
     });
 
-    // revert: src/lib/state/sources/fs-transport.ts "return entries.find((one) => one.fields.root === root && one.fields.path === path) ?? null;" => return entries.find((one) => one.fields.path === path) ?? null;
     it('find a bookmark by its id and by the file it is over', () => {
         const marks = [
             { id: 'm1', title: 'One', fields: { root: 'hub', path: 'a.md' } },
@@ -287,7 +283,6 @@ describe('the file browser lookups over what its store holds', () => {
         expect(bookmarkById(marks, 'm3')).toBeNull();
     });
 
-    // revert: src/lib/state/sources/fs-transport.ts "return entries.filter((entry) => entry.kind === 'file');" => return entries;
     it('keep the files of a listing and leave its folders out', () => {
         const entries = [
             { name: 'a.md', kind: 'file' as const, size: 1, mtime: 0 },
@@ -296,7 +291,6 @@ describe('the file browser lookups over what its store holds', () => {
         expect(fileEntries(entries).map((one) => one.name)).toEqual(['a.md']);
     });
 
-    // revert: src/lib/state/sources/fs-transport.ts ".filter((row) => row.open)" => .filter(() => true)
     it('name the open folders whose listing failed, and say when a filter matched nothing', () => {
         const row = (path: string, open: boolean, depth: number) =>
             ({ root: 'hub', path, name: path, kind: 'dir', depth, open }) as unknown as Parameters<
@@ -309,10 +303,6 @@ describe('the file browser lookups over what its store holds', () => {
         expect(matchedNothing(rows)).toBe(false);
     });
 
-    // revert: src/lib/state/sources/fs-transport.ts "if (saved.loading || saved.error !== '') return null;" => if (saved.error !== '') return null;
-    // revert: src/lib/state/sources/fs-transport.ts "return currentWorkspace(saved).roots.map((one) => one.key);" => return saved.workspaces[0]?.roots.map((one) => one.key) ?? [];
-    // revert: src/lib/state/sources/fs-transport.ts "return entries.map((one) => one.title);" => return entries.map((one) => one.id);
-    // revert: src/lib/state/sources/fs-transport.ts "return saved.workspaces.map((one) => one.name);" => return saved.workspaces.map((one) => one.current);
     it('name the workspaces, the current roots once they are read, and the bookmark titles', () => {
         expect(workspaceNames(saved)).toEqual(['home', 'work']);
         expect(rootKeysOf(saved)).toEqual(['hub', 'code']);

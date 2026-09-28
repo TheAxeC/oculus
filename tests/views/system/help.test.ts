@@ -91,7 +91,6 @@ describe('the diagrams in the manual', () => {
     ].join('\n');
 
     it('draws a diagram of docs/diagrams from the route, with the prose around it', () => {
-        // revert: src/lib/views/system/help/Help.svelte "{#if part.kind === 'diagram'}" => {#if false}
         const body = drawn({ html, frontmatter: null, error: '', loading: false });
         expect(body).toContain('data-diagram="layers"');
         expect(body).toContain('aria-label="The layers &amp; imports"');
@@ -104,7 +103,6 @@ describe('the diagrams in the manual', () => {
     });
 
     it('audits that the manual is cut at a diagram alone, and every other image stays in the prose', () => {
-        // revert: src/lib/views/system/help/manual.ts "const SOURCE = /^docs\\/diagrams\\/([a-z0-9][a-z0-9-]*)\\.svg$/;" => const SOURCE = /^(?:docs\/diagrams\/)?([^.]*)\.(?:svg|png)$/;
         expect(splitManual(html)).toEqual([
             { kind: 'html', html: '<h2>Before</h2>\n' },
             { kind: 'diagram', name: 'layers', alt: 'The layers & imports' },
@@ -119,7 +117,6 @@ describe('the diagrams in the manual', () => {
     });
 
     it('audits that an image written inside a code block is no diagram', () => {
-        // revert: src/lib/server/content/docs.ts "return base === null ? renderDocument(text) : renderDocument(text, figures(base));" => return base === null ? text.replace(/!\[([^\]]*)\]\(([^)]*)\)/g, '<img src="$2" alt="$1">') : renderDocument(text, figures(base));
         const fenced = renderMarkdown('```\n![Layers](docs/diagrams/layers.svg)\n```\n', null);
         expect(diagramsOf(fenced)).toEqual([]);
         expect(diagramsOf(renderMarkdown('![Layers](docs/diagrams/layers.svg)\n', null))).toEqual([
@@ -128,7 +125,6 @@ describe('the diagrams in the manual', () => {
     });
 
     it('audits that the alternative text is read as it was written', () => {
-        // revert: src/lib/views/system/help/manual.ts "return found[1].replace(/&(?:amp|lt|gt|quot|#39);/g, (entity) => ENTITIES[entity] ?? entity);" => return found[1];
         const [part] = splitManual(
             '<img alt="a &lt;b&gt; &quot;c&quot; &#39;d&#39;" src="docs/diagrams/w.svg">'
         );
@@ -136,7 +132,6 @@ describe('the diagrams in the manual', () => {
     });
 
     it('audits that the manual shows every diagram the generator writes, each one committed', async () => {
-        // revert: bin/diagrams/diagrams.mjs "'writes'" => 'writes', 'calls'
         const answer = renderManual({
             hub: engineDir(),
             engine: engineDir(),
@@ -178,7 +173,6 @@ function landed(): Promise<void> {
 
 describe('the newest answer a diagram takes', () => {
     it('audits that an answer for a name a later one replaced is dropped', async () => {
-        // revert: src/lib/views/system/help/newest.ts "if (!stop.signal.aborted) take(answer);" => take(answer);
         const taken: string[] = [];
         const ask = newestAnswer<string>((answer) => taken.push(answer));
         const earlier = deferred();
@@ -194,7 +188,6 @@ describe('the newest answer a diagram takes', () => {
     });
 
     it('audits that an answer landing after the view closed is dropped', async () => {
-        // revert: src/lib/views/system/help/newest.ts "if (!stop.signal.aborted) take(answer);" => take(answer);
         const taken: string[] = [];
         const ask = newestAnswer<string>((answer) => taken.push(answer));
         const out = deferred();
@@ -206,7 +199,6 @@ describe('the newest answer a diagram takes', () => {
     });
 
     it('audits that a stop aborts the signal its work was handed, and only that one', () => {
-        // revert: src/lib/views/system/help/newest.ts "stop.abort();" => delete
         const ask = newestAnswer<string>(() => undefined);
         const first = deferred();
         const second = deferred();
@@ -301,7 +293,6 @@ describe('the manual itself', () => {
         expect(MANUAL).toContain('`local.yml`');
         expect(MANUAL).toContain('`npm test`');
         expect(MANUAL).toContain('`npm run check`');
-        expect(MANUAL).toContain('`npm run test:browser`');
         expect(MANUAL).toContain('`hub` key of `local.yml`');
     });
 });

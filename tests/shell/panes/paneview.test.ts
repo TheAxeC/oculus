@@ -4,7 +4,7 @@
 //
 // What this does NOT cover: the menu opening and the item being pressed. There is no DOM in this
 // suite, so a closed Menu renders its opener and no list; the move itself is
-// tests/state/workbench/layout/pages.test.ts and the press is a browser check.
+// tests/state/workbench/layout/pages.test.ts and the press needs a DOM and is not run here.
 
 import { describe, expect, it } from 'vitest';
 import {

@@ -47,7 +47,6 @@ function run(dir: string, report: string): { out: string; status: number | null 
 
 describe('the citation check', () => {
     it('prints the line the tree holds at every citation', () => {
-        // revert: bin/cited-lines.mjs "out.push(`${citation.path}:${at} | ${held[at - 1]}`);" => out.push(`${citation.path}:${at} | `);
         const held = fixture('The rule is at `src/rule.ts:2`, and the block at src/rule.ts:1-3.\n');
         const found = run(held.dir, held.path);
         expect(found.out).toContain('src/rule.ts:2 | const second = 2;');
@@ -58,7 +57,6 @@ describe('the citation check', () => {
     });
 
     it('reads a list of lines, and prints each one once', () => {
-        // revert: bin/cited-lines.mjs "if (seen.has(key)) continue;" => delete
         const held = fixture('Three of them: src/rule.ts:1,3 and again src/rule.ts:1,3.\n');
         const found = run(held.dir, held.path);
         expect(found.out.split('\n').filter((line) => line.startsWith('src/rule.ts:1'))).toEqual([
@@ -69,7 +67,6 @@ describe('the citation check', () => {
     });
 
     it('calls a line past the end, and a file the tree has not, MISSING and fails', () => {
-        // revert: bin/cited-lines.mjs "if (!existsSync(full)) {" => if (false) {
         const held = fixture('Wrong: src/rule.ts:99, and gone: src/other.ts:4.\n');
         const found = run(held.dir, held.path);
         expect(found.out).toContain('MISSING src/rule.ts:99 the file has 4 lines');
@@ -79,7 +76,6 @@ describe('the citation check', () => {
     });
 
     it('calls a citation that lands on a blank line MISSING', () => {
-        // revert: bin/cited-lines.mjs "if (text === '') return 'the line is blank';" => if (text === '') return '';
         const held = fixture('The rule is at src/rule.ts:4, which is the line after the last.\n');
         const found = run(held.dir, held.path);
         expect(found.out).toContain('MISSING src/rule.ts:4 the line is blank');
@@ -88,7 +84,6 @@ describe('the citation check', () => {
     });
 
     it('refuses a range that runs backwards, one wider than a screenful, and a number below one', () => {
-        // revert: bin/cited-lines.mjs "if (last < first) {" => if (false) {
         const held = fixture(
             'Wide: src/rule.ts:1-9999. Back: src/rule.ts:3-1. Under: src/rule.ts:-5.\n'
         );
@@ -103,7 +98,6 @@ describe('the citation check', () => {
     });
 
     it('calls a citation landing on a line of punctuation MISSING', () => {
-        // revert: bin/cited-lines.mjs "if (/^[{}()[\\];,]+$/.test(text)) return 'the line holds only punctuation';" => if (false) return '';
         const held = fixture('The brace is at src/braces.ts:2.\n', {
             'src/braces.ts': ['const one = {', '};', 'const two = 2;', ''].join('\n')
         });
@@ -114,7 +108,6 @@ describe('the citation check', () => {
     });
 
     it('calls a citation that climbs out of the tree MISSING, and reads nothing there', () => {
-        // revert: bin/cited-lines.mjs "const held = resolve(path);" => return true;
         // Revert: in under of bin/cited-lines.mjs, let every path pass, and a report citing a file
         // above the tree is read and counted among the lines that are there.
         const held = fixture('The secret is at ../outside.md:1.\n');
@@ -126,7 +119,6 @@ describe('the citation check', () => {
     });
 
     it('refuses a report the tree does not hold', () => {
-        // revert: bin/cited-lines.mjs "if (!existsSync(report)) {" => if (false) {
         const held = fixture('nothing cited\n');
         const found = run(held.dir, join(held.dir, 'gone.md'));
         expect(found.out).toContain('no such report');

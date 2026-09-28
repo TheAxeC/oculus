@@ -74,7 +74,6 @@ async function armed(
     return { watcher, got };
 }
 
-// revert: src/lib/server/root/watch/bookmarks.ts "hub.publish('files', { root: '', bookmarks: true } satisfies FilesPayload);" => hub.publish('files', { root: '' } satisfies FilesPayload);
 it('publishes a bookmark message when the file is written outside oculus', async () => {
     const file = bookmarksFile();
     const hub = new Hub();
@@ -91,7 +90,6 @@ it('publishes a bookmark message when the file is written outside oculus', async
     expect(payload).toEqual({ root: '', bookmarks: true });
 });
 
-// revert: src/lib/server/root/watch/bookmarks.ts "options.file," => folder,
 it('says nothing for another file written in the same folder', async () => {
     const file = bookmarksFile();
     const folder = join(dir, '.oculus');
@@ -112,7 +110,6 @@ it('says nothing for another file written in the same folder', async () => {
     expect(client.got).toHaveLength(1);
 });
 
-// revert: src/lib/server/root/watch/bookmarks.ts "const queue = (): void => {" +2 => delete
 it('publishes once for a burst of writes, and nothing at all once it is closed', async () => {
     const file = bookmarksFile();
     const hub = new Hub();
@@ -137,7 +134,6 @@ it('publishes once for a burst of writes, and nothing at all once it is closed',
     expect(client.got).toHaveLength(1);
 });
 
-// revert: src/lib/server/root/watch/bookmarks.ts "if (!existsSync(folder)) mkdirSync(folder, { recursive: true });" => delete
 it('makes the folder it watches when the machine has none, and publishes for the file made in it', async () => {
     const said = vi.spyOn(console, 'error').mockImplementation(noop);
     const folder = join(dir, 'never-made');

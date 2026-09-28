@@ -5,7 +5,7 @@
 // them; and the local target a form outside any pane keeps its values in.
 //
 // Nothing here touches localStorage or the DOM. What a form does with a draft when it is pressed
-// is tests/browser/workbench/unsaved-forms.spec.ts.
+// is a DOM event no case here fires.
 
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { Entry, Snapshot } from '../../../src/lib/data/model/index.ts';
@@ -459,7 +459,6 @@ describe('a form outside any pane', () => {
 describe('the entry an add form made', () => {
     // Revert: in setFormAdded of state/forms/form-drafts.svelte.ts, keep what was made in a
     // variable of the store rather than in the instance's own state.
-    // revert: src/lib/state/forms/form-drafts.svelte.ts "return added(instance)[form] ?? null;" => return null;
     it('is kept in the instance state, so a form drawn again still writes it', () => {
         drafts.setFormAdded('one', ADD, { id: 'made', value: 'made' });
         expect(drafts.formAdded('one', ADD)).toEqual({ id: 'made', value: 'made' });
@@ -475,7 +474,6 @@ describe('the entry an add form made', () => {
 
     // Revert: in clearFormDraft of state/forms/form-drafts.svelte.ts, drop the forgetAdded call, by
     // dropping the line under the signature.
-    // revert: src/lib/state/forms/form-drafts.svelte.ts "function clearFormDraft(instance: string, form: string): void {" +1 => if (false) forgetAdded(instance, form);
     it('is forgotten when its form closes, and when its answer takes the draft whole', () => {
         drafts.setFormAdded('one', ADD, { id: 'made', value: 'made' });
         drafts.clearFormDraft('one', ADD);
@@ -491,7 +489,6 @@ describe('the entry an add form made', () => {
 
     // Revert: in moveFormDraft of state/forms/form-drafts.svelte.ts, leave the draft where it is,
     // by returning from the line under the guard.
-    // revert: src/lib/state/forms/form-drafts.svelte.ts "function moveFormDraft(instance: string, form: string, next: string): void {" +2 => if (true) return;
     it('goes with the draft when a save writes the entry under another id', () => {
         // The bookmarks are not in the snapshot, so nothing there says the entry under the new id
         // is gone. A collection the snapshot holds says so until its next push, which drops the
@@ -519,7 +516,6 @@ describe('the entry an add form made', () => {
 
     // Revert: in keep of state/forms/form-drafts.svelte.ts, write every draft whatever the snapshot
     // says, by dropping the gone check.
-    // revert: src/lib/state/forms/form-drafts.svelte.ts "if (Object.keys(draft).length > 0 && !gone(form)) kept[form] = draft;" => if (Object.keys(draft).length > 0) kept[form] = draft;
     it('is dropped by a move onto an entry the snapshot says the collection no longer holds', () => {
         const before = formKey('tasks', 'probe');
         drafts.setFormField('one', before, 'status', typed('typed', 'open'));
@@ -529,7 +525,6 @@ describe('the entry an add form made', () => {
 
     // Revert: in parseAdded of state/forms/form-drafts.svelte.ts, keep every entry of the record as
     // it stands, by dropping the three guards.
-    // revert: src/lib/state/forms/form-drafts.svelte.ts "if (parseFormKey(form) === null || !isRecord(held)) continue;" .. "if (held.id !== '') kept[form] = { id: held.id, value: held.value };" => kept[form] = held as AddedEntry;
     it('is read back from a record holding anything at all, keeping only what it wrote', () => {
         expect(parseAdded(undefined)).toEqual({});
         expect(parseAdded('a word')).toEqual({});
@@ -544,7 +539,6 @@ describe('the entry an add form made', () => {
 
     // Revert: in addedKey of state/forms/form-drafts.svelte.ts, hold the made entries under the
     // instance's own id rather than under one of its own.
-    // revert: src/lib/state/forms/form-drafts.svelte.ts "return `${instance}${ADDED_SUFFIX}`;" => return instance;
     it('keeps an instance whose id already ends in the added suffix apart from the one it names', () => {
         const colliding = addedKey('one');
         drafts.setFormAdded('one', ADD, { id: 'of one', value: 'of one' });
@@ -557,7 +551,6 @@ describe('the entry an add form made', () => {
     });
 
     // Revert: in localDrafts of state/forms/form-drafts.svelte.ts, have setAdded record nothing.
-    // revert: src/lib/state/forms/form-drafts.svelte.ts "held.added = { ...held.added, [form]: made };" => held.added = { ...held.added };
     it('is kept by a form outside any pane in a target of its own', () => {
         const target = draftTarget(client.formDrafts, null, localDrafts());
         expect(target.added(ADD)).toBeNull();

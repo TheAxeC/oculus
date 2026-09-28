@@ -459,12 +459,7 @@ describe('the log, the branches and the worktrees', () => {
         expect(state().branches.length).toBe(MAX_ENTRIES);
     });
 
-    // revert: src/lib/server/core/git.ts "return { branches: capped(read.branches), tags: capped(read.tags), stash: read.stash };" => return { branches: read.branches, tags: capped(read.tags), stash: read.stash };
     it('cuts every list it publishes at the cap', () => {
-        // revert: src/lib/server/core/git.ts "return { branches: capped(read.branches), tags: capped(read.tags), stash: read.stash };" => return { branches: capped(read.branches), tags: read.tags, stash: read.stash };
-        // revert: src/lib/server/core/git.ts "return done.ok ? capped(parseStashes(done.text)) : [];" => return done.ok ? parseStashes(done.text) : [];
-        // revert: src/lib/server/core/git.ts "return done.ok ? capped(done.text.split('\\n').filter((one) => one.trim() !== '')) : [];" => return done.ok ? done.text.split('\n').filter((one) => one.trim() !== '') : [];
-        // revert: src/lib/server/core/git.ts "return capped(parseWorktrees(done.text)).map((one) => ({" => return parseWorktrees(done.text).map((one) => ({
         // Past the cap in every list, each made by writing what git reads rather than by a git
         // process per entry: the branches and the tags by one update-ref, the stashes as the stash
         // reflog's lines, the worktrees as their administrative folders and the remotes in the
@@ -566,7 +561,6 @@ describe('failure', () => {
     });
 
     it('keeps a repository whose config git cannot parse a repository, and says why', () => {
-        // revert: src/lib/server/core/git.ts "refused.repository = ownRefusal && seen(join(root, '.git'));" =>         refused.repository = false;
         const broken = join(dir, 'broken');
         mkdirSync(broken);
         git(broken, 'init', '--initial-branch=work');
@@ -768,7 +762,6 @@ describe('read only', () => {
         expect(state().stashes.length).toBe(1);
     }
 
-    // revert: src/lib/server/core/git.ts "const done = run(root, ['check-ignore', '--stdin', '-z'], milliseconds(timeout), input);" => const done = run(root, ['check-ignore', '--stdin'], milliseconds(timeout), input);
     it('names the entries the repository ignores, and leaves it as it was', () => {
         write('.gitignore', '*.log\n');
         write('a.log', 'ignored\n');
@@ -798,7 +791,6 @@ describe('read only', () => {
     });
 
     // Revert: write the `symbolic-ref` call in server/core/git.ts as `['symbolic-ref', 'HEAD']`.
-    // revert: src/lib/server/core/git.ts "const unborn = run(root, ['symbolic-ref', '--short', 'HEAD'], timeout);" => const unborn = run(root, ['symbolic-ref', 'HEAD'], timeout);
     it('holds only the allowed subcommands at its call site, the pinned six as their exact vectors', () => {
         const source = readFileSync(MODULE, 'utf8');
         const calls = [...source.matchAll(/\brun\(\s*root\s*,\s*\[\s*'([a-z-]+)'/g)];
@@ -808,7 +800,6 @@ describe('read only', () => {
         for (const form of PINNED_SOURCE) expect(source).toContain(form);
     });
 
-    // revert: src/lib/server/core/git.ts "const argv = ['-C', root, '--no-optional-locks', ...args];" => const argv = ['-C', root, ...args];
     it('ran every command without optional locks, so a read writes no index lock', () => {
         everyRead();
         expect(ran.length).toBeGreaterThan(0);
@@ -817,8 +808,6 @@ describe('read only', () => {
         }
     });
 
-    // revert: src/lib/server/core/git.ts "const unborn = run(root, ['symbolic-ref', '--short', 'HEAD'], timeout);" => const unborn = run(root, ['symbolic-ref', 'HEAD'], timeout);
-    // revert: src/lib/server/core/git.ts "['for-each-ref', REFS_FORMAT, 'refs/heads', 'refs/tags', 'refs/stash']," => ['for-each-ref', REFS_FORMAT, '--sort=-refname', 'refs/heads', 'refs/tags', 'refs/stash'],
     it('ran nothing but those commands over this file, the pinned six as their vectors', () => {
         everyRead();
         expect(ran.length).toBeGreaterThan(0);

@@ -274,7 +274,6 @@ describe('liveSignature', () => {
     it('names every live session and the state it is in, and nothing else', () => {
         const record = (id: string, live: boolean, state: string) =>
             ({ id, live, state, liveStatus: live ? 'busy' : null, agents: [] }) as never;
-        // revert: src/lib/server/root/watch/sessions.ts "if (!record.live) continue;" => delete
         const before = liveSignature([record('a', true, 'working'), record('b', false, 'ended')]);
         expect(before).toBe('a:working:busy');
         expect(liveSignature([record('a', true, 'idle')])).not.toBe(before);
@@ -289,7 +288,6 @@ describe('liveSignature', () => {
         });
         const record = (agents: unknown[]) =>
             ({ id: 'p', live: false, state: 'ended', liveStatus: null, agents }) as never;
-        // revert: src/lib/server/root/watch/sessions.ts "if (agent.dispatch !== undefined)" => if (false)
         const running = liveSignature([record([agent('dispatch:x', 'running', true)])]);
         expect(running).toBe('p>dispatch:x:running');
         expect(liveSignature([record([agent('dispatch:x', 'done', true)])])).not.toBe(running);
@@ -453,7 +451,6 @@ describe('watchSessions', () => {
         const started = start(fixture);
         await until(() => started.got.length >= 1, WAIT);
         expect(latest(started.got).records[0].agents).toEqual([]);
-        // revert: src/lib/server/root/watch/sessions.ts "options.dispatches ?? defaultDispatchesPath()" => delete
         await armed(fixture.root, 'dispatches.json', started.got);
 
         // One launch, as bin/dispatch-note.mjs writes it.
@@ -509,7 +506,6 @@ describe('watchSessions', () => {
         // A late event for the note written before the watch opened would rescan whatever the
         // re-check compares, so the process exits only once the channel has gone quiet.
         await quiet(started.got);
-        // revert: src/lib/server/root/watch/sessions.ts "if (agent.dispatch !== undefined)" => if (false)
         fixture.alive.delete(9191);
         await until(() => status() === 'done', WAIT);
         expect(status()).toBe('done');
@@ -553,7 +549,6 @@ describe('watchSessions', () => {
         expect(latest(started.got).records[0].agents[0]?.ended).toBe(stamped.endedAt);
         const before = await quiet(started.got);
 
-        // revert: src/lib/server/sessions/stores/transcripts.ts "if (stampEnded(options.dispatchesPath ?? defaultDispatchesPath(), reused)) reused.clear();" => delete
         // `ps` fails from here on, so no scan has a start time for the pid; the re-check runs
         // every 100 ms, and none of them may take the running pid for the builder again.
         fixture.startOf.delete(9292);
@@ -571,7 +566,6 @@ describe('watchSessions', () => {
         const started = start(fixture);
         await until(() => started.got.length >= 1, WAIT);
         expect(latest(started.got).records[0].live).toBe(false);
-        // revert: src/lib/server/root/watch/sessions.ts "...(options.registries ?? [])," => delete
         await armed(second, 'not-a-registry-entry.txt', started.got);
 
         fixture.alive.add(PID);

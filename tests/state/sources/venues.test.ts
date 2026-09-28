@@ -193,7 +193,6 @@ describe('conference timing', () => {
         ]);
     });
 
-    // revert: src/lib/state/sources/venues.ts "export const SPARK_STEPS = [0, 1, 2, 3, 5, 6, 7];" => export const SPARK_STEPS = [0,1,2,3,4,5,6];
     it('gives each count the height in eighths the block ramp drew it at', () => {
         expect(sparkBars([0, 1, 2, 3, 4, 5, 6])).toEqual([0, 1, 2, 3, 5, 6, 7]);
         expect(sparkBars([0, 2, 1])).toEqual([0, 7, 3]);
@@ -233,7 +232,6 @@ describe('saved venue state', () => {
 });
 
 describe('the venues by category', () => {
-    // revert: src/lib/state/sources/venues.ts "conferences: venues.filter((venue) => venue.category === 'conference')" => conferences: []
     it('are the journals and the conferences, each in the order given, anything else left out', () => {
         const venues = [
             { id: 'j1', category: 'journal' },

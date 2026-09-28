@@ -172,7 +172,6 @@ describe('the id one lead card carries', () => {
 });
 
 describe('the run log of the leads feed', () => {
-    // revert: src/lib/state/feeds/leads.ts "(line): line is string | number => typeof line === 'string' || typeof line === 'number'" => (line): line is string | number => typeof line === 'string'
     it('is every line the meta carries as text, a line that is not text or a number left out', () => {
         expect(runLog({ log: ['one', 2, null, { a: 1 }] })).toEqual(['one', '2']);
         expect(runLog({ log: 'not a list' })).toEqual([]);

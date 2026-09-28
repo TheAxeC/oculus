@@ -375,7 +375,6 @@ describe('normalise, the field mapping', () => {
         expect(snapshot.entities.venues.bspc.email).toBe('chair@example.invalid');
     });
 
-    // revert: src/lib/data/snapshot/normalise.ts "wos: wos.words === '' ? undefined : wos.words," => wos: str(entry.wos),
     it('reads a leading check or cross of an indexing field as its mark, and keeps the words', () => {
         const { indexed, prose } = snapshot.entities.venues;
         expect([indexed.wos, indexed.wosMark, indexed.scopus, indexed.scopusMark]).toEqual([

@@ -101,8 +101,6 @@ function gitEvent(root: string, name: string): void {
 
 describe('the events the git watcher reads a root for', () => {
     it('drops a late event for a write made before the watch opened', async () => {
-        // revert: src/lib/server/root/watch/git.ts "if (seenBy(root, path)) return;" => delete
-        // revert: src/lib/server/root/watch/git.ts "if (one !== undefined) answered(root, opening.get(root) ?? 0, one);" => delete
         const { root, clock } = await watched();
         // The repository's own making, delivered late: its first read already saw every one.
         event(root, 'kept.txt');
@@ -118,7 +116,6 @@ describe('the events the git watcher reads a root for', () => {
     });
 
     it('drops an event for a write the newest read saw, not only the first read', async () => {
-        // revert: src/lib/server/root/watch/git.ts "answered(root, began, next);" => delete
         const { root, clock } = await watched();
         put(root, 'loose.txt', 'x\n');
         event(root, 'loose.txt');
@@ -133,7 +130,6 @@ describe('the events the git watcher reads a root for', () => {
     });
 
     it('drops a late event for a path made and taken away before the watch opened', async () => {
-        // revert: src/lib/server/root/watch/git.ts "if (at === root || !up.startsWith(root)) return false;" => return false;
         // git init probes the folder with files it takes away again, and the stream can name them
         // after the watch opened, when there is nothing left at the path to stat.
         const { root, clock } = await watched((made) => {
@@ -146,7 +142,6 @@ describe('the events the git watcher reads a root for', () => {
     });
 
     it('keeps an event for a path taken away after the watch opened, by its folder', async () => {
-        // revert: src/lib/server/root/watch/git.ts "const up = dirname(at);" => const up = root;
         const { root, clock } = await watched((made) => {
             mkdirSync(join(made, 'deep'));
             return ['deep'];
@@ -158,7 +153,6 @@ describe('the events the git watcher reads a root for', () => {
     });
 
     it('dates an event the .git watch gives about the folder itself by that folder', async () => {
-        // revert: src/lib/server/root/watch/git.ts "if (at === root || !up.startsWith(root)) return false;" => return false;
         const { root, clock } = await watched();
         // The folder's own event names it by its own name, and it changed before the watch opened.
         gitEvent(root, '.git');
@@ -172,7 +166,6 @@ describe('the events the git watcher reads a root for', () => {
     });
 
     it('keeps a late event after a read that failed, since that read saw nothing', async () => {
-        // revert: src/lib/server/root/watch/git.ts "if (read.error !== null) return;" => delete
         const { root, clock } = await watched();
         put(root, 'loose.txt', 'x\n');
         event(root, 'loose.txt');

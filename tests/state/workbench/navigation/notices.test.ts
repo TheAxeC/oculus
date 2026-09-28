@@ -2,8 +2,7 @@
 // count is what has not been seen, a toast shows unless Do Not Disturb is on, and each can be put
 // away or cleared, one or all.
 //
-// What this does NOT cover: the bell, the centre and the toasts drawn and pressed, which
-// tests/browser/status/notices.spec.ts does in Chrome.
+// What this does NOT cover: the bell, the centre and the toasts drawn and pressed.
 
 import { describe, expect, it } from 'vitest';
 import { createNotices } from '../../../../src/lib/state/workbench/navigation/notices.svelte.ts';
@@ -16,7 +15,6 @@ function quiet(on = false): { statusQuiet: () => boolean; set: (value: boolean) 
 
 describe('the notifications store', () => {
     it('lists a post newest first, with its words, tone, time and actions, unread and toasting', () => {
-        // revert: src/lib/state/workbench/navigation/notices.svelte.ts "held.notices = [notice, ...held.notices];" => held.notices = [...held.notices, notice];
         let now = 1000;
         const store = createNotices(quiet(), () => now);
         const run = (): void => undefined;
@@ -38,7 +36,6 @@ describe('the notifications store', () => {
     });
 
     it('shows no toast for a post while Do Not Disturb is on, and keeps it in the list', () => {
-        // revert: src/lib/state/workbench/navigation/notices.svelte.ts "toast: !ui.statusQuiet()" => toast: true
         const ui = quiet(true);
         const store = createNotices(ui);
         store.post('quiet');
@@ -51,7 +48,6 @@ describe('the notifications store', () => {
     });
 
     it('puts a toast away and keeps its entry, and marks everything seen', () => {
-        // revert: src/lib/state/workbench/navigation/notices.svelte.ts "markRead: () => change((notice) => ({ ...notice, read: true }))," => markRead: () => undefined,
         const store = createNotices(quiet());
         const one = store.post('one');
         store.post('two');
@@ -67,7 +63,6 @@ describe('the notifications store', () => {
     });
 
     it('clears one entry, and every entry', () => {
-        // revert: src/lib/state/workbench/navigation/notices.svelte.ts "held.notices = held.notices.filter((notice) => notice.id !== id);" => held.notices = held.notices.filter((notice) => notice.id === id);
         const store = createNotices(quiet());
         const one = store.post('one');
         store.post('two');

@@ -59,13 +59,11 @@ export function twoAddForms(root: string): string[] {
 
 describe('an add form', () => {
     it('audits that no view draws a second one, which would type into its draft', () => {
-        // revert: src/lib/views/boards/collection/Collection.svelte "<EntryForm" => <EntryForm {schema} onclose={() => {}} /><EntryForm
         expect(twoAddForms(join(ENGINE, 'src', 'lib', 'views'))).toEqual([]);
         expect(twoAddForms(join(ENGINE, 'src', 'lib', 'shell'))).toEqual([]);
     });
 
     it('audits that it reads a form the source draws, and an edit form as no add form', () => {
-        // revert: tests/checks/source/add-forms.test.ts "if (/\\{\\s*entry\\s*\\}/.test(props)) return false;" => return held === null;
         const drawn = `<EntryForm collection={key} {schema} entry={null} onclose={close} />
             <EntryForm collection="data" {schema} {entry} onclose={close} />
             <EntryForm collection="venues" {schema} onclose={close} />`;

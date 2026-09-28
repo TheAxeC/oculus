@@ -3,8 +3,7 @@
 // is longer than its clamp and which control that draws, and which late measurement is still
 // wanted.
 //
-// What this does NOT cover: the measuring, the hover and the menu, which need a page and are
-// tests/browser/boards/cards.spec.ts.
+// What this does NOT cover: the measuring, the hover and the menu, which need a page.
 
 import { describe, expect, it } from 'vitest';
 import {

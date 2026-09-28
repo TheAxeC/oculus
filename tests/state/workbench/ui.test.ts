@@ -109,7 +109,6 @@ describe('the appearance store', () => {
     });
 
     it('saves the six appearance values and one blob per instance under the one key', () => {
-        // revert: src/lib/state/workbench/ui.svelte.ts "statusHidden: []," => delete
         const storage = fakeStorage();
         loadUi(storage);
         setTheme('mocha');
@@ -137,7 +136,6 @@ describe('the appearance store', () => {
     });
 
     it('keeps the status bar items the reader hid and Do Not Disturb, and reads them back', () => {
-        // revert: src/lib/state/workbench/ui.svelte.ts "save({ ...store.current, statusHidden: hidden ? [...others, item] : others });" => save({ ...store.current });
         const storage = fakeStorage();
         loadUi(storage);
         expect(client.ui.statusHidden()).toEqual([]);
@@ -157,7 +155,6 @@ describe('the appearance store', () => {
     });
 
     it('reads a hidden list saved wrongly as the entries it can use, and one saved before it as none', () => {
-        // revert: src/lib/state/workbench/ui.svelte.ts "(item): item is string => typeof item === 'string' && item !== ''" => (item): item is string => typeof item === 'string'
         const odd = createClientState();
         odd.ui.loadUi(
             fakeStorage({
@@ -279,7 +276,6 @@ describe('the appearance store', () => {
         expect(icons()).toBe(true);
     });
 
-    // revert: src/lib/state/workbench/ui.svelte.ts "icons: typeof held.icons === 'boolean' ? held.icons : held.unicode === true," => icons: held.icons === true,
     it('reads a choice saved under the older field name when no icons field is saved', () => {
         const older = fakeStorage({
             version: UI_VERSION,
@@ -302,7 +298,6 @@ describe('the appearance store', () => {
         expect(icons()).toBe(false);
     });
 
-    // revert: src/lib/state/workbench/ui.svelte.ts "if (typeof held.icons !== 'boolean' && typeof held.unicode === 'boolean')" => if (false)
     it('writes a choice read under the older field name back under icons at once', () => {
         const older = fakeStorage({
             version: UI_VERSION,

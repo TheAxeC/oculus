@@ -5,7 +5,7 @@
 // out as src is (the modules under lib/, `$lib/` standing for it): a block adding to a module above
 // its own folder, a block filling an empty interface a module below declares, a block across two
 // layers, a reference directive, a block named only in comments, and a package's own augmentation;
-// each shows what the check names, and goes red under the revert it names.
+// each shows what the check names.
 
 import { tmpdir } from 'node:os';
 import { resolve, sep } from 'node:path';
@@ -32,14 +32,12 @@ const BASE = {
 };
 
 describe('augmentation of a module of the tree', () => {
-    // revert: src/lib/highlight-languages.d.ts "declare module 'highlight.js/lib/languages/*' {" => declare module './state/client/context.ts' {
     it('is refused across src, and src holds none', () => {
         // Every module that needs another's declarations imports them; the one block src holds
         // adds to a package.
         expect(findAugments(SRC, 'lib/')).toEqual([]);
     });
 
-    // revert: bin/diagrams/imports.mjs "if (ts.isModuleDeclaration(node) && ts.isStringLiteral(node.name)) {" => if (false) {
     it('is named for a block that adds to a module of a folder above its own', () => {
         const dir = plant({
             ...BASE,
@@ -51,7 +49,6 @@ describe('augmentation of a module of the tree', () => {
         ]);
     });
 
-    // revert: bin/diagrams/imports.mjs "if (ts.isModuleDeclaration(node) && ts.isStringLiteral(node.name)) {" => if (false) {
     it('is named for a block that fills an empty interface a module below declares', () => {
         const dir = plant({
             ...BASE,
@@ -63,7 +60,6 @@ describe('augmentation of a module of the tree', () => {
         ]);
     });
 
-    // revert: bin/diagrams/imports.mjs "if (ts.isModuleDeclaration(node) && ts.isStringLiteral(node.name)) {" => if (false) {
     it('is named for a block across layers, in a component as in a module', () => {
         const dir = plant({
             ...BASE,
@@ -77,7 +73,6 @@ describe('augmentation of a module of the tree', () => {
         ]);
     });
 
-    // revert: bin/diagrams/imports.mjs "for (const reference of source.referencedFiles) {" => for (const reference of []) {
     it('is named for a reference directive to a module of the tree', () => {
         const dir = plant({
             ...BASE,
@@ -91,7 +86,6 @@ describe('augmentation of a module of the tree', () => {
         ]);
     });
 
-    // revert: bin/diagrams/imports.mjs "for (const reference of source.referencedFiles) {" => for (const reference of source.referencedFiles.filter((one) => /^\/\/\/\s*<reference\s+path/.test(code.slice(code.lastIndexOf('\n', one.pos) + 1)))) {
     it('is named for a reference directive with preserve before its path', () => {
         const dir = plant({
             ...BASE,
@@ -103,7 +97,6 @@ describe('augmentation of a module of the tree', () => {
         ]);
     });
 
-    // revert: bin/diagrams/imports.mjs "for (const reference of source.referencedFiles) {" => for (const reference of source.referencedFiles.filter((one) => /^\/\/\/\s*<reference\s+path/.test(code.slice(code.lastIndexOf('\n', one.pos) + 1)))) {
     it('is named for a reference directive with resolution-mode before its path', () => {
         const dir = plant({
             ...BASE,
@@ -115,7 +108,6 @@ describe('augmentation of a module of the tree', () => {
         ]);
     });
 
-    // revert: bin/diagrams/imports.mjs "const source = parsed(file, code);" => const source = parsed(file, code.replace(/\/\/ ?|\/\*|\*\//g, ''));
     it('is not read in a comment that names a block', () => {
         const dir = plant({
             ...BASE,
@@ -126,7 +118,6 @@ describe('augmentation of a module of the tree', () => {
         expect(findAugments(dir, 'lib/')).toEqual([]);
     });
 
-    // revert: tests/checks/imports/graph.ts "const id = target(fileRel, spec, lib);" => const id = spec;
     it('leaves a block that adds to a package', () => {
         const dir = plant({
             ...BASE,

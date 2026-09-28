@@ -159,7 +159,6 @@ describe('a subagent started in the background', () => {
     }
 
     it('keeps a subagent started in the background running after its launch answer', () => {
-        // revert: src/lib/server/sessions/fold.ts "if (isLaunch(acc, ident, record)) {" => if (false) {
         const f = new Fixture();
         launched(f);
         const [agent] = f.only().agents;
@@ -169,7 +168,6 @@ describe('a subagent started in the background', () => {
     });
 
     it('knows a launch by its answer when the call does not ask for the background', () => {
-        // revert: src/lib/server/sessions/stores/background.ts "return isMap(answer) && (answer.isAsync === true || answer.status === 'async_launched');" => return false;
         const f = new Fixture();
         launched(f, false);
         const [agent] = f.only().agents;
@@ -178,7 +176,6 @@ describe('a subagent started in the background', () => {
     });
 
     it('ends a background subagent at the completion notice naming its agent id', () => {
-        // revert: src/lib/server/sessions/fold.ts "takeNotices(acc, content, stamp);" => delete
         const f = new Fixture();
         const own = launched(f, false);
         f.append([notice('2026-01-01T10:05:00.000Z', { task: 'someone-else' }, 'completed')]);
@@ -192,7 +189,6 @@ describe('a subagent started in the background', () => {
     });
 
     it('ends one by the notice naming its call when the launch answer named no agent id', () => {
-        // revert: src/lib/server/sessions/stores/background.ts "call in acc.background" => false
         const f = new Fixture();
         stopped(launched(f, false, false));
         f.append([notice('2026-01-01T10:09:00.000Z', { task: 'agent7', call: 'b1' }, 'completed')]);
@@ -202,7 +198,6 @@ describe('a subagent started in the background', () => {
     });
 
     it('reads a subagent killed before it finished as stopped', () => {
-        // revert: src/lib/server/sessions/stores/background.ts "const ENDED_AS: Record<string, string> = { completed: 'done', killed: 'stopped' };" => const ENDED_AS: Record<string, string> = { completed: 'done' };
         const f = new Fixture();
         stopped(launched(f, false));
         f.append([notice('2026-01-01T10:09:00.000Z', { task: 'agent7', call: 'b1' }, 'killed')]);
@@ -212,7 +207,6 @@ describe('a subagent started in the background', () => {
     });
 
     it('reads a subagent resumed after its notice by the latest notice', () => {
-        // revert: src/lib/server/sessions/stores/background.ts "agent.ended = stamp;" => agent.ended = stamp; delete acc.background[id ?? ''];
         const f = new Fixture();
         stopped(launched(f, false));
         f.append([notice('2026-01-01T10:09:00.000Z', { task: 'agent7', call: 'b1' }, 'killed')]);
@@ -224,7 +218,6 @@ describe('a subagent started in the background', () => {
     });
 
     it('reads a subagent resumed after its notice as running while it writes again, and by its next notice after', () => {
-        // revert: src/lib/server/sessions/stores/background.ts "if (own !== null && own > ended + RESUMED_AFTER_MS) {" => if (false) {
         const f = new Fixture();
         const own = launched(f, false);
         stopped(own);
@@ -246,7 +239,6 @@ describe('a subagent started in the background', () => {
     });
 
     it('ends a subagent by a notice queued while the session was busy, and reads a killed one stopped', () => {
-        // revert: src/lib/server/sessions/fold.ts "if (queued.commandMode === 'task-notification' && typeof queued.prompt === 'string') {" => if (false) {
         const f = new Fixture();
         stopped(launched(f, false));
         f.append([queued('2026-01-01T10:09:00.000Z', { task: 'agent7' }, 'killed')]);
@@ -256,7 +248,6 @@ describe('a subagent started in the background', () => {
     });
 
     it('reads a background subagent by its own transcript: running while it grows, done once still', () => {
-        // revert: src/lib/server/sessions/stores/background.ts "if (last === null || now - last <= IDLE_AFTER_SECONDS * 1000) continue;" => continue;
         const f = new Fixture();
         const own = launched(f);
         // The session's own file has been still for two hours; the subagent's transcript has not.

@@ -1,13 +1,12 @@
 // The Repositories view rendered to HTML on the server: the Repositories section over the roots of
 // the `git` channel, the one repository shown, its branch line, its commit box, and its Changes,
 // Graph, Stashes, Tags, Branches and Worktrees sections with their counts and the controls of each
-// row. Each case names the change that turns it red.
+// row.
 //
 // The catalog and the glyphs are the real config; the git payload is the test's own, so the
 // sections are drawn without a repository anywhere. What this does NOT cover: pressing a control,
 // and the reads the graph, a diff pane and the merge editor make, none of which a server rendering
-// runs; those are exercised by tests/browser/sources/repositories.spec.ts and tests/browser/scm/.
-// The two panes the views open are rendered here too: the diff pane with its bar (the two
+// runs. The two panes the views open are rendered here too: the diff pane with its bar (the two
 // layouts, Previous Change and Next Change, Open File and the re-read) and the merge editor with
 // its count of open conflicts and Complete Merge.
 
@@ -153,7 +152,6 @@ function group(body: string, id: string): string {
 
 describe('the Repositories view', () => {
     it('audits that maps each repository picker status to its own tone and a readable repository to none', () => {
-        // revert: src/lib/views/shared/changes/repo-shape.ts "if (shape === 'missing') return 'red';" => if (shape === 'missing') return 'blue';
         expect([
             shapeBadgeTone('missing'),
             shapeBadgeTone('failed'),
@@ -162,7 +160,6 @@ describe('the Repositories view', () => {
         ]).toEqual(['red', 'amber', 'blue', undefined]);
     });
 
-    // revert: src/lib/views/sources/repositories/Repositories.svelte "<Empty message={t('repositories.empty')} glyph={t('repositories.empty_glyph')} />" => <Empty message={t('repositories.list')} glyph={t('repositories.empty_glyph')} />
     it('says nothing is on the channel before the first payload', () => {
         const body = render(Repositories, {
             context: clientContext(client),
@@ -171,7 +168,6 @@ describe('the Repositories view', () => {
         expect(body).toContain(catalog['repositories.empty']);
     });
 
-    // revert: src/lib/views/sources/repositories/Repositories.svelte "const shown = $derived(shownRoot(roots, view.root));" => const shown = $derived(roots.at(-1) ?? '');
     it('draws one repository, the first root the channel carries while the instance keeps none', () => {
         const body = html({ [HUB]: HUB_GIT, [OTHER]: git({ branch: 'work' }) });
         expect(body).toContain(`data-root="${HUB}"`);
@@ -180,7 +176,6 @@ describe('the Repositories view', () => {
         expect(count(body, 'data-root=')).toBe(1);
     });
 
-    // revert: src/lib/views/sources/repositories/Repositories.svelte "const shown = $derived(shownRoot(roots, view.root));" => const shown = $derived(roots[0] ?? '');
     it('draws the repository the instance keeps, and the first one when that one has gone', () => {
         const kept = html({ [HUB]: HUB_GIT, [OTHER]: git({ branch: 'work' }) }, 'repositories', {
             root: OTHER
@@ -193,7 +188,6 @@ describe('the Repositories view', () => {
         expect(gone).toContain(`data-root="${HUB}"`);
     });
 
-    // revert: src/lib/views/sources/repositories/RepoList.svelte "current={root === shown}" => current={false}
     it('lists every root in the Repositories section, each by its name, the one shown as current', () => {
         const body = html({ [HUB]: HUB_GIT, [OTHER]: git({ branch: 'work' }) }, 'repositories', {
             root: OTHER
@@ -210,7 +204,6 @@ describe('the Repositories view', () => {
         expect(hub.slice(0, hub.indexOf('</li>'))).not.toContain('aria-current="true"');
     });
 
-    // revert: src/lib/views/sources/repositories/RepoList.svelte "{:else if count > 0}" => {:else if false}
     it('says on each row its branch, its distance from the upstream and how many paths it changed', () => {
         const body = html({ [HUB]: { ...HUB_GIT, upstream: true } });
         const row = group(body, 'repos');
@@ -222,14 +215,12 @@ describe('the Repositories view', () => {
         );
     });
 
-    // revert: src/lib/views/sources/repositories/Repo.svelte "<span class=\"mt\">{branchState(git)}</span>" => delete
     it('draws the branch line with the distance from the upstream', () => {
         const body = html({ [HUB]: HUB_GIT });
         expect(body).toContain('main');
         expect(body).toContain(catalog['sessions.ch_ahead'].replace('{0}', '2'));
     });
 
-    // revert: src/lib/views/shared/changes/branch-state.ts "if (bits.length === 0 && state.upstream === true) bits.push(t('sessions.ch_insync'));" => if (bits.length === 0) bits.push(t('sessions.ch_insync'));
     it('says in step on the branch line only for a branch with an upstream', () => {
         // A repository with no commit yet has no upstream, and reads the line saying so instead.
         const fresh = html({ [HUB]: git({ branch: 'start', log: [], branches: [] }) });
@@ -241,7 +232,6 @@ describe('the Repositories view', () => {
         expect(tracked).toContain(catalog['sessions.ch_insync']);
     });
 
-    // revert: src/lib/views/sources/repositories/Repo.svelte "if (drawn === 'missing') return t('sessions.ch_nofolder');" => delete
     it('says a folder that is not there is not there, and one that is no repository is neither', () => {
         const reason = 'no such directory';
         const away = repo(git({ branch: '', present: false, repository: false, error: reason }));
@@ -260,7 +250,6 @@ describe('the Repositories view', () => {
         expect(folder).not.toContain(catalog['sessions.ch_failed'].replace('{0}', norepo));
     });
 
-    // revert: src/lib/views/sources/repositories/Changes.svelte "count={total}" => delete
     it('draws the Changes section with its count and the three groups with theirs', () => {
         const changes = group(html({ [HUB]: HUB_GIT }), 'changes');
         expect(changes).toContain(`aria-label="${catalog['repositories.changes']}"`);
@@ -271,7 +260,6 @@ describe('the Repositories view', () => {
         expect(count(changes, '>1</span>')).toBe(3);
     });
 
-    // revert: src/lib/views/sources/repositories/Changes.svelte "{:else if group !== 'untracked'}" => {:else if true}
     it('draws each change row with its diff, Open File, its staging and, for a changed path, its discard', () => {
         const changes = group(html({ [HUB]: HUB_GIT }), 'changes');
         expect(changes).toContain('data-entry="code/one.py"');
@@ -291,7 +279,6 @@ describe('the Repositories view', () => {
         expect(count(changes, `aria-label="${catalog['git.discard']}"`)).toBe(1);
     });
 
-    // revert: src/lib/views/sources/repositories/Changes.svelte "{#if open}" => {#if true}
     it('draws no row of a group or a section the instance keeps closed', () => {
         const body = html({ [HUB]: HUB_GIT }, 'repositories', { collapsed: ['staged', 'graph'] });
         // the staged group is closed, so its rows are not drawn
@@ -300,7 +287,6 @@ describe('the Repositories view', () => {
         expect(group(body, 'graph')).toContain('aria-expanded="false"');
     });
 
-    // revert: src/lib/views/sources/repositories/Repo.svelte "<CommitBox {root} {git} />" => delete
     it('draws the commit box above the sections, with the Commit button and its list', () => {
         const body = html({ [HUB]: HUB_GIT });
         const box = body.indexOf('data-commit-box');
@@ -309,7 +295,6 @@ describe('the Repositories view', () => {
         expect(body).toContain(`aria-label="${catalog['git.commit_more']}"`);
     });
 
-    // revert: src/lib/views/sources/repositories/graph/Graph.svelte "label={t('repositories.graph')}" => label={t('repositories.tags')}
     it('draws the Graph section, whose commits the page reads when it opens', () => {
         const graph = group(html({ [HUB]: HUB_GIT }), 'graph');
         expect(graph).toContain(`aria-label="${catalog['repositories.graph']}"`);
@@ -317,7 +302,6 @@ describe('the Repositories view', () => {
         expect(graph).toContain(catalog['repositories.log_empty']);
     });
 
-    // revert: src/lib/views/sources/repositories/refs/Stashes.svelte "{#each git.stashes as stash (stash.ref)}" => {#each [] as stash (stash.ref)}
     it('lists the stashes, each with Apply, Pop and Drop, and says when there is none', () => {
         const held = {
             ...HUB_GIT,
@@ -334,7 +318,6 @@ describe('the Repositories view', () => {
         );
     });
 
-    // revert: src/lib/views/sources/repositories/refs/Tags.svelte "{#each git.tags as tag (tag.name)}" => {#each [] as tag (tag.name)}
     it('lists the tags, each with Delete Tag, and says when there is none', () => {
         const held = {
             ...HUB_GIT,
@@ -348,7 +331,6 @@ describe('the Repositories view', () => {
         );
     });
 
-    // revert: src/lib/views/sources/repositories/Repo.svelte "{#if git.sequence !== ''}" => {#if false}
     it('says a merge is in progress with Abort, draws Merge Changes first, and opens a conflict in the merge editor', () => {
         const held = git({
             sequence: 'merging',
@@ -366,7 +348,6 @@ describe('the Repositories view', () => {
         expect(changes).toContain(catalog['repositories.conflict_both_modified']);
     });
 
-    // revert: src/lib/views/sources/repositories/Branches.svelte "{#if !branch.current}" => {#if true}
     it('lists the branches with the switch control on the ones not checked out', () => {
         const branches = group(html({ [HUB]: HUB_GIT }), 'branches');
         expect(branches).toContain('origin/main');
@@ -378,7 +359,6 @@ describe('the Repositories view', () => {
         expect(main.slice(0, main.indexOf('</li>'))).toContain('aria-current="true"');
     });
 
-    // revert: src/lib/state/sources/repositories/repositories.ts "return git.worktrees.filter((one) => !one.main);" => return git.worktrees;
     it('lists every worktree but the checkout, each with its four controls', () => {
         const body = html({ [HUB]: HUB_GIT });
         const worktrees = group(body, 'worktrees');
@@ -392,7 +372,6 @@ describe('the Repositories view', () => {
         expect(worktrees).toContain(catalog['repositories.remove']);
     });
 
-    // revert: src/lib/views/sources/repositories/Worktrees.svelte "title={git.detached" => title={false
     it('offers no merge back while the repository has no branch checked out', () => {
         const body = html({ [HUB]: HUB_GIT });
         expect(body).toContain(catalog['repositories.merge_title']);
@@ -407,7 +386,6 @@ describe('the Repositories view', () => {
         expect(group(loose, 'worktrees')).toContain('disabled');
     });
 
-    // revert: src/lib/views/sources/repositories/Worktrees.svelte "{#if !git.ignoresWorktrees}" => {#if false}
     it('warns about a repository whose .gitignore does not keep the folder out', () => {
         // this repository's .gitignore keeps the worktree folder out, so there is nothing to warn
         // about
@@ -416,7 +394,6 @@ describe('the Repositories view', () => {
         expect(loose).toContain(catalog['repositories.worktrees_unignored']);
     });
 
-    // revert: src/lib/views/sources/repositories/Repo.svelte "{#if busy}" => {#if true}
     it('draws the busy line on the root with a write in flight and on no other', async () => {
         // The write is held open, so the store is still busy on that root while the page renders.
         let release: () => void = () => undefined;
@@ -441,7 +418,6 @@ describe('the Repositories view', () => {
         vi.unstubAllGlobals();
     });
 
-    // revert: src/lib/state/sources/repositories/repositories.ts "return roots.filter((root) => stateOf(root) !== null);" => return roots.filter((root) => stateOf(root)?.repository === true);
     it('draws a root that is no repository, and says nothing is on the channel only when nothing is', () => {
         const folder = git({ branch: '', repository: false, error: 'not a git repository' });
         const body = html({ [HUB]: folder, [OTHER]: git({ branch: 'work' }) });
@@ -455,7 +431,6 @@ describe('the Repositories view', () => {
         expect(body).not.toContain(catalog['repositories.empty']);
     });
 
-    // revert: src/lib/state/sources/repositories/repositories.ts "return roots.filter((root) => stateOf(root) !== null);" => return roots.filter((root) => stateOf(root)?.repository === true);
     it('keeps the view on a root the reader picked after its folder was deleted', () => {
         const away = git({
             branch: '',
@@ -480,7 +455,6 @@ describe('the Repositories view', () => {
         expect(body).toContain('title="no such directory"');
     });
 
-    // revert: src/lib/views/sources/repositories/Repo.svelte "{#if shape !== 'readable'}" => {#if false}
     it('draws a repository whose read failed as its error row and no section', () => {
         const reason = 'index file smaller than expected';
         const body = html(
@@ -509,7 +483,6 @@ describe('the Repositories view', () => {
         expect(other.slice(0, other.indexOf('</li>'))).toContain('aria-current="true"');
     });
 
-    // revert: src/lib/views/sources/repositories/Repo.svelte "{#if git.branch !== ''}" => {#if git.error === null}
     it('keeps the branch line and the path above the error row while the state names a branch', () => {
         const reason = 'index file smaller than expected';
         const named = html({ [OTHER]: git({ branch: 'work', error: reason }) });
@@ -528,7 +501,6 @@ describe('the Repositories view', () => {
         expect(unnamed).toContain('class="path');
     });
 
-    // revert: src/lib/views/sources/repositories/Branches.svelte "const unborn = $derived(noCommitYet(git));" => const unborn = $derived(false);
     it('says a repository with no commit has no branch to list, and keeps New branch live', () => {
         const fresh = git({ branch: 'start', branches: [], log: [] });
         const branches = group(html({ [HUB]: fresh }), 'branches');
@@ -570,7 +542,6 @@ describe('the Repositories view', () => {
         expect(liveCreate.slice(0, liveCreate.indexOf('>'))).not.toContain('disabled');
     });
 
-    // revert: src/lib/state/sources/repositories/repositories.ts "labels[root] = !sameOne ? one : !sameTwo ? two : root;" => labels[root] = one;
     it('tells two repositories with the same last folder apart by the folder above it', () => {
         const body = html(
             { '/a/work/hub': HUB_GIT, '/b/other/hub': git({ branch: 'work' }) },
@@ -581,7 +552,6 @@ describe('the Repositories view', () => {
         expect(row.slice(0, row.indexOf('</li>'))).toContain('aria-label="other/hub"');
     });
 
-    // revert: src/lib/state/sources/repositories/repositories.ts "(group) => (group.id !== 'staged' && group.id !== 'merge') || group.entries.length > 0" => () => true
     it('draws no staged group while nothing is staged, and one muted row under an empty group', () => {
         const changes = group(
             html({
@@ -596,7 +566,6 @@ describe('the Repositories view', () => {
         expect(changes).toContain(catalog['sessions.ch_group_empty']);
     });
 
-    // revert: src/lib/ui/tree/TreeView.svelte "<div class=\"tree\" role=\"tree\" aria-label={label} bind:this={box} onfocusin={entered}>" => <div class="tree" aria-label={label} bind:this={box} onfocusin={entered}>
     it('draws the Repositories section and the sections of the repository as a tree each, a treeitem per row at its level, one stop each', () => {
         const body = html({ [HUB]: HUB_GIT });
         expect(count(body, 'role="tree"')).toBe(2);
@@ -607,7 +576,6 @@ describe('the Repositories view', () => {
         expect(count(body, 'tabindex="0"')).toBe(2);
     });
 
-    // revert: src/lib/views/sources/repositories/Branches.svelte "current={branch.current}" => selected={branch.current}
     it('draws the checked-out branch as in force and not as the selection', () => {
         const branches = group(html({ [HUB]: HUB_GIT }), 'branches');
         const main = branches.slice(branches.indexOf('data-branch="main"'));
@@ -617,7 +585,6 @@ describe('the Repositories view', () => {
         expect(row).toContain('class="mark');
     });
 
-    // revert: src/lib/views/sources/repositories/Branches.svelte "label={t('git.branch_new')}" => label={t('git.branch_new_label')}
     it('names the new-branch and new-worktree fields by the words their rows show', () => {
         const body = html({ [HUB]: HUB_GIT });
         const branch = group(body, 'branches');
@@ -650,7 +617,6 @@ const FILE = {
 };
 
 describe('the diff pane', () => {
-    // revert: src/lib/views/sources/repositories/diff/Diff.svelte "const title = $derived(held.label === '' ? t('views.repositories_diff') : held.label);" => const title = $derived(t('views.repositories_diff'));
     it('says what it is over in its title, and asks for nothing when it is over nothing', () => {
         const empty = pane(Diff, 'repositories-diff', {});
         expect(empty).toContain(catalog['views.repositories_diff']);
@@ -658,7 +624,6 @@ describe('the diff pane', () => {
         expect(pane(Diff, 'repositories-diff', FILE)).toContain('README.md');
     });
 
-    // revert: src/lib/views/sources/repositories/diff/Diff.svelte "pressed={view.mode === 'side'}" => pressed={false}
     it('draws the two layouts, side by side pressed unless the pane keeps inline', () => {
         const side = pane(Diff, 'repositories-diff', FILE);
         const pressed = (body: string, key: string): boolean => {
@@ -672,7 +637,6 @@ describe('the diff pane', () => {
         expect(pressed(inline, 'repositories.diff_inline')).toBe(true);
     });
 
-    // revert: src/lib/views/sources/repositories/diff/Diff.svelte "{#if held.path !== '' && !held.worktree && (held.commit ?? '') === ''}" => {#if true}
     it('offers Previous Change, Next Change and Open File for a file, and no Open File for a commit', () => {
         const file = pane(Diff, 'repositories-diff', FILE);
         expect(file).toContain(`aria-label="${catalog['repositories.change_prev']}"`);
@@ -685,7 +649,6 @@ describe('the diff pane', () => {
 });
 
 describe('the merge editor', () => {
-    // revert: src/lib/views/sources/repositories/merge/Merge.svelte "{#if root === '' || path === ''}" => {#if false}
     it('says it was opened for nothing, and waits for the three versions of a path it was opened for', () => {
         expect(pane(Merge, 'repositories-merge', {})).toContain(
             catalog['repositories.merge_empty']
@@ -698,7 +661,6 @@ describe('the merge editor', () => {
         expect(body).toContain('data-conflicts-left="0"');
     });
 
-    // revert: src/lib/views/sources/repositories/merge/Merge.svelte "disabled={busy || sides === null || done}" => disabled={busy}
     it('holds Complete Merge back until the three versions are read', () => {
         const body = pane(Merge, 'repositories-merge', { root: '/hub', path: 'both.txt' });
         const at = body.indexOf(`>${catalog['repositories.merge_complete']}</span>`);

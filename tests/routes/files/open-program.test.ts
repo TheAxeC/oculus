@@ -164,7 +164,6 @@ describe('a file handed to the application its extension names', () => {
     });
 
     it('refuses a file whose FinderInfo read fails for any reason but its absence', async () => {
-        // revert: src/lib/server/files/open.ts "info = await reader(real);" +2 => return false;
         const { roots } = withFiles();
         const failing: FinderInfoReader = () => Promise.reject(new Error('xattr: [Errno 1]'));
         await refusedBoth('projects/active/alpha/report.docx', roots, checkedIn, failing);
@@ -193,7 +192,6 @@ describe('a file handed to the application its extension names', () => {
     });
 
     it('refuses a listed file it cannot read', async () => {
-        // revert: src/lib/server/files/open.ts ");" +2 => return false;
         const { report, roots } = withFiles();
         chmodSync(report, 0o000);
         // A reader that finds no FinderInfo, so the unread first bytes alone refuse the file.
@@ -215,7 +213,6 @@ describe('a file handed to the application its extension names', () => {
     });
 
     it('opens a file under a root when an earlier root in the list is gone', async () => {
-        // revert: src/lib/server/files/open.ts "continue;" => return null;
         const { work, sheet } = withFiles();
         const roots = [
             { key: 'gone', dir: join(work, 'removed-since-it-was-saved') },
@@ -360,7 +357,6 @@ describe('what macOS open is run with and the floor under it', () => {
     });
 
     it('refuses a relative path, an option and a path with nothing at it', async () => {
-        // revert: src/lib/server/files/open.ts "return isBundleId(target.app) && (await safeFile(path, reader));" +2 => return true;
         const { hub } = withFiles();
         const word = 'com.microsoft.Word';
         expect(await openable({ kind: 'folder', path: join(hub, 'nothing-here') })).toBe(false);

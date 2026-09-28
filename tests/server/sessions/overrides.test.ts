@@ -69,7 +69,6 @@ describe('setHidden', () => {
 });
 
 describe('setFlag top', () => {
-    // revert: src/lib/server/sessions/overrides.ts "const next = on ? { ...entry, [flag]: true } : without(entry, flag);" => const next = on ? { ...entry, hidden: true } : without(entry, flag);
     it('pins a session to the top of its group and takes it off, keeping the dismissal beside it', () => {
         const path = file({ sessions: { [ID]: { hidden: true } } });
         expect(setFlag(ID, 'top', true, path)).toEqual({

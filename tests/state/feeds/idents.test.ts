@@ -10,7 +10,6 @@ import {
 } from '../../../src/lib/state/feeds/idents.ts';
 
 describe('a feed entry identity over the whole feed', () => {
-    // revert: src/lib/state/feeds/idents.ts "ids.set(entry, own === '' || own === fallback || shared ? `${own || fallback}#${at}` : own);" => ids.set(entry, `${own || fallback}#${at}`);
     it('keeps the entry own id where it is unique and not empty', () => {
         const entries = [{ title: 'One' }, { title: 'Two' }];
         const identOf = feedIdents('radar', entries);
@@ -18,7 +17,6 @@ describe('a feed entry identity over the whole feed', () => {
         expect(identOf(entries[1])).toBe('Two');
     });
 
-    // revert: src/lib/state/feeds/idents.ts "ids.set(entry, own === '' || own === fallback || shared ? `${own || fallback}#${at}` : own);" => ids.set(entry, own === '' || own === fallback ? `${own || fallback}#${at}` : own);
     it('tells two entries with one title apart by their place in the feed', () => {
         const entries = [{ title: 'Same' }, { title: 'Same' }];
         const identOf = feedIdents('radar', entries);
@@ -28,7 +26,6 @@ describe('a feed entry identity over the whole feed', () => {
         expect(identOf(entries[0])).not.toBe(identOf(entries[1]));
     });
 
-    // revert: src/lib/state/feeds/idents.ts "ids.set(entry, own === '' || own === fallback || shared ? `${own || fallback}#${at}` : own);" => ids.set(entry, shared ? `${own || fallback}#${at}` : own);
     it('gives an entry whose every field is empty an id the cursor can hold', () => {
         const entries = [{ title: '', inst: '', url: '' }, { title: 'Real' }];
         const identOf = feedIdents('radar', entries);
@@ -37,7 +34,6 @@ describe('a feed entry identity over the whole feed', () => {
         expect(identOf(entries[1])).toBe('Real');
     });
 
-    // revert: src/lib/state/feeds/idents.ts "ids.set(entry, own === '' || own === fallback || shared ? `${own || fallback}#${at}` : own);" => ids.set(entry, own);
     it('numbers by the list it was built over, whatever the base gives', () => {
         const entries = [{ id: 'a' }, { id: 'a' }, { id: 'b' }];
         const identOf = uniqueIdents(entries, (entry) => entry.id, 'lead');
@@ -50,7 +46,6 @@ describe('a feed entry identity over the whole feed', () => {
 });
 
 describe('the strings nested in an entry', () => {
-    // revert: src/lib/state/feeds/idents.ts "return Object.values(value as Record<string, unknown>).flatMap(nestedStrings);" => return [];
     it('are every non-empty string, in property order, lists and maps followed', () => {
         expect(nestedStrings({ a: '', b: ['x', { c: 'y' }], d: 3, e: null })).toEqual(['x', 'y']);
     });

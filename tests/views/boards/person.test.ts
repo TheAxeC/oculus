@@ -3,8 +3,8 @@
 //
 // The catalog and the glyphs are the real config; the folder listing comes from the fs store, whose
 // `fetch` is a stub, so the folder block is checked with a real answer behind it rather than with a
-// spinner. Pressing a row is a DOM event no server render fires; opening the tab from a card end to
-// end is tests/browser/boards/person.spec.ts.
+// spinner. Pressing a row, and opening the tab from a card, are DOM events no server render fires,
+// and no case here covers them.
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render } from 'svelte/server';
@@ -300,7 +300,6 @@ describe('one person as their own tab', () => {
         expect(body).not.toContain(catalog['person.show_in_files']);
     });
 
-    // revert: src/lib/views/boards/person/Person.svelte "<Empty message={t('person.folder_outside')} glyph=\"warn\" />" => <!-- nothing to draw -->
     // Revert: in views/boards/person/Person.svelte, draw nothing where the folder is not one of the
     // hub, and the block is a heading over an empty space that says nothing about why.
     it('says so when the folder is not one of the hub, rather than drawing an empty block', () => {
@@ -310,7 +309,6 @@ describe('one person as their own tab', () => {
         expect(body).not.toContain(catalog['person.folder_loading']);
     });
 
-    // revert: src/lib/state/boards/collection.ts "const HUB_ONLY_FIELDS = ['folder'];" => const HUB_ONLY_FIELDS: string[] = [];
     // Revert: in hubPathsOf of state/boards/collection.ts, read a `folder` through the address rule
     // like a link, and a folder of this hub whose name is host-shaped becomes a web address.
     it('reads a folder whose first segment is host-shaped as the folder of the hub it is', () => {

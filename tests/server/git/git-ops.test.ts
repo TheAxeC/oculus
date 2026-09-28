@@ -171,7 +171,6 @@ function diffOf(root: string, ...flags: string[]): string {
 }
 
 describe('the amend', () => {
-    // revert: src/lib/server/git/git-write.ts "if (text.trim() === '') return commitWith(root, ['--amend', '--no-edit']);" => delete
     it('replaces the last commit, and keeps its message when the box is empty', async () => {
         write(repo, 'kept.txt', 'one\n');
         git(repo, 'commit', '-qam', 'Local work');
@@ -189,7 +188,6 @@ describe('the amend', () => {
         ]);
     });
 
-    // revert: src/lib/server/git/git-write.ts "if (pushed) {" => if (false) {
     it('refuses a commit the upstream already holds, since that would need a forced push', async () => {
         const head = git(repo, 'rev-parse', 'HEAD');
         const answer = await commit(repo, 'Rewrite history', ROOTS, true);
@@ -198,7 +196,6 @@ describe('the amend', () => {
         expect(git(repo, 'rev-parse', 'HEAD')).toBe(head);
     });
 
-    // revert: src/lib/server/git/git-write.ts "if (!amend && text.trim() === '') return failed('a commit needs a message');" => delete
     it('still refuses a plain commit with no message', async () => {
         const answer = await commit(repo, '  ', ROOTS);
         expect(answer.ok).toBe(false);
@@ -207,7 +204,6 @@ describe('the amend', () => {
 });
 
 describe('pull, fetch, sync and publish', () => {
-    // revert: src/lib/server/git/git-remote.ts "const done = await pullIn(root);" => const done = await fetchIn(root);
     it('pulls what the upstream holds', async () => {
         write(other, 'theirs.txt', 'x\n');
         git(other, 'add', '.');
@@ -218,7 +214,6 @@ describe('pull, fetch, sync and publish', () => {
         expect(read(repo, 'theirs.txt')).toBe('x\n');
     });
 
-    // revert: src/lib/server/git/git-write.ts "return run(root, ['fetch', '--prune'], PUSH_TIMEOUT_MS);" => return run(root, ['fetch'], PUSH_TIMEOUT_MS);
     it('fetches the remote branches and takes away the ones the remote dropped', async () => {
         git(other, 'push', '-q', 'origin', 'main:gone-soon');
         expect((await fetchAll(repo, ROOTS)).ok).toBe(true);
@@ -228,7 +223,6 @@ describe('pull, fetch, sync and publish', () => {
         expect(git(repo, 'branch', '-r')).not.toContain('origin/gone-soon');
     });
 
-    // revert: src/lib/server/git/git-remote.ts "const pushed = await pushTo(root, []);" => const pushed = pulled;
     it('syncs: pulls, then pushes what the branch holds', async () => {
         write(other, 'theirs.txt', 'x\n');
         git(other, 'add', '.');
@@ -245,7 +239,6 @@ describe('pull, fetch, sync and publish', () => {
         expect(upstream).toContain('Theirs');
     });
 
-    // revert: src/lib/server/git/git-remote.ts "return stoppedOn(root, done, 'the pull');" => return done;
     it('leaves a pull that stops on conflicts in progress, and says where they are', async () => {
         write(other, 'kept.txt', 'theirs\n');
         git(other, 'commit', '-qam', 'Theirs');
@@ -261,7 +254,6 @@ describe('pull, fetch, sync and publish', () => {
         expect(git(remote, 'log', '--format=%s', 'main')).not.toContain('Mine');
     });
 
-    // revert: src/lib/server/git/git-write.ts "return run(root, ['pull'], PUSH_TIMEOUT_MS);" => return run(root, ['pull', '--no-rebase'], PUSH_TIMEOUT_MS);
     it("pulls the repository's own way, rebasing where the repository says so", async () => {
         git(repo, 'config', 'pull.rebase', 'true');
         write(other, 'theirs.txt', 'x\n');
@@ -280,7 +272,6 @@ describe('pull, fetch, sync and publish', () => {
         ]);
     });
 
-    // revert: src/lib/server/git/git-remote.ts "if (!up.ok) return failed('this branch has no upstream, so there is nothing to pull from');" => delete
     it('refuses a pull on a branch with no upstream', async () => {
         git(repo, 'switch', '-qc', 'lonely');
         const answer = await pull(repo, ROOTS);
@@ -288,7 +279,6 @@ describe('pull, fetch, sync and publish', () => {
         expect(answer.error).toContain('no upstream');
     });
 
-    // revert: src/lib/server/git/git-remote.ts "if (up.ok) return failed(`this branch already has the upstream ${up.output.trim()}`);" => delete
     it('publishes a branch to a remote of its own, and refuses one that has an upstream', async () => {
         git(repo, 'switch', '-qc', 'fresh-work');
         const bad = await publish(repo, 'elsewhere', ROOTS);
@@ -305,7 +295,6 @@ describe('pull, fetch, sync and publish', () => {
         expect(again.error).toContain('already has the upstream');
     });
 
-    // revert: src/lib/server/git/git-remote.ts "export async function pull(root: string, roots: string[] = allowedRoots()): Promise<Outcome> {" +1 => delete
     it('refuses a root the page does not know', async () => {
         const stranger = join(dir, 'stranger');
         for (const answer of [
@@ -327,7 +316,6 @@ describe('hunks and lines', () => {
         write(repo, 'kept.txt', 'one\nTWO\nthree\nfour\nfive\nsix\nSEVEN\neight\n');
     }
 
-    // revert: src/lib/server/git/git-index.ts "if (name === '/dev/null') continue;" => delete
     it('names the paths a patch heads carry, quoted or not, and leaves /dev/null out', () => {
         const patch = [
             'diff --git a/x b/x',
@@ -342,7 +330,6 @@ describe('hunks and lines', () => {
         expect(patchPaths(patch)).toEqual(['x', 'x', 'sp ace', 'old', 'new']);
     });
 
-    // revert: src/lib/server/git/git-index.ts "unstage: ['--cached', '--reverse']," => unstage: ['--cached'],
     it('stages one hunk of two, and unstages it again', async () => {
         twoChanges();
         const text = diffOf(repo, '-U1');
@@ -361,7 +348,6 @@ describe('hunks and lines', () => {
         expect(read(repo, 'kept.txt')).toContain('TWO');
     });
 
-    // revert: src/lib/server/git/git-write.ts "return run(root, ['apply', ...flags, '--recount', '-'], TIMEOUT_MS, { input: patch });" => return run(root, ['apply', ...flags, '-'], TIMEOUT_MS, { input: patch });
     it('stages chosen lines only, git counting the cut hunk itself', async () => {
         write(repo, 'kept.txt', 'one\nA\nB\ntwo\nthree\nfour\nfive\nsix\nseven\neight\n');
         // The hunk adds A and B; the patch keeps A and drops B, with the counts left as they were.
@@ -378,7 +364,6 @@ describe('hunks and lines', () => {
         expect(read(repo, 'kept.txt')).toContain('B\n');
     });
 
-    // revert: src/lib/server/git/git-index.ts "revert: ['--reverse']" => revert: []
     it('reverts one hunk in the worktree and leaves the other', async () => {
         twoChanges();
         const text = diffOf(repo, '-U1');
@@ -388,7 +373,6 @@ describe('hunks and lines', () => {
         expect(read(repo, 'kept.txt')).toBe('one\nTWO\nthree\nfour\nfive\nsix\nseven\neight\n');
     });
 
-    // revert: src/lib/server/git/git-index.ts "if (outside !== undefined) return failed(`the path ${outside} is not inside the workspace`);" => delete
     it("answers a patch git refuses with git's own line, and refuses one that leaves the repository", async () => {
         const stale = [
             'diff --git a/kept.txt b/kept.txt',
@@ -412,7 +396,6 @@ describe('hunks and lines', () => {
         expect(nothing.error).toContain('not a patch');
     });
 
-    // revert: src/lib/server/git/git-index.ts "return restore(root, ['.'], false);" => return restore(root, ['.'], true);
     it('stages every tracked change, every untracked path, unstages all and discards all', async () => {
         write(repo, 'kept.txt', 'changed\n');
         write(repo, 'loose.txt', 'new\n');
@@ -443,7 +426,6 @@ describe('conflicts', () => {
         expect(tryGit(repo, 'merge', 'side')).toBe(false);
     }
 
-    // revert: src/lib/server/git/git-index.ts "return failed(`the result could not be written: ${String(error)}`);" +2 => return { ok: true, output: '', error: '' };
     it('writes the result over a conflicted path and stages it, and commits the merge', async () => {
         conflicted();
         const answer = await resolveMerge(repo, 'kept.txt', 'main\nside\n', ROOTS);
@@ -455,7 +437,6 @@ describe('conflicts', () => {
         expect(git(repo, 'log', '-1', '--format=%P').trim().split(' ').length).toBe(2);
     });
 
-    // revert: src/lib/server/git/git-index.ts "if (!(await unmergedPaths(root)).includes(path)) {" => if (false) {
     it('refuses to write over a path that is not in conflict', async () => {
         const answer = await resolveMerge(repo, 'kept.txt', 'lost\n', ROOTS);
         expect(answer.ok).toBe(false);
@@ -463,7 +444,6 @@ describe('conflicts', () => {
         expect(read(repo, 'kept.txt')).toContain('one');
     });
 
-    // revert: src/lib/server/git/git-index.ts "return failed('no merge is in progress here, so there is nothing to abort');" => delete
     it('aborts a merge, and a rebase, and says when neither is in progress', async () => {
         const quiet = await abortMerge(repo, ROOTS);
         expect(quiet.ok).toBe(false);
@@ -480,7 +460,6 @@ describe('conflicts', () => {
         expect(read(repo, 'kept.txt')).toBe('main\n');
     });
 
-    // revert: src/lib/server/git/git-index.ts "return rebaseIn(root, '--continue');" => delete
     it('carries a rebase on once its conflict is resolved, and not before', async () => {
         conflicted();
         expect((await abortMerge(repo, ROOTS)).ok).toBe(true);
@@ -506,7 +485,6 @@ describe('conflicts a deletion made', () => {
         return git(repo, 'ls-files', '-u').trim();
     }
 
-    // revert: src/lib/server/git/git-index.ts "return removeIn(root, ['--quiet', '--', path]);" => return { ok: true, output: '', error: '' };
     it('takes the deletion of a DD, a DU and a UD path: gone from the index and the worktree', async () => {
         deletionConflicts(repo, git, 'main');
         expect(status()).toEqual(
@@ -527,7 +505,6 @@ describe('conflicts a deletion made', () => {
         expect(status()).toContain(`D  ${DELETED.theirs}`);
     });
 
-    // revert: src/lib/server/git/git-index.ts "if (!DELETIONS.includes(await pairOf(root, path))) {" => if (false) {
     it('refuses to take a deletion on a path both sides changed, or one not in conflict', async () => {
         git(repo, 'switch', '-qc', 'side');
         write(repo, 'kept.txt', 'side\n');
@@ -543,7 +520,6 @@ describe('conflicts a deletion made', () => {
         expect(status()).toEqual(['UU kept.txt']);
     });
 
-    // revert: src/lib/server/git/git-index.ts "if (!unmerged.includes(path)) {" +3 => return { ok: true, output: '', error: '' };
     it('marks each deletion conflict resolved, leaving no unmerged entry, and keeps a held file', async () => {
         deletionConflicts(repo, git, 'main');
         expect(unmerged()).not.toBe('');
@@ -564,7 +540,6 @@ describe('conflicts a deletion made', () => {
         expect(git(repo, 'ls-files', '--', DELETED.theirs).trim()).toBe(DELETED.theirs);
     });
 
-    // revert: src/lib/server/git/git-index.ts "if (!unmerged.includes(path)) {" => if (false) {
     it('refuses to mark resolved a path that is not in conflict', async () => {
         write(repo, 'kept.txt', 'changed\n');
         const answer = await markResolved(repo, 'kept.txt', ROOTS);
@@ -575,7 +550,6 @@ describe('conflicts a deletion made', () => {
 });
 
 describe('stashes', () => {
-    // revert: src/lib/server/git/git-refs.ts "untracked: ['--include-untracked']," => untracked: [],
     it('stashes the tracked changes, every change, or what is staged, each with its message', async () => {
         write(repo, 'kept.txt', 'changed\n');
         write(repo, 'loose.txt', 'new\n');
@@ -594,8 +568,6 @@ describe('stashes', () => {
         expect(git(repo, 'stash', 'list').split('\n')[0]).toContain('only staged');
     });
 
-    // revert: src/lib/server/git/git-refs.ts "return /unknown option [`']?staged/.test(error);" => return false;
-    // revert: src/lib/server/git/git-refs.ts "if (!done.ok && mode === 'staged' && stagedUnknown(done.error)) {" => if (false) {
     it('says a git older than 2.35 cannot stash only what is staged', async () => {
         // A git of its own on the path, which answers --staged as git 2.34 does and hands every
         // other command to the real git.
@@ -632,9 +604,6 @@ describe('stashes', () => {
         expect(git(repo, 'stash', 'list')).toBe('');
     });
 
-    // revert: src/lib/server/git/git-refs.ts "if (!holds(state.output, mode)) return failed('there is nothing here for that stash to take');" => delete
-    // revert: src/lib/server/git/git-refs.ts "if (flags === undefined) return failed('that is not a way to stash');" => delete
-    // revert: src/lib/server/git/git-refs.ts "if (typeof ref !== 'string' || !STASH_REF.test(ref)) return failed('that is not a stash');" => if (typeof ref !== 'string') return failed('that is not a stash');
     it('refuses a stash of nothing, and a mode or a name it does not know', async () => {
         const empty = await stash(repo, 'tracked', '', ROOTS);
         expect(empty.ok).toBe(false);
@@ -650,7 +619,6 @@ describe('stashes', () => {
         }
     });
 
-    // revert: src/lib/server/git/git-refs.ts "const done = await stashIn(root, [act, ref]);" => const done = await stashIn(root, ['apply', ref]);
     it('applies, pops and drops a stash by its name', async () => {
         write(repo, 'kept.txt', 'first\n');
         await stash(repo, 'tracked', 'one', ROOTS);
@@ -670,7 +638,6 @@ describe('stashes', () => {
         expect(git(repo, 'stash', 'list')).toBe('');
     });
 
-    // revert: src/lib/server/git/git-refs.ts "return stoppedOn(root, done, act === 'pop' ? 'the pop' : 'the apply');" => return done;
     it('leaves the conflicts of a pop in the index and keeps the stash', async () => {
         write(repo, 'kept.txt', 'stashed\n');
         await stash(repo, 'tracked', 'kept', ROOTS);
@@ -685,7 +652,6 @@ describe('stashes', () => {
 });
 
 describe('tags', () => {
-    // revert: src/lib/server/git/git-refs.ts "return withFile('oculus-tag-', text, (file) => tagIn(root, ['-a', name, '-F', file]));" => return tagIn(root, [name]);
     it('makes a plain tag and an annotated one at HEAD, and deletes one', async () => {
         const head = git(repo, 'rev-parse', 'HEAD').trim();
         expect((await createTag(repo, 'v1', '', ROOTS)).ok).toBe(true);
@@ -699,7 +665,6 @@ describe('tags', () => {
         expect(git(repo, 'tag', '-l')).not.toContain('v1');
     });
 
-    // revert: src/lib/server/git/git-refs.ts "if (name.startsWith('-')) return `${name} is not a tag name git accepts`;" => delete
     it('refuses a name git would not take for a tag', async () => {
         for (const name of ['', '-d', 'two words', 'a..b', 'end.']) {
             const answer = await createTag(repo, name, '', ROOTS);
@@ -708,7 +673,6 @@ describe('tags', () => {
         expect(git(repo, 'tag', '-l')).toBe('');
     });
 
-    // revert: src/lib/server/git/git-remote.ts "return pushTo(root, ['--tags']);" => return pushTo(root, []);
     it('pushes every tag to the remote', async () => {
         await createTag(repo, 'shipped', 'Shipped', ROOTS);
         expect((await pushTags(repo, ROOTS)).ok).toBe(true);
@@ -730,7 +694,6 @@ describe('through the endpoint, with the real operations', () => {
         return { status: response.status, body: await response.json() };
     }
 
-    // revert: src/lib/server/git/git-routes.ts "stashApply: (_action, root, fields, roots) => stashAct(root, 'apply', text(fields.ref), roots)," => stashApply: (_action, root, fields, roots) => stashAct(root, 'pop', text(fields.ref), roots),
     it('routes each action to its own operation with its own fields', async () => {
         write(repo, 'kept.txt', 'one\nTWO\nthree\nfour\nfive\nsix\nseven\neight\n');
         expect((await post({ action: 'stagePatch', patch: diffOf(repo) })).status).toBe(200);
@@ -762,7 +725,6 @@ describe('through the endpoint, with the real operations', () => {
         expect((await post({ action: 'deleteTag', name: 'v9', confirm: true })).status).toBe(200);
         expect(git(repo, 'tag', '-l')).toBe('');
 
-        // revert: src/lib/server/git/git-routes.ts "commit(root, text(fields.message), roots, fields.amend === true)," => commit(root, text(fields.message), roots),
         write(repo, 'kept.txt', 'amended\n');
         git(repo, 'commit', '-qam', 'Local');
         write(repo, 'kept.txt', 'amended again\n');
@@ -782,7 +744,6 @@ describe('through the endpoint, with the real operations', () => {
         expect(git(remote, 'branch', '--list', 'fresh')).toContain('fresh');
     });
 
-    // revert: src/lib/server/git/git-routes.ts "resolveMerge(root, text(fields.path), text(fields.content), roots)," => resolveMerge(root, text(fields.path), 'other\n', roots),
     it('routes the conflict actions: resolve, abort and continue', async () => {
         git(repo, 'switch', '-qc', 'side');
         write(repo, 'kept.txt', 'side\n');
@@ -800,7 +761,6 @@ describe('through the endpoint, with the real operations', () => {
         expect(read(repo, 'kept.txt')).toBe('both\n');
     });
 
-    // revert: src/lib/server/git/git-routes.ts "acceptDeletion(root, text(fields.path), roots)," => markResolved(root, text(fields.path), roots),
     it('routes the deletion actions: take the deletion, and mark resolved', async () => {
         deletionConflicts(repo, git, 'main');
         const taken = await post({ action: 'acceptDeletion', path: DELETED.ours, confirm: true });
@@ -814,7 +774,6 @@ describe('through the endpoint, with the real operations', () => {
 });
 
 describe('the gate over what these writes ran', () => {
-    // revert: src/lib/server/git/git-write.ts "return run(root, ['push', ...args], PUSH_TIMEOUT_MS);" => return run(root, ['push', '--force', ...args], PUSH_TIMEOUT_MS);
     it('ran nothing but the writing half of git, in the temporary tree, never forced', async () => {
         // A sync of a commit of its own runs here, so the case has a push to judge when it runs
         // alone as well as after the rest of the file.

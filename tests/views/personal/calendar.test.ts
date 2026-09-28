@@ -197,8 +197,6 @@ describe('the Calendar view', () => {
         expect(body).toMatch(/class="[^"]*cancelled[^"]*"[^>]*>\s*Called off/);
     });
 
-    // revert: src/lib/views/shared/accounts/AccountList.svelte "{:else if row.status !== 'connected'}" => {:else if true}
-    // revert: src/lib/views/shared/accounts/AccountList.svelte "data-calendar-account={kind === 'calendar' ? connectKey(row) : undefined}" => delete
     it('shows Connect on the account with no token and not on the connected one', () => {
         const body = draw(payload);
         expect(body).toContain('data-calendar-account="google-work"');
@@ -211,7 +209,6 @@ describe('the Calendar view', () => {
         expect([...body.matchAll(/aria-label="Row actions"/g)]).toHaveLength(2);
     });
 
-    // revert: src/lib/views/shared/accounts/AccountList.svelte "<span class=\"controls\">" +1 => {#if false}
     it('offers the setup page in place of Connect for an account whose provider is not set up', () => {
         const body = draw({
             ...payload,
@@ -223,7 +220,6 @@ describe('the Calendar view', () => {
         expect(body).not.toMatch(/>Connect</);
     });
 
-    // revert: src/lib/views/personal/calendar/Calendar.svelte "{#if said !== ''}" => {:else if false}
     it('offers Add account in the empty state and in the head', () => {
         const body = draw({ ...payload, status: 'unconfigured', accounts: [], events: [] });
         expect(body).toContain('No calendar account yet. Add one to read its agenda here.');
@@ -253,8 +249,6 @@ describe('the Calendar view', () => {
         expect(body).toContain('No events in this window.');
     });
 
-    // revert: src/lib/views/personal/calendar/Calendar.svelte "{#if said !== ''}" => {:else if false}
-    // revert: src/lib/views/personal/calendar/Calendar.svelte "return {" => unconfigured: t('calendar.polling'),
     it('says the machine names no account, and draws no agenda, when it is unconfigured', () => {
         const body = draw({ ...payload, status: 'unconfigured', accounts: [], events: [] });
         expect(body).toContain('No calendar account yet.');
@@ -285,7 +279,6 @@ describe('the Calendar view', () => {
         expect(body).toContain('Standup');
     });
 
-    // revert: src/lib/views/shared/accounts/AccountList.svelte "disabled={connecting(kind, row)}" => disabled={false}
     it('shows the Connect control as connecting and unpressable while a press is open', () => {
         // The press never answers, so the store holds it open for the render below.
         vi.stubGlobal('fetch', () => new Promise<Response>(() => undefined));

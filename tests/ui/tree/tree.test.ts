@@ -1,12 +1,10 @@
 // The explorer's primitives rendered to HTML on the server: one row of ui/tree/TreeItem.svelte, a
 // section of ui/tree/TreeSection.svelte, the tree of ui/tree/TreeView.svelte and the path of
-// ui/tabs/Breadcrumb.svelte, with the roles, the levels and the stops a screen reader and the
-// browser suite read.
+// ui/tabs/Breadcrumb.svelte, with the roles, the levels and the stops a screen reader reads.
 //
 // What this does NOT cover: a press, a key, a hover or the focus, none of which a server rendering
-// runs, and the sizes a row is drawn at; tests/browser/sources/files.spec.ts and
-// tests/browser/sources/repositories.spec.ts press them and measure the row. Each case names
-// the change to the primitive that turns it red.
+// runs, and the sizes a row is drawn at. Each case names the change to the primitive that turns it
+// red.
 
 import { describe, expect, it } from 'vitest';
 import { render } from 'svelte/server';

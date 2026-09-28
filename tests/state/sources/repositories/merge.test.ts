@@ -29,7 +29,6 @@ function conflictOf(regions: Region[]): Extract<Region, { kind: 'conflict' }> {
 }
 
 describe('the regions of a three-way merge', () => {
-    // revert: src/lib/state/sources/repositories/merge-regions.ts "else if (same(theirLines, baseLines) || same(ourLines, theirLines)) {" => else if (same(theirLines, baseLines)) {
     it('settles what one side changed or both changed alike, and leaves a conflict where they differ', () => {
         const regions = regionsOf(BASE, OURS, THEIRS);
         expect(regions.map((one) => one.kind)).toEqual(['settled', 'conflict', 'settled']);
@@ -43,7 +42,6 @@ describe('the regions of a three-way merge', () => {
         expect(conflict.at.theirs).toEqual({ start: 1, count: 1 });
     });
 
-    // revert: src/lib/state/sources/repositories/merge-regions.ts "if (lines.at(-1) === '') lines.pop();" => delete
     it('cuts a text into lines without an empty line for the final newline', () => {
         expect(linesOf('a\nb\n')).toEqual(['a', 'b']);
         expect(linesOf('a\nb')).toEqual(['a', 'b']);
@@ -52,7 +50,6 @@ describe('the regions of a three-way merge', () => {
 });
 
 describe('a conflict settled', () => {
-    // revert: src/lib/state/sources/repositories/merge-regions.ts "if (choice === 'both-incoming') return [...region.theirs, ...region.ours];" => delete
     it('takes Incoming, Current, both in either order, or the ancestor for Ignore', () => {
         const conflict = conflictOf(regionsOf(BASE, OURS, THEIRS));
         const take = (choice: Choice): string[] => chosenLines(conflict, choice);
@@ -64,7 +61,6 @@ describe('a conflict settled', () => {
         expect(take('open')).toEqual(['b']);
     });
 
-    // revert: src/lib/state/sources/repositories/merge-regions.ts "next[at] = pieceOf(chosenLines(region, choice));" => delete
     it('rewrites only the settled conflict piece of the result, and counts what stays open', () => {
         const regions = regionsOf(BASE, OURS, THEIRS);
         const pieces = initialPieces(regions);
@@ -78,7 +74,6 @@ describe('a conflict settled', () => {
 });
 
 describe('the result typed into by hand', () => {
-    // revert: src/lib/state/sources/repositories/merge-regions.ts "for (let at = first; at <= last; at += 1) touched.push(at);" => delete
     it('puts the typing into the piece it lands in and names that region as touched', () => {
         const regions = regionsOf(BASE, OURS, THEIRS);
         const pieces = initialPieces(regions);
@@ -87,7 +82,6 @@ describe('the result typed into by hand', () => {
         expect(typed.touched).toEqual([1]);
     });
 
-    // revert: src/lib/state/sources/repositories/merge-regions.ts "for (let at = first + 1; at <= last; at += 1) out[at] = '';" => delete
     it('gives a deletion across pieces to the first it reaches, empties the rest, and touches those', () => {
         const pieces = ['a\n', 'b\n', 'c\n'];
         const typed = typedPieces(pieces, 'a\n');
@@ -95,7 +89,6 @@ describe('the result typed into by hand', () => {
         expect(typed.touched).toEqual([1, 2]);
     });
 
-    // revert: src/lib/state/sources/repositories/merge-regions.ts "if (regions.length === 0) {" => if (false) {
     it('takes typing into a result whose versions left no lines, as when both sides emptied it', () => {
         const regions = regionsOf('gone\n', '', '');
         expect(regions).toHaveLength(1);
@@ -111,7 +104,6 @@ describe('the result typed into by hand', () => {
 });
 
 describe('Complete Merge on a path a side deleted', () => {
-    // revert: src/lib/state/sources/repositories/merge-regions.ts "return deleted !== '' && result === '';" => return false;
     it('takes the deletion when a side deleted the path and the Result is empty', () => {
         for (const deleted of ['both', 'ours', 'theirs']) {
             expect(takesDeletion(deleted, ''), deleted).toBe(true);
@@ -120,12 +112,10 @@ describe('Complete Merge on a path a side deleted', () => {
         expect(takesDeletion('', '')).toBe(false);
     });
 
-    // revert: src/lib/state/sources/repositories/merge-regions.ts "return deleted !== '' && result === '';" => return result === '';
     it('writes an empty Result over a path neither side deleted, as the file it now is', () => {
         expect(takesDeletion('', '')).toBe(false);
     });
 
-    // revert: src/lib/state/sources/repositories/merge-regions.ts "else if (same(theirLines, baseLines) || same(ourLines, theirLines)) {" => else if (same(theirLines, baseLines)) {
     it('starts a path both sides deleted with an empty Result, which Complete Merge takes as the deletion', () => {
         const pieces = initialPieces(regionsOf('gone\n', '', ''));
         expect(takesDeletion('both', pieces.join(''))).toBe(true);

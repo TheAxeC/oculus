@@ -6,7 +6,7 @@
 //
 // What this does NOT cover: anything that needs a DOM. There is no browser in this suite, so no
 // menu opens, no card is clicked and no $effect runs; the state a click would write is written
-// here through setInstanceState instead, and the interactions are checked in a browser.
+// here through setInstanceState instead, and the interactions need a DOM and are not run here.
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { NO_FEEDS } from '../../fixtures/entities-fixture.ts';
@@ -450,8 +450,8 @@ describe('a long description', () => {
 
     it('draws no control on a server rendering, which measures no text', () => {
         // Whether the text is longer than the clamp is measured in the page, and the control is
-        // drawn only then (tests/browser/boards/cards.spec.ts; the rule is card-layout.test.ts),
-        // so a server rendering draws no control at all.
+        // drawn only then (the rule is card-layout.test.ts), so a server rendering draws no control
+        // at all.
         expect(html('projects')).not.toContain(catalog['project.card.show_more']);
     });
 });
@@ -516,8 +516,7 @@ describe('the facets', () => {
 
     // A menu's groups are drawn when it opens, which needs a DOM: what the groups hold is
     // tests/state/boards/board/board-filter-menu.test.ts over filterGroups, and the menu opening
-    // and filtering is tests/browser/boards/cards.spec.ts. What is checked here is the one control
-    // and its count.
+    // and filtering is not run here. What is checked here is the one control and its count.
     it('offers one filter control in the toolbar and no menu per facet', () => {
         const opener = /<button[^>]*aria-haspopup="menu"[^>]*aria-label="([^"]*)"/g;
         const labels = [...body.matchAll(opener)].map((one) => one[1]);
@@ -586,7 +585,7 @@ describe('the controls beside the search', () => {
         for (const view of ['projects', 'archive', 'coauthor']) {
             expect(html(view)).toContain(catalog['board.new_idea']);
         }
-        // The form itself opens on a click, which needs a DOM; it is a browser check.
+        // The form itself opens on a click, which needs a DOM and is not run here.
     });
 
     it('offers the two quick filters on the projects board and on no other', () => {

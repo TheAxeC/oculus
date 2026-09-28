@@ -4,7 +4,7 @@
 //
 // The facets are handed in as data, since what is checked is the menu built over them; the facets
 // themselves are tests/state/boards/board/board.test.ts. What this does NOT cover: the menu opening
-// and a pick filtering the board, which need a page and are tests/browser/boards/cards.spec.ts.
+// and a pick filtering the board, which need a page.
 
 import { describe, expect, it } from 'vitest';
 import {

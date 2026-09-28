@@ -7,10 +7,9 @@ import { join } from 'node:path';
  * The directory the engine's YAML is read from and written to: `<engine>/config`, always. The
  * machine's own local.yml sits in it beside the tracked files.
  *
- * A run that must not write the checkout names another engine directory on the command line, which
- * is what the browser layer does: it stands a server up and presses controls that write, the Slides
- * view's Save among them, and the file that save edits is `config/present.yml` of the engine it was
- * given.
+ * A run that must not write the checkout names another engine directory on the command line, and
+ * a write it makes, the Slides view's Save among them, edits the file under that engine: the Save
+ * edits `config/present.yml` of the engine it was given.
  */
 export function configDir(engine: string): string {
     return join(engine, 'config');

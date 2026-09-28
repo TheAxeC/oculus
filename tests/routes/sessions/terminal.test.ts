@@ -149,7 +149,6 @@ describe('POST /api/terminal, the resume action', () => {
         expect(started).toContain('-c');
         expect(started[started.indexOf('-c') + 1]).toBe(HERE);
         // The argv follows `--`, one word each, under the default account's `env -u`.
-        // revert: src/lib/server/machine/pty/sessions.ts "if (resume.tool === 'claude') return ['claude', '--resume', resume.id];" => if (resume.tool === 'claude') return ['claude', '--continue'];
         expect(started.slice(started.indexOf('--') + 1)).toEqual([
             'env',
             '-u',
@@ -177,7 +176,6 @@ describe('POST /api/terminal, the resume action', () => {
         );
         expect(response.status).toBe(200);
         const started = driver.calls.find((args) => args[0] === 'new-session') ?? [];
-        // revert: src/lib/server/machine/pty/sessions.ts "return ['codex', 'resume', resume.id];" => return ['codex', 'resume', '--last'];
         expect(started.slice(started.indexOf('--') + 1)).toEqual([
             'env',
             '-u',

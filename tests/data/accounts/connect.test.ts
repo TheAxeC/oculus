@@ -9,7 +9,6 @@ const GOOGLE_ID = '1234-abcd.apps.googleusercontent.com';
 const GUID = '0f0e0d0c-0b0a-0908-0706-050403020100';
 
 describe('a new account', () => {
-    // revert: src/lib/data/accounts/connect.ts "if (rows.some((row) => row.provider === provider && row.label === label)) return 'taken';" => delete
     it('is refused for an unknown provider, a label of the wrong shape and a label taken', () => {
         const rows = [{ provider: 'google', label: 'work' }] as const;
         expect(accountRefusal(rows, 'yahoo', 'box')).toBe('provider');
@@ -22,7 +21,6 @@ describe('a new account', () => {
 });
 
 describe("a provider's client half", () => {
-    // revert: src/lib/data/accounts/connect.ts "if (!GOOGLE_ID.test(clientId)) return { refused: 'google_id' };" => delete
     it('takes a Google id only on googleusercontent.com, and a secret with no space', () => {
         expect(providerHalf('google', { clientId: 'abc', clientSecret: 's' })).toEqual({
             refused: 'google_id'
@@ -37,7 +35,6 @@ describe("a provider's client half", () => {
         });
     });
 
-    // revert: src/lib/data/accounts/connect.ts "if (tenant !== '' && !GUID.test(tenant)) return { refused: 'tenant' };" => delete
     it('takes a Microsoft id and an optional tenant only as GUIDs', () => {
         expect(providerHalf('microsoft', { clientId: 'not-a-guid' })).toEqual({
             refused: 'microsoft_id'

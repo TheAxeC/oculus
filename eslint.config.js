@@ -18,21 +18,15 @@ import svelteParser from 'svelte-eslint-parser';
 import ts from 'typescript-eslint';
 
 export default ts.config(
-    // Generated output, dependencies, and the two root files that are build configuration rather
-    // than application code. The three globs below are the whole of what is linted.
+    // Generated output, dependencies, and the one root file that is build configuration rather than
+    // application code. The three globs below are the whole of what is linted.
     {
         ignores: [
             '.svelte-kit/**',
             'build/**',
             'node_modules/**',
             'eslint.config.js',
-            'vite.config.ts',
-            // Beside vite.config.ts for the same two reasons: it is build configuration rather than
-            // application code, and the generated .svelte-kit/tsconfig.json includes src/ and
-            // tests/ and the root vite config and nothing else, so a type-aware rule over a root
-            // file the project service does not hold is a parse error rather than a lint result.
-            // The specs under tests/browser/ are linted by the tests/**/*.ts glob below.
-            'playwright.config.ts'
+            'vite.config.ts'
         ]
     },
     {

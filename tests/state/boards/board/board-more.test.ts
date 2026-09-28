@@ -3,8 +3,7 @@
 // card's project id, kept apart from the ids of the open cards (`expanded`) it may share.
 //
 // What this does NOT cover: the clamp's control and the state surviving a tab switch, which need a
-// page and are tests/browser/boards/cards.spec.ts, and the rendering of an open or cut card, which
-// is tests/views/boards/projects.test.ts.
+// page, and the rendering of an open or cut card, which is tests/views/boards/projects.test.ts.
 
 import { describe, expect, it } from 'vitest';
 import { emptyBoardState, parseBoardState } from '../../../../src/lib/state/boards/board/index.ts';

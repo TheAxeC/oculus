@@ -1,8 +1,7 @@
 // The editor status store: what each source tab publishes for the status bar, taken away when the
 // tab goes, and the asks the bar makes of one tab, each numbered so it is performed once.
 //
-// What this does NOT cover: the source tab performing an ask on its text, which
-// tests/browser/status/source-items.spec.ts presses in Chrome.
+// What this does NOT cover: the source tab performing an ask on its text.
 
 import { describe, expect, it } from 'vitest';
 import {
@@ -23,7 +22,6 @@ const SAID: EditorStatus = {
 
 describe('the editor status store', () => {
     it('keeps what each tab said apart, and forgets a tab that goes', () => {
-        // revert: src/lib/state/workbench/navigation/editor-status.svelte.ts "held.entries = { ...untrack(() => held.entries), [instance]: status };" => return;
         const store = createEditorStatus();
         store.publish('one', SAID);
         store.publish('two', { ...SAID, language: 'yaml' });
@@ -38,7 +36,6 @@ describe('the editor status store', () => {
     });
 
     it('asks a tab that has said something, numbering each ask, and no other tab', () => {
-        // revert: src/lib/state/workbench/navigation/editor-status.svelte.ts "held.last = { ...change, instance, seq: (held.last?.seq ?? 0) + 1 };" => held.last = { ...change, instance, seq: 1 };
         const store = createEditorStatus();
         expect(store.ask('one', { kind: 'goto', line: 3 })).toBe(false);
         expect(store.asked('one')).toBe(null);
@@ -56,7 +53,6 @@ describe('the editor status store', () => {
     });
 
     it('finds the source tab on screen that has said something, and no other tab', () => {
-        // revert: src/lib/state/workbench/navigation/editor-status.svelte.ts "if (tab?.view !== 'source') return null;" => if (tab === null) return null;
         const store = createEditorStatus();
         store.publish('one', SAID);
         expect(sourceOnScreen({ id: 'one', view: 'source' }, store.statusOf)).toEqual({

@@ -1,6 +1,6 @@
 // Layer 4, view test. The card's cross-link tags: one labelled line per kind that has entries, the
 // first three of a longer kind with a control for the rest, and the cross-link kinds drawn as the
-// buttons that open their view. Pressing the control is exercised in the browser suite.
+// buttons that open their view. Pressing the control is a DOM event no case here fires.
 
 import { render } from 'svelte/server';
 import { readFileSync } from 'node:fs';
@@ -201,7 +201,7 @@ describe('the card tag lines', () => {
     });
 
     // A server render carries no handler, so what pressing a cross-link does is read off the
-    // source; the press itself, and the press of the control, are in the browser suite.
+    // source; the press itself, and the press of the control, are not run here.
     it('opens a cross-link entry by its label in the view of its own kind', () => {
         const source = readFileSync('src/lib/views/shared/card/CardLinks.svelte', 'utf8');
         expect(source).toContain('goto(client, linkView(kind.key), tag.label)');
@@ -245,7 +245,7 @@ describe('the card tag lines', () => {
     });
 
     // A server render carries no handler, so where a software tag goes is read off the source; the
-    // press itself is in the browser suite.
+    // press itself is not run here.
     it("opens a software cross-link as the related project's own tab", () => {
         const source = readFileSync('src/lib/views/shared/card/CardLinks.svelte', 'utf8');
         expect(source).toContain("openView('project', { id: tag.id, label: tag.label })");

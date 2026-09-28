@@ -367,8 +367,8 @@ export class Terminals {
         }
         if (this.#attached.get(id)?.has(sink) !== true) return true;
         // One terminal's commands run one after another: each keystroke is its own message and its
-        // own tmux process, and two started at once can finish in either order, which typed "ceho"
-        // for "echo" in the first Chrome check.
+        // own tmux process, and two started at once can finish in either order, which types "ceho"
+        // for "echo".
         const work =
             message.type === 'input'
                 ? () => this.#input(id, message.bytes)

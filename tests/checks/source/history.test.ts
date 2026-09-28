@@ -151,8 +151,6 @@ describe('no history in code', () => {
     });
 
     it('reads every line of a text file and the comments of a shell script and a YAML file', () => {
-        // revert: tests/checks/source/history.test.ts "if (file.endsWith('.txt')) return true;" => if (false) return true;
-        // revert: tests/checks/source/history.test.ts "if (file.endsWith('.yml') || file.endsWith('.sh')) {" => if (file.endsWith('.yml')) {
         const dir = scratchDir('oculus-history-');
         expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
         const plant = (rel: string, body: string): void => {

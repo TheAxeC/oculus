@@ -6,7 +6,7 @@
 // covers: a drag driven by calls runs exactly as one driven by the document's listeners.
 //
 // What this does NOT cover: the listeners themselves, the pointer that installs them, and anything
-// drawn. A drag is exercised in a browser after this package lands.
+// drawn. A drag needs a DOM and is not run here.
 
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
@@ -208,7 +208,6 @@ describe('a view carried out of the catalogue', () => {
     }
 
     it('opens the view on the page it was dropped on, then moves that tab into the strip', () => {
-        // revert: src/lib/state/workbench/drag.svelte.ts "const id = held.kind === 'view' ? sink.open(held.id, held.state, drop.page) : held.id;" => const id = held.id;
         carry('help');
         expect(dragging()?.kind).toBe('view');
         hover({ kind: 'strip', path: [1], index: 2, page: 'views' });
@@ -217,7 +216,6 @@ describe('a view carried out of the catalogue', () => {
     });
 
     it('opens a document with its state and splits the pane for a drop on an edge', () => {
-        // revert: src/lib/state/workbench/drag.svelte.ts "const id = held.kind === 'view' ? sink.open(held.id, held.state, drop.page) : held.id;" => const id = held.kind === 'view' ? sink.open(held.id, undefined, drop.page) : held.id;
         carry('doc', { path: 'a.md' });
         hover({ kind: 'edge', path: [0], edge: 'bottom' });
         end();
@@ -228,7 +226,6 @@ describe('a view carried out of the catalogue', () => {
     });
 
     it('performs nothing before the threshold, so the press stays a click', () => {
-        // revert: src/lib/state/workbench/drag.svelte.ts "kind: 'view'," +2 => armed: true
         startView('help', undefined, 'Help', { x: 100, y: 100 });
         expect(dragging()).toBe(null);
         hover({ kind: 'centre', path: [] });
@@ -237,7 +234,6 @@ describe('a view carried out of the catalogue', () => {
     });
 
     it('opens nothing when the page it was dropped on is gone', () => {
-        // revert: src/lib/state/workbench/drag.svelte.ts "if (id === '') return;" => delete
         setDragSink({ ...sink, open: () => '' });
         carry('help');
         hover({ kind: 'centre', path: [] });

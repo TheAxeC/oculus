@@ -150,8 +150,6 @@ describe('the calendar poller', () => {
         vi.useRealTimers();
     });
 
-    // revert: src/lib/server/accounts/connect/loop.ts "const refreshToken = credentials.refreshToken;" => delete
-    // revert: src/lib/server/accounts/calendar/poll.ts "...(hasOwnHalf(dir, account) ? { ownHalf: true } : {})," => delete
     it('marks an account with a client half and no refresh token not connected, with no hint', async () => {
         const dir = scratch();
         writeAccount(dir, GOOGLE, false);
@@ -177,7 +175,6 @@ describe('the calendar poller', () => {
         watcher.close();
     });
 
-    // revert: src/lib/server/accounts/connect/loop.ts "const credentials = readCredentials(dirs.dir, account, dirs.providerDir);" => if (credentials === null) return { waiting: { status: 'not-connected' } };
     it('marks an account with no client half anywhere as waiting on its provider being set up', async () => {
         const dir = scratch();
         const hub = new Hub();
@@ -203,7 +200,6 @@ describe('the calendar poller', () => {
         watcher.close();
     });
 
-    // revert: src/lib/server/accounts/connect/store.ts "half = record === null ? undefined : halfIn(shared, record, account.provider);" => half = undefined;
     it("reads an account through its provider's client half when its own file holds only a token", async () => {
         const dir = scratch();
         const file = credentialFile(dir, GOOGLE);

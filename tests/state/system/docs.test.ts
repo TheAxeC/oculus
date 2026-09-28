@@ -6,8 +6,7 @@
 // client's own entities store, which is where the page's socket hands it. What this does NOT cover:
 // the endpoint itself, which is tests/routes/docs/docs.test.ts; the view drawing the HTML, which is
 // tests/views/sources/doc.test.ts and tests/views/boards/project.test.ts; and a mounted view
-// drawing again when a document is marked, which needs a DOM and is
-// tests/browser/workbench/system.spec.ts.
+// drawing again when a document is marked, which needs a DOM.
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createClientState, type ClientState } from '../../fixtures/client.ts';
@@ -114,7 +113,6 @@ const APPROACH = `${HUB}/docs/RESEARCH-APPROACH.md`;
 
 describe('the documents of a project', () => {
     it('asks the endpoint once for a pair and holds the answer', async () => {
-        // revert: src/lib/state/system/docs.svelte.ts "if (doc === undefined || askedAt[key] !== (marks[key] ?? 0)) request(key, url);" => request(key, url);
         serving({ status: 200, body: { html: '<h1>Alpha</h1>', frontmatter: { stage: 'run' } } });
 
         expect(document('alpha', 'README.md').loading).toBe(true);
@@ -132,7 +130,6 @@ describe('the documents of a project', () => {
     });
 
     it('holds what the endpoint refused with instead of the document', async () => {
-        // revert: src/lib/state/system/docs.svelte.ts "error: body.error ?? String(response.status)," => error: '',
         serving({ status: 404, body: { error: 'document does not exist' } });
         document('bravo', 'code/README.md');
         await settle();
@@ -141,7 +138,6 @@ describe('the documents of a project', () => {
     });
 
     it('asks again after a write under the root holding it, and shows what came back', async () => {
-        // revert: src/lib/state/system/docs.svelte.ts "if (concerns(key, root, gap)) marks[key] = (marks[key] ?? 0) + 1;" => delete
         const file = `${HUB}/projects/charlie/README.md`;
         serving({ status: 200, body: { html: '<p>one</p>', frontmatter: null, file } });
         document('charlie', 'README.md');
@@ -157,7 +153,6 @@ describe('the documents of a project', () => {
     });
 
     it('asks nothing again after a write under a root that does not hold it', async () => {
-        // revert: src/lib/state/system/docs.svelte.ts "return holds(root, file);" => return true;
         const file = `${HUB}/projects/delta/README.md`;
         serving({ status: 200, body: { html: '<p>held</p>', frontmatter: null, file } });
         document('delta', 'README.md');
@@ -175,7 +170,6 @@ describe('the documents of a project', () => {
     });
 
     it('asks nothing for an empty id or an empty name', async () => {
-        // revert: src/lib/state/system/docs.svelte.ts "if (id === '' || name === '') return NOTHING;" => delete
         serving({ status: 200, body: { html: '', frontmatter: null } });
         expect(document('', 'README.md').loading).toBe(false);
         expect(document('foxtrot', '').loading).toBe(false);
@@ -187,7 +181,6 @@ describe('the documents of a project', () => {
 
 describe('the documents that belong to no project', () => {
     it('asks for one hub document by its path and holds the answer', async () => {
-        // revert: src/lib/state/system/docs.svelte.ts "return doc ?? PENDING;" => return doc ?? NOTHING;
         serving({ status: 200, body: { html: '<h1>Approach</h1>', frontmatter: null } });
 
         expect(hubDocument('RESEARCH-APPROACH.md').loading).toBe(true);
@@ -198,7 +191,6 @@ describe('the documents that belong to no project', () => {
     });
 
     it('keeps a hub document apart from a project whose id is hub', async () => {
-        // revert: src/lib/state/system/docs.svelte.ts "return holds(root, file);" => return true;
         vi.stubGlobal('fetch', (url: string) => {
             asked.push(url);
             const file = url.includes('project=') ? '/work/hub/README.md' : `${HUB}/README.md`;
@@ -220,7 +212,6 @@ describe('the documents that belong to no project', () => {
     });
 
     it('escapes a path with a separator in it, and asks once for it', async () => {
-        // revert: src/lib/state/system/docs.svelte.ts "return reading(ownKey(HUB, path), `${DOCS}?hub=${encodeURIComponent(path)}`);" => return reading(ownKey(HUB, path), `${DOCS}?hub=${path}`);
         serving({ status: 200, body: { html: '<h1>Notes</h1>', frontmatter: null } });
         hubDocument('notes/one.md');
         await settle();
@@ -231,7 +222,6 @@ describe('the documents that belong to no project', () => {
     });
 
     it('asks nothing for an empty path', () => {
-        // revert: src/lib/state/system/docs.svelte.ts "if (path === '') return NOTHING;" => delete
         serving({ status: 200, body: { html: '', frontmatter: null } });
         expect(hubDocument('').loading).toBe(false);
         // An empty path names no document, so nothing was asked.
@@ -239,7 +229,6 @@ describe('the documents that belong to no project', () => {
     });
 
     it('asks for the manual without a path, and holds it apart from the hub documents', async () => {
-        // revert: src/lib/state/system/docs.svelte.ts "return reading(ownKey(MANUAL, MANUAL), `${DOCS}?${MANUAL}=1`);" => return reading(ownKey(MANUAL, MANUAL), `${DOCS}?${MANUAL}`);
         serving({ status: 200, body: { html: '<h1>Oculus</h1>', frontmatter: null } });
         expect(manual().loading).toBe(true);
         await settle();
@@ -249,7 +238,6 @@ describe('the documents that belong to no project', () => {
     });
 
     it('says what a refused read failed with', async () => {
-        // revert: src/lib/state/system/docs.svelte.ts "error: body.error ?? String(response.status)," +1 => loading: true
         serving({ status: 404, body: { error: 'document does not exist' } });
         hubDocument('nothing.md');
         await settle();
@@ -262,7 +250,6 @@ describe('the documents that belong to no project', () => {
 
 describe('a re-read', () => {
     it('keeps returning what is held while the new answer is in flight', async () => {
-        // revert: src/lib/state/system/docs.svelte.ts "return doc ?? PENDING;" => return askedAt[key] !== (marks[key] ?? 0) ? PENDING : (doc ?? PENDING);
         serving({
             status: 200,
             body: { html: '<h1>One</h1>', frontmatter: null, file: APPROACH }
@@ -290,7 +277,6 @@ describe('a re-read', () => {
     });
 
     it('sends the held tag, and keeps the held object itself on a 304', async () => {
-        // revert: src/lib/state/system/docs.svelte.ts "tag === '' ? undefined : { headers: { 'if-none-match': tag } }" => undefined
         serving({
             status: 200,
             body: { html: '<h1>One</h1>', frontmatter: null, file: APPROACH },
@@ -314,7 +300,6 @@ describe('a re-read', () => {
     });
 
     it('keeps the held object itself when the new answer draws the same document', async () => {
-        // revert: src/lib/state/system/docs.svelte.ts "if (before !== undefined && same(before, next)) return;" => delete
         serving({
             status: 200,
             body: { html: '<h1>One</h1>', frontmatter: { stage: 'run' }, file: APPROACH }
@@ -331,7 +316,6 @@ describe('a re-read', () => {
     });
 
     it('is asked for by no message with the empty root', async () => {
-        // revert: src/lib/state/system/docs.svelte.ts "if (root === '') return false;" => if (root === '') return true;
         serving({ status: 200, body: { html: '<h1>One</h1>', frontmatter: null, file: APPROACH } });
         hubDocument('docs/RESEARCH-APPROACH.md');
         manual();
@@ -347,7 +331,6 @@ describe('a re-read', () => {
     });
 
     it('leaves the manual as it is when a write re-reads a hub document', async () => {
-        // revert: src/lib/state/system/docs.svelte.ts "return holds(root, file);" => return true;
         vi.stubGlobal('fetch', (url: string) => {
             asked.push(url);
             const file = url.includes('manual') ? '/engine/HELP.md' : APPROACH;
@@ -371,7 +354,6 @@ describe('a re-read', () => {
     });
 
     it('asks for every held document when the versions skip one, whose root is unknown', async () => {
-        // revert: src/lib/state/system/docs.svelte.ts "const gap = heard === null || message.version !== heard + 1;" => const gap = false;
         vi.stubGlobal('fetch', (url: string) => {
             asked.push(url);
             const file = url.includes('manual') ? '/engine/HELP.md' : APPROACH;
@@ -393,7 +375,6 @@ describe('a re-read', () => {
     });
 
     it('asks again on its own when a write came while the answer was in flight', async () => {
-        // revert: src/lib/state/system/docs.svelte.ts "if ((marks[key] ?? 0) !== mark) request(key, url);" => delete
         const release = holding({
             status: 200,
             body: { html: '<h1>One</h1>', frontmatter: null, file: APPROACH }
@@ -413,7 +394,6 @@ describe('a re-read', () => {
     });
 
     it('asks again for an answer that named no file after any write that names a root', async () => {
-        // revert: src/lib/state/system/docs.svelte.ts "if (file === undefined || file === '') return true;" => if (file === undefined || file === '') return false;
         serving({ status: 404, body: { error: 'no project with the id golf' } });
         document('golf', 'README.md');
         await settle();
@@ -428,7 +408,6 @@ describe('a re-read', () => {
 
 describe('a re-read that fails', () => {
     it('keeps a drawn document when the request never reaches the server, and asks again on the next write', async () => {
-        // revert: src/lib/state/system/docs.svelte.ts "if (before?.error === '' && !before.loading) return;" => delete
         serving({ status: 200, body: { html: '<h1>One</h1>', frontmatter: null, file: APPROACH } });
         hubDocument('docs/RESEARCH-APPROACH.md');
         await settle();
@@ -446,7 +425,6 @@ describe('a re-read that fails', () => {
         expect(hubDocument('docs/RESEARCH-APPROACH.md')).toBe(before);
 
         // The mark the failed request did not consume makes the next call ask again, with no write.
-        // revert: src/lib/state/system/docs.svelte.ts "if (before?.error === '' && !before.loading) return;" => if (before?.error === '' && !before.loading) { askedAt[key] = mark; return; }
         asked = [];
         hubDocument('docs/RESEARCH-APPROACH.md');
         await settle();
@@ -461,7 +439,6 @@ describe('a re-read that fails', () => {
     });
 
     it('replaces a drawn document with what the endpoint refused, since that is news of the file', async () => {
-        // revert: src/lib/state/system/docs.svelte.ts "error: body.error ?? String(response.status)," => error: '',
         serving({ status: 200, body: { html: '<h1>One</h1>', frontmatter: null, file: APPROACH } });
         hubDocument('docs/RESEARCH-APPROACH.md');
         await settle();
@@ -473,7 +450,6 @@ describe('a re-read that fails', () => {
         expect(hubDocument('docs/RESEARCH-APPROACH.md').error).toBe('document does not exist');
     });
     it("replaces a drawn document with the status of an answer whose body is not the endpoint's", async () => {
-        // revert: src/lib/state/system/docs.svelte.ts "return error instanceof Error ? error : new Error(String(error));" => throw error;
         serving({ status: 200, body: { html: '<h1>One</h1>', frontmatter: null, file: APPROACH } });
         hubDocument('docs/RESEARCH-APPROACH.md');
         await settle();
@@ -490,34 +466,28 @@ describe('a re-read that fails', () => {
 
 describe('whether a root holds a file', () => {
     it('reads a doubled separator and a trailing one as one', () => {
-        // revert: src/lib/state/system/docs.svelte.ts "if (part === '' || part === '.') continue;" => if (part === '.') continue;
         expect(holds('/a//b/', '/a/b/x.md')).toBe(true);
     });
 
     it('reads a dot segment as the folder it is in', () => {
-        // revert: src/lib/state/system/docs.svelte.ts "if (part === '' || part === '.') continue;" => if (part === '') continue;
         expect(holds('/a/./b', '/a/b/x.md')).toBe(true);
     });
 
     it('reads a dot-dot segment as the folder above', () => {
-        // revert: src/lib/state/system/docs.svelte.ts "if (part === '..') kept.pop();" => if (part === '..') continue;
         expect(holds('/a/c/../b', '/a/b/x.md')).toBe(true);
     });
 
     it('holds nothing in a folder whose name only begins like its own', () => {
-        // revert: src/lib/state/system/docs.svelte.ts "return base.every((part, at) => inner[at] === part);" => return inner.join('/').startsWith(base.join('/'));
         expect(holds('/a/bc', '/a/b/x.md')).toBe(false);
         expect(holds('/a/b', '/a/bc/x.md')).toBe(false);
         expect(holds('/a/b', '/a/b/x.md')).toBe(true);
     });
 
     it('reads a backslash as a separator, as a Windows path writes it', () => {
-        // revert: src/lib/state/system/docs.svelte.ts "for (const part of path.split(/[/\\\\]/)) {" => for (const part of path.split('/')) {
         expect(holds('C:\\a\\b', 'C:\\a\\b\\x.md')).toBe(true);
     });
 
     it('holds every file under the top of the file system', () => {
-        // revert: src/lib/state/system/docs.svelte.ts "return base.every((part, at) => inner[at] === part);" => return base.length > 0 && base.every((part, at) => inner[at] === part);
         expect(holds('/', '/a/x.md')).toBe(true);
     });
 });

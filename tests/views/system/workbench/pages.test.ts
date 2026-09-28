@@ -3,7 +3,7 @@
 // controls of each row by their names.
 //
 // What this does NOT cover: a control pressed, the rename typed, the close confirmed and a row
-// dragged onto a pane, which are tests/browser/workbench/pages.spec.ts's and nested.spec.ts's.
+// dragged onto a pane.
 
 import { render } from 'svelte/server';
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -36,7 +36,6 @@ const NODE = { root: { kind: 'pane', view: 'status' } };
 
 describe('the Pages view', () => {
     it('draws one row per page, in the order of the page list', () => {
-        // revert: src/lib/views/system/workbench/Pages.svelte "{#each shown as page, at (page.id)}" => {#each shown.slice(0, 1) as page, at (page.id)}
         client.layout.openPage('Writing');
         client.layout.openRailPage('focus', 'Focus', NODE);
         const body = draw();
@@ -48,7 +47,6 @@ describe('the Pages view', () => {
     });
 
     it('marks the page on screen, and no other', () => {
-        // revert: src/lib/views/system/workbench/Pages.svelte "{#if page.id === current}" => {#if true}
         client.layout.openPage('Writing');
         const body = draw();
         const shown = present(catalog['workbench.pages_current'], 'pages_current');
@@ -60,14 +58,12 @@ describe('the Pages view', () => {
     });
 
     it('names the rail key a rail page is tied to', () => {
-        // revert: src/lib/views/system/workbench/Pages.svelte "{#if page.rail !== undefined}" => {#if false}
         client.layout.openRailPage('focus', 'Focus', NODE);
         const words = present(catalog['workbench.pages_on_rail'], 'pages_on_rail');
         expect(row(draw(), 'Focus')).toContain(words.replace('{0}', 'focus'));
     });
 
     it('says a page holds unsaved text, and says nothing of a page that does not', () => {
-        // revert: src/lib/views/system/workbench/Pages.svelte "{#if pageUnsaved(page, unsaved)}" => {#if false}
         const held = client.layout.currentPage();
         const tab = client.layout.activeInstance(held.id)?.id ?? '';
         client.ui.registerUnsaved((id) => id === tab);
@@ -80,7 +76,6 @@ describe('the Pages view', () => {
     });
 
     it('offers show, rename and close on every row, show held back on the page on screen', () => {
-        // revert: src/lib/views/system/workbench/Pages.svelte "disabled={page.id === current}" => disabled={false}
         client.layout.openPage('Writing');
         const body = draw();
         const shown = row(body, 'Writing');

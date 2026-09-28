@@ -3,8 +3,7 @@
 //
 // There is one flag, `--engine <dir>`, naming the directory that holds `config/`; the whole of what
 // the server needs is in that directory, so nothing else is a flag and nothing is read from the
-// environment. A run that must not write the checkout's own configuration, the browser suite above
-// all, points this at a copy.
+// environment. A run that must not write the checkout's own configuration points this at a copy.
 
 import { resolve } from 'node:path';
 

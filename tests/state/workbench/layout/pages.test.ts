@@ -299,7 +299,6 @@ describe("a page's rail key in the saved layout", () => {
     }
 
     it('reads the key a rail page was saved with and writes it back', () => {
-        // revert: src/lib/state/workbench/layout/saved/saved.ts "if (rail !== null) page.rail = rail;" => delete
         const read = present(parseLayout(withKey('focus'), ''), 'layout');
         expect(read.pages.map((page) => page.rail)).toEqual(['focus', undefined]);
         const written = JSON.parse(serialiseLayout(read)) as { pages: { rail?: string }[] };
@@ -307,7 +306,6 @@ describe("a page's rail key in the saved layout", () => {
     });
 
     it('reads an empty key, or one that is not a string, as none', () => {
-        // revert: src/lib/state/workbench/layout/saved/saved.ts "if (typeof value !== 'string' || value === '') return null;" => if (typeof value !== 'string') return null;
         for (const odd of ['', 3, null]) {
             const read = present(parseLayout(withKey(odd), ''), 'layout');
             expect(read.pages[0].rail).toBe(undefined);
@@ -315,13 +313,11 @@ describe("a page's rail key in the saved layout", () => {
     });
 
     it('keeps a key on the first page carrying it and reads the second as a page of its own', () => {
-        // revert: src/lib/state/workbench/layout/saved/saved.ts "return earlier.some((page) => page.rail === value) ? null : value;" => return value;
         const read = present(parseLayout(withKey('focus', 'focus'), ''), 'layout');
         expect(read.pages.map((page) => page.rail)).toEqual(['focus', undefined]);
     });
 
     it('names a key on two pages, and an empty one, as a problem of the page list', () => {
-        // revert: src/lib/state/workbench/layout/saved/saved.ts "problems.push(`rail key ${JSON.stringify(page.rail)} is on two pages`);" => delete
         const pages = [newPage('One', undefined, 'focus'), newPage('Two', undefined, 'focus')];
         expect(checkPages({ pages, current: pages[0].id })).toEqual([
             'rail key "focus" is on two pages'
@@ -400,7 +396,6 @@ describe('the first rail page on a browser with no saved layout', () => {
     const FOCUS = { root: { kind: 'pane', view: 'focus' } };
 
     it('replaces the default page with the first rail page while nothing has changed', () => {
-        // revert: src/lib/state/workbench/layout.svelte.ts "if (!fresh) return;" => delete
         loadLayout(fakeStorage());
         client.layout.startOnRailPage('focus', 'Focus', FOCUS);
         expect(pages().map((page) => [page.label, page.rail])).toEqual([['Focus', 'focus']]);
@@ -422,7 +417,6 @@ describe('the first rail page on a browser with no saved layout', () => {
     });
 
     it('waits for the rail list on a fresh browser, and stops waiting when it names no page', () => {
-        // revert: src/lib/state/workbench/layout.svelte.ts "// The first entry names nothing drawable: the default page stays the reader's first." +1 => delete
         loadLayout(fakeStorage());
         expect(client.layout.startingFresh()).toBe(true);
         client.layout.startOnRailPage('broken', 'Broken', { root: 'not a node' });
@@ -444,7 +438,6 @@ describe('the first rail page on a browser with no saved layout', () => {
 
 describe('the page shown before the one on screen', () => {
     it('is the page switched away from, and none on a fresh load or once it was closed', () => {
-        // revert: src/lib/state/workbench/layout.svelte.ts "if (next.current !== store.current.current) previous = store.current.current;" => delete
         loadLayout(fakeStorage());
         const first = currentPage().id;
         expect(client.layout.previousPage()).toBe(null);

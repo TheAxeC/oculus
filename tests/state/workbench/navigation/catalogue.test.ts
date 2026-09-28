@@ -43,7 +43,6 @@ beforeEach(() => {
 
 describe('arrange', () => {
     it("puts a group's views in the group's own key order, and the rest at the end", () => {
-        // revert: src/lib/state/workbench/navigation/catalogue.ts "(left, right) => left.order - right.order || left.id.localeCompare(right.id)" => (left, right) => left.id.localeCompare(right.id)
         const found = arrange(
             [probe('c'), probe('a', 'two', 1), probe('b', 'two', 0)],
             [{ id: 'two', label: 'Two' }]
@@ -54,7 +53,6 @@ describe('arrange', () => {
     });
 
     it('resolves equal orders by view id', () => {
-        // revert: src/lib/state/workbench/navigation/catalogue.ts "(left, right) => left.order - right.order || left.id.localeCompare(right.id)" => (left, right) => left.order - right.order
         const found = arrange(
             [probe('charlie', 'one', 2), probe('alpha', 'one', 2), probe('bravo', 'one', 2)],
             [{ id: 'one', label: 'One' }]
@@ -63,14 +61,12 @@ describe('arrange', () => {
     });
 
     it('lists no group for keys no registration answers', () => {
-        // revert: src/lib/state/workbench/navigation/catalogue.ts "if (items.length === 0 && inside.length === 0) continue;" => delete
         expect(arrange([probe('a')], [{ id: 'none', label: 'None' }])).toEqual([
             { label: null, items: [probe('a')], docs: [] }
         ]);
     });
 
     it("puts a group's documents after its views, in the order the config lists them", () => {
-        // revert: src/lib/state/workbench/navigation/catalogue.ts "const inside = docs.filter((entry) => entry.group === group.id);" => const inside = docs.filter((entry) => entry.group === group.id).reverse();
         const found = arrange(
             [probe('b', 'one', 1), probe('a', 'one', 0)],
             [{ id: 'one', label: 'One' }],
@@ -83,7 +79,6 @@ describe('arrange', () => {
     });
 
     it('lists a group whose documents are all it has', () => {
-        // revert: src/lib/state/workbench/navigation/catalogue.ts "if (items.length === 0 && inside.length === 0) continue;" => if (items.length === 0) continue;
         const found = arrange([], [{ id: 'one', label: 'One' }], [doc('ONE.md', 'one')]);
         expect(found.map((section) => section.label)).toEqual(['One']);
         expect(found[0].items).toEqual([]);
@@ -91,14 +86,12 @@ describe('arrange', () => {
     });
 
     it('trails a document whose group nothing configures, with the ungrouped views', () => {
-        // revert: src/lib/state/workbench/navigation/catalogue.ts "const loose = docs.filter((entry) => !configured.has(entry.group));" => const loose: DocEntry[] = [];
         const found = arrange([probe('a')], [{ id: 'one', label: 'One' }], [doc('ONE.md', 'gone')]);
         expect(found.map((section) => section.label)).toEqual([null]);
         expect(found[0].docs.map((entry) => entry.path)).toEqual(['ONE.md']);
     });
 
     it('counts a document towards the size that puts a group under a chord of its own', () => {
-        // revert: src/lib/state/workbench/navigation/catalogue.ts "return section.items.length + section.docs.length;" => return section.items.length;
         const views = [probe('a', 'one', 0), probe('b', 'one', 1), probe('c', 'one', 2)];
         const small = arrange(views, [{ id: 'one', label: 'One' }], [doc('ONE.md', 'one')]);
         expect(isChorded(small[0])).toBe(false);
@@ -112,7 +105,6 @@ describe('arrange', () => {
     });
 
     it("carries the group's glyph when it has one, and leaves it off when it has none", () => {
-        // revert: src/lib/state/workbench/navigation/catalogue.ts "if (group.glyph !== undefined) section.glyph = group.glyph;" => delete
         const found = arrange(
             [probe('a', 'iconed'), probe('b', 'bare')],
             [
@@ -137,7 +129,6 @@ describe('railOrder and keyOf', () => {
     ];
 
     it('exposes the direct views and the chords of the groups that configure one', () => {
-        // revert: src/lib/state/workbench/navigation/catalogue.ts "const direct = sections" +1 => .filter(() => true)
         expect(railOrder(registrations, groups)).toEqual({
             direct: ['b', 'a'],
             chords: { c: ['c', 'd', 'e', 'f', 'g'] }
@@ -145,7 +136,6 @@ describe('railOrder and keyOf', () => {
     });
 
     it('puts the direct views under the configured letter, which a group of its own keeps', () => {
-        // revert: src/lib/state/workbench/navigation/catalogue.ts "if (directChord !== undefined && direct.length > 0) {" => if (directChord !== undefined) {
         expect(railOrder(registrations, groups, 'v').chords).toEqual({
             v: ['b', 'a'],
             c: ['c', 'd', 'e', 'f', 'g']
@@ -157,7 +147,6 @@ describe('railOrder and keyOf', () => {
     });
 
     it('names the letter and the place an entry is reached by, and nothing past the ninth', () => {
-        // revert: src/lib/state/workbench/navigation/catalogue.ts "if (at >= 0 && at < 9) return `${letter}${at + 1}`;" => if (at >= 0) return `${letter}${at + 1}`;
         const long = 'abcdefghij'.split('').map((id, order) => probe(id, 'many', order));
         const order = railOrder(long, [{ id: 'many', label: 'Many', chord: 'm' }], 'v');
         expect(keyOf(order, 'a')).toBe('m1');
@@ -168,7 +157,6 @@ describe('railOrder and keyOf', () => {
     });
 
     it("gives a group's heading its own glyph, its first view's, or the document glyph", () => {
-        // revert: src/lib/state/workbench/navigation/catalogue.ts "if (section.items.length === 0) return t('views.doc_glyph');" => delete
         const [own, borrowed, papers] = arrange(
             [probe('a', 'iconed'), probe('b', 'bare')],
             [
@@ -184,7 +172,6 @@ describe('railOrder and keyOf', () => {
     });
 
     it('opens a document as a tab of its own per path, so two documents are two tabs', () => {
-        // revert: src/lib/state/workbench/navigation/catalogue.ts "return { id: entry.path, path: entry.path, label: entry.label };" => return { id: 'doc', path: entry.path, label: entry.label };
         expect(docState(doc('ONE.md', 'one')).id).toBe('ONE.md');
         expect(docState(doc('TWO.md', 'one')).id).toBe('TWO.md');
     });
@@ -192,7 +179,6 @@ describe('railOrder and keyOf', () => {
 
 describe('the readers of layout.yml', () => {
     it('reads nav_groups in order, dropping a group with no label and a chord that is no letter', () => {
-        // revert: src/lib/state/workbench/navigation/catalogue.ts "if (typeof group.chord === 'string' && /^[a-z]$/.test(group.chord)) {" => if (typeof group.chord === 'string') {
         expect(
             readGroups({
                 one: { label: 'One', glyph: 'chat', chord: 'o' },
@@ -209,7 +195,6 @@ describe('the readers of layout.yml', () => {
     });
 
     it('reads the direct chord as one lowercase letter or nothing', () => {
-        // revert: src/lib/state/workbench/navigation/catalogue.ts "return typeof raw === 'string' && /^[a-z]$/.test(raw) ? raw : undefined;" => return typeof raw === 'string' ? raw : undefined;
         expect(readChord('v')).toBe('v');
         expect(readChord('V')).toBe(undefined);
         expect(readChord('vv')).toBe(undefined);
@@ -218,7 +203,6 @@ describe('the readers of layout.yml', () => {
     });
 
     it('reads docs as three non-empty strings each, dropping any other entry', () => {
-        // revert: src/lib/state/workbench/navigation/catalogue.ts "if (typeof doc.path !== 'string' || doc.path === '') continue;" => if (typeof doc.path !== 'string') continue;
         expect(
             readDocs([
                 { label: 'One', path: 'ONE.md', group: 'g' },
@@ -251,8 +235,6 @@ describe('the catalogue of the real config', () => {
     }
 
     it('lists Personal with the wall, the agenda, the setup page and two documents, and the third in System', () => {
-        // revert: config/layout.yml "- { label: \"HPC how-to\",        path: docs/HPC-UTwente-howto.md, group: system }" => - { label: "HPC how-to", path: docs/HPC-UTwente-howto.md, group: personal }
-        // revert: src/lib/views/personal/account-setup/AccountSetup.svelte "group: 'personal'," => group: 'system',
         const personal = sections.find((found) => found.label === 'Personal');
         expect(personal?.items.map((view) => view.id)).toEqual([
             'memories',
@@ -283,15 +265,12 @@ describe('the catalogue of the real config', () => {
     });
 
     it('leaves no view out of a group, the collections of sources.yml included', () => {
-        // revert: config/layout.yml "boards: { label: \"Boards\" }" => boardz: { label: "Boards" }
         const rest = sections.find((found) => found.label === null)?.items ?? [];
         expect(COLLECTIONS.length).toBeGreaterThan(0);
         expect(rest.map((view) => view.id)).toEqual([]);
     });
 
     it('gives every chorded group a letter and a glyph, and one letter to one list', () => {
-        // revert: config/layout.yml "sessions: { label: \"Sessions\", glyph: live, chord: m }" => sessions: { label: "Sessions", glyph: live }
-        // revert: config/layout.yml "personal: { label: \"Personal\", glyph: memories, chord: p }" => personal: { label: "Personal" }
         expect(
             sections
                 .filter(isChorded)
@@ -306,8 +285,6 @@ describe('the catalogue of the real config', () => {
     });
 
     it('counts the real keys: the direct views and the five chords', () => {
-        // revert: config/layout.yml "direct_chord: v" => direct_chord: w
-        // revert: config/layout.yml "personal: { label: \"Personal\", glyph: memories, chord: p }" => personal: { label: "Personal" }
         const order = railOrder(
             views().filter((view) => view.listed !== false),
             groups,
@@ -383,7 +360,6 @@ describe('the catalogue of the real config', () => {
     });
 
     it('keeps the boards, the pillars and the feeds each under their heading', () => {
-        // revert: config/layout.yml "feeds: { label: \"Feeds\", glyph: scout }" => feeds: { label: "Feed", glyph: scout }
         expect(section('Boards').map((view) => view.id)).toEqual([
             'focus',
             'projects',
@@ -417,7 +393,6 @@ describe('the page a catalogue press opens on', () => {
     ];
 
     it("finds a view anywhere in an arrangement, alone or among a pane's tabs", () => {
-        // revert: src/lib/state/workbench/navigation/catalogue.ts "return Array.isArray(held.view) ? held.view.includes(view) : held.view === view;" => return false;
         expect(nodeHolds(views, 'catalogue')).toBe(true);
         expect(nodeHolds(views, 'pages')).toBe(true);
         expect(nodeHolds(views, 'focus')).toBe(false);
@@ -425,7 +400,6 @@ describe('the page a catalogue press opens on', () => {
     });
 
     it('names only the rail page whose arrangement holds the catalogue as its own page', () => {
-        // revert: src/lib/state/workbench/navigation/catalogue.ts "return entry !== undefined && nodeHolds(entry.node, catalogue);" => return entry !== undefined;
         expect(onCataloguePage('views', pages, 'catalogue')).toBe(true);
         expect(onCataloguePage('focus', pages, 'catalogue')).toBe(false);
         expect(onCataloguePage(undefined, pages, 'catalogue')).toBe(false);
@@ -433,7 +407,6 @@ describe('the page a catalogue press opens on', () => {
 });
 
 describe('the views the catalogue lists', () => {
-    // revert: src/lib/state/workbench/navigation/catalogue.ts "return views.filter((view) => view.listed !== false);" => return views;
     it('are every registration that does not say it is unlisted', () => {
         const views = [
             { id: 'a' },
@@ -453,14 +426,12 @@ describe('the entry a saved document tab shows', () => {
     const MOVED: DocEntry = { ...HELD, path: 'docs/RESEARCH-APPROACH.md' };
 
     it('keeps the path it holds when the list still names it, whatever the label', () => {
-        // revert: src/lib/state/workbench/navigation/catalogue.ts "if (listed !== undefined) return { entry: listed, moved: false };" => delete
         const other: DocEntry = { label: 'Other', path: 'docs/OTHER.md', group: 'personal' };
         const found = followDoc([other, { ...HELD, label: 'Other' }], HELD.path, 'Other');
         expect(found).toEqual({ entry: { ...HELD, label: 'Other' }, moved: false });
     });
 
     it('follows only a label exactly one entry carries, and never an empty one', () => {
-        // revert: src/lib/state/workbench/navigation/catalogue.ts "if (named.length !== 1) return { entry: null, moved: false };" => if (named.length === 0) return { entry: null, moved: false };
         const twice = [MOVED, { ...MOVED, path: 'docs/COPY.md' }];
         expect(followDoc(twice, HELD.path, HELD.label)).toEqual({ entry: null, moved: false });
         expect(followDoc([MOVED], HELD.path, HELD.label)).toEqual({ entry: MOVED, moved: true });

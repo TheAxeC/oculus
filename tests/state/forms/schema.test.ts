@@ -256,7 +256,6 @@ describe('the values a form opens with', () => {
 });
 
 describe('the fields of one section of the manifest form', () => {
-    // revert: src/lib/state/forms/schema.ts "return fields.filter((one) => one.section === section);" => return fields;
     it('are the fields that name it, in file order', () => {
         const fields = [
             { field: 'a', section: 'one' },

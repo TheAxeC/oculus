@@ -3,8 +3,8 @@
 //
 // The rows are synthetic and put into the store by hand, so no case fetches anything; the catalog
 // is the real one, which is what holds the words the view draws. What this does NOT cover: the
-// press on the undo control and what the server does with it, which is
-// tests/routes/edit/write.test.ts's and the browser suite's.
+// press on the undo control, and what the server does with it, which is
+// tests/routes/edit/write.test.ts's.
 
 import { beforeEach, describe, expect, it } from 'vitest';
 import { render } from 'svelte/server';
@@ -184,9 +184,9 @@ describe('the History view', () => {
             expect(word, `no word for ${kind}`).toBeDefined();
             expect(body).toContain(`>${word}</span>`);
         }
-        // The kind is on the row as data for a spec to select on, and never as the reader's word.
+        // The kind is on the row as data for a test to select on, and never as the reader's word.
         expect(body).toContain('data-kind="new-entry"');
-        // the kind is on the row as data for a spec to select on, never as the reader's word
+        // the kind is on the row as data for a test to select on, never as the reader's word
         expect(body).not.toContain('>new-entry</span>');
     });
 

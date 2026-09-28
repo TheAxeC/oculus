@@ -3,8 +3,7 @@
 // back after a reload through a fake storage.
 //
 // The project is synthetic and handed to the store through its projectOf argument, so what is
-// checked is the draft. Typing into the form and pressing Save is
-// tests/browser/workbench/unsaved-forms.spec.ts.
+// checked is the draft. Typing into the form and pressing Save are DOM events no case here fires.
 
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { Project } from '../../../src/lib/data/model/index.ts';

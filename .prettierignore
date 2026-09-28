@@ -9,7 +9,7 @@ package-lock.json
 # it, and a formatter pass would rewrite the indentation and the comment columns of every file listed.
 # meta.yml and icons.yml are formatted. The demo hub is data, not source: a formatter pass would
 # rewrite the indentation and the quoting of every manifest and every collection file, which is what
-# tests/data/demo-hub.test.ts and the browser specs read.
+# tests/data/demo-hub.test.ts reads.
 demo/
 
 config/appearance.yml

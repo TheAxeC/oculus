@@ -20,7 +20,6 @@ describe('the system probe', () => {
     it("reads this process's start time under a locale that is not English", () => {
         process.env.LC_ALL = 'nl_NL.UTF-8';
         process.env.LANG = 'nl_NL.UTF-8';
-        // revert: src/lib/server/sessions/registry.ts "env: { ...process.env, LC_ALL: 'C' }" => delete
         const start = systemProbe.starts([process.pid]).get(process.pid);
         expect(start).toBeDefined();
         // A start in the past and after 2026 began, which only a stamp read as a date gives.

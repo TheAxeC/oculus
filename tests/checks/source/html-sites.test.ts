@@ -235,7 +235,6 @@ export function looseTrustedIntros(root: string): string[] {
 
 describe('every {@html} site', () => {
     it('draws the sanitiser, inline Markdown, the catalog, or a named exception', () => {
-        // revert: tests/checks/source/html-sites.test.ts "const FILTERED = ['sanitise(', 'sanitiseSvg(', 'sanitiseGraph(', 'inlineMarkdown('];" => const FILTERED = ['sanitise(', 'sanitiseSvg(', 'inlineMarkdown('];
         expect(unfilteredSites(LIB)).toEqual([]);
     });
 

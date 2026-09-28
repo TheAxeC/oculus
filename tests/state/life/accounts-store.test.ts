@@ -109,7 +109,6 @@ function holding(): () => void {
 
 describe('the accounts store commands', () => {
     it('posts a Connect naming the account by its key, and says it is opening until answered', async () => {
-        // revert: src/lib/state/life/accounts.svelte.ts "connectingKeys.add(key);" => delete
         const release = holding();
         const pending = store.connect('calendar', WORK);
         expect(store.connecting('calendar', WORK)).toBe(true);
@@ -127,14 +126,12 @@ describe('the accounts store commands', () => {
     });
 
     it('opens the account setup page when a Connect is answered that the provider is not set up', async () => {
-        // revert: src/lib/state/life/accounts.svelte.ts "if (answer.error === 'setup') {" +1 => delete
         answers.set('POST /api/calendar', { status: 409, body: { error: 'setup' } });
         expect(await store.connect('calendar', WORK)).toBe('');
         expect(opened).toEqual([ACCOUNT_SETUP_VIEW]);
     });
 
     it('refuses a label outside the rule in words, and sends nothing', async () => {
-        // revert: src/lib/state/life/accounts.svelte.ts "if (refused !== null) return refusalWords(refused, typed, '');" => delete
         expect(await store.add('calendar', 'google', 'Work Mail')).toBe(
             t('accounts.refused_label')
         );
@@ -142,7 +139,6 @@ describe('the accounts store commands', () => {
     });
 
     it('refuses a label the list already holds for that provider, and sends nothing', async () => {
-        // revert: src/lib/state/life/accounts.svelte.ts "return held?.accounts ?? [];" => return [];
         expect(await store.add('calendar', 'google', 'work')).toBe(
             t('accounts.refused_taken', 'work')
         );
@@ -150,7 +146,6 @@ describe('the accounts store commands', () => {
     });
 
     it('posts an Add to the endpoint of its own connector, with the label trimmed', async () => {
-        // revert: src/lib/state/life/accounts.svelte.ts "const ENDPOINT: Record<ConnectKind, string> = { calendar: '/api/calendar', mail: '/api/mail' };" => const ENDPOINT: Record<ConnectKind, string> = { calendar: '/api/calendar', mail: '/api/calendar' };
         expect(await store.add('mail', 'microsoft', '  home  ')).toBe('');
         expect(asked.map((one) => [one.url, one.body, one.token])).toEqual([
             ['/api/mail', { action: 'add', provider: 'microsoft', label: 'home' }, WRITE_TOKEN]
@@ -158,7 +153,6 @@ describe('the accounts store commands', () => {
     });
 
     it('says the connector is busy while its Add is not answered', async () => {
-        // revert: src/lib/state/life/accounts.svelte.ts "return waitForSetup({ kind, provider, label: typed });" +2 => delete
         const release = holding();
         const pending = store.add('mail', 'google', 'home');
         expect(store.busy('mail')).toBe(true);
@@ -169,13 +163,11 @@ describe('the accounts store commands', () => {
     });
 
     it('says a code the server refuses with in the same words the page uses', async () => {
-        // revert: src/lib/state/life/accounts.svelte.ts "return t('accounts.refused_taken', label);" => return t('accounts.refused', code);
         answers.set('POST /api/mail', { status: 400, body: { error: 'taken' } });
         expect(await store.add('mail', 'google', 'home')).toBe(t('accounts.refused_taken', 'home'));
     });
 
     it('posts a Remove naming the account by its key', async () => {
-        // revert: src/lib/state/life/accounts.svelte.ts "action: 'remove'," +1 => account: account.label
         expect(await store.remove('calendar', WORK)).toBe('');
         expect(asked.map((one) => one.body)).toEqual([
             { action: 'remove', account: 'google-work' }
@@ -185,7 +177,6 @@ describe('the accounts store commands', () => {
 
 describe('the Add that waits on its provider', () => {
     it('reads the setup answer the page draws from', async () => {
-        // revert: src/lib/state/life/accounts.svelte.ts "setup = (await response.json()) as ConnectSetup;" => delete
         answers.set('GET /api/connect', {
             status: 200,
             body: setupWith({ google: true, microsoft: false })
@@ -196,7 +187,6 @@ describe('the Add that waits on its provider', () => {
     });
 
     it('waits and opens the setup page, sending nothing, when the provider is known not set up', async () => {
-        // revert: src/lib/state/life/accounts.svelte.ts "if (setup !== null && !setup.ready[provider]) {" => if (false) {
         answers.set('GET /api/connect', {
             status: 200,
             body: setupWith({ google: false, microsoft: false })
@@ -210,7 +200,6 @@ describe('the Add that waits on its provider', () => {
     });
 
     it('waits and opens the setup page when the server answers that the provider is not set up', async () => {
-        // revert: src/lib/state/life/accounts.svelte.ts "if (answer.error === 'setup') return waitForSetup({ kind, provider, label: typed });" => delete
         answers.set('POST /api/mail', { status: 409, body: { error: 'setup' } });
         expect(await store.add('mail', 'google', 'home')).toBe('');
         expect(opened).toEqual([ACCOUNT_SETUP_VIEW]);
@@ -218,7 +207,6 @@ describe('the Add that waits on its provider', () => {
     });
 
     it('refuses a half whose client id is not Google shaped, and sends nothing', async () => {
-        // revert: src/lib/state/life/accounts.svelte.ts "if ('refused' in checked) return refusalWords(checked.refused, '', '');" => delete
         const said = await store.saveHalf('google', {
             clientId: 'not-an-id',
             clientSecret: 'shh',
@@ -229,7 +217,6 @@ describe('the Add that waits on its provider', () => {
     });
 
     it('saves the half, reads the setup again and makes the Add that waited on it', async () => {
-        // revert: src/lib/state/life/accounts.svelte.ts "return add(held.kind, held.provider, held.label);" => return '';
         answers.set('POST /api/mail', { status: 409, body: { error: 'setup' } });
         await store.add('mail', 'google', 'home');
         answers.set('POST /api/mail', { status: 200, body: { ok: true } });
@@ -263,7 +250,6 @@ describe('the Add that waits on its provider', () => {
     });
 
     it('keeps an Add waiting on another provider when one provider is saved', async () => {
-        // revert: src/lib/state/life/accounts.svelte.ts "if (held?.provider !== provider) return '';" => if (held === null) return '';
         answers.set('POST /api/mail', { status: 409, body: { error: 'setup' } });
         await store.add('mail', 'microsoft', 'home');
         answers.set('GET /api/connect', {
@@ -293,7 +279,6 @@ function failing(how: 'unreachable' | 'unreadable'): void {
 }
 
 describe('a press whose request fails', () => {
-    // revert: src/lib/state/shared/stores/post.ts "return { ok: false, body: {}, failed: 'unreachable' };" => throw new Error('unreachable');
     it('says in words that an Add got no answer, and does not reject', async () => {
         failing('unreachable');
         await expect(store.add('calendar', 'google', 'home')).resolves.toBe(
@@ -302,20 +287,17 @@ describe('a press whose request fails', () => {
         expect(store.busy('calendar')).toBe(false);
     });
 
-    // revert: src/lib/state/shared/stores/post.ts "return { ok: false, body: {}, failed: 'unreadable' };" => throw new Error('unreadable');
     it('says in words that a Connect answer could not be read, and does not reject', async () => {
         failing('unreadable');
         await expect(store.connect('calendar', WORK)).resolves.toBe(t('accounts.unreadable'));
         expect(store.connecting('calendar', WORK)).toBe(false);
     });
 
-    // revert: src/lib/state/life/accounts.svelte.ts "return t('accounts.unreachable');" => return t('accounts.refused', code);
     it('says in words that a Remove got no answer, and does not reject', async () => {
         failing('unreachable');
         await expect(store.remove('calendar', WORK)).resolves.toBe(t('accounts.unreachable'));
     });
 
-    // revert: src/lib/state/life/accounts.svelte.ts "return t('accounts.unreadable');" => return t('accounts.refused', code);
     it('says in words that a Save answer could not be read, and does not reject', async () => {
         failing('unreadable');
         const said = store.saveHalf('google', {
@@ -326,7 +308,6 @@ describe('a press whose request fails', () => {
         await expect(said).resolves.toBe(t('accounts.unreadable'));
     });
 
-    // revert: src/lib/state/life/accounts.svelte.ts "setupFailed = t('accounts.unreachable');" => delete
     it('says in words that the setup page could not be read, and keeps no setup', async () => {
         failing('unreachable');
         await store.loadSetup();
@@ -337,7 +318,6 @@ describe('a press whose request fails', () => {
 
 describe('the scopes the setup page lists', () => {
     it('lists each scope of one provider once, across both connectors, in first-seen order', () => {
-        // revert: src/lib/state/life/accounts.ts "if (scope !== '' && !found.includes(scope)) found.push(scope);" => if (scope !== '') found.push(scope);
         expect(scopesOf(setupWith({ google: true, microsoft: true }), 'microsoft')).toEqual([
             'Calendars.Read',
             'offline_access',

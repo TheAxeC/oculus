@@ -6,9 +6,9 @@
 // checked is the view, not the hub.
 //
 // What this does NOT cover: anything that needs a DOM. There is no browser in this suite, so no
-// menu opens, no card is clicked and no write is made; the menu's two writes are checked in a
-// browser. The countdowns are the real clock's, so the dates below are far enough from any run date
-// that which side of today they fall on is not in question.
+// menu opens, no card is clicked and no write is made; the menu's two writes need a DOM and are not
+// run here. The countdowns are the real clock's, so the dates below are far enough from any run
+// date that which side of today they fall on is not in question.
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -69,7 +69,6 @@ describe('the Live HPC pill', () => {
         expect(body).not.toContain('HPC job');
     });
 
-    // revert: src/lib/views/boards/focus/CommandCenterView.svelte "glyph=\"hpc\"" => delete
     it('is present with counts from the shared HPC state, its glyph beside the words', () => {
         receive({
             channel: 'hpc',
@@ -135,7 +134,6 @@ describe('the board', () => {
     });
 
     it('draws a column whose tone the palette lacks, or that names none, and its header in the unknown tone', () => {
-        // revert: src/lib/state/shared/words/tones.ts "return Object.values(palette).includes(`c-${tone}`) ? tone : UNKNOWN_TONE;" => return tone;
         receive({
             channel: 'config',
             version: 2,
@@ -160,7 +158,6 @@ describe('the board', () => {
         expect(drawn.split(grey).length - 1).toBeGreaterThanOrEqual(2);
     });
 
-    // revert: src/lib/views/boards/focus/lanes/LaneHead.svelte "<span class=\"count\">{count}</span>" => <span class="count">{count + 1}</span>
     it('counts what sits on a lane', () => {
         const run = body.slice(body.indexOf('>Run<'));
         expect(run.slice(0, 200)).toContain('>3<');
@@ -178,7 +175,6 @@ describe('the board', () => {
 });
 
 describe('a card', () => {
-    // revert: src/lib/views/boards/focus/lanes/LaneCard.svelte "<Glyph name={t('focus.fire_glyph')} />" => delete
     it('draws the short handle, the priority flames and the first sentence of next', () => {
         expect(body).toContain('Alpha');
         expect(body).toContain('Run the sweep.');
@@ -220,7 +216,7 @@ describe('a card', () => {
     });
 
     // The flame is always drawn, faint, so a card with no priority can be clicked to set one; the
-    // cycle itself needs a DOM and is checked in a browser.
+    // cycle itself needs a DOM and is not run here.
     it('draws the flame badge on a card with no priority at all', () => {
         expect(/class="[^"]*\bflames\b[^"]*\bunset\b/.test(body)).toBe(true);
         expect(body).toContain(catalog['focus.set_priority']);
@@ -359,7 +355,6 @@ describe('the strip and the band', () => {
         expect(body).toContain(catalog['focus.wait_hosts']);
     });
 
-    // revert: src/lib/views/boards/focus/Band.svelte "t('focus.teaching_lane')," => t('focus.jobs_lane'),
     it('stacks the grants by stage and names the teaching column', () => {
         expect(body).toContain(catalog['focus.cards_group']);
         expect(body).toContain('A grant in prep');
@@ -368,7 +363,6 @@ describe('the strip and the band', () => {
         expect(body).toContain('A course');
     });
 
-    // revert: src/lib/views/boards/focus/Band.svelte "glyph={t('focus.funding_glyph')}" => delete
     it('draws each column glyph before the column words, and no character in the words', () => {
         const heads = [...body.matchAll(/<div class="lane-h[\s\S]*?<\/div>/g)].map((one) => one[0]);
         for (const key of ['funding', 'jobs', 'teaching']) {

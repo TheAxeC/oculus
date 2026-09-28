@@ -2,8 +2,7 @@
 // overlaps one already drawn is left out, and the hovered and the selected node's labels are drawn
 // whatever they overlap.
 //
-// What this does NOT cover: the measuring of a label's width and the pointer, which need a page and
-// are tests/browser/boards/cards.spec.ts.
+// What this does NOT cover: the measuring of a label's width and the pointer, which need a page.
 
 import { describe, expect, it } from 'vitest';
 import {

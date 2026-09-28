@@ -27,18 +27,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:      # Q93 and L7 in flight side by side (Axel, 2026-09-28); Q93 lands first, then L7 on Q93's head; next Q94, Q92, Q89, Q79, Q80, then the queue of plan.md.
-- step: Q93
-  executor: agent
-  worker: "claude:opus, agent af1bae095499172e3; reported 2026-09-28 (agents/reviews/Q93-report.md: everything built; lock file keeps 2 vitest peer lines; demo/hpc and demo/sessions deleted outside the brief; a duplication-check defect found, not fixed). Reviewer claude:opus, agent adb5b2f31e8d44431, reported 2026-09-28. Round 1 reported 2026-09-28 (agents/reviews/Q93-report.md, section Repair round 1), verify: 6 commands passed on the worktree. Round 1 reviewer claude:opus, agent ad68a901d48a41ce8, reported 2026-09-28 (agents/reviews/Q93-refuter.md, section Repair round 1, refuted): one Proof finding and 66 stale reasons outside the round, both fixed at landing"
-  reviewer_report: agents/reviews/Q93-refuter.md
-  worktree: .agents/worktrees/Q93
-  base: 7bb7d2bc
-  launched: 2026-09-28
-  report: agents/reviews/Q93-report.md
-  landing: not-started
-  round: "1 (sent 2026-09-28, agents/briefs/Q93-round1-sent.md; the round starts at the worktree commit 98100b22)"
-  shared_paths: "20 files with L7 (DESIGN.md, HELP.md, allow-duplication.txt and 17 unit test files). Both steps delete the same directive lines there; L7 undoes its changes under tests/browser/. What conflicts at L7's landing is a comment Q93 rewrote beside an L7 edit, resolved by hand then."
+dispatch:      # Q93 landed 2026-09-28; L7 lands on Q93's head next; then Q94, Q92, Q89, Q79, Q80 and the queue of plan.md.
 - step: L7
   executor: agent
   worker: "claude:opus, agent a646fd5818276f983, stopped by Axel 2026-09-28 for starting a second full revert-check run; continuation builder claude:opus, agent ad60ea6becf7aa4d7 (Axel: restart it); stopped. Continuation builder claude:opus, agent a655bd95c87499049, launched 2026-09-28 under the brief without browser tests or directives (item 11); reported 2026-09-28 (agents/reviews/L7-report.md: everything built, the full unit run red once in git-ops.test.ts and history.test.ts, both green alone). Reviewer claude:opus, agent a81cc1400af2f8d0b, reported 2026-09-28. Round 1 reported 2026-09-28 (agents/reviews/L7-report.md, section Repair round 1), verify: 6 commands passed on the worktree. Round 1 reviewer claude:opus, agent a80fc5c65448ddab6, reported 2026-09-28 (agents/reviews/L7-refuter.md, section Repair round 1, refuted); its findings are fixed at landing"
@@ -50,6 +39,7 @@ dispatch:      # Q93 and L7 in flight side by side (Axel, 2026-09-28); Q93 lands
   report: agents/reviews/L7-report.md
   landing: not-started
   round: "1 (sent 2026-09-28, agents/briefs/L7-round1-sent.md, with Axel's Z18 ruling; the round starts at the worktree commit fa6b3a97)"
+  shared_paths: "20 files with L7 (DESIGN.md, HELP.md, allow-duplication.txt and 17 unit test files). Both steps delete the same directive lines there; L7 undoes its changes under tests/browser/. What conflicts at L7's landing is a comment Q93 rewrote beside an L7 edit, resolved by hand then."
 ```
 
 ## The standing demands (from Axel, in force)
@@ -665,6 +655,7 @@ The plan.md lines shortened on 2026-09-25 (P1 the parity audit, S2, and Q67's St
 
 ## Usage
 
+- Q93 landing, orchestrator claude:opus (this session), `usage.py` from Q77b's landing (2026-09-27T21:12:15+02:00) to the booking: 455 messages, 325,102 output tokens, 1,236,532 cache-write tokens, 114,879,071 cache-read tokens, 932 fresh input tokens, 789 minutes; shared with L7's rounds, the ledger repairs and the rulings Z18 to Z21. One repair round; 2 fixes at landing; first report did not pass its bar (the review's standards findings).
 - Q93, builder claude:opus (`af1bae095499172e3`): 235,272 tokens, 79 tool uses, 20.8 minutes (the runner's result). Round 1: 276,114 tokens, 23 tool uses, 10.9 minutes (the runner's result); 19 files, +354 -323.
 - Q93, reviewer claude:opus (`adb5b2f31e8d44431`), through /refute: 201,726 tokens, 61 tool uses, 18.9 minutes (the runner's result). Round 1 reviewer claude:opus (`ad68a901d48a41ce8`), through /refute: 129,778 tokens, 29 tool uses, 8.3 minutes (the runner's result).
 - L7, continuation builder claude:opus (`a655bd95c87499049`): 217,664 tokens, 63 tool uses, 15.2 minutes (the runner's result). Round 1: 331,727 tokens, 78 tool uses, 28.2 minutes (the runner's result); 38 files, +1026 -579, and the new HeldQuestion.svelte.

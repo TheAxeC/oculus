@@ -128,8 +128,6 @@ describe('the mail poller', () => {
         watcher.close();
     });
 
-    // revert: src/lib/server/accounts/mail/poll.ts "...(hasOwnHalf(dir, account) ? { ownHalf: true } : {})," => delete
-    // revert: src/lib/server/accounts/connect/loop.ts "const credentials = readCredentials(dirs.dir, account, dirs.providerDir);" => if (credentials === null) return { waiting: { status: 'not-connected' } };
     it('marks an account with no refresh token not connected, and one with no half as needing setup', async () => {
         const hub = new Hub();
         const dir = scratch();
@@ -298,7 +296,6 @@ describe('the mail poller', () => {
     });
 
     it('republishes when the triage skill writes the notes file from outside', async () => {
-        // revert: src/lib/server/accounts/mail/poll.ts "if (options.pollNotes === false) return;" +1 => return;
         const hub = new Hub();
         const dir = scratch();
         writeAccount(dir, GOOGLE);
@@ -330,8 +327,6 @@ describe('the mail poller', () => {
     });
 
     it('makes the mail folder when it is not there, so the first write from outside is seen', async () => {
-        // revert: src/lib/server/accounts/mail/poll.ts "mkdirSync(dir, { recursive: true, mode: DIR_MODE });" => delete
-        // revert: src/lib/server/accounts/mail/poll.ts "if (options.pollNotes === false) return;" +1 => return;
         const hub = new Hub();
         const parent = scratch();
         const dir = join(parent, 'not-made-yet');
@@ -354,7 +349,6 @@ describe('the mail poller', () => {
     });
 
     it('reads a notes file written the moment the poller starts, at the next tick', () => {
-        // revert: src/lib/server/accounts/mail/poll.ts "if (options.pollNotes === false) return;" +1 => return;
         const hub = new Hub();
         const dir = scratch();
         const clock = manual();
@@ -381,7 +375,6 @@ describe('the mail poller', () => {
     });
 
     it('does not publish a page write a second time when the tick after it comes', () => {
-        // revert: src/lib/server/accounts/mail/poll.ts "notesPoll?.reading();" => delete
         const hub = new Hub();
         const dir = scratch();
         const clock = manual();
@@ -404,7 +397,6 @@ describe('the mail poller', () => {
     });
 
     it('publishes nothing for a notes write after it closed, and leaves no tick behind', () => {
-        // revert: src/lib/server/accounts/mail/poll.ts "loop.close();" +1 => delete
         const hub = new Hub();
         const dir = scratch();
         const clock = manual();

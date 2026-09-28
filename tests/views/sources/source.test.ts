@@ -5,8 +5,7 @@
 //
 // What this does NOT cover: what the sanitiser does to markup a file carries. The suite runs in
 // node, where DOMPurify has no document and ui/html.ts hands the text back, which its own head
-// comment says; the filtering is exercised in Chrome, by the preview case of
-// tests/browser/sources/source.spec.ts and by tests/browser/workbench/sanitise.spec.ts.
+// comment says; the filtering needs a DOM and is not run here.
 
 import { render } from 'svelte/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -136,7 +135,6 @@ describe('the source editor', () => {
         expect(editable).toContain(catalog['source.saved']);
     });
 
-    // revert: src/lib/views/sources/source/Editor.svelte "<div class=\"row\" bind:this={box}>" => <div role="toolbar"></div><div class="row" bind:this={box}>
     it('draws the highlight mirror and the editable textarea, and no control row of its own', () => {
         const { body } = render(Editor, {
             context: clientContext(client),
@@ -155,7 +153,6 @@ describe('the source editor', () => {
         expect(body).not.toContain('readonly');
     });
 
-    // revert: src/lib/views/sources/source/Source.svelte "<Glyph name=\"cross\" />" => delete
     it('draws a refused save with the cross glyph beside its words, and a later word without it', async () => {
         let refuse = true;
         vi.stubGlobal('fetch', (_url: string, init?: RequestInit) =>
@@ -198,7 +195,6 @@ describe('the source editor', () => {
         expect(saved).not.toContain('data-glyph="cross"');
     });
 
-    // revert: src/lib/views/sources/source/Source.svelte "{#if editing}" => {#if false}
     it('draws Save, Revert, Preview and the star on the pane bar in that order, the saved word after', async () => {
         vi.stubGlobal('fetch', (_url: string, init?: RequestInit) =>
             Promise.resolve(
@@ -327,7 +323,6 @@ describe('the source editor', () => {
     });
 
     it('draws the rendered half beside a Markdown file and nothing beside a YAML one', () => {
-        // revert: src/lib/ui/html.ts "return sanitise(renderDocument(text));" => return sanitise(marked.parse(text, { async: false }));
         const drawn = (path: string): string =>
             render(Editor, {
                 context: clientContext(client),
@@ -344,7 +339,6 @@ describe('the source editor', () => {
     });
 
     it('leaves a front matter block out of the rendered half and a relative image as written', () => {
-        // revert: src/lib/ui/html.ts "return sanitise(renderDocument(text));" => return sanitise(marked.parse(text, { async: false }));
         const body = render(Editor, {
             context: clientContext(client),
             props: {
@@ -363,7 +357,6 @@ describe('the source editor', () => {
     });
 
     it('takes the rendered half away when the instance state says the toggle is off', async () => {
-        // revert: src/lib/ui/html.ts "return sanitise(renderDocument(text));" => return sanitise(marked.parse(text, { async: false }));
         vi.stubGlobal(
             'fetch',
             vi.fn(() => Promise.resolve(new Response('# A heading\n')))
@@ -462,8 +455,8 @@ describe('a file the source tab may not write', () => {
             props: { instance: opened }
         }).body;
         expect(body).toContain('data-source-line="2"');
-        // The cursor the editor places is the offset of that line, which is what the browser
-        // suite presses through; the offset rule itself is tests/state/sessions/source.test.ts.
+        // The cursor the editor places is the offset of that line; the offset rule itself is
+        // tests/state/sessions/source.test.ts.
         expect(lineStart('one\ntwo\nthree\n', 2)).toBe(4);
     });
 });

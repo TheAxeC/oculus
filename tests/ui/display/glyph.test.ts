@@ -7,8 +7,7 @@
 // parse into and this suite runs in node (vite.config.ts sets `environment: 'node'`), where its
 // `isSupported` is false and `sanitiseSvg` hands the drawing back as it came. What is checked here
 // is the data the browser is given, the profile, and that the primitive puts every icon through it.
-// The icons in the page, with no script and no handler among them, are
-// tests/browser/shell/icons.spec.ts.
+// The icons in the page, with no script and no handler among them, need a DOM and are not run here.
 
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
@@ -51,7 +50,6 @@ function drawn(name: string): string {
 }
 
 describe('what the glyph primitive draws', () => {
-    // revert: src/lib/ui/display/Glyph.svelte ": { text: '', svg: iconSvg(name) ?? '' };" => : { text: standIn, svg: '' };
     it('draws the icon of the name, and no text, while the icons are in force', () => {
         const body = drawn('pin');
         expect(body).toContain('<svg');
@@ -59,7 +57,6 @@ describe('what the glyph primitive draws', () => {
         expect(body).not.toContain(GLYPHS.pin);
     });
 
-    // revert: src/lib/ui/display/Glyph.svelte "? { text: standIn, svg: '' }" => ? { text: '', svg: iconSvg(name) ?? '' }
     it('draws the ASCII stand-in, and no icon, under a terminal vocabulary', () => {
         setGlyphMode('ascii');
         try {
@@ -72,7 +69,6 @@ describe('what the glyph primitive draws', () => {
         }
     });
 
-    // revert: src/lib/ui/display/Glyph.svelte "<span class=\"glyph\" data-glyph={name} aria-hidden=\"true\">{drawn.text}</span>" => <span class="glyph">{name}</span>
     it('draws an empty box, and no text, for a name the icon map does not carry', () => {
         setIcons({});
         try {
@@ -87,12 +83,10 @@ describe('what the glyph primitive draws', () => {
         }
     });
 
-    // revert: src/lib/ui/display/Glyph.svelte "const standIn = glyph(name);" => const standIn = '';
     it('throws on a name the vocabulary does not hold while the icons are in force', () => {
         expect(() => drawn('nonesuch')).toThrow(/nonesuch/);
     });
 
-    // revert: src/lib/ui/display/Glyph.svelte "{@html sanitiseSvg(drawn.svg)}" => {@html drawn.svg}
     it('puts every icon through the icon filter before it reaches the page', () => {
         const source = readFileSync(GLYPH, 'utf8');
         expect(source).toContain('{@html sanitiseSvg(drawn.svg)}');
@@ -151,7 +145,6 @@ describe('the glyph slot', () => {
 
 describe('the terminal palette brackets', () => {
     it('are drawn around a row and never around a rail control', () => {
-        // revert: src/lib/ui/controls/ToolButton.svelte ":global(body.rice) .tool:not(.rail-control):not(.bare):not(.status):not(.cell)::before {" => :global(body.rice) .tool:not(.bare)::before {
         const brackets = rules(TOOL).filter((rule) => /content:\s*'[[\]]'/.test(rule.body));
         expect(brackets.length).toBe(2);
         for (const rule of brackets) {

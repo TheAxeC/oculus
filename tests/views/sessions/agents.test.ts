@@ -3,8 +3,7 @@
 // to open a transcript.
 //
 // The catalog and glyphs are the real config; the session is the test's own. Nothing reads
-// ~/.claude, ~/.codex or ~/.oculus. Pressing the open control needs a DOM and is proven in
-// tests/browser/sessions/agents.spec.ts.
+// ~/.claude, ~/.codex or ~/.oculus. Pressing the open control needs a DOM and is not run here.
 
 import { beforeEach, describe, expect, it } from 'vitest';
 import { render } from 'svelte/server';
@@ -101,7 +100,6 @@ describe('the agents view over launched builders', () => {
             subagent('toolu_1', '2026-09-23T10:00:00.000Z', 'first subagent'),
             launched('one', '2026-09-23T10:01:00.000Z')
         ]);
-        // revert: src/lib/views/sessions/agents/Agents.svelte "const agents = $derived(newestFirst(record?.agents ?? []));" => const agents = $derived([...(record?.agents ?? [])].reverse());
         const body = html();
         const at = (text: string): number => body.indexOf(text);
         expect(at('second subagent')).toBeGreaterThan(-1);
@@ -115,7 +113,6 @@ describe('the agents view over launched builders', () => {
                 tokens: { input: 12000, output: 3000, cacheRead: 0, cacheCreation: 0, thinking: 0 }
             })
         ]);
-        // revert: src/lib/views/sessions/agents/Agents.svelte "if (harness === 'codex') return t('sessions.ag_codex');" => if (harness === 'codex') return agent.subagentType;
         const body = html();
         expect(body).toContain('data-launched="true"');
         expect(body).toContain(catalog['sessions.ag_launched']);
@@ -127,7 +124,6 @@ describe('the agents view over launched builders', () => {
 
     it('draws no launched mark and no open control on a subagent', () => {
         holding([subagent('toolu_1', '2026-09-23T10:00:00.000Z', 'a subagent')]);
-        // revert: src/lib/views/sessions/agents/Agents.svelte "{#if agent.dispatch !== undefined}" => {#if true}
         const body = html();
         // A subagent carries no launch record, so nothing marks it as a process of its own.
         expect(body).not.toContain('data-launched');
@@ -142,7 +138,6 @@ describe('the agents view over launched builders', () => {
             launched('known', '2026-09-23T10:01:00.000Z', { session: 'builder-session' }),
             launched('unknown', '2026-09-23T10:00:00.000Z', {}, '2026-09-23T10:05:00.000Z')
         ]);
-        // revert: src/lib/views/sessions/agents/Agents.svelte "{#if (agent.dispatch?.session ?? null) !== null}" => {#if true}
         const body = html();
         const known = body.slice(body.indexOf('data-agent="dispatch:known"'));
         const unknown = body.slice(body.indexOf('data-agent="dispatch:unknown"'));
@@ -163,7 +158,6 @@ describe('the agents view over launched builders', () => {
 
     it('counts a stamped launch from its start to its end', () => {
         holding([launched('ran', '2026-09-23T16:12:23.433Z', {}, '2026-09-23T16:13:53.869Z')]);
-        // revert: src/lib/views/sessions/agents/Agents.svelte ": seconds(agent.started, agent.ended, now);" => : seconds(agent.started, null, now);
         expect(line(html(), 'ran')).toBe(
             [catalog['sessions.ag_done'], '1m 30s'].join(` ${catalog['sessions.meta_sep']} `)
         );
@@ -172,7 +166,6 @@ describe('the agents view over launched builders', () => {
     it('counts a running launch from its start to now', () => {
         const started = new Date(Date.now() - 45_000).toISOString();
         holding([launched('runs', started)]);
-        // revert: src/lib/views/sessions/agents/Agents.svelte "? seconds(agent.started, null, now)" => ? null
         const said = line(html(), 'runs');
         expect(
             said.startsWith(`${catalog['sessions.ag_running']} ${catalog['sessions.meta_sep']} `)
@@ -184,7 +177,6 @@ describe('the agents view over launched builders', () => {
     it('draws no count for a finished launch whose end is not known', () => {
         const gone = { ...launched('gone', '2026-09-23T10:00:00.000Z'), status: 'done' as const };
         holding([gone]);
-        // revert: src/lib/views/sessions/agents/Agents.svelte ": agent.ended === null" => : false
         expect(line(html(), 'gone')).toBe(catalog['sessions.ag_done']);
     });
 
@@ -195,7 +187,6 @@ describe('the agents view over launched builders', () => {
             ended: '2026-09-23T10:01:00.000Z'
         };
         holding([stopped]);
-        // revert: src/lib/views/sessions/agents/Agents.svelte "if (status === 'stopped') return t('sessions.ag_stopped');" => delete
         const body = html();
         expect(body).toContain(
             `>${catalog['sessions.ag_stopped']} ${catalog['sessions.meta_sep']} 1m 00s<`

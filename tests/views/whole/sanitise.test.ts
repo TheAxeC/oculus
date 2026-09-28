@@ -6,8 +6,7 @@
 // node, so `sanitise` returns its argument here and no script is removed in this file; what is
 // checked is that each of the three draws the sanitiser's result and nothing around it, which is
 // the part that would rot if a later site drew the raw value instead. tests/ui/html.test.ts holds
-// the same note and the profile the browser is given, and tests/browser/workbench/sanitise.spec.ts
-// presses the filtering itself in Chrome, the card title among it.
+// the same note and the profile the browser is given.
 
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
@@ -77,8 +76,6 @@ describe('a title out of a feed', () => {
 
 describe('a body rendered from a file on disk', () => {
     it("audits that the project tab draws its document through the prose partial's sanitised draw", () => {
-        // revert: src/lib/views/boards/project/Project.svelte "<Markdown" => {@html shown.html}
-        // revert: src/lib/views/shared/prose/Markdown.svelte "{@html sanitise(doc.html)}" => {@html doc.html}
         const source = readFileSync(join(VIEWS, 'boards/project/Project.svelte'), 'utf8');
         expect(source).toContain('<Markdown');
         expect(source).toContain('doc={shown}');

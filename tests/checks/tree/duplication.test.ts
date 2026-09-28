@@ -70,6 +70,26 @@ export const HELD = readHeld(
 /** The least run of identical lines that is a copy rather than a coincidence of shape. */
 const WINDOW = 8;
 
+/**
+ * Where a block comment opens on one line, or -1. A `/*` inside a quoted string is text, and one
+ * after a `//` outside a string is inside a line comment, so neither opens a block.
+ */
+function blockOpens(line: string): number {
+    let quote = '';
+    for (let at = 0; at < line.length; at += 1) {
+        const one = line[at];
+        if (quote !== '') {
+            if (one === '\\') at += 1;
+            else if (one === quote) quote = '';
+            continue;
+        }
+        if (one === "'" || one === '"' || one === '`') quote = one;
+        else if (one === '/' && line[at + 1] === '/') return -1;
+        else if (one === '/' && line[at + 1] === '*') return at;
+    }
+    return -1;
+}
+
 /** One file's lines that carry code, each with the line number the file holds it at. */
 export function meaningful(text: string, dropStyle = false): { at: number; code: string }[] {
     const found: { at: number; code: string }[] = [];
@@ -99,7 +119,7 @@ export function meaningful(text: string, dropStyle = false): { at: number; code:
             line = line.slice(ends + 2);
             inBlock = false;
         }
-        const opens = line.indexOf('/*');
+        const opens = blockOpens(line);
         if (opens !== -1 && !line.includes('*/', opens)) {
             line = line.slice(0, opens);
             inBlock = true;
@@ -258,17 +278,14 @@ function block(differs = ''): string {
 
 describe('a rule written twice', () => {
     it('is not held anywhere under src/lib', () => {
-        // revert: tests/checks/tree/allow-duplication.txt "src/lib/data/helpers/opens-in-program.ts src/lib/state/sources/fs.ts 3f5da9c7a4e9 the same 8 lines at 36 and 97, to fold into one place" => delete
         expect(findCopies(ROOT, 'src/lib')).toEqual([]);
     });
 
     it('is not held anywhere under tests', () => {
-        // revert: tests/checks/tree/allow-duplication.txt "tests/data/sources/collections.test.ts tests/data/sources/registries.test.ts 606e1552e4e1 the same 8 lines at 30 and 19, to fold into one place" => delete
         expect(findCopies(ROOT, 'tests')).toEqual([]);
     });
 
     it('catches a window of eight lines held in two files', () => {
-        // revert: tests/checks/tree/duplication.test.ts "const WINDOW = 8;" => const WINDOW = 999;
         const dir = scratch({ 'group/one.ts': block(), 'group/two.ts': block() });
         expect(findCopies(dir, 'group', [])).toEqual([
             `group/one.ts:1 and group/two.ts:1 hold the same 8 lines (${markOfBlock()})`
@@ -276,7 +293,6 @@ describe('a rule written twice', () => {
     });
 
     it('reports a copy longer than the window once, at the line it starts on', () => {
-        // revert: tests/checks/tree/duplication.test.ts "if (pairs.has(before)) continue;" => delete
         const long = `${block()}\n${block(' held += 1;')}`;
         const dir = scratch({ 'group/one.ts': long, 'group/two.ts': long });
         expect(findCopies(dir, 'group', [])).toEqual([
@@ -285,7 +301,6 @@ describe('a rule written twice', () => {
     });
 
     it('passes two files that differ inside the window, and a copy of seven lines', () => {
-        // revert: tests/checks/tree/duplication.test.ts "const WINDOW = 8;" => const WINDOW = 4;
         const differing = scratch({
             'group/one.ts': block(),
             'group/two.ts': block(' held += 1;')
@@ -297,7 +312,6 @@ describe('a rule written twice', () => {
     });
 
     it('drops an import list and a style block before it compares', () => {
-        // revert: tests/checks/tree/duplication.test.ts "if (/^\\s*import\\b/.test(line)) {" => if (false) {
         const head = [
             "import { join } from 'node:path';",
             "import { tmpdir } from 'node:os';",
@@ -327,7 +341,6 @@ describe('a rule written twice', () => {
     });
 
     it('drops comments and whitespace before it compares, and the allow list silences a pair', () => {
-        // revert: tests/checks/tree/duplication.test.ts "const code = line" .. ".trim();" => const code = line;
         const commented = block().replace('let held = 0;', 'let  held  =  0; // the running sum');
         const dir = scratch({ 'group/one.ts': block(), 'group/two.ts': commented });
         expect(findCopies(dir, 'group', [])).toEqual([
@@ -350,8 +363,21 @@ describe('a rule written twice', () => {
         expect(findCopies(twice, 'group', allowed)).toHaveLength(1);
     });
 
+    it('opens no block comment at a /* inside a line comment or a string', () => {
+        const text = [
+            '// a folder ending in /**',
+            'const a = 1;',
+            "const globs = ['views/shared/**', 'state/**'];",
+            'const b = 2;'
+        ].join('\n');
+        expect(meaningful(text)).toEqual([
+            { at: 2, code: 'const a = 1;' },
+            { at: 3, code: "const globs = ['views/shared/**', 'state/**'];" },
+            { at: 4, code: 'const b = 2;' }
+        ]);
+    });
+
     it('holds every entry of both lists to a reason', () => {
-        // revert: tests/checks/tree/duplication.test.ts "why: part.slice(3).join(' ')" => why: 'x'
         const bare = [...DELIBERATE, ...HELD].filter((one) => !isReason(one.why));
         expect(bare.map((one) => `${one.a} and ${one.b}`)).toEqual([]);
         expect(readHeld('a.ts b.ts abc123\n')[0].why).toBe('');
@@ -364,7 +390,6 @@ describe('a rule written twice', () => {
     });
 
     it('holds the lists to pairs that still share, so a repaired copy takes its entry with it', () => {
-        // revert: tests/checks/tree/duplication.test.ts "for (const one of copies(root, group, [])) found.add(`${one.left}|${one.right}|${one.mark}`);" => delete
         const sharing = new Set([...sharedPairs(ROOT, 'src/lib'), ...sharedPairs(ROOT, 'tests')]);
         const stale = [...DELIBERATE, ...HELD]
             .filter(

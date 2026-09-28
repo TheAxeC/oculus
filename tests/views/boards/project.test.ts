@@ -219,7 +219,6 @@ describe('a project as its own tab', () => {
     });
 
     it('draws a known document the project has not got as the tag the card draws for it', () => {
-        // revert: src/lib/views/boards/project/Project.svelte "const absent = $derived(item === null ? [] : absentDocs(item.project));" => const absent = $derived([]);
         const section = body.slice(body.indexOf(`>${catalog['project.documents']}</`));
         expect(section).toContain('data-absent-docs');
         expect(body.split('>TEX</span>').length - 1).toBe(1);

@@ -240,12 +240,10 @@ function scratch(body: string, rel = 'planted.test.ts'): string {
 
 describe('a case that never draws anything', () => {
     it('is named an audit everywhere under tests/views', () => {
-        // revert: tests/checks/tree/allow-audits.txt "tests/views/system/audit.test.ts :: draws a card with the primitive and filters with the search primitive | the case draws nothing and asserts over source" => delete
         expect(findAudits(VIEWS)).toEqual([]);
     });
 
     it('catches a case that asserts over source text alone', () => {
-        // revert: tests/checks/tree/audits.test.ts "found.push(line);" => delete
         const dir = scratch(
             [
                 "const source = readFileSync('src/lib/views/sources/files/Files.svelte', 'utf8');",
@@ -260,7 +258,6 @@ describe('a case that never draws anything', () => {
     });
 
     it('passes a case that renders, one that uses a helper, and one that says it audits', () => {
-        // revert: tests/checks/tree/audits.test.ts "/^\\s*(\\w+)\\s*=\\s*\\S/" => delete
         const dir = scratch(
             [
                 'function drawn(state) {',
@@ -291,7 +288,6 @@ describe('a case that never draws anything', () => {
     });
 
     it('walks a folder under tests/views as well as the files beside it', () => {
-        // revert: tests/checks/tree/audits.test.ts "found.push(...everyCase(root, rel));" => delete
         const dir = scratch(
             [
                 "it('names the control in the markup', () => {",
@@ -306,7 +302,6 @@ describe('a case that never draws anything', () => {
     });
 
     it('follows a render helper into the fixture beside the file, and only a helper that renders', () => {
-        // revert: tests/checks/tree/audits.test.ts "const names = renderNames(text, importedRenders(root, rel, text));" => const names = renderNames(text);
         const dir = scratch(
             [
                 "import { drawn, labelOf } from './planted-fixture.ts';",
@@ -334,7 +329,6 @@ describe('a case that never draws anything', () => {
     });
 
     it('holds the allow list to cases the tree still has', () => {
-        // revert: tests/checks/tree/audits.test.ts "found.push({ file: rel, name: one.name, body: one.body, names });" => found.push({ file: rel, name: '', body: one.body, names });
         const held = new Set(
             everyCase(VIEWS).map((one) => `tests/views/${one.file} :: ${one.name}`)
         );
@@ -342,13 +336,11 @@ describe('a case that never draws anything', () => {
     });
 
     it('holds the allow list to the cases the scan still finds', () => {
-        // revert: tests/checks/tree/allow-audits.txt "tests/views/system/audit.test.ts :: draws a card with the primitive and filters with the search primitive | the case draws nothing and asserts over source" => tests/views/boards/project.test.ts :: draws the card of the board, opened out | a reason of four words here
         const needed = new Set(findAudits(VIEWS, []));
         expect(AUDITS.filter((one) => !needed.has(one))).toEqual([]);
     });
 
     it('holds every entry of the list to a reason', () => {
-        // revert: tests/checks/tree/audits.test.ts "found.push({ line: line.trim(), why: '' });" => found.push({ line: line.trim(), why: 'a reason of four words here' });
         expect(AUDIT_ENTRIES.filter((one) => !isReason(one.why)).map((one) => one.line)).toEqual(
             []
         );
@@ -358,7 +350,6 @@ describe('a case that never draws anything', () => {
     });
 
     it('reads a render named inside a string as no render', () => {
-        // revert: tests/checks/source/code.ts "function kinds(text: string): Kind[] {" +1 => return Array.from({ length: text.length }, () => 'code');
         const dir = scratch(
             [
                 "it('names the render in the markup', () => {",
@@ -372,7 +363,6 @@ describe('a case that never draws anything', () => {
     });
 
     it('reads a name one case binds for itself as that case alone', () => {
-        // revert: tests/checks/tree/audits.test.ts "if (own.has(at)) continue;" => delete
         const dir = scratch(
             [
                 'function drawn(state) {',
@@ -392,7 +382,6 @@ describe('a case that never draws anything', () => {
     });
 
     it('reads the brackets of a comment as no brackets', () => {
-        // revert: tests/checks/source/code.ts "if (pair === '//') {" => if (false) {
         const dir = scratch(
             [
                 "it('draws the pane', () => {",

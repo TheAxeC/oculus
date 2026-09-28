@@ -6,8 +6,7 @@
 // the config channel and the document are synthetic. What this does NOT cover: the fetch
 // state/system/docs.svelte.ts makes, which needs a server; the tab of a moved entry writing the
 // entry's path into the saved layout, which is an effect and runs only in a browser; and the
-// sanitiser, which needs a DOM and passes the markup through unchanged here. All three are
-// tests/browser/workbench/system.spec.ts.
+// sanitiser, which needs a DOM and passes the markup through unchanged here.
 
 import { beforeEach, describe, expect, it } from 'vitest';
 import { render } from 'svelte/server';
@@ -77,7 +76,6 @@ const READY: DocState = {
 
 describe('the state a document tab is opened with', () => {
     it('is the path, so one entry is one tab and another entry is another', () => {
-        // revert: src/lib/state/workbench/navigation/catalogue.ts "return { id: entry.path, path: entry.path, label: entry.label };" => return { id: entry.label, path: entry.path, label: entry.label };
         expect(docState(ENTRY)).toEqual({
             id: 'RESEARCH-APPROACH.md',
             path: 'RESEARCH-APPROACH.md',
@@ -88,7 +86,6 @@ describe('the state a document tab is opened with', () => {
 
 describe('a hub document as its own tab', () => {
     it('draws the document under the entry label, with its path on the box', () => {
-        // revert: src/lib/views/sources/doc/Doc.svelte "<div class=\"view\" data-instance={instance.id} data-path={reading === '' ? path : reading}>" => <div class="view" data-instance={instance.id}>
         const body = drawn(docState(ENTRY), READY);
 
         expect(body).toContain('Research approach');
@@ -97,7 +94,6 @@ describe('a hub document as its own tab', () => {
     });
 
     it('draws nothing and says so when the instance names no document', () => {
-        // revert: src/lib/views/sources/doc/Doc.svelte "<Empty message={t('doc.none')} glyph={t('doc.none_glyph')} />" => <Empty message={t('doc.unlisted', path)} glyph={t('doc.none_glyph')} />
         const body = drawn({}, READY);
 
         expect(body).toContain('No document chosen.');
@@ -106,7 +102,6 @@ describe('a hub document as its own tab', () => {
     });
 
     it('says the document is being read while the first answer is still to come', () => {
-        // revert: src/lib/views/shared/prose/Markdown.svelte "{:else if doc.loading}" => {:else if false}
         const body = drawn(docState(ENTRY), {
             html: '',
             frontmatter: null,
@@ -118,7 +113,6 @@ describe('a hub document as its own tab', () => {
     });
 
     it('says what the read failed with and which path it read, and draws no document', () => {
-        // revert: src/lib/views/sources/doc/Doc.svelte "failed={t('doc.failed', reading, shown.error)}" => failed={t('doc.failed', '', shown.error)}
         const body = drawn(docState(ENTRY), {
             html: '<h1>Approach</h1>',
             frontmatter: null,
@@ -138,14 +132,12 @@ describe('a tab whose path the documents list no longer holds', () => {
     const MOVED: DocEntry = { ...ENTRY, path: 'docs/RESEARCH-APPROACH.md' };
 
     it('reads the path it holds while the list has not been pushed yet', () => {
-        // revert: src/lib/views/sources/doc/Doc.svelte "const reading = $derived(followed === null ? path : (followed.entry?.path ?? ''));" => const reading = $derived(followed === null ? '' : (followed.entry?.path ?? ''));
         const body = drawn(docState(ENTRY), READY);
         expect(asked.at(-1)).toBe('RESEARCH-APPROACH.md');
         expect(body).toContain('<h1>Approach</h1>');
     });
 
     it('draws the entry carrying its label, at the entry path', () => {
-        // revert: src/lib/views/sources/doc/Doc.svelte "const reading = $derived(followed === null ? path : (followed.entry?.path ?? ''));" => const reading = $derived(path);
         listing([MOVED]);
         const body = drawn(docState(ENTRY), READY);
 
@@ -155,7 +147,6 @@ describe('a tab whose path the documents list no longer holds', () => {
     });
 
     it('names the path it asked for when no entry carries its path or its label', () => {
-        // revert: src/lib/views/sources/doc/Doc.svelte "<Empty message={t('doc.unlisted', path)} glyph={t('doc.none_glyph')} />" => <Empty message={t('doc.none')} glyph={t('doc.none_glyph')} />
         listing([MOVED]);
         const body = drawn({ id: 'GONE.md', path: 'GONE.md', label: 'Gone' }, READY);
 
@@ -169,7 +160,6 @@ describe('a tab whose path the documents list no longer holds', () => {
 
 describe('the shared Markdown partial', () => {
     it('draws headings, lists, tables and figures as the server rendered them', () => {
-        // revert: src/lib/views/shared/prose/Markdown.svelte "{@html sanitise(doc.html)}" => {doc.html}
         const html =
             '<h2>Two</h2><ul><li>one</li></ul><table><tr><td>a</td></tr></table>' +
             '<img src="/api/file/hub/notes/one.png" alt="one">';

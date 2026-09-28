@@ -225,7 +225,6 @@ it('leaves hidden usage refresher sessions out of the terminal list', () => {
     expect(parseTerminal(fields.join('\t'))).toBe(null);
 });
 
-// revert: src/lib/server/machine/pty/tmux.ts "return socket === undefined || socket === '' ? ['-u'] : ['-u', '-S', socket];" => return socket === undefined || socket === '' ? [] : ['-S', socket];
 it.skipIf(!TMUX)('lists what it started from a process whose locale is not UTF-8', async () => {
     for (const name of ['LC_ALL', 'LC_CTYPE', 'LANG']) vi.stubEnv(name, 'C');
     try {

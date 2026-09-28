@@ -846,7 +846,6 @@ describe('the fields a form offers and what it refuses', () => {
 });
 
 describe('the members of one cross-link group', () => {
-    // revert: src/lib/state/boards/collection.ts "if (found === undefined) held.set(member.type, [member]);" => if (found === undefined || found !== undefined) held.set(member.type, [member]);
     it('nest under their own project type, one row per type, in the members own order', () => {
         expect(
             membersByType({
@@ -871,7 +870,6 @@ describe('the members of one cross-link group', () => {
         ]);
     });
 
-    // revert: src/lib/state/boards/collection.ts "if (found === undefined) held.set(member.type, [member]);" => if (found === undefined) held.set(`${member.type}${held.size}`, [member]);
     it('is one row for a group whose members are all of one type', () => {
         const group = {
             type: 'work' as const,
@@ -884,7 +882,6 @@ describe('the members of one cross-link group', () => {
 });
 
 describe('an entry and the subtasks of a collection', () => {
-    // revert: src/lib/state/boards/collection.ts "return collection?.entries.find((entry) => entry.id === id) ?? null;" => return collection?.entries[0] ?? null;
     it('find an entry by its id, and nothing for an id or a collection that is not there', () => {
         const entries = [{ id: 'a' }, { id: 'b' }] as Entry[];
         expect(entryById({ entries }, 'b')).toBe(entries[1]);
@@ -892,7 +889,6 @@ describe('an entry and the subtasks of a collection', () => {
         expect(entryById(null, 'a')).toBeNull();
     });
 
-    // revert: src/lib/state/boards/collection.ts "return subtasks.filter((one) => !one.done).length;" => return subtasks.length;
     it('count the subtasks not done yet', () => {
         expect(openSubtaskCount([{ done: true }, { done: false }, { done: false }])).toBe(2);
         expect(openSubtaskCount([])).toBe(0);

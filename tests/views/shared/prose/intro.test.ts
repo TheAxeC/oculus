@@ -4,7 +4,7 @@
 //
 // What this does NOT cover: the filtering. DOMPurify needs a document and this suite runs in node,
 // so `sanitise` returns its argument here; which of the two paths a line takes is read off the
-// source, and tests/browser/workbench/sanitise.spec.ts presses the filtering itself in Chrome.
+// source, and the filtering itself is not run here.
 
 import { readFileSync } from 'node:fs';
 import { render } from 'svelte/server';

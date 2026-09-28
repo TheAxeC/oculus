@@ -510,7 +510,6 @@ describe('watchPortfolio', () => {
     });
 
     it('publishes portfolio, config, and feeds at start, each at version 1', async () => {
-        // revert: src/lib/server/root/watch/portfolio.ts "host: paths.host," => delete
         const started = start();
         await until(() => started.got.length >= 3, 2000);
 
@@ -645,7 +644,6 @@ describe('watchPortfolio', () => {
     });
 
     it('reports a rail button naming a page no arrangement holds, in the catalog words', async () => {
-        // revert: src/lib/server/root/watch/portfolio.ts "...railFindings(config, layoutFile(paths.engine), textCatalog(config))" => delete
         const started = start((_hub, engine) => {
             write(
                 engine,

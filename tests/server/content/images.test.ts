@@ -5,8 +5,7 @@
 // Every picture here is built byte by byte by the case itself, the header the format defines and no
 // more, and written under the system temporary directory, asserted inside it before the write. The
 // one real picture is the smallest JPEG a camera library writes, carried as base64. What this does
-// not cover: the tile the size is drawn into, which is tests/views/personal/memories.test.ts and
-// tests/browser/views/memories.spec.ts.
+// not cover: the tile the size is drawn into, which is tests/views/personal/memories.test.ts.
 
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
@@ -500,8 +499,6 @@ describe('how far into a file the size is read', () => {
     });
 
     it('turns a PNG whose eXIf chunk is the last the walk reaches, and not one a chunk later', () => {
-        // revert: src/lib/server/content/images.ts "function pngOrientation(read: ReadAt, at: number): number {" +1 => for (let passed = 0; passed <= SEGMENTS; passed += 1) {
-        // revert: src/lib/server/content/images.ts "function pngOrientation(read: ReadAt, at: number): number {" +1 => for (let passed = 1; passed < SEGMENTS; passed += 1) {
         const before = (count: number): Uint8Array[] =>
             Array.from({ length: count }, () => chunk('tEXt', ascii('k\0v')));
         const inside = pngWith(400, 300, ...before(SEGMENTS - 1), chunk('eXIf', tiff(6, 'MM')));
@@ -511,8 +508,6 @@ describe('how far into a file the size is read', () => {
     });
 
     it('sizes a JPEG whose frame is the last segment the walk reaches, and not one a segment later', () => {
-        // revert: src/lib/server/content/images.ts "let turn = 0;" +1 => for (let passed = 0; passed <= SEGMENTS; passed += 1) {
-        // revert: src/lib/server/content/images.ts "let turn = 0;" +1 => for (let passed = 1; passed < SEGMENTS; passed += 1) {
         const before = (count: number): number[][] =>
             Array.from({ length: count }, () => segment(0xfe, ascii('a comment')));
         expect(readSize(counted(jpeg(...before(SEGMENTS - 1), frame(640, 480))).read)).toEqual({

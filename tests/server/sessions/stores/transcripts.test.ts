@@ -496,7 +496,6 @@ describe('the fold', () => {
         expect(agents.get('a3')?.resultChars).toBe(0);
     });
 
-    // revert: src/lib/server/sessions/fold.ts "if (spent !== null) agent.tokens = spent;" => if (spent !== null) agent.tokens = 0;
     it('reports the tokens an agent result says it spent, and none where the result says nothing', () => {
         const f = make();
         const spent = outcome('2026-01-01T10:00:09.000Z', 'a1', 'done');

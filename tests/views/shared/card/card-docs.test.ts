@@ -147,7 +147,6 @@ function rows(holder: ClientState = client): Record<string, string> {
 }
 
 describe('the file list of a project card', () => {
-    // revert: src/lib/views/shared/links/ProgramButton.svelte "glyph={t('file.open_program_glyph')}" => glyph="copy"
     it('draws a .docx and an .xlsx as the ui/controls/ToolButton that opens them in their program', () => {
         const found = rows();
         for (const name of ['report.docx', 'budget.xlsx']) {

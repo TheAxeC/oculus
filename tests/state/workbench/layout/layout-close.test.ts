@@ -4,7 +4,7 @@
 // leaves shows is still in the strip, and its tabs keep what they hold.
 //
 // Nothing here touches localStorage or the DOM: both stores take the storage they are given. What
-// the pane menu does in Chrome is tests/browser/workbench/unsaved-forms.spec.ts.
+// the pane menu does in a page is not run here.
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sources/config.ts';

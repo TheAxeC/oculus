@@ -14,7 +14,7 @@ Finish the ablations, then add one real dataset.
 
 ## Rendering
 
-The block below carries markup on purpose: tests/browser/sanitise.spec.ts asserts what the Project tab draws from it.
+The block below carries markup on purpose, so the demo hub shows what the sanitiser does to it on the Project tab.
 
 <div onclick="alert(1)">click me</div>
 

@@ -147,7 +147,6 @@ describe('UpdateTray', () => {
         expect(body).toContain(`>${catalog['app.chat']}</span>`);
     });
 
-    // revert: src/lib/shell/rail/UpdateTray.svelte "<Glyph name=\"info\" />" => delete
     it('draws the inbox note with the info glyph beside its words and no character in them', () => {
         const body = render(UpdateTray, {
             context: clientContext(client),
@@ -166,7 +165,6 @@ describe('UpdateTray', () => {
         expect(note).not.toMatch(/[^\t\n\r\x20-\x7E]/);
     });
 
-    // revert: src/lib/shell/rail/UpdateTray.svelte "glyph=\"chat\"" => glyph="info"
     it('renders the Chat glyph through ASCII mode', () => {
         setGlyphMode('ascii');
         try {
@@ -206,8 +204,8 @@ describe('UpdateTray', () => {
     it('marks every task row as confirming while tasks.skip_permissions is on', () => {
         // The setting travels in the merged config the `config` channel carries, so the case turns
         // it on the way the server would: by pushing a config that holds it. A server render cannot
-        // press, so what is asserted here is the path a press takes; the press itself is
-        // tests/browser/boards/tasks.spec.ts.
+        // press, so what is asserted here is the path a press takes; the press itself is not run
+        // here.
         const skipping = { ...config, tasks: { skip_permissions: true } };
         receive({
             channel: 'config',

@@ -2,10 +2,9 @@
 // from the document, its path is read off the element, and the tab the digit names, or the one Ctrl
 // and a bracket counts to, is activated in the store. A bare Tab is left to the browser here as it
 // is in the resolver. The document and the element are plain stand-ins, so this runs in node
-// environment; what it does NOT cover is focus, scrolling and event defaults in a browser, which
-// tests/browser/shell/keyboard.spec.ts presses for real, nor the other ways the handler finds its
-// pane (the pane focused last, the maximised pane, the pane holding the active instance): every
-// case here puts the pane under document.activeElement.
+// environment; what it does NOT cover is focus, scrolling and event defaults in a browser, nor the
+// other ways the handler finds its pane (the pane focused last, the maximised pane, the pane
+// holding the active instance): every case here puts the pane under document.activeElement.
 
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createWorkbenchKeys } from '../../../src/lib/shell/keys/workbench-keys.svelte.ts';
@@ -344,7 +343,6 @@ describe('Escape while the update tray is open', () => {
 
 describe('a bare digit', () => {
     it('shows the rail page of its place, and is swallowed only when there was one', () => {
-        // revert: src/lib/shell/keys/workbench-keys.svelte.ts "return options.railPage(action.index);" => return options.railPage(action.index + 1);
         const asked: number[] = [];
         const keys = handler(
             '1',
@@ -379,7 +377,6 @@ describe('the n key', () => {
         });
     }
 
-    // revert: src/lib/shell/keys/workbench-keys.svelte.ts "options.layout.restateInstance(target, state);" => delete
     it("shows a fresh composer in the page's Terminal tab that follows the selection", () => {
         withTerminal(null);
         const keys = handler('');
@@ -391,7 +388,6 @@ describe('the n key', () => {
         expect(client.layout.activeInstance()?.id).toBe('t');
     });
 
-    // revert: src/lib/shell/keys/workbench-keys.svelte.ts "options.layout.openView('terminal', state, page);" => delete
     it('opens a new Terminal tab when the only one there is pinned to a terminal', () => {
         withTerminal({ session: 'a1b2c3-shell' });
         const keys = handler('');

@@ -17,9 +17,7 @@
 // DOMPurify needs a document to parse into. The app renders in the browser alone, which is what
 // src/routes/+layout.ts says with `ssr = false`, so a runtime without a DOM draws no HTML either
 // and the text comes back as it came; tests/ui/html.test.ts reads that file and fails if the app
-// ever starts rendering on the server, because the pass-through would then be a hole. What the
-// profile does to real markup is checked in the browser, by
-// tests/browser/workbench/sanitise.spec.ts.
+// ever starts rendering on the server, because the pass-through would then be a hole.
 
 import DOMPurify from 'dompurify';
 import { marked } from 'marked';

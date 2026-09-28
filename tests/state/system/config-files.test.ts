@@ -22,7 +22,6 @@ function directory(name: string): FsEntry {
 }
 
 describe('the configuration files the view cards', () => {
-    // revert: src/lib/state/system/config-files.ts ".filter((entry) => entry.kind === 'file' && entry.name.endsWith(CONFIG_SUFFIX))" => .filter((entry) => entry.name.endsWith(CONFIG_SUFFIX))
     it('are the YAML files of the folder itself, in name order', () => {
         expect(
             configFiles([
@@ -36,7 +35,6 @@ describe('the configuration files the view cards', () => {
         ).toEqual(['appearance.yml', 'layout.yml', 'vocab.yml']);
     });
 
-    // revert: src/lib/state/system/config-files.ts "return top.some(isLocalFile) ? [...tracked, ...nested, LOCAL_NAME] : [...tracked, ...nested];" => return [...tracked, ...nested];
     it('put the machine own file last, after the tracked ones and the catalogs', () => {
         expect(
             configFiles([file('local.yml'), file('vocab.yml')], [file('glyphs.yml'), file('b.md')])
@@ -47,13 +45,11 @@ describe('the configuration files the view cards', () => {
     });
 
     it('name the machine own file as the server module does, which the page cannot import', () => {
-        // revert: src/lib/state/system/config-files.ts "export const LOCAL_NAME = 'local.yml';" => export const LOCAL_NAME = 'machine.yml';
         expect(LOCAL_NAME).toBe(SERVER_LOCAL_NAME);
     });
 });
 
 describe('the lines of a configuration file', () => {
-    // revert: src/lib/state/system/config-files.ts "if (text === '') return 0;" => delete
     it('are counted whether or not the file ends in a newline, and none for an empty file', () => {
         expect(fileLineCount('')).toBe(0);
         expect(fileLineCount('one\n')).toBe(1);

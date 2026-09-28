@@ -298,7 +298,7 @@
         if (name === '') return;
         // The class that carries the new tokens is put on the body by the workbench's own effect,
         // and this one may run before it in the same flush; reading the palette on the next frame
-        // reads it after the body has changed. (The first Chrome check read the old palette.)
+        // reads it after the body has changed, where reading it at once would read the old palette.
         return scheduleReflow(
             requestAnimationFrame,
             cancelAnimationFrame,

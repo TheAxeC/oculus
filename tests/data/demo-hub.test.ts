@@ -6,9 +6,6 @@
 // The counts are pinned here, unlike the real hub's, because this folder does not grow: eleven
 // manifests over the six tiers, the seven registries, and the eleven collection files. A count that
 // moves means the demo changed, which is the thing a test over a fixture is for.
-//
-// The browser layer serves a copy of this folder, so a finding it would raise is caught here, in
-// npm test, rather than in a spec that has already started a server.
 
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';

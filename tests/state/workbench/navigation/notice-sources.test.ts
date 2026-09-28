@@ -5,8 +5,7 @@
 // nothing for what the first message after the page loads already says; a write that does not
 // land, refused or given no answer, posts once, unless its caller words it itself.
 //
-// What this does NOT cover: the toast, the bell and the centre drawing what is posted, which
-// tests/browser/status/notices.spec.ts presses in Chrome.
+// What this does NOT cover: the toast, the bell and the centre drawing what is posted.
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
@@ -95,7 +94,6 @@ function portfolio(radar: string | null, scout: string | null, linkedin: string 
 
 describe('a session that starts waiting', () => {
     it('is told once, with an Open that shows it, and not for what the first message said', () => {
-        // revert: src/lib/state/workbench/navigation/notice-sources.ts "return first ? [] : [...new Set(fresh)];" => return [...new Set(fresh)];
         receive('sessions', sessions(['a', 'permission_prompt', '1']));
         expect(said()).toEqual([]);
         receive(
@@ -128,7 +126,6 @@ describe('a session that starts waiting', () => {
     });
 
     it('is not told again when a state already told comes back', () => {
-        // revert: src/lib/state/workbench/navigation/notice-sources.ts "for (const key of fresh) known.add(key);" => known.clear();
         receive('sessions', sessions());
         receive('sessions', sessions(['a', 'permission_prompt', '1']));
         receive('sessions', sessions());
@@ -137,7 +134,6 @@ describe('a session that starts waiting', () => {
     });
 
     it('reads a permission prompt and an idle prompt as waiting, each as what it waits for, and the count the permission alone', () => {
-        // revert: src/lib/state/workbench/navigation/notice-sources.ts "return hook?.event === 'notification' && hook.kind === 'permission_prompt';" => return hook?.event === 'notification';
         const rows: [string, string | null, string][] = [
             ['a', 'permission_prompt', '1'],
             ['b', 'idle_prompt', '1'],
@@ -157,8 +153,6 @@ describe('a session that starts waiting', () => {
     });
 
     it('is told once when a session goes idle after its turn, worded as waiting for input, with an Open that shows it', () => {
-        // revert: src/lib/state/workbench/navigation/notice-sources.ts "return hook?.event === 'notification' && hook.kind === 'idle_prompt' ? 'idle' : null;" => return null;
-        // revert: src/lib/state/workbench/navigation/notice-sources.ts ": t('statusbar.notice_idle', one.title);" => : t('statusbar.notice_permission', one.title);
         receive('sessions', sessions(['a', null, '1']));
         receive('sessions', sessions(['a', 'idle_prompt', '2']));
         expect(said()).toEqual([t('statusbar.notice_idle', 'Session a')]);
@@ -181,7 +175,6 @@ describe('a session that starts waiting', () => {
 
 describe('a Live HPC job that ends', () => {
     it('is told once as it appears among the ended jobs, finished or failed, even across polls that failed', () => {
-        // revert: src/lib/state/workbench/navigation/notice-sources.ts "for (const id of jobs(now.map((job) => job.id))) {" => for (const id of jobs(now.map((job) => job.id)).slice(1)) {
         receive('hpc', hpc('starting'));
         receive('hpc', hpc('ok', [['1', 'COMPLETED', '0:0']]));
         expect(said()).toEqual([]);
@@ -221,14 +214,12 @@ describe('a Live HPC job that ends', () => {
     });
 
     it('is not started by a poll the cluster did not answer', () => {
-        // revert: src/lib/state/workbench/navigation/notice-sources.ts "if (payload.status !== 'ok') return;" => if (payload.status === 'starting') return;
         receive('hpc', hpc('error', []));
         receive('hpc', hpc('ok', [['1', 'COMPLETED', '0:0']]));
         expect(said()).toEqual([]);
     });
 
     it('reads COMPLETED with a zero exit as finished, and any other state or code as failed', () => {
-        // revert: src/lib/state/workbench/navigation/notice-sources.ts "return job.state.trim() === 'COMPLETED' && (exit === '' || exit === '0:0');" => return job.state.trim() === 'COMPLETED';
         expect(jobFinished({ state: 'COMPLETED', exit: '0:0' })).toBe(true);
         expect(jobFinished({ state: 'COMPLETED', exit: '' })).toBe(true);
         expect(jobFinished({ state: 'COMPLETED', exit: '2:0' })).toBe(false);
@@ -240,7 +231,6 @@ describe('a Live HPC job that ends', () => {
 
 describe('an update task whose results land', () => {
     it('is told once per run date, with an Open that shows that feed view', () => {
-        // revert: src/lib/state/workbench/navigation/notice-sources.ts "actions: action(() => open.openView(TASK_VIEW[task]))" => actions: action(() => open.openView('hpc'))
         receive('portfolio', portfolio('2026-09-20', null, '2026-09-01'));
         receive('inbox', { notesRun: '2026-09-21' });
         expect(said()).toEqual([]);
@@ -276,7 +266,6 @@ describe('an update task whose results land', () => {
     });
 
     it('says nothing when a run date goes, or comes back to one already told', () => {
-        // revert: src/lib/state/workbench/navigation/notice-sources.ts "(runs[task] ?? '') === '' ? [] : [`${task}@${runs[task]}`]" => (runs[task] ?? '') === '' ? [`${task}@`] : [`${task}@${runs[task]}`]
         receive('portfolio', portfolio('2026-09-20', null, null));
         receive('portfolio', portfolio(null, null, null));
         receive('portfolio', portfolio('2026-09-20', null, null));
@@ -286,7 +275,6 @@ describe('an update task whose results land', () => {
 
 describe('a write that does not land', () => {
     it('is told once in the words the server gave, and not when its caller words it', async () => {
-        // revert: src/lib/state/client/context.ts "writes.onUnwritten(sources.unwritten);" => delete
         vi.stubGlobal('fetch', () =>
             Promise.resolve(
                 new Response(
@@ -314,7 +302,6 @@ describe('a write that does not land', () => {
     });
 
     it('is told when the server answers but refuses a field of it', async () => {
-        // revert: src/lib/state/client/writes.svelte.ts "if (options.said === true || (answer.ok && answer.refused.length === 0)) return answer;" => if (options.said === true || answer.ok) return answer;
         vi.stubGlobal('fetch', () =>
             Promise.resolve(
                 new Response(
@@ -331,14 +318,12 @@ describe('a write that does not land', () => {
     });
 
     it('is told as a write that got no answer when the request never reached the server', async () => {
-        // revert: src/lib/state/client/writes.svelte.ts "listener(reason, answered);" => listener(reason, true);
         vi.stubGlobal('fetch', () => Promise.reject(new Error('offline')));
         await client.writes.writeEntry('venues', 'x', { title: 'X' });
         expect(said()).toEqual([t('statusbar.notice_write_failed', 'offline')]);
     });
 
     it('is told once after the retry a stale token gets, not for the refusal that led to it', async () => {
-        // revert: src/lib/state/client/writes.svelte.ts "return tell(await exchange(request, path), options);" => const sent = await exchange(request, path); tell(sent, options); return tell(sent, options);
         let calls = 0;
         vi.stubGlobal('fetch', () => {
             calls += 1;
@@ -353,7 +338,6 @@ describe('a write that does not land', () => {
         'is told as a write that got no answer when it is given up for want of one',
         { timeout: 5000 },
         async () => {
-            // revert: src/lib/state/client/writes.svelte.ts "answered: false," => answered: true,
             vi.stubGlobal(
                 'fetch',
                 (_url: string, init: RequestInit) =>

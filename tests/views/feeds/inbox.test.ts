@@ -224,10 +224,6 @@ describe('the Inbox view', () => {
         expect(hasAction(closed, catalog['inbox.send'])).toBe(false);
     });
 
-    // revert: src/lib/views/feeds/inbox/Inbox.svelte "<AddAccount kind=\"mail\" onclose={() => (adding = false)} />" +2 => {#if false}
-    // revert: src/lib/views/shared/accounts/AccountList.svelte "data-mail-account={kind === 'mail' ? connectKey(row) : undefined}" => delete
-    // revert: src/lib/views/shared/accounts/AccountList.svelte "label={t('accounts.open_setup', setupName(row))}" => label={t('accounts.open_setup', provider(row))}
-    // revert: src/lib/views/shared/accounts/AccountList.svelte "<li class=\"hint\">{t('accounts.needs_setup', setupName(row))}</li>" => <li class="hint">{t('accounts.needs_setup', provider(row))}</li>
     it('draws the account rows with the Connect control while an account is not connected', () => {
         serve({
             status: 'ok',
@@ -251,7 +247,6 @@ describe('the Inbox view', () => {
         expect(body).toContain(catalog['inbox.clear']);
     });
 
-    // revert: src/lib/views/feeds/inbox/Inbox.svelte "{:else if data.status === 'unconfigured'}" => {#if false}
     it('says a machine with no mail account is unconfigured, offers Add and draws no section', () => {
         serve({ status: 'unconfigured', accounts: [], threads: [] });
         const body = draw('inbox-none');
@@ -265,7 +260,6 @@ describe('the Inbox view', () => {
         expect(body).not.toContain(catalog['inbox.sec_reply']);
     });
 
-    // revert: src/lib/views/feeds/inbox/InboxCard.svelte "glyph=\"refresh\"" => glyph="dismiss"
     it('opens the triaged section with restore, and filters every section by the search', () => {
         serve();
         const open = draw('inbox-open', true);

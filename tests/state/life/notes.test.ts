@@ -6,7 +6,7 @@
 // the two timer calls, so a case runs the wait forward by hand and nothing here sleeps.
 //
 // What this does NOT cover: the note view's own wiring of the scheduler to its controls, which is
-// tests/views/sources/note.test.ts and the browser layer.
+// tests/views/sources/note.test.ts.
 
 import { describe, expect, it } from 'vitest';
 import {

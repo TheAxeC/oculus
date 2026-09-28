@@ -2,8 +2,7 @@
 // opens or closes, and which row holds the tree's one stop. Each case names the change that turns
 // it red.
 //
-// What this does NOT cover: the focus actually moving and Enter pressing a row, which need a DOM
-// and are tests/browser/sources/files.spec.ts and tests/browser/sources/repositories.spec.ts.
+// What this does NOT cover: the focus actually moving and Enter pressing a row, which need a DOM.
 
 import { describe, expect, it } from 'vitest';
 import { rowMove, stopOf, type KeyRow } from '../../../src/lib/ui/tree/tree-keys.ts';

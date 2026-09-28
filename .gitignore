@@ -2,6 +2,3 @@ node_modules/
 .svelte-kit/
 build/
 config/local.yml
-tests/browser/helpers/.hub
-test-results/
-playwright-report/

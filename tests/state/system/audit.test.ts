@@ -96,14 +96,12 @@ describe('the findings a search keeps and a section holds', () => {
         finding('data', 'beta', 'project.yml', 'the dataset is unknown')
     ];
 
-    // revert: src/lib/state/system/audit.ts "`${finding.scope} ${finding.where} ${finding.message}`.toLowerCase().includes(wanted)" => `${finding.scope}`.toLowerCase().includes(wanted)
     it('are the ones whose scope, place or message holds the search, case aside', () => {
         expect(auditSearch(findings, 'readme').map((one) => one.scope)).toEqual(['alpha']);
         expect(auditSearch(findings, 'UNKNOWN').map((one) => one.scope)).toEqual(['beta']);
         expect(auditSearch(findings, '  ')).toBe(findings);
     });
 
-    // revert: src/lib/state/system/audit.ts "return findings.filter((finding) => finding.kind === kind);" => return findings;
     it('are the ones of the section kind', () => {
         expect(findingsOfKind(findings, 'data').map((one) => one.scope)).toEqual(['beta']);
     });

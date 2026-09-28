@@ -1,7 +1,7 @@
 // Layer 3, primitive test. Where a scroll control or a reveal brings an overflowing tab strip to
 // rest: a tab's start at its left edge, or the strip's end, which is the browser's largest offset
 // and may fall short of a start. Plain numbers stand for the measured extents; the strip that
-// measures them is the browser suite's.
+// measures them needs a DOM and is not run here.
 
 import { describe, expect, it } from 'vitest';
 import {

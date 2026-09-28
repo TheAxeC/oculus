@@ -4,7 +4,7 @@
 //
 // What this does NOT cover: anything that needs a DOM. There is no browser in this suite, so a sort
 // is not clicked, Escape is not pressed and no $effect runs; the sort itself is checked through the
-// exported order() and the interactions are checked in a browser. The colours are covered by
+// exported order() and the interactions need a DOM and are not run here. The colours are covered by
 // tests/ui/colours.test.ts and tests/checks/look/contrast.test.ts, which read the style rather than
 // the markup.
 
@@ -162,7 +162,6 @@ describe('Chip', () => {
         expect(html(Chip, { label: 'a', tone: 'teal', filled: true })).toContain('filled');
     });
 
-    // revert: src/lib/ui/controls/Chip.svelte "<span class=\"chip\" class:toned={tone !== undefined} class:filled class:bracketed {style}>" +2 => delete
     it('draws a glyph by name', () => {
         const body = html(Chip, { label: 'a', glyph: 'pin' });
         expect(body).toContain('class="glyph');
@@ -188,7 +187,6 @@ describe('Chip', () => {
         expect(source).toContain('max-width: 100%');
     });
 
-    // revert: src/lib/state/shared/words/text.ts "return drawn.startsWith('[') && drawn.endsWith(']');" => return false;
     it('marks a chip whose stand-in already reads as a bracketed tag, so it draws no second pair', () => {
         setGlyphMode('ascii');
         try {
@@ -400,8 +398,6 @@ describe('Pane, Empty, Toolbar, ToolButton, Segment and Search', () => {
         expect(body).toContain('Overlay');
     });
 
-    // revert: src/lib/ui/controls/ToolButton.svelte "const named = $derived(iconOnly || cell || children !== undefined);" => const named = $derived(iconOnly || children !== undefined);
-    // revert: src/lib/ui/controls/ToolButton.svelte "{...attributes}" => delete
     it('draws a cell button with its children, its label as its name and its data attributes', () => {
         const words = createRawSnippet(() => ({ render: () => '<span>12</span>' }));
         const body = html(ToolButton, {
@@ -508,7 +504,6 @@ describe('Ticker', () => {
     });
 
     // Revert: in Ticker.svelte, draw a row's buttons whether or not the caller said what one means.
-    // revert: src/lib/ui/display/Ticker.svelte "{#if onaction !== undefined && row.actions !== undefined}" => {#if row.actions !== undefined}
     it('draws a row action as a button only when the caller says what one means', () => {
         expect(html(Ticker, { rows })).not.toContain('1w');
         const body = html(Ticker, { rows, onaction: noop });
@@ -518,7 +513,6 @@ describe('Ticker', () => {
     });
 
     // Revert: in Ticker.svelte, mark no button as the one the row keeps.
-    // revert: src/lib/ui/display/Ticker.svelte "class:kept={action.id === keep}" => class:kept={false}
     it('lists the buttons in the order the row gives them, marking the one it keeps', () => {
         const body = html(Ticker, {
             rows,
@@ -586,7 +580,6 @@ describe('the gallery', () => {
 describe('RowButton', () => {
     const lines = createRawSnippet(() => ({ render: () => '<span>two lines</span>' }));
 
-    // revert: src/lib/ui/controls/RowButton.svelte "<button type=\"button\" class=\"row-button\" class:selected {title} {onclick} {ondblclick}>" => <button class="row-button" class:selected {title} {onclick} {ondblclick}>
     it('is a button that submits nothing, holding the lines the caller draws', () => {
         const body = html(RowButton, {
             title: 'Select',
@@ -597,7 +590,6 @@ describe('RowButton', () => {
         expect(body).toContain('<span>two lines</span>');
     });
 
-    // revert: src/lib/ui/controls/RowButton.svelte "<button type=\"button\" class=\"row-button\" class:selected {title} {onclick} {ondblclick}>" => <button type="button" class="row-button" {title} {onclick} {ondblclick}>
     it('draws the selected row in the ink of the selection tint', () => {
         const on = html(RowButton, { selected: true, onclick: () => undefined, children: lines });
         expect(on).toMatch(/class="row-button[^"]* selected/);
@@ -703,7 +695,7 @@ describe('one strip, one stop of the focus order', () => {
 
 // What a node render can show of the tab look: the classes a tab carries for being the one shown
 // and for holding unsaved text, the dot drawn only for the latter, and a preview's mark. The
-// pointer's hover, and what each class paints, are tests/browser/workbench/tabs.spec.ts.
+// pointer's hover, and what each class paints, need a DOM and are not run here.
 describe('the marks a tab carries', () => {
     function strip(): string {
         return html(Tabs, {
@@ -732,7 +724,6 @@ describe('the marks a tab carries', () => {
     }
 
     // Revert: drop `class:current` from ui/tabs/TabFace.svelte, and the shown tab loses its mark.
-    // revert: src/lib/ui/tabs/TabFace.svelte "class:current" => class:current={false}
     it('marks the shown tab current and no other', () => {
         const body = strip();
         expect(classOf(tabOf(body, 'Shown'))).toBe('tab current');
@@ -740,7 +731,6 @@ describe('the marks a tab carries', () => {
     });
 
     // Revert: drop `class:dirty` or the dot's block from ui/tabs/TabFace.svelte.
-    // revert: src/lib/ui/tabs/TabFace.svelte "class:dirty={tab.dirty === true}" => class:dirty={false}
     it('marks a tab holding unsaved text and draws its dot, and draws no dot on a clean tab', () => {
         const body = strip();
         const held = tabOf(body, 'Held');
@@ -754,7 +744,6 @@ describe('the marks a tab carries', () => {
     });
 
     // Revert: drop the `aria-label` of the tab face in ui/tabs/TabFace.svelte.
-    // revert: src/lib/ui/tabs/TabFace.svelte "aria-label={tab.dirty === true ? t('ui.tab_unsaved', tab.label) : undefined}" => aria-label={undefined}
     it('names a tab holding unsaved text with the catalog word, and leaves a clean tab its label', () => {
         const body = strip();
         const face = (label: string): string =>
@@ -768,7 +757,6 @@ describe('the marks a tab carries', () => {
 
     // Revert: drop `class:unfocused` from the strip in ui/tabs/Tabs.svelte.
     it('marks the strip unfocused only when asked', () => {
-        // revert: src/lib/ui/tabs/Tabs.svelte "class:unfocused={!focused}" => class:unfocused={focused}
         const classes = (body: string): string =>
             /<div class="(strip[^"]*)"/.exec(body)?.[1].replace(/\s*svelte-\S+/g, '') ?? '';
         expect(classes(strip())).toBe('strip');
@@ -809,7 +797,6 @@ describe('the marks a tab carries', () => {
     });
 
     // Revert: drop the Glyph before the label in ui/tabs/TabFace.svelte.
-    // revert: src/lib/ui/tabs/TabFace.svelte "<Glyph name={tab.glyph} />" => delete
     it('draws the glyph before the label, and the preview mark on the preview tab alone', () => {
         const body = strip();
         const shown = tabOf(body, 'Shown');

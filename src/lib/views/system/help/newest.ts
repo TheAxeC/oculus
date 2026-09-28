@@ -6,7 +6,7 @@
 // end, and an answer that lands anyway, from work that took no notice of the signal, is dropped
 // here: a slow answer for an earlier name never overwrites the drawing of the name shown now. It is
 // a module of its own so the rule is proven by a unit case without a browser; the component hands
-// each question's stop to its effect's cleanup, which tests/browser/workbench/system.spec.ts shows.
+// each question's stop to its effect's cleanup.
 
 /**
  * Ask one question: `work` is started with the signal its stop aborts, and the function returned

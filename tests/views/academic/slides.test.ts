@@ -9,8 +9,7 @@
 //
 // What this does NOT cover: pressing anything. The environment is node and the render is the
 // server's, so the answers behind each state are covered by tests/state/life/slides.test.ts
-// as plain calls, and the presses themselves by tests/browser/workbench/present.spec.ts in a
-// browser.
+// as plain calls, and the presses themselves are not run here.
 
 import { render } from 'svelte/server';
 import { beforeEach, describe, expect, it } from 'vitest';

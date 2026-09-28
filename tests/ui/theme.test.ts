@@ -76,7 +76,6 @@ function apply(name: string, crt = false) {
 }
 
 describe('applyTheme', () => {
-    // revert: src/lib/state/shared/words/appearance.ts "glyph: stringAt(row, 'glyph') ?? ''," => glyph: '',
     it('gives each theme its glyph name apart from words that carry none, in either mode', () => {
         const light = themes().find((entry) => entry.name === 'light');
         const mocha = themes().find((entry) => entry.name === 'mocha');
@@ -91,7 +90,6 @@ describe('applyTheme', () => {
         expect(themeLabel('mocha')).toBe('mocha');
     });
 
-    // revert: src/lib/state/shared/words/appearance.ts "return list.map((theme) => ({ ...theme, glyph: hasGlyph(theme.glyph) ? theme.glyph : '' }));" => return list.map((theme) => ({ ...theme }));
     it('offers a row whose glyph is empty, missing or unknown with its words alone', () => {
         setAppearance({
             themes: [
@@ -111,7 +109,6 @@ describe('applyTheme', () => {
         ]);
     });
 
-    // revert: src/lib/state/shared/words/appearance.ts "if (name === undefined || name.length === 0 || Object.hasOwn(byName, name)) continue;" => if (name === undefined || name.length === 0) continue;
     it('offers a theme named twice once, as its first row gives it', () => {
         setAppearance({
             themes: [
@@ -216,7 +213,6 @@ describe('terminalFontPx', () => {
 
 describe('the derived chrome tokens', () => {
     it('are given on :root the values the default theme derives, for the first paint', () => {
-        // revert: src/lib/themes/tokens.css "--accent-bg: #e6d6d2;" => --accent-bg: #000000;
         const root = parseBlocks(TOKENS)[':root'];
         const derived = apply('light').set;
         for (const name of ['--scroll-thumb', '--scroll-track', '--accent-bg']) {

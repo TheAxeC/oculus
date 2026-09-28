@@ -3,8 +3,7 @@
 // on any other row (an event, an application, a project, a lead). The builder answers it by the
 // row's own id, the id still finds its line, and a target keeps that id when earlier rows leave.
 //
-// What this does NOT cover: the buttons shown under the pointer or the keyboard, which need a page
-// and are tests/browser/boards/cards.spec.ts.
+// What this does NOT cover: the buttons shown under the pointer or the keyboard, which need a page.
 
 import { describe, expect, it } from 'vitest';
 import { keptAction, rowMaker } from '../../../src/lib/views/boards/focus/rows.ts';
@@ -54,7 +53,6 @@ describe('the button a row keeps drawn', () => {
         const secondId = before.row(second, '').id;
         const after = rowMaker('r');
 
-        // revert: src/lib/views/boards/focus/rows.ts "const identity = line.target === undefined ? String(at++) : targetId(line.target);" => const identity = String(at++);
         // Number rows by their current place and the second line inherits the removed first line's
         // id instead of keeping its own.
         expect(after.row(second, '').id).toBe(secondId);
