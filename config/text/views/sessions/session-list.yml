@@ -39,8 +39,6 @@ text:
         open_sessions_tip: the Sessions view lists every session and terminal, and a row picks one
         pick_session: Pick a session
         pick_session_tip: the session this view shows
-        pick_terminal: Pick a terminal
-        pick_terminal_tip: the terminal this tab shows, under the session running in it
         pin_glyph: pin
         pin_pane: Pin this pane
         pin_top: Pin to the top

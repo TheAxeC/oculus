@@ -141,6 +141,8 @@ const SOLID: Record<string, string> = {
         'a hover response, saying which row the pointer is on',
     'src/lib/views/sessions/session-list/TerminalRows.svelte .row:hover':
         'a hover response, saying which row the pointer is on',
+    'src/lib/views/sessions/terminal/TerminalList.svelte .row:hover':
+        'a hover response, saying which row the pointer is on',
     'src/lib/views/shared/card/CardDetails.svelte .crosslink:hover':
         'a hover response, saying which tag the pointer is on',
     'src/lib/views/shared/card/CardLinks.svelte .crosslink:hover':

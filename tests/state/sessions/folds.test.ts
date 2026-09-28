@@ -5,6 +5,9 @@
 
 import { describe, expect, it } from 'vitest';
 
+import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
+import { setCatalog } from '../../../src/lib/state/shared/words/text.ts';
+
 import {
     agentTokens,
     ago,
@@ -32,6 +35,9 @@ import type {
     SessionEvent,
     Workspace
 } from '../../../src/lib/data/model/index.ts';
+
+const catalog = textCatalog(loadConfig(engineDir()).config);
+setCatalog(catalog);
 
 /** One session row: its id, whether it is live, and whether the reader dismissed it. */
 function row(id: string, live: boolean, hidden = false): GroupedSession {
@@ -256,28 +262,108 @@ describe("an agent's tokens", () => {
     });
 });
 
-describe("the Terminal view's picker", () => {
-    const shell = { id: 'a1b2c3-shell', name: 'zsh', pid: 11, foreign: false, resumes: null };
+describe("the Terminal view's list of terminals", () => {
+    const at = '2026-09-11T08:00:00.000Z';
+    const shell = {
+        id: 'a1b2c3-shell',
+        name: 'zsh',
+        kind: 'shell' as const,
+        command: 'vim',
+        cwd: '/Users/x/work/oculus',
+        created: at,
+        pid: 11,
+        foreign: false,
+        resumes: null
+    };
     const resumed = {
         id: 'd4e5f6-claude',
         name: 'claude',
+        kind: 'claude' as const,
+        command: 'node',
+        cwd: '/Users/x/work',
+        created: at,
         pid: 12,
         foreign: false,
         resumes: { tool: 'claude' as const, id: 'ended-one' }
     };
-    const started = { id: '0a0b0c-claude', name: '', pid: 13, foreign: false, resumes: null };
-    const outside = { id: 'outside', name: 'work', pid: 14, foreign: true, resumes: null };
+    const started = {
+        id: '0a0b0c-codex',
+        name: '',
+        kind: 'codex' as const,
+        command: 'codex',
+        cwd: '/Users/x/work',
+        created: at,
+        pid: 13,
+        foreign: false,
+        resumes: null
+    };
+    const idle = {
+        id: '0d0e0f-shell',
+        name: '0d0e0f-shell',
+        kind: 'shell' as const,
+        command: '',
+        cwd: '/',
+        created: at,
+        pid: 14,
+        foreign: false,
+        resumes: null
+    };
+    const outside = { ...shell, id: 'outside', name: 'work', pid: 15, foreign: true };
     const sessions = [
-        { id: 'ended-one', title: 'The resumed one', pid: null },
+        { id: 'ended-one', title: 'Fix the parser', pid: null },
         { id: 'live-one', title: '', pid: 13 }
     ];
 
-    it('names each terminal after the session running in it, by its resume, else its process', () => {
-        expect(terminalChoices([shell, resumed, started], sessions)).toEqual([
-            { id: 'a1b2c3-shell', terminal: 'a1b2c3-shell', label: 'zsh' },
-            { id: 'ended-one', terminal: 'd4e5f6-claude', label: 'The resumed one' },
-            { id: 'live-one', terminal: '0a0b0c-claude', label: 'live-one' }
+    it('titles an agent terminal by its agent and describes it by the session running in it', () => {
+        const [claude, codex] = terminalChoices([resumed, started], sessions);
+        expect(claude).toMatchObject({
+            id: 'ended-one',
+            terminal: 'd4e5f6-claude',
+            kind: 'claude',
+            title: catalog['sessions.kind_claude'],
+            description: 'Fix the parser'
+        });
+        expect(claude.title).toBe('Claude');
+        // a session found by its process with no title of its own is described by its id
+        expect(codex).toMatchObject({
+            id: 'live-one',
+            terminal: '0a0b0c-codex',
+            kind: 'codex',
+            title: 'Codex',
+            description: 'live-one'
+        });
+    });
+
+    it('describes an agent terminal no session is found in by its own name, else its id', () => {
+        const [lone, nameless] = terminalChoices(
+            [
+                { ...resumed, resumes: null, pid: 0 },
+                { ...started, pid: 0 }
+            ],
+            sessions
+        );
+        expect(lone).toMatchObject({ id: 'd4e5f6-claude', description: 'claude' });
+        expect(nameless).toMatchObject({ id: '0a0b0c-codex', description: '0a0b0c-codex' });
+    });
+
+    it('titles a shell by its running command and describes it by its folder', () => {
+        expect(terminalChoices([shell], sessions)).toEqual([
+            {
+                id: 'a1b2c3-shell',
+                terminal: 'a1b2c3-shell',
+                kind: 'shell',
+                title: 'vim',
+                description: 'oculus',
+                created: at
+            }
         ]);
+    });
+
+    it('titles a shell tmux reports no command for "shell"', () => {
+        const [row] = terminalChoices([idle], sessions);
+        expect(row.title).toBe(catalog['sessions.terminal_title_shell']);
+        expect(row.title).toBe('shell');
+        expect(row.description).toBe('/');
     });
 
     it('offers no terminal oculus did not start, since the tab cannot attach to one', () => {

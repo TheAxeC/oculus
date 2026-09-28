@@ -1,8 +1,8 @@
 // Layer 2, client state. The folds the session views draw from: the session rows of the tree the
 // selectors group, the tree cut to the rows a list keeps, how many rows a workspace or a list
 // holds, where a terminal may start, a session's agents newest first, the list's filter, search
-// and order, a relative time, and a timeline cut into turns. Pure over the payloads they are
-// handed, so every one is checked without a browser.
+// and order, a relative time, a timeline cut into turns, and the rows of the Terminal view's list.
+// Pure over the payloads they are handed, so every one is checked without a browser.
 
 import type {
     Area,
@@ -14,6 +14,7 @@ import type {
     Terminal,
     Workspace
 } from '../../data/model/index.ts';
+import { t } from '../shared/words/text.ts';
 
 /** Every session row of the tree, workspace by workspace and area by area. */
 export function sessionRows(tree: Workspace[]): GroupedSession[] {
@@ -241,32 +242,62 @@ export function isTop(row: ListedSession): boolean {
 }
 
 /**
- * One entry of the Terminal view's picker: a terminal oculus runs, the id a pick selects (the
- * session running in it, else the terminal), and the words it is shown by.
+ * One row of the Terminal view's list: a terminal oculus runs, the id a press selects (the session
+ * running in it, else the terminal), its kind, the title it is named by after what runs in it, the
+ * description drawn muted after the title, and when it was started, which orders the list.
  */
-export type TerminalChoice = { id: string; terminal: string; label: string };
+export type TerminalChoice = {
+    id: string;
+    terminal: string;
+    kind: Terminal['kind'];
+    title: string;
+    description: string;
+    created: string;
+};
+
+/** The last segment of a folder, or the folder itself when it has none (the root). */
+function folderName(path: string): string {
+    const last = path
+        .split('/')
+        .filter((part) => part !== '')
+        .pop();
+    return last ?? path;
+}
 
 /**
- * The terminals a Terminal tab can show, in the order the payload lists them, each under the
- * session running in it when one does (its resume, else its process), else under its own name. A
- * terminal oculus did not start is left out, since the tab cannot attach to it.
+ * The terminals a Terminal tab can show, in the order the payload lists them. An agent terminal is
+ * titled by its agent, since what tmux reports running in its pane says nothing of it, and is
+ * described by the session running in it (its resume, else its process), else by its own name. A
+ * shell is titled by the command running in it, or by the word for a shell when tmux reports none,
+ * and is described by the last segment of its folder. A terminal oculus did not start is left out,
+ * since the tab cannot attach to it.
  */
 export function terminalChoices(
-    terminals: readonly Pick<Terminal, 'id' | 'name' | 'pid' | 'foreign' | 'resumes'>[],
+    terminals: readonly Pick<
+        Terminal,
+        'id' | 'name' | 'kind' | 'command' | 'cwd' | 'created' | 'pid' | 'foreign' | 'resumes'
+    >[],
     sessions: readonly Pick<GroupedSession, 'id' | 'title' | 'pid'>[]
 ): TerminalChoice[] {
     return terminals
         .filter((one) => one.foreign !== true)
         .map((one) => {
+            const row = { terminal: one.id, kind: one.kind, created: one.created };
+            if (one.kind === 'shell') {
+                const title = one.command === '' ? t('sessions.terminal_title_shell') : one.command;
+                return { ...row, id: one.id, title, description: folderName(one.cwd) };
+            }
+            const title =
+                one.kind === 'claude' ? t('sessions.kind_claude') : t('sessions.kind_codex');
             const running = sessions.find(
-                (row) =>
-                    one.resumes?.id === row.id ||
-                    (row.pid !== null && one.pid !== 0 && row.pid === one.pid)
+                (session) =>
+                    one.resumes?.id === session.id ||
+                    (session.pid !== null && one.pid !== 0 && session.pid === one.pid)
             );
             if (running !== undefined) {
-                const label = running.title === '' ? running.id : running.title;
-                return { id: running.id, terminal: one.id, label };
+                const description = running.title === '' ? running.id : running.title;
+                return { ...row, id: running.id, title, description };
             }
-            return { id: one.id, terminal: one.id, label: one.name === '' ? one.id : one.name };
+            return { ...row, id: one.id, title, description: one.name === '' ? one.id : one.name };
         });
 }

@@ -1,7 +1,8 @@
 <script lang="ts">
     // Layer 3, shared view. The workspace a new session starts in, or the Customizations section
-    // reads: a menu of the hub, every root of every saved workspace and every workspace a session
-    // sits in, each by the last segment of its folder with the whole path as its tooltip.
+    // reads: a menu of the places it is handed (the hub, every root of every saved workspace, every
+    // workspace a session sits in, and a split terminal's folder when a place of its own), each by
+    // the last segment of its folder with the whole path as its tooltip.
 
     import Menu from '$lib/ui/menu/Menu.svelte';
     import { t } from '$lib/state/shared/words/text';
@@ -9,7 +10,7 @@
     type Props = {
         /** The folder picked, absolute. */
         workspace: string;
-        /** The folders offered, absolute, the hub first. */
+        /** The folders offered, absolute, in the order the menu lists them. */
         places: string[];
         /** The hub's folder, which is offered under its own name. */
         hub: string;

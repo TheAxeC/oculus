@@ -4,9 +4,10 @@
 // reactive and the one place it is saved.
 //
 // The saved unit is every page: each one a whole workbench (one tree and the maximised pane, if
-// there is one) with a name, and which page is on screen. Every operation that names a path names
-// the page it addresses, and the page on screen is what it means when it names none, so a caller
-// that knows nothing of pages reads and writes the one on screen.
+// there is one) with a name and what a view keeps for the whole page, and which page is on
+// screen. Every operation that names a path names the page it addresses, and the page on screen
+// is what it means when it names none, so a caller that knows nothing of pages reads and writes
+// the one on screen.
 // Every change reaches the store through apply() or savePages(), which are also what save, so
 // neither an arrangement nor a page is changed without being written down.
 //
@@ -82,6 +83,14 @@ export type LayoutStore = {
     /** The view one instance shows, from whichever page's tree holds it, or undefined for none. */
     instanceView: (id: string) => ViewId | undefined;
     restateInstance: (id: string, state: unknown) => void;
+    /**
+     * What the page holding an instance keeps for that instance's view, shared by every tab of the
+     * view on the page and saved with the layout; undefined when nothing is kept or no page holds
+     * the instance.
+     */
+    pageViewState: (instance: string) => unknown;
+    /** Keep a value for the instance's view on the page holding it; no page holding it, nothing. */
+    setPageViewState: (instance: string, state: unknown) => void;
     pinInstance: (id: string, session: string, label: string) => void;
     unpinInstance: (id: string) => void;
     /**
@@ -149,6 +158,12 @@ export type LayoutStore = {
      * view is a tool view.
      */
     registerOpened: (rule: (view: ViewId) => boolean) => void;
+    /**
+     * Say which ids are registered views, which the registry knows and this store does not: a
+     * saved page keeps what it holds for a view only under such an id (saved.ts's parseLayout).
+     * Until a rule is registered no id is one.
+     */
+    registerViews: (rule: (view: ViewId) => boolean) => void;
     /**
      * Rebuild one page from a rail button's arrangement: its tabs made fresh, its id and rail key
      * kept, its name the button's words. Answers whether it was rebuilt; an id naming no page or an
@@ -234,6 +249,25 @@ export function createLayout(ui: UiStore): LayoutStore {
         );
     }
 
+    /** What the page holding an instance keeps for the instance's view. */
+    function pageViewState(instance: string): unknown {
+        const view = instances.instanceView(instance);
+        if (view === undefined) return undefined;
+        return holding(instance)?.views?.[view];
+    }
+
+    /** Keep a value for the instance's view on the page holding it, and save the pages. */
+    function setPageViewState(instance: string, state: unknown): void {
+        const view = instances.instanceView(instance);
+        const page = holding(instance);
+        if (view === undefined || page === null) return;
+        const views = { ...page.views, [view]: state };
+        savePages({
+            ...store.current,
+            pages: store.current.pages.map((one) => (one.id === page.id ? { ...one, views } : one))
+        });
+    }
+
     /** The whole arrangement of a page, and an empty one for an id naming no page. */
     function workbench(page?: string): Workbench {
         return at(page)?.workbench ?? GONE;
@@ -270,6 +304,9 @@ export function createLayout(ui: UiStore): LayoutStore {
     /** Which views are opened for something, as the registry says once it is registered. */
     let openedRule: (view: ViewId) => boolean = () => false;
 
+    /** Which ids are registered views, as the registry says once it is registered. */
+    let knownRule: (view: ViewId) => boolean = () => false;
+
     const attention = createAttention(access, where);
     const instances = createInstances(access, attention);
     const opening = createOpening(access, attention, instances.keepPreview, (view) =>
@@ -295,7 +332,7 @@ export function createLayout(ui: UiStore): LayoutStore {
         storage.attach(held);
         const first = t('ui.page_default', 1);
         const raw = storage.read(LAYOUT_KEY);
-        const parsed = raw === null ? null : parseLayout(raw, first);
+        const parsed = raw === null ? null : parseLayout(raw, first, (view) => knownRule(view));
         const previous = parseWorkbench(storage.read(PREVIOUS_KEY));
         attention.clear();
         // A browser that ran before pages holds one workbench, and holds the user's own arrangement
@@ -591,6 +628,8 @@ export function createLayout(ui: UiStore): LayoutStore {
         instanceLayoutState: instances.instanceLayoutState,
         instanceView: instances.instanceView,
         restateInstance: instances.restateInstance,
+        pageViewState,
+        setPageViewState,
         pinInstance: instances.pinInstance,
         unpinInstance: instances.unpinInstance,
         keepPreview: instances.keepPreview,
@@ -631,6 +670,9 @@ export function createLayout(ui: UiStore): LayoutStore {
         showInFiles: files.showInFiles,
         registerOpened: (rule) => {
             openedRule = rule;
+        },
+        registerViews: (rule) => {
+            knownRule = rule;
         },
         resetPage,
         resetPages

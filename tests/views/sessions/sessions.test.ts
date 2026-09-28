@@ -495,9 +495,10 @@ describe('a terminal in the payload', () => {
             return html(Terminal);
         });
         expect(body).toContain(`data-terminal="${pane.id}"`);
-        // the grid is the selection, so no composer is drawn; the steer box sits under the grid
+        // the grid is the selection, so no composer is drawn
         expect(body).not.toContain('data-composer');
-        expect(body).toContain(catalog['composer.steer']);
+        // the terminal is a shell, which is typed into at the grid, so nothing steers it from below
+        expect(body).not.toContain(catalog['composer.steer']);
         select(null);
     });
 

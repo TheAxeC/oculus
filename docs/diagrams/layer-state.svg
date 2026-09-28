@@ -306,7 +306,7 @@
 <g id="node34" class="node">
 <title>folder state/sessions to folder state/shared</title>
 <polygon fill="none" stroke="none" points="277.88,-286.76 268.12,-286.76 268.12,-274.28 277.88,-274.28 277.88,-286.76"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="273" y="-278.12" font-family="Helvetica,Arial,sans-serif" font-size="8.00">2</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="273" y="-278.12" font-family="Helvetica,Arial,sans-serif" font-size="8.00">3</text>
 </g>
 <!-- folder state/sessions&#45;&gt;folder state/sessions to folder state/shared -->
 <g id="edge56" class="edge">

@@ -59,7 +59,18 @@ export type Workbench = {
  * config/layout.yml the page was made from by a rail button, which is what ties the page to that
  * button: renaming the button keeps the page, and a page no button made carries none.
  */
-export type Page = { id: string; label: string; workbench: Workbench; rail?: string };
+export type Page = {
+    id: string;
+    label: string;
+    workbench: Workbench;
+    rail?: string;
+    /**
+     * What a view keeps for the whole page rather than for one of its tabs, by view id, so every
+     * tab of that view on the page reads the same value (the Terminal view's row order). The shape
+     * of each value is the view's own.
+     */
+    views?: Record<ViewId, unknown>;
+};
 
 /** Every page, and which of them is on screen. This is the unit that is saved. */
 export type Pages = { pages: Page[]; current: string };

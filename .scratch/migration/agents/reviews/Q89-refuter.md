@@ -282,3 +282,18 @@ git status --short: the 11 modified paths of the round plus the untracked report
 - `npm run diagrams` was not rerun, since it writes files. The diagram checks inside the suite ran within the report's vitest subset and passed.
 
 Reviewer usage: 24 tool uses, about 30 minutes.
+
+## Closed
+
+- The first review's findings: closed in repair round 1, as the run over round 1 above reproduces.
+- The run over round 1: its findings and the unbuilt Z39 (a) item went back as repair round 2 (`agents/briefs/Q89-round2-sent.md`), and the run over round 2 above reproduces each closure.
+- Round 2, Spec 1 (the arm kept when the stop moves other than by the arrow keys): fixed at landing, an `$effect` on `stop` in `TerminalList.svelte` disarms any Kill armed on another row, whatever moved the stop.
+- Round 2, Spec 2 (`armKept`'s focus argument with no caller passing false): fixed at landing, `armKept(armed, stop)` holds the stop rule and its cases; focus leaving the list is the list's `focusout`, as its doc comment says.
+- Round 2, Spec 3 (the split folder labelled by its last segment): no change. The picker labels every place by its last segment with the whole path as its tooltip, and the split folder follows that rule; Z39 (a)'s "listed first by its path" is read as identified by its path. Named in the landing report for Axel.
+- Round 2, Proof 1 (Split's wiring held by no case): fixed at landing, `splitState(folder, agent)` in `state/sessions/composer.ts` builds the split tab's state and the view passes its result; the case "opens a split tab whose composer offers and starts in a folder outside every place" fails with the split field dropped: "expected [ '/hub', '/hub/tools' ] to deeply equal [ '/tmp/elsewhere', '/hub', ...(1) ]".
+- Round 2, Proof 2 (the focusout clear and the pointer hand-off held by no case): no DOM case exists in this suite for either; the Kill arm and kill by the pointer were seen on TEST, the keyboard paths were not. Named in the landing report.
+- Round 2, Standards 1 (`WorkspacePicker.svelte`'s head comment and `places` doc made false): fixed at landing, both now say the menu lists the places it is handed, a split folder among them, in the order handed.
+- Round 2, Standards 2 (the head comment of `TerminalList.svelte`): true after Spec 1's fix.
+- Round 2, Standards 3 (`togglePanePin` compacted and `fileOver` moved, to hold `Terminal.svelte` at 540 lines): accepted, behaviour unchanged.
+- Round 2, Behaviour 1 and 2 (a pointer-armed Kill disarmed when focus leaves the list; a split tab keeps offering its folder): stated in the landing report.
+- The verify run's red tests (git-reads, git and git-ops under load): not the step's files; green on main at landing.

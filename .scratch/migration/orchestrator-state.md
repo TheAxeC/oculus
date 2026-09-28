@@ -27,23 +27,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:      # Q89 of set 2, refuted over round 2, to land; Q92 of set 2 in repair round 1; one slot free for Q79a, its brief being written.
-- step: Q89
-  executor: agent
-  worker: claude:opus
-  session_id: a905babf491651d99
-  worktree: .agents/worktrees/Q89
-  base: 36db3164
-  launched: 2026-09-28
-  report: agents/reviews/Q89-report.md
-  landing: not-started
-  reviewer_report: agents/reviews/Q89-refuter.md (reviewer a116360e9ab07e528)
-  reviewer_report_round1: agents/reviews/Q89-refuter.md "Repair round 1, refuted" (reviewer a38991e425707e8b4, 30 tool calls, 11 min)
-  reviewer_report_round2: agents/reviews/Q89-refuter.md "Repair round 2, refuted" (reviewer aefceffa630f486a8, 28 tool calls, 12 min)
-  round: 2
-  shared_paths:
-  - tools/oculus/HELP.md and tools/oculus/DESIGN.md: both steps correct only sentences their change makes false; Q98's are about catalog code words, the session title and the Calendar footer, Q89's about the Terminal view (HELP.md:123 and the picker), so they touch different lines and the second landing merges by hand if at all
-  - tools/oculus/docs/diagrams/: a rerun of npm run diagrams on the second landing
+dispatch:      # Q92 of set 2 in repair round 1; two slots free for Q79a and Q79c, their briefs being written.
 - step: Q92
   executor: agent
   worker: claude:opus
@@ -404,6 +388,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-09-28. Q89 landed through /spec, /refute and /land (the terminal as VS Code's terminal, Split in the row's own folder by Z39 (a)); two repair rounds, each refuted again; four fixes at landing, the last review's findings. Verify on main: `verify: 6 commands passed` (Test Files 343 passed, Tests 5408 passed). In flight: Q92 (repair round 1). Next: `/spec` Q79a and Q79c.
 - 2026-09-28. Q80 landed through /spec, /refute and /land (line counts on the Status view with cloc); one repair round, refuted again; five fixes at landing, the round review's findings. Verify on main: `verify: 6 commands passed` (Test Files 342 passed, Tests 5370 passed). In flight: Q89 (the review over round 2) and Q92 (its first review). Next: `/spec` Q79a.
 - 2026-09-28. Q98 landed through /spec, /refute and /land (the four look findings Z28 to Z31: the Lit Watch link cut with an ellipsis, slash-command session titles, catalog code words drawn as code, the one-day Calendar footer); one repair round, refuted again, one fix at landing (the report's open items). Verify on main: `verify: 6 commands passed` (Test Files 339 passed, Tests 5325 passed). Axel ruled Z38 (a): the queue regrouped, a set only an order. In flight: Q89 (review read, repair round next) and Q80 (building). Next: `/spec` Q92.
 - 2026-09-28. Set 1 of the queue landed through /spec, /refute and /land: Q95 (Add a button no longer takes the Rail section down, b927aae0), Q94 (the launch note removed, 6b73371d) and Q97 (Help its own rail button after System, with its own page; one repair round, refuted again with no finding; one fix at landing, the merge of Q95's Add case with the twelve-button rail). Verify on main after Q97: `verify: 6 commands passed` (Test Files 338 passed, Tests 5309 passed). Nothing in flight. Next: set 2, Q98 + Q92 + Q89.

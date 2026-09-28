@@ -28,6 +28,11 @@ export type ComposerRecord = {
     accounts: Partial<Record<AgentId, string>>;
     /** The value id per list key, per agent. */
     picks: Partial<Record<AgentId, Record<string, string>>>;
+    /**
+     * The folder of the terminal this tab was split from, offered as a place of its own whether or
+     * not a place holds it; absent on a composer no Split opened.
+     */
+    split?: string;
 };
 
 /** The instance-state field the record is kept under. */
@@ -63,17 +68,50 @@ export function composerOf(state: unknown): ComposerRecord {
     const agent = held.agent;
     const accounts = wordsOf(held.accounts);
     const picks = mapOf(held.picks) ?? {};
-    return {
+    const record: ComposerRecord = {
         workspace: typeof held.workspace === 'string' ? held.workspace : '',
         agent: agent === 'codex' || agent === 'shell' ? agent : 'claude',
         accounts: { claude: accounts.claude, codex: accounts.codex },
         picks: { claude: wordsOf(picks.claude), codex: wordsOf(picks.codex) }
     };
+    if (typeof held.split === 'string' && held.split !== '') record.split = held.split;
+    return record;
+}
+
+/**
+ * The record a Split writes into the tab it opens: the terminal's own folder, as the folder it was
+ * split from and as the one it starts in, and the terminal's kind.
+ */
+export function splitRecord(folder: string, agent: ComposerAgent): ComposerRecord {
+    return { ...COMPOSER_EMPTY, workspace: folder, agent, split: folder };
+}
+
+/**
+ * The places a composer offers: its places as they are, with the folder it was split from listed
+ * first when no place equals it. A composer no Split opened offers its places unchanged.
+ */
+export function offeredPlaces(places: readonly string[], record: ComposerRecord): string[] {
+    const split = record.split ?? '';
+    return split === '' || places.includes(split) ? [...places] : [split, ...places];
+}
+
+/** The folder the composer starts in: the tab's choice while it is offered, else the hub. */
+export function composerWorkspace(
+    record: ComposerRecord,
+    offered: readonly string[],
+    hub: string
+): string {
+    return record.workspace !== '' && offered.includes(record.workspace) ? record.workspace : hub;
 }
 
 /** The tab's instance state with the composer record in place of the one it held. */
 export function withComposer(state: unknown, record: ComposerRecord): Record<string, unknown> {
     return { ...(mapOf(state) ?? {}), [COMPOSER_FIELD]: record };
+}
+
+/** The state of a tab Split opens: its composer in the split row's folder and kind. */
+export function splitState(folder: string, agent: ComposerAgent): Record<string, unknown> {
+    return withComposer(undefined, splitRecord(folder, agent));
 }
 
 /**

@@ -16,5 +16,16 @@ text:
         terminal_larger: Larger terminal text
         terminal_reset: Reset terminal text size
         terminal_smaller: Smaller terminal text
+        terminal_title_shell: shell
+        terminal_list: The terminals oculus runs; the arrow keys move between them and Enter shows one here
+        terminal_row_tip: "{0}\nCommand: {1}\nFolder: {2}\nStarted: {3}"
+        terminal_split: Split
+        terminal_split_tip: Open a new terminal beside this tab, in this terminal's folder and of its kind (Shift+Enter on the row)
+        terminal_kill: Kill
+        terminal_kill_tip: Kill this terminal, ending its tmux session and everything running in it (Delete or Backspace on the row, twice)
+        terminal_kill_armed: Press again to kill this terminal
+        terminal_bell: Bell
+        paste_confirm: Paste {0} lines into the terminal?
+        paste_ok: Paste
         terminals: Terminals
         view_terminal: Terminal

@@ -255,6 +255,8 @@ export function createClientState(): ClientState {
     // document, a file), and the layout lands it apart from a page's tool views. The registry is
     // built over the layout, so the layout is told the rule once both exist.
     layout.registerOpened((view) => registry.viewFor(view)?.group === '');
+    // What a saved page keeps for a view is read back only under an id the registry holds.
+    layout.registerViews((view) => registry.viewFor(view) !== undefined);
     return {
         entities,
         writes,

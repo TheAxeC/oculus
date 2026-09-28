@@ -11,9 +11,14 @@
 </script>
 
 <script lang="ts">
-    // Layer 3, view. One terminal pane: xterm.js over the `pty:` channel with the prompt box that
-    // steers it under the grid, and the composer of a new session when the tab shows no terminal.
-    // The grid takes keyboard input and carries its own bytes.
+    // Layer 3, view. One terminal pane, drawn as VS Code's terminal panel: xterm.js over the `pty:`
+    // channel, the steer box under the grid only when Claude or Codex runs in it (a shell is typed
+    // into at the grid, which then takes the whole height), and the composer of a new session when
+    // the tab shows no terminal. From two terminals on, the list of terminals (TerminalList.svelte)
+    // is drawn on the right of the body whatever the tab shows, and with one terminal while the tab
+    // shows the composer; a tab showing its only terminal names it on the bar. A paste of several
+    // lines is asked about before it is sent, since each line would run; a file dropped from the
+    // Files view types its quoted path; a bell marks the terminal's row.
     //
     // A selected session that runs in no terminal of oculus cannot be typed into, so the tab draws
     // its steer box disabled with the sentence saying why; a new session is reached by New.
@@ -39,8 +44,10 @@
     // own API. This is the one file in the application that reads a computed token.
 
     import Composer from './Composer.svelte';
-    import TerminalPicker from './TerminalPicker.svelte';
+    import TerminalList from './TerminalList.svelte';
+    import TerminalTitle from './TerminalTitle.svelte';
     import SteerBox from '$lib/views/shared/sessions/SteerBox.svelte';
+    import Confirm from '$lib/ui/controls/Confirm.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Toolbar from '$lib/ui/frame/Toolbar.svelte';
@@ -48,6 +55,18 @@
     import { pinnedTerminal } from '$lib/state/workbench/selection.svelte';
     import { stateId } from '$lib/state/workbench/layout/instance';
     import { followsSelection, titleStripper } from '$lib/state/sessions/terminals.svelte';
+    import { sessionRows, terminalChoices } from '$lib/state/sessions/folds';
+    import { FILE_DRAG } from '$lib/state/sources/fs';
+    import {
+        BELL_MS,
+        fileOver,
+        holdPastes,
+        listDrawn,
+        orderedRows,
+        shellQuote,
+        storedOrder,
+        terminalTip
+    } from './terminal-list';
     import { t } from '$lib/state/shared/words/text';
     import { scheduleReflow } from './reflow';
     import { untrack } from 'svelte';
@@ -56,8 +75,15 @@
     import { useState } from '$lib/state/client/use';
 
     const {
-        layout: { instanceLayoutState, openView, pinInstance, restateInstance, unpinInstance },
-        selectors: { sessionById },
+        layout: {
+            instanceLayoutState,
+            openView,
+            pageViewState,
+            pinInstance,
+            restateInstance,
+            unpinInstance
+        },
+        selectors: { sessionById, sessionsByWorkspace },
         selection: { select, selected, selectedTerminal },
         terminals: {
             resizeTerminal,
@@ -66,6 +92,7 @@
             subscribePty,
             terminalById,
             terminalOfSession,
+            terminals,
             unsubscribePty
         },
         ui: { setTerminalFont, terminalFont, textScale, theme }
@@ -119,6 +146,27 @@
             (fresh ? null : (selectedTerminal() ?? terminalOfSession(selectedSession)?.id ?? null))
     );
     const terminal = $derived(terminalById(id));
+    /** Whether an agent runs in the terminal shown, which is what the steer box is drawn under. */
+    const agent = $derived(terminal !== null && terminal.kind !== 'shell');
+
+    /** The list's rows, in the reader's order for the page, else in the order they were started. */
+    const rows = $derived(
+        orderedRows(
+            terminalChoices(terminals(), sessionRows(sessionsByWorkspace(true))),
+            storedOrder(pageViewState(instance.id))
+        )
+    );
+    const listed = $derived(listDrawn(rows.length, id === null && selectedSession === null));
+    const shown = $derived(rows.find((row) => row.terminal === id) ?? null);
+
+    /** The terminal whose bell rang in this tab, while its mark shows. */
+    let ringing: string | null = $state(null);
+    let bellTimer: ReturnType<typeof setTimeout> | null = null;
+
+    /** A paste of several lines waiting for its answer, and how many lines it holds. */
+    let pasting: { text: string; lines: number } | null = $state(null);
+    /** The terminal a pointer press on its row asked for, whose grid takes focus on mounting. */
+    let focusing: string | null = null;
 
     /**
      * A pinned tab carries the session's name, and a terminal is renamed while it runs; the label
@@ -140,13 +188,8 @@
 
     /** Pin this terminal to what it shows, or return it to following the terminal selection. */
     function togglePanePin(): void {
-        if (pinned !== null) {
-            unpinInstance(instance.id);
-            return;
-        }
-        if (terminal !== null) {
-            pinInstance(instance.id, terminal.id, terminal.name);
-        }
+        if (pinned !== null) unpinInstance(instance.id);
+        else if (terminal !== null) pinInstance(instance.id, terminal.id, terminal.name);
     }
 
     /**
@@ -209,6 +252,40 @@
         restateInstance(owner, { session: made, label });
     }
 
+    /** Mark a terminal's row for the bell's moment, the timer of an earlier ring replaced. */
+    function ring(which: string): void {
+        if (bellTimer !== null) clearTimeout(bellTimer);
+        ringing = which;
+        bellTimer = setTimeout(() => {
+            bellTimer = null;
+            ringing = null;
+        }, BELL_MS);
+    }
+
+    /** Send the paste the question held, or drop it. */
+    function answerPaste(send: boolean): void {
+        const held = pasting;
+        pasting = null;
+        if (held === null || grid === null) return;
+        if (send) grid.paste(held.text);
+        grid.focus();
+    }
+
+    /** A file dropped on the grid from the Files view: its path typed, quoted, and no Enter. */
+    function droppedOnGrid(event: DragEvent): void {
+        const path = event.dataTransfer?.getData(FILE_DRAG) ?? '';
+        if (path === '' || id === null) return;
+        event.preventDefault();
+        sendInput(id, `${shellQuote(path)} `);
+        grid?.focus();
+    }
+
+    /** A row pressed by the pointer: the grid shown takes focus, or the one about to mount. */
+    function pointed(terminal: string): void {
+        if (terminal === id) grid?.focus();
+        else focusing = terminal;
+    }
+
     /** Open another Terminal tab, with an identity of its own, showing the composer. */
     function openAnother(): void {
         openView('terminal', { id: crypto.randomUUID() });
@@ -244,9 +321,16 @@
             term.open(at);
             fit.fit();
             grid = term;
+            if (focusing === wanted) term.focus();
+            focusing = null;
             measure = () => ({ cols: term.cols, rows: term.rows });
             refit = () => fit.fit();
             const typed = term.onData((data: string) => sendInput(wanted, data));
+            const rang = term.onBell(() => ring(wanted));
+            // The mount point typed as the element it is: the checker reads `body` as its
+            // declaration's null, so `at` would otherwise carry no methods it can resolve.
+            const host: HTMLElement = at;
+            const unhold = holdPastes(host, (held) => (pasting = held));
             // A shell names its tmux window after the running command with `ESC k <name> ESC \`,
             // which xterm does not know and would print as the name itself; the title is dropped,
             // and a sequence cut across two chunks is carried to the next one.
@@ -274,6 +358,12 @@
                 off();
                 unsubscribePty(wanted);
                 typed.dispose();
+                rang.dispose();
+                unhold();
+                if (bellTimer !== null) clearTimeout(bellTimer);
+                bellTimer = null;
+                ringing = null;
+                pasting = null;
                 term.dispose();
                 grid = null;
                 measure = null;
@@ -321,7 +411,13 @@
 
 {#snippet tools()}
     <Toolbar label={t('sessions.view_terminal')}>
-        <TerminalPicker instance={instance.id} current={id} />
+        {#if !listed && shown !== null}
+            <TerminalTitle
+                {shown}
+                tip={terminal === null ? shown.title : terminalTip(terminal)}
+                ringing={ringing === shown.terminal}
+            />
+        {/if}
         <ToolButton
             label={t('sessions.new_terminal')}
             title={t('sessions.new_terminal_title')}
@@ -361,32 +457,65 @@
 
 <Pane title={t('sessions.view_terminal')} toolbar={tools} tinted>
     <div class="terminal" data-instance={instance.id}>
-        {#if id === null && selectedSession !== null}
-            <div class="start">
-                <p class="elsewhere" data-runs-elsewhere>
-                    {t('composer.selected_elsewhere', selectedSession.title)}
-                </p>
-                <SteerBox terminal={null} />
-            </div>
-        {:else if id === null}
-            <div class="start">
-                <Composer owner={instance.id} onstarted={started} />
-            </div>
-        {:else}
-            <div class="grid" bind:this={body} data-terminal={id}></div>
-            <SteerBox {terminal} />
+        <div class="main">
+            {#if id === null && selectedSession !== null}
+                <div class="start">
+                    <p class="elsewhere" data-runs-elsewhere>
+                        {t('composer.selected_elsewhere', selectedSession.title)}
+                    </p>
+                    <SteerBox terminal={null} />
+                </div>
+            {:else if id === null}
+                <div class="start">
+                    <Composer owner={instance.id} onstarted={started} />
+                </div>
+            {:else}
+                <!-- The grid takes a file dropped from the Files view; its keyboard is xterm's. -->
+                <!-- svelte-ignore a11y_no_static_element_interactions -->
+                <div
+                    class="grid"
+                    bind:this={body}
+                    data-terminal={id}
+                    ondragover={fileOver}
+                    ondrop={droppedOnGrid}
+                ></div>
+                {#if agent}
+                    <SteerBox {terminal} />
+                {/if}
+            {/if}
+        </div>
+        {#if listed}
+            <TerminalList instance={instance.id} {rows} current={id} {ringing} onshown={pointed} />
         {/if}
     </div>
 </Pane>
 
+{#if pasting !== null}
+    <Confirm
+        message={t('sessions.paste_confirm', pasting.lines)}
+        confirm={t('sessions.paste_ok')}
+        cancel={t('ui.confirm_cancel')}
+        onconfirm={() => answerPaste(true)}
+        oncancel={() => answerPaste(false)}
+    />
+{/if}
+
 <style>
     .terminal {
         display: flex;
-        flex-direction: column;
+        gap: 6px;
         min-width: 0;
         height: 100%;
         padding: 4px 6px 6px;
         box-sizing: border-box;
+    }
+
+    .main {
+        display: flex;
+        flex-direction: column;
+        flex: 1 1 auto;
+        min-width: 0;
+        min-height: 0;
     }
 
     .start {

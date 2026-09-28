@@ -15,13 +15,17 @@ import {
     composeStart,
     composerOf,
     composerPlaces,
+    composerWorkspace,
     customizationScopeOf,
     insertMention,
     isImage,
     mention,
+    offeredPlaces,
     picksFor,
     promptKey,
     relativeIn,
+    splitRecord,
+    splitState,
     withComposer,
     withCustomizationScope
 } from '../../../src/lib/state/sessions/composer.ts';
@@ -116,6 +120,60 @@ describe("a tab's composer record", () => {
         const saved = [{ roots: [{ dir: '/hub' }, { dir: '/w/a' }] }, { roots: [{ dir: '/w/a' }] }];
         expect(composerPlaces('/hub', saved, tree)).toEqual(['/hub', '/w/a', '/w/b']);
         expect(composerPlaces('', [], tree)).toEqual(['/hub', '/w/b']);
+    });
+});
+
+describe('a composer opened by Split', () => {
+    const places = ['/hub', '/hub/tools'];
+
+    it("records the terminal's own folder as the folder it was split from and starts there", () => {
+        expect(splitRecord('/hub/projects/foo/code', 'shell')).toEqual({
+            ...COMPOSER_EMPTY,
+            workspace: '/hub/projects/foo/code',
+            agent: 'shell',
+            split: '/hub/projects/foo/code'
+        });
+    });
+
+    it('reads the split folder as a string, and drops an empty or malformed one', () => {
+        expect(composerOf({ composer: { split: '/w/x' } }).split).toBe('/w/x');
+        expect('split' in composerOf({ composer: { split: '' } })).toBe(false);
+        expect('split' in composerOf({ composer: { split: 7 } })).toBe(false);
+    });
+
+    it('opens a split tab whose composer offers and starts in a folder outside every place', () => {
+        const record = composerOf(splitState('/tmp/elsewhere', 'shell'));
+        expect(record.agent).toBe('shell');
+        expect(offeredPlaces(['/hub', '/hub/tools'], record)).toEqual([
+            '/tmp/elsewhere',
+            '/hub',
+            '/hub/tools'
+        ]);
+        expect(
+            composerWorkspace(record, offeredPlaces(['/hub', '/hub/tools'], record), '/hub')
+        ).toBe('/tmp/elsewhere');
+    });
+
+    it('offers a split folder no place holds first, by its path, and starts in it', () => {
+        const record = composerOf({ composer: splitRecord('/hub/projects/foo/code', 'claude') });
+        const offered = offeredPlaces(places, record);
+        expect(offered).toEqual(['/hub/projects/foo/code', '/hub', '/hub/tools']);
+        expect(composerWorkspace(record, offered, '/hub')).toBe('/hub/projects/foo/code');
+    });
+
+    it('offers the places as they are when the split folder is one of them, with it chosen', () => {
+        const record = composerOf({ composer: splitRecord('/hub/tools', 'shell') });
+        const offered = offeredPlaces(places, record);
+        expect(offered).toEqual(places);
+        expect(composerWorkspace(record, offered, '/hub')).toBe('/hub/tools');
+    });
+
+    it('offers the places as they are to a composer no Split opened', () => {
+        const record = composerOf({ composer: { workspace: '/elsewhere', agent: 'claude' } });
+        const offered = offeredPlaces(places, record);
+        expect(offered).toEqual(places);
+        expect(composerWorkspace(record, offered, '/hub')).toBe('/hub');
+        expect(offeredPlaces(places, COMPOSER_EMPTY)).toEqual(places);
     });
 });
 

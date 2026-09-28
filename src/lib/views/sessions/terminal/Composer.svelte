@@ -6,7 +6,9 @@
     //
     // What each picker last chose is kept in the tab's instance state (state/sessions/composer.ts),
     // so the tab's next composer opens on it; the prompt being typed is this component's own. A
-    // Shell takes none of the agent pickers, and its prompt is the first command it runs.
+    // Shell takes none of the agent pickers, and its prompt is the first command it runs. A tab
+    // opened by a terminal's Split starts in that terminal's folder, which the workspace picker
+    // offers first when none of its places holds it.
     //
     // The prompt goes to the server as one field and reaches the agent as one argument; nothing on
     // this side quotes, splits or escapes it, since nothing on either side hands it to a shell.
@@ -24,8 +26,10 @@
         composeStart,
         composerOf,
         composerPlaces,
+        composerWorkspace,
         insertMention,
         mention,
+        offeredPlaces,
         promptKey,
         picksFor,
         relativeIn,
@@ -71,11 +75,12 @@
     const record = $derived(composerOf(instanceState(owner)));
     const hub = $derived(hubRoot());
     const places = $derived(
-        composerPlaces(hub, workspaces().workspaces, sessionsByWorkspace(true))
+        offeredPlaces(
+            composerPlaces(hub, workspaces().workspaces, sessionsByWorkspace(true)),
+            record
+        )
     );
-    const workspace = $derived(
-        record.workspace !== '' && places.includes(record.workspace) ? record.workspace : hub
-    );
+    const workspace = $derived(composerWorkspace(record, places, hub));
     const branch = $derived(branchOf(workspace, git()));
     const agent = $derived(record.agent);
     const base = $derived(agentChoices().value);
