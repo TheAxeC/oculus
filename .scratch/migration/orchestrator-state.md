@@ -27,7 +27,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:      # set 2 of the queue: Q98 and Q89 in flight; Q92 waits on open item Z35.
+dispatch:      # Q98 and Q89 of set 2 in flight, Q98 under review; Q92 waits on open item Z36; Q80 of set 3 in flight.
 - step: Q98
   executor: agent
   worker: claude:opus
@@ -51,6 +51,17 @@ dispatch:      # set 2 of the queue: Q98 and Q89 in flight; Q92 waits on open it
   shared_paths:
   - tools/oculus/HELP.md and tools/oculus/DESIGN.md: both steps correct only sentences their change makes false; Q98's are about catalog code words, the session title and the Calendar footer, Q89's about the Terminal view (HELP.md:123 and the picker), so they touch different lines and the second landing merges by hand if at all
   - tools/oculus/docs/diagrams/: a rerun of npm run diagrams on the second landing
+- step: Q80
+  executor: agent
+  worker: claude:opus
+  session_id: adfd1cde92313bcfc
+  worktree: .agents/worktrees/Q80
+  base: 740ebd5e
+  launched: 2026-09-28
+  report: agents/reviews/Q80-report.md
+  landing: not-started
+  round: 0
+  shared_paths: HELP.md and DESIGN.md (Q80 changes HELP.md:128 and DESIGN.md:128, other sentences than Q89's and Q98's), docs/diagrams (a rerun of npm run diagrams at landing), any whole-tree test list such as type-scale.test.ts (one added name per step)
 ```
 
 ## The standing demands (from Axel, in force)
