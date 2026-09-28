@@ -1,4 +1,4 @@
-Everything in the brief is done. The verify list ran once, at the end, and is red at `npm test` only because of timeouts in four test files this step does not touch; the other five commands were run on their own afterwards and pass (below).
+Everything in the brief and in repair round 1 is done. The full verify list was not run in this round, as the round says; the orchestrator runs it on main at landing.
 
 ## Open items (verbatim from the state file)
 
@@ -10,55 +10,77 @@ None.
 
 ## The cases' first run
 
-The first run of the cases against the unchanged tree was done by the previous builder of this step, who was stopped before writing a report. Its results are not on disk and are not restated here. For each case, the test that is it and the change whose undoing turns it red:
+Run in a scratch copy of the worktree's `tools/oculus` outside the repository (`<scratchpad>/q97copy/oculus`, `node_modules` linked to the worktree's, deleted after the runs; `ls` of it then prints "No such file or directory"), with the step's tests and the base's `config/layout.yml` (`Q97-base-layout.yml`, the orchestrator's copy) in place. Command: `npx vitest run` over the eight test files of the brief (`rail-config`, `config-folder`, state `catalogue`, Views `catalogue`, `arrangement`, `settings`, state `rail`, shell `rail`).
 
-| Case | Test | Turns red when |
+Result on the base layout: `Test Files  7 failed | 1 passed (8)`, `Tests  10 failed | 128 passed (138)`. The failing tests:
+
+```
+ FAIL  tests/checks/config/config-folder.test.ts > oculus's own config directory > keys every catalogue group by the rail page it holds, in rail order, Help after System
+ FAIL  tests/shell/rail/rail-config.test.ts > the rail of the real config > draws the twelve pages of layout.yml in their order, Views and Settings last
+ FAIL  tests/shell/rail/rail-config.test.ts > the rail of the real config > draws the Help button with the question glyph, the Help view's own
+ FAIL  tests/state/workbench/navigation/arrangement.test.ts > the shipped pages > draws the twelve buttons in the ruled order, Help right after System
+ FAIL  tests/state/workbench/navigation/arrangement.test.ts > the shipped pages > makes every page as the rulings lay it out, pane by pane
+ FAIL  tests/state/workbench/navigation/arrangement.test.ts > a System page saved before the Help page was its own > makes the Help page from its shipped arrangement on its first press, tied to help
+ FAIL  tests/state/workbench/navigation/catalogue.test.ts > the catalogue of the real config > lists one group per rail page, in rail order, labelled with its button, and Help after System
+ FAIL  tests/state/workbench/navigation/rail.test.ts > the rail pages the page hands the shell > reads the shipped list in its order, Views and Settings last
+ FAIL  tests/views/system/workbench/catalogue.test.ts > the Views catalogue > draws each group under its heading, with its chord letter where it has one
+ FAIL  tests/views/system/workbench/settings.test.ts > the rail half > draws one row per button of the file, holding its label
+```
+
+So on the base every case fails except three, which pass: the one-page rule (`arrangement.test.ts:294`, the base keeps every entry on one page), the saved System page keeping its old tabs (`arrangement.test.ts:395`), and the Help section's five entries at `h1` to `h5` (`views/.../catalogue.test.ts:61`, `:81`). Those three are audits of rules this step keeps.
+
+Then, in the same scratch copy with the step's `config/layout.yml`, each change undone on its own (the rest of the step's layout kept), the same eight files:
+
+| Change undone | Result | Failing tests |
 |---|---|---|
-| `railPages(shipped)` as `label:page`, twelve | `tests/state/workbench/navigation/arrangement.test.ts:248` "draws the twelve buttons in the ruled order, Help right after System" | the `Help` entry is taken out of `rail:` in `config/layout.yml` |
-| `ActivityRail` draws twelve `data-rail-page` in order | `tests/shell/rail/rail-config.test.ts:30` (against `SHIPPED_RAIL_KEYS` of `tests/shell/rail/shipped-rail.ts`) | the `Help` rail entry is taken out |
-| the `help` button draws `data-glyph="question"` | `tests/shell/rail/rail-config.test.ts:40` "draws the Help button with the question glyph, the Help view's own" (new) | the Help rail entry's glyph is anything but `question`, or the entry is taken out |
-| the pages pane by pane | `tests/state/workbench/navigation/arrangement.test.ts:265` "makes every page as the rulings lay it out, pane by pane" | the `info` arrangement goes back to the two-pane split, or the `help` arrangement is taken out |
-| every placed entry on exactly one page | `tests/state/workbench/navigation/arrangement.test.ts:294`, unchanged | the `info` arrangement goes back to holding the manual, the documents and `memories` while `help` holds them too |
-| the config's groups equal the rail's pages and labels | `tests/checks/config/config-folder.test.ts:450` "keys every catalogue group by the rail page it holds, in rail order, Help after System" | the Help rail entry or the `help` arrangement is taken out |
-| the catalogue's sections, state fold | `tests/state/workbench/navigation/catalogue.test.ts:260` "lists one group per rail page, in rail order, labelled with its button, and Help after System" | the Help rail entry is taken out |
-| the catalogue's sections, Views view | `tests/views/system/workbench/catalogue.test.ts:51` "draws each group under its heading, with its chord letter where it has one" | the Help rail entry is taken out |
-| the Help section holds its five entries at `h1` to `h5` | `tests/views/system/workbench/catalogue.test.ts:61` and `:81`, unchanged | audit: this step changes no group membership or chord |
-| the Settings rail half: 12 rows | `tests/views/system/workbench/settings.test.ts:96` (the count at `:98`) | the Help rail entry is taken out |
-| a saved System page keeps its old tabs; the Help page is made on its first press | `tests/state/workbench/navigation/arrangement.test.ts:395` and `:403`, under the describe at `:320` (new) | audit of the existing keep-what-was-arranged rule of `openRailPage` over the shipped arrangements; the `:403` test also turns red if the `help` arrangement is taken out |
+| the Help rail line removed | `Tests  10 failed \| 128 passed (138)` | config-folder `keys every catalogue group...`; rail-config `draws the twelve pages...` and `draws the Help button with the question glyph...`; arrangement `draws the twelve buttons...`, `makes every page... pane by pane`, `puts every view... on exactly one page`; state catalogue `lists one group per rail page...`; state rail `reads the shipped list in its order...`; Views catalogue `draws each group under its heading...`; settings `draws one row per button...` |
+| `info` back to the two-pane split | `Tests  2 failed \| 136 passed (138)` | arrangement `makes every page... pane by pane`, `puts every view... on exactly one page` |
+| the `help` arrangement removed | `Tests  9 failed \| 129 passed (138)` | config-folder `keys every catalogue group...`; rail-config `draws the twelve pages...` and `draws the Help button...`; arrangement `draws the twelve buttons...`, `makes every page... pane by pane`, `puts every view... on exactly one page`, `makes the Help page from its shipped arrangement...`; state rail `finds nothing wrong with the shipped rail list` and `reads the shipped list in its order...` |
+| the Help glyph `question` changed to `page` | `Tests  1 failed \| 137 passed (138)` | rail-config `draws the Help button with the question glyph, the Help view's own` |
+
+The Views view's heading test (repair item 1) fails with the Help rail line removed and passes with it.
+
+Each case, the test that is it, and what turns it red:
+
+| Case | Test | Red when |
+|---|---|---|
+| `railPages(shipped)` as `label:page`, twelve | `arrangement.test.ts:248` | the Help rail line or the `help` arrangement is removed |
+| `ActivityRail` draws twelve `data-rail-page` in order | `rail-config.test.ts:30` | the Help rail line or the `help` arrangement is removed |
+| the `help` button draws `data-glyph="question"` | `rail-config.test.ts:40` (new) | the glyph is changed, or the Help rail line or `help` arrangement is removed |
+| the pages pane by pane | `arrangement.test.ts:265` | `info` goes back to two panes, or the Help rail line or `help` arrangement is removed |
+| every placed entry on exactly one page | `arrangement.test.ts:294`, unchanged | `info` goes back to two panes, or the Help rail line or `help` arrangement is removed; passes on the base (audit there) |
+| the config's groups equal the rail's pages and labels | `config-folder.test.ts:450` | the Help rail line or the `help` arrangement is removed |
+| the catalogue's sections, state fold | `state/.../catalogue.test.ts:260` | the Help rail line is removed |
+| the catalogue's sections, Views view | `views/.../catalogue.test.ts:51` | the Help rail line is removed |
+| the Help section's entries at `h1` to `h5` | `views/.../catalogue.test.ts:61`, `:81`, unchanged | audit: this step changes no group membership or chord |
+| the Settings rail half: 12 rows | `settings.test.ts:96` | the Help rail line is removed |
+| a saved System page keeps its old tabs | `arrangement.test.ts:395` (new) | audit of the existing keep-what-was-arranged rule of `openRailPage` |
+| the Help page made on its first press, tied to `help` | `arrangement.test.ts:403` (new) | the `help` arrangement is removed (audit of the same rule otherwise) |
 
 ## What to build
 
 | Item | State | Where | Proof |
 |---|---|---|---|
-| 1. `config/layout.yml`: Help rail entry after System, `help` arrangement after `info`, `info` one pane, `nav_groups` comment | DONE | `config/layout.yml:20`, `:24`, `:98-106` | `grep -c "label:" <(sed -n '/^rail:/,/^$/p' config/layout.yml)` prints `12`; `sed -n 8,40p` and `sed -n 95,115p` show the entries; `nav_groups` entries unchanged |
-| 2. head comments of `catalogue.ts`, `Help.svelte`, `Memories.svelte` | DONE | `catalogue.ts:2-3`, `Help.svelte:2-3`, `Memories.svelte:2-3` | `grep -n "no page" config/layout.yml src/lib/views/system/help/Help.svelte src/lib/views/personal/memories/Memories.svelte src/lib/state/workbench/navigation/catalogue.ts` prints one line, `config/layout.yml:44` ("An arrangement that does not add up makes no page."), which is not about the Help group; no code line changed (diff against main shows only the comment lines) |
-| 3. `HELP.md:19`, `:68` | DONE | `HELP.md:19`, `:68` | word diff against main: only these two lines changed, "twelve", System's six views, Help's five entries, "the Help page's under Help, reached by `h`", "the Help page's group" |
+| 1. `config/layout.yml`: Help rail entry after System, `help` arrangement after `info`, `info` one pane, `nav_groups` comment | DONE | `config/layout.yml:20`, `:24`, `:98-106` | `grep -c "label:" <(sed -n '/^rail:/,/^$/p' config/layout.yml)` prints `12`; the `nav_groups` entries are unchanged |
+| 2. head comments of `catalogue.ts`, `Help.svelte`, `Memories.svelte` | DONE | `catalogue.ts:2-3`, `Help.svelte:2-3`, `Memories.svelte:2-3` | `grep -n "no page"` over the four files prints only `config/layout.yml:44` ("An arrangement that does not add up makes no page."), which is not about the Help group; a diff against main shows only the comment lines changed |
+| 3. `HELP.md:19`, `:68` | DONE | `HELP.md:19`, `:68` | word diff against main: only these two lines changed |
 | 4. `DESIGN.md:269`, `:282` | DONE | `DESIGN.md:269`, `:282` | `:269` reads "(`f`, `m`, `p`, `e`, `s`, `c`, `l`, `r`, `t`, `y`, `h` and `w`, one per rail page)"; `:282` reads "a listed view of the Help page's group" |
-| 5. tests changed to the twelve-page rail and the new cases | DONE | the eight test files of the brief | `npx vitest run` over `rail-config`, `config-folder`, both `catalogue`, `arrangement`, `settings`, `rail.test.ts` (state) and `rail.test.ts` (shell): `Test Files  8 passed (8)`, `Tests  138 passed (138)` |
+| 5. tests changed to the twelve-page rail and the new cases | DONE | the eight test files of the brief | see the checks below |
+| Round 1, item 1: the Views view's heading test compares with the loaded config's rail labels | DONE | `tests/views/system/workbench/catalogue.test.ts:54` | `expect(headings).toEqual((config.rail as { label: string }[]).map((entry) => entry.label));`, the Help-after-System check kept at `:55`, the unused `SHIPPED_RAIL_LABELS` import removed; red with the Help rail line removed (table above) |
 
-Accepted edits outside the brief's path list, as the orchestrator ruled: `config/text/app.yml:12`, the `h1-h5` row of the key sheet now ends "the Help page's group", the same text as `HELP.md:68`; `DESIGN.md:81`, the sentence that called Help a group with no page now reads "The Help page's group, ... every group has a chord".
+Accepted edits outside the brief's path list, as the orchestrator ruled: `config/text/app.yml:12` (the `h1-h5` row of the key sheet) and `DESIGN.md:81` (the sentence that called Help a group with no page).
 
-`npm run diagrams` was run; `diff -rq` of `docs/diagrams` against the main checkout prints nothing, so no diagram changed.
+`npm run diagrams` leaves `docs/diagrams` identical to main (`diff -rq` prints nothing).
 
-### The verify list, verbatim
+### Checks, run from the worktree in this round
 
-`sh /Users/axelfaes/.claude-work/skills/land/templates/verify.sh /Users/axelfaes/workspace/research-hub/tools/oculus/.scratch/migration/orchestrator-state.md`, exit 1. Its first lines and summary:
+- The eight test files: `Test Files  8 passed (8)`, `Tests  138 passed (138)`.
+- `npm run check`: exit 0, `COMPLETED 1433 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS`.
+- `npm run format:check`: exit 0, `All matched files use Prettier code style!`.
+- `npm run lint`: exit 0.
+- `LC_ALL=C grep -n '[^ -~]' tests/views/system/workbench/catalogue.test.ts` prints nothing.
 
-```
-RED: npm test
-exit status: 1
-```
-```
- Test Files  4 failed | 337 passed (341)
-      Tests  13 failed | 5345 passed (5358)
-```
-
-The failing files, all timeouts (`Test timed out in 5000ms` / `Hook timed out in 10000ms`): `tests/server/core/git.test.ts`, `tests/server/git/git-ops.test.ts`, `tests/checks/tree/duplication.test.ts`, `tests/checks/tree/scratch.test.ts`, and one line of `tests/checks/source/comment-width.test.ts` also appears in the captured output.
-
-- `tests/server/core/git.test.ts` and `tests/server/git/git-ops.test.ts`: not this step's; not rerun or investigated.
-- `tests/checks/tree/duplication.test.ts`, `tests/checks/tree/scratch.test.ts` and `tests/checks/source/comment-width.test.ts` scan the files this step changed, so they count. Run on their own with default timeouts: `Test Files  3 passed (3)`, `Tests  22 passed (22)`.
-
-The runner stops at the first red command, so the rest of the list was run one by one from the worktree: `npm run check` exit 0 (`COMPLETED 1433 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS`); `npm run build` exit 0; `npm run format:check` exit 0 (`All matched files use Prettier code style!`); `npm run lint` exit 0; `! LC_ALL=C grep -rna '[^ -~]' src tests` exit 0. The spec's ASCII gate (the perl form over `src tests bin config`) prints nothing. `verify: 6 commands passed` was not printed, since the runner stopped at `npm test`.
+The full verify list was not run in this round, as instructed. Its one run in the first round was red at `npm test` on timeouts in `tests/server/core/git.test.ts` and `tests/server/git/git-ops.test.ts`, which this step does not touch. `tests/checks/tree/duplication.test.ts`, `tests/checks/tree/scratch.test.ts` and `tests/checks/source/comment-width.test.ts` also timed out in that run; they scan this step's files and passed when run on their own (22 of 22). The other five commands of the list passed.
 
 ## Files, line counts before and after
 
@@ -75,7 +97,7 @@ The runner stops at the first red command, so the rest of the list was run one b
 | `tests/shell/rail/rail-config.test.ts` | 114 | 123 |
 | `tests/checks/config/config-folder.test.ts` | 682 | 681 |
 | `tests/state/workbench/navigation/catalogue.test.ts` | 414 | 395 |
-| `tests/views/system/workbench/catalogue.test.ts` | 114 | 110 |
+| `tests/views/system/workbench/catalogue.test.ts` | 114 | 109 |
 | `tests/state/workbench/navigation/arrangement.test.ts` | 455 | 547 |
 | `tests/views/system/workbench/settings.test.ts` | 139 | 139 |
 
@@ -84,6 +106,7 @@ The runner stops at the first red command, so the rest of the list was run one b
 - The saved-System-page case lives in `arrangement.test.ts` as its own describe block, with the old `info` arrangement written out in the test (`OLD_INFO`) and the page saved and reloaded through a fake storage, so the case runs over a layout that was saved, not one still in memory.
 - The Help glyph case is a separate test in `rail-config.test.ts` that reads the `help` button's markup from the rendered rail.
 - The arrangement test title at `:248` drops "Incoming new and Info/more named System" for "Help right after System".
+- In the first-run copy, `node_modules` was a symbolic link to the worktree's rather than a copy; nothing was written through it.
 
 ## Limitations and sharp edges
 
@@ -95,4 +118,5 @@ The runner stops at the first red command, so the rest of the list was run one b
 - The System page. Before: a 0.6/0.4 split, left Status, Findings, Audit, History, Config, Gallery, Help, HPC how-to; right Research approach, Agent approach, Memories. After: one pane of Status, Findings, Audit, History, Config, Gallery.
 - The Help page. Before: none. After: a 0.6/0.4 split, left Help and HPC how-to, right Research approach, Agent approach, Memories.
 - The catalogue. Before: one section per rail page plus a Help section after System that was no page. After: one section per rail page in rail order, Help among them after System, with the same five entries at `h1` to `h5`.
+- The key sheet, `config/text/app.yml:12`. Before: "h1-h5 | open the manual, the Memories wall or a hub document, the Help group". After: "h1-h5 | open the manual, the Memories wall or a hub document, the Help page's group".
 - A saved System page. Before and after: shown as saved until its Reset; after Reset it is the one-pane System page. The Help page is made from its arrangement on its first press.

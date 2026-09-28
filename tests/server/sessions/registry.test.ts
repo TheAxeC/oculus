@@ -1,6 +1,6 @@
 // Layer 4, test. The registry's system probe reads a process's start time whatever locale the
 // server runs in, since `ps` names the weekday and month in the locale's words and parseStamp reads
-// them only in English; the launch note's writer records its builder's start the same way.
+// them only in English.
 //
 // The one process asked about is this test's own, and the only signal sent to it is signal 0.
 

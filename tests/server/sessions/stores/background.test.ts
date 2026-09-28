@@ -52,6 +52,9 @@ class Fixture {
     root = scratchDir('oculus-background-');
     store: string;
     path: string;
+    /** The session registry, none until `enrol` writes one. */
+    registry: string | null = null;
+    alive = new Set<number>();
 
     constructor() {
         expect(resolve(this.root).startsWith(resolve(tmpdir()) + sep)).toBe(true);
@@ -69,14 +72,25 @@ class Fixture {
         writeFileSync(this.path, held, { flag: 'a' });
     }
 
+    /** Enrol the session in a registry of its own, under a process the probe says is running. */
+    enrol(pid: number): void {
+        this.registry = join(this.root, 'registry');
+        mkdirSync(this.registry, { recursive: true });
+        this.alive.add(pid);
+        const record = { pid, sessionId: SID, cwd: CONTEXT.cwd, status: 'busy' };
+        writeFileSync(join(this.registry, `${pid}.json`), JSON.stringify(record));
+    }
+
     only(): SessionRecord {
         const found = scan({
             stores: [this.store],
             cachePath: join(this.root, 'cache', 'transcript-cache.json'),
-            registries: [],
+            registries: this.registry === null ? [] : [this.registry],
             overridesPath: join(this.root, 'sessions.json'),
-            dispatchesPath: join(this.root, 'dispatches.json'),
-            probe: { running: () => false, starts: () => new Map<number, number>() },
+            probe: {
+                running: (pid) => this.alive.has(pid),
+                starts: () => new Map<number, number>()
+            },
             codexProbe: { commands: () => [] }
         });
         expect(found.length).toBe(1);
@@ -165,6 +179,26 @@ describe('a subagent started in the background', () => {
         expect(agent.status).toBe('running');
         expect(agent.ended).toBeNull();
         expect(agent.resultChars).toBe(0);
+    });
+
+    it("lists a live session's background subagent as its transcript names it, and nothing beside it", () => {
+        const f = new Fixture();
+        launched(f);
+        f.enrol(4242);
+        const record = f.only();
+        expect(record.live).toBe(true);
+        expect(record.agents).toStrictEqual([
+            {
+                id: 'b1',
+                description: 'builder',
+                subagentType: 'general-purpose',
+                model: null,
+                started: '2026-01-01T10:00:00.000Z',
+                ended: null,
+                status: 'running',
+                resultChars: 0
+            }
+        ]);
     });
 
     it('knows a launch by its answer when the call does not ask for the background', () => {

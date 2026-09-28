@@ -2,15 +2,10 @@
 text:
     sessions:
         ag_chars: '{0} chars'
-        ag_claude: claude
-        ag_codex: codex
         ag_done: done
         ag_empty: This session dispatched no agents.
         ag_error: error
-        ag_launched: launched
-        ag_launched_tip: '{0}, launched by {1} in {2}'
         ag_mins: '{0}m {1}s'
-        ag_open: Open its transcript
         ag_running: running
         ag_secs: '{0} s'
         ag_stopped: stopped

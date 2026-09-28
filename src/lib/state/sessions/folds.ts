@@ -61,9 +61,8 @@ export function terminalPlaces(hub: string, tree: Workspace[]): string[] {
 }
 
 /**
- * A session's agents newest first by the moment each started. The server lists the transcript's
- * subagents and the launched builders in two runs, so the order is the stamps', not the list's; an
- * agent with no stamp goes last.
+ * A session's subagents newest first by the moment each started, sorted by the stamps rather than
+ * kept in the server's list order; an agent with no stamp goes last.
  */
 export function newestFirst(agents: readonly SessionAgent[]): SessionAgent[] {
     return [...agents].sort((a, b) => (b.started ?? '').localeCompare(a.started ?? ''));

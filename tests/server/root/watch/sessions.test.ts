@@ -5,7 +5,7 @@
 // first, and the liveness probes are stubs, so no process is signalled and `ps` is never run. Every
 // watcher a test opens is closed when the test ends.
 
-import { appendFileSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { appendFileSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve, sep } from 'node:path';
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
@@ -18,7 +18,7 @@ import {
 } from '../../../../src/lib/server/root/watch/sessions.ts';
 import type { Watcher } from '../../../../src/lib/server/root/watch/portfolio.ts';
 import type { Message, SessionsPayload, Terminal } from '../../../../src/lib/data/model/index.ts';
-import { formatStamp, type Probe } from '../../../../src/lib/server/sessions/registry.ts';
+import type { Probe } from '../../../../src/lib/server/sessions/registry.ts';
 import type { CodexProbe } from '../../../../src/lib/server/sessions/stores/codex.ts';
 import { recording } from './probe.ts';
 import { noop } from '../../../fixtures/doubles.ts';
@@ -89,7 +89,6 @@ class Fixture {
     registry: string;
     cache: string;
     overrides: string;
-    dispatches: string;
     /** Every account's registry the watcher is given; the first one alone unless a case adds. */
     registries: string[];
     path: string;
@@ -108,7 +107,6 @@ class Fixture {
         mkdirSync(this.registry, { recursive: true });
         this.cache = join(this.root, 'cache', 'transcript-cache.json');
         this.overrides = join(this.root, 'sessions.json');
-        this.dispatches = join(this.root, 'dispatches.json');
         this.registries = [this.registry];
         this.path = join(this.store, SLUG, `${SID}.jsonl`);
     }
@@ -256,7 +254,6 @@ function start(
         registries: fixture.registries,
         cache: fixture.cache,
         overrides: fixture.overrides,
-        dispatches: fixture.dispatches,
         roots: [fixture.root],
         projectFolders: () => [],
         debounce: 100,
@@ -280,18 +277,23 @@ describe('liveSignature', () => {
         expect(liveSignature([])).toBe('');
     });
 
-    it("names every launched agent's status, under a session live or not, and no subagent's", () => {
-        const agent = (id: string, status: string, launched: boolean) => ({
-            id,
-            status,
-            ...(launched ? { dispatch: {} } : {})
-        });
-        const record = (agents: unknown[]) =>
-            ({ id: 'p', live: false, state: 'ended', liveStatus: null, agents }) as never;
-        const running = liveSignature([record([agent('dispatch:x', 'running', true)])]);
-        expect(running).toBe('p>dispatch:x:running');
-        expect(liveSignature([record([agent('dispatch:x', 'done', true)])])).not.toBe(running);
-        expect(liveSignature([record([agent('toolu_1', 'running', false)])])).toBe('');
+    it("names a live session's id and state, and not its running subagent's status", () => {
+        const agent = { id: 'toolu_1', status: 'running' };
+        const record = {
+            id: 'p',
+            live: true,
+            state: 'working',
+            liveStatus: 'busy',
+            agents: [agent]
+        } as never;
+        const signature = liveSignature([record]);
+        expect(signature).toBe('p:working:busy');
+        expect(signature).not.toContain('>');
+        expect(
+            liveSignature([
+                { ...(record as object), agents: [{ ...agent, status: 'done' }] } as never
+            ])
+        ).toBe(signature);
     });
 });
 
@@ -442,119 +444,6 @@ describe('watchSessions', () => {
         writeFileSync(fixture.cache, JSON.stringify({ version: 99, entries: {} }));
         await sleep(600);
         expect(started.got.length).toBe(before);
-    });
-
-    it('rescans when the launch note changes, and joins the launch to its parent', async () => {
-        const fixture = new Fixture();
-        fixture.cache = join(fixture.root, 'transcript-cache.json');
-        fixture.transcript([prompt('2026-09-10T10:00:00.000Z', 'first question')]);
-        const started = start(fixture);
-        await until(() => started.got.length >= 1, WAIT);
-        expect(latest(started.got).records[0].agents).toEqual([]);
-        await armed(fixture.root, 'dispatches.json', started.got);
-
-        // One launch, as bin/dispatch-note.mjs writes it.
-        const launch = {
-            id: 'launch-one',
-            launcher: 'plan-orchestration',
-            label: 'O99',
-            harness: 'codex',
-            model: 'gpt-test',
-            parent: SID,
-            cwd: '/tmp/fixture/worktree',
-            transcript: '',
-            startedAt: '2026-09-10T10:00:05.000Z',
-            endedAt: ''
-        };
-        writeFileSync(fixture.dispatches, JSON.stringify([launch]));
-        const joined = (): string[] =>
-            latest(started.got).records[0].agents.map((agent) => agent.id);
-        await until(() => joined().length > 0, WAIT);
-        expect(joined()).toEqual(['dispatch:launch-one']);
-    });
-
-    it("republishes on the liveness re-check when a launched builder's process exits unstamped", async () => {
-        const fixture = new Fixture();
-        fixture.transcript([prompt('2026-09-10T10:00:00.000Z', 'first question')]);
-        // The launcher's session is not live and the launch is never stamped ended; only the
-        // builder's recorded process says whether it runs.
-        fixture.alive.add(9191);
-        writeFileSync(
-            fixture.dispatches,
-            JSON.stringify([
-                {
-                    id: 'launch-pid',
-                    launcher: 'plan-orchestration',
-                    label: 'O99',
-                    harness: 'codex',
-                    model: 'gpt-test',
-                    parent: SID,
-                    cwd: '/tmp/fixture/worktree',
-                    transcript: '',
-                    startedAt: new Date().toISOString(),
-                    endedAt: '',
-                    pid: 9191,
-                    pidStart: ''
-                }
-            ])
-        );
-        const started = start(fixture, 100);
-        const status = (): string | undefined => latest(started.got).records[0].agents[0]?.status;
-        await until(() => started.got.length >= 1, WAIT);
-        expect(status()).toBe('running');
-
-        // A late event for the note written before the watch opened would rescan whatever the
-        // re-check compares, so the process exits only once the channel has gone quiet.
-        await quiet(started.got);
-        fixture.alive.delete(9191);
-        await until(() => status() === 'done', WAIT);
-        expect(status()).toBe('done');
-    });
-
-    it('publishes nothing when a launch seen under a reused pid meets a scan with no start time', async () => {
-        const fixture = new Fixture();
-        fixture.transcript([prompt('2026-09-10T10:00:00.000Z', 'first question')]);
-        const began = Math.floor(Date.now() / 1000) - 60;
-        // The recorded pid still answers signal 0, but `ps` gives it a start an hour after the
-        // builder's own: another process took the pid.
-        fixture.alive.add(9292);
-        fixture.startOf.set(9292, began + 3600);
-        writeFileSync(
-            fixture.dispatches,
-            JSON.stringify([
-                {
-                    id: 'launch-reused',
-                    launcher: 'plan-orchestration',
-                    label: 'O98',
-                    harness: 'codex',
-                    model: 'gpt-test',
-                    parent: SID,
-                    cwd: '/tmp/fixture/worktree',
-                    transcript: '',
-                    startedAt: new Date().toISOString(),
-                    endedAt: '',
-                    pid: 9292,
-                    pidStart: formatStamp(began, true)
-                }
-            ])
-        );
-        const started = start(fixture, 100);
-        const status = (): string | undefined => latest(started.got).records[0].agents[0]?.status;
-        await until(() => started.got.length >= 1, WAIT);
-        expect(status()).toBe('done');
-        // The scan stamped the launch ended in the note, whose watch rescans once more.
-        await until(() => latest(started.got).records[0].agents[0]?.ended !== null, WAIT);
-        const stamped = (JSON.parse(readFileSync(fixture.dispatches, 'utf8')) as Json[])[0];
-        expect(stamped.endedAt).not.toBe('');
-        expect(latest(started.got).records[0].agents[0]?.ended).toBe(stamped.endedAt);
-        const before = await quiet(started.got);
-
-        // `ps` fails from here on, so no scan has a start time for the pid; the re-check runs
-        // every 100 ms, and none of them may take the running pid for the builder again.
-        fixture.startOf.delete(9292);
-        await sleep(1000);
-        expect(started.got.length).toBe(before);
-        expect(status()).toBe('done');
     });
 
     it("rescans when a second account's registry changes", async () => {

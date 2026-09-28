@@ -27,7 +27,7 @@ digraph layer_views {
         "folder views/personal to layer ui" [label="16", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder views/sessions to folder views/shared" [label="18", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder views/sessions to layer state" [label="66", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-        "folder views/sessions to layer ui" [label="57", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder views/sessions to layer ui" [label="55", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder views/sources to folder views/shared" [label="28", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder views/sources to layer state" [label="144", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder views/sources to layer ui" [label="133", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];

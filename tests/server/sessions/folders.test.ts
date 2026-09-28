@@ -94,7 +94,6 @@ class Home {
             ...sessionFolders(accounts),
             cachePath: join(this.root, 'oculus', 'transcript-cache.json'),
             overridesPath: join(this.root, 'oculus', 'sessions.json'),
-            dispatchesPath: join(this.root, 'oculus', 'dispatches.json'),
             probe: this.probe(),
             codexProbe: { commands: () => [] }
         });

@@ -1,9 +1,8 @@
-// The Agents view rendered to HTML on the server, over a session that dispatched native subagents
-// and launched builders: the order the rows come in, what a launched row says, and which rows offer
-// to open a transcript.
+// The Agents view rendered to HTML on the server, over a session that dispatched subagents: the
+// order the rows come in, and what each row's status line counts.
 //
 // The catalog and glyphs are the real config; the session is the test's own. Nothing reads
-// ~/.claude, ~/.codex or ~/.oculus. Pressing the open control needs a DOM and is not run here.
+// ~/.claude, ~/.codex or ~/.oculus.
 
 import { beforeEach, describe, expect, it } from 'vitest';
 import { render } from 'svelte/server';
@@ -28,45 +27,22 @@ setCatalog(catalog);
 setGlyphs(glyphCatalog(config));
 setVocab(vocabCatalog(config));
 
-/** A subagent the transcript named, started at the given moment. */
-function subagent(id: string, started: string, description: string): SessionAgent {
+/** A subagent the transcript named, started at the given moment and running until `ended`. */
+function subagent(
+    id: string,
+    started: string,
+    description: string,
+    ended: string | null = null
+): SessionAgent {
     return {
         id,
         description,
         subagentType: 'Explore',
         model: 'claude-sonnet-5',
         started,
-        ended: null,
-        status: 'running',
-        resultChars: 0
-    };
-}
-
-/** A builder a launch note placed under the session. */
-function launched(
-    id: string,
-    started: string,
-    over: Partial<NonNullable<SessionAgent['dispatch']>> = {},
-    ended: string | null = null
-): SessionAgent {
-    return {
-        id: `dispatch:${id}`,
-        description: `step ${id}`,
-        subagentType: 'plan-orchestration',
-        model: 'gpt-5.6-sol',
-        started,
         ended,
         status: ended === null ? 'running' : 'done',
-        resultChars: 0,
-        dispatch: {
-            launcher: 'plan-orchestration',
-            harness: 'codex',
-            cwd: '/ws/.agents/worktrees/O99',
-            transcript: '',
-            session: null,
-            tokens: null,
-            ...over
-        }
+        resultChars: 0
     };
 }
 
@@ -92,80 +68,45 @@ function html(): string {
 
 beforeEach(() => holding([]));
 
-describe('the agents view over launched builders', () => {
+describe("the agents view's rows", () => {
     it('draws newest first by start, whatever order the server lists them in', () => {
-        // The server lists the transcript's subagents newest first and appends the launches.
         holding([
-            subagent('toolu_2', '2026-09-23T10:02:00.000Z', 'second subagent'),
             subagent('toolu_1', '2026-09-23T10:00:00.000Z', 'first subagent'),
-            launched('one', '2026-09-23T10:01:00.000Z')
+            subagent('toolu_2', '2026-09-23T10:01:00.000Z', 'second subagent')
         ]);
         const body = html();
         const at = (text: string): number => body.indexOf(text);
+        expect(at('first subagent')).toBeGreaterThan(-1);
         expect(at('second subagent')).toBeGreaterThan(-1);
-        expect(at('second subagent')).toBeLessThan(at('step one'));
-        expect(at('step one')).toBeLessThan(at('first subagent'));
-    });
-
-    it('marks a launched row, names its harness and model, and carries a Codex token count', () => {
-        holding([
-            launched('one', '2026-09-23T10:01:00.000Z', {
-                tokens: { input: 12000, output: 3000, cacheRead: 0, cacheCreation: 0, thinking: 0 }
-            })
-        ]);
-        const body = html();
-        expect(body).toContain('data-launched="true"');
-        expect(body).toContain(catalog['sessions.ag_launched']);
-        expect(body).toMatch(new RegExp(`class="ty[^"]*">${catalog['sessions.ag_codex']}<`));
-        expect(body).toContain('step one');
-        expect(body).toContain(catalog['sessions.ag_tokens'].replace('{0}', '15k'));
-        expect(body).toContain(catalog['sessions.ag_running']);
-    });
-
-    it('draws no launched mark and no open control on a subagent', () => {
-        holding([subagent('toolu_1', '2026-09-23T10:00:00.000Z', 'a subagent')]);
-        const body = html();
-        // A subagent carries no launch record, so nothing marks it as a process of its own.
-        expect(body).not.toContain('data-launched');
-        // The same reason: the mark is drawn for a launch record and this row has none.
-        expect(body).not.toContain(`>${catalog['sessions.ag_launched']}<`);
-        // Its turns live in the parent's transcript, so there is no session of its own to open.
-        expect(body).not.toContain(catalog['sessions.ag_open']);
-    });
-
-    it('offers to open the transcript only of a launch whose session the payload holds', () => {
-        holding([
-            launched('known', '2026-09-23T10:01:00.000Z', { session: 'builder-session' }),
-            launched('unknown', '2026-09-23T10:00:00.000Z', {}, '2026-09-23T10:05:00.000Z')
-        ]);
-        const body = html();
-        const known = body.slice(body.indexOf('data-agent="dispatch:known"'));
-        const unknown = body.slice(body.indexOf('data-agent="dispatch:unknown"'));
-        expect(known.slice(0, known.indexOf('data-agent="dispatch:unknown"'))).toContain(
-            catalog['sessions.ag_open']
-        );
-        // That launch names no transcript, so the payload holds no session for it to open.
-        expect(unknown).not.toContain(catalog['sessions.ag_open']);
-        expect(unknown).toContain(catalog['sessions.ag_done']);
+        expect(at('second subagent')).toBeLessThan(at('first subagent'));
     });
 
     /** The status line of one row of the rendered view. */
     function line(body: string, id: string): string {
-        const row = body.slice(body.indexOf(`data-agent="dispatch:${id}"`));
+        const row = body.slice(body.indexOf(`data-agent="${id}"`));
         const found = /<span class="st[^"]*">([^<]*)<\/span>/.exec(row);
         return found === null ? '' : found[1];
     }
 
-    it('counts a stamped launch from its start to its end', () => {
-        holding([launched('ran', '2026-09-23T16:12:23.433Z', {}, '2026-09-23T16:13:53.869Z')]);
+    it('counts a finished subagent from its start to its end', () => {
+        holding([
+            subagent(
+                'ran',
+                '2026-09-23T16:12:23.433Z',
+                'a finished subagent',
+                '2026-09-23T16:13:53.869Z'
+            )
+        ]);
+        const took = catalog['sessions.ag_mins'].replace('{0}', '1').replace('{1}', '30');
+        expect(took).toBe('1m 30s');
         expect(line(html(), 'ran')).toBe(
-            [catalog['sessions.ag_done'], '1m 30s'].join(` ${catalog['sessions.meta_sep']} `)
+            [catalog['sessions.ag_done'], took].join(` ${catalog['sessions.meta_sep']} `)
         );
     });
 
-    it('counts a running launch from its start to now', () => {
+    it('counts a running subagent from its start to now', () => {
         const started = new Date(Date.now() - 45_000).toISOString();
-        holding([launched('runs', started)]);
+        holding([subagent('runs', started, 'a running subagent')]);
         const said = line(html(), 'runs');
         expect(
             said.startsWith(`${catalog['sessions.ag_running']} ${catalog['sessions.meta_sep']} `)
@@ -174,8 +115,11 @@ describe('the agents view over launched builders', () => {
         expect(['45 s', '46 s']).toContain(said.split(` ${catalog['sessions.meta_sep']} `)[1]);
     });
 
-    it('draws no count for a finished launch whose end is not known', () => {
-        const gone = { ...launched('gone', '2026-09-23T10:00:00.000Z'), status: 'done' as const };
+    it('draws no count for a finished subagent whose end is not known', () => {
+        const gone = {
+            ...subagent('gone', '2026-09-23T10:00:00.000Z', 'a finished subagent'),
+            status: 'done' as const
+        };
         holding([gone]);
         expect(line(html(), 'gone')).toBe(catalog['sessions.ag_done']);
     });

@@ -32,19 +32,8 @@ afterAll(sweepScratch);
 
 const engine = engineDir();
 
-/**
- * The files and folders of the engine a development server reads; the launch note's writer under
- * bin is among them, since the session scan stamps a launch ended through it.
- */
-const COPIED = [
-    'package.json',
-    'vite.config.ts',
-    'tsconfig.json',
-    'HELP.md',
-    'src',
-    'config',
-    'bin/dispatch-note.mjs'
-];
+/** The files and folders of the engine a development server reads. */
+const COPIED = ['package.json', 'vite.config.ts', 'tsconfig.json', 'HELP.md', 'src', 'config'];
 
 /** How long the server is given to start, which includes the rebuild of its dependency cache. */
 const START_MS = 90_000;

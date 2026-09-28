@@ -92,7 +92,6 @@ class Rollout {
             cachePath: this.cache,
             registries: [this.registry],
             overridesPath: this.overrides,
-            dispatchesPath: join(this.root, 'dispatches.json'),
             probe: { running: () => false, starts: () => new Map() },
             codexProbe: probe
         });

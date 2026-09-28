@@ -60,7 +60,7 @@ export const systemProbe: Probe = {
         for (const pid of wanted) args.push('-p', String(pid));
         // List arguments, never a shell, and a timeout: a hung `ps` must not hang a scan. The C
         // locale, since `ps` names the weekday and month in the locale's words, which parseStamp
-        // reads only in English; bin/dispatch-note.mjs records a builder's start the same way.
+        // reads only in English.
         const done = spawnSync('ps', args, {
             encoding: 'utf8',
             timeout: PS_TIMEOUT_SEC * 1000,
@@ -180,8 +180,7 @@ export function registryCandidates(registries: readonly string[], probe: Probe):
 
 /**
  * Session id to live entry, for the candidates whose start time agrees with the registry's.
- * `starts` is one `probe.starts` answer, which a scan shares with the launch note's builders so
- * that `ps` runs once per scan.
+ * `starts` is one `probe.starts` answer over every candidate's pid, so `ps` runs once per scan.
  */
 export function liveFrom(
     candidates: readonly Candidate[],

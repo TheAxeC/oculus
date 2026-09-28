@@ -8,11 +8,6 @@
 // to the last complete line, because a trailing line without a newline is a record still being
 // written and waits for the next pass.
 //
-// The launch note (stores/dispatches.ts) is joined last: a builder a scanned session launched as a
-// process of its own becomes one of that session's agents, and when the scan found the builder's
-// own transcript as well, its row names that session so the row can open it. Nothing is folded for
-// the note alone, so the list the scan returns is the window's and no more.
-//
 // Nothing here throws. A file that cannot be read is left out and the rest come back.
 
 import { closeSync, fstatSync, openSync, readSync, statSync } from 'node:fs';
@@ -42,15 +37,7 @@ import { claudeTranscripts, codexRollouts, isRollout } from '../../transcripts/s
 import { claudeState, foldClaude } from '../fold.ts';
 import { settleBackground } from './background.ts';
 import { whole } from '../../core/json.ts';
-import {
-    builderProcesses,
-    defaultDispatchesPath,
-    joinDispatches,
-    pendingBuilders,
-    readDispatches,
-    stampEnded
-} from './dispatches.ts';
-import { distinctFolders, realFolder } from '../folders.ts';
+import { distinctFolders } from '../folders.ts';
 import { defaultOverridesPath, hiddenIds } from '../overrides.ts';
 import { liveFrom, mergeLive, registryCandidates, systemProbe, type Probe } from '../registry.ts';
 import { finish, newAcc, prune, type Acc } from '../record.ts';
@@ -74,14 +61,6 @@ export type ScanOptions = {
     /** Claude Code's session registries, `<dir>/sessions` of every Claude account. */
     registries?: string[];
     overridesPath?: string;
-    /** The launch note; `~/.oculus/dispatches.json` when absent. */
-    dispatchesPath?: string;
-    /**
-     * The launches seen under a reused pid whose stamp is not written yet, by id, each with the
-     * moment it was first seen; held by the watcher across scans, so a stamp the note's lock put
-     * off is tried again and the launch reads ended meanwhile, whatever a later `ps` answers.
-     */
-    reused?: Map<string, string>;
     /** What the liveness check asks of the system; stubbed by every test. */
     probe?: Probe;
     /** What the Codex liveness check asks of the system; stubbed by every test. */
@@ -260,17 +239,12 @@ export function scan(options: ScanOptions = {}): SessionRecord[] {
 
     const previous = loadCache(cachePath);
     const probe = options.probe ?? systemProbe;
-    const notes = readDispatches(options.dispatchesPath ?? defaultDispatchesPath());
-    // The registry's sessions and the launched builders ask signal 0 per pid and share one `ps`.
     const candidates = registryCandidates(options.registries ?? [], probe);
-    const pending = pendingBuilders(notes, now - windowDays * 86_400_000);
-    const answered = new Set(pending.map((note) => note.pid).filter((pid) => probe.running(pid)));
-    const starts = probe.starts([...candidates.map((entry) => entry.pid), ...answered]);
+    const starts = probe.starts(candidates.map((entry) => entry.pid));
     const live = liveFrom(candidates, starts);
     const dismissed = hiddenIds(options.overridesPath ?? defaultOverridesPath());
     const fresh: Record<string, CacheEntry> = {};
     const found: { record: SessionRecord; mtimeMs: number }[] = [];
-    const byPath = new Map<string, SessionRecord>();
     let running: boolean | null = null;
 
     /** Fold one file, merge its liveness, and keep it. */
@@ -287,7 +261,6 @@ export function scan(options: ScanOptions = {}): SessionRecord[] {
         mergeLive(folded.record, entry, dismissed);
         if (folded.entry !== null) fresh[file.path] = folded.entry;
         found.push({ record: folded.record, mtimeMs: file.mtimeMs });
-        byPath.set(file.path, folded.record);
     };
 
     const claude = (store: string): Found[] => claudeTranscripts(store, windowDays, maxSessions);
@@ -296,32 +269,6 @@ export function scan(options: ScanOptions = {}): SessionRecord[] {
     for (const { file, store } of gather(codexStores, codex, maxSessions)) {
         take(file, store, 'codex');
     }
-
-    // Every folded file by its real path, since a note may name a transcript through a symlink.
-    const byReal = new Map<string, SessionRecord>();
-    if (notes.length > 0) for (const [path, record] of byPath) byReal.set(realFolder(path), record);
-    const builders = builderProcesses(pending, answered, starts);
-    // A launch whose pid now runs another process is stamped ended in the note itself, so it reads
-    // done for good whatever a later `ps` answers, and this scan's row carries the stamp already.
-    // One the lock put off stays in `reused` and reads ended until its stamp is written.
-    const reused = options.reused ?? new Map<string, string>();
-    const stamp = new Date(now).toISOString();
-    for (const id of builders.reused) if (!reused.has(id)) reused.set(id, stamp);
-    for (const id of [...reused.keys()]) {
-        if (!notes.some((note) => note.id === id && !note.endedAt)) reused.delete(id);
-    }
-    const ended = new Map(reused);
-    if (stampEnded(options.dispatchesPath ?? defaultDispatchesPath(), reused)) reused.clear();
-    for (const note of notes) {
-        const at = ended.get(note.id);
-        if (at !== undefined) note.endedAt ||= at;
-    }
-    joinDispatches(
-        found.map((item) => item.record),
-        notes,
-        (note) => (note.transcript ? (byReal.get(realFolder(note.transcript)) ?? null) : null),
-        builders.live
-    );
 
     saveCache(cachePath, previous, fresh);
     found.sort((a, b) => b.mtimeMs - a.mtimeMs);

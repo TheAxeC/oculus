@@ -11,14 +11,8 @@
 </script>
 
 <script lang="ts">
-    // Layer 3, view. The agents one session dispatched, newest first: what kind it was, on what
-    // model, what it was asked for, and how it went.
-    //
-    // Two kinds share the list. A subagent is named by the session's own transcript. A launched
-    // builder is a process of its own (a Codex worker, or `claude -p`) that the launch note
-    // ~/.oculus/dispatches.json places under the session that launched it: it is marked, names its
-    // harness, carries a Codex rollout's token totals, and opens its own transcript in the
-    // Transcript view once the payload holds that transcript's session.
+    // Layer 3, view. The subagents one session dispatched, newest first: what kind it was, on what
+    // model, what it was asked for, and how it went. Each is named by the session's own transcript.
     //
     // A finished agent reports what it took, from its start to its end, and nothing when its end is
     // not known. A running one is counted from its start to now, which is the number that says
@@ -27,9 +21,7 @@
     import Empty from '$lib/ui/frame/Empty.svelte';
     import PickSession from '$lib/views/shared/sessions/PickSession.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
-    import Tag from '$lib/ui/controls/Tag.svelte';
     import Toolbar from '$lib/ui/frame/Toolbar.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { compactCount, modelShort, seconds, span } from '$lib/state/shared/words/format';
     import type { SessionAgent } from '$lib/state/client/selectors.svelte';
     import { agentTokens, anyRunning, newestFirst } from '$lib/state/sessions/folds';
@@ -39,7 +31,6 @@
     import { useState } from '$lib/state/client/use';
 
     const {
-        layout: { openView },
         selectors: { sessionFor }
     } = useState();
 
@@ -61,9 +52,8 @@
 
     const record = $derived(sessionFor(instance.id));
     /**
-     * Newest first by the moment each started. The server lists the transcript's subagents and the
-     * launched builders in two runs, so the order is the stamps', not the list's; an agent with no
-     * stamp goes last.
+     * Newest first by the moment each started, sorted by the stamps rather than kept in the
+     * server's list order; an agent with no stamp goes last.
      */
     const agents = $derived(newestFirst(record?.agents ?? []));
 
@@ -103,32 +93,14 @@
         if (agent.resultChars > 0) {
             parts.push(t('sessions.ag_chars', compactCount(agent.resultChars)));
         }
-        const tokens = agent.dispatch?.tokens ?? null;
-        const spent = tokens === null ? agentTokens(agent) : tokens.input + tokens.output;
+        const spent = agentTokens(agent);
         if (spent !== null) parts.push(t('sessions.ag_tokens', compactCount(spent)));
         return parts.join(` ${t('sessions.meta_sep')} `);
     }
 
-    /** What the kind column says: the harness of a launched builder, else the subagent's type. */
+    /** What the kind column says: the subagent's type, or the generic word when it has none. */
     function kind(agent: SessionAgent): string {
-        const harness = agent.dispatch?.harness;
-        if (harness === 'claude') return t('sessions.ag_claude');
-        if (harness === 'codex') return t('sessions.ag_codex');
-        if (harness !== undefined) return t('sessions.ag_type');
         return agent.subagentType === '' ? t('sessions.ag_type') : agent.subagentType;
-    }
-
-    /** A row's tooltip: what it was asked for, and for a launch, who launched it and where. */
-    function tip(agent: SessionAgent): string {
-        const dispatch = agent.dispatch;
-        if (dispatch === undefined) return agent.description;
-        return t('sessions.ag_launched_tip', agent.description, dispatch.launcher, dispatch.cwd);
-    }
-
-    /** Show a launched builder's own turns, in a Transcript view pinned to its session. */
-    function openBuilder(agent: SessionAgent): void {
-        const session = agent.dispatch?.session ?? null;
-        if (session !== null) openView('transcript', { session, label: agent.description });
     }
 </script>
 
@@ -146,28 +118,12 @@
             <Empty message={t('sessions.ag_empty')} glyph={t('sessions.empty_glyph')} />
         {:else}
             {#each agents as agent (agent.id)}
-                <div
-                    class="agent"
-                    data-agent={agent.id}
-                    data-launched={agent.dispatch === undefined ? undefined : 'true'}
-                >
+                <div class="agent" data-agent={agent.id}>
                     <span class="dot" style={dotStyle(agent.status)}></span>
-                    {#if agent.dispatch !== undefined}
-                        <Tag label={t('sessions.ag_launched')} />
-                    {/if}
                     <span class="ty">{kind(agent)}</span>
                     <span class="mo">{modelShort(agent.model)}</span>
-                    <span class="ds" title={tip(agent)}>{agent.description}</span>
+                    <span class="ds" title={agent.description}>{agent.description}</span>
                     <span class="st">{meta(agent)}</span>
-                    {#if (agent.dispatch?.session ?? null) !== null}
-                        <ToolButton
-                            label={t('sessions.ag_open')}
-                            title={t('sessions.ag_open')}
-                            glyph={t('sessions.transcript_glyph')}
-                            compact
-                            onclick={() => openBuilder(agent)}
-                        />
-                    {/if}
                 </div>
             {/each}
         {/if}

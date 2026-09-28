@@ -7,22 +7,18 @@
 // One debounce over every handle. A transcript is appended to as a session works, so a change there
 // is an ordinary .jsonl write; a registry file appears when a session starts, changes when it goes
 // from busy to idle, and vanishes when it ends; a rollout appends under YYYY/MM/DD, and a new day
-// makes a new folder, which the recursive watch on the store's root sees. Two more are files no
+// makes a new folder, which the recursive watch on the store's root sees. One more is a file no
 // session writes: the overrides file, which is api/write's, and without it a dismissal or a pin
-// made on one page would not reach another until a transcript happened to change; and the launch
-// note, ~/.oculus/dispatches.json, which a launcher writes when it starts or ends a builder
-// process, and without it a launch would reach no page until the parent's transcript moved. The
+// made on one page would not reach another until a transcript happened to change. The
 // byte-offset cache in sessions/cache.ts is what makes the rescan cost the appended bytes rather
 // than the whole store.
 //
 // The 15 s liveness re-check covers the changes to the payload no file event announces. A process
 // can die without its registry file changing, and a Codex rollout is live only while a codex
 // process runs and the file is fresh (sessions/stores/codex.ts, codexLive), so a session goes from
-// live to ended with nothing written anywhere; and a launched builder whose recorded process exits
-// before its launcher stamps the end goes from running to done the same way
-// (sessions/stores/dispatches.ts). The re-check therefore rescans on a timer and publishes only
-// when the set of live ids, one of their states or a launched agent's status changed, so a quiet
-// machine sees no traffic on the channel.
+// live to ended with nothing written anywhere. The re-check therefore rescans on a timer and
+// publishes only when the set of live ids or one of their states changed, so a quiet machine sees
+// no traffic on the channel.
 //
 // The slow clock beside it is a full rescan every few minutes whatever the events said. A write
 // that lands while a watch is being opened is announced to nobody, and a re-check that sees the
@@ -36,7 +32,6 @@ import type { SessionRecord, SessionsPayload, Terminal } from '../../../data/mod
 import type { Hub } from '../../core/channels.ts';
 import { sessions } from '../../sessions/index.ts';
 import type { CodexProbe } from '../../sessions/stores/codex.ts';
-import { defaultDispatchesPath } from '../../sessions/stores/dispatches.ts';
 import { distinctFolders } from '../../sessions/folders.ts';
 import type { Probe } from '../../sessions/registry.ts';
 import { defaultOverridesPath } from '../../sessions/overrides.ts';
@@ -83,8 +78,6 @@ export type SessionsWatchOptions = {
     cache?: string;
     /** The per-session overrides file; `defaultOverridesPath()` when absent. */
     overrides?: string;
-    /** The launch note; `defaultDispatchesPath()` when absent. */
-    dispatches?: string;
     /** The roots a workspace is looked for under; `defaultRoots()` when absent. */
     roots?: string[];
     /**
@@ -119,17 +112,10 @@ export type SessionsWatcher = Watcher & {
     onChange: (listener: () => void) => () => void;
 };
 
-/**
- * What the liveness re-check compares: every live session's id and the state it is in, and every
- * launched agent's id and status under any session, live or not.
- */
+/** What the liveness re-check compares: every live session's id and the state it is in. */
 export function liveSignature(records: SessionRecord[]): string {
     const parts: string[] = [];
     for (const record of records) {
-        for (const agent of record.agents) {
-            if (agent.dispatch !== undefined)
-                parts.push(`${record.id}>${agent.id}:${agent.status}`);
-        }
         if (!record.live) continue;
         parts.push(`${record.id}:${record.state}:${record.liveStatus ?? ''}`);
     }
@@ -158,18 +144,13 @@ export function watchSessions(hub: Hub, options: SessionsWatchOptions = {}): Ses
     let signature: string | null = null;
     let closed = false;
 
-    // The launches seen under a reused pid whose stamp the note's lock has put off, kept across
-    // scans so each scan tries the stamp again and reads the launch ended meanwhile.
-    const reused = new Map<string, string>();
     const read = (): SessionsPayload =>
         sessions({
-            reused,
             stores: options.stores,
             codexStores: options.codexStores,
             registries: options.registries,
             cachePath: options.cache,
             overridesPath: options.overrides,
-            dispatchesPath: options.dispatches,
             roots: options.roots,
             projectFolders: options.projectFolders?.() ?? [],
             windowDays: options.windowDays ?? WINDOW_DAYS,
@@ -243,12 +224,11 @@ export function watchSessions(hub: Hub, options: SessionsWatchOptions = {}): Ses
     };
 
     /**
-     * The overrides file and the launch note, each watched through its own directory: fs.watch on
-     * a file that is replaced by a rename, which is how server/core/json.ts and
-     * bin/dispatch-note.mjs write them, stops seeing the new inode. One watch per directory, not
-     * recursive, firing only for the names asked for, because the transcript cache sits beside them
-     * in ~/.oculus and every scan rewrites it, so watching the directory as a whole would make each
-     * scan cause the next one.
+     * The overrides file, watched through its own directory: fs.watch on a file that is replaced
+     * by a rename, which is how server/core/json.ts writes it, stops seeing the new inode. One
+     * watch per directory, not recursive, firing only for the names asked for, because the
+     * transcript cache sits beside it in ~/.oculus and every scan rewrites it, so watching the
+     * directory as a whole would make each scan cause the next one.
      */
     const openFiles = (files: string[]): void => {
         const names = new Map<string, Set<string>>();
@@ -284,13 +264,10 @@ export function watchSessions(hub: Hub, options: SessionsWatchOptions = {}): Ses
     ])) {
         open(folder);
     }
-    // A dismissal, a pin or a launch is written by something other than a session, so nothing under
-    // the stores changes and only these handles carry the write to every open page. The default
-    // paths are resolved at the call, so a process whose home directory differs sees its own.
-    openFiles([
-        options.overrides ?? defaultOverridesPath(),
-        options.dispatches ?? defaultDispatchesPath()
-    ]);
+    // A dismissal or a pin is written by something other than a session, so nothing under the
+    // stores changes and only this handle carries the write to every open page. The default path is
+    // resolved at the call, so a process whose home directory differs sees its own.
+    openFiles([options.overrides ?? defaultOverridesPath()]);
     if (liveness > 0) {
         ticker = setInterval(recheck, liveness);
         // The re-check must not be the reason a process stays up.

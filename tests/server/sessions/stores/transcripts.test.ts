@@ -241,7 +241,6 @@ class Fixture {
             cachePath: this.cache,
             registries: [this.registry],
             overridesPath: this.overrides,
-            dispatchesPath: join(this.root, 'dispatches.json'),
             probe: this.probe(),
             ...options
         });

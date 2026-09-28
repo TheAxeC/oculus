@@ -91,7 +91,7 @@
 <g id="node17" class="node">
 <title>folder server/root to folder server/sessions</title>
 <polygon fill="none" stroke="none" points="47.88,-711.08 38.12,-711.08 38.12,-698.6 47.88,-698.6 47.88,-711.08"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="43" y="-702.44" font-family="Helvetica,Arial,sans-serif" font-size="8.00">8</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="43" y="-702.44" font-family="Helvetica,Arial,sans-serif" font-size="8.00">7</text>
 </g>
 <!-- folder server/root&#45;&gt;folder server/root to folder server/sessions -->
 <g id="edge22" class="edge">
@@ -364,7 +364,7 @@
 <g id="node38" class="node">
 <title>folder server/sessions to folder server/core</title>
 <polygon fill="none" stroke="none" points="83.88,-180.68 70.12,-180.68 70.12,-168.2 83.88,-168.2 83.88,-180.68"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="77" y="-172.04" font-family="Helvetica,Arial,sans-serif" font-size="8.00">14</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="77" y="-172.04" font-family="Helvetica,Arial,sans-serif" font-size="8.00">13</text>
 </g>
 <!-- folder server/sessions&#45;&gt;folder server/sessions to folder server/core -->
 <g id="edge64" class="edge">
