@@ -93,7 +93,20 @@ None. Axel lifted it on 2026-09-23 with `/plan-orchestration oculus/migration` a
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is booked as its own step in `plan.md` and carried in the Booked section below, since it needs no ruling from him.
 
-None.
+- Z35, three choices Q92 needs before its brief (raised 2026-09-28 at `/spec` Q92; Q92 waits, the rest of the queue goes on). Seen on the TEST page of 8790 and read on main at 934d0d5d.
+  - (1) The mail snippet shows HTML entities as text: the Gmail thread "Sparcly.ai New Review Assignment" reads "the paper &quot;Manifest-Assisted Retrieval...". `server/accounts/mail/google.ts:103` passes Gmail's `snippet` on as it comes, and Gmail escapes it as HTML. Options: (a) `entities` 8.1.0 (BSD-2-Clause, fb55, released 2026-09-07, no dependencies of its own), which decodes every HTML entity, used for the snippet and in place of the five-entity table in `views/system/help/manual.ts:21-35`; (b) that five-entity table moved to one shared helper and used for the snippet too: no new dependency, but an entity outside the five (such as `&nbsp;`) would still show as text, and whether Gmail ever sends one is not verified. Recommended (a): it decodes everything, and it removes a hand table instead of adding a second user of it. Leaving the entities is the lazy option and is not offered.
+  - (2) The window the Calendar shows: the server reads `days_back: 1` and `days_ahead: 14` (`config/behavior.yml:95-96`), so a month view would hold events on about half its days, and paging back a week would show nothing. Options: (a) the view asks the server for the range on screen, and the server reads that range from each account when the reader pages: a new request on the calendar channel, the most code; (b) the window widened in `behavior.yml` to `days_back: 31` and `days_ahead: 62`, with paging stopped at the window's edges: every poll then reads about three months from each account, and nothing new on the wire; (c) the window left at 1 and 14, with paging stopped at its edges. Recommended (b): day, week and month all show real data within three months, with no new request shape. (c) is the lazy option.
+  - (3) The look of the two views, as seen on TEST:
+    - Inbox card title: today it is the sender's name followed by the address as a blue underlined link. Proposed: the name alone, in plain text, with the address in smaller muted text after it; the whole From line is the tooltip.
+    - Inbox subject: the second line, in the text colour and weight 600, drawn as plain text rather than Markdown.
+    - Inbox snippet: two lines, cut with an ellipsis.
+    - Inbox kind tag ("unsorted"): drawn only in the Triaged section, since the other sections are already headed by the kind.
+    - Inbox account tag ("gmail"): drawn only when more than one mail account is configured.
+    - Inbox controls: Draft reply and "open at the provider" become compact icon controls on the card's control row, beside Archive and Done, instead of two full-width lines; the draft editor still opens below the card's text.
+    - Inbox layout: one column of cards in reading order, instead of the two-column grid.
+    - Calendar: day, week, month and list views, week the default, the chosen view kept in the view's state; the list view replaces `Agenda.svelte`.
+    - Calendar event: its title, time and colour by account, drawn in the theme's tokens; a click opens the event at its provider, as the Open control does today.
+  - Recommended: the proposal as listed. Keeping the two-column grid is the lighter alternative. None of these is the lazy option. `@event-calendar/core` 5.15.0 requires `svelte ^5.57.0`, so oculus's `svelte` moves from `^5.56.1` to `^5.57.0`, as Z10 said.
 
 ## Time per step (Axel asked 2026-09-27 for how it evolves with Q77; measured from each builder's transcript: each tool call from call to result, each background wait from the builder stopping to the run waking it)
 
