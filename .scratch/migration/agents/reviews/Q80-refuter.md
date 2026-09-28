@@ -105,3 +105,128 @@ Other reproductions:
 - A path containing a directory entry (a submodule or a symlinked folder), which cloc's --list-file would recurse into, was not exercised. The tree has none of either, but that was not verified by a command.
 
 4. Usage: 34 tool calls, about 13 minutes (the two verify runs took about 1.5 minutes each).
+
+## Repair round 1, refuted
+
+Reviewer aa0e2181b19c92109, a fresh agent, over `git diff 56f1749d` read against `git diff 740ebd5e`.
+
+Q80 repair round 1 review. I changed nothing in the worktree or the ledger. Every revert ran in a scratch copy at scratchpad/q80copy, with node_modules symlinked.
+
+1. Verify
+
+From the worktree's tools/oculus, `sh .../land/templates/verify.sh .../orchestrator-state.md > scratchpad/q80-r1-verify.log 2>&1; echo $?` printed exit=0. Summary lines, verbatim:
+ Test Files  341 passed (341)
+      Tests  5352 passed (5352)
+1790611081838 COMPLETED 1437 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+All matched files use Prettier code style!
+verify: 6 commands passed
+Nothing timed out.
+
+Commands the report quotes, rerun:
+- The 16-file vitest command printed "Test Files  16 passed (16)" and "Tests  178 passed (178)".
+- `npm run lint` exited 0.
+- `npm run format:check` printed "All matched files use Prettier code style!".
+- `LC_ALL=C grep -n '[^ -~]'` over the 9 files `git diff --name-only 56f1749d` lists printed nothing (exit 1).
+- The not-a-git-folder sentence: countLines over an empty mktemp folder answered exactly {"error":"git could not list the tracked files: not a git repository (or any of the parent directories): .git."}.
+- git.ts:735 is `spawnSync(GIT, argv, { encoding: 'utf8', timeout, input })` with no maxBuffer, so the 1 MiB default cap the report names is real.
+
+Revert failures, 8 of the 16 checked in the scratch copy. Each one reproduces the report's quoted failure:
+- `signal` removed from spawn: "Error: Test timed out in 5000ms." (7 s).
+- The `code !== 0` branch removed: "expected { Object (error) } to deeply equal { error: 'cloc exited with code 1.' }".
+- The closed check before cloc removed: "... to deeply equal { error: 'The request was closed.' }".
+- The body parsed without its own try: "expected { count: null, ...(2) } to deeply equal { count: null, ...(2) }".
+- failed() clearing count: "expected { count: null, ...(2) } to deeply equal { ...(3) }".
+- The fetch sent at once: "expected [ '/api/lines' ] to deeply equal []".
+- No total check: "expected '' to be 'the answer holds no total'".
+- <LineCounts /> moved after <Hooks>: "expected 509 to be greater than 1829".
+
+I also checked that the abort reaches the real stack. A node script ran @sveltejs/kit 2.70.3's getRequest behind http.createServer on an ephemeral port. A GET the client aborted at 100 ms printed "/closed aborted at 99 ms". A GET the client kept printed "/kept handler done, aborted=false". So request.signal aborts on a closed connection and not during a normal request, and item 5 works outside the unit test.
+
+2. Closures, items 1 to 11
+
+1. Closed. The case asserts the "perl could not be started to run cloc" prefix and ENOENT.
+2. Closed, except the rejected-fetch case, which pins an engine string (Standards St1).
+3. Closed in code. The sentence is wrong for one input (Behaviour B1).
+4. Closed. The view already drew both the sentence and the table; the store now keeps count.
+5. Partly closed. The loop's closed() check has no test (Spec S1).
+6. Closed. The reverts above reproduce.
+7. Closed as ruled.
+8 to 10. Present in the report and true where checked.
+11. Closed for the 16 rows. The loop check has no row, because no case guards it (S1).
+
+No finding was closed by removing a check. The round's only removed check is grouped()'s NaN branch and its test, and that removal was ruled (item 7). No fix reaches beyond its finding: every changed file is in item 5's route and counter chain, the store, the tests or format.ts.
+
+3. Points (a) to (f)
+
+(a) An abort during the file reads is work inside item 5 that was left undone.
+- Item 5 says an abort "answers nothing further". spec.md:58 requires every asynchronous path to be exercised "after close".
+- In the scratch copy I deleted the in-loop line `if (closed(options.signal)) return { error: 'The request was closed.' };` (lines.ts:268). `npx vitest run tests/server/machine/lines.test.ts -t 'the counter'` then printed "Tests  10 passed | 6 skipped (16)". Nothing guards that line.
+- The report's reason, "Its check is the same closed(signal) read as the case that is tested before cloc", is a sentence excusing an absence.
+- A test is possible now. Node's spawn removes its abort listener on the child's 'exit'. A case can use the recorded spawn with a fake cloc that prints valid by-file JSON for a.ts and call `child.once('exit', () => closing.abort())`. The close then resolves the text, and the loop must answer { error: 'The request was closed.' }. This is deterministic.
+- The report's first line, "Everything in the brief and in repair round 1 is done", is false while this is open.
+
+(b) The test is sound and does not depend on timing for its result.
+- countLines calls spawn synchronously: trackedFiles is spawnSync, and runCloc's promise executor runs at once. So the child starts after the test starts, and a 5 s `sleep 5` always ends after vitest's default 5000 ms timeout. vite.config.ts sets no testTimeout.
+- If the timeout were raised, the reverted run would answer "cloc's answer is not the JSON it writes." and the toEqual would still fail.
+- Weakness, not a defect: the red shows as a timeout rather than a message naming the defect, and it costs 5 s. A tighter version gives the fake cloc `sleep 30` and the count `timeout: 3000`. Then the reverted run fails its assertion with the SIGTERM sentence.
+
+(c) Every caller hands grouped() a whole number.
+- `grep -rnw grouped src tests` finds one caller, LineCounts.svelte:68.
+- It passes files, blank, comment, code and todo. readCount's tally() (lines.svelte.ts:36) accepted each only if Number.isInteger and >= 0.
+- It also passes lines, the sum of three such integers.
+- No finding. The format.ts comment ties a shared formatter to that one caller's guarantee: a future caller passing 2.5 would draw a wrong grouping.
+
+(d) Not true, and not fit for the reader. See Behaviour B1.
+
+(e) A spec defect. See Standards St1.
+
+(f) True.
+- A minimal copy of the shape run through the worktree's tsc 6.0.3 with --strict: an inline `options.signal?.aborted === true` inside the loop, after the same check before the await, gives "error TS2367: This comparison appears to be unintentional because the types 'false | undefined' and 'true' have no overlap."
+- The truthy form compiles under tsc. That strictTypeChecked's no-unnecessary-condition flags it is not verified.
+- The code comment on closed() ("read afresh at each step of the count") is accurate.
+
+4. Findings
+
+Spec
+- S1. File: src/lib/server/machine/lines.ts:268.
+  - Hunk: `+            if (closed(options.signal)) return { error: 'The request was closed.' };` inside `for (const path of paths) {`.
+  - What is wrong: no case covers this path (proof under (a)), while item 5 and spec.md:58 require it. The report's Limitations books it instead of testing it, and its first line says everything is done.
+  - Smallest fix: the case in (a), in tests/server/machine/lines.test.ts, plus a row in the revert table. The first line of the report changes until that case exists.
+
+Proof
+- P1. File: tests/views/system/status.test.ts:190-195.
+  - Hunk: `+        vi.stubGlobal('location', { origin: 'http://127.0.0.1:8793' });` ... `+        vi.unstubAllGlobals();`.
+  - What is wrong: the unstub runs inline after render. A throw in render would leave location stubbed for the rest of the file.
+  - Smallest fix: put the render in try/finally, or move vi.unstubAllGlobals() to an afterEach in that describe.
+- P2. File: tests/state/system/lines.test.ts, the case "holds the sentence of a fetch that failed before any answer".
+  - Hunk: `+        expect(store.lines()).toEqual({ count: null, error: 'Failed to fetch', loading: false });`.
+  - What is wrong: it asserts that a browser string reaches the reader, which St1 finds to be a defect. spec.md:54 says a test never asserts a known defect.
+  - Smallest fix: it goes with St1's fix and asserts the catalog sentence.
+
+Standards
+- St1. File: src/lib/state/system/lines.svelte.ts, the catch in load().
+  - Hunk: `+            failed(error instanceof Error ? error.message : String(error));`.
+  - What is wrong: a rejected fetch shows the browser's own message, which differs by browser (Chrome "Failed to fetch", Firefox "NetworkError when attempting to fetch resource.", Safari "Load failed"). spec.md:44: "every user-facing string from a catalog file ... A literal string ... anywhere a reader sees it is a defect."
+  - The first review's St3 and ruling 3 both state the aim "no engine message reaches the reader". Ruling 2's "a rejected fetch says its sentence" does not authorise an engine string.
+  - memories.svelte.ts:137-139 does the same thing, which makes it an older defect and not an exemption. account-setup.yml:85 (`unreachable: 'The server did not answer. ...'`) shows the catalog form.
+  - Smallest fix: `failed(t('status.lines_unreachable'))`, with `lines_unreachable: the server did not answer` in status.yml, and P2's case asserting that sentence.
+
+Behaviour
+- B1. File: src/lib/state/system/lines.svelte.ts, load().
+  - Hunk: `+            if (!response.ok || body === null) {` with `failed(said === '' ? t('status.lines_bad_status', response.status) : said)`, where the key reads 'the server answered {0} and said nothing more'.
+  - What is wrong for a 200 whose body is not JSON: the reader sees "The line count failed: the server answered 200 and said nothing more". "Said nothing more" is false, since the server sent a body that is not a count. "Answered 200" also reads as success next to "failed".
+  - The same untruth holds for the tested 500 HTML page: it did say something, a page.
+  - The key fits only its original case, a non-ok JSON answer with no error field.
+  - Smallest fix: a separate key used when body === null, for example `lines_bad_body: "the server's answer ({0}) is not a line count"`, with the not-JSON case asserting it.
+  - This departs from ruling 3's wording, which named lines_bad_status, so it is the orchestrator's call at landing.
+
+5. What I did not check
+- Nothing was looked at on screen.
+- 8 of the 16 revert rows were rerun; the other 8 were not.
+- Whether eslint's no-unnecessary-condition flags the truthy inline form (under (f)).
+- The first-round claims the report carries forward (first run, 2900 ms timing).
+- package-lock.json and the diagrams, since this round does not touch them.
+- The report's ENOBUFS sentence ("would fail with a sentence naming git") was not exercised.
+- Git: beyond `git status --short` and `git diff 56f1749d` / `git diff 740ebd5e`, I ran their `--stat` and `--name-only` forms, which are the same diffs.
+
+6. Usage: about 38 tool calls and about 20 minutes. The verify run took about 2 minutes, and the scratch-copy reverts about 45 s in all.

@@ -1,9 +1,9 @@
 /plan-orchestration oculus/migration
 
 In flight:
-- Q89 (the terminal as VS Code's terminal): repair round 2 (Split in the row's own folder, Z39 (a); Delete and Backspace made safe), then its review.
-- Q80 (line counts on the Status view, with cloc): repair round 1 done, its review running.
-- Q92 (inbox and calendar): building.
+- Q89 (the terminal as VS Code's terminal): repair round 2 done (Split in the row's own folder, Z39 (a); Delete and Backspace made safe); its review starts after the pause.
+- Q80 (line counts on the Status view, with cloc): repair round 1 reviewed; lands after the pause, with five small fixes at landing.
+- Q92 (inbox and calendar): built; its review starts after the pause.
 Queued, in order:
 - Q79a and Q79c (the library audit's fixes that need no new library: the server; the page, with the 11 raw buttons).
 - Q79d, Q87 and Q81 (the shared helpers; the import-graph checks on dependency-cruiser; menus, context menus, tooltips and dialogs on bits-ui).

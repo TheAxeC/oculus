@@ -1,23 +1,80 @@
-# Q89 report: the Terminal view as VS Code terminal panel (after repair round 1)
+# Q89 report: the Terminal view as VS Code terminal panel (after repair round 2)
 
-Everything in the brief and in the round 1 rulings is done, except Z39 (where Split starts for a folder no composer place holds), which the rulings leave to Axel and the landing. The full verify list was not run this round, as the rulings say; the orchestrator runs it on main at landing.
+Every item of the brief, of round 1 and of round 2 is done. One behaviour has no automated case: the pointer press on a row that moves focus to the grid needs a DOM, which the unit suite does not have; it is checked by `npm run check` and `npm run lint` only, and needs the look on TEST. The full verify list was not run this round, as the rulings say.
 
 ## Open items of the state file (verbatim from the main checkout's `tools/oculus/.scratch/migration/orchestrator-state.md`, read at the end of the round)
 
+## Open items (only what Axel must rule on; every report opens with this list verbatim and repeats it until he has ruled)
+
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is booked as its own step in `plan.md` and carried in the Booked section below, since it needs no ruling from him.
 
-- Z39, where Split starts a terminal whose folder no composer place holds (raised 2026-09-28 by Q89's review). Q89's brief says Split opens the composer beside "with the row's folder" (`agents/briefs/Q89.md:29`), and `HELP.md:123` says "in its folder". The composer offers only its places, the hub, every workspace root and every folder a session sits in (`composerPlaces`, `src/lib/state/sessions/composer.ts:119`), and turns any other value into the hub (`Composer.svelte:76-78`). So Split of a shell that has moved to `hub/projects/foo/code`, which no place names, starts at the hub, and one in `/tmp` also at the hub. The server's start takes any folder (`src/lib/server/machine/pty/routes.ts:410`), so nothing below the page stops the first option. Options:
-  - (a) The composer a Split opens holds the row's folder as a place of its own, listed first by its path, and starts there. Pros: Split does what it says, as VS Code's split starts in the terminal's folder. Cons: the composer's folder list can hold a folder that is not a workspace, for that tab only.
-  - (b) Split starts at the deepest place that holds the row's folder, the hub when none does, and `HELP.md:123` and the Split tooltip say so. Pros: nothing more to build. Cons: a split of a terminal in a subfolder lands somewhere else, and the reader must pick the folder again. This is the lazy option.
-  - Recommended: (a). Q89's round 1 is sent without this item; the landing makes the change once Axel rules.
+None.
 
-
-## Round 1: each ruling item
+## Round 2: each item
 
 | Item | State | Where | Proof |
 |---|---|---|---|
-| 1. The list is one keyboard stop; Delete or Backspace kills, Shift+Enter splits | DONE | `TerminalList.svelte:223` and `:237` carry `tabindex={-1}`; `keys()` at `:126` asks `rowKey` (`terminal-list.ts:83`) and calls `show`, `split` or `kill`; head comment `TerminalList.svelte:11-15` corrected; `terminal_split_tip` and `terminal_kill_tip` name the keys; `HELP.md:123` names them | "is one stop of the focus order: the row at the stop, and none of its controls" and "audits the keys a row answers: Delete and Backspace kill, Shift+Enter splits" pass |
-| 2. A composer tab with one terminal lists it | DONE | `listDrawn` (`terminal-list.ts:71`), used at `Terminal.svelte:158`; `HELP.md:123` says both cases | "draws the one terminal there is as a row while the tab shows the composer", "draws no list under the composer when no terminal runs", "audits when the list is drawn: two terminals, or one under the composer" pass |
+| 1. Z39 (a): Split in the row's own folder | DONE | `ComposerRecord.split` (`src/lib/state/sessions/composer.ts:35`), read by `composerOf` as a non-empty string (`:77`); `splitRecord` (`:85`), `offeredPlaces` (`:93`), `composerWorkspace` (`:99`); `Composer.svelte:77-83` offers `offeredPlaces(...)` and starts in `composerWorkspace(...)`; Split writes `splitRecord(folder, row.kind)` (`TerminalList.svelte:100-105`); `placeOf` and its audit are gone; the Split tooltip and `HELP.md:123` unchanged | five cases in `tests/state/sessions/composer.test.ts` ("a composer opened by Split") and one view case in `tests/views/sessions/terminal.test.ts` pass |
+| 2. Delete and Backspace made safe | DONE | `rowKey(key, shift, repeat)` returns null for a repeated Delete or Backspace (`terminal-list.ts:86`), called with `event.repeat` (`TerminalList.svelte:138`); `armKept` (`terminal-list.ts:97`) clears the arm when the stop moves (`TerminalList.svelte:150`); `onfocusout={left}` on the list (`:187`, `left` at `:114`) clears it when `relatedTarget` is outside the list; a pointer press on a row (`pressed`, `:108`, `event.detail > 0`) calls `onshown`, and `Terminal.svelte` `pointed` (`:284`) focuses the grid shown now or sets `focusing`, which the grid effect honours on mounting (`:324-325`) | "audits a held key: an auto-repeated Delete or Backspace kills nothing" and "audits the arm of Kill: kept only while its row is the stop and focus is in the list" pass; the pointer focus has no case (see the top) |
+| 3. Controls' CSS comment | DONE | `TerminalList.svelte:335-336`: "drawn clear, and drawn while the pointer or the keyboard's stop is on the row, so the armed Kill shows while a Delete or Backspace waits for its second press" | read |
+| 4. `rowKey` doc comment | DONE | `terminal-list.ts:79-85`: the VS Code clause is gone; "these keys are the keyboard's way to Split and Kill, which the list keeps out of the focus order" | read |
+| 5. `terminal-list.ts` line count | DONE | `wc -l` prints 151 now (the round 1 file printed 144; the round 1 report's 143 was wrong) | table below |
+| 6. Each new case's failure with its change undone | DONE | below | |
+| 7. Before and after of Split outside every place and of a held Backspace | DONE | below | |
+
+Other changes in the round:
+- `Terminal.svelte` stays at 540 lines, the component limit, with the new focus lines: `togglePanePin` is written with an `else if` instead of two blocks, and the grid's dragover handler moved to `fileOver` in `terminal-list.ts:114`. Behaviour of both is unchanged.
+- The new import of `FILE_DRAG` in `terminal-list.ts` changes two counts in the layer diagrams (`views/sessions` to `state`: 71 to 72; `views` to `state`: 568 to 569); `npm run diagrams` regenerated `docs/diagrams/layers.*` and `docs/diagrams/layer-views.*`, and `tests/checks/diagrams/diagrams.test.ts` passes.
+- `Composer.svelte`'s head comment says a Split tab starts in its terminal's folder, offered first when no place holds it; `TerminalList.svelte`'s head comment says the arm rule, the pointer's hand-off to the grid and where Split starts.
+- Step paths added by the rulings: `src/lib/state/client/context.ts` and `tests/state/sessions/composer.test.ts`. `src/lib/state/sessions/composer.ts` and `Composer.svelte` are also changed by item 1.
+
+## Before and after (round 2)
+
+- Split of a terminal outside every place (a shell in `/hub/projects/foo/code` with places `/hub` and `/hub/tools`). Before: the composer beside opened with the workspace `/hub`, the deepest place holding the folder, and a terminal in `/tmp` opened at the hub. After: the composer offers `/hub/projects/foo/code`, `/hub`, `/hub/tools` in that order and starts in `/hub/projects/foo/code`; a terminal in `/hub/tools` gives today's places with `/hub/tools` chosen; a composer not opened by Split offers exactly today's places.
+- A held Backspace (or Delete) on a row. Before: the first press armed Kill and the keyboard's auto-repeat was the second press, so holding the key killed the terminal after the repeat delay (about half a second). After: repeats ask nothing, so a held key only arms; the arm is cleared when the stop moves to another row or focus leaves the list, so a second press kills only the row the first armed while the list still has focus.
+- A pointer press on a row. Before: the row was shown and focus stayed on the row. After: the row is shown and the keyboard goes to its grid (at once when the row is the terminal shown, on mounting otherwise); Enter on a row still leaves focus in the list.
+
+## Each new case's failure (round 2)
+
+### First run, on the round 1 code (`npx vitest run tests/views/sessions/terminal.test.ts tests/state/sessions/composer.test.ts`: 8 failed, 35 passed)
+
+- "records the terminal's own folder as the folder it was split from and starts there": `TypeError: splitRecord is not a function`.
+- "reads the split folder as a string, and drops an empty or malformed one": `AssertionError: expected undefined to be '/w/x' // Object.is equality`.
+- "offers a split folder no place holds first, by its path, and starts in it": `TypeError: splitRecord is not a function`.
+- "offers the places as they are when the split folder is one of them, with it chosen": `TypeError: splitRecord is not a function`.
+- "offers the places as they are to a composer no Split opened": `TypeError: offeredPlaces is not a function`.
+- "starts in the split terminal's own folder, though no place of the composer holds it": `AssertionError: expected 'data-picker="workspace"><div class="m...' to contain '>code<'`.
+- "audits a held key: an auto-repeated Delete or Backspace kills nothing": `AssertionError: expected 'kill' to be null // Object.is equality`.
+- "audits the arm of Kill: kept only while its row is the stop and focus is in the list": `TypeError: armKept is not a function`.
+
+### With the change each guards undone, on the finished code
+
+Each was run alone with `npx vitest run <file> -t '<name>'` with one change undone, and the file was then put back byte for byte (the script asserted it). Every run printed `Tests  1 failed` and the failure below. After the runs, both files pass: `Test Files  2 passed (2)`, `Tests  43 passed (43)`.
+
+- "records the terminal's own folder ..." (`splitRecord` writes no `split`): `AssertionError: expected { ...(4) } to deeply equal { ...(5) }`.
+- "reads the split folder as a string ..." (the `record.split` line taken out of `composerOf`): `AssertionError: expected undefined to be '/w/x' // Object.is equality`.
+- "offers a split folder no place holds first ..." (`offeredPlaces` returns the places alone): `AssertionError: expected [ '/hub', '/hub/tools' ] to deeply equal [ '/hub/projects/foo/code', ...(2) ]`.
+- "offers the places as they are when the split folder is one of them ..." (`offeredPlaces` prepends the split folder even when a place equals it): `AssertionError: expected [ '/hub/tools', '/hub', '/hub/tools' ] to deeply equal [ '/hub', '/hub/tools' ]`.
+- "offers the places as they are to a composer no Split opened" (`offeredPlaces` reads the record's workspace when there is no split folder): `AssertionError: expected [ '/elsewhere', '/hub', '/hub/tools' ] to deeply equal [ '/hub', '/hub/tools' ]`.
+- "starts in the split terminal's own folder ..." (`Composer.svelte` offers its places without `offeredPlaces`): `AssertionError: expected 'data-picker="workspace"><div class="m...' to contain '>code<'`.
+- "audits a held key ..." (`rowKey` returns `'kill'` for a repeat): `AssertionError: expected 'kill' to be null // Object.is equality`.
+- "audits the arm of Kill ..." (`armKept` returns `armed !== ''`): `AssertionError: expected true to be false // Object.is equality`.
+
+## Checks, run at the end of round 2
+
+- `npx vitest run tests/views/sessions tests/state/sessions tests/checks tests/views/whole tests/ui/wall.test.ts tests/ui/colours.test.ts tests/state/workbench/layout`: `Test Files  60 passed (60)`, `Tests  1146 passed (1146)`.
+- `npm run check`: `COMPLETED 1431 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS`.
+- `npm run format:check`: `All matched files use Prettier code style!`.
+- `npm run lint`: exit 0, no output after `eslint .`.
+- The spec's perl ASCII gate over `src tests bin config` printed 0 lines; `LC_ALL=C grep -n '[^ -~]' HELP.md DESIGN.md` printed 0 lines.
+- The full verify list was not run in this round, as the rulings say.
+
+## Round 1: each ruling item (line numbers as of round 2)
+
+| Item | State | Where | Proof |
+|---|---|---|---|
+| 1. The list is one keyboard stop; Delete or Backspace kills, Shift+Enter splits | DONE | the Split and Kill controls carry `tabindex={-1}`; `keys()` (now `TerminalList.svelte:136`) asks `rowKey` (now `terminal-list.ts:86`) and calls `show`, `split` or `kill`; head comment `TerminalList.svelte:11-15` corrected; `terminal_split_tip` and `terminal_kill_tip` name the keys; `HELP.md:123` names them | "is one stop of the focus order: the row at the stop, and none of its controls" and "audits the keys a row answers: Delete and Backspace kill, Shift+Enter splits" pass |
+| 2. A composer tab with one terminal lists it | DONE | `listDrawn` in `terminal-list.ts`, used in `Terminal.svelte` for `listed`; `HELP.md:123` says both cases | "draws the one terminal there is as a row while the tab shows the composer", "draws no list under the composer when no terminal runs", "audits when the list is drawn: two terminals, or one under the composer" pass |
 | 3. `parseLayout` keeps only registered view ids | DONE | `parseLayout(value, label, known)` at `saved/saved.ts:279`, `viewStates` at `:328` (drops the empty key and any id `known` refuses; no rule given keeps nothing); `registerViews` on the layout store (`layout.svelte.ts:166`, `:674`), passed to `parseLayout` in `loadLayout`; wired in `src/lib/state/client/context.ts:255` as `registry.viewFor(view) !== undefined` | "keeps a saved value only under a registered view id, dropping an empty or unknown key" and "reads back only what the registry of the client holds after a reload" pass (`tests/state/workbench/layout/pages.test.ts`) |
 | 4. `storedOrder` duplicate case | DONE | `terminal.test.ts`, the stored-order audit: `storedOrder({ order: ['a', 'a'] })` equals `['a']` | passes |
 | 5. Kill counted per row | DONE | "offers Split and Kill on every row, ..." counts `aria-label="Split"` and `aria-label="Kill"` once in each row's slice | passes |
@@ -37,7 +94,7 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 - "audits the keys a row answers: Delete and Backspace kill, Shift+Enter splits": `TypeError: rowKey is not a function`.
 - "draws no list under the composer when no terminal runs": passed on the code before the round; it guards that a composer with no terminal draws no list. With `listDrawn` changed to `count >= 2 || composer`: `AssertionError: expected '<!--[--><section class="pane svelte-b...' not to contain 'data-terminal-list'`.
 - "audits when the list is drawn: two terminals, or one under the composer": with `listDrawn` not exported: `TypeError: listDrawn is not a function`. With the rule undone to `count >= 2`, the composer-with-one case fails: `AssertionError: expected [] to deeply equal [ 'd4e5f6-shell' ]`.
-- Duplicate stored order (item 4): passed on the code before the round, since `storedOrder` already used `new Set`. With `new Set` removed (`terminal-list.ts:27`): `AssertionError: expected [ 'a', 'a' ] to deeply equal [ 'a' ]`.
+- Duplicate stored order (item 4): passed on the code before the round, since `storedOrder` already used `new Set`. With `new Set` removed from `storedOrder`: `AssertionError: expected [ 'a', 'a' ] to deeply equal [ 'a' ]`.
 - Kill per row (item 5): passed on the code before the round, since every row has Kill. With Kill drawn on the first row only: `AssertionError: expected [ Array(1) ] to have a length of 2 but got 1`.
 - "keeps a saved value only under a registered view id, dropping an empty or unknown key": with the round's filter undone (every key kept): `AssertionError: expected { '': { order: [ 'a' ] }, ...(2) } to deeply equal { terminal: { x: 1 } }`.
 - "reads back only what the registry of the client holds after a reload": with the `registerViews` line removed from `context.ts`: `AssertionError: expected undefined to deeply equal { order: [ 'x' ] }`.
@@ -59,15 +116,6 @@ Each was run alone with `npx vitest run <file> -t '<name>'`, with the undone cha
 
 Every case failed except two, which the brief states as unchanged behaviour: "is drawn under an agent terminal" and "stays disabled with its sentence for an agent session running outside oculus". The quotes: shell steer box `expected '<!--[--><section class="pane svelte-b...' not to contain 'data-steer'`; one terminal `expected '' to be 'vim'`; two rows `expected '<!--[--><section ...' to contain 'data-terminal-list'`; shell titled "shell" (view) `expected '' to be undefined`; foreign row `expected [] to deeply equal [ 'a1b2c3-claude', 'd4e5f6-shell' ]`; stored order (view) `TypeError: client.layout.setPageViewState is not a function`; Split and Kill `expected 0 to be greater than or equal to 2`; the pure-function audits `Cannot find module '../../../src/lib/views/sessions/terminal/terminal-list.ts'`.
 
-## Checks, run at the end of the round
-
-- `npx vitest run tests/views/sessions/terminal.test.ts tests/state/workbench/layout tests/state/sessions/folds.test.ts tests/views/sessions tests/views/whole tests/checks tests/ui/wall.test.ts tests/ui/colours.test.ts`: `Test Files  51 passed (51)`, `Tests  1044 passed (1044)`.
-- `npm run check -> exit 0` (`COMPLETED 1431 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS`).
-- `npm run format:check -> exit 0` (`All matched files use Prettier code style!`).
-- `npm run lint -> exit 0`.
-- The spec's perl ASCII gate over `src tests bin config` printed nothing; `LC_ALL=C grep -n '[^ -~]' HELP.md DESIGN.md` printed nothing.
-- The full verify list was not run in this round (the rulings' "Tests" section). In the first round, verify stopped on two timeouts in files the step does not touch (`tests/checks/imports/order.test.ts`, `tests/checks/tree/scratch.test.ts`); the refuter's run of it passed all six commands.
-
 ## What to build (the brief), item by item
 
 | Item | State | Where |
@@ -84,15 +132,17 @@ Every case failed except two, which the brief states as unchanged behaviour: "is
 
 ## Files, lines before and after
 
-Before is `wc -l` of the same path in the main checkout as it stands at the end of the round.
+Before is `wc -l` of the same path in the main checkout; after is `wc -l` in the worktree, both run at the end of round 2.
 
 | File | Before | After |
 |---|---|---|
-| src/lib/views/sessions/terminal/Terminal.svelte | 411 | 538 |
+| src/lib/views/sessions/terminal/Terminal.svelte | 411 | 540 |
 | src/lib/views/sessions/terminal/TerminalPicker.svelte | 62 | deleted |
-| src/lib/views/sessions/terminal/TerminalList.svelte | new | 346 |
+| src/lib/views/sessions/terminal/TerminalList.svelte | new | 358 |
 | src/lib/views/sessions/terminal/TerminalTitle.svelte | new | 61 |
-| src/lib/views/sessions/terminal/terminal-list.ts | new | 143 |
+| src/lib/views/sessions/terminal/terminal-list.ts | new | 151 |
+| src/lib/views/sessions/terminal/Composer.svelte | 418 | 423 |
+| src/lib/state/sessions/composer.ts | 259 | 292 |
 | src/lib/state/sessions/folds.ts | 272 | 303 |
 | src/lib/state/workbench/layout.svelte.ts | 638 | 680 |
 | src/lib/state/workbench/layout/model.ts | 157 | 168 |
@@ -101,36 +151,40 @@ Before is `wc -l` of the same path in the main checkout as it stands at the end 
 | config/text/views/sessions/terminal.yml | 20 | 31 |
 | config/text/views/sessions/session-list.yml | 70 | 68 |
 | tests/state/sessions/folds.test.ts | 288 | 374 |
-| tests/views/sessions/terminal.test.ts | new | 318 |
+| tests/state/sessions/composer.test.ts | 323 | 367 |
+| tests/views/sessions/terminal.test.ts | new | 340 |
 | tests/views/sessions/sessions.test.ts | 638 | 639 |
-| tests/views/whole/type-scale.test.ts | 345 | 345 (two entries changed; main's count moved since the first round) |
+| tests/views/whole/type-scale.test.ts | 345 | 345 (two entries changed) |
 | tests/state/workbench/layout/pages.test.ts | 611 | 708 |
 | tests/ui/wall.test.ts | 204 | 206 |
 | HELP.md | 294 | 294 (line 123 rewritten) |
 | DESIGN.md | 320 | 320 (lines 208, 271, 272 rewritten) |
-| docs/diagrams/layers, layer-state, layer-views (.dot and .svg) | | regenerated by `npm run diagrams` in the first round |
+| docs/diagrams/layers, layer-state, layer-views (.dot and .svg) | | regenerated by `npm run diagrams` |
 
 ## Judgment calls (each reversible)
 
-1. `parseLayout` takes the rule as a third argument whose default keeps no view state, and the layout store keeps nothing until `registerViews` is called. A caller that forgets the rule loses the order rather than carrying unknown keys. The empty key is dropped even when the rule would accept it.
-2. `registerViews` is a second registration hook beside `registerOpened`, so the layout store still does not import the registry.
-3. Shift+Enter is the Split key; Delete and Backspace both arm and then kill, as the Kill control does.
-4. The list under a composer tab with one terminal is drawn only when the tab shows the composer, not when it shows the "selected elsewhere" sentence.
-5. From the first round, unchanged: `Page.views` keyed by view id with `{ order: string[] }` under `terminal`; the whole drawn order written on a drop; start order by `created` as an ISO string; agent rows described by the session title, else the terminal's name; shell description the last folder segment; `pasteLines` counting a trailing line break as closing the last line; the bell mark also beside the bar title; the dropped path typed through `sendInput`; list width 180 px.
+1. The split folder is kept in the tab's composer record for as long as the tab holds the composer, so picking another place and coming back still finds it offered.
+2. `offeredPlaces` adds the split folder only when no place equals it; a place that holds it as a parent does not stop it being added, per the ruling's first case.
+3. A pointer press is told from a key's click by `event.detail > 0`; Space on the row's button (which `rowKey` does not answer) clicks with `detail` 0 and so shows the row without moving focus, like Enter.
+4. The grid focus for a row that is not yet shown is a pending id read when that terminal's grid mounts, and cleared on every mount so a later mount of the same terminal does not take focus.
+5. `parseLayout` takes the rule as a third argument whose default keeps no view state, and the layout store keeps nothing until `registerViews` is called; `registerViews` is a second registration hook beside `registerOpened`, so the layout store does not import the registry.
+6. Shift+Enter is the Split key; Delete and Backspace both arm and then kill, as the Kill control does. The list under a composer tab with one terminal is drawn only when the tab shows the composer, not the "selected elsewhere" sentence.
+7. From the first round, unchanged: `Page.views` keyed by view id with `{ order: string[] }` under `terminal`; the whole drawn order written on a drop; start order by `created` as an ISO string; agent rows described by the session title, else the terminal's name; shell description the last folder segment; `pasteLines` counting a trailing line break as closing the last line; the bell mark also beside the bar title; the dropped path typed through `sendInput`; list width 180 px.
 
 ## Limitations
 
-- Z39: Split of a terminal whose folder no composer place holds opens the composer at the hub; `placeOf`, the composer and the Split half of `HELP.md:123` are left as they are for the landing.
-- The paste question, the file drop, the drag, the bell, hover and the keys need a DOM; the unit suite asserts the functions they call, and the look on TEST checks them on screen.
+- The pointer press that hands focus to the grid, the paste question, the file drop, the drag, the bell, hover, the keys and the arm clearing on focus leaving the list need a DOM; the unit suite asserts the pure functions they call (`rowKey`, `armKept`, `pasteLines`, `shellQuote`, `movedOrder`, `listDrawn`), and the look on TEST checks them on screen.
+- `Terminal.svelte` is at 540 lines, the component limit; the next line added to it needs a split.
 - A drop while the socket is closed types nothing, as typing at the grid does.
-- The first round ran one read-only `git rev-parse` in the worktree, against the brief's rule; no git state was changed. No git command was run in this round.
+- The first round ran one read-only `git rev-parse` in the worktree, against the brief's rule; no git state was changed. No git command was run in rounds 1 and 2.
 
 ## Before and after, for the look (page TEST)
 
 - One terminal, tab showing it: the bar shows its title and folder, no list.
-- One terminal, tab on the composer (New terminal): a one-row list on the right; press the row to show it here.
+- One terminal, tab on the composer (New terminal): a one-row list on the right; press the row to show it here, and the keyboard goes to its grid.
 - Two or more terminals: the list on the right; the row this tab shows is marked; hover shows Split and Kill.
-- Keyboard: Tab reaches the list once (the current row), then leaves it; the arrow keys move between rows; Enter shows, Shift+Enter splits, Delete or Backspace pressed twice kills.
+- Keyboard: Tab reaches the list once (the current row), then leaves it; the arrow keys move between rows; Enter shows, Shift+Enter splits, Delete or Backspace pressed twice kills; holding the key kills nothing; moving the stop or tabbing out disarms.
+- Split of a shell that has moved (`cd`) to a folder no workspace names: the composer beside lists that folder first and starts there.
 - Steer box: under a Claude or Codex terminal only; a shell's grid fills the height.
 - Paste of three lines into a grid: the question "Paste 3 lines into the terminal?"; one line pastes at once.
 - Drop a file from Files on the grid: its quoted path and a space are typed, no Enter.

@@ -27,7 +27,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:      # Q89 of set 2 in repair round 2 (Z39 (a), an unbuilt acceptance item), Q80 of set 3 under review over round 1, Q92 of set 2 building.
+dispatch:      # Q89 of set 2, repair round 2 reported, its review owed after the pause, Q80 of set 3 refuted over round 1, to land after the pause, Q92 of set 2 built, its review owed after the pause.
 - step: Q89
   executor: agent
   worker: claude:opus
@@ -53,7 +53,7 @@ dispatch:      # Q89 of set 2 in repair round 2 (Z39 (a), an unbuilt acceptance 
   report: agents/reviews/Q80-report.md
   landing: not-started
   reviewer_report: agents/reviews/Q80-refuter.md (reviewer a59a84cb98d926c8b, 40 tool calls, 14 min)
-  reviewer_report_round1: agents/reviews/Q80-refuter.md "Repair round 1, refuted" (reviewer aa0e2181b19c92109, running)
+  reviewer_report_round1: agents/reviews/Q80-refuter.md "Repair round 1, refuted" (reviewer aa0e2181b19c92109, 38 tool calls, 20 min); its findings S1, P1, P2, St1 and B1 are small and inside the brief, fixed at landing after the pause
   round: 1
   shared_paths: HELP.md and DESIGN.md (Q80 changes HELP.md:128 and DESIGN.md:128, other sentences than Q89's and Q98's), docs/diagrams (a rerun of npm run diagrams at landing), any whole-tree test list such as type-scale.test.ts (one added name per step)
 - step: Q92
@@ -133,6 +133,7 @@ None.
 
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)
 
+- `plainTitle` in `src/lib/state/life/present.ts:61-117` keeps its own HTML entity table, which `entities` (added by Q92) would replace (found by Q92's builder, 2026-09-28): to be folded into Q92 at its landing if the review finds it inside the brief's Z35 (a) scope, else a step of its own.
 - The Ordo sentence "A step that touches a configuration file or a rule file runs alone" (`skills/plan-orchestration/SKILL.md:208`) reworded to name the plan's own configuration (`.agents/plan.yaml`, the verification block) and the rules file with its standards, as Z34 (a) reads it: a change in the Ordo repository, for its session.
 - Q72, the architecture re-read before the release (booked 2026-09-24 with Q71, on Axel's ruling that one package fixes the architecture and a re-read checks it at the end): the diagrams regenerated and read, Q71's import measures run again, and what moved since fixed as its own step; queued after M4, before R2 (`plan.md:176`).
 - Q79a to Q79d, the library audit's fixes that need no new dependency (booked 2026-09-26 from the audit, section D of `agents/reviews/library-audit.md`; split into the server, the tests, the page and the shared helpers by Axel's Z37 (a), 2026-09-28): each a step in `plan.md`, queued Q79a + Q79c + Q80, then Q79d + Q87 + Q81, then Q79b alone (Z38 (a)).
