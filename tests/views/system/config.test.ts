@@ -90,6 +90,17 @@ describe('the Config view', () => {
         expect(body).toContain(catalog['config.desc_vocab']);
     });
 
+    it('draws the backticked keys of a description as code, with no backtick left', () => {
+        const body = drawn([file('behavior.yml')]);
+        for (const key of ['editor.paint_limit_kb', 'tasks.skip_permissions', 'open.program_ext']) {
+            expect(body).toMatch(new RegExp(`<code[^>]*>${key.replace(/\./g, '\\.')}</code>`));
+        }
+        const line = /<p class="desc[^"]*">([\s\S]*?)<\/p>/.exec(body)?.[1] ?? '';
+        expect(line).toContain('Thresholds, horizons and cadences');
+        // CodeText draws each key between backticks as code, so no mark is left in the sentence.
+        expect(line).not.toContain('`');
+    });
+
     it('says how many lines the file holds on the control that shows it', () => {
         const body = drawn([file('layout.yml')], text('one\ntwo\nthree\n'));
 

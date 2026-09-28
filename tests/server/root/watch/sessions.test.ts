@@ -23,6 +23,7 @@ import type { CodexProbe } from '../../../../src/lib/server/sessions/stores/code
 import { recording } from './probe.ts';
 import { noop } from '../../../fixtures/doubles.ts';
 import { scratchDir, sweepScratch } from '../../../fixtures/scratch.ts';
+import { CONTEXT, human as prompt, type Json } from '../../sessions/stores/transcript-fixture.ts';
 
 afterAll(sweepScratch);
 
@@ -36,31 +37,11 @@ const WAIT = 6000;
 const SLUG = '-tmp-fixture-workspace';
 const SID = 'cccccccc-1111-2222-3333-dddddddddddd';
 const PID = 5151;
-const CONTEXT = {
-    cwd: '/tmp/fixture/workspace',
-    gitBranch: 'main',
-    version: '9.9.9',
-    permissionMode: 'auto',
-    entrypoint: 'cli'
-};
-
-type Json = Record<string, unknown>;
-
 const watchers: Watcher[] = [];
 
 afterEach(() => {
     while (watchers.length > 0) watchers.pop()?.close();
 });
-
-function prompt(stamp: string, text: string): Json {
-    return {
-        type: 'user',
-        timestamp: stamp,
-        origin: { kind: 'human' },
-        message: { role: 'user', content: text },
-        ...CONTEXT
-    };
-}
 
 function answer(stamp: string, text: string): Json {
     return {

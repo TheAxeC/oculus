@@ -1,9 +1,9 @@
 // Transcript folding, the live-registry merge, dismissals and the incremental read cache.
 //
-// Every fixture here is synthetic, the session registry included: no test reads ~/.claude or
-// ~/.codex, no test writes anywhere but the temporary directory it made, and the liveness check
-// is answered by a stub, so nothing is ever signalled and `ps` is never run. Real transcripts hold
-// private research content and never enter a test.
+// Every fixture here is synthetic, the session registry included, and transcript-fixture.ts builds
+// them: no test reads ~/.claude or ~/.codex, no test writes anywhere but the temporary directory it
+// made, and the liveness check is answered by a stub, so nothing is ever signalled and `ps` is
+// never run. Real transcripts hold private research content and never enter a test.
 
 import {
     appendFileSync,
@@ -13,14 +13,9 @@ import {
     utimesSync,
     writeFileSync
 } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join, resolve, sep } from 'node:path';
+import { join } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
-import {
-    readSession,
-    scan,
-    type ScanOptions
-} from '../../../../src/lib/server/sessions/stores/transcripts.ts';
+import { readSession } from '../../../../src/lib/server/sessions/stores/transcripts.ts';
 import {
     formatStamp,
     liveFrom,
@@ -30,8 +25,21 @@ import {
 import { hiddenIds, setHidden } from '../../../../src/lib/server/sessions/overrides.ts';
 import { CACHE_VERSION } from '../../../../src/lib/server/sessions/cache.ts';
 import { spentTokens } from '../../../../src/lib/server/sessions/fold.ts';
-import type { LiveEntry, SessionRecord } from '../../../../src/lib/data/model/index.ts';
-import { scratchDir, sweepScratch } from '../../../fixtures/scratch.ts';
+import type { LiveEntry } from '../../../../src/lib/data/model/index.ts';
+import { sweepScratch } from '../../../fixtures/scratch.ts';
+import {
+    CONTEXT,
+    PID,
+    SID,
+    SLUG,
+    assistant,
+    human,
+    make,
+    outcome,
+    turn,
+    usage,
+    type Fixture
+} from './transcript-fixture.ts';
 
 /** The registry's live sessions alone: signal 0 per entry, then one `ps` for the ones that ran. */
 function liveSessions(registries: string[], probe: Probe): Map<string, LiveEntry> {
@@ -40,253 +48,6 @@ function liveSessions(registries: string[], probe: Probe): Map<string, LiveEntry
 }
 
 afterAll(sweepScratch);
-
-const SLUG = '-tmp-fixture-workspace';
-const SID = 'aaaaaaaa-1111-2222-3333-bbbbbbbbbbbb';
-const PID = 4242;
-const CONTEXT = {
-    cwd: '/tmp/fixture/workspace',
-    gitBranch: 'main',
-    version: '9.9.9',
-    permissionMode: 'auto',
-    entrypoint: 'cli'
-};
-
-type Json = Record<string, unknown>;
-
-function usage(
-    options: Partial<{
-        input: number;
-        output: number;
-        read: number;
-        created: number;
-        thinking: number;
-        window: string;
-    }> = {}
-): Json {
-    const input = options.input ?? 5;
-    const output = options.output ?? 7;
-    const read = options.read ?? 0;
-    const created = options.created ?? 0;
-    const block: Json = {
-        input_tokens: input,
-        output_tokens: output,
-        cache_read_input_tokens: read,
-        cache_creation_input_tokens: created,
-        output_tokens_details: { thinking_tokens: options.thinking ?? 0 }
-    };
-    if (options.window !== undefined) {
-        block.cache_creation = {
-            ephemeral_1h_input_tokens: options.window === '1h' ? created : 0,
-            ephemeral_5m_input_tokens: options.window === '5m' ? created : 0
-        };
-    }
-    return block;
-}
-
-function human(stamp: string, text: string): Json {
-    return {
-        type: 'user',
-        timestamp: stamp,
-        origin: { kind: 'human' },
-        message: { role: 'user', content: text },
-        ...CONTEXT
-    };
-}
-
-function assistant(
-    stamp: string,
-    options: Partial<{
-        text: string;
-        tools: [string, string, Json][];
-        tokens: Json | null;
-        model: string;
-        effort: string;
-    }> = {}
-): Json {
-    const content: Json[] = [];
-    if (options.text !== undefined) content.push({ type: 'text', text: options.text });
-    for (const [id, name, args] of options.tools ?? []) {
-        content.push({ type: 'tool_use', id, name, input: args });
-    }
-    return {
-        type: 'assistant',
-        timestamp: stamp,
-        effort: options.effort ?? 'high',
-        message: {
-            role: 'assistant',
-            model: options.model ?? 'claude-test',
-            content,
-            ...(options.tokens === null ? {} : { usage: options.tokens ?? usage() })
-        },
-        ...CONTEXT
-    };
-}
-
-function outcome(stamp: string, id: string, content: unknown = 'done', error = false): Json {
-    return {
-        type: 'user',
-        timestamp: stamp,
-        message: {
-            role: 'user',
-            content: [{ type: 'tool_result', tool_use_id: id, content, is_error: error }]
-        },
-        ...CONTEXT
-    };
-}
-
-function turn(stamp: string, millis = 1200): Json {
-    return {
-        type: 'system',
-        subtype: 'turn_duration',
-        durationMs: millis,
-        timestamp: stamp,
-        ...CONTEXT
-    };
-}
-
-/**
- * One temporary fixture: a store with one transcript, a registry, a cache and an overrides file.
- */
-class Fixture {
-    root: string;
-    store: string;
-    path: string;
-    cache: string;
-    registry: string;
-    overrides: string;
-    codexStore: string;
-    alive = new Set<number>();
-    starts = new Map<number, number>();
-
-    constructor() {
-        this.root = scratchDir('oculus-sessions-');
-        expect(resolve(this.root).startsWith(resolve(tmpdir()) + sep)).toBe(true);
-        this.store = join(this.root, 'projects');
-        mkdirSync(join(this.store, SLUG), { recursive: true });
-        this.path = join(this.store, SLUG, `${SID}.jsonl`);
-        this.cache = join(this.root, 'cache', 'transcript-cache.json');
-        this.registry = join(this.root, 'registry');
-        mkdirSync(this.registry);
-        this.overrides = join(this.root, 'sessions.json');
-        // A store that does not exist: no test of this file reads the real Codex rollouts.
-        this.codexStore = join(this.root, 'no-codex-store');
-    }
-
-    /** The stub the liveness check asks instead of the kernel and `ps`. */
-    probe(): Probe {
-        return {
-            running: (pid: number) => this.alive.has(pid),
-            starts: (pids: number[]) => {
-                const found = new Map<number, number>();
-                for (const pid of pids) {
-                    const start = this.starts.get(pid);
-                    if (start !== undefined) found.set(pid, start);
-                }
-                return found;
-            }
-        };
-    }
-
-    /** Write one session-registry entry, the way Claude Code does. */
-    enrol(
-        options: Partial<{
-            pid: number;
-            status: string | null;
-            name: string;
-            id: string;
-            procStart: string;
-        }> = {}
-    ): void {
-        const pid = options.pid ?? PID;
-        const entry: Json = {
-            pid,
-            sessionId: options.id ?? SID,
-            cwd: CONTEXT.cwd,
-            startedAt: 1788955717254,
-            version: '9.9.9',
-            kind: 'interactive',
-            entrypoint: 'cli',
-            name: options.name ?? 'fixture-01'
-        };
-        const status = options.status === undefined ? 'busy' : options.status;
-        if (status !== null) entry.status = status;
-        if (options.procStart !== undefined) entry.procStart = options.procStart;
-        this.alive.add(pid);
-        writeFileSync(join(this.registry, `${pid}.json`), JSON.stringify(entry));
-    }
-
-    dismiss(id = SID, hidden = true): void {
-        writeFileSync(this.overrides, JSON.stringify({ sessions: { [id]: { hidden } } }));
-    }
-
-    write(records: Json[], raw = ''): void {
-        writeFileSync(
-            this.path,
-            records.map((record) => JSON.stringify(record) + '\n').join('') + raw
-        );
-    }
-
-    append(records: Json[] = [], raw = ''): void {
-        appendFileSync(
-            this.path,
-            records.map((record) => JSON.stringify(record) + '\n').join('') + raw
-        );
-    }
-
-    scan(options: ScanOptions = {}): SessionRecord[] {
-        return scan({
-            stores: [this.store],
-            codexStores: [this.codexStore],
-            cachePath: this.cache,
-            registries: [this.registry],
-            overridesPath: this.overrides,
-            probe: this.probe(),
-            ...options
-        });
-    }
-
-    only(options: ScanOptions = {}): SessionRecord {
-        const found = this.scan(options);
-        expect(found.length).toBe(1);
-        return found[0];
-    }
-
-    cacheFile(): { version: number; entries: Record<string, { offset: number }> } {
-        return JSON.parse(readFileSync(this.cache, 'utf8')) as {
-            version: number;
-            entries: Record<string, { offset: number }>;
-        };
-    }
-
-    /** Age the transcript, which is how the idle threshold is reached without waiting. */
-    age(seconds: number): void {
-        const when = Date.now() / 1000 - seconds;
-        utimesSync(this.path, when, when);
-    }
-
-    /**
-     * A scanned record carries the registry's answer (live, its status, the pid, the dismissal); a
-     * bare read of the file cannot know any of that. Everything else must agree.
-     */
-    matchesFullRead(record: SessionRecord): void {
-        const full = readSession(this.path);
-        const merged = {
-            ...full,
-            state: record.state,
-            live: record.live,
-            liveStatus: record.liveStatus,
-            pid: record.pid,
-            registryName: record.registryName,
-            hidden: record.hidden
-        };
-        expect(record).toEqual(merged);
-    }
-}
-
-function make(): Fixture {
-    return new Fixture();
-}
 
 describe('the fold', () => {
     it('turns a minimal transcript into a record', () => {
@@ -376,6 +137,63 @@ describe('the fold', () => {
 
         writeFileSync(f.path, 'garbage\n');
         expect(f.only().title).toBe(SID);
+    });
+
+    const LITWATCH =
+        '<command-message>research-cockpit</command-message>\n<command-name>/research-cockpit</command-name>\n<command-args>litwatch</command-args>';
+
+    /** The title of a session whose one record is a human prompt of this text. */
+    function titled(prompt: string): string {
+        const f = make();
+        f.write([human('2026-01-01T10:00:00.000Z', prompt)]);
+        return f.only().title;
+    }
+
+    it('titles a session opened by a slash command with the command and its arguments', () => {
+        expect(titled(LITWATCH)).toBe('/research-cockpit litwatch');
+        expect(
+            titled(
+                '<command-message>spec</command-message>\n<command-name>/spec</command-name>\n<command-args>38.2 20b</command-args>'
+            )
+        ).toBe('/spec 38.2 20b');
+    });
+
+    it('titles a slash command that carries no arguments with the command alone', () => {
+        expect(
+            titled(
+                '<command-message>research-cockpit</command-message>\n<command-name>/research-cockpit</command-name>'
+            )
+        ).toBe('/research-cockpit');
+        expect(
+            titled(
+                '<command-name>/model</command-name>\n            <command-message>model</command-message>\n            <command-args></command-args>'
+            )
+        ).toBe('/model');
+    });
+
+    it('makes the arguments one line and cuts the title where an opening is cut', () => {
+        const title = titled(
+            '<command-message>plan-orchestration</command-message>\n<command-name>/plan-orchestration</command-name>\n<command-args>38.4 inline\n\nPlease properly read the skills. Some additional notes, only commit on important events</command-args>'
+        );
+        expect(title).toBe('/plan-orchestration 38.4 inline Please properly read the ski');
+        expect(title).toHaveLength(60);
+    });
+
+    it("keeps the model's title over a slash command's", () => {
+        const f = make();
+        f.write([
+            human('2026-01-01T10:00:00.000Z', LITWATCH),
+            { type: 'ai-title', aiTitle: 'Named by the model' }
+        ]);
+        expect(f.only().title).toBe('Named by the model');
+    });
+
+    it('titles a prompt that quotes the markup mid-sentence by its opening', () => {
+        expect(
+            titled(
+                'Why does <command-name>/x</command-name> show up in the list of sessions I have open today?'
+            )
+        ).toBe('Why does <command-name>/x</command-name> show up in the list');
     });
 
     it('sums the tokens and counts a cache bust', () => {

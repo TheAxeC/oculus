@@ -69,7 +69,7 @@ digraph layers {
     "views to state" [label="563", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     "views" -> "views to state" [arrowhead=none];
     "views to state" -> "state" [];
-    "views to ui" [label="524", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+    "views to ui" [label="526", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     "views" -> "views to ui" [arrowhead=none];
     "views to ui" -> "ui" [];
 }

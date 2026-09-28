@@ -270,6 +270,7 @@ const PASS_THROUGH: Record<string, string> = {
     'src/lib/ui/menu/MenuOpener.svelte':
         '.opener=fs-sm | .opener.compact=fs-lg | .opener.bare=fs-lg | :global(body.rice) .opener.rail :global(.glyph:not(:has(svg)))=fs-lg',
     'src/lib/ui/controls/Confirm.svelte': '.message=fs-sm | .detail=fs-xs | .row button=fs-sm',
+    'src/lib/ui/display/CodeText.svelte': 'code=fs-sm',
     'src/lib/ui/display/Glyph.svelte': '',
     'src/lib/ui/controls/RowButton.svelte': '',
     'src/lib/ui/controls/Search.svelte': '.search=fs-sm',

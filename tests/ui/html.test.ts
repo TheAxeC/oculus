@@ -1,5 +1,6 @@
 // Layer 3, primitive test. The one sanitiser: the profile it filters by, the addresses it lets an
-// href hold, what a link is given once it is clean, and the Markdown line a card's field becomes.
+// href hold, what a link is given once it is clean, and the Markdown line a card's field becomes;
+// and the pieces codeSpans cuts a catalog line into, its backticked code and the words around it.
 //
 // What this does NOT cover: DOMPurify's own filtering. The library needs a document to parse into
 // and this suite runs in node (vite.config.ts sets `environment: 'node'`), where its `isSupported`
@@ -23,6 +24,7 @@ import {
     LINK_TARGET,
     OUTWARD_SCHEME,
     PROFILE,
+    codeSpans,
     inlineMarkdown,
     sanitise
 } from '../../src/lib/ui/html.ts';
@@ -135,6 +137,51 @@ describe('inlineMarkdown', () => {
         for (const text of ['a **bold** field', '<script>alert(1)</script>', '[one](one.md)']) {
             expect(inlineMarkdown(text)).toBe(sanitise(marked.parseInline(text, { async: false })));
         }
+    });
+});
+
+describe('codeSpans', () => {
+    /** The line the pieces give again, with each code piece's backticks put back. */
+    function joined(text: string): string {
+        return codeSpans(text)
+            .map((piece) => (piece.code ? `\`${piece.text}\`` : piece.text))
+            .join('');
+    }
+
+    it('cuts a code span out of the words around it', () => {
+        expect(codeSpans('missing `title`')).toEqual([
+            { code: false, text: 'missing ' },
+            { code: true, text: 'title' }
+        ]);
+    });
+
+    it('keeps the words between two code spans as one plain piece', () => {
+        const line = 'has `datasets` but no Data section (README.md `## Data` or DATA.md)';
+        expect(codeSpans(line)).toEqual([
+            { code: false, text: 'has ' },
+            { code: true, text: 'datasets' },
+            { code: false, text: ' but no Data section (README.md ' },
+            { code: true, text: '## Data' },
+            { code: false, text: ' or DATA.md)' }
+        ]);
+        expect(joined(line)).toBe(line);
+    });
+
+    it('leaves a lone backtick, and a line with none, as one plain piece', () => {
+        expect(codeSpans('a lone ` backtick')).toEqual([
+            { code: false, text: 'a lone ` backtick' }
+        ]);
+        expect(codeSpans('no code at all')).toEqual([{ code: false, text: 'no code at all' }]);
+    });
+
+    it('honours nothing of Markdown but the code span', () => {
+        const line = 'public (`a<b & c`) but *no* entry [x](y)';
+        expect(codeSpans(line)).toEqual([
+            { code: false, text: 'public (' },
+            { code: true, text: 'a<b & c' },
+            { code: false, text: ') but *no* entry [x](y)' }
+        ]);
+        expect(joined(line)).toBe(line);
     });
 });
 

@@ -1,7 +1,10 @@
 <script lang="ts">
     // Layer 3, primitive. One line saying there is nothing here. The words are the view's, since
-    // only the view knows what is missing and why; this gives them the same shape everywhere.
+    // only the view knows what is missing and why; this gives them the same shape everywhere. The
+    // message is drawn through CodeText, so a backticked key in it (a manifest field, a file) is
+    // drawn as code.
 
+    import CodeText from '../display/CodeText.svelte';
     import Glyph from '../display/Glyph.svelte';
 
     type Props = {
@@ -18,7 +21,9 @@
     {#if glyph !== undefined}
         <Glyph name={glyph} />
     {/if}
-    <span class="message">{message}</span>
+    <span class="message">
+        <CodeText text={message} />
+    </span>
 </p>
 
 <style>

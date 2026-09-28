@@ -144,6 +144,13 @@ describe('the cards', () => {
         expect(body).toContain('one open marker');
     });
 
+    it('draws a backticked word of the message as code, with no backtick left', () => {
+        const body = drawn([finding({ message: 'missing `results`' })]);
+        expect(body).toMatch(/<code[^>]*>results<\/code>/);
+        // CodeText draws the field between backticks as code, so the marks themselves are dropped.
+        expect(body).not.toContain('`results`');
+    });
+
     it('carries the mute control on an open card', () => {
         expect(drawn([finding()])).toContain(catalog['audit.mute']);
     });

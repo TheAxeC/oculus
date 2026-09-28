@@ -29,6 +29,7 @@
     // machine's own, since its keys are read by loadLocal and never merged into the configuration.
 
     import Card from '$lib/ui/frame/Card.svelte';
+    import CodeText from '$lib/ui/display/CodeText.svelte';
     import Disclosure from '$lib/ui/tree/Disclosure.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
@@ -117,7 +118,9 @@
                             onclick={() => edit(name)}
                         />
                     {/snippet}
-                    <p class="desc">{lookup(descriptionKey(name))}</p>
+                    <p class="desc">
+                        <CodeText text={lookup(descriptionKey(name))} />
+                    </p>
                     {#if held.error !== ''}
                         <p class="desc">{t('config.failed', held.error)}</p>
                     {:else if held.loading}

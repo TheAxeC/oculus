@@ -1,7 +1,8 @@
 // Layer 3, primitive, and one of the three that are not components. The HTML the app draws and the
 // one sanitiser every string of it passes through. A hub file, a feed value and an agent's
 // transcript are markup somebody else wrote, so what they turn into is filtered before a view draws
-// it; the catalog's own text under config/text/ is oculus writing to itself and is drawn as it is.
+// it; the catalog's own text under config/text/ is oculus writing to itself and is drawn without
+// the sanitiser.
 //
 // The profile is data below, not a call site's argument: an allow-list of the elements and the
 // attributes marked and inline Markdown emit, and nothing else. No handler attribute, no style, no
@@ -10,6 +11,10 @@
 // own purifier, because DOMPurify filters attribute names and never their values: a link that names
 // a scheme is given the target and the rel below, and an input that is not a task list's checkbox
 // is removed with its attributes.
+//
+// One reading here draws no HTML at all: codeSpans cuts a catalog line into its plain words and
+// its backticked code, which ui/display/CodeText.svelte draws as Svelte markup, so a line keeps its
+// code look on the server and in the browser alike.
 //
 // The purifier is this module's instance, built from the document once, so the hooks are ours and
 // the package's shared default instance is left as it is for anything else that imports it.
@@ -20,7 +25,7 @@
 // ever starts rendering on the server, because the pass-through would then be a hole.
 
 import DOMPurify from 'dompurify';
-import { marked } from 'marked';
+import { Lexer, marked } from 'marked';
 import { HEADING_PREFIX, renderDocument } from '../data/prose/markdown.ts';
 
 /**
@@ -328,4 +333,26 @@ export function inlineMarkdown(text: string): string {
  */
 export function blockMarkdown(text: string): string {
     return sanitise(renderDocument(text));
+}
+
+/** One piece of a catalog line: a run of plain words, or the text of one backticked code span. */
+export type CodeSpan = { code: boolean; text: string };
+
+/**
+ * The pieces of one catalog line, in order: each backticked code span a code piece of its text, and
+ * the words between them plain pieces. marked's inline lexer finds the spans, and every other token
+ * it reads is kept as the source text it was read from, so a line never grows emphasis or a link it
+ * was not written with. The plain pieces and the code pieces with their backticks put back give the
+ * line again.
+ */
+export function codeSpans(text: string): CodeSpan[] {
+    const pieces: CodeSpan[] = [];
+    for (const token of new Lexer().inlineTokens(text)) {
+        const code = token.type === 'codespan';
+        const words = code ? String(token.text) : token.raw;
+        const last = pieces.at(-1);
+        if (!code && last !== undefined && !last.code) last.text += words;
+        else pieces.push({ code, text: words });
+    }
+    return pieces;
 }

@@ -28,6 +28,7 @@
     // are not repeated here.
 
     import Card from '$lib/ui/frame/Card.svelte';
+    import CodeText from '$lib/ui/display/CodeText.svelte';
     import Disclosure from '$lib/ui/tree/Disclosure.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
@@ -120,7 +121,9 @@
                 onclick={() => void mute(finding, !muted)}
             />
         {/snippet}
-        <span class="message">{finding.message}</span>
+        <span class="message">
+            <CodeText text={finding.message} />
+        </span>
     </Card>
 {/snippet}
 

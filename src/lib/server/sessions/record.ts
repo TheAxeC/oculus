@@ -28,7 +28,7 @@ export const MAX_TIMELINE = 200;
 export const MAX_AGENTS = 100;
 /** The prefix of a prompt that goes on the timeline. */
 export const PROMPT_CHARS = 200;
-/** The prefix of the first prompt that becomes the fallback title. */
+/** The length the fallback title is cut to. */
 export const TITLE_CHARS = 60;
 
 /** The running state of one fold. Everything in it survives JSON.stringify and JSON.parse. */
@@ -204,10 +204,30 @@ export function prune(acc: Acc): void {
     if (acc.timeline.length > MAX_TIMELINE) acc.timeline = acc.timeline.slice(-MAX_TIMELINE);
 }
 
-/** The AI title, else the opening of the first prompt, else the session id. */
+/**
+ * The command a prompt that opens a slash command runs, with its arguments on one line: the prompt
+ * the harness writes for `/spec 38.2 20b` is its `<command-name>` and `<command-args>` tags, which
+ * read as markup at the head of a title. Only a prompt that starts with a `<command-` tag counts,
+ * so a prompt that quotes the markup mid-sentence keeps its own words. Null for any other prompt.
+ */
+function slashCommand(prompt: string): string | null {
+    const text = prompt.trimStart();
+    if (!text.startsWith('<command-')) return null;
+    const name = /<command-name>([\s\S]*?)<\/command-name>/.exec(text)?.[1].trim();
+    if (!name) return null;
+    const args = /<command-args>([\s\S]*?)<\/command-args>/.exec(text)?.[1].replace(/\s+/g, ' ');
+    const words = args?.trim() ?? '';
+    return words === '' ? name : `${name} ${words}`;
+}
+
+/**
+ * The AI title, else the opening of the first prompt, else the session id. The opening of a prompt
+ * that runs a slash command is the command and its arguments, cut to the same length.
+ */
 export function title(acc: Acc): string {
     if (acc.aiTitle) return acc.aiTitle;
-    const opening = (acc.firstPrompt ?? '').slice(0, TITLE_CHARS).trim();
+    const prompt = acc.firstPrompt ?? '';
+    const opening = (slashCommand(prompt) ?? prompt).slice(0, TITLE_CHARS).trim();
     return opening || acc.id;
 }
 

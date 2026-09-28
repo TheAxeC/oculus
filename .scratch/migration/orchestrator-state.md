@@ -27,18 +27,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:      # Q98 and Q89 of set 2 in flight, Q98 under review; Q92 waits on open item Z36; Q80 of set 3 in flight.
-- step: Q98
-  executor: agent
-  worker: claude:opus
-  session_id: acf138bc046aa572e
-  worktree: .agents/worktrees/Q98
-  base: 6048ddab
-  launched: 2026-09-28
-  report: agents/reviews/Q98-report.md
-  landing: not-started
-  reviewer_report: agents/reviews/Q98-refuter.md (reviewer aeed9e709ec6a8e7f, about 24 tool calls, 15 min)
-  round: 1
+dispatch:      # Q89 of set 2 under review, Q80 of set 3 building; Q92 of set 2 is prepared next.
 - step: Q89
   executor: agent
   worker: claude:opus
@@ -118,10 +107,7 @@ None. Axel lifted it on 2026-09-23 with `/plan-orchestration oculus/migration` a
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is booked as its own step in `plan.md` and carried in the Booked section below, since it needs no ruling from him.
 
-- Z38, the queue's single steps regrouped (raised 2026-09-28, from Axel's question why so many steps run alone). The loop fills three slots as they free, so a set on the queue line is an order, never a barrier; a step runs alone only when it shares files with every neighbour. Checked on main at fce72d27: Q79d (the `isRecord`, `inside`, `ago` and `parseBranches` copies in `server/`, `state/` and `MergeSide.svelte`), Q87 (`tests/checks/imports/`, the duplication check, `bin/diagrams/imports.mjs`) and Q81 (`ui/menu/`, `Confirm`, `Prompt`, the palette and their 58 users) share only `package.json` and its lock, a rerun of `npm install`. Q87's line says it runs alone, which Z34 (a) no longer supports. Q79b stays alone (it rewrites 99 test files), and Q72, R2, X2 and O33 stay alone (each reads or moves the whole tree). Q88 shares rows and tabs with Q82, X3a and X3c, so it can pair only with Q96. Q84 and L4 may pair; L4's brief has no path list, so it is settled at their `/spec`. Options:
-  - (a) The queue from Q79a on reads: Q79a + Q79c + Q80; Q79d + Q87 + Q81; Q79b; Q96 + Q88; Q82 + D13 + X3c; X3a (after Q82); Q91 + Q83; Q84 + L4 (if their paths allow); Q85 + Q86; the rest unchanged; and "runs alone" struck from Q87's line.
-  - (b) The queue as it stands.
-  - Recommended: (a); it removes four single slots. (b) is the lazy option.
+None.
 
 ## Time per step (Axel asked 2026-09-27 for how it evolves with Q77; measured from each builder's transcript: each tool call from call to result, each background wait from the builder stopping to the run waking it)
 
@@ -132,10 +118,16 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 
 - The Ordo sentence "A step that touches a configuration file or a rule file runs alone" (`skills/plan-orchestration/SKILL.md:208`) reworded to name the plan's own configuration (`.agents/plan.yaml`, the verification block) and the rules file with its standards, as Z34 (a) reads it: a change in the Ordo repository, for its session.
 - Q72, the architecture re-read before the release (booked 2026-09-24 with Q71, on Axel's ruling that one package fixes the architecture and a re-read checks it at the end): the diagrams regenerated and read, Q71's import measures run again, and what moved since fixed as its own step; queued after M4, before R2 (`plan.md:176`).
-- Q79a to Q79d, the library audit's fixes that need no new dependency (booked 2026-09-26 from the audit, section D of `agents/reviews/library-audit.md`; split into the server, the tests, the page and the shared helpers by Axel's Z37 (a), 2026-09-28): each a step in `plan.md`, queued Q79a + Q79c + Q80, then Q79d, then Q79b alone.
+- Q79a to Q79d, the library audit's fixes that need no new dependency (booked 2026-09-26 from the audit, section D of `agents/reviews/library-audit.md`; split into the server, the tests, the page and the shared helpers by Axel's Z37 (a), 2026-09-28): each a step in `plan.md`, queued Q79a + Q79c + Q80, then Q79d + Q87 + Q81, then Q79b alone (Z38 (a)).
 - O33, oculus extracted into its own GitHub repository (Axel, 2026-09-25), last in the queue after X2; Axel pushes.
 
 ## Closed items (kept as the log of what was raised and how it ended)
+
+- Z38, the queue's single steps regrouped (raised 2026-09-28, from Axel's question why so many steps run alone). The loop fills three slots as they free, so a set on the queue line is an order, never a barrier; a step runs alone only when it shares files with every neighbour. Checked on main at fce72d27: Q79d (the `isRecord`, `inside`, `ago` and `parseBranches` copies in `server/`, `state/` and `MergeSide.svelte`), Q87 (`tests/checks/imports/`, the duplication check, `bin/diagrams/imports.mjs`) and Q81 (`ui/menu/`, `Confirm`, `Prompt`, the palette and their 58 users) share only `package.json` and its lock, a rerun of `npm install`. Q87's line says it runs alone, which Z34 (a) no longer supports. Q79b stays alone (it rewrites 99 test files), and Q72, R2, X2 and O33 stay alone (each reads or moves the whole tree). Q88 shares rows and tabs with Q82, X3a and X3c, so it can pair only with Q96. Q84 and L4 may pair; L4's brief has no path list, so it is settled at their `/spec`. Options:
+  - (a) The queue from Q79a on reads: Q79a + Q79c + Q80; Q79d + Q87 + Q81; Q79b; Q96 + Q88; Q82 + D13 + X3c; X3a (after Q82); Q91 + Q83; Q84 + L4 (if their paths allow); Q85 + Q86; the rest unchanged; and "runs alone" struck from Q87's line.
+  - (b) The queue as it stands.
+  - Recommended: (a); it removes four single slots. (b) is the lazy option.
+  - Ruled 2026-09-28, Axel: "(a) And indeed, 'the loop fills three slots as they free up. A set on the queue line is only an order, never a barrier;' I really like this". The queue in `plan.md` reads as (a) says, with that sentence written as the queue's rule, and Q87's line no longer says it runs alone. The lazy option was (b).
 
 - Z37, Q79 as one step or four (raised 2026-09-28, by the orchestrator while preparing the queue). Q79 is section D of `agents/reviews/library-audit.md` in full plus the raw view buttons. Counted on main at 406e97fa: 22 files build JSON responses by hand (`grep -rln 'new Response(JSON.stringify' src`), 24 call `sameOrigin(` (two different `sameOrigin` rules, `server/core/auth.ts:38` and `server/content/images.ts:298`), 99 test files end with `afterAll(sweepScratch` and 113 lines assert on a tmpdir, 31 test files walk folders with `readdirSync`, 7 `isRecord` copies, 11 raw `<button>` elements under `src/lib/views`, plus the marked, highlight.js, yaml, terminal-token, HPC-markup and plural items. As one step it touches most of `src/lib/server`, most of `tests` and a part of the views: one builder for many hours, a diff of a few hundred files that must be read in full, and no other step can run beside it, since it shares files with nearly every one. Two items shrink by rulings already made: the overlays' focus traps and the palette's `aria-activedescendant` go to Q81 (LA1 (a), LA2 (b) taken), and the `duplication.test.ts` fix goes, since Q87 replaces that check with `jscpd` (LA12 (a)). Options:
   - (a) Split Q79 into four steps, each one builder and one review: Q79a the server (`json()`, the one `/api/` origin guard in `hooks.server.ts` with the two rules reconciled, config read one way, `isDeepStrictEqual`, `TextDecoder`, `util.parseArgs` in `bin/` and `root/args.ts`, `stripVTControlCharacters` and `timers/promises` in `usage/refresh.ts`, `yaml` `stringify` in the migration script); Q79b the tests (vitest `test.extend` scratch fixtures in place of `afterAll(sweepScratch)`, the redundant tmpdir assertions dropped, `fs.globSync` for the walkers, the TypeScript scanner and `svelte/compiler` as the one code reader of the checks); Q79c the page (`svelte/no-restricted-html-elements` over every view folder in place of `controls.test.ts`, the 11 raw buttons made primitives, marked's `walkTokens`, the Help view reading marked's tokens, `hljs.getLanguage`, the unused highlight.js in Config, the terminal's font and selection colour from tokens, the HPC views' markup one element per line, the `hpc.svelte.ts:33` plural); Q79d the shared helpers (the seven `isRecord` copies to `isMap`, one `inside`, one `parseBranches`, one porcelain parser, one path helper, one `ago`, one local-date helper). Q79a and Q79c touch disjoint folders and can run side by side with other steps; Q79b runs alone. Pros: each diff can be read whole and reviewed, and work goes on beside three of the four. Cons: four dispatches, four landings.
@@ -401,6 +393,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-09-28. Q98 landed through /spec, /refute and /land (the four look findings Z28 to Z31: the Lit Watch link cut with an ellipsis, slash-command session titles, catalog code words drawn as code, the one-day Calendar footer); one repair round, refuted again, one fix at landing (the report's open items). Verify on main: `verify: 6 commands passed` (Test Files 339 passed, Tests 5325 passed). Axel ruled Z38 (a): the queue regrouped, a set only an order. In flight: Q89 (review read, repair round next) and Q80 (building). Next: `/spec` Q92.
 - 2026-09-28. Set 1 of the queue landed through /spec, /refute and /land: Q95 (Add a button no longer takes the Rail section down, b927aae0), Q94 (the launch note removed, 6b73371d) and Q97 (Help its own rail button after System, with its own page; one repair round, refuted again with no finding; one fix at landing, the merge of Q95's Add case with the twelve-button rail). Verify on main after Q97: `verify: 6 commands passed` (Test Files 338 passed, Tests 5309 passed). Nothing in flight. Next: set 2, Q98 + Q92 + Q89.
 - 2026-09-28. Axel ruled Z22 to Z26, Z28 to Z32 and closed Z11. Booked: Q95 (the Add a button crash) before Q94, Q97 (Help's rail button) and Q98 (the four look findings) after Q94, Q96 (the Rail section's labels and icon dropdown) after Q81; their order is open item Z33. `libraries: check` added to `.agents/plan.yaml` and `check_config.py` exits 0. D16's source-tab control seen on a probe `.rtf`. No agent is started, on Axel's word; next, once he rules on Z33: `/spec` Q95.
 - 2026-09-28. Every owed look taken on the TEST page of Axel's Chrome on 8790 (Z27 closed): Q70, Q52, Q38, Q34, Q29 and D19c, and again Q13, M2, D16 and Q33. One finding fixed on main: the Changes view draws the session control its empty text names (S2's brief item 8), with a case. Raised: Z28 to Z32. Verify on main: `verify: 6 commands passed` (Test Files 341 passed, Tests 5355 passed). Paused for Axel on Z22 to Z26 and Z28 to Z32. Q94 is prepared and not launched; nothing is dispatched until he rules on Z22.

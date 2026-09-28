@@ -68,6 +68,12 @@
          * children, or nothing for a cell that is a mark alone, and `label` is its name.
          */
         cell?: boolean;
+        /**
+         * Words that may be longer than the room: the button is never wider than its parent, and a
+         * label that does not fit is cut with an ellipsis, so the caller gives the whole words as
+         * `title` for the tooltip. The parent is what sets the room, a flex box its width capped.
+         */
+        cut?: boolean;
         /** A rail view id, rendered on the button for browser navigation. */
         dataView?: string;
         /** A configured hub document's path, rendered on the button for browser navigation. */
@@ -111,6 +117,7 @@
         bare = false,
         status = false,
         cell = false,
+        cut = false,
         dataView,
         dataDoc,
         dataCardToggle = false,
@@ -147,6 +154,7 @@
         class:bare
         class:status
         class:cell
+        class:cut
         role={checked === undefined ? undefined : 'radio'}
         aria-checked={checked}
         aria-expanded={expanded}
@@ -299,6 +307,21 @@
         white-space: inherit;
         overflow: hidden;
         text-overflow: ellipsis;
+    }
+
+    /* Words cut to the room: the button is capped at its parent's width, and the label, the one
+       box that gives way, is one line ended with an ellipsis where the room ends. */
+    .tool.cut {
+        max-width: 100%;
+    }
+
+    /* The label is named through :global so the compiler stamps no scoping class on it: every
+       button draws its label as the plain `label` class, cut or not. */
+    .tool.cut > :global(.label) {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
     .tool.cell:disabled {

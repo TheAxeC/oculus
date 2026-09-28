@@ -2,7 +2,8 @@
     // Layer 3, view partial of views/feeds/radar/Radar.svelte. One paper with its metadata, links,
     // and writes. It receives the feed entry and project map and keeps only the optional idea form
     // locally. The source line (authors, venue, year) is one line, cut with an ellipsis where the
-    // card ends, and its whole text is the line's tooltip.
+    // card ends, and its whole text is the line's tooltip. A project link ends in an ellipsis where
+    // the card ends, with the whole title as its tooltip.
 
     import Card from '$lib/ui/frame/Card.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
@@ -138,11 +139,16 @@
     {#if links.length > 0 || text('maps_to') === 'new-idea-candidate'}
         <div class="row">
             {#each links as project (project.id)}
-                <ToolButton
-                    label={project.title}
-                    glyph="goto"
-                    onclick={() => openView('project', { id: project.id, label: project.title })}
-                />
+                <span class="link">
+                    <ToolButton
+                        label={project.title}
+                        title={project.title}
+                        glyph="goto"
+                        cut
+                        onclick={() =>
+                            openView('project', { id: project.id, label: project.title })}
+                    />
+                </span>
             {/each}
             {#if text('maps_to') === 'new-idea-candidate'}
                 <Tag label={t('radar.new_idea_candidate')} glyph="spark" />
@@ -201,6 +207,15 @@
 
     .threat {
         color: var(--c-red-txt);
+    }
+
+    /* A flex box capped at the row's width. The tooltip's wrapper around the project's button is
+       its flex item and gives way to the room left, the button fills the wrapper, and the button
+       cuts its own label, so a long title ends in an ellipsis where the card ends. */
+    .link {
+        display: flex;
+        min-width: 0;
+        max-width: 100%;
     }
 
     .paper a {

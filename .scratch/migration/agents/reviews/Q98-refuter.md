@@ -48,3 +48,22 @@ The first run on the unchanged tree (no base checkout; reasoned instead); the CS
 ## Usage
 
 About 24 tool calls (31 by the runner's count), about 10 to 15 minutes, the verify run about 3 of them.
+
+## Repair round 1, refuted
+
+Reviewer ab3d474312821ace6, a fresh agent, over `git diff be867d83` read against `git diff 6048ddab`.
+
+Verify from `.agents/worktrees/Q98/tools/oculus` exited 1 at `npm test`: `Test Files 3 failed | 336 passed (339)`, `Tests 9 failed | 5316 passed (5325)`, all nine timeouts (`Hook timed out in 10000ms` or `Test timed out in 5000ms`) in `tests/server/core/git-reads.test.ts`, `tests/server/core/git.test.ts` and `tests/server/git/git-ops.test.ts`, none touched by the step (`git diff 6048ddab --name-only | grep -i git` prints nothing), load averages 6.61, 10.32, 10.42. The other five commands, run one by one: `npm run check` `COMPLETED 1431 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS`; `npm run build` exit 0; `npm run format:check` "All matched files use Prettier code style!"; `npm run lint` exit 0; the ASCII grep exit 0.
+
+- Spec: none. The delta is round items 1 to 3 exactly (`record.ts:31`, `record.ts:213`, `html.ts:4-5`), nothing beyond, no check removed.
+- Proof 1: the report's open-items section quotes Z36 alone as read from `orchestrator-state.md:105-114`; at the round's send commit f120cbb5 the section held Z36 and Z37, and the report was rewritten (16:59:21) before the rulings were booked (ae7cc754, 17:00:18). Fix at landing: the section replaced with the current open-items list, verbatim. The `codeSpans` Markdown case is at `tests/ui/html.test.ts:177-185` (the file is 193 lines), so the report's corrected line is right and the first review's `:469-476` was wrong.
+- Standards: none. Behaviour: none.
+
+## Closed
+
+- First review, Spec 1 (the `cut` prop in place of the brief's RadarCard rules): ruled in round 1, the prop stays; the ellipsis is checked at the landing's look.
+- First review, Spec 2 (six paths beyond the list): ruled in round 1, all stay as necessary.
+- First review, Proof 1 (the wrong revert line): corrected in round 1, confirmed by the round's review.
+- First review, Standards 1 (the builder's `git log -1` in the main checkout): recorded; no code to change, and no git command was run in round 1.
+- First review, Standards 2 to 4: fixed in round 1, confirmed by the round's review.
+- Round review, Proof 1 (stale open items in the report): fixed at landing.

@@ -11,7 +11,9 @@ text:
         cancelled: cancelled
         error: error
         every: every {0}m
-        footer: Read-only over {0} days back and {1} days ahead. A Google account reads the calendars ticked in Google's own calendar list, and no others.
+        days_n: '{0} days'
+        days_one: 1 day
+        footer: Read-only over {0} back and {1} ahead. A Google account reads the calendars ticked in Google's own calendar list, and no others.
         live: live
         open_event: open at the provider
         polling: reading calendars...

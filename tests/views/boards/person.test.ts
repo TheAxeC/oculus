@@ -253,7 +253,12 @@ describe('one person as their own tab', () => {
     it('says so on each block a person has nothing under, and marks the hub owner', () => {
         const body = drawn(client, { key: 'axel' });
         expect(body).toContain(catalog['person.no_joint_work']);
-        expect(body).toContain(catalog['person.no_projects']);
+        // The backticked key of the catalog line is drawn as code, with no backtick left.
+        expect(body.replace(/<!--[\s\S]*?-->/g, '')).toMatch(
+            /No project names this person in its <code[^>]*>collaborators:<\/code>\./
+        );
+        // CodeText draws the key between backticks as code, so the marks themselves are dropped.
+        expect(body).not.toContain('`collaborators:`');
         expect(body).toContain(catalog['person.self']);
         // this person has no supervision folder, so the block is not drawn
         expect(body).not.toContain('data-block="folder"');

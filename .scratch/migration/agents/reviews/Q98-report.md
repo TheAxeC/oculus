@@ -2,18 +2,11 @@
 
 Everything in the brief and in repair round 1 is done. The orchestrator ruled that the `cut` prop on `ToolButton` and the six paths beyond the brief's list stay (decisions 1 and 2 below).
 
-## Open items of the state file (verbatim, read from the main checkout's `tools/oculus/.scratch/migration/orchestrator-state.md:105-114`)
-
 ## Open items (only what Axel must rule on; every report opens with this list verbatim and repeats it until he has ruled)
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is booked as its own step in `plan.md` and carried in the Booked section below, since it needs no ruling from him.
 
-- Z36, where Q92's calendar link is kept (raised 2026-09-28, by `/spec` Q92). Z12 ruled the link written in `config/local.yml` as `- { provider: ics, label: <label>, url: "<link>" }` and never sent to the page. The tree makes the two contradict: the Config view lists `local.yml` as a card (`src/lib/state/system/config-files.ts:49`), reads its whole text through the file endpoint to count its lines (`src/lib/views/system/config/Config.svelte:107`) and draws that raw text under a disclosure, so any link in `local.yml` reaches the page whenever the Config view is open, and shows on screen when the card is opened. The connector's other secrets (client halves, refresh tokens) are kept out of `local.yml` in `~/.oculus/connect/`, at mode 0600, which nothing on the page reads (`src/lib/server/accounts/connect/store.ts:1-24`). Options:
-  - (a) The link in the account's own credential file, `~/.oculus/connect/calendar/ics-<label>.json` holding `{ "url": "<link>" }`, and `local.yml` holding only `- { provider: ics, label: <label> }`. The Calendar's Add form offers a third provider, the published link, which asks for the label and the link, and the server writes the row and the file. Pros: the link sits with every other secret, the Config view shows none, and it is put there from the page without editing a file. Cons: the Add form gets a third field shape, and the link is not where `local.yml` readers would look for it.
-  - (b) The link in `local.yml` as ruled, and the file endpoint masks the `url` of every `ics` row when it serves `local.yml`, a save carrying the mask keeping the stored link. Pros: the shape Z12 ruled. Cons: one file's text is rewritten on every read and save, the text shown differs from the disk, and a save must merge the mask back, which is fragile.
-  - (c) The link in `local.yml` as ruled, and "never sent to the page" narrowed to never in the `calendar` channel, a log or an error. Pros: nothing more to build. Cons: the link shows in the Config view, where a screenshot of that card carries it. This is the lazy option.
-  - Recommended: (a), since it keeps the link where oculus already keeps every connector secret and needs no masking. The rest of Q92 (the Inbox card, the entities, the calendar views, the 31/62 window) does not depend on this choice and is briefed once it is ruled, so Q92 goes out as one step.
-
+None.
 
 ## Repair round 1
 

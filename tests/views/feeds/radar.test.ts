@@ -151,6 +151,34 @@ describe('the Lit Watch view', () => {
         expect(body).not.toContain('Dismissed paper');
     });
 
+    it('draws a linked project with its whole title as the tooltip, its label in a capped box', () => {
+        const long =
+            'Private Coupled Descent: Dimension-Free Privacy for Vertical Federated Learning';
+        const snapshot = {
+            version: 302,
+            entities: { projects: { pcd: { id: 'pcd', title: long } } }
+        } as unknown as Snapshot;
+        receive({ channel: 'portfolio', version: 302, payload: snapshot });
+        serve({
+            ok: true,
+            kind: 'radar',
+            file: 'feeds/literature-radar.yml',
+            meta: {},
+            entries: [{ title: 'Linked paper', bucket: 'adjacent', project: 'pcd' }]
+        });
+        const body = render(Radar, {
+            context: clientContext(client),
+            props: { instance: instance('radar-link') }
+        }).body.replace(/<!--[\s\S]*?-->/g, '');
+        const at = body.indexOf('<span class="link');
+        expect(at).toBeGreaterThan(-1);
+        // The link's box holds the button with the title as its label and the tooltip after it.
+        const link = body.slice(at, body.indexOf('role="tooltip"', at) + 400);
+        expect(link).toMatch(/<button type="button" class="tool [^"]*\bcut\b/);
+        expect(link).toMatch(new RegExp(`<span class="label">${long}</span>`));
+        expect(link).toMatch(new RegExp(`role="tooltip"[^>]*>${long}</span>`));
+    });
+
     it('draws the intro legend as bucket glyphs in their hues beside the catalog words', () => {
         receive({
             channel: 'portfolio',

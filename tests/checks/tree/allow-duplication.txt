@@ -169,8 +169,6 @@ tests/server/git/deposit.test.ts tests/server/root/watch/git.test.ts b7816553bad
 tests/server/git/git-write.test.ts tests/server/core/git.test.ts aa36569ff27e the same 8 lines at 66 and 189, to fold into one place
 tests/server/git/git-write.test.ts tests/server/root/watch/git.test.ts b7816553bad2 the same 8 lines at 57 and 45, to fold into one place
 tests/server/accounts/mail/routes.test.ts tests/server/accounts/mail/write.test.ts e37e6d945c5e the same 8 lines at 62 and 36, to fold into one place
-tests/server/sessions/stores/transcripts.test.ts tests/server/root/watch/sessions.test.ts 79844c5ebf5d the same 8 lines at 47 and 39, to fold into one place
-tests/server/sessions/stores/transcripts.test.ts tests/server/root/watch/sessions.test.ts e7734c6bf606 the same 8 lines at 88 and 56, to fold into one place
 tests/server/machine/usage/usage.test.ts tests/views/system/usage.test.ts 37f9ca200f14 the same 8 lines at 882 and 317, to fold into one place
 tests/server/machine/usage/usage.test.ts tests/views/system/usage.test.ts 578723f7b40b the same 8 lines at 435 and 226, to fold into one place
 tests/shell/keys/palette.test.ts tests/views/sources/source.test.ts cf6105d754c4 the same 8 lines at 27 and 56, to fold into one place

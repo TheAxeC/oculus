@@ -67,6 +67,11 @@
             refresh: t('calendar.refresh_now')
         };
     }
+
+    /** A number of days as the footer says it: one day, or that many days. */
+    function dayCount(count: number): string {
+        return count === 1 ? t('calendar.days_one') : t('calendar.days_n', count);
+    }
 </script>
 
 <!-- The pane is the frame every view has; the head inside it is the connector's own status
@@ -102,7 +107,9 @@
             />
         {/if}
         {#if data}
-            <footer>{t('calendar.footer', data.daysBack, data.daysAhead)}</footer>
+            <footer>
+                {t('calendar.footer', dayCount(data.daysBack), dayCount(data.daysAhead))}
+            </footer>
         {/if}
     </div>
 </Pane>

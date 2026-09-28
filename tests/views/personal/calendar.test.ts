@@ -233,7 +233,16 @@ describe('the Calendar view', () => {
         expect(body).toContain('as of 08:15');
         expect(body).toContain('every 15m');
         expect(body).toContain('Refresh now');
-        expect(body).toContain('Read-only over 1 days back and 14 days ahead.');
+        expect(body).toContain('Read-only over 1 day back and 14 days ahead.');
+    });
+
+    it('says one day for a number that is 1, back or ahead, and days for any other', () => {
+        expect(draw({ ...payload, daysBack: 3, daysAhead: 1 })).toContain(
+            'Read-only over 3 days back and 1 day ahead.'
+        );
+        expect(draw({ ...payload, daysBack: 2, daysAhead: 14 })).toContain(
+            'Read-only over 2 days back and 14 days ahead.'
+        );
     });
 
     // Which calendars of an account are read is a choice the reader makes at Google rather than
