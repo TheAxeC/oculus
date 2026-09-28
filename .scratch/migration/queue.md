@@ -2,7 +2,7 @@
 
 In flight:
 - Q101 (each Terminal tab a terminal panel of its own, Z40 (d)): building.
-- Q79d (the library audit's shared helpers, each written once): built, review next.
+- Q79d (the library audit's shared helpers, each written once): repair round 1.
 Queued, in order:
 - Q87 and Q81 (the import-graph checks on dependency-cruiser; menus, context menus, tooltips and dialogs on bits-ui).
 - Q79b (the tests, runs alone).
