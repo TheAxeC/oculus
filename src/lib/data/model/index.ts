@@ -325,6 +325,7 @@ export type {
     Followup,
     Funding,
     Id,
+    ManualPart,
     Organisation,
     Person,
     PresentEli5,

@@ -23,8 +23,11 @@
 // of the held answer, a 304 keeps the held object as it is, and an answer equal to the held one
 // keeps the held object too, so an unchanged document rebuilds no markup and reloads no figure.
 
-import type { FilesPayload, Message } from '../../data/model/index.ts';
+import { fields } from '../../data/helpers/guards.ts';
+import type { FilesPayload, ManualPart, Message } from '../../data/model/index.ts';
 import type { EntitiesStore } from '../shared/stores/shapes.ts';
+
+export type { ManualPart };
 
 /** One document as the view reads it: the rendered HTML, its frontmatter, or what went wrong. */
 export type DocState = {
@@ -34,13 +37,18 @@ export type DocState = {
     error: string;
     /** True while the first answer for the pair is still to come. */
     loading: boolean;
+    /**
+     * The manual's runs of prose and diagrams as the server cut them, in order; empty for every
+     * other document.
+     */
+    parts: ManualPart[];
 };
 
 /** What a pair reads as before its answer arrives. */
-const PENDING: DocState = { html: '', frontmatter: null, error: '', loading: true };
+const PENDING: DocState = { html: '', frontmatter: null, error: '', loading: true, parts: [] };
 
 /** What no pair at all reads as: an empty id or name asks nothing and waits for nothing. */
-const NOTHING: DocState = { html: '', frontmatter: null, error: '', loading: false };
+const NOTHING: DocState = { html: '', frontmatter: null, error: '', loading: false, parts: [] };
 
 /** One rendered document per project and name, held for one client. */
 export type DocsStore = {
@@ -59,7 +67,13 @@ const HUB = 'hub';
 const MANUAL = 'manual';
 
 /** What api/docs answers in JSON, every field optional since an error answer carries fewer. */
-type Body = { html?: string; frontmatter?: unknown; error?: string; file?: unknown };
+type Body = {
+    html?: string;
+    frontmatter?: unknown;
+    error?: string;
+    file?: unknown;
+    parts?: unknown;
+};
 
 /** HTTP's answer to a request whose entity tag is still the file's. */
 const NOT_MODIFIED = 304;
@@ -93,7 +107,8 @@ function same(one: DocState, other: DocState): boolean {
         one.html === other.html &&
         one.error === other.error &&
         one.loading === other.loading &&
-        JSON.stringify(one.frontmatter) === JSON.stringify(other.frontmatter)
+        JSON.stringify(one.frontmatter) === JSON.stringify(other.frontmatter) &&
+        JSON.stringify(one.parts) === JSON.stringify(other.parts)
     );
 }
 
@@ -252,6 +267,7 @@ export function createDocs(entities: EntitiesStore): DocsStore {
             keep(key, {
                 html: typeof body.html === 'string' ? body.html : '',
                 frontmatter: readFrontmatter(body.frontmatter),
+                parts: readParts(body.parts),
                 error: '',
                 loading: false
             });
@@ -289,4 +305,27 @@ export function createDocs(entities: EntitiesStore): DocsStore {
     }
 
     return { document, hubDocument, manual };
+}
+
+/**
+ * The manual's runs as the answer carries them, each checked for its shape: a run that is neither a
+ * string of HTML nor a diagram with a name and its words is dropped, and an answer without runs
+ * reads as none.
+ */
+function readParts(value: unknown): ManualPart[] {
+    if (!Array.isArray(value)) return [];
+    return value.flatMap((one): ManualPart[] => {
+        const held = fields(one);
+        if (held.kind === 'html' && typeof held.html === 'string') {
+            return [{ kind: 'html', html: held.html }];
+        }
+        if (
+            held.kind === 'diagram' &&
+            typeof held.name === 'string' &&
+            typeof held.alt === 'string'
+        ) {
+            return [{ kind: 'diagram', name: held.name, alt: held.alt }];
+        }
+        return [];
+    });
 }

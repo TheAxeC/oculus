@@ -30,9 +30,10 @@ const EXTENSION = /^\.[^./\s]+$/;
 const BUNDLE_ID = /^[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+$/;
 
 /**
- * The extension of the last segment of a path, lowercased and with its dot, or the empty string.
+ * The extension of the last segment of a path, lowercased and with its dot, or the empty string for
+ * a name with none.
  */
-function extension(name: string): string {
+export function extensionOf(name: string): string {
     const base =
         name
             .split('/')
@@ -65,7 +66,7 @@ export function programApps(config: Record<string, unknown>): ProgramApps | null
 
 /** The bundle id of the application a file of this name opens in, or null when none is named. */
 export function programFor(name: string, apps: ProgramApps): string | null {
-    const suffix = extension(name);
+    const suffix = extensionOf(name);
     if (suffix === '' || !Object.hasOwn(apps, suffix)) return null;
     return apps[suffix];
 }

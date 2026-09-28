@@ -1,20 +1,21 @@
-// Layer 2, client state. The pure half of the file browser: what a name is, and what the tree
-// draws.
+// Layer 2, client state. The pure half of the file browser: what the tree draws. What a name says
+// about a file is state/sources/file-type.ts's, exported from here with the rest of the browser.
 //
 // The tree is a flat list rather than a component that renders itself. A row carries its depth, so
 // one `each` draws the whole tree and the view holds no recursion; and because the list is computed
 // from the listings the server answered and the set of open folders, what is on screen is state
 // rather than what some component last did to the DOM.
-//
-// The formats a browser draws are read from the name: the server sends no type with a listing, the
-// same answer has to serve a tree drawn before anything is opened, and a name is what the reader
-// picks by. Whether anything else is text is the file's own first bytes, through
-// data/helpers/text-kind.ts, because a name says nothing reliable about that and a list of
-// extensions is wrong about every name nobody put on it.
-
-import { isTextBytes } from '../../data/helpers/text-kind.ts';
 
 export { opensInProgram } from '../../data/helpers/opens-in-program.ts';
+export {
+    extensionOf,
+    languageOf,
+    languages,
+    nameOf,
+    typeOfFile,
+    type FileKind,
+    type FileType
+} from './file-type.ts';
 
 /** The root api/file serves the hub itself under, for a link that is a path inside the hub. */
 export const HUB_ROOT = 'hub';
@@ -45,9 +46,6 @@ export function normalisePath(path: string): string {
  */
 export const ENGINE_ROOT = 'engine';
 
-/** How a file opens: an HTML document, a code window, an image, a PDF, or a name and a link. */
-export type FileKind = 'html' | 'text' | 'image' | 'pdf' | 'other';
-
 /** One entry of one directory, as /api/fs answers it. */
 export type FsEntry = { name: string; kind: 'file' | 'dir'; size: number; mtime: number };
 
@@ -76,105 +74,8 @@ export type TreeRow = {
     open: boolean;
 };
 
-/** A file's type, and for a text file the highlighter's name for its language. */
-export type FileType = { kind: FileKind; language: string };
-
 /** The largest text a code window draws. A longer file is cut here and the view says so. */
 export const TEXT_LIMIT = 2 * 1024 * 1024;
-
-/** The extensions each language claims. A text file outside this map is painted as plain text. */
-const LANGUAGES: Record<string, string[]> = {
-    typescript: ['.ts', '.tsx', '.mts', '.cts'],
-    javascript: ['.js', '.jsx', '.mjs', '.cjs'],
-    python: ['.py'],
-    yaml: ['.yml', '.yaml'],
-    json: ['.json', '.ipynb'],
-    bash: ['.sh', '.bash', '.zsh', '.slurm'],
-    markdown: ['.md'],
-    latex: ['.tex', '.bib', '.sty', '.cls'],
-    css: ['.css'],
-    xml: ['.xml', '.svelte'],
-    lisp: ['.lisp', '.el', '.scm'],
-    ocaml: ['.ml', '.mli'],
-    r: ['.r'],
-    matlab: ['.m'],
-    julia: ['.jl'],
-    ini: ['.toml', '.ini']
-};
-
-/**
- * The whole names a language claims, for a file that carries no extension to be read from. The name
- * is compared lowercased, which is what makes `Makefile` and `makefile` the same file to a reader.
- */
-const NAMES: Record<string, string[]> = {
-    makefile: ['makefile']
-};
-
-/** What the highlighter calls a file it has no language for. */
-const PLAIN = 'plaintext';
-
-/** The extensions drawn as a picture. */
-const IMAGES = ['.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp'];
-
-/** The extensions that open in the document view, which is the one type this view hands on. */
-const PAGES = ['.html', '.htm'];
-
-/**
- * The extension of a name, lowercased and with its dot, or the empty string for a name with none.
- */
-export function extensionOf(name: string): string {
-    const base =
-        name
-            .split('/')
-            .filter((part) => part !== '')
-            .at(-1) ?? name;
-    const at = base.lastIndexOf('.');
-    return at <= 0 ? '' : base.slice(at).toLowerCase();
-}
-
-/** The last segment of a path, which is what a tab is labelled with. */
-export function nameOf(path: string): string {
-    return (
-        path
-            .split('/')
-            .filter((part) => part !== '')
-            .at(-1) ?? path
-    );
-}
-
-/** The highlighter's name for a file's language, from its extension or from its whole name. */
-export function languageOf(name: string): string {
-    const suffix = extensionOf(name);
-    for (const [language, list] of Object.entries(LANGUAGES)) {
-        if (list.includes(suffix)) return language;
-    }
-    const bare = nameOf(name).toLowerCase();
-    for (const [language, list] of Object.entries(NAMES)) {
-        if (list.includes(bare)) return language;
-    }
-    return PLAIN;
-}
-
-/**
- * How a file opens. The three formats a browser draws itself are the name's: an SVG is a picture
- * rather than text, as it is drawn everywhere else in the application. Everything else is text when
- * its first bytes say so and a download when they do not, so a `.txt` holding an archive is a
- * download and a script nobody gave an extension is text. A caller with no bytes yet gets `other`,
- * which is what the file view draws while it has none.
- */
-export function typeOfFile(name: string, bytes?: Uint8Array): FileType {
-    const suffix = extensionOf(name);
-    if (PAGES.includes(suffix)) return { kind: 'html', language: PLAIN };
-    if (IMAGES.includes(suffix)) return { kind: 'image', language: PLAIN };
-    if (suffix === '.pdf') return { kind: 'pdf', language: PLAIN };
-    const text = bytes !== undefined && isTextBytes(bytes);
-    return { kind: text ? 'text' : 'other', language: languageOf(name) };
-}
-
-/** Every language the code window registers, which is every one a name can resolve to. */
-export function languages(): string[] {
-    return [...new Set([...Object.keys(LANGUAGES), ...Object.keys(NAMES)])];
-}
 
 /** How one open folder is addressed in the set of open folders, and in a listing's own cache. */
 export function treeKey(root: string, path: string): string {

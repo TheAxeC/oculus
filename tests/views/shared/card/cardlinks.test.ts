@@ -31,6 +31,16 @@ setCatalog(catalog);
 
 const word = (key: string): string => catalog[key];
 const openIn = (label: string): string => word('project.card.open_in').replace('{0}', label);
+/**
+ * The control that offers the rest of a kind, found by its own word (the catalog's `more_tags`
+ * with any count), so a check that none is drawn holds whatever primitive or variant draws it and
+ * is not tripped by the cross-links, which are buttons too.
+ */
+const CONTROL = new RegExp(
+    `>${word('project.card.more_tags')
+        .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+        .replace('\\{0\\}', '\\d+')}<`
+);
 const more = (count: number): string =>
     word('project.card.more_tags').replace('{0}', String(count));
 
@@ -152,21 +162,26 @@ describe('the card tag lines', () => {
         expect(funding).toContain(`>${more(2)}<`);
         expect(datasets.match(/class="tag/g)).toHaveLength(SHOWN);
         expect(datasets).toContain(`>${more(1)}<`);
+        expect(funding).toMatch(CONTROL);
         expect(pillars.match(/class="tag/g)).toHaveLength(2);
         // this kind is no longer than SHOWN, so there is no control offering the rest
-        expect(pillars).not.toContain('class="tool');
+        expect(pillars).not.toMatch(CONTROL);
         expect(collaborations.match(/class="tag/g)).toHaveLength(1);
         // nor this one, which is shorter still
-        expect(collaborations).not.toContain('class="tool');
+        expect(collaborations).not.toMatch(CONTROL);
     });
 
     it('draws the cross-link kinds as buttons naming their kind and the rest as plain tags', () => {
         const [funding, pillars, datasets, collaborations] = lines(
             draw({ item: item({ funding: 1, pillars: 1, datasets: 1, collaborators: 1 }) })
         );
-        expect(funding).toContain(`title="${openIn(LABELS[0])}"`);
+        expect(funding).toContain(
+            `role="tooltip" hidden="" style="left: 0px; top: 0px">${openIn(LABELS[0])}<`
+        );
         expect(funding).toContain('class="crosslink');
-        expect(collaborations).toContain(`title="${openIn(LABELS[3])}"`);
+        expect(collaborations).toContain(
+            `role="tooltip" hidden="" style="left: 0px; top: 0px">${openIn(LABELS[3])}<`
+        );
         expect(collaborations).toContain('class="crosslink');
         // a pillar is not a kind that opens a view of its own, so its tags stay plain
         expect(pillars).not.toContain('class="crosslink');
@@ -197,7 +212,7 @@ describe('the card tag lines', () => {
         expect(datasets.match(/class="tag/g)).toHaveLength(2);
         expect(datasets).toContain('DATA-1');
         // the kind is no longer than SHOWN, so it is drawn whole and offers no control
-        expect(datasets).not.toContain('class="tool');
+        expect(datasets).not.toMatch(CONTROL);
     });
 
     // A server render carries no handler, so what pressing a cross-link does is read off the
@@ -240,7 +255,9 @@ describe('the card tag lines', () => {
         const software = drawn[4];
         expect(software.match(/class="tag/g)).toHaveLength(2);
         expect(software).toContain('class="crosslink');
-        expect(software).toContain(`title="${openIn(SOFTWARE)}"`);
+        expect(software).toContain(
+            `role="tooltip" hidden="" style="left: 0px; top: 0px">${openIn(SOFTWARE)}<`
+        );
         expect(software).toContain('SOFT-1');
     });
 

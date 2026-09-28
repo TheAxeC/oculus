@@ -35,7 +35,7 @@ function typeRules(file: string): string {
 
 const VIEWS: Record<string, string> = {
     'boards/collection/Collection.svelte': '.label=fs-xxs | .said=fs-md | .sub=fs-md',
-    'system/config/Config.svelte': '.intro, .desc=fs-md | .raw=fs-sm',
+    'system/config/Config.svelte': '.intro, .desc=fs-md',
     'sources/data/Data.svelte': '.said, .empty=fs-md',
     'boards/deposit/Deposit.svelte':
         '.lb=fs-xs | .mt=fs-sm | .grp-h=fs-xs | .none=fs-md | .warn=fs-md | .outcome=fs-md',
@@ -108,7 +108,7 @@ const VIEWS: Record<string, string> = {
     'boards/focus/Band.svelte':
         'summary=fs-xs | .lane-sub=fs-xs | .stage=fs-3xs | .entry-name=fs-md | .entry-name :global(.tool)=fs-md | .note=fs-xs',
     'boards/focus/CareerPanel.svelte':
-        '.career > summary=fs-sm | .seclbl=fs-xxs | .sub=fs-md | .note=fs-sm | .fact=fs-sm | .fact b=fs-xxs | .milestone=fs-md | .caveat=fs-sm | .order li=fs-sm | .ordernote=fs-xs | .inst=fs-xs | .tag=fs-xs | .when=fs-xs | .host-h=fs-sm | .rank=fs-xxs | .move=fs-sm | .crit li=fs-sm | .empty=fs-md',
+        '.career > summary=fs-sm | .seclbl=fs-xxs | .sub=fs-md | .note=fs-sm | .fact=fs-sm | .fact b=fs-xxs | .milestone=fs-md | .caveat=fs-sm | .order li=fs-sm | .ordernote=fs-xs | .inst=fs-xs | .tag=fs-xs | .when=fs-xs | .host-h=fs-sm | .rank=fs-xxs | .crit li=fs-sm | .empty=fs-md',
     'boards/focus/CommandCenter.svelte': '',
     'boards/focus/CommandCenterView.svelte':
         '.head > b=fs-sm | .lbl=fs-xs | .sub=fs-md | .behind=fs-md',
@@ -193,10 +193,11 @@ const VIEWS: Record<string, string> = {
     'sessions/terminal/TerminalList.svelte': '.title=fs-sm | .description=fs-xs | .failure=fs-xs',
     'sessions/terminal/TerminalTitle.svelte': '.title=fs-sm | .description=fs-xs',
     'sessions/session-list/TerminalRows.svelte':
-        '.head=fs-xs | .hide .confirm=fs-xs | .top .nm=fs-md | .meta=fs-xs',
+        '.head=fs-xs | .confirm=fs-xs | .top .nm=fs-md | .meta=fs-xs',
     'sessions/timeline/Timeline.svelte': '.turn-h=fs-sm | .event=fs-sm | .ts=fs-xs',
     'sessions/transcript/Transcript.svelte':
         '.turn=fs-md | .turn.tool=fs-sm | .who=fs-xs | .ts=fs-xs | .cut=fs-md | .failed=fs-md | .doc=fs-md | .doc :global(h1), .doc :global(h2), .doc :global(h3), .doc :global(h4)=fs-md | .doc :global(code), .doc :global(pre)=fs-sm',
+    'shared/code/Code.svelte': '.gutter, .text=fs-sm',
     'shared/changes/ChangeCounts.svelte': '.bin=fs-xs | .add, .del=fs-xs',
     'shared/changes/ChangeGroups.svelte': '.group-h=fs-xs | .file=fs-sm | .none=fs-xs',
     'shared/links/BookmarkStar.svelte': '.failed=fs-sm',
@@ -224,7 +225,6 @@ const VIEWS: Record<string, string> = {
     'shared/links/SourceToolbar.svelte': '',
     'shared/forms/RegistryHead.svelte': '.said=fs-md',
     'shared/forms/Subtasks.svelte': '.label=fs-xs | .count, .box=fs-xs | .do=fs-md',
-    'sources/source/Code.svelte': '.gutter, .text=fs-sm',
     'sources/source/Editor.svelte': '.mirror=fs-sm | .input :global(.area)=fs-sm',
     'sources/source/Preview.svelte': '',
     'system/status/Hooks.svelte': 'h3=fs-md | pre=fs-xs | .said=fs-sm',
@@ -281,6 +281,7 @@ const PASS_THROUGH: Record<string, string> = {
     'src/lib/ui/forms/Checkbox.svelte': '.box=fs-sm',
     'src/lib/ui/forms/DateInput.svelte': '.date=fs-sm',
     'src/lib/ui/forms/Field.svelte': '.name=fs-xs | .help, .note=fs-xs',
+    'src/lib/ui/forms/FileChooser.svelte': '',
     'src/lib/ui/forms/MultiSelect.svelte': '.filter=fs-sm',
     'src/lib/ui/forms/Select.svelte': '.select=fs-sm',
     'src/lib/ui/forms/Prompt.svelte': '.message=fs-sm | .detail, .name=fs-xs | .row button=fs-sm',

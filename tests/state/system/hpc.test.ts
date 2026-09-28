@@ -12,6 +12,9 @@ import {
     walltimeFraction
 } from '../../../src/lib/state/system/hpc.ts';
 import { scalar } from '../../../src/lib/data/helpers/guards.ts';
+import type { HpcPayload } from '../../../src/lib/data/model/index.ts';
+import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
+import { setCatalog } from '../../../src/lib/state/shared/words/text.ts';
 import { createClientState, type ClientState } from '../../fixtures/client.ts';
 
 let client: ClientState;
@@ -100,5 +103,41 @@ describe('HPC state', () => {
 
         answering({});
         expect(await jobLog('4711')).toEqual({ status: 'error', output: '' });
+    });
+});
+
+describe('the HPC pill', () => {
+    setCatalog(textCatalog(loadConfig(engineDir()).config));
+
+    /** The pill's words over an answer with the counts given. */
+    function pill(running: number, pending: number): string {
+        const payload: HpcPayload = {
+            status: 'ok',
+            jobs: [],
+            running,
+            pending,
+            total: running + pending,
+            recent: [],
+            sinfo: [],
+            quota: [],
+            updated: '2026-09-11T12:00:00.000Z',
+            pollMin: 20,
+            retryMin: 2,
+            host: 'fixture'
+        };
+        client.entities.receive({ channel: 'hpc', version: 1, payload });
+        return client.hpc.pillText();
+    }
+
+    it('says one running job in the singular', () => {
+        expect(pill(1, 0)).toBe('1 HPC job running');
+    });
+
+    it('says two running jobs in the plural', () => {
+        expect(pill(2, 0)).toBe('2 HPC jobs running');
+    });
+
+    it('adds the pending count after the running one', () => {
+        expect(pill(2, 3)).toBe('2 HPC jobs running | 3 pending');
     });
 });

@@ -86,3 +86,52 @@ Not reproduced: the "Before" column (the builder read it, did not run it; I did 
 - For the diff's test files that only drop per-route origin cases, I read docs.test.ts, wallpaper.test.ts, fs.test.ts, search.test.ts, git.test.ts, hook.test.ts, transcript.test.ts, file.test.ts, terminal-actions.test.ts and history.test.ts. Each removed case (foreign Origin, cross-site without Origin, a neither-header 200, an origin refusal before the token or the query) is covered by the guard's own cases in hooks-server.test.ts and auth.test.ts, except that those run on the fs route id alone. The remaining test files of that kind were not read whole.
 
 Reviewer usage: about 55 tool calls, about 45 minutes; token counts not available to me.
+
+# Repair round 1, refuted (reviewer a7bbab68a23036dab, round from 5ce7a0ec)
+
+## Verification
+
+```
+$ uptime -> load 9.27 before, 16.99 after
+$ PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH sh .../verify.sh .../orchestrator-state.md </dev/null
+ FAIL tests/checks/imports/order.test.ts > holds the server folders (timed out in 5000ms)
+ FAIL tests/checks/tree/boundaries.test.ts > holds across src/lib (timed out in 5000ms)
+ Test Files 2 failed | 342 passed (344); Tests 2 failed | 5419 passed (5421)
+Each alone: boundaries 11 passed; order 13 passed.
+npm run check 0 errors 0 warnings; build exit 0; format:check clean; lint exit 0; ASCII gate nothing.
+grep "new Response(JSON.stringify" -> 0; sameOrigin( -> hooks.server.ts:47 only; locals.server.config -> 0.
+Report's test runs reproduced: 26 files 293 passed; 5 files 138 passed; bin/folder-check.sh exit 0.
+Host table on a built server of the worktree (scratch HOME, engine and tmux, port 8797, stopped):
+  neither header GET to the 16 token-free routes -> 403 {"error":"forbidden"}; memories 200; wallpaper 404 (none set); diagrams 200; callbacks 400 pages
+  neither header POST, no token, to the 12 write routes -> 403 {"error":"forbidden"}; hook 200; memories 403 token words
+  empty Origin (-H 'Origin;') to memories, wallpaper, hook -> 403
+  pictures with Sec-Fetch-Site same-origin or none plus an evil Origin -> 200; own-host Origin -> 200
+Every neither-header status equals the base status (read from the base source).
+```
+
+## 1. Spec
+
+- `bin/migrations/migrate-joint-work.mjs:337-343` and `tests/checks/bin/migrate-joint-work.test.ts:164`: the output writes `tags: ["federated"]`; round item 5 asked for `tags: [federated]` as the hand-kept `network/joint-work.yml` writes every tags list (`grep -c ': \["' network/joint-work.yml` gives 0), while `registries/people.yml` quotes its affiliations. Fix: the tag items' scalars PLAIN in `fileText`, and the case checks `    tags: [federated]`.
+
+## 2. Proof
+
+- `src/hooks.server.ts:23` HEADERLESS: no case sends `/api/(docs)/memories` or `/api/(docs)/diagrams/[name]` through `handle`; dropping either entry leaves the suite green.
+- `Q79a-report.md:5-7`: the open items copy says "None" though Z43 was committed before the report was written.
+- `Q79a-report.md:141`: "curl drops an empty header" is wrong; `curl -H 'Origin;'` sends one (curled above).
+- `tests/routes/sessions/hook.test.ts:46`, `tests/routes/edit/write.test.ts:123`, `tests/routes/machine/lines.test.ts:17`: titles name origin behaviour their handlers no longer have, the same kind as the case round item 3 removed.
+
+## 3. Standards
+
+- `src/lib/server/root/hooks.ts:9-10`: "the origin guard in src/hooks.server.ts, which admits a request naming neither header" is false after the round.
+- `migrate-joint-work.mjs:318-321`: the head comment's "so the file reads as the hand-kept ones do" is false for joint-work.yml's tags.
+
+## 4. Behaviour
+
+- The picture routes now admit `Sec-Fetch-Site: same-origin` or `none` with a foreign Origin, and an Origin naming the request's own host; the base images.ts rule refused both with an empty 403. Not stated in the report with before and after.
+- An empty `Origin:` on the picture routes: admitted on the base, refused now. Accepted: it follows round item 1, and no browser sends an empty Origin.
+
+## Not checked
+
+- The report's red-when-undone claims (need edits); a base build; `npm run diagrams`; the hook with an own-host non-localhost Origin and a JSON content type.
+
+Reviewer usage: about 36 tool uses, 20 minutes.

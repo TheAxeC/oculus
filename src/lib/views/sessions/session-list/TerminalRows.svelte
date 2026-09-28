@@ -2,7 +2,9 @@
     // Layer 3, sessions view partial. Terminal rows live here because their stop and pin controls
     // change independently of transcript-backed session rows.
 
+    import RowButton from '$lib/ui/controls/RowButton.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
+    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import Menu from '$lib/ui/menu/Menu.svelte';
     import { stamp } from '$lib/state/shared/words/format';
@@ -40,11 +42,11 @@
 </script>
 
 {#snippet row(entry: Terminal)}
+    {@const armed = arming === entry.id}
     <div class="row" class:on={entry.id === selected()}>
-        <button
-            type="button"
-            class="pick"
+        <RowButton
             title={t('sessions.select_tip')}
+            selected={entry.id === selected()}
             onclick={() => select(entry.id)}
         >
             <span class="top"
@@ -57,7 +59,7 @@
                 <span class="sep">{t('sessions.meta_sep')}</span>
                 <span class="ts">{stamp(entry.created, now)}</span></span
             >
-        </button>
+        </RowButton>
         <div class="menu">
             <Menu
                 label={t('ui.row_menu')}
@@ -71,19 +73,20 @@
                 }}
             />
         </div>
-        <button
-            type="button"
-            class="hide"
-            title={arming === entry.id ? t('sessions.confirm_stop') : t('sessions.stop_terminal')}
-            aria-label={arming === entry.id ? t('ui.confirm_stop') : t('sessions.stop_terminal')}
+        <!-- One button whose words follow the arming, so the element focused at the first press is
+             the one the second press confirms. -->
+        <ToolButton
+            bare
+            compact={!armed}
+            label={armed ? t('ui.confirm_stop') : t('sessions.stop_terminal')}
+            glyph={armed ? undefined : t('sessions.dismiss_glyph')}
+            title={armed ? t('sessions.confirm_stop') : t('sessions.stop_terminal')}
             onclick={() => void onstop(entry)}
         >
-            {#if arming === entry.id}
+            {#if armed}
                 <span class="confirm">{t('ui.confirm_stop')}</span>
-            {:else}
-                <Glyph name={t('sessions.dismiss_glyph')} />
             {/if}
-        </button>
+        </ToolButton>
     </div>
 {/snippet}
 
@@ -138,7 +141,7 @@
         align-items: flex-start;
     }
 
-    .hide .confirm {
+    .confirm {
         font-size: var(--fs-xs);
         text-transform: uppercase;
         letter-spacing: 0.04em;
@@ -157,30 +160,6 @@
 
     .row.on {
         background: var(--accent-bg);
-    }
-
-    .row.on .pick {
-        color: var(--on-accent-bg, var(--ink));
-    }
-
-    .pick {
-        display: flex;
-        flex-direction: column;
-        flex: 1 1 auto;
-        min-width: 0;
-        border: 0;
-        background: none;
-        color: var(--ink-txt, var(--ink));
-        font: inherit;
-        text-align: left;
-        padding: 0 6px;
-        cursor: pointer;
-    }
-
-    .pick:focus-visible,
-    .hide:focus-visible {
-        outline: 1px solid var(--accent);
-        outline-offset: -1px;
     }
 
     /* Each line is one list row of VS Code's, 22 pixels. */
@@ -214,16 +193,5 @@
 
     .sep {
         opacity: 0.5;
-    }
-
-    .hide {
-        flex: 0 0 auto;
-        height: 22px;
-        border: 0;
-        background: none;
-        color: var(--muted-txt, var(--muted));
-        font: inherit;
-        padding: 0 4px;
-        cursor: pointer;
     }
 </style>

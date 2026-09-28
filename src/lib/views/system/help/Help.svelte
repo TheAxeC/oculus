@@ -21,16 +21,16 @@
     // engine directory and nothing else around it.
     //
     // The manual shows the diagrams bin/diagrams/diagrams.mjs draws from the source. Each is an
-    // image of docs/diagrams/ in HELP.md, which manual.ts cuts out of the HTML so Diagram.svelte
-    // can draw it in the page's text colour; the prose between them is drawn by the Markdown
-    // partial, one run at a time. The prose is drawn straight into the box, so over a wallpaper the
+    // image of docs/diagrams/ in HELP.md, which the server cuts out of the manual's answer as a
+    // part of its own (server/content/docs.ts, renderManualParts) so Diagram.svelte can draw it in
+    // the page's text colour; the prose between them is drawn by the Markdown partial, one run at a
+    // time. The prose is drawn straight into the box, so over a wallpaper the
     // box asks for the tint and is the one surface the manual is read off.
 
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Markdown from '../../shared/prose/Markdown.svelte';
     import Diagram from './Diagram.svelte';
-    import { splitManual, type ManualPart } from './manual';
-    import type { DocState } from '$lib/state/system/docs.svelte';
+    import type { DocState, ManualPart } from '$lib/state/system/docs.svelte';
     import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
@@ -42,8 +42,6 @@
     let { instance }: ViewProps = $props();
 
     const shown = $derived(manual());
-
-    const parts = $derived(splitManual(shown.html));
 
     /** One run of prose as the document the Markdown partial draws, the manual's state kept. */
     function prose(part: ManualPart): DocState {
@@ -61,7 +59,7 @@
                 surface={false}
             />
         {:else}
-            {#each parts as part, at (at)}
+            {#each shown.parts as part, at (at)}
                 {#if part.kind === 'diagram'}
                     <Diagram name={part.name} alt={part.alt} />
                 {:else}

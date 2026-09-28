@@ -32,14 +32,16 @@
 
 <section>
     <header>
-        <b>{t('hpc.log_job', id)}</b><span
-            ><ToolButton
+        <b>{t('hpc.log_job', id)}</b>
+        <span>
+            <ToolButton
                 label={t('hpc.tail')}
                 disabled={!live}
                 title={live ? undefined : t('hpc.controls_offline')}
                 onclick={onrefresh}
-            /><ToolButton label={t('hpc.close')} onclick={onclose} /></span
-        >
+            />
+            <ToolButton label={t('hpc.close')} onclick={onclose} />
+        </span>
     </header>
     <pre>{body}</pre>
 </section>

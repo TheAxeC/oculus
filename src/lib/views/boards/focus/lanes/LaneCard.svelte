@@ -12,6 +12,7 @@
     // the primitive draws.
 
     import Tag from '$lib/ui/controls/Tag.svelte';
+    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import Menu from '$lib/ui/menu/Menu.svelte';
     import type { MenuItem } from '$lib/ui/menu/menu-items';
@@ -78,17 +79,18 @@
                 <Glyph name={t('board.warn_glyph')} />
             </span>
         {:else}
-            <button
-                type="button"
-                class="flames"
-                class:unset
-                title={project.priority ?? t('focus.set_priority')}
-                onclick={oncycle}
-            >
-                {#each { length: flames } as _, at (at)}
-                    <Glyph name={t('focus.fire_glyph')} />
-                {/each}
-            </button>
+            <span class="flames" class:unset>
+                <ToolButton
+                    plain
+                    label={project.priority ?? t('focus.set_priority')}
+                    title={project.priority ?? t('focus.set_priority')}
+                    onclick={oncycle}
+                >
+                    {#each { length: flames } as _, at (at)}
+                        <Glyph name={t('focus.fire_glyph')} />
+                    {/each}
+                </ToolButton>
+            </span>
         {/if}
         {#each project.chips.slice(0, CARD_CHIPS) as chip (chip)}
             <span class="mark">
@@ -99,9 +101,9 @@
                 />
             </span>
         {/each}
-        <button type="button" class="name" onclick={onopen}>
-            {labelOf(project)}
-        </button>
+        <span class="name">
+            <ToolButton plain cut label={labelOf(project)} onclick={onopen} />
+        </span>
         {#if due}
             <span class="due">
                 <Tag label={due.label} glyph={t('project.card.deadline_glyph')} tone={due.tone} />
@@ -137,15 +139,7 @@
         gap: 5px;
     }
 
-    .flames,
-    .name {
-        padding: 0;
-        border: 0;
-        background: none;
-        font: inherit;
-        cursor: pointer;
-    }
-
+    /* The flames and the name are plain buttons, each inside the box below that draws its look. */
     .flames {
         display: inline-flex;
         flex: 0 0 auto;
@@ -158,7 +152,7 @@
     }
 
     .flames.unset:hover,
-    .flames.unset:focus-visible {
+    .flames.unset:has(:global(:focus-visible)) {
         opacity: 0.6;
     }
 
@@ -177,9 +171,9 @@
     }
 
     .name {
+        display: inline-flex;
         min-width: 0;
-        overflow: hidden;
-        text-overflow: ellipsis;
+        max-width: 100%;
         white-space: nowrap;
         font-size: var(--fs-md);
         font-weight: 650;
@@ -187,7 +181,7 @@
     }
 
     .name:hover,
-    .name:focus-visible {
+    .name:has(:global(:focus-visible)) {
         color: var(--accent-txt, var(--accent));
         text-decoration: underline;
     }

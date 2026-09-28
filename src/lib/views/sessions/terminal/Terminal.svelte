@@ -39,9 +39,10 @@
     // a static import of it is folded into the route's own stylesheet, which every page then
     // carries for a grid most readers never open.
     //
-    // The grid's colours are the theme's, read off the root element with getComputedStyle. They
-    // cannot be CSS: xterm paints the glyphs itself and takes its palette as strings through its
-    // own API. This is the one file in the application that reads a computed token.
+    // The grid's colours, its selection and its font are the theme's, read off the body with
+    // getComputedStyle by grid-look.ts, and its size from the type scale by fontSize() below. They
+    // cannot be CSS: xterm paints the glyphs itself and takes its palette and its font as strings
+    // through its own API.
 
     import Composer from './Composer.svelte';
     import TerminalList from './TerminalList.svelte';
@@ -69,9 +70,10 @@
     } from './terminal-list';
     import { t } from '$lib/state/shared/words/text';
     import { scheduleReflow } from './reflow';
+    import { applyLook, gridLook, gridOptions } from './grid-look';
     import { untrack } from 'svelte';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
-    import type { ITheme, Terminal as Grid } from '@xterm/xterm';
+    import type { Terminal as Grid } from '@xterm/xterm';
     import { useState } from '$lib/state/client/use';
 
     const {
@@ -102,26 +104,6 @@
 
     /** How long the pane must hold still before the tmux window is told its new size. */
     const SETTLE = 100;
-
-    /** The sixteen ANSI slots, in xterm's order, and the token each one is painted from. */
-    const ANSI: [keyof ITheme, string][] = [
-        ['black', '--muted'],
-        ['red', '--c-red'],
-        ['green', '--c-green'],
-        ['yellow', '--c-gold'],
-        ['blue', '--c-blue'],
-        ['magenta', '--c-magenta'],
-        ['cyan', '--c-cyan'],
-        ['white', '--ink'],
-        ['brightBlack', '--muted'],
-        ['brightRed', '--c-red'],
-        ['brightGreen', '--c-green'],
-        ['brightYellow', '--c-gold'],
-        ['brightBlue', '--c-blue'],
-        ['brightMagenta', '--c-magenta'],
-        ['brightCyan', '--c-cyan'],
-        ['brightWhite', '--ink']
-    ];
 
     /** The mount point, once the browser has it. */
     let body: HTMLDivElement | null = $state(null);
@@ -190,25 +172,6 @@
     function togglePanePin(): void {
         if (pinned !== null) unpinInstance(instance.id);
         else if (terminal !== null) pinInstance(instance.id, terminal.id, terminal.name);
-    }
-
-    /**
-     * The palette in force, read off the body, which is where the theme's class sits and where its
-     * tokens are set (`body.rice.dracula` and the like in themes.css); the root element carries the
-     * light defaults only, and reading there painted a white grid under every dark theme.
-     */
-    function palette(): ITheme {
-        const root = getComputedStyle(document.body);
-        const of = (name: string) => root.getPropertyValue(name).trim();
-        const colours: ITheme = {
-            background: of('--panel'),
-            foreground: of('--ink'),
-            cursor: of('--accent')
-        };
-        for (const [slot, token] of ANSI) {
-            (colours as Record<string, string>)[slot] = of(token);
-        }
-        return colours;
     }
 
     /** The configured grid size, or the body type scale when config leaves it unset. */
@@ -310,13 +273,7 @@
             if (!alive) return;
             const fit = new addon.FitAddon();
             const size = fontSize(untrack(terminalFont), untrack(textScale) ?? 1);
-            const options = {
-                theme: palette(),
-                convertEol: false
-            };
-            const term = new xterm.Terminal(
-                size === undefined ? options : { ...options, fontSize: size }
-            );
+            const term = new xterm.Terminal(gridOptions(gridLook(), size));
             term.loadAddon(fit);
             term.open(at);
             fit.fit();
@@ -394,7 +351,7 @@
             cancelAnimationFrame,
             () => {
                 if (grid === null) return false;
-                grid.options.theme = palette();
+                applyLook(grid.options, gridLook());
                 const size = fontSize(chosen, scale);
                 if (size !== undefined && grid.options.fontSize !== size) {
                     grid.options.fontSize = size;

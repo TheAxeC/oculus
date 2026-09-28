@@ -9,7 +9,6 @@
 #
 # The list is a text file rather than a module because its entries with their reasons in TypeScript
 # are a source file several times over the 1000-line rule.
-src/lib/data/helpers/opens-in-program.ts src/lib/state/sources/fs.ts 3f5da9c7a4e9 the same 8 lines at 36 and 126, to fold into one place
 src/lib/data/sources/collections.ts src/lib/data/sources/feeds.ts 99e4d34d3988 the same 8 lines at 45 and 57, to fold into one place
 src/lib/data/sources/collections.ts src/lib/data/sources/feeds.ts ab1d4e1b3ce4 the same 8 lines at 32 and 49, to fold into one place
 src/lib/data/sources/collections.ts src/lib/data/sources/manifests.ts 9d95463a045f the same 8 lines at 50 and 94, to fold into one place

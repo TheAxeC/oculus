@@ -37,11 +37,8 @@
     {/each}
 </div>
 {#if rows.length}<details>
-        <summary>{t('hpc.capacity_summary', rows.length)}</summary><Table
-            {columns}
-            rows={tableRows}
-            rowKey="key"
-        />
+        <summary>{t('hpc.capacity_summary', rows.length)}</summary>
+        <Table {columns} rows={tableRows} rowKey="key" />
     </details>{/if}
 
 <style>

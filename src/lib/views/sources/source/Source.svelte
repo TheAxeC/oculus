@@ -57,7 +57,7 @@
     import Toolbar from '$lib/ui/frame/Toolbar.svelte';
     import BookmarkStar from '../../shared/links/BookmarkStar.svelte';
     import ProgramButton from '../../shared/links/ProgramButton.svelte';
-    import Code from './Code.svelte';
+    import Code from '../../shared/code/Code.svelte';
     import Editor from './Editor.svelte';
     import Gutter from './Gutter.svelte';
     import { languageOf, opensInProgram } from '$lib/state/sources/fs';

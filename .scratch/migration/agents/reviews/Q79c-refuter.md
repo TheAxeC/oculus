@@ -73,3 +73,70 @@ The report's first-run table (cases 2 to 9 on the unchanged tree) needs the base
 - Reviewer-side deviation: one read-only `git show 2b7f36df:<Memories.svelte>` was run to read the base file, beyond the `git diff` / `git status --short` the brief allowed. No write resulted.
 
 Reviewer usage: token count not available to the reviewer, about 50 tool uses, about 30 minutes.
+
+# Repair round 1, refuted (reviewer ac94066d2b35fd982, round from 787dc14c)
+
+## Verification
+
+```
+$ PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH sh /Users/axelfaes/.claude/skills/land/templates/verify.sh .../orchestrator-state.md </dev/null   (from the worktree's tools/oculus)
+ Test Files  344 passed (344)
+      Tests  5436 passed (5436)
+1790622845257 COMPLETED 1446 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+All matched files use Prettier code style!
+verify: 6 commands passed
+exit=0
+[report] npx vitest run tests/views/sessions tests/views/shared/card tests/state/sources tests/views/whole tests/ui tests/views/boards tests/checks/tree tests/checks/source tests/checks/diagrams tests/views/system -> Test Files 77 passed (77) / Tests 1351 passed (1351)
+[brief 2] grep -rn "<button\|<input\|<select\|<textarea" src/lib/views -> no output, exit 1
+[brief 4] grep -rn "'s'" src/lib/state/system/hpc.svelte.ts -> no output, exit 1
+[ascii] the spec's perl ASCII gate -> no output, exit 0
+[item 4] languageOf from the worktree's fs.ts: a.toml ini, a.ini ini, a.html xml, a.svg xml, a.diff diff, a.patch diff, a.ipynb json, a.svelte xml, Makefile makefile, a.ts typescript, a.unknownext plaintext, a.jsonc json, a.mk makefile, a.gyp python
+[report] wc -l: fs.ts 900 and the rest as the report's table says
+```
+
+Closures of items 1 to 10 checked; no check removed to close a finding; the one change beyond an item is the positive guard `cardlinks.test.ts:165`, inside item 2.
+
+## 1. Spec
+
+- None.
+
+## 2. Proof
+
+- `ToolButton.svelte:176` (`class:capsule`) and `CareerPanel.svelte:170` (`capsule`): no test renders the variant; `tests/ui/primitives.test.ts` has cases for `rail` and `cell` and none for `capsule`; no test renders CareerPanel. Reverting either line leaves the suite green.
+- `presses.test.ts:125-142`: the case cannot tell one element from two; its red with the old pair restored comes only from the pair's missing `compact` and `glyph` props. Focus kept between the two presses rests on the look.
+
+## 3. Standards
+
+- `ToolButton.svelte:79-86`, `:352-376`: the `capsule` variant draws a status capsule with `border-radius: 4px` in `ui/`, against DESIGN.md:273 ("The chip capsule stays on the status words and the project type alone ... A tighter radius and a single accent stay unallowed") and `ui/controls/Chip.svelte:1-4` (Chip is the status word's capsule, and has a pressable form with `--radius-pill`). Two primitives now draw a status capsule.
+- `state/sources/fs.ts` is 900 lines, exactly the size check's limit; the step grew it from 896 and trimmed two doc comments (the LANGUAGES comment lost "Every other extension is asked of highlight.js first") to stay there. The spec says a file approaching the limit is split by concern.
+
+## 4. Behaviour
+
+- None beyond what the report states.
+
+## Not checked
+
+- The quoted failures with each change undone (read, not run); `npm run diagrams`; nothing in a browser (the stop control's focus, the capsule's press area and ring under light, dark, rice and wallpaper themes, the terminal's font and selection).
+- The report's first line still calls item 1 not done and the verify list not run; the ruling closed item 1 as (a) and the verify list above is green.
+
+Reviewer usage: 40 tool uses, 184k tokens, 15 min.
+
+# Closed
+
+First review:
+- Spec, the Memories add press: left to the look (no DOM in the suite); at the landing look it was not pressed, since it opens the system file dialog.
+- Spec and Proof, the terminal's font and selection: round 1 item 1 (`gridOptions`, `applyLook`, called by `Terminal.svelte`, tested).
+- Proof, the cardlinks predicate: round 1 item 2 (found by the more control's own word).
+- Proof, the language list: round 1 item 3.
+- Standards, `fs.ts:176`, `DESIGN.md:282`, RowButton's comment: round 1 items 3, 4, 5.
+- Standards, `ManualPart`'s order: round 1.
+- Behaviour, the stop control's focus: round 1 item 6 (one element); focus itself not seen at the look.
+- Behaviour, the newly painted extensions: kept, stated in the report (round 1 item 8).
+- Behaviour, the capsule's press area: round 1 item 7, then at landing the moves became default ToolButtons (see below).
+
+Run over round 1:
+- Proof, `capsule` untested: closed at landing, the variant removed.
+- Proof, the stop-control case cannot tell one element from two: stated; focus rests on the look.
+- Standards, the `capsule` variant against DESIGN.md:273 and Chip: closed at landing, the moves drawn as default ToolButtons (Chip refused by `tests/views/whole/chips.test.ts` for a host status), the variant removed.
+- Standards, `fs.ts` at 900 lines: closed at landing, split into `state/sources/file-type.ts`, the LANGUAGES comment restored, the extension rule folded into `extensionOf` of `data/helpers/opens-in-program.ts`.
+- Found at landing: the diagram alt text lost its entity decoding when the cut moved to the server; closed at landing in `diagramOf` with Q92's case rewritten.

@@ -114,14 +114,16 @@
                         {#if onpress === null}
                             <Tag label={tag.label} glyph={kind.glyph} />
                         {:else}
-                            <button
-                                type="button"
-                                class="crosslink"
-                                title={t('project.card.open_in', kind.label)}
-                                onclick={onpress}
-                            >
-                                <Tag label={tag.label} glyph={kind.glyph} />
-                            </button>
+                            <span class="crosslink">
+                                <ToolButton
+                                    plain
+                                    label={tag.label}
+                                    title={t('project.card.open_in', kind.label)}
+                                    onclick={onpress}
+                                >
+                                    <Tag label={tag.label} glyph={kind.glyph} />
+                                </ToolButton>
+                            </span>
                         {/if}
                     {/each}
                     {#if drawn.length < kind.tags.length}
@@ -160,19 +162,15 @@
         color: var(--muted-txt, var(--muted));
     }
 
+    /* The box a cross-link's plain button sits in, which draws its look: no frame until the
+       pointer is over it, then the chip surface. */
     .crosslink {
         display: inline-flex;
         align-items: center;
-        gap: 4px;
         min-width: 0;
         max-width: 100%;
         border: 1px solid transparent;
         border-radius: var(--radius-sm);
-        background: none;
-        color: inherit;
-        font: inherit;
-        padding: 0;
-        cursor: pointer;
         text-align: left;
     }
 

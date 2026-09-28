@@ -464,3 +464,101 @@ describe('the manual', () => {
         expect(response.status).toBe(403);
     });
 });
+
+describe("a figure's address in a project's README", () => {
+    /** The rendered README of a project holding the one Markdown line given. */
+    async function drawnReadme(line: string): Promise<string> {
+        const response = handleDocs(
+            request('project=alpha&name=README.md'),
+            target({ 'README.md': `${line}\n` })
+        );
+        expect(response.status).toBe(200);
+        return String(fields(await response.json()).html);
+    }
+
+    it('draws a relative source as the file route address, with its alt and its title', async () => {
+        expect(await drawnReadme('![a](fig.png "t")')).toContain(
+            '<img src="/api/file/hub/projects/manuscripts/alpha/fig.png" alt="a" title="t">'
+        );
+    });
+
+    it('keeps an address the browser resolves itself', async () => {
+        const html = await drawnReadme('![a](https://x.org/p.png)');
+        expect(html).toContain('<img src="https://x.org/p.png" alt="a">');
+        expect(html).not.toContain('/api/file/');
+    });
+
+    it('keeps a source that climbs out of the root as the author wrote it', async () => {
+        const html = await drawnReadme('![a](../../../../etc/p.png)');
+        expect(html).toContain('<img src="../../../../etc/p.png" alt="a">');
+        expect(html).not.toContain('/api/file/');
+    });
+
+    it('escapes a quote and an ampersand in the alternative text', async () => {
+        expect(await drawnReadme('![a "b" & c](fig.png)')).toContain(
+            'alt="a &quot;b&quot; &amp; c"'
+        );
+    });
+});
+
+describe("the manual's parts", () => {
+    /** The route's answer for the manual of an engine directory whose HELP.md is the text given. */
+    async function manualOf(text: string): Promise<Record<string, unknown>> {
+        const into = target();
+        const engine = scratchDir('oculus-manual-');
+        expect(resolve(engine).startsWith(resolve(tmpdir()) + sep)).toBe(true);
+        const help = join(engine, 'HELP.md');
+        expect(resolve(help).startsWith(resolve(engine) + sep)).toBe(true);
+        writeFileSync(help, text);
+        const response = handleDocs(request('manual=1'), { ...into, engine });
+        expect(response.status).toBe(200);
+        return fields(await response.json());
+    }
+
+    /** The kinds of the parts an answer carries, in order. */
+    function kinds(answer: Record<string, unknown>): unknown[] {
+        const parts = answer.parts;
+        return Array.isArray(parts) ? parts.map((part) => fields(part).kind) : [];
+    }
+
+    it('cuts the manual at a paragraph holding one diagram and nothing else', async () => {
+        const answer = await manualOf('Before.\n\n![Flow](docs/diagrams/flow.svg)\n\nAfter.\n');
+        expect(kinds(answer)).toEqual(['html', 'diagram', 'html']);
+        const parts = answer.parts as Record<string, unknown>[];
+        expect(parts[0].html).toContain('<p>Before.</p>');
+        expect(parts[1]).toEqual({ kind: 'diagram', name: 'flow', alt: 'Flow' });
+        expect(parts[2].html).toContain('<p>After.</p>');
+        expect(String(answer.html)).toContain('<p>Before.</p>');
+        expect(String(answer.html)).toContain('<p>After.</p>');
+    });
+
+    it('keeps an image of another address, and a diagram inside a sentence, in the prose', async () => {
+        const answer = await manualOf(
+            'Before.\n\n![Photo](pictures/photo.png)\n\nSee ![Flow](docs/diagrams/flow.svg) here.\n'
+        );
+        expect(kinds(answer)).toEqual(['html']);
+        const [prose] = answer.parts as Record<string, unknown>[];
+        expect(prose.html).toContain('src="pictures/photo.png"');
+        expect(prose.html).toContain('src="docs/diagrams/flow.svg"');
+    });
+
+    it('reads an alternative text holding an ampersand and a quote as written', async () => {
+        const answer = await manualOf("![Flow & the 'rest'](docs/diagrams/flow.svg)\n");
+        expect(answer.parts).toEqual([{ kind: 'diagram', name: 'flow', alt: "Flow & the 'rest'" }]);
+    });
+
+    it('lists every heading in a table of contents written before a diagram', async () => {
+        const answer = await manualOf(
+            '[TOC]\n\n# One\n\n![Flow](docs/diagrams/flow.svg)\n\n## Two\n'
+        );
+        expect(kinds(answer)).toEqual(['html', 'diagram', 'html']);
+        const [head] = answer.parts as Record<string, unknown>[];
+        expect(head.html).toContain('href="#user-content-one"');
+        expect(head.html).toContain('href="#user-content-two"');
+    });
+
+    it('carries no parts on the answer of any other document', async () => {
+        const response = handleDocs(request('project=alpha&name=README.md'), target());
+        expect(fields(await response.json())).not.toHaveProperty('parts');
+    });
+});

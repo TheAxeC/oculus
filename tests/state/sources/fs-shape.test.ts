@@ -5,6 +5,7 @@ import {
     childPath,
     expandedOf,
     extensionOf,
+    languageOf,
     languages,
     nameOf,
     toggleExpanded,
@@ -104,6 +105,34 @@ describe('what a file opens as', () => {
 
     it('names only languages the code window has registered', () => {
         expect(languages().filter((one) => !registered().includes(one))).toEqual([]);
+        expect(registered().filter((one) => !languages().includes(one))).toEqual([]);
+        const names = [
+            'a.ts',
+            'a.js',
+            'a.py',
+            'a.yml',
+            'a.yaml',
+            'a.md',
+            'a.css',
+            'a.r',
+            'a.ini',
+            'a.toml',
+            'a.json',
+            'a.ipynb',
+            'a.sh',
+            'a.tex',
+            'a.xml',
+            'a.svelte',
+            'a.html',
+            'a.svg',
+            'a.diff',
+            'a.jsonc',
+            'a.mk',
+            'Makefile',
+            'a.txt',
+            'a.unknown'
+        ];
+        expect(names.filter((name) => !registered().includes(languageOf(name)))).toEqual([]);
     });
 
     it('reads an extension and a name off a path', () => {

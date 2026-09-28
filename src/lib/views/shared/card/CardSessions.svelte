@@ -2,6 +2,7 @@
     // Layer 3, shared view. Working project sessions live here because live-session navigation
     // changes independently of the project-card frame.
 
+    import RowButton from '$lib/ui/controls/RowButton.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import type { BoardItem } from '$lib/state/boards/board';
     import { findView } from '$lib/state/workbench/layout';
@@ -73,16 +74,15 @@
             <Tag label={t('sessions.card_live', live)} tone="green" />
         {/if}
         {#each working as entry (entry.id)}
-            <button
-                type="button"
-                class="session"
-                title={t('sessions.select_tip')}
-                onclick={() => pick(entry)}
-            >
-                <span class="dot" style={dotStyle(entry)}></span>
-                <Tag label={entry.tool} />
-                <span class="nm">{entry.title}</span>
-            </button>
+            <span class="session">
+                <RowButton title={t('sessions.select_tip')} onclick={() => pick(entry)}>
+                    <span class="line">
+                        <span class="dot" style={dotStyle(entry)}></span>
+                        <Tag label={entry.tool} />
+                        <span class="nm">{entry.title}</span>
+                    </span>
+                </RowButton>
+            </span>
         {/each}
     </div>
 {/if}
@@ -96,25 +96,26 @@
         margin-top: 6px;
     }
 
+    /* The frame of one session's row, around the pressable row of one line inside it. */
     .session {
         display: inline-flex;
-        align-items: center;
-        gap: 4px;
         min-width: 0;
         max-width: 100%;
         border: 1px solid var(--line);
         border-radius: var(--radius-sm);
-        background: none;
-        color: inherit;
-        font: inherit;
-        padding: 1px 6px;
-        cursor: pointer;
-        text-align: left;
+        padding: 1px 0;
         font-size: var(--fs-sm);
     }
 
     .session:hover {
         background: var(--chip);
+    }
+
+    .line {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        min-width: 0;
     }
 
     .dot {

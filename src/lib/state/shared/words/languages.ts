@@ -2,7 +2,9 @@
 // page draws registered by name, and the one call that paints text.
 //
 // It sits in the state layer because two views paint with it, the source tab's code window and
-// editor and the diff pane of a repository, and a view may not import another view's partial.
+// editor and the diff pane of a repository, and a view may not import another view's partial. The
+// file browser's state asks it too, which language a file's extension names, so the table of
+// names and aliases is highlight.js's own and oculus keeps only the extensions it does not know.
 //
 // The core build rather than the whole package, which carries close to two hundred languages
 // against the eighteen a research tree actually holds. The registration runs once at load and is
@@ -71,6 +73,19 @@ for (const [name, definition] of Object.entries(REGISTERED)) {
 /** The names the window can paint, which is what a file's type is matched against. */
 export function registered(): string[] {
     return Object.keys(REGISTERED);
+}
+
+/**
+ * The registered name of the language highlight.js resolves a name or an alias to, or null when it
+ * resolves none: `ts` and `tsx` are typescript's aliases, and the name a language was registered
+ * under is the one whose definition is the same object. The lookup is highlight.js's own table of
+ * names and aliases, so an extension it knows needs no line of oculus's.
+ */
+export function languageNamed(alias: string): string | null {
+    if (alias === '') return null;
+    const found = hljs.getLanguage(alias);
+    if (found === undefined) return null;
+    return Object.keys(REGISTERED).find((name) => hljs.getLanguage(name) === found) ?? null;
 }
 
 /**

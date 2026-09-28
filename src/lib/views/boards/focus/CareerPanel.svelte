@@ -7,6 +7,7 @@
     // holds no career file, which is the ordinary case for a hub that keeps no career plan.
 
     import Tag from '$lib/ui/controls/Tag.svelte';
+    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import {
         hostStatuses,
@@ -165,14 +166,11 @@
                                 <div class="moves">
                                     {#each statuses as one (one.key)}
                                         {#if one.key !== host.status}
-                                            <button
-                                                type="button"
-                                                class="move"
+                                            <ToolButton
+                                                label={one.key}
                                                 title={t('focus.host', one.key)}
                                                 onclick={() => move(host, one.key)}
-                                            >
-                                                {one.key}
-                                            </button>
+                                            />
                                         {/if}
                                     {/each}
                                 </div>
@@ -454,29 +452,6 @@
         display: flex;
         flex-wrap: wrap;
         gap: 4px;
-    }
-
-    .move {
-        padding: 0 6px;
-        border: 1px solid var(--line);
-        border-radius: 4px;
-        background: var(--chip);
-        font: inherit;
-        font-size: var(--fs-sm);
-        font-weight: 700;
-        text-transform: uppercase;
-        color: var(--muted-txt, var(--muted));
-        cursor: pointer;
-    }
-
-    :global(body.wall) .move {
-        background: transparent;
-    }
-
-    .move:hover,
-    .move:focus-visible {
-        color: var(--accent-txt, var(--accent));
-        border-color: var(--accent-txt, var(--accent));
     }
 
     .crit {

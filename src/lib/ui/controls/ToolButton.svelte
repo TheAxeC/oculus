@@ -69,6 +69,14 @@
          */
         cell?: boolean;
         /**
+         * The words or marks alone, inline, for a control whose look the caller's box around it
+         * draws, as a cell's is drawn by its grid: no border, fill, padding or brackets of its own,
+         * and the font, colour, case, decoration and alignment of that box. A project's name drawn
+         * as a link and a tag that opens its view are each one of these inside the box that gives
+         * them their look.
+         */
+        plain?: boolean;
+        /**
          * Words that may be longer than the room: the button is never wider than its parent, and a
          * label that does not fit is cut with an ellipsis, so the caller gives the whole words as
          * `title` for the tooltip. The parent is what sets the room, a flex box its width capped.
@@ -117,6 +125,7 @@
         bare = false,
         status = false,
         cell = false,
+        plain = false,
         cut = false,
         dataView,
         dataDoc,
@@ -154,6 +163,7 @@
         class:bare
         class:status
         class:cell
+        class:plain
         class:cut
         role={checked === undefined ? undefined : 'radio'}
         aria-checked={checked}
@@ -309,6 +319,26 @@
         text-overflow: ellipsis;
     }
 
+    /* The words or marks alone, inline: the box around the button holds its look, so the button
+       takes that box's font, colour, case and decoration and draws nothing of its own. */
+    .tool.plain,
+    :global(body.rice) .tool.plain {
+        gap: inherit;
+        min-width: 0;
+        padding: 0;
+        border: 0;
+        border-radius: 0;
+        background: none;
+        color: inherit;
+        font: inherit;
+        line-height: inherit;
+        letter-spacing: inherit;
+        text-align: inherit;
+        text-decoration: inherit;
+        text-transform: inherit;
+        white-space: inherit;
+    }
+
     /* Words cut to the room: the button is capped at its parent's width, and the label, the one
        box that gives way, is one line ended with an ellipsis where the room ends. */
     .tool.cut {
@@ -356,6 +386,12 @@
         outline-offset: -2px;
     }
 
+    /* A plain button has no box of its own to draw the ring inside, so the ring sits just
+       outside its words. */
+    .tool.plain:focus-visible {
+        outline-offset: 1px;
+    }
+
     /* The rail's focus is VS Code's focus border: a one pixel line inside the item's box, which the
        active item's bar stays visible beside. */
     .tool.rail-control:focus-visible {
@@ -379,13 +415,16 @@
     /* The brackets are a row's shape, around a word with the glyph inside them. A rail control is
        a glyph in a box the rail's width sets, where the terminal stand-in the glyph draws carries
        its own brackets already. A bare button is a strip's icon and draws none, as a bare menu
-       opener beside it draws none, and a status bar item is a word in a bar of words. */
-    :global(body.rice) .tool:not(.rail-control):not(.bare):not(.status):not(.cell)::before {
+       opener beside it draws none, and a status bar item is a word in a bar of words. A cell and a
+       plain button draw nothing of their own, so the box around them keeps its own shape. */
+    :global(body.rice)
+        .tool:not(.rail-control):not(.bare):not(.status):not(.cell):not(.plain)::before {
         content: '[';
         opacity: 0.5;
     }
 
-    :global(body.rice) .tool:not(.rail-control):not(.bare):not(.status):not(.cell)::after {
+    :global(body.rice)
+        .tool:not(.rail-control):not(.bare):not(.status):not(.cell):not(.plain)::after {
         content: ']';
         opacity: 0.5;
     }

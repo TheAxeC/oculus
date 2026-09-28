@@ -1,9 +1,10 @@
 <script lang="ts">
     // Layer 3, partial of views/sources/source/Source.svelte, drawn by Editor.svelte and
-    // Code.svelte. The source tab's gutter as VS Code draws it for a file in a repository: the line
-    // numbers, and beside them the quick diff marks against the index (a bar for an added or a
-    // modified run, a wedge where lines were deleted, at the top of the line after them or at the
-    // foot of the last line for a deletion at the end) and, while blame is on, each line's blame.
+    // views/shared/code/Code.svelte. The source tab's gutter as VS Code draws it for a file in a
+    // repository: the line numbers, and beside them the quick diff marks against the index (a bar
+    // for an added or a modified run, a wedge where lines were deleted, at the top of the line
+    // after them or at the foot of the last line for a deletion at the end) and, while blame is
+    // on, each line's blame.
     //
     // A mark is a button that opens the file's diff at that change, as a press on VS Code's gutter
     // mark peeks it. The blame writes its author and how long ago on the first line of each run

@@ -548,13 +548,10 @@ describe('the code window palette', () => {
 
     // The code window and the editor's mirror paint the same highlighter's classes, so each must
     // paint every role and nothing else: a file is coloured the same whether it is read or written.
-    it.each(['Code.svelte', 'Editor.svelte'])(
+    it.each(['shared/code/Code.svelte', 'sources/source/Editor.svelte'])(
         'paints %s through those six and nothing else',
         (file) => {
-            const source = readFileSync(
-                join(SRC, 'lib', 'views', 'sources', 'source', file),
-                'utf8'
-            );
+            const source = readFileSync(join(SRC, 'lib', 'views', file), 'utf8');
             const painted = [...source.matchAll(/color:\s*var\((--c-code-[a-z-]+)-txt\)/g)].map(
                 (found) => found[1]
             );

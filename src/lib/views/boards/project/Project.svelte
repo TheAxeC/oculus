@@ -35,6 +35,7 @@
     // draws what comes back, as the doc and help views draw theirs: one sanitised draw, one set of
     // document styles and one press on a link to a heading for every document the page shows.
 
+    import RowButton from '$lib/ui/controls/RowButton.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
@@ -142,12 +143,7 @@
 
 {#snippet sessionRow(entry: GroupedSession)}
     <div class="session" class:on={entry.id === selected()}>
-        <button
-            type="button"
-            class="pick"
-            aria-label={t('sessions.select_tip')}
-            onclick={() => select(entry.id)}
-        >
+        <RowButton title={t('sessions.select_tip')} onclick={() => select(entry.id)}>
             <span class="top">
                 <Tag label={entry.tool} />
                 <span class="nm">{entry.title}</span>
@@ -161,7 +157,7 @@
                 <span class="sep">{t('sessions.meta_sep')}</span>
                 <span class="ts">{stamp(entry.started, now)}</span>
             </span>
-        </button>
+        </RowButton>
     </div>
 {/snippet}
 
@@ -266,32 +262,15 @@
 
     /* The sessions, the same row the session list draws. */
     .session {
+        display: flex;
         border: 1px solid var(--line);
         border-radius: var(--radius-sm);
         margin-bottom: 4px;
+        padding: 5px 2px;
     }
 
     .session.on {
         border-color: var(--accent);
-    }
-
-    .pick {
-        display: flex;
-        flex-direction: column;
-        gap: 2px;
-        width: 100%;
-        border: none;
-        background: none;
-        color: var(--ink-txt, var(--ink));
-        font: inherit;
-        text-align: left;
-        padding: 5px 8px;
-        cursor: pointer;
-    }
-
-    .pick:focus-visible {
-        outline: 2px solid var(--accent);
-        outline-offset: -2px;
     }
 
     .top {
@@ -312,6 +291,7 @@
         display: flex;
         align-items: center;
         gap: 4px;
+        margin-top: 2px;
         font-size: var(--fs-sm);
         color: var(--muted-txt, var(--muted));
     }

@@ -102,5 +102,21 @@ export default ts.config(
             // reports one that suppresses nothing; linterOptions above does not see it.
             'svelte/comment-directive': ['error', { reportUnusedDisableDirectives: true }]
         }
+    },
+    {
+        // Every control a reader presses in a view is a ui/ primitive, which is what gives it the
+        // theme's look, its focus ring and its keys. The primitives themselves and the shell draw
+        // the raw elements, so the rule holds under views/ alone.
+        files: ['src/lib/views/**/*.svelte'],
+        rules: {
+            'svelte/no-restricted-html-elements': [
+                'error',
+                {
+                    elements: ['button', 'input', 'select', 'textarea'],
+                    message:
+                        'A view draws its controls with ui/ primitives (ToolButton, RowButton, Chip, the ui/forms inputs), never a raw element.'
+                }
+            ]
+        }
     }
 );

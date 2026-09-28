@@ -71,7 +71,8 @@ const READY: DocState = {
     html: '<h1>Approach</h1>',
     frontmatter: null,
     error: '',
-    loading: false
+    loading: false,
+    parts: []
 };
 
 describe('the state a document tab is opened with', () => {
@@ -106,7 +107,8 @@ describe('a hub document as its own tab', () => {
             html: '',
             frontmatter: null,
             error: '',
-            loading: true
+            loading: true,
+            parts: []
         });
 
         expect(body).toContain('Reading the document...');
@@ -117,7 +119,8 @@ describe('a hub document as its own tab', () => {
             html: '<h1>Approach</h1>',
             frontmatter: null,
             error: 'document does not exist',
-            loading: false
+            loading: false,
+            parts: []
         });
 
         expect(body).toContain(
@@ -165,7 +168,7 @@ describe('the shared Markdown partial', () => {
             '<img src="/api/file/hub/notes/one.png" alt="one">';
         const body = render(Markdown, {
             props: {
-                doc: { html, frontmatter: null, error: '', loading: false },
+                doc: { html, frontmatter: null, error: '', loading: false, parts: [] },
                 loading: 'reading',
                 failed: 'failed'
             }

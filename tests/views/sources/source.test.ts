@@ -9,7 +9,7 @@
 
 import { render } from 'svelte/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import Code from '../../../src/lib/views/sources/source/Code.svelte';
+import Code from '../../../src/lib/views/shared/code/Code.svelte';
 import Editor from '../../../src/lib/views/sources/source/Editor.svelte';
 import Source from '../../../src/lib/views/sources/source/Source.svelte';
 import {

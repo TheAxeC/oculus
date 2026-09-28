@@ -10,6 +10,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { NO_FEEDS } from '../../fixtures/entities-fixture.ts';
 import { render } from 'svelte/server';
 import Project from '../../../src/lib/views/boards/project/Project.svelte';
+import RowButton from '../../../src/lib/ui/controls/RowButton.svelte';
 import {
     engineDir,
     glyphCatalog,
@@ -29,6 +30,22 @@ import type {
 } from '../../../src/lib/data/model/index.ts';
 import type { Instance } from '../../../src/lib/state/workbench/layout/index.ts';
 import { clientContext, createClientState, type ClientState } from '../../fixtures/client.ts';
+
+// The row primitive is wrapped by a recorder that renders the real one and keeps its calls, so a
+// case presses a row by calling the handler the view handed it.
+vi.mock('../../../src/lib/ui/controls/RowButton.svelte', async (original) =>
+    (await import('../../checks/diagrams/counted.ts')).counted(
+        await original<Record<string, unknown>>(),
+        'default'
+    )
+);
+
+/** The props each drawn session row was given, in the order they were drawn. */
+function drawnRows(): Record<string, unknown>[] {
+    return vi
+        .mocked(RowButton as unknown as (...args: unknown[]) => unknown)
+        .mock.calls.map((call) => call[1] as Record<string, unknown>);
+}
 
 let client: ClientState;
 let receive: ClientState['entities']['receive'];
@@ -464,5 +481,37 @@ describe('a software project and the paper it names', () => {
         const body = html('alpha');
         expect(body).toContain(catalog['project.card.software']);
         expect(body).toContain('>Kit<');
+    });
+});
+
+describe('a press on a session row', () => {
+    /** Call the press handler of one recorded row. */
+    function press(props: Record<string, unknown> | undefined): void {
+        const onclick = props?.onclick as ((event: MouseEvent) => void) | undefined;
+        expect(onclick).toBeTypeOf('function');
+        onclick?.({} as MouseEvent);
+    }
+
+    let rows: Record<string, unknown>[];
+
+    beforeEach(() => {
+        vi.mocked(RowButton as unknown as (...args: unknown[]) => unknown).mockClear();
+        html('alpha');
+        rows = drawnRows();
+    });
+
+    it("draws the card's session row and the tab's own, in that order", () => {
+        expect(rows).toHaveLength(2);
+    });
+
+    it("selects the session on the tab's own row", () => {
+        press(rows[1]);
+        expect(client.selection.selected()).toBe('in-alpha');
+    });
+
+    it("selects the session on the card's row, and opens its detail beside the board", () => {
+        press(rows[0]);
+        expect(client.selection.selected()).toBe('in-alpha');
+        expect(JSON.stringify(client.layout.layout())).toContain('session-detail');
     });
 });

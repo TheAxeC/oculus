@@ -51,9 +51,14 @@
                 ></thead
             ><tbody>
                 {#each rows as row (row.id)}{@const fraction = walltimeFraction(row)}<tr>
-                        <td>{row.id}</td><td>{row.name}</td><td>{row.partition}</td><td
-                            ><Tag label={row.state} tone={stateTone(row.state)} /></td
-                        ><td>{row.time}</td><td>{row.limit}</td>
+                        <td>{row.id}</td>
+                        <td>{row.name}</td>
+                        <td>{row.partition}</td>
+                        <td>
+                            <Tag label={row.state} tone={stateTone(row.state)} />
+                        </td>
+                        <td>{row.time}</td>
+                        <td>{row.limit}</td>
                         <td
                             >{#if fraction !== null}<Meter
                                     value={fraction}
@@ -61,9 +66,13 @@
                                     text={`${Math.round(fraction * 100)}%`}
                                 />{:else}{t('hpc.none')}{/if}</td
                         >
-                        <td>{row.nodes}</td><td>{row.cpus}</td><td>{row.gpus || t('hpc.none')}</td
-                        ><td>{row.mem || t('hpc.none')}</td><td>{row.priority || t('hpc.none')}</td
-                        ><td>{startLabel(row.start) || t('hpc.none')}</td><td>{row.reason}</td>
+                        <td>{row.nodes}</td>
+                        <td>{row.cpus}</td>
+                        <td>{row.gpus || t('hpc.none')}</td>
+                        <td>{row.mem || t('hpc.none')}</td>
+                        <td>{row.priority || t('hpc.none')}</td>
+                        <td>{startLabel(row.start) || t('hpc.none')}</td>
+                        <td>{row.reason}</td>
                         <td class="actions"
                             ><ToolButton
                                 label={t('hpc.cancel_ok')}

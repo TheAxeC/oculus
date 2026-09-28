@@ -11,10 +11,9 @@ import { join } from 'node:path';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { render } from 'svelte/server';
 import Help from '../../../src/lib/views/system/help/Help.svelte';
-import { splitManual } from '../../../src/lib/views/system/help/manual.ts';
 import { newestAnswer } from '../../../src/lib/views/system/help/newest.ts';
 import { NAMES, OUT } from '../../../bin/diagrams/diagrams.mjs';
-import { renderManual, renderMarkdown } from '../../../src/lib/server/content/docs.ts';
+import { renderManual, renderManualParts } from '../../../src/lib/server/content/docs.ts';
 import { portfolioConfigFrom } from '../../../src/lib/data/index.ts';
 import { descriptionKey } from '../../../src/lib/views/system/config/files.ts';
 import { sheetRows } from '../../../src/lib/ui/menu/key-rows.ts';
@@ -86,7 +85,8 @@ describe('the Help view', () => {
             html: '<h1>Oculus</h1>',
             frontmatter: null,
             error: '',
-            loading: false
+            loading: false,
+            parts: [{ kind: 'html', html: '<h1>Oculus</h1>' }]
         });
 
         expect(body).toContain('Help');
@@ -94,73 +94,89 @@ describe('the Help view', () => {
     });
 
     it('says the manual is being read, and says what a failed read failed with', () => {
-        expect(drawn({ html: '', frontmatter: null, error: '', loading: true })).toContain(
-            'Reading the manual...'
-        );
         expect(
-            drawn({ html: '', frontmatter: null, error: 'no such file', loading: false })
+            drawn({ html: '', frontmatter: null, error: '', loading: true, parts: [] })
+        ).toContain('Reading the manual...');
+        expect(
+            drawn({ html: '', frontmatter: null, error: 'no such file', loading: false, parts: [] })
         ).toContain('The manual could not be read: no such file');
     });
 });
 
-/** The diagrams one rendered manual shows, in order, as the Help view cuts it. */
-function diagramsOf(html: string): string[] {
-    return splitManual(html).flatMap((part) => (part.kind === 'diagram' ? [part.name] : []));
+/** The diagrams one manual's text shows, in order, as the server cuts it. */
+function diagramsOf(text: string): string[] {
+    return (
+        renderManualParts(text).parts?.flatMap((part) =>
+            part.kind === 'diagram' ? [part.name] : []
+        ) ?? []
+    );
 }
 
 describe('the diagrams in the manual', () => {
-    const html = [
-        '<h2>Before</h2>',
-        '<p><img src="docs/diagrams/layers.svg" alt="The layers &amp; imports"></p>',
-        '<p>Between.</p>',
-        '<p><img src="pictures/photo.png" alt="A photo"></p>'
+    const MARKDOWN = [
+        '## Before',
+        '',
+        '![The layers & imports](docs/diagrams/layers.svg)',
+        '',
+        'Between.',
+        '',
+        '![A photo](pictures/photo.png)',
+        ''
     ].join('\n');
 
-    it('draws a diagram of docs/diagrams from the route, with the prose around it', () => {
-        const body = drawn({ html, frontmatter: null, error: '', loading: false });
+    it('draws a diagram part from the route, with the prose parts around it', () => {
+        const { html, parts = [] } = renderManualParts(MARKDOWN);
+        const body = drawn({ html, frontmatter: null, error: '', loading: false, parts });
         expect(body).toContain('data-diagram="layers"');
         expect(body).toContain('aria-label="The layers &amp; imports"');
         expect(body).toContain('Drawing the diagram layers...');
         // The manual's own image of the file is taken out and drawn inline instead, since an image
         // keeps its own black under a dark theme.
         expect(body).not.toContain('src="docs/diagrams/layers.svg"');
-        expect(body).toContain('<h2>Before</h2>');
+        expect(body).toContain('<h2 id="user-content-before">Before</h2>');
         expect(body).toContain('<p>Between.</p>');
+        expect(body).toContain('src="pictures/photo.png"');
     });
 
     it('audits that the manual is cut at a diagram alone, and every other image stays in the prose', () => {
-        expect(splitManual(html)).toEqual([
-            { kind: 'html', html: '<h2>Before</h2>\n' },
+        expect(renderManualParts(MARKDOWN).parts).toEqual([
+            { kind: 'html', html: '<h2 id="user-content-before">Before</h2>\n' },
             { kind: 'diagram', name: 'layers', alt: 'The layers & imports' },
             {
                 kind: 'html',
-                html: '\n<p>Between.</p>\n<p><img src="pictures/photo.png" alt="A photo"></p>'
+                html: '<p>Between.</p>\n<p><img src="pictures/photo.png" alt="A photo"></p>\n'
             }
         ]);
-        expect(splitManual('<p>No picture.</p>')).toEqual([
-            { kind: 'html', html: '<p>No picture.</p>' }
+        expect(renderManualParts('No picture.\n').parts).toEqual([
+            { kind: 'html', html: '<p>No picture.</p>\n' }
         ]);
     });
 
-    it('audits that an image written inside a code block is no diagram', () => {
-        const fenced = renderMarkdown('```\n![Layers](docs/diagrams/layers.svg)\n```\n', null);
-        expect(diagramsOf(fenced)).toEqual([]);
-        expect(diagramsOf(renderMarkdown('![Layers](docs/diagrams/layers.svg)\n', null))).toEqual([
-            'layers'
-        ]);
+    it('audits that the answer keeps the diagram in its HTML, as one parse drew it', () => {
+        const { html } = renderManualParts(MARKDOWN);
+        expect(html).toContain(
+            '<p><img src="docs/diagrams/layers.svg" alt="The layers &amp; imports"></p>'
+        );
+        expect(html).toContain('<p>Between.</p>');
+    });
+
+    it('audits that an image written inside a code block, a list or a quote is no diagram', () => {
+        expect(diagramsOf('```\n![Layers](docs/diagrams/layers.svg)\n```\n')).toEqual([]);
+        expect(diagramsOf('- one\n\n  ![Layers](docs/diagrams/layers.svg)\n')).toEqual([]);
+        expect(diagramsOf('> ![Layers](docs/diagrams/layers.svg)\n')).toEqual([]);
+        expect(diagramsOf('![Layers](docs/diagrams/layers.svg)\n')).toEqual(['layers']);
     });
 
     it('audits that the alternative text is read as it was written', () => {
-        const [part] = splitManual(
-            '<img alt="a &lt;b&gt; &quot;c&quot; &#39;d&#39;" src="docs/diagrams/w.svg">'
-        );
-        expect(part).toEqual({ kind: 'diagram', name: 'w', alt: 'a <b> "c" \'d\'' });
+        expect(renderManualParts('![a <b> "c" \'d\'](docs/diagrams/w.svg)\n').parts).toEqual([
+            { kind: 'diagram', name: 'w', alt: 'a <b> "c" \'d\'' }
+        ]);
     });
 
     it('audits that an ampersand and an apostrophe written as entities in the alt text read as written', () => {
-        const [part] = splitManual(
-            '<p><img src="docs/diagrams/w.svg" alt="Reader &amp; writer&#39;s view"></p>'
-        );
+        const [part] =
+            renderManualParts('![Reader &amp; writer&#39;s view](docs/diagrams/w.svg)\n').parts ??
+            [];
         expect(part).toEqual({ kind: 'diagram', name: 'w', alt: "Reader & writer's view" });
     });
 
@@ -170,8 +186,9 @@ describe('the diagrams in the manual', () => {
             engine: engineDir(),
             config: portfolioConfigFrom(config, engineDir())
         });
-        const { html } = (await answer.json()) as { html: string };
-        expect([...diagramsOf(html)].sort()).toEqual([...NAMES].sort());
+        const { parts } = (await answer.json()) as { parts: { kind: string; name?: string }[] };
+        const shown = parts.flatMap((part) => (part.kind === 'diagram' ? [part.name] : []));
+        expect([...shown].sort()).toEqual([...NAMES].sort());
         for (const name of NAMES) {
             expect(readdirSync(join(engineDir(), OUT))).toContain(`${name}.svg`);
         }

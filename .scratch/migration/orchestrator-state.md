@@ -27,7 +27,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:      # Q79a, Q79c and Q99 building.
+dispatch:      # Q79a and Q99 in review.
 - step: Q79a
   executor: agent
   worker: claude:opus
@@ -37,21 +37,9 @@ dispatch:      # Q79a, Q79c and Q99 building.
   launched: 2026-09-28
   report: agents/reviews/Q79a-report.md
   landing: not-started
-  reviewer_report: agents/reviews/Q79a-refuter.md (reviewer a4d1823055e6df7c3, 62 tool uses, 307k tokens, 19 min)
+  reviewer_report: agents/reviews/Q79a-refuter.md (reviewer a4d1823055e6df7c3, 62 tool uses, 307k tokens, 19 min; round 1 builder report saved, 82 tool uses, 189k tokens, 25 min; round 1 reviewer a7bbab68a23036dab, running)
   round: 1   # sent 2026-09-28 in agents/briefs/Q79a-round1-sent.md, from worktree commit 5ce7a0ec; the brief's decision 1 reversed there (neither header refused, as on the base)
   shared_paths: with Q92, server/accounts/connect/actions.ts (Q79a replaces its hand JSON answers, Q92 changes its add and remove rows: different lines, a hand merge), routes/api/(accounts)/calendar and mail route files (Q79a changes the config read and drops the origin calls, Q92 the ics provider: different lines), server/root/context.ts (Q79a may drop the config field, Q92 adds the ics account wiring: different lines), docs/diagrams (a rerun), DESIGN.md (the Auth paragraph against Q92's lines 134 and 298)
-- step: Q79c
-  executor: agent
-  worker: claude:opus
-  session_id: a0a06c199b2d9544d
-  worktree: .agents/worktrees/Q79c
-  base: 2b7f36df
-  launched: 2026-09-28
-  report: agents/reviews/Q79c-report.md
-  landing: not-started
-  reviewer_report: agents/reviews/Q79c-refuter.md (reviewer a98d284f504829f77, 60 tool uses, 229k tokens, 14 min; round 1 builder report saved, 71 tool uses, 303k tokens, 24 min; round 1 reviewer ac94066d2b35fd982, running)
-  round: 1   # sent 2026-09-28 in agents/briefs/Q79c-round1-sent.md, from worktree commit 787dc14c
-  shared_paths: with Q79a, server/content/docs.ts (Q79a changes the json call in answer() and drops the origin check in handleDocs; Q79c changes figures(), renderManual() and adds parts to the body in answer(): a hand merge of answer()); with Q92, views/system/help/manual.ts (Q92 decodes attribute() through entities, Q79c removes attribute() with the regex cut: the landing takes Q79c's file) and tests/views/system/help.test.ts (different cases); with both, docs/diagrams (a rerun of npm run diagrams), DESIGN.md and HELP.md (different sentences)
 - step: Q99
   executor: agent
   worker: claude:opus
@@ -120,11 +108,7 @@ None. Axel lifted it on 2026-09-23 with `/plan-orchestration oculus/migration` a
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is booked as its own step in `plan.md` and carried in the Booked section below, since it needs no ruling from him.
 
-- Z43, the shape of the `sessions` message while tmux has not answered yet (raised 2026-09-28, from Q99's builder). Q99 closes a Terminal tab when its terminal has ended, read off the `terminals` list the server sends in the `sessions` message. Until tmux has answered the server's first `list-sessions` (just after a server start, or when that first read times out), the server has no list, and today it sends an empty one, which the page would read as every terminal having ended and close every Terminal tab while the terminals run on. The message between the server and the page is a wire format, so its shape is yours to rule. Options:
-  - (a) As built: `terminals` is left out of the message until tmux has answered once, and a page reads a message without it as saying nothing about any terminal. Pros: the smallest change; the page's reading needs no new field; an old page and a new server still agree. Cons: one field of the message becomes optional, so every reader must handle its absence. Recommended.
-  - (b) `terminals` always present, plus a field `terminalsRead: boolean` that says whether tmux has answered. Pros: no optional field. Cons: two fields to keep in step, and a reader that forgets the flag makes the same mistake as today.
-  - (c) The server sends no `sessions` message at all until tmux has answered. Pros: no shape change. Cons: the Sessions list of Claude and Codex sessions waits on tmux at every start, and waits for good when tmux does not answer.
-  - The lazy option is sending the empty list as today, which closes every Terminal tab after a restart.
+- None.
 
 ## Time per step (Axel asked 2026-09-27 for how it evolves with Q77; measured from each builder's transcript: each tool call from call to result, each background wait from the builder stopping to the run waking it)
 
@@ -142,6 +126,11 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 
 ## Closed items (kept as the log of what was raised and how it ended)
 
+- Z43, the shape of the `sessions` message while tmux has not answered yet (raised 2026-09-28, from Q99's builder). Q99 closes a Terminal tab when its terminal has ended, read off the `terminals` list the server sends in the `sessions` message. Until tmux has answered the server's first `list-sessions` (just after a server start, or when that first read times out), the server has no list, and today it sends an empty one, which the page would read as every terminal having ended and close every Terminal tab while the terminals run on. The message between the server and the page is a wire format, so its shape is yours to rule. Options:
+  - (a) As built: `terminals` is left out of the message until tmux has answered once, and a page reads a message without it as saying nothing about any terminal. Pros: the smallest change; the page's reading needs no new field; an old page and a new server still agree. Cons: one field of the message becomes optional, so every reader must handle its absence. Recommended.
+  - (b) `terminals` always present, plus a field `terminalsRead: boolean` that says whether tmux has answered. Pros: no optional field. Cons: two fields to keep in step, and a reader that forgets the flag makes the same mistake as today.
+  - (c) The server sends no `sessions` message at all until tmux has answered. Pros: no shape change. Cons: the Sessions list of Claude and Codex sessions waits on tmux at every start, and waits for good when tmux does not answer.
+  - The lazy option is sending the empty list as today, which closes every Terminal tab after a restart. Closed 2026-09-28, Axel: (a), as built in Q99; the lazy option was sending the empty list as today.
 - Z40, what the Terminal view is (raised 2026-09-28, from Axel's look: "the side panel thingy for terminals are also kind of different panels? Maybe this is just a design mismatch?"). Seen on TEST: every terminal is a tab of its own (`8e90e6-shell`, `6bcd37-shell`), and every Terminal tab also draws a list of all terminals on its right (`views/sessions/terminal/TerminalList.svelte`, from two terminals on, `terminal-list.ts:72`); New terminal in the right pane opened its start form as a new tab in the left pane. So one terminal is both a tab somewhere and a row in each Terminal tab's list: two ways to the same thing, mixing VS Code's terminal panel (one panel, a list of terminals on its right, New terminal adds a row) with VS Code's terminal in the editor area (a tab per terminal, no list). Options:
   - (a) The panel: one Terminal tab holds every terminal; its list switches the terminal the tab shows; New terminal adds a row to this tab and shows it; Split divides this tab's body between two terminals, as VS Code's split does; a terminal is no longer a tab of its own, and the pin goes. Pros: one place for terminals, as Q89 set out to draw VS Code's terminal panel. Cons: two terminals side by side in different panes of a page are no longer possible outside Split.
   - (b) The editor tab: every terminal is a tab of its own, the list goes, New terminal opens a tab in the pane it was pressed in. Pros: panes place terminals freely. Cons: no list of terminals beside them; the Sessions view is the overview.
@@ -428,6 +417,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-09-28. Q79c landed through /spec, /refute and /land (the page half of the library audit): one repair round, refuted again; five fixes at landing (the merge with Q92's manual.ts, the diagram alt text decoded on the server, the career moves as default ToolButtons with the capsule variant removed, fs.ts split into file-type.ts, the extension rule written once). Axel ruled Z43 (a). Q79a's round and Q99's first review are in; next: Q79a's landing, then Q99's repair round.
 - 2026-09-28. Q92 landed through /spec, /refute and /land (the Inbox and Calendar views beautified, a published calendar link read with ical.js); one repair round, refuted again; three fixes at landing: the colour and tint rules together, a view test's title, an event's title first in its tooltip. Verify on main: `verify: 6 commands passed` (Test Files 344 passed, Tests 5465 passed). Z42 raised from the look. Q79a and Q79c are building; Q99 is next into the freed slot.
 - 2026-09-28. Q79a and Q79c launched (the library audit's server and page halves), beside Q92, whose repair round 1 is answered. Q79c's plan line corrected at `/spec`: the Config view holds no highlight.js to drop, so the item is its YAML drawn through the highlighter, as the audit found. Next: `/refute` Q92 over round 1.
 - 2026-09-28. Q89 landed through /spec, /refute and /land (the terminal as VS Code's terminal, Split in the row's own folder by Z39 (a)); two repair rounds, each refuted again; four fixes at landing, the last review's findings. Verify on main: `verify: 6 commands passed` (Test Files 343 passed, Tests 5408 passed). In flight: Q92 (repair round 1). Next: `/spec` Q79a and Q79c.

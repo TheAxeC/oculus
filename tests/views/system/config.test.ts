@@ -108,6 +108,15 @@ describe('the Config view', () => {
         expect(body).toContain('lines');
     });
 
+    it('paints an opened YAML file through the code window', () => {
+        client.ui.setInstanceState(instance.id, { open: ['layout.yml'] });
+        const open = drawn([file('layout.yml')], text(LAYOUT));
+        // the key of the file is painted by the highlighter inside the element that names it
+        expect(open).toMatch(
+            /data-file="layout\.yml"[^>]*>[\s\S]*<span class="hljs-attr">nav_groups:<\/span>/
+        );
+    });
+
     it('shows the raw text only for a file the tab was left open on', () => {
         const closed = drawn([file('layout.yml')], text(LAYOUT));
         // the tab was left closed on this file, so its raw text is not drawn

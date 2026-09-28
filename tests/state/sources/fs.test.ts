@@ -2,7 +2,7 @@
 // and the guards that stop stale answers and duplicate requests.
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ENGINE_ROOT, TEXT_LIMIT } from '../../../src/lib/state/sources/fs.ts';
+import { ENGINE_ROOT, TEXT_LIMIT, languageOf } from '../../../src/lib/state/sources/fs.ts';
 import { FS_PATH, NOTE_GONE } from '../../../src/lib/state/sources/fs.svelte.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
 import { setCatalog } from '../../../src/lib/state/shared/words/text.ts';
@@ -827,5 +827,58 @@ describe('the store reading the endpoints', () => {
                 language: 'plaintext'
             });
         });
+    });
+});
+
+describe('the language a file is painted in', () => {
+    /** Every extension the table named, with the language it gave, and the one whole name. */
+    const NAMED: [string, string][] = [
+        ['x.ts', 'typescript'],
+        ['x.tsx', 'typescript'],
+        ['x.mts', 'typescript'],
+        ['x.cts', 'typescript'],
+        ['x.js', 'javascript'],
+        ['x.jsx', 'javascript'],
+        ['x.mjs', 'javascript'],
+        ['x.cjs', 'javascript'],
+        ['x.py', 'python'],
+        ['x.yml', 'yaml'],
+        ['x.yaml', 'yaml'],
+        ['x.json', 'json'],
+        ['x.ipynb', 'json'],
+        ['x.sh', 'bash'],
+        ['x.bash', 'bash'],
+        ['x.zsh', 'bash'],
+        ['x.slurm', 'bash'],
+        ['x.md', 'markdown'],
+        ['x.tex', 'latex'],
+        ['x.bib', 'latex'],
+        ['x.sty', 'latex'],
+        ['x.cls', 'latex'],
+        ['x.css', 'css'],
+        ['x.xml', 'xml'],
+        ['x.svelte', 'xml'],
+        ['x.lisp', 'lisp'],
+        ['x.el', 'lisp'],
+        ['x.scm', 'lisp'],
+        ['x.ml', 'ocaml'],
+        ['x.mli', 'ocaml'],
+        ['x.r', 'r'],
+        ['x.m', 'matlab'],
+        ['x.jl', 'julia'],
+        ['x.toml', 'ini'],
+        ['x.ini', 'ini'],
+        ['Makefile', 'makefile'],
+        ['src/makefile', 'makefile'],
+        ['DATA.YML', 'yaml']
+    ];
+
+    it('gives every extension and name the language it has always been painted in', () => {
+        expect(NAMED.map(([name]) => [name, languageOf(name)])).toEqual(NAMED);
+    });
+
+    it('paints a name nothing claims as plain text', () => {
+        expect(languageOf('x.unknownext')).toBe('plaintext');
+        expect(languageOf('README')).toBe('plaintext');
     });
 });

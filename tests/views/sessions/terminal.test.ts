@@ -11,8 +11,14 @@
 // tested in tests/state/workbench/layout/pages.test.ts.
 
 import { render } from 'svelte/server';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import Terminal from '../../../src/lib/views/sessions/terminal/Terminal.svelte';
+import type { ITerminalOptions } from '@xterm/xterm';
+import {
+    applyLook,
+    gridLook,
+    gridOptions
+} from '../../../src/lib/views/sessions/terminal/grid-look.ts';
 import {
     listDrawn,
     movedOrder,
@@ -335,5 +341,59 @@ describe('the rules the list and the grid go by', () => {
         expect(storedOrder(undefined)).toEqual([]);
         expect(storedOrder(['a'])).toEqual([]);
         expect(storedOrder({ order: ['a', 'a'] })).toEqual(['a']);
+    });
+});
+
+describe("the grid's font and selection", () => {
+    /** The tokens the stubbed body carries, and the other element, which carries none of them. */
+    const BODY = { tokens: true };
+    const TOKENS: Record<string, string> = {
+        '--font-mono': ' "JetBrains Mono", monospace ',
+        '--accent-bg': ' #d0e4ff ',
+        '--on-accent-bg': ' #0a1a2f ',
+        '--panel': '#ffffff',
+        '--ink': '#111111',
+        '--accent': '#3366ff'
+    };
+
+    /** Stub the body's computed style with these tokens, and nothing on any other element. */
+    function stubBody(tokens: Record<string, string>): void {
+        vi.stubGlobal('document', { body: BODY });
+        vi.stubGlobal('getComputedStyle', (element: unknown) => ({
+            getPropertyValue: (name: string) => (element === BODY ? (tokens[name] ?? '') : '')
+        }));
+    }
+
+    afterEach(() => vi.unstubAllGlobals());
+
+    it('audits that the grid is built with the mono font and the selected row surface, read off the body', () => {
+        stubBody(TOKENS);
+        const options = gridOptions(gridLook(), 14);
+        expect(options.fontFamily).toBe('"JetBrains Mono", monospace');
+        expect(options.theme?.selectionBackground).toBe('#d0e4ff');
+        expect(options.theme?.selectionForeground).toBe('#0a1a2f');
+        expect(options.theme?.background).toBe('#ffffff');
+        expect(options.theme?.foreground).toBe('#111111');
+        expect(options.convertEol).toBe(false);
+        expect(options.fontSize).toBe(14);
+        expect(gridOptions(gridLook(), undefined)).not.toHaveProperty('fontSize');
+    });
+
+    it('audits that a new look puts its font and its selection on a grid drawn in another', () => {
+        stubBody(TOKENS);
+        const options: ITerminalOptions = {
+            fontFamily: 'courier-new, courier, monospace',
+            theme: { selectionBackground: '#888888' },
+            fontSize: 12
+        };
+        applyLook(options, gridLook());
+        expect(options.fontFamily).toBe('"JetBrains Mono", monospace');
+        expect(options.theme?.selectionBackground).toBe('#d0e4ff');
+        expect(options.fontSize).toBe(12);
+    });
+
+    it('audits that the selection is drawn in the ink before a theme sets its own colour', () => {
+        stubBody({ ...TOKENS, '--on-accent-bg': '' });
+        expect(gridLook().theme.selectionForeground).toBe('#111111');
     });
 });

@@ -44,9 +44,9 @@ function drawn(images: Picture[]): string {
     return render(Memories, { context: clientContext(client), props: { instance } }).body;
 }
 
-/** The opening tag of the tile of one name, as the rendering wrote it. */
+/** The opening tag of the box of one name's tile, as the rendering wrote it. */
 function tile(body: string, name: string): string {
-    const found = new RegExp(`<button[^>]*data-tile="${name}"[^>]*>`).exec(body);
+    const found = new RegExp(`<div[^>]*data-picture="${name}"[^>]*>`).exec(body);
     expect(found).not.toBeNull();
     return found?.[0] ?? '';
 }

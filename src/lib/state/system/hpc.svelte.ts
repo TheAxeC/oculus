@@ -30,7 +30,9 @@ export function createHpc(entities: EntitiesStore, writes: WritesStore): HpcStor
     function pillText(): string {
         const value = entities.hpc();
         return value?.status === 'ok' && value.total > 0
-            ? t('hpc.pill_running', value.running, value.running === 1 ? '' : 's') +
+            ? (value.running === 1
+                  ? t('hpc.pill_running_one')
+                  : t('hpc.pill_running', value.running)) +
                   (value.pending ? t('hpc.pill_pending', value.pending) : '')
             : '';
     }

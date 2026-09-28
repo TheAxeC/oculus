@@ -37,6 +37,7 @@
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Toolbar from '$lib/ui/frame/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import FileChooser from '$lib/ui/forms/FileChooser.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { readMessage, tooLarge, uploadMessage } from '$lib/state/life/memories';
     import { tileRatio } from '$lib/state/life/memories.svelte';
@@ -89,8 +90,8 @@
     /** True while an add is in flight, so a second press sends no second write. */
     let busy = $state(false);
 
-    /** The hidden input the add control presses, which is the only way a file is chosen. */
-    let chooser: HTMLInputElement | null = $state(null);
+    /** The file chooser the add control opens, which is the only way a file is chosen. */
+    let chooser: { open: () => void } | null = $state(null);
 
     /**
      * The address one picture is served at, with the answer it is asked for again at after it
@@ -150,12 +151,8 @@
      * it would be refused by the server's own parser, and the reader would meet that and not a
      * sentence.
      */
-    async function add(event: Event): Promise<void> {
-        const field = event.currentTarget;
-        if (!(field instanceof HTMLInputElement) || field.files === null) return;
-        const chosen = [...field.files];
-        field.value = '';
-        if (chosen.length === 0 || busy) return;
+    async function add(chosen: File[]): Promise<void> {
+        if (busy) return;
         busy = true;
         const refused: { name: string; said: string }[] = [];
         for (const file of chosen) {
@@ -186,21 +183,18 @@
             glyph={t('memories.add_glyph')}
             title={t('memories.add_tip')}
             disabled={busy}
-            onclick={() => chooser?.click()}
+            onclick={() => chooser?.open()}
         />
     </Toolbar>
 {/snippet}
 
 <Pane title={t('memories.title')} toolbar={tools} tinted>
     <div class="memories" bind:this={box} data-instance={instance.id} data-memories>
-        <input
-            class="chooser"
+        <FileChooser
             bind:this={chooser}
-            type="file"
             accept="image/jpeg,image/png"
             multiple
-            hidden
-            onchange={(event: Event) => void add(event)}
+            onchoose={(files: File[]) => void add(files)}
         />
         {#if failed.length === 1}
             <p class="failed" aria-live="polite">
@@ -224,28 +218,33 @@
             <div class="wall">
                 {#each images as picture (picture.name)}
                     {@const name = picture.name}
-                    <button
-                        type="button"
+                    <div
                         class="tile"
                         class:loaded={arrived[name] === 'loaded'}
                         style:aspect-ratio={tileRatio(picture)}
-                        data-tile={name}
+                        data-picture={name}
                         data-arrived={arrived[name] ?? 'loading'}
-                        title={t('memories.open', name)}
-                        onclick={() => void enlarge(name)}
                     >
-                        {#if arrived[name] === 'failed'}
-                            <span class="alt">{t('memories.tile', name)}</span>
-                        {:else}
-                            <img
-                                loading="lazy"
-                                src={source(name)}
-                                alt={t('memories.tile', name)}
-                                onload={() => (arrived[name] = 'loaded')}
-                                onerror={() => (arrived[name] = 'failed')}
-                            />
-                        {/if}
-                    </button>
+                        <ToolButton
+                            cell
+                            label={t('memories.open', name)}
+                            title={t('memories.open', name)}
+                            data={{ tile: name }}
+                            onclick={() => void enlarge(name)}
+                        >
+                            {#if arrived[name] === 'failed'}
+                                <span class="alt">{t('memories.tile', name)}</span>
+                            {:else}
+                                <img
+                                    loading="lazy"
+                                    src={source(name)}
+                                    alt={t('memories.tile', name)}
+                                    onload={() => (arrived[name] = 'loaded')}
+                                    onerror={() => (arrived[name] = 'failed')}
+                                />
+                            {/if}
+                        </ToolButton>
+                    </div>
                 {/each}
             </div>
         {/if}
@@ -259,12 +258,13 @@
                 tabindex="-1"
                 onkeydown={keys}
             >
-                <button
-                    type="button"
-                    class="backdrop"
-                    aria-label={t('memories.close_outside')}
-                    onclick={() => void close()}
-                ></button>
+                <span class="backdrop">
+                    <ToolButton
+                        cell
+                        label={t('memories.close_outside')}
+                        onclick={() => void close()}
+                    />
+                </span>
                 <figure class="shown">
                     <img src={source(open)} alt={t('memories.tile', open)} />
                 </figure>
@@ -314,11 +314,11 @@
        picture with no size; a sized one sets its own ratio on the element. The ratio is the content
        box's, the border drawn outside it, so a picture of that ratio fills the box to the pixel;
        the border's width is one property, read by the border and by the width that leaves room for
-       it. */
+       it. The box is a flex box, which stretches the pressable cell inside it to its whole area. */
     .tile {
         --tile-border: 1px;
         position: relative;
-        display: block;
+        display: flex;
         box-sizing: content-box;
         width: calc(100% - 2 * var(--tile-border));
         aspect-ratio: 4 / 3;
@@ -328,7 +328,6 @@
         border-radius: var(--radius-sm);
         background: var(--chip);
         overflow: hidden;
-        cursor: pointer;
         break-inside: avoid;
     }
 
@@ -340,11 +339,6 @@
 
     .tile:hover {
         border-color: var(--accent);
-    }
-
-    .tile:focus-visible {
-        outline: 2px solid var(--accent);
-        outline-offset: 2px;
     }
 
     .tile img {
@@ -386,15 +380,14 @@
     }
 
     /* The press outside the picture is a control of its own, so closing that way is a button press
-       and not a click handler on a box: the keyboard reaches it and the screen reader names it. */
+       and not a click handler on a box: the keyboard reaches it and the screen reader names it. The
+       box is a flex box, which stretches the pressable cell inside it over the whole pane. */
     .backdrop {
         position: absolute;
         inset: 0;
-        border: 0;
-        padding: 0;
+        display: flex;
         background: var(--bg);
         opacity: 0.86;
-        cursor: pointer;
     }
 
     .shown {

@@ -37,7 +37,8 @@
         html: blockMarkdown(text.replace(FRONT_MATTER, '')),
         frontmatter: null,
         error: '',
-        loading: false
+        loading: false,
+        parts: []
     });
 
     // The two halves hold the same text at different heights, so the editor's position through its

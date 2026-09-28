@@ -5,6 +5,7 @@
     // card too.
 
     import Tag from '$lib/ui/controls/Tag.svelte';
+    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import type { BoardItem } from '$lib/state/boards/board';
     import { t } from '$lib/state/shared/words/text';
     import { goto } from './card';
@@ -85,14 +86,16 @@
             <span class="label">{t('project.card.disseminated_in')}</span>
             <div class="tags">
                 {#each shows as entry (`${entry.collection}:${entry.id}`)}
-                    <button
-                        type="button"
-                        class="crosslink"
-                        title={t('project.card.open_in', entry.collection)}
-                        onclick={() => goto(client, entry.collection, entry.title)}
-                    >
-                        <Tag label={entry.title} />
-                    </button>
+                    <span class="crosslink">
+                        <ToolButton
+                            plain
+                            label={entry.title}
+                            title={t('project.card.open_in', entry.collection)}
+                            onclick={() => goto(client, entry.collection, entry.title)}
+                        >
+                            <Tag label={entry.title} />
+                        </ToolButton>
+                    </span>
                 {/each}
             </div>
         </div>
@@ -141,19 +144,15 @@
         margin-top: 6px;
     }
 
+    /* The box a cross-link's plain button sits in, which draws its look: no frame until the
+       pointer is over it, then the chip surface. */
     .crosslink {
         display: inline-flex;
         align-items: center;
-        gap: 4px;
         min-width: 0;
         max-width: 100%;
         border: 1px solid transparent;
         border-radius: var(--radius-sm);
-        background: none;
-        color: inherit;
-        font: inherit;
-        padding: 0;
-        cursor: pointer;
         text-align: left;
     }
 

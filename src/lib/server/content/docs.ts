@@ -35,14 +35,15 @@
 import { existsSync, readdirSync, realpathSync, statSync } from 'node:fs';
 import { dirname, join, resolve, sep } from 'node:path';
 import { randomUUID } from 'node:crypto';
-import type { MarkedExtension, Tokens } from 'marked';
-import { escapeAttribute, renderDocument } from '../../data/prose/markdown.ts';
+import { decodeHTML } from 'entities';
+import type { MarkedExtension, Token, Tokens } from 'marked';
+import { renderDocument } from '../../data/prose/markdown.ts';
 import { configDir } from '../../data/sources/config.ts';
 import { PROJECT_DOCS, isFinding, readDoc } from '../../data/sources/docs.ts';
 import { PRESENT_DOC } from '../../data/sources/present.ts';
 import { sameOrigin } from '../core/auth.ts';
 import { HUB_ROOT } from '../files/files.ts';
-import type { Finding, PortfolioConfig, Project } from '../../data/model/index.ts';
+import type { Finding, ManualPart, PortfolioConfig, Project } from '../../data/model/index.ts';
 
 /**
  * What a document read needs to know: which hub it is in, what its scan rules are, and how to reach
@@ -75,13 +76,18 @@ export const MARKDOWN_DOCS = [
  * What the endpoint answers with: the rendered document, the frontmatter block it had, and the
  * absolute path of the file read. The page holds the path to tell which `files` events concern the
  * document: an event names the watched root a write landed under, and only a root that holds this
- * file can have changed it.
+ * file can have changed it. The manual's answer carries its runs of prose and diagrams as well,
+ * cut from the same parse as its HTML; no other document's does.
  */
 export type DocAnswer = {
     html: string;
     frontmatter: Record<string, unknown> | null;
     file: string;
+    parts?: ManualPart[];
 };
+
+/** What one render gives the answer: the HTML, and the manual's runs where it has them. */
+type Drawn = { html: string; parts?: ManualPart[] };
 
 /**
  * A document is asked for again whenever a write may have changed it, and the page itself asks
@@ -249,24 +255,89 @@ export function renderMarkdown(
 }
 
 /**
- * The renderer that addresses a document's figures through the file route under `base.root`,
- * resolved against the document's own folder.
+ * The token pass that addresses a document's figures through the file route under `base.root`,
+ * resolved against the document's own folder. It sets the address on each image token before the
+ * render, and marked's own renderer draws the element and escapes what it writes.
  */
 function figures(base: { root: string; folder: string }): MarkedExtension {
     return {
+        walkTokens(token: Token) {
+            if (token.type !== 'image') return;
+            const image = token as Tokens.Image;
+            // A source that leaves the document's own root is left as the author wrote it, since
+            // the file route serves nothing outside a root; the browser then resolves it against
+            // the page.
+            const joined = join(base.folder, image.href);
+            if (ABSOLUTE.test(image.href) || climbs(joined)) return;
+            image.href = routeUrl(base.root, joined);
+        }
+    };
+}
+
+/** The address HELP.md gives a diagram, relative to the manual, and the name it carries. */
+const DIAGRAM = /^docs\/diagrams\/([a-z0-9][a-z0-9-]*)\.svg$/;
+
+/**
+ * The diagram a paragraph shows when one image of `docs/diagrams/` is all it holds, read from the
+ * image token: the name from its address and the alternative text as the author wrote it, its
+ * entities decoded, since the token keeps an `&amp;` as written. Null for any other paragraph, an
+ * image of another address or an image inside a sentence among them.
+ */
+function diagramOf(paragraph: Tokens.Paragraph): { name: string; alt: string } | null {
+    const held = paragraph.tokens.filter((one) => one.type !== 'text' || one.raw.trim() !== '');
+    const only = held.length === 1 ? held[0] : null;
+    if (only?.type !== 'image') return null;
+    const image = only as Tokens.Image;
+    const name = DIAGRAM.exec(image.href)?.[1];
+    return name === undefined ? null : { name, alt: decodeHTML(image.text) };
+}
+
+/**
+ * The manual as HTML and as runs of prose and diagrams, from one parse. HELP.md shows a diagram as
+ * an image of its file, `docs/diagrams/<name>.svg`, which is the address a Markdown reader opening
+ * the file in place resolves; the Help view draws each one from the diagram route instead, in the
+ * page's text colour, which an `img` cannot do.
+ *
+ * The cut is made in the render, the way the table of contents is: a paragraph at the top of the
+ * document whose one image is a diagram leaves a mark only this call can write, the diagram is
+ * noted in order, and the HTML is split at the marks. The heading ids and the table of contents are
+ * therefore those of the one parse the answer's HTML comes from. A paragraph inside a list or a
+ * quote is never cut, since a run cut there would close markup it did not open.
+ */
+export function renderManualParts(text: string): Drawn {
+    const mark = `<!--diagram-${randomUUID()}-->`;
+    const top = new Set<Token>();
+    const shown: { name: string; alt: string; html: string }[] = [];
+    const cut: MarkedExtension = {
+        hooks: {
+            processAllTokens(tokens) {
+                for (const one of tokens) top.add(one);
+                return tokens;
+            }
+        },
         renderer: {
-            image({ href, title, text: alt }: Tokens.Image) {
-                // A source that leaves the document's own root is left as the author wrote it,
-                // since the file route serves nothing outside a root; the browser then resolves it
-                // against the page.
-                const joined = join(base.folder, href);
-                const src =
-                    ABSOLUTE.test(href) || climbs(joined) ? href : routeUrl(base.root, joined);
-                const name = title === null ? '' : ` title="${escapeAttribute(title)}"`;
-                return `<img src="${escapeAttribute(src)}" alt="${escapeAttribute(alt)}"${name}>`;
+            paragraph(paragraph: Tokens.Paragraph) {
+                const diagram = top.has(paragraph) ? diagramOf(paragraph) : null;
+                if (diagram === null) return false;
+                const html = `<p>${this.parser.parseInline(paragraph.tokens)}</p>\n`;
+                shown.push({ ...diagram, html });
+                return mark;
             }
         }
     };
+    const parts: ManualPart[] = [];
+    let html = '';
+    renderDocument(text, cut)
+        .split(mark)
+        .forEach((piece, at) => {
+            if (piece.trim() !== '') parts.push({ kind: 'html', html: piece });
+            html += piece;
+            const diagram = shown.at(at);
+            if (diagram === undefined) return;
+            parts.push({ kind: 'diagram', name: diagram.name, alt: diagram.alt });
+            html += diagram.html;
+        });
+    return { html, parts };
 }
 
 /**
@@ -279,7 +350,8 @@ function answer(
     path: string,
     base: { root: string; folder: string } | null,
     catalog: Record<string, string>,
-    held: string
+    held: string,
+    draw: (text: string) => Drawn = (text) => ({ html: renderMarkdown(text, base) })
 ): Response {
     const file = resolve(path);
     const tag = fileTag(file);
@@ -289,7 +361,7 @@ function answer(
     const read = readDoc(file, catalog);
     if (isFinding(read)) return json(404, { error: read.message, file });
     const body: DocAnswer = {
-        html: renderMarkdown(read.text, base),
+        ...draw(read.text),
         frontmatter: read.frontmatter,
         file
     };
@@ -437,10 +509,11 @@ export const MANUAL = 'HELP.md';
 /**
  * The manual, read from the engine directory. It is the one path outside the hub this route opens,
  * and it is a constant rather than anything the request names: the `engine` root of api/file is the
- * config folder alone, so the manual has no other way to the page.
+ * config folder alone, so the manual has no other way to the page. Its answer carries the runs
+ * renderManualParts cut beside the HTML.
  */
 export function renderManual(into: DocTarget, held = ''): Response {
-    return answer(join(into.engine, MANUAL), null, into.config.text, held);
+    return answer(join(into.engine, MANUAL), null, into.config.text, held, renderManualParts);
 }
 
 /**

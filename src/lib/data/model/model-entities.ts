@@ -202,6 +202,13 @@ export type DocFlag = {
 };
 
 /**
+ * One run of oculus's manual as api/docs answers it: HTML to draw as prose, or one diagram of
+ * `docs/diagrams/` by its file name without `.svg`, with the alternative text HELP.md gives it.
+ */
+export type ManualPart =
+    { kind: 'html'; html: string } | { kind: 'diagram'; name: string; alt: string };
+
+/**
  * One standing "do this later" note, the manifest's `followup:` (manifest-schema.yml's
  * `followup.do` and `followup.after`). `after` is an ISO date the note is hidden until; a note
  * without one is always due.

@@ -13,8 +13,9 @@
 
 <script lang="ts">
     // Layer 3, view. The files of the engine's config folder, one card each: the name, how many
-    // lines it holds, the one line saying what is in it, the raw text under a disclosure, and the
-    // control that opens it in a source tab.
+    // lines it holds, the one line saying what is in it, the text under a disclosure, and the
+    // control that opens it in a source tab. The text is drawn by the source tab's read-only code
+    // window, so a file's keys and values are painted as they are in the tab that edits it.
     //
     // The folder is read through the file browser's own endpoint under the `engine` root, which
     // serves the engine's config folder and nothing above it, so listing a folder, reading a file
@@ -30,6 +31,7 @@
 
     import Card from '$lib/ui/frame/Card.svelte';
     import CodeText from '$lib/ui/display/CodeText.svelte';
+    import Code from '../../shared/code/Code.svelte';
     import Disclosure from '$lib/ui/tree/Disclosure.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
@@ -136,7 +138,9 @@
                             <p class="desc" data-cut={name}>{t('file.truncated')}</p>
                         {/if}
                         {#if open.includes(name)}
-                            <pre class="raw" data-file={name}>{held.text}</pre>
+                            <div class="raw" data-file={name}>
+                                <Code text={held.text} language="yaml" path={name} />
+                            </div>
                         {/if}
                     {/if}
                 </Card>
@@ -166,20 +170,11 @@
         color: var(--muted-txt, var(--muted));
     }
 
+    /* The code window grows with its text, so this box is what caps it and scrolls it: the line
+       numbers and the text move down together, and a long line still scrolls inside the window. */
     .raw {
         max-height: 24rem;
         overflow: auto;
         margin: 6px 0 0;
-        padding: 8px;
-        background: var(--chip);
-        border-radius: var(--radius-sm);
-        font-family: var(--font-mono);
-        font-size: var(--fs-sm);
-        color: var(--ink-txt, var(--ink));
-    }
-
-    :global(body.wall) .raw {
-        background: color-mix(in srgb, var(--chip) var(--wall-panel), transparent);
-        backdrop-filter: blur(var(--wall-blur));
     }
 </style>
