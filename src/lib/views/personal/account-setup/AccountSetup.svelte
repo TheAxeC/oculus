@@ -1,14 +1,14 @@
 <script module lang="ts">
-    // Layer 3, view registration. Account setup sits in the Personal group after the Calendar,
-    // since what it sets up is the Calendar's and the Inbox's accounts. It is opened from their Add
-    // and their `...` menus as much as from the rail.
+    // Layer 3, view registration. Account setup follows Settings in the Views and Settings page's
+    // group, a tab beside it. It is opened from the Calendar's and the Inbox's Add and `...` menus
+    // as much as from the catalogue, since what it sets up is their accounts.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
 
     export const registration: ViewRegistration = {
         id: 'account-setup',
         label: 'views.account_setup',
         glyph: 'views.account_setup_glyph',
-        group: 'personal',
+        group: 'views',
         order: 2
     };
 </script>

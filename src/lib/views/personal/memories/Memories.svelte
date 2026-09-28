@@ -1,14 +1,14 @@
 <script module lang="ts">
-    // Layer 3, view registration. The photo wall sits in the Personal group with the two documents
-    // of the hub that are drawn there.
+    // Layer 3, view registration. The photo wall follows Help in the Help group, and is drawn in
+    // the System page's right pane with two of the hub's documents.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
 
     export const registration: ViewRegistration = {
         id: 'memories',
         label: 'views.memories',
         glyph: 'views.memories_glyph',
-        group: 'personal',
-        order: 0
+        group: 'help',
+        order: 1
     };
 </script>
 

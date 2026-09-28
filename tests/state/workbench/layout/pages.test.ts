@@ -20,7 +20,13 @@ import {
 } from '../../../../src/lib/state/workbench/layout/index.ts';
 import { LAYOUT_KEY, PREVIOUS_KEY } from '../../../../src/lib/state/workbench/layout.svelte.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sources/config.ts';
-import { setCatalog } from '../../../../src/lib/state/shared/words/text.ts';
+import { setCatalog, t } from '../../../../src/lib/state/shared/words/text.ts';
+import {
+    pageInstanceIds,
+    resetAfterAsking,
+    resetAsk,
+    resetPlan
+} from '../../../../src/lib/state/workbench/navigation/pages.ts';
 import { bench, docked, fakeStorage, pane, saveBench, three, viewsOf } from './layout-fixture.ts';
 import { fields } from '../../../../src/lib/data/helpers/guards.ts';
 import { present } from '../../../fixtures/present.ts';
@@ -448,5 +454,158 @@ describe('the page shown before the one on screen', () => {
         expect(client.layout.previousPage()).toBe(second);
         closePage(second);
         expect(client.layout.previousPage()).toBe(null);
+    });
+
+    it('rebuilds a rail page in place, removes a gone button, and leaves a page of the own', async () => {
+        const { resetPagesFixture, FOCUS_NODE: FOCUS } = await import('./layout-fixture.ts');
+        const { own, focus, added } = resetPagesFixture(client);
+        const rail = [{ page: 'focus', label: 'Focus', node: FOCUS }];
+        expect(client.layout.resetPages(rail)).toBe(true);
+        expect(pages().map((page) => [page.id, page.label, page.rail])).toEqual([
+            [own, 'Page 1', undefined],
+            [focus, 'Focus', 'focus']
+        ]);
+        expect(viewsOf(workbench(focus).root)).toEqual(['focus']);
+        expect(client.ui.instanceState(added)).toBe(undefined);
+    });
+
+    it('removes the page of a button the rail no longer has, and moves off it', async () => {
+        const { resetPagesFixture, FOCUS_NODE: FOCUS } = await import('./layout-fixture.ts');
+        const { storage, own, focus, old } = resetPagesFixture(client);
+        expect(currentPage().id).toBe(old);
+        client.layout.resetPages([{ page: 'focus', label: 'Focus', node: FOCUS }]);
+        expect(pages().map((page) => page.id)).toEqual([own, focus]);
+        expect(saved(storage)?.current).toBe(own);
+        expect(currentPage().id).toBe(own);
+    });
+
+    it('takes a removed page out of the page it was drawn inside', async () => {
+        const { resetPagesFixture, FOCUS_NODE: FOCUS } = await import('./layout-fixture.ts');
+        const { own, old } = resetPagesFixture(client);
+        client.layout.apply(
+            {
+                root: {
+                    kind: 'split',
+                    dir: 'row',
+                    sizes: [0.5, 0.5],
+                    children: [pane(['a']), { kind: 'page', page: old }]
+                }
+            },
+            own
+        );
+        client.layout.resetPages([{ page: 'focus', label: 'Focus', node: FOCUS }]);
+        expect(JSON.stringify(workbench(own).root)).not.toContain(old);
+    });
+
+    it('starts again from the default page when every page was of a gone button', async () => {
+        const { resetPagesFixture } = await import('./layout-fixture.ts');
+        const { own, focus } = resetPagesFixture(client);
+        closePage(own);
+        closePage(focus);
+        client.layout.resetPages([]);
+        expect(pages().map((page) => [page.label, page.rail])).toEqual([['Page 1', undefined]]);
+    });
+
+    it('does nothing when no page is tied to a button', async () => {
+        const { FOCUS_NODE: FOCUS } = await import('./layout-fixture.ts');
+        loadLayout(fakeStorage());
+        expect(client.layout.resetPages([{ page: 'focus', label: 'Focus', node: FOCUS }])).toBe(
+            false
+        );
+        expect(pages().map((page) => page.label)).toEqual(['Page 1']);
+    });
+
+    it('makes one page again from its button, keeping its id and place', async () => {
+        const { resetPagesFixture, FOCUS_NODE: FOCUS } = await import('./layout-fixture.ts');
+        const { own, focus, old, added } = resetPagesFixture(client);
+        expect(client.layout.resetPage(focus, { page: 'focus', label: 'Focus', node: FOCUS })).toBe(
+            true
+        );
+        expect(pages().map((page) => [page.id, page.label])).toEqual([
+            [own, 'Page 1'],
+            [focus, 'Focus'],
+            [old, 'Old']
+        ]);
+        expect(viewsOf(workbench(focus).root)).toEqual(['focus']);
+        expect(client.ui.instanceState(added)).toBe(undefined);
+    });
+
+    it('refuses a page it does not hold and an arrangement that does not parse', async () => {
+        const { resetPagesFixture, FOCUS_NODE: FOCUS } = await import('./layout-fixture.ts');
+        const { focus } = resetPagesFixture(client);
+        const before = workbench(focus);
+        expect(
+            client.layout.resetPage('gone', { page: 'focus', label: 'Focus', node: FOCUS })
+        ).toBe(false);
+        expect(
+            client.layout.resetPage(focus, { page: 'focus', label: 'Focus', node: 'broken' })
+        ).toBe(false);
+        expect(workbench(focus)).toBe(before);
+    });
+
+    it('asks each unsaved tab of a reset, one at a time, after the reset question', async () => {
+        const { resetPagesFixture, FOCUS_NODE: FOCUS } = await import('./layout-fixture.ts');
+        const { focus, old, added } = resetPagesFixture(client);
+        const oldIds = pageInstanceIds(
+            present(
+                pages().find((page) => page.id === old),
+                'old page'
+            )
+        );
+        const held = new Set([added, ...oldIds]);
+        const rail = [{ page: 'focus', label: 'Focus', node: FOCUS }];
+        const plan = resetPlan(pages(), rail);
+        const asked: string[][] = [];
+        const ran = await resetAfterAsking(
+            pages(),
+            resetAsk(pages(), plan.rebuilt, plan.removed),
+            [...plan.rebuilt, ...plan.removed],
+            (id) => held.has(id),
+            (instance) => `${instance.view} ${instance.id}`,
+            (message, detail) => {
+                asked.push([message, detail]);
+                return Promise.resolve(true);
+            },
+            () => client.layout.resetPages(rail)
+        );
+        expect(ran).toBe(true);
+        // Each question names its tab and that tab's page, so two tabs are told apart.
+        expect(asked.slice(1)).toEqual([
+            [t('ui.tab_close_dirty'), t('workbench.reset_tab', `status ${added}`, 'Mine now')],
+            [t('ui.tab_close_dirty'), t('workbench.reset_tab', `status ${oldIds[0]}`, 'Old')]
+        ]);
+        expect(pages().map((page) => page.id)).not.toContain(old);
+        expect(viewsOf(workbench(focus).root)).toEqual(['focus']);
+    });
+
+    it('leaves every page as it was when the second unsaved tab is answered no', async () => {
+        const { resetPagesFixture, FOCUS_NODE: FOCUS } = await import('./layout-fixture.ts');
+        const { old, added } = resetPagesFixture(client);
+        const held = new Set([
+            added,
+            ...pageInstanceIds(
+                present(
+                    pages().find((page) => page.id === old),
+                    'old page'
+                )
+            )
+        ]);
+        const rail = [{ page: 'focus', label: 'Focus', node: FOCUS }];
+        const plan = resetPlan(pages(), rail);
+        const before = JSON.stringify(pages());
+        const answers = [true, true, false];
+        let asked = 0;
+        const ran = await resetAfterAsking(
+            pages(),
+            resetAsk(pages(), plan.rebuilt, plan.removed),
+            [...plan.rebuilt, ...plan.removed],
+            (id) => held.has(id),
+            (instance) => instance.id,
+            () => Promise.resolve(answers[asked++]),
+            () => client.layout.resetPages(rail)
+        );
+        expect([ran, asked]).toEqual([false, 3]);
+        expect(JSON.stringify(pages())).toBe(before);
+        expect(client.ui.instanceState(added)).toEqual({ typed: 'held' });
     });
 });

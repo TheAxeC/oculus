@@ -1,11 +1,11 @@
 <script module lang="ts">
-    // Layer 3, view registration. Venues opens the sources group.
+    // Layer 3, view registration. Venues opens the References page's group.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     export const registration: ViewRegistration = {
         id: 'venues',
         label: 'views.venues',
         glyph: 'views.venues_glyph',
-        group: 'sources',
+        group: 'references',
         order: 0
     };
 </script>

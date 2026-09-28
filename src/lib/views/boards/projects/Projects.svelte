@@ -1,12 +1,13 @@
 <script module lang="ts">
-    // Layer 3, view registration. One board component owns the three portfolio board registrations.
+    // Layer 3, view registration. One board component owns the three portfolio board registrations,
+    // the Projects page's group.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
 
     const boardRegistration = (id: string, order: number): ViewRegistration => ({
         id,
         label: `views.${id}`,
         glyph: `views.${id}_glyph`,
-        group: 'boards',
+        group: 'projects',
         order,
         badge: (client) => client.railBadges.boardBadge(id),
         badgeTitle: (client) => client.railBadges.boardBadgeTitle(id),

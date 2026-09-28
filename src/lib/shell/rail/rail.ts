@@ -1,7 +1,8 @@
 // Layer 3, shell. What the activity rail is made of apart from its markup: a bookmark with the
 // state that opens it and the Bookmarks menu's choices, the fades of its scrolled list, where an
-// arrow key takes its stop, the one badge a page button draws, and the `rail:` list a drag or a
-// Hide on a page button writes. Apart from the components so each can be read without a rendering.
+// arrow key takes its stop, the one badge a page button draws, a page button's right-click menu,
+// and the `rail:` list a drag or a Hide on a page button writes. Apart from the components so each
+// can be read without a rendering.
 
 import { nextStop } from '$lib/ui/tree/roving';
 import type { MenuItem } from '$lib/ui/menu/menu-items';
@@ -91,7 +92,21 @@ export function railStop(key: string, current: string, ring: readonly string[]):
 
 /** The choices of a page button's right-click menu, drawn by RailPages and answered by the rail. */
 export const RAIL_HIDE = 'hide';
+export const RAIL_RESET = 'reset';
 export const RAIL_SETTINGS = 'settings';
+
+/**
+ * A page button's right-click menu: Hide, then Reset to its arrangement while a saved page is tied
+ * to the button (a button never pressed has no page to reset, since its page is made from the
+ * arrangement on the first press), then Settings.
+ */
+export function railMenu(made: boolean): MenuItem[] {
+    return [
+        { id: RAIL_HIDE, label: t('ui.rail_hide') },
+        ...(made ? [{ id: RAIL_RESET, label: t('ui.rail_reset') }] : []),
+        { id: RAIL_SETTINGS, label: t('ui.rail_settings') }
+    ];
+}
 
 /**
  * The one badge a page button draws: the first of its page's badges, which are in the order of the

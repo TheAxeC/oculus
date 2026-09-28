@@ -2,17 +2,21 @@
 // and what it does to the tab a single click opened.
 //
 // A view already open is activated where it is rather than opened twice, so opening a view never
-// leaves two copies of it behind. Where a new one lands is the pane the reader was last in, or a
-// new pane beside it when the caller asked for one, and a pane hidden inside a folded child is
-// expanded first, since opening a view into something invisible would look like nothing happening.
+// leaves two copies of it behind. Where a new tool view lands is the pane the reader was last in,
+// or a new pane beside it when the caller asked for one; a view opened for something (one
+// registered with no catalogue group) lands where layout/open/landing.ts says, whichever of the two
+// was asked, since a page keeps its documents apart from its tools. A pane hidden inside a folded
+// child is expanded first, since opening a view into something invisible would look like nothing
+// happening.
 
 import { activePath, findView, isInstanceOf, newInstance, stateId } from '../instance.ts';
 import type { LayoutAccess } from '../access.ts';
 import type { Attention } from './attention.ts';
 import type { Instance, Pane, ViewId } from '../model.ts';
+import { landingFor } from './landing.ts';
 import { asPreview, isPreview, previewIn, retarget } from './preview.ts';
 import { activate, expandTo, openInstance, paneAt, restate, splitPane } from '../tree.ts';
-import { focusedPane } from '../workbench.ts';
+import { focusedPane, restore } from '../workbench.ts';
 
 /** What an opener may ask for beyond the view and its state. */
 export type OpenOptions = {
@@ -28,10 +32,15 @@ export type Opening = {
     openBeside: (view: ViewId, state?: unknown, page?: string) => string;
 };
 
+/**
+ * `opened` says whether a view is one opened for something, which the registry answers: a
+ * registration with no catalogue group.
+ */
 export function createOpening(
     access: LayoutAccess,
     attention: Attention,
-    keepPreview: (id: string) => void
+    keepPreview: (id: string) => void,
+    opened: (view: ViewId) => boolean = () => false
 ): Opening {
     /**
      * Show a view: the instance already open is activated, so no opener makes a second copy of the
@@ -81,6 +90,7 @@ export function createOpening(
         const held = page === undefined ? attention.touched() : access.at(page);
         if (held === null) return '';
         const host = held.id;
+        if (opened(view)) return openOpened(view, state, host, preview);
         const focus = focusedPane(access.workbench(host));
         const tree = access.layout(host);
         const into = focus === null ? null : focus.path;
@@ -147,6 +157,70 @@ export function createOpening(
                 ? splitPane(shown, path, 'row', instance)
                 : openInstance(shown, stack, instance);
         }, host);
+        return instance.id;
+    }
+
+    /**
+     * Open or activate a view opened for something on a page. One already open anywhere on the page
+     * is activated where it is; a new one lands where landingFor says. A maximised pane is given
+     * back first when what is opened is not in it, since a tab opened or activated behind it would
+     * look like nothing happening, and a maximised tool pane is no place for a document either.
+     */
+    function openOpened(view: ViewId, state: unknown, host: string, preview: boolean): string {
+        const bench = access.workbench(host);
+        const tree = bench.root;
+        const focus = focusedPane(bench);
+        const existing = findView(tree, view, stateId(state));
+        const shows = (path: number[]): boolean =>
+            focus === null || path.every((step, index) => focus.path[index] === step);
+        if (existing !== null) {
+            const at = activePath(tree, existing.id);
+            attention.remembered(existing.id, host);
+            attention.rememberReceived(host, existing.id, tree);
+            access.apply(
+                {
+                    ...(shows(at) ? bench : restore(bench)),
+                    root: activate(
+                        expandTo(
+                            state === undefined ? tree : restate(tree, existing.id, state),
+                            at
+                        ),
+                        existing.id
+                    )
+                },
+                host
+            );
+            if (preview && isPreview(existing)) keepPreview(existing.id);
+            return existing.id;
+        }
+        const reader = activePath(tree, attention.active(host));
+        const landing = landingFor(tree, opened, attention.received(host), reader);
+        const base = landing.kind === 'pane' && shows(landing.path) ? bench : restore(bench);
+        const replaced =
+            preview && landing.kind === 'pane' ? previewIn(paneAt(tree, landing.path)) : null;
+        if (replaced !== null) {
+            attention.remembered(replaced.id, host);
+            attention.rememberReceived(host, replaced.id, tree);
+            access.ui.clearInstanceState(replaced.id);
+            access.apply(
+                {
+                    ...base,
+                    root: retarget(expandTo(tree, landing.path), replaced.id, view, state ?? {})
+                },
+                host
+            );
+            return replaced.id;
+        }
+        const fresh = newInstance(view, state ?? {});
+        const instance = preview ? asPreview(fresh) : fresh;
+        const shown = expandTo(tree, landing.path);
+        const root =
+            landing.kind === 'pane'
+                ? openInstance(shown, landing.path, instance)
+                : splitPane(shown, landing.path, 'row', instance);
+        attention.remembered(instance.id, host);
+        access.apply({ ...base, root }, host);
+        attention.rememberReceived(host, instance.id, access.layout(host));
         return instance.id;
     }
 

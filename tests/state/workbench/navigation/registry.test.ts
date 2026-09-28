@@ -19,8 +19,8 @@ import {
 } from '../../../../src/lib/data/sources/config.ts';
 import type { ViewProps } from '../../../../src/lib/state/workbench/navigation/registry.ts';
 import {
-    GROUP_MAX,
     arrange,
+    isChorded,
     railOrder,
     type NavGroup
 } from '../../../../src/lib/state/workbench/navigation/catalogue.ts';
@@ -143,12 +143,15 @@ describe('the view registry', () => {
     });
 
     it('ignores a partial without registration metadata', () => {
+        const before = views().length;
         expect(() =>
             registerModules(client.registry, {
                 '/src/lib/views/other/Partial.svelte': { default: component }
             })
         ).not.toThrow();
         expect(viewFor('Partial')).toBeUndefined();
+        // A partial registers nothing at all, under its own name or under none.
+        expect(views()).toHaveLength(before);
     });
 });
 
@@ -233,64 +236,64 @@ describe('the real registrations', () => {
         const expected: Record<string, { group: string; order: number }> = {
             agents: { group: 'sessions', order: 6 },
             applications: { group: 'academic', order: 3 },
-            audit: { group: 'system', order: 7 },
-            calendar: { group: 'personal', order: 1 },
-            'account-setup': { group: 'personal', order: 2 },
-            catalogue: { group: 'system', order: 9 },
-            archive: { group: 'boards', order: 3 },
+            audit: { group: 'info', order: 2 },
+            calendar: { group: 'incoming', order: 4 },
+            'account-setup': { group: 'views', order: 2 },
+            catalogue: { group: 'views', order: 0 },
+            archive: { group: 'projects', order: 3 },
             changes: { group: 'sessions', order: 5 },
-            coauthor: { group: 'boards', order: 2 },
-            code: { group: 'sources', order: 2 },
+            coauthor: { group: 'projects', order: 2 },
+            code: { group: 'references', order: 2 },
             'joint-work': { group: 'academic', order: 4 },
-            config: { group: 'system', order: 6 },
+            config: { group: 'info', order: 4 },
             customization: { group: '', order: 0 },
-            data: { group: 'sources', order: 1 },
+            data: { group: 'references', order: 1 },
             deposit: { group: '', order: 0 },
             doc: { group: '', order: 0 },
             document: { group: '', order: 0 },
-            domains: { group: 'structure', order: 1 },
+            domains: { group: 'pillars', order: 1 },
             editor: { group: '', order: 0 },
             file: { group: '', order: 0 },
-            files: { group: 'sources', order: 4 },
+            files: { group: 'explorer', order: 0 },
             education: { group: 'academic', order: 2 },
             events: { group: 'academic', order: 1 },
-            findings: { group: 'system', order: 1 },
-            focus: { group: 'boards', order: 0 },
+            findings: { group: 'info', order: 1 },
+            focus: { group: 'focus', order: 0 },
             funding: { group: 'academic', order: 0 },
-            gallery: { group: 'system', order: 2 },
-            help: { group: 'system', order: 5 },
-            history: { group: 'system', order: 8 },
-            hpc: { group: 'system', order: 3 },
-            inbox: { group: 'feeds', order: 2 },
-            leads: { group: 'feeds', order: 1 },
-            linkedin: { group: 'feeds', order: 3 },
-            map: { group: 'structure', order: 2 },
-            memories: { group: 'personal', order: 0 },
+            gallery: { group: 'info', order: 5 },
+            help: { group: 'help', order: 0 },
+            history: { group: 'info', order: 3 },
+            hpc: { group: 'focus', order: 1 },
+            inbox: { group: 'incoming', order: 0 },
+            leads: { group: 'incoming', order: 2 },
+            linkedin: { group: 'incoming', order: 3 },
+            map: { group: 'pillars', order: 2 },
+            memories: { group: 'help', order: 1 },
             note: { group: '', order: 0 },
-            pages: { group: 'system', order: 11 },
+            pages: { group: 'views', order: 3 },
             person: { group: '', order: 0 },
-            present: { group: 'academic', order: 6 },
-            pillars: { group: 'structure', order: 0 },
+            present: { group: 'present', order: 0 },
+            pillars: { group: 'pillars', order: 0 },
             project: { group: '', order: 0 },
-            projects: { group: 'boards', order: 1 },
-            radar: { group: 'feeds', order: 0 },
-            repositories: { group: 'sources', order: 5 },
+            projects: { group: 'projects', order: 1 },
+            radar: { group: 'incoming', order: 1 },
+            repositories: { group: 'explorer', order: 1 },
             'repositories-diff': { group: '', order: 0 },
             'repositories-merge': { group: '', order: 0 },
-            search: { group: 'sources', order: 6 },
-            'session-detail': { group: 'sessions', order: 1 },
+            search: { group: 'explorer', order: 2 },
+            'session-detail': { group: 'sessions', order: 4 },
             'session-list': { group: 'sessions', order: 0 },
-            settings: { group: 'system', order: 10 },
+            settings: { group: 'views', order: 1 },
             slides: { group: '', order: 0 },
             source: { group: '', order: 0 },
-            statements: { group: 'sources', order: 3 },
-            status: { group: 'system', order: 0 },
+            statements: { group: 'references', order: 3 },
+            status: { group: 'info', order: 0 },
             tasks: { group: 'academic', order: 5 },
-            terminal: { group: 'sessions', order: 2 },
-            timeline: { group: 'sessions', order: 4 },
-            transcript: { group: 'sessions', order: 3 },
-            usage: { group: 'system', order: 4 },
-            venues: { group: 'sources', order: 0 }
+            terminal: { group: 'sessions', order: 1 },
+            timeline: { group: 'sessions', order: 3 },
+            transcript: { group: 'sessions', order: 2 },
+            usage: { group: 'focus', order: 2 },
+            venues: { group: 'references', order: 0 }
         };
         expect(
             Object.fromEntries(
@@ -346,13 +349,13 @@ describe('the real registrations', () => {
             id: 'help',
             label: 'views.help',
             glyph: 'views.help_glyph',
-            group: 'system'
+            group: 'help'
         });
         expect(viewFor('config')).toMatchObject({
             id: 'config',
             label: 'views.config',
             glyph: 'views.config_glyph',
-            group: 'system'
+            group: 'info'
         });
         // A hub document is opened for one path, so it is not listed bare in the catalogue.
         expect(viewFor('doc')).toMatchObject({
@@ -530,11 +533,11 @@ describe('the real registrations', () => {
             views().filter((view) => view.listed !== false),
             groups
         );
-        // A group reached by its own chord carries a glyph of its own; a small group's heading
+        // A group reached by its own chord carries a glyph of its own; a group naming no letter
         // borrows its first view's, which groupGlyph of state/workbench/navigation/catalogue.ts
         // answers.
         const clashes = sections
-            .filter((section) => section.items.length > GROUP_MAX)
+            .filter(isChorded)
             .filter((section) => section.glyph !== undefined)
             .filter((section) =>
                 section.items.some((view) => (catalog[view.glyph] ?? view.glyph) === section.glyph)

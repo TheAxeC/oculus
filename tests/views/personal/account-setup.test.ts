@@ -57,9 +57,9 @@ function listOf(body: string, attribute: string): string {
 }
 
 describe('the account setup view', () => {
-    it('audits that the view sits in the Personal group, after Memories and Calendar', () => {
+    it('audits that the view sits in the Views and Settings group, after Settings', () => {
         const registered = registration as ViewRegistration;
-        expect(registered.group).toBe('personal');
+        expect(registered.group).toBe('views');
         expect(registered.order).toBe(2);
     });
 

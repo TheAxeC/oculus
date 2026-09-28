@@ -1,6 +1,5 @@
 <script module lang="ts">
-    // Layer 3, view registration. Changes registration stays on the component because the registry
-    // discovers this file directly.
+    // Layer 3, view registration. Changes follows Session detail in the Sessions page's group.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     export const registration: ViewRegistration = {
         id: 'changes',

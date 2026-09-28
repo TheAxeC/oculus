@@ -1,6 +1,6 @@
 <script module lang="ts">
-    // Layer 3, view registration. Session-list registration stays on the component because the
-    // registry discovers this file directly.
+    // Layer 3, view registration. The session list opens the Sessions page's group, as it opens the
+    // page.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
 
     export const registration: ViewRegistration = {

@@ -4,6 +4,7 @@
 
 import {
     checkWorkbench,
+    emptyPane,
     isRecord,
     newInstance,
     type Instance,
@@ -55,11 +56,13 @@ function readArrangement(value: unknown): Layout | null {
  * A pane's tabs from its `view`, which is one view id or a list of them. A tab of the list may be
  * `{ view, state }` instead of an id, for a tab the arrangement opens in a state of its own (the
  * sessions page's Files tab, which follows the selected session); the state is a map, and anything
- * else refuses the arrangement.
+ * else refuses the arrangement. An empty list is an empty pane, which is where a view opened for
+ * something (a project, a document, a file) lands on the page.
  */
 function readArrangementPane(view: unknown): Layout | null {
     const names = typeof view === 'string' ? [view] : Array.isArray(view) ? view : null;
-    if (names === null || names.length === 0) return null;
+    if (names === null) return null;
+    if (names.length === 0) return emptyPane();
     const tabs: Instance[] = [];
     for (const name of names) {
         const tab = readArrangementTab(name);

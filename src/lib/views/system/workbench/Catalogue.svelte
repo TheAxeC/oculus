@@ -1,13 +1,12 @@
 <script module lang="ts">
-    // Layer 3, view registration. The Views catalogue follows the system views, with the Settings
-    // and Pages views after it on the Views and Settings page.
+    // Layer 3, view registration. The Views catalogue opens the Views and Settings page's group.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     export const registration: ViewRegistration = {
         id: 'catalogue',
         label: 'views.catalogue',
         glyph: 'views.catalogue_glyph',
-        group: 'system',
-        order: 9
+        group: 'views',
+        order: 0
     };
 </script>
 

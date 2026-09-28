@@ -4,11 +4,11 @@ import { describe, expect, it } from 'vitest';
 import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
 import {
     deadlineOf,
-    dismissedCount,
+    declinedCount,
     fitKey,
     fitTone,
     isClosed,
-    isDismissed,
+    isDeclined,
     isExpired,
     leadsSearch,
     leadId,
@@ -36,8 +36,8 @@ describe('position lead selectors', () => {
             true
         ]);
         expect(isClosed('open')).toBe(false);
-        expect([' Dismissed ', 'DISMISSED'].map(isDismissed)).toEqual([true, true]);
-        expect(['open', 'declined'].map(isDismissed)).toEqual([false, false]);
+        expect([' Dismissed ', 'DISMISSED'].map(isDeclined)).toEqual([true, true]);
+        expect(['open', 'applied'].map(isDeclined)).toEqual([false, false]);
         expect(isExpired({ status: 'dismissed', deadline: '2099-10-01' }, '2026-09-12')).toBe(true);
         expect(deadlineOf('closes 20-09-2026 (2026-09-20)')).toBe('2026-09-20');
         expect(deadlineOf('rolling')).toBe(null);
@@ -76,6 +76,10 @@ describe('position lead selectors', () => {
         ]);
     });
 
+    it('reads a declined lead, and a dismissed one a file may still hold, as declined', () => {
+        expect([' Declined ', 'DECLINED', 'dismissed'].map(isDeclined)).toEqual([true, true, true]);
+    });
+
     it('searches all seven fields and parses the instance-state fields', () => {
         const entries = [
             {
@@ -98,7 +102,7 @@ describe('position lead selectors', () => {
                 expiredOpen: true,
                 runlogOpen: true,
                 adding: true,
-                showDismissed: true
+                showDeclined: true
             })
         ).toEqual({
             search: 'ai',
@@ -106,7 +110,7 @@ describe('position lead selectors', () => {
             runlogOpen: true,
             logAll: false,
             adding: true,
-            showDismissed: true
+            showDeclined: true
         });
         expect(parseLeadsState(null)).toEqual({
             search: '',
@@ -114,11 +118,19 @@ describe('position lead selectors', () => {
             runlogOpen: false,
             logAll: false,
             adding: false,
-            showDismissed: false
+            showDeclined: false
         });
     });
 
-    it('hides the entries whose status is dismissed until the toggle shows every lead', () => {
+    it('reads a state saved under the toggle of dismissed leads as the toggle of declined ones', () => {
+        expect(parseLeadsState({ showDismissed: true }).showDeclined).toBe(true);
+        // A state saved under the new name answers for itself.
+        expect(parseLeadsState({ showDeclined: false, showDismissed: true }).showDeclined).toBe(
+            false
+        );
+    });
+
+    it('hides the declined and dismissed entries until the toggle shows every lead', () => {
         const entries = [
             {
                 title: 'First role',
@@ -126,14 +138,15 @@ describe('position lead selectors', () => {
                 url: 'https://example.org/jobs/first',
                 status: 'dismissed'
             },
-            { title: 'Second role', inst: 'Two', status: 'open' }
+            { title: 'Second role', inst: 'Two', status: 'open' },
+            { title: 'Third role', inst: 'Three', status: 'declined' }
         ];
         expect(leadId(entries[0])).toBe('https-example-org-jobs-first');
         expect(leadId(entries[1])).toBe('second-role-two');
         expect(visibleLeads(entries, false)).toEqual([entries[1]]);
         expect(visibleLeads(entries, true)).toEqual(entries);
-        expect(dismissedCount(entries)).toBe(1);
-        expect(dismissedCount([entries[1]])).toBe(0);
+        expect(declinedCount(entries)).toBe(2);
+        expect(declinedCount([entries[1]])).toBe(0);
     });
 
     it('sends a dismissed lead to the expired list, where its status is what it reads', () => {

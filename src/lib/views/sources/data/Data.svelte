@@ -1,11 +1,11 @@
 <script module lang="ts">
-    // Layer 3, view registration. Data is the second source registry in the view catalogue.
+    // Layer 3, view registration. Data follows Venues in the References page's group.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     export const registration: ViewRegistration = {
         id: 'data',
         label: 'views.data',
         glyph: 'views.data_glyph',
-        group: 'sources',
+        group: 'references',
         order: 1
     };
 </script>

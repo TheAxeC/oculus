@@ -1,20 +1,21 @@
 <script module lang="ts">
-    // Layer 3, view registration. Pages follows Settings in the system group.
+    // Layer 3, view registration. Pages closes the Views and Settings page's group.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     export const registration: ViewRegistration = {
         id: 'pages',
         label: 'views.pages',
         glyph: 'views.pages_glyph',
-        group: 'system',
-        order: 11
+        group: 'views',
+        order: 3
     };
 </script>
 
 <script lang="ts">
     // Layer 3, view. Every page there is, the rail's and the reader's own, which is how a page no
-    // rail button shows is reached: a row shows its page, renames it and closes it, and New page
-    // makes one. A row carried out of the list onto a pane's edge shows its page there, which is
-    // the pointer's way to a page inside a page; the pane menu is the keyboard's.
+    // rail button shows is reached: a row shows its page, renames it and closes it, a rail page's
+    // row resets it to its button's arrangement after a confirm naming it, and New page makes one.
+    // A row carried out of the list onto a pane's edge shows its page there, which is the pointer's
+    // way to a page inside a page; the pane menu is the keyboard's.
     //
     // It holds only what is being asked: the page a close is waiting on, the name being typed while
     // one is renamed, and the press a drag may grow out of. The pages themselves are the layout
@@ -31,15 +32,23 @@
         pageAt,
         pageInstanceIds,
         pageName,
-        pageUnsaved
+        pageUnsaved,
+        questionFor,
+        resetAfterAsking,
+        resetAsk,
+        tabNameOf,
+        type Question
     } from '$lib/state/workbench/navigation/pages';
+    import { railPages, type RailPage } from '$lib/state/workbench/navigation/rail';
     import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 
     const {
         drag: { startPage },
-        layout: { closePage, currentPage, openPage, pages, renamePage, switchPage },
+        entities: { config },
+        layout: { closePage, currentPage, openPage, pages, renamePage, resetPage, switchPage },
+        registry: { viewFor },
         ui: { unsaved }
     } = useState();
 
@@ -47,6 +56,38 @@
 
     const shown = $derived(pages());
     const current = $derived(currentPage().id);
+    const rail = $derived(railPages(config()?.config));
+
+    /** The rail button a page is tied to, or null for a page no button of the rail carries. */
+    function buttonOf(key: string | undefined): RailPage | null {
+        return key === undefined ? null : (rail.find((entry) => entry.page === key) ?? null);
+    }
+
+    /** The question a reset is waiting on, or null while none is. */
+    let question: Question | null = $state(null);
+    const ask = questionFor((held) => (question = held));
+
+    /**
+     * Ask before a rail page is made again from its button's arrangement, and then about each of
+     * its tabs holding unsaved text.
+     */
+    function reset(id: string): void {
+        const found = pageAt(shown, id);
+        const button = buttonOf(found?.page.rail);
+        if (found === null || button === null) return;
+        const words = resetAsk(shown, [found.page], [], found.page);
+        void resetAfterAsking(
+            shown,
+            words,
+            [found.page],
+            unsaved,
+            (instance) => tabNameOf(instance, viewFor),
+            ask,
+            () => {
+                resetPage(id, button);
+            }
+        );
+    }
 
     /**
      * The close that is waiting on the dialog: the words it asks and the page a yes closes. A page
@@ -222,6 +263,15 @@
                             compact
                             onclick={() => (renaming = { id: page.id, draft: name })}
                         />
+                        {#if buttonOf(page.rail) !== null}
+                            <ToolButton
+                                label={t('workbench.pages_reset')}
+                                title={name}
+                                glyph="refresh"
+                                compact
+                                onclick={() => reset(page.id)}
+                            />
+                        {/if}
                         <ToolButton
                             label={t('workbench.pages_close')}
                             title={name}
@@ -240,6 +290,13 @@
     message={confirming?.message ?? null}
     onconfirm={confirmed}
     oncancel={() => (confirming = null)}
+/>
+
+<CloseQuestion
+    message={question?.message ?? null}
+    detail={question?.detail}
+    onconfirm={() => question?.answer(true)}
+    oncancel={() => question?.answer(false)}
 />
 
 <style>

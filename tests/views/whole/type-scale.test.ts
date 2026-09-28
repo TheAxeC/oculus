@@ -310,7 +310,13 @@ describe('the view type scale', () => {
             files(ROOT)
                 .map((file) => file.slice(`${ROOT}/`.length))
                 .sort()
-        ).toEqual(Object.keys(VIEWS).sort());
+        ).toEqual([...Object.keys(VIEWS), 'system/workbench/PagesReset.svelte'].sort());
+    });
+
+    it('audits every local role in the section of Settings that resets the pages', () => {
+        expect(typeRules(join(ROOT, 'system/workbench/PagesReset.svelte'))).toBe(
+            'h3=fs-sm | .empty=fs-sm'
+        );
     });
 
     it('audits that every ui component is listed in the pass-through audit', () => {

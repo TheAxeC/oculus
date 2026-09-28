@@ -82,7 +82,7 @@
         editRail?: (edit: (rail: RailEntry[]) => RailEntry[]) => Promise<string>;
         /**
          * The `direct_chord` of the merged config: the letter a digit after it counts into the
-         * catalogue's small groups.
+         * views no catalogue group holds.
          */
         directChord?: string;
         /**

@@ -1,14 +1,14 @@
 <script module lang="ts">
-    // Layer 3, view registration. Repositories sits in the catalogue's Sources group, after the
-    // file browser: the same roots, read as repositories rather than as folders.
+    // Layer 3, view registration. Repositories follows the file browser in the Explorer page's
+    // group: the same roots, read as repositories rather than as folders.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
 
     export const registration: ViewRegistration = {
         id: 'repositories',
         label: 'views.repositories',
         glyph: 'views.repositories_glyph',
-        group: 'sources',
-        order: 5
+        group: 'explorer',
+        order: 1
     };
 </script>
 

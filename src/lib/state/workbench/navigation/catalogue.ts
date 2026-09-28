@@ -1,5 +1,6 @@
 // Layer 2, client state. The view catalogue: every listed registration and every configured hub
-// document under the `nav_groups` heading it belongs to, and the key order the chords count into.
+// document under the `nav_groups` heading it belongs to, which is the rail page it sits on or the
+// Help group, which is no page, and the key order the chords count into.
 // The Views view on the Views and Settings page draws the sections and the shell's keyboard counts
 // the chords over the same sections, so a key and the entry it opens are read from one fold.
 //
@@ -73,24 +74,13 @@ export type RailOrder = {
     chords: Record<string, string[] | undefined>;
 };
 
-/** How many entries a group holds: its views and the documents after them. */
-export function sectionSize(section: Section): number {
-    return section.items.length + section.docs.length;
-}
-
 /**
- * How many entries a group may hold and still be counted under the direct chord. A larger group is
- * reached by the letter it configures and by no other, so a group that crosses this needs a
- * `chord:`. The ungrouped trailing section is always counted under the direct chord.
- */
-export const GROUP_MAX = 4;
-
-/**
- * Whether a group is reached by a chord of its own rather than under the direct chord. The
- * ungrouped trailing section has no heading and no letter, so it never is.
+ * Whether a group is reached by a chord of its own rather than under the direct chord: a group that
+ * names a letter is, whatever its size, so no group grows its entries into the direct chord's
+ * count. The ungrouped trailing section has no heading and no letter, so it never is.
  */
 export function isChorded(section: Section): boolean {
-    return section.label !== null && sectionSize(section) > GROUP_MAX;
+    return section.label !== null && section.chord !== undefined;
 }
 
 /**
@@ -129,11 +119,11 @@ export function arrange(
 
 /**
  * The directly reached views in their numbered order, and the lists a one-letter chord counts
- * into. `directChord` is the letter the small groups are reached under; a group that names the same
- * letter takes it, since a group's own configuration is the more specific one. A group's documents
- * follow its views in its chord, as `docPick` entries, so the digit after a group's last view opens
- * its first document; the small groups' documents follow the direct views the same way. `direct`
- * holds views alone.
+ * into. `directChord` is the letter the groups that name none are reached under; a group that names
+ * the same letter takes it, since a group's own configuration is the more specific one. A group's
+ * documents follow its views in its chord, as `docPick` entries, so the digit after a group's last
+ * view opens its first document; the unlettered groups' documents follow the direct views the same
+ * way. `direct` holds views alone.
  */
 export function railOrder(
     registrations: Registration[],
@@ -211,8 +201,9 @@ export function readGroups(raw: unknown): NavGroup[] {
 }
 
 /**
- * The `direct_chord` of config/layout.yml: the one letter a digit after it counts into the small
- * groups' views. Anything but a single lowercase letter leaves the chord unset.
+ * The `direct_chord` of config/layout.yml: the one letter a digit after it counts into the views
+ * of the groups that name no chord and the views no group holds. Anything but a single lowercase
+ * letter leaves the chord unset.
  */
 export function readChord(raw: unknown): string | undefined {
     return typeof raw === 'string' && /^[a-z]$/.test(raw) ? raw : undefined;

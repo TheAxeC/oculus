@@ -18,6 +18,7 @@ import { glyphCatalog } from '../../../src/lib/data/sources/config.ts';
 import { setGlyphMode } from '../../../src/lib/state/shared/words/text.ts';
 import { clientContext, createClientState, type ClientState } from '../../fixtures/client.ts';
 import { catalog, config } from './rail-fixture.ts';
+import { SHIPPED_RAIL_KEYS } from './shipped-rail.ts';
 
 let client: ClientState;
 
@@ -26,26 +27,14 @@ beforeEach(() => {
 });
 
 describe('the rail of the real config', () => {
-    it('draws the thirteen pages of layout.yml in their order, Views and Settings last', () => {
+    it('draws the eleven pages of layout.yml in their order, Views and Settings last', () => {
         const body = render(ActivityRail, {
             context: clientContext(client),
             props: { pages: railPages(config) }
         }).body;
-        expect([...body.matchAll(/data-rail-page="([^"]+)"/g)].map((found) => found[1])).toEqual([
-            'focus',
-            'projects',
-            'academic',
-            'pillars',
-            'feeds',
-            'references',
-            'present',
-            'explorer',
-            'sessions',
-            'info',
-            'calendar',
-            'inbox',
-            'views'
-        ]);
+        expect([...body.matchAll(/data-rail-page="([^"]+)"/g)].map((found) => found[1])).toEqual(
+            SHIPPED_RAIL_KEYS
+        );
     });
 
     it("draws each page's glyph from the vocabulary", () => {

@@ -27,19 +27,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:      # Q93 landed 2026-09-28; L7 lands on Q93's head next; then Q94, Q92, Q89, Q79, Q80 and the queue of plan.md.
-- step: L7
-  executor: agent
-  worker: "claude:opus, agent a646fd5818276f983, stopped by Axel 2026-09-28 for starting a second full revert-check run; continuation builder claude:opus, agent ad60ea6becf7aa4d7 (Axel: restart it); stopped. Continuation builder claude:opus, agent a655bd95c87499049, launched 2026-09-28 under the brief without browser tests or directives (item 11); reported 2026-09-28 (agents/reviews/L7-report.md: everything built, the full unit run red once in git-ops.test.ts and history.test.ts, both green alone). Reviewer claude:opus, agent a81cc1400af2f8d0b, reported 2026-09-28. Round 1 reported 2026-09-28 (agents/reviews/L7-report.md, section Repair round 1), verify: 6 commands passed on the worktree. Round 1 reviewer claude:opus, agent a80fc5c65448ddab6, reported 2026-09-28 (agents/reviews/L7-refuter.md, section Repair round 1, refuted); its findings are fixed at landing"
-  reviewer_report: agents/reviews/L7-refuter.md
-  worktree: .agents/worktrees/L7
-  base: 1712f075
-  base_export: .agents/worktrees/L7-base (git archive of the base, read by revert-check --base; removed at landing)
-  launched: 2026-09-27
-  report: agents/reviews/L7-report.md
-  landing: not-started
-  round: "1 (sent 2026-09-28, agents/briefs/L7-round1-sent.md, with Axel's Z18 ruling; the round starts at the worktree commit fa6b3a97)"
-  shared_paths: "20 files with L7 (DESIGN.md, HELP.md, allow-duplication.txt and 17 unit test files). Both steps delete the same directive lines there; L7 undoes its changes under tests/browser/. What conflicts at L7's landing is a comment Q93 rewrote beside an L7 edit, resolved by hand then."
+dispatch:      # L7 landed 2026-09-28; next Q94, then Q92, Q89, Q79, Q80 and the queue of plan.md.
 ```
 
 ## The standing demands (from Axel, in force)
@@ -341,6 +329,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-09-28. L7 landed through /spec, /refute and /land, built by an Opus continuation builder, one repair round with Axel's Z18 (d), refuted again, seven fixes at landing: the rail and pages rebuilt to Axel's table with a Help catalogue group (`h1`-`h5`), where opened tabs land, Reset per page and Reset all asking about each unsaved tab by its name and page, and the Position Leads applied control opening a prefilled Applications form. Q93 landed before it. The look ran in headless Chrome on a server on 8791, since the Chrome extension was not connected. Next: Q94, then Q92, Q89, Q79, Q80.
 - 2026-09-27. Q77b landed through /spec, /refute and /land, built by an Opus agent, one repair round, refuted again with one finding, fixed at landing: `revert-check --base <dir>` proves only the directives a change adds or changes (over `revert-check.test.ts` 17.73 s against 229.62 s). Next: L7, alone, then Q89, Q79, Q80. Correction 2026-09-28, from the session transcript: /spec and /land were called; /refute was not called for the review or the run over the round. No review ran the plan's verify list through `verify.sh`.
 - 2026-09-27. Q77a landed through /spec, /refute and /land, built by an Opus builder and a continuation builder after an interrupt, two repair rounds (the second under the exception, Axel keeping it), each refuted again, six fixes at landing: revert-check proves a unit directive in memory first, `diagrams.test.ts` about three times faster, and lives in `bin/revert-check/`. Next: Q77b, then L7. Correction 2026-09-28, from the session transcript: /spec, /refute and /land were not called: not for the brief, the review, either run over a round, or the landing. No review ran the plan's verify list through `verify.sh`.
 - 2026-09-27. Q77e landed through /spec, /refute and /land, built by an Opus agent and, after an interrupt stopped it inside its repair round, an Opus continuation builder; one repair round, refuted again with nothing to send back; one fix at landing: every diagram of a generation reads one parse per file, one generation of the engine 1.7 to 1.9 s where it took 6.4 to 7 s. Q77a built, its review next; then Q77b, then L7. Correction 2026-09-28, from the session transcript: /spec was not called; /refute was called for the review but not the run over the round; /land was not called. No review ran the plan's verify list through `verify.sh`.
@@ -655,6 +644,7 @@ The plan.md lines shortened on 2026-09-25 (P1 the parity audit, S2, and Q67's St
 
 ## Usage
 
+- L7 landing, orchestrator claude:opus (this session), `usage.py` from Q93's landing (2026-09-28T10:22:06+02:00) to the booking: 129 messages, 54,239 output tokens, 225,382 cache-write tokens, 25,163,756 cache-read tokens, 258 fresh input tokens, 28 minutes. One repair round; 7 fixes at landing; the round's report did not pass its bar (the review's proof and behaviour findings).
 - Q93 landing, orchestrator claude:opus (this session), `usage.py` from Q77b's landing (2026-09-27T21:12:15+02:00) to the booking: 455 messages, 325,102 output tokens, 1,236,532 cache-write tokens, 114,879,071 cache-read tokens, 932 fresh input tokens, 789 minutes; shared with L7's rounds, the ledger repairs and the rulings Z18 to Z21. One repair round; 2 fixes at landing; first report did not pass its bar (the review's standards findings).
 - Q93, builder claude:opus (`af1bae095499172e3`): 235,272 tokens, 79 tool uses, 20.8 minutes (the runner's result). Round 1: 276,114 tokens, 23 tool uses, 10.9 minutes (the runner's result); 19 files, +354 -323.
 - Q93, reviewer claude:opus (`adb5b2f31e8d44431`), through /refute: 201,726 tokens, 61 tool uses, 18.9 minutes (the runner's result). Round 1 reviewer claude:opus (`ad68a901d48a41ce8`), through /refute: 129,778 tokens, 29 tool uses, 8.3 minutes (the runner's result).

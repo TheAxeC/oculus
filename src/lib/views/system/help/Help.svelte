@@ -1,13 +1,14 @@
 <script module lang="ts">
-    // Layer 3, view registration. Help sits in the System group, after Live usage.
+    // Layer 3, view registration. Help opens the Help group, which is no page: its entries are
+    // drawn on the System page.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
 
     export const registration: ViewRegistration = {
         id: 'help',
         label: 'views.help',
         glyph: 'views.help_glyph',
-        group: 'system',
-        order: 5
+        group: 'help',
+        order: 0
     };
 </script>
 

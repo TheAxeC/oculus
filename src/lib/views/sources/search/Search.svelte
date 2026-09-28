@@ -1,12 +1,12 @@
 <script module lang="ts">
-    // Layer 3, view registration. Search closes the Sources group, after Repositories.
+    // Layer 3, view registration. Search closes the Explorer page's group, after Repositories.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     export const registration: ViewRegistration = {
         id: 'search',
         label: 'views.search',
         glyph: 'views.search_glyph',
-        group: 'sources',
-        order: 6
+        group: 'explorer',
+        order: 2
     };
 </script>
 

@@ -5,10 +5,9 @@ import { scalar } from '../../data/helpers/guards.ts';
 import {
     APPLIED,
     DECLINED,
-    DISMISSED,
     OPEN,
     isLeadClosed,
-    isLeadDismissed,
+    isLeadDeclined,
     isLeadOpen
 } from '../../data/accounts/leads.ts';
 import { uniqueIdents } from './idents.ts';
@@ -23,8 +22,8 @@ export type LeadsState = {
     logAll: boolean;
     /** Whether the add form is open, kept with the instance so a re-render does not close it. */
     adding: boolean;
-    /** Whether cards the reader dismissed are shown for possible restoration. */
-    showDismissed: boolean;
+    /** Whether the leads the reader declined are shown, so one can be reopened. */
+    showDeclined: boolean;
     /** The palette destination, cleared by the view after it scrolls and flashes the card. */
     reveal?: string;
 };
@@ -34,10 +33,9 @@ export { localDate } from '../../data/helpers/dates.ts';
 export {
     APPLIED,
     DECLINED,
-    DISMISSED,
     OPEN,
     isLeadClosed as isClosed,
-    isLeadDismissed as isDismissed,
+    isLeadDeclined as isDeclined,
     isLeadOpen as isOpen
 };
 
@@ -76,15 +74,15 @@ export function leadIdents(entries: readonly LeadEntry[]): (entry: LeadEntry) =>
     return uniqueIdents(entries, leadId, 'lead');
 }
 
-/** Hide the entries whose status the reader dismissed, or every entry while the toggle is on. */
+/** Hide the entries the reader declined, or show every entry while the toggle is on. */
 export function visibleLeads(entries: LeadEntry[], showing: boolean): LeadEntry[] {
     if (showing) return entries;
-    return entries.filter((entry) => !isLeadDismissed(entry.status));
+    return entries.filter((entry) => !isLeadDeclined(entry.status));
 }
 
-/** How many entries of the feed the reader has dismissed, which is what the toggle offers. */
-export function dismissedCount(entries: readonly LeadEntry[]): number {
-    return entries.filter((entry) => isLeadDismissed(entry.status)).length;
+/** How many entries of the feed the reader has declined, which is what the toggle offers. */
+export function declinedCount(entries: readonly LeadEntry[]): number {
+    return entries.filter((entry) => isLeadDeclined(entry.status)).length;
 }
 
 /** The first ISO date inside deadline prose, or null when it contains none. */
@@ -154,16 +152,20 @@ export function leadsSearch(entries: LeadEntry[], search: string): LeadEntry[] {
     });
 }
 
-/** Read the search and the two disclosure states from one view instance. */
+/**
+ * Read the search, the disclosures and the toggles from one view instance. A saved state holding
+ * `showDismissed` in place of `showDeclined` is read as the same toggle.
+ */
 export function parseLeadsState(raw: unknown): LeadsState {
     const held = record(raw);
+    const showing = held?.showDeclined ?? held?.showDismissed;
     const state: LeadsState = {
         search: typeof held?.search === 'string' ? held.search : '',
         expiredOpen: held?.expiredOpen === true,
         runlogOpen: held?.runlogOpen === true,
         logAll: held?.logAll === true,
         adding: held?.adding === true,
-        showDismissed: held?.showDismissed === true
+        showDeclined: showing === true
     };
     if (typeof held?.reveal === 'string' && held.reveal !== '') state.reveal = held.reveal;
     return state;

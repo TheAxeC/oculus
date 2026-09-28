@@ -1,11 +1,11 @@
 <script module lang="ts">
-    // Layer 3, view registration. Focus is the first board and the landing view.
+    // Layer 3, view registration. Focus opens the Focus page's group and is the landing view.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     export const registration: ViewRegistration = {
         id: 'focus',
         label: 'views.focus',
         glyph: 'views.focus_glyph',
-        group: 'boards',
+        group: 'focus',
         order: 0
     };
 </script>

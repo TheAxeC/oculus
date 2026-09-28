@@ -1,13 +1,13 @@
 <script module lang="ts">
-    // Layer 3, view registration. Config closes the System group.
+    // Layer 3, view registration. Config follows History in the System page's group.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
 
     export const registration: ViewRegistration = {
         id: 'config',
         label: 'views.config',
         glyph: 'views.config_glyph',
-        group: 'system',
-        order: 6
+        group: 'info',
+        order: 4
     };
 </script>
 

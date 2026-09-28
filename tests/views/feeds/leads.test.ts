@@ -130,10 +130,10 @@ function instance(
     runlogOpen = false,
     search = '',
     adding = false,
-    showDismissed = false
+    showDeclined = false
 ): Instance {
     const value: Instance = { id, view: 'leads', state: {} };
-    setInstanceState(id, { search, expiredOpen, runlogOpen, adding, showDismissed });
+    setInstanceState(id, { search, expiredOpen, runlogOpen, adding, showDeclined });
     return value;
 }
 
@@ -151,14 +151,6 @@ function hasAction(body: string, label: string): boolean {
     return buttons.some((button) => button.includes(`>${label}</span>`));
 }
 
-/** A glyph-only control is named by its label and says more in its tooltip; assert both. */
-function expectCompactControl(body: string, label: string, tip: string): void {
-    const start = body.indexOf(`aria-label="${label}"`);
-    expect(start).toBeGreaterThanOrEqual(0);
-    const tooltip = /<span\b[^>]*role="tooltip"[^>]*>([^<]*)<\/span>/.exec(body.slice(start));
-    expect(tooltip?.[1]).toBe(tip);
-}
-
 let feedVersion = 0;
 
 function serve(body: Record<string, unknown>, _status = 200): void {
@@ -169,7 +161,7 @@ beforeEach(() => loadUi({ getItem: () => null, setItem: noop }));
 afterEach(() => vi.unstubAllGlobals());
 
 describe('the Position Leads view', () => {
-    it('hides the dismissed card, counts it on the toggle, and shows it under the toggle', () => {
+    it('hides the declined and dismissed cards, counts both on the toggle, and shows them under it', () => {
         serve({
             ok: true,
             kind: 'leads',
@@ -183,20 +175,23 @@ describe('the Position Leads view', () => {
             context: clientContext(client),
             props: { instance: instance('leads-hidden', true) }
         }).body;
-        // the instance hides the dismissed ones, which is what the count beside the control offers
-        // back
+        // the instance hides the declined and the dismissed one, which is what the count beside the
+        // control offers back
         expect(hidden).not.toContain('data-lead="Dismissed role"');
-        expect(hidden).toContain(catalog['leads.show_dismissed'].replace('{0}', '1'));
+        // a lead the reader declined is hidden by the same toggle, and counted in the same number
+        expect(hidden).not.toContain('data-lead="Declined role"');
+        expect(hidden).toContain(catalog['leads.show_declined'].replace('{0}', '2'));
 
         const shown = render(Leads, {
             context: clientContext(client),
             props: { instance: instance('leads-shown', true, false, '', false, true) }
         }).body;
         expect(shown).toContain('data-lead="Dismissed role"');
-        expect(shown).toContain(catalog['leads.hide_dismissed'].replace('{0}', '1'));
+        expect(shown).toContain('data-lead="Declined role"');
+        expect(shown).toContain(catalog['leads.hide_declined'].replace('{0}', '2'));
     });
 
-    it('draws a dismissed card in the expired list, tagged by its status, with reopen and no dismiss', () => {
+    it('draws a dismissed card in the expired list, tagged by its status, with reopen and no decline', () => {
         serve({
             ok: true,
             kind: 'leads',
@@ -216,8 +211,8 @@ describe('the Position Leads view', () => {
         expect(body.indexOf('data-lead="Dismissed role"')).toBeGreaterThan(
             body.indexOf(catalog['leads.expired_sec'].replace('{0}', '4'))
         );
-        // the lead is already dismissed, so it is offered reopen instead
-        expect(dropped).not.toContain(`aria-label="${catalog['leads.action.dismiss']}"`);
+        // the lead is already out of the running, so it is offered reopen instead
+        expect(hasAction(dropped, catalog['leads.action.decline'])).toBe(false);
     });
 
     it('draws the intro, controls, ordered live cards, details, and collapsed sections', () => {
@@ -235,7 +230,8 @@ describe('the Position Leads view', () => {
         }).body;
         expect(body).toMatch(/class="intro(?:\s|")/);
         expect(body).toContain('2 live');
-        expect(body).toContain('3 expired');
+        // The declined and the dismissed lead are held back by the toggle, so two are counted.
+        expect(body).toContain('2 expired');
         expect(body).toContain(catalog['leads.search']);
         expect(body).toContain(catalog['leads.add']);
         expect(body).toContain('<strong>Strong</strong> role');
@@ -253,7 +249,7 @@ describe('the Position Leads view', () => {
         expect(body).toContain('href="https://jobs.example.org/strong"');
         expect(body).toContain(catalog['leads.action.applied']);
         expect(body).toContain(catalog['leads.action.decline']);
-        expect(body).toContain(catalog['leads.expired_sec'].replace('{0}', '3'));
+        expect(body).toContain(catalog['leads.expired_sec'].replace('{0}', '2'));
         expect(body).toContain(catalog['leads.runlog']);
         // the instance keeps the expired section closed, and an applied lead is expired
         expect(body).not.toContain('Applied role');
@@ -296,7 +292,7 @@ describe('the Position Leads view', () => {
         });
         const body = render(Leads, {
             context: clientContext(client),
-            props: { instance: instance('leads-cards', true) }
+            props: { instance: instance('leads-cards', true, false, '', false, true) }
         }).body;
         const open = card(body, '**Strong** role');
         const undated = card(body, 'Undated role');
@@ -305,11 +301,6 @@ describe('the Position Leads view', () => {
         expect(hasAction(open, catalog['leads.action.applied'])).toBe(true);
         expect(hasAction(open, catalog['leads.action.decline'])).toBe(true);
         expect(hasAction(open, catalog['leads.action.reopen'])).toBe(false);
-        expectCompactControl(
-            open,
-            catalog['leads.action.dismiss'],
-            catalog['leads.action.dismiss_tip']
-        );
         expect(hasAction(open, catalog['project.action.del'])).toBe(true);
         expect(open).toContain('data-glyph="deadline"');
         expect(open).toContain('>Belgium</span>');
@@ -324,7 +315,7 @@ describe('the Position Leads view', () => {
         expect(applied).toMatch(/class="[^"]*expired/);
         expect(applied).toContain('>applied</span>');
         expect(hasAction(applied, catalog['leads.action.applied'])).toBe(false);
-        expect(hasAction(applied, catalog['leads.action.decline'])).toBe(true);
+        expect(hasAction(applied, catalog['leads.action.decline'])).toBe(false);
         expect(hasAction(applied, catalog['leads.action.reopen'])).toBe(true);
 
         const declined = card(body, 'Declined role');
@@ -343,7 +334,7 @@ describe('the Position Leads view', () => {
         }
     });
 
-    it('offers the dismiss control on an open lead alone, never on a closed one', () => {
+    it('offers the decline control on an open lead alone, never on a closed one', () => {
         serve({
             ok: true,
             kind: 'leads',
@@ -356,12 +347,12 @@ describe('the Position Leads view', () => {
             context: clientContext(client),
             props: { instance: instance('leads-dismissable', true, false, '', false, true) }
         }).body;
-        const label = catalog['leads.action.dismiss'];
-        expect(card(body, '**Strong** role')).toContain(`aria-label="${label}"`);
+        const label = catalog['leads.action.decline'];
+        expect(hasAction(card(body, '**Strong** role'), label)).toBe(true);
         for (const title of ['Applied role', 'Declined role', 'Dismissed role']) {
-            // each of these is already out of the running, so none of them is offered the dismiss
+            // each of these is already out of the running, so none of them is offered the decline
             // control
-            expect(card(body, title)).not.toContain(`aria-label="${label}"`);
+            expect(hasAction(card(body, title), label)).toBe(false);
         }
     });
 
@@ -495,5 +486,23 @@ describe('the Position Leads view', () => {
         }).body;
         // the file is not on this machine, so there is no path for the source control to name
         expect(body).not.toContain('data-source-path');
+    });
+});
+
+describe('the Applications entry a lead fills', () => {
+    it("names the Applications form in the hover words of every lead's applied control", () => {
+        serve({ ok: true, kind: 'leads', file: 'feeds/position-leads.yml', schema, entries });
+        const body = render(Leads, {
+            context: clientContext(client),
+            props: { instance: instance('leads-apply', true, false, '', false, true) }
+        }).body;
+        for (const title of ['**Strong** role', 'Undated role', 'Past role', 'Declined role']) {
+            const control = /<button[\s\S]*?<\/button>/g;
+            const found = (card(body, title).match(control) ?? []).find((one) =>
+                one.includes(`>${catalog['leads.action.applied']}</span>`)
+            );
+            expect(found).toBeDefined();
+        }
+        expect(body).toContain(catalog['leads.action.applied_tip']);
     });
 });

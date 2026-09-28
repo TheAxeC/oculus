@@ -71,6 +71,11 @@ export type CollectionState = OpenForms & {
     more: string[];
     /** The palette destination, cleared by the view after it scrolls and flashes the card. */
     reveal?: string;
+    /**
+     * The title of the position lead the add form was filled from, whose status the view sets to
+     * `applied` once the form's entry is written, and forgets when the form closes.
+     */
+    lead?: string;
 };
 
 /** The state of an instance nobody has typed in yet. */
@@ -95,6 +100,7 @@ export function parseCollectionState(raw: unknown): CollectionState {
         hidden?: unknown;
         more?: unknown;
         reveal?: unknown;
+        lead?: unknown;
     };
     const state: CollectionState = {
         search: typeof held.search === 'string' ? held.search : '',
@@ -104,6 +110,7 @@ export function parseCollectionState(raw: unknown): CollectionState {
         ...parseOpenForms(raw)
     };
     if (typeof held.reveal === 'string' && held.reveal !== '') state.reveal = held.reveal;
+    if (typeof held.lead === 'string' && held.lead.trim() !== '') state.lead = held.lead;
     return state;
 }
 

@@ -27,6 +27,12 @@ import {
 } from '../../../src/lib/data/sources/config.ts';
 import { setCatalog, setGlyphs } from '../../../src/lib/state/shared/words/text.ts';
 import type { DocState } from '../../../src/lib/state/system/docs.svelte.ts';
+import {
+    railOrder,
+    readChord,
+    readDocs,
+    readGroups
+} from '../../../src/lib/state/workbench/navigation/catalogue.ts';
 import type { Instance } from '../../../src/lib/state/workbench/layout/index.ts';
 import { registerAll, registerCollections } from '../../../src/routes/views.ts';
 import { clientContext, createClientState, type ClientState } from '../../fixtures/client.ts';
@@ -47,6 +53,26 @@ setGlyphs(glyphCatalog(config));
 const MANUAL = readFileSync(join(engineDir(), 'HELP.md'), 'utf8');
 
 const instance: Instance = { id: 'help-one', view: 'help', state: {} };
+
+/** The catalogue's order as the key table counts it: each chord letter and what it reaches. */
+function chordOrder(): ReturnType<typeof railOrder> {
+    return railOrder(
+        client.registry.views().filter((view) => view.listed !== false),
+        readGroups(config.nav_groups),
+        readChord(config.direct_chord),
+        readDocs(config.docs)
+    );
+}
+
+/**
+ * The keys a chord letter reaches, as the key table writes them: `x1` for a group of one entry,
+ * `x1-xn` for a group of n entries up to nine, and `x1-x9` for a larger one, which is the range
+ * that says exactly which keys open something.
+ */
+function range(letter: string): string {
+    const count = Math.min(chordOrder().chords[letter]?.length ?? 0, 9);
+    return count === 1 ? `${letter}1` : `${letter}1-${letter}${String(count)}`;
+}
 
 /** The view with a doubled document store, so a case draws the manual without a server. */
 function drawn(doc: DocState): string {
@@ -222,8 +248,7 @@ describe('the key sheet', () => {
             (group) =>
                 !rows.some(
                     (row) =>
-                        row.key.includes(`${group.chord}1-${group.chord}9`) &&
-                        row.meaning.includes(group.label)
+                        row.key === range(group.chord ?? '') && row.meaning.includes(group.label)
                 )
         );
         expect(missing.map((group) => group.label)).toEqual([]);
@@ -248,15 +273,27 @@ describe('the manual itself', () => {
     });
 
     it('writes down every letter a catalogue group is reached by', () => {
-        const groups = config.nav_groups as Record<string, { chord?: string }>;
+        const missing = Object.keys(chordOrder().chords).filter(
+            (letter) => !MANUAL.includes(`| ${range(letter)} |`)
+        );
+        expect(missing).toEqual([]);
+    });
+
+    it('gives no row to a chord letter that reaches nothing', () => {
         const letters = [
             config.direct_chord as string,
-            ...Object.values(groups)
-                .map((group) => group.chord)
-                .filter((chord): chord is string => chord !== undefined)
-        ];
-        const missing = letters.filter((letter) => !MANUAL.includes(`${letter}1-${letter}9`));
-        expect(missing).toEqual([]);
+            ...Object.values(config.nav_groups as Record<string, { chord?: string }>).map(
+                (group) => group.chord ?? ''
+            )
+        ].filter((letter) => letter !== '' && chordOrder().chords[letter] === undefined);
+        // Every view sits in a group with a letter of its own, so the direct chord reaches none.
+        expect(letters).toEqual([config.direct_chord]);
+        const rows = sheetRows(catalog['app.keys.rows']).map((row) => row.key);
+        const drawn = letters.filter(
+            (letter) =>
+                rows.some((key) => key.startsWith(`${letter}1`)) || MANUAL.includes(`| ${letter}1`)
+        );
+        expect(drawn).toEqual([]);
     });
 
     it('describes every configuration file in the words the Config view shows', () => {

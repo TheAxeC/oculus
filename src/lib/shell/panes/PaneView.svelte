@@ -10,6 +10,8 @@
     // closes or leaves the pane, so switching back to it neither builds the view again nor fetches
     // what it read again, and a tab never shown costs nothing. There is no cap on the views one
     // pane keeps: it is the number of tabs the reader has opened and looked at.
+    // A pane holding no tab draws one line saying that opened files appear there, since an empty
+    // pane is where a view opened for something lands on its page.
     //
     // It is where closing is guarded. A tab holding text no save has taken is asked about before it
     // goes, whether the close came from the tab's own control or from Delete on it, and so is a
@@ -375,6 +377,13 @@
                 <TabView {instance} registration={found} shown={instance.id === active} />
             {/if}
         {/each}
+        <!-- A pane holding no tab is where a view opened for something lands on the page, so it
+             says so rather than drawing nothing. -->
+        {#if instances.length === 0}
+            <p class="empty" data-pane-empty>
+                {t('ui.pane_empty')}
+            </p>
+        {/if}
     </div>
 </div>
 
@@ -435,5 +444,13 @@
         min-width: 0;
         min-height: 0;
         overflow: hidden;
+    }
+
+    /* The one line of a pane with no tab, in the muted ink, clear of the strip above it. */
+    .empty {
+        margin: 0;
+        padding: 12px;
+        color: var(--muted-txt, var(--muted));
+        font-size: var(--fs-sm);
     }
 </style>

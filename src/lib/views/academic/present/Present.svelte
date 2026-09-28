@@ -1,13 +1,13 @@
 <script module lang="ts">
-    // Layer 3, view registration. Present closes the Academic life group, after the collections.
+    // Layer 3, view registration. Present is the Present page's group.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
 
     export const registration: ViewRegistration = {
         id: 'present',
         label: 'views.present',
         glyph: 'views.present_glyph',
-        group: 'academic',
-        order: 6
+        group: 'present',
+        order: 0
     };
 </script>
 

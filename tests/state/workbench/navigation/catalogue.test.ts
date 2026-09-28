@@ -11,7 +11,6 @@ import {
     type DocEntry,
     docState,
     followDoc,
-    GROUP_MAX,
     groupGlyph,
     isChorded,
     keyOf,
@@ -22,10 +21,8 @@ import {
     readChord,
     readDocs,
     readGroups,
-    sectionSize,
     listedViews
 } from '../../../../src/lib/state/workbench/navigation/catalogue.ts';
-import type { Registration } from '../../../../src/lib/state/workbench/navigation/registry.ts';
 import { registerAll, registerCollections } from '../../../../src/routes/views.ts';
 import { createClientState, type ClientState } from '../../../fixtures/client.ts';
 import { COLLECTIONS, catalog, config, doc, probe } from '../../../shell/rail/rail-fixture.ts';
@@ -75,7 +72,7 @@ describe('arrange', () => {
         expect(found).toHaveLength(1);
         expect(found[0].items.map((view) => view.id)).toEqual(['a', 'b']);
         expect(found[0].docs.map((entry) => entry.path)).toEqual(['SECOND.md', 'FIRST.md']);
-        expect(sectionSize(found[0])).toBe(4);
+        expect(found[0].items.length + found[0].docs.length).toBe(4);
     });
 
     it('lists a group whose documents are all it has', () => {
@@ -91,17 +88,21 @@ describe('arrange', () => {
         expect(found[0].docs.map((entry) => entry.path)).toEqual(['ONE.md']);
     });
 
-    it('counts a document towards the size that puts a group under a chord of its own', () => {
-        const views = [probe('a', 'one', 0), probe('b', 'one', 1), probe('c', 'one', 2)];
-        const small = arrange(views, [{ id: 'one', label: 'One' }], [doc('ONE.md', 'one')]);
-        expect(isChorded(small[0])).toBe(false);
-        const large = arrange(
-            views,
-            [{ id: 'one', label: 'One' }],
-            [doc('ONE.md', 'one'), doc('TWO.md', 'one')]
-        );
-        expect(sectionSize(large[0])).toBe(GROUP_MAX + 1);
-        expect(isChorded(large[0])).toBe(true);
+    it('puts a group that names a letter under its own chord whatever its size', () => {
+        const views = [probe('a', 'one', 0), probe('b', 'two', 0), probe('c', 'two', 1)];
+        const groups: NavGroup[] = [
+            { id: 'one', label: 'One', chord: 'o' },
+            { id: 'two', label: 'Two' }
+        ];
+        const [lettered, bare] = arrange(views, groups, [doc('ONE.md', 'one')]);
+        expect(isChorded(lettered)).toBe(true);
+        expect(isChorded(bare)).toBe(false);
+        // The one-view group is reached by its own letter, and the group naming none by the
+        // direct chord, so no small group's entries swell the direct count.
+        expect(railOrder(views, groups, 'v', [doc('ONE.md', 'one')]).chords).toEqual({
+            v: ['b', 'c'],
+            o: ['a', 'doc:ONE.md']
+        });
     });
 
     it("carries the group's glyph when it has one, and leaves it off when it has none", () => {
@@ -230,38 +231,24 @@ describe('the catalogue of the real config', () => {
         );
     });
 
-    function section(label: string): Registration[] {
-        return sections.find((found) => found.label === label)?.items ?? [];
-    }
-
-    it('lists Personal with the wall, the agenda, the setup page and two documents, and the third in System', () => {
-        const personal = sections.find((found) => found.label === 'Personal');
-        expect(personal?.items.map((view) => view.id)).toEqual([
-            'memories',
-            'calendar',
-            'account-setup'
-        ]);
-        expect(personal?.docs.map((entry) => entry.path)).toEqual([
-            'docs/RESEARCH-APPROACH.md',
-            'docs/AGENT-APPROACH.md'
-        ]);
-        const [system] = sections.filter((found) => found.label === 'System');
-        expect(system.docs.map((entry) => entry.path)).toEqual(['docs/HPC-UTwente-howto.md']);
-        expect(system.items.map((view) => view.id)).toEqual([
+    it('lists the manual, the photo wall and the three hub documents under Help, apart from System', () => {
+        const system = sections.find((found) => found.label === 'System');
+        expect(system?.items.map((view) => view.id)).toEqual([
             'status',
             'findings',
-            'gallery',
-            'hpc',
-            'usage',
-            'help',
-            'config',
             'audit',
             'history',
-            'catalogue',
-            'settings',
-            'pages'
+            'config',
+            'gallery'
         ]);
-        expect(isChorded(system)).toBe(true);
+        expect(system?.docs).toEqual([]);
+        const help = sections.find((found) => found.label === 'Help');
+        expect(help?.items.map((view) => view.id)).toEqual(['help', 'memories']);
+        expect(help?.docs.map((entry) => entry.path)).toEqual([
+            'docs/RESEARCH-APPROACH.md',
+            'docs/AGENT-APPROACH.md',
+            'docs/HPC-UTwente-howto.md'
+        ]);
     });
 
     it('leaves no view out of a group, the collections of sources.yml included', () => {
@@ -270,109 +257,95 @@ describe('the catalogue of the real config', () => {
         expect(rest.map((view) => view.id)).toEqual([]);
     });
 
-    it('gives every chorded group a letter and a glyph, and one letter to one list', () => {
+    it('lists one group per rail page, in rail order, labelled with its button, and Help after System', () => {
+        const rail = config.rail as { label: string; page: string }[];
+        const at = rail.findIndex((entry) => entry.page === 'info') + 1;
+        const withHelp = <T>(list: T[], help: T): T[] => [
+            ...list.slice(0, at),
+            help,
+            ...list.slice(at)
+        ];
+        expect(groups.map((group) => group.id)).toEqual(
+            withHelp(
+                rail.map((entry) => entry.page),
+                'help'
+            )
+        );
+        expect(groups.map((group) => group.label)).toEqual(
+            withHelp(
+                rail.map((entry) => entry.label),
+                'Help'
+            )
+        );
+        expect(sections.map((section) => section.label)).toEqual(
+            withHelp(
+                rail.map((entry) => entry.label),
+                'Help'
+            )
+        );
+    });
+
+    it('gives every group a letter and a glyph, and one letter to one list', () => {
         expect(
             sections
                 .filter(isChorded)
                 .map((one) => `${one.label ?? ''}:${one.chord ?? ''}:${one.glyph ?? ''}`)
         ).toEqual([
+            'Focus:f:focus',
             'Sessions:m:live',
-            'Academic life:c:scout',
-            'Sources:s:folder',
-            'Personal:p:memories',
-            'System:y:audit'
+            'Projects:p:paper',
+            'Incoming:e:email',
+            'Explorer:s:folder',
+            'Academic Life:c:scout',
+            'Pillars:l:book',
+            'References:r:venue_dist',
+            'Present:t:conference',
+            'System:y:info',
+            'Help:h:page',
+            'Views and Settings:w:settings'
         ]);
     });
 
-    it('counts the real keys: the direct views and the five chords', () => {
+    it('counts the real keys: every page under its own letter, the direct chord counting none', () => {
         const order = railOrder(
             views().filter((view) => view.listed !== false),
             groups,
             readChord(config.direct_chord),
             docs
         );
-        // The direct list is what a digit after the direct chord counts into, so it is pinned
-        // whole: a group that grows past the group maximum leaves it, which is a keyboard change.
-        expect(order.direct).toEqual([
-            'focus',
-            'projects',
-            'coauthor',
-            'archive',
-            'pillars',
-            'domains',
-            'map',
-            'radar',
-            'leads',
-            'inbox',
-            'linkedin'
-        ]);
-        expect(order.chords.v).toEqual(order.direct);
-        expect(order.chords.p).toEqual([
-            'memories',
-            'calendar',
-            'account-setup',
-            'doc:docs/RESEARCH-APPROACH.md',
-            'doc:docs/AGENT-APPROACH.md'
-        ]);
-        expect(order.chords.c).toEqual([
-            'funding',
-            'events',
-            'education',
-            'applications',
-            'joint-work',
-            'tasks',
-            'present'
-        ]);
-        expect(order.chords.m).toEqual([
-            'session-list',
-            'session-detail',
-            'terminal',
-            'transcript',
-            'timeline',
-            'changes',
-            'agents'
-        ]);
-        expect(order.chords.s).toEqual([
-            'venues',
-            'data',
-            'code',
-            'statements',
-            'files',
-            'repositories',
-            'search'
-        ]);
-        expect(order.chords.y).toEqual([
-            'status',
-            'findings',
-            'gallery',
-            'hpc',
-            'usage',
-            'help',
-            'config',
-            'audit',
-            'history',
-            'catalogue',
-            'settings',
-            'pages',
-            'doc:docs/HPC-UTwente-howto.md'
-        ]);
-        expect(Object.keys(order.chords).sort()).toEqual(['c', 'm', 'p', 's', 'v', 'y']);
-    });
-
-    it('keeps the boards, the pillars and the feeds each under their heading', () => {
-        expect(section('Boards').map((view) => view.id)).toEqual([
-            'focus',
-            'projects',
-            'coauthor',
-            'archive'
-        ]);
-        expect(section('Pillars').map((view) => view.id)).toEqual(['pillars', 'domains', 'map']);
-        expect(section('Feeds').map((view) => view.id)).toEqual([
-            'radar',
-            'leads',
-            'inbox',
-            'linkedin'
-        ]);
+        // Every listed view sits on a page, so nothing is left to the direct chord, which is
+        // therefore bound to no list at all.
+        expect(order.direct).toEqual([]);
+        expect(order.chords).toEqual({
+            f: ['focus', 'hpc', 'usage'],
+            m: [
+                'session-list',
+                'terminal',
+                'transcript',
+                'timeline',
+                'session-detail',
+                'changes',
+                'agents'
+            ],
+            p: ['projects', 'coauthor', 'archive'],
+            e: ['inbox', 'radar', 'leads', 'linkedin', 'calendar'],
+            s: ['files', 'repositories', 'search'],
+            c: ['funding', 'events', 'education', 'applications', 'joint-work', 'tasks'],
+            l: ['pillars', 'domains', 'map'],
+            r: ['venues', 'data', 'code', 'statements'],
+            t: ['present'],
+            y: ['status', 'findings', 'audit', 'history', 'config', 'gallery'],
+            h: [
+                'help',
+                'memories',
+                'doc:docs/RESEARCH-APPROACH.md',
+                'doc:docs/AGENT-APPROACH.md',
+                'doc:docs/HPC-UTwente-howto.md'
+            ],
+            w: ['catalogue', 'settings', 'account-setup', 'pages']
+        });
+        expect(keyOf(order, 'calendar')).toBe('e5');
+        expect(keyOf(order, 'account-setup')).toBe('w3');
     });
 });
 

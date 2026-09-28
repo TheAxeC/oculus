@@ -8,6 +8,7 @@ import {
     parseLayout
 } from '../../../../src/lib/state/workbench/layout/index.ts';
 import { LAYOUT_KEY } from '../../../../src/lib/state/workbench/layout.svelte.ts';
+import type { ClientState } from '../../../fixtures/client.ts';
 import type {
     Focus,
     Instance,
@@ -97,4 +98,32 @@ export function fakeStorage(seed?: string) {
 /** The folded children of a split, and nothing for a pane, which cannot hold any. */
 export function foldedOf(tree: Layout): number[] | undefined {
     return tree.kind === 'split' ? tree.folded : undefined;
+}
+
+/** The arrangement a Focus rail button carries in the reset cases: the Focus view alone. */
+export const FOCUS_NODE = { root: { kind: 'pane', view: 'focus' } };
+
+/**
+ * The pages the reset cases of pages.test.ts start from, loaded from a new storage: Page 1 of the
+ * reader's own, the page of the Focus button renamed and given a Status tab holding typed text,
+ * and the page of a button named Old, which is on screen. The storage comes back with their ids,
+ * so a case reads what the store saved.
+ */
+export function resetPagesFixture(client: ClientState): {
+    storage: ReturnType<typeof fakeStorage>;
+    own: string;
+    focus: string;
+    old: string;
+    added: string;
+} {
+    const storage = fakeStorage();
+    client.layout.loadLayout(storage);
+    const own = client.layout.currentPage().id;
+    client.layout.openRailPage('focus', 'Focus', FOCUS_NODE);
+    const focus = client.layout.currentPage().id;
+    const added = client.layout.openView('status', undefined, focus);
+    client.ui.setInstanceState(added, { typed: 'held' });
+    client.layout.renamePage(focus, 'Mine now');
+    client.layout.openRailPage('old', 'Old', { root: { kind: 'pane', view: 'status' } });
+    return { storage, own, focus, old: client.layout.currentPage().id, added };
 }

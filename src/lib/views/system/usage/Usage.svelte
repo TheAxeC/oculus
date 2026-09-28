@@ -1,13 +1,13 @@
 <script module lang="ts">
-    // Layer 3, view registration. Usage closes the current system views.
+    // Layer 3, view registration. Usage closes the Focus page's group, a tab beside Live HPC.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     export const registration: ViewRegistration = {
         id: 'usage',
         label: 'views.usage',
         glyph: 'views.usage_glyph',
-        group: 'system',
-        order: 4
+        group: 'focus',
+        order: 2
     };
 </script>
 

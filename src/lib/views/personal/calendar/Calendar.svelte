@@ -1,15 +1,15 @@
 <script module lang="ts">
-    // Layer 3, view registration. The agenda sits in the Personal group after the photo wall, since
-    // what it holds is the reader's own days rather than a fact about the hub. The view's badge is
-    // how many of today's events have not ended yet, and nothing when none are left.
+    // Layer 3, view registration. The agenda closes the Incoming page's group, in the pane beside
+    // the feeds. The view's badge is how many of today's events have not ended yet, and nothing
+    // when none are left.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
 
     export const registration: ViewRegistration = {
         id: 'calendar',
         label: 'views.calendar',
         glyph: 'views.calendar_glyph',
-        group: 'personal',
-        order: 1,
+        group: 'incoming',
+        order: 4,
         badge: (client) => client.calendar.badgeText(),
         badgeTitle: (client) => client.railBadges.calendarBadgeTitle(),
         badgeCells: (client) => client.railBadges.calendarCells(),

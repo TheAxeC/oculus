@@ -208,6 +208,24 @@ describe('the instance a page was left on', () => {
         // Revert: drop the loop over Object.keys(lastActive) from clear in attention.ts.
         expect(attention.active(page.id)).toBe(null);
     });
+
+    it('keeps the tabs a page received that are still on it, newest last, each once', () => {
+        const { pages, page } = onePage();
+        const attention = createAttention(access(pages, page.id));
+        attention.rememberReceived(page.id, 'a', pane(['a']));
+        attention.rememberReceived(page.id, 'b', pane(['a', 'b']));
+        attention.rememberReceived(page.id, 'c', pane(['b', 'c']));
+        attention.rememberReceived(page.id, 'b', pane(['b', 'c']));
+        expect(attention.received(page.id)).toEqual(['c', 'b']);
+    });
+
+    it('forgets the tabs a page received with the page', () => {
+        const { pages, page } = onePage();
+        const attention = createAttention(access(pages, page.id));
+        attention.rememberReceived(page.id, 'a', pane(['a']));
+        attention.forgetPage(page.id);
+        expect(attention.received(page.id)).toEqual([]);
+    });
 });
 
 describe('the pane the last openBeside made', () => {

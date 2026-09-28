@@ -1,12 +1,12 @@
 <script module lang="ts">
-    // Layer 3, view registration. Map closes the structure group.
+    // Layer 3, view registration. Map closes the Pillars page's group.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     export const registration: ViewRegistration = {
         id: 'map',
         label: 'views.map',
         glyph: 'views.map_glyph',
-        group: 'structure',
+        group: 'pillars',
         order: 2
     };
 </script>

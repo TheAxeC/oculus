@@ -1,12 +1,12 @@
 <script module lang="ts">
-    // Layer 3, view registration. Transcript follows Terminal in the Sessions group.
+    // Layer 3, view registration. Transcript follows Terminal in the Sessions page's group.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     export const registration: ViewRegistration = {
         id: 'transcript',
         label: 'sessions.view_transcript',
         glyph: 'sessions.transcript_glyph',
         group: 'sessions',
-        order: 3
+        order: 2
     };
 </script>
 

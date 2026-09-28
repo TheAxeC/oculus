@@ -1,11 +1,11 @@
 <script module lang="ts">
-    // Layer 3, view registration. Findings follows Status in the system group.
+    // Layer 3, view registration. Findings follows Status in the System page's group.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     export const registration: ViewRegistration = {
         id: 'findings',
         label: 'views.findings',
         glyph: 'views.findings_glyph',
-        group: 'system',
+        group: 'info',
         order: 1
     };
 </script>

@@ -11,6 +11,7 @@ import { collectionKeys } from '../../../../src/lib/data/sources/config.ts';
 import { registerAll, registerCollections } from '../../../../src/routes/views.ts';
 import { clientContext, type ClientState } from '../../../fixtures/client.ts';
 import { catalog, config, configured, words } from './workbench-fixture.ts';
+import { SHIPPED_RAIL_LABELS } from '../../../shell/rail/shipped-rail.ts';
 
 let client: ClientState;
 
@@ -49,22 +50,36 @@ describe('the Views catalogue', () => {
 
     it('draws each group under its heading, with its chord letter where it has one', () => {
         const body = draw();
-        for (const label of ['Boards', 'Pillars', 'Sessions', 'Academic life', 'System']) {
-            expect(body).toContain(`data-group="${label}"`);
-        }
+        const headings = [...body.matchAll(/data-group="([^"]+)"/g)].map((found) => found[1]);
+        // One heading per rail page, and the Help group, which is no page, after System.
+        const system = SHIPPED_RAIL_LABELS.indexOf('System') + 1;
+        expect(headings).toEqual([
+            ...SHIPPED_RAIL_LABELS.slice(0, system),
+            'Help',
+            ...SHIPPED_RAIL_LABELS.slice(system)
+        ]);
         const sessions = body.slice(body.indexOf('data-group="Sessions"'));
         expect(sessions).toMatch(/class="chord[^"]*">m</);
     });
 
-    it('draws the key that opens an entry beside it, and none past the ninth', () => {
+    it('draws a key beside every entry of every group, System y1 to y6 and Help h1 to h5', () => {
         const body = draw();
         const focus = body.slice(body.indexOf('data-view="focus"'));
-        expect(focus).toMatch(/class="key[^"]*"[^>]*>v1</);
-        const pages = body.slice(
-            body.indexOf('data-view="pages"'),
-            body.indexOf('data-doc="docs/HPC-UTwente-howto.md"')
-        );
-        expect(pages).not.toMatch(/class="key/);
+        expect(focus).toMatch(/class="key[^"]*"[^>]*>f1</);
+        const starts = [...body.matchAll(/data-group="([^"]+)"/g)];
+        const keysOf = new Map<string, string[]>();
+        starts.forEach((found, index) => {
+            const section = body.slice(found.index, starts[index + 1]?.index ?? body.length);
+            const entries = [...section.matchAll(/data-(?:view|doc)="[^"]+"/g)].length;
+            const keys = [...section.matchAll(/class="key[^"]*"[^>]*>([^<]+)</g)].map(
+                (one) => one[1]
+            );
+            // Every entry of the group carries its key.
+            expect([found[1], keys.length]).toEqual([found[1], entries]);
+            keysOf.set(found[1], keys);
+        });
+        expect(keysOf.get('System')).toEqual(['y1', 'y2', 'y3', 'y4', 'y5', 'y6']);
+        expect(keysOf.get('Help')).toEqual(['h1', 'h2', 'h3', 'h4', 'h5']);
     });
 
     it("lists a group's hub documents after its views, as buttons carrying their path", () => {
@@ -81,7 +96,7 @@ describe('the Views catalogue', () => {
         client.registry.registerView({
             ...status,
             id: 'probe-badged',
-            group: 'system',
+            group: 'info',
             order: 99,
             badge: () => '3 5',
             badgeTone: () => 'red'
@@ -93,7 +108,7 @@ describe('the Views catalogue', () => {
 
     it('names the key in the hover words of an entry a chord reaches', () => {
         const body = draw();
-        expect(body).toContain(words('workbench.catalogue_key', catalog['views.focus'], 'v1'));
-        expect(body).toContain(`${catalog['views.focus']}, key v1`);
+        expect(body).toContain(words('workbench.catalogue_key', catalog['views.focus'], 'f1'));
+        expect(body).toContain(`${catalog['views.focus']}, key f1`);
     });
 });

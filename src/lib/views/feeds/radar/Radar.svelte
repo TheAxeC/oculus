@@ -1,12 +1,12 @@
 <script module lang="ts">
-    // Layer 3, view registration. Lit Watch opens the feeds group.
+    // Layer 3, view registration. Lit Watch follows Inbox in the Incoming page's group.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     export const registration: ViewRegistration = {
         id: 'radar',
         label: 'views.radar',
         glyph: 'views.radar_glyph',
-        group: 'feeds',
-        order: 0
+        group: 'incoming',
+        order: 1
     };
 </script>
 

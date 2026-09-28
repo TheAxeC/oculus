@@ -11,6 +11,7 @@ export {
     defaultLayout,
     defaultPages,
     defaultWorkbench,
+    emptyPane,
     isRecord,
     newPage,
     pageLeaf,

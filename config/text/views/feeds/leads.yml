@@ -3,14 +3,13 @@ text:
     leads:
         action:
             applied: applied
+            applied_tip: open the Applications add form beside the leads, filled in from this lead; saving it marks the lead applied
             decline: decline
-            decline_tip: decline / not interested
+            decline_tip: decline this lead (off the radar, kept in the file)
             delete_lead_tip: delete this lead (removes the entry)
-            dismiss: dismiss
-            dismiss_tip: dismiss this lead (off the radar, kept in the file)
-            mark_applied: mark applied
             reopen: reopen
             reopen_tip: reopen (back to the radar)
+            to_application_replace: The Applications add form holds text you have not saved. Replace it with this lead?
         add: + add lead
         add_tip: add a position lead
         empty: No live leads - run <code>/research-cockpit scout</code>.
@@ -18,7 +17,7 @@ text:
         expired: expired
         expired_sec: Expired / actioned ({0}) - hidden
         fit_none: '-'
-        hide_dismissed: Hide dismissed ({0})
+        hide_declined: Hide declined ({0})
         intro: Academic openings - auto-scouted (BE/NL/LU). {0} live{1} | fit chip = strong / moderate / reach.
         no_deadline: no deadline
         no_file: No position-leads file configured.
@@ -27,7 +26,7 @@ text:
         log_fewer: show fewer lines
         runlog: Run log
         search: Search leads | institution | focus ...
-        show_dismissed: Show dismissed ({0})
+        show_declined: Show declined ({0})
     views:
         leads: Position Leads
         leads_glyph: scout

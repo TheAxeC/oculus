@@ -247,6 +247,10 @@ export function createClientState(): ClientState {
     entities.afterReceive(sources.heard);
     writes.onUnwritten(sources.unwritten);
     const registry = createRegistry(layout);
+    // A view registered with no catalogue group is one opened for something (a project, a
+    // document, a file), and the layout lands it apart from a page's tool views. The registry is
+    // built over the layout, so the layout is told the rule once both exist.
+    layout.registerOpened((view) => registry.viewFor(view)?.group === '');
     return {
         entities,
         writes,

@@ -55,13 +55,13 @@ function tile(body: string, name: string): string {
 const registered = registration as ViewRegistration;
 
 describe('the Memories registration', () => {
-    it('sits in the Personal group and is listed in the view catalogue', () => {
+    it('sits in the Help group after the manual and is listed in the view catalogue', () => {
         expect(registered).toMatchObject({
             id: 'memories',
             label: 'views.memories',
             glyph: 'views.memories_glyph',
-            group: 'personal',
-            order: 0
+            group: 'help',
+            order: 1
         });
         expect(registered.listed).toBeUndefined();
     });

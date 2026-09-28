@@ -1,13 +1,13 @@
 <script module lang="ts">
-    // Layer 3, view registration. The audit follows the configuration in the System group.
+    // Layer 3, view registration. The audit follows Findings in the System page's group.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
 
     export const registration: ViewRegistration = {
         id: 'audit',
         label: 'views.audit',
         glyph: 'views.audit_glyph',
-        group: 'system',
-        order: 7,
+        group: 'info',
+        order: 2,
         badge: (client) => client.railBadges.auditBadge()
     };
 </script>

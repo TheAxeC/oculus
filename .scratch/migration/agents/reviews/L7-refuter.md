@@ -275,3 +275,25 @@ I changed no file in the tree. `git status --short` in the worktree printed 39 l
 - The help.test.ts revert argument under Proof is by reading. I did not edit the tree to run it.
 
 Reviewer usage: 25 tool uses, about 12 minutes (about 03:18 to 03:30 local). Token count not visible to me.
+
+## Closed (the orchestrator's disposition of every finding above, 2026-09-28)
+
+First review:
+- The two System entries without a key, and the test asserting it: Axel's ruling on Z18 (d), a Help group with chord `h`; round 1 items 1 and 2.
+- The landing order, the prefill carried in the form drafts, and the other judgment calls: kept, round 1 item 6.
+- Unsaved tabs not asked about per tab: round 1 item 3.
+- The leads-to-Applications flow without a case: round 1 item 4, the state moved into `state/feeds/lead-application.ts` with its cases.
+- The case and directive counts: corrected in the report by round 1.
+- The red full suite: not reproduced by the reviewer; the whole suite passed on main at landing.
+- The three comments made false: round 1 item 5.
+- The behaviour the report did not state (saved pages keep their layout until a reset, no decline on an applied lead, declined leads hidden by default, `applied` on declined and expired leads): written into the report by round 1, and into the landing report.
+
+Repair round 1, refuted:
+- `HeldQuestion.svelte`, a third wrapper over the same Confirm: fixed at landing; `CloseQuestion` takes a `detail` line, the three reset surfaces draw it, and `HeldQuestion.svelte` is deleted.
+- The verify runner run more than once in the round: a departure from the brief with no effect on the tree; the whole list ran once on main at landing.
+- The key-sheet predicates widened: fixed at landing; both cases require the exact range, and a case asserts no row for a chord letter that reaches nothing.
+- The component wiring of item 4 without a case: needs a DOM, which the unit suite does not run; seen at the look (the applied control opened the Applications form prefilled with title, subtitle, url, deadline and status).
+- The head comment of `navigation/pages.ts` and `DESIGN.md:305`: fixed at landing.
+- The key table mixing two conventions: fixed at landing, every row exact; the `v1-v9` row removed since `v` reaches no view.
+- The per-tab question naming no tab: fixed at landing; the question reads "Tab: <name>, on <page>." (`tabNameOf`, `workbench.reset_tab`), with a case that fails without the name.
+- The System and key-sheet changes the report did not state: written into the landing report.

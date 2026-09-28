@@ -58,6 +58,7 @@ import {
     type Workbench
 } from './layout/index.ts';
 import { parseArrangement } from './navigation/arrangement.ts';
+import { resetPlan, type RailSource } from './navigation/pages.ts';
 import { t } from '../shared/words/text.ts';
 
 export { LAYOUT_KEY, PREVIOUS_KEY };
@@ -142,6 +143,24 @@ export type LayoutStore = {
     openNextTo: (view: ViewId, state: unknown, page: string, beside: string) => string;
     /** Whether the pane at a path of a page holds one instance. */
     paneHolds: (path: number[], id: string, page: string) => boolean;
+    /**
+     * Say which views are opened for something, which the registry knows and this store does not:
+     * where such a view lands is layout/open/landing.ts's rule. Until a rule is registered every
+     * view is a tool view.
+     */
+    registerOpened: (rule: (view: ViewId) => boolean) => void;
+    /**
+     * Rebuild one page from a rail button's arrangement: its tabs made fresh, its id and rail key
+     * kept, its name the button's words. Answers whether it was rebuilt; an id naming no page or an
+     * arrangement that does not parse changes nothing.
+     */
+    resetPage: (id: string, source: RailSource) => boolean;
+    /**
+     * Rebuild every saved page a rail button carries the key of from that button's arrangement and
+     * remove every saved page carrying a key no button carries (navigation/pages.ts's resetPlan). A
+     * page with no rail key is left alone. Answers whether anything changed.
+     */
+    resetPages: (rail: readonly RailSource[]) => boolean;
     /**
      * Show one path in the file browser: the Files tab of the page the reader is in is activated
      * (the panes are restored first when it sits behind a maximised pane), or one is opened there
@@ -248,9 +267,14 @@ export function createLayout(ui: UiStore): LayoutStore {
      */
     const where: Touched = $state({ page: null });
 
+    /** Which views are opened for something, as the registry says once it is registered. */
+    let openedRule: (view: ViewId) => boolean = () => false;
+
     const attention = createAttention(access, where);
     const instances = createInstances(access, attention);
-    const opening = createOpening(access, attention, instances.keepPreview);
+    const opening = createOpening(access, attention, instances.keepPreview, (view) =>
+        openedRule(view)
+    );
     const files = createShowInFiles(access, attention, opening.openView);
     const away = createAway(
         access,
@@ -490,6 +514,63 @@ export function createLayout(ui: UiStore): LayoutStore {
     }
 
     /**
+     * One page made again from a rail button's arrangement: fresh instances, the id kept so a page
+     * showing it keeps showing it, the rail key kept so the button still reaches it, and the
+     * button's words as its name. What its old tabs held is forgotten as closing them would.
+     */
+    function resetPage(id: string, source: RailSource): boolean {
+        const found = pageOf(id);
+        const next = parseArrangement(source.node);
+        if (found === null || next === null) return false;
+        attention.forgetPage(id);
+        attention.forgetTouched();
+        savePages({
+            ...store.current,
+            pages: store.current.pages.map((page) =>
+                page.id === id ? { ...page, label: source.label, workbench: next } : page
+            )
+        });
+        instances.forgetTabs(tabsOf(found.workbench.root));
+        return true;
+    }
+
+    /**
+     * Every rail page made again from its button's arrangement, and every page of a button that is
+     * gone removed, in one save. A removed page is shown nowhere afterwards, as closing it leaves
+     * it, and the page on screen moves to the first page left when it was one of them.
+     */
+    function resetPages(rail: readonly RailSource[]): boolean {
+        const held = store.current;
+        const plan = resetPlan(held.pages, rail);
+        if (plan.rebuilt.length === 0 && plan.removed.length === 0) return false;
+        const gone = new Set(plan.removed.map((page) => page.id));
+        const pages = held.pages.flatMap((page): Page[] => {
+            if (gone.has(page.id)) return [];
+            const source = rail.find((entry) => entry.page === page.rail);
+            const made = source === undefined ? null : parseArrangement(source.node);
+            if (!plan.rebuilt.includes(page) || source === undefined || made === null) {
+                return [page];
+            }
+            return [{ ...page, label: source.label, workbench: made }];
+        });
+        let next: Pages =
+            pages.length === 0
+                ? defaultPages(t('ui.page_default', 1))
+                : {
+                      pages,
+                      current: gone.has(held.current) ? pages[0].id : held.current
+                  };
+        for (const id of gone) next = clearPage(next, id);
+        for (const page of [...plan.rebuilt, ...plan.removed]) attention.forgetPage(page.id);
+        attention.forgetTouched();
+        savePages(next);
+        instances.forgetTabs(
+            [...plan.rebuilt, ...plan.removed].flatMap((page) => tabsOf(page.workbench.root))
+        );
+        return true;
+    }
+
+    /**
      * The instance the next view opened without a page named would join: the active instance of the
      * page the reader is in. It is the one pane in the window a view opens into, whether that
      * page is the one on screen or one drawn inside it.
@@ -547,6 +628,11 @@ export function createLayout(ui: UiStore): LayoutStore {
         openAway: away.openAway,
         openNextTo: away.openNextTo,
         paneHolds: away.paneHolds,
-        showInFiles: files.showInFiles
+        showInFiles: files.showInFiles,
+        registerOpened: (rule) => {
+            openedRule = rule;
+        },
+        resetPage,
+        resetPages
     };
 }

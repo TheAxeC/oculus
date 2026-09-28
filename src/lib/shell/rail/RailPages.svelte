@@ -5,9 +5,11 @@
     // first view of the page that counts anything. The page's other counts stay on their tabs.
     //
     // A button dragged along the rail and let go elsewhere on it moves its page there, with a line
-    // between two buttons saying where it would land, and its right-click menu offers Hide and
-    // Settings. Both are asked of the rail, which writes `rail:` through the rail write: this draws
-    // the buttons and turns the gestures into what was asked, and holds only the drag in hand.
+    // between two buttons saying where it would land, and its right-click menu offers Hide, Reset
+    // to its arrangement while the button's page has been made, and Settings. Each is asked of the
+    // rail, which writes `rail:` through the rail write or resets the page after a confirm: this
+    // draws the buttons and turns the gestures into what was asked, and holds only the drag in
+    // hand.
     //
     // The keyboard ring is the rail's, so each button is handed its place in the focus order and
     // its key handler.
@@ -15,8 +17,7 @@
     import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import type { MenuItem } from '$lib/ui/menu/menu-items';
-    import { firstBadge, railInsertAt, RAIL_HIDE, RAIL_SETTINGS } from '$lib/shell/rail/rail';
+    import { firstBadge, railInsertAt, railMenu } from '$lib/shell/rail/rail';
     import { THRESHOLD, type Point } from '$lib/state/workbench/drag.svelte';
     import { railPageViews } from '$lib/state/workbench/navigation/pages';
     import type { RailPage } from '$lib/state/workbench/navigation/rail';
@@ -46,12 +47,6 @@
 
     /** How many rail pages a digit reaches: the bare digits 1 to 9, resolved in shell/keys. */
     const SHORTCUTS = 9;
-
-    /** The choices of a page button's right-click menu, which ActivityRail.svelte answers. */
-    const menu: MenuItem[] = [
-        { id: RAIL_HIDE, label: t('ui.rail_hide') },
-        { id: RAIL_SETTINGS, label: t('ui.rail_settings') }
-    ];
 
     /** The rail key of the page on screen, which is the button drawn as the one in force. */
     const shown = $derived(currentPage().rail);
@@ -183,7 +178,7 @@
         {@const stop = `page:${entry.page}`}
         <ContextMenu
             label={entry.label}
-            items={menu}
+            items={railMenu(allPages().some((page) => page.rail === entry.page))}
             onpick={(pick: string) => onmenu(entry.page, pick)}
         >
             <!-- The button is where a drag along the rail starts; it is pressed as it is. -->

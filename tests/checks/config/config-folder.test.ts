@@ -447,14 +447,17 @@ describe("oculus's own config directory", () => {
         );
     });
 
-    it('keeps boards separate from the configured Pillars group', () => {
+    it('keys every catalogue group by the rail page it holds, in rail order, Help after System', () => {
         const { config } = loadConfig(engineDir());
-        const groups = config.nav_groups as Record<string, { label: string; glyph?: string }>;
-        expect(groups.boards).toEqual({ label: 'Boards' });
-        expect(groups.structure).toEqual({ label: 'Pillars', glyph: 'pillar' });
-        expect(Object.keys(groups).indexOf('structure')).toBe(
-            Object.keys(groups).indexOf('boards') + 1
-        );
+        const groups = config.nav_groups as Record<string, { label: string }>;
+        const rail = config.rail as { label: string; page: string }[];
+        // The Help group is the one group that is no page: it adds no button and no arrangement.
+        const pages = Object.keys(groups).filter((key) => key !== 'help');
+        expect(pages).toEqual(rail.map((entry) => entry.page));
+        expect(pages.map((key) => groups[key].label)).toEqual(rail.map((entry) => entry.label));
+        expect(Object.keys(groups).indexOf('help')).toBe(Object.keys(groups).indexOf('info') + 1);
+        expect(groups.help.label).toBe('Help');
+        expect(config.arrangements).not.toHaveProperty('help');
     });
 
     it('keeps view lists out of every navigation group', () => {
@@ -586,7 +589,7 @@ describe("oculus's own config directory", () => {
         expect(Object.keys(iconSet(inherited))).toEqual(['pin']);
     });
 
-    it('configures one lowercase chord and a glyph on every group reached by a chord of its own', () => {
+    it('gives every group a chord and a glyph, and no letter a key the workbench binds', async () => {
         const { config } = loadConfig(engineDir());
         registerAll(client.registry);
         registerCollections(client.registry, collectionKeys(config));
@@ -597,28 +600,52 @@ describe("oculus's own config directory", () => {
             groups,
             config.docs as DocEntry[]
         );
-        // A group of more entries than the group maximum, its documents counted, is reached only by
-        // a letter of its own, and its catalogue heading carries a mark of its own: a group of four
-        // or fewer is reached through the direct chord. This holds for whichever groups those are.
-        const chorded = sections.filter(isChorded);
-        expect(chorded.map((section) => section.label)).toEqual([
-            'Sessions',
-            'Academic life',
-            'Sources',
-            'Personal',
-            'System'
+        // Every group names a letter, so each is reached by a chord of its own whatever its size,
+        // and its catalogue heading carries a mark of its own.
+        expect(sections.filter((section) => !isChorded(section))).toEqual([]);
+        expect(sections.filter((section) => section.glyph === undefined)).toEqual([]);
+        expect(sections.map((section) => section.chord)).toEqual([
+            'f',
+            'm',
+            'p',
+            'e',
+            's',
+            'c',
+            'l',
+            'r',
+            't',
+            'y',
+            'h',
+            'w'
         ]);
-        expect(chorded.filter((section) => section.glyph === undefined)).toEqual([]);
-        expect(chorded.map((section) => section.chord)).toEqual(['m', 'c', 's', 'p', 'y']);
-        for (const group of groups) {
-            if (group.chord !== undefined) expect(group.chord).toMatch(/^[a-z]$/);
-        }
         // One letter reaches one thing: the direct chord and every group's are all distinct.
         const letters = [
             config.direct_chord as string,
             ...groups.map((group) => group.chord).filter((chord) => chord !== undefined)
         ];
         expect(new Set(letters).size).toBe(letters.length);
+        // A chord letter is a letter the workbench binds to nothing else: with no chord configured,
+        // the key answers with no action and leaves the key state as it was, which a cursor key,
+        // `n` and the first `g` of `g g` do not.
+        const quiet = {
+            cursorActive: true,
+            typing: false,
+            paletteOpen: false,
+            trayOpen: false,
+            confirmOpen: false
+        };
+        const { initialKeyState, resolveKey } = await import('../../../src/lib/shell/keys/keys.ts');
+        const bound = letters.filter((letter) => {
+            const answer = resolveKey(
+                { key: letter },
+                { direct: [], chords: {} },
+                quiet,
+                initialKeyState(),
+                1000
+            );
+            return answer.action !== null || answer.state.lastG !== initialKeyState().lastG;
+        });
+        expect(bound).toEqual([]);
     });
 
     it('names a configured group and a nonnegative order in every listed registration', () => {

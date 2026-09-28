@@ -1,12 +1,12 @@
 <script module lang="ts">
-    // Layer 3, view registration. Position Leads follows Lit Watch in the feeds group.
+    // Layer 3, view registration. Position Leads follows Lit Watch in the Incoming page's group.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     export const registration: ViewRegistration = {
         id: 'leads',
         label: 'views.leads',
         glyph: 'views.leads_glyph',
-        group: 'feeds',
-        order: 1,
+        group: 'incoming',
+        order: 2,
         badge: (client) => client.railBadges.leadsBadge(),
         badgeTone: () => 'amber'
     };
@@ -15,6 +15,14 @@
 <script lang="ts">
     // Layer 3, view. Position Leads reads its socket feed, splits live from expired entries,
     // and keeps search plus the expired and run-log disclosures in this view instance's state.
+    //
+    // A lead's `applied` control opens the Applications add form beside the leads, prefilled from
+    // the lead through state/feeds/lead-application.ts: the values go into that tab's form drafts,
+    // as typed values do, so they are there after a reload and the tab asks before it closes over
+    // them, and the tab's state names the lead, which the Applications view sets `applied` once the
+    // form's entry is written. Nothing is written until the reader saves the form, and a cancel
+    // writes nothing to the lead. An add form already holding typed text is asked about before the
+    // lead replaces it.
 
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
@@ -22,13 +30,15 @@
     import Toolbar from '$lib/ui/frame/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import LeadCard from './LeadCard.svelte';
+    import AskConfirm from '../../shared/AskConfirm.svelte';
+    import type { Ask } from '../../shared/ask';
     import EntryForm from '../../shared/forms/EntryForm.svelte';
     import Intro from '../../shared/prose/Intro.svelte';
     import Reveal from '../../shared/card/Reveal.svelte';
     import SourceButton from '../../shared/links/SourceButton.svelte';
     import { inlineMarkdown } from '$lib/ui/html';
     import {
-        dismissedCount,
+        declinedCount,
         leadIdents,
         leadsSearch,
         localDate,
@@ -36,9 +46,17 @@
         runLog,
         splitLeads,
         visibleLeads,
+        type LeadEntry,
         type LeadsState
     } from '$lib/state/feeds/leads';
     import { asText } from '$lib/state/forms/schema';
+    import { formFields } from '$lib/state/boards/collection';
+    import {
+        APPLICATIONS,
+        holdsTyped,
+        prefillFromLead,
+        type ApplicationTab
+    } from '$lib/state/feeds/lead-application';
     import { t } from '$lib/state/shared/words/text';
     import { cardCursor } from '$lib/state/workbench/layout/instance';
     import { feedIdents } from '$lib/state/feeds/idents';
@@ -49,8 +67,9 @@
     const {
         entities: { config },
         feeds: { feed },
-        formDrafts: { toggleAdd },
-        selectors: { configMap },
+        formDrafts: { clearFormDraft, formEdits, setFormField, toggleAdd },
+        layout: { openBeside },
+        selectors: { collectionOf, configMap },
         ui: { instanceState, setInstanceState },
         writes: { addLead }
     } = useState();
@@ -65,12 +84,10 @@
     const entries = $derived(data?.entries ?? []);
     const identOf = $derived(feedIdents('leads', entries));
     const leadOf = $derived(leadIdents(entries));
-    const dismissed = $derived(dismissedCount(entries));
-    const split = $derived(splitLeads(visibleLeads(entries, held.showDismissed), today));
-    const dismissedToggleLabel = $derived(
-        held.showDismissed
-            ? t('leads.hide_dismissed', dismissed)
-            : t('leads.show_dismissed', dismissed)
+    const declined = $derived(declinedCount(entries));
+    const split = $derived(splitLeads(visibleLeads(entries, held.showDeclined), today));
+    const declinedToggleLabel = $derived(
+        held.showDeclined ? t('leads.hide_declined', declined) : t('leads.show_declined', declined)
     );
     const live = $derived(leadsSearch(split.live, held.search));
     const expired = $derived(leadsSearch(split.expired, held.search));
@@ -89,13 +106,50 @@
         setInstanceState(instance.id, { ...held, ...next });
     }
 
+    /** The replace question held while the reader is asked, or null while none is. */
+    let asking: Ask | null = $state(null);
+
+    /** The Applications tab's drafts and state, which the prefill writes. */
+    const tab: ApplicationTab = {
+        formEdits,
+        clearFormDraft,
+        setFormField,
+        instanceState,
+        setInstanceState
+    };
+
     /**
-     * Dismissed is one of the statuses that close a lead, so a dismissed card is drawn in the
-     * expired section. Turning the toggle on opens that section, or the count would change and
-     * nothing new would appear.
+     * Open the Applications add form beside the leads over what one lead says. A form there that
+     * already holds typed text is asked about first, since the lead would replace it.
+     */
+    function toApplication(entry: LeadEntry): void {
+        const id = openBeside(APPLICATIONS);
+        if (id === '') return;
+        const fill = (): void =>
+            prefillFromLead(
+                tab,
+                id,
+                entry,
+                formFields(collectionOf(APPLICATIONS)?.schema, configMap())
+            );
+        if (!holdsTyped(tab, id)) {
+            fill();
+            return;
+        }
+        asking = {
+            message: t('leads.action.to_application_replace'),
+            detail: asText(entry.title),
+            act: fill
+        };
+    }
+
+    /**
+     * Declined is one of the statuses that close a lead, so a declined card is drawn in the expired
+     * section. Turning the toggle on opens that section, or the count would change and nothing new
+     * would appear.
      */
     function showing(on: boolean): Partial<LeadsState> {
-        return on ? { showDismissed: true, expiredOpen: true } : { showDismissed: false };
+        return on ? { showDeclined: true, expiredOpen: true } : { showDeclined: false };
     }
 </script>
 
@@ -112,13 +166,13 @@
             active={held.adding}
             onclick={() => write({ adding: toggleAdd(instance.id, 'leads', held.adding) })}
         />
-        {#if dismissed > 0}
+        {#if declined > 0}
             <ToolButton
-                label={dismissedToggleLabel}
+                label={declinedToggleLabel}
                 glyph="dismiss"
-                active={held.showDismissed}
-                pressed={held.showDismissed}
-                onclick={() => write(showing(!held.showDismissed))}
+                active={held.showDeclined}
+                pressed={held.showDeclined}
+                onclick={() => write(showing(!held.showDeclined))}
             />
         {/if}
         {#if source !== null}
@@ -172,6 +226,7 @@
                                 {vocab}
                                 cursor={cursor === leadOf(entry)}
                                 onsaid={(words: string) => (said = words)}
+                                onapply={() => toApplication(entry)}
                             />
                         </Reveal>
                     {/each}
@@ -204,6 +259,7 @@
                                         cursor={cursor === leadOf(entry)}
                                         expired
                                         onsaid={(words: string) => (said = words)}
+                                        onapply={() => toApplication(entry)}
                                     />
                                 </Reveal>
                             {/each}
@@ -243,6 +299,8 @@
         {/if}
     </div>
 </Pane>
+
+<AskConfirm {asking} onclose={() => (asking = null)} />
 
 <style>
     .leads {

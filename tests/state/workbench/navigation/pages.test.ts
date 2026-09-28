@@ -12,7 +12,12 @@ import {
     pageNameOf,
     railPageViews,
     unsavedCount,
-    pageUnsaved
+    pageUnsaved,
+    questionFor,
+    resetAsk,
+    resetPlan,
+    tabNameOf,
+    type Question
 } from '../../../../src/lib/state/workbench/navigation/pages.ts';
 import type { Page } from '../../../../src/lib/state/workbench/layout/index.ts';
 import { bench, instance, pane, split } from '../layout/layout-fixture.ts';
@@ -133,5 +138,80 @@ describe('where a page sits in the page list', () => {
         // The list holds no page of that id, so it has no place in it.
         expect(pageAt(pages, 'gone')).toBeNull();
         expect(pageNameOf(pages, 'b')).toBe(t('ui.page_default', 2));
+    });
+});
+
+describe('what a tab is called', () => {
+    it('is its state label, else its view name, else the view id the registry lacks', () => {
+        const viewFor = (id: string) => (id === 'status' ? { label: 'views.status' } : undefined);
+        const named = { ...instance('a', 'status'), state: { label: 'My notes' } };
+        expect(tabNameOf(named, viewFor)).toBe('My notes');
+        // An empty label names nothing, so the view's name stands.
+        const blank = { ...instance('b', 'status'), state: { label: '' } };
+        expect(tabNameOf(blank, viewFor)).toBe(t('views.status'));
+        expect(tabNameOf(instance('c', 'gone'), viewFor)).toBe('gone');
+    });
+});
+
+describe('the asker a confirm draws', () => {
+    it('shows each question, settles it with the answer, and answers a superseded one no', async () => {
+        const shown: (Question | null)[] = [];
+        const ask = questionFor((held) => shown.push(held));
+        const first = ask('one?', '');
+        const second = ask('two?', 'more');
+        expect(await first).toBe(false);
+        shown.at(-1)?.answer(true);
+        expect(await second).toBe(true);
+        expect(shown.map((held) => held?.message ?? null)).toEqual(['one?', 'two?', null]);
+        // The first question's own answer, given late, settles nothing.
+        shown[0]?.answer(true);
+        expect(shown.at(-1)).toBe(null);
+    });
+});
+
+describe('what resetting the pages does', () => {
+    const FOCUS = { root: { kind: 'pane', view: 'focus' } };
+    const rail = [
+        { page: 'focus', label: 'Focus', node: FOCUS },
+        { page: 'broken', label: 'Broken', node: 'not a node' }
+    ];
+    /** A page tied to the rail button of `key`, holding one tab per id. */
+    const tied = (id: string, label: string, key: string, ids: string[] = []): Page => ({
+        ...page(id, label, pane(ids)),
+        rail: key
+    });
+
+    it('rebuilds the pages of buttons the rail has and removes those of buttons it lost', () => {
+        const pages = [
+            page('own', 'Mine'),
+            tied('f', 'Focus', 'focus'),
+            tied('o', 'Old', 'old'),
+            tied('b', 'Broken', 'broken')
+        ];
+        const plan = resetPlan(pages, rail);
+        expect(plan.removed.map((one) => one.id)).toEqual(['o']);
+        expect(plan.rebuilt.map((one) => one.id)).toEqual(['f']);
+    });
+
+    it('leaves a page no button made in neither list', () => {
+        expect(resetPlan([page('own', 'Mine')], rail)).toEqual({ rebuilt: [], removed: [] });
+    });
+
+    it('names each page it rebuilds and removes', () => {
+        const focus = tied('f', 'Focus', 'focus', ['a', 'unsaved']);
+        const old = tied('o', 'Old', 'old', ['b']);
+        const all = [page('own', 'Mine'), focus, old];
+        const words = resetAsk(all, [focus], [old]);
+        expect(words.message).toBe(t('workbench.reset_all_confirm'));
+        expect(words.detail).toBe(
+            [t('workbench.reset_rebuilt', 'Focus'), t('workbench.reset_removed', 'Old')].join(' ')
+        );
+    });
+
+    it('asks about one page by its name when one page is reset', () => {
+        const focus = tied('f', 'Focus', 'focus');
+        const words = resetAsk([focus], [focus], [], focus);
+        expect(words.message).toBe(t('workbench.reset_page_confirm', 'Focus'));
+        expect(words.detail).toBe(t('workbench.reset_rebuilt', 'Focus'));
     });
 });

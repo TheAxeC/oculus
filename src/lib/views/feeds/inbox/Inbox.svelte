@@ -1,14 +1,14 @@
 <script module lang="ts">
-    // Layer 3, view registration. Inbox follows Position Leads in the feeds group. The view's badge
-    // is how many threads of the live plate are still waiting on an answer or an action.
+    // Layer 3, view registration. Inbox opens the Incoming page's group. The view's badge is how
+    // many threads of the live plate are still waiting on an answer or an action.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     export const registration: ViewRegistration = {
         id: 'inbox',
         label: 'views.inbox',
         glyph: 'views.inbox_glyph',
-        group: 'feeds',
-        order: 2,
+        group: 'incoming',
+        order: 0,
         badge: (client) => client.railBadges.inboxBadge(),
         badgeTone: () => 'red'
     };

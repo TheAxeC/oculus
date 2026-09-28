@@ -1,12 +1,16 @@
-// Layer 2, client state. What a page is called, which tabs it holds, and what a close asks before
-// it happens. The shell's pane menus and page leaves and the Pages view on the Views and Settings
-// page all name a page and close one, so the rules live here, where both of them may read them.
+// Layer 2, client state. What a page and a tab are called, which tabs a page holds, what a close
+// asks before it happens, and what a reset asks before it runs: its own question, then the close
+// question of each tab holding unsaved text (resetAfterAsking), each held for a dialog to draw
+// through questionFor. The shell's pane menus, page leaves and rail, and the Pages view on the
+// Views and Settings page all name a page, close one and reset one, so the rules live here, where
+// each of them may read them.
 //
 // Whether an instance holds unsaved text is not decided here. The caller passes the ui store's
 // answer for an instance id, so a view that keeps unsaved text registers its rule once and none of
 // the closes is edited for it.
 
-import { tabsOf, type Page } from '../layout/index.ts';
+import { tabsOf, type Instance, type Page } from '../layout/index.ts';
+import { registrationLabel, type Registration } from './registry.ts';
 import { t } from '../../shared/words/text.ts';
 import { parseArrangement } from './arrangement.ts';
 
@@ -23,6 +27,24 @@ export function pageName(page: Page, index: number): string {
 export function pageNameOf(pages: readonly Page[], id: string): string {
     const found = pageAt(pages, id);
     return found === null ? '' : pageName(found.page, found.at);
+}
+
+/**
+ * What a tab is called: the `label` its state carries, else its view's name, else the view's id
+ * when the registry holds no such view. A pane's tab strip names a tab the same way, so a question
+ * about a tab calls it what its strip does.
+ */
+export function tabNameOf(
+    instance: Instance,
+    viewFor: (id: string) => Pick<Registration, 'label'> | undefined
+): string {
+    const state = instance.state;
+    if (typeof state === 'object' && state !== null && !Array.isArray(state)) {
+        const own = (state as Record<string, unknown>).label;
+        if (typeof own === 'string' && own !== '') return own;
+    }
+    const found = viewFor(instance.view);
+    return found === undefined ? instance.view : registrationLabel(found);
 }
 
 /**
@@ -91,4 +113,111 @@ export function pageUnsaved(page: Page, unsaved: (id: string) => boolean): boole
 export function pageAt(pages: readonly Page[], id: string): { page: Page; at: number } | null {
     const at = pages.findIndex((page) => page.id === id);
     return at < 0 ? null : { page: pages[at], at };
+}
+
+/** One rail button as a reset reads it: its arrangement key, its words and its arrangement. */
+export type RailSource = { page: string; label: string; node: unknown };
+
+/**
+ * What resetting every page does: the saved pages a rail button carries the key of, rebuilt from
+ * that button's arrangement, and the saved pages carrying a key no button carries, removed. A page
+ * with no rail key (Page 1, a page New page made) is in neither list, and so is a page whose
+ * button's arrangement does not parse, which a reset leaves as it is rather than emptying.
+ */
+export function resetPlan(
+    pages: readonly Page[],
+    rail: readonly RailSource[]
+): { rebuilt: Page[]; removed: Page[] } {
+    const rebuilt: Page[] = [];
+    const removed: Page[] = [];
+    for (const page of pages) {
+        if (page.rail === undefined) continue;
+        const button = rail.find((entry) => entry.page === page.rail);
+        if (button === undefined) removed.push(page);
+        else if (parseArrangement(button.node) !== null) rebuilt.push(page);
+    }
+    return { rebuilt, removed };
+}
+
+/**
+ * What a reset asks before it runs, already translated: the question, and the line under it naming
+ * each page it rebuilds and each it removes. `one` is the page a reset of a single page names; a
+ * reset of every page names none. The tabs holding unsaved text are asked about after it, one by
+ * one (resetAfterAsking).
+ */
+export function resetAsk(
+    all: readonly Page[],
+    rebuilt: readonly Page[],
+    removed: readonly Page[],
+    one?: Page
+): { message: string; detail: string } {
+    const names = (chosen: readonly Page[]): string =>
+        chosen.map((page) => pageNameOf(all, page.id)).join(', ');
+    const lines = [
+        rebuilt.length > 0 ? t('workbench.reset_rebuilt', names(rebuilt)) : '',
+        removed.length > 0 ? t('workbench.reset_removed', names(removed)) : ''
+    ].filter((line) => line !== '');
+    const message =
+        one === undefined
+            ? t('workbench.reset_all_confirm')
+            : t('workbench.reset_page_confirm', pageNameOf(all, one.id));
+    return { message, detail: lines.join(' ') };
+}
+
+/** A question held for a confirm to draw, and the answer that lets it go. */
+export type Question = { message: string; detail: string; answer: (yes: boolean) => void };
+
+/** Asks one question and answers whether the reader said yes. */
+export type Asker = (message: string, detail: string) => Promise<boolean>;
+
+/**
+ * An asker over a component's held question: each call hands `show` a question, and the answer
+ * given to it takes the question away and settles the call. A question asked while another is held
+ * answers the held one no, so no call is left waiting.
+ */
+export function questionFor(show: (held: Question | null) => void): Asker {
+    let waiting: ((yes: boolean) => void) | null = null;
+    return (message, detail) =>
+        new Promise<boolean>((resolve) => {
+            waiting?.(false);
+            waiting = resolve;
+            show({
+                message,
+                detail,
+                answer: (yes) => {
+                    if (waiting !== resolve) return;
+                    waiting = null;
+                    show(null);
+                    resolve(yes);
+                }
+            });
+        });
+}
+
+/**
+ * Run a reset once the reader agreed to it: the reset's own question first, then, for each tab of
+ * the pages it rebuilds or removes that holds unsaved text, the question closing that tab asks
+ * (closeQuestion over the one tab), one tab at a time, with the tab and its page named under it,
+ * since the tab may not be on screen. A no to any of them ends it with nothing done. Answers
+ * whether the reset ran.
+ */
+export async function resetAfterAsking(
+    all: readonly Page[],
+    words: { message: string; detail: string },
+    touched: readonly Page[],
+    unsaved: (id: string) => boolean,
+    name: (instance: Instance) => string,
+    ask: Asker,
+    act: () => void
+): Promise<boolean> {
+    if (!(await ask(words.message, words.detail))) return false;
+    for (const page of touched) {
+        for (const instance of tabsOf(page.workbench.root)) {
+            if (closeQuestion([instance.id], unsaved) !== 'dirty') continue;
+            const detail = t('workbench.reset_tab', name(instance), pageNameOf(all, page.id));
+            if (!(await ask(t('ui.tab_close_dirty'), detail))) return false;
+        }
+    }
+    act();
+    return true;
 }

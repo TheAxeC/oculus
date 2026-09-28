@@ -1,12 +1,12 @@
 <script module lang="ts">
-    // Layer 3, view registration. Timeline follows Transcript in the Sessions group.
+    // Layer 3, view registration. Timeline follows Transcript in the Sessions page's group.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     export const registration: ViewRegistration = {
         id: 'timeline',
         label: 'sessions.view_timeline',
         glyph: 'sessions.timeline_glyph',
         group: 'sessions',
-        order: 4
+        order: 3
     };
 </script>
 

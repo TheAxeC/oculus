@@ -22,6 +22,7 @@ import {
     withRailDraft
 } from '../../../../src/lib/state/workbench/navigation/rail.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sources/config.ts';
+import { SHIPPED_RAIL_LABELS } from '../../../shell/rail/shipped-rail.ts';
 
 const { config } = loadConfig(engineDir());
 const catalog = textCatalog(config);
@@ -163,21 +164,7 @@ describe('the rail pages the page hands the shell', () => {
 
     it('reads the shipped list in its order, Views and Settings last', () => {
         const pages = railPages(config);
-        expect(pages.map((one) => one.label)).toEqual([
-            'Focus',
-            'Projects',
-            'Academic Life',
-            'Pillars',
-            'Feeds',
-            'References',
-            'Present',
-            'Explorer',
-            'Sessions',
-            'Info/more',
-            'Calendar',
-            'Inbox',
-            'Views and Settings'
-        ]);
+        expect(pages.map((one) => one.label)).toEqual(SHIPPED_RAIL_LABELS);
         expect(pages.every((one) => one.node !== undefined)).toBe(true);
     });
 });

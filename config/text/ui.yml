@@ -34,6 +34,7 @@ text:
         page_shortcut: '{0}, key {1}'
         pane_close: Close pane
         pane_close_confirm: Close this pane and the {0} tabs in it?
+        pane_empty: Files and documents you open on this page appear here.
         pane_expand: Expand pane
         pane_expand_glyph: expand
         pane_fold: Fold pane
@@ -45,6 +46,7 @@ text:
         preview_tab: 'The next single click replaces this tab; double-click to keep it.'
         rail: Pages
         rail_hide: Hide
+        rail_reset: Reset to its arrangement
         rail_settings: Settings
         row_menu: Row actions
         sash: Resize

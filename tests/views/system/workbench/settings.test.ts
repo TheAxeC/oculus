@@ -95,7 +95,7 @@ describe('the appearance half', () => {
 describe('the rail half', () => {
     it('draws one row per button of the file, holding its label', () => {
         const body = draw();
-        expect([...body.matchAll(/data-rail-row="/g)]).toHaveLength(13);
+        expect([...body.matchAll(/data-rail-row="/g)]).toHaveLength(11);
         expect(body).toContain('value="Views and Settings"');
     });
 
@@ -133,7 +133,7 @@ describe('the rail half', () => {
 
     it('names each control of a row by the place of its button', () => {
         const body = draw();
-        expect(buttonNamed(body, why('workbench.rail_remove', 13))).not.toBe('');
+        expect(buttonNamed(body, why('workbench.rail_remove', 11))).not.toBe('');
         expect(buttonNamed(body, why('workbench.rail_up', 1))).toMatch(/\sdisabled/);
     });
 });

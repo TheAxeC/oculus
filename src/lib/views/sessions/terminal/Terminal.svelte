@@ -1,12 +1,12 @@
 <script module lang="ts">
-    // Layer 3, view registration. Terminal follows session detail in the Sessions group.
+    // Layer 3, view registration. Terminal follows the session list in the Sessions page's group.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     export const registration: ViewRegistration = {
         id: 'terminal',
         label: 'sessions.view_terminal',
         glyph: 'sessions.terminal_glyph',
         group: 'sessions',
-        order: 2
+        order: 1
     };
 </script>
 

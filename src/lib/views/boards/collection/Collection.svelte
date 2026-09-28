@@ -1,6 +1,8 @@
 <script module lang="ts">
     // Layer 3, view registration. The generic collection component owns each configured
-    // collection's rail placement.
+    // collection's place in the catalogue, which is the rail page it sits on: the Academic Life
+    // page's six, and the References page's for Code, Statements and a collection sources.yml adds
+    // that no placement names.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
 
     const placements: Record<string, { group: string; order: number }> = {
@@ -10,14 +12,14 @@
         applications: { group: 'academic', order: 3 },
         'joint-work': { group: 'academic', order: 4 },
         tasks: { group: 'academic', order: 5 },
-        code: { group: 'sources', order: 2 },
-        statements: { group: 'sources', order: 3 }
+        code: { group: 'references', order: 2 },
+        statements: { group: 'references', order: 3 }
     };
 
     export const registration = (keys: string[]): ViewRegistration[] =>
         keys.map((id, index) => {
             const applications = id === 'applications';
-            const place = placements[id] ?? { group: 'sources', order: 100 + index };
+            const place = placements[id] ?? { group: 'references', order: 100 + index };
             return {
                 id,
                 label: `views.${id}`,
@@ -51,6 +53,11 @@
     // to the projects rather than a second view: funding adds the card of the projects no scheme
     // covers, and code adds what the portfolio says about its own code above the cards, then the
     // software projects of its own scan tier, which the registry file does not hold.
+    //
+    // An add form the Position Leads view opened from a lead names that lead in this instance's
+    // state, and its save goes through state/feeds/lead-application.ts: the entry, then the lead
+    // set to `applied` once the entry is written. Closing the form forgets the lead, so a cancel
+    // writes nothing to it.
 
     import Card from '$lib/ui/frame/Card.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
@@ -81,6 +88,11 @@
         unfundedBy,
         type CollectionState
     } from '$lib/state/boards/collection';
+    import {
+        closeAddForm,
+        leadAddFor,
+        type ApplicationTab
+    } from '$lib/state/feeds/lead-application';
     import { cardCursor } from '$lib/state/workbench/layout/instance';
     import { lookup, t } from '$lib/state/shared/words/text';
     import { statusTone } from '$lib/state/shared/words/tones';
@@ -91,9 +103,9 @@
     const {
         layout: { openView },
         selectors: { archiveDead, collectionOf, configMap, projects },
-        formDrafts: { toggleAdd, toggleEdit },
+        formDrafts: { clearFormDraft, formEdits, setFormField, toggleAdd, toggleEdit },
         ui: { cardMoveRequested, instanceState, setInstanceState },
-        writes: { reorderEntries }
+        writes: { newEntry, reorderEntries, writeFeedField }
     } = useState();
 
     let { instance }: ViewProps = $props();
@@ -127,6 +139,21 @@
     function write(next: Partial<CollectionState>): void {
         setInstanceState(instance.id, { ...held, ...next });
     }
+
+    /** This tab's drafts and state, as the add from a lead reads and writes them. */
+    const tab: ApplicationTab = {
+        formEdits,
+        clearFormDraft,
+        setFormField,
+        instanceState,
+        setInstanceState
+    };
+
+    /**
+     * The add write of a form opened from a position lead, or none for any other add form, which
+     * then writes through the form's own add.
+     */
+    const leadAdd = $derived(leadAddFor(tab, { newEntry, writeFeedField }, instance.id, key));
 
     /** Hide one status's cards, or bring them back, which is what a facet toggle does. */
     function toggle(value: string): void {
@@ -257,7 +284,8 @@
                 collection={key}
                 {schema}
                 entry={null}
-                onclose={() => write({ adding: false })}
+                onadd={leadAdd}
+                onclose={() => closeAddForm(tab, instance.id)}
                 onsaid={(words: string) => (said = words)}
             />
         {/if}

@@ -18,6 +18,7 @@ text:
         pages_on_rail: 'rail: {0}'
         pages_open: Show
         pages_rename: Rename
+        pages_reset: Reset to its arrangement
         pages_rename_label: Name of {0}
         pages_unsaved: unsaved
         rail_add: Add a button
@@ -45,4 +46,13 @@ text:
         rail_why_page_unknown: 'button {0} names a page arrangements does not hold'
         rail_why_repeated: 'button {0} names a page an earlier button already shows'
         rail_why_shape: 'button {0} is not a label, a glyph and a page'
+        reset_all: Reset all pages
+        reset_all_confirm: Reset every rail page to its arrangement?
+        reset_all_none: Every rail page is as its arrangement makes it, and no page of a removed button is left.
+        reset_all_tip: Rebuild every rail page from its arrangement and remove the pages of buttons the rail no longer has. Pages of your own are left alone.
+        reset_page_confirm: Reset {0} to its arrangement?
+        reset_rebuilt: 'Rebuilt: {0}.'
+        reset_tab: 'Tab: {0}, on {1}.'
+        reset_removed: 'Removed: {0}.'
+        reset_title: Pages
         settings_appearance: Appearance

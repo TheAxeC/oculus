@@ -1,12 +1,13 @@
 <script module lang="ts">
-    // Layer 3, view registration. Live HPC follows Gallery in the system group.
+    // Layer 3, view registration. Live HPC follows Focus in the Focus page's group, in the pane
+    // beside it.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     export const registration: ViewRegistration = {
         id: 'hpc',
         label: 'views.hpc',
         glyph: 'views.hpc_glyph',
-        group: 'system',
-        order: 3,
+        group: 'focus',
+        order: 1,
         badge: (client) => client.hpc.badgeText(),
         badgeTitle: (client) => client.railBadges.queueBadgeTitle(),
         badgeCells: (client) => client.railBadges.queueCells(),

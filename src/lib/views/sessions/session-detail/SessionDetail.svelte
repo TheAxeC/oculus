@@ -1,12 +1,13 @@
 <script module lang="ts">
-    // Layer 3, view registration. Session detail follows the list in the Sessions group.
+    // Layer 3, view registration. Session detail opens the right pane of the Sessions page and
+    // follows Timeline in its group.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     export const registration: ViewRegistration = {
         id: 'session-detail',
         label: 'sessions.detail_title',
         glyph: 'sessions.detail_glyph',
         group: 'sessions',
-        order: 1
+        order: 4
     };
 </script>
 

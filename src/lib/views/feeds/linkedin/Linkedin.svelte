@@ -1,11 +1,11 @@
 <script module lang="ts">
-    // Layer 3, view registration. LinkedIn closes the feeds group.
+    // Layer 3, view registration. LinkedIn follows Position Leads in the Incoming page's group.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     export const registration: ViewRegistration = {
         id: 'linkedin',
         label: 'views.linkedin',
         glyph: 'views.linkedin_glyph',
-        group: 'feeds',
+        group: 'incoming',
         order: 3,
         badgeGlyph: (client) => client.railBadges.linkedinBadgeGlyph(),
         badgeMark: 'views.linkedin_badge_mark',

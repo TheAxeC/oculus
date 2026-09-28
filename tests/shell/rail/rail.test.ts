@@ -17,7 +17,11 @@ import {
     listFade,
     railHidden,
     railInsertAt,
-    railMoved
+    railMenu,
+    railMoved,
+    RAIL_HIDE,
+    RAIL_RESET,
+    RAIL_SETTINGS
 } from '../../../src/lib/shell/rail/rail.ts';
 import type { RailEntry } from '../../../src/lib/state/workbench/navigation/rail.ts';
 import type { RailPage } from '../../../src/lib/state/workbench/navigation/rail.ts';
@@ -260,5 +264,19 @@ describe('the rail list a drag or a Hide writes', () => {
         expect(pages(railHidden(rail, 'x'))).toEqual(['a', 'b', 'c', 'd']);
         const twice = [entry('a'), { ...entry('a'), label: 'second' }];
         expect(railHidden(twice, 'a')).toEqual([{ ...entry('a'), label: 'second' }]);
+    });
+});
+
+describe("a page button's right-click menu", () => {
+    it('offers Reset to its arrangement between Hide and Settings once the page is made', () => {
+        expect(railMenu(true).map((item) => [item.id, item.label])).toEqual([
+            [RAIL_HIDE, catalog['ui.rail_hide']],
+            [RAIL_RESET, catalog['ui.rail_reset']],
+            [RAIL_SETTINGS, catalog['ui.rail_settings']]
+        ]);
+    });
+
+    it('offers no reset for a button never pressed, whose page is not made yet', () => {
+        expect(railMenu(false).map((item) => item.id)).toEqual([RAIL_HIDE, RAIL_SETTINGS]);
     });
 });

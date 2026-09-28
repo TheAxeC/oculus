@@ -12,18 +12,32 @@
     // rail redraws from the config the watcher pushes back. A write the server refuses leaves the
     // rail as it was and says why in a notification, whose action is the Settings view with its
     // rail list in view, which is also what Settings in the same menu shows.
+    //
+    // Reset to its arrangement in the same menu makes the button's saved page again from the
+    // button's arrangement, after a confirm naming the page and then the question closing each of
+    // its tabs holding unsaved text asks, one at a time; a no to any leaves the page as it was. The
+    // page keeps its id, so a page showing it keeps showing it.
 
     import RailFoot from './RailFoot.svelte';
     import RailList from './RailList.svelte';
     import RailPages from './RailPages.svelte';
+    import CloseQuestion from '$lib/ui/controls/CloseQuestion.svelte';
     import {
         RAIL_HIDE,
+        RAIL_RESET,
         railHidden,
         railMoved,
         railStop,
         type Bookmark
     } from '$lib/shell/rail/rail';
-    import { railPageViews } from '$lib/state/workbench/navigation/pages';
+    import {
+        questionFor,
+        railPageViews,
+        resetAfterAsking,
+        resetAsk,
+        tabNameOf,
+        type Question
+    } from '$lib/state/workbench/navigation/pages';
     import {
         SETTINGS_VIEW,
         type RailEntry,
@@ -34,8 +48,10 @@
     import { useState } from '$lib/state/client/use';
 
     const {
-        layout: { currentPage, openRailPage, openView, pages: allPages },
-        notices: { post }
+        layout: { currentPage, openRailPage, openView, pages: allPages, resetPage },
+        notices: { post },
+        registry: { viewFor },
+        ui: { unsaved }
     } = useState();
 
     type Props = {
@@ -93,16 +109,48 @@
         void write((rail) => railMoved(rail, page, before));
     }
 
+    /** The question a reset is waiting on, or null while none is. */
+    let question: Question | null = $state(null);
+    const ask = questionFor((held) => (question = held));
+
     /**
-     * A choice of a page button's right-click menu: Hide takes its entry out of `rail:`, and
-     * Settings shows the Settings view with its rail list in view.
+     * A choice of a page button's right-click menu: Hide takes its entry out of `rail:`, Reset asks
+     * before the button's page is made again from its arrangement, and Settings shows the Settings
+     * view with its rail list in view.
      */
     function menuPick(page: string, pick: string): void {
         if (pick === RAIL_HIDE) {
             void write((rail) => railHidden(rail, page));
             return;
         }
+        if (pick === RAIL_RESET) {
+            askReset(page);
+            return;
+        }
         openSettings();
+    }
+
+    /**
+     * Ask before the page of one button is made again from the button's arrangement, and then about
+     * each of its tabs holding unsaved text.
+     */
+    function askReset(key: string): void {
+        const entry = pages.find((one) => one.page === key);
+        const all = allPages();
+        const made = all.find((page) => page.rail === key);
+        if (entry === undefined || made === undefined) return;
+        const words = resetAsk(all, [made], [], made);
+        void resetAfterAsking(
+            all,
+            words,
+            [made],
+            unsaved,
+            (instance) => tabNameOf(instance, viewFor),
+            ask,
+            () => {
+                resetPage(made.id, entry);
+            }
+        );
     }
 
     /**
@@ -261,6 +309,13 @@
         <RailFoot {saved} {stopIndex} {ringKeys} {onsearch} {onupdate} />
     </div>
 </nav>
+
+<CloseQuestion
+    message={question?.message ?? null}
+    detail={question?.detail}
+    onconfirm={() => question?.answer(true)}
+    oncancel={() => question?.answer(false)}
+/>
 
 <style>
     /* VS Code's activity bar: the bar's width, no padding, the items flush one under the next, the

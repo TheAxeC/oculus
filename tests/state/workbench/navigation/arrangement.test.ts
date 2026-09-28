@@ -29,6 +29,8 @@ import {
 } from '../layout/layout-fixture.ts';
 import { present } from '../../../fixtures/present.ts';
 import { createClientState, type ClientState } from '../../../fixtures/client.ts';
+import { registerAll, registerCollections } from '../../../../src/routes/views.ts';
+import { collectionKeys } from '../../../../src/lib/data/sources/config.ts';
 
 let client: ClientState;
 let currentPage: ClientState['layout']['currentPage'];
@@ -81,16 +83,41 @@ describe('parseArrangement', () => {
             'transcript',
             'timeline',
             'session-detail',
-            'agents',
             'changes',
+            'agents',
             'files'
         ]);
     });
 
-    it('reads the sessions arrangement as three columns, its Files tab following the selection', () => {
-        const made = present(parseArrangement(real()), 'arrangement');
-        const root = made.root;
-        expect(root.kind === 'split' ? root.sizes : []).toEqual([0.22, 0.5, 0.28]);
+    it('reads the sessions arrangement as saved, its Files tab following the selection', () => {
+        const root = present(parseArrangement(real()), 'arrangement').root;
+        // The shape is written out in full: a row of the working area and the right pane, the
+        // working area a row of the list and a column of the terminal over the transcript.
+        const shape = (node: typeof root): unknown =>
+            node.kind === 'split'
+                ? { dir: node.dir, sizes: node.sizes, children: node.children.map(shape) }
+                : node.kind === 'pane'
+                  ? node.tabs.map((tab) => tab.view)
+                  : null;
+        expect(shape(root)).toEqual({
+            dir: 'row',
+            sizes: [0.7, 0.3],
+            children: [
+                {
+                    dir: 'row',
+                    sizes: [0.28, 0.72],
+                    children: [
+                        ['session-list'],
+                        {
+                            dir: 'col',
+                            sizes: [0.6, 0.4],
+                            children: [['terminal'], ['transcript', 'timeline']]
+                        }
+                    ]
+                },
+                ['session-detail', 'changes', 'agents', 'files']
+            ]
+        });
         const files = panes(root)
             .flatMap(({ pane: node }) => node.tabs)
             .find((tab) => tab.view === 'files');
@@ -138,7 +165,32 @@ describe('parseArrangement', () => {
         expect(parseArrangement(null)).toBe(null);
         expect(parseArrangement({ main: { kind: 'pane', view: 'timeline' } })).toBe(null);
         expect(parseArrangement({ root: { kind: 'box' } })).toBe(null);
-        expect(parseArrangement({ root: { kind: 'pane', view: [] } })).toBe(null);
+        expect(parseArrangement({ root: { kind: 'pane', view: 7 } })).toBe(null);
+        expect(parseArrangement({ root: { kind: 'pane' } })).toBe(null);
+    });
+
+    it('makes a pane naming an empty list an empty pane, the one opened files land in', () => {
+        const made = present(
+            parseArrangement({
+                root: {
+                    kind: 'split',
+                    dir: 'row',
+                    sizes: [0.5, 0.5],
+                    children: [
+                        { kind: 'pane', view: 'files' },
+                        { kind: 'pane', view: [] }
+                    ]
+                }
+            }),
+            'arrangement'
+        );
+        expect(checkWorkbench(made)).toEqual([]);
+        expect(panes(made.root).map(({ pane: node }) => [node.tabs.length, node.active])).toEqual([
+            [1, panes(made.root)[0].pane.tabs[0].id],
+            [0, '']
+        ]);
+        // An empty name is still no view, so a list holding one refuses the arrangement.
+        expect(parseArrangement({ root: { kind: 'pane', view: [''] } })).toBe(null);
     });
 
     it('refuses a split whose sizes do not add up, or take a child under the minimum', () => {
@@ -175,6 +227,100 @@ describe('parseArrangement', () => {
         expect(parseArrangement(bad({ dir: 'sideways' }))).toBe(null);
         expect(parseArrangement(bad({ sizes: ['half', 'half'] }))).toBe(null);
         expect(parseArrangement(bad({ children: 'two' }))).toBe(null);
+    });
+});
+
+describe('the shipped pages', () => {
+    const shipped = loadConfig(engineDir()).config;
+
+    /** Every tab of a rail page's arrangement, pane by pane: a view id, or a document's path. */
+    function tabsOfPage(key: string): string[][] {
+        const entry = railPages(shipped).find((one) => one.page === key);
+        const made = present(parseArrangement(entry?.node), 'arrangement');
+        return panes(made.root).map(({ pane: node }) =>
+            node.tabs.map((tab) => {
+                const path = (tab.state as { path?: unknown } | null)?.path;
+                return tab.view === 'doc' && typeof path === 'string' ? `doc:${path}` : tab.view;
+            })
+        );
+    }
+
+    it('draws the eleven buttons in the ruled order, Incoming new and Info/more named System', () => {
+        expect(railPages(shipped).map((entry) => `${entry.label}:${entry.page}`)).toEqual([
+            'Focus:focus',
+            'Sessions:sessions',
+            'Projects:projects',
+            'Incoming:incoming',
+            'Explorer:explorer',
+            'Academic Life:academic',
+            'Pillars:pillars',
+            'References:references',
+            'Present:present',
+            'System:info',
+            'Views and Settings:views'
+        ]);
+    });
+
+    it('makes every page as the rulings lay it out, pane by pane', () => {
+        expect(
+            Object.fromEntries(
+                railPages(shipped).map((entry) => [entry.page, tabsOfPage(entry.page)])
+            )
+        ).toEqual({
+            focus: [['focus'], ['hpc', 'usage']],
+            sessions: [
+                ['session-list'],
+                ['terminal'],
+                ['transcript', 'timeline'],
+                ['session-detail', 'changes', 'agents', 'files']
+            ],
+            projects: [['projects', 'coauthor', 'archive']],
+            incoming: [['inbox', 'radar', 'leads', 'linkedin'], ['calendar']],
+            explorer: [['files', 'repositories', 'search'], []],
+            academic: [['funding', 'events', 'education', 'applications', 'joint-work', 'tasks']],
+            pillars: [['pillars', 'domains', 'map']],
+            references: [['venues', 'data', 'code', 'statements']],
+            present: [['present']],
+            info: [
+                [
+                    'status',
+                    'findings',
+                    'audit',
+                    'history',
+                    'config',
+                    'gallery',
+                    'help',
+                    'doc:docs/HPC-UTwente-howto.md'
+                ],
+                ['doc:docs/RESEARCH-APPROACH.md', 'doc:docs/AGENT-APPROACH.md', 'memories']
+            ],
+            views: [['catalogue'], ['settings', 'account-setup'], ['pages']]
+        });
+    });
+
+    it('puts every view with a place, every collection and every hub document on exactly one page', () => {
+        const client = createClientState();
+        registerAll(client.registry);
+        registerCollections(client.registry, collectionKeys(shipped));
+        const placed = client.registry
+            .views()
+            .filter((view) => view.group !== '')
+            .map((view) => view.id);
+        const collections = (shipped.collections as { key: string }[]).map((entry) => entry.key);
+        const documents = (shipped.docs as { path: string }[]).map((entry) => `doc:${entry.path}`);
+        const wanted = [...new Set([...placed, ...collections, ...documents])].sort();
+        const seen = railPages(shipped).flatMap((entry) =>
+            [...new Set(tabsOfPage(entry.page).flat())].map((tab) => ({ tab, page: entry.page }))
+        );
+        const pagesOf = (tab: string): string[] =>
+            seen.filter((one) => one.tab === tab).map((one) => one.page);
+        expect(wanted).toHaveLength(50);
+        expect(wanted.filter((tab) => pagesOf(tab).length !== 1)).toEqual(['files']);
+        // The one entry on two pages is the Files view: Explorer's own and the Sessions page's
+        // tab that follows the selected session.
+        expect(pagesOf('files')).toEqual(['sessions', 'explorer']);
+        // Nothing sits on a page that is not one of the entries.
+        expect(seen.filter((one) => !wanted.includes(one.tab))).toEqual([]);
     });
 });
 

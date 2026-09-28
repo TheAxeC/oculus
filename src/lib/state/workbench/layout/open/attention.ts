@@ -1,6 +1,7 @@
 // Layer 2, client state. What the reader last acted in, which is what an operation naming no page
-// and no pane means: the instance each page was left on, the page of the pane last pressed, and the
-// pane the last openBeside made.
+// and no pane means: the instance each page was left on, the page of the pane last pressed, the
+// pane the last openBeside made, and the tabs of views opened for something each page received,
+// whose pane the next such view lands in (layout/open/landing.ts).
 //
 // None of it is saved. A reload opens a view in the first pane, which is where an arrangement with
 // one pane puts it anyway, and nothing about the arrangement itself is lost; keeping it out of the
@@ -51,6 +52,13 @@ export type Attention = {
     rememberBeside: (page: string, held: Beside) => void;
     /** The pane the last openBeside made, while a view asked for beside one is still beside it. */
     besidePath: (tree: Layout, page: string) => number[] | null;
+    /** The tabs of views opened for something a page received, oldest first. */
+    received: (page: string) => string[];
+    /**
+     * Remember a tab of a view opened for something a page received. The ids no longer on the
+     * page's tree are let go at the same time, so the list holds what the page still shows.
+     */
+    rememberReceived: (page: string, id: string, tree: Layout) => void;
 };
 
 export function createAttention(access: LayoutAccess, where: Touched = { page: null }): Attention {
@@ -62,6 +70,9 @@ export function createAttention(access: LayoutAccess, where: Touched = { page: n
 
     /** The pane the last openBeside made on each page, keyed by page id. */
     const lastBeside = new Map<string, Beside>();
+
+    /** The tabs of views opened for something each page received, oldest first, by page id. */
+    const lastReceived = new Map<string, string[]>();
 
     function active(page?: string): string | null {
         const held = access.at(page);
@@ -108,12 +119,14 @@ export function createAttention(access: LayoutAccess, where: Touched = { page: n
         // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- a Map here would change the shape every reader of this record depends on
         delete lastActive[id];
         lastBeside.delete(id);
+        lastReceived.delete(id);
     }
 
     function clear(): void {
         // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- a Map here would change the shape every reader of this record depends on
         for (const id of Object.keys(lastActive)) delete lastActive[id];
         lastBeside.clear();
+        lastReceived.clear();
     }
 
     function beside(page: string): Beside | undefined {
@@ -139,6 +152,17 @@ export function createAttention(access: LayoutAccess, where: Touched = { page: n
         return made.path;
     }
 
+    function received(page: string): string[] {
+        return [...(lastReceived.get(page) ?? [])];
+    }
+
+    function rememberReceived(page: string, id: string, tree: Layout): void {
+        const kept = (lastReceived.get(page) ?? []).filter(
+            (held) => held !== id && findInstance(tree, held) !== null
+        );
+        lastReceived.set(page, [...kept, id]);
+    }
+
     return {
         active,
         remembered,
@@ -150,6 +174,8 @@ export function createAttention(access: LayoutAccess, where: Touched = { page: n
         clear,
         beside,
         rememberBeside,
-        besidePath
+        besidePath,
+        received,
+        rememberReceived
     };
 }

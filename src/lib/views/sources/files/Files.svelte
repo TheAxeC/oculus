@@ -1,14 +1,13 @@
 <script module lang="ts">
-    // Layer 3, view registration. The file browser sits in the catalogue's Sources group, after the
-    // collections the configuration names.
+    // Layer 3, view registration. The file browser opens the Explorer page's group.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
 
     export const registration: ViewRegistration = {
         id: 'files',
         label: 'views.files',
         glyph: 'views.files_glyph',
-        group: 'sources',
-        order: 4
+        group: 'explorer',
+        order: 0
     };
 </script>
 

@@ -8,69 +8,100 @@
 # The rail: one button per page, drawn in this order, the digits 1 to 9 showing the first nine. `label` is the button's words, `glyph` a name in config/catalogs/glyphs.yml, and `page` a key of `arrangements:` below, which is what the page is first made from and what the saved page stays tied to, so a button renamed keeps its page. A page key named twice, or naming no arrangement, draws no second button and is a finding. The Settings view edits this list.
 rail:
   - { label: "Focus", glyph: compass, page: focus }
+  - { label: "Sessions", glyph: live, page: sessions }
   - { label: "Projects", glyph: paper, page: projects }
+  - { label: "Incoming", glyph: email, page: incoming }
+  - { label: "Explorer", glyph: folder, page: explorer }
   - { label: "Academic Life", glyph: scout, page: academic }
   - { label: "Pillars", glyph: pillar, page: pillars }
-  - { label: "Feeds", glyph: litwatch, page: feeds }
   - { label: "References", glyph: venue, page: references }
   - { label: "Present", glyph: poster, page: present }
-  - { label: "Explorer", glyph: folder, page: explorer }
-  - { label: "Sessions", glyph: live, page: sessions }
-  - { label: "Info/more", glyph: info, page: info }
-  - { label: "Calendar", glyph: calendar, page: calendar }
-  - { label: "Inbox", glyph: inbox, page: inbox }
+  - { label: "System", glyph: info, page: info }
   - { label: "Views and Settings", glyph: sliders, page: views }
 
 
-# The view catalogue's groups, in the order the Views view lists them. A view names its group and position in its registration. A group with no registered views is not listed. A group holding more than four entries, its views and its documents together, is reached only by its `chord`; the others are counted under `direct_chord`. `glyph` is the group heading's glyph name, and `chord` is its optional one-letter keyboard prefix.
+# The view catalogue's groups, in the order the Views view lists them: one group per rail page, keyed by the page's arrangement key and labelled with its button's words, so the catalogue lists each page's views under the page they sit on, and the `help` group, which is no page: the manual, the photo wall and the hub's documents, drawn on the System page, gathered under a letter of their own. A view names its group and position in its registration, and a document of `docs:` below names its group. A group with no registered views is not listed. `glyph` is the group heading's glyph name, one no view of the group carries, so the heading does not read as one of its entries, and `chord` its one-letter keyboard prefix: the letter, then a digit for the entry's place in the group, its views first and its documents after them. A group with no `chord` is counted under `direct_chord`.
 nav_groups:
-  boards: { label: "Boards" }
-  structure: { label: "Pillars", glyph: pillar }
+  focus: { label: "Focus", glyph: focus, chord: f }
   sessions: { label: "Sessions", glyph: live, chord: m }
-  academic: { label: "Academic life", glyph: scout, chord: c }
-  sources: { label: "Sources", glyph: folder, chord: s }
-  feeds: { label: "Feeds", glyph: scout }
-  personal: { label: "Personal", glyph: memories, chord: p }
-  system: { label: "System", glyph: audit, chord: y }
+  projects: { label: "Projects", glyph: paper, chord: p }
+  incoming: { label: "Incoming", glyph: email, chord: e }
+  explorer: { label: "Explorer", glyph: folder, chord: s }
+  academic: { label: "Academic Life", glyph: scout, chord: c }
+  pillars: { label: "Pillars", glyph: book, chord: l }
+  references: { label: "References", glyph: venue_dist, chord: r }
+  present: { label: "Present", glyph: conference, chord: t }
+  info: { label: "System", glyph: info, chord: y }
+  help: { label: "Help", glyph: page, chord: h }
+  views: { label: "Views and Settings", glyph: settings, chord: w }
 
 
-# The one-letter prefix that reaches the views of the catalogue's groups of four entries or fewer by number: the letter, then a digit for the view's place among them. The groups above name their own prefixes; a value that is not one lowercase letter means no such prefix, and those views are reached from the catalogue alone.
+# The one-letter prefix that reaches, by number, the views of the catalogue's groups that name no `chord` and the views no group holds: the letter, then a digit for the view's place among them. A value that is not one lowercase letter means no such prefix, and those views are reached from the catalogue alone.
 direct_chord: v
 
 
-# What each rail page is first made from, by the key its `rail:` entry names. After that first press the page is the one the reader arranged, kept in the saved layout. An arrangement carries `root`, the page's one tree. A node is `{ kind: split, dir, sizes, children }` or `{ kind: pane, view }`, where `view` is one view id or a list of them (the tabs of that pane), and a tab of the list may be `{ view, state }` to open it in a state of its own, as the sessions page's Files tab follows the selected session with `state: { follow: true }`. It is the layout tree of DESIGN.md with the instance ids left out, since those are minted fresh when the page is made. An arrangement that does not add up makes no page.
+# What each rail page is first made from, by the key its `rail:` entry names, and what Reset gives it back. After that first press the page is the one the reader arranged, kept in the saved layout. An arrangement carries `root`, the page's one tree. A node is `{ kind: split, dir, sizes, children }` or `{ kind: pane, view }`, where `view` is one view id or a list of them (the tabs of that pane), and a tab of the list may be `{ view, state }` to open it in a state of its own, as the sessions page's Files tab follows the selected session with `state: { follow: true }`. `view: []` is an empty pane, the one a view opened for something (a project, a document, a file) lands in. It is the layout tree of DESIGN.md with the instance ids left out, since those are minted fresh when the page is made. An arrangement that does not add up makes no page.
 arrangements:
   focus:
-    root: { kind: pane, view: focus }
-  projects:
-    root: { kind: pane, view: [projects, coauthor, archive] }
-  academic:
-    root: { kind: pane, view: [funding, events, education, applications, joint-work, tasks] }
-  pillars:
-    root: { kind: pane, view: [pillars, domains, map] }
-  feeds:
-    root: { kind: pane, view: [radar, leads, linkedin] }
-  references:
-    root: { kind: pane, view: [venues, data, code, statements] }
-  present:
-    root: { kind: pane, view: present }
-  explorer:
-    root: { kind: pane, view: [files, repositories, search] }
+    root:
+      kind: split
+      dir: row
+      sizes: [0.7, 0.3]
+      children:
+        - { kind: pane, view: focus }
+        - { kind: pane, view: [hpc, usage] }
   sessions:
     root:
       kind: split
       dir: row
-      sizes: [0.22, 0.5, 0.28]
+      sizes: [0.7, 0.3]
       children:
-        - { kind: pane, view: session-list }
-        - { kind: pane, view: [terminal, transcript, timeline, session-detail, agents] }
-        - { kind: pane, view: [changes, { view: files, state: { follow: true } }] }
+        - kind: split
+          dir: row
+          sizes: [0.28, 0.72]
+          children:
+            - { kind: pane, view: session-list }
+            - kind: split
+              dir: col
+              sizes: [0.6, 0.4]
+              children:
+                - { kind: pane, view: terminal }
+                - { kind: pane, view: [transcript, timeline] }
+        - { kind: pane, view: [session-detail, changes, agents, { view: files, state: { follow: true } }] }
+  projects:
+    root: { kind: pane, view: [projects, coauthor, archive] }
+  incoming:
+    root:
+      kind: split
+      dir: row
+      sizes: [0.6, 0.4]
+      children:
+        - { kind: pane, view: [inbox, radar, leads, linkedin] }
+        - { kind: pane, view: calendar }
+  explorer:
+    root:
+      kind: split
+      dir: row
+      sizes: [0.4, 0.6]
+      children:
+        - { kind: pane, view: [files, repositories, search] }
+        - { kind: pane, view: [] }
+  academic:
+    root: { kind: pane, view: [funding, events, education, applications, joint-work, tasks] }
+  pillars:
+    root: { kind: pane, view: [pillars, domains, map] }
+  references:
+    root: { kind: pane, view: [venues, data, code, statements] }
+  present:
+    root: { kind: pane, view: present }
   info:
-    root: { kind: pane, view: [status, findings, audit, history, usage, help] }
-  calendar:
-    root: { kind: pane, view: calendar }
-  inbox:
-    root: { kind: pane, view: inbox }
+    root:
+      kind: split
+      dir: row
+      sizes: [0.6, 0.4]
+      children:
+        - { kind: pane, view: [status, findings, audit, history, config, gallery, help, { view: doc, state: { id: docs/HPC-UTwente-howto.md, path: docs/HPC-UTwente-howto.md, label: "HPC how-to" } }] }
+        - { kind: pane, view: [{ view: doc, state: { id: docs/RESEARCH-APPROACH.md, path: docs/RESEARCH-APPROACH.md, label: "Research approach" } }, { view: doc, state: { id: docs/AGENT-APPROACH.md, path: docs/AGENT-APPROACH.md, label: "Agent approach" } }, memories] }
   views:
     root:
       kind: split
@@ -82,7 +113,7 @@ arrangements:
           dir: col
           sizes: [0.6, 0.4]
           children:
-            - { kind: pane, view: settings }
+            - { kind: pane, view: [settings, account-setup] }
             - { kind: pane, view: pages }
 
 
@@ -145,6 +176,6 @@ map_label_mode: short        # Map tab nodes
 
 # Hub documents in the view catalogue: one entry inside its group, listed after the group's views, opening the `doc` view over api/docs. `path` is relative to the research hub, `group` is a key of `nav_groups` above, and `label` is the tab's words. A path with no file there draws the view's own missing line.
 docs:
-  - { label: "Research approach", path: docs/RESEARCH-APPROACH.md, group: personal }
-  - { label: "Agent approach",    path: docs/AGENT-APPROACH.md,    group: personal }
-  - { label: "HPC how-to",        path: docs/HPC-UTwente-howto.md, group: system }
+  - { label: "Research approach", path: docs/RESEARCH-APPROACH.md, group: help }
+  - { label: "Agent approach",    path: docs/AGENT-APPROACH.md,    group: help }
+  - { label: "HPC how-to",        path: docs/HPC-UTwente-howto.md, group: help }

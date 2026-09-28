@@ -82,7 +82,7 @@ tests/views/personal/memories.test.ts :: reads a size that is not two whole posi
 tests/views/personal/memories.test.ts :: reads an answer whose pictures are not a list as a failed read, not as an empty wall | the case draws nothing and asserts over await answered('mem-01.png')
 tests/views/personal/memories.test.ts :: reads an item with no name as a failed read, not as a wall without it | the case draws nothing and asserts over await answered(['names.png', { name: 'one.png', width: 10, h
 tests/views/personal/memories.test.ts :: refuses a file larger than the wall takes before it reads one | the case draws nothing and asserts over source
-tests/views/personal/memories.test.ts :: sits in the Personal group and is listed in the view catalogue | the case draws nothing and asserts over registered
+tests/views/personal/memories.test.ts :: sits in the Help group after the manual and is listed in the view catalogue | the case draws nothing and asserts over registered
 tests/views/sources/note.test.ts :: deletes no note and closes no tab when one is left | the case draws nothing and asserts over fn('leave')
 tests/views/sources/note.test.ts :: is closed by the removal, so no tab is left drawing a note that is gone | the case draws nothing and asserts over first
 tests/views/sources/note.test.ts :: is one instance per note, so opening the same note twice is one tab | the case draws nothing and asserts over first
