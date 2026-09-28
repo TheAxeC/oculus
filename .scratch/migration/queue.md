@@ -5,6 +5,8 @@ In flight:
 - Q79a (the library audit's server fixes): building.
 - Q79c (the library audit's page fixes, with the 11 raw buttons): building.
 Queued, in order:
+- Q100 (the Calendar's fixed strips cover the rows under them over a wallpaper, Z42 (a)).
+- Q101 (each Terminal tab a terminal panel of its own, Z40 (d), once Q99 has landed).
 - Q79d, Q87 and Q81 (the shared helpers; the import-graph checks on dependency-cruiser; menus, context menus, tooltips and dialogs on bits-ui).
 - Q79b (the tests, runs alone).
 - Q96 and Q88 (the Rail section's field labels and its icon dropdown on bits-ui, once Q81 has landed; right-click menus wherever vscode.dev gives one).
