@@ -37,7 +37,7 @@ entries:
     url: "https://example.org/jobs/meridian-postdoc"
 
   # The title carries markup on purpose, so the demo hub shows what the sanitiser does to it: the
-  # card draws it as words, with the script gone and the handler off the image.
+  # card draws the words and the image, with the script gone and the handler off the image.
   - title: "Attention <script>alert(1)</script> <img src=x onerror=alert(2)> is all you need"
     inst: "Vector Hall"
     country: "NL"
