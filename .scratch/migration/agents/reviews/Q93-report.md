@@ -190,3 +190,59 @@ Premise-4 comments:
   - I did not change the check, since fixing it may surface more duplicates.
 - **Leftover history comments, not changed.** `src/lib/server/machine/pty/channel.ts:371` and `src/lib/views/sessions/terminal/Terminal.svelte:301` mention "the first Chrome check", and `tests/state/workbench/drag.test.ts:9` says "after this package lands". These are history-style comments that are not about the browser suite.
 - **Line numbers in `allow-duplication.txt`.** The "the same 8 lines at X and Y" reasons now point at shifted lines in the stripped files. The check reads the marks, not these numbers, and passes.
+
+
+## Repair round 1 (the builder's report, 2026-09-28)
+
+NOT done: the verify runner does not end `verify: 6 commands passed`. It stops at command 6 with `RED: LC_ALL=C grep -rna '[^ -~]' src tests`, `exit status: 1`. The cause is in the state file's verify list, which I may not edit, and not in my tree. The fix is to quote that list item in `orchestrator-state.md` (for example `- "! LC_ALL=C grep -rna '[^ -~]' src tests"`); I did not change it. Every item of the round is built, and the first five verify commands pass.
+
+Why command 6 fails:
+- The list item is written `- ! LC_ALL=C grep -rna '[^ -~]' src tests`. In YAML a leading `!` is a tag, so the `!` is dropped when the list is read. This command shows it: `python3 -c "...yaml.safe_load(block)['verify'][5]"` prints `"LC_ALL=C grep -rna '[^ -~]' src tests"`.
+- The runner therefore runs the bare grep. When the tree holds no non-ASCII byte, grep finds nothing and exits 1, which the runner reads as red.
+- On this tree, `LC_ALL=C grep -rna '[^ -~]' src tests` prints nothing (exit 1), and the intended form, `bash -o pipefail -c "! LC_ALL=C grep -rna '[^ -~]' src tests"`, exits 0.
+
+| Item | State | File and line | Proving command |
+|---|---|---|---|
+| 1. The "each case names the change that turns it red" sentence deleted | DONE | `tests/views/sources/repositories/repositories.test.ts:4`; `tests/state/sources/repositories/repositories.test.ts:109-110`; `tests/state/sources/fs.test.ts:544-546`; `tests/state/sources/explorer.test.ts:73`; `tests/views/sources/files/files.test.ts:8` | `npx vitest run` over tests/state/sources, tests/views/sources and the other touched files: `Test Files 52 passed (52)`, `Tests 988 passed (988)` |
+| 2. Two browser-suite pointers rewritten to "needs a DOM and is not run here" | DONE | `tests/state/sources/files.test.ts:6-7`; `tests/routes/page.test.ts:6-7` | same run |
+| 3. "and the browser specs" dropped | DONE | `.prettierignore:12` now ends "tests/data/demo-hub.test.ts reads." | `npm run format:check` inside verify: `All matched files use Prettier code style!` |
+| 4. Each "checked in a browser" phrase rewritten to "needs a DOM and is not run here" | DONE | `tests/shell/panes/splitview.test.ts:8`; `tests/shell/panes/paneview.test.ts:7`; `tests/shell/workbench.test.ts:10`, `:288-289`; `tests/ui/primitives.test.ts:7`; `tests/views/boards/focus.test.ts:9-10`, `:219`; `tests/views/boards/projects.test.ts:9`, `:588`; `tests/state/workbench/drag.test.ts:9`, which also lost "after this package lands" | 52-file run above; comment-width test passes in it |
+| 5. "The first Chrome check" history removed | DONE | `src/lib/server/machine/pty/channel.ts:370-371` now reads "...can finish in either order, which types "ceho" for "echo"."; `src/lib/views/sessions/terminal/Terminal.svelte:301` now reads "...reads it after the body has changed, where reading it at once would read the old palette." | `npm run check` inside verify: `COMPLETED 1427 FILES 0 ERRORS 0 WARNINGS` |
+| 6. `allow-duplication.txt` line numbers set to where each shared window now starts | DONE, with a count that differs from the round's (below) | `tests/checks/tree/allow-duplication.txt`: 293 reasons renumbered | see below |
+| 7. `meaningful()` no longer opens a block comment at a `/*` inside a `//` comment or a string; one unit case added | DONE | `tests/checks/tree/duplication.test.ts`: new `blockOpens(line)` above `meaningful()`, called where `line.indexOf('/*')` was; new case "opens no block comment at a /* inside a line comment or a string" | `npx vitest run tests/checks/tree/duplication.test.ts`: `Tests 10 passed (10)` |
+| 8. Kept as built | no change | `demo/hpc` and `demo/sessions` deletion, `tests/fixtures/scratch.ts`, the colours `plantScratch` fold | |
+
+**Item 6 in detail:**
+- I counted 293 entries to renumber, where the round says 82 of 663 are off.
+  - To find where each window starts, I ported `meaningful()` and `copies()` to Python and ran them over the tree.
+  - Checked by hand on one entry: `src/lib/state/sources/fs.ts` window start at 126, which matches the `extensionOf` body there.
+  - By that port, 359 of 663 reasons were off: 293 in entries that touch a file this step changed, and 66 in entries whose files it did not.
+  - On main's tree the same port finds 375 of 666 off. Most of these numbers were already stale before this step.
+- I renumbered all 293 entries that touch a changed file. The 66 in untouched files are left as they are, since the round limits item 6 to changed files.
+- After the change, the same port finds 0 off among entries that touch changed files.
+- No mark, pair or entry changed. `diff` of main's list (minus the four browser lines) against mine, with `at N and N` in place of the numbers, prints nothing. The file keeps main's missing trailing newline.
+
+**Item 7 in detail:**
+- The new case fails without the fix. I ran the old `meaningful()` body with `line.indexOf("/*")` over the case's four lines through `node`, and it returns `[]`.
+- With the fix it returns lines 2, 3 and 4.
+- `npx vitest run tests/checks/tree/duplication.test.ts` passes, 10 tests, so no new duplicate surfaced.
+
+**Report corrections (taken from the round):**
+- The 80-case drop is all in the four deleted test files: `revert-check.test.ts` 41, `revert-base.test.ts` 17 plus its loop cases, `tests/browser/shell/layer.test.ts` 14, `revert-anchors.test.ts` 7. No kept file lost a case.
+- The lock file's 2 remaining playwright lines are vitest's own optional peer entries; the brief's expected 0 was wrong.
+
+`grep -rn -E '^[[:space:]]*// revert:' src tests bin` prints nothing (exit 1).
+
+Verify lines, verbatim. The runner's full output is long; these are its summary lines, from `grep -a -E 'Test Files|^      Tests|Duration|COMPLETED|built in|All matched|RED:|exit status|verify:'` over the captured log:
+```
+ Test Files  339 passed (339)
+      Tests  5301 passed (5301)
+   Duration  109.44s (transform 15.92s, setup 0ms, import 117.17s, tests 274.58s, environment 93ms)
+1790557312298 COMPLETED 1427 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+✓ built in 1.95s
+✓ built in 6.20s
+All matched files use Prettier code style!
+RED: LC_ALL=C grep -rna '[^ -~]' src tests
+exit status: 1
+```
+The lint command printed no error and the runner went on to command 6, so lint passed. The unit suite's 5301 tests are the previous 5300 plus the new duplication case.

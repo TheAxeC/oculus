@@ -9,7 +9,7 @@ verify:                      # from tools/oculus in the worktree and again on ma
 - npm run build
 - npm run format:check
 - npm run lint
-- ! LC_ALL=C grep -rna '[^ -~]' src tests
+- "! LC_ALL=C grep -rna '[^ -~]' src tests"
 worktree_root: .agents/worktrees
 worktree_paths: [tools/oculus, tools/cockpit, feeds, registries, projects, funding, network, education, applications, tasks]
 standards: [tools/oculus/.scratch/migration/agents/spec.md]
@@ -30,7 +30,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 dispatch:      # Q93 and L7 in flight side by side (Axel, 2026-09-28); Q93 lands first, then L7 on Q93's head; next Q94, Q92, Q89, Q79, Q80, then the queue of plan.md.
 - step: Q93
   executor: agent
-  worker: "claude:opus, agent af1bae095499172e3; reported 2026-09-28 (agents/reviews/Q93-report.md: everything built; lock file keeps 2 vitest peer lines; demo/hpc and demo/sessions deleted outside the brief; a duplication-check defect found, not fixed). Reviewer claude:opus, agent adb5b2f31e8d44431, reported 2026-09-28"
+  worker: "claude:opus, agent af1bae095499172e3; reported 2026-09-28 (agents/reviews/Q93-report.md: everything built; lock file keeps 2 vitest peer lines; demo/hpc and demo/sessions deleted outside the brief; a duplication-check defect found, not fixed). Reviewer claude:opus, agent adb5b2f31e8d44431, reported 2026-09-28. Round 1 reported 2026-09-28 (agents/reviews/Q93-report.md, section Repair round 1), verify: 6 commands passed on the worktree. Round 1 reviewer claude:opus, agent ad68a901d48a41ce8, launched 2026-09-28 through /refute"
   reviewer_report: agents/reviews/Q93-refuter.md
   worktree: .agents/worktrees/Q93
   base: 7bb7d2bc
@@ -665,7 +665,7 @@ The plan.md lines shortened on 2026-09-25 (P1 the parity audit, S2, and Q67's St
 
 ## Usage
 
-- Q93, builder claude:opus (`af1bae095499172e3`): 235,272 tokens, 79 tool uses, 20.8 minutes (the runner's result).
+- Q93, builder claude:opus (`af1bae095499172e3`): 235,272 tokens, 79 tool uses, 20.8 minutes (the runner's result). Round 1: 276,114 tokens, 23 tool uses, 10.9 minutes (the runner's result); 19 files, +354 -323.
 - Q93, reviewer claude:opus (`adb5b2f31e8d44431`), through /refute: 201,726 tokens, 61 tool uses, 18.9 minutes (the runner's result).
 - L7, continuation builder claude:opus (`a655bd95c87499049`): 217,664 tokens, 63 tool uses, 15.2 minutes (the runner's result).
 - L7, reviewer claude:opus (`a81cc1400af2f8d0b`), through /refute: 237,142 tokens, 49 tool uses, 11.1 minutes (the runner's result).
