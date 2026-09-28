@@ -37,8 +37,8 @@ dispatch:      # Q79a, Q79c and Q99 building.
   launched: 2026-09-28
   report: agents/reviews/Q79a-report.md
   landing: not-started
-  reviewer_report: agents/reviews/Q79a-refuter.md (reviewer a4d1823055e6df7c3, running)
-  round: 0
+  reviewer_report: agents/reviews/Q79a-refuter.md (reviewer a4d1823055e6df7c3, 62 tool uses, 307k tokens, 19 min)
+  round: 1   # sent 2026-09-28 in agents/briefs/Q79a-round1-sent.md, from worktree commit 5ce7a0ec; the brief's decision 1 reversed there (neither header refused, as on the base)
   shared_paths: with Q92, server/accounts/connect/actions.ts (Q79a replaces its hand JSON answers, Q92 changes its add and remove rows: different lines, a hand merge), routes/api/(accounts)/calendar and mail route files (Q79a changes the config read and drops the origin calls, Q92 the ics provider: different lines), server/root/context.ts (Q79a may drop the config field, Q92 adds the ics account wiring: different lines), docs/diagrams (a rerun), DESIGN.md (the Auth paragraph against Q92's lines 134 and 298)
 - step: Q79c
   executor: agent
