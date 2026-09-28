@@ -38,6 +38,16 @@ dispatch:      # set 1 of the queue: Q95 + Q94 + Q97 (Z34 (a)); then Q98 + Q92 +
   report: agents/reviews/Q94-report.md
   landing: not-started
   round: 0
+- step: Q95
+  executor: agent
+  worker: claude:opus
+  session_id: a70a56accfe788e07
+  worktree: .agents/worktrees/Q95
+  base: c53af148
+  launched: 2026-09-28
+  report: agents/reviews/Q95-report.md
+  landing: not-started
+  round: 0
 ```
 
 ## The standing demands (from Axel, in force)
