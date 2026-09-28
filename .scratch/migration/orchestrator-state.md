@@ -118,7 +118,10 @@ None. Axel lifted it on 2026-09-23 with `/plan-orchestration oculus/migration` a
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is booked as its own step in `plan.md` and carried in the Booked section below, since it needs no ruling from him.
 
-None.
+- Z38, the queue's single steps regrouped (raised 2026-09-28, from Axel's question why so many steps run alone). The loop fills three slots as they free, so a set on the queue line is an order, never a barrier; a step runs alone only when it shares files with every neighbour. Checked on main at fce72d27: Q79d (the `isRecord`, `inside`, `ago` and `parseBranches` copies in `server/`, `state/` and `MergeSide.svelte`), Q87 (`tests/checks/imports/`, the duplication check, `bin/diagrams/imports.mjs`) and Q81 (`ui/menu/`, `Confirm`, `Prompt`, the palette and their 58 users) share only `package.json` and its lock, a rerun of `npm install`. Q87's line says it runs alone, which Z34 (a) no longer supports. Q79b stays alone (it rewrites 99 test files), and Q72, R2, X2 and O33 stay alone (each reads or moves the whole tree). Q88 shares rows and tabs with Q82, X3a and X3c, so it can pair only with Q96. Q84 and L4 may pair; L4's brief has no path list, so it is settled at their `/spec`. Options:
+  - (a) The queue from Q79a on reads: Q79a + Q79c + Q80; Q79d + Q87 + Q81; Q79b; Q96 + Q88; Q82 + D13 + X3c; X3a (after Q82); Q91 + Q83; Q84 + L4 (if their paths allow); Q85 + Q86; the rest unchanged; and "runs alone" struck from Q87's line.
+  - (b) The queue as it stands.
+  - Recommended: (a); it removes four single slots. (b) is the lazy option.
 
 ## Time per step (Axel asked 2026-09-27 for how it evolves with Q77; measured from each builder's transcript: each tool call from call to result, each background wait from the builder stopping to the run waking it)
 
