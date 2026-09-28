@@ -27,7 +27,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:      # set 2 of the queue: Q98 in flight; Q92 and Q89 next.
+dispatch:      # set 2 of the queue: Q98 and Q89 in flight; Q92 waits on open item Z35.
 - step: Q98
   executor: agent
   worker: claude:opus
@@ -38,6 +38,19 @@ dispatch:      # set 2 of the queue: Q98 in flight; Q92 and Q89 next.
   report: agents/reviews/Q98-report.md
   landing: not-started
   round: 0
+- step: Q89
+  executor: agent
+  worker: claude:opus
+  session_id: a905babf491651d99
+  worktree: .agents/worktrees/Q89
+  base: 36db3164
+  launched: 2026-09-28
+  report: agents/reviews/Q89-report.md
+  landing: not-started
+  round: 0
+  shared_paths:
+  - tools/oculus/HELP.md and tools/oculus/DESIGN.md: both steps correct only sentences their change makes false; Q98's are about catalog code words, the session title and the Calendar footer, Q89's about the Terminal view (HELP.md:123 and the picker), so they touch different lines and the second landing merges by hand if at all
+  - tools/oculus/docs/diagrams/: a rerun of npm run diagrams on the second landing
 ```
 
 ## The standing demands (from Axel, in force)
