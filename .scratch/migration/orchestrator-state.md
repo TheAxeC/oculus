@@ -27,7 +27,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:      # Q89 of set 2 in repair round 1 (Z39 open), Q80 of set 3 under review, Q92 of set 2 building.
+dispatch:      # Q89 of set 2 under review over round 1 (Z39 open), Q80 of set 3 in repair round 1, Q92 of set 2 building.
 - step: Q89
   executor: agent
   worker: claude:opus
@@ -38,6 +38,7 @@ dispatch:      # Q89 of set 2 in repair round 1 (Z39 open), Q80 of set 3 under r
   report: agents/reviews/Q89-report.md
   landing: not-started
   reviewer_report: agents/reviews/Q89-refuter.md (reviewer a116360e9ab07e528)
+  reviewer_report_round1: agents/reviews/Q89-refuter.md "Repair round 1, refuted" (reviewer a38991e425707e8b4, running)
   round: 1
   shared_paths:
   - tools/oculus/HELP.md and tools/oculus/DESIGN.md: both steps correct only sentences their change makes false; Q98's are about catalog code words, the session title and the Calendar footer, Q89's about the Terminal view (HELP.md:123 and the picker), so they touch different lines and the second landing merges by hand if at all
@@ -51,8 +52,8 @@ dispatch:      # Q89 of set 2 in repair round 1 (Z39 open), Q80 of set 3 under r
   launched: 2026-09-28
   report: agents/reviews/Q80-report.md
   landing: not-started
-  reviewer_report: agents/reviews/Q80-refuter.md (reviewer a59a84cb98d926c8b, running)
-  round: 0
+  reviewer_report: agents/reviews/Q80-refuter.md (reviewer a59a84cb98d926c8b, 40 tool calls, 14 min)
+  round: 1
   shared_paths: HELP.md and DESIGN.md (Q80 changes HELP.md:128 and DESIGN.md:128, other sentences than Q89's and Q98's), docs/diagrams (a rerun of npm run diagrams at landing), any whole-tree test list such as type-scale.test.ts (one added name per step)
 - step: Q92
   executor: agent
