@@ -9,6 +9,12 @@
 // (server/machine/pty/channel.ts, `#attach`), so the listener is told which of the two it was
 // handed and a reconnect repaints rather than appending a second copy of the scrollback.
 //
+// A terminal that ends leaves the `sessions` payload's list, and the store closes what showed it:
+// every Terminal tab pinned to it, on any page, and, when the selection showed it (the terminal
+// selected, or the one the selected session runs in), the tabs that follow the selection, with a
+// terminal selection cleared and a session selection kept. The workbench is handed in by
+// state/client/context.ts, since a hidden page mounts no view that could notice.
+//
 // Every action is a write in DESIGN.md's "Auth" sense, since it runs a process on the machine: the
 // POST carries the token state/client/writes.svelte.ts holds, and the socket carries it in its
 // subscribe message, which is what lets that socket send input at all.
@@ -213,6 +219,45 @@ export function composerTarget(
     );
 }
 
+/**
+ * The terminals that have ended, as one `sessions` message says: those not in its list that an
+ * earlier message listed, and, on the first message the page hears, those a tab or the selection
+ * holds, which ended while the page was away. A terminal started from this page after the first
+ * message and not listed yet has not ended, since no message listed it. A message with no list
+ * says nothing about any terminal.
+ */
+export function endedTerminals(
+    before: ReadonlySet<string>,
+    now: readonly string[] | null,
+    first: boolean,
+    held: readonly string[]
+): string[] {
+    if (now === null) return [];
+    const listed = new Set(now);
+    const known = first ? [...before, ...held] : [...before];
+    return [...new Set(known)].filter((id) => !listed.has(id));
+}
+
+/** One Terminal tab of any page, as the layout holds it. */
+export type TerminalTab = { id: string; page: string; state: unknown };
+
+/**
+ * What the terminals store needs of the workbench to close the tabs of a terminal that ended: the
+ * Terminal tabs of every page (a hidden page mounts no view, so no view can be the one that
+ * notices), the terminal a tab's state pins, the layout's close, and the selection as it stands, a
+ * terminal id, a session id or null.
+ */
+export type TerminalTabs = {
+    tabs: () => TerminalTab[];
+    pinned: (state: unknown) => string | null;
+    close: (id: string, page: string) => void;
+    selected: () => string | null;
+    select: (id: string | null) => void;
+};
+
+/** The terminal the selection shows, and the selection it was resolved from. */
+type Followed = { terminal: string; from: string };
+
 /** The terminals one client owns, and the actions it runs on them. */
 export type TerminalsStore = {
     terminals: () => Terminal[];
@@ -261,8 +306,87 @@ export type TerminalsStore = {
 export function createTerminals(
     entities: EntitiesStore,
     socket: SocketStore,
-    writes: WritesStore
+    writes: WritesStore,
+    workbench?: TerminalTabs
 ): TerminalsStore {
+    /**
+     * Every terminal id a `sessions` message has listed, whether a message with a list has arrived
+     * yet, and the terminal the selection showed at the last one.
+     */
+    const seen = new Set<string>();
+    let heard = false;
+    let followed: Followed | null = null;
+
+    /**
+     * The terminal the selection shows now: the selection itself when it is a terminal, else the
+     * oculus terminal the selected session runs in, read off the payload just received.
+     */
+    function following(records: unknown): Followed | null {
+        const selected = workbench?.selected() ?? null;
+        if (selected === null) return null;
+        if (isTerminalId(selected)) return { terminal: selected, from: selected };
+        const record = Array.isArray(records)
+            ? records.map(mapOf).find((one) => one?.id === selected)
+            : undefined;
+        if (record === undefined || record === null) return null;
+        const pid = typeof record.pid === 'number' ? record.pid : null;
+        const terminal = terminalOfSession({ id: selected, pid });
+        return terminal === null ? null : { terminal: terminal.id, from: selected };
+    }
+
+    /**
+     * Close what a terminal that ended leaves behind: every tab pinned to it on any page, and, when
+     * the selection showed it and has not moved since, every tab that follows the selection with no
+     * identity of its own. A terminal selection is cleared with them; a session selection is kept,
+     * since the session's other views still show it. A composer New put in a following tab carries
+     * an identity and stays, with what the reader typed into it.
+     */
+    function closeEnded(ended: string[], shown: Followed | null): void {
+        if (workbench === undefined || ended.length === 0) return;
+        const gone = new Set(ended);
+        for (const tab of workbench.tabs()) {
+            const pin = workbench.pinned(tab.state);
+            if (pin !== null && gone.has(pin)) workbench.close(tab.id, tab.page);
+        }
+        if (shown === null || !gone.has(shown.terminal)) return;
+        if (workbench.selected() !== shown.from) return;
+        if (isTerminalId(shown.from)) workbench.select(null);
+        for (const tab of workbench.tabs()) {
+            if (followsSelection(tab.state) && identity(tab.state) === null) {
+                workbench.close(tab.id, tab.page);
+            }
+        }
+    }
+
+    entities.afterReceive((message) => {
+        if (message.channel !== 'sessions') return;
+        const payload = mapOf(message.payload);
+        const list = payload?.terminals;
+        // A message with no list says nothing about any terminal, so it is not the first one.
+        if (!Array.isArray(list)) return;
+        const first = !heard;
+        heard = true;
+        const now = list
+            .map((one: unknown) => mapOf(one)?.id)
+            .filter((id): id is string => typeof id === 'string');
+        if (workbench !== undefined) {
+            const selected = workbench.selected();
+            // A selected terminal is what the following tabs show, whenever it was selected; a
+            // selected session shows the terminal it was found running in at the last message.
+            const shown =
+                selected !== null && isTerminalId(selected)
+                    ? { terminal: selected, from: selected }
+                    : followed;
+            const held = workbench.tabs().map((tab) => workbench.pinned(tab.state));
+            const holding = [...held, shown?.terminal ?? null].filter(
+                (id): id is string => id !== null
+            );
+            closeEnded(endedTerminals(seen, now, first, holding), shown);
+            followed = following(payload?.records);
+        }
+        for (const id of now) seen.add(id);
+    });
+
     /** Every terminal oculus owns, as the last `sessions` payload reported them. */
     function terminals(): Terminal[] {
         const held = entities.message('sessions');

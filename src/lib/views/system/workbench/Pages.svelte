@@ -12,21 +12,26 @@
 
 <script lang="ts">
     // Layer 3, view. Every page there is, the rail's and the reader's own, which is how a page no
-    // rail button shows is reached: a row shows its page, renames it and closes it, a rail page's
-    // row resets it to its button's arrangement after a confirm naming it, and New page makes one.
-    // A row carried out of the list onto a pane's edge shows its page there, which is the pointer's
-    // way to a page inside a page; the pane menu is the keyboard's.
-    //
-    // It holds only what is being asked: the page a close is waiting on, the name being typed while
-    // one is renamed, and the press a drag may grow out of. The pages themselves are the layout
-    // store's.
+    // rail button shows is reached. Each page is one explorer row (ui/tree/TreeItem.svelte in a
+    // TreeView), so the list reads at the tree's size like the other explorers: a press on the row
+    // shows its page (a drag the row started and released over it shows nothing, by row-press.ts's
+    // rule), the page on screen is the row in force (bold, with a check), a rail page
+    // names its key after its name, and a page holding unsaved text carries the dirty mark at the
+    // row's end. The row's controls, shown under the pointer and with the focus inside the row,
+    // rename it, reset a rail page to its button's arrangement after a confirm naming it, and
+    // close it; New page makes one. A row carried out of the list onto a pane's edge shows its
+    // page there, which is the pointer's way to a page inside a page; the pane menu is the
+    // keyboard's.
 
     import CloseQuestion from '$lib/ui/controls/CloseQuestion.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
-    import Tag from '$lib/ui/controls/Tag.svelte';
+    import Glyph from '$lib/ui/display/Glyph.svelte';
     import TextInput from '$lib/ui/forms/TextInput.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import { THRESHOLD, type Point } from '$lib/state/workbench/drag.svelte';
+    import Tooltip from '$lib/ui/menu/Tooltip.svelte';
+    import TreeItem from '$lib/ui/tree/TreeItem.svelte';
+    import TreeView from '$lib/ui/tree/TreeView.svelte';
+    import type { TreeNav } from '$lib/ui/tree/tree-keys';
     import {
         closeQuestion,
         pageAt,
@@ -43,6 +48,8 @@
     import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
+    import { THRESHOLD, type Point } from '$lib/state/workbench/drag.svelte';
+    import { rowPresses } from './row-press';
 
     const {
         drag: { startPage },
@@ -56,6 +63,8 @@
 
     const shown = $derived(pages());
     const current = $derived(currentPage().id);
+    /** The rows as the keyboard walks them: one per page, none opening. */
+    const keyRows = $derived(shown.map((page) => ({ id: page.id, parent: null })));
     const rail = $derived(railPages(config()?.config));
 
     /** The rail button a page is tied to, or null for a page no button of the rail carries. */
@@ -101,6 +110,9 @@
 
     /** A press on a row before it has crossed the drag threshold. */
     let pressed: { id: string; origin: Point } | null = null;
+
+    /** The row's click, which a drag released over the same row does not turn into a show. */
+    const rowClick = rowPresses((id) => switchPage(id));
 
     /**
      * Close a page, asking first unless it holds one tab with nothing unsaved in it. More than one
@@ -166,10 +178,16 @@
         box?.select();
     }
 
-    /** Hold a row until the pointer has moved far enough to be a drag rather than a click. */
+    /**
+     * Hold a row until the pointer has moved far enough to be a drag rather than a click. A press
+     * on one of the row's controls or in its rename box is that control's, and starts no drag.
+     */
     function press(id: string, event: PointerEvent): void {
         if (event.button !== 0) return;
+        if (event.target instanceof Element && event.target.closest('[data-page-control]') !== null)
+            return;
         pressed = { id, origin: { x: event.clientX, y: event.clientY } };
+        rowClick.down(pressed.origin);
         document.addEventListener('pointermove', moved);
         document.addEventListener('pointerup', release);
         document.addEventListener('pointercancel', release);
@@ -207,82 +225,104 @@
         <div class="actions">
             <ToolButton label={t('ui.page_new')} glyph="expand" onclick={add} />
         </div>
-        <ul class="list">
-            {#each shown as page, at (page.id)}
-                {@const name = pageName(page, at)}
-                <li class="page" class:current={page.id === current} data-page-row={name}>
-                    <!-- The name is where a drag starts; the controls after it are pressed as
-                         they are. -->
-                    <!-- svelte-ignore a11y_no_static_element_interactions -->
-                    <span
-                        class="name"
-                        title={t('workbench.pages_drag', name)}
-                        onpointerdown={(event) => press(page.id, event)}
-                    >
-                        {name}
-                    </span>
-                    {#if page.id === current}
-                        <Tag label={t('workbench.pages_current')} />
-                    {/if}
-                    {#if page.rail !== undefined}
-                        <Tag label={t('workbench.pages_on_rail', page.rail)} />
-                    {/if}
+        <TreeView label={t('views.pages')} rows={keyRows}>
+            {#snippet children(nav: TreeNav)}
+                {#each shown as page, at (page.id)}
+                    {@const name = pageName(page, at)}
+                    {@const editing = renaming !== null && renaming.id === page.id}
+                    {#snippet railKey()}
+                        {t('workbench.pages_on_rail', page.rail ?? '')}
+                    {/snippet}
                     <!-- Closing a page holding text no save has taken loses that text, so the row
                          says so before the close is pressed. -->
-                    {#if pageUnsaved(page, unsaved)}
-                        <Tag label={t('workbench.pages_unsaved')} glyph={t('ui.dirty_glyph')} />
-                    {/if}
-                    {#if renaming !== null && renaming.id === page.id}
-                        <!-- The wrapper reads Enter and Escape out of the box inside it, which has
-                             no keys of its own to report; the box is the one thing that takes
-                             focus. -->
+                    {#snippet unsavedMark()}
+                        <Tooltip text={t('workbench.pages_unsaved')}>
+                            <span
+                                class="dirty"
+                                role="img"
+                                aria-label={t('workbench.pages_unsaved')}
+                                data-page-unsaved
+                            >
+                                <Glyph name={t('ui.dirty_glyph')} />
+                            </span>
+                        </Tooltip>
+                    {/snippet}
+                    <!-- The wrapper reads Enter and Escape out of the box inside it, which has no
+                         keys of its own to report; the box is the one thing that takes focus. -->
+                    {#snippet renameBox()}
                         <!-- svelte-ignore a11y_no_static_element_interactions -->
-                        <span class="rename" use:takesFocus onkeydown={renameKeys}>
+                        <span
+                            class="rename"
+                            data-page-control
+                            use:takesFocus
+                            onkeydown={renameKeys}
+                        >
                             <TextInput
-                                value={renaming.draft}
+                                value={renaming?.draft ?? name}
                                 label={t('workbench.pages_rename_label', name)}
                                 oninput={(value: string) => {
                                     if (renaming !== null) renaming = { ...renaming, draft: value };
                                 }}
                             />
                         </span>
-                    {/if}
-                    <span class="controls">
-                        <ToolButton
-                            label={t('workbench.pages_open')}
-                            title={name}
-                            glyph="goto"
-                            compact
-                            disabled={page.id === current}
-                            onclick={() => switchPage(page.id)}
-                        />
-                        <ToolButton
-                            label={t('workbench.pages_rename')}
-                            title={name}
-                            glyph="edit"
-                            compact
-                            onclick={() => (renaming = { id: page.id, draft: name })}
-                        />
-                        {#if buttonOf(page.rail) !== null}
-                            <ToolButton
-                                label={t('workbench.pages_reset')}
-                                title={name}
-                                glyph="refresh"
-                                compact
-                                onclick={() => reset(page.id)}
-                            />
-                        {/if}
-                        <ToolButton
-                            label={t('workbench.pages_close')}
-                            title={name}
-                            glyph="dismiss"
-                            compact
-                            onclick={() => close(page.id)}
-                        />
-                    </span>
-                </li>
-            {/each}
-        </ul>
+                    {/snippet}
+                    <!-- The row is where a drag starts; a press on it that never crosses the
+                         threshold is the row's own press, which shows the page. -->
+                    <div
+                        class="page"
+                        role="none"
+                        data-page-row={name}
+                        onpointerdown={(event) => press(page.id, event)}
+                    >
+                        <TreeItem
+                            label={name}
+                            id={page.id}
+                            {nav}
+                            level={1}
+                            current={page.id === current}
+                            title={t('workbench.pages_drag', name)}
+                            onclick={editing
+                                ? undefined
+                                : (event: MouseEvent) => rowClick.click(page.id, event)}
+                            detail={page.rail === undefined ? undefined : railKey}
+                            end={pageUnsaved(page, unsaved) ? unsavedMark : undefined}
+                            field={editing ? renameBox : undefined}
+                        >
+                            {#snippet actions(reach: number)}
+                                <span class="controls" data-page-control>
+                                    <ToolButton
+                                        label={t('workbench.pages_rename')}
+                                        title={name}
+                                        glyph="edit"
+                                        compact
+                                        tabindex={reach}
+                                        onclick={() => (renaming = { id: page.id, draft: name })}
+                                    />
+                                    {#if buttonOf(page.rail) !== null}
+                                        <ToolButton
+                                            label={t('workbench.pages_reset')}
+                                            title={name}
+                                            glyph="refresh"
+                                            compact
+                                            tabindex={reach}
+                                            onclick={() => reset(page.id)}
+                                        />
+                                    {/if}
+                                    <ToolButton
+                                        label={t('workbench.pages_close')}
+                                        title={name}
+                                        glyph="dismiss"
+                                        compact
+                                        tabindex={reach}
+                                        onclick={() => close(page.id)}
+                                    />
+                                </span>
+                            {/snippet}
+                        </TreeItem>
+                    </div>
+                {/each}
+            {/snippet}
+        </TreeView>
     </div>
 </Pane>
 
@@ -314,43 +354,24 @@
         gap: 6px;
     }
 
-    .list {
-        display: flex;
-        flex-direction: column;
-        gap: 2px;
-        margin: 0;
-        padding: 0;
-        list-style: none;
-    }
-
+    /* The row's own space is where a drag starts, so the pointer says it can be carried. */
     .page {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 6px;
-        padding: 2px 4px;
-    }
-
-    /* The page on screen is named by its tag and set in the ink's weight, with no surface of its
-       own over the box's. */
-    .page.current .name {
-        font-weight: 600;
-    }
-
-    .name {
-        flex: 1 1 auto;
-        min-width: 0;
         cursor: grab;
         user-select: none;
     }
 
     .controls {
         display: flex;
-        gap: 2px;
+        gap: 1px;
     }
 
     .rename {
         display: flex;
+        flex: 1 1 auto;
         align-items: center;
+    }
+
+    .dirty {
+        display: inline-flex;
     }
 </style>

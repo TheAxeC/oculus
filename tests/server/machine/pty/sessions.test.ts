@@ -7,10 +7,10 @@
 // typed comes back without a shell interpreting anything.
 
 import { spawnSync } from 'node:child_process';
-import { realpathSync, rmSync } from 'node:fs';
+import { existsSync, readFileSync, realpathSync, rmSync, statSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
-import { afterAll, expect, it, vi } from 'vitest';
+import { afterAll, describe, expect, it, vi } from 'vitest';
 import {
     isSessionId,
     listTerminals,
@@ -19,14 +19,24 @@ import {
     resizeTerminal,
     resumeArgs,
     resumeOption,
+    screenAt,
     scrollback,
-    sendKeysArgs,
+    sendBytesArgs,
     sessionName,
+    steerArgs,
+    steerTerminal,
+    interruptTerminal,
+    cursorArgs,
     startArgs,
     startTerminal,
     stopTerminal
 } from '../../../../src/lib/server/machine/pty/sessions.ts';
-import { control, run } from '../../../../src/lib/server/machine/pty/tmux.ts';
+import {
+    control,
+    inputChunks,
+    INPUT_MOST,
+    run
+} from '../../../../src/lib/server/machine/pty/tmux.ts';
 import { noop } from '../../../fixtures/doubles.ts';
 import { scratchDir, sweepScratch } from '../../../fixtures/scratch.ts';
 
@@ -54,6 +64,7 @@ const options = { socket: join(dir, 'server.sock') };
 // and the `--` of send-keys have to survive. tmux expands $name inside double quotes, so HOME here
 // is the case that says the escaping works.
 const TYPED = '-x "$HOME" a\\b';
+const STEERED = '-y "$HOME" steered';
 
 afterAll(() => {
     try {
@@ -104,11 +115,17 @@ it.skipIf(!TMUX)('starts, lists, feeds, resizes, captures and stops a terminal',
     );
     const text = (): string => Buffer.concat(seen).toString('utf8');
     try {
-        await run(sendKeysArgs(started.id, { literal: TYPED }), options);
-        await run(sendKeysArgs(started.id, { key: 'Enter' }), options);
+        // The line goes the way a page's typing goes: its bytes, in pieces, through send-keys -H.
+        for (const piece of inputChunks(Buffer.from(`${TYPED}\r`))) {
+            await run(sendBytesArgs(started.id, piece), options);
+        }
         await until(() => text().includes(TYPED), 'the typed line to come back as output');
-        // cat writes the line back, so the characters survived the quoting exactly as typed.
+        // cat writes the line back, so the characters survived exactly as typed.
         expect(text()).toContain(TYPED);
+        // A steer types its text as bytes, so a line beginning with a dash reaches the pane as
+        // text and never as flags.
+        for (const args of steerArgs(started.id, STEERED)) await run(args, options);
+        await until(() => text().includes(STEERED), 'the steered line');
 
         const screen = await scrollback(started.id, 50, options);
         expect(screen).toContain(TYPED);
@@ -238,4 +255,197 @@ it.skipIf(!TMUX)('lists what it started from a process whose locale is not UTF-8
     } finally {
         vi.unstubAllEnvs();
     }
+});
+
+it.skipIf(!TMUX)('runs a line typed as bytes into a shell', async () => {
+    const started = await startTerminal(
+        { kind: 'shell', cwd: dir, cols: 80, rows: 24 },
+        { ...options, command: 'sh' }
+    );
+    const seen: Buffer[] = [];
+    const client = control(
+        sessionName(started.id),
+        { output: (_pane, bytes) => seen.push(bytes), event: noop, exit: noop },
+        options
+    );
+    try {
+        const pieces = inputChunks(Buffer.from('ls -la\r'));
+        expect(pieces).toHaveLength(1);
+        for (const piece of pieces) await run(sendBytesArgs(started.id, piece), options);
+        // The socket file sits in the directory the shell started in, so a listing that ran
+        // names it; a line typed but not run would not.
+        await until(
+            () => Buffer.concat(seen).toString('utf8').includes('server.sock'),
+            'the listing to name the socket'
+        );
+    } finally {
+        client.close();
+        await stopTerminal(started.id, options);
+    }
+});
+
+it.skipIf(!TMUX)(
+    'takes a piece of the most bytes in one command, and refuses one more',
+    async () => {
+        const started = await startTerminal(
+            { kind: 'shell', cwd: dir, cols: 80, rows: 24 },
+            { ...options, command: 'cat' }
+        );
+        try {
+            const most = Buffer.from('a'.repeat(INPUT_MOST));
+            await run(sendBytesArgs(started.id, most), options);
+            await expect(
+                run(sendBytesArgs(started.id, Buffer.concat([most, Buffer.from('a')])), options)
+            ).rejects.toThrow('command too long');
+        } finally {
+            await stopTerminal(started.id, options);
+        }
+    }
+);
+
+it.skipIf(!TMUX)('types a 20000-character steer into a pane whole, then Enter', async () => {
+    // The pane writes every byte it is given to a file: raw mode, so nothing is edited or echoed,
+    // and the file is made only once raw mode is in force.
+    const file = join(dir, 'steered.bin');
+    const started = await startTerminal(
+        { kind: 'claude', cwd: dir, cols: 80, rows: 24 },
+        { ...options, command: `stty raw -echo; exec cat > ${file}` }
+    );
+    try {
+        await until(() => existsSync(file), 'the pane to open its file');
+        const text = `${'a'.repeat(9999)}\n${'b'.repeat(10000)}`;
+        await steerTerminal(started.id, text, options);
+        await until(() => statSync(file).size >= 20001, 'the steer and its Enter in the file');
+        expect(readFileSync(file, 'utf8')).toBe(`${text}\r`);
+    } finally {
+        await stopTerminal(started.id, options);
+    }
+});
+
+describe('the input arguments', () => {
+    it('sends bytes as two lowercase hex digits each', () => {
+        expect(sendBytesArgs('t1', Buffer.from('\u001b[I'))).toEqual([
+            'send-keys',
+            '-t',
+            sessionName('t1'),
+            '-H',
+            '1b',
+            '5b',
+            '49'
+        ]);
+        expect(sendBytesArgs('t1', Buffer.from([0xc3, 0xa9, 0x0a]))).toEqual([
+            'send-keys',
+            '-t',
+            sessionName('t1'),
+            '-H',
+            'c3',
+            'a9',
+            '0a'
+        ]);
+    });
+
+    it('steers with the text as bytes, then Enter, and interrupts with Escape', async () => {
+        const session = sessionName('a1b2c3-claude');
+        expect(steerArgs('a1b2c3-claude', 'go on')).toEqual([
+            ['send-keys', '-t', session, '-H', '67', '6f', '20', '6f', '6e'],
+            ['send-keys', '-t', session, '--', 'Enter']
+        ]);
+        const calls: string[][] = [];
+        await interruptTerminal('a1b2c3-claude', {
+            run: (args: string[]) => {
+                calls.push(args);
+                return Promise.resolve('');
+            }
+        });
+        expect(calls).toEqual([['send-keys', '-t', session, '--', 'Escape']]);
+    });
+
+    it('types a steer of any length it accepts in commands tmux takes, a line break as its byte', () => {
+        const text = `${'a'.repeat(9999)}\n${'b'.repeat(10000)}`;
+        expect(text.length).toBe(20000);
+        const calls = steerArgs('a1b2c3-claude', text);
+        const typed = calls.slice(0, -1);
+        expect(typed).toHaveLength(Math.ceil(20000 / INPUT_MOST));
+        for (const args of typed) {
+            expect(args.slice(0, 4)).toEqual([
+                'send-keys',
+                '-t',
+                sessionName('a1b2c3-claude'),
+                '-H'
+            ]);
+            expect(args.length - 4).toBeLessThanOrEqual(INPUT_MOST);
+        }
+        const bytes = typed.flatMap((args) => args.slice(4));
+        expect(bytes).toHaveLength(20000);
+        expect(bytes[9999]).toBe('0a');
+        expect(calls.at(-1)).toEqual([
+            'send-keys',
+            '-t',
+            sessionName('a1b2c3-claude'),
+            '--',
+            'Enter'
+        ]);
+    });
+});
+
+/**
+ * The row xterm's cursor is on after writing a screen into an empty grid of this many rows: a line
+ * feed moves it down one row until the last, where a line feed scrolls instead, and a cursor
+ * position sequence puts it on the row it names.
+ */
+function rowAfter(screen: string, height: number): number {
+    let row = 0;
+    // eslint-disable-next-line no-control-regex
+    for (const found of screen.matchAll(/\n|\u001b\[(\d+)(?:;\d+)?H/g)) {
+        row = found[0] === '\n' ? Math.min(row + 1, height - 1) : Number(found[1]) - 1;
+    }
+    return row;
+}
+
+describe('the screen an attaching page is given', () => {
+    const rows = (count: number, written: number): string =>
+        Array.from({ length: count }, (_, at) => (at < written ? `row ${at}` : '')).join('\n') +
+        '\n';
+
+    it('reads the cursor with display-message', () => {
+        expect(cursorArgs('a1b2c3-shell')).toEqual([
+            'display-message',
+            '-p',
+            '-t',
+            sessionName('a1b2c3-shell'),
+            '#{cursor_x} #{cursor_y} #{pane_height}'
+        ]);
+    });
+
+    it('keeps a new shell whole and puts the cursor on its row and column', () => {
+        const capture = rows(24, 3);
+        const screen = screenAt(capture, '2 2 24\n');
+        expect(screen).toBe(`${capture.slice(0, -1)}\u001b[3;3H`);
+        expect(rowAfter(screen, 24)).toBe(2);
+    });
+
+    it('keeps every line of a pane whose cursor is on its last row', () => {
+        const capture = rows(30, 30);
+        expect(screenAt(capture, '0 23 24\n')).toBe(`${capture.slice(0, -1)}\u001b[24;1H`);
+    });
+
+    it('hands the capture back unchanged when the cursor does not parse', () => {
+        const capture = rows(24, 3);
+        expect(screenAt(capture, 'not a cursor')).toBe(capture);
+        expect(screenAt(capture, '')).toBe(capture);
+        // A row outside the pane is not a place the cursor can be.
+        expect(screenAt(capture, '0 24 24')).toBe(capture);
+    });
+
+    // A pane with history and its cursor above its last row: a private server printed `8 20 24 20`
+    // for a 44-line capture whose last three rows sit below the cursor, the shape a full-screen
+    // prompt with a footer has.
+    it('puts the cursor of the page on the row of tmux when the pane has history above it', () => {
+        const capture = rows(44, 44);
+        const screen = screenAt(capture, '8 20 24\n');
+        expect(screen).toBe(`${capture.slice(0, -1)}\u001b[21;9H`);
+        expect(rowAfter(screen, 24)).toBe(20);
+        // The three rows under the cursor are part of the screen and are kept.
+        expect(screen).toContain('row 43');
+    });
 });

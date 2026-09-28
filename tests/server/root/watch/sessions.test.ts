@@ -452,11 +452,13 @@ describe('watchSessions', () => {
         fixture.transcript([prompt('2026-09-10T10:00:00.000Z', 'first question')]);
         // The terminal list moves without anything under the three stores being written, which is
         // what a missed event looks like to this watcher: only a rescan can find it.
-        let terminals: Terminal[] = [];
+        // Until tmux has answered once the source has no list, and the payload carries none.
+        let terminals: Terminal[] | null = null;
         const source: TerminalSource = { list: () => terminals, onChange: () => noop };
         const started = start(fixture, 0, 150, source);
         const before = await quiet(started.got);
         expect(before).toBeGreaterThan(0);
+        expect('terminals' in latest(started.got)).toBe(false);
 
         // The clock runs while nothing changed and publishes nothing.
         await sleep(600);
@@ -464,13 +466,22 @@ describe('watchSessions', () => {
 
         terminals = [terminal('a1b2c3-shell')];
         await until(() => started.got.length > before, WAIT);
-        expect(latest(started.got).terminals.map((one) => one.id)).toEqual(['a1b2c3-shell']);
+        expect(latest(started.got).terminals?.map((one) => one.id)).toEqual(['a1b2c3-shell']);
 
         const after = started.got.length;
         watchers.pop()?.close();
         terminals = [];
         await sleep(600);
         expect(started.got.length).toBe(after);
+    });
+
+    it('carries no terminal list when it was given no terminal source', async () => {
+        const fixture = new Fixture();
+        fixture.transcript([prompt('2026-09-10T10:00:00.000Z', 'first question')]);
+        const started = start(fixture);
+        await until(() => started.got.length >= 1, WAIT);
+        // A process with no terminals says nothing about any terminal, so a page ends none.
+        expect('terminals' in latest(started.got)).toBe(false);
     });
 
     it('closes every handle it opened', async () => {

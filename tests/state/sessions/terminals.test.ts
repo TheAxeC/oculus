@@ -13,12 +13,20 @@ import { scalar } from '../../../src/lib/data/helpers/guards.ts';
 import {
     decodeBytes,
     encodeBytes,
+    endedTerminals,
     isTerminalId,
     ptyChannel,
     titleStripper
 } from '../../../src/lib/state/sessions/terminals.svelte.ts';
 import type { Terminal } from '../../../src/lib/data/model/index.ts';
 import { createClientState, type ClientState } from '../../fixtures/client.ts';
+import { record, terminal as listed } from '../../fixtures/sessions-fixture.ts';
+import { fakeStorage } from '../workbench/layout/layout-fixture.ts';
+import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
+import { setCatalog } from '../../../src/lib/state/shared/words/text.ts';
+
+// The layout names its default page from the catalog, so the real one is installed.
+setCatalog(textCatalog(loadConfig(engineDir()).config));
 
 let client: ClientState;
 let connect: ClientState['socket']['connect'];
@@ -393,5 +401,108 @@ describe('the frame check', () => {
         expect(message('sessions')?.version ?? 0).toBe(held);
         socket.deliver('sessions', held + 3, { records: [], workspaces: [], terminals: [] });
         expect(message('sessions')?.version).toBe(held + 3);
+    });
+});
+
+describe('the terminals that ended', () => {
+    it('are the ones an earlier message listed and this one does not', () => {
+        expect(endedTerminals(new Set(['a', 'b']), ['b'], false, [])).toEqual(['a']);
+    });
+
+    it('include a terminal a tab holds when the first message does not list it', () => {
+        expect(endedTerminals(new Set(), [], true, ['c'])).toEqual(['c']);
+    });
+
+    it('leave out a terminal started here that no message has listed yet', () => {
+        expect(endedTerminals(new Set(), [], false, ['d'])).toEqual([]);
+    });
+
+    it('are none when the message carries no terminal list', () => {
+        expect(endedTerminals(new Set(['a']), null, false, ['a'])).toEqual([]);
+        expect(endedTerminals(new Set(), null, true, ['a'])).toEqual([]);
+    });
+
+    it('name each terminal once, whether a tab holds it or an earlier message listed it', () => {
+        expect(endedTerminals(new Set(['a']), [], true, ['a', 'a'])).toEqual(['a']);
+    });
+});
+
+describe('a following tab over a selected session whose terminal ended', () => {
+    const FIRST = '3f2504e0-4f89-11d3-9a0c-0305e82c3301';
+    const SECOND = '9a1f2b3c-4d5e-11d3-9a0c-0305e82c3301';
+    const RUNS = 'e1e1e1-claude';
+    let version = 0;
+
+    /** One sessions message: the two sessions, the first running in RUNS when it is listed. */
+    function sessions(terminals: string[]): void {
+        version += 1;
+        receive({
+            channel: 'sessions',
+            version,
+            payload: {
+                records: [record(FIRST, { pid: 4242 }), record(SECOND, { pid: 5151 })],
+                workspaces: [],
+                terminals: terminals.map((id) => listed(id, { kind: 'claude', pid: 4242 }))
+            }
+        });
+    }
+
+    /** Whether a tab of this id is on any page. */
+    function open(tab: string): boolean {
+        return client.layout
+            .pages()
+            .some((page) => JSON.stringify(page.workbench.root).includes(`"${tab}"`));
+    }
+
+    beforeEach(() => {
+        client.layout.loadLayout(fakeStorage());
+        version = 0;
+    });
+
+    it('closes the tab and keeps the selection', () => {
+        const tab = client.layout.openView('terminal', undefined, client.layout.currentPage().id);
+        client.selection.select(FIRST);
+        sessions([RUNS]);
+        expect(terminalById(RUNS)).not.toBe(null);
+        sessions([]);
+        expect(open(tab)).toBe(false);
+        expect(client.selection.selected()).toBe(FIRST);
+    });
+
+    it('closes nothing when the selection moved to another session between the two messages', () => {
+        const tab = client.layout.openView('terminal', undefined, client.layout.currentPage().id);
+        client.selection.select(FIRST);
+        sessions([RUNS]);
+        client.selection.select(SECOND);
+        sessions([]);
+        expect(open(tab)).toBe(true);
+        expect(client.selection.selected()).toBe(SECOND);
+    });
+
+    it('closes the tab and clears a terminal selection, as before', () => {
+        const tab = client.layout.openView('terminal', undefined, client.layout.currentPage().id);
+        client.selection.select(RUNS);
+        sessions([RUNS]);
+        sessions([]);
+        expect(open(tab)).toBe(false);
+        expect(client.selection.selected()).toBe(null);
+    });
+});
+
+describe('a message with no terminal list', () => {
+    it('is not the first message, so the first list that lacks a pinned terminal closes its tab', () => {
+        client.layout.loadLayout(fakeStorage());
+        const page = client.layout.currentPage().id;
+        const tab = client.layout.openView('terminal', { session: 'c3c3c3-shell' }, page);
+        receive({ channel: 'sessions', version: 1, payload: { records: [], workspaces: [] } });
+        receive({
+            channel: 'sessions',
+            version: 2,
+            payload: { records: [], workspaces: [], terminals: [] }
+        });
+        const tabs = client.layout
+            .pages()
+            .some((one) => JSON.stringify(one.workbench.root).includes(`"${tab}"`));
+        expect(tabs).toBe(false);
     });
 });

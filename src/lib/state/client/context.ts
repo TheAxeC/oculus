@@ -73,12 +73,20 @@ import {
     createRepositories,
     type RepositoriesStore
 } from '../sources/repositories/repositories.svelte.ts';
-import { createSelection, type SelectionStore } from '../workbench/selection.svelte.ts';
+import {
+    createSelection,
+    pinnedTerminal,
+    type SelectionStore
+} from '../workbench/selection.svelte.ts';
 import { createSearch, type SearchStore } from '../sources/search.svelte.ts';
 import { createSelectors, type SelectorsStore } from './selectors.svelte.ts';
 import { createSocket, type SocketStore } from './socket.svelte.ts';
 import { createSource, type SourceStore } from '../sessions/source.svelte.ts';
-import { createTerminals, type TerminalsStore } from '../sessions/terminals.svelte.ts';
+import {
+    COMPOSER_VIEW,
+    createTerminals,
+    type TerminalsStore
+} from '../sessions/terminals.svelte.ts';
 import { createTranscripts, type TranscriptsStore } from '../sessions/transcript.svelte.ts';
 import { createUi, type UiStore } from '../workbench/ui.svelte.ts';
 import { createUsageRefresh, type UsageRefreshStore } from '../system/usage-refresh.svelte.ts';
@@ -159,7 +167,21 @@ export function createClientState(): ClientState {
     const clock = createClock();
     const changes = createChanges();
     const selection = createSelection();
-    const terminals = createTerminals(entities, socket, writes);
+    // A Terminal tab whose terminal ended is closed on whichever page it is, and a hidden page
+    // mounts no view, so the terminals store is handed every page's Terminal tabs, the layout's
+    // close and the selection, and closes them itself when a `sessions` message stops listing it.
+    const terminals = createTerminals(entities, socket, writes, {
+        tabs: () =>
+            layout.pages().flatMap((page) =>
+                tabsOf(page.workbench.root)
+                    .filter((tab) => tab.view === COMPOSER_VIEW)
+                    .map((tab) => ({ id: tab.id, page: page.id, state: tab.state }))
+            ),
+        pinned: pinnedTerminal,
+        close: (id, page) => layout.closeInstance(id, page),
+        selected: selection.selected,
+        select: selection.select
+    });
     const agents = createAgents();
     const files = createFiles(entities);
     // The file browser's bookmark forms are the fs store's to close: it is what learns that a

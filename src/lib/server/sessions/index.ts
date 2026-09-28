@@ -20,8 +20,11 @@ export type SessionsOptions = ScanOptions & {
     attachedIds?: string[];
     /** hooks.ts's HookStore to merge each record's `hook` field from. */
     hooks?: HookStore;
-    /** The tmux terminals, which the payload carries so the page sees one the moment it exists. */
-    terminals?: Terminal[];
+    /**
+     * The tmux terminals, which the payload carries so the page sees one the moment it exists; null
+     * while tmux's list has not been read yet, and then the payload carries no list at all.
+     */
+    terminals?: Terminal[] | null;
 };
 
 // The payload's own shape lives in data/model/index.ts with the rest of the wire, since the
@@ -53,5 +56,6 @@ export function sessions(options: SessionsOptions = {}): SessionsPayload {
         options.attachedIds ?? [],
         options.overridesPath ?? defaultOverridesPath()
     );
+    if (options.terminals === null) return { records, workspaces };
     return { records, workspaces, terminals: options.terminals ?? [] };
 }

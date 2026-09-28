@@ -13,10 +13,8 @@ text:
         catalogue_open_beside: Open beside on this page
         catalogue_open_here: Open on this page
         pages_close: Close
-        pages_current: shown
         pages_drag: Drag onto the edge of a pane to show {0} there
         pages_on_rail: 'rail: {0}'
-        pages_open: Show
         pages_rename: Rename
         pages_reset: Reset to its arrangement
         pages_rename_label: Name of {0}

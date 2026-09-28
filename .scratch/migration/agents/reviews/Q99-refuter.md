@@ -59,3 +59,43 @@ noServer strings: "no server running on <sock>"; with -u a missing socket gives 
 - What a following tab draws once a selected session's terminal is gone.
 
 Reviewer usage: 62 tool uses, 203k tokens, 15 min.
+
+## Repair round 1, refuted (reviewer a1c799351ef79b368, delta from bc5c3bef)
+
+### Verification
+
+`verify.sh` from the worktree's tools/oculus: red on `npm test`, `Test Files 1 failed | 344 passed (345)`, `Tests 2 failed | 5510 passed (5512)`; `npx vitest run tests/routes/sessions/compose.test.ts` alone gives `Tests 2 failed | 9 passed (11)` (lines 134 and 170 still expect `['send-keys', '-t', ..., '-l', '--', text]`). Not a timeout. By hand: `npm run check` 0 errors (1477 files), build exit 0, format clean, lint exit 0, ASCII gate empty, largest file 898 lines, `bin/folder-check.sh` exit 0. `npx vitest run tests/server/machine/pty` 82 passed; the report's combined run 38 files, 477 tests passed. Every revert the report quotes reproduced through a load-time rewrite plugin, and a row-press copy under node.
+
+### 1. Spec
+
+- `server/root/watch/sessions.ts:162` `terminals: options.terminals === undefined ? null : options.terminals.list()`: round item 5 asked for the comment only; the code was changed so the comment holds (before, a watcher with no source sent `terminals: []`). Inert in production (the one caller, `server/root/context.ts:251-258`, always passes `terminals`) and tested.
+
+### 2. Proof
+
+- `tests/routes/sessions/compose.test.ts:134` and `:170` red: item 7 changed `steerArgs`, and the test that expects its old shape was not updated.
+- The same change sends a shell start's first command (compose's shell prompt, through `steerTerminal`) as `-H` bytes; the report's reader-visible changes do not name it.
+- The report's limitation (a `sessions` message before the layout loads) does not happen: `src/routes/+page.svelte:195-212` connects and calls `loadLayout()` synchronously in one `onMount`, a WebSocket's `open` and `message` come in later tasks (`socket.svelte.ts:147-167`), nothing else feeds `sessions`, and the selection is never saved.
+
+### 3. Standards
+
+- `HELP.md:40` still says a paste "arrives whole and never as a lone Escape followed by text"; item 4 corrected the same claim in `DESIGN.md:264` and `channel.ts` (a paste over 996 bytes arrives in several writes, in order).
+
+### 4. Behaviour
+
+- None beyond the red compose test.
+
+### Not checked
+
+- The report's 100000-character timing; anything needing the browser; the real-tmux steer beyond its pass; whether the page's write timeout covers a 302-command steer at STEER_MAX (300000 bytes of 3-byte characters, each command with its own 5 s timeout, `tmux.ts:25`).
+
+Reviewer usage: about 45 tool uses, about 12 min.
+
+# Closed
+
+- First review: every finding went into repair round 1 (`agents/briefs/Q99-round1-sent.md`), and the round refutation above checked each closure.
+- Proof, `compose.test.ts:134` and `:170` red: fixed at landing; both cases expect the `-H` bytes of the text, then Enter.
+- Proof, the shell start's first command sent as `-H` bytes: stated in the booking.
+- Proof, the report's limitation about a `sessions` message before the layout: corrected in the booking.
+- Standards, `HELP.md` terminal row: fixed at landing, in the words of `DESIGN.md` and `channel.ts`.
+- Spec, `watch/sessions.ts:162`: accepted and stated in the booking.
+- Not checked, the write timeout at STEER_MAX: measured at landing, 6566 ms for 303 commands, under 30 s.

@@ -23,22 +23,17 @@ import type {
 import type { Hub, Sink } from '../../core/channels.ts';
 import {
     captureArgs,
+    cursorArgs,
     isTerminalId,
     listArgs,
     parseTerminals,
     resizeArgs,
-    sendKeysArgs,
+    inputArgs,
+    screenAt,
     sessionName,
     SCROLLBACK_LINES
 } from './sessions.ts';
-import {
-    control,
-    run,
-    splitKeys,
-    RESTART_MS,
-    type ControlClient,
-    type TmuxOptions
-} from './tmux.ts';
+import { control, run, RESTART_MS, type ControlClient, type TmuxOptions } from './tmux.ts';
 
 /** The prefix of a terminal channel. */
 export const CHANNEL_PREFIX = 'pty:';
@@ -274,7 +269,8 @@ export class Terminals {
     #writable = new WeakSet<Sink>();
     /** The tail of each terminal's command chain, so its keystrokes reach tmux in order. */
     #queue = new Map<string, Promise<void>>();
-    #terminals: Terminal[] = [];
+    /** The last list tmux gave, or null before it has given one. */
+    #terminals: Terminal[] | null = null;
     #signature = '';
     #listeners = new Set<() => void>();
     #poll: number;
@@ -319,8 +315,12 @@ export class Terminals {
         if (typeof timer === 'object' && typeof timer.unref === 'function') timer.unref();
     }
 
-    /** Every oculus terminal as the last list reported it. The `sessions` payload carries this. */
-    list(): Terminal[] {
+    /**
+     * Every oculus terminal as the last list reported it, or null before any list was read. The
+     * `sessions` payload carries this, and carries no list while it is null, so a page that
+     * connects in the moment after the server starts is not told that every terminal has gone.
+     */
+    list(): Terminal[] | null {
         return this.#terminals;
     }
 
@@ -336,7 +336,12 @@ export class Terminals {
         void this.#driver
             .run(listArgs())
             .then((text) => this.#took(parseTerminals(text)))
-            .catch(() => this.#took([]));
+            .catch((error: unknown) => {
+                // No server is the one failure that is a list: the last session exited and tmux
+                // with it. Any other failure (a timeout, a busy server) says nothing about the
+                // terminals, and an empty list would have every page close its Terminal tabs.
+                if (noServer(reason(error))) this.#took([]);
+            });
     }
 
     /**
@@ -411,7 +416,9 @@ export class Terminals {
 
     #took(terminals: Terminal[]): void {
         const signature = terminals.map((terminal) => `${terminal.id}:${terminal.name}`).join('|');
-        if (signature === this.#signature) return;
+        // The first list is taken even when it is empty: it is what turns "not read yet" into a
+        // list.
+        if (this.#terminals !== null && signature === this.#signature) return;
         this.#signature = signature;
         this.#terminals = terminals;
         for (const listener of this.#listeners) listener();
@@ -441,11 +448,23 @@ export class Terminals {
         } catch (error) {
             console.error(`pty: no scrollback for ${id}: ${reason(error)}`);
         }
+        // The cursor is read after the capture, so output that lands between the two moves the
+        // cursor down over rows the capture already holds rather than past rows it lacks.
+        let cursor = '';
+        try {
+            cursor = await this.#driver.run(cursorArgs(id));
+        } catch (error) {
+            console.error(`pty: no cursor for ${id}, the whole capture is sent: ${reason(error)}`);
+        }
         if (!this.#attached.get(id)?.has(sink)) return;
+        const placed = screenAt(text, cursor);
+        if (placed === text && cursor !== '') {
+            console.error(`pty: the cursor of ${id} did not read, the whole capture is sent`);
+        }
         // capture-pane writes one line per row with a bare newline between them; a terminal moves
         // down without returning to the left on a bare newline, so the rows would step across the
         // grid (seen in Chrome as a staircase). Every line break goes out as CR LF.
-        const screen = text.replace(/\r?\n/g, '\r\n');
+        const screen = placed.replace(/\r?\n/g, '\r\n');
         const message = {
             channel: ptyChannel(id),
             // The scrollback is not a chunk, so it carries no chunk number; the chunks count from
@@ -465,12 +484,17 @@ export class Terminals {
         this.#hub.publish(ptyChannel(id), { bytes: bytes.toString('base64') });
     }
 
+    /**
+     * Type what the page sent into the pane as the bytes it is, one `send-keys -H` per piece of at
+     * most INPUT_MOST bytes (inputArgs), in order, stopping at the first that fails. A mouse report
+     * or a focus report is one escape sequence and stays in one piece, so the pane reads it in one
+     * write and never as a lone Escape followed by text. A paste longer than INPUT_MOST arrives in
+     * several writes, in order, its opening and closing markers each whole.
+     */
     async #input(id: string, encoded: string): Promise<void> {
-        const text = Buffer.from(encoded, 'base64').toString('utf8');
-        if (text === '') return;
-        for (const chunk of splitKeys(text)) {
+        for (const args of inputArgs(id, Buffer.from(encoded, 'base64'))) {
             try {
-                await this.#driver.run(sendKeysArgs(id, chunk));
+                await this.#driver.run(args);
             } catch (error) {
                 console.error(`pty: input to ${id} failed: ${reason(error)}`);
                 return;
@@ -487,6 +511,14 @@ export class Terminals {
             console.error(`pty: resize of ${id} failed: ${reason(error)}`);
         }
     }
+}
+
+/** Whether tmux's error says no server runs, which is an empty list rather than a failed one. */
+export function noServer(said: string): boolean {
+    return (
+        said.includes('no server running on') ||
+        (said.includes('error connecting to') && said.includes('(No such file or directory)'))
+    );
 }
 
 function reason(error: unknown): string {

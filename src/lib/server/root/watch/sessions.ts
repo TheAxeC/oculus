@@ -56,11 +56,11 @@ export const WINDOW_DAYS = 2;
 export const MAX_SESSIONS = 40;
 
 /**
- * What the watcher needs of server/machine/pty/channel.ts's Terminals: the list, and when it
- * changed.
+ * What the watcher needs of server/machine/pty/channel.ts's Terminals: the list, null until tmux
+ * has answered once, and when it changed.
  */
 export type TerminalSource = {
-    list(): Terminal[];
+    list(): Terminal[] | null;
     onChange: (listener: () => void) => () => void;
 };
 
@@ -96,7 +96,8 @@ export type SessionsWatchOptions = {
     /**
      * The tmux terminals. The list is read here at every rescan and the watcher republishes
      * whenever the source says it moved, so a terminal started anywhere appears on the page without
-     * the page asking. Absent in a process that has no terminals, where the payload carries none.
+     * the page asking. When this option is absent (a process with no terminals), and while the
+     * source has read no list yet, the payload carries no `terminals` field at all.
      */
     terminals?: TerminalSource;
     /** The request hook store owned by ServerContext. */
@@ -158,7 +159,7 @@ export function watchSessions(hub: Hub, options: SessionsWatchOptions = {}): Ses
             probe: options.probe,
             codexProbe: options.codexProbe,
             hooks: options.hooks,
-            terminals: options.terminals?.list() ?? []
+            terminals: options.terminals === undefined ? null : options.terminals.list()
         });
 
     const publish = (payload: SessionsPayload): void => {

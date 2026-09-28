@@ -223,8 +223,10 @@ export type SessionsPayload = {
     workspaces: Workspace[];
     /**
      * Every tmux session oculus started, so a terminal appears on the page as soon as it exists.
+     * Absent while the server has not yet read tmux's list, which a page reads as saying nothing
+     * about any terminal rather than as every terminal having ended.
      */
-    terminals: Terminal[];
+    terminals?: Terminal[];
 };
 
 // ------------------------------------------------------------------ terminals

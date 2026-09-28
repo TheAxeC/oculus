@@ -1,11 +1,10 @@
 /plan-orchestration oculus/migration
 
 In flight:
-- Q99 (repair round 1 sent: the terminal and Pages defects from Axel's look: Claude interrupted by clicks, scrolls and pastes; an exited terminal's tab left open; a new shell's prompt at the bottom; the Pages view's large text), in the first free slot.
 - Q100 (the Calendar's fixed strips cover the rows under them over a wallpaper, Z42 (a)): repair round 1 sent (a strip listed inside `:global()`, the strip rule narrowed to the calendar's sticky strips, the table header named in DESIGN.md).
 - Q79d (the library audit's shared helpers, each written once): building.
 Queued, in order:
-- Q101 (each Terminal tab a terminal panel of its own, Z40 (d), once Q99 has landed).
+- Q101 (each Terminal tab a terminal panel of its own, Z40 (d)).
 - Q87 and Q81 (the import-graph checks on dependency-cruiser; menus, context menus, tooltips and dialogs on bits-ui).
 - Q79b (the tests, runs alone).
 - Q96 and Q88 (the Rail section's field labels and its icon dropdown on bits-ui, once Q81 has landed; right-click menus wherever vscode.dev gives one).
@@ -29,6 +28,7 @@ Queued, in order:
 The loop fills three slots as they free up; a line above is only an order, never a barrier, apart from the "once ... has landed" notes. A step's line moves to Landed, at the top of that list, in its landing commit.
 
 Landed, newest first: every step ticked in `plan.md`, each with the date and the commit that ticked it (the 15 steps dated 2026-09-10 at f8af492b were landed before the ledger was opened):
+- Q99 (the terminal and Pages defects), 2026-09-28, 41c6e3df.
 - Q79a (the server half of the library audit's section D), 2026-09-28, 6a5ad2f8.
 - Q79c (the page half of section D), 2026-09-28, f2330638.
 - Q92 (the Inbox and Calendar views beautified), 2026-09-28, 26ab6f90.

@@ -281,83 +281,94 @@ export function control(
     };
 }
 
-/** One piece of what the page typed: literal text, or a key tmux has a name for. */
+/** One argument of a `send-keys` a server-built message types: literal text, or a key by name. */
 export type KeyChunk = { literal: string } | { key: string };
 
-/** The escape sequences xterm.js sends, longest first, each with tmux's name for that key. */
-const SEQUENCES: [string, string][] = [
-    ['\u001b[1~', 'Home'],
-    ['\u001b[4~', 'End'],
-    ['\u001b[3~', 'DC'],
-    ['\u001b[5~', 'PageUp'],
-    ['\u001b[6~', 'PageDown'],
-    ['\u001b[A', 'Up'],
-    ['\u001b[B', 'Down'],
-    ['\u001b[C', 'Right'],
-    ['\u001b[D', 'Left'],
-    ['\u001b[H', 'Home'],
-    ['\u001b[F', 'End'],
-    ['\u001bOA', 'Up'],
-    ['\u001bOB', 'Down'],
-    ['\u001bOC', 'Right'],
-    ['\u001bOD', 'Left'],
-    ['\u001bOH', 'Home'],
-    ['\u001bOF', 'End']
-];
+/**
+ * The most bytes one `send-keys -H` carries. `-H` takes one byte per word, and tmux's command-line
+ * client refuses a command of more than 1000 words with "command too long" (measured on tmux 3.7c:
+ * 996 bytes after `send-keys -t <session> -H` went through, 997 did not), so a piece is 996 bytes.
+ */
+export const INPUT_MOST = 996;
 
-/** The single characters with a tmux name. Everything else below 0x20 is a Ctrl-letter. */
-const SINGLES = new Map<string, string>([
-    ['\r', 'Enter'],
-    ['\n', 'Enter'],
-    ['\t', 'Tab'],
-    ['\u001b', 'Escape'],
-    ['\u007f', 'BSpace'],
-    ['\u0008', 'BSpace'],
-    ['\u0000', 'C-Space']
-]);
+const ESC = 0x1b;
+const BEL = 0x07;
 
-/** tmux's name for a control byte, or null when the byte is not one. */
-export function keyName(character: string): string | null {
-    const named = SINGLES.get(character);
-    if (named !== undefined) return named;
-    const code = character.charCodeAt(0);
-    if (code >= 1 && code <= 26) return `C-${String.fromCharCode(96 + code)}`;
-    if (code < 0x20) return `C-${String.fromCharCode(64 + code)}`;
-    return null;
+/** Whether a byte continues a UTF-8 character rather than starting one. */
+function continues(byte: number): boolean {
+    return byte >= 0x80 && byte <= 0xbf;
 }
 
 /**
- * What the page typed, split into the runs `send-keys` can carry: literal text goes out with `-l`
- * and a named key goes out as its name, because `-l` would type the letters of the name instead.
+ * For each position of the input, whether an escape sequence is open there, so a cut before it
+ * would split the sequence. A sequence opens at ESC and ends: a CSI (`ESC [`) at its final byte
+ * 0x40-0x7E after parameter bytes 0x30-0x3F and intermediate bytes 0x20-0x2F, an SS3 (`ESC O`) at
+ * the byte after the `O`, an OSC, DCS, APC or PM (`ESC ]`, `ESC P`, `ESC _`, `ESC ^`) at BEL or at
+ * `ESC \`, and any other `ESC x` at `x`. A CSI broken by a byte outside those ranges ends before
+ * that byte.
  */
-export function splitKeys(input: string): KeyChunk[] {
-    const chunks: KeyChunk[] = [];
-    let literal = '';
-    const flush = (): void => {
-        if (literal === '') return;
-        chunks.push({ literal });
-        literal = '';
-    };
-    let at = 0;
-    while (at < input.length) {
-        const sequence = SEQUENCES.find(([text]) => input.startsWith(text, at));
-        if (sequence !== undefined) {
-            flush();
-            chunks.push({ key: sequence[1] });
-            at += sequence[0].length;
-            continue;
+function openAt(bytes: Buffer): boolean[] {
+    const open: boolean[] = new Array<boolean>(bytes.length).fill(false);
+    type Mode = 'ground' | 'escape' | 'csi' | 'ss3' | 'string' | 'string-escape';
+    let mode: Mode = 'ground';
+    for (let at = 0; at < bytes.length; at += 1) {
+        const byte = bytes[at];
+        if (mode === 'csi' && !(byte >= 0x20 && byte <= 0x7e)) mode = 'ground';
+        // The position before this byte is inside a sequence when one is open and not yet ended.
+        open[at] = mode !== 'ground';
+        switch (mode) {
+            case 'ground':
+                if (byte === ESC) mode = 'escape';
+                break;
+            case 'escape':
+                if (byte === 0x5b) mode = 'csi';
+                else if (byte === 0x4f) mode = 'ss3';
+                else if (byte === 0x5d || byte === 0x50 || byte === 0x5f || byte === 0x5e) {
+                    mode = 'string';
+                } else mode = 'ground';
+                break;
+            case 'csi':
+                if (byte >= 0x40 && byte <= 0x7e) mode = 'ground';
+                break;
+            case 'ss3':
+                mode = 'ground';
+                break;
+            case 'string':
+                if (byte === BEL) mode = 'ground';
+                else if (byte === ESC) mode = 'string-escape';
+                break;
+            case 'string-escape':
+                mode = byte === 0x5c ? 'ground' : 'string';
+                break;
         }
-        const character = input[at];
-        const named = keyName(character);
-        if (named !== null) {
-            flush();
-            chunks.push({ key: named });
-            at += 1;
-            continue;
-        }
-        literal += character;
-        at += 1;
     }
-    flush();
-    return chunks;
+    return open;
+}
+
+/**
+ * What the page typed, cut into the pieces one `send-keys -H` each carries, at most `most` bytes a
+ * piece. A cut never falls inside a UTF-8 character or inside an escape sequence, since a sequence
+ * split across two commands reaches the pane as two writes and a program reads the lone ESC of the
+ * first as the Escape key. A single sequence longer than `most` is cut at the last character
+ * boundary within it.
+ */
+export function inputChunks(bytes: Buffer, most: number = INPUT_MOST): Buffer[] {
+    const open = openAt(bytes);
+    const cuttable = (at: number): boolean =>
+        at === bytes.length || (!open[at] && !continues(bytes[at]));
+    const pieces: Buffer[] = [];
+    let start = 0;
+    while (start < bytes.length) {
+        const limit = Math.min(start + most, bytes.length);
+        let end = limit;
+        while (end > start && !cuttable(end)) end -= 1;
+        if (end === start) {
+            end = limit;
+            while (end > start && end < bytes.length && continues(bytes[end])) end -= 1;
+            if (end === start) end = limit;
+        }
+        pieces.push(bytes.subarray(start, end));
+        start = end;
+    }
+    return pieces;
 }

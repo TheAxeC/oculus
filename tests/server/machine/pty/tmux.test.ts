@@ -1,15 +1,15 @@
 // The control-mode protocol, on recorded text. No tmux runs here: every case feeds the parser the
-// bytes a `tmux -C attach-session` child printed on this machine, so the decoding, the
-// reply pairing and the key map are checked without a process, a socket or a session.
+// bytes a `tmux -C attach-session` child printed on this machine, so the decoding, the reply
+// pairing and the cutting of typed input are checked without a process, a socket or a session.
 
 import { describe, expect, it } from 'vitest';
 import {
     commandLine,
     createParser,
     decodeOutput,
-    keyName,
+    inputChunks,
+    INPUT_MOST,
     quote,
-    splitKeys,
     type ControlEvent,
     type ControlReply
 } from '../../../../src/lib/server/machine/pty/tmux.ts';
@@ -104,60 +104,70 @@ describe('the argument quoting', () => {
     });
 });
 
-describe('the key map', () => {
-    it('names every control character xterm.js sends', () => {
-        const expected: [string, string][] = [
-            ['\r', 'Enter'],
-            ['\n', 'Enter'],
-            ['\t', 'Tab'],
-            ['\u001b', 'Escape'],
-            ['\u007f', 'BSpace'],
-            ['\u0008', 'BSpace'],
-            ['\u0000', 'C-Space'],
-            ['\u0001', 'C-a'],
-            ['\u0003', 'C-c'],
-            ['\u0004', 'C-d'],
-            ['\u001a', 'C-z']
-        ];
-        for (const [character, name] of expected) expect(keyName(character)).toBe(name);
-        expect(keyName('a')).toBeNull();
-        expect(keyName('\u00e9')).toBeNull();
+describe('the input pieces', () => {
+    /** The byte count of each piece, after checking the pieces put back together are the input. */
+    function sizes(input: Buffer, most?: number): number[] {
+        const pieces = most === undefined ? inputChunks(input) : inputChunks(input, most);
+        expect(Buffer.concat(pieces).equals(input)).toBe(true);
+        return pieces.map((piece) => piece.length);
+    }
+
+    it('keeps a mouse report whole, as one piece of its 11 bytes', () => {
+        const report = Buffer.from('\u001b[<0;20;14M');
+        expect(sizes(report)).toEqual([11]);
     });
 
-    it('names the arrows, Home, End and the two page keys in both their forms', () => {
-        const expected: [string, string][] = [
-            ['\u001b[A', 'Up'],
-            ['\u001b[B', 'Down'],
-            ['\u001b[C', 'Right'],
-            ['\u001b[D', 'Left'],
-            ['\u001bOA', 'Up'],
-            ['\u001bOD', 'Left'],
-            ['\u001b[H', 'Home'],
-            ['\u001b[F', 'End'],
-            ['\u001bOH', 'Home'],
-            ['\u001bOF', 'End'],
-            ['\u001b[1~', 'Home'],
-            ['\u001b[4~', 'End'],
-            ['\u001b[3~', 'DC'],
-            ['\u001b[5~', 'PageUp'],
-            ['\u001b[6~', 'PageDown']
-        ];
-        for (const [sequence, name] of expected)
-            expect(splitKeys(sequence)).toEqual([{ key: name }]);
+    it('keeps a typed line whole', () => {
+        expect(sizes(Buffer.from('ls -la\r'))).toEqual([7]);
     });
 
-    it('splits typed text into the runs send-keys can carry', () => {
-        expect(splitKeys('ls -la\r')).toEqual([{ literal: 'ls -la' }, { key: 'Enter' }]);
-        expect(splitKeys('ab\u001b[Dc')).toEqual([
-            { literal: 'ab' },
-            { key: 'Left' },
-            { literal: 'c' }
+    it('cuts a long text at the most one command carries', () => {
+        expect(INPUT_MOST).toBe(996);
+        expect(sizes(Buffer.from('a'.repeat(INPUT_MOST + 904)))).toEqual([INPUT_MOST, 904]);
+        expect(sizes(Buffer.from('a'.repeat(5000)), 4096)).toEqual([4096, 904]);
+    });
+
+    it('never cuts inside a UTF-8 character', () => {
+        const text = `${'a'.repeat(INPUT_MOST - 1)}\u00e9`;
+        expect(sizes(Buffer.from(text))).toEqual([INPUT_MOST - 1, 2]);
+        expect(sizes(Buffer.from(`${'a'.repeat(4095)}\u00e9`), 4096)).toEqual([4095, 2]);
+    });
+
+    it('never cuts inside a CSI sequence', () => {
+        const report = '\u001b[<0;20;14M';
+        expect(sizes(Buffer.from(`${'a'.repeat(INPUT_MOST - 6)}${report}`))).toEqual([
+            INPUT_MOST - 6,
+            11
         ]);
-        expect(splitKeys('')).toEqual([]);
-        expect(splitKeys('\u0003')).toEqual([{ key: 'C-c' }]);
+        expect(sizes(Buffer.from(`${'a'.repeat(4090)}${report}`), 4096)).toEqual([4090, 11]);
     });
 
-    it('keeps a character above ASCII as literal text rather than as a key', () => {
-        expect(splitKeys('caf\u00e9')).toEqual([{ literal: 'caf\u00e9' }]);
+    it('keeps an OSC answer whole up to its BEL', () => {
+        const answer = '\u001b]11;rgb:0000/0000/0000\u0007';
+        const input = Buffer.from(`${'a'.repeat(INPUT_MOST - 16)}${answer}`);
+        const pieces = inputChunks(input);
+        expect(pieces.map((piece) => piece.length)).toEqual([INPUT_MOST - 16, answer.length]);
+        expect(pieces[1].toString('latin1')).toBe(answer);
+        expect(sizes(Buffer.from(`${'a'.repeat(4080)}${answer}`), 4096)).toEqual([
+            4080,
+            answer.length
+        ]);
+    });
+
+    it('ends an SS3, a string closed by ESC backslash, and any other ESC x where they end', () => {
+        // Each sequence straddles the cut at 8 bytes, so each is pushed whole into the next piece.
+        expect(sizes(Buffer.from('aaaaaaa\u001bOA'), 8)).toEqual([7, 3]);
+        expect(sizes(Buffer.from('aaaaaa\u001bPq\u001b\\b'), 8)).toEqual([6, 6]);
+        expect(sizes(Buffer.from('aaaaaaa\u001b7b'), 8)).toEqual([7, 3]);
+    });
+
+    it('cuts a sequence longer than a piece at the last character boundary', () => {
+        const title = `\u001b]0${'\u00e9'.repeat(10)}\u0007`;
+        // 3 bytes of opener, then two-byte characters: a cut at 8 would fall inside the third one.
+        expect(sizes(Buffer.from(title), 8)).toEqual([7, 8, 8, 1]);
+    });
+
+    it('gives no piece for no input', () => {
+        expect(inputChunks(Buffer.alloc(0))).toEqual([]);
     });
 });

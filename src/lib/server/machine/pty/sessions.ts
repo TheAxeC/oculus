@@ -8,14 +8,14 @@
 // it. A composer's start is an argument vector of at least two words, which tmux runs directly,
 // with the prompt as one word of it and the account as one `-e NAME=folder` pair, or, for the
 // default account, `env -u NAME` leading the argument vector. What the page types into a running
-// terminal, a steer included, goes out only through `send-keys -l`, and an interrupt is the one
-// Escape key.
+// terminal and the text of a steer go out as their bytes, through `send-keys -H` in pieces
+// (inputArgs), a steer then Enter, and an interrupt is the one Escape key.
 
 import { randomBytes } from 'node:crypto';
 import { statSync } from 'node:fs';
 import { isAbsolute } from 'node:path';
 import type { Terminal, TerminalKind, TerminalResume } from '../../../data/model/index.ts';
-import { run, type KeyChunk, type TmuxOptions } from './tmux.ts';
+import { inputChunks, run, type KeyChunk, type TmuxOptions } from './tmux.ts';
 
 /** Every tmux session oculus owns carries this prefix and nothing else does. */
 export const PREFIX = 'oculus-';
@@ -409,10 +409,52 @@ export async function scrollback(
     return (options.run ?? run)(captureArgs(id, lines), options);
 }
 
+/** The arguments that read where tmux has a pane's cursor, and how many rows the pane has. */
+export function cursorArgs(id: string): string[] {
+    return [
+        'display-message',
+        '-p',
+        '-t',
+        sessionName(id),
+        '#{cursor_x} #{cursor_y} #{pane_height}'
+    ];
+}
+
 /**
- * The arguments that send one chunk of what the page typed. `--` is what stops getopt inside tmux
- * from reading a line beginning with a dash as flags; tests/server/machine/pty/sessions.test.ts
- * types such a line through a real tmux and reads it back.
+ * The screen an attaching page is given: the whole capture without its final newline, then the
+ * cursor put where tmux has it. Written into a grid as high as the pane, the capture's last rows
+ * are the pane's rows, so a new shell's prompt sits on its own row at the top rather than under
+ * the capture's blank rows, and the rows under a prompt's cursor stay drawn. A cursor that does not
+ * read as three whole numbers, or whose row is outside the pane, leaves the capture as it is.
+ */
+export function screenAt(capture: string, cursor: string): string {
+    const found = /^(\d+) (\d+) (\d+)\s*$/.exec(cursor);
+    if (found === null) return capture;
+    const [column, row, height] = [Number(found[1]), Number(found[2]), Number(found[3])];
+    if (row >= height) return capture;
+    const lines = capture.endsWith('\n') ? capture.slice(0, -1) : capture;
+    return `${lines}\u001b[${row + 1};${column + 1}H`;
+}
+
+/** The arguments that type bytes into a pane as they are: two lowercase hex digits per byte. */
+export function sendBytesArgs(id: string, bytes: Uint8Array): string[] {
+    const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0'));
+    return ['send-keys', '-t', sessionName(id), '-H', ...hex];
+}
+
+/**
+ * The commands that type bytes into a pane: one `send-keys -H` per piece of inputChunks, in order.
+ * The page's typing and a steer both go this way, so a text of any length fits tmux's cap on one
+ * command and no escape sequence or character is split across two.
+ */
+export function inputArgs(id: string, bytes: Uint8Array): string[][] {
+    return inputChunks(Buffer.from(bytes)).map((piece) => sendBytesArgs(id, piece));
+}
+
+/**
+ * The arguments that send one chunk of text a server-built message types: literal text or a key by
+ * name. `--` is what stops getopt inside tmux from reading a line beginning with a dash
+ * as flags.
  */
 export function sendKeysArgs(id: string, chunk: KeyChunk): string[] {
     const target = sessionName(id);
@@ -421,12 +463,13 @@ export function sendKeysArgs(id: string, chunk: KeyChunk): string[] {
 }
 
 /**
- * The two calls that type one message into a running agent and send it: the text as literal keys,
- * a line break inside it typed as the character it is, then Enter. Both agents read a typed line
- * feed as a new line of the message and Enter as its end.
+ * The calls that type one message into a running agent and send it: the text as its UTF-8 bytes,
+ * in as many `send-keys -H` commands as its length takes, a line break inside it typed as the byte
+ * it is, then Enter. Both agents read a typed line feed as a new line of the message and Enter as
+ * its end.
  */
 export function steerArgs(id: string, text: string): string[][] {
-    return [sendKeysArgs(id, { literal: text }), sendKeysArgs(id, { key: 'Enter' })];
+    return [...inputArgs(id, Buffer.from(text, 'utf8')), sendKeysArgs(id, { key: 'Enter' })];
 }
 
 /** The longest message one steer types. */

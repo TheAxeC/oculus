@@ -76,6 +76,11 @@ async function post(body: Record<string, unknown>, recordFor = source()) {
     };
 }
 
+/** The hex words `send-keys -H` types a text's UTF-8 bytes as. */
+function bytes(text: string): string[] {
+    return Array.from(Buffer.from(text, 'utf8'), (byte) => byte.toString(16).padStart(2, '0'));
+}
+
 describe('POST /api/terminal, the compose action', () => {
     it('starts the agent with its picks and the prompt as one argument, in the workspace', async () => {
         const prompt = `$(touch x); echo "q' ; rm -rf ~"`;
@@ -132,7 +137,7 @@ describe('POST /api/terminal, the compose action', () => {
         expect(argv).toHaveLength(1);
         const keys = calls.filter((args) => args[0] === 'send-keys');
         expect(keys.map((args) => args.slice(3))).toEqual([
-            ['-l', '--', 'ls -la; echo "$HOME"'],
+            ['-H', ...bytes('ls -la; echo "$HOME"')],
             ['--', 'Enter']
         ]);
         const quiet = await post({ action: 'compose', agent: 'shell', cwd: HERE, prompt: ' ' });
@@ -163,12 +168,12 @@ describe('POST /api/terminal, the compose action', () => {
 describe('POST /api/terminal, the steer and interrupt actions', () => {
     const ID = 'a1b2c3-claude';
 
-    it('types the message as literal keys after `--`, then Enter', async () => {
+    it('types the message as its UTF-8 bytes in hex, then Enter', async () => {
         const text = '-n two\nlines "$HOME"';
         const { response, calls } = await post({ action: 'steer', id: ID, text });
         expect(response.status).toBe(200);
         expect(calls).toEqual([
-            ['send-keys', '-t', `oculus-${ID}`, '-l', '--', text],
+            ['send-keys', '-t', `oculus-${ID}`, '-H', ...bytes(text)],
             ['send-keys', '-t', `oculus-${ID}`, '--', 'Enter']
         ]);
     });
