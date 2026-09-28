@@ -162,6 +162,42 @@ Status words: **has**, **part** (some of it, the rest named), **none**, **not ch
 | Word count | none | D14 |
 | Formatting, linting (ChkTeX) | none | D14 |
 
+## Terminal panel (oculus: the Terminal view; owner Q89)
+
+Taken 2026-09-28 from the two VS Code pages "Terminal Basics" and "Terminal Appearance" (sources below). Oculus shows one terminal per Terminal tab, and its tabs sit in the page's panes, so VS Code's terminal groups and its editor-area terminals are panes of a page here.
+
+| VS Code | oculus | step |
+|---|---|---|
+| Tabs list beside the terminal, on the right, shown from two terminals on (`tabs.hideCondition` singleTerminal, `tabs.location` right) | none: a "Pick a terminal" menu on the bar | Q89 |
+| With one terminal, its name and actions in the view's header (`tabs.showActiveTerminal` singleTerminal) | none | Q89 |
+| A row: icon, title, description, the one shown marked | part: the menu lists names | Q89 |
+| Title named after what runs (`${process}`) | none: the session title or the tmux name | Q89 |
+| Description after the title (`${task}`, `${cwdFolder}`) | none | Q89 |
+| Status icon on the row: bell (`enableBell`, `bellDuration`) | none | Q89 |
+| Status icon on the row: a task's check or cross | none | left out: oculus runs no VS Code tasks; an update task is a terminal like any other |
+| Hover detail on a row (process, folder, id) | none | Q89 |
+| Row actions on hover: split, kill | part: stop in the Sessions list | Q89 |
+| New terminal (+) and the profile dropdown | has: New terminal and the composer's agent choice (Claude, Codex, shell) | none |
+| Split the terminal beside | part: panes, opened by hand | Q89 |
+| Kill the terminal from the view | part: stop in the Sessions list | Q89 |
+| Previous and next terminal by keyboard (Cmd+[ and Cmd+]) | none | Q89: arrow keys in the tabs list |
+| Right-click menu: split, rename, change icon, change colour, move, kill | none | Q88 (the terminal is in its list) |
+| Drag a row to reorder, or to another group | none | Q89: reorder within the list, the order kept in the reader's layout state; another group is another pane, reached by dragging the tab |
+| Terminal in the editor area, in a new window | has: a Terminal tab opens in any pane of any page | none |
+| Maximize the panel | has: the pane menu | none |
+| Find in the terminal (Cmd+F) | none | Q83 (the xterm search addon) |
+| Links: URLs, file paths, open detected link | none | Q83 (the web-links addon) for URLs; file paths left out until Q83 lands |
+| Copy, paste, select all, Alt-click selection | has: xterm's own | none |
+| Multi-line paste warning | none | Q89 |
+| Scroll by line, page, top, bottom; previous and next command | part: xterm's own scrolling | left out: command navigation needs shell integration, which oculus does not install |
+| Shell integration decorations | none | left out: needs a script injected into the reader's shell |
+| Run selected text, run active file | none | left out until the editor is Monaco (D13) |
+| Fixed dimensions, size to content width | none | left out: tmux owns the size |
+| Drag a file into the terminal to type its path | none | Q89: a row dragged from the Files view, as the composer already takes one |
+| Scrollback length setting | part: tmux's history | none |
+| Inline chat and `@terminal` | none | left out: the terminal is the agent |
+| Message box under the terminal | part: shown under every terminal | Q89: only under a Claude or Codex terminal |
+
 ## Sources
 
 - https://code.visualstudio.com/docs/getstarted/userinterface
@@ -171,3 +207,5 @@ Status words: **has**, **part** (some of it, the rest named), **none**, **not ch
 - https://code.visualstudio.com/docs/agents/overview
 - https://github.com/James-Yu/LaTeX-Workshop/wiki
 - vscode.dev, measured in Chrome on 2026-09-23
+- https://code.visualstudio.com/docs/terminal/basics
+- https://code.visualstudio.com/docs/terminal/appearance
