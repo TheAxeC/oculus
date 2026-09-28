@@ -299,7 +299,7 @@ One line per package: the status mark, the id, the title, and where the rest is 
 ## Could run in parallel
 
 - The feature stretch after R17, three in flight at all times, one dispatched at each landing (Axel 2026-09-14 17:50 and 2026-09-15 19:58; the steps that run alone and the order are in `orchestrator-state.md`, which holds this line whole)
-- The queue, in order: Q76; S2; X3b + Q78; Q77c + Q77d + Q90; Q77a + Q77b + Q77e; Q93; L7; Q95; Q94; Q97; Q98; Q92; Q89; Q79; Q80; Q87; Q81; Q96; Q82; Q88; D13; X3a + X3c; Q91; Q83; Q84; Q85; Q86; L4; Q66; Q35; D11 + D14; D23 + D15 + D17; D18 + D20 + D24; A1 + A2 + A3; M3 + E1; M4; then Q72, R2, O29, O30, X2, then O33 last.
+- The queue, in order: Q76; S2; X3b + Q78; Q77c + Q77d + Q90; Q77a + Q77b + Q77e; Q93; L7; Q95 + Q94 + Q97; Q98 + Q92 + Q89; Q79 + Q80; Q87; Q81; Q96 + Q82; Q88; D13 + X3a + X3c; Q91 + Q83; Q84; Q85 + Q86; L4; Q66 + Q35; D11 + D14; D23 + D15 + D17; D18 + D20 + D24; A1 + A2 + A3; M3 + E1 + M4; then Q72, R2, O29 + O30, X2, then O33 last. Inside a set: Q96 after Q81 lands, X3a after Q82, Q91 after X3a, D23 after D13, D15 after D14, A3 after D17.
 Independent of each other; two may run side by side under R9's rule when their briefs name disjoint paths and different views, else they run one at a time.
 - S1 with anything after R1.
 - O5 with O2 to O4.
@@ -413,6 +413,7 @@ Independent of each other; two may run side by side under R9's rule when their b
 - Open item Z31 (2026-09-28): the Calendar footer gets a second line for one day; step Q98 (the user).
 - Open item Z32 (2026-09-28): Ordo v2.0.0 is pinned; `libraries: check` is in the `oculus` project of `.agents/plan.yaml` (the user).
 - Open item Z33 (2026-09-28): the queue runs L7; Q95; Q94; Q97; Q98; Q92; ... Q81; Q96; Q82, as booked (the user).
+- Open item Z34 (2026-09-28): the run-alone rule means the plan's own configuration and rules (`.agents/plan.yaml`, the verification block, the rules file and its standards); oculus's `config/*.yml` are judged like any shared file, by how simply they merge; the queue runs as 23 sets (the user).
 
 ## Blocked, and by what
 - O16: no longer blocked. The `Notification` and `Stop` hooks exist since 2026-09-10 in the hub's and cathedra's local settings, written by Axel.
