@@ -61,7 +61,7 @@ dispatch:      # Q99 and Q100 in repair round 1; Q79d building.
   launched: 2026-09-28
   report: agents/reviews/Q79d-report.md
   landing: not-started
-  round: 0
+  round: 0   # the grep case ruled in agents/briefs/Q79d-cases.md, 2026-09-28
   shared_paths: with Q100, views/personal/calendar/Calendar.svelte (Q79d its script's localDay import and two calls, Q100 its style block: different lines, a hand merge); with Q99, docs/diagrams (a rerun of npm run diagrams)
 ```
 
