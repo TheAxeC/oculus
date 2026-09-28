@@ -7,7 +7,9 @@ Queued, in order:
 - Q81 (menus, context menus, tooltips and dialogs on bits-ui), once Q101 has landed, since both change the terminal views.
 - Q79b (the tests, runs alone).
 - Q96 and Q88 (the Rail section's field labels and its icon dropdown on bits-ui, once Q81 has landed; right-click menus wherever vscode.dev gives one).
-- Q82, D13 and X3c (the tree on @zag-js/tree-view; the editor replaced by Monaco; the tab strip as VS Code's editor tabs).
+- Q82 (the tree on @zag-js/tree-view), once Q101 has landed, since both change `TerminalList.svelte` and `Latex.svelte`.
+- D13 (the editor replaced by Monaco): stopped at /spec, waiting on Axel's ruling Z46.
+- X3c (the tab strip as VS Code's editor tabs).
 - X3a (the Files view as VS Code's Explorer, once Q82 has landed).
 - Q91 and Q83 (the project view and its editor, once X3a has landed; small libraries: culori and the others).
 - Q84 and L4 (the fetch-and-hold stores on @tanstack/svelte-query; floating panes; together only when their briefs name no shared file).
