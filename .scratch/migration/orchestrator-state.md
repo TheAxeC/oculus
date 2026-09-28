@@ -27,19 +27,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:      # Q100 round refuted, landing next; Q79d building.
-- step: Q100
-  executor: agent
-  worker: claude:opus
-  session_id: acde8db41af144918
-  worktree: .agents/worktrees/Q100
-  base: 4f22e78e
-  launched: 2026-09-28
-  report: agents/reviews/Q100-report.md
-  landing: not-started
-  reviewer_report: agents/reviews/Q100-refuter.md (reviewer a4d8e215a755b412b, 34 tool uses, 135k tokens, 11 min; builder 29 tool uses, 130k tokens, 10 min; the builder ran one read-only git diff --stat against the no-git rule)
-  round: 1   # sent 2026-09-28 in agents/briefs/Q100-round1-sent.md, from worktree commit d5a94e03
-  shared_paths: with Q99, DESIGN.md (Q100 line 216, the wallpaper paragraph; Q99 line 264, the pty bridge: different paragraphs, a hand merge)
+dispatch:      # Q79d built, its review next.
 - step: Q79d
   executor: agent
   worker: claude:opus
@@ -54,6 +42,7 @@ dispatch:      # Q100 round refuted, landing next; Q79d building.
 ```
 
 ## The standing demands (from Axel, in force)
+- At landing the verify list runs once on main (Axel, 2026-09-28). A failing test in a file the step does not change, which passes when that one file runs alone, is named in the booking with that one-file run, and the landing goes on. The full list is not run again for it, and the test is not investigated. This holds whatever the failure says, a timeout or an assertion.
 - `queue.md` beside this file is the list of steps in flight and queued, in the shape Axel reads it (Axel, 2026-09-28). It is rewritten in the same commit as every launch, repair round, landing and ruling that moves a step, and a resume point never leaves it behind the dispatch block or the queue line of `plan.md`.
 - Libraries: the orchestrator checks, Axel decides (Axel, 2026-09-26). Less code is the aim: oculus is over 100,000 lines, and a library that covers a capability can remove code that would otherwise be kept up; code is written by hand only where no library covers the capability, never by cutting a feature. Before any brief is written, `/spec` includes a library check for every capability the step builds or changes: the candidates found (npm and the ecosystem oculus uses), each with its version, license, maintainer, last release, compatibility with what oculus runs (Svelte 5, SvelteKit, `marked` 18 and the rest of `package.json`), what it would replace and what would stay, and how it takes oculus's theme tokens and layer rules. A candidate that could replace or avoid hand-built code is an open item for Axel with options, pros, cons and one recommendation (a library, or keeping the code), and the step waits for his ruling. Bundle size is not a criterion. The brief names the library ruled, and a builder adds no dependency the brief did not name (`agents/spec.md`), and reports an unnamed library that would cover its work instead of installing it. The Ordo `/spec` skill and its brief template carry no library check yet; this file carries it until they do, and the Ordo change goes through the session that holds that repository.
 - The library audit (Axel, 2026-09-26: a proper and full audit, before any new step is launched): every capability oculus builds by hand, across `src/`, `bin/`, the config loaders and the test and check tooling, with X3b's worktree changes included, audited for a library that covers it; the result is a set of open items, one per capability where a library is a real option, each with options, pros, cons and a recommendation. Done and ruled 2026-09-26 (LA1 to LA22, closed log); a step whose brief uses a ruled library names it, and a builder adds no other dependency. X3b, already in flight, continues through its round's refutation and its landing.
@@ -416,6 +405,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-09-29. Q100 landed through /spec, /refute and /land (the Calendar's fixed strips over a wallpaper); one repair round, refuted again; fixes at landing: the library import rule, the pseudo-class comma, the strips at the popover mix (Z44 (b), Axel), the list titles at the Calendar's size (Axel), the DESIGN sentence. The git cap case tagged slow and left out of `npm test` (4390ffda, Axel). Next: Q79d's review, `/spec` Q101.
 - 2026-09-28. Q99 landed through /spec, /refute and /land (the terminal and Pages defects: input as `-H` bytes, a tab closing on its terminal's end, a new shell's prompt at the top, the Pages rows); one repair round, refuted again; fixes at landing: two compose test expectations, the HELP.md paste sentence, the diagrams merge. Verify on main: `verify: 6 commands passed` (Test Files 347 passed, Tests 5553 passed). Next: Q100's landing, `/spec` Q101, Q79d's report.
 - 2026-09-28. Q79a landed through /spec, /refute and /land (the server half of the library audit: `json()`, one `/api/` origin guard in `handle`); one repair round, refuted again; fixes at landing: the merge with Q92's `connect/actions.ts`, the migration's plain tags, the two `HEADERLESS` cases, three test titles and one comment. Verify on main: `verify: 6 commands passed` (Test Files 346 passed, Tests 5506 passed). Next: Q99's repair round 1, then `/spec` Q100 and Q101.
 - 2026-09-28. Q79c landed through /spec, /refute and /land (the page half of the library audit): one repair round, refuted again; five fixes at landing (the merge with Q92's manual.ts, the diagram alt text decoded on the server, the career moves as default ToolButtons with the capsule variant removed, fs.ts split into file-type.ts, the extension rule written once). Axel ruled Z43 (a). Q79a's round and Q99's first review are in; next: Q79a's landing, then Q99's repair round.

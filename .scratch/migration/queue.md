@@ -1,8 +1,7 @@
 /plan-orchestration oculus/migration
 
 In flight:
-- Q100 (the Calendar's fixed strips cover the rows under them over a wallpaper, Z42 (a)): repair round 1 sent (a strip listed inside `:global()`, the strip rule narrowed to the calendar's sticky strips, the table header named in DESIGN.md).
-- Q79d (the library audit's shared helpers, each written once): building.
+- Q79d (the library audit's shared helpers, each written once): built, review next.
 Queued, in order:
 - Q101 (each Terminal tab a terminal panel of its own, Z40 (d)).
 - Q87 and Q81 (the import-graph checks on dependency-cruiser; menus, context menus, tooltips and dialogs on bits-ui).
@@ -28,7 +27,8 @@ Queued, in order:
 The loop fills three slots as they free up; a line above is only an order, never a barrier, apart from the "once ... has landed" notes. A step's line moves to Landed, at the top of that list, in its landing commit.
 
 Landed, newest first: every step ticked in `plan.md`, each with the date and the commit that ticked it (the 15 steps dated 2026-09-10 at f8af492b were landed before the ledger was opened):
-- Q99 (the terminal and Pages defects), 2026-09-28, 41c6e3df.
+- Q100 (the Calendar's fixed strips over a wallpaper), 2026-09-29, the commit that carries this line.
+- Q99 (the terminal and Pages defects), 2026-09-28, f2ace0c0.
 - Q79a (the server half of the library audit's section D), 2026-09-28, 6a5ad2f8.
 - Q79c (the page half of section D), 2026-09-28, f2330638.
 - Q92 (the Inbox and Calendar views beautified), 2026-09-28, 26ab6f90.

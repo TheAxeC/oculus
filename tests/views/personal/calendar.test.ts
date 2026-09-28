@@ -235,6 +235,46 @@ describe('the Calendar view', () => {
         expect(library).not.toMatch(/\n\s*height:/);
     });
 
+    // The strips that stay in place while the grid scrolls under them cover the rows over a
+    // wallpaper with the panel's colour at the popover's fraction, and a date heading keeps today's
+    // chip over it.
+    it('audits that over a wallpaper both fixed strips paint the popover mix with the blur, and the date heading its chip after it', () => {
+        const source = readFileSync('src/lib/views/personal/calendar/Calendar.svelte', 'utf8');
+        const style = source.slice(source.indexOf('<style>')).replace(/\/\*[\s\S]*?\*\//g, ' ');
+        const rules = [...style.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map((match) => ({
+            at: match.index,
+            selectors: match[1]
+                .split(',')
+                .map((one) => one.trim().replace(/\s+/g, ' '))
+                .sort(),
+            body: match[2]
+        }));
+        const header = ':global(body.wall) .grid :global(.ec-header)';
+        const heading = ':global(body.wall) .grid :global(.ec-list .ec-day-head)';
+        const same = (selectors: string[], wanted: string[]): boolean =>
+            JSON.stringify(selectors) === JSON.stringify([...wanted].sort());
+        const both = rules.filter((rule) => same(rule.selectors, [header, heading]));
+        expect(both).toHaveLength(1);
+        expect(both[0].body).toMatch(
+            /\n\s*background: color-mix\(in srgb, var\(--panel\) var\(--wall-popover\), transparent\);/
+        );
+        expect(both[0].body).toMatch(/\n\s*backdrop-filter: blur\(var\(--wall-blur\)\);/);
+        const chip = rules.filter((rule) => same(rule.selectors, [heading]));
+        expect(chip).toHaveLength(1);
+        expect(chip[0].at).toBeGreaterThan(both[0].at);
+        expect(chip[0].body).toMatch(
+            /\n\s*background-image: linear-gradient\(var\(--ec-day-bg-color\), var\(--ec-day-bg-color\)\);/
+        );
+    });
+
+    it("audits that a list view's event title takes the calendar's size rather than the root's", () => {
+        const source = readFileSync('src/lib/views/personal/calendar/Calendar.svelte', 'utf8');
+        const style = source.slice(source.indexOf('<style>')).replace(/\/\*[\s\S]*?\*\//g, ' ');
+        expect(style).toMatch(
+            /\.grid :global\(\.ec-list \.ec-event-title\) \{\s*font-size: var\(--fs-sm\);\s*\}/
+        );
+    });
+
     it('draws the calendar in month view for an instance that keeps the month', () => {
         const body = draw(payload, { view: 'dayGridMonth' });
         expect(body).toMatch(/class="ec ec-day-grid ec-month-view"/);

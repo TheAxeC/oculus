@@ -9,6 +9,11 @@
 // surface was that partial's is bare and asks. So a new bare view fails this until it asks for the
 // tint, and a view that grows a card of its own fails until it stops asking.
 //
+// A strip that stays in place while rows of the same box scroll under it may carry a wall mix of
+// the panel's colour over the tint, so a wall rule whose selectors, `:global(...)` lists included, all end with
+// such a strip is no surface of the view's own. A strip counts only in a component that imports
+// the calendar library that draws it; anywhere else a rule naming its class is a surface.
+//
 // The audit is a function of the sources it is given, so the two sides of the rule are also driven
 // over a synthetic pair below rather than only over whatever the tree happens to hold.
 
@@ -30,6 +35,62 @@ const WALL_MIX =
 
 /** The body class every wallpaper rule hangs off, in a rule's own selector. */
 const WALL = /:global\(body[^)]*\bwall\b[^)]*\)/;
+
+/**
+ * The strips that stay in place while rows of the same box scroll under them. `.ec-header` is the
+ * header of the time grid and of the day grid, which the library makes sticky; `.ec-list
+ * .ec-day-head` is the list view's date heading, which it makes sticky too. The day heading inside
+ * a grid's header is not sticky itself, so `.ec-day-head` alone is not a strip. Such a strip may
+ * carry a wall mix of the panel's colour over the tint, since the rows scrolled under it must not show through and it
+ * covers only rows of its own box. A strip counts only in a component that imports `LIBRARY`, since
+ * only there do these classes name the library's strips.
+ */
+const STRIPS = ['.ec-header', '.ec-list .ec-day-head'];
+
+/**
+ * The calendar library that draws the strips, as an import statement of a component's script brings
+ * its values in; a type-only import draws nothing.
+ */
+const LIBRARY = /^\s*import\s+(?!type\b)[^;'"]*\bfrom\s+['"]@event-calendar\/core['"]/m;
+
+/** Whether a component's script imports the calendar library, its comments removed. */
+function importsLibrary(source: string): boolean {
+    return [...source.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/g)].some((match) =>
+        LIBRARY.test(match[1].replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, ''))
+    );
+}
+
+/** The selectors of a rule, split at the commas outside any parentheses. */
+function selectors(list: string): string[] {
+    const found: string[] = [];
+    let depth = 0;
+    let start = 0;
+    for (let at = 0; at < list.length; at++) {
+        if (list[at] === '(') depth++;
+        else if (list[at] === ')') depth--;
+        else if (list[at] === ',' && depth === 0) {
+            found.push(list.slice(start, at));
+            start = at + 1;
+        }
+    }
+    found.push(list.slice(start));
+    return found.map((one) => one.trim());
+}
+
+/**
+ * Whether a selector names only strips. Every `:global(...)` is read through first, and a
+ * `:global(...)` holding a list turns the selector into that list, split at the commas outside any
+ * other parentheses, so every part must end with a strip.
+ */
+function namesStrip(selector: string): boolean {
+    const plain = selector.replace(/:global\(([^()]*)\)/g, '$1');
+    return selectors(plain).every((part) => STRIPS.some((strip) => part.endsWith(strip)));
+}
+
+/** Whether a rule's selector list names anything besides the strips a component may have. */
+function beyondStrips(list: string, library: boolean): boolean {
+    return !library || selectors(list).some((selector) => !namesStrip(selector));
+}
 
 function files(at: string): string[] {
     return readdirSync(at)
@@ -85,11 +146,14 @@ function opening(source: string, name: string): string | null {
 function read(file: string, source: string): Read {
     const rules = [...css(source).matchAll(/([^{}]+)\{([^{}]*)\}/g)];
     const box = opening(source, 'Pane');
+    const library = importsLibrary(source);
     const imports = [
         ...source.matchAll(/import\s+(\w+)\s+from\s+'((?:\.|\$lib\/views\/)[^']+\.svelte)'/g)
     ];
     return {
-        surface: rules.some((rule) => WALL.test(rule[1]) && WALL_MIX.test(rule[2])),
+        surface: rules.some(
+            (rule) => WALL.test(rule[1]) && WALL_MIX.test(rule[2]) && beyondStrips(rule[1], library)
+        ),
         card: /<Card[\s/>]/.test(source),
         pane: box !== null,
         asks: box !== null && new RegExp(`\\b${PROP}\\b`).test(box),
@@ -206,6 +270,27 @@ function audit(entries: Record<string, string>): { missing: string[]; extra: str
     return faults(held);
 }
 
+/** The calendar library's import, as the Calendar's script writes it. */
+const IMPORT = "import { Calendar } from '@event-calendar/core';";
+
+/**
+ * A partial whose one wall rule, under `selector`, paints the pane's own mix, with `script` as the
+ * one line of its script.
+ */
+function strip(selector: string, script = IMPORT): string {
+    return [
+        '<script lang="ts">',
+        `    ${script}`,
+        '</script>',
+        '',
+        '<style>',
+        `    ${selector} {`,
+        '        background: color-mix(in srgb, var(--panel) var(--wall-panel), transparent);',
+        '    }',
+        '</style>'
+    ].join('\n');
+}
+
 describe('the rule over a pair of sources', () => {
     const one = resolve(ROOT, 'One.svelte');
 
@@ -230,5 +315,62 @@ describe('the rule over a pair of sources', () => {
                 'One.svelte': view(' tinted', '<Form surface={false} />')
             })
         ).toEqual({ missing: [], extra: [] });
+    });
+
+    const tinted = (selector: string, script = IMPORT) =>
+        audit({
+            'Form.svelte': strip(selector, script),
+            'One.svelte': view(' tinted', '<Form />')
+        });
+    const clean = { missing: [], extra: [] };
+    const extra = { missing: [], extra: [one] };
+
+    it("audits that a wall rule on the grid's header alone is no surface of the view's own", () => {
+        expect(tinted(':global(body.wall) .grid :global(.ec-header)')).toEqual(clean);
+    });
+
+    it("audits that a wall rule on the list view's date headings alone is no surface of the view's own", () => {
+        expect(tinted(':global(body.wall) .grid :global(.ec-list .ec-day-head)')).toEqual(clean);
+    });
+
+    it('audits that a wall rule naming a strip and anything else is a surface', () => {
+        expect(
+            tinted(':global(body.wall) .grid :global(.ec-header), :global(body.wall) .grid .rows')
+        ).toEqual(extra);
+    });
+
+    it('audits that a global list naming a strip and anything else is a surface', () => {
+        expect(tinted(':global(body.wall) .grid :global(.rows, .ec-header)')).toEqual(extra);
+    });
+
+    it("audits that a global list naming only strips is no surface of the view's own", () => {
+        expect(
+            tinted(':global(body.wall) .grid :global(.ec-header, .ec-list .ec-day-head)')
+        ).toEqual(clean);
+    });
+
+    it("audits that a day heading inside a grid's header is no strip", () => {
+        expect(tinted(':global(body.wall) .grid :global(.ec-time-grid .ec-day-head)')).toEqual(
+            extra
+        );
+    });
+
+    it('audits that a strip class counts as a strip only where the calendar library is imported', () => {
+        expect(tinted(':global(body.wall) .cards .ec-header', '')).toEqual(extra);
+        expect(tinted(':global(body.wall) .cards .ec-header')).toEqual(clean);
+    });
+
+    it('audits that only an import of the library values counts as importing it', () => {
+        for (const script of [
+            'const note = "from \'@event-calendar/core\'";',
+            "// an import from '@event-calendar/core' would go here",
+            "import type { Calendar } from '@event-calendar/core';"
+        ]) {
+            expect(tinted(':global(body.wall) .cards .ec-header', script)).toEqual(extra);
+        }
+    });
+
+    it("audits that a comma inside a pseudo-class does not split a strip's selector", () => {
+        expect(tinted(':global(body.wall) .grid:not(.a, .b) :global(.ec-header)')).toEqual(clean);
     });
 });

@@ -90,3 +90,40 @@ The `Rebasing ... could not apply` lines in the test output come from a deposit 
 - Who wrote the report copy in the main checkout. The orchestrator did, at Steps 6 of plan-orchestration.
 
 Reviewer usage: about 34 tool uses, 135k tokens, 11 minutes.
+
+## Repair round 1, refuted (reviewer a045d53907cbdd178, delta from d5a94e03)
+
+### Verification
+
+Run 1 from the worktree: `verify: 6 commands passed`. Run 2 under a load of 21.9: five files timed out (`checks/imports/augments`, `core/git`, `edit/yaml-edit`, `git/git-ops`, `machine/lines`), none changed by the step; alone they give `Test Files 5 passed (5)`, `Tests 158 passed (158)`. Brief verify 2: `Tests 48 passed (48)`; tinted alone 14. ASCII gate empty. Every revert the report quotes reproduced (R1 to R6, C1, C2, the corrected premise, the chip rule). The round's closures hold and none removes a check.
+
+### 1. Spec
+
+- `tests/views/whole/tinted.test.ts:51` `LIBRARY = /\bfrom\s+['"]@event-calendar\/core['"]/`, tested over the whole source at `:142`: a markup comment, a script string, a script comment or a type-only import naming the library make the strip rule apply (probes L1 to L4 gave `{ missing: [], extra: [] }` where `extra` was asserted). No case pins the import form.
+- `tinted.test.ts:75-80` `plain.split(',')` splits at a comma inside a pseudo-class such as `:not(.a, .b)` or `:is(.grid, .x)`, so a strip-only rule with one counts as a surface (probes S1, S2, S4, S6, S7). It never admits a non-strip. A `:global` list that is not last (`:global(.rows, .x) .ec-header`) counts as a surface too, by the round's own rule.
+
+### 2. Proof
+
+- None beyond the two uncovered forms above. Every quoted count reproduces.
+
+### 3. Standards
+
+- `DESIGN.md:216` names "the Calendar's day headings and date headings"; `.ec-header` also carries the time grid's all-day row and the month view's weekday row, which take the mix too. Minor.
+
+### 4. Behaviour
+
+- `Q100-report.md`: the month view's weekday row "does not scroll" is wrong. `.ec-uniform` applies only when `dayMaxEvents === true` (`@event-calendar/core/dist/index.js:2865`), the default is `false` (`:2890`) and `src` never sets it, so the month grid's rows are `auto` with `min-block-size: 5em` (`index.css:128-131`) in `.ec-main` `overflow: auto` (`:716-718`) under the sticky `.ec-header` (`:749-755`): a month taller than the pane scrolls under the weekday row, before readable through it, after hidden.
+
+### Not checked
+
+- The look under a wallpaper; whether the month grid overflows the pane at its usual height; whether Svelte compiles a `:global(.a, .b)` that is not the last compound.
+
+Reviewer usage: about 25 tool uses, 124k tokens, 15 min.
+
+# Closed
+
+- First review: every finding went into repair round 1 (`agents/briefs/Q100-round1-sent.md`), and the round refutation above checked each closure.
+- Spec, `LIBRARY` over the whole source: fixed at landing; `importsLibrary` tests only the script blocks with comments removed, for a value import; a case covers a string, a comment and `import type`.
+- Spec, `plain.split(',')`: fixed at landing; the split is `selectors()`, at commas outside parentheses; a case covers `:not(.a, .b)`. A `:global` list that is not last still counts as a surface, which never admits a wrong rule.
+- Standards, the DESIGN sentence: fixed at landing; it names the header row with the weekday headings and the all-day row, the list headings and the table's header row.
+- Behaviour, the month weekday row: corrected in the booking; it scrolls under the strip like the week's.

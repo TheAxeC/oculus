@@ -325,6 +325,18 @@
         color: var(--ink-txt, var(--ink));
     }
 
+    /* The library sets a list view's event title in the page's root size; it takes the calendar's
+       own size, as the grids' titles do. */
+    .grid :global(.ec-list .ec-event-title) {
+        font-size: var(--fs-sm);
+    }
+
+    /* The library sets a list view's event title in the page's root size; it takes the calendar's
+       own size, as the grids' titles do. */
+    .grid :global(.ec-list .ec-event-title) {
+        font-size: var(--fs-sm);
+    }
+
     /* The library's toolbar is replaced by the bar above, so its empty strip takes no room. */
     .grid :global(.ec-toolbar) {
         display: none;
@@ -338,9 +350,11 @@
 
     /* The strips that stay in place while the grid scrolls under them, the day headings and a list
        view's date headings, are painted with the pane's own surface, so the rows scrolled beneath
-       them do not show through; a date heading keeps today's chip over it. Over a wallpaper the
-       pane's tint is the one surface, so a strip paints no colour and blurs what passes under it.
-       The more-events popup keeps the panel's own colour over the grid. */
+       them do not show through; a date heading keeps today's chip over it. Over a wallpaper a
+       strip keeps the panel's colour at the popover's fraction with the wallpaper blur over the
+       pane's tint, since at the pane's own fraction the rows passing under it still show; the shorthand resets the
+       date heading's chip, so it is laid again after it. The more-events popup keeps the panel's
+       own colour over the grid. */
     .grid :global(.ec-header),
     .grid :global(.ec-list .ec-day-head) {
         background-color: var(--panel);
@@ -350,8 +364,11 @@
     }
     :global(body.wall) .grid :global(.ec-header),
     :global(body.wall) .grid :global(.ec-list .ec-day-head) {
-        background-color: transparent;
+        background: color-mix(in srgb, var(--panel) var(--wall-popover), transparent);
         backdrop-filter: blur(var(--wall-blur));
+    }
+    :global(body.wall) .grid :global(.ec-list .ec-day-head) {
+        background-image: linear-gradient(var(--ec-day-bg-color), var(--ec-day-bg-color));
     }
 
     /* The library draws the time grid's hour and half-hour lines as gradients and hides parts of
