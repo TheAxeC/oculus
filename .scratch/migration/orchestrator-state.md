@@ -37,6 +37,7 @@ dispatch:      # Q79d built, its review next.
   launched: 2026-09-28
   report: agents/reviews/Q79d-report.md
   landing: not-started
+  reviewer_report: agents/reviews/Q79d-refuter.md (reviewer a0f9a49e067ffa141, running; builder 162 tool uses, 356k tokens, 77 min, with the cases hand-back; the builder ran one git init in its scratchpad against the no-git rule)
   round: 0   # the grep case ruled in agents/briefs/Q79d-cases.md, 2026-09-28
   shared_paths: with Q100, views/personal/calendar/Calendar.svelte (Q79d its script's localDay import and two calls, Q100 its style block: different lines, a hand merge); with Q99, docs/diagrams (a rerun of npm run diagrams)
 ```

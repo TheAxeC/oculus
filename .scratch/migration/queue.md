@@ -27,7 +27,7 @@ Queued, in order:
 The loop fills three slots as they free up; a line above is only an order, never a barrier, apart from the "once ... has landed" notes. A step's line moves to Landed, at the top of that list, in its landing commit.
 
 Landed, newest first: every step ticked in `plan.md`, each with the date and the commit that ticked it (the 15 steps dated 2026-09-10 at f8af492b were landed before the ledger was opened):
-- Q100 (the Calendar's fixed strips over a wallpaper), 2026-09-29, the commit that carries this line.
+- Q100 (the Calendar's fixed strips over a wallpaper), 2026-09-29, a26286e1.
 - Q99 (the terminal and Pages defects), 2026-09-28, f2ace0c0.
 - Q79a (the server half of the library audit's section D), 2026-09-28, 6a5ad2f8.
 - Q79c (the page half of section D), 2026-09-28, f2330638.
