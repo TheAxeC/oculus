@@ -140,8 +140,8 @@ First review:
 - Remove deletes an account's own client half: round item 12. Provider naming: round item 13. The keyboard move: round item 15.
 - Errors escape unhandled: round item 5.
 - Premise check, the `allow-duplication.txt` removals, the reviewer's own unrun browser reverts: no finding.
-- Paths written outside the brief's list (the `secret` prop on `ui/forms/TextInput.svelte`, the `gatedBody` fold into the hpc and usage routes): no round item and no disposition in the landing. Raised to Axel as open items Z16 (the paths) and Z17 (the widened check).
-- The boundaries allowlist widened (`tests/checks/tree/boundaries.test.ts:106`, `data/accounts/connect` allowed to state): no round item and no disposition in the landing. Raised to Axel as open items Z16 (the paths) and Z17 (the widened check).
+- Paths written outside the brief's list (the `secret` prop on `ui/forms/TextInput.svelte`, the `gatedBody` fold into the hpc and usage routes): no round item and no disposition in the landing. Raised as Z16 and Z17, withdrawn by the orchestrator and accepted as landed (see the state file's closed items).
+- The boundaries allowlist widened (`tests/checks/tree/boundaries.test.ts:106`, `data/accounts/connect` allowed to state): no round item and no disposition in the landing. Raised as Z16 and Z17, withdrawn by the orchestrator and accepted as landed (see the state file's closed items).
 
 Repair round 1, refuted:
 - The Inbox and Calendar failure sentences: fixed at landing (`Q67-landing.md`, Fixed at landing, first bullet).
