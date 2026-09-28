@@ -207,6 +207,7 @@ One line per package: the status mark, the id, the title, and where the rest is 
 - Q87 the import-graph checks on `dependency-cruiser` (its resolution of `$lib` and markup `import()` proven first) and duplication detection on `jscpd`, with the ratchets kept as glue; it changes the check tooling and runs alone (LA11 a, LA12 a; Axel 2026-09-26, library audit)
 - O32 the launch note completed, NOT DONE: the oculus half landed 2026-09-23; the skill half (Ordo's plan 2.B) is not in the installed skills. Ticked when Axel has pinned the Ordo release carrying 2.B and a shell-launched step has written its note; nothing in Ordo is touched from this plan (Axel 2026-09-23; brief `agents/briefs/O32.md`, the full line there)
   - Step 0, ruled 2026-09-23 by Axel: (a) on both O31 open items, the `launch_note:` key and the builder's pid in the record.
+  - Step 0, raised 2026-09-28: open item Z20 of the state file; Ordo's next release removes `launch_note`, so the tick condition cannot be met.
 - ✅ Q68 the git watcher reads a root added to the saved workspaces file under any load, by a 500 ms poll on its own clock (booked 2026-09-24; brief `agents/briefs/Q68.md`, the full line there; landing `agents/reviews/Q68-landing.md`); landed 2026-09-24
 - ✅ Q69 what earlier landings left, closed, and the check of seven landed steps (booked 2026-09-24; brief `agents/briefs/Q69.md`, the full line there; the check `agents/reviews/Q69-checks.md`; landing `agents/reviews/Q69-landing.md`); landed 2026-09-25
   - The text as booked, in full in `agents/briefs/Q69.md`.
