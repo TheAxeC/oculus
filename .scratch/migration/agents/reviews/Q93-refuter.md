@@ -137,3 +137,80 @@ Nothing else reaches Playwright or `tests/browser` (passes):
 - Unrelated to the step: the full run left `outside.md` and `node-compile-cache` at the root of the private TMPDIR. `scratch-count.sh` counts only `oculus-*` folders, so it does not see them. I did not trace which test writes `outside.md`.
 
 Reviewer usage: tokens not measured, about 45 tool uses, about 25 minutes.
+
+
+## Repair round 1, refuted (reviewer claude:opus, a fresh agent, 2026-09-28)
+
+## Verification (rerun by the reviewer)
+- uptime before: `3:09 up 2 days, 5:15, 1 user, load averages: 14.22 12.64 9.28`
+- `sh /Users/axelfaes/.claude-work/skills/land/templates/verify.sh .../orchestrator-state.md` from `.agents/worktrees/Q93/tools/oculus`, under `/usr/bin/time -p`, exit 0:
+  - ` Test Files  339 passed (339)`
+  - `      Tests  5301 passed (5301)`
+  - `   Duration  95.63s (transform 24.86s, setup 0ms, import 80.16s, tests 260.46s, environment 70ms)`
+  - `1790557901299 COMPLETED 1427 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS`
+  - `built in 2.03s` / `built in 9.27s`
+  - `All matched files use Prettier code style!`
+  - no RED line
+  - `verify: 6 commands passed`
+  - `real 221.62`
+- uptime after: `3:13 up 2 days, 5:19, 1 user, load averages: 6.83 10.99 9.47`
+- The builder's report says command 6 was RED. That was true when it ran. The state file's verify item now reads `- "! LC_ALL=C grep -rna '[^ -~]' src tests"` (orchestrator-state.md:12), so the list passes on this tree. The report's NOT-done line is out of date. It is not a defect in the round.
+- `npx vitest run tests/checks/tree/duplication.test.ts`: `Test Files 1 passed (1)`, `Tests 10 passed (10)`. This matches the report.
+- `grep -rn -E '^[[:space:]]*// revert:' src tests bin`: no output, exit 1. This matches the report.
+- Old logic in `node` (a copy of `meaningful()` with `line.indexOf('/*')`) over the new case's four lines: `old []`. With `blockOpens`: lines 2, 3 and 4. So the case fails without the fix, as the report says. With the comment line removed, the old logic still truncates line 2 at `'views/shared`, so the string half also discriminates.
+- Same case, with only the `//` branch of `blockOpens` removed (`else if (one === '/' && line[at + 1] === '/') return -1;`): the result is the same lines 2 to 4, so the case stays green. On its own, `blockOpens` without that branch returns 13 for `// ending in /**`. See Proof.
+- allow-duplication.txt, recomputed by a node port of `meaningful`/`copies`/`markOf` (scratchpad `dup.mjs`, allow list empty, first offset of each run) over every entry:
+  - Round's list against the current tree: `ok 597 off 66 missing 0 noNum 3`.
+  - The list at 98100b22 against the current tree: `ok 304 off 359`. 359 - 66 = 293, the builder's count.
+  - All 293 renumbered entries touch a file changed since 7bb7d2bc (`git diff 7bb7d2bc --name-only`, 327 files). A loop over the 293 finds 0 whose two files are both unchanged.
+  - None of the 66 stale entries touches a changed file.
+  - The 66 are the same set under the old `indexOf('/*')` logic, so the round's item 7 moved no window start.
+  - Main (ff6040bf), old logic: `ok 291 off 375 noNum 4`. This reproduces the builder's "375 off on main".
+  - The builder's 293 reproduces. The round's 82 does not, by this method: 293 entries were off and are now right.
+- allow-duplication.txt shape: `git diff 98100b22 --numstat` gives `293 293`. `diff` of the 98100b22 list and the current list, with ` at N and N,` masked, prints nothing. So no path, mark, entry or other reason text changed: 678 lines before and after, no trailing newline, as before.
+- Sample of 10 renumbered entries checked by hand (`sed -n` at the listed lines in both files, leading whitespace stripped). Each window starts on identical lines:
+  1. normalise.test.ts:290 / board-fixture.ts:161 (a5fd3d4fec95)
+  2. audit.test.ts:52 / portfolio.test.ts:84 (a9d64f176f1b)
+  3. board-software.test.ts:22 / focus-lanes.test.ts:64 (3538d24336d3)
+  4. collection.test.ts:512 / life/present.test.ts:36 (b402b19dc6c1)
+  5. focus-lanes.test.ts:25 / state/boards/focus.test.ts:79 (964ac956944f)
+  6. focus-lanes.test.ts:25 / views/sessions/sessions.test.ts:576 (964ac956944f)
+  7. state/boards/focus.test.ts:79 / views/academic/present.test.ts:73 (964ac956944f)
+  8. structure/lines.test.ts:33 / collection-fixture.ts:113 (b402b19dc6c1)
+  9. forms/schema.test.ts:139 / views/sources/venues.test.ts:54 (3538d24336d3)
+  10. card.test.ts:22 / views/boards/projects.test.ts:82 (964ac956944f)
+- Phrase grep for `checked in (a|the) browser|browser suite|browser spec|turns it red|chrome check|in a browser|browser check`, including the forms broken across two lines, over src tests bin config DESIGN.md HELP.md README.md .prettierignore: no browser-suite pointer is left.
+  - The remaining "in a browser" hits describe the runtime, not a check. `drag.svelte.ts:320`, `workbench-keys.test.ts:5`, `config.test.ts:149` and `doc.test.ts:8` also mean a real browser at runtime.
+  - The remaining "Each case names the change that turns it red" sentences hold on the tree. For each file, it( cases against `// Revert:` prose lines: tree.test.ts 10/10, tree-keys.test.ts 7/7, layout-parts.test.ts 16/16, show-in-files.test.ts 33/33.
+- Added lines of the round: `git diff 98100b22 | grep '^+' | LC_ALL=C grep '[^ -~]'` gives no output. No added line outside allow-duplication.txt is over 100 columns.
+
+## 1. Spec
+- Items 1 to 5: every file and line the round brief lists is changed as asked. The diff of the 18 files other than allow-duplication.txt was read in full. No change outside the round brief.
+- Item 6: done for every entry whose files the step changed. The count differs from the round's 82 because the round's count was wrong, not the renumbering (see Verification).
+- Item 7: the round asked for a case with "a `//` comment holding `/*`". The case's comment line, `"// a glob such as 'ui/**' in a comment"` (duplication.test.ts:368), holds the `/*` only inside quotes. That tests the string branch twice and never a bare `/*` after `//`. This is the Proof finding below.
+
+## 2. Proof
+- tests/checks/tree/duplication.test.ts:366-378, the new case `opens no block comment at a /* inside a line comment or a string`. It stays green with the line-comment branch of `blockOpens` (`:86`, `else if (one === '/' && line[at + 1] === '/') return -1;`) deleted, as reproduced in node.
+  - The quote in the comment text closes around `ui/**`, so the quote branch alone returns -1.
+  - That branch is the one that stops `// ending in /**` (the boundaries.test.ts:24 form the refuter named) from opening a block. No case holds it.
+  - Fix: a comment line with an unquoted `/*`, for example `// a folder ending in /**`, followed by a code line that must be returned.
+- No other Proof finding. Every count in the round report reproduces:
+  - 293 renumbered, 66 stale, 359 off before, 375 off on main
+  - 10 tests in duplication.test.ts
+  - 5301 = 5300 + 1
+
+## 3. Standards
+- None against the round.
+- Outside the round's limit, for the record: 66 reasons in allow-duplication.txt still give line numbers that are not where the window starts. All of them are in entries whose files the step did not change, and they were stale on main already (375 off there). The file's header (`:5-6`, "The reason says where the first shared window sits") is false for those 66. Item 6 limited the fix to changed files, so this is for the orchestrator to fix at landing or book.
+
+## 4. Behaviour
+- None. The only src hunks are comment rewrites: `src/lib/server/machine/pty/channel.ts:370-371` and `src/lib/views/sessions/terminal/Terminal.svelte:301`.
+- The duplication check now reads lines it skipped before. The run shows no new duplicate and no moved window start.
+
+## Not checked
+- Whether the whole unit suite is green under the load that made `scratch-count.sh` red in the first review. Not rerun: the round changes no test outside the files above, and the verify run passed.
+- `sh bin/scratch-count.sh` was not rerun.
+- Whether `blockOpens` misreads a line where a regex literal holds a quote character (for example `/'/`) followed by a real `/*` on the same line. No such line was searched for in the tree.
+- The step's diff before 98100b22 was not re-read beyond what the round's findings name. The first refuter covered it.
+
+Reviewer usage: about 22 tool uses, about 9 minutes; tokens not measured.
