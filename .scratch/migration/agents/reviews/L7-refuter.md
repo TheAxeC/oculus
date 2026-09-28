@@ -147,3 +147,131 @@ The runner exits 1 on the last entry because grep exits 1 when it finds nothing:
 - 25 of the 32 registration-only view files. I sampled Present, Projects, AccountSetup, Calendar, Agents, Changes, Files and Hpc: each changed only its registration group, order and head comment. `grep -rn "group: '"` over `src/lib/views` tallies every group key against the 11 page keys, with no old group key left.
 
 Reviewer usage: about 150k tokens, 40 tool uses, about 12 minutes (01:43 to 01:55).
+
+
+## Repair round 1, refuted (reviewer claude:opus, a fresh agent, 2026-09-28)
+
+I changed no file in the tree. `git status --short` in the worktree printed 39 lines both before and after my runs (38 tracked changes and the untracked HeldQuestion.svelte). My scratch files are under the session scratchpad only: `verify-r1.txt`, `r1-tests.diff`, `d0/` and `d1/`.
+
+## Verification (rerun by the reviewer)
+
+- **The verify list.** `uptime` before: `3:23 ... load averages: 4.87 6.85 8.20`. I ran `sh /Users/axelfaes/.claude-work/skills/land/templates/verify.sh .../orchestrator-state.md` from `.agents/worktrees/L7/tools/oculus`. It exited 0 and printed:
+  - ` Test Files  345 passed (345)`
+  - `      Tests  5432 passed (5432)`
+  - `1790558752001 COMPLETED 1523 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS`
+  - `✓ built in 1.35s`
+  - `✓ built in 6.69s`
+  - `All matched files use Prettier code style!`
+  - `verify: 6 commands passed`
+  - No RED line.
+  - `uptime` after: `3:27 ... load averages: 7.09 8.11 8.53`.
+- **`ls -d $TMPDIR/oculus-* | wc -l`:** 1 before and 1 after.
+- **`npx vitest run tests/checks/config/config-folder.test.ts`:** `Test Files 1 passed (1)`, `Tests 26 passed (26)`. Matches the report.
+- **`npx vitest run tests/state/workbench/layout/pages.test.ts tests/state/workbench/navigation/pages.test.ts`:** `Test Files 2 passed (2)`, `Tests 61 passed (61)`. Matches.
+- **`npx vitest run tests/state/feeds/lead-application.test.ts tests/views/feeds/leads.test.ts`:** `Test Files 2 passed (2)`, `Tests 25 passed (25)`. Matches.
+- **The other seven changed test files** (views catalogue, state catalogue, help, type-scale, registry, memories, rail): `Test Files 7 passed (7)`, `Tests 354 passed (354)`.
+- **`grep -c "it(" tests/state/workbench/layout/open/landing.test.ts`:** 14. Matches the correction.
+- **The `// revert:` grep** over every file changed or added since 1712f075 (101 files: `git diff --name-only --diff-filter=AMR 1712f075` plus the untracked files): nothing printed, exit 1. Matches "101 files".
+- **The 8 directive lines deleted this round in `tests/views/system/help.test.ts`:** counted in the round diff, 8. Matches.
+- **`diff -r .../L7-base/tools/oculus/tests/browser tests/browser`:** nothing printed, exit 0.
+- **`sh bin/size-check.sh`:** exit 0. **`sh bin/folder-check.sh`:** exit 0. `ls src/lib/ui/controls | wc -l` is 10, the folder limit.
+- **`npm run diagrams` twice:** a copy of `docs/diagrams` was taken before each run. The first run changed nothing against the committed files (`diff -r` exit 0), and the second changed nothing either (exit 0). So the regenerated `.svg` files follow from the `.dot` changes. The `.dot` deltas are:
+  - `state/feeds` gains an edge to `state/forms` (2), and its edge to `state/boards` goes from 2 to 3;
+  - `ui/controls` to state goes from 3 to 4 (HeldQuestion's `t` import);
+  - `views/feeds` to state goes from 47 to 46;
+  - `views/system` to shared goes from 3 to 1, and to ui from 76 to 78;
+  - `ui` to state goes from 8 to 9.
+
+  Each is consistent with the source delta.
+
+## 1. Spec
+
+- **Round item 3 adds a UI primitive the round did not ask for, and removes a shared confirm from two views.**
+  - The new file is `src/lib/ui/controls/HeldQuestion.svelte`: Confirm with `ui.confirm_ok` and `ui.confirm_cancel`, over `{ message, detail, answer }`.
+  - It is the third wrapper that renders the same Confirm with the same two buttons, beside `ui/controls/CloseQuestion.svelte` (message only) and `views/shared/AskConfirm.svelte` (message, detail and act).
+  - `Pages.svelte` and `PagesReset.svelte` drop `AskConfirm` for it (`-<AskConfirm asking={resetting} ...` becomes `+<HeldQuestion {question} />`).
+  - The round asked that each tab be asked "the same question closing that tab asks (`ui.tab_close_dirty`, through the function the tab close uses)". The function `closeQuestion` is used. The tab close's dialog, `CloseQuestion.svelte`, is not: a `detail` prop on CloseQuestion would have served the reset, and the tab close would not need a second component.
+  - HeldQuestion takes the tenth and last slot of `ui/controls`. The report states this as a judgment call. It is a reach beyond the brief and a DRY cost the orchestrator should rule on.
+- **The verify runner was run more than once in the round.** The report says: "The runner was run more than once in this round. Only the run quoted above is on the final tree." The round brief says "Verify, once, at the end of the round", and the step brief says "Running the whole unit suite more than once is a finding in the review." The report is open about it. It is still a departure from the brief.
+- **Items 1, 2, 4 and 5 do what the round brief says:**
+  - `config/layout.yml:35`: `help: { label: "Help", glyph: page, chord: h }` after `info`.
+  - The three `docs:` entries take `group: help`.
+  - `Help.svelte` and `Memories.svelte` register `group: 'help'` with orders 0 and 1.
+  - `arrangements.info` is unchanged.
+  - `page` exists in `glyphs.yml:116`, and no entry of the group carries it: `help_glyph: question`, `memories_glyph: memories`, `doc_glyph: book`.
+  - `grep -rnE "(key|\.key)\s*===?\s*'h'|case 'h'" src/lib` prints nothing.
+  - The keyless case is replaced.
+  - `prefillFromLead`, `leadAddFor` and `closeAddForm` are in `state/feeds/lead-application.ts` with unit cases.
+  - The three comments are rewritten.
+- **Z18 as written in the brief is met.** Every entry of every group carries a key: this is asserted per drawn group in `tests/views/system/workbench/catalogue.test.ts:66-83`, and it passed in the run above.
+
+## 2. Proof
+
+- **The change to `tests/views/system/help.test.ts` widens both key-sheet predicates, and leaves the round's System row unproven.**
+  - The new helper, `help.test.ts:57-71`:
+    ```
+    const count = Math.min(order.chords[letter]?.length ?? 0, 9);
+    const whole = `${letter}1-${letter}9`;
+    return count > 0 && count < 9 ? [whole, `${letter}1-${letter}${String(count)}`] : [whole];
+    ```
+  - Both "names every catalogue group that has a chord" (`:244`) and "writes down every letter a catalogue group is reached by" (`:280`) now pass on either `x1-x9` or `x1-x<exact count>`.
+  - The widening is bounded: only the exact count is added, taken from the live config. It is not an arbitrary n.
+  - But it keeps `y1-y9` acceptable for a 6-entry group. So reverting `HELP.md:67` and the `app.yml` key row to the old `y1-y9 | open a view or a document of the System page's group` keeps both cases green: `y1-y9` is in `ranges('y')`, and the meaning still contains `System`. This is by reading; I did not edit the tree to run it.
+  - The same holds for a row `h1-h9` in place of `h1-h5`.
+  - So the round's y1-y6 and h1-h5 rows are not pinned by any case. A predicate that required the exact range for these two groups, or for every group, would pin them.
+- **The component wiring of item 4 still has no case.** `Collection.svelte:156` `const leadAdd = $derived(leadAddFor(tab, { newEntry, writeFeedField }, instance.id, key));`, the `onadd={leadAdd}` and `onclose={() => closeAddForm(tab, instance.id)}` bindings, and `Leads.svelte`'s call of `prefillFromLead` are component lines. Reverting any of them leaves the suite green. The state functions they call are covered (`lead-application.test.ts:148-245`), which is what the round asked. What is left is seen at the look.
+- **The item 3 cases do fail on revert, by reading.**
+  - `tests/state/workbench/layout/pages.test.ts:546` expects `asked.slice(1)` to equal two `ui.tab_close_dirty` questions. A `resetAfterAsking` that skipped the per-tab loop would give `[]`.
+  - `:581` expects `[ran, asked]` to equal `[false, 3]` with the pages' JSON unchanged.
+  - `navigation/pages.test.ts:143` covers the superseded question being answered no.
+- **Every count and path the round report quotes reproduces** (see Verification).
+
+## 3. Standards
+
+- **A head comment the round makes incomplete.** `src/lib/state/workbench/navigation/pages.ts:1-3` still reads "What a page is called, which tabs it holds, and what a close asks before it happens." The module now also holds `questionFor`, a general asker any component's held question runs through, and `resetAfterAsking`. Neither is a close, and the head comment does not name either.
+- **A DESIGN.md sentence that misplaces what holds the question.** `DESIGN.md:305` (added): "is drawn by `ui/controls/HeldQuestion.svelte` over the question `questionFor` of `state/workbench/navigation/pages.ts` holds". `questionFor` holds only the pending resolver. The question itself is held in each component's `$state` (`let question: Question | null = $state(null)` in ActivityRail, Pages and PagesReset).
+- **The key table now mixes two conventions** (`HELP.md:58-70`, and the same rows in `config/text/app.yml`).
+  - `y1-y6` and `h1-h5` give the exact count.
+  - Every other group with fewer than nine entries still reads `x1-x9`: Focus 3, Sessions 7, Projects 3, Incoming 5, Explorer 3, Academic Life 6, Pillars 3, References 4, Present 1, Views and Settings 4 (counts from `tests/state/workbench/navigation/catalogue.test.ts:319-345`).
+  - The round brief asked for the y1-y6 row, so this follows the brief. The test helper's own comment calls the exact form "the one range that says exactly which keys open something", which the other ten rows are not.
+- **Changed names grepped over `src tests config HELP.md DESIGN.md README.md`:**
+  - `reset_unsaved`: no hit.
+  - `resetAsk(`: every call uses the new 3 or 4 argument form.
+  - `leads/application` or `application.ts`: no stale reference. `Leads.svelte:20` and `Collection.svelte:58` name `state/feeds/lead-application.ts`.
+  - "System group", "System page's group", `group: 'info'`: the remaining hits are the six System views' registrations, their tests, `HELP.md:67` and `DESIGN.md:280/282` (History and Audit), all still true.
+  - `tests/browser/workbench/system.spec.ts:1` "The System group in Chrome: the manual, ..." is now false, but it sits under `tests/browser/`, which brief item 11 forbids touching and Q93 deletes.
+- **Nothing else found:**
+  - No history marker on added lines: I grepped for step ids, dates outside test fixtures, "round" and "revert-check".
+  - No non-ASCII (the verify gate, plus `LC_ALL=C grep -n '[^ -~]'` over HELP.md, DESIGN.md and HeldQuestion.svelte printed nothing).
+  - No file over its limit (largest touched this round: `tests/state/workbench/layout/pages.test.ts` at 610 lines, `Collection.svelte` at 423).
+  - HeldQuestion opens with a Layer 3 head comment.
+
+## 4. Behaviour
+
+- **The per-tab question a reset asks is not the same question closing that tab asks.**
+  - The message is the same: `ui.tab_close_dirty`, "Close this tab and lose its unsaved changes?".
+  - The buttons are the same: Confirm and Cancel, from `ui.confirm_ok` and `ui.confirm_cancel`, as CloseQuestion draws them.
+  - Three things differ:
+    - (a) It is a different dialog component (HeldQuestion, not CloseQuestion).
+    - (b) It carries a detail line that the tab close lacks: the page's name (`pages.ts:193`, `ask(t('ui.tab_close_dirty'), pageNameOf(all, page.id))`).
+    - (c) It names and shows no tab. The tab close is asked about the tab the reader just pressed, so "this tab" is on screen. The reset asks while the reset's page may not be on screen, and names only the page.
+  - Two unsaved tabs on one page therefore produce two identical dialogs, and the reader cannot tell which tab each is about.
+  - The report's judgment call ("shows the page's name as its second line, since the tab itself is not on screen") names (b) but not (c).
+  - Naming the tab (its view label, or the instance's title) in the detail would make the question answerable.
+- **The report states these user-visible changes:** the Help heading with h1 to h5, and one confirm per unsaved tab after the reset confirm. It does not state:
+  - the System catalogue section now lists six entries (y1 to y6) and no longer lists Help, Memories and the three documents;
+  - the key sheet's System row reads "open a view of the System page's group" in place of "a view or a document".
+- **A no to any per-tab question now cancels the whole reset,** including Reset all across every page. This is as the round brief says, and HELP.md and DESIGN.md state it.
+
+## Not checked
+
+- Anything that needs a DOM, left to the look:
+  - the HeldQuestion dialog appearing and chaining;
+  - the Help heading drawn in the browser;
+  - the h chord pressed;
+  - the Applications form prefilled on screen.
+- Whether `$derived(leadAddFor(...))` in `Collection.svelte:156` re-derives when the tab's `lead` changes. It depends on `instanceState` being a reactive read inside `$derived`. I did not trace the ui store.
+- The 25 view files of the first round that the round did not touch. The first reviewer sampled them.
+- The help.test.ts revert argument under Proof is by reading. I did not edit the tree to run it.
+
+Reviewer usage: 25 tool uses, about 12 minutes (about 03:18 to 03:30 local). Token count not visible to me.
