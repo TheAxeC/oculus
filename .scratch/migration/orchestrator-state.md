@@ -27,7 +27,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:      # Q99 reviewed, its repair round next.
+dispatch:      # Q99 in repair round 1.
 - step: Q99
   executor: agent
   worker: claude:opus
@@ -37,8 +37,8 @@ dispatch:      # Q99 reviewed, its repair round next.
   launched: 2026-09-28
   report: agents/reviews/Q99-report.md
   landing: not-started
-  reviewer_report: agents/reviews/Q99-refuter.md (reviewer a5f962d7aba868b83, running; builder 139 tool uses, 328k tokens, 33 min)
-  round: 0   # the cases ruled 2026-09-28 in agents/briefs/Q99-cases.md (commit bbb278d3), the builder resumed
+  reviewer_report: agents/reviews/Q99-refuter.md (reviewer a5f962d7aba868b83, 62 tool uses, 203k tokens, 15 min; builder 139 tool uses, 328k tokens, 33 min)
+  round: 1   # sent 2026-09-28 in agents/briefs/Q99-round1-sent.md, from worktree commit bc5c3bef; the cases ruled in agents/briefs/Q99-cases.md (commit bbb278d3)
   shared_paths: with Q79a and Q79c, DESIGN.md and HELP.md (different sentences: Q99's are the terminal's input, the scrollback, a tab closing on its terminal's end and the Pages view; Q79a's the Auth section; Q79c's the Help view's cut and the controls check) and docs/diagrams (a rerun of npm run diagrams); no code file is shared (Q79a changes no file under server/machine/pty or state/client; Q79c's Terminal.svelte is not in Q99's paths)
 ```
 
