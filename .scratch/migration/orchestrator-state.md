@@ -27,7 +27,17 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch: []   # set 1 of the queue (Q95, Q94, Q97) landed; next set Q98 + Q92 + Q89.
+dispatch:      # set 2 of the queue: Q98 in flight; Q92 and Q89 next.
+- step: Q98
+  executor: agent
+  worker: claude:opus
+  session_id: acf138bc046aa572e
+  worktree: .agents/worktrees/Q98
+  base: 6048ddab
+  launched: 2026-09-28
+  report: agents/reviews/Q98-report.md
+  landing: not-started
+  round: 0
 ```
 
 ## The standing demands (from Axel, in force)
