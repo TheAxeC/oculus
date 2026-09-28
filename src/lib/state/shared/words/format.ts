@@ -1,5 +1,6 @@
-// Layer 2, client state. The small conversions the session views share: a count in three digits, a
-// stamp a rail row has room for, a span in seconds, a model's short name, and the three path forms.
+// Layer 2, client state. The small conversions the views share: a count in three digits, a count
+// with its thousands grouped, a stamp a rail row has room for, a span in seconds, a model's short
+// name, and the three path forms.
 // No runes here, so every one of them is a pure function over its arguments and is tested directly.
 //
 // The words come from the catalog like every other word: a suffix, a separator and the leading
@@ -38,6 +39,19 @@ export function compactCount(value: number): string {
     }
     if (count >= 1000) return t('sessions.n_thousands', String(Math.round(count / 1000)));
     return String(Math.round(count));
+}
+
+/**
+ * A whole count with its thousands grouped, `1,234,567`, for a column of counts a reader compares
+ * digit by digit. The separator is the catalog's, like every other character a reader sees. The
+ * caller hands a whole number: the line store refuses any other before it reaches a view.
+ */
+export function grouped(value: number): string {
+    const digits = String(Math.abs(value)).replace(
+        /\B(?=(\d{3})+(?!\d))/g,
+        t('app.thousands_separator')
+    );
+    return value < 0 ? `-${digits}` : digits;
 }
 
 /**

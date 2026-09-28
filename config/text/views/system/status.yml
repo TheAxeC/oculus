@@ -10,3 +10,25 @@ text:
         hooks_copy_failed: the clipboard refused the block
         hooks_help: Claude Code posts to oculus when a session wants you or finishes. Merge this block into the top level of ~/.claude/settings.json, the file both accounts read, and every session notifies oculus; a session whose oculus is down waits one second.
         hooks_title: Claude Code hooks
+        lines_bad_body: "the server's answer ({0}) is not a line count"
+        lines_bad_counted: the answer does not say when it counted
+        lines_bad_row: "row {0} of the answer is not a folder's count"
+        lines_bad_rows: the answer holds no list of rows
+        lines_bad_status: 'the server answered {0} and said nothing more'
+        lines_bad_total: the answer holds no total
+        lines_blank: Blank
+        lines_code: Code
+        lines_comment: Comment
+        lines_counted: 'Counted at {0}'
+        lines_counting: Counting lines...
+        lines_failed: 'The line count failed: {0}'
+        lines_files: Files
+        lines_folder: Folder
+        lines_help: Oculus's own tracked files, counted by cloc. The plan's ledger, the lock file and the generated diagrams are left out.
+        lines_lines: Lines
+        lines_recount: Count again
+        lines_title: Lines of code
+        lines_todo: TODO
+        lines_top: top level
+        lines_total: Total
+        lines_unreachable: the server did not answer

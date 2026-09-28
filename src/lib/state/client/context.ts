@@ -57,6 +57,7 @@ import { createInbox, type InboxStore } from '../feeds/inbox.svelte.ts';
 import { tabsOf } from '../workbench/layout/instance.ts';
 import { createLatex, type LatexStore } from '../sessions/latex.svelte.ts';
 import { createLayout, type LayoutStore } from '../workbench/layout.svelte.ts';
+import { createLines, type LinesStore } from '../system/lines.svelte.ts';
 import { createManifestDraft, type ManifestDraftStore } from '../forms/manifest-draft.ts';
 import { createMemories, type MemoriesStore } from '../life/memories.svelte.ts';
 import { createNotices, type NoticesStore } from '../workbench/navigation/notices.svelte.ts';
@@ -114,6 +115,8 @@ export type ClientState = {
     accounts: AccountsStore;
     audit: AuditStore;
     memories: MemoriesStore;
+    /** The Status view's line counts of oculus's own files. */
+    lines: LinesStore;
     present: PresentStore;
     repositories: RepositoriesStore;
     search: SearchStore;
@@ -204,6 +207,7 @@ export function createClientState(): ClientState {
     const accounts = createAccounts(entities, writes, (view) => void layout.openView(view));
     const audit = createAudit(entities);
     const memories = createMemories();
+    const lines = createLines();
     const present = createPresent(entities);
     // The Source Control views open a repository's file in a source tab by the root the file routes
     // serve it under, and point the Repositories view at a commit through its remembered state.
@@ -279,6 +283,7 @@ export function createClientState(): ClientState {
         accounts,
         audit,
         memories,
+        lines,
         present,
         repositories,
         search,

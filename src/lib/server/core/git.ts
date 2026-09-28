@@ -22,6 +22,7 @@
 //     git -C <root> log --walk-reflogs --format=... refs/stash --
 //     git -C <root> worktree list --porcelain
 //     git -C <root> check-ignore --stdin -z
+//     git -C <root> ls-files -z
 //     git -C <root> for-each-ref --format=... refs/heads refs/tags refs/stash
 //     git -C <root> remote
 //     git -C <root> blame --porcelain -- <path>
@@ -31,7 +32,9 @@
 //         <commit> -- <path>
 //
 // `check-ignore` is the file browser's: which entries of one listed folder the repository ignores,
-// the names handed on its standard input, so the tree can leave them out (ignoredIn below). The
+// the names handed on its standard input, so the tree can leave them out (ignoredIn below).
+// `ls-files` is the Status view's line counts: the paths a folder's repository tracks under it
+// (trackedFiles below), which is the set of files server/machine/lines.ts hands to cloc. The
 // status read above it is the `git` channel's; the graph, the blame, the gutter marks, the three
 // versions of a conflicted path, a commit's files and diffs and a stash's diff are read on demand
 // by GET /api/git, since each is text or a page a reader asked for rather than state every event
@@ -42,8 +45,8 @@
 // dashboard watcher must never be the thing that runs one. tests/server/core/git.test.ts holds two
 // gates over that: the source names no writing subcommand, and the suite records every argument
 // vector the process runs and asserts the whole suite ran only the commands above, `for-each-ref`,
-// `worktree`, `symbolic-ref`, `check-ignore`, `remote` and `rev-parse` only as the vectors written
-// here.
+// `worktree`, `symbolic-ref`, `check-ignore`, `ls-files`, `remote` and `rev-parse` only as the
+// vectors written here.
 //
 // A repository on a slow mount must not stall a watcher, so the one call site takes a list argument
 // (never a shell string), carries a timeout, and collapses any failure into the empty shape with a
@@ -206,6 +209,18 @@ export function ignoredIn(
     if (!done.ok) return none;
     const said = new Set(done.text.split('\0').filter((one) => one !== ''));
     return new Set(names.filter((name) => said.has(name)));
+}
+
+/**
+ * The paths the repository tracks under the folder, relative to it, for the Status view's line
+ * counts. `-z` ends each path with a NUL and writes it unquoted, so a name with a space or an
+ * accented letter comes back as it is on disk. A folder in no repository, a git that is missing and
+ * a run that timed out answer why instead.
+ */
+export function trackedFiles(root: string, timeout: number = TIMEOUT_MS): Read<string[]> {
+    const done = run(root, ['ls-files', '-z'], milliseconds(timeout));
+    if (!done.ok) return refused(done.text);
+    return { ok: true, value: done.text.split('\0').filter((path) => path !== '') };
 }
 
 // ---------------------------------------------------------------- read on demand

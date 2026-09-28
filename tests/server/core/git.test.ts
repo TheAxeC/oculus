@@ -42,7 +42,8 @@ import {
     lineMarks,
     mergeSides,
     stashDiff,
-    statusFor
+    statusFor,
+    trackedFiles
 } from '../../../src/lib/server/core/git.ts';
 import { REFS_FORMAT } from '../../../src/lib/server/core/git-parse.ts';
 import {
@@ -67,6 +68,7 @@ const ALLOWED = [
     'diff',
     'for-each-ref',
     'log',
+    'ls-files',
     'remote',
     'rev-list',
     'rev-parse',
@@ -85,15 +87,17 @@ const ALLOWED = [
 const CALLS = [...ALLOWED, 'rev-parse', 'diff', 'log', 'log', 'log'].sort();
 
 /**
- * The exact vectors six subcommands may run as. `symbolic-ref HEAD <ref>` moves HEAD, `worktree
+ * The exact vectors seven subcommands may run as. `symbolic-ref HEAD <ref>` moves HEAD, `worktree
  * add` makes a checkout and `remote add` adds a remote, so each of those is held to its one reading
  * vector; `rev-parse` has no writing form and is held to the module's two reads so a third use is a
  * change this gate sees, `check-ignore` to the one form the file browser reads its ignored entries
- * by, and `for-each-ref` to the one ref listing over the branches, the tags and the stash ref.
+ * by, `for-each-ref` to the one ref listing over the branches, the tags and the stash ref, and
+ * `ls-files` to the one listing of the tracked paths the Status view's line counts read.
  */
 const PINNED: Partial<Record<string, string[][]>> = {
     'check-ignore': [['check-ignore', '--stdin', '-z']],
     'for-each-ref': [['for-each-ref', REFS_FORMAT, 'refs/heads', 'refs/tags', 'refs/stash']],
+    'ls-files': [['ls-files', '-z']],
     remote: [['remote']],
     'rev-parse': [
         ['rev-parse', '--git-dir'],
@@ -107,6 +111,7 @@ const PINNED: Partial<Record<string, string[][]>> = {
 const PINNED_SOURCE = [
     "['check-ignore', '--stdin', '-z']",
     "['for-each-ref', REFS_FORMAT, 'refs/heads', 'refs/tags', 'refs/stash']",
+    "['ls-files', '-z']",
     "['remote']",
     "['rev-parse', '--git-dir']",
     "['rev-parse', '--abbrev-ref', 'HEAD']",
@@ -723,6 +728,33 @@ describe('failure', () => {
     });
 });
 
+describe('the tracked files', () => {
+    it('lists the tracked paths relative to the folder asked, untracked ones left out', () => {
+        write('sub/deep/one.ts', 'one\n');
+        write('sub/two.md', 'two\n');
+        write('sub/loose.txt', 'loose\n');
+        write('odd name.txt', 'odd\n');
+        git(repo, 'add', '--', 'sub/deep/one.ts', 'sub/two.md', 'odd name.txt');
+        const whole = trackedFiles(repo);
+        expect(whole).toEqual({
+            ok: true,
+            value: ['kept.txt', 'odd name.txt', 'sub/deep/one.ts', 'sub/two.md']
+        });
+        expect(trackedFiles(join(repo, 'sub'))).toEqual({
+            ok: true,
+            value: ['deep/one.ts', 'two.md']
+        });
+    });
+
+    it('refuses a folder that is no repository, saying why', () => {
+        const plain = join(dir, 'plain');
+        mkdirSync(plain);
+        const read = trackedFiles(plain);
+        expect(read.ok).toBe(false);
+        if (!read.ok) expect(read.error).toContain('not a git repository');
+    });
+});
+
 describe('read only', () => {
     /**
      * Runs every read of the module once, so each gate below holds when it runs alone: the status
@@ -745,6 +777,8 @@ describe('read only', () => {
         expect(states[clone].upstream).toBe(true);
         expect(states[unborn].branch).toBe('fresh');
         expect([...ignoredIn(repo, ['a.log', 'kept.txt'])]).toEqual(['a.log']);
+        const tracked = trackedFiles(repo);
+        expect(tracked.ok && tracked.value.includes('kept.txt')).toBe(true);
         // The reads on demand, each once, so the gates below see their commands too.
         const hash = git(repo, 'rev-parse', 'HEAD').trim();
         expect(graphPage(clone, 0).ok).toBe(true);
@@ -791,7 +825,7 @@ describe('read only', () => {
     });
 
     // Revert: write the `symbolic-ref` call in server/core/git.ts as `['symbolic-ref', 'HEAD']`.
-    it('holds only the allowed subcommands at its call site, the pinned six as their exact vectors', () => {
+    it('holds only the allowed subcommands at its call site, the pinned seven as their exact vectors', () => {
         const source = readFileSync(MODULE, 'utf8');
         const calls = [...source.matchAll(/\brun\(\s*root\s*,\s*\[\s*'([a-z-]+)'/g)];
         expect(calls.map((call) => call[1]).sort()).toEqual(CALLS);
@@ -808,7 +842,7 @@ describe('read only', () => {
         }
     });
 
-    it('ran nothing but those commands over this file, the pinned six as their vectors', () => {
+    it('ran nothing but those commands over this file, the pinned seven as their vectors', () => {
         everyRead();
         expect(ran.length).toBeGreaterThan(0);
         const used = new Set<string>();

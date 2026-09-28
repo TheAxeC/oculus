@@ -12,8 +12,9 @@
 
 <script lang="ts">
     // Layer 3, view. What the page knows: whether the socket is up, which snapshot it is holding,
-    // and how many of each entity that snapshot carries. It is the smallest real view there is and
-    // it is the one that says whether the data layer underneath is alive.
+    // and how many of each entity that snapshot carries, then the line counts of oculus's own files
+    // (LineCounts.svelte) and the Claude Code hooks block (Hooks.svelte). It is the view that says
+    // whether the data layer underneath is alive.
 
     import Pane from '$lib/ui/frame/Pane.svelte';
     import { liveCount } from '$lib/state/sessions/folds';
@@ -21,6 +22,7 @@
     import { entityCount, type CountedKind } from '$lib/state/workbench/navigation/status';
     import { t } from '$lib/state/shared/words/text';
     import Hooks from './Hooks.svelte';
+    import LineCounts from './LineCounts.svelte';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 
@@ -82,6 +84,7 @@
         {/if}
         <p>{t('app.sessions', records.length, live)}</p>
         <p>{t('app.git', workspaces)}</p>
+        <LineCounts />
         <Hooks origin={servedOrigin()} />
     </div>
 </Pane>

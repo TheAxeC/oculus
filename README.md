@@ -2,7 +2,7 @@
 
 The private dashboard over the research portfolio. `DESIGN.md` is what it is measured against; this file is how to run it.
 
-Install once, with Node 24 and npm 11 (`nvm install 24` gives both): `npm ci` from the committed lockfile, or `npm install` to regenerate it.
+Install once, with Node 24 and npm 11 (`nvm install 24` gives both): `npm ci` from the committed lockfile, or `npm install` to regenerate it. The Status view's line counts also need Perl on the PATH to run cloc; macOS and most Linux systems carry it.
 
 Develop with `npm run dev`, which hot-reloads and serves on 127.0.0.1 at the port from `local.yml` (8790 by default), the same address as the built server, so the Claude Code hooks that post to it reach whichever is running; the two cannot run at once. For the built server, `npm run build` then `node src/server.ts`. Port 8787 belongs to the cockpit and is never used.
 
@@ -10,7 +10,7 @@ The built server takes one argument, `--engine <dir>` (`--engine=<dir>` too), na
 
 Machine-local values live in `config/local.yml` of the engine directory the server was given, which for the checkout is `tools/oculus/config/local.yml`; it is gitignored and optional: `hub` is the absolute path of the research hub, defaulting to two directories above the engine; `port` is an integer, defaulting to 8790; and `claude_bin` names the Claude CLI used by update tasks, defaulting to `claude` on PATH. That file is read by itself and is never merged with the rest of the folder, so a key it carries is the machine's own and no other reader sees it. The server reads no environment variable of its own: a run that must not touch the checkout's configuration is started over a copy with `--engine`.
 
-The runtime dependencies, with their licences: `dompurify` (MPL-2.0 or Apache-2.0) filters every piece of HTML the app draws, `marked` (MIT) renders a Markdown field, `yaml` (ISC) reads the configuration and the hub's files, `ws` (MIT) is the socket, `@xterm/xterm` and `@xterm/addon-fit` (MIT) are the terminal grid, and `lucide-static` (ISC) ships the line icons `config/catalogs/icons.yml` names, which the server reads off disk and pushes with the configuration.
+The runtime dependencies, with their licences: `dompurify` (MPL-2.0 or Apache-2.0) filters every piece of HTML the app draws, `marked` (MIT) renders a Markdown field, `yaml` (ISC) reads the configuration and the hub's files, `ws` (MIT) is the socket, `@xterm/xterm` and `@xterm/addon-fit` (MIT) are the terminal grid, `lucide-static` (ISC) ships the line icons `config/catalogs/icons.yml` names, which the server reads off disk and pushes with the configuration, and `cloc` (GPL-2.0) is run as a separate Perl program, never imported, to count the Status view's lines.
 
 The four verification commands are `npm test` (vitest), `npm run check` (svelte-check), `npm run build` and `npm run format:check` (Prettier, four-space indentation; `npm run format` applies it).
 

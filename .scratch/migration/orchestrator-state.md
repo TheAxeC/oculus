@@ -27,7 +27,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:      # Q89 of set 2, repair round 2 reported, its review owed after the pause, Q80 of set 3 refuted over round 1, to land after the pause, Q92 of set 2 built, its review owed after the pause.
+dispatch:      # Q89 of set 2, repair round 2 reported, its review running; Q92 of set 2 built, its review running; one slot free for Q79a.
 - step: Q89
   executor: agent
   worker: claude:opus
@@ -39,23 +39,11 @@ dispatch:      # Q89 of set 2, repair round 2 reported, its review owed after th
   landing: not-started
   reviewer_report: agents/reviews/Q89-refuter.md (reviewer a116360e9ab07e528)
   reviewer_report_round1: agents/reviews/Q89-refuter.md "Repair round 1, refuted" (reviewer a38991e425707e8b4, 30 tool calls, 11 min)
+  reviewer_report_round2: agents/reviews/Q89-refuter.md "Repair round 2, refuted" (reviewer aefceffa630f486a8, running)
   round: 2
   shared_paths:
   - tools/oculus/HELP.md and tools/oculus/DESIGN.md: both steps correct only sentences their change makes false; Q98's are about catalog code words, the session title and the Calendar footer, Q89's about the Terminal view (HELP.md:123 and the picker), so they touch different lines and the second landing merges by hand if at all
   - tools/oculus/docs/diagrams/: a rerun of npm run diagrams on the second landing
-- step: Q80
-  executor: agent
-  worker: claude:opus
-  session_id: adfd1cde92313bcfc
-  worktree: .agents/worktrees/Q80
-  base: 740ebd5e
-  launched: 2026-09-28
-  report: agents/reviews/Q80-report.md
-  landing: not-started
-  reviewer_report: agents/reviews/Q80-refuter.md (reviewer a59a84cb98d926c8b, 40 tool calls, 14 min)
-  reviewer_report_round1: agents/reviews/Q80-refuter.md "Repair round 1, refuted" (reviewer aa0e2181b19c92109, 38 tool calls, 20 min); its findings S1, P1, P2, St1 and B1 are small and inside the brief, fixed at landing after the pause
-  round: 1
-  shared_paths: HELP.md and DESIGN.md (Q80 changes HELP.md:128 and DESIGN.md:128, other sentences than Q89's and Q98's), docs/diagrams (a rerun of npm run diagrams at landing), any whole-tree test list such as type-scale.test.ts (one added name per step)
 - step: Q92
   executor: agent
   worker: claude:opus
@@ -65,12 +53,12 @@ dispatch:      # Q89 of set 2, repair round 2 reported, its review owed after th
   launched: 2026-09-28
   report: agents/reviews/Q92-report.md
   landing: not-started
+  reviewer_report: agents/reviews/Q92-refuter.md (reviewer ae7ef61fd1dab9cc6, running)
   round: 0
   shared_paths: package.json and package-lock.json with Q80 (Q80 adds cloc, Q92 adds @event-calendar/core, ical.js and entities and moves svelte; the later landing reruns npm install), HELP.md and DESIGN.md with Q80 and Q89 (different sentences: Q92's are the Inbox, the Calendar and the accounts at HELP.md:119, 137, 244, 246 and DESIGN.md:134, 298), docs/diagrams (a rerun of npm run diagrams), type-scale.test.ts (one entry each)
 ```
 
 ## The standing demands (from Axel, in force)
-- Paused (Axel, 2026-09-28, before a session restart): the running agents finish (Q80's round review, Q89's repair round 2, Q92's build) and their reports are saved; nothing new is dispatched, reviewed or landed until Axel says to continue.
 - `queue.md` beside this file is the list of steps in flight and queued, in the shape Axel reads it (Axel, 2026-09-28). It is rewritten in the same commit as every launch, repair round, landing and ruling that moves a step, and a resume point never leaves it behind the dispatch block or the queue line of `plan.md`.
 - Libraries: the orchestrator checks, Axel decides (Axel, 2026-09-26). Less code is the aim: oculus is over 100,000 lines, and a library that covers a capability can remove code that would otherwise be kept up; code is written by hand only where no library covers the capability, never by cutting a feature. Before any brief is written, `/spec` includes a library check for every capability the step builds or changes: the candidates found (npm and the ecosystem oculus uses), each with its version, license, maintainer, last release, compatibility with what oculus runs (Svelte 5, SvelteKit, `marked` 18 and the rest of `package.json`), what it would replace and what would stay, and how it takes oculus's theme tokens and layer rules. A candidate that could replace or avoid hand-built code is an open item for Axel with options, pros, cons and one recommendation (a library, or keeping the code), and the step waits for his ruling. Bundle size is not a criterion. The brief names the library ruled, and a builder adds no dependency the brief did not name (`agents/spec.md`), and reports an unnamed library that would cover its work instead of installing it. The Ordo `/spec` skill and its brief template carry no library check yet; this file carries it until they do, and the Ordo change goes through the session that holds that repository.
 - The library audit (Axel, 2026-09-26: a proper and full audit, before any new step is launched): every capability oculus builds by hand, across `src/`, `bin/`, the config loaders and the test and check tooling, with X3b's worktree changes included, audited for a library that covers it; the result is a set of open items, one per capability where a library is a real option, each with options, pros, cons and a recommendation. Done and ruled 2026-09-26 (LA1 to LA22, closed log); a step whose brief uses a ruled library names it, and a builder adds no other dependency. X3b, already in flight, continues through its round's refutation and its landing.
@@ -416,6 +404,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-09-28. Q80 landed through /spec, /refute and /land (line counts on the Status view with cloc); one repair round, refuted again; five fixes at landing, the round review's findings. Verify on main: `verify: 6 commands passed` (Test Files 342 passed, Tests 5370 passed). In flight: Q89 (the review over round 2) and Q92 (its first review). Next: `/spec` Q79a.
 - 2026-09-28. Q98 landed through /spec, /refute and /land (the four look findings Z28 to Z31: the Lit Watch link cut with an ellipsis, slash-command session titles, catalog code words drawn as code, the one-day Calendar footer); one repair round, refuted again, one fix at landing (the report's open items). Verify on main: `verify: 6 commands passed` (Test Files 339 passed, Tests 5325 passed). Axel ruled Z38 (a): the queue regrouped, a set only an order. In flight: Q89 (review read, repair round next) and Q80 (building). Next: `/spec` Q92.
 - 2026-09-28. Set 1 of the queue landed through /spec, /refute and /land: Q95 (Add a button no longer takes the Rail section down, b927aae0), Q94 (the launch note removed, 6b73371d) and Q97 (Help its own rail button after System, with its own page; one repair round, refuted again with no finding; one fix at landing, the merge of Q95's Add case with the twelve-button rail). Verify on main after Q97: `verify: 6 commands passed` (Test Files 338 passed, Tests 5309 passed). Nothing in flight. Next: set 2, Q98 + Q92 + Q89.
 - 2026-09-28. Axel ruled Z22 to Z26, Z28 to Z32 and closed Z11. Booked: Q95 (the Add a button crash) before Q94, Q97 (Help's rail button) and Q98 (the four look findings) after Q94, Q96 (the Rail section's labels and icon dropdown) after Q81; their order is open item Z33. `libraries: check` added to `.agents/plan.yaml` and `check_config.py` exits 0. D16's source-tab control seen on a probe `.rtf`. No agent is started, on Axel's word; next, once he rules on Z33: `/spec` Q95.

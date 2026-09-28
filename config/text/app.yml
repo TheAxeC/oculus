@@ -49,6 +49,7 @@ text:
         text_larger: Larger text
         text_reset: Reset text size
         text_smaller: Smaller text
+        thousands_separator: ','
         title: oculus
         title_waiting: oculus ({0} waiting) | {1}
         update: Update

@@ -37,6 +37,7 @@ const STORES: (keyof ClientState)[] = [
     'inbox',
     'audit',
     'memories',
+    'lines',
     'present',
     'repositories',
     'search',

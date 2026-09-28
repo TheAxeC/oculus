@@ -13,6 +13,7 @@ import {
     basename,
     clock,
     compactCount,
+    grouped,
     elide,
     modelShort,
     relativeTo,
@@ -32,6 +33,17 @@ function at(year: number, month: number, day: number, hour: number, minute: numb
 }
 
 const NOW = new Date(2026, 8, 10, 9, 0, 0, 0).getTime();
+
+describe('grouped', () => {
+    it('groups the thousands of a count with the catalog separator', () => {
+        expect(grouped(0)).toBe('0');
+        expect(grouped(999)).toBe('999');
+        expect(grouped(1000)).toBe('1,000');
+        expect(grouped(83011)).toBe('83,011');
+        expect(grouped(1234567)).toBe('1,234,567');
+        expect(grouped(-1234)).toBe('-1,234');
+    });
+});
 
 describe('compactCount', () => {
     it('writes millions with one decimal, and drops a decimal that is zero', () => {

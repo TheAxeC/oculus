@@ -228,6 +228,7 @@ const VIEWS: Record<string, string> = {
     'sources/source/Editor.svelte': '.mirror=fs-sm | .input :global(.area)=fs-sm',
     'sources/source/Preview.svelte': '',
     'system/status/Hooks.svelte': 'h3=fs-md | pre=fs-xs | .said=fs-sm',
+    'system/status/LineCounts.svelte': 'h3=fs-md | .said=fs-sm',
     'sources/venues/Facets.svelte': '.label=fs-xxs',
     'sources/venues/Ribbon.svelte':
         '.next=fs-sm | .legend=fs-xs | .spark=fs-xs | .spark .bars=fs-xl | .spark-label=fs-xxs | .spark-months=fs-3xs | .monthname=fs-xxs',

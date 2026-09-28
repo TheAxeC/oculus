@@ -230,3 +230,12 @@ Behaviour
 - Git: beyond `git status --short` and `git diff 56f1749d` / `git diff 740ebd5e`, I ran their `--stat` and `--name-only` forms, which are the same diffs.
 
 6. Usage: about 38 tool calls and about 20 minutes. The verify run took about 2 minutes, and the scratch-copy reverts about 45 s in all.
+
+## Closed
+
+- First review's findings: closed in repair round 1, as the round review above reproduces item by item.
+- S1 (no case for a request closed during the file reads): fixed at landing, `tests/server/machine/lines.test.ts` "reads no further file once the request is closed after cloc has answered"; with the loop's `closed` check removed it fails: "expected { Object (rows, total, ...) } to deeply equal { error: 'The request was closed.' }".
+- P1 (`location` unstubbed inline): fixed at landing, `tests/views/system/status.test.ts` renders in `try` and unstubs in `finally`.
+- P2 and St1 (the browser's own fetch message shown and asserted): fixed at landing, the catch in `lines.svelte.ts` says `status.lines_unreachable` ("the server did not answer"), and the case asserts that catalog sentence.
+- B1 ("said nothing more" for a body that is not JSON): fixed at landing, a body that is not JSON says `status.lines_bad_body` ("the server's answer ({0}) is not a line count"); the 500 HTML case asserts it and a new case covers a 200 carrying a page.
+- Point (b), the abort case failing by timeout: the fake cloc sleeps 30 s under a 3 s timeout, so a missing signal fails on its assertion.
