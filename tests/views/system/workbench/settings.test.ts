@@ -9,7 +9,7 @@
 import { render } from 'svelte/server';
 import { beforeEach, describe, expect, it } from 'vitest';
 import Settings from '../../../../src/lib/views/system/workbench/Settings.svelte';
-import { withRailDraft } from '../../../../src/lib/state/workbench/navigation/rail.ts';
+import { configRail, withRailDraft } from '../../../../src/lib/state/workbench/navigation/rail.ts';
 import { clientContext, type ClientState } from '../../../fixtures/client.ts';
 import { setAppearance } from '../../../../src/lib/state/shared/words/appearance.ts';
 import { catalog, config, configured, words } from './workbench-fixture.ts';
@@ -34,6 +34,18 @@ function buttonNamed(body: string, words: string): string {
             .find((one) => one.includes(`aria-label="${words}"`) || one.includes(`>${words}<`)) ??
         ''
     );
+}
+
+/**
+ * The markup of one rail row's mark: from the row's opening to its label field, which is the next
+ * thing the row draws. Empty when the row or its mark is not drawn.
+ */
+function markOf(body: string, at: number): string {
+    const row = body.indexOf(`data-rail-row="${at}"`);
+    if (row < 0) return '';
+    const mark = body.indexOf('class="mark', row);
+    const field = body.indexOf(words('workbench.rail_label', at + 1), row);
+    return mark < 0 || field < 0 || mark > field ? '' : body.slice(mark, field);
 }
 
 /** The sentence a refused row is named by, with its place put in. */
@@ -129,6 +141,43 @@ describe('the rail half', () => {
         const body = draw();
         expect(buttonNamed(body, catalog['workbench.rail_save'])).toMatch(/\sdisabled/);
         expect(buttonNamed(body, catalog['workbench.rail_revert'])).toMatch(/\sdisabled/);
+    });
+
+    it('draws a row "Add a button" appended, with an empty mark and the line naming its label', () => {
+        const saved = configRail(config);
+        client.ui.setInstanceState(
+            instance.id,
+            withRailDraft({}, [...saved, { label: '', glyph: '', page: '' }])
+        );
+        const body = draw();
+        expect([...body.matchAll(/data-rail-row="/g)]).toHaveLength(12);
+        expect(markOf(body, 11)).not.toBe('');
+        // a new row names no glyph yet, and an empty name is none the vocabulary holds
+        expect(markOf(body, 11)).not.toContain('data-glyph');
+        expect(body).toContain(why('workbench.rail_why_label', 12));
+        expect(buttonNamed(body, catalog['workbench.rail_save'])).toMatch(/\sdisabled/);
+    });
+
+    it('draws a row whose glyph the vocabulary lacks with an empty mark and names it', () => {
+        client.ui.setInstanceState(
+            instance.id,
+            withRailDraft({}, [{ label: 'Odd', glyph: 'nonesuch', page: 'focus' }])
+        );
+        const body = draw();
+        expect([...body.matchAll(/data-rail-row="/g)]).toHaveLength(1);
+        expect(body).toContain('value="Odd"');
+        expect(markOf(body, 0)).not.toBe('');
+        // nonesuch is a name the vocabulary lacks, so the mark stays and draws nothing
+        expect(markOf(body, 0)).not.toContain('data-glyph');
+        expect(body).toContain(why('workbench.rail_why_glyph_unknown', 1));
+    });
+
+    it('draws the glyph in the mark of a row whose glyph the vocabulary holds', () => {
+        client.ui.setInstanceState(
+            instance.id,
+            withRailDraft({}, [{ label: 'Only', glyph: 'compass', page: 'focus' }])
+        );
+        expect(markOf(draw(), 0)).toContain('data-glyph="compass"');
     });
 
     it('names each control of a row by the place of its button', () => {

@@ -8,7 +8,9 @@
     // What is being typed is the tab's own state, so it is there again after the tab is switched
     // away from and after a reload, and a tab holding a list that differs from the file's is one
     // holding unsaved text. A row the shared rule refuses is named under the list and Save waits
-    // for it, so the server's own refusal is the answer to a race and never to a typo.
+    // for it, so the server's own refusal is the answer to a race and never to a typo. A row whose
+    // glyph the vocabulary does not hold (a new row has none yet) draws an empty mark, and the
+    // rule's line names what the row lacks.
     //
     // The rail's Settings choice opens the Settings view with `reveal: 'rail'` in its instance
     // state; the list is then scrolled into view and the ask is taken out of the state, so a later
@@ -31,7 +33,7 @@
         type RailEntry,
         type RailProblem
     } from '$lib/state/workbench/navigation/rail';
-    import { t } from '$lib/state/shared/words/text';
+    import { hasGlyph, t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
 
     const {
@@ -138,7 +140,11 @@
          mended, and the rule names that row rather than the markup refusing it. -->
     {#each rows as row, at (at)}
         <div class="row" data-rail-row={at}>
-            <span class="mark" aria-hidden="true"><Glyph name={row.glyph} /></span>
+            <span class="mark" aria-hidden="true">
+                {#if hasGlyph(row.glyph)}
+                    <Glyph name={row.glyph} />
+                {/if}
+            </span>
             <TextInput
                 value={row.label}
                 label={t('workbench.rail_label', at + 1)}

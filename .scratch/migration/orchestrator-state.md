@@ -27,7 +27,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:      # set 1 of the queue: Q95 + Q94 + Q97 (Z34 (a)); then Q98 + Q92 + Q89.
+dispatch:      # set 1 of the queue: Q95 landed; Q94 and Q97 in flight (Z34 (a)); then Q98 + Q92 + Q89.
 - step: Q94
   executor: agent
   worker: claude:opus
@@ -38,18 +38,6 @@ dispatch:      # set 1 of the queue: Q95 + Q94 + Q97 (Z34 (a)); then Q98 + Q92 +
   report: agents/reviews/Q94-report.md
   reviewer: claude:opus af7089b8538396f6e
   reviewer_report: agents/reviews/Q94-refuter.md
-  landing: not-started
-  round: 0
-- step: Q95
-  executor: agent
-  worker: claude:opus
-  session_id: a7e725ab4541badd3   # continuation builder; the first one was stopped during its final verify run
-  worktree: .agents/worktrees/Q95
-  base: c53af148
-  launched: 2026-09-28
-  report: agents/reviews/Q95-report.md
-  reviewer: claude:opus a82096b221e3d70f8
-  reviewer_report: agents/reviews/Q95-refuter.md
   landing: not-started
   round: 0
 - step: Q97
