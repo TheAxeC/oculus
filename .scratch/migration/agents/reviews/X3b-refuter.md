@@ -131,5 +131,5 @@ The builder's timing for finding 15; the AU/UA rows on screen; the full browser 
 - Round, Proof 5 (`controls.test.ts` a source scan): the reviewer judged it acceptable; no finding.
 - Round, Standards 1 to 4: fixed at landing, items 4, 5, 6 and 7.
 - Round, Behaviour 1 (AU and UA read as a deletion): fixed at landing, item 1.
-- Round, Spec 1 (`git.ts:403-412`, `:420-427`, the `refs()` read and the conditional stash and remote reads go beyond finding 15's ruling): no disposition in the landing. Raised to Axel as open item Z14.
-- Round, Behaviour 2 (the gutter's cost on a long file with blame on, not measured): no disposition in the landing. Raised to Axel as open item Z14.
+- Round, Spec 1 (`git.ts:403-412`, `:420-427`, the `refs()` read and the conditional stash and remote reads go beyond finding 15's ruling): no disposition in the landing. Raised to Axel as open items Z14 (the reads) and Z15 (the gutter).
+- Round, Behaviour 2 (the gutter's cost on a long file with blame on, not measured): no disposition in the landing. Raised to Axel as open items Z14 (the reads) and Z15 (the gutter).
