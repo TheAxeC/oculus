@@ -27,7 +27,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:      # Q89 of set 2 in repair round 1 (Z39 open), Q80 of set 3 under review; Q92 of set 2 is prepared next.
+dispatch:      # Q89 of set 2 in repair round 1 (Z39 open), Q80 of set 3 under review, Q92 of set 2 building.
 - step: Q89
   executor: agent
   worker: claude:opus
@@ -54,6 +54,17 @@ dispatch:      # Q89 of set 2 in repair round 1 (Z39 open), Q80 of set 3 under r
   reviewer_report: agents/reviews/Q80-refuter.md (reviewer a59a84cb98d926c8b, running)
   round: 0
   shared_paths: HELP.md and DESIGN.md (Q80 changes HELP.md:128 and DESIGN.md:128, other sentences than Q89's and Q98's), docs/diagrams (a rerun of npm run diagrams at landing), any whole-tree test list such as type-scale.test.ts (one added name per step)
+- step: Q92
+  executor: agent
+  worker: claude:opus
+  session_id: a137b223fbd2bd7e2
+  worktree: .agents/worktrees/Q92
+  base: 09e58eb1
+  launched: 2026-09-28
+  report: agents/reviews/Q92-report.md
+  landing: not-started
+  round: 0
+  shared_paths: package.json and package-lock.json with Q80 (Q80 adds cloc, Q92 adds @event-calendar/core, ical.js and entities and moves svelte; the later landing reruns npm install), HELP.md and DESIGN.md with Q80 and Q89 (different sentences: Q92's are the Inbox, the Calendar and the accounts at HELP.md:119, 137, 244, 246 and DESIGN.md:134, 298), docs/diagrams (a rerun of npm run diagrams), type-scale.test.ts (one entry each)
 ```
 
 ## The standing demands (from Axel, in force)
