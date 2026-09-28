@@ -27,7 +27,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:      # Q89 of set 2 under review over round 1 (Z39 open), Q80 of set 3 in repair round 1, Q92 of set 2 building.
+dispatch:      # Q89 of set 2 in repair round 2 (Z39 (a), an unbuilt acceptance item), Q80 of set 3 in repair round 1, Q92 of set 2 building.
 - step: Q89
   executor: agent
   worker: claude:opus
@@ -38,8 +38,8 @@ dispatch:      # Q89 of set 2 under review over round 1 (Z39 open), Q80 of set 3
   report: agents/reviews/Q89-report.md
   landing: not-started
   reviewer_report: agents/reviews/Q89-refuter.md (reviewer a116360e9ab07e528)
-  reviewer_report_round1: agents/reviews/Q89-refuter.md "Repair round 1, refuted" (reviewer a38991e425707e8b4, running)
-  round: 1
+  reviewer_report_round1: agents/reviews/Q89-refuter.md "Repair round 1, refuted" (reviewer a38991e425707e8b4, 30 tool calls, 11 min)
+  round: 2
   shared_paths:
   - tools/oculus/HELP.md and tools/oculus/DESIGN.md: both steps correct only sentences their change makes false; Q98's are about catalog code words, the session title and the Calendar footer, Q89's about the Terminal view (HELP.md:123 and the picker), so they touch different lines and the second landing merges by hand if at all
   - tools/oculus/docs/diagrams/: a rerun of npm run diagrams on the second landing
@@ -69,6 +69,7 @@ dispatch:      # Q89 of set 2 under review over round 1 (Z39 open), Q80 of set 3
 ```
 
 ## The standing demands (from Axel, in force)
+- `queue.md` beside this file is the list of steps in flight and queued, in the shape Axel reads it (Axel, 2026-09-28). It is rewritten in the same commit as every launch, repair round, landing and ruling that moves a step, and a resume point never leaves it behind the dispatch block or the queue line of `plan.md`.
 - Libraries: the orchestrator checks, Axel decides (Axel, 2026-09-26). Less code is the aim: oculus is over 100,000 lines, and a library that covers a capability can remove code that would otherwise be kept up; code is written by hand only where no library covers the capability, never by cutting a feature. Before any brief is written, `/spec` includes a library check for every capability the step builds or changes: the candidates found (npm and the ecosystem oculus uses), each with its version, license, maintainer, last release, compatibility with what oculus runs (Svelte 5, SvelteKit, `marked` 18 and the rest of `package.json`), what it would replace and what would stay, and how it takes oculus's theme tokens and layer rules. A candidate that could replace or avoid hand-built code is an open item for Axel with options, pros, cons and one recommendation (a library, or keeping the code), and the step waits for his ruling. Bundle size is not a criterion. The brief names the library ruled, and a builder adds no dependency the brief did not name (`agents/spec.md`), and reports an unnamed library that would cover its work instead of installing it. The Ordo `/spec` skill and its brief template carry no library check yet; this file carries it until they do, and the Ordo change goes through the session that holds that repository.
 - The library audit (Axel, 2026-09-26: a proper and full audit, before any new step is launched): every capability oculus builds by hand, across `src/`, `bin/`, the config loaders and the test and check tooling, with X3b's worktree changes included, audited for a library that covers it; the result is a set of open items, one per capability where a library is a real option, each with options, pros, cons and a recommendation. Done and ruled 2026-09-26 (LA1 to LA22, closed log); a step whose brief uses a ruled library names it, and a builder adds no other dependency. X3b, already in flight, continues through its round's refutation and its landing.
 - Rounds and briefs carry known fixes only (Axel, 2026-09-27, "Yes"): a round or a brief never asks the builder to find a cause, reproduce a fault or measure until a condition holds; the orchestrator diagnoses first, read-only, and a cause it cannot find is booked. A format or rule a brief applies across the tree is run by the orchestrator on five real cases, quoted in the brief. Both are in the spec and plan-orchestration skills.
@@ -121,10 +122,7 @@ None. Axel lifted it on 2026-09-23 with `/plan-orchestration oculus/migration` a
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is booked as its own step in `plan.md` and carried in the Booked section below, since it needs no ruling from him.
 
-- Z39, where Split starts a terminal whose folder no composer place holds (raised 2026-09-28 by Q89's review). Q89's brief says Split opens the composer beside "with the row's folder" (`agents/briefs/Q89.md:29`), and `HELP.md:123` says "in its folder". The composer offers only its places, the hub, every workspace root and every folder a session sits in (`composerPlaces`, `src/lib/state/sessions/composer.ts:119`), and turns any other value into the hub (`Composer.svelte:76-78`). So Split of a shell that has moved to `hub/projects/foo/code`, which no place names, starts at the hub, and one in `/tmp` also at the hub. The server's start takes any folder (`src/lib/server/machine/pty/routes.ts:410`), so nothing below the page stops the first option. Options:
-  - (a) The composer a Split opens holds the row's folder as a place of its own, listed first by its path, and starts there. Pros: Split does what it says, as VS Code's split starts in the terminal's folder. Cons: the composer's folder list can hold a folder that is not a workspace, for that tab only.
-  - (b) Split starts at the deepest place that holds the row's folder, the hub when none does, and `HELP.md:123` and the Split tooltip say so. Pros: nothing more to build. Cons: a split of a terminal in a subfolder lands somewhere else, and the reader must pick the folder again. This is the lazy option.
-  - Recommended: (a). Q89's round 1 is sent without this item; the landing makes the change once Axel rules.
+None.
 
 ## Time per step (Axel asked 2026-09-27 for how it evolves with Q77; measured from each builder's transcript: each tool call from call to result, each background wait from the builder stopping to the run waking it)
 
@@ -140,6 +138,11 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 
 ## Closed items (kept as the log of what was raised and how it ended)
 
+- Z39, where Split starts a terminal whose folder no composer place holds (raised 2026-09-28 by Q89's review). Q89's brief says Split opens the composer beside "with the row's folder" (`agents/briefs/Q89.md:29`), and `HELP.md:123` says "in its folder". The composer offers only its places, the hub, every workspace root and every folder a session sits in (`composerPlaces`, `src/lib/state/sessions/composer.ts:119`), and turns any other value into the hub (`Composer.svelte:76-78`). So Split of a shell that has moved to `hub/projects/foo/code`, which no place names, starts at the hub, and one in `/tmp` also at the hub. The server's start takes any folder (`src/lib/server/machine/pty/routes.ts:410`), so nothing below the page stops the first option. Options:
+  - (a) The composer a Split opens holds the row's folder as a place of its own, listed first by its path, and starts there. Pros: Split does what it says, as VS Code's split starts in the terminal's folder. Cons: the composer's folder list can hold a folder that is not a workspace, for that tab only.
+  - (b) Split starts at the deepest place that holds the row's folder, the hub when none does, and `HELP.md:123` and the Split tooltip say so. Pros: nothing more to build. Cons: a split of a terminal in a subfolder lands somewhere else, and the reader must pick the folder again. This is the lazy option.
+  - Recommended: (a). Q89's round 1 is sent without this item; the landing makes the change once Axel rules.
+  - Ruled 2026-09-28, Axel: "(a)". Split's composer holds the row's folder as a place of its own, listed first, and starts there; `HELP.md:123` and the Split tooltip stay true. Made at Q89's landing. The lazy option was (b).
 - Z38, the queue's single steps regrouped (raised 2026-09-28, from Axel's question why so many steps run alone). The loop fills three slots as they free, so a set on the queue line is an order, never a barrier; a step runs alone only when it shares files with every neighbour. Checked on main at fce72d27: Q79d (the `isRecord`, `inside`, `ago` and `parseBranches` copies in `server/`, `state/` and `MergeSide.svelte`), Q87 (`tests/checks/imports/`, the duplication check, `bin/diagrams/imports.mjs`) and Q81 (`ui/menu/`, `Confirm`, `Prompt`, the palette and their 58 users) share only `package.json` and its lock, a rerun of `npm install`. Q87's line says it runs alone, which Z34 (a) no longer supports. Q79b stays alone (it rewrites 99 test files), and Q72, R2, X2 and O33 stay alone (each reads or moves the whole tree). Q88 shares rows and tabs with Q82, X3a and X3c, so it can pair only with Q96. Q84 and L4 may pair; L4's brief has no path list, so it is settled at their `/spec`. Options:
   - (a) The queue from Q79a on reads: Q79a + Q79c + Q80; Q79d + Q87 + Q81; Q79b; Q96 + Q88; Q82 + D13 + X3c; X3a (after Q82); Q91 + Q83; Q84 + L4 (if their paths allow); Q85 + Q86; the rest unchanged; and "runs alone" struck from Q87's line.
   - (b) The queue as it stands.

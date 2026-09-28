@@ -69,3 +69,146 @@ No comment carries history, the files are ASCII only, no file is over a size lin
 ## Usage
 
 Not measured. Roughly 60k tokens of context, one full run of the verify script (about 6 minutes), and one targeted vitest run.
+
+## Repair round 1, refuted
+
+Reviewer a38991e425707e8b4, a fresh agent, over `git diff 65baf8da` read against `git diff 36db3164`.
+
+Scope: `git diff 65baf8da` (the round) read against `git diff 36db3164` (the whole step) in `.agents/worktrees/Q89`. `git status --short` lists the 11 modified paths of the round plus the untracked report, and nothing else. I changed nothing in the worktree or the ledger. Every revert test below ran in a copy of `tools/oculus` in my scratchpad, which I deleted afterwards. After deleting it, `git status --short | wc -l` still printed 12, the same as before.
+
+### Verify
+
+I ran `sh .../land/templates/verify.sh .../orchestrator-state.md > $S/verify.log 2>&1; echo $?` from the worktree's `tools/oculus`. It exited 0. The summary lines, verbatim:
+
+```
+ Test Files  339 passed (339)
+      Tests  5339 passed (5339)
+1790610231648 COMPLETED 1431 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+built in 1.86s
+built in 9.80s
+All matched files use Prettier code style!
+verify: 6 commands passed
+```
+
+There were no timeouts. 5339 is the first review's 5332 plus the round's 7 new cases (5 in `terminal.test.ts`, 2 in `pages.test.ts`).
+
+### Commands the report quotes, rerun
+
+- The vitest subset (`tests/views/sessions/terminal.test.ts tests/state/workbench/layout tests/state/sessions/folds.test.ts tests/views/sessions tests/views/whole tests/checks tests/ui/wall.test.ts tests/ui/colours.test.ts`) gave `Test Files  51 passed (51)` and `Tests  1044 passed (1044)`, as the report says.
+- `npm run lint` exited 0. The check and the format lines are in the verify output above.
+- The perl ASCII gate printed nothing. `LC_ALL=C grep -n '[^ -~]' HELP.md DESIGN.md` printed nothing (exit 1). The picker grep printed nothing (exit 1).
+- Line references: `rowKey` is at `terminal-list.ts:83`, `listDrawn` at `:71`, `parseLayout` at `saved.ts:279`, `viewStates` at `:328`, `registerViews` at `layout.svelte.ts:166` and `:674`, and `new Set` at `terminal-list.ts:27`. All match the report.
+- Line counts: `wc -l` matches the report's table except one row. `terminal-list.ts` has 144 lines; the report says 143.
+
+### Revert tests of the round's closures (in the scratch copy)
+
+| Change undone | Result |
+|---|---|
+| `listDrawn` back to `count >= 2` | Red: "draws the one terminal there is as a row while the tab shows the composer" and "audits when the list is drawn". |
+| The call site `Terminal.svelte:158` back to `rows.length >= 2` | Red: "draws the one terminal there is as a row while the tab shows the composer". |
+| Split and Kill back to `tabindex={row.terminal === stop ? 0 : -1}` | Red: "is one stop of the focus order". |
+| The `layout.registerViews(...)` line deleted from `context.ts` | Red: "reads back only what the registry of the client holds after a reload". |
+| The `view !== ''` filter taken out of `viewStates` | Red: "keeps a saved value only under a registered view id, dropping an empty or unknown key". |
+| Kill drawn on the first row only | Red: "offers Split and Kill on every row, and a tooltip naming the terminal". |
+| The `split` and `kill` branches removed from `keys()` in `TerminalList.svelte:132-133` | All 20 green. See Proof 1. |
+
+No item of the round was closed by removing a check. The one test changed outside the new cases is the first `pages.test.ts` case, which gained `again.registerViews((view) => view === 'terminal')`. The rule it tests changed, and the case still asserts the order read back, so this does not fit a test to its revert.
+
+### Points (a) to (f)
+
+(a) The load order is correct on a real page load. No test holds it.
+- `createClientState()` runs at `src/routes/+page.svelte:42`. At its end, `context.ts:255` registers the rule as a closure that asks `registry.viewFor` at the time it is called.
+- `registerAll(client.registry)` runs in the component's script body (`+page.svelte:67`, inside `untrack`). `loadLayout()` runs later, in `onMount` (`+page.svelte:210`).
+- The only parse of the saved layout is inside `loadLayout`: `storage.attach` at `layout.svelte.ts:332`, then `parseLayout(raw, first, (view) => knownRule(view))` at `:335`. `grep -rn parseLayout src` finds no other caller in `src`. `grep loadLayout src` finds only `+page.svelte:210`.
+- So when the layout is parsed, the rule exists and `terminal` is registered, and the row order survives a reload.
+- The new `pages.test.ts` case "reads back only what the registry of the client holds after a reload" copies this order through `createClientState` (register, then `loadLayout`). It goes red without `context.ts:255`.
+- No test mounts `+page.svelte`. If `loadLayout()` were moved before `registerAll`, no test would fail, and every saved order would be dropped. This is a gap in coverage, not a defect in the diff. The round did not change `+page.svelte`, so it is not a finding against the round.
+
+(b) The `context.ts` change is necessary.
+- `parseLayout` has to be told which ids are registered views. Only the registry knows this, and the layout store does not import it (DESIGN.md: "The rule reads the registry through `registerOpened` ... so the layout store never imports the registry").
+- The registry is built over the layout (`createRegistry(layout)`, `context.ts:250`), so the rule cannot go into `createLayout` as an argument.
+- The two added lines sit beside the existing `registerOpened` call at `:253`, in the one place where both objects exist. That is the smallest place the change could go.
+- The report names the path as outside the brief's list, with this reason. The orchestrator should add the path to the step's accepted paths.
+
+(c) The comment breaks the rule in effect, though not in the way the other VS Code references in the tree do. `terminal-list.ts:80` reads: "Delete or Backspace kills it, as VS Code's tabs list kills with Delete."
+- The step's brief and DESIGN.md make VS Code the target a surface is drawn to. The other 55 files in `src` that name VS Code (`grep -rln "VS Code" src | wc -l`) name the thing drawn.
+- This clause instead gives another program's behaviour as the reason for a key binding. The authority for these keys is round ruling item 1, not VS Code.
+- The parity inventory lists no Delete key: `grep -n -i "delete\|backspace\|kill" vscode-parity.md` shows only "Row actions on hover: split, kill" and "Kill the terminal from the view". So the claim about VS Code is unsourced in the ledger.
+- The clause also covers Backspace, which it does not claim VS Code binds.
+- It is a Standards finding (Standards 2 below).
+
+(d) Backspace from the list is a risk. The cause is not a keystroke leaking from the grid; it is focus, key repeat and an arm that never ends.
+- A Backspace meant for the grid cannot reach a row. `keys()` is attached only to the row's own button (`TerminalList.svelte:202`). The xterm textarea sits in `div.grid` inside `.main`, a sibling of the list (`Terminal.svelte:470-486`). Split and Kill sit in `.actions`, a sibling of the row button, so their key events do not bubble into `keys()`.
+- Focus is left on a row after a pointer press. `show()` (`TerminalList.svelte:88-91`) does not move focus. The grid effect (`Terminal.svelte:~290-330`) never calls `term.focus()`. The only `grid.focus()` calls are at `:273` (after a paste answer) and `:282` (after a drop).
+- In Chromium a pressed button keeps focus (not verified in a browser). A reader who presses a row and starts typing therefore loses the letters, and two Backspaces kill the tmux session.
+- Holding Backspace alone is enough. `keys()` does not look at `event.repeat`, so the first keydown arms and the first auto-repeat, about half a second later, kills.
+- `arming` is never cleared (`:61`, `:111-120`: no timeout, no reset on blur, no reset when the stop moves). One stray Backspace leaves the row armed, and any later Backspace or Kill press on it kills at once.
+- See Behaviour 1.
+
+(e) Yes, the one-row list is covered. With `listDrawn` reverted to `count >= 2`, two cases go red. With the call site reverted to `rows.length >= 2`, "draws the one terminal there is as a row while the tab shows the composer" goes red. The first review's revert run agrees.
+
+(f) Z39 is left as ruled. `placeOf` and the Split half of `HELP.md:123` are unchanged in the round's delta. Not a finding.
+
+### Spec
+
+None. Each of rulings 1 to 7 is built as ruled, and rulings 8 and 9 are in the report.
+
+### Proof
+
+1. **The keys' wiring in the component is not held by any case.** `TerminalList.svelte:129-133`:
+   ```
+   if (action === 'show') show(rows[index]);
+   else if (action === 'split') split(rows[index]);
+   else void kill(rows[index]);
+   ```
+   Deleting the `split` and `kill` lines leaves all 20 cases of `terminal.test.ts` green (scratch-copy run). Ruling 1 asked that "Delete, Backspace and Shift+Enter reach the kill and the split through the functions the view calls". The audit asserts only `rowKey`, which is a function the view calls, so the letter of the ruling is met. This matches how the step treats the other named audits.
+   - Smallest fix: none in code. The landing's look on TEST must press Delete twice and Shift+Enter on a row.
+2. **The report's line count for `terminal-list.ts` is wrong.** The table gives 143; `wc -l` gives 144.
+   - Smallest fix: correct the row.
+
+### Standards
+
+1. **`TerminalList.svelte:323-324` is a comment the round made false.**
+   ```
+   /* The row's controls are drawn clear until the pointer or the keyboard is on the row, and are
+      kept in the page rather than hidden so the keyboard can reach the ones at the stop. */
+   ```
+   After ruling 1, Split and Kill carry `tabindex={-1}` (`:223`, `:237`), and the keyboard no longer reaches them.
+   - Smallest fix: give the reason that is true now. The controls are drawn while the pointer or the keyboard's stop is on the row, so the armed Kill ("Press again to kill this terminal") shows while a Delete or Backspace waits for its second press.
+2. **`terminal-list.ts:80` gives prior art as the reason for a binding.** See (c):
+   ```
+    * Delete or Backspace kills it, as VS Code's tabs list kills with Delete. Null for any other key,
+   ```
+   - Smallest fix: drop "as VS Code's tabs list kills with Delete", or state the reason on oculus's terms: the keys are the keyboard's way to Kill, which the list keeps out of the focus order.
+
+### Behaviour
+
+1. **Delete or Backspace can kill a terminal the reader did not mean to kill.** `TerminalList.svelte:126-134` (`keys`) and `:111-120` (`kill`):
+   ```
+   const action = rowKey(event.key, event.shiftKey);
+   if (action !== null) {
+       event.preventDefault();
+       ...
+       else void kill(rows[index]);
+   ```
+   - An auto-repeated keydown counts as the second press, so holding Backspace for about half a second kills the terminal. That breaks "the first arms, the second kills".
+   - The arm never ends, so an earlier stray press turns a later single press into a kill.
+   - A pointer press leaves focus on the row, since `show()` does not move it to the grid. A reader who then types Backspace twice, believing they are in the shell, kills it.
+   - The same row-level arm with no expiry exists in `SessionList.svelte:73`, `:129-133`, but there it is reached by the pointer only.
+   - Smallest fix, in `TerminalList.svelte`:
+     - return early from `keys()` when `event.repeat` is true and the action is `kill`;
+     - clear `arming` when the list loses focus (`onfocusout` on `div.list`, when `relatedTarget` is outside it) and when `stopped` moves;
+     - optionally hand focus to the grid after a pointer `show()`.
+   - Add a case for the repeat, which `rowKey` can take as a third argument, `rowKey('Backspace', false, true) === null`, so it is asserted without a DOM.
+
+### What I did not check
+
+- Anything that needs a DOM or a browser: whether a pressed row really keeps focus in Chromium and Safari, the key repeat, the hover opacity, the drag, the paste question, the file drop and the bell.
+- The report's first-run quotes, and each of its per-case failure quotes in the round's "Each new case's failure" section. I made my own reverts of the round's closures (table above) and did not repeat the builder's exact reverts. The eight `pages.test.ts` and `folds.test.ts` quotes were not rerun.
+- Whether VS Code's terminal tabs list binds Delete, or which keys it uses on macOS.
+- `npm run diagrams`, which writes files. Only its checks inside the suite ran, and they passed.
+- The main checkout's state file, whose open items the report quotes. I did not compare them.
+
+### Usage
+
+Not measured. Roughly 70k tokens of context. One full verify run (about 6 minutes), one run of the report's vitest subset, and eight targeted vitest runs in the scratch copy.
