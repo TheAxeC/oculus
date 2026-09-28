@@ -9,7 +9,8 @@
         "preview": "vite preview",
         "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
         "lint": "eslint .",
-        "test": "vitest run",
+        "test": "vitest run --tagsFilter '!slow'",
+        "test:slow": "vitest run --tagsFilter slow",
         "format": "prettier --write .",
         "format:check": "prettier --check .",
         "diagrams": "node bin/diagrams/diagrams.mjs"

@@ -464,7 +464,7 @@ describe('the log, the branches and the worktrees', () => {
         expect(state().branches.length).toBe(MAX_ENTRIES);
     });
 
-    it('cuts every list it publishes at the cap', () => {
+    it('cuts every list it publishes at the cap', { tags: ['slow'] }, () => {
         // Past the cap in every list, each made by writing what git reads rather than by a git
         // process per entry: the branches and the tags by one update-ref, the stashes as the stash
         // reflog's lines, the worktrees as their administrative folders and the remotes in the

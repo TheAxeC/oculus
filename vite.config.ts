@@ -30,6 +30,9 @@ export default defineConfig({
     test: {
         environment: 'node',
         include: ['tests/**/*.test.ts'],
+        // A case tagged slow builds more than a run beside other worktrees can read in time, so
+        // npm test leaves it out and npm run test:slow runs it.
+        tags: [{ name: 'slow', description: 'Left out of npm test; npm run test:slow runs it.' }],
         expect: { requireAssertions: true },
         // Four workers, not one per core: two or three worktrees run this suite at once beside the
         // machine's own sessions, and a suite that takes every core makes the timed cases of the
