@@ -27,7 +27,18 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:      # Q79d built, its review next.
+dispatch:      # Q79d built, in review; Q101 building.
+- step: Q101
+  executor: agent
+  worker: claude:opus
+  session_id: add47a57e76017575
+  worktree: .agents/worktrees/Q101
+  base: 3d4f9bd4
+  launched: 2026-09-29
+  report: agents/reviews/Q101-report.md
+  landing: not-started
+  round: 0
+  shared_paths: with Q79d, views/sessions/session-list/TerminalRows.svelte (Q79d its nameOf import and the folder line, Q101 the row press and the menu pick: different lines, a hand merge), DESIGN.md (Q79d lines 169 and 305, Q101 lines 266 and 273 and the terminal sentences: different lines), docs/diagrams (a rerun of npm run diagrams)
 - step: Q79d
   executor: agent
   worker: claude:opus

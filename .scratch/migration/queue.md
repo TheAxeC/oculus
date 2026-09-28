@@ -1,9 +1,9 @@
 /plan-orchestration oculus/migration
 
 In flight:
+- Q101 (each Terminal tab a terminal panel of its own, Z40 (d)): building.
 - Q79d (the library audit's shared helpers, each written once): built, review next.
 Queued, in order:
-- Q101 (each Terminal tab a terminal panel of its own, Z40 (d)).
 - Q87 and Q81 (the import-graph checks on dependency-cruiser; menus, context menus, tooltips and dialogs on bits-ui).
 - Q79b (the tests, runs alone).
 - Q96 and Q88 (the Rail section's field labels and its icon dropdown on bits-ui, once Q81 has landed; right-click menus wherever vscode.dev gives one).
