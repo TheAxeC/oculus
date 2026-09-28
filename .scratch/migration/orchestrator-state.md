@@ -27,7 +27,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:      # Q99 in repair round 1; Q100 and Q79d building.
+dispatch:      # Q99 and Q100 in repair round 1; Q79d building.
 - step: Q99
   executor: agent
   worker: claude:opus
@@ -37,7 +37,7 @@ dispatch:      # Q99 in repair round 1; Q100 and Q79d building.
   launched: 2026-09-28
   report: agents/reviews/Q99-report.md
   landing: not-started
-  reviewer_report: agents/reviews/Q99-refuter.md (reviewer a5f962d7aba868b83, 62 tool uses, 203k tokens, 15 min; builder 139 tool uses, 328k tokens, 33 min)
+  reviewer_report: agents/reviews/Q99-refuter.md (reviewer a5f962d7aba868b83, 62 tool uses, 203k tokens, 15 min; builder 139 tool uses, 328k tokens, 33 min; round 1 builder report saved, 62 tool uses, 111k tokens, 23 min; round 1 reviewer a1c799351ef79b368, running)
   round: 1   # sent 2026-09-28 in agents/briefs/Q99-round1-sent.md, from worktree commit bc5c3bef; the cases ruled in agents/briefs/Q99-cases.md (commit bbb278d3)
   shared_paths: with Q79a and Q79c, DESIGN.md and HELP.md (different sentences: Q99's are the terminal's input, the scrollback, a tab closing on its terminal's end and the Pages view; Q79a's the Auth section; Q79c's the Help view's cut and the controls check) and docs/diagrams (a rerun of npm run diagrams); no code file is shared (Q79a changes no file under server/machine/pty or state/client; Q79c's Terminal.svelte is not in Q99's paths)
 - step: Q100
@@ -49,7 +49,8 @@ dispatch:      # Q99 in repair round 1; Q100 and Q79d building.
   launched: 2026-09-28
   report: agents/reviews/Q100-report.md
   landing: not-started
-  round: 0
+  reviewer_report: agents/reviews/Q100-refuter.md (reviewer a4d8e215a755b412b, 34 tool uses, 135k tokens, 11 min; builder 29 tool uses, 130k tokens, 10 min; the builder ran one read-only git diff --stat against the no-git rule)
+  round: 1   # sent 2026-09-28 in agents/briefs/Q100-round1-sent.md, from worktree commit d5a94e03
   shared_paths: with Q99, DESIGN.md (Q100 line 216, the wallpaper paragraph; Q99 line 264, the pty bridge: different paragraphs, a hand merge)
 - step: Q79d
   executor: agent

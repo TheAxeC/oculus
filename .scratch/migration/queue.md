@@ -2,7 +2,7 @@
 
 In flight:
 - Q99 (repair round 1 sent: the terminal and Pages defects from Axel's look: Claude interrupted by clicks, scrolls and pastes; an exited terminal's tab left open; a new shell's prompt at the bottom; the Pages view's large text), in the first free slot.
-- Q100 (the Calendar's fixed strips cover the rows under them over a wallpaper, Z42 (a)): building.
+- Q100 (the Calendar's fixed strips cover the rows under them over a wallpaper, Z42 (a)): repair round 1 sent (a strip listed inside `:global()`, the strip rule narrowed to the calendar's sticky strips, the table header named in DESIGN.md).
 - Q79d (the library audit's shared helpers, each written once): building.
 Queued, in order:
 - Q101 (each Terminal tab a terminal panel of its own, Z40 (d), once Q99 has landed).
