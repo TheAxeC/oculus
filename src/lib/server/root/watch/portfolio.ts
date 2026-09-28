@@ -284,6 +284,8 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
      */
     const rebuild = (withConfig: boolean, withFeeds: boolean): void => {
         try {
+            // Read here and not taken from a request: a rebuild is the watcher's answer to a change
+            // on disk, and no request is in flight when it runs.
             const { config, findings } = loadConfig(paths.engine);
             if (withConfig) {
                 // The roots of sources.yml, the documents of layout.yml and the icon map are

@@ -138,6 +138,8 @@ export type DepositOptions = {
     into?: WriteTarget;
     /** The engine directory the hub is read from when the caller names no target of its own. */
     engine?: string;
+    /** The request's merged configuration, read beside `engine` when the caller names no target. */
+    config?: Record<string, unknown>;
     /** How `gh` is run; the real one when absent. */
     gh?: GhRun;
     /** How git is run; the real one when absent. A test fails one command through it. */
@@ -176,10 +178,12 @@ function done(output: string): Outcome {
  */
 function hubTarget(options: DepositOptions): WriteTarget {
     if (options.into !== undefined) return options.into;
-    if (options.engine === undefined) {
-        throw new Error('a deposit needs either a write target or the engine directory');
+    if (options.engine === undefined || options.config === undefined) {
+        throw new Error(
+            'a deposit needs either a write target or the engine directory and its configuration'
+        );
     }
-    return target(options.engine);
+    return target(options.engine, options.config);
 }
 
 function settings(options: DepositOptions): {

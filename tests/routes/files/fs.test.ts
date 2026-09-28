@@ -192,17 +192,6 @@ describe('the fs route, reading', () => {
         }[];
         expect(entries.map((entry) => entry.name)).toEqual(['code', 'README.md']);
     });
-
-    it('refuses a read from another origin, saying why', async () => {
-        const into = target();
-        const response = handleFs(
-            get('?root=hub&path=', { origin: 'https://elsewhere.test' }),
-            into
-        );
-
-        expect(response.status).toBe(403);
-        expect((await read(response)).error).toBe('origin');
-    });
 });
 
 describe('the fs route, writing', () => {
@@ -337,16 +326,8 @@ describe('the fs route, writing', () => {
         expect((await read(gone)).error).toBe('no-such-workspace');
     });
 
-    it('refuses another origin, a missing token, a body that is not JSON, and an unknown action', async () => {
+    it('refuses a missing token, a body that is not JSON, and an unknown action', async () => {
         const into = target();
-
-        const elsewhere = await handleFsWrite(
-            post({ action: 'select-workspace', name: '' }, { origin: 'https://elsewhere.test' }),
-            TOKEN,
-            into
-        );
-        expect(elsewhere.status).toBe(403);
-        expect((await read(elsewhere)).error).toBe('origin');
 
         const stale = await handleFsWrite(
             post({ action: 'select-workspace', name: '' }, { 'x-oculus-token': 'stale' }),
@@ -354,11 +335,13 @@ describe('the fs route, writing', () => {
             into
         );
         expect(stale.status).toBe(403);
-        expect((await read(stale)).error).toBe('token');
+        expect(stale.headers.get('cache-control')).toBe('no-store');
+        expect(await read(stale)).toEqual({ error: 'token' });
 
         const broken = await handleFsWrite(post('not json at all'), TOKEN, into);
         expect(broken.status).toBe(400);
-        expect((await read(broken)).error).toBe('not-json');
+        expect(broken.headers.get('cache-control')).toBe('no-store');
+        expect(await read(broken)).toEqual({ error: 'not-json' });
 
         const unknown = await handleFsWrite(post({ action: 'drop-everything' }), TOKEN, into);
         expect(unknown.status).toBe(400);
@@ -437,13 +420,5 @@ describe("the fs route, the reader's own bookmarks and notes", () => {
         expect(await say('sub/deep')).toBe('no-such-note');
         expect(await say('')).toBe('no-such-note');
         expect(existsSync(into.notes)).toBe(false);
-    });
-
-    it('refuses a bookmarks read from another origin, as every other read is refused', async () => {
-        const into = target();
-        const response = handleFs(get('?bookmarks=1', { origin: 'https://elsewhere.test' }), into);
-
-        expect(response.status).toBe(403);
-        expect((await read(response)).error).toBe('origin');
     });
 });

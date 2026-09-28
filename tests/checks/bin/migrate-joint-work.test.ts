@@ -138,6 +138,35 @@ describe('migrate-joint-work.mjs', () => {
         expect(readFileSync(join(hub, 'registries/people.yml'), 'utf8')).toBe(written);
     });
 
+    it('writes a note holding a line break, a colon and a quote so it reads back unchanged', () => {
+        const hub = scratch();
+        const note = 'first line: with a colon\nsecond line with "a quote" and a # sign';
+        write(
+            hub,
+            'network/collaborations.yml',
+            COLLABORATIONS.replace(
+                '    tags: [federated]\n',
+                `    tags: [federated]\n    note: ${JSON.stringify(note)}\n`
+            )
+        );
+        expect(run(hub).status).toBe(0);
+        const parsed: unknown = parse(readFileSync(join(hub, 'network/joint-work.yml'), 'utf8'));
+        const entries = (parsed as { entries: { key: string; note?: string }[] }).entries;
+        expect(entries.find((one) => one.key === 'naesens')?.note).toBe(note);
+    });
+
+    it('writes a list inside an entry on one line with no padding inside its brackets, a tag plain', () => {
+        const hub = scratch();
+        write(hub, 'network/collaborations.yml', COLLABORATIONS);
+        expect(run(hub).status).toBe(0);
+        const lines = (relative: string): string[] =>
+            readFileSync(join(hub, relative), 'utf8').split('\n');
+        expect(lines('network/joint-work.yml')).toContain('    tags: [federated]');
+        expect(lines('registries/people.yml')).toContain(
+            '    affiliations: ["ku-leuven", "uz-leuven"]'
+        );
+    });
+
     it('refuses a --from file that is not there, writing nothing', () => {
         const hub = scratch();
         write(hub, 'network/collaborations.yml', COLLABORATIONS);
@@ -145,5 +174,27 @@ describe('migrate-joint-work.mjs', () => {
         expect(out.status).toBe(2);
         expect(out.stderr).toContain('no such file');
         expect(existsSync(join(hub, 'registries/people.yml'))).toBe(false);
+    });
+
+    it('reads the owner flags, and refuses a flag it does not know or one with nothing after it', () => {
+        const hub = scratch();
+        write(hub, 'network/collaborations.yml', COLLABORATIONS);
+        for (const line of [[hub, '--bogus'], [hub, '--self-key'], ['--from']]) {
+            const out = run(...line);
+            expect(out.status).toBe(2);
+            expect(out.stderr).toContain('usage: node bin/migrations/migrate-joint-work.mjs');
+        }
+        expect(existsSync(join(hub, 'registries/people.yml'))).toBe(false);
+
+        const args = ['--self-key', 'owner', '--self-name=The Owner', '--self-role', 'lead'];
+        expect(run(hub, ...args, '--self-affiliation', 'mst').status).toBe(0);
+        const owner = people(hub).find((one) => one.key === 'owner') as Record<string, unknown>;
+        expect(owner).toEqual({
+            key: 'owner',
+            name: 'The Owner',
+            affiliations: ['mst'],
+            role: 'lead',
+            self: true
+        });
     });
 });

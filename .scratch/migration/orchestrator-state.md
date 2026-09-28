@@ -27,19 +27,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:      # Q79a and Q99 in review.
-- step: Q79a
-  executor: agent
-  worker: claude:opus
-  session_id: a80468c03d9af29d2
-  worktree: .agents/worktrees/Q79a
-  base: aad34cdd
-  launched: 2026-09-28
-  report: agents/reviews/Q79a-report.md
-  landing: not-started
-  reviewer_report: agents/reviews/Q79a-refuter.md (reviewer a4d1823055e6df7c3, 62 tool uses, 307k tokens, 19 min; round 1 builder report saved, 82 tool uses, 189k tokens, 25 min; round 1 reviewer a7bbab68a23036dab, running)
-  round: 1   # sent 2026-09-28 in agents/briefs/Q79a-round1-sent.md, from worktree commit 5ce7a0ec; the brief's decision 1 reversed there (neither header refused, as on the base)
-  shared_paths: with Q92, server/accounts/connect/actions.ts (Q79a replaces its hand JSON answers, Q92 changes its add and remove rows: different lines, a hand merge), routes/api/(accounts)/calendar and mail route files (Q79a changes the config read and drops the origin calls, Q92 the ics provider: different lines), server/root/context.ts (Q79a may drop the config field, Q92 adds the ics account wiring: different lines), docs/diagrams (a rerun), DESIGN.md (the Auth paragraph against Q92's lines 134 and 298)
+dispatch:      # Q99 reviewed, its repair round next.
 - step: Q99
   executor: agent
   worker: claude:opus
@@ -417,6 +405,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-09-28. Q79a landed through /spec, /refute and /land (the server half of the library audit: `json()`, one `/api/` origin guard in `handle`); one repair round, refuted again; fixes at landing: the merge with Q92's `connect/actions.ts`, the migration's plain tags, the two `HEADERLESS` cases, three test titles and one comment. Verify on main: `verify: 6 commands passed` (Test Files 346 passed, Tests 5506 passed). Next: Q99's repair round 1, then `/spec` Q100 and Q101.
 - 2026-09-28. Q79c landed through /spec, /refute and /land (the page half of the library audit): one repair round, refuted again; five fixes at landing (the merge with Q92's manual.ts, the diagram alt text decoded on the server, the career moves as default ToolButtons with the capsule variant removed, fs.ts split into file-type.ts, the extension rule written once). Axel ruled Z43 (a). Q79a's round and Q99's first review are in; next: Q79a's landing, then Q99's repair round.
 - 2026-09-28. Q92 landed through /spec, /refute and /land (the Inbox and Calendar views beautified, a published calendar link read with ical.js); one repair round, refuted again; three fixes at landing: the colour and tint rules together, a view test's title, an event's title first in its tooltip. Verify on main: `verify: 6 commands passed` (Test Files 344 passed, Tests 5465 passed). Z42 raised from the look. Q79a and Q79c are building; Q99 is next into the freed slot.
 - 2026-09-28. Q79a and Q79c launched (the library audit's server and page halves), beside Q92, whose repair round 1 is answered. Q79c's plan line corrected at `/spec`: the Config view holds no highlight.js to drop, so the item is its YAML drawn through the highlighter, as the audit found. Next: `/refute` Q92 over round 1.

@@ -49,13 +49,13 @@ function fixture(): { dir: string; root: Root; file: string; outside: string } {
     return { dir, root: { key: 'fixture', dir: rootDir }, file, outside };
 }
 
-function request(token: string, body: unknown, origin = true): Request {
+function request(token: string, body: unknown): Request {
     const headers: Record<string, string> = {
         'content-type': 'application/json',
         host: HOST,
+        'sec-fetch-site': 'same-origin',
         [TOKEN_HEADER]: token
     };
-    if (origin) headers['sec-fetch-site'] = 'same-origin';
     return new Request(`http://${HOST}/api/source`, {
         method: 'POST',
         headers,
@@ -64,13 +64,10 @@ function request(token: string, body: unknown, origin = true): Request {
 }
 
 describe('POST /api/source', () => {
-    it('requires the same origin and current write token', async () => {
+    it('requires the current write token', async () => {
         const one = fixture();
         const token = mintToken();
         const body = { root: one.root.key, path: 'notes.md', content: 'after\n' };
-        expect((await handleSource(request(token, body, false), token, [one.root])).status).toBe(
-            403
-        );
         expect((await handleSource(request('stale', body), token, [one.root])).status).toBe(403);
         expect(readFileSync(one.file, 'utf8')).toBe('before\n');
     });
@@ -243,12 +240,11 @@ describe('POST /api/source', () => {
 
 describe('GET /api/source', () => {
     /** The GET as the page makes it, which carries no body and no token. */
-    function ask(root: string, path: string, origin = true): { request: Request; url: URL } {
+    function ask(root: string, path: string): { request: Request; url: URL } {
         const address = new URL(
             `http://${HOST}/api/source?root=${encodeURIComponent(root)}&path=${encodeURIComponent(path)}`
         );
-        const headers: Record<string, string> = { host: HOST };
-        if (origin) headers['sec-fetch-site'] = 'same-origin';
+        const headers = { host: HOST, 'sec-fetch-site': 'same-origin' };
         return { request: new Request(address, { headers }), url: address };
     }
 
@@ -276,10 +272,8 @@ describe('GET /api/source', () => {
         expect(handleSourceInfo(outside.request, outside.url, [one.root]).status).toBe(403);
     });
 
-    it('requires the same origin and both of its two parameters', () => {
+    it('requires both of its two parameters', () => {
         const one = fixture();
-        const other = ask(one.root.key, 'notes.md', false);
-        expect(handleSourceInfo(other.request, other.url, [one.root]).status).toBe(403);
         const bare = ask('', '');
         expect(handleSourceInfo(bare.request, bare.url, [one.root]).status).toBe(400);
     });

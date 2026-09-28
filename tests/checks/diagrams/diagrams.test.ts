@@ -410,7 +410,7 @@ describe('the write reader', () => {
         "import { saveOld } from './old.ts';",
         "import { isMap } from '../../data/guards.ts';",
         'export function handleWrite() {',
-        '    if (!hasToken()) return json(403, {});',
+        '    if (!hasToken()) return json({}, { status: 403 });',
         '    if (isMap(1)) saveOld();',
         '}',
         ''
@@ -457,6 +457,30 @@ describe('the write reader', () => {
                 'refuses'
             )
         );
+    });
+
+    it('draws the call whose Response is handed back as a refusal, and no answer outside 4xx', () => {
+        const handed = writes.replace(
+            '    if (!hasToken()) return json({}, { status: 403 });',
+            [
+                '    const read = await hasToken(request, token);',
+                '    if (read instanceof Response) return read;',
+                '    if (isMap(2)) return json({}, { status: 500 });',
+                '    if (isMap(3)) return json({ status: 404 });'
+            ].join('\n')
+        );
+        const dot = writesDot(sources({ ...base, 'lib/server/edit/writes.ts': handed }));
+        expect(dot).toContain(
+            arrow(
+                'lib/server/edit/writes.ts',
+                'lib/server/core/auth.ts',
+                'hasToken',
+                'style=dashed',
+                'refuses'
+            )
+        );
+        // A 500, and a body that merely holds a status key, answer no refusal.
+        expect(dot).not.toContain('lib/data/guards.ts');
     });
 
     it('draws the modules on a path to the disk and the checks a refusal calls, and no other', () => {

@@ -199,7 +199,7 @@
 </g>
 <!-- lib/server/edit/writes.ts&#45;&gt;lib/server/edit/writes/subtasks.ts -->
 <g id="edge21" class="edge">
-<title>lib/server/edit/writes.ts&#45;&gt;lib/server/edit/writes/subtasks.ts: writeHost, writeSubtask, writeSubtaskAdd</title>
+<title>lib/server/edit/writes.ts&#45;&gt;lib/server/edit/writes/subtasks.ts: careerRules, writeHost, writeSubtask, writeSubtaskAdd</title>
 <path fill="none" stroke="currentColor" d="M204.2,-396.44C258.51,-342.12 202.18,-282.54 261.08,-233.24 288.89,-209.96 331.31,-206.39 361.71,-207.44"/>
 <polygon fill="currentColor" stroke="currentColor" points="361.56,-209.53 367.65,-207.72 361.76,-205.34 361.56,-209.53"/>
 </g>
@@ -242,13 +242,13 @@
 <!-- lib/server/edit/writes.ts to lib/server/core/auth.ts (refuses) -->
 <g id="node21" class="node">
 <title>lib/server/edit/writes.ts to lib/server/core/auth.ts (refuses)</title>
-<polygon fill="none" stroke="none" points="438.87,-504.48 360.69,-504.48 360.69,-492 438.87,-492 438.87,-504.48"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="399.78" y="-495.84" font-family="Helvetica,Arial,sans-serif" font-size="8.00">hasToken, sameOrigin</text>
+<polygon fill="none" stroke="none" points="423.99,-504.48 375.57,-504.48 375.57,-492 423.99,-492 423.99,-504.48"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="399.78" y="-495.84" font-family="Helvetica,Arial,sans-serif" font-size="8.00">tokenedBody</text>
 </g>
 <!-- lib/server/edit/writes.ts&#45;&gt;lib/server/edit/writes.ts to lib/server/core/auth.ts (refuses) -->
 <g id="edge10" class="edge">
 <title>lib/server/edit/writes.ts&#45;&gt;lib/server/edit/writes.ts to lib/server/core/auth.ts (refuses)</title>
-<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M185.86,-418.3C199.73,-435.11 228.67,-466.66 261.08,-481.24 292.49,-495.38 331.78,-499.02 360.34,-499.49"/>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M185.86,-418.3C199.73,-435.11 228.67,-466.66 261.08,-481.24 298.42,-498.04 346.89,-500.03 375.24,-499.46"/>
 </g>
 <!-- lib/server/edit/writes.ts to lib/server/edit/feeds.ts (refuses) -->
 <g id="node22" class="node">
@@ -261,15 +261,15 @@
 <title>lib/server/edit/writes.ts&#45;&gt;lib/server/edit/writes.ts to lib/server/edit/feeds.ts (refuses)</title>
 <path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M176.2,-418.41C176.2,-430.85 176.2,-443.29 176.2,-455.73"/>
 </g>
-<!-- ? src/lib/server/edit/writes/audit&#45;mute.ts:66 -->
+<!-- ? src/lib/server/edit/writes/audit&#45;mute.ts:67 -->
 <g id="node16" class="node">
-<title>? src/lib/server/edit/writes/audit&#45;mute.ts:66</title>
+<title>? src/lib/server/edit/writes/audit&#45;mute.ts:67</title>
 <polygon fill="none" stroke="currentColor" points="530.48,-50.04 269.08,-50.04 269.08,-28.44 530.48,-28.44 530.48,-50.04"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="399.78" y="-36.24" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/server/edit/writes/audit&#45;mute.ts:66 SIGNATURE.test(</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="399.78" y="-36.24" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/server/edit/writes/audit&#45;mute.ts:67 SIGNATURE.test(</text>
 </g>
-<!-- lib/server/edit/writes/audit&#45;mute.ts&#45;&gt;? src/lib/server/edit/writes/audit&#45;mute.ts:66 -->
+<!-- lib/server/edit/writes/audit&#45;mute.ts&#45;&gt;? src/lib/server/edit/writes/audit&#45;mute.ts:67 -->
 <g id="edge25" class="edge">
-<title>lib/server/edit/writes/audit&#45;mute.ts&#45;&gt;? src/lib/server/edit/writes/audit&#45;mute.ts:66</title>
+<title>lib/server/edit/writes/audit&#45;mute.ts&#45;&gt;? src/lib/server/edit/writes/audit&#45;mute.ts:67</title>
 <path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M211.33,-96.76C249.89,-84.93 312.75,-65.64 354.92,-52.7"/>
 <polygon fill="currentColor" stroke="currentColor" points="355.45,-54.73 360.57,-50.97 354.22,-50.72 355.45,-54.73"/>
 </g>
@@ -482,7 +482,7 @@
 <!-- lib/server/edit/writes.ts to lib/server/core/auth.ts (refuses)&#45;&gt;lib/server/core/auth.ts -->
 <g id="edge11" class="edge">
 <title>lib/server/edit/writes.ts to lib/server/core/auth.ts (refuses)&#45;&gt;lib/server/core/auth.ts</title>
-<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M439.35,-496.47C467.28,-494.47 505.73,-490.22 538.48,-481.24 594.1,-465.99 607.65,-458.48 657.37,-429.24 686.85,-411.9 717.75,-387.03 736.58,-371.01"/>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M424.08,-497.41C451.79,-495.96 499.22,-492 538.48,-481.24 594.1,-465.99 607.65,-458.48 657.37,-429.24 686.85,-411.9 717.75,-387.03 736.58,-371.01"/>
 <polygon fill="currentColor" stroke="currentColor" points="737.69,-372.82 740.87,-367.32 734.95,-369.64 737.69,-372.82"/>
 </g>
 <!-- lib/server/edit/writes.ts to lib/server/edit/feeds.ts (refuses)&#45;&gt;lib/server/edit/feeds.ts -->

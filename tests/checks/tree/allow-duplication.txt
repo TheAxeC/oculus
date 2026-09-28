@@ -20,10 +20,6 @@ src/lib/data/sources/feeds.ts src/lib/data/sources/registries.ts 99e4d34d3988 th
 src/lib/data/sources/feeds.ts src/lib/data/sources/registries.ts ab1d4e1b3ce4 the same 8 lines at 49 and 64, to fold into one place
 src/lib/data/sources/manifests.ts src/lib/data/sources/registries.ts 9d95463a045f the same 8 lines at 94 and 82, to fold into one place
 src/lib/server/git/deposit-git.ts src/lib/server/git/git-write.ts f6da88e69cee the same 8 lines at 307 and 704, to fold into one place
-src/lib/server/git/deposit-routes.ts src/lib/server/files/fs.ts 2218e8d71b8d the same 8 lines at 76 and 363, to fold into one place
-src/lib/server/git/deposit-routes.ts src/lib/server/git/git-routes.ts 4c23bcded24d the same 8 lines at 164 and 247, to fold into one place
-src/lib/server/git/deposit-routes.ts src/lib/server/files/open.ts 4c23bcded24d the same 8 lines at 164 and 336, to fold into one place
-src/lib/server/git/deposit-routes.ts src/lib/server/machine/pty/routes.ts 4c23bcded24d the same 8 lines at 164 and 383, to fold into one place
 src/lib/server/git/deposit.ts src/lib/state/system/deposit.svelte.ts d1ae18af96c8 the same 8 lines at 114 and 31, to fold into one place
 src/lib/server/content/docs.ts src/lib/server/files/files.ts 20b06154f5e8 the same 8 lines at 133 and 78, to fold into one place
 src/lib/server/content/docs.ts src/lib/server/files/fs.ts 20b06154f5e8 the same 8 lines at 133 and 262, to fold into one place
@@ -32,9 +28,6 @@ src/lib/server/edit/entry-edit/lines.ts src/lib/server/edit/yaml-edit.ts a24957d
 src/lib/server/files/files.ts src/lib/server/files/fs.ts 20b06154f5e8 the same 8 lines at 78 and 262, to fold into one place
 src/lib/server/files/files.ts src/lib/server/files/fs/notes.ts 20b06154f5e8 the same 8 lines at 78 and 35, to fold into one place
 src/lib/server/files/fs/notes.ts src/lib/server/files/fs.ts 20b06154f5e8 the same 8 lines at 35 and 262, to fold into one place
-src/lib/server/git/git-routes.ts src/lib/server/files/open.ts 4c23bcded24d the same 8 lines at 247 and 336, to fold into one place
-src/lib/server/git/git-routes.ts src/lib/server/machine/pty/routes.ts 4c23bcded24d the same 8 lines at 247 and 383, to fold into one place
-src/lib/server/files/open.ts src/lib/server/machine/pty/routes.ts 4c23bcded24d the same 8 lines at 336 and 383, to fold into one place
 src/lib/server/machine/pty/channel.ts src/lib/server/root/socket.ts 9d9d34a4a92f the same 8 lines at 102 and 53, to fold into one place
 src/lib/state/shared/words/appearance.ts src/lib/state/shared/words/tones.ts 6df64cd3fcbc the same 8 lines at 55 and 34, to fold into one place
 src/lib/state/sources/files.svelte.ts src/lib/state/sessions/latex.svelte.ts 044217652a12 the same 8 lines at 108 and 142, to fold into one place
@@ -75,16 +68,13 @@ tests/checks/config/integrity.test.ts tests/state/boards/focus.test.ts 9220afbd8
 tests/checks/look/lane-distance.test.ts tests/state/boards/focus.test.ts 9220afbd8ce8 the same 8 lines at 234 and 314, to fold into one place
 tests/routes/edit/audit-mute.test.ts tests/server/core/changes.test.ts 3a28211de0ba the same 8 lines at 31 and 165, to fold into one place
 tests/routes/git/changes.test.ts tests/routes/docs/docs.test.ts 6134f288ff91 the same 8 lines at 30 and 92, to fold into one place
-tests/routes/git/changes.test.ts tests/routes/files/file.test.ts 6134f288ff91 the same 8 lines at 30 and 67, to fold into one place
 tests/routes/git/changes.test.ts tests/server/core/changes.test.ts 2c6d806255cb the same 8 lines at 46 and 400, to fold into one place
 tests/routes/git/deposit.test.ts tests/routes/git/git.test.ts fd5ccaeda113 the same 8 lines at 47 and 55, to fold into one place
 tests/routes/git/deposit.test.ts tests/routes/edit/write-fixture.ts cb81eee98bb9 the same 8 lines at 53 and 130, to fold into one place
-tests/routes/docs/docs.test.ts tests/routes/files/file.test.ts 6134f288ff91 the same 8 lines at 92 and 67, to fold into one place
 tests/routes/files/fs.test.ts tests/server/files/fs.test.ts 1d8cdb62ad20 the same 8 lines at 39 and 65, to fold into one place
 tests/routes/git/git.test.ts tests/routes/edit/write-fixture.ts cb81eee98bb9 the same 8 lines at 61 and 130, to fold into one place
 tests/routes/files/search.test.ts tests/server/files/search.test.ts 24e7af02827b the same 8 lines at 124 and 199, to fold into one place
 tests/routes/edit/write-fixture.ts tests/server/content/audit.test.ts bec0f2cebb88 the same 8 lines at 185 and 80, to fold into one place
-tests/routes/edit/write-fixture.ts tests/server/core/changes.test.ts 29d1f4fd61f1 the same 8 lines at 95 and 79, to fold into one place
 tests/routes/edit/write-fixture.ts tests/server/core/changes.test.ts 5dec9a8df27f the same 8 lines at 177 and 106, to fold into one place
 tests/routes/edit/write-fixture.ts tests/server/core/changes.test.ts 85f0a4a3aafd the same 8 lines at 66 and 63, to fold into one place
 tests/routes/edit/write-fixture.ts tests/server/core/changes.test.ts 92d5d698e24b the same 8 lines at 161 and 95, to fold into one place

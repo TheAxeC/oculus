@@ -5,5 +5,5 @@
 import { serveDiagram } from '$lib/server/content/diagrams';
 import type { RequestHandler } from './$types';
 
-export const GET: RequestHandler = ({ params, request, locals }) =>
-    serveDiagram(locals.server.engine, params.name, request.headers);
+export const GET: RequestHandler = ({ params, locals }) =>
+    serveDiagram(locals.server.engine, params.name);

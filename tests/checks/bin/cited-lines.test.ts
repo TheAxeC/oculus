@@ -7,6 +7,7 @@ import { join, resolve, sep } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { afterAll, afterEach, describe, expect, it } from 'vitest';
 import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
+import { readArgs } from '../../../bin/cited-lines.mjs';
 
 afterAll(sweepScratch);
 
@@ -123,5 +124,25 @@ describe('the citation check', () => {
         const found = run(held.dir, join(held.dir, 'gone.md'));
         expect(found.out).toContain('no such report');
         expect(found.status).toBe(2);
+    });
+});
+
+describe('the command line', () => {
+    it('reads the root and the report, the last --root winning', () => {
+        expect(readArgs(['--root', '/r', 'a.md'])).toEqual({ root: '/r', report: 'a.md' });
+        expect(readArgs(['--root=/r', '--root', '/s', 'a.md'])).toEqual({
+            root: '/s',
+            report: 'a.md'
+        });
+        expect(readArgs(['a.md'])).toEqual({ root: null, report: 'a.md' });
+        expect(readArgs([])).toEqual({ root: null, report: null });
+    });
+
+    it('names no report for a line that does not read, so the usage is printed', () => {
+        expect(readArgs(['--root'])).toEqual({ root: null, report: null });
+        expect(readArgs(['--bogus', 'a.md'])).toEqual({ root: null, report: null });
+        const held = spawnSync('node', ['bin/cited-lines.mjs', '--bogus'], { encoding: 'utf8' });
+        expect(held.stdout).toContain('usage: node bin/cited-lines.mjs');
+        expect(held.status).toBe(2);
     });
 });

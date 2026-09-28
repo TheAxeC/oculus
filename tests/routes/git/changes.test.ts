@@ -1,5 +1,6 @@
-// What the /api/changes route answers: one page of the log, the page before it, and the refusal a
-// request from another origin gets.
+// What the /api/changes route answers: one page of the log and the page before it. Where the
+// request came from is judged before the route, by the origin guard
+// tests/server/root/hooks-server.test.ts covers.
 //
 // The log is a file under the system temporary directory, asserted to be inside it before anything
 // is written, so nothing here reads or writes ~/.oculus/changes.jsonl.
@@ -93,17 +94,6 @@ describe('the change log endpoint', () => {
         expect(body.changes).toHaveLength(18);
         expect(body.changes[0].field).toBe('f17');
         expect(body.changes[body.changes.length - 1].field).toBe('f0');
-    });
-
-    it('refuses a request that did not come from this page', async () => {
-        const into = log();
-        await fill(into, 1);
-        const response = handleChanges(
-            request('', { origin: 'http://evil.example', 'sec-fetch-site': 'cross-site' }),
-            into
-        );
-        expect(response.status).toBe(403);
-        expect(await response.json()).toEqual({ error: 'origin' });
     });
 
     it('answers an empty page for a process that holds no log', async () => {

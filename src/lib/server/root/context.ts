@@ -90,7 +90,6 @@ export type ServerContext = {
     /** The machine the server runs on and the address a page reaches it at, built once here. */
     host: HostInfo;
     local: LocalConfig;
-    config: Record<string, unknown>;
     /**
      * The directory the configuration was read from, so a route names a config file without a walk.
      */
@@ -200,6 +199,9 @@ export function createServerContext(
 ): ServerContext {
     const make = { ...dependencies, ...replacements };
     const local = make.loadLocal(engine);
+    // The one read outside a request: the watchers, the pollers and the hook target are built from
+    // it once here, before any request arrives. A request reads the disk again through
+    // `locals.config`, so a route never answers from this copy.
     const config = make.loadConfig(engine).config;
     const slurm = slurmSettings(config);
     const calendarConfig = calendarSettings(config);
@@ -345,7 +347,6 @@ export function createServerContext(
         token,
         host,
         local,
-        config,
         engine,
         fsWrites: writes,
         ignoredCache: ignoredCache(),

@@ -18,6 +18,7 @@
 // A shell takes no picks and no argv: it is the reader's own shell, and its prompt is the first
 // command, typed into it as keys once it has started.
 
+import { json } from '@sveltejs/kit';
 import { readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { isAbsolute, join, relative, resolve, sep } from 'node:path';
@@ -35,7 +36,6 @@ import type {
     AgentsAnswer,
     ComposeStart
 } from '../../../data/model/index.ts';
-import { sameOrigin } from '../../core/auth.ts';
 
 /** The catalog's path under the engine's config folder. */
 export const AGENTS_FILE = join('catalogs', 'agents.yml');
@@ -205,12 +205,8 @@ export function composeRequest(message: Record<string, unknown>): ComposeStart {
     };
 }
 
-function json(status: number, body: unknown): Response {
-    return new Response(JSON.stringify(body), {
-        status,
-        headers: { 'content-type': 'application/json', 'cache-control': 'no-store' }
-    });
-}
+/** What every answer of this route carries besides its type: nothing of it is cached. */
+const NO_STORE = { 'cache-control': 'no-store' };
 
 /**
  * GET /api/agents: the composer's choices, per account for a picker that reads the account's
@@ -222,9 +218,6 @@ export function handleAgents(
     engine: string,
     local: LocalConfig = loadLocalOrDefaults(engine)
 ): Response {
-    if (!sameOrigin(request, request.headers.get('host') ?? '')) {
-        return json(403, { error: 'the request did not come from this page' });
-    }
     const read = readAgentsFile(engine);
     const accounts = agentAccounts(local);
     const asked = new URL(request.url).searchParams.get('account') ?? '';
@@ -233,5 +226,5 @@ export function handleAgents(
         return accountChoices(one, own.find((held) => held.label === asked) ?? own.at(0) ?? null);
     });
     const answer: AgentsAnswer = { agents, accounts, findings: read.findings };
-    return json(200, answer);
+    return json(answer, { headers: NO_STORE });
 }

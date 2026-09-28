@@ -9,8 +9,9 @@ import { handleMailCallback } from '$lib/server/accounts/mail/routes';
 import { textCatalog } from '$lib/data/sources/config';
 import type { RequestHandler } from './$types';
 
-export const GET: RequestHandler = ({ request, locals }) =>
-    handleMailCallback(request, {
+export const GET: RequestHandler = ({ request, locals }) => {
+    const config = locals.config().config;
+    return handleMailCallback(request, {
         accounts: locals.server.local.mail,
         dir: locals.server.mailDir,
         providerDir: locals.server.providerDir,
@@ -18,7 +19,8 @@ export const GET: RequestHandler = ({ request, locals }) =>
         fetcher: fetch,
         refresh: () => locals.server.mail.refresh(),
         words: {
-            ok: textCatalog(locals.server.config)['inbox.callback_ok'],
-            bad: textCatalog(locals.server.config)['inbox.callback_bad']
+            ok: textCatalog(config)['inbox.callback_ok'],
+            bad: textCatalog(config)['inbox.callback_bad']
         }
     });
+};

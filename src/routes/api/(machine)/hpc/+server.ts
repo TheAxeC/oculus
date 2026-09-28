@@ -9,7 +9,7 @@ import type { RequestHandler } from './$types';
 
 export const POST: RequestHandler = ({ request, locals }) =>
     handleHpc(request, {
-        host: locals.server.local.hpcHost ?? slurmSettings(locals.server.config).host,
+        host: locals.server.local.hpcHost ?? slurmSettings(locals.config().config).host,
         token: locals.server.token,
         refresh: () => locals.server.hpc.refresh(),
         log: (host, id) => log(host, id, locals.server.hpcLogPaths)

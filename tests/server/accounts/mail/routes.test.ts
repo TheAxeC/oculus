@@ -120,18 +120,8 @@ function target(
 }
 
 describe('the mail endpoint', () => {
-    it('refuses a request from another origin and one with no write token', async () => {
+    it('refuses a request with no write token', async () => {
         const dir = scratch();
-        const cross = new Request('http://127.0.0.1:8791/api/mail', {
-            method: 'POST',
-            headers: {
-                'content-type': 'application/json',
-                'sec-fetch-site': 'cross-site',
-                'x-oculus-token': TOKEN
-            },
-            body: JSON.stringify({ action: 'refresh' })
-        });
-        expect((await handleMail(cross, target(dir))).status).toBe(403);
         const untokened = new Request('http://127.0.0.1:8791/api/mail', {
             method: 'POST',
             headers: { 'content-type': 'application/json', 'sec-fetch-site': 'same-origin' },

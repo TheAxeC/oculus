@@ -135,3 +135,14 @@ Every neither-header status equals the base status (read from the base source).
 - The report's red-when-undone claims (need edits); a base build; `npm run diagrams`; the hook with an own-host non-localhost Origin and a JSON content type.
 
 Reviewer usage: about 36 tool uses, 20 minutes.
+
+# Closed
+
+- First review: every finding went into repair round 1 (`agents/briefs/Q79a-round1-sent.md`), and the round refutation above checked each closure.
+- Spec, the tag scalars: fixed at landing; `fileText` writes a tag plain and the case checks `    tags: [federated]`.
+- Proof, `HEADERLESS` cases: fixed at landing; the cases for `/api/(docs)/memories` and `/api/(docs)/diagrams/[name]` each fail with the path dropped.
+- Proof, the report's open items copy and the curl claim: corrected in the booking in `plan.md`.
+- Proof, the three stale titles: fixed at landing.
+- Standards, `root/hooks.ts:9-10` and `migrate-joint-work.mjs:318-321`: fixed at landing.
+- Behaviour, the picture routes under the one rule: stated with before and after in the booking; the one rule deciding both is the round's ruling.
+- Behaviour, the empty Origin: accepted by the reviewer; stated in the booking.

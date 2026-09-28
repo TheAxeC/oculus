@@ -16,9 +16,9 @@
 // holds in its portfolio snapshot, and the folder that project declares is joined to the hub and
 // checked against it again before anything is opened.
 
+import { json } from '@sveltejs/kit';
 import { closeSync, openSync, readFileSync, readdirSync, readSync, statSync } from 'node:fs';
 import { join, relative, resolve, sep } from 'node:path';
-import { sameOrigin } from '../core/auth.ts';
 import { projectDirectory } from '../files/files.ts';
 import type { Project } from '../../data/model/index.ts';
 
@@ -76,14 +76,7 @@ export type LatexTarget = {
 };
 
 /** A build's files are read again whenever the panel asks, so nothing here is ever cached. */
-const CACHE = 'no-store';
-
-function json(status: number, body: unknown): Response {
-    return new Response(JSON.stringify(body), {
-        status,
-        headers: { 'content-type': 'application/json', 'cache-control': CACHE }
-    });
-}
+const NO_STORE = { 'cache-control': 'no-store' };
 
 /** Whether a path the log named is the build folder itself or sits inside it. */
 function inside(path: string, folder: string): boolean {
@@ -330,28 +323,29 @@ export function buildState(folder: string, main: string): MainState {
  * leave the hub. A project with no main file answers with none, which is the panel not being drawn.
  */
 export function latexState(into: LatexTarget, id: string): Response {
-    if (id === '') return json(400, { error: 'no project id' });
+    if (id === '') return json({ error: 'no project id' }, { status: 400, headers: NO_STORE });
     const project = into.project(id);
-    if (project === null) return json(404, { error: `no project with the id ${id}` });
+    if (project === null)
+        return json({ error: `no project with the id ${id}` }, { status: 404, headers: NO_STORE });
     // One rule for resolving a project's folder beneath the hub, the one the terminal actions run
     // through: a folder that would leave the hub throws there and is a 404 here.
     let folder: string;
     try {
         folder = projectDirectory(into.hub, project.folder);
     } catch {
-        return json(404, { error: 'the folder is not inside the hub' });
+        return json(
+            { error: 'the folder is not inside the hub' },
+            { status: 404, headers: NO_STORE }
+        );
     }
     const answer: LatexAnswer = {
         folder: project.folder,
         mains: mains(folder).map((main) => buildState(folder, main))
     };
-    return json(200, answer);
+    return json(answer, { headers: NO_STORE });
 }
 
-/** The whole endpoint: refuse a request from another origin, or answer for the project it names. */
+/** The whole endpoint: the build state of the project the request names. */
 export function handleLatex(request: Request, into: LatexTarget): Response {
-    if (!sameOrigin(request, request.headers.get('host') ?? '')) {
-        return json(403, { error: 'the request did not come from this page' });
-    }
     return latexState(into, new URL(request.url).searchParams.get('id') ?? '');
 }

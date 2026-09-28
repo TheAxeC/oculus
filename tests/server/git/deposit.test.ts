@@ -42,6 +42,7 @@ import { portfolioConfigFrom } from '../../../src/lib/data/index.ts';
 import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
 import type { WriteTarget } from '../../../src/lib/server/edit/writes.ts';
 import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
+import { careerRules } from '../../../src/lib/server/edit/writes/subtasks.ts';
 
 afterAll(sweepScratch);
 
@@ -226,6 +227,7 @@ beforeAll(() => {
         hub,
         config: { ...real, scan: [{ dir: 'projects/manuscripts', type: 'manuscript' }] },
         engine: engineDir(),
+        career: careerRules(loadConfig(engineDir()).config),
         overrides: join(dir, 'sessions.json'),
         projects: () => [],
         bookmarks: join(dir, 'bookmarks.yml'),
@@ -260,13 +262,18 @@ describe('the hub the engine names', () => {
         const engine = depositEngine();
         // `alpha` is a project of that hub and `never-made` is not, so the answer says the engine
         // was read rather than that nothing was.
-        expect(await state('alpha', { engine, mirrors })).not.toBeNull();
-        expect(await state('never-made', { engine, mirrors })).toBeNull();
+        const config = loadConfig(engine).config;
+        expect(await state('alpha', { engine, config, mirrors })).not.toBeNull();
+        expect(await state('never-made', { engine, config, mirrors })).toBeNull();
     });
 
     it('is a fault said plainly when the caller names neither a target nor an engine', async () => {
         await expect(state('alpha', { mirrors })).rejects.toThrow(
             'a deposit needs either a write target or the engine directory'
+        );
+        // The engine alone is not enough: the configuration comes from the route's request.
+        await expect(state('alpha', { engine: depositEngine(), mirrors })).rejects.toThrow(
+            'the engine directory and its configuration'
         );
     });
 
@@ -275,8 +282,9 @@ describe('the hub the engine names', () => {
     // before the first publish, is still one this endpoint answers for.
     it('is the id gate, so a project the last payload does not carry is still known', () => {
         const engine = depositEngine();
-        expect(knownIds(['gamma'], engine)).toContain('alpha');
-        expect(knownIds([], engine).sort()).toEqual(['alpha', 'beta', 'gamma']);
+        const config = loadConfig(engine).config;
+        expect(knownIds(['gamma'], engine, config)).toContain('alpha');
+        expect(knownIds([], engine, config).sort()).toEqual(['alpha', 'beta', 'gamma']);
         // Without an engine the gate is only what the caller supplied, which is what the endpoint
         // would be reduced to if the route stopped naming one.
         expect(knownIds(['gamma'])).toEqual(['gamma']);

@@ -36,7 +36,7 @@ import {
 } from '../../../src/lib/server/git/git-index.ts';
 import { createTag, deleteTag, stash, stashAct } from '../../../src/lib/server/git/git-refs.ts';
 import { handleGit } from '../../../src/lib/server/git/git-routes.ts';
-import { engineDir } from '../../../src/lib/data/sources/config.ts';
+import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
 import { ALLOWED } from './allowed.ts';
 import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
 import { pageRequest } from './page.ts';
@@ -689,7 +689,7 @@ describe('through the endpoint, with the real operations', () => {
         const response = await handleGit(
             pageRequest(`http://${HOST}/api/git`, TOKEN, { root: repo, ...body }),
             TOKEN,
-            { engine: engineDir(), rootsFor: () => ROOTS }
+            { config: loadConfig(engineDir()).config, rootsFor: () => ROOTS }
         );
         return { status: response.status, body: await response.json() };
     }

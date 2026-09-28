@@ -18,7 +18,6 @@
 
 import { readFileSync, realpathSync, statSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { sameOrigin } from './images.ts';
 
 /** The folder of the engine directory the diagrams are written to, as bin/diagrams/ names it. */
 export const DIAGRAM_DIR = join('docs', 'diagrams');
@@ -51,9 +50,8 @@ export function diagramPath(engine: string, name: string): string | null {
     }
 }
 
-/** One diagram, or a 403 for a request from another origin, or a 404 for any other name. */
-export function serveDiagram(engine: string, name: string, headers: Headers): Response {
-    if (!sameOrigin(headers)) return new Response(null, { status: 403 });
+/** One diagram, or a 404 for any other name. */
+export function serveDiagram(engine: string, name: string): Response {
     const path = diagramPath(engine, name);
     if (path === null) return new Response(null, { status: 404 });
     return new Response(readFileSync(path, 'utf8'), { status: 200, headers: HEADERS });

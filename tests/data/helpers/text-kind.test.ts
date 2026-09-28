@@ -91,3 +91,28 @@ describe('whether bytes are text', () => {
         expect(isTextBytes(held)).toBe(true);
     });
 });
+
+describe('the sniff over the cases of one rule', () => {
+    /** TEXT_SNIFF bytes of `a` whose last one is a lead byte, and `after` behind them. */
+    function endingInLead(after: number[]): Uint8Array {
+        const held = new Uint8Array(TEXT_SNIFF + after.length);
+        held.fill(0x61, 0, TEXT_SNIFF - 1);
+        held[TEXT_SNIFF - 1] = 0xc3;
+        held.set(after, TEXT_SNIFF);
+        return held;
+    }
+
+    it('reads UTF-8 as text and a byte no UTF-8 holds as not', () => {
+        expect(isTextBytes(new Uint8Array([0x63, 0x61, 0x66, 0xc3, 0xa9]))).toBe(true);
+        expect(isTextBytes(new Uint8Array([0xff]))).toBe(false);
+    });
+
+    it('tells a window cut inside a character from a file that ends inside one', () => {
+        expect(isTextBytes(endingInLead([0xa9]))).toBe(true);
+        expect(isTextBytes(endingInLead([]))).toBe(false);
+    });
+
+    it('reads a NUL byte as not text', () => {
+        expect(isTextBytes(new Uint8Array([0x61, 0x00, 0x62]))).toBe(false);
+    });
+});

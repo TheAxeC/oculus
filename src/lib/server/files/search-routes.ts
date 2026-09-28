@@ -11,7 +11,8 @@
 // one the file route and the source route compose, and a `root` that is not one of their keys is
 // refused before any process starts.
 
-import { hasToken, sameOrigin } from '../core/auth.ts';
+import { json } from '@sveltejs/kit';
+import { hasToken } from '../core/auth.ts';
 import { queryFrom } from '../../data/helpers/search.ts';
 import { runSearch, type SearchOptions } from './search.ts';
 import type { Root } from './files.ts';
@@ -31,34 +32,33 @@ const REFUSALS: Record<SearchRefusal, string> = {
     unknown_root: 'that root is not one oculus serves'
 };
 
-function json(status: number, body: unknown): Response {
-    return new Response(JSON.stringify(body), {
-        status,
-        headers: { 'content-type': 'application/json', 'cache-control': 'no-store' }
-    });
-}
+/** What every answer of this route carries besides its type: nothing of it is cached. */
+const NO_STORE = { 'cache-control': 'no-store' };
 
 /**
  * GET /api/search: one query over one served root or over all of them. The order is the order of
- * the refusals: the origin, the token, the query's own bounds, and only then ripgrep.
+ * the refusals: the token, the query's own bounds, and only then ripgrep.
  */
 export async function handleSearch(
     request: Request,
     token: string,
     options: SearchRouteOptions
 ): Promise<Response> {
-    if (!sameOrigin(request, request.headers.get('host') ?? '')) {
-        return json(403, { error: 'the request did not come from this page' });
-    }
     if (!hasToken(request, token)) {
-        return json(403, { error: 'the write token is missing or stale' });
+        return json(
+            { error: 'the write token is missing or stale' },
+            { status: 403, headers: NO_STORE }
+        );
     }
     const query = queryFrom(new URL(request.url).searchParams, options.cap);
     const outcome = await runSearch(options.roots, query, options);
     if (!outcome.ok) {
-        return json(400, {
-            error: 'refused' in outcome ? REFUSALS[outcome.refused] : outcome.error
-        });
+        return json(
+            {
+                error: 'refused' in outcome ? REFUSALS[outcome.refused] : outcome.error
+            },
+            { status: 400, headers: NO_STORE }
+        );
     }
-    return json(200, { ok: true, ...outcome.answer });
+    return json({ ok: true, ...outcome.answer }, { headers: NO_STORE });
 }

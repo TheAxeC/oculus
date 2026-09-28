@@ -17,6 +17,7 @@ import {
     settings,
     wallpaperMemory
 } from '../../../src/lib/server/content/wallpaper.ts';
+import { loadConfig } from '../../../src/lib/data/sources/config.ts';
 import { noop } from '../../fixtures/doubles.ts';
 import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
 
@@ -33,11 +34,6 @@ function folder(names: string[]): string {
         writeFileSync(full, 'x');
     }
     return dir;
-}
-
-/** The headers a page of the app itself sends. */
-function local(): Headers {
-    return new Headers({ origin: 'http://127.0.0.1:8790', 'sec-fetch-site': 'same-origin' });
 }
 
 const PICTURES = ['a-first.jpg', 'b-second.png', 'c-third.webp', 'notes.txt', '.hidden.jpg'];
@@ -92,7 +88,7 @@ describe('choosing the image', () => {
 
 describe('the response', () => {
     it('serves the chosen image with its own type and a private cache header', async () => {
-        const response = serve({ dir: folder(PICTURES), pick: 'first' }, local(), memory);
+        const response = serve({ dir: folder(PICTURES), pick: 'first' }, memory);
         expect(response.status).toBe(200);
         expect(response.headers.get('content-type')).toBe('image/jpeg');
         expect(response.headers.get('cache-control')).toBe('private, max-age=3600');
@@ -102,42 +98,21 @@ describe('the response', () => {
     it('names the type by the extension', () => {
         const dir = folder(PICTURES);
         const type = (file: string): string | null =>
-            serve({ dir, file, pick: 'first' }, local(), memory).headers.get('content-type');
+            serve({ dir, file, pick: 'first' }, memory).headers.get('content-type');
         expect(type('b-second')).toBe('image/png');
         expect(type('c-third')).toBe('image/webp');
     });
 
     it('answers 404 with no image, no folder and no configuration', () => {
-        expect(serve({ dir: folder(['notes.txt']), pick: 'first' }, local(), memory).status).toBe(
-            404
-        );
-        expect(
-            serve({ dir: join(folder([]), 'nothing'), pick: 'first' }, local(), memory).status
-        ).toBe(404);
-        expect(serve(null, local(), memory).status).toBe(404);
+        expect(serve({ dir: folder(['notes.txt']), pick: 'first' }, memory).status).toBe(404);
+        expect(serve({ dir: join(folder([]), 'nothing'), pick: 'first' }, memory).status).toBe(404);
+        expect(serve(null, memory).status).toBe(404);
     });
 
     it('answers 404 to a file that would leave the folder', () => {
         expect(
-            serve({ dir: folder(PICTURES), file: '../a-first.jpg', pick: 'first' }, local(), memory)
-                .status
+            serve({ dir: folder(PICTURES), file: '../a-first.jpg', pick: 'first' }, memory).status
         ).toBe(404);
-    });
-
-    it('answers 403 to another origin, and to a cross-site fetch that names none', () => {
-        const dir = folder(PICTURES);
-        const foreign = new Headers({ origin: 'http://evil.invalid' });
-        expect(serve({ dir, pick: 'first' }, foreign, memory).status).toBe(403);
-        expect(
-            serve({ dir, pick: 'first' }, new Headers({ 'sec-fetch-site': 'cross-site' }), memory)
-                .status
-        ).toBe(403);
-    });
-
-    it('answers the command line, which sends neither header', () => {
-        expect(serve({ dir: folder(PICTURES), pick: 'first' }, new Headers(), memory).status).toBe(
-            200
-        );
     });
 });
 
@@ -160,7 +135,7 @@ describe('the configured settings', () => {
 
     it('reads the configured directory under the hub of the engine it is given', () => {
         const own = fixture('wallpaper:\n  dir: pictures\n  pick: first\n');
-        expect(settings(wallpaperMemory(), own.engine)).toEqual({
+        expect(settings(wallpaperMemory(), loadConfig(own.engine).config, own.engine)).toEqual({
             dir: join(own.hub, 'pictures'),
             file: undefined,
             pick: 'first'
@@ -169,7 +144,7 @@ describe('the configured settings', () => {
 
     it('returns null when dir is absent', () => {
         const own = fixture('wallpaper:\n  pick: first\n');
-        expect(settings(wallpaperMemory(), own.engine)).toBeNull();
+        expect(settings(wallpaperMemory(), loadConfig(own.engine).config, own.engine)).toBeNull();
     });
 
     it('reports a missing or unknown pick once and returns null', () => {
@@ -177,12 +152,20 @@ describe('the configured settings', () => {
         try {
             const missing = fixture('wallpaper:\n  dir: pictures\n');
             const missingMemory = wallpaperMemory();
-            expect(settings(missingMemory, missing.engine)).toBeNull();
-            expect(settings(missingMemory, missing.engine)).toBeNull();
+            expect(
+                settings(missingMemory, loadConfig(missing.engine).config, missing.engine)
+            ).toBeNull();
+            expect(
+                settings(missingMemory, loadConfig(missing.engine).config, missing.engine)
+            ).toBeNull();
             const unknown = fixture('wallpaper:\n  dir: pictures\n  pick: newest\n');
             const unknownMemory = wallpaperMemory();
-            expect(settings(unknownMemory, unknown.engine)).toBeNull();
-            expect(settings(unknownMemory, unknown.engine)).toBeNull();
+            expect(
+                settings(unknownMemory, loadConfig(unknown.engine).config, unknown.engine)
+            ).toBeNull();
+            expect(
+                settings(unknownMemory, loadConfig(unknown.engine).config, unknown.engine)
+            ).toBeNull();
             expect(error).toHaveBeenCalledTimes(2);
         } finally {
             error.mockRestore();

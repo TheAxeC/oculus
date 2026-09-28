@@ -1,7 +1,7 @@
 // Layer 2, server. The rules every route that serves a picture out of a configured folder obeys:
 // which extensions are pictures, what each is sent as, how long a browser may hold one, whether a
-// path is inside its folder, whether the request came from this application's page, and the
-// response that streams one file.
+// path is inside its folder, and the response that streams one file. Where the request came from is
+// answered before any of them, by the origin guard in src/hooks.server.ts.
 //
 // It is one module rather than a copy per route because the rules are the security of those routes:
 // the folder is resolved under the hub and refused if it is not inside it, the chosen file is
@@ -23,8 +23,7 @@ import { closeSync, createReadStream, openSync, readdirSync, readSync, statSync 
 import { extname, join, resolve, sep } from 'node:path';
 import { Readable } from 'node:stream';
 import { byKey } from '../../data/helpers/guards.ts';
-import { loadConfig, loadLocalOrDefaults } from '../../data/sources/config.ts';
-import { allowedOrigin } from '../core/auth.ts';
+import { loadLocalOrDefaults } from '../../data/sources/config.ts';
 
 /** The extensions a picture folder is filtered to, and the type each one is served as. */
 const TYPES: Record<string, string> = {
@@ -294,19 +293,11 @@ export function isName(name: string): boolean {
     return !name.includes('/') && !name.includes('\\') && !name.includes('..');
 }
 
-/** A request from another origin is refused; a request that names none is the command line's. */
-export function sameOrigin(headers: Headers): boolean {
-    const site = headers.get('sec-fetch-site');
-    if (site !== null && site !== 'same-origin' && site !== 'none') return false;
-    const origin = headers.get('origin');
-    if (origin === null || origin === '') return true;
-    return allowedOrigin(origin);
-}
-
 /**
  * One picture of a folder, its type and its cache header, streamed from disk. 404 covers every way
  * there is no image to send: no name, a name that leaves the folder, an extension that is not a
- * picture, a file that has gone since the listing. The caller has already answered the origin.
+ * picture, a file that has gone since the listing. The origin guard has answered where it came
+ * from.
  */
 export function stream(dir: string, name: string | null): Response {
     if (name === null || !isName(name)) return new Response(null, { status: 404 });
@@ -352,11 +343,4 @@ export function folderOf(
         return null;
     }
     return dir;
-}
-
-/**
- * The merged configuration of one engine directory, read per request so an edit shows on reload.
- */
-export function configOf(engine: string): Record<string, unknown> {
-    return loadConfig(engine).config;
 }

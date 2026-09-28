@@ -149,8 +149,19 @@ export function tmux(existingNames: string[] = []): {
     };
 }
 
+/** The configuration of one engine directory, read at the call as a request reads it. */
+export function configOf(engine: string): () => Record<string, unknown> {
+    return () => loadConfig(engine).config;
+}
+
 export function options(over: Partial<TerminalOptions> = {}): TerminalOptions {
-    return { engine: ENGINE, run: tmux().run, recordFor: () => null, ...over };
+    return {
+        engine: ENGINE,
+        run: tmux().run,
+        recordFor: () => null,
+        configFor: configOf(ENGINE),
+        ...over
+    };
 }
 
 /** A record source holding exactly the sessions the case is about. */

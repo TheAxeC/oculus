@@ -202,22 +202,12 @@ describe('the consent URL a Connect press builds', () => {
         expect(opened).toEqual([]);
     });
 
-    it('refuses a request from another page, and one with no write token', async () => {
+    it('refuses a request with no write token', async () => {
         const dir = scratch();
         writeClient(dir, GOOGLE, { client_id: 'an-id', client_secret: 'a-secret' });
         const opened: string[] = [];
         const where = target(dir, new ConnectStates(), opened);
         const body = { action: 'connect', account: 'google-work' };
-        const elsewhere = new Request('http://127.0.0.1:8791/api/calendar', {
-            method: 'POST',
-            headers: {
-                'content-type': 'application/json',
-                origin: 'https://elsewhere.example',
-                'x-oculus-token': TOKEN
-            },
-            body: JSON.stringify(body)
-        });
-        expect((await handleCalendar(elsewhere, where)).status).toBe(403);
         expect(
             (await handleCalendar(post(body, { 'x-oculus-token': 'stale' }), where)).status
         ).toBe(403);

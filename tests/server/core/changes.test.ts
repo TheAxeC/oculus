@@ -23,6 +23,8 @@ import type { Project, Tier } from '../../../src/lib/data/model/index.ts';
 import type { Change, ChangeLog, ChangeRecord } from '../../../src/lib/server/core/changes.ts';
 import type { WriteTarget } from '../../../src/lib/server/edit/writes.ts';
 import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
+import { careerRules } from '../../../src/lib/server/edit/writes/subtasks.ts';
+import { targetOver } from '../../routes/edit/write-fixture.ts';
 
 afterAll(sweepScratch);
 
@@ -69,25 +71,13 @@ function target(keep = 500): WriteTarget {
         mkdirSync(join(file, '..'), { recursive: true });
         writeFileSync(file, body);
     }
-    const real = portfolioConfigFrom(loadConfig(engineDir()).config, engineDir());
-    const log = join(dir, 'changes.jsonl');
+    const changes = join(dir, 'changes.jsonl');
     const overrides = join(dir, 'sessions.json');
     const bookmarks = join(dir, 'bookmarks.yml');
-    for (const path of [log, overrides, bookmarks]) {
+    for (const path of [changes, overrides, bookmarks]) {
         expect(resolve(path).startsWith(resolve(dir) + sep)).toBe(true);
     }
-    return {
-        hub: dir,
-        config: { ...real, scan: [{ dir: 'projects/manuscripts', type: 'manuscript' }] },
-        engine: engineDir(),
-        overrides,
-        projects: () => [],
-        bookmarks,
-        behaviorFile: join(dir, 'behavior.yml'),
-        layoutFile: join(dir, 'layout.yml'),
-        glyphs: [],
-        changes: { file: log, keep, writes: fsWrites() }
-    };
+    return targetOver(dir, { overrides, bookmarks, changes }, keep);
 }
 
 /** A deck file of the same shape as config/present.yml, for the deck write's own record. */
@@ -143,6 +133,7 @@ function deckTarget(): WriteTarget {
         hub: dir,
         config: { ...real, deck: (parse(DECK) as { deck: unknown }).deck, deckFile: file },
         engine: engineDir(),
+        career: careerRules(loadConfig(engineDir()).config),
         projects: () => [slideProject('alpha', 'active'), slideProject('gamma', 'archive')],
         bookmarks: join(dir, 'bookmarks.yml'),
         behaviorFile: join(dir, 'behavior.yml'),

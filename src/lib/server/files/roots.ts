@@ -10,8 +10,8 @@ import { configuredRootsOf, ENGINE_ROOT, expandHome, rootsFrom, type Root } from
 import { addedRoots, defaultWorkspacesPath, readSaved } from './fs.ts';
 
 /**
- * What the fold needs off a ServerContext: the config already read, the engine and the machine's
- * own.
+ * What the fold needs: the configuration a route read from `locals.config()` at its request, and
+ * the engine and the machine's own file off the request's ServerContext.
  */
 export type RootsTarget = {
     config: Record<string, unknown>;

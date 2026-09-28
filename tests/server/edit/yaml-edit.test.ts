@@ -14,7 +14,12 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { parse } from 'yaml';
 import { describe, expect, it } from 'vitest';
-import { NOT_A_FIELD_VALUE, renameKey, setFields } from '../../../src/lib/server/edit/yaml-edit.ts';
+import {
+    NOT_A_FIELD_VALUE,
+    renameKey,
+    sameValue,
+    setFields
+} from '../../../src/lib/server/edit/yaml-edit.ts';
 import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
 import { portfolioConfigFrom } from '../../../src/lib/data/index.ts';
 import { realHub } from '../../fixtures/real-hub.ts';
@@ -521,5 +526,22 @@ describe.skipIf(!present)('every manifest of the real hub, read only', () => {
             if (movedLines(source, out.text) !== 1) wrong.push(`${file}: more than one line moved`);
         }
         expect(wrong).toEqual([]);
+    });
+});
+
+// Whether a value a write carries is the one the file already holds: the data compared deeply,
+// with absent and null one thing.
+describe('sameValue', () => {
+    it('takes null and absent as one thing', () => {
+        expect(sameValue(null, undefined)).toBe(true);
+        expect(sameValue(undefined, null)).toBe(true);
+        expect(sameValue(null, 'held')).toBe(false);
+    });
+
+    it('compares lists and maps by their contents', () => {
+        expect(sameValue(['a'], ['a'])).toBe(true);
+        expect(sameValue(['a'], ['a', 'b'])).toBe(false);
+        expect(sameValue({ a: 1 }, { a: 1, b: 2 })).toBe(false);
+        expect(sameValue({ a: 1, b: [2] }, { b: [2], a: 1 })).toBe(true);
     });
 });

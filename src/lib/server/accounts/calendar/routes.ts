@@ -1,11 +1,12 @@
 // Layer 2, server. The calendar endpoints: the one POST the page presses, and the callback the
 // provider sends the reader's browser to.
 //
-// The POST carries the origin and token gates every other action carries. Connect, Add and Remove
-// are the account actions both connectors answer alike, in connect/actions.ts; refresh and the
-// control that opens one event are the calendar's own. The callback carries neither gate: the
-// browser arrives there from the provider and not from the page, so what guards it is the `state`
-// this process minted ten minutes earlier and holds in memory, which is taken once and never again.
+// The POST carries the token gate every other action carries, behind the origin guard in
+// src/hooks.server.ts. Connect, Add and Remove are the account actions both connectors answer
+// alike, in connect/actions.ts; refresh and the control that opens one event are the calendar's
+// own. The callback carries neither gate, and the guard passes it: the browser arrives there from
+// the provider and not from the page, so what guards it is the `state` this process minted ten
+// minutes earlier and holds in memory, which is taken once and never again.
 //
 // The page hands this module one URL, the published link an Add of a provider `ics` carries, which
 // is written to the account's own file and never opened. Connect names an account and the consent
@@ -15,13 +16,13 @@
 //
 // No answer of this module carries a token, a secret, an authorization code or an event's contents.
 
+import { json } from '@sveltejs/kit';
 import type { CalendarAccountConfig } from '../../../data/model/index.ts';
 import { httpsLink } from '../connect/api.ts';
 import { gatedBody } from '../../core/auth.ts';
 import {
     accountAction,
     handleConnectCallback,
-    json,
     type AccountTarget,
     type CallbackTarget
 } from '../connect/actions.ts';
@@ -45,7 +46,7 @@ export async function handleCalendar(request: Request, target: CalendarTarget): 
     if (record instanceof Response) return record;
     if (record.action === 'refresh') {
         await target.refresh();
-        return json(200, { status: 'ok' });
+        return json({ status: 'ok' });
     }
     const answered = accountAction('calendar', target, record);
     if (answered !== null) return answered;
@@ -54,11 +55,11 @@ export async function handleCalendar(request: Request, target: CalendarTarget): 
         // The scheme is checked again here, where the operating system is about to be called, and
         // not only where the provider's answer was read.
         const link = httpsLink(held ?? undefined);
-        if (link === undefined) return json(400, { error: 'no such event' });
+        if (link === undefined) return json({ error: 'no such event' }, { status: 400 });
         await target.open(link);
-        return json(200, { ok: true });
+        return json({ ok: true });
     }
-    return json(400, { error: 'bad action' });
+    return json({ error: 'bad action' }, { status: 400 });
 }
 
 /**

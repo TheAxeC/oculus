@@ -1,6 +1,6 @@
 // Layer 2, server. The source endpoint: what one file may be done with, and the whole-file write.
 //
-// The write authenticates one same-origin request, resolves its existing file inside a configured
+// The write authenticates one request by its token, resolves its existing file inside a configured
 // root, and replaces its text through a temporary neighbour and atomic rename. What it may be done
 // to is the file itself and not a list of extensions: a file the mode locks is refused with
 // `readonly`, and a file whose own bytes are not text is refused with `binary`, since replacing
@@ -11,24 +11,21 @@
 // on this machine, so the editor can say so rather than letting a reader type into something that
 // will refuse the save.
 
+import { json } from '@sveltejs/kit';
 import { accessSync, closeSync, constants, openSync, readSync } from 'node:fs';
 import { LOCAL_NAME, checkLocal } from '../../data/sources/config.ts';
 import { TEXT_SNIFF_READ, isTextBytes } from '../../data/helpers/text-kind.ts';
-import { hasToken, sameOrigin } from '../core/auth.ts';
+import { tokenedBody } from '../core/auth.ts';
 import { ENGINE_ROOT, resolveRootFileResult, resolveRootPath, type Root } from './files.ts';
 import { writeTextAtomic } from '../core/json.ts';
 
 export type SourceBody = { root: string; path: string; content: string };
 
-function json(status: number, body: unknown): Response {
-    return new Response(JSON.stringify(body), {
-        status,
-        headers: { 'content-type': 'application/json' }
-    });
-}
-
 function refuse(reason: string): Response {
-    return json(403, { ok: false, error: reason, refused: [{ field: 'path', reason }] });
+    return json(
+        { ok: false, error: reason, refused: [{ field: 'path', reason }] },
+        { status: 403 }
+    );
 }
 
 /** The word a refusal carries, which the source tab has a sentence of its own for. */
@@ -99,24 +96,21 @@ function localRefusal(list: Root[], path: string, content: string): string | nul
 
 /**
  * What the source tab may do with one file: whether this machine's mode on it refuses a write. The
- * resolver and the origin check are the write's, so the two answer about the same file.
+ * resolver is the write's, so the two answer about the same file.
  */
 export function handleSourceInfo(request: Request, url: URL, rootList: Root[]): Response {
-    if (!sameOrigin(request, request.headers.get('host') ?? '')) {
-        return json(403, { ok: false, error: 'the request did not come from this page' });
-    }
     const root = url.searchParams.get('root') ?? '';
     const path = url.searchParams.get('path') ?? '';
     if (root === '' || path === '') {
-        return json(400, { ok: false, error: 'root and path are required' });
+        return json({ ok: false, error: 'root and path are required' }, { status: 400 });
     }
     const resolved = resolveRootFileResult(rootList, root, path);
     if ('error' in resolved) {
         return resolved.error === 'missing'
-            ? json(404, { ok: false, error: 'the file is not there' })
+            ? json({ ok: false, error: 'the file is not there' }, { status: 404 })
             : refuse('the path is outside the named root');
     }
-    return json(200, { ok: true, readonly: isReadonly(resolved.path) });
+    return json({ ok: true, readonly: isReadonly(resolved.path) });
 }
 
 /** Refuse a source write or replace its complete text and answer in the write route's shape. */
@@ -125,39 +119,31 @@ export async function handleSource(
     token: string,
     rootList: Root[]
 ): Promise<Response> {
-    if (!sameOrigin(request, request.headers.get('host') ?? '')) {
-        return json(403, { ok: false, error: 'the request did not come from this page' });
-    }
-    if (!hasToken(request, token)) {
-        return json(403, { ok: false, error: 'the write token is missing or stale' });
-    }
-
-    let raw: unknown;
-    try {
-        raw = await request.json();
-    } catch {
-        return json(400, { ok: false, error: 'the body is not JSON' });
-    }
-    const body = sourceBody(raw);
+    const read = await tokenedBody(request, token, { fields: { ok: false } });
+    if (read instanceof Response) return read;
+    const body = sourceBody(read.body);
     if (body === null) {
-        return json(400, { ok: false, error: 'root, path and content are required' });
+        return json({ ok: false, error: 'root, path and content are required' }, { status: 400 });
     }
 
     const resolved = resolveRootFileResult(rootList, body.root, body.path);
     if ('error' in resolved) {
         return resolved.error === 'missing'
-            ? json(404, { ok: false, error: 'the file is not there' })
+            ? json({ ok: false, error: 'the file is not there' }, { status: 404 })
             : refuse('the path is outside the named root');
     }
     if (isReadonly(resolved.path)) return refuse('readonly');
     if (isBinaryFile(resolved.path)) return refuse('binary');
     const refusal = localRefusal(rootList, resolved.path, body.content);
-    if (refusal !== null) return json(400, { ok: false, error: refusal });
+    if (refusal !== null) return json({ ok: false, error: refusal }, { status: 400 });
     try {
         writeTextAtomic(resolved.path, body.content);
     } catch (error) {
         const reason = error instanceof Error ? error.message : String(error);
-        return json(500, { ok: false, error: `the source could not be saved: ${reason}` });
+        return json(
+            { ok: false, error: `the source could not be saved: ${reason}` },
+            { status: 500 }
+        );
     }
-    return json(200, { ok: true });
+    return json({ ok: true });
 }

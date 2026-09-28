@@ -24,7 +24,8 @@ import {
     writeSubtask,
     writeSubtaskAdd
 } from '../../../src/lib/server/edit/writes.ts';
-import { engineDir } from '../../../src/lib/data/sources/config.ts';
+import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
+import { careerRules } from '../../../src/lib/server/edit/writes/subtasks.ts';
 import { sweepScratch } from '../../fixtures/scratch.ts';
 import {
     MANIFEST,
@@ -265,7 +266,12 @@ describe('writing one subtask line', () => {
 describe('writing one career host', () => {
     it('sets a status of the vocabulary and refuses one outside it', () => {
         const root = wider();
-        const out = writeHost(root, 'Naesens', 'candidate', engineDir());
+        const out = writeHost(
+            root,
+            'Naesens',
+            'candidate',
+            careerRules(loadConfig(engineDir()).config)
+        );
         expect(out).toEqual({
             found: true,
             changed: ['status'],
@@ -283,7 +289,12 @@ describe('writing one career host', () => {
         expect(readFileSync(join(root, 'registries/career.yml'), 'utf8')).toBe(
             CAREER.replace('status: "warm"', 'status: "candidate"')
         );
-        const bad = writeHost(root, 'Naesens', 'promoted', engineDir());
+        const bad = writeHost(
+            root,
+            'Naesens',
+            'promoted',
+            careerRules(loadConfig(engineDir()).config)
+        );
         expect(bad.changed).toEqual([]);
         expect(bad.refused).toEqual([
             { field: 'status', reason: 'promoted is not a career host status' }
@@ -292,7 +303,9 @@ describe('writing one career host', () => {
 
     it('says not found for a host the file does not hold', () => {
         const root = wider();
-        expect(writeHost(root, 'Nobody', 'warm', engineDir())).toEqual({
+        expect(
+            writeHost(root, 'Nobody', 'warm', careerRules(loadConfig(engineDir()).config))
+        ).toEqual({
             found: false,
             changed: [],
             refused: []

@@ -9,7 +9,7 @@
 // answered them; everything else is server/core/git.ts's, the read-only module. Every read is an
 // option with a real default, so tests/routes/git/git.test.ts drives the endpoint without git.
 
-import { sameOrigin } from '../core/auth.ts';
+import { json } from '@sveltejs/kit';
 import {
     blameOf,
     commitDiff,
@@ -63,26 +63,21 @@ const REAL: CoreReads = {
     stash: stashDiff
 };
 
-function json(status: number, body: unknown): Response {
-    return new Response(JSON.stringify(body), {
-        status,
-        headers: { 'content-type': 'application/json', 'cache-control': 'no-store' }
-    });
-}
+/** What every answer of this route carries besides its type: nothing of it is cached. */
+const NO_STORE = { 'cache-control': 'no-store' };
 
-const NOT_HERE = { error: 'the request did not come from this page' };
 const UNKNOWN = { error: 'that directory is not a workspace oculus knows' };
 
 /** A read of the read-only module, answered as the endpoint answers every read. */
 function answer<T>(read: Read<T>, key: string): Response {
-    if (!read.ok) return json(400, { error: read.error });
-    return json(200, { ok: true, [key]: read.value });
+    if (!read.ok) return json({ error: read.error }, { status: 400, headers: NO_STORE });
+    return json({ ok: true, [key]: read.value }, { headers: NO_STORE });
 }
 
 /** An outcome of the writing module's reads, answered the same way. */
 function outcome(done: Outcome): Response {
-    if (!done.ok) return json(400, { error: done.error });
-    return json(200, { ok: true, output: done.output });
+    if (!done.ok) return json({ error: done.error }, { status: 400, headers: NO_STORE });
+    return json({ ok: true, output: done.output }, { headers: NO_STORE });
 }
 
 /**
@@ -93,7 +88,6 @@ function outcome(done: Outcome): Response {
  * branch listing.
  */
 export async function handleGitGet(request: Request, options: ReadOptions): Promise<Response> {
-    if (!sameOrigin(request, request.headers.get('host') ?? '')) return json(403, NOT_HERE);
     const parameters = new URL(request.url).searchParams;
     const roots = (options.rootsFor ?? allowedRoots)();
     const reads = { ...REAL, ...options.reads };
@@ -105,47 +99,47 @@ export async function handleGitGet(request: Request, options: ReadOptions): Prom
 
     if (parameters.has('diff')) {
         const root = named('diff');
-        if (root === null) return json(400, UNKNOWN);
+        if (root === null) return json(UNKNOWN, { status: 400, headers: NO_STORE });
         const staged = parameters.get('staged') === '1';
         return outcome(await (options.diff ?? fileDiff)(root, path, staged, roots));
     }
     if (parameters.has('worktree')) {
         const root = named('root');
-        if (root === null) return json(400, UNKNOWN);
+        if (root === null) return json(UNKNOWN, { status: 400, headers: NO_STORE });
         const tree = parameters.get('worktree') ?? '';
         return outcome(await (options.worktree ?? worktreeDiff)(root, tree, roots));
     }
     if (parameters.has('graph')) {
         const root = named('graph');
-        if (root === null) return json(400, UNKNOWN);
+        if (root === null) return json(UNKNOWN, { status: 400, headers: NO_STORE });
         const skip = Number.parseInt(parameters.get('skip') ?? '0', 10);
         return answer(reads.graph(root, Number.isInteger(skip) ? skip : 0), 'page');
     }
     if (parameters.has('commit')) {
         const root = named('root');
-        if (root === null) return json(400, UNKNOWN);
+        if (root === null) return json(UNKNOWN, { status: 400, headers: NO_STORE });
         const hash = parameters.get('commit') ?? '';
         if (path === '') return answer(reads.files(root, hash), 'files');
         return answer(reads.commit(root, hash, path), 'output');
     }
     if (parameters.has('stash')) {
         const root = named('root');
-        if (root === null) return json(400, UNKNOWN);
+        if (root === null) return json(UNKNOWN, { status: 400, headers: NO_STORE });
         return answer(reads.stash(root, parameters.get('stash') ?? ''), 'output');
     }
     for (const key of ['blame', 'marks', 'sides'] as const) {
         if (!parameters.has(key)) continue;
         const root = named(key);
-        if (root === null) return json(400, UNKNOWN);
+        if (root === null) return json(UNKNOWN, { status: 400, headers: NO_STORE });
         if (key === 'blame') return answer(reads.blame(root, path), 'lines');
         if (key === 'marks') return answer(reads.marks(root, path), 'marks');
         return answer(reads.sides(root, path), 'sides');
     }
     const root = named('root');
-    if (root === null) return json(400, UNKNOWN);
+    if (root === null) return json(UNKNOWN, { status: 400, headers: NO_STORE });
     const listed = await branches(root, roots);
-    if (!listed.ok) return json(400, { error: listed.error });
-    return json(200, { ok: true, branches: parseBranches(listed.output) });
+    if (!listed.ok) return json({ error: listed.error }, { status: 400, headers: NO_STORE });
+    return json({ ok: true, branches: parseBranches(listed.output) }, { headers: NO_STORE });
 }
 
 /** GET /api/git?root=: the branches of one root, for the branch menu; handleGitGet's last read. */

@@ -43,23 +43,10 @@ function request(
 }
 
 describe('POST /api/hook', () => {
-    it('answers 200 for a request with no Origin header, as curl sends', async () => {
+    it("answers 200 with ok for the hook's post", async () => {
         const response = await handleHookRequest(request(), target());
         expect(response.status).toBe(200);
         expect(await response.json()).toEqual({ ok: true });
-    });
-
-    it('refuses 403 for a foreign Origin', async () => {
-        const response = await handleHookRequest(
-            request({ origin: 'http://evil.example' }),
-            target()
-        );
-        expect(response.status).toBe(403);
-    });
-
-    it('answers 200 for a same-origin Origin', async () => {
-        const response = await handleHookRequest(request({ origin: `http://${HOST}` }), target());
-        expect(response.status).toBe(200);
     });
 
     it('accepts 20 requests in one second and refuses the 21st with 429', async () => {

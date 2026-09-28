@@ -5,10 +5,15 @@
 //
 // The one write that needs more than the hub is the deck's, which checks the slide keys it was sent
 // against the projects this request's server last published, so target() is handed this request's
-// server rather than reaching for one.
+// server rather than reaching for one, and this request's configuration read, which is read before
+// the write it makes.
 
 import { handleWrite, target } from '$lib/server/edit/writes';
 import type { RequestHandler } from './$types';
 
 export const POST: RequestHandler = ({ request, locals }) =>
-    handleWrite(request, locals.token, target(locals.server.engine, locals.server));
+    handleWrite(
+        request,
+        locals.token,
+        target(locals.server.engine, locals.config().config, locals.server)
+    );

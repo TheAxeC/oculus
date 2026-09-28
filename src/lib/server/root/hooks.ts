@@ -6,17 +6,19 @@
 //
 // A hook is `curl`, not a page: it carries no write token (nothing minted one for a process that
 // starts before any page has loaded) and no Origin (curl never sends one), so its rules are not
-// api/write's. The three refusals are size, a foreign Origin, and the rate limit; everything else,
-// including a body this route cannot make sense of, is answered 200 so the hook's own `|| true`
-// never has a real failure to hide, and Axel loses no notification to a shape this route did not
-// expect. The first payload of each hook_event_name is written to stderr once per process, which is
-// how the real shape gets recorded once a hook has actually fired.
+// api/write's. A foreign Origin is refused before this route, by the origin guard in
+// src/hooks.server.ts, whose HEADERLESS list lets this path's request naming neither header
+// through. The two refusals here are the rate limit and the size; everything else, including a body
+// this route cannot make sense of, is answered 200 so the hook's own `|| true` never has a real
+// failure to hide, and Axel loses no notification to a shape this route did not expect. The first
+// payload of each hook_event_name is written to stderr once per process, which is how the real
+// shape gets recorded once a hook has actually fired.
 
+import { json } from '@sveltejs/kit';
 import { execFile as execFileCb } from 'node:child_process';
 import { basename } from 'node:path';
 import type { HookEvent, SessionRecord, SessionsPayload } from '../../data/model/index.ts';
 import { byKey } from '../../data/helpers/guards.ts';
-import { allowedOrigin } from '../core/auth.ts';
 import { HookStore, patchPayload, type HubLike } from '../sessions/stores/hooks.ts';
 
 export const MAX_BODY_BYTES = 64 * 1024;
@@ -33,13 +35,6 @@ const EVENT_NAMES: Record<string, HookEvent['event']> = {
     Notification: 'notification',
     Stop: 'stop'
 };
-
-function json(status: number, body: unknown): Response {
-    return new Response(JSON.stringify(body), {
-        status,
-        headers: { 'content-type': 'application/json' }
-    });
-}
 
 /**
  * A non-empty string field of the body, or undefined for anything else (absent, empty, wrong type).
@@ -205,45 +200,40 @@ export type HookTarget = {
 };
 
 /**
- * The whole endpoint. Order: a foreign Origin refuses first since it is the cheapest and the one
- * that matters most; then the rate limit, so an attacker cannot spend the size check's parsing on
- * every request; then the size; then the body is read and parsed, and from there almost everything
- * answers 200, per the module comment.
+ * The whole endpoint. Order: the rate limit first, so an attacker cannot spend the size check's
+ * parsing on every request; then the size; then the body is read and parsed, and from there almost
+ * everything answers 200, per the module comment.
  */
 export async function handleHookRequest(request: Request, into: HookTarget): Promise<Response> {
-    const origin = request.headers.get('origin') ?? undefined;
-    if (origin !== undefined && !allowedOrigin(origin)) {
-        return json(403, { error: 'the request did not come from this machine' });
-    }
     const now = (into.now ?? Date.now)();
     if (!into.limiter.allow(now)) {
-        return json(429, { error: 'too many hook requests' });
+        return json({ error: 'too many hook requests' }, { status: 429 });
     }
     const contentLength = request.headers.get('content-length');
     if (contentLength !== null && Number(contentLength) > MAX_BODY_BYTES) {
-        return json(413, { error: 'the hook body is too large' });
+        return json({ error: 'the hook body is too large' }, { status: 413 });
     }
     let text: string;
     try {
         text = await request.text();
     } catch {
-        return json(200, { ok: true });
+        return json({ ok: true });
     }
     if (Buffer.byteLength(text, 'utf8') > MAX_BODY_BYTES) {
-        return json(413, { error: 'the hook body is too large' });
+        return json({ error: 'the hook body is too large' }, { status: 413 });
     }
     let body: unknown;
     try {
         body = text === '' ? {} : JSON.parse(text);
     } catch {
-        return json(200, { ok: true });
+        return json({ ok: true });
     }
     if (typeof body === 'object' && body !== null && !Array.isArray(body)) {
         const name = (body as Record<string, unknown>).hook_event_name;
         if (typeof name === 'string' && name !== '') logFirstPayload(into.logged, name, body);
     }
     const event = handleHook(body, now);
-    if (event === null) return json(200, { ok: true });
+    if (event === null) return json({ ok: true });
 
     into.store.record(event);
     republishHookOn(into, event);
@@ -254,7 +244,7 @@ export async function handleHookRequest(request: Request, into: HookTarget): Pro
             notify(event, record, into.stopMessage, into.exec);
         }
     }
-    return json(200, { ok: true });
+    return json({ ok: true });
 }
 
 /**

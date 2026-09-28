@@ -19,13 +19,14 @@
 // gained a collaborations entry since adds that one and touches nothing else. Run it as
 //
 //     node bin/migrations/migrate-joint-work.mjs <hub> [--from f] [--self-key k] [--self-name n] \
-//         [--self-role r]
+//         [--self-role r] [--self-affiliation a]
 //
 // and it prints, per file, what it wrote and what it could not fill in.
 
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { parse } from 'yaml';
+import { parseArgs } from 'node:util';
+import { Document, isMap, isSeq, parse, stringify } from 'yaml';
 
 /** Where each half of a collaborations entry goes. */
 const SOURCE = 'network/collaborations.yml';
@@ -66,15 +67,21 @@ function slug(name) {
         .replace(/^-+|-+$/g, '');
 }
 
-/** A YAML double-quoted scalar, which is what every string this writes is written as. */
-function quoted(value) {
-    return `"${String(value).replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
+/** Whether a field has something to write; an empty one is left out of its entry. */
+function filled(value) {
+    return value !== undefined && value !== null && value !== '';
 }
 
-/** One `key: value` line at the indent given, left out when the value is empty. */
-function line(indent, key, value) {
-    if (value === undefined || value === null || value === '') return [];
-    return [`${indent}${key}: ${quoted(value)}`];
+/** The fields of an entry that hold something, as strings, in the order they are named. */
+function strings(entry, keys) {
+    const out = {};
+    for (const key of keys) if (filled(entry[key])) out[key] = String(entry[key]);
+    return out;
+}
+
+/** A list field when it holds anything, and nothing when it does not. */
+function listed(key, value) {
+    return Array.isArray(value) && value.length > 0 ? { [key]: value } : {};
 }
 
 /** The parsed map of a hub file, and an empty map when the file is not there or is not a map. */
@@ -234,7 +241,6 @@ schema:
   - { field: folder,       type: text,     help: "hub-relative folder of a student's supervision files" }
   - { field: self,         type: checkbox, help: "true on the hub owner's own entry, exactly one" }
 
-entries:
 `;
 
 const ORGANISATIONS_HEAD = `# Organisations - the universities, hospitals, funders and companies the hub names. A person's
@@ -249,7 +255,6 @@ schema:
   - { field: country, type: text,   help: "two-letter country code" }
   - { field: links,   type: tags }
 
-entries:
 `;
 
 const JOINT_WORK_HEAD = `# Joint work - one entry per piece of work with one person, and the pipeline it is in. Who the person
@@ -270,64 +275,76 @@ schema:
   - { field: deadline, type: date }
   - { field: followup, type: text, help: "a standing reminder" }
 
-entries:
 `;
 
-/** One people entry as YAML, whichever of its optional fields it has. */
-function personBlock(entry) {
-    const out = [`  - key: ${quoted(entry.key)}`];
-    out.push(...line('    ', 'name', entry.name));
-    if (Array.isArray(entry.affiliations) && entry.affiliations.length > 0) {
-        out.push(`    affiliations: [${entry.affiliations.map(quoted).join(', ')}]`);
-    }
-    out.push(...line('    ', 'role', entry.role));
-    out.push(...line('    ', 'orcid', entry.orcid));
-    out.push(...line('    ', 'email', entry.email));
-    if (Array.isArray(entry.links) && entry.links.length > 0) {
-        out.push(`    links: [${entry.links.map(quoted).join(', ')}]`);
-    }
-    out.push(...line('    ', 'folder', entry.folder));
-    if (entry.self === true) out.push('    self: true');
-    return out.join('\n');
+/** One people entry, whichever of its optional fields it has. */
+function personEntry(entry) {
+    return {
+        key: String(entry.key),
+        ...strings(entry, ['name']),
+        ...listed('affiliations', entry.affiliations?.map(String)),
+        ...strings(entry, ['role', 'orcid', 'email']),
+        ...listed('links', entry.links?.map(String)),
+        ...strings(entry, ['folder']),
+        ...(entry.self === true ? { self: true } : {})
+    };
 }
 
-/** One organisation entry as YAML. */
-function organisationBlock(entry) {
-    const out = [`  - key: ${quoted(entry.key)}`];
-    out.push(...line('    ', 'name', entry.name));
-    out.push(...line('    ', 'kind', entry.kind));
-    out.push(...line('    ', 'country', entry.country));
-    if (Array.isArray(entry.links) && entry.links.length > 0) {
-        out.push(`    links: [${entry.links.map(quoted).join(', ')}]`);
-    }
-    return out.join('\n');
+/** One organisation entry. */
+function organisationEntry(entry) {
+    return {
+        key: String(entry.key),
+        ...strings(entry, ['name', 'kind', 'country']),
+        ...listed('links', entry.links?.map(String))
+    };
 }
 
-/** One `meta:` row of a joint-work entry. */
-function metaBlock(rows) {
-    return rows.map(
-        (row) => `      - { label: ${quoted(row.label)}, value: ${quoted(row.value)} }`
+/** One joint-work entry: the work, its person, and the pipeline fields it kept. */
+function workEntry(entry) {
+    return {
+        key: String(entry.key),
+        ...strings(entry, ['title', 'person', 'status']),
+        ...listed(
+            'meta',
+            entry.meta.map((row) => ({ label: String(row.label), value: String(row.value) }))
+        ),
+        ...listed('tags', entry.tags),
+        ...strings(entry, ['note', 'deadline', 'followup']),
+        ...listed('related', entry.related)
+    };
+}
+
+/**
+ * A registry or collection file: its head as written, then `entries:` built as objects. Strings are
+ * double-quoted except a tag, which is plain where YAML allows it, a list inside an entry and a
+ * `meta:` row are written on one line with no space inside their brackets, and a blank line stands
+ * between two entries, so the file reads as the hand-kept ones do.
+ */
+function fileText(head, entries) {
+    const doc = new Document({ entries });
+    const list = doc.get('entries');
+    if (isSeq(list)) {
+        list.items.forEach((item, at) => {
+            if (at > 0) item.spaceBefore = true;
+            if (!isMap(item)) return;
+            for (const pair of item.items) {
+                if (!isSeq(pair.value)) continue;
+                if (pair.key.value === 'meta') for (const row of pair.value.items) row.flow = true;
+                else pair.value.flow = true;
+                if (pair.key.value === 'tags')
+                    for (const tag of pair.value.items) tag.type = 'PLAIN';
+            }
+        });
+    }
+    return (
+        head +
+        stringify(doc, {
+            defaultStringType: 'QUOTE_DOUBLE',
+            defaultKeyType: 'PLAIN',
+            flowCollectionPadding: false,
+            lineWidth: 0
+        })
     );
-}
-
-/** One joint-work entry as YAML: the work, its person, and the pipeline fields it kept. */
-function workBlock(entry) {
-    const out = [`  - key: ${quoted(entry.key)}`];
-    out.push(...line('    ', 'title', entry.title));
-    out.push(...line('    ', 'person', entry.person));
-    out.push(...line('    ', 'status', entry.status));
-    if (entry.meta.length > 0) {
-        out.push('    meta:');
-        out.push(...metaBlock(entry.meta));
-    }
-    if (entry.tags.length > 0) out.push(`    tags: [${entry.tags.join(', ')}]`);
-    out.push(...line('    ', 'note', entry.note));
-    out.push(...line('    ', 'deadline', entry.deadline));
-    out.push(...line('    ', 'followup', entry.followup));
-    if (Array.isArray(entry.related) && entry.related.length > 0) {
-        out.push(`    related: [${entry.related.join(', ')}]`);
-    }
-    return out.join('\n');
 }
 
 /** The whole migration over one hub, and the lines the run prints about it. */
@@ -412,10 +429,12 @@ function migrate(hub, self, from) {
         said.push(`person ${self.key}: the hub's own entry, orcid and email to complete`);
     }
 
-    const peopleText = PEOPLE_HEAD + [...people.values()].map(personBlock).join('\n\n') + '\n';
-    const organisationsText =
-        ORGANISATIONS_HEAD + [...organisations.values()].map(organisationBlock).join('\n\n') + '\n';
-    const workText = JOINT_WORK_HEAD + work.map(workBlock).join('\n\n') + '\n';
+    const peopleText = fileText(PEOPLE_HEAD, [...people.values()].map(personEntry));
+    const organisationsText = fileText(
+        ORGANISATIONS_HEAD,
+        [...organisations.values()].map(organisationEntry)
+    );
+    const workText = fileText(JOINT_WORK_HEAD, work.map(workEntry));
 
     write(hub, PEOPLE, peopleText);
     write(hub, ORGANISATIONS, organisationsText);
@@ -430,33 +449,43 @@ function migrate(hub, self, from) {
     return said;
 }
 
-/** The command line: the hub, then the hub owner's own person entry. */
+const USAGE =
+    'usage: node bin/migrations/migrate-joint-work.mjs <hub> [--from f] [--self-key k] [--self-name n] [--self-role r] [--self-affiliation a]';
+
+/**
+ * The command line: the hub, then the hub owner's own person entry. A flag this does not know, or
+ * one with nothing after it, is refused with the usage rather than read as the hub.
+ */
 function options(argv) {
-    const rest = [];
-    let from = '';
+    const { values, positionals } = parseArgs({
+        args: argv,
+        options: {
+            from: { type: 'string', default: '' },
+            'self-key': { type: 'string', default: 'axel-faes' },
+            'self-name': { type: 'string', default: 'Axel Faes' },
+            'self-role': { type: 'string', default: 'postdoc' },
+            'self-affiliation': { type: 'string', default: 'university-of-twente' }
+        },
+        allowPositionals: true
+    });
     const self = {
-        key: 'axel-faes',
-        name: 'Axel Faes',
-        role: 'postdoc',
-        affiliations: ['university-of-twente']
+        key: values['self-key'],
+        name: values['self-name'],
+        role: values['self-role'],
+        affiliations: [values['self-affiliation']]
     };
-    for (let at = 0; at < argv.length; at += 1) {
-        const arg = argv[at];
-        if (arg === '--self-key') self.key = argv[(at += 1)] ?? '';
-        else if (arg === '--self-name') self.name = argv[(at += 1)] ?? '';
-        else if (arg === '--self-role') self.role = argv[(at += 1)] ?? '';
-        else if (arg === '--self-affiliation') self.affiliations = [argv[(at += 1)] ?? ''];
-        else if (arg === '--from') from = argv[(at += 1)] ?? '';
-        else rest.push(arg);
-    }
-    return { hub: rest[0], self, from };
+    return { hub: positionals[0], self, from: values.from };
 }
 
-const { hub, self, from } = options(process.argv.slice(2));
+let asked;
+try {
+    asked = options(process.argv.slice(2));
+} catch {
+    asked = { hub: undefined };
+}
+const { hub, self, from } = asked;
 if (hub === undefined) {
-    console.error(
-        'usage: node bin/migrations/migrate-joint-work.mjs <hub> [--from f] [--self-key k] [--self-name n]'
-    );
+    console.error(USAGE);
     process.exit(2);
 }
 if (from !== '' && !existsSync(from)) {

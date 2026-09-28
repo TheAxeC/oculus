@@ -1,10 +1,11 @@
 // Layer 2, server. Collection entry field edits, insertion, reordering and deletion live here
 // because entry-list changes do not affect subtask or host-status edits.
 
+import { isDeepStrictEqual } from 'node:util';
 import { scalar } from '../../../data/helpers/guards.ts';
 import { isMap, isScalar, isSeq } from 'yaml';
 import type { Node, YAMLMap } from 'yaml';
-import { NOT_A_FIELD_VALUE, asFieldValue, deepEqual, isBlockMap, sameValue } from '../yaml-edit.ts';
+import { NOT_A_FIELD_VALUE, asFieldValue, isBlockMap, sameValue } from '../yaml-edit.ts';
 import type { EditResult, Refusal } from '../yaml-edit.ts';
 import {
     LIST,
@@ -138,7 +139,7 @@ export function startEntries(source: string, listKey: string, block: string): Ed
         !Array.isArray(has) ||
         has.length !== 1 ||
         (before[listKey] ?? null) !== null ||
-        !deepEqual(without(after), without(before))
+        !isDeepStrictEqual(without(after), without(before))
     ) {
         return refuseAll(source, [listKey], 'the edit did not verify; nothing was written');
     }
@@ -184,10 +185,10 @@ export function appendEntry(source: string, listKey: string, block: string): Edi
         Array.isArray(had) &&
         Array.isArray(has) &&
         has.length === had.length + 1 &&
-        deepEqual(has.slice(0, had.length), had);
+        isDeepStrictEqual(has.slice(0, had.length), had);
     const rest = { ...before, [listKey]: null };
     const restAfter = { ...after, [listKey]: null };
-    if (!grew || !deepEqual(rest, restAfter)) {
+    if (!grew || !isDeepStrictEqual(rest, restAfter)) {
         return refuseAll(source, [listKey], 'the edit did not verify; nothing was written');
     }
     return { text, changed: [listKey], refused: [] };
@@ -268,7 +269,7 @@ export function reorderEntries(source: string, ident: string, order: string[]): 
     const wanted = order.map((value): unknown => had[values.indexOf(value)]);
     const rest = { ...before, [placed.list]: null };
     const restAfter = { ...after, [placed.list]: null };
-    if (!deepEqual(has, wanted) || !deepEqual(rest, restAfter)) {
+    if (!isDeepStrictEqual(has, wanted) || !isDeepStrictEqual(rest, restAfter)) {
         return refuseAll(source, [placed.list], 'the edit did not verify; nothing was written');
     }
     return { text, changed: [placed.list], refused: [] };
@@ -301,7 +302,7 @@ export function deleteEntry(source: string, ident: string, value: string): EditR
     const wanted = had.filter((_item, at) => at !== found.index);
     const rest = { ...before, [found.list]: null };
     const restAfter = { ...after, [found.list]: null };
-    if (!deepEqual(has, wanted) || !deepEqual(rest, restAfter)) {
+    if (!isDeepStrictEqual(has, wanted) || !isDeepStrictEqual(rest, restAfter)) {
         return refuseAll(source, [found.list], 'the edit did not verify; nothing was written');
     }
     return { text, changed: [found.list], refused: [] };

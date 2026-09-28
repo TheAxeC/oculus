@@ -116,7 +116,7 @@ export function valueNow(into: WriteTarget, change: Change): { found: boolean; v
         const entry = change.key in held ? held[change.key] : {};
         return { found: true, value: entry[change.field] ?? null };
     }
-    if (change.kind === 'host') return hostStatus(into.hub, change.key, into.engine);
+    if (change.kind === 'host') return hostStatus(into.hub, change.key, into.career);
     if (change.kind === 'deck') {
         const lists = deckNow(into.config);
         return lists === null ? { found: false, value: null } : { found: true, value: lists };
@@ -210,7 +210,7 @@ function apply(into: WriteTarget, change: Change): WriteOutcome | null {
             hub,
             change.key,
             typeof change.before === 'string' ? change.before : '',
-            into.engine
+            into.career
         );
     }
     if (change.kind === 'deck') {

@@ -13,6 +13,7 @@
 // nothing to invalidate.
 
 import { readFileSync, writeFileSync } from 'node:fs';
+import { isDeepStrictEqual } from 'node:util';
 import { parse } from 'yaml';
 import { othersThan, readBack, setList } from '../list-edit.ts';
 import { SIGNATURE } from '../../content/audit.ts';
@@ -49,7 +50,7 @@ function kept(source: string, edited: string, wanted: string[]): boolean {
     const read = readBack(source, edited);
     if (read === null) return false;
     if (othersThan(read.before, [IGNORE]) !== othersThan(read.after, [IGNORE])) return false;
-    return JSON.stringify(read.after[IGNORE] ?? []) === JSON.stringify(wanted);
+    return isDeepStrictEqual(read.after[IGNORE] ?? [], wanted);
 }
 
 /** The list one write leaves behind: the signature added at the end, or taken out. */

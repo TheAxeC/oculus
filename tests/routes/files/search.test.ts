@@ -88,16 +88,6 @@ function request(query: string, headers: Record<string, string> = {}): Request {
 }
 
 describe('the gates', () => {
-    it('refuses a request from another origin before it reads the query', async () => {
-        const response = await handleSearch(
-            request('q=needle', { origin: 'http://evil.example', 'sec-fetch-site': 'cross-site' }),
-            TOKEN,
-            options()
-        );
-        expect(response.status).toBe(403);
-        expect(ran).toEqual([]);
-    });
-
     it('refuses a request without the write token', async () => {
         const response = await handleSearch(
             request('q=needle', { 'x-oculus-token': 'stale' }),

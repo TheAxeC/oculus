@@ -24,6 +24,7 @@
 // which is taken once and never again. No answer carries a token, a secret or an authorization
 // code, and the page never hands this module an address.
 
+import { json } from '@sveltejs/kit';
 import { existsSync, readFileSync } from 'node:fs';
 import { parse } from 'yaml';
 import { publishedLink } from '../../../data/accounts/calendar.ts';
@@ -92,9 +93,6 @@ export type CallbackTarget = {
     words: CallbackWords;
 };
 
-export const json = (status: number, body: unknown): Response =>
-    new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
-
 /** The five characters a browser reads as markup, so a configured sentence is drawn as words. */
 function escaped(text: string): string {
     return text
@@ -144,14 +142,14 @@ export async function startConsent(
     try {
         credentials = readCredentials(target.dir, account, target.providerDir);
     } catch (error) {
-        return json(400, { error: reason(error) });
+        return json({ error: reason(error) }, { status: 400 });
     }
-    if (credentials === null) return json(400, { error: 'setup' });
+    if (credentials === null) return json({ error: 'setup' }, { status: 400 });
     const { state, verifier } = target.states.mint(connectKey(account), target.redirect);
     await target.open(
         consentUrl(kind, credentials, { state, verifier, redirect: target.redirect })
     );
-    return json(200, { ok: true });
+    return json({ ok: true });
 }
 
 /** The machine file's text, or the empty text when the machine has not made one. */
@@ -185,27 +183,27 @@ function addRow(
     const list = LIST[kind];
     const text = localText(target.book.file);
     const refused = accountRefusal(kind, rowsIn(text, list), record.provider, record.label);
-    if (refused !== null) return json(400, { error: refused });
+    if (refused !== null) return json({ error: refused }, { status: 400 });
     const row = { provider: record.provider, label: record.label } as AccountRow;
     const link = row.provider === 'ics' ? publishedLink(record.url) : null;
-    if (row.provider === 'ics' && link === null) return json(400, { error: 'link' });
+    if (row.provider === 'ics' && link === null) return json({ error: 'link' }, { status: 400 });
     if (signsIn(row)) {
         try {
             if (!providerReady(target.providerDir, row.provider)) {
-                return json(400, { error: 'setup' });
+                return json({ error: 'setup' }, { status: 400 });
             }
         } catch (error) {
-            return json(400, { error: reason(error) });
+            return json({ error: reason(error) }, { status: 400 });
         }
     }
     const edit = addAccountRow(text, list, row, target.book.file);
-    if ('reason' in edit) return json(400, { error: 'file', reason: edit.reason });
+    if ('reason' in edit) return json({ error: 'file', reason: edit.reason }, { status: 400 });
     try {
         if (link === null) writeAccountFile(target.dir, row);
         else writePublishedLink(target.dir, row, link);
         writeTextAtomic(target.book.file, edit.text);
     } catch (error) {
-        return json(500, { error: 'file', reason: reason(error) });
+        return json({ error: 'file', reason: reason(error) }, { status: 500 });
     }
     target.book.reload();
     return row;
@@ -222,7 +220,7 @@ export async function addAccount(
 ): Promise<Response> {
     const written = await chained(target.book.writes, () => addRow(kind, target, record));
     if (written instanceof Response) return written;
-    if (!signsIn(written)) return json(200, { ok: true });
+    if (!signsIn(written)) return json({ ok: true });
     return startConsent(kind, target, written);
 }
 
@@ -232,15 +230,15 @@ export async function addAccount(
  */
 function removeRow(list: AccountList, target: AccountTarget, account: AccountRow): Response {
     const edit = removeAccountRow(localText(target.book.file), list, account, target.book.file);
-    if ('reason' in edit) return json(400, { error: 'file', reason: edit.reason });
+    if ('reason' in edit) return json({ error: 'file', reason: edit.reason }, { status: 400 });
     try {
         writeTextAtomic(target.book.file, edit.text);
         removeAccountFile(target.dir, account);
     } catch (error) {
-        return json(500, { error: 'file', reason: reason(error) });
+        return json({ error: 'file', reason: reason(error) }, { status: 500 });
     }
     target.book.reload();
-    return json(200, { ok: true });
+    return json({ ok: true });
 }
 
 /**
@@ -253,7 +251,7 @@ export async function removeAccount(
     record: Record<string, unknown>
 ): Promise<Response> {
     const account = accountFor(target.accounts, record.account);
-    if (account === undefined) return json(400, { error: 'no such account' });
+    if (account === undefined) return json({ error: 'no such account' }, { status: 400 });
     return chained(target.book.writes, () => removeRow(LIST[kind], target, account));
 }
 
@@ -268,8 +266,9 @@ export function accountAction(
 ): Promise<Response> | null {
     if (record.action === 'connect') {
         const account = accountFor(target.accounts, record.account);
-        if (account === undefined) return Promise.resolve(json(400, { error: 'no such account' }));
-        if (!signsIn(account)) return Promise.resolve(json(400, { error: 'provider' }));
+        if (account === undefined)
+            return Promise.resolve(json({ error: 'no such account' }, { status: 400 }));
+        if (!signsIn(account)) return Promise.resolve(json({ error: 'provider' }, { status: 400 }));
         return startConsent(kind, target, account);
     }
     if (record.action === 'add') return addAccount(kind, target, record);

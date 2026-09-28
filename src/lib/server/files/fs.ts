@@ -32,10 +32,11 @@
 // Nothing here holds state between calls: the path of the file, the roots and the write chain all
 // come in from the request's ServerContext, so two servers in one process read two files.
 
+import { json } from '@sveltejs/kit';
 import { readdirSync, realpathSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { basename, isAbsolute, join, sep } from 'node:path';
-import { hasToken, sameOrigin } from '../core/auth.ts';
+import { tokenedBody } from '../core/auth.ts';
 import { expandHome, HUB_ROOT, resolveRootPath, type Root } from './files.ts';
 import { readBookmarks } from './fs/bookmarks.ts';
 import { ignoredIn } from '../core/git.ts';
@@ -360,12 +361,8 @@ function inside(path: string, dir: string): boolean {
     return path === dir || path.startsWith(dir + sep);
 }
 
-function json(status: number, body: unknown): Response {
-    return new Response(JSON.stringify(body), {
-        status,
-        headers: { 'content-type': 'application/json', 'cache-control': 'no-store' }
-    });
-}
+/** What every answer of this route carries besides its type: nothing of it is cached. */
+const NO_STORE = { 'cache-control': 'no-store' };
 
 function text(value: unknown): string {
     return typeof value === 'string' ? value : '';
@@ -396,29 +393,31 @@ export function workspacesAnswer(into: FsTarget, saved: Saved): WorkspacesAnswer
  * and a path the entries of that directory (with `hidden=1` and `ignored=1` asking for what the
  * tree leaves out by default), and nothing at all the workspaces.
  *
- * A read, so it carries no token; it is still refused to another origin, since any page open in the
- * browser can address this server. One file is read, whichever answer is given.
+ * A read, so it carries no token; the origin guard in src/hooks.server.ts still refuses it to
+ * another origin, since any page open in the browser can address this server. One file is read,
+ * whichever answer is given.
  */
 export function handleFs(request: Request, into: FsTarget): Response {
-    if (!sameOrigin(request, request.headers.get('host') ?? '')) {
-        return json(403, { error: 'origin' });
-    }
     const url = new URL(request.url);
-    if (url.searchParams.get('bookmarks') !== null) return json(200, readBookmarks(into.bookmarks));
-    if (url.searchParams.get('notes') !== null) return json(200, { notes: listNotes(into.notes) });
+    if (url.searchParams.get('bookmarks') !== null)
+        return json(readBookmarks(into.bookmarks), { headers: NO_STORE });
+    if (url.searchParams.get('notes') !== null)
+        return json({ notes: listNotes(into.notes) }, { headers: NO_STORE });
     const one = url.searchParams.get('note');
     if (one !== null) {
         const note = readNote(into.notes, one);
-        return note === null ? json(404, { error: 'no-such-note' }) : json(200, note);
+        return note === null
+            ? json({ error: 'no-such-note' }, { status: 404, headers: NO_STORE })
+            : json(note, { headers: NO_STORE });
     }
     const key = url.searchParams.get('root') ?? '';
     const path = url.searchParams.get('path') ?? '';
     const saved = readSaved(into.file, reservedKeys(into.fixed));
-    if (key === '') return json(200, workspacesAnswer(into, saved));
+    if (key === '') return json(workspacesAnswer(into, saved), { headers: NO_STORE });
     const roots = [...into.fixed, ...addedRoots(into.fixed, saved)];
     const found = listShown(roots, key, path, shownOf(url.searchParams), into.ignored);
-    if ('error' in found) return json(404, { error: found.error });
-    return json(200, { root: key, path, entries: found.entries });
+    if ('error' in found) return json({ error: found.error }, { status: 404, headers: NO_STORE });
+    return json({ root: key, path, entries: found.entries }, { headers: NO_STORE });
 }
 
 /** Every action POST /api/fs knows. */
@@ -446,28 +445,30 @@ function currentOf(saved: Saved): SavedWorkspace {
 /** Write the file and say what changed, in the shape every other write endpoint answers in. */
 function written(saved: Saved, into: FsTarget): Response {
     writeSaved(into.file, saved);
-    return json(200, { ok: true, changed: ['workspaces'], refused: [] });
+    return json({ ok: true, changed: ['workspaces'], refused: [] }, { headers: NO_STORE });
 }
 
 /** Add the folder the body names to the workspace in force, under a key taken from its own name. */
 function addRoot(saved: Saved, fields: Record<string, unknown>, into: FsTarget): Response {
     const typed = text(fields.dir).trim();
-    if (typed === '') return json(400, { error: 'no-dir' });
+    if (typed === '') return json({ error: 'no-dir' }, { status: 400, headers: NO_STORE });
     const expanded = expandHome(typed);
-    if (!isAbsolute(expanded)) return json(400, { error: 'not-absolute' });
+    if (!isAbsolute(expanded))
+        return json({ error: 'not-absolute' }, { status: 400, headers: NO_STORE });
     const dir = real(expanded);
-    if (dir === null) return json(400, { error: 'no-such-dir' });
+    if (dir === null) return json({ error: 'no-such-dir' }, { status: 400, headers: NO_STORE });
     let directory: boolean;
     try {
         directory = statSync(dir).isDirectory();
     } catch {
-        return json(400, { error: 'no-such-dir' });
+        return json({ error: 'no-such-dir' }, { status: 400, headers: NO_STORE });
     }
-    if (!directory) return json(400, { error: 'not-a-directory' });
+    if (!directory) return json({ error: 'not-a-directory' }, { status: 400, headers: NO_STORE });
     const held = [...into.fixed, ...addedRoots(into.fixed, saved)];
     // The real paths are compared, so the same folder reached through a trailing slash or a link is
     // the root it already is rather than a second root under a second key.
-    if (held.some((one) => real(one.dir) === dir)) return json(400, { error: 'root-held' });
+    if (held.some((one) => real(one.dir) === dir))
+        return json({ error: 'root-held' }, { status: 400, headers: NO_STORE });
     const workspace = currentOf(saved);
     const taken = [...held.map((one) => one.key), ...workspace.roots.map((one) => one.key)];
     workspace.roots.push({ key: rootKey(dir, taken), dir });
@@ -477,10 +478,11 @@ function addRoot(saved: Saved, fields: Record<string, unknown>, into: FsTarget):
 /** Take one reader-added root out of the workspace in force. A configured root is refused. */
 function removeRoot(saved: Saved, fields: Record<string, unknown>, into: FsTarget): Response {
     const key = text(fields.key);
-    if (into.fixed.some((one) => one.key === key)) return json(400, { error: 'root-fixed' });
+    if (into.fixed.some((one) => one.key === key))
+        return json({ error: 'root-fixed' }, { status: 400, headers: NO_STORE });
     const workspace = currentOf(saved);
     const at = workspace.roots.findIndex((one) => one.key === key);
-    if (at < 0) return json(400, { error: 'no-such-root' });
+    if (at < 0) return json({ error: 'no-such-root' }, { status: 400, headers: NO_STORE });
     workspace.roots.splice(at, 1);
     return written(saved, into);
 }
@@ -488,8 +490,9 @@ function removeRoot(saved: Saved, fields: Record<string, unknown>, into: FsTarge
 /** Save the roots in force under a new name, and make that workspace the current one. */
 function saveWorkspace(saved: Saved, fields: Record<string, unknown>, into: FsTarget): Response {
     const name = text(fields.name).trim();
-    if (name === '') return json(400, { error: 'no-name' });
-    if (saved.workspaces.some((one) => one.name === name)) return json(400, { error: 'name-held' });
+    if (name === '') return json({ error: 'no-name' }, { status: 400, headers: NO_STORE });
+    if (saved.workspaces.some((one) => one.name === name))
+        return json({ error: 'name-held' }, { status: 400, headers: NO_STORE });
     saved.workspaces.push({ name, roots: [...rootsOf(saved, saved.current)] });
     saved.current = name;
     return written(saved, into);
@@ -499,7 +502,7 @@ function saveWorkspace(saved: Saved, fields: Record<string, unknown>, into: FsTa
 function selectWorkspace(saved: Saved, fields: Record<string, unknown>, into: FsTarget): Response {
     const name = text(fields.name);
     if (name !== DEFAULT_WORKSPACE && !saved.workspaces.some((one) => one.name === name)) {
-        return json(400, { error: 'no-such-workspace' });
+        return json({ error: 'no-such-workspace' }, { status: 400, headers: NO_STORE });
     }
     saved.current = name;
     return written(saved, into);
@@ -509,15 +512,16 @@ function selectWorkspace(saved: Saved, fields: Record<string, unknown>, into: Fs
 function writeNote(fields: Record<string, unknown>, into: FsTarget): Response {
     const id = text(fields.id).trim();
     const row = saveNote(into.notes, id, text(fields.title), text(fields.body));
-    if (row === null) return json(400, { error: 'no-such-note' });
-    return json(200, { ok: true, changed: ['note'], refused: [], note: row });
+    if (row === null) return json({ error: 'no-such-note' }, { status: 400, headers: NO_STORE });
+    return json({ ok: true, changed: ['note'], refused: [], note: row }, { headers: NO_STORE });
 }
 
 /** Take one note off the disk. */
 function removeNote(fields: Record<string, unknown>, into: FsTarget): Response {
     const id = text(fields.id).trim();
-    if (!deleteNote(into.notes, id)) return json(400, { error: 'no-such-note' });
-    return json(200, { ok: true, changed: ['note'], refused: [] });
+    if (!deleteNote(into.notes, id))
+        return json({ error: 'no-such-note' }, { status: 400, headers: NO_STORE });
+    return json({ ok: true, changed: ['note'], refused: [] }, { headers: NO_STORE });
 }
 
 /**
@@ -535,26 +539,23 @@ function act(action: string, fields: Record<string, unknown>, into: FsTarget): R
 
 /**
  * POST /api/fs: one action on the workspaces file. The order is the order of the refusals: the
- * origin, the token, the body, the action, and only then the file.
+ * token, the body, the action, and only then the file.
  */
 export async function handleFsWrite(
     request: Request,
     token: string,
     into: FsTarget
 ): Promise<Response> {
-    if (!sameOrigin(request, request.headers.get('host') ?? '')) {
-        return json(403, { error: 'origin' });
-    }
-    if (!hasToken(request, token)) return json(403, { error: 'token' });
-    let body: unknown;
-    try {
-        body = (await request.json()) as unknown;
-    } catch {
-        return json(400, { error: 'not-json' });
-    }
-    if (!isMap(body)) return json(400, { error: 'not-an-action' });
+    const read = await tokenedBody(request, token, {
+        headers: NO_STORE,
+        words: { token: 'token', json: 'not-json' }
+    });
+    if (read instanceof Response) return read;
+    const body = read.body;
+    if (!isMap(body)) return json({ error: 'not-an-action' }, { status: 400, headers: NO_STORE });
     const action = text(body.action);
-    if (!ACTIONS.includes(action)) return json(400, { error: 'not-an-action' });
+    if (!ACTIONS.includes(action))
+        return json({ error: 'not-an-action' }, { status: 400, headers: NO_STORE });
     const fields = body;
     // Whichever request got here first finishes its read, its change and its write before the next
     // one starts its read, so two adds in flight are two roots and never one.

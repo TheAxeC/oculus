@@ -12,7 +12,6 @@ import { readFileSync } from 'node:fs';
 import { join, resolve, sep } from 'node:path';
 import { parse } from 'yaml';
 import { isMap } from '../../../data/helpers/guards.ts';
-import { loadConfig } from '../../../data/sources/config.ts';
 import { readManifests } from '../../../data/sources/manifests.ts';
 import {
     addSubtask,
@@ -156,9 +155,11 @@ export function writeSubtaskAdd(
     return { ...out, records: subtaskRecord(host, edit, '', target) };
 }
 
-/** The career file and the host statuses, read out of the same merged config every reader reads. */
-export function careerRules(engine: string): { file: string; statuses: string[] } {
-    const merged = loadConfig(engine).config;
+/** Where the career hosts are, and the statuses one may hold. */
+export type CareerRules = { file: string; statuses: string[] };
+
+/** The career file and the host statuses, out of the request's merged config. */
+export function careerRules(merged: Record<string, unknown>): CareerRules {
     const file =
         typeof merged.career_file === 'string' ? merged.career_file : 'registries/career.yml';
     const held = merged.career_host_status;
@@ -182,9 +183,9 @@ export function subtaskValue(
 export function hostStatus(
     hub: string,
     name: string,
-    engine: string
+    rules: CareerRules
 ): { found: boolean; value: unknown } {
-    const file = resolve(join(hub, careerRules(engine).file));
+    const file = resolve(join(hub, rules.file));
     if (!file.startsWith(resolve(hub) + sep)) return { found: false, value: null };
     let data: unknown;
     try {
@@ -202,8 +203,12 @@ export function hostStatus(
  * Set one host's status in registries/career.yml. A status outside the vocabulary is refused,
  * never written.
  */
-export function writeHost(hub: string, name: string, status: string, engine: string): WriteOutcome {
-    const rules = careerRules(engine);
+export function writeHost(
+    hub: string,
+    name: string,
+    status: string,
+    rules: CareerRules
+): WriteOutcome {
     const file = resolve(join(hub, rules.file));
     if (!file.startsWith(resolve(hub) + sep)) return { found: false, changed: [], refused: [] };
     let source: string;

@@ -10,7 +10,7 @@
 // before the picture arrives, and the upload, which is the one write in oculus that lands bytes
 // rather than text.
 //
-// An upload is behind the write token as well as the origin check, and the name is reduced to its
+// An upload is behind the write token as well as the origin guard, and the name is reduced to its
 // last segment before anything is done with it, so a name that tried to reach out of the folder is
 // a file name in the folder or is refused. The three extensions the wall accepts are the JPEG and
 // PNG ones: a picture arrives from a camera or a phone, and `.webp` is served if the reader puts
@@ -20,11 +20,12 @@
 // ones that format starts with, and must be the format the extension names, so a script or a text
 // file cannot be written under a picture's name into a folder the page then draws from.
 
+import { json } from '@sveltejs/kit';
 import { byKey } from '../../data/helpers/guards.ts';
 import type { Picture } from '../../data/model/index.ts';
-import { hasToken } from '../core/auth.ts';
+import { tokenedBody } from '../core/auth.ts';
 import { writeBytesAtomic } from '../core/json.ts';
-import { configOf, folderOf, images, isName, sameOrigin, sizeOf, stream } from './images.ts';
+import { folderOf, images, isName, sizeOf, stream } from './images.ts';
 import { existsSync } from 'node:fs';
 import { basename, extname, join } from 'node:path';
 
@@ -85,11 +86,15 @@ export type UploadOutcome =
     { written: string } | { error: 'name' | 'data' | 'taken' | 'unwritable' };
 
 /**
- * The configured folder, or null when there is none to serve. The config is read per request so an
- * edit shows on reload; a missing `dir`, or one outside the hub, serves nothing.
+ * The configured folder, or null when there is none to serve. The config is the request's own
+ * read, so an edit shows on reload; a missing `dir`, or one outside the hub, serves nothing.
  */
-export function folder(memory: MemoriesMemory, engine: string): string | null {
-    return folderOf(configOf(engine).memories, engine, memory.refused, 'memories');
+export function folder(
+    memory: MemoriesMemory,
+    config: Record<string, unknown>,
+    engine: string
+): string | null {
+    return folderOf(config.memories, engine, memory.refused, 'memories');
 }
 
 /** Read the body of an upload, or null when it is not one. */
@@ -136,56 +141,35 @@ export function write(dir: string, asked: Upload): UploadOutcome {
     return { written: name };
 }
 
-/**
- * The pictures of the folder with their sizes, as JSON. 403 covers a request from another origin.
- */
-export function listing(dir: string | null, headers: Headers): Response {
-    if (!sameOrigin(headers)) return new Response(null, { status: 403 });
-    return new Response(JSON.stringify({ images: dir === null ? [] : pictures(dir) }), {
-        status: 200,
-        headers: { 'content-type': 'application/json' }
-    });
+/** The pictures of the folder with their sizes, as JSON. */
+export function listing(dir: string | null): Response {
+    return json({ images: dir === null ? [] : pictures(dir) });
 }
 
-/** One picture of the folder, streamed. 403 for another origin, 404 for anything not there. */
-export function serve(dir: string | null, name: string | null, headers: Headers): Response {
-    if (!sameOrigin(headers)) return new Response(null, { status: 403 });
+/** One picture of the folder, streamed. 404 for anything not there. */
+export function serve(dir: string | null, name: string | null): Response {
     if (dir === null) return new Response(null, { status: 404 });
     return stream(dir, name);
 }
 
-/** What the endpoint says back, in the one shape every answer of this route has. */
-function said(status: number, body: unknown): Response {
-    return new Response(JSON.stringify(body), {
-        status,
-        headers: { 'content-type': 'application/json' }
-    });
-}
-
 /**
- * One picture added to the wall. The order is the write endpoint's: the request must come from this
- * application's own page and carry the process token, the body must be a picture, and only then is
- * a file written. A refusal names what was wrong and the folder is untouched.
+ * One picture added to the wall. The order is the write endpoint's: the request must carry the
+ * process token, the body must be a picture, and only then is a file written. A refusal names what
+ * was wrong and the folder is untouched.
  */
 export async function add(dir: string | null, request: Request, token: string): Promise<Response> {
-    if (!sameOrigin(request.headers)) {
-        return said(403, { error: 'the request did not come from this page' });
-    }
-    if (!hasToken(request, token)) {
-        return said(403, { error: 'the write token is missing or stale' });
-    }
-    let body: unknown;
-    try {
-        body = await request.json();
-    } catch {
-        return said(400, { error: 'the body is not JSON' });
-    }
+    const read = await tokenedBody(request, token);
+    if (read instanceof Response) return read;
+    const body = read.body;
     const asked = upload(body);
-    if (asked === null) return said(400, { error: 'the body is not a picture to add' });
-    if (dir === null) return said(404, { error: 'no memories folder is configured' });
+    if (asked === null) return json({ error: 'the body is not a picture to add' }, { status: 400 });
+    if (dir === null) return json({ error: 'no memories folder is configured' }, { status: 404 });
     const outcome = write(dir, asked);
     if ('error' in outcome) {
-        return said(outcome.error === 'unwritable' ? 500 : 400, { error: outcome.error });
+        return json(
+            { error: outcome.error },
+            { status: outcome.error === 'unwritable' ? 500 : 400 }
+        );
     }
-    return said(200, { ok: true, written: outcome.written });
+    return json({ ok: true, written: outcome.written });
 }

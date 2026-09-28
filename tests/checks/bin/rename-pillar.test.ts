@@ -12,6 +12,7 @@ import { RENAMED_FIELDS } from '../../../src/lib/data/snapshot/validate.ts';
 import {
     manifestsUnder,
     migrateHub,
+    rootsOf,
     theRename
 } from '../../../bin/migrations/rename-program-to-pillar.ts';
 import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
@@ -99,5 +100,15 @@ describe('the migration over a fixture hub', () => {
         expect(again.unchanged.sort()).toEqual([alpha, beta, nested].sort());
         expect(again.refused).toEqual([]);
         expect(readFileSync(alpha, 'utf8')).toBe(text);
+    });
+});
+
+describe('the command line', () => {
+    it('is every root it names, null for none and for a flag, and a word after -- as a root', () => {
+        expect(rootsOf(['/a', '/b'])).toEqual(['/a', '/b']);
+        expect(rootsOf([])).toBeNull();
+        expect(rootsOf(['--dry-run', '/a'])).toBeNull();
+        expect(rootsOf(['-x'])).toBeNull();
+        expect(rootsOf(['--', '--odd-folder'])).toEqual(['--odd-folder']);
     });
 });

@@ -2,20 +2,21 @@
 // lib/server/files/files.ts and this is the few lines that join them. The rest route gives the
 // root's key and the whole path under it, so a manual's own relative links reach the same handler.
 //
-// The origin is checked before anything is read from disk, since a request from another page is
-// answered with nothing whatever the roots turn out to be. The roots are then the configured ones
-// with the current workspace's after them, so a folder the reader added in the file browser is
-// served exactly as a configured one is; the configuration and the hub come off the request's
-// ServerContext, so one request reads the workspaces file once and no config file at all.
+// The origin guard in src/hooks.server.ts answers a request from another page before anything is
+// read from disk, whatever the roots turn out to be. The roots are the configured ones with the
+// current workspace's after them, so a folder the reader added in the file browser is served
+// exactly as a configured one is; the configuration is the request's own read and the hub comes off
+// its ServerContext, so one request reads the workspaces file once.
 
-import { sameOrigin } from '$lib/server/core/auth';
 import { serveFile } from '$lib/server/files/files';
 import { browserRoots } from '$lib/server/files/roots';
 import type { RequestHandler } from './$types';
 
-export const GET: RequestHandler = ({ params, request, locals }) => {
-    if (!sameOrigin(request, request.headers.get('host') ?? '')) {
-        return new Response(null, { status: 403 });
-    }
-    return serveFile(request, browserRoots(locals.server), params.root, params.path);
+export const GET: RequestHandler = ({ params, locals }) => {
+    const roots = browserRoots({
+        config: locals.config().config,
+        engine: locals.server.engine,
+        local: locals.server.local
+    });
+    return serveFile(roots, params.root, params.path);
 };

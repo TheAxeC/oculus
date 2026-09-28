@@ -10,16 +10,14 @@
 // Nothing outside a root is ever served, which is DESIGN.md's "Auth" applied to a route that reads
 // a path the request names. The root's directory and the resolved file are both put through
 // realpath first, so a symbolic link pointing out of the root is refused rather than followed, and
-// the file is then required to be the directory itself or something under it. The request is
-// checked against `Origin` and `Sec-Fetch-Site` before any of that, since any page open in the
-// browser can address localhost.
+// the file is then required to be the directory itself or something under it. Where the request
+// came from is answered before any of that, by the origin guard in src/hooks.server.ts.
 
 import { createReadStream, realpathSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { dirname, extname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { Readable } from 'node:stream';
-import { configDir, loadConfig, loadLocalOrDefaults } from '../../data/sources/config.ts';
-import { sameOrigin } from '../core/auth.ts';
+import { configDir } from '../../data/sources/config.ts';
 import type { Finding } from '../../data/model/index.ts';
 
 /**
@@ -212,13 +210,9 @@ export function expandHome(dir: string): string {
 /**
  * The file the request names, streamed from disk. 404 covers every way there is nothing to send: a
  * root nothing configures, a root whose directory is not there, a path that leaves the root once
- * both ends are resolved, a file that is not there, and a directory. 403 covers a request from
- * another origin.
+ * both ends are resolved, a file that is not there, and a directory.
  */
-export function serveFile(request: Request, list: Root[], key: string, path: string): Response {
-    if (!sameOrigin(request, request.headers.get('host') ?? '')) {
-        return new Response(null, { status: 403 });
-    }
+export function serveFile(list: Root[], key: string, path: string): Response {
     const full = resolveRootFile(list, key, path);
     if (full === null) return new Response(null, { status: 404 });
     // The bytes are streamed: a manual is megabytes and nothing here holds one in memory.
@@ -294,18 +288,4 @@ export function rootsFrom(
     const taken = new Set([HUB_ROOT, ENGINE_ROOT, ...configured.map((one) => one.key)]);
     const extra = added.filter((one) => !taken.has(one.key));
     return withFixed([...configured, ...extra], hub, engine);
-}
-
-/**
- * The same, reading the config and local itself, for a caller with no request to take them off. A
- * request carries both on its ServerContext and uses rootsFrom, so one request reads each file
- * once.
- */
-export function roots(engine: string, added: Root[] = []): Root[] {
-    return rootsFrom(
-        configuredRootsOf(loadConfig(engine).config, engine),
-        loadLocalOrDefaults(engine).hub,
-        engine,
-        added
-    );
 }

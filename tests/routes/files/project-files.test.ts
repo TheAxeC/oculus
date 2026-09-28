@@ -87,13 +87,4 @@ describe('the project-files route', () => {
         expect(response.status).toBe(200);
         expect(await body(response)).toMatchObject({ rows: [], truncated: false });
     });
-
-    it('refuses a request from another origin', () => {
-        const response = handleProjectFiles(
-            request('id=alpha', { origin: 'http://example.invalid' }),
-            target()
-        );
-
-        expect(response.status).toBe(403);
-    });
 });

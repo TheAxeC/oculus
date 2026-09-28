@@ -9,6 +9,7 @@
 // on its row rather than a count of zero. The file served for one item is served only when it is
 // one of the paths the same listing gives, so the viewer cannot be asked for any other file.
 
+import { json } from '@sveltejs/kit';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
@@ -20,7 +21,6 @@ import type {
     CustomizationRow,
     CustomizationsAnswer
 } from '../../../data/model/index.ts';
-import { sameOrigin } from '../../core/auth.ts';
 
 /** The rows in the order the section lists them. */
 export const CUSTOMIZATION_KINDS: CustomizationKind[] = [
@@ -396,12 +396,8 @@ export function customizationFile(scope: CustomizationScope, path: string): stri
     }
 }
 
-function json(status: number, body: unknown): Response {
-    return new Response(JSON.stringify(body), {
-        status,
-        headers: { 'content-type': 'application/json', 'cache-control': 'no-store' }
-    });
-}
+/** What every answer of this route carries besides its type: nothing of it is cached. */
+const NO_STORE = { 'cache-control': 'no-store' };
 
 /** Whether a path is an existing folder. */
 function isDir(path: string): boolean {
@@ -422,28 +418,32 @@ export function handleCustomizations(
     accounts: { tool: string; label: string; dir: string }[],
     roots: string[]
 ): Response {
-    if (!sameOrigin(request, request.headers.get('host') ?? '')) {
-        return json(403, { error: 'the request did not come from this page' });
-    }
     const params = new URL(request.url).searchParams;
     const agent = params.get('agent');
     if (agent !== 'claude' && agent !== 'codex')
-        return json(400, { error: 'agent must be claude or codex' });
+        return json({ error: 'agent must be claude or codex' }, { status: 400, headers: NO_STORE });
     const workspace = params.get('workspace') ?? '';
     if (!isAbsolute(workspace) || !isDir(workspace)) {
-        return json(400, { error: 'workspace must be an absolute folder' });
+        return json(
+            { error: 'workspace must be an absolute folder' },
+            { status: 400, headers: NO_STORE }
+        );
     }
     const label = params.get('account') ?? '';
     const own = accounts.filter((one) => one.tool === agent);
     const account = label === '' ? own[0] : own.find((one) => one.label === label);
-    if (account === undefined) return json(400, { error: `no ${agent} account ${label}` });
+    if (account === undefined)
+        return json({ error: `no ${agent} account ${label}` }, { status: 400, headers: NO_STORE });
     const scope: CustomizationScope = { agent, account: account.dir, workspace, roots };
     const file = params.get('file');
     if (file !== null) {
         const text = customizationFile(scope, file);
         return text === null
-            ? json(404, { error: 'the file is not one this listing gives' })
-            : json(200, { path: resolve(file), text });
+            ? json(
+                  { error: 'the file is not one this listing gives' },
+                  { status: 404, headers: NO_STORE }
+              )
+            : json({ path: resolve(file), text }, { headers: NO_STORE });
     }
     const answer: CustomizationsAnswer = {
         agent,
@@ -451,5 +451,5 @@ export function handleCustomizations(
         workspace: resolve(workspace),
         rows: customizationRows(scope)
     };
-    return json(200, answer);
+    return json(answer, { headers: NO_STORE });
 }

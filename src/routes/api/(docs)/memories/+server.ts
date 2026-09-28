@@ -5,11 +5,15 @@
 import { add, folder, listing, serve } from '$lib/server/content/memories';
 import type { RequestHandler } from './$types';
 
-export const GET: RequestHandler = ({ request, url, locals }) => {
-    const dir = folder(locals.server.memories, locals.server.engine);
+export const GET: RequestHandler = ({ url, locals }) => {
+    const dir = folder(locals.server.memories, locals.config().config, locals.server.engine);
     const file = url.searchParams.get('file');
-    return file === null ? listing(dir, request.headers) : serve(dir, file, request.headers);
+    return file === null ? listing(dir) : serve(dir, file);
 };
 
 export const POST: RequestHandler = ({ request, locals }) =>
-    add(folder(locals.server.memories, locals.server.engine), request, locals.token);
+    add(
+        folder(locals.server.memories, locals.config().config, locals.server.engine),
+        request,
+        locals.token
+    );

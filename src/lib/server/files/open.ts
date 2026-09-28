@@ -19,12 +19,13 @@
 // `open` follows an alias to wherever it points. The map is read at every request, so an edit to it
 // applies at once.
 
+import { json } from '@sveltejs/kit';
 import { scalar } from '../../data/helpers/guards.ts';
 import { execFile } from 'node:child_process';
 import { closeSync, openSync, readSync, realpathSync, statSync } from 'node:fs';
 import { basename, isAbsolute, resolve, sep } from 'node:path';
 import { isBundleId, programFor, type ProgramApps } from '../../data/helpers/opens-in-program.ts';
-import { hasToken, sameOrigin } from '../core/auth.ts';
+import { tokenedBody } from '../core/auth.ts';
 import { HUB_ROOT, resolveRootPath, type Root } from './files.ts';
 
 // The URL opener is declared beside the connect flow that is its other reader, and handed on here
@@ -75,16 +76,9 @@ const BOOKMARK_HEAD = 16;
 const FINDER_FLAGS_BYTE = 8;
 const ALIAS_FLAG = 0x80;
 
-function json(status: number, body: unknown): Response {
-    return new Response(JSON.stringify(body), {
-        status,
-        headers: { 'content-type': 'application/json' }
-    });
-}
-
 /** A refusal of one field of the body, in the shape the page's write answers read. */
 function refuse(status: number, field: string, reason: string): Response {
-    return json(status, { error: reason, refused: [{ field, reason }] });
+    return json({ error: reason, refused: [{ field, reason }] }, { status });
 }
 
 /** Whether a resolved path is the root itself or below it. */
@@ -334,18 +328,9 @@ export async function handleOpen(
     opener: PathOpener = macOpenPath,
     reader: FinderInfoReader = readFinderInfo
 ): Promise<Response> {
-    if (!sameOrigin(request, request.headers.get('host') ?? '')) {
-        return json(403, { error: 'the request did not come from this page' });
-    }
-    if (!hasToken(request, token)) {
-        return json(403, { error: 'the write token is missing or stale' });
-    }
-    let body: unknown;
-    try {
-        body = await request.json();
-    } catch {
-        return json(400, { error: 'the body is not JSON' });
-    }
+    const read = await tokenedBody(request, token);
+    if (read instanceof Response) return read;
+    const body = read.body;
     if (
         typeof body !== 'object' ||
         body === null ||
@@ -353,13 +338,16 @@ export async function handleOpen(
         typeof (body as { path?: unknown }).path !== 'string' ||
         (body as { path: string }).path.trim() === ''
     ) {
-        return json(400, { error: 'the path is required' });
+        return json({ error: 'the path is required' }, { status: 400 });
     }
     let apps: ProgramApps;
     try {
         apps = appsFor();
     } catch (error) {
-        return json(500, { error: error instanceof Error ? error.message : String(error) });
+        return json(
+            { error: error instanceof Error ? error.message : String(error) },
+            { status: 500 }
+        );
     }
     const path = (body as { path: string }).path;
     const found = await target(body as Record<string, unknown>, path, roots, apps, reader);
@@ -368,7 +356,7 @@ export async function handleOpen(
         await opener(found);
     } catch (error) {
         const reason = error instanceof Error ? error.message : String(error);
-        return json(500, { error: `the path could not be opened: ${reason}` });
+        return json({ error: `the path could not be opened: ${reason}` }, { status: 500 });
     }
-    return json(200, { ok: true, changed: [], refused: [] });
+    return json({ ok: true, changed: [], refused: [] });
 }

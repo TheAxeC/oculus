@@ -2,7 +2,6 @@
 // lib/server/machine/pty/routes.ts and this is the two lines that join them. The token it checks is
 // the one ServerContext minted and hooks.server.ts put on the event, as with /api/write.
 
-import { loadConfig } from '$lib/data/sources/config';
 import { handleTerminal, handleTerminalList } from '$lib/server/machine/pty/routes';
 import { datasetIds, project, sessionRecord } from '$lib/server/sessions/stores/hooks';
 import type { RequestHandler } from './$types';
@@ -17,11 +16,10 @@ export const POST: RequestHandler = ({ request, locals }) => {
         datasetIdsFor: () => datasetIds(server.hub),
         hubFor: () => server.local.hub,
         projectFor: (id) => project(server.hub, id),
-        // Read from disk on this request rather than from the snapshot the context took at start:
-        // `tasks.skip_permissions` decides both the argv here and the confirmation the tray draws,
-        // and the tray reads the config channel, which republishes on every save. A start-time copy
-        // would let the two disagree until a restart, with the flag on and nothing asking first.
-        configFor: () => loadConfig(server.engine).config,
+        // The request's own read of the disk: `tasks.skip_permissions` decides both the argv here
+        // and the confirmation the tray draws, and the tray reads the config channel, which
+        // republishes on every save, so the two agree without a restart.
+        configFor: () => locals.config().config,
         localFor: () => server.local,
         refresh: () => server.terminals.refresh()
     });

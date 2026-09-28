@@ -12,13 +12,13 @@
 // already found under the hub's own scan directories, and the folder is joined to the hub and
 // checked against it again before anything is read. A request naming anything else is a 404.
 
+import { json } from '@sveltejs/kit';
 import { readdirSync, statSync } from 'node:fs';
 import { join, relative, resolve, sep } from 'node:path';
 import { portfolioConfigFrom } from '../../data/index.ts';
-import { loadConfig, loadLocalOrDefaults } from '../../data/sources/config.ts';
+import { loadLocalOrDefaults } from '../../data/sources/config.ts';
 import { isMap } from '../../data/helpers/guards.ts';
 import { readManifests } from '../../data/sources/manifests.ts';
-import { sameOrigin } from '../core/auth.ts';
 import type { PortfolioConfig } from '../../data/model/index.ts';
 
 /**
@@ -88,14 +88,7 @@ const DEFAULT_EXT = [
 const DEFAULT_CAP = 400;
 
 /** A listing is walked again whenever a card is opened, so nothing here is ever cached. */
-const CACHE = 'no-store';
-
-function json(status: number, body: unknown): Response {
-    return new Response(JSON.stringify(body), {
-        status,
-        headers: { 'content-type': 'application/json', 'cache-control': CACHE }
-    });
-}
+const NO_STORE = { 'cache-control': 'no-store' };
 
 /** Whether a path is the folder itself or sits inside it. */
 function inside(path: string, folder: string): boolean {
@@ -176,27 +169,30 @@ function walk(root: string, dir: string, ext: string[], rows: FileRow[]): void {
  * the hub.
  */
 export function listFiles(into: FilesTarget, id: string): Response {
-    if (id === '') return json(400, { error: 'no project id' });
+    if (id === '') return json({ error: 'no project id' }, { status: 400, headers: NO_STORE });
     const { manifests } = readManifests(into.hub, into.config.scan, into.config.text);
     const manifest = manifests.find((one) => one.id === id);
-    if (manifest === undefined) return json(404, { error: `no project with the id ${id}` });
+    if (manifest === undefined)
+        return json({ error: `no project with the id ${id}` }, { status: 404, headers: NO_STORE });
 
     const folder = join(into.hub, manifest.folder);
-    if (!inside(folder, into.hub)) return json(404, { error: 'the folder is not inside the hub' });
+    if (!inside(folder, into.hub))
+        return json(
+            { error: 'the folder is not inside the hub' },
+            { status: 404, headers: NO_STORE }
+        );
 
     const found = projectFiles(folder, into.settings);
     const answer: FilesAnswer = { ...found, folder: manifest.folder };
-    return json(200, answer);
+    return json(answer, { headers: NO_STORE });
 }
 
 /**
- * What the route reads: the hub every write lands in, and the merged config beside it. The hub and
- * the scan rules come from the readers target() in lib/server/edit/writes.ts takes them from,
- * loadLocalOrDefaults and portfolioConfigFrom, rather than from a second reader of local.yml, and
- * the configuration is read once for both.
+ * What the route reads: the hub every write lands in, and the request's merged config beside it.
+ * The hub and the scan rules come from the readers target() in lib/server/edit/writes.ts takes them
+ * from, loadLocalOrDefaults and portfolioConfigFrom, rather than from a second reader of local.yml.
  */
-export function filesTarget(engine: string): FilesTarget {
-    const settings = loadConfig(engine).config;
+export function filesTarget(engine: string, settings: Record<string, unknown>): FilesTarget {
     return {
         hub: loadLocalOrDefaults(engine).hub,
         config: portfolioConfigFrom(settings, engine),
@@ -204,11 +200,8 @@ export function filesTarget(engine: string): FilesTarget {
     };
 }
 
-/** The whole endpoint: refuse a request from another origin, or list the project it names. */
+/** The whole endpoint: the files of the project the request names. */
 export function handleProjectFiles(request: Request, into: FilesTarget): Response {
-    if (!sameOrigin(request, request.headers.get('host') ?? '')) {
-        return json(403, { error: 'the request did not come from this page' });
-    }
     const url = new URL(request.url);
     return listFiles(into, url.searchParams.get('id') ?? '');
 }

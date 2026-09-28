@@ -36,14 +36,9 @@ function engine(names: string[]): string {
     return dir;
 }
 
-/** The headers a page of the app itself sends. */
-function local(): Headers {
-    return new Headers({ origin: 'http://127.0.0.1:8790', 'sec-fetch-site': 'same-origin' });
-}
-
 describe('the diagram route', () => {
     it('serves a diagram of the folder as an SVG image that loads and runs nothing', async () => {
-        const served = serveDiagram(engine(['layers.svg']), 'layers.svg', local());
+        const served = serveDiagram(engine(['layers.svg']), 'layers.svg');
         expect(served.status).toBe(200);
         expect(served.headers.get('content-type')).toBe('image/svg+xml');
         expect(served.headers.get('x-content-type-options')).toBe('nosniff');
@@ -63,7 +58,7 @@ describe('the diagram route', () => {
             '',
             'missing.svg'
         ]) {
-            expect(serveDiagram(dir, name, local()).status, name).toBe(404);
+            expect(serveDiagram(dir, name).status, name).toBe(404);
         }
     });
 
@@ -71,7 +66,7 @@ describe('the diagram route', () => {
         const dir = engine([]);
         symlinkSync(join(dir, 'outside.svg'), join(dir, DIAGRAM_DIR, 'away.svg'));
         expect(diagramPath(dir, 'away.svg')).toBeNull();
-        expect(serveDiagram(dir, 'away.svg', local()).status).toBe(404);
+        expect(serveDiagram(dir, 'away.svg').status).toBe(404);
     });
 
     it('refuses a docs or a diagrams folder that is a link out of the engine directory', () => {
@@ -83,24 +78,16 @@ describe('the diagram route', () => {
             if (linked === 'docs') rmSync(join(dir, 'docs'), { recursive: true });
             symlinkSync(join(away, linked), join(dir, linked));
             expect(diagramPath(dir, 'layers.svg'), linked).toBeNull();
-            expect(serveDiagram(dir, 'layers.svg', local()).status, linked).toBe(404);
+            expect(serveDiagram(dir, 'layers.svg').status, linked).toBe(404);
         }
     });
 
     it('refuses a folder that is not a file, and an engine with no diagrams folder', () => {
         const dir = engine([]);
         mkdirSync(join(dir, DIAGRAM_DIR, 'nested.svg'));
-        expect(serveDiagram(dir, 'nested.svg', local()).status).toBe(404);
+        expect(serveDiagram(dir, 'nested.svg').status).toBe(404);
         const bare = scratchDir('oculus-diagrams-bare-');
         expect(resolve(bare).startsWith(resolve(tmpdir()) + sep)).toBe(true);
-        expect(serveDiagram(bare, 'layers.svg', local()).status).toBe(404);
-    });
-
-    it('refuses a request from another origin', () => {
-        const other = new Headers({
-            origin: 'https://example.com',
-            'sec-fetch-site': 'cross-site'
-        });
-        expect(serveDiagram(engine(['layers.svg']), 'layers.svg', other).status).toBe(403);
+        expect(serveDiagram(bare, 'layers.svg').status).toBe(404);
     });
 });

@@ -2,14 +2,24 @@
 // the token a write additionally carries.
 //
 // The server binds 127.0.0.1, but any page open in the browser can address 127.0.0.1, so a request
-// is judged by where it came from: `Sec-Fetch-Site` when the browser sends one, and `Origin`
-// otherwise. The rule is the socket's too: it lives here and server/root/socket.ts imports it.
+// is judged by where it came from, by one rule, `sameOrigin`. `Sec-Fetch-Site: same-origin` or
+// `none` admits; an `Origin` header admits when it names this machine or the request's own host and
+// refuses otherwise; a request naming no `Origin` whose `Sec-Fetch-Site` says another site sent it
+// is refused; a request with neither header is refused too, since a browser without Fetch Metadata,
+// or one addressing a host that is not potentially trustworthy, sends neither on a cross-site
+// request. `handle` in src/hooks.server.ts applies the rule to every request under /api/ before a
+// route sees it, except the two OAuth callbacks (`/api/calendar/callback`, `/api/mail/callback`),
+// which a provider's redirect reaches cross-site and which the `state` this process minted guards.
+// Its HEADERLESS list names the four paths that admit a request with neither header: the hook,
+// which Claude Code's `curl` posts, and the three picture routes the command line fetches. The
+// socket checks `allowedOrigin` on its upgrade, which does not pass through `handle`.
 //
 // The token is minted once per process and delivered to the page as its data. It is not a secret
 // against the machine's owner; it is what stops another page in the same browser from posting a
-// write, which the origin check alone cannot do for a client that sends neither header.
+// write, which the origin rule alone cannot do.
 
 import { randomBytes } from 'node:crypto';
+import { json } from '@sveltejs/kit';
 import { isMap } from '../../data/helpers/guards.ts';
 
 /** The header a write carries the token in. */
@@ -28,18 +38,19 @@ export function allowedOrigin(origin: string | undefined): boolean {
 }
 
 /**
- * Whether a request came from this application's own page.
+ * Whether a request came from this application's own page, by DESIGN.md's one "Auth" rule.
  *
  * `Sec-Fetch-Site: same-origin` is the browser saying so, and `none` is a request the user made
- * themselves (a typed address, a bookmark). Otherwise the Origin must name this machine, or the
- * very host the request was sent to. A request with neither header is refused: every browser sends
- * one, so their absence is a client this endpoint has no reason to answer.
+ * themselves (a typed address, a bookmark). An Origin must name this machine or the very host the
+ * request was sent to. No Origin and any other `Sec-Fetch-Site` is a browser sending from another
+ * page. Neither header is refused: a browser that sends no Fetch Metadata sends neither on a
+ * cross-site request, so the two cannot be told apart.
  */
-export function sameOrigin(request: Request, host: string): boolean {
-    const site = request.headers.get('sec-fetch-site');
+export function sameOrigin(headers: Headers, host: string): boolean {
+    const site = headers.get('sec-fetch-site');
     if (site === 'same-origin' || site === 'none') return true;
-    const origin = request.headers.get('origin') ?? undefined;
-    if (origin === undefined) return false;
+    const origin = headers.get('origin');
+    if (origin === null) return false;
     if (allowedOrigin(origin)) return true;
     if (host === '') return false;
     try {
@@ -60,30 +71,49 @@ export function hasToken(request: Request, token: string): boolean {
     return request.headers.get(TOKEN_HEADER) === token;
 }
 
-/** A JSON answer with its status. */
-function answer(status: number, body: unknown): Response {
-    return new Response(JSON.stringify(body), {
-        status,
-        headers: { 'content-type': 'application/json' }
-    });
+/**
+ * What a write route puts into each refusal of tokenedBody: its headers, fields of its body, and
+ * its own `error` words for a missing token and for a body that is not JSON.
+ */
+export type RefusalShape = {
+    headers?: Record<string, string>;
+    fields?: Record<string, unknown>;
+    words?: { token?: string; json?: string };
+};
+
+/**
+ * The parsed body of a write request, or the answer that refuses it: 403 for a request without the
+ * process token, 400 for a body that is not JSON, each in the route's words when the shape names
+ * them. What the body must hold is the route's own check.
+ */
+export async function tokenedBody(
+    request: Request,
+    token: string,
+    shape: RefusalShape = {}
+): Promise<{ body: unknown } | Response> {
+    const refuse = (error: string, status: number): Response =>
+        json({ ...shape.fields, error }, { status, headers: shape.headers });
+    if (!hasToken(request, token))
+        return refuse(shape.words?.token ?? 'the write token is missing or stale', 403);
+    try {
+        return { body: (await request.json()) as unknown };
+    } catch {
+        return refuse(shape.words?.json ?? 'the body is not JSON', 400);
+    }
 }
 
 /**
  * The body of a write request as a JSON object, or the answer that refuses it: 403 for a request
- * from another origin or without the process token, 400 for a body that is not a JSON object.
+ * without the process token, 400 for a body that is not a JSON object. Where the request came from
+ * was answered before the route, by the origin guard in `handle`.
  */
 export async function gatedBody(
     request: Request,
     token: string
 ): Promise<Record<string, unknown> | Response> {
-    if (!sameOrigin(request, request.headers.get('host') ?? '') || !hasToken(request, token)) {
-        return answer(403, { error: 'forbidden' });
-    }
-    let body: unknown;
-    try {
-        body = await request.json();
-    } catch {
-        return answer(400, { error: 'bad body' });
-    }
-    return isMap(body) ? body : answer(400, { error: 'bad body' });
+    const read = await tokenedBody(request, token, {
+        words: { token: 'forbidden', json: 'bad body' }
+    });
+    if (read instanceof Response) return read;
+    return isMap(read.body) ? read.body : json({ error: 'bad body' }, { status: 400 });
 }

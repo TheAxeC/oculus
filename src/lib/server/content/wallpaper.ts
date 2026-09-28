@@ -3,16 +3,16 @@
 // nothing but the GET, since a route module may export only its verbs.
 //
 // The image is served rather than inlined: the picture is megabytes, the document is not, and a
-// browser caches a URL. Which extensions are pictures, what is inside a folder, the same-origin
-// check and the streamed response are server/content/images.ts's, shared with the Memories wall;
+// browser caches a URL. Which extensions are pictures, what is inside a folder and the streamed
+// response are server/content/images.ts's, shared with the Memories wall;
 // what is here is the one thing this route has of its own, which is choosing a file when the reader
 // named a fragment or asked for a random one.
 
 import { resolve } from 'node:path';
 import { byKey } from '../../data/helpers/guards.ts';
-import { configOf, folderOf, images, sameOrigin, stream } from './images.ts';
+import { folderOf, images, stream } from './images.ts';
 
-export { images, sameOrigin } from './images.ts';
+export { images } from './images.ts';
 
 /**
  * What serving needs of the configuration; a test passes its own rather than reading the config.
@@ -68,24 +68,23 @@ export function choose(settings: Wallpaper, memory: WallpaperMemory): string | n
 /**
  * The image, its type and its cache header, streamed from disk. 404 covers every way there is no
  * image to send: no directory, no image in it, a name that leaves the directory, a file that has
- * gone since the listing. 403 covers a request from another origin.
+ * gone since the listing.
  */
-export function serve(
-    settings: Wallpaper | null,
-    headers: Headers,
-    memory: WallpaperMemory
-): Response {
-    if (!sameOrigin(headers)) return new Response(null, { status: 403 });
+export function serve(settings: Wallpaper | null, memory: WallpaperMemory): Response {
     if (settings === null) return new Response(null, { status: 404 });
     return stream(settings.dir, choose(settings, memory));
 }
 
 /**
- * The configured wallpaper, or null when there is nothing to serve. The config is read per request
- * so an edit shows on reload. A missing `dir`, or one outside the hub, serves nothing.
+ * The configured wallpaper, or null when there is nothing to serve. The config is the request's own
+ * read, so an edit shows on reload. A missing `dir`, or one outside the hub, serves nothing.
  */
-export function settings(memory: WallpaperMemory, engine: string): Wallpaper | null {
-    const raw = configOf(engine).wallpaper;
+export function settings(
+    memory: WallpaperMemory,
+    config: Record<string, unknown>,
+    engine: string
+): Wallpaper | null {
+    const raw = config.wallpaper;
     if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return null;
     const held = raw as Record<string, unknown>;
     if (typeof held.dir !== 'string' || held.dir === '') return null;

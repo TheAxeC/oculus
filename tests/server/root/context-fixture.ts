@@ -36,7 +36,7 @@ export function contextFixture(overrides: Partial<ServerContext> = {}): ServerCo
         calendars: [],
         mail: []
     };
-    const config = overrides.config ?? {};
+    const config = {};
     const terminals =
         overrides.terminals ?? new Terminals(hub, { driver: terminalDriver(), poll: 0 });
     const hooks = overrides.hooks ?? {
@@ -74,7 +74,6 @@ export function contextFixture(overrides: Partial<ServerContext> = {}): ServerCo
         token: ROUTE_TOKEN,
         host: hostInfo(local.port),
         local,
-        config,
         engine: overrides.engine ?? '/fixture/engine',
         fsWrites: overrides.fsWrites ?? fsWrites(),
         ignoredCache: overrides.ignoredCache ?? ignoredCache(),

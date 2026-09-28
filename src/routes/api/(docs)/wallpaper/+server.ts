@@ -4,9 +4,8 @@
 import { serve, settings } from '$lib/server/content/wallpaper';
 import type { RequestHandler } from './$types';
 
-export const GET: RequestHandler = ({ request, locals }) =>
+export const GET: RequestHandler = ({ locals }) =>
     serve(
-        settings(locals.server.wallpaper, locals.server.engine),
-        request.headers,
+        settings(locals.server.wallpaper, locals.config().config, locals.server.engine),
         locals.server.wallpaper
     );

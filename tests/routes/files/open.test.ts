@@ -10,6 +10,7 @@ import { scalar } from '../../../src/lib/data/helpers/guards.ts';
 import { invalidateAll } from '$app/navigation';
 import { handleOpen } from '../../../src/lib/server/files/open.ts';
 import { browserRoots } from '../../../src/lib/server/files/roots.ts';
+import { loadConfig } from '../../../src/lib/data/sources/config.ts';
 import { OPEN_PATH } from '../../../src/lib/state/client/writes.svelte.ts';
 import { POST } from '../../../src/routes/api/(files)/open/+server.ts';
 import { createClientState, type ClientState } from '../../fixtures/client.ts';
@@ -206,7 +207,7 @@ describe('the open endpoint over a file', () => {
         const { hub, work } = withFiles();
         expect(existsSync(join(work, 'gone.docx'))).toBe(false);
         const server = { ...servedOver(hub, work), openPath: vi.fn() };
-        const locals = { token: TOKEN, server };
+        const locals = { token: TOKEN, server, config: () => loadConfig(server.engine) };
         const response = await POST({
             request: request({ root: 'work', path: 'gone.docx' }),
             locals
@@ -223,7 +224,7 @@ describe('the open endpoint over a file', () => {
         const post = async (): Promise<Response> =>
             POST({
                 request: request({ root: 'work', path: 'deck.xlsx' }),
-                locals: { token: TOKEN, server }
+                locals: { token: TOKEN, server, config: () => loadConfig(server.engine) }
             } as unknown as Parameters<typeof POST>[0]);
 
         expect((await post()).status).toBe(200);

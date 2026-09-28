@@ -13,6 +13,7 @@
 import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import type { Dirent } from 'node:fs';
 import { join } from 'node:path';
+import { parseArgs } from 'node:util';
 import { RENAMED_FIELDS } from '../../src/lib/data/snapshot/validate.ts';
 import { renameKey } from '../../src/lib/server/edit/yaml-edit.ts';
 
@@ -82,8 +83,22 @@ export function theRename(): { from: string; to: string } {
     return { from, to };
 }
 
-function main(roots: string[]): number {
-    if (roots.length === 0) {
+/**
+ * The hub roots a command line names, or null for a line naming none or carrying a flag, since this
+ * takes no flag and a word starting with `--` is a mistyped command rather than a folder.
+ */
+export function rootsOf(argv: string[]): string[] | null {
+    try {
+        const { positionals } = parseArgs({ args: argv, options: {}, allowPositionals: true });
+        return positionals.length === 0 ? null : positionals;
+    } catch {
+        return null;
+    }
+}
+
+function main(argv: string[]): number {
+    const roots = rootsOf(argv);
+    if (roots === null) {
         process.stderr.write(
             'usage: node bin/migrations/rename-program-to-pillar.ts <hub-root> ...\n'
         );

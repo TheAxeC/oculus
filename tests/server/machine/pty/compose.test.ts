@@ -215,9 +215,9 @@ describe("a Codex account's models", () => {
 });
 
 describe('GET /api/agents', () => {
-    function asked(query = '', origin = 'http://127.0.0.1:8792'): Request {
+    function asked(query = ''): Request {
         return new Request(`http://127.0.0.1:8792/api/agents${query}`, {
-            headers: { host: '127.0.0.1:8792', origin }
+            headers: { host: '127.0.0.1:8792', origin: 'http://127.0.0.1:8792' }
         });
     }
 
@@ -230,10 +230,6 @@ describe('GET /api/agents', () => {
         expect(answer.agents.map((agent) => agent.agent)).toEqual(['claude', 'codex']);
         expect(answer.accounts).toEqual(ACCOUNTS);
         expect(answer.findings).toEqual([]);
-    });
-
-    it('refuses a request from another origin', () => {
-        expect(handleAgents(asked('', 'http://evil.test'), ENGINE, local).status).toBe(403);
     });
 
     it("reads the model list of the Codex account it names, and the first account's for a name it does not hold", async () => {

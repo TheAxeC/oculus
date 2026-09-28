@@ -136,14 +136,6 @@ describe('GET /api/transcript', () => {
         expect(tail.turns).toEqual([]);
         expect(tail.offset).toBe(size);
     });
-
-    it('refuses a request from another origin', () => {
-        const other = new Request(`http://${HOST}/api/transcript?id=${SESSION}`, {
-            headers: { origin: 'http://elsewhere.example', 'sec-fetch-site': 'cross-site' }
-        });
-        const response = handleTranscript(other, { recordFor: recordFor(transcript()) });
-        expect(response.status).toBe(403);
-    });
 });
 
 describe('GET /api/transcript?format=markdown', () => {

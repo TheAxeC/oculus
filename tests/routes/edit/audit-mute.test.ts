@@ -18,6 +18,7 @@ import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
 import { mutedSignatures } from '../../../src/lib/server/content/audit.ts';
 import type { WriteTarget } from '../../../src/lib/server/edit/writes.ts';
 import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
+import { careerRules } from '../../../src/lib/server/edit/writes/subtasks.ts';
 
 afterAll(sweepScratch);
 
@@ -70,6 +71,7 @@ function muteTarget(body = BEHAVIOR): WriteTarget {
         hub: dir,
         config: real,
         engine: engineDir(),
+        career: careerRules(loadConfig(engineDir()).config),
         projects: () => [],
         bookmarks: join(dir, 'bookmarks.yml'),
         behaviorFile: file,

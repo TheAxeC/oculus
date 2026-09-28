@@ -7,17 +7,16 @@
 // provider is set up is the one fact about the files it answers; the client id, the secret and the
 // tenant are never in an answer, a log or an error.
 //
-// The Save carries the origin and token gates every write carries and runs behind the process's
-// write chain. The half is checked by the rule the page checks it by (data/accounts/connect.ts), so
-// a refusal is a code the page words, and the half written is one the connect flow reads back. Both
-// connectors are then read again, so an account that was waiting on the provider says it can
-// connect.
+// The Save carries the token gate every write carries and runs behind the process's write chain.
+// The half is checked by the rule the page checks it by (data/accounts/connect.ts), so a refusal is
+// a code the page words, and the half written is one the connect flow reads back. Both connectors
+// are then read again, so an account that was waiting on the provider says it can connect.
 
+import { json } from '@sveltejs/kit';
 import { providerHalf, isProvider } from '../../../data/accounts/connect.ts';
 import type { ConnectProvider, ConnectSetup } from '../../../data/model/index.ts';
-import { gatedBody, sameOrigin } from '../../core/auth.ts';
+import { gatedBody } from '../../core/auth.ts';
 import { chained, type FsWrites } from '../../core/json.ts';
-import { json } from './actions.ts';
 import { SCOPE, callbackUrl } from './oauth.ts';
 import { providerReady, writeProviderHalf } from './store.ts';
 
@@ -43,9 +42,6 @@ function ready(providerDir: string, provider: ConnectProvider): boolean {
 
 /** What the setup page draws from, for the request that asked. */
 export function handleSetupRead(request: Request, target: SetupTarget): Response {
-    if (!sameOrigin(request, request.headers.get('host') ?? '')) {
-        return json(403, { error: 'forbidden' });
-    }
     const answer: ConnectSetup = {
         ready: {
             google: ready(target.providerDir, 'google'),
@@ -57,27 +53,27 @@ export function handleSetupRead(request: Request, target: SetupTarget): Response
         },
         scopes: SCOPE
     };
-    return json(200, answer);
+    return json(answer);
 }
 
 /** Save one provider's client half, refused as a code when its shape is wrong. */
 export async function handleSetupWrite(request: Request, target: SetupTarget): Promise<Response> {
     const body = await gatedBody(request, target.token);
     if (body instanceof Response) return body;
-    if (body.action !== 'save') return json(400, { error: 'bad action' });
-    if (!isProvider(body.provider)) return json(400, { error: 'provider' });
+    if (body.action !== 'save') return json({ error: 'bad action' }, { status: 400 });
+    if (!isProvider(body.provider)) return json({ error: 'provider' }, { status: 400 });
     const checked = providerHalf(body.provider, {
         clientId: body.client_id,
         clientSecret: body.client_secret,
         tenant: body.tenant
     });
-    if ('refused' in checked) return json(400, { error: checked.refused });
+    if ('refused' in checked) return json({ error: checked.refused }, { status: 400 });
     try {
         await chained(target.writes, () => writeProviderHalf(target.providerDir, checked.half));
     } catch (error) {
         const reason = error instanceof Error ? error.message : String(error);
-        return json(500, { error: 'file', reason });
+        return json({ error: 'file', reason }, { status: 500 });
     }
     await target.refresh();
-    return json(200, { ok: true });
+    return json({ ok: true });
 }

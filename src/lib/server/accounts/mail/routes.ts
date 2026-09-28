@@ -1,11 +1,12 @@
 // Layer 2, server. The mail endpoints: the one POST the page presses, and the callback the provider
 // sends the reader's browser to.
 //
-// The POST carries the origin and token gates every other action carries. Connect, Add and Remove
-// are the account actions both connectors answer alike, in connect/actions.ts; refresh, triage,
-// reply and archive are the mail's own. The callback carries neither gate: the browser arrives
-// there from the provider and not from the page, so what guards it is the `state` this process
-// minted ten minutes earlier and holds in memory, which is taken once and never again.
+// The POST carries the token gate every other action carries, behind the origin guard in
+// src/hooks.server.ts. Connect, Add and Remove are the account actions both connectors answer
+// alike, in connect/actions.ts; refresh, triage, reply and archive are the mail's own. The callback
+// carries neither gate, and the guard passes it: the browser arrives there from the provider and
+// not from the page, so what guards it is the `state` this process minted ten minutes earlier and
+// holds in memory, which is taken once and never again.
 //
 // The page never hands this module a provider's id or an address. Connect names a configured
 // account; triage, reply and archive name a thread of the state the poller published, and the
@@ -15,6 +16,7 @@
 //
 // No answer of this module carries a token, a secret, an authorization code or a message body.
 
+import { json } from '@sveltejs/kit';
 import { mailKey } from '../../../data/accounts/mail.ts';
 import type { InboxKind, InboxThread, MailAccountConfig } from '../../../data/model/index.ts';
 import { signIn } from '../connect/loop.ts';
@@ -24,7 +26,6 @@ import {
     accountAction,
     accountFor,
     handleConnectCallback,
-    json,
     type AccountTarget,
     type CallbackTarget
 } from '../connect/actions.ts';
@@ -107,10 +108,10 @@ async function reply(target: MailTarget, held: Addressed, body: string): Promise
         if (held.account.provider === 'google') await replyGoogle(args, held.providerId, body);
         else await replyMicrosoft(args, held.providerId, body);
     } catch (error) {
-        return json(400, { error: reason(error) });
+        return json({ error: reason(error) }, { status: 400 });
     }
     await target.refresh();
-    return json(200, { ok: true });
+    return json({ ok: true });
 }
 
 /** Take one thread off the inbox at the provider. */
@@ -120,10 +121,10 @@ async function archive(target: MailTarget, held: Addressed): Promise<Response> {
         if (held.account.provider === 'google') await archiveGoogle(args, held.providerId);
         else await archiveMicrosoft(args, held.providerId);
     } catch (error) {
-        return json(400, { error: reason(error) });
+        return json({ error: reason(error) }, { status: 400 });
     }
     await target.refresh();
-    return json(200, { ok: true });
+    return json({ ok: true });
 }
 
 export async function handleMail(request: Request, target: MailTarget): Promise<Response> {
@@ -131,34 +132,34 @@ export async function handleMail(request: Request, target: MailTarget): Promise<
     if (record instanceof Response) return record;
     if (record.action === 'refresh') {
         await target.refresh();
-        return json(200, { status: 'ok' });
+        return json({ status: 'ok' });
     }
     const answered = accountAction('mail', target, record);
     if (answered !== null) return answered;
     const held = addressed(target, record.thread);
     if (record.action === 'triage') {
-        if (held === null) return json(400, { error: 'no such thread' });
+        if (held === null) return json({ error: 'no such thread' }, { status: 400 });
         const fields = triageFields(record.fields);
-        if (fields === null) return json(400, { error: 'no field to write' });
+        if (fields === null) return json({ error: 'no field to write' }, { status: 400 });
         try {
             writeNote(target.dir, held.thread.id, fields);
         } catch (error) {
-            return json(400, { error: reason(error) });
+            return json({ error: reason(error) }, { status: 400 });
         }
         target.republish();
-        return json(200, { ok: true });
+        return json({ ok: true });
     }
     if (record.action === 'reply') {
-        if (held === null) return json(400, { error: 'no such thread' });
+        if (held === null) return json({ error: 'no such thread' }, { status: 400 });
         const text = typeof record.body === 'string' ? record.body : '';
-        if (text.trim() === '') return json(400, { error: 'an answer needs words' });
+        if (text.trim() === '') return json({ error: 'an answer needs words' }, { status: 400 });
         return reply(target, held, text);
     }
     if (record.action === 'archive') {
-        if (held === null) return json(400, { error: 'no such thread' });
+        if (held === null) return json({ error: 'no such thread' }, { status: 400 });
         return archive(target, held);
     }
-    return json(400, { error: 'bad action' });
+    return json({ error: 'bad action' }, { status: 400 });
 }
 
 /**

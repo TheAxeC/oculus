@@ -18,6 +18,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { parseArgs } from 'node:util';
 
 /**
  * A path with an extension the tree uses, followed by one or more line numbers.
@@ -28,17 +29,23 @@ import { fileURLToPath } from 'node:url';
 const CITATION =
     /(?<![\w/.-])((?:[\w.-]+\/)*[\w.-]+\.(?:ts|tsx|mjs|js|svelte|md|yml|yaml|css|html|json|sh|txt)):(-?\d+(?:[-,]-?\d+)*)/g;
 
-/** The arguments: an optional root, then the one report file. */
+/**
+ * The arguments: an optional root, then the one report file. A line that does not read (a flag
+ * this does not know, `--root` with nothing after it) names no report, which prints the usage.
+ *
+ * @param {string[]} argv
+ */
 export function readArgs(argv) {
-    let root = null;
-    const rest = [];
-    for (let at = 0; at < argv.length; at += 1) {
-        if (argv[at] === '--root') {
-            root = argv[at + 1] ?? null;
-            at += 1;
-        } else rest.push(argv[at]);
+    try {
+        const { values, positionals } = parseArgs({
+            args: argv,
+            options: { root: { type: 'string' } },
+            allowPositionals: true
+        });
+        return { root: values.root ?? null, report: positionals[0] ?? null };
+    } catch {
+        return { root: null, report: null };
     }
-    return { root, report: rest[0] ?? null };
 }
 
 /**
@@ -47,6 +54,8 @@ export function readArgs(argv) {
  * A range that runs backwards, or one wider than a screenful, names no line a reader can go to, and
  * a number below one names nothing at all; each is refused by name rather than read as its first
  * line, since a report's citation is meant to take a reader to one place.
+ *
+ * @param {string} part
  */
 export function numbers(part) {
     const found = [];
@@ -78,7 +87,11 @@ export function numbers(part) {
     return { found, refused };
 }
 
-/** Why a line is not one a citation can stand for, or the empty string where it is. */
+/**
+ * Why a line is not one a citation can stand for, or the empty string where it is.
+ *
+ * @param {string} line
+ */
 export function unreadable(line) {
     const text = line.trim();
     if (text === '') return 'the line is blank';
@@ -86,7 +99,11 @@ export function unreadable(line) {
     return '';
 }
 
-/** Every citation the report holds, in the order it holds them, with duplicates dropped. */
+/**
+ * Every citation the report holds, in the order it holds them, with duplicates dropped.
+ *
+ * @param {string} text
+ */
 export function citations(text) {
     const found = [];
     const seen = new Set();
@@ -101,6 +118,9 @@ export function citations(text) {
 
 /**
  * Whether a cited path stays under the root, so a citation names a file of the tree and no other.
+ *
+ * @param {string} root
+ * @param {string} path
  */
 function under(root, path) {
     const base = resolve(root);
@@ -108,7 +128,12 @@ function under(root, path) {
     return held === base || held.startsWith(base + sep);
 }
 
-/** One line of output per line cited: the tree's text there, or why there is none. */
+/**
+ * One line of output per line cited: the tree's text there, or why there is none.
+ *
+ * @param {string} root
+ * @param {string} text
+ */
 export function lines(root, text) {
     const out = [];
     for (const citation of citations(text)) {

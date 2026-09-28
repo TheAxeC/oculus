@@ -1,5 +1,6 @@
 // What the /api/git route answers. The route itself is two lines handing the request to
-// lib/server/git/git-routes.ts with the token ServerContext minted, which is what this calls.
+// lib/server/git/git-routes.ts with the token ServerContext minted, which is what this calls, and
+// the confirm refusal that module shares with /api/deposit.
 //
 // Nothing here runs git: the handler takes the operations as options, and every case hands it a
 // stub the test owns, so the roots are names rather than repositories and no file is written
@@ -14,10 +15,11 @@ import {
     handleGit,
     handleGitBranches,
     handleGitGet,
-    messagePrompt
+    messagePrompt,
+    unconfirmed
 } from '../../../src/lib/server/git/git-routes.ts';
 import { mintToken } from '../../../src/lib/server/core/auth.ts';
-import { engineDir } from '../../../src/lib/data/sources/config.ts';
+import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
 import type { GitOptions } from '../../../src/lib/server/git/git-routes.ts';
 import { contextFixture } from '../../server/root/context-fixture.ts';
 
@@ -44,7 +46,7 @@ let ran: { action: string; root: string; fields: Record<string, unknown> }[] = [
 function options(extra: Partial<GitOptions> = {}): GitOptions {
     ran = [];
     return {
-        engine: engineDir(),
+        config: loadConfig(engineDir()).config,
         rootsFor: () => [ROOT],
         run: (action, root, fields) => {
             ran.push({ action, root, fields });
@@ -82,19 +84,6 @@ describe('the git endpoint', () => {
         );
         expect(response.status).toBe(403);
         expect(await response.json()).toEqual({ error: 'the write token is missing or stale' });
-        expect(ran).toEqual([]);
-    });
-
-    it('refuses a request from another origin', async () => {
-        const response = await handleGit(
-            request(
-                { action: 'stage', root: ROOT, paths: ['a.txt'] },
-                { origin: 'http://example.invalid', 'sec-fetch-site': 'cross-site' }
-            ),
-            TOKEN,
-            options()
-        );
-        expect(response.status).toBe(403);
         expect(ran).toEqual([]);
     });
 
@@ -304,20 +293,9 @@ describe('the diff reads', () => {
         expect(seen[1].staged).toBe(false);
     });
 
-    it('refuses a diff of a root it was not given, and one from another origin', async () => {
+    it('refuses a diff of a root it was not given', async () => {
         const refused = await handleGitGet(get('diff=/somewhere/else&path=a.txt'), options());
         expect(refused.status).toBe(400);
-        const elsewhere = await handleGitGet(
-            new Request(`${URL_}?diff=${encodeURIComponent(ROOT)}&path=a.txt`, {
-                headers: {
-                    host: HOST,
-                    origin: 'http://example.invalid',
-                    'sec-fetch-site': 'cross-site'
-                }
-            }),
-            options()
-        );
-        expect(elsewhere.status).toBe(403);
     });
 
     it("answers a worktree's diff, the repository named beside the worktree", async () => {
@@ -372,20 +350,6 @@ describe('the branch listing', () => {
             options()
         );
         expect(response.status).toBe(400);
-    });
-
-    it('refuses a request from another origin', async () => {
-        const response = await handleGitBranches(
-            new Request(`${URL_}?root=${encodeURIComponent(ROOT)}`, {
-                headers: {
-                    host: HOST,
-                    origin: 'http://example.invalid',
-                    'sec-fetch-site': 'cross-site'
-                }
-            }),
-            options()
-        );
-        expect(response.status).toBe(403);
     });
 });
 
@@ -576,5 +540,27 @@ describe('the reads on demand', () => {
             expect(response.status, query).toBe(400);
         }
         expect(asked).toEqual([]);
+    });
+});
+
+describe('unconfirmed', () => {
+    const CONFIRMED = ['push'];
+
+    it('refuses a confirmed action without confirm: true, and passes one with it', async () => {
+        for (const fields of [{}, { confirm: 'true' }, { confirm: 1 }]) {
+            const refused = unconfirmed(CONFIRMED, 'push', fields);
+            expect(refused?.status).toBe(400);
+            expect(refused?.headers.get('cache-control')).toBe('no-store');
+            expect(await refused?.json()).toEqual({
+                error: 'this action needs the page to confirm it'
+            });
+        }
+        expect(unconfirmed(CONFIRMED, 'push', { confirm: true })).toBeNull();
+    });
+
+    it('passes an action that needs no confirm, the empty one among them', () => {
+        expect(unconfirmed(CONFIRMED, 'fetch', {})).toBeNull();
+        expect(unconfirmed(CONFIRMED, '', {})).toBeNull();
+        expect(unconfirmed([], 'push', {})).toBeNull();
     });
 });

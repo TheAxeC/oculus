@@ -19,9 +19,9 @@ import { spawn } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { join } from 'node:path';
+import { json } from '@sveltejs/kit';
 import { isMap } from '../../data/helpers/guards.ts';
 import type { FolderLines, LanguageLines, LineCount, LineTally } from '../../data/model/index.ts';
-import { sameOrigin } from '../core/auth.ts';
 import { trackedFiles } from '../core/git.ts';
 
 /** The folder name of the files no folder holds. */
@@ -290,17 +290,13 @@ export async function countLines(engine: string, options: LinesOptions = {}): Pr
 }
 
 /**
- * GET /api/lines: 403 for a request from another origin, else the count, 200 when it counted and
- * 500 with its sentence when it failed. The count is handed the request's signal, so a closed
- * request stops it.
+ * GET /api/lines: the count, 200 when it counted and 500 with its sentence when it failed. The
+ * count is handed the request's signal, so a closed request stops it.
  */
 export async function handleLines(
     request: Request,
     count: (signal: AbortSignal) => Promise<LinesAnswer>
 ): Promise<Response> {
-    if (!sameOrigin(request, request.headers.get('host') ?? '')) {
-        return Response.json({ error: 'forbidden' }, { status: 403 });
-    }
     const said = await count(request.signal);
-    return Response.json(said, { status: 'error' in said ? 500 : 200 });
+    return json(said, { status: 'error' in said ? 500 : 200 });
 }

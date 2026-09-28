@@ -11,6 +11,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
 import { mintToken } from '../../../src/lib/server/core/auth.ts';
+import { loadConfig } from '../../../src/lib/data/sources/config.ts';
 import {
     add,
     BODY_LIMIT_BYTES,
@@ -60,11 +61,6 @@ function pictures(names: string[], held: Record<string, Uint8Array> = {}): strin
     return dir;
 }
 
-/** The headers a page of the app itself sends. */
-function local(): Headers {
-    return new Headers({ origin: 'http://127.0.0.1:8790', 'sec-fetch-site': 'same-origin' });
-}
-
 /** One POST of the wall's own page, carrying the process token. */
 function request(body: unknown, token = TOKEN): Request {
     return pagePost('http://127.0.0.1:8790/api/memories', body, token);
@@ -103,7 +99,7 @@ describe('the picture list', () => {
             'a-first.jpg': Buffer.from(JPEG, 'base64'),
             'b-second.png': pngHead(777, 1200)
         });
-        const response = listing(dir, local());
+        const response = listing(dir);
         expect(response.status).toBe(200);
         // The WebP is one byte, so its header gives no size and its record says so.
         expect(await response.json()).toEqual({
@@ -116,19 +112,13 @@ describe('the picture list', () => {
     });
 
     it('answers an empty list for a folder that is not configured', async () => {
-        expect(await listing(null, local()).json()).toEqual({ images: [] });
-    });
-
-    it('answers 403 to another origin', () => {
-        expect(
-            listing(pictures(NAMES), new Headers({ origin: 'http://evil.invalid' })).status
-        ).toBe(403);
+        expect(await listing(null).json()).toEqual({ images: [] });
     });
 });
 
 describe('one picture served', () => {
     it('streams the named file with its own type and a private cache header', async () => {
-        const response = serve(pictures(NAMES), 'a-first.jpg', local());
+        const response = serve(pictures(NAMES), 'a-first.jpg');
         expect(response.status).toBe(200);
         expect(response.headers.get('content-type')).toBe('image/jpeg');
         expect(response.headers.get('cache-control')).toBe('private, max-age=3600');
@@ -137,22 +127,17 @@ describe('one picture served', () => {
 
     it('refuses a name that carries a separator or leaves the folder', () => {
         const dir = pictures(NAMES);
-        expect(serve(dir, '../a-first.jpg', local()).status).toBe(404);
-        expect(serve(dir, 'sub/a-first.jpg', local()).status).toBe(404);
-        expect(serve(dir, '/etc/hosts', local()).status).toBe(404);
-        expect(serve(dir, '.hidden.jpg', local()).status).toBe(404);
+        expect(serve(dir, '../a-first.jpg').status).toBe(404);
+        expect(serve(dir, 'sub/a-first.jpg').status).toBe(404);
+        expect(serve(dir, '/etc/hosts').status).toBe(404);
+        expect(serve(dir, '.hidden.jpg').status).toBe(404);
     });
 
     it('refuses a name that is not a picture and one that is not there', () => {
         const dir = pictures(NAMES);
-        expect(serve(dir, 'notes.txt', local()).status).toBe(404);
-        expect(serve(dir, 'nothing.png', local()).status).toBe(404);
-        expect(serve(null, 'a-first.jpg', local()).status).toBe(404);
-    });
-
-    it('answers 403 to another origin', () => {
-        const foreign = new Headers({ 'sec-fetch-site': 'cross-site' });
-        expect(serve(pictures(NAMES), 'a-first.jpg', foreign).status).toBe(403);
+        expect(serve(dir, 'notes.txt').status).toBe(404);
+        expect(serve(dir, 'nothing.png').status).toBe(404);
+        expect(serve(null, 'a-first.jpg').status).toBe(404);
     });
 });
 
@@ -268,21 +253,6 @@ describe('the endpoint of an upload', () => {
         expect(existsSync(join(dir, 'one.png'))).toBe(false);
     });
 
-    it('refuses a request from another origin, and writes nothing', async () => {
-        const dir = pictures([]);
-        const foreign = new Request('http://127.0.0.1:8790/api/memories', {
-            method: 'POST',
-            headers: {
-                'content-type': 'application/json',
-                'sec-fetch-site': 'cross-site',
-                'x-oculus-token': TOKEN
-            },
-            body: JSON.stringify({ name: 'one.png', data: PIXEL })
-        });
-        expect((await add(dir, foreign, TOKEN)).status).toBe(403);
-        expect(existsSync(join(dir, 'one.png'))).toBe(false);
-    });
-
     it('refuses a body that is not a picture, and one with no folder to write into', async () => {
         const dir = pictures([]);
         expect((await add(dir, request({ name: 'one.png' }), TOKEN)).status).toBe(400);
@@ -345,13 +315,19 @@ describe('the configured folder', () => {
 
     it('resolves the configured directory under the hub', () => {
         const own = fixture('memories:\n  dir: pictures\n');
-        expect(folder(memoriesMemory(), own.engine)).toBe(join(own.hub, 'pictures'));
+        expect(folder(memoriesMemory(), loadConfig(own.engine).config, own.engine)).toBe(
+            join(own.hub, 'pictures')
+        );
     });
 
     it('is null when the key is absent, and when the directory leaves the hub', () => {
         const absent = fixture('themes: []\n');
-        expect(folder(memoriesMemory(), absent.engine)).toBeNull();
+        expect(
+            folder(memoriesMemory(), loadConfig(absent.engine).config, absent.engine)
+        ).toBeNull();
         const outside = fixture('memories:\n  dir: ../elsewhere\n');
-        expect(folder(memoriesMemory(), outside.engine)).toBeNull();
+        expect(
+            folder(memoriesMemory(), loadConfig(outside.engine).config, outside.engine)
+        ).toBeNull();
     });
 });

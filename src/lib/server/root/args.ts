@@ -6,6 +6,7 @@
 // environment. A run that must not write the checkout's own configuration points this at a copy.
 
 import { resolve } from 'node:path';
+import { parseArgs } from 'node:util';
 
 export type EngineArgs = { engine: string } | { error: string };
 
@@ -40,23 +41,22 @@ export function parseEngineArgs(argv: string[], reader: ArgsReader): EngineArgs 
     const missing = { error: `${FLAG} needs the directory that holds config/` };
     /** A value the flag cannot mean: nothing at all, or the next flag on the line. */
     const notADirectory = (value: string): boolean => value === '' || value.startsWith('--');
+    const { tokens } = parseArgs({
+        args: argv,
+        options: { engine: { type: 'string' } },
+        strict: false,
+        allowPositionals: true,
+        tokens: true
+    });
     let named: string | null = null;
-    for (let at = 0; at < argv.length; at += 1) {
-        const arg = argv[at];
-        if (arg === FLAG) {
-            const value = at + 1 < argv.length ? argv[at + 1] : '';
-            if (notADirectory(value)) return missing;
-            named = value;
-            at += 1;
-            continue;
-        }
-        if (arg.startsWith(`${FLAG}=`)) {
-            const value = arg.slice(FLAG.length + 1);
+    for (const token of tokens) {
+        if (token.kind === 'option' && token.rawName === FLAG) {
+            const value = token.value ?? '';
             if (notADirectory(value)) return missing;
             named = value;
             continue;
         }
-        return { error: `unknown argument: ${arg}` };
+        return { error: `unknown argument: ${argv[token.index]}` };
     }
     const engine = named === null ? reader.fallback : resolve(reader.cwd, named);
     if (!reader.hasConfig(engine)) {

@@ -212,11 +212,13 @@ describe('GET /api/customizations', () => {
         { tool: 'codex', label: 'Work', dir: ACCOUNT }
     ];
 
-    function get(query: Record<string, string>, origin = 'http://127.0.0.1:8792'): Response {
+    function get(query: Record<string, string>): Response {
         const url = new URL('http://127.0.0.1:8792/api/customizations');
         for (const [key, value] of Object.entries(query)) url.searchParams.set(key, value);
         return handleCustomizations(
-            new Request(url, { headers: { host: '127.0.0.1:8792', origin } }),
+            new Request(url, {
+                headers: { host: '127.0.0.1:8792', origin: 'http://127.0.0.1:8792' }
+            }),
             ACCOUNTS,
             [ROOT]
         );
@@ -237,8 +239,7 @@ describe('GET /api/customizations', () => {
         expect(other.status).toBe(404);
     });
 
-    it('refuses another origin, an agent it does not know, a workspace that is not a folder and an account it does not hold', () => {
-        expect(get({ agent: 'claude', workspace: WORK }, 'http://evil.test').status).toBe(403);
+    it('refuses an agent it does not know, a workspace that is not a folder and an account it does not hold', () => {
         expect(get({ agent: 'shell', workspace: WORK }).status).toBe(400);
         expect(get({ agent: 'claude', workspace: 'work' }).status).toBe(400);
         expect(get({ agent: 'claude', workspace: join(WORK, 'CLAUDE.local.md') }).status).toBe(400);

@@ -22,7 +22,7 @@ export const POST: RequestHandler = ({ request, locals }) =>
         book: locals.server.accounts,
         redirect: callbackUrl(locals.server.local.port, 'mail'),
         states: locals.server.mailConnects,
-        perSignal: mailSettings(locals.server.config).perSignal,
+        perSignal: mailSettings(locals.config().config).perSignal,
         fetcher: fetch,
         refresh: () => locals.server.mail.refresh(),
         republish: () => locals.server.mail.republish(),

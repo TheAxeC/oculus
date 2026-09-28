@@ -15,10 +15,10 @@
 // requests never interleave a line. The time is stamped inside the chain and kept ahead of the last
 // line's, so every record carries its own moment and a page addresses one change by it.
 
+import { json } from '@sveltejs/kit';
 import { appendFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { dirname, join, relative, resolve, sep } from 'node:path';
-import { sameOrigin } from './auth.ts';
 import { chained, writeTextAtomic } from './json.ts';
 import type { FsWrites } from './json.ts';
 
@@ -231,18 +231,9 @@ export async function logChanges(
  * simply nothing recorded yet.
  */
 export function handleChanges(request: Request, log: ChangeLog | undefined): Response {
-    if (!sameOrigin(request, request.headers.get('host') ?? '')) {
-        return new Response(JSON.stringify({ error: 'origin' }), {
-            status: 403,
-            headers: { 'content-type': 'application/json' }
-        });
-    }
     const before = new URL(request.url).searchParams.get('before') ?? undefined;
     const changes = log === undefined ? [] : readChanges(log, before);
     // The page size the read used, which is what tells the page whether a full page came back and
     // there may be older rows behind it.
-    return new Response(JSON.stringify({ changes, page: PAGE }), {
-        status: 200,
-        headers: { 'content-type': 'application/json' }
-    });
+    return json({ changes, page: PAGE });
 }

@@ -22,15 +22,11 @@
 // career host, writes/bodies.ts for the ten body parsers. What an importer of this module needs of
 // them is re-exported here, so an importer may name this module or the one that holds the function.
 
+import { json } from '@sveltejs/kit';
 import { join } from 'node:path';
 import { portfolioConfigFrom } from '../../data/index.ts';
-import {
-    changesKeep,
-    configDir,
-    loadConfig,
-    loadLocalOrDefaults
-} from '../../data/sources/config.ts';
-import { hasToken, sameOrigin } from '../core/auth.ts';
+import { changesKeep, configDir, loadLocalOrDefaults } from '../../data/sources/config.ts';
+import { tokenedBody } from '../core/auth.ts';
 import { changeAt, defaultChangesPath, logChanges, pathOf } from '../core/changes.ts';
 import { undoChange } from './writes/undo.ts';
 import { defaultBookmarksPath } from '../files/fs/bookmarks.ts';
@@ -43,7 +39,7 @@ import { writeMute } from './writes/audit-mute.ts';
 import { writeRail } from './writes/rail.ts';
 import { glyphNames } from '../../data/sources/config/rail.ts';
 import { createEntry, removeEntry, reorderCollection, writeEntry } from './writes/entries.ts';
-import { writeHost, writeSubtask, writeSubtaskAdd } from './writes/subtasks.ts';
+import { careerRules, writeHost, writeSubtask, writeSubtaskAdd } from './writes/subtasks.ts';
 import {
     addLead,
     addLinkedinIdea,
@@ -76,7 +72,7 @@ import {
 import type { ChangeLog, ChangeRecord } from '../core/changes.ts';
 import type { FsWrites } from '../core/json.ts';
 import type { Refusal } from './yaml-edit.ts';
-import type { SubtaskTarget } from './writes/subtasks.ts';
+import type { CareerRules, SubtaskTarget } from './writes/subtasks.ts';
 import type { PortfolioConfig, Project } from '../../data/model/index.ts';
 
 /**
@@ -91,11 +87,10 @@ import type { PortfolioConfig, Project } from '../../data/model/index.ts';
 export type WriteTarget = {
     hub: string;
     config: PortfolioConfig;
-    /**
-     * The engine directory this write's configuration was read from, so a writer that needs another
-     * key of it (the career rules, the audit's mute list) reads the same folder the request did.
-     */
+    /** The engine directory this write's configuration was read from. */
     engine: string;
+    /** The career file and its host statuses, out of the request's configuration. */
+    career: CareerRules;
     overrides?: string;
     /**
      * The projects of the portfolio this server last published, which the deck write builds its
@@ -192,28 +187,26 @@ const BEHAVIOR = 'behavior.yml';
 /** The engine config file the rail's list of pages lives in. */
 const LAYOUT = 'layout.yml';
 
-function json(status: number, body: unknown): Response {
-    return new Response(JSON.stringify(body), {
-        status,
-        headers: { 'content-type': 'application/json' }
-    });
-}
-
 /**
  * Where writes land on this machine: the hub of local.yml, read the way every other reader does,
- * and the projects of the portfolio this request's server last published.
+ * the request's merged configuration as its route read it, and the projects of the portfolio this
+ * request's server last published.
  *
  * The server is passed in rather than reached from a module, so nothing here is process-wide. A
  * caller with no server in hand (a document read, a deposit action) names no projects, and only the
  * deck write depends on them.
  */
-export function target(engine: string, server?: { hub: HubLike; fsWrites: FsWrites }): WriteTarget {
+export function target(
+    engine: string,
+    merged: Record<string, unknown>,
+    server?: { hub: HubLike; fsWrites: FsWrites }
+): WriteTarget {
     const local = loadLocalOrDefaults(engine);
-    const merged = loadConfig(engine).config;
     return {
         hub: local.hub,
         config: portfolioConfigFrom(merged, engine),
         engine,
+        career: careerRules(merged),
         overrides: local.sessionsOverrides,
         projects: () => (server === undefined ? [] : projectsOf(server.hub)),
         bookmarks: local.bookmarks ?? defaultBookmarksPath(),
@@ -240,18 +233,9 @@ export async function handleWrite(
     token: string,
     into: WriteTarget
 ): Promise<Response> {
-    if (!sameOrigin(request, request.headers.get('host') ?? '')) {
-        return json(403, { error: 'the request did not come from this page' });
-    }
-    if (!hasToken(request, token))
-        return json(403, { error: 'the write token is missing or stale' });
-
-    let body: unknown;
-    try {
-        body = await request.json();
-    } catch {
-        return json(400, { error: 'the body is not JSON' });
-    }
+    const read = await tokenedBody(request, token);
+    if (read instanceof Response) return read;
+    const body = read.body;
     const session = sessionWrite(body);
     if (session !== null) {
         const changed: string[] = [];
@@ -277,7 +261,10 @@ export async function handleWrite(
             }
         } catch (error) {
             const reason = error instanceof Error ? error.message : String(error);
-            return json(500, { error: `the session write could not be saved: ${reason}` });
+            return json(
+                { error: `the session write could not be saved: ${reason}` },
+                { status: 500 }
+            );
         }
         return answer({ found: true, changed, refused, records }, 'session', into);
     }
@@ -285,7 +272,8 @@ export async function handleWrite(
     const write = manifestWrite(body);
     if (write !== null) {
         const outcome = writeManifest(into.hub, into.config, write.id, write.fields);
-        if (!outcome.found) return json(404, { error: `no project with the id ${write.id}` });
+        if (!outcome.found)
+            return json({ error: `no project with the id ${write.id}` }, { status: 404 });
         return answer(outcome, 'manifest', into);
     }
 
@@ -300,7 +288,7 @@ export async function handleWrite(
             into.bookmarks
         );
         if (!outcome.found) {
-            return json(404, { error: `no entry ${entry.id} in ${entry.collection}` });
+            return json({ error: `no entry ${entry.id} in ${entry.collection}` }, { status: 404 });
         }
         return answer(outcome, 'entry', into);
     }
@@ -315,21 +303,21 @@ export async function handleWrite(
             subtask.action,
             subtask.value
         );
-        if (!outcome.found) return json(404, { error: notFound(subtask.target) });
+        if (!outcome.found) return json({ error: notFound(subtask.target) }, { status: 404 });
         return answer(outcome, 'subtask', into);
     }
 
     const added = subtaskAdd(body);
     if (added !== null) {
         const outcome = writeSubtaskAdd(into.hub, into.config, added.target, added.fields);
-        if (!outcome.found) return json(404, { error: notFound(added.target) });
+        if (!outcome.found) return json({ error: notFound(added.target) }, { status: 404 });
         return answer(outcome, 'subtask-add', into);
     }
 
     const host = hostWrite(body);
     if (host !== null) {
-        const outcome = writeHost(into.hub, host.name, host.status, into.engine);
-        if (!outcome.found) return json(404, { error: `no host named ${host.name}` });
+        const outcome = writeHost(into.hub, host.name, host.status, into.career);
+        if (!outcome.found) return json({ error: `no host named ${host.name}` }, { status: 404 });
         return answer(outcome, 'host', into);
     }
 
@@ -342,7 +330,8 @@ export async function handleWrite(
             fresh.fields,
             into.bookmarks
         );
-        if (!outcome.found) return json(404, { error: `no collection ${fresh.collection}` });
+        if (!outcome.found)
+            return json({ error: `no collection ${fresh.collection}` }, { status: 404 });
         return answer(outcome, 'new-entry', into);
     }
 
@@ -355,7 +344,8 @@ export async function handleWrite(
             order.order,
             into.bookmarks
         );
-        if (!outcome.found) return json(404, { error: `no collection ${order.collection}` });
+        if (!outcome.found)
+            return json({ error: `no collection ${order.collection}` }, { status: 404 });
         return answer(outcome, 'reorder', into);
     }
 
@@ -369,7 +359,10 @@ export async function handleWrite(
             into.bookmarks
         );
         if (!outcome.found) {
-            return json(404, { error: `no entry ${removal.id} in ${removal.collection}` });
+            return json(
+                { error: `no entry ${removal.id} in ${removal.collection}` },
+                { status: 404 }
+            );
         }
         return answer(outcome, 'delete-entry', into);
     }
@@ -377,7 +370,7 @@ export async function handleWrite(
     const feedField = feedFieldWrite(body);
     if (feedField !== null) {
         if (!isFeedKind(feedField.feed))
-            return json(400, { error: `unknown feed ${feedField.feed}` });
+            return json({ error: `unknown feed ${feedField.feed}` }, { status: 400 });
         const outcome = writeFeedField(
             into.hub,
             into.config,
@@ -387,7 +380,10 @@ export async function handleWrite(
             feedField.value
         );
         if (!outcome.found) {
-            return json(404, { error: `no entry ${feedField.id} in ${feedField.feed}` });
+            return json(
+                { error: `no entry ${feedField.id} in ${feedField.feed}` },
+                { status: 404 }
+            );
         }
         return answer(outcome, 'feed-field', into);
     }
@@ -395,10 +391,13 @@ export async function handleWrite(
     const feedDelete = feedDeleteWrite(body);
     if (feedDelete !== null) {
         if (!isFeedKind(feedDelete.feed))
-            return json(400, { error: `unknown feed ${feedDelete.feed}` });
+            return json({ error: `unknown feed ${feedDelete.feed}` }, { status: 400 });
         const outcome = deleteFeedEntry(into.hub, into.config, feedDelete.feed, feedDelete.id);
         if (!outcome.found) {
-            return json(404, { error: `no entry ${feedDelete.id} in ${feedDelete.feed}` });
+            return json(
+                { error: `no entry ${feedDelete.id} in ${feedDelete.feed}` },
+                { status: 404 }
+            );
         }
         return answer(outcome, 'feed-delete', into);
     }
@@ -406,7 +405,8 @@ export async function handleWrite(
     const lead = leadAddWrite(body);
     if (lead !== null) {
         const outcome = addLead(into.hub, into.config, lead.fields);
-        if (!outcome.found) return json(404, { error: 'the leads feed is not on this hub' });
+        if (!outcome.found)
+            return json({ error: 'the leads feed is not on this hub' }, { status: 404 });
         return answer(outcome, 'lead-add', into);
     }
 
@@ -418,7 +418,8 @@ export async function handleWrite(
             linkedinIdea.title,
             linkedinIdea.category
         );
-        if (!outcome.found) return json(404, { error: 'the LinkedIn folder is not on this hub' });
+        if (!outcome.found)
+            return json({ error: 'the LinkedIn folder is not on this hub' }, { status: 404 });
         return answer(outcome, 'linkedin-idea', into);
     }
 
@@ -426,7 +427,7 @@ export async function handleWrite(
     if (linkedinPost !== null) {
         const outcome = markLinkedinPosted(into.hub, into.config, linkedinPost.file);
         if (!outcome.found)
-            return json(404, { error: 'the LinkedIn idea file is not on this hub' });
+            return json({ error: 'the LinkedIn idea file is not on this hub' }, { status: 404 });
         return answer(outcome, 'linkedin-post', into);
     }
 
@@ -438,10 +439,13 @@ export async function handleWrite(
         } catch {
             // The file is the reader's own configuration and anything about it can go wrong on this
             // machine; the page is told which of the refusals it was and the file is left alone.
-            return json(500, { error: 'unwritable' });
+            return json({ error: 'unwritable' }, { status: 500 });
         }
         if ('error' in outcome) {
-            return json(outcome.error === 'unwritable' ? 500 : 400, { error: outcome.error });
+            return json(
+                { error: outcome.error },
+                { status: outcome.error === 'unwritable' ? 500 : 400 }
+            );
         }
         return answer({ found: true, ...outcome }, 'deck', into);
     }
@@ -454,10 +458,13 @@ export async function handleWrite(
         } catch {
             // The file is the reader's own configuration and anything about it can go wrong on this
             // machine; the page is told which of the refusals it was and the file is left alone.
-            return json(500, { error: 'unwritable' });
+            return json({ error: 'unwritable' }, { status: 500 });
         }
         if ('error' in outcome) {
-            return json(outcome.error === 'unwritable' ? 500 : 400, { error: outcome.error });
+            return json(
+                { error: outcome.error },
+                { status: outcome.error === 'unwritable' ? 500 : 400 }
+            );
         }
         return answer({ found: true, ...outcome }, 'audit-mute', into);
     }
@@ -470,10 +477,13 @@ export async function handleWrite(
         } catch {
             // The file is the reader's own configuration and anything about it can go wrong on this
             // machine; the page is told which of the refusals it was and the file is left alone.
-            return json(500, { error: 'unwritable' });
+            return json({ error: 'unwritable' }, { status: 500 });
         }
         if ('error' in outcome) {
-            return json(outcome.error === 'unwritable' ? 500 : 400, { error: outcome.error });
+            return json(
+                { error: outcome.error },
+                { status: outcome.error === 'unwritable' ? 500 : 400 }
+            );
         }
         return answer({ found: true, ...outcome }, 'rail', into);
     }
@@ -483,22 +493,25 @@ export async function handleWrite(
 
     const undo = undoWrite(body);
     if (undo !== null) {
-        if (into.changes === undefined) return json(404, { error: 'unknown' });
+        if (into.changes === undefined) return json({ error: 'unknown' }, { status: 404 });
         const change = changeAt(into.changes, undo.at);
-        if (change === undefined) return json(404, { error: 'unknown' });
+        if (change === undefined) return json({ error: 'unknown' }, { status: 404 });
         const outcome = undoChange(into, change);
         if ('error' in outcome) {
             if (outcome.error === 'refused') {
-                return json(400, { error: outcome.error, refused: outcome.refused });
+                return json({ error: outcome.error, refused: outcome.refused }, { status: 400 });
             }
-            return json(outcome.error === 'moved' ? 409 : 404, { error: outcome.error });
+            return json(
+                { error: outcome.error },
+                { status: outcome.error === 'moved' ? 409 : 404 }
+            );
         }
         // The undo is a write like any other and is recorded like one, by the writer it went
         // through, so taking it back again is the row above it in the log.
         return answer(outcome, change.kind, into, change.at);
     }
 
-    return json(400, { error: 'the body is not a write this route knows' });
+    return json({ error: 'the body is not a write this route knows' }, { status: 400 });
 }
 
 /**
@@ -517,7 +530,7 @@ async function answer(
         file: pathOf(into.hub, record.file)
     }));
     await logChanges(into.changes, kind, records, undoes);
-    return json(200, {
+    return json({
         ok: true,
         changed: outcome.changed,
         refused: outcome.refused,

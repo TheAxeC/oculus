@@ -6,7 +6,7 @@
 // payload holds, and the path and the tool come off that record, so the page can ask for a session
 // it can already see and for nothing else. A read, so it is same-origin and carries no write token.
 
-import { sameOrigin } from '../core/auth.ts';
+import { json } from '@sveltejs/kit';
 import { readTurns } from './stores/turns.ts';
 import { words } from '../core/words.ts';
 import type { SessionRecord, Turn } from '../../data/model/index.ts';
@@ -29,40 +29,34 @@ export type TranscriptOptions = {
     catalogFor?: () => Record<string, string>;
 };
 
-function json(status: number, body: unknown): Response {
-    return new Response(JSON.stringify(body), {
-        status,
-        headers: { 'content-type': 'application/json', 'cache-control': 'no-store' }
-    });
-}
+/** What every answer of this route carries besides its type: nothing of it is cached. */
+const NO_STORE = { 'cache-control': 'no-store' };
 
 /**
  * GET /api/transcript: the turns of one session from a byte offset, and the offset to ask next;
  * with `format=markdown`, the whole conversation as a Markdown file to save.
  */
 export function handleTranscript(request: Request, options: TranscriptOptions = {}): Response {
-    if (!sameOrigin(request, request.headers.get('host') ?? '')) {
-        return json(403, { error: 'the request did not come from this page' });
-    }
     const url = new URL(request.url);
     const asked = url.searchParams.get('from') ?? '';
     const from = asked === '' ? 0 : Number(asked);
     if (!Number.isInteger(from) || from < 0) {
-        return json(400, { error: `not a byte offset: ${asked}` });
+        return json({ error: `not a byte offset: ${asked}` }, { status: 400, headers: NO_STORE });
     }
     const id = url.searchParams.get('id') ?? '';
     const record = (options.recordFor ?? (() => null))(id);
-    if (record === null) return json(404, { error: `no session with the id ${id}` });
+    if (record === null)
+        return json({ error: `no session with the id ${id}` }, { status: 404, headers: NO_STORE });
     if (url.searchParams.get('format') === 'markdown') {
         if (options.catalogFor === undefined) throw new Error('an export needs the text catalog');
         return exported(record, options.catalogFor());
     }
     const read = readTurns(record.path, record.tool, from);
-    if (from > 0 || read.turns.length <= FIRST_READ_TURNS) return json(200, read);
+    if (from > 0 || read.turns.length <= FIRST_READ_TURNS) return json(read, { headers: NO_STORE });
     // The offset is the file's end either way, so the client's append path continues from the same
     // place; what is dropped is the oldest turns, which is the end of the conversation nobody is
     // looking at.
-    return json(200, { ...read, turns: read.turns.slice(-FIRST_READ_TURNS) });
+    return json({ ...read, turns: read.turns.slice(-FIRST_READ_TURNS) }, { headers: NO_STORE });
 }
 
 /** The file name an export is offered under: the title's letters and digits, else the id. */

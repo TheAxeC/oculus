@@ -8,14 +8,16 @@ import { allowedRoots } from '$lib/server/git/git-write';
 import { gitRoots } from '$lib/server/sessions/stores/hooks';
 import type { RequestHandler } from './$types';
 
-const options = (server: App.Locals['server']) => ({
-    engine: server.engine,
-    rootsFor: () => allowedRoots(gitRoots(server.hub), server.local.hub),
-    refresh: (root: string) => server.git.refresh(root)
-});
+const options = (locals: App.Locals) => {
+    const server = locals.server;
+    return {
+        config: locals.config().config,
+        rootsFor: () => allowedRoots(gitRoots(server.hub), server.local.hub),
+        refresh: (root: string) => server.git.refresh(root)
+    };
+};
 
-export const GET: RequestHandler = ({ request, locals }) =>
-    handleGitGet(request, options(locals.server));
+export const GET: RequestHandler = ({ request, locals }) => handleGitGet(request, options(locals));
 
 export const POST: RequestHandler = ({ request, locals }) =>
-    handleGit(request, locals.server.token, options(locals.server));
+    handleGit(request, locals.server.token, options(locals));

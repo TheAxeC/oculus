@@ -4,9 +4,9 @@
 // workspaces file and carries the token ServerContext minted, as with /api/write, /api/git and
 // /api/deposit.
 //
-// The configuration, the hub and the write chain all come off the request's ServerContext, so one
-// request reads config/sources.yml no times, local.yml no times, and one of the reader's own files
-// once: the workspaces, the bookmarks, or a note.
+// The configuration is the request's own read, and the hub and the write chain come off its
+// ServerContext, so one request reads the configuration once, local.yml no times, and one of the
+// reader's own files once: the workspaces, the bookmarks, or a note.
 
 import { configuredRootsOf, rootsFrom } from '$lib/server/files/files';
 import {
@@ -19,21 +19,23 @@ import { defaultBookmarksPath } from '$lib/server/files/fs/bookmarks';
 import { defaultNotesDir } from '$lib/server/files/fs/notes';
 import type { RequestHandler } from './$types';
 
-const target = (server: App.Locals['server']): FsTarget => ({
-    file: server.local.workspaces ?? defaultWorkspacesPath(),
-    bookmarks: server.local.bookmarks ?? defaultBookmarksPath(),
-    notes: server.local.notes ?? defaultNotesDir(),
-    fixed: rootsFrom(
-        configuredRootsOf(server.config, server.engine),
-        server.local.hub,
-        server.engine
-    ),
-    writes: server.fsWrites,
-    ignored: server.ignoredCache
-});
+const target = (locals: App.Locals): FsTarget => {
+    const server = locals.server;
+    return {
+        file: server.local.workspaces ?? defaultWorkspacesPath(),
+        bookmarks: server.local.bookmarks ?? defaultBookmarksPath(),
+        notes: server.local.notes ?? defaultNotesDir(),
+        fixed: rootsFrom(
+            configuredRootsOf(locals.config().config, server.engine),
+            server.local.hub,
+            server.engine
+        ),
+        writes: server.fsWrites,
+        ignored: server.ignoredCache
+    };
+};
 
-export const GET: RequestHandler = ({ request, locals }) =>
-    handleFs(request, target(locals.server));
+export const GET: RequestHandler = ({ request, locals }) => handleFs(request, target(locals));
 
 export const POST: RequestHandler = ({ request, locals }) =>
-    handleFsWrite(request, locals.server.token, target(locals.server));
+    handleFsWrite(request, locals.server.token, target(locals));

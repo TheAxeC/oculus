@@ -175,6 +175,8 @@ function verified(
     const after = valuesOf(edit.text);
     if (after === null) return { reason: `the edit of ${list} would not parse` };
     const expected = { ...before, [list]: wanted };
+    // Compared as JSON text: a wanted row's optional field may be set to undefined, which the file
+    // cannot hold and JSON drops, so a deep comparison would call the two different.
     if (JSON.stringify(after) !== JSON.stringify(expected)) {
         return { reason: `the edit of ${list} would change more than the one row` };
     }

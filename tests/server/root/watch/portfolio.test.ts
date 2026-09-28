@@ -29,6 +29,7 @@ import type {
 } from '../../../../src/lib/data/model/index.ts';
 import { recording } from './probe.ts';
 import { scratchDir, sweepScratch } from '../../../fixtures/scratch.ts';
+import { careerRules } from '../../../../src/lib/server/edit/writes/subtasks.ts';
 
 afterAll(sweepScratch);
 
@@ -455,6 +456,7 @@ describe('watchPortfolio', () => {
                 hub: started.hub,
                 config,
                 engine: started.engine,
+                career: careerRules(loadConfig(started.engine).config),
                 projects: () => [],
                 bookmarks: join(started.hub, 'bookmarks.yml'),
                 behaviorFile: join(started.engine, 'config', 'behavior.yml'),
@@ -601,6 +603,7 @@ describe('watchPortfolio', () => {
                 hub: started.hub,
                 config,
                 engine: started.engine,
+                career: careerRules(loadConfig(started.engine).config),
                 projects: () => [],
                 bookmarks: join(started.hub, 'bookmarks.yml'),
                 behaviorFile: join(started.engine, 'config', 'behavior.yml'),

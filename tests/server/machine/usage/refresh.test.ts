@@ -12,6 +12,7 @@ import {
     USAGE_RENEW_WAIT_MS,
     USAGE_WAIT_MS,
     hasPrompt,
+    sheetShown,
     usageSessionName,
     usageStartArgs,
     watchUsageRefresh,
@@ -482,12 +483,12 @@ describe('one-shot Claude usage refresher', () => {
     });
 });
 
-function request(body: unknown, token = 'write-token', origin = 'http://127.0.0.1:8791'): Request {
+function request(body: unknown, token = 'write-token'): Request {
     return new Request('http://127.0.0.1:8791/api/usage/refresh', {
         method: 'POST',
         headers: {
             host: '127.0.0.1:8791',
-            origin,
+            origin: 'http://127.0.0.1:8791',
             'content-type': 'application/json',
             'x-oculus-token': token
         },
@@ -518,17 +519,6 @@ describe('usage refresh route', () => {
             404
         );
     });
-
-    it('rejects a cross-origin request before dispatch even with the correct token', async () => {
-        const refresh = vi.fn(() => Promise.resolve(true));
-        const server = contextFixture({ token: 'write-token' });
-        const response = await handleUsageRefresh(
-            request({ account: 'University' }, 'write-token', 'https://example.com'),
-            { token: server.token, refresh }
-        );
-        expect(response.status).toBe(403);
-        expect(refresh).not.toHaveBeenCalled();
-    });
 });
 
 describe('paneReason', () => {
@@ -537,5 +527,13 @@ describe('paneReason', () => {
         expect(paneReason('Please log in\n> ')).toBe('login_required');
         expect(paneReason('> ')).toBe('refresh_failed');
         expect(paneReason('')).toBe('prompt_missing');
+    });
+});
+
+describe('the screen read without its escapes', () => {
+    it('reads the words a colour sequence sits inside', () => {
+        expect(hasPrompt('\u001b[31m>\u001b[0m red')).toBe(true);
+        expect(sheetShown('\u001b[1mcurrent \u001b[31mweek\u001b[0m')).toBe(true);
+        expect(paneReason('\u001b[31mUsage limit\u001b[0m reached\n> ')).toBe('usage_limit');
     });
 });

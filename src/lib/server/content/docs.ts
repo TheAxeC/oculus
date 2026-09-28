@@ -32,6 +32,7 @@
 // one place the markup becomes a document, so this route stays the reader of a file and nothing
 // else.
 
+import { json } from '@sveltejs/kit';
 import { existsSync, readdirSync, realpathSync, statSync } from 'node:fs';
 import { dirname, join, resolve, sep } from 'node:path';
 import { randomUUID } from 'node:crypto';
@@ -41,7 +42,6 @@ import { renderDocument } from '../../data/prose/markdown.ts';
 import { configDir } from '../../data/sources/config.ts';
 import { PROJECT_DOCS, isFinding, readDoc } from '../../data/sources/docs.ts';
 import { PRESENT_DOC } from '../../data/sources/present.ts';
-import { sameOrigin } from '../core/auth.ts';
 import { HUB_ROOT } from '../files/files.ts';
 import type { Finding, ManualPart, PortfolioConfig, Project } from '../../data/model/index.ts';
 
@@ -98,14 +98,8 @@ const CACHE = 'no-store';
 /** The query parameter that asks for the manual instead of a project's or the hub's document. */
 export const MANUAL_PARAM = 'manual';
 
-function json(status: number, body: unknown, tag = ''): Response {
-    const headers: Record<string, string> = {
-        'content-type': 'application/json',
-        'cache-control': CACHE
-    };
-    if (tag !== '') headers.etag = tag;
-    return new Response(JSON.stringify(body), { status, headers });
-}
+/** What every answer of this route carries besides its type. */
+const NO_STORE = { 'cache-control': CACHE };
 
 /**
  * What this server process's tags start with, made once as the module loads and never changed. A
@@ -359,13 +353,14 @@ function answer(
         return new Response(null, { status: 304, headers: { etag: tag, 'cache-control': CACHE } });
     }
     const read = readDoc(file, catalog);
-    if (isFinding(read)) return json(404, { error: read.message, file });
+    if (isFinding(read))
+        return json({ error: read.message, file }, { status: 404, headers: NO_STORE });
     const body: DocAnswer = {
         ...draw(read.text),
         frontmatter: read.frontmatter,
         file
     };
-    return json(200, body, tag);
+    return json(body, { headers: tag === '' ? NO_STORE : { ...NO_STORE, etag: tag } });
 }
 
 /**
@@ -375,13 +370,21 @@ function answer(
  */
 export function renderDoc(into: DocTarget, id: string, name: string, held = ''): Response {
     if (!MARKDOWN_DOCS.includes(name)) {
-        return json(404, { error: `not a document this route serves: ${name}` });
+        return json(
+            { error: `not a document this route serves: ${name}` },
+            { status: 404, headers: NO_STORE }
+        );
     }
     const folder = folderOf(into, id);
-    if (folder === null) return json(404, { error: `no project with the id ${id}` });
+    if (folder === null)
+        return json({ error: `no project with the id ${id}` }, { status: 404, headers: NO_STORE });
 
     const path = join(into.hub, folder, name);
-    if (escapes(path, into.hub)) return json(404, { error: 'the document is not inside the hub' });
+    if (escapes(path, into.hub))
+        return json(
+            { error: 'the document is not inside the hub' },
+            { status: 404, headers: NO_STORE }
+        );
 
     return answer(
         path,
@@ -400,10 +403,17 @@ export function renderDoc(into: DocTarget, id: string, name: string, held = ''):
  */
 export function renderHubDoc(into: DocTarget, path: string, held = ''): Response {
     if (path === '' || !path.endsWith('.md')) {
-        return json(404, { error: `not a document this route serves: ${path}` });
+        return json(
+            { error: `not a document this route serves: ${path}` },
+            { status: 404, headers: NO_STORE }
+        );
     }
     const full = join(into.hub, path);
-    if (escapes(full, into.hub)) return json(404, { error: 'the document is not inside the hub' });
+    if (escapes(full, into.hub))
+        return json(
+            { error: 'the document is not inside the hub' },
+            { status: 404, headers: NO_STORE }
+        );
     return answer(full, { root: HUB_ROOT, folder: dirname(path) }, into.config.text, held);
 }
 
@@ -517,14 +527,11 @@ export function renderManual(into: DocTarget, held = ''): Response {
 }
 
 /**
- * The whole endpoint: refuse a request from another origin, or answer the document it names. A
- * request carries one of three things: a project and one of that project's document names, a hub
- * path, or `manual`, which is the engine's own HELP.md and takes no path.
+ * The whole endpoint: the document the request names. A request carries one of three things: a
+ * project and one of that project's document names, a hub path, or `manual`, which is the engine's
+ * own HELP.md and takes no path.
  */
 export function handleDocs(request: Request, into: DocTarget): Response {
-    if (!sameOrigin(request, request.headers.get('host') ?? '')) {
-        return json(403, { error: 'the request did not come from this page' });
-    }
     const url = new URL(request.url);
     const held = request.headers.get('if-none-match') ?? '';
     if (url.searchParams.has(MANUAL_PARAM)) return renderManual(into, held);

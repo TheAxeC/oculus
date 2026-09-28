@@ -25,7 +25,8 @@ import {
     options,
     source,
     request,
-    answer
+    answer,
+    configOf
 } from './terminal-fixture.ts';
 
 afterAll(sweepScratch);
@@ -41,7 +42,7 @@ describe('GET /api/terminal after a write', () => {
         const started = await handleTerminal(
             request({ action: 'start', kind: 'claude', cwd: HERE, cols: 80, rows: 24 }),
             TOKEN,
-            { engine: ENGINE, run: driver.run }
+            { engine: ENGINE, configFor: configOf(ENGINE), run: driver.run }
         );
         expect(started.status).toBe(200);
         const terminal = (await answer(started)).terminal as { id: string };
@@ -67,7 +68,7 @@ describe('POST /api/terminal, a session oculus did not start', () => {
             const response = await handleTerminal(
                 request({ action, id: 'scratch', cols: 80, rows: 24 }),
                 TOKEN,
-                { engine: ENGINE, run: driver.run }
+                { engine: ENGINE, configFor: configOf(ENGINE), run: driver.run }
             );
             expect(response.status).toBe(400);
             expect(String((await answer(response)).error)).toContain('not started by oculus');
@@ -113,7 +114,12 @@ describe('POST /api/terminal, the resume action', () => {
         const response = await handleTerminal(
             request({ action: 'resume', tool: 'claude', id: SESSION, cols: 80, rows: 24 }),
             TOKEN,
-            { engine: ENGINE, run: driver.run, recordFor: source(running) }
+            {
+                engine: ENGINE,
+                configFor: configOf(ENGINE),
+                run: driver.run,
+                recordFor: source(running)
+            }
         );
         expect(response.status).toBe(400);
         expect((await answer(response)).error).toBe('sessions.resume_live');
@@ -137,7 +143,12 @@ describe('POST /api/terminal, the resume action', () => {
         const response = await handleTerminal(
             request({ action: 'resume', tool: 'claude', id: SESSION, cols: 100, rows: 30 }),
             TOKEN,
-            { engine: ENGINE, run: driver.run, recordFor: source(ended) }
+            {
+                engine: ENGINE,
+                configFor: configOf(ENGINE),
+                run: driver.run,
+                recordFor: source(ended)
+            }
         );
         expect(response.status).toBe(200);
         const body = await answer(response);
@@ -172,7 +183,12 @@ describe('POST /api/terminal, the resume action', () => {
         const response = await handleTerminal(
             request({ action: 'resume', tool: 'codex', id: SESSION, cols: 80, rows: 24 }),
             TOKEN,
-            { engine: ENGINE, run: driver.run, recordFor: source(ended) }
+            {
+                engine: ENGINE,
+                configFor: configOf(ENGINE),
+                run: driver.run,
+                recordFor: source(ended)
+            }
         );
         expect(response.status).toBe(200);
         const started = driver.calls.find((args) => args[0] === 'new-session') ?? [];
@@ -191,7 +207,12 @@ describe('POST /api/terminal, the resume action', () => {
         const response = await handleTerminal(
             request({ action: 'resume', tool: 'claude', id: SESSION }, 'stale'),
             TOKEN,
-            { engine: ENGINE, run: driver.run, recordFor: source(record(SESSION, { cwd: HERE })) }
+            {
+                engine: ENGINE,
+                configFor: configOf(ENGINE),
+                run: driver.run,
+                recordFor: source(record(SESSION, { cwd: HERE }))
+            }
         );
         expect(response.status).toBe(403);
         expect(driver.calls).toEqual([]);
@@ -206,6 +227,7 @@ describe('POST /api/terminal, the recover action', () => {
             TOKEN,
             {
                 engine: ENGINE,
+                configFor: configOf(ENGINE),
                 run: driver.run,
                 datasetIdsFor: () => ['mimic-iv'],
                 hubFor: () => HERE
@@ -229,6 +251,7 @@ describe('POST /api/terminal, the recover action', () => {
             TOKEN,
             {
                 engine: ENGINE,
+                configFor: configOf(ENGINE),
                 run: driver.run,
                 datasetIdsFor: () => ['mimic-iv'],
                 hubFor: () => HERE
@@ -248,6 +271,7 @@ describe('POST /api/terminal, the recover action', () => {
             TOKEN,
             {
                 engine: ENGINE,
+                configFor: configOf(ENGINE),
                 run: driver.run,
                 datasetIdsFor: () => ['mimic-iv'],
                 hubFor: () => HERE
@@ -262,7 +286,13 @@ describe('POST /api/terminal, the recover action', () => {
         const response = await handleTerminal(
             request({ action: 'recover', key: '--all', cols: 80, rows: 24 }),
             TOKEN,
-            { engine: ENGINE, run: driver.run, datasetIdsFor: () => ['--all'], hubFor: () => HERE }
+            {
+                engine: ENGINE,
+                configFor: configOf(ENGINE),
+                run: driver.run,
+                datasetIdsFor: () => ['--all'],
+                hubFor: () => HERE
+            }
         );
         expect(response.status).toBe(400);
         expect((await answer(response)).error).toBe('key is not a valid dataset key');

@@ -9,8 +9,9 @@ import { handleCalendarCallback } from '$lib/server/accounts/calendar/routes';
 import { textCatalog } from '$lib/data/sources/config';
 import type { RequestHandler } from './$types';
 
-export const GET: RequestHandler = ({ request, locals }) =>
-    handleCalendarCallback(request, {
+export const GET: RequestHandler = ({ request, locals }) => {
+    const config = locals.config().config;
+    return handleCalendarCallback(request, {
         accounts: locals.server.local.calendars,
         dir: locals.server.calendarDir,
         providerDir: locals.server.providerDir,
@@ -18,7 +19,8 @@ export const GET: RequestHandler = ({ request, locals }) =>
         fetcher: fetch,
         refresh: () => locals.server.calendar.refresh(),
         words: {
-            ok: textCatalog(locals.server.config)['calendar.callback_ok'],
-            bad: textCatalog(locals.server.config)['calendar.callback_bad']
+            ok: textCatalog(config)['calendar.callback_ok'],
+            bad: textCatalog(config)['calendar.callback_bad']
         }
     });
+};

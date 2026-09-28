@@ -87,12 +87,34 @@ describe('the engine argument', () => {
         });
     });
 
+    it('reads a relative directory, the last of two flags, and refuses a stray word', () => {
+        expect(parseEngineArgs(['--engine', 'x'], reader('/work'))).toEqual({ engine: '/work/x' });
+        expect(parseEngineArgs(['--engine=x'], reader('/work'))).toEqual({ engine: '/work/x' });
+        expect(parseEngineArgs(['--engine', 'a', '--engine', 'b'], reader('/work'))).toEqual({
+            engine: '/work/b'
+        });
+        expect(parseEngineArgs(['stray'], reader())).toEqual({
+            error: 'unknown argument: stray'
+        });
+    });
+
     it('refuses any other argument, naming it', () => {
         expect(parseEngineArgs(['--port', '8791'], reader())).toEqual({
             error: 'unknown argument: --port'
         });
         expect(parseEngineArgs(['/srv/engine'], reader())).toEqual({
             error: 'unknown argument: /srv/engine'
+        });
+    });
+
+    it('names the argument as it was typed, and reads a single-dash word as the directory', () => {
+        for (const typed of ['-abc', '--port=3', '--', '-']) {
+            expect(parseEngineArgs([typed], reader())).toEqual({
+                error: `unknown argument: ${typed}`
+            });
+        }
+        expect(parseEngineArgs(['--engine', '-x'], reader('/work'))).toEqual({
+            engine: '/work/-x'
         });
     });
 });

@@ -12,13 +12,13 @@ digraph layers {
     "routes";
     "src" [label="entry"];
     "files: assets" [label="assets"];
-    "routes to data" [label="11", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+    "routes to data" [label="10", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     "routes" -> "routes to data" [arrowhead=none];
     "routes to data" -> "data" [];
     "routes to files: assets" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     "routes" -> "routes to files: assets" [arrowhead=none];
     "routes to files: assets" -> "files: assets" [];
-    "routes to server" [label="50", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+    "routes to server" [label="49", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     "routes" -> "routes to server" [arrowhead=none];
     "routes to server" -> "server" [];
     "routes to shell" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
@@ -36,7 +36,7 @@ digraph layers {
     "routes to views" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     "routes" -> "routes to views" [arrowhead=none];
     "routes to views" -> "views" [];
-    "server to data" [label="114", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+    "server to data" [label="113", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     "server" -> "server to data" [arrowhead=none];
     "server to data" -> "data" [];
     "shell to state" [label="69", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
@@ -51,7 +51,7 @@ digraph layers {
     "src to routes" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     "src" -> "src to routes" [arrowhead=none];
     "src to routes" -> "routes" [];
-    "src to server" [label="6", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+    "src to server" [label="7", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     "src" -> "src to server" [arrowhead=none];
     "src to server" -> "server" [];
     "state to data" [label="62", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];

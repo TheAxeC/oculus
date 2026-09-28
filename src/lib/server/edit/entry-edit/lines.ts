@@ -1,9 +1,9 @@
 // Layer 2, server. Shared YAML line ranges and verified byte edits live here because every entry
 // writer must use the same source-position rules.
+import { isDeepStrictEqual } from 'node:util';
 import { isMap, isScalar, isSeq, parseDocument } from 'yaml';
 import type { Document, Node, Pair, Scalar, YAMLMap, YAMLSeq } from 'yaml';
 import {
-    deepEqual,
     isBlockMap,
     isMetalist,
     renderBlockMap,
@@ -241,7 +241,7 @@ export function verified(source: string, text: string, changes: Change[]): boole
     const wanted = asJs(source);
     if (after === undefined || wanted === undefined) return false;
     for (const change of changes) if (!applyChange(wanted, change)) return false;
-    return deepEqual(after, wanted);
+    return isDeepStrictEqual(after, wanted);
 }
 
 /** One expected change applied to the parsed source, or false when the path is not there. */

@@ -8,13 +8,17 @@ import { knownIds } from '$lib/server/git/deposit-routes';
 import { projectIds } from '$lib/server/sessions/stores/hooks';
 import type { RequestHandler } from './$types';
 
-const options = (server: App.Locals['server']) => ({
-    idsFor: () => knownIds(projectIds(server.hub), server.engine),
-    deposit: { plans: server.depositPlans, engine: server.engine }
-});
+const options = (locals: App.Locals) => {
+    const server = locals.server;
+    const config = locals.config().config;
+    return {
+        idsFor: () => knownIds(projectIds(server.hub), server.engine, config),
+        deposit: { plans: server.depositPlans, engine: server.engine, config }
+    };
+};
 
 export const GET: RequestHandler = ({ request, locals }) =>
-    handleDepositState(request, options(locals.server));
+    handleDepositState(request, options(locals));
 
 export const POST: RequestHandler = ({ request, locals }) =>
-    handleDeposit(request, locals.server.token, options(locals.server));
+    handleDeposit(request, locals.server.token, options(locals));

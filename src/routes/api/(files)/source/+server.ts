@@ -3,15 +3,23 @@
 //
 // The roots are the file browser's own list, folded by lib/server/files/roots.ts and by nothing
 // else: a folder the reader added in the file browser is read there and written here, so a file
-// that opens for editing is a file that saves. The configuration and the hub come off the request's
-// ServerContext, so one request reads the workspaces file once and no config file.
+// that opens for editing is a file that saves. The configuration is the request's own read and the
+// hub comes off its ServerContext, so one request reads the workspaces file once.
 
 import { browserRoots } from '$lib/server/files/roots';
 import { handleSource, handleSourceInfo } from '$lib/server/files/source';
 import type { RequestHandler } from './$types';
 
+/** The roots this request may name, over the configuration it read. */
+const roots = (locals: App.Locals) =>
+    browserRoots({
+        config: locals.config().config,
+        engine: locals.server.engine,
+        local: locals.server.local
+    });
+
 export const GET: RequestHandler = ({ request, url, locals }) =>
-    handleSourceInfo(request, url, browserRoots(locals.server));
+    handleSourceInfo(request, url, roots(locals));
 
 export const POST: RequestHandler = ({ request, locals }) =>
-    handleSource(request, locals.token, browserRoots(locals.server));
+    handleSource(request, locals.token, roots(locals));

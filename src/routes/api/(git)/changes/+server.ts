@@ -11,4 +11,7 @@ import { target } from '$lib/server/edit/writes';
 import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = ({ request, locals }) =>
-    handleChanges(request, target(locals.server.engine, locals.server).changes);
+    handleChanges(
+        request,
+        target(locals.server.engine, locals.config().config, locals.server).changes
+    );

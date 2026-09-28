@@ -239,18 +239,6 @@ describe('the document endpoint', () => {
         expect(response.status).toBe(404);
         rmSync(outside, { recursive: true, force: true });
     });
-
-    it('refuses a request from another origin', async () => {
-        const response = handleDocs(
-            request('project=alpha&name=README.md', {
-                origin: 'http://example.test',
-                'sec-fetch-site': 'cross-site'
-            }),
-            target()
-        );
-        expect(response.status).toBe(403);
-        expect(fields(await response.json()).error).toBe('the request did not come from this page');
-    });
 });
 
 describe('a document of the hub', () => {
@@ -454,14 +442,6 @@ describe('the manual', () => {
         expect(fields(await response.json()).html).toContain(
             '<h1 id="user-content-oculus">Oculus</h1>'
         );
-    });
-
-    it('refuses a request for the manual from another origin', () => {
-        const response = handleDocs(
-            request('manual=1', { origin: 'http://example.test', 'sec-fetch-site': 'cross-site' }),
-            target()
-        );
-        expect(response.status).toBe(403);
     });
 });
 

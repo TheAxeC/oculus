@@ -10,7 +10,7 @@ import { target } from '$lib/server/edit/writes';
 import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = ({ request, locals }) => {
-    const into = target(locals.server.engine);
+    const into = target(locals.server.engine, locals.config().config);
     return handleDocs(request, {
         hub: into.hub,
         engine: locals.server.engine,

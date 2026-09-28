@@ -2,7 +2,6 @@
 
 In flight:
 - Q99 (reviewed, repair round next: the terminal and Pages defects from Axel's look: Claude interrupted by clicks, scrolls and pastes; an exited terminal's tab left open; a new shell's prompt at the bottom; the Pages view's large text), in the first free slot.
-- Q79a (the library audit's server fixes): repair round refuted, landing next.
 Queued, in order:
 - Q100 (the Calendar's fixed strips cover the rows under them over a wallpaper, Z42 (a)).
 - Q101 (each Terminal tab a terminal panel of its own, Z40 (d), once Q99 has landed).

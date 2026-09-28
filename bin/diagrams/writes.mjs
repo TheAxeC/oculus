@@ -124,19 +124,59 @@ export function declarations(/** @type {string} */ text) {
     return found;
 }
 
-/** The condition of every `if` of a body followed by a 4xx answer: how a refusal is written. */
+/** The text from an opening bracket at `at` to its matching close, the brackets left out. */
+function bracketed(/** @type {string} */ text, /** @type {number} */ at) {
+    let depth = 1;
+    let end = at + 1;
+    while (end < text.length && depth > 0) {
+        if (text[end] === '(') depth += 1;
+        else if (text[end] === ')') depth -= 1;
+        end += 1;
+    }
+    return text.slice(at + 1, end - 1);
+}
+
+/** What follows the first comma of an argument list that no bracket holds, or nothing. */
+function secondArgument(/** @type {string} */ args) {
+    let depth = 0;
+    for (let at = 0; at < args.length; at += 1) {
+        if ('([{'.includes(args[at])) depth += 1;
+        else if (')]}'.includes(args[at])) depth -= 1;
+        else if (args[at] === ',' && depth === 0) return args.slice(at + 1);
+    }
+    return '';
+}
+
+/**
+ * The calls a refusal of a body makes, as the text they are written in: the condition of every
+ * `if` followed by a 4xx answer (`return json(body, { status: 4xx })`), and the call whose answer
+ * is handed back when it is a Response (`const read = await tokenedBody(...)` then `if (read
+ * instanceof Response) return read`), since that call is the check that refused.
+ */
 function refusals(/** @type {string} */ body) {
     const found = [];
     for (const match of body.matchAll(/\bif\s*\(/g)) {
-        let depth = 1;
-        let at = match.index + match[0].length;
-        while (at < body.length && depth > 0) {
-            if (body[at] === '(') depth += 1;
-            else if (body[at] === ')') depth -= 1;
-            at += 1;
+        const condition = bracketed(body, match.index + match[0].length - 1);
+        const after = body.slice(match.index + match[0].length + condition.length + 1);
+        const answer = /^\s*\{?\s*return\s+json\(/.exec(after);
+        if (answer !== null) {
+            const options = secondArgument(bracketed(after, answer[0].length - 1));
+            if (/\bstatus:\s*4\d\d\b/.test(options)) found.push(condition);
+            continue;
         }
-        if (/^\s*\{?\s*return\s+json\(\s*4\d\d/.test(body.slice(at))) {
-            found.push(body.slice(match.index + match[0].length, at - 1));
+        const handed = /^\s*([\w$]+)\s+instanceof\s+Response\s*$/.exec(condition);
+        if (
+            handed === null ||
+            !new RegExp(`^\\s*\\{?\\s*return\\s+${handed[1]}\\s*;`).test(after)
+        ) {
+            continue;
+        }
+        const made = new RegExp(
+            `(?:const|let)\\s+${handed[1]}\\s*=\\s*(?:await\\s+)?([\\w$.]+\\s*\\()`
+        ).exec(body);
+        if (made !== null) {
+            const open = made.index + made[0].length - 1;
+            found.push(`${made[1]}${bracketed(body, open)})`);
         }
     }
     return found;

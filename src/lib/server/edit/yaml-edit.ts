@@ -13,6 +13,7 @@
 // Nothing is thrown. A path this cannot write is a refusal with a reason, which is what the write
 // route hands back to the page.
 
+import { isDeepStrictEqual } from 'node:util';
 import { isMap, isScalar, isSeq, parseDocument, stringify } from 'yaml';
 import type { Node, Pair, Scalar, YAMLMap } from 'yaml';
 import { byKey } from '../../data/helpers/guards.ts';
@@ -116,24 +117,10 @@ function currentValue(data: Parsed, path: string[]): unknown {
     return isRecord(top) ? top[path[1]] : undefined;
 }
 
-export function deepEqual(a: unknown, b: unknown): boolean {
-    if (a === b) return true;
-    if (Array.isArray(a) || Array.isArray(b)) {
-        if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) return false;
-        return a.every((item, at) => deepEqual(item, b[at]));
-    }
-    if (isRecord(a) && isRecord(b)) {
-        const keys = Object.keys(a);
-        if (keys.length !== Object.keys(b).length) return false;
-        return keys.every((key) => key in b && deepEqual(a[key], b[key]));
-    }
-    return false;
-}
-
 /** Whether a value is the one the manifest already holds; absent and null are one thing. */
 export function sameValue(next: unknown, current: unknown): boolean {
     if (next === null || next === undefined) return current === null || current === undefined;
-    return deepEqual(next, current);
+    return isDeepStrictEqual(next, current);
 }
 
 /** The value as one of the shapes a write may carry, or undefined when it is none of them. */
@@ -653,7 +640,8 @@ export function renameKey(source: string, from: string, to: string): EditResult 
     wanted[to] = wanted[from];
     // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- a Map here would change the shape every reader of this record depends on
     delete wanted[from];
-    if (!deepEqual(after, wanted)) return refusal('the edit did not verify; nothing was written');
+    if (!isDeepStrictEqual(after, wanted))
+        return refusal('the edit did not verify; nothing was written');
     return { text, changed: [from], refused: [] };
 }
 
@@ -721,7 +709,7 @@ export function setFields(source: string, fields: Record<string, unknown>): Edit
     const wanted = safeParse(source);
     if (after !== null && wanted !== null) {
         for (const one of applied) expect(wanted, one.path, one.value);
-        if (deepEqual(after, wanted)) return { text, changed, refused };
+        if (isDeepStrictEqual(after, wanted)) return { text, changed, refused };
     }
     return {
         text: source,

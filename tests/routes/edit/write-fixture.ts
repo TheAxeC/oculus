@@ -23,6 +23,7 @@ import type { Change, ChangeLog } from '../../../src/lib/server/core/changes.ts'
 import type { WriteTarget } from '../../../src/lib/server/edit/writes.ts';
 import { present } from '../../fixtures/present.ts';
 import { scratchDir } from '../../fixtures/scratch.ts';
+import { careerRules } from '../../../src/lib/server/edit/writes/subtasks.ts';
 
 export const MANIFEST =
     'id: alpha\ntype: manuscript\ntitle: "A title"\nstatus:\n  line: "the line"\n';
@@ -79,7 +80,6 @@ export function target(): WriteTarget {
         join(linkedin, 'xx-route-idea.md'),
         '---\ntitle: "Route idea"\ncategory: research\ndate: 2026-09-12\n---\n\n'
     );
-    const real = portfolioConfigFrom(loadConfig(engineDir()).config, engineDir());
     // The overrides file is inside the same temporary directory, so a session write in this suite
     // can never reach ~/.oculus/sessions.json.
     const overrides = join(dir, 'sessions.json');
@@ -92,17 +92,31 @@ export function target(): WriteTarget {
     // ~/.oculus/changes.jsonl.
     const changes = join(dir, 'changes.jsonl');
     expect(resolve(changes).startsWith(resolve(dir) + sep)).toBe(true);
+    return targetOver(dir, { overrides, bookmarks, changes });
+}
+
+/**
+ * The write target over a synthetic hub whose overrides file, bookmarks and change log were
+ * checked to be inside it, over the engine's own configuration with one scanned folder.
+ */
+export function targetOver(
+    dir: string,
+    files: { overrides: string; bookmarks: string; changes: string },
+    keep = 500
+): WriteTarget {
+    const real = portfolioConfigFrom(loadConfig(engineDir()).config, engineDir());
     return {
         hub: dir,
         config: { ...real, scan: [{ dir: 'projects/manuscripts', type: 'manuscript' }] },
         engine: engineDir(),
-        overrides,
+        career: careerRules(loadConfig(engineDir()).config),
+        overrides: files.overrides,
         projects: () => [],
-        bookmarks,
+        bookmarks: files.bookmarks,
         behaviorFile: join(dir, 'behavior.yml'),
         layoutFile: join(dir, 'layout.yml'),
         glyphs: [],
-        changes: { file: changes, keep: 500, writes: fsWrites() }
+        changes: { file: files.changes, keep, writes: fsWrites() }
     };
 }
 
@@ -218,6 +232,7 @@ export function deckTarget(): WriteTarget {
         hub: dir,
         config: { ...real, deck: deckMapOf(DECK), deckFile: file },
         engine: engineDir(),
+        career: careerRules(loadConfig(engineDir()).config),
         projects: () => [slideProject('alpha', 'active'), slideProject('gamma', 'archive')],
         bookmarks: join(dir, 'bookmarks.yml'),
         behaviorFile: join(dir, 'behavior.yml'),

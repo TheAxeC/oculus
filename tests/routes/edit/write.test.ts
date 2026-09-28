@@ -120,19 +120,10 @@ describe('the write endpoint', () => {
         expect(manifestOf(into)).toBe(MANIFEST);
     });
 
-    it('refuses a request from another origin', async () => {
-        const into = target();
-        const foreign = { origin: 'http://evil.invalid', 'sec-fetch-site': 'cross-site' };
-        const response = await handleWrite(request(GOOD, foreign), TOKEN, into);
-        expect(response.status).toBe(403);
-        expect(await response.json()).toEqual({ error: 'the request did not come from this page' });
-        expect(manifestOf(into)).toBe(MANIFEST);
-    });
-
-    it('refuses a request that names no origin at all', async () => {
+    it('refuses a request that carries no token', async () => {
         const bare = new Request(URL_, {
             method: 'POST',
-            headers: { host: HOST, 'x-oculus-token': TOKEN },
+            headers: { host: HOST },
             body: JSON.stringify(GOOD)
         });
         expect((await handleWrite(bare, TOKEN, target())).status).toBe(403);

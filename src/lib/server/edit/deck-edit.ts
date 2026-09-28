@@ -10,6 +10,7 @@
 // compares it with the original: the two lists must be what was asked and every other key must be
 // what it was, or nothing is written. What the caller gets then is null, and the endpoint refuses.
 
+import { isDeepStrictEqual } from 'node:util';
 import { othersThan, readBack, setList } from './list-edit.ts';
 
 /** The map the two lists live under, and the two keys themselves. */
@@ -35,11 +36,6 @@ function mapOf(value: unknown): Record<string, unknown> {
     return value as Record<string, unknown>;
 }
 
-/** Whether two parsed values are the same data, which over YAML scalars and lists is their JSON. */
-function same(left: unknown, right: unknown): boolean {
-    return JSON.stringify(left ?? null) === JSON.stringify(right ?? null);
-}
-
 /**
  * Whether the edited source still says what the original said, with the two lists replaced. It is
  * the whole guard on the shapes the text edit cannot keep: the result must parse, the `deck:` map
@@ -52,8 +48,8 @@ function kept(source: string, edited: string, lists: DeckLists): boolean {
     const { before: first, after: second } = read;
     if (othersThan(first, [DECK]) !== othersThan(second, [DECK])) return false;
     const deck = mapOf(second.deck);
-    if (!same(deck[SELECTION], lists.selection)) return false;
-    if (!same(deck[ORDER], lists.slideOrder)) return false;
+    if (!isDeepStrictEqual(deck[SELECTION], lists.selection)) return false;
+    if (!isDeepStrictEqual(deck[ORDER], lists.slideOrder)) return false;
     const written = [SELECTION, ORDER];
     return othersThan(mapOf(first.deck), written) === othersThan(deck, written);
 }

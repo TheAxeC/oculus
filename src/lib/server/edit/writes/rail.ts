@@ -12,6 +12,7 @@
 // second and the rail redraws from it; there is no build step and nothing to invalidate.
 
 import { readFileSync, writeFileSync } from 'node:fs';
+import { isDeepStrictEqual } from 'node:util';
 import { parse } from 'yaml';
 import {
     arrangementKeys,
@@ -74,7 +75,7 @@ function kept(source: string, edited: string, wanted: RailEntry[]): boolean {
     const read = readBack(source, edited);
     if (read === null) return false;
     if (othersThan(read.before, [RAIL]) !== othersThan(read.after, [RAIL])) return false;
-    return JSON.stringify(read.after[RAIL] ?? []) === JSON.stringify(wanted);
+    return isDeepStrictEqual(read.after[RAIL] ?? [], wanted);
 }
 
 /**

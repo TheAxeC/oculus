@@ -6,7 +6,6 @@ import { rmSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { chatModel } from '../../../data/accounts/chat.ts';
 import {
-    loadConfig,
     loadLocalOrDefaults,
     textCatalog,
     type LocalConfig
@@ -27,9 +26,10 @@ export type ChatOptions = StartOptions & {
     /** A project in the latest portfolio snapshot. Tests provide the snapshot source they own. */
     projectFor?: (id: string) => ChatProject | null;
     /**
-     * The merged engine config. Tests provide a fixture without changing the checked-in catalog.
+     * The merged engine config as the request read it. Tests provide a fixture without changing the
+     * checked-in catalog.
      */
-    configFor?: () => Record<string, unknown>;
+    configFor: () => Record<string, unknown>;
     /** Machine-local paths carried by ServerContext. */
     localFor?: () => LocalConfig;
 };
@@ -81,7 +81,7 @@ export async function startChat(id: unknown, cols: unknown, rows: unknown, optio
     }
     const engine = options.engine;
     const local = options.localFor?.() ?? loadLocalOrDefaults(engine);
-    const config = options.configFor?.() ?? loadConfig(engine).config;
+    const config = options.configFor();
     const catalog = textCatalog(config);
     const project = typeof id === 'string' ? (options.projectFor ?? (() => null))(id) : null;
     if (typeof id === 'string' && project === null) {

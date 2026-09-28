@@ -108,14 +108,14 @@ describe('what an undo is said to have done', () => {
             // the outcome is worded from the catalog, so the endpoint's own word is not in it
             expect(outcome.said).not.toContain(word);
         }
-        // A refusal from before the undo branch, the origin or the token, reads as its own sentence
-        // around the reason, which is a sentence of the server's and not a word of the wire.
+        // A refusal from before the undo branch, the token's, reads as its own sentence around the
+        // reason, which is a sentence of the server's and not a word of the wire.
         const upstream = undoSaid(
-            { ok: false, changed: [], error: 'the request did not come from this page' },
+            { ok: false, changed: [], error: 'the write token is missing or stale' },
             'x'
         );
         expect(upstream.said).toBe(
-            catalog['history.refused'].replace('{0}', 'the request did not come from this page')
+            catalog['history.refused'].replace('{0}', 'the write token is missing or stale')
         );
     });
 

@@ -3,6 +3,8 @@
 // ticks. A serialized queue per account keeps a route request and a scheduled tick from
 // overlapping.
 
+import { setTimeout as delay } from 'node:timers/promises';
+import { stripVTControlCharacters } from 'node:util';
 import type { UsageAccountConfig, UsageRefresher } from '../../../data/model/index.ts';
 import { usageAccountLabel } from '../../../data/sources/config.ts';
 import { sendKeysArgs, startArgs, USAGE_PREFIX, type Runner } from '../pty/sessions.ts';
@@ -94,11 +96,6 @@ function visibleCaptureArgs(account: UsageAccountConfig): string[] {
     return ['capture-pane', '-p', '-t', usageSessionName(account)];
 }
 
-function plain(screen: string): string {
-    // eslint-disable-next-line no-control-regex
-    return screen.replace(/\u001b\[[0-?]*[ -/]*[@-~]/g, '');
-}
-
 /**
  * Claude Code draws its footer under the prompt, so the prompt is one of the last lines, not the
  * last.
@@ -106,7 +103,7 @@ function plain(screen: string): string {
 export const PROMPT_TAIL_LINES = 8;
 
 export function hasPrompt(screen: string): boolean {
-    const tail = plain(screen)
+    const tail = stripVTControlCharacters(screen)
         .split('\n')
         .map((line) => line.trim())
         .filter(Boolean)
@@ -120,22 +117,18 @@ export function hasPrompt(screen: string): boolean {
  * a refresh inside that window changes no file and the figures stay the cached ones.
  */
 export function sheetShown(screen: string): boolean {
-    return /current week/i.test(plain(screen));
+    return /current week/i.test(stripVTControlCharacters(screen));
 }
 
 export function paneReason(screen: string): UsageRefreshReason {
     // A message on the screen names the cause even when a prompt follows it.
-    const text = plain(screen).toLowerCase();
+    const text = stripVTControlCharacters(screen).toLowerCase();
     if (/log[ -]?in|authenticate|authentication/.test(text)) return 'login_required';
     if (/usage limit|rate limit|limit reached|reached your .*limit/.test(text)) {
         return 'usage_limit';
     }
     if (/offline|no internet|network|connection|connect to/.test(text)) return 'offline';
     return hasPrompt(screen) ? 'refresh_failed' : 'prompt_missing';
-}
-
-function wait(milliseconds: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
 
 /**
@@ -150,7 +143,7 @@ export function watchUsageRefresh(options: UsageRefreshOptions): UsageRefreshWat
     const accounts = options.accounts.filter((account) => account.tool === 'claude');
     const exec = options.run ?? run;
     const now = options.now ?? Date.now;
-    const pause = options.pause ?? wait;
+    const pause = options.pause ?? delay;
     const onChange =
         options.onChange ??
         (() => {

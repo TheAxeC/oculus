@@ -46,7 +46,8 @@ import {
     request,
     command,
     filled,
-    answer
+    answer,
+    configOf
 } from './terminal-fixture.ts';
 
 afterAll(sweepScratch);
@@ -67,7 +68,7 @@ describe('POST /api/terminal, the task action', () => {
             request({ action: 'task', kind, cols: 92, rows: 27 }),
             TOKEN,
             config === undefined
-                ? { engine: TASK_ENGINE, run: driver.run }
+                ? { engine: TASK_ENGINE, run: driver.run, configFor: configOf(TASK_ENGINE) }
                 : { engine: TASK_ENGINE, run: driver.run, configFor: () => config }
         );
         expect(response.status).toBe(200);
@@ -192,8 +193,7 @@ describe('POST /api/terminal, the task action', () => {
             ),
             'utf8'
         );
-        expect(route).toContain('configFor: () => loadConfig(server.engine).config');
-        expect(route).not.toContain('configFor: () => server.config');
+        expect(route).toContain('configFor: () => locals.config().config');
     });
 
     it('carries tasks.skip_permissions on the wire, off in the checked-in configuration', () => {
@@ -211,7 +211,7 @@ describe('POST /api/terminal, the task action', () => {
         const response = await handleTerminal(
             request({ action: 'task', kind: 'audit', cols: 80, rows: 24 }),
             TOKEN,
-            { engine: TASK_ENGINE, run: driver.run }
+            { engine: TASK_ENGINE, run: driver.run, configFor: configOf(TASK_ENGINE) }
         );
         expect(response.status).toBe(400);
         expect(driver.calls).toEqual([]);
@@ -222,7 +222,11 @@ describe('POST /api/terminal, the task action', () => {
         const response = await handleTerminal(
             request({ action: 'task', kind: 'scout', cols: 80, rows: 24 }),
             TOKEN,
-            { engine: TASK_DEFAULT_ENGINE, run: driver.run }
+            {
+                engine: TASK_DEFAULT_ENGINE,
+                run: driver.run,
+                configFor: configOf(TASK_DEFAULT_ENGINE)
+            }
         );
         expect(response.status).toBe(200);
         const started = driver.calls.find((args) => args[0] === 'new-session') ?? [];
@@ -320,33 +324,6 @@ describe('POST /api/terminal, the latex action', () => {
             expect((await answer(response)).error).toBe('main is not a main file of this project');
             expect(driver.calls).toEqual([]);
         }
-    });
-
-    it('names the terminal from the engine catalog when the caller hands it no config', async () => {
-        const driver = tmux();
-        const routed = latexOptions(driver);
-        delete routed.configFor;
-        const response = await handleTerminal(
-            request({
-                action: 'latex',
-                id: 'alpha',
-                main: 'main.tex',
-                step: 'build',
-                cols: 80,
-                rows: 24
-            }),
-            TOKEN,
-            routed
-        );
-        expect(response.status).toBe(200);
-        const terminal = (await answer(response)).terminal as { name: string };
-        const engine = textCatalog(loadConfig(engineDir()).config);
-        expect(terminal.name).toBe(
-            engine['server.latex.name']
-                .replace('{0}', 'build')
-                .replace('{1}', 'alpha')
-                .replace('{2}', 'main.tex')
-        );
     });
 
     it('refuses a project folder that would leave the hub, before anything runs', async () => {

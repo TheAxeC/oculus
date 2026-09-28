@@ -1,6 +1,6 @@
-// GET /api/latex: the origin check, the id checked against the snapshot, and the answer for one
-// project. The hub is a synthetic folder under the system temporary directory and the snapshot is
-// the case's own, so nothing of the real hub is read and nothing at all is written outside it.
+// GET /api/latex: the id checked against the snapshot, and the answer for one project. The hub is a
+// synthetic folder under the system temporary directory and the snapshot is the case's own, so
+// nothing of the real hub is read and nothing at all is written outside it.
 
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -39,9 +39,9 @@ const TARGET: LatexTarget = {
     project: (id) => (id === 'alpha' ? { folder: FOLDER } : null)
 };
 
-function request(query: string, origin = 'same-origin'): Request {
+function request(query: string): Request {
     return new Request(`http://${HOST}/api/latex${query}`, {
-        headers: { host: HOST, 'sec-fetch-site': origin }
+        headers: { host: HOST, 'sec-fetch-site': 'same-origin' }
     });
 }
 
@@ -50,13 +50,6 @@ async function answer(response: Response): Promise<Record<string, unknown>> {
 }
 
 describe('GET /api/latex', () => {
-    it('refuses a request from another origin', async () => {
-        const response = handleLatex(request('?id=alpha', 'cross-site'), TARGET);
-
-        expect(response.status).toBe(403);
-        expect((await answer(response)).error).toBe('the request did not come from this page');
-    });
-
     it('refuses a request naming no project', async () => {
         const response = handleLatex(request(''), TARGET);
 
