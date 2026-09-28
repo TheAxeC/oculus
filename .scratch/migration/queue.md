@@ -1,9 +1,9 @@
 /plan-orchestration oculus/migration
 
 In flight:
-- Q92 (inbox and calendar): reviewed; repair round 1 sent.
+- Q92 (inbox and calendar): repair round 1 answered; its refutation next.
 - Q79a (the library audit's server fixes): building.
-- Q79c (the library audit's page fixes, with the 11 raw buttons): its brief is being written, in the slot Q89 left.
+- Q79c (the library audit's page fixes, with the 11 raw buttons): building.
 Queued, in order:
 - Q79d, Q87 and Q81 (the shared helpers; the import-graph checks on dependency-cruiser; menus, context menus, tooltips and dialogs on bits-ui).
 - Q79b (the tests, runs alone).

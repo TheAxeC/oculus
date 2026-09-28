@@ -27,7 +27,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:      # Q92 of set 2 in repair round 1; Q79a of set 3 building; one slot free for Q79c, its brief being written.
+dispatch:      # Q92 of set 2, repair round 1 answered, its refutation next; Q79a and Q79c of set 3 building.
 - step: Q92
   executor: agent
   worker: claude:opus
@@ -51,6 +51,17 @@ dispatch:      # Q92 of set 2 in repair round 1; Q79a of set 3 building; one slo
   landing: not-started
   round: 0
   shared_paths: with Q92, server/accounts/connect/actions.ts (Q79a replaces its hand JSON answers, Q92 changes its add and remove rows: different lines, a hand merge), routes/api/(accounts)/calendar and mail route files (Q79a changes the config read and drops the origin calls, Q92 the ics provider: different lines), server/root/context.ts (Q79a may drop the config field, Q92 adds the ics account wiring: different lines), docs/diagrams (a rerun), DESIGN.md (the Auth paragraph against Q92's lines 134 and 298)
+- step: Q79c
+  executor: agent
+  worker: claude:opus
+  session_id: a0a06c199b2d9544d
+  worktree: .agents/worktrees/Q79c
+  base: 2b7f36df
+  launched: 2026-09-28
+  report: agents/reviews/Q79c-report.md
+  landing: not-started
+  round: 0
+  shared_paths: with Q79a, server/content/docs.ts (Q79a changes the json call in answer() and drops the origin check in handleDocs; Q79c changes figures(), renderManual() and adds parts to the body in answer(): a hand merge of answer()); with Q92, views/system/help/manual.ts (Q92 decodes attribute() through entities, Q79c removes attribute() with the regex cut: the landing takes Q79c's file) and tests/views/system/help.test.ts (different cases); with both, docs/diagrams (a rerun of npm run diagrams), DESIGN.md and HELP.md (different sentences)
 ```
 
 ## The standing demands (from Axel, in force)
@@ -399,6 +410,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-09-28. Q79a and Q79c launched (the library audit's server and page halves), beside Q92, whose repair round 1 is answered. Q79c's plan line corrected at `/spec`: the Config view holds no highlight.js to drop, so the item is its YAML drawn through the highlighter, as the audit found. Next: `/refute` Q92 over round 1.
 - 2026-09-28. Q89 landed through /spec, /refute and /land (the terminal as VS Code's terminal, Split in the row's own folder by Z39 (a)); two repair rounds, each refuted again; four fixes at landing, the last review's findings. Verify on main: `verify: 6 commands passed` (Test Files 343 passed, Tests 5408 passed). In flight: Q92 (repair round 1). Next: `/spec` Q79a and Q79c.
 - 2026-09-28. Q80 landed through /spec, /refute and /land (line counts on the Status view with cloc); one repair round, refuted again; five fixes at landing, the round review's findings. Verify on main: `verify: 6 commands passed` (Test Files 342 passed, Tests 5370 passed). In flight: Q89 (the review over round 2) and Q92 (its first review). Next: `/spec` Q79a.
 - 2026-09-28. Q98 landed through /spec, /refute and /land (the four look findings Z28 to Z31: the Lit Watch link cut with an ellipsis, slash-command session titles, catalog code words drawn as code, the one-day Calendar footer); one repair round, refuted again, one fix at landing (the report's open items). Verify on main: `verify: 6 commands passed` (Test Files 339 passed, Tests 5325 passed). Axel ruled Z38 (a): the queue regrouped, a set only an order. In flight: Q89 (review read, repair round next) and Q80 (building). Next: `/spec` Q92.
