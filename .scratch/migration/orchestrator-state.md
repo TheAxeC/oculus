@@ -36,6 +36,8 @@ dispatch:      # set 1 of the queue: Q95 + Q94 + Q97 (Z34 (a)); then Q98 + Q92 +
   base: 4120beb7
   launched: 2026-09-28
   report: agents/reviews/Q94-report.md
+  reviewer: claude:opus af7089b8538396f6e
+  reviewer_report: agents/reviews/Q94-refuter.md
   landing: not-started
   round: 0
 - step: Q95
@@ -46,6 +48,8 @@ dispatch:      # set 1 of the queue: Q95 + Q94 + Q97 (Z34 (a)); then Q98 + Q92 +
   base: c53af148
   launched: 2026-09-28
   report: agents/reviews/Q95-report.md
+  reviewer: claude:opus a82096b221e3d70f8
+  reviewer_report: agents/reviews/Q95-refuter.md
   landing: not-started
   round: 0
 - step: Q97
@@ -56,10 +60,12 @@ dispatch:      # set 1 of the queue: Q95 + Q94 + Q97 (Z34 (a)); then Q98 + Q92 +
   base: 4e33d99e
   launched: 2026-09-28
   report: agents/reviews/Q97-report.md
+  reviewer: claude:opus ad765807871077cac
+  reviewer_report: agents/reviews/Q97-refuter.md
   landing: not-started
-  round: 0
+  round: 1   # sent 2026-09-28 from worktree commit 4da494a5; agents/briefs/Q97-round1-sent.md
   shared_paths:
-  - tools/oculus/tests/views/system/workbench/settings.test.ts: Q95 adds rail cases at the end of the rail half and Q97 changes the row count at line 98; the second landing also moves Q95's added-row count from 12 to 13, one number
+  - tools/oculus/tests/views/system/workbench/settings.test.ts: Q95 adds rail cases inside the rail half and Q97 changes the row count at line 98; the second landing also moves the three places of Q95's Add case that count the saved rail (toHaveLength 12, markOf 11, rail_why_label 12) by one
   - tools/oculus/HELP.md and tools/oculus/DESIGN.md: Q94 writes HELP.md 127, 240, 242 and DESIGN.md 116, 124, 125; Q97 writes HELP.md 19, 68 and DESIGN.md 269, 282; different lines
   - tools/oculus/docs/diagrams/: Q94 changes them and Q97 only if its comments move them; a rerun of npm run diagrams on the second landing
 ```
