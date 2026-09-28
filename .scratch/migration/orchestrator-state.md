@@ -27,7 +27,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:      # Q101 under review; Q86 building.
+dispatch:      # Q101 in repair round 1; Q86 building.
 - step: Q101
   executor: agent
   worker: claude:opus
@@ -38,8 +38,8 @@ dispatch:      # Q101 under review; Q86 building.
   report: agents/reviews/Q101-report.md
   landing: not-started
   builder_usage: 141 tool uses, 146k tokens, 40 min, with the cases hand-back
-  reviewer_report: agents/reviews/Q101-refuter.md (reviewer a1c2f1a2de69bc190, running)
-  round: 0
+  reviewer_report: agents/reviews/Q101-refuter.md (reviewer a1c2f1a2de69bc190, 65 tool uses, 242k tokens, 15 min; it ran one `git -C . diff` outside the allowed set)
+  round: 1   # sent 2026-09-29 from 55bea404, agents/briefs/Q101-round1-sent.md; cases ruled in agents/briefs/Q101-cases.md
   shared_paths: with Q79d, views/sessions/session-list/TerminalRows.svelte (Q79d its nameOf import and the folder line, Q101 the row press and the menu pick: different lines, a hand merge), DESIGN.md (Q79d lines 169 and 305, Q101 lines 266 and 273 and the terminal sentences: different lines), docs/diagrams (a rerun of npm run diagrams)
 - step: Q86
   executor: agent

@@ -2,7 +2,7 @@
 
 In flight:
 - Q86 (the Map laid out by Graphviz's neato in the page): building.
-- Q101 (each Terminal tab a terminal panel of its own, Z40 (d)): built, review next.
+- Q101 (each Terminal tab a terminal panel of its own, Z40 (d)): repair round 1.
 Queued, in order:
 - Q87 (the import-graph checks on dependency-cruiser, the duplication check on jscpd): stopped at /spec, waiting on Axel's ruling Z45.
 - Q81 (menus, context menus, tooltips and dialogs on bits-ui), once Q101 has landed, since both change the terminal views.
