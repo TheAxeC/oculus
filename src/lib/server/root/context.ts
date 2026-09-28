@@ -301,6 +301,7 @@ export function createServerContext(
     // The calendar poller reads the credential files of the folder the machine's own file names, so
     // a served test run is pointed at a directory of its own and never at the reader's. The client
     // halves are the provider folder's under this process's HOME, which a served run makes its own.
+    // The sentences an account's row may carry are the catalog's, as the callback's are.
     const calendarDir = local.calendarDir ?? defaultConnectDir('calendar');
     const providerDir = defaultProviderDir();
     const calendar = make.watchCalendar(hub, {
@@ -309,7 +310,12 @@ export function createServerContext(
         providerDir,
         pollMin: calendarConfig.pollMin,
         daysBack: calendarConfig.daysBack,
-        daysAhead: calendarConfig.daysAhead
+        daysAhead: calendarConfig.daysAhead,
+        words: {
+            icsNoLink: textCatalog(config)['calendar.ics_no_link'],
+            icsFailed: textCatalog(config)['calendar.ics_failed'],
+            timedOut: textCatalog(config)['accounts.timed_out']
+        }
     });
 
     // The mail poller reads the credential files and the triage notes of the folder the machine's
@@ -320,7 +326,8 @@ export function createServerContext(
         dir: mailDir,
         providerDir,
         pollMin: mailConfig.pollMin,
-        perSignal: mailConfig.perSignal
+        perSignal: mailConfig.perSignal,
+        words: { timedOut: textCatalog(config)['accounts.timed_out'] }
     });
 
     let closed = false;

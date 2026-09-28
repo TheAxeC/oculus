@@ -209,6 +209,12 @@ describe('plainTitle', () => {
             'Questions & collaborations welcome'
         );
     });
+
+    it('decodes a named, a no-break and a numeric escape, the no-break space folded to a plain one', () => {
+        expect(plainTitle('Tom&nbsp;&amp;&nbsp;Jerry&#39;s <em>deck</em>')).toBe(
+            "Tom & Jerry's deck"
+        );
+    });
 });
 
 describe('slideSources', () => {

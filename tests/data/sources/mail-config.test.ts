@@ -91,6 +91,10 @@ describe('the mail rows of the machine own file', () => {
             'mail[0].provider must be google or microsoft'
         ],
         [
+            'mail:\n  - { provider: ics, label: work }\n',
+            'mail[0].provider must be google or microsoft'
+        ],
+        [
             'mail:\n  - { provider: google }\n',
             'mail[0].label must be lowercase letters, digits and dashes'
         ],

@@ -7,12 +7,12 @@ import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { homedir } from 'node:os';
 import { parse } from 'yaml';
 import type {
+    AccountProvider,
     CalendarAccountConfig,
-    ConnectAccountConfig,
     MailAccountConfig,
     UsageAccountConfig
 } from '../../model/index.ts';
-import { isAccountLabel, isProvider } from '../../accounts/connect.ts';
+import { isAccountLabel, isCalendarProvider, isProvider } from '../../accounts/connect.ts';
 import { configDir } from './folder.ts';
 
 export type LocalConfig = {
@@ -168,12 +168,18 @@ function usageAccounts(value: unknown, file: string, base: string): UsageAccount
 }
 
 /**
- * The rows of `calendars:` or `mail:`: one provider and one label each, the label unique per
- * provider inside its own list. A bad row throws the sentence naming the file, the list and the
- * row, as the accounts above do, so a machine whose own file is wrong is told at the start rather
- * than served an empty view.
+ * The rows of `calendars:` or `mail:`: one provider the list takes and one label each, the label
+ * unique per provider inside its own list. `calendars:` takes the two providers that sign in and a
+ * published link, `ics`; `mail:` takes the two alone. A bad row throws the sentence naming the
+ * file, the list, the row and the providers the list takes, as the accounts above do, so a machine
+ * whose own file is wrong is told at the start rather than served an empty view.
  */
-function connectAccounts(value: unknown, file: string, list: string): ConnectAccountConfig[] {
+function connectAccounts<P extends AccountProvider>(
+    value: unknown,
+    file: string,
+    list: string,
+    takes: { accepts: (value: unknown) => value is P; named: string }
+): { provider: P; label: string }[] {
     if (!Array.isArray(value)) throw new Error(`${file}: ${list} must be a list`);
     const seen = new Set<string>();
     return value.map((item, index) => {
@@ -182,8 +188,8 @@ function connectAccounts(value: unknown, file: string, list: string): ConnectAcc
         }
         const row = item as Record<string, unknown>;
         const provider = row.provider;
-        if (!isProvider(provider)) {
-            throw new Error(`${file}: ${list}[${index}].provider must be google or microsoft`);
+        if (!takes.accepts(provider)) {
+            throw new Error(`${file}: ${list}[${index}].provider must be ${takes.named}`);
         }
         if (!isAccountLabel(row.label)) {
             throw new Error(
@@ -261,9 +267,17 @@ function applyLocal(
     }
     if (record.accounts !== undefined) config.accounts = usageAccounts(record.accounts, file, base);
     if (record.calendars !== undefined) {
-        config.calendars = connectAccounts(record.calendars, file, 'calendars');
+        config.calendars = connectAccounts(record.calendars, file, 'calendars', {
+            accepts: isCalendarProvider,
+            named: 'google, microsoft or ics'
+        });
     }
-    if (record.mail !== undefined) config.mail = connectAccounts(record.mail, file, 'mail');
+    if (record.mail !== undefined) {
+        config.mail = connectAccounts(record.mail, file, 'mail', {
+            accepts: isProvider,
+            named: 'google or microsoft'
+        });
+    }
     // The machine-local state paths are absent unless the machine names them, so a config that says
     // nothing about them leaves the defaults to the modules that own them.
     for (const [key, field] of [

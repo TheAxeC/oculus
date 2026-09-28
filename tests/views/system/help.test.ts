@@ -157,6 +157,13 @@ describe('the diagrams in the manual', () => {
         expect(part).toEqual({ kind: 'diagram', name: 'w', alt: 'a <b> "c" \'d\'' });
     });
 
+    it('audits that an ampersand and an apostrophe written as entities in the alt text read as written', () => {
+        const [part] = splitManual(
+            '<p><img src="docs/diagrams/w.svg" alt="Reader &amp; writer&#39;s view"></p>'
+        );
+        expect(part).toEqual({ kind: 'diagram', name: 'w', alt: "Reader & writer's view" });
+    });
+
     it('audits that the manual shows every diagram the generator writes, each one committed', async () => {
         const answer = renderManual({
             hub: engineDir(),

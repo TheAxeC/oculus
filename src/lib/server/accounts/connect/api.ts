@@ -8,7 +8,7 @@
 
 import { isMap, str } from '../../../data/helpers/guards.ts';
 import type { ConnectProvider } from '../../../data/model/index.ts';
-import type { Fetcher } from './oauth.ts';
+import { ReadTimeout, type Fetcher } from './oauth.ts';
 
 /**
  * The error code a provider put in its refusal, or nothing when it put none there. Google names it
@@ -29,11 +29,15 @@ export function refusalLine(provider: ConnectProvider, status: number, body: unk
     return `${provider}: ${status}${code === '' ? '' : ` ${code}`}`;
 }
 
-/** Read one answer as a parsed object, saying whether it could be read at all. */
+/**
+ * Read one answer as a parsed object, saying whether it could be read at all. A body the read
+ * timeout cut off is thrown on, so the account says it had no answer in time.
+ */
 async function parsed(response: Response): Promise<{ read: boolean; body: unknown }> {
     try {
         return { read: true, body: await response.json() };
-    } catch {
+    } catch (error) {
+        if (error instanceof ReadTimeout) throw error;
         return { read: false, body: null };
     }
 }

@@ -22,7 +22,9 @@
     //
     // Everything drawn here comes from the `inbox` channel, so the view holds no copy of the plate
     // and a publish redraws it. Search and the triaged disclosure are this view instance's own
-    // state; the note, the answer and the archive are writes through the mail endpoint.
+    // state; the note, the answer and the archive are writes through the mail endpoint. Each
+    // section is one column of cards, read top to bottom, and a card names its account only while
+    // more than one mail account is configured.
 
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
@@ -121,6 +123,7 @@
             id={thread.id}
             cursor={cursor === thread.id}
             account={labelOf(thread)}
+            accountTag={(data?.accounts.length ?? 0) > 1}
             busy={busy(thread)}
             draftOpen={held.drafts.includes(thread.id)}
             onshowdraft={showDraft}
@@ -233,9 +236,10 @@
         font-size: var(--fs-lg);
     }
 
+    /* One column, so the cards read top to bottom in the order the section sorted them. */
     .cards {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(min(340px, 100%), 1fr));
+        display: flex;
+        flex-direction: column;
         gap: 8px;
         margin-top: 8px;
     }

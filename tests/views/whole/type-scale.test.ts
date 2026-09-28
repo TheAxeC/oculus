@@ -67,9 +67,8 @@ const VIEWS: Record<string, string> = {
     'system/help/Help.svelte': '',
     'system/history/History.svelte':
         '.when=fs-sm | .kind=fs-xs | .file, .lbl=fs-sm | .what, .value=fs-md | .empty, .said=fs-md | .raw=fs-sm',
-    'personal/calendar/Calendar.svelte': 'footer=fs-sm',
+    'personal/calendar/Calendar.svelte': '.period=fs-md | footer=fs-sm | .grid :global(.ec)=fs-sm',
     'shared/accounts/AccountList.svelte': '.provider, .when, .hint=fs-sm | .said=fs-sm',
-    'personal/calendar/Agenda.svelte': 'h3=fs-sm | .where=fs-sm',
     'shared/accounts/ConnectorHead.svelte': '.meta=fs-sm',
     'system/hpc/Hpc.svelte': 'footer=fs-sm',
     'system/usage/Usage.svelte':
@@ -136,7 +135,7 @@ const VIEWS: Record<string, string> = {
     'personal/account-setup/GoogleSteps.svelte': '.note=fs-sm',
     'personal/account-setup/HalfForm.svelte': '.said=fs-sm',
     'personal/account-setup/MicrosoftSteps.svelte': '.note=fs-sm',
-    'feeds/inbox/InboxCard.svelte': '.age=fs-sm | .sub=fs-md | .snippet=fs-sm',
+    'feeds/inbox/InboxCard.svelte': '.address=fs-sm | .age=fs-sm | .subject=fs-md | .snippet=fs-sm',
     'feeds/leads/LeadCard.svelte': '.deadline=fs-sm | .sub=fs-md',
     'feeds/linkedin/PostCard.svelte': '.date=fs-sm',
     'structure/map/Controls.svelte': '.controls=fs-sm | .filters=fs-sm',

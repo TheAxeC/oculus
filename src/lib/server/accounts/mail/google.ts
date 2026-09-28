@@ -2,13 +2,15 @@
 //
 // Four calls per round: one thread listing per plate signal, then one metadata read per candidate.
 // The metadata read asks for the headers alone, so no message body is ever fetched; what the
-// payload carries of a message is the thread snippet Gmail puts in its own list.
+// payload carries of a message is the thread snippet Gmail puts in its own list, which Gmail writes
+// with HTML entities and which is decoded here so the payload holds the words themselves.
 //
 // The two writes are a reply on the thread and an archive. A reply is one `messages/send` of a raw
 // RFC 2822 message carrying the thread's own `In-Reply-To` and `References`, so the answer lands in
 // the thread rather than beside it; no draft is ever created, and `users.drafts` is not called by
 // anything in this file. An archive is one `threads/modify` taking the `INBOX` label off.
 
+import { decodeHTML } from 'entities';
 import { str } from '../../../data/helpers/guards.ts';
 import { getJson, httpsLink, postJson, rowsOf } from '../connect/api.ts';
 import {
@@ -100,7 +102,7 @@ function threadOf(id: string, body: Record<string, unknown>): PlateThread | null
         replyTo: replyTo(newest),
         subject: header(newest, 'subject'),
         received: receivedAt(newest),
-        snippet: str(newest.snippet) ?? str(body.snippet) ?? '',
+        snippet: decodeHTML(str(newest.snippet) ?? str(body.snippet) ?? ''),
         messages: messages.length,
         ...(link === undefined ? {} : { url: link }),
         ownNewest: carried.includes('SENT'),

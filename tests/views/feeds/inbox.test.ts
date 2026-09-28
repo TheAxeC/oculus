@@ -4,6 +4,8 @@
 // Nothing here reaches a provider or a route: the payload is put on the channel by hand and the two
 // writes are asserted through the markup they are pressed from.
 
+import { readFileSync } from 'node:fs';
+import { compile } from 'svelte/compiler';
 import { render } from 'svelte/server';
 import { beforeEach, describe, expect, it } from 'vitest';
 import Inbox from '../../../src/lib/views/feeds/inbox/Inbox.svelte';
@@ -140,29 +142,27 @@ describe('the Inbox view', () => {
         expect(body).not.toContain('data-inbox="google-work-done"');
     });
 
-    it('draws one card with its note, its snippet, its age, its account and its link', () => {
+    it('draws one card with its note, its snippet, its age and its two controls', () => {
         serve();
         const reply = card(draw('inbox-card'), 'reply');
-        expect(reply).toContain('<strong>Ada</strong>');
+        // The sender is plain text: the Markdown of a From line is drawn as its own characters.
+        expect(reply).toContain('**Ada**');
+        // A mail header is not Markdown, so its asterisks are never turned into bold.
+        expect(reply).not.toContain('<strong>Ada</strong>');
         expect(reply).toContain('reply subject');
         expect(reply).toContain('Reply <strong>needed</strong>');
         expect(reply).toContain('the snippet of reply');
-        expect(reply).toContain(catalog['inbox.reply']);
-        expect(reply).toContain('work');
-        expect(reply).toContain(catalog['inbox.show_draft']);
         // the draft editor is closed, so the draft's own text is not drawn
         expect(reply).not.toContain('Beste Ada');
-        expect(reply).toContain('target="_blank"');
-        expect(reply).toContain(catalog['inbox.open_provider']);
-        expect(reply).toContain('href="https://mail.google.com/mail/u/0/#inbox/reply"');
+        expect(hasAction(reply, catalog['inbox.show_draft'])).toBe(true);
+        expect(hasAction(reply, catalog['inbox.open_provider'])).toBe(true);
         expect(hasAction(reply, catalog['inbox.triaged'])).toBe(true);
         expect(reply).toContain(catalog['inbox.triage_tip']);
     });
 
-    it('marks an unsorted thread as unsorted and says how many messages it holds', () => {
+    it('says how many messages an unsorted thread holds', () => {
         serve();
         const unsorted = card(draw('inbox-unsorted'), 'unsorted');
-        expect(unsorted).toContain(catalog['inbox.unsorted']);
         expect(unsorted).toContain(catalog['inbox.messages'].replace('{0}', '3'));
     });
 
@@ -336,5 +336,114 @@ describe('the Inbox view', () => {
         expect(body).toContain(catalog['inbox.error']);
         expect(body).toContain(catalog['inbox.retrying'].replace('{0}', '2'));
         expect(body).toContain('google: 401 invalid_grant');
+    });
+});
+
+/** The markup of one card's heading, which is where the title and the sender's address are. */
+function heading(markup: string): string {
+    return /<h3[^>]*class="title[^"]*"[^>]*>[\s\S]*?<\/h3>/.exec(markup)?.[0] ?? '';
+}
+
+/** Whether a card draws a tag whose words are exactly these. */
+function hasTag(markup: string, words: string): boolean {
+    return new RegExp(
+        `class="tag[^"]*"[^>]*>(?:<!--[^>]*-->|\\s)*<span class="label[^"]*">${words}</span>`
+    ).test(markup);
+}
+
+/** The markup of a card's control row, the meta row under its title. */
+function controlRow(markup: string): string {
+    const at = markup.search(/class="meta[ "]/);
+    expect(at).toBeGreaterThan(-1);
+    const body = markup.slice(at).search(/class="body[ "]/);
+    return markup.slice(at, body < 0 ? markup.length : at + body);
+}
+
+describe('the Inbox card', () => {
+    it("titles a card with the sender's display name as text, the address muted after it", () => {
+        serve({ threads: [thread('sparcly', { sender: 'Sparcly.ai <noreply@sparcly.ai>' })] });
+        const drawn = card(draw('inbox-sender'), 'sparcly');
+        const title = heading(drawn);
+        expect(title).toContain('Sparcly.ai');
+        // The title is words to read rather than an address to write to, so it links nowhere.
+        expect(drawn).not.toContain('mailto:');
+        expect(title).toMatch(/<span class="address[^"]*">noreply@sparcly\.ai<\/span>/);
+        // The whole From line is the title's tooltip.
+        expect(title).toMatch(/role="tooltip"[^>]*>Sparcly\.ai &lt;noreply@sparcly\.ai><\/span>/);
+    });
+
+    it('titles a card whose From line has no display name with the address', () => {
+        serve({ threads: [thread('bare-from', { sender: 'axel@x.be' })] });
+        const title = heading(card(draw('inbox-bare'), 'bare-from'));
+        expect(title).toContain('axel@x.be');
+        // With no display name the address is the title itself, so it is not repeated beside it.
+        expect(title).not.toContain('class="address');
+        // and it stays words to read, linking nowhere, as a named sender's title does
+        expect(title).not.toContain('mailto:');
+    });
+
+    it('draws the subject as the characters it holds, with no emphasis and no link', () => {
+        serve({ threads: [thread('marked', { subject: '*Review* [x](y)' })] });
+        const drawn = card(draw('inbox-subject'), 'marked');
+        expect(drawn).toMatch(/<p class="subject[^"]*">\*Review\* \[x\]\(y\)<\/p>/);
+        // A subject is not Markdown, so its asterisks are never turned into emphasis
+        expect(drawn).not.toContain('<em>');
+        // and its brackets are never turned into a link.
+        expect(drawn).not.toContain('<a ');
+    });
+
+    it('draws the kind tag on a triaged card alone', () => {
+        serve();
+        const body = draw('inbox-kinds', true);
+        expect(hasTag(card(body, 'reply'), catalog['inbox.reply'])).toBe(false);
+        expect(hasTag(card(body, 'unsorted'), catalog['inbox.unsorted'])).toBe(false);
+        expect(hasTag(card(body, 'done'), catalog['inbox.reply'])).toBe(true);
+    });
+
+    it('draws the account tag only while more than one mail account is configured', () => {
+        serve();
+        expect(hasTag(card(draw('inbox-one-account'), 'reply'), 'work')).toBe(false);
+        serve({
+            accounts: [
+                { provider: 'google', label: 'work', status: 'connected' },
+                { provider: 'microsoft', label: 'uni', status: 'connected' }
+            ],
+            threads: [
+                THREADS[0],
+                thread('outlook', { id: 'microsoft-uni-outlook', account: 'microsoft-uni' })
+            ]
+        });
+        const body = draw('inbox-two-accounts');
+        expect(hasTag(card(body, 'reply'), 'work')).toBe(true);
+        const at = body.indexOf('data-inbox="microsoft-uni-outlook"');
+        expect(at).toBeGreaterThan(-1);
+        expect(hasTag(body.slice(body.lastIndexOf('<div', at)), 'uni')).toBe(true);
+    });
+
+    it('puts Draft reply and the provider control on the control row as compact controls', () => {
+        serve();
+        const row = controlRow(card(draw('inbox-row'), 'reply'));
+        for (const label of [catalog['inbox.show_draft'], catalog['inbox.open_provider']]) {
+            expect(row).toMatch(
+                new RegExp(`<button[^>]*class="tool[^"]*compact[^"]*"[^>]*aria-label="${label}"`)
+            );
+        }
+        const whole = card(draw('inbox-row-whole'), 'reply');
+        // The provider's page is reached from the row's control, so no full-width line is drawn
+        // for it under the card's text.
+        expect(whole).not.toContain('class="provider');
+        // nor a paragraph of its own anywhere on the card
+        expect(whole).not.toContain('<p class="provider');
+    });
+
+    it('audits that the cards are one column in reading order', () => {
+        const source = readFileSync('src/lib/views/feeds/inbox/Inbox.svelte', 'utf8');
+        const css = compile(source, { filename: 'Inbox.svelte', css: 'external' }).css?.code ?? '';
+        const rule = /\.cards[^{]*\{([^}]*)\}/.exec(css)?.[1] ?? '';
+        expect(rule).not.toBe('');
+        // One column reads in order, so the rule fills no row with as many cards as fit
+        expect(rule).not.toContain('auto-fill');
+        // and sets no columns at all.
+        expect(rule).not.toContain('grid-template-columns');
     });
 });

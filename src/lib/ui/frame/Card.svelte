@@ -18,6 +18,11 @@
         title: string;
         /** The title as inline Markdown already rendered; the card sanitises it before drawing. */
         titleHtml?: string;
+        /**
+         * The title drawn by the caller inside the heading, for a title that is more than its
+         * words; `title` is then what the card is named by and is not drawn.
+         */
+        heading?: Snippet;
         /** A hue name from state/shared/words/tones.ts. A card with none has no bar. */
         tone?: string;
         /** Draws an accent ring inside the border, for a card the view is holding on to. */
@@ -42,6 +47,7 @@
         cursor,
         title,
         titleHtml,
+        heading: drawnHeading,
         tone,
         pinned = false,
         level = 3,
@@ -51,7 +57,7 @@
         footer
     }: Props = $props();
 
-    const heading = $derived(`h${Math.min(6, Math.max(1, Math.trunc(level)))}`);
+    const element = $derived(`h${Math.min(6, Math.max(1, Math.trunc(level)))}`);
     const style = $derived(tone === undefined ? undefined : `--tone: var(--c-${tone})`);
 </script>
 
@@ -67,8 +73,10 @@
         <span class="bar"></span>
     {/if}
     <div class="face">
-        <svelte:element this={heading} class="title">
-            {#if ontitle !== undefined && titleHtml !== undefined}
+        <svelte:element this={element} class="title">
+            {#if drawnHeading !== undefined}
+                {@render drawnHeading()}
+            {:else if ontitle !== undefined && titleHtml !== undefined}
                 <button type="button" class="open" onclick={ontitle}>
                     <!-- eslint-disable-next-line svelte/no-at-html-tags -- the sanitiser writes this -->
                     {@html sanitise(titleHtml)}

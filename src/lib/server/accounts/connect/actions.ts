@@ -9,9 +9,15 @@
 // without a restart.
 //
 // A refusal the page words itself is answered as a code: `provider`, `label` or `taken` for the
-// account the page named, `setup` for a provider with no client half on this machine, `file` with
+// account the page named, `link` for a published calendar link that is missing or is not an
+// https or webcal address, `setup` for a provider with no client half on this machine, `file` with
 // the sentence for a machine file the edit would not leave readable. The page runs the same rules
-// before it sends (data/accounts/connect.ts), so a code is what a race or a hand edit produced.
+// before it sends (data/accounts/connect.ts and data/accounts/calendar.ts), so a code is what a
+// race or a hand edit produced.
+//
+// A published link is added with no consent and no client half: its row names the provider `ics`
+// and the label alone, the link itself goes into the account's own file, and the Add answers once
+// both are written. It has nothing to connect, so a Connect naming one is refused as `provider`.
 //
 // The callback carries no token: the browser arrives there from the provider and not from the page,
 // so what guards it is the `state` this process minted ten minutes earlier and holds in memory,
@@ -20,9 +26,10 @@
 
 import { existsSync, readFileSync } from 'node:fs';
 import { parse } from 'yaml';
-import { accountRefusal, connectKey } from '../../../data/accounts/connect.ts';
+import { publishedLink } from '../../../data/accounts/calendar.ts';
+import { accountRefusal, connectKey, signsIn } from '../../../data/accounts/connect.ts';
 import { isMap } from '../../../data/helpers/guards.ts';
-import type { ConnectAccountConfig, ConnectKind } from '../../../data/model/index.ts';
+import type { AccountRow, ConnectAccountConfig, ConnectKind } from '../../../data/model/index.ts';
 import { chained, writeTextAtomic, type FsWrites } from '../../core/json.ts';
 import {
     consentUrl,
@@ -37,6 +44,7 @@ import {
     readCredentials,
     removeAccountFile,
     writeAccountFile,
+    writePublishedLink,
     writeRefreshToken
 } from './store.ts';
 
@@ -67,7 +75,7 @@ export type AccountBook = {
 
 /** An account action's target: a consent's, the accounts at the request, and the book. */
 export type AccountTarget = ConsentTarget & {
-    accounts: ConnectAccountConfig[];
+    accounts: AccountRow[];
     book: AccountBook;
 };
 
@@ -75,7 +83,7 @@ export type AccountTarget = ConsentTarget & {
 export type CallbackWords = { ok: string; bad: string };
 
 export type CallbackTarget = {
-    accounts: ConnectAccountConfig[];
+    accounts: AccountRow[];
     dir: string;
     providerDir: string;
     states: ConnectStates;
@@ -118,10 +126,7 @@ function reason(error: unknown): string {
 }
 
 /** The configured account a key names, or undefined when the machine names no such account. */
-export function accountFor(
-    accounts: ConnectAccountConfig[],
-    key: unknown
-): ConnectAccountConfig | undefined {
+export function accountFor<A extends AccountRow>(accounts: A[], key: unknown): A | undefined {
     return typeof key !== 'string' ? undefined : accounts.find((one) => connectKey(one) === key);
 }
 
@@ -155,7 +160,7 @@ function localText(file: string): string {
 }
 
 /** The rows one list of the machine file holds now, read as the file's reader would. */
-function rowsIn(text: string, list: AccountList): ConnectAccountConfig[] {
+function rowsIn(text: string, list: AccountList): AccountRow[] {
     let parsed: unknown;
     try {
         parsed = parse(text);
@@ -163,32 +168,41 @@ function rowsIn(text: string, list: AccountList): ConnectAccountConfig[] {
         return [];
     }
     const held = isMap(parsed) ? parsed[list] : undefined;
-    return Array.isArray(held) ? held.filter(isMap).map((row) => row as ConnectAccountConfig) : [];
+    return Array.isArray(held) ? held.filter(isMap).map((row) => row as AccountRow) : [];
 }
 
 /**
  * The row of an Add written into the machine file with its account file, and the lists read again,
- * or the refusal: nothing is written for a label the list would refuse or for a provider with no
- * client half yet. It runs inside the write chain, so the file it reads is the one it writes over.
+ * or the refusal: nothing is written for a label the list would refuse, for a provider with no
+ * client half yet, or for a published link that is missing or of another scheme. It runs inside
+ * the write chain, so the file it reads is the one it writes over.
  */
 function addRow(
-    list: AccountList,
+    kind: ConnectKind,
     target: AccountTarget,
     record: Record<string, unknown>
-): Response | ConnectAccountConfig {
+): Response | AccountRow {
+    const list = LIST[kind];
     const text = localText(target.book.file);
-    const refused = accountRefusal(rowsIn(text, list), record.provider, record.label);
+    const refused = accountRefusal(kind, rowsIn(text, list), record.provider, record.label);
     if (refused !== null) return json(400, { error: refused });
-    const row = { provider: record.provider, label: record.label } as ConnectAccountConfig;
-    try {
-        if (!providerReady(target.providerDir, row.provider)) return json(400, { error: 'setup' });
-    } catch (error) {
-        return json(400, { error: reason(error) });
+    const row = { provider: record.provider, label: record.label } as AccountRow;
+    const link = row.provider === 'ics' ? publishedLink(record.url) : null;
+    if (row.provider === 'ics' && link === null) return json(400, { error: 'link' });
+    if (signsIn(row)) {
+        try {
+            if (!providerReady(target.providerDir, row.provider)) {
+                return json(400, { error: 'setup' });
+            }
+        } catch (error) {
+            return json(400, { error: reason(error) });
+        }
     }
     const edit = addAccountRow(text, list, row, target.book.file);
     if ('reason' in edit) return json(400, { error: 'file', reason: edit.reason });
     try {
-        writeAccountFile(target.dir, row);
+        if (link === null) writeAccountFile(target.dir, row);
+        else writePublishedLink(target.dir, row, link);
         writeTextAtomic(target.book.file, edit.text);
     } catch (error) {
         return json(500, { error: 'file', reason: reason(error) });
@@ -199,15 +213,16 @@ function addRow(
 
 /**
  * Add one account: its row in the machine file, its credential file, the lists read again, and its
- * consent started at once.
+ * consent started at once. A published link has no consent, so its Add answers once it is written.
  */
 export async function addAccount(
     kind: ConnectKind,
     target: AccountTarget,
     record: Record<string, unknown>
 ): Promise<Response> {
-    const written = await chained(target.book.writes, () => addRow(LIST[kind], target, record));
+    const written = await chained(target.book.writes, () => addRow(kind, target, record));
     if (written instanceof Response) return written;
+    if (!signsIn(written)) return json(200, { ok: true });
     return startConsent(kind, target, written);
 }
 
@@ -215,11 +230,7 @@ export async function addAccount(
  * The row of a Remove taken from the machine file, its credential file deleted, and the lists read
  * again. It runs inside the write chain, as an Add does.
  */
-function removeRow(
-    list: AccountList,
-    target: AccountTarget,
-    account: ConnectAccountConfig
-): Response {
+function removeRow(list: AccountList, target: AccountTarget, account: AccountRow): Response {
     const edit = removeAccountRow(localText(target.book.file), list, account, target.book.file);
     if ('reason' in edit) return json(400, { error: 'file', reason: edit.reason });
     try {
@@ -258,6 +269,7 @@ export function accountAction(
     if (record.action === 'connect') {
         const account = accountFor(target.accounts, record.account);
         if (account === undefined) return Promise.resolve(json(400, { error: 'no such account' }));
+        if (!signsIn(account)) return Promise.resolve(json(400, { error: 'provider' }));
         return startConsent(kind, target, account);
     }
     if (record.action === 'add') return addAccount(kind, target, record);
@@ -281,7 +293,7 @@ export async function handleConnectCallback(
     const pending = state === null ? null : target.states.take(state);
     if (pending === null || code === null || code === '') return page(400, target.words.bad);
     const account = accountFor(target.accounts, pending.key);
-    if (account === undefined) return page(400, target.words.bad);
+    if (account === undefined || !signsIn(account)) return page(400, target.words.bad);
     let credentials;
     try {
         credentials = readCredentials(target.dir, account, target.providerDir);

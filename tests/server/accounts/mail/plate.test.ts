@@ -84,7 +84,13 @@ function googleList(ids: string[]): unknown {
 /** Gmail's metadata answer for one thread. */
 function googleThread(
     id: string,
-    over: { subject?: string; labels?: string[]; messages?: number; replyTo?: string } = {}
+    over: {
+        subject?: string;
+        labels?: string[];
+        messages?: number;
+        replyTo?: string;
+        snippet?: string;
+    } = {}
 ): unknown {
     const headers = [
         { name: 'From', value: 'Ada <ada@example.invalid>' },
@@ -96,7 +102,7 @@ function googleThread(
     const messages = Array.from({ length: count }, (_value, at) => ({
         id: `${id}-${at}`,
         internalDate: String(Date.parse('2026-09-16T10:00:00.000Z')),
-        snippet: `the snippet of ${id}`,
+        snippet: over.snippet ?? `the snippet of ${id}`,
         labelIds: at === count - 1 ? (over.labels ?? ['INBOX', 'UNREAD']) : ['INBOX'],
         payload: { headers }
     }));
@@ -209,6 +215,7 @@ function graphMessage(
         categories?: string[];
         folder?: string;
         replyTo?: string;
+        preview?: string;
     } = {}
 ): Record<string, unknown> {
     return {
@@ -220,7 +227,7 @@ function graphMessage(
             ? {}
             : { replyTo: [{ emailAddress: { name: 'Desk', address: over.replyTo } }] }),
         receivedDateTime: '2026-09-16T10:00:00Z',
-        bodyPreview: `the snippet of ${id}`,
+        bodyPreview: over.preview ?? `the snippet of ${id}`,
         categories: over.categories ?? [],
         parentFolderId: over.folder ?? 'inbox-folder',
         webLink: `https://outlook.office.com/mail/${id}`
@@ -393,5 +400,46 @@ describe('the Microsoft plate', () => {
         expect(by.desk.replyTo).toBe('Desk <desk@example.invalid>');
         expect(by.desk.sender).toBe('Ada <ada@example.invalid>');
         expect(by.plain.replyTo).toBe('Ada <ada@example.invalid>');
+    });
+});
+
+/** The snippet as Gmail writes it, HTML-escaped, and as the payload carries it, decoded. */
+const ESCAPED = 'the paper &quot;Manifest-Assisted Retrieval&quot; &amp; more&nbsp;now';
+const DECODED = 'the paper "Manifest-Assisted Retrieval" & more\u00a0now';
+
+describe('the snippet of a thread', () => {
+    it('is published as readable text from a Gmail snippet the provider HTML-escaped', async () => {
+        const fake = fakeFetcher([
+            { when: (url) => url.includes('is%3Aunread'), body: googleList(['one']) },
+            { when: (url) => url.includes('label%3Atodo'), body: googleList([]) },
+            { when: (url) => url.includes('has%3Anouserlabels'), body: googleList([]) },
+            {
+                when: (url) => url.includes('/threads/one'),
+                body: googleThread('one', { snippet: ESCAPED })
+            }
+        ]);
+        const rows = plate(await readGoogleMail({ ...ARGS, fetcher: fake.fetcher }));
+        expect(rows.map((one) => one.snippet)).toEqual([DECODED]);
+    });
+
+    it('is published as readable text from a Microsoft preview that holds entities', async () => {
+        const conversations = { one: [graphMessage('one', { preview: ESCAPED })] };
+        const { fetcher } = graphFetcher(conversations, [
+            {
+                when: (url: string) => /isRead(\+|%20)eq/.test(url),
+                body: { value: [graphMessage('one', { preview: ESCAPED })] }
+            },
+            {
+                when: (url: string) => url.includes('any%28') || url.includes('any('),
+                body: { value: [] }
+            },
+            {
+                when: (url: string) => url.includes('/mailFolders/inbox/messages'),
+                body: { value: [] }
+            },
+            { when: (url: string) => url.includes('/me/messages'), body: { value: [] } }
+        ]);
+        const rows = plate(await readMicrosoftMail({ ...ARGS, key: 'microsoft-uni', fetcher }));
+        expect(rows.map((one) => one.snippet)).toEqual([DECODED]);
     });
 });

@@ -11,7 +11,11 @@ import { chmodSync, existsSync, mkdirSync, readFileSync, statSync, writeFileSync
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
 import { afterAll, describe, expect, it, vi } from 'vitest';
-import type { ConnectAccountConfig, ConnectSetup } from '../../../../src/lib/data/model/index.ts';
+import type {
+    CalendarAccountConfig,
+    ConnectAccountConfig,
+    ConnectSetup
+} from '../../../../src/lib/data/model/index.ts';
 import { handleCalendar } from '../../../../src/lib/server/accounts/calendar/routes.ts';
 import { handleMail } from '../../../../src/lib/server/accounts/mail/routes.ts';
 import {
@@ -207,6 +211,91 @@ describe('an account removed from the page', () => {
         expect(existsSync(file)).toBe(false);
         expect(existsSync(providerFile(at.providerDir, 'microsoft'))).toBe(true);
         expect(reload).toHaveBeenCalledTimes(1);
+    });
+});
+
+describe('a published calendar link added from the page', () => {
+    const LINK = 'https://outlook.example/cal.ics';
+    const ICS: CalendarAccountConfig = { provider: 'ics', label: 'work' };
+
+    it('writes its row with no link, keeps the link in its own file at 0600 and starts no consent', async () => {
+        const at = machine();
+        const opened: string[] = [];
+        const reload = vi.fn();
+
+        const answer = await handleCalendar(
+            post('/api/calendar', { action: 'add', provider: 'ics', label: 'work', url: LINK }),
+            calendarTarget(at, opened, reload)
+        );
+
+        expect(answer.status).toBe(200);
+        expect(await body(answer)).toEqual({ ok: true });
+        expect(readFileSync(at.file, 'utf8')).toBe(`${LOCAL}  - { provider: ics, label: work }\n`);
+        expect(readFileSync(at.file, 'utf8')).not.toContain('outlook.example');
+        const file = join(at.calendarDir, 'ics-work.json');
+        expect(credentialFile(at.calendarDir, ICS)).toBe(file);
+        expect(JSON.parse(readFileSync(file, 'utf8'))).toEqual({ url: LINK });
+        expect(statSync(file).mode & 0o777).toBe(0o600);
+        expect(statSync(at.calendarDir).mode & 0o777).toBe(0o700);
+        expect(opened).toEqual([]);
+        expect(reload).toHaveBeenCalledTimes(1);
+    });
+
+    it('refuses a missing link and one of another scheme with link, writing nothing', async () => {
+        const at = machine();
+        for (const record of [
+            { action: 'add', provider: 'ics', label: 'work' },
+            { action: 'add', provider: 'ics', label: 'work', url: 'ftp://x' }
+        ]) {
+            const answer = await handleCalendar(
+                post('/api/calendar', record),
+                calendarTarget(at, [])
+            );
+            expect(answer.status).toBe(400);
+            expect(await body(answer)).toEqual({ error: 'link' });
+        }
+        expect(readFileSync(at.file, 'utf8')).toBe(LOCAL);
+        expect(existsSync(at.calendarDir)).toBe(false);
+    });
+
+    it('is refused as a provider on the mail endpoint', async () => {
+        const at = machine();
+        const answer = await handleMail(
+            post('/api/mail', { action: 'add', provider: 'ics', label: 'work', url: LINK }),
+            {
+                ...calendarTarget(at, []),
+                dir: at.mailDir,
+                redirect: callbackUrl(8792, 'mail'),
+                perSignal: 25,
+                fetcher: vi.fn<Fetcher>(),
+                republish: () => undefined,
+                threadFor: () => null
+            }
+        );
+        expect(answer.status).toBe(400);
+        expect(await body(answer)).toEqual({ error: 'provider' });
+        expect(readFileSync(at.file, 'utf8')).toBe(LOCAL);
+        expect(existsSync(at.mailDir)).toBe(false);
+    });
+
+    it('is removed with its row and its file', async () => {
+        const at = machine(`${LOCAL}  - { provider: ics, label: work }\n`);
+        mkdirSync(at.calendarDir);
+        const file = join(at.calendarDir, 'ics-work.json');
+        expect(resolve(file).startsWith(resolve(at.root) + sep)).toBe(true);
+        writeFileSync(file, JSON.stringify({ url: LINK }));
+
+        const answer = await handleCalendar(
+            post('/api/calendar', { action: 'remove', account: 'ics-work' }),
+            {
+                ...calendarTarget(at, []),
+                accounts: [{ provider: 'microsoft', label: 'uni' }, ICS] as CalendarAccountConfig[]
+            }
+        );
+
+        expect(answer.status).toBe(200);
+        expect(readFileSync(at.file, 'utf8')).toBe(LOCAL);
+        expect(existsSync(file)).toBe(false);
     });
 });
 

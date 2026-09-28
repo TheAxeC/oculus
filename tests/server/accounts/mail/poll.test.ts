@@ -1,6 +1,6 @@
 // The mail poller with an injected fetcher only, so the unconfigured machine, the not-connected
-// account, a good round, a refused one, the forced refresh, the per-account cadence, one round at a
-// time and the notes republish are all reached without the network.
+// account, a good round, a refused one, one that never answers, the forced refresh, the per-account
+// cadence, one round at a time and the notes republish are all reached without the network.
 //
 // Every credential file this file reads is in a directory it made under mkdtemp and asserted to be
 // inside the temporary directory first; nothing under the reader's own home is touched.
@@ -31,21 +31,36 @@ import {
     writeAccount
 } from './fixture.ts';
 import { sweepScratch } from '../../../fixtures/scratch.ts';
+import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sources/config.ts';
+import { fillPlaceholders } from '../../../../src/lib/data/helpers/finding-text.ts';
 import { manual } from '../../root/watch/repos.ts';
 
 afterAll(sweepScratch);
 
 const MINUTE = 60000;
 const POLL_MIN = 10;
+const catalog = textCatalog(loadConfig(engineDir()).config);
 
 afterEach(() => {
     vi.useRealTimers();
     cleanup();
 });
 
-/** The watcher over a provider folder no case fills, so every half is the account file's own. */
-function watchMail(hub: Hub, options: Omit<MailOptions, 'providerDir'>): MailWatcher {
-    return watchMailOver(hub, { ...options, providerDir: join(options.dir, 'connect') });
+/** The sentences an account's row may carry, as the server reads them. */
+const WORDS = { timedOut: catalog['accounts.timed_out'] };
+/** The read timeout a case shortens the poller's to, so a request that hangs ends at once. */
+const SHORT_TIMEOUT_MS = 50;
+
+/**
+ * The watcher over a provider folder no case fills, so every half is the account file's own, with
+ * the catalog's sentences.
+ */
+function watchMail(hub: Hub, options: Omit<MailOptions, 'providerDir' | 'words'>): MailWatcher {
+    return watchMailOver(hub, {
+        ...options,
+        providerDir: join(options.dir, 'connect'),
+        words: WORDS
+    });
 }
 
 /** Give the event loop a turn until the condition holds, or give up. */
@@ -252,6 +267,40 @@ describe('the mail poller', () => {
         expect(payload.accounts[0].lastOk).toBeTruthy();
         // The rows the last good round left are still what the reader sees.
         expect(payload.threads.map((one) => one.id)).toEqual(['google-work-one']);
+        watcher.close();
+    });
+
+    it('gives an account whose provider never answers the timeout sentence and reads the next', async () => {
+        const hub = new Hub();
+        const dir = scratch();
+        writeAccount(dir, MICROSOFT);
+        writeAccount(dir, GOOGLE);
+        const google = fakeFetcher(googleRoutes(['one']));
+        const fetcher: typeof fetch = (input, init) => {
+            if (!urlOf(input).includes('graph.microsoft.com')) return google.fetcher(input, init);
+            // A request that settles only when its signal aborts, rejecting as fetch does.
+            return new Promise((_resolve, reject) => {
+                const signal = init?.signal;
+                signal?.addEventListener('abort', () => {
+                    reject(signal.reason as Error);
+                });
+            });
+        };
+        const watcher = watchMail(hub, {
+            accounts: [MICROSOFT, GOOGLE],
+            dir,
+            pollMin: POLL_MIN,
+            perSignal: 25,
+            fetcher,
+            readTimeoutMs: SHORT_TIMEOUT_MS,
+            pollNotes: false
+        });
+        await watched(() => published(hub) && held(hub).threads.length === 1);
+        const [uni, work] = held(hub).accounts;
+        expect(uni.status).toBe('error');
+        expect(uni.hint).toBe(fillPlaceholders(WORDS.timedOut, [String(SHORT_TIMEOUT_MS / 1000)]));
+        expect(work.status).toBe('connected');
+        expect(held(hub).threads.map((one) => one.id)).toEqual(['google-work-one']);
         watcher.close();
     });
 

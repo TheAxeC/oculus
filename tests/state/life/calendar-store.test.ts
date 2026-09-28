@@ -126,18 +126,16 @@ describe('what the calendar store commands say', () => {
 });
 
 describe('the calendar store readers', () => {
-    it('reads the payload, its day groups and the badge count off the socket entity', () => {
+    it('reads the payload and the badge count off the socket entity', () => {
         vi.useFakeTimers();
         try {
             vi.setSystemTime(Date.parse('2031-03-02T08:30:00'));
             const fresh = createClientState();
             expect(fresh.calendar.state()).toBe(null);
-            expect(fresh.calendar.days()).toEqual([]);
             expect(fresh.calendar.badgeText()).toBe('');
 
             fresh.entities.receive({ channel: 'calendar', version: 1, payload: PAYLOAD });
             expect(fresh.calendar.state()).toEqual(PAYLOAD);
-            expect(fresh.calendar.days().map((day) => day.day)).toEqual(['2031-03-02']);
             expect(fresh.calendar.remaining()).toBe(1);
             expect(fresh.calendar.badgeText()).toBe('1');
         } finally {

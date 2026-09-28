@@ -1,4 +1,4 @@
-// Pure Inbox kind, tone, grouping, search, age, and saved-state rules.
+// Pure Inbox kind, tone, grouping, search, age, sender, and saved-state rules.
 
 import { describe, expect, it } from 'vitest';
 import {
@@ -8,6 +8,7 @@ import {
     kindOf,
     kindTone,
     parseInboxState,
+    senderParts,
     splitInbox,
     threadAge,
     untriagedActionable,
@@ -117,5 +118,25 @@ describe('the threads still on the plate', () => {
         expect(
             plateCount({ unsorted: one, replies: one, actions: [], info: one, triaged: one })
         ).toBe(3);
+    });
+});
+
+describe('the sender of a thread, split for its card', () => {
+    it('reads the display name and the address of a From line', () => {
+        expect(senderParts('Sparcly.ai <noreply@sparcly.ai>')).toEqual({
+            name: 'Sparcly.ai',
+            address: 'noreply@sparcly.ai'
+        });
+    });
+
+    it('reads a quoted display name without its quotes, a comma inside it included', () => {
+        expect(senderParts('"Faes, Axel" <axel@x.be>')).toEqual({
+            name: 'Faes, Axel',
+            address: 'axel@x.be'
+        });
+    });
+
+    it('reads a bare address as an address with no name', () => {
+        expect(senderParts('axel@x.be')).toEqual({ name: '', address: 'axel@x.be' });
     });
 });

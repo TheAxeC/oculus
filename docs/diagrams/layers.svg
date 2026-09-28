@@ -19,7 +19,7 @@
 <g id="node19" class="node">
 <title>server to data</title>
 <polygon fill="none" stroke="none" points="341.76,-123.12 324,-123.12 324,-110.64 341.76,-110.64 341.76,-123.12"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="332.88" y="-114.48" font-family="Helvetica,Arial,sans-serif" font-size="8.00">110</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="332.88" y="-114.48" font-family="Helvetica,Arial,sans-serif" font-size="8.00">114</text>
 </g>
 <!-- server&#45;&gt;server to data -->
 <g id="edge17" class="edge">
@@ -36,7 +36,7 @@
 <g id="node25" class="node">
 <title>state to data</title>
 <polygon fill="none" stroke="none" points="194.76,-70.08 181,-70.08 181,-57.6 194.76,-57.6 194.76,-70.08"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="187.88" y="-61.44" font-family="Helvetica,Arial,sans-serif" font-size="8.00">57</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="187.88" y="-61.44" font-family="Helvetica,Arial,sans-serif" font-size="8.00">60</text>
 </g>
 <!-- state&#45;&gt;state to data -->
 <g id="edge29" class="edge">
@@ -120,7 +120,7 @@
 <g id="node29" class="node">
 <title>views to state</title>
 <polygon fill="none" stroke="none" points="180.76,-176.16 163,-176.16 163,-163.68 180.76,-163.68 180.76,-176.16"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="171.88" y="-167.52" font-family="Helvetica,Arial,sans-serif" font-size="8.00">572</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="171.88" y="-167.52" font-family="Helvetica,Arial,sans-serif" font-size="8.00">571</text>
 </g>
 <!-- views&#45;&gt;views to state -->
 <g id="edge37" class="edge">
@@ -131,7 +131,7 @@
 <g id="node30" class="node">
 <title>views to ui</title>
 <polygon fill="none" stroke="none" points="238.76,-282.24 221,-282.24 221,-269.76 238.76,-269.76 238.76,-282.24"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="229.88" y="-273.6" font-family="Helvetica,Arial,sans-serif" font-size="8.00">532</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="229.88" y="-273.6" font-family="Helvetica,Arial,sans-serif" font-size="8.00">533</text>
 </g>
 <!-- views&#45;&gt;views to ui -->
 <g id="edge39" class="edge">

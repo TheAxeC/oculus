@@ -20,19 +20,19 @@
 // with a refresh token the provider hands back in its place kept in the account's file.
 
 import { connectKey } from '../../../data/accounts/connect.ts';
-import type { ConnectAccountConfig, ConnectKind } from '../../../data/model/index.ts';
+import type { AccountRow, ConnectAccountConfig, ConnectKind } from '../../../data/model/index.ts';
 import { accessToken, type Fetcher } from './oauth.ts';
 import { keepRotatedToken, readCredentials } from './store.ts';
 
 /** Where a poller's accounts come from: its own options, as the machine's file first named them. */
-export type LoopSource = {
-    accounts: ConnectAccountConfig[];
+export type LoopSource<A extends AccountRow> = {
+    accounts: A[];
     /** The folder the account files are read from, already resolved. */
     dir: string;
     pollMin: number;
 };
 
-export type LoopOptions = {
+export type LoopOptions<A extends AccountRow> = {
     /** Minutes before the next attempt while a provider is not answering. */
     retryMin: number;
     now: () => Date;
@@ -40,7 +40,7 @@ export type LoopOptions = {
      * Read one account from one folder: true when it answered or has nothing to call, false when
      * it failed. `live` answers whether the account and the folder are still the loop's.
      */
-    read: (account: ConnectAccountConfig, dir: string, live: () => boolean) => Promise<boolean>;
+    read: (account: A, dir: string, live: () => boolean) => Promise<boolean>;
     /** Publish one complete state over the accounts the loop holds now. */
     publish: () => void;
     /** What the poller holds by account key, dropped for an account that has left or moved. */
@@ -49,16 +49,16 @@ export type LoopOptions = {
     moved?: (dir: string) => void;
 };
 
-export type AccountLoop = {
+export type AccountLoop<A extends AccountRow> = {
     /** The accounts the loop holds now, in the order the machine's file lists them. */
-    accounts: () => ConnectAccountConfig[];
+    accounts: () => A[];
     /** The folder the loop reads now. */
     dir: () => string;
     /** The first publish, or the first round when there is an account to read. */
     start: () => void;
     run: (all: boolean) => Promise<void>;
     /** Take a new list and folder; the same list in the same order and folder changes nothing. */
-    set: (accounts: ConnectAccountConfig[], dir: string) => void;
+    set: (accounts: A[], dir: string) => void;
     close: () => void;
 };
 
@@ -85,17 +85,20 @@ export async function signIn(
     return { token: await accessToken(kind, credentials, refreshToken, fetcher, keep) };
 }
 
-export function accountLoop(source: LoopSource, options: LoopOptions): AccountLoop {
+export function accountLoop<A extends AccountRow>(
+    source: LoopSource<A>,
+    options: LoopOptions<A>
+): AccountLoop<A> {
     let accounts = [...source.accounts];
     let dir = source.dir;
     let closed = false;
     /** When each account is next due, as an epoch time; an account with no entry is due now. */
     const due = new Map<string, number>();
-    const dueAt = (account: ConnectAccountConfig): number => due.get(connectKey(account)) ?? 0;
+    const dueAt = (account: A): number => due.get(connectKey(account)) ?? 0;
     const clock = (): number => options.now().getTime();
 
     /** Whether an account read from one folder still counts: open, still listed, same folder. */
-    const holds = (account: ConnectAccountConfig, from: string): boolean =>
+    const holds = (account: A, from: string): boolean =>
         !closed && from === dir && accounts.some((one) => connectKey(one) === connectKey(account));
 
     /**
@@ -163,7 +166,7 @@ export function accountLoop(source: LoopSource, options: LoopOptions): AccountLo
         return queued;
     };
 
-    const set = (next: ConnectAccountConfig[], nextDir: string): void => {
+    const set = (next: A[], nextDir: string): void => {
         if (closed) return;
         const moved = nextDir !== dir;
         const keys = next.map(connectKey);

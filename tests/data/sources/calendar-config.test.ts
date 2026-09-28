@@ -62,6 +62,12 @@ describe('the calendars rows of the machine own file', () => {
         expect(loadLocal(dir).calendars).toHaveLength(2);
     });
 
+    it('reads a published calendar link as a row of the provider ics', () => {
+        const dir = scratch();
+        writeLocal(dir, 'calendars:\n  - { provider: ics, label: work }\n');
+        expect(loadLocal(dir).calendars).toEqual([{ provider: 'ics', label: 'work' }]);
+    });
+
     it('leaves the list empty when the machine names no account', () => {
         const dir = scratch();
         writeLocal(dir, 'hub: /srv/research-hub\n');
@@ -80,7 +86,7 @@ describe('the calendars rows of the machine own file', () => {
         ['calendars: [one]\n', 'calendars[0] must be a map'],
         [
             'calendars:\n  - { provider: fastmail, label: work }\n',
-            'calendars[0].provider must be google or microsoft'
+            'calendars[0].provider must be google, microsoft or ics'
         ],
         [
             'calendars:\n  - { provider: google }\n',
@@ -108,8 +114,8 @@ describe('calendarSettings', () => {
     it('reads the three keys of the config oculus ships', () => {
         expect(calendarSettings(loadConfig(engineDir()).config)).toEqual({
             pollMin: 15,
-            daysBack: 1,
-            daysAhead: 14
+            daysBack: 31,
+            daysAhead: 62
         });
     });
 

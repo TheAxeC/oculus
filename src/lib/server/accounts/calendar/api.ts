@@ -10,7 +10,7 @@ import type { Fetcher } from '../connect/oauth.ts';
 
 export { getJson, httpsLink, PAGE_MAX, rowsOf } from '../connect/api.ts';
 
-/** The span an agenda is read over, from `days_back` before now to `days_ahead` after it. */
+/** The span a calendar is read over, from `days_back` before now to `days_ahead` after it. */
 export type Window = { start: Date; end: Date };
 
 /** What one account's read answers with. */
@@ -21,7 +21,7 @@ export type ReadArgs = {
     token: string;
     /** The account's key, which prefixes every event id so two accounts cannot collide. */
     key: string;
-    /** The account's label, which is the tag the agenda draws on each line. */
+    /** The account's label, which names the account an event was read from. */
     label: string;
     window: Window;
     fetcher: Fetcher;

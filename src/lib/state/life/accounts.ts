@@ -6,8 +6,10 @@
 // a copy that could fall behind it.
 
 import type { ConnectKind, ConnectProvider, ConnectSetup } from '../../data/model/index.ts';
-export { PROVIDERS, connectKey } from '../../data/accounts/connect.ts';
+export { PROVIDERS, PROVIDERS_OF, connectKey, signsIn } from '../../data/accounts/connect.ts';
 export type {
+    AccountProvider,
+    AccountRow,
     ConnectAccountConfig,
     ConnectAccountStatus,
     ConnectStatus,

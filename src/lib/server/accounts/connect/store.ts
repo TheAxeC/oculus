@@ -16,6 +16,10 @@
 // an account of the other: a calendar token never gains send rights, and a mail token never gains
 // calendar rights.
 //
+// A calendar's published link is an account file too, `ics-<label>.json` holding `{ "url": ... }`:
+// the link is the reader's key to the calendar, so it is kept as a token is, in a file of this
+// folder at 0600, and never in config/local.yml.
+//
 // Every folder is resolved at the call and never at import, as server/core/changes.ts and
 // server/machine/usage/accounts.ts resolve theirs, so a test points a connector at a directory of
 // its own and a served run at the directory the machine's own file or its HOME names. Every write
@@ -30,6 +34,7 @@ import { join } from 'node:path';
 import { isMap } from '../../../data/helpers/guards.ts';
 import { connectKey, type ProviderHalf } from '../../../data/accounts/connect.ts';
 import type {
+    AccountRow,
     ConnectAccountConfig,
     ConnectKind,
     ConnectProvider
@@ -74,7 +79,7 @@ export function defaultProviderDir(): string {
 }
 
 /** The credential file of one account inside a connector's directory. */
-export function credentialFile(dir: string, account: ConnectAccountConfig): string {
+export function credentialFile(dir: string, account: AccountRow): string {
     return join(dir, `${connectKey(account)}.json`);
 }
 
@@ -129,7 +134,7 @@ function halfIn(
  * Whether an account's own file names a client id, which a Remove deletes with the file. A file
  * that cannot be read names none here; the poll says why it cannot be read.
  */
-export function hasOwnHalf(dir: string, account: ConnectAccountConfig): boolean {
+export function hasOwnHalf(dir: string, account: AccountRow): boolean {
     try {
         return field(readRecord(credentialFile(dir, account)) ?? {}, 'client_id') !== undefined;
     } catch {
@@ -220,15 +225,33 @@ export function keepRotatedToken(
  * half. A file that is already there is left as it is, so an account named again keeps what its
  * file held.
  */
-export function writeAccountFile(dir: string, account: ConnectAccountConfig): void {
+export function writeAccountFile(dir: string, account: AccountRow): void {
     const file = credentialFile(dir, account);
     if (existsSync(file)) return;
     writeCredentialFile(file, dir, {});
 }
 
 /** Take a removed account's file away; the provider's file stays for the other accounts. */
-export function removeAccountFile(dir: string, account: ConnectAccountConfig): void {
+export function removeAccountFile(dir: string, account: AccountRow): void {
     rmSync(credentialFile(dir, account), { force: true });
+}
+
+/**
+ * Keep a published link in its account's file, replacing the link it held and leaving every other
+ * field of it as it was.
+ */
+export function writePublishedLink(dir: string, account: AccountRow, url: string): void {
+    const file = credentialFile(dir, account);
+    const held = readRecord(file) ?? {};
+    writeCredentialFile(file, dir, { ...held, url });
+}
+
+/**
+ * The published link an account's file holds, or undefined when the file is not there or holds
+ * none. A file that is there and cannot be read throws the sentence naming the file.
+ */
+export function readPublishedLink(dir: string, account: AccountRow): string | undefined {
+    return field(readRecord(credentialFile(dir, account)) ?? {}, 'url');
 }
 
 /** Write one provider's client half, replacing the one that was there. */

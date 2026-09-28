@@ -9,13 +9,24 @@
 // Connect for a provider with no client half on this machine opens the setup page instead; the Add
 // waits there and is made when that provider's half is saved.
 //
+// A published calendar link signs in nowhere, so its Add waits on no setup: the link is checked by
+// the rule the server checks it by (data/accounts/calendar.ts), sent once as `url` with the label,
+// and never kept here or read back from the server.
+//
 // The setup page's facts, whether each provider is set up and the addresses and scopes to register,
 // are the server's answer to `GET /api/connect`; the page holds no copy of them. Nothing here keeps
 // a client id or a secret past the request that carries it.
 
-import { accountRefusal, connectKey, providerHalf } from '../../data/accounts/connect.ts';
+import { publishedLink } from '../../data/accounts/calendar.ts';
+import {
+    accountRefusal,
+    connectKey,
+    isProvider,
+    providerHalf
+} from '../../data/accounts/connect.ts';
 import type {
-    ConnectAccountConfig,
+    AccountProvider,
+    AccountRow,
     ConnectKind,
     ConnectProvider,
     ConnectSetup
@@ -43,11 +54,17 @@ export type AccountsStore = {
     saveHalf: (provider: ConnectProvider, typed: HalfFields) => Promise<string>;
     /** The Add waiting on its provider's setup, or null. */
     waiting: () => WaitingAdd | null;
-    add: (kind: ConnectKind, provider: ConnectProvider, label: string) => Promise<string>;
-    remove: (kind: ConnectKind, account: ConnectAccountConfig) => Promise<string>;
-    connect: (kind: ConnectKind, account: ConnectAccountConfig) => Promise<string>;
+    /** Add one account; `url` is the published link, and is sent only for a provider `ics`. */
+    add: (
+        kind: ConnectKind,
+        provider: AccountProvider,
+        label: string,
+        url?: string
+    ) => Promise<string>;
+    remove: (kind: ConnectKind, account: AccountRow) => Promise<string>;
+    connect: (kind: ConnectKind, account: AccountRow) => Promise<string>;
     /** Whether a Connect press on this account has not been answered yet. */
-    connecting: (kind: ConnectKind, account: ConnectAccountConfig) => boolean;
+    connecting: (kind: ConnectKind, account: AccountRow) => boolean;
     /** Whether an Add or a Remove of this connector has not been answered yet. */
     busy: (kind: ConnectKind) => boolean;
     openSetup: () => void;
@@ -66,6 +83,8 @@ function refusalWords(code: string, label: string, reason: string): string {
             return t('accounts.refused_provider');
         case 'label':
             return t('accounts.refused_label');
+        case 'link':
+            return t('accounts.refused_link');
         case 'taken':
             return t('accounts.refused_taken', label);
         case 'google_id':
@@ -116,7 +135,7 @@ export function createAccounts(
     }
 
     /** The rows a connector's payload lists now. */
-    function rows(kind: ConnectKind): ConnectAccountConfig[] {
+    function rows(kind: ConnectKind): AccountRow[] {
         const held = kind === 'calendar' ? entities.calendar() : entities.inbox();
         return held?.accounts ?? [];
     }
@@ -149,21 +168,39 @@ export function createAccounts(
         return '';
     }
 
+    /** The request an Add sends, or the refusal said before anything is sent. */
+    function addBody(
+        kind: ConnectKind,
+        provider: AccountProvider,
+        typed: string,
+        url: string
+    ): Record<string, string> | { refused: string } {
+        const refused = accountRefusal(kind, rows(kind), provider, typed);
+        if (refused !== null) return { refused: refusalWords(refused, typed, '') };
+        if (isProvider(provider)) return { action: 'add', provider, label: typed };
+        const link = publishedLink(url);
+        if (link === null) return { refused: refusalWords('link', typed, '') };
+        return { action: 'add', provider, label: typed, url: link };
+    }
+
     async function add(
         kind: ConnectKind,
-        provider: ConnectProvider,
-        label: string
+        provider: AccountProvider,
+        label: string,
+        url = ''
     ): Promise<string> {
         const typed = label.trim();
-        const refused = accountRefusal(rows(kind), provider, typed);
-        if (refused !== null) return refusalWords(refused, typed, '');
-        if (setup !== null && !setup.ready[provider]) {
+        const body = addBody(kind, provider, typed, url);
+        if ('refused' in body) return body.refused;
+        if (isProvider(provider) && setup !== null && !setup.ready[provider]) {
             return waitForSetup({ kind, provider, label: typed });
         }
         busyKinds.add(kind);
         try {
-            const answer = await post(ENDPOINT[kind], { action: 'add', provider, label: typed });
-            if (answer.error === 'setup') return waitForSetup({ kind, provider, label: typed });
+            const answer = await post(ENDPOINT[kind], body);
+            if (answer.error === 'setup' && isProvider(provider)) {
+                return waitForSetup({ kind, provider, label: typed });
+            }
             return answer.ok ? '' : refusalWords(answer.error, typed, answer.reason);
         } finally {
             busyKinds.delete(kind);

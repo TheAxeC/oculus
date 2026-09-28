@@ -10,21 +10,28 @@
     // write to a mailbox anywhere on the page, and neither of these two ever creates a draft at the
     // provider.
     //
-    // What is drawn of the message itself is the provider's own one-line snippet, which is all the
-    // payload carries.
+    // The card is titled by the sender's display name, with the address in smaller words after it
+    // and the whole From line as the title's tooltip; the subject is the line under it. Both are
+    // drawn as the characters they hold, since a mail header is not Markdown. What is drawn of the
+    // message itself is the provider's own snippet, already decoded on the server, clamped to two
+    // lines. The kind tag is drawn only in the Triaged section, where the card has left the section
+    // that names its kind, and the account tag only while there is more than one account to tell
+    // apart. Draft reply and the provider's page are compact controls on the same row as Archive
+    // and Triaged; the draft editor opens under the card's text.
 
     import Card from '$lib/ui/frame/Card.svelte';
     import Confirm from '$lib/ui/controls/Confirm.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
-    import Glyph from '$lib/ui/display/Glyph.svelte';
     import TextArea from '$lib/ui/forms/TextArea.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import Tooltip from '$lib/ui/menu/Tooltip.svelte';
     import { inlineMarkdown } from '$lib/ui/html';
     import {
         archiveConfirm,
         kindOf,
         kindTone,
         sendConfirm,
+        senderParts,
         threadAge,
         type InboxThread
     } from '$lib/state/feeds/inbox';
@@ -42,6 +49,8 @@
         cursor: boolean;
         /** The account's own label, which is what a confirmation names the mailbox by. */
         account: string;
+        /** Whether the card names its account, which it does while more than one is configured. */
+        accountTag: boolean;
         busy: boolean;
         /** Whether this card's draft editor is open, which the view keeps in its instance state. */
         draftOpen: boolean;
@@ -57,6 +66,7 @@
         id,
         cursor,
         account,
+        accountTag,
         busy,
         draftOpen,
         onshowdraft,
@@ -76,7 +86,9 @@
     const note = $derived(thread.triage);
     const saved = $derived(note.draft ?? '');
     const draft = $derived(typed ?? saved);
-    const sender = $derived(thread.sender || thread.subject || t('inbox.thread'));
+    const from = $derived(senderParts(thread.sender));
+    /** What the card is titled by: the display name, else the address, else the subject. */
+    const name = $derived(from.name || from.address || thread.subject || t('inbox.thread'));
     const age = $derived(threadAge(thread, minuteNow()));
 
     /** The age in the reader's own words, and nothing when the provider's time cannot be read. */
@@ -123,18 +135,51 @@
         asking = null;
         say(await onarchive(thread), t('inbox.said_archived'));
     }
+
+    /** Open the thread at its provider, in a tab of its own. */
+    function openProvider(): void {
+        if (thread.url) window.open(thread.url, '_blank', 'noopener,noreferrer');
+    }
 </script>
 
 <div data-inbox={thread.id}>
-    <Card {id} {cursor} title={sender} titleHtml={inlineMarkdown(sender)} tone={kindTone(kind)}>
+    <Card {id} {cursor} title={name} tone={kindTone(kind)}>
+        {#snippet heading()}
+            <Tooltip text={thread.sender}>
+                <span class="name">{name}</span>
+            </Tooltip>
+            {#if from.name !== '' && from.address !== ''}
+                <span class="address">{from.address}</span>
+            {/if}
+        {/snippet}
         {#snippet meta()}
-            <Tag label={kindLabel()} tone={kindTone(kind)} />
-            <Tag label={account} />
+            {#if note.triaged}
+                <Tag label={kindLabel()} tone={kindTone(kind)} />
+            {/if}
+            {#if accountTag}
+                <Tag label={account} />
+            {/if}
             {#if ageText() !== ''}
                 <span class="age">{ageText()}</span>
             {/if}
             {#if thread.messages > 1}
                 <span class="age">{t('inbox.messages', thread.messages)}</span>
+            {/if}
+            <ToolButton
+                label={t('inbox.show_draft')}
+                glyph="draft"
+                compact
+                active={draftOpen}
+                expanded={draftOpen}
+                onclick={() => onshowdraft(thread, !draftOpen)}
+            />
+            {#if thread.url}
+                <ToolButton
+                    label={t('inbox.open_provider')}
+                    glyph="launch"
+                    compact
+                    onclick={openProvider}
+                />
             {/if}
             <ToolButton
                 label={t('inbox.archive')}
@@ -166,8 +211,7 @@
         {/snippet}
 
         {#if thread.subject !== ''}
-            <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
-            <p class="sub">{@html inlineMarkdown(thread.subject)}</p>
+            <p class="subject">{thread.subject}</p>
         {/if}
         {#if note.what}
             <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
@@ -177,15 +221,8 @@
             <p class="snippet">{thread.snippet}</p>
         {/if}
 
-        <div class="draft">
-            <ToolButton
-                label={t('inbox.show_draft')}
-                glyph="draft"
-                active={draftOpen}
-                expanded={draftOpen}
-                onclick={() => onshowdraft(thread, !draftOpen)}
-            />
-            {#if draftOpen}
+        {#if draftOpen}
+            <div class="draft">
                 <TextArea
                     value={draft}
                     label={t('inbox.draft_label')}
@@ -208,17 +245,7 @@
                         onclick={() => (asking = 'send')}
                     />
                 </div>
-            {/if}
-        </div>
-
-        {#if thread.url}
-            <p class="provider">
-                <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- the address is data, the provider's own page for this thread, rather than a route id resolve() takes -->
-                <a href={thread.url} target="_blank" rel="noopener noreferrer">
-                    <Glyph name="link" />
-                    <span>{t('inbox.open_provider')}</span>
-                </a>
-            </p>
+            </div>
         {/if}
     </Card>
 </div>
@@ -244,25 +271,39 @@
 {/if}
 
 <style>
+    .address {
+        margin-left: 6px;
+        color: var(--muted-txt, var(--muted));
+        font-size: var(--fs-sm);
+        font-weight: 400;
+    }
+
     .age {
         color: var(--muted-txt, var(--muted));
         font-size: var(--fs-sm);
     }
 
-    .sub {
-        color: var(--muted-txt, var(--muted));
+    .subject {
+        color: var(--ink-txt, var(--ink));
         font-size: var(--fs-md);
+        font-weight: 600;
     }
 
+    /* The snippet is cut after two lines with an ellipsis, so every card is about as tall as the
+       next and the column reads as a list. */
     .snippet {
+        display: -webkit-box;
+        overflow: hidden;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
         color: var(--muted-txt, var(--muted));
         font-size: var(--fs-sm);
     }
 
-    .sub,
+    .subject,
     .what,
-    .snippet,
-    .provider {
+    .snippet {
         margin: 4px 0 0;
     }
 
@@ -276,12 +317,5 @@
         display: flex;
         flex-wrap: wrap;
         gap: 6px;
-    }
-
-    .provider a {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        color: var(--accent-txt, var(--accent));
     }
 </style>

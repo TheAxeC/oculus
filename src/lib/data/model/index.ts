@@ -361,6 +361,8 @@ export type {
 } from './model-collections.ts';
 
 export type {
+    AccountProvider,
+    AccountRow,
     ConnectAccountConfig,
     ConnectAccountStatus,
     ConnectKind,

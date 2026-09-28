@@ -15,7 +15,7 @@ import { isMap, isScalar, isSeq, parse, parseDocument } from 'yaml';
 import type { Node, Pair, YAMLSeq } from 'yaml';
 import { checkLocal } from '../../../data/sources/config.ts';
 import { isMap as isRecord } from '../../../data/helpers/guards.ts';
-import type { ConnectAccountConfig } from '../../../data/model/index.ts';
+import type { AccountRow } from '../../../data/model/index.ts';
 
 /** The two lists of config/local.yml an account row lives in. */
 export type AccountList = 'calendars' | 'mail';
@@ -24,7 +24,7 @@ export type AccountList = 'calendars' | 'mail';
 export type RowEdit = { text: string } | { reason: string };
 
 /** How a row is written: one flow map on one line, the label quoted when YAML would retype it. */
-function rowText(row: ConnectAccountConfig): string {
+function rowText(row: AccountRow): string {
     const label = parse(row.label) === row.label ? row.label : JSON.stringify(row.label);
     return `{ provider: ${row.provider}, label: ${label} }`;
 }
@@ -65,7 +65,7 @@ function textEnd(text: string, node: Node): number {
 }
 
 /** Whether a row names this account. */
-function same(item: unknown, account: ConnectAccountConfig): boolean {
+function same(item: unknown, account: AccountRow): boolean {
     return isRecord(item) && item.provider === account.provider && item.label === account.label;
 }
 
@@ -82,7 +82,7 @@ function blockIndent(text: string, seq: YAMLSeq): string | null {
 }
 
 /** The text with one row added to the list, before any check. */
-function added(text: string, list: AccountList, row: ConnectAccountConfig): RowEdit {
+function added(text: string, list: AccountList, row: AccountRow): RowEdit {
     const doc = parseDocument(text);
     const root = doc.contents;
     const empty = root === null || (isScalar(root) && root.value === null);
@@ -120,7 +120,7 @@ function added(text: string, list: AccountList, row: ConnectAccountConfig): RowE
 }
 
 /** The text with one row taken from the list, before any check. */
-function removed(text: string, list: AccountList, account: ConnectAccountConfig): RowEdit {
+function removed(text: string, list: AccountList, account: AccountRow): RowEdit {
     const doc = parseDocument(text);
     const pair = listPair(doc.contents, list);
     const value = pair?.value;
@@ -168,7 +168,7 @@ function verified(
     before: Record<string, unknown>,
     edit: RowEdit,
     list: AccountList,
-    wanted: ConnectAccountConfig[],
+    wanted: AccountRow[],
     file: string
 ): RowEdit {
     if ('reason' in edit) return edit;
@@ -183,16 +183,16 @@ function verified(
 }
 
 /** The rows the list holds now, or the empty list when the file names none. */
-function rowsOf(before: Record<string, unknown>, list: AccountList): ConnectAccountConfig[] {
+function rowsOf(before: Record<string, unknown>, list: AccountList): AccountRow[] {
     const held = before[list];
-    return Array.isArray(held) ? (held as ConnectAccountConfig[]) : [];
+    return Array.isArray(held) ? (held as AccountRow[]) : [];
 }
 
 /** Add one account row to a machine file's text, verified; the empty text is a file not made. */
 export function addAccountRow(
     text: string,
     list: AccountList,
-    row: ConnectAccountConfig,
+    row: AccountRow,
     file: string
 ): RowEdit {
     const before = valuesOf(text);
@@ -205,7 +205,7 @@ export function addAccountRow(
 export function removeAccountRow(
     text: string,
     list: AccountList,
-    account: ConnectAccountConfig,
+    account: AccountRow,
     file: string
 ): RowEdit {
     const before = valuesOf(text);

@@ -305,7 +305,7 @@ describe('ServerContext', () => {
     });
 
     it('hands the account lists of a local.yml written again to both pollers and the routes', () => {
-        let rows: LocalConfig['calendars'] = [];
+        let rows: LocalConfig['mail'] = [];
         const changed: (() => void)[] = [];
         const calendarSet = vi.fn();
         const mailSet = vi.fn();

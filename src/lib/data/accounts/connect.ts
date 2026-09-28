@@ -7,23 +7,55 @@
 // the Inbox, and refuses a label or a client id in words before anything is sent. A copy on each
 // side would let them disagree about what an account is called or what the server accepts.
 //
+// Which providers a connector takes is the kind's: the two that sign in for either, and the
+// published link for a calendar alone, so a mail row naming `ics` is refused by the same rule that
+// refuses a provider nobody offers.
+//
 // Pure: no I/O and no path module. The label's allowed characters are checked here, before a row is
 // written, and again where the machine's own configuration is read, so a key is always a safe file
 // name by the time it reaches a join.
 
-import type { ConnectAccountConfig, ConnectProvider } from '../model/model-connect.ts';
+import type { CalendarProvider } from '../model/model-calendar.ts';
+import type {
+    AccountProvider,
+    AccountRow,
+    ConnectAccountConfig,
+    ConnectKind,
+    ConnectProvider
+} from '../model/model-connect.ts';
 
 /** How an account is named in its credential file, on the wire and in a payload's rows. */
-export function connectKey(account: ConnectAccountConfig): string {
+export function connectKey(account: AccountRow): string {
     return `${account.provider}-${account.label}`;
 }
 
-/** The two providers, in the order the page offers them. */
+/** The two providers that sign in, in the order the page offers them. */
 export const PROVIDERS: readonly ConnectProvider[] = ['google', 'microsoft'];
 
-/** Whether a value the page or a file sent is one of the two providers. */
+/** The providers a calendar account is read from: the two that sign in, then a published link. */
+export const CALENDAR_PROVIDERS: readonly CalendarProvider[] = [...PROVIDERS, 'ics'];
+
+/** The providers each connector offers, in the order its Add form lists them. */
+export const PROVIDERS_OF: Record<ConnectKind, readonly AccountProvider[]> = {
+    calendar: CALENDAR_PROVIDERS,
+    mail: PROVIDERS
+};
+
+/** Whether a value the page or a file sent is one of the two providers that sign in. */
 export function isProvider(value: unknown): value is ConnectProvider {
     return value === 'google' || value === 'microsoft';
+}
+
+/** Whether a value the page or a file sent is one of the three calendar providers. */
+export function isCalendarProvider(value: unknown): value is CalendarProvider {
+    return isProvider(value) || value === 'ics';
+}
+
+/**
+ * Whether an account row is of a provider that signs in, which is every row but a published link.
+ */
+export function signsIn(account: AccountRow): account is ConnectAccountConfig {
+    return isProvider(account.provider);
 }
 
 /**
@@ -42,16 +74,18 @@ export function isAccountLabel(label: unknown): label is string {
 export type AccountRefusal = 'provider' | 'label' | 'taken';
 
 /**
- * Why an account of this provider and label cannot join a list that already holds `rows`, or null
- * when it can. The label is unique per provider inside its own list, which is the rule the reader
- * of config/local.yml applies, so a row this accepts is a row the next read accepts.
+ * Why an account of this provider and label cannot join a connector's list that already holds
+ * `rows`, or null when it can. The provider is one the connector offers, and the label is unique
+ * per provider inside its own list, which is the rule the reader of config/local.yml applies, so a
+ * row this accepts is a row the next read accepts.
  */
 export function accountRefusal(
-    rows: readonly ConnectAccountConfig[],
+    kind: ConnectKind,
+    rows: readonly AccountRow[],
     provider: unknown,
     label: unknown
 ): AccountRefusal | null {
-    if (!isProvider(provider)) return 'provider';
+    if (!PROVIDERS_OF[kind].some((one) => one === provider)) return 'provider';
     if (!isAccountLabel(label)) return 'label';
     if (rows.some((row) => row.provider === provider && row.label === label)) return 'taken';
     return null;

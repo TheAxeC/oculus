@@ -175,6 +175,54 @@ describe('the accounts store commands', () => {
     });
 });
 
+describe('the Add of a published calendar link', () => {
+    const LINK = 'https://outlook.example/cal.ics';
+
+    it('posts the link with the label to the calendar endpoint, whatever the setup says', async () => {
+        answers.set('GET /api/connect', {
+            status: 200,
+            body: setupWith({ google: false, microsoft: false })
+        });
+        await store.loadSetup();
+        expect(await store.add('calendar', 'ics', ' rooster ', LINK)).toBe('');
+        expect(opened).toEqual([]);
+        expect(
+            asked.filter((one) => one.method === 'POST').map((one) => [one.url, one.body])
+        ).toEqual([
+            ['/api/calendar', { action: 'add', provider: 'ics', label: 'rooster', url: LINK }]
+        ]);
+    });
+
+    it('refuses a missing link and one of another scheme in words, and sends nothing', async () => {
+        expect(await store.add('calendar', 'ics', 'rooster', '')).toBe(t('accounts.refused_link'));
+        expect(await store.add('calendar', 'ics', 'rooster', 'ftp://x')).toBe(
+            t('accounts.refused_link')
+        );
+        expect(asked).toEqual([]);
+    });
+
+    it("says the server's link refusal in the same words", async () => {
+        answers.set('POST /api/calendar', { status: 400, body: { error: 'link' } });
+        expect(await store.add('calendar', 'ics', 'rooster', LINK)).toBe(
+            t('accounts.refused_link')
+        );
+    });
+
+    it('refuses a published link on the mail in words, and sends nothing', async () => {
+        expect(await store.add('mail', 'ics', 'rooster', LINK)).toBe(
+            t('accounts.refused_provider')
+        );
+        expect(asked).toEqual([]);
+    });
+
+    it('sends no link with an Add of a provider that signs in', async () => {
+        expect(await store.add('mail', 'microsoft', 'home', LINK)).toBe('');
+        expect(asked.map((one) => one.body)).toEqual([
+            { action: 'add', provider: 'microsoft', label: 'home' }
+        ]);
+    });
+});
+
 describe('the Add that waits on its provider', () => {
     it('reads the setup answer the page draws from', async () => {
         answers.set('GET /api/connect', {

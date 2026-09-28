@@ -87,7 +87,7 @@ export function createEntities(): EntitiesStore {
         git: () => (payload('git') as GitPayload | undefined) ?? null,
         /** The latest Live HPC state, or null before the server's starting message. */
         hpc: () => (payload('hpc') as HpcPayload | undefined) ?? null,
-        /** The latest calendar agenda, or null before the server's first message. */
+        /** The latest calendar payload, or null before the server's first message. */
         calendar: () => (payload('calendar') as CalendarPayload | undefined) ?? null,
         /**
          * The latest inbox plate and its triage notes, or null before the server's first message.

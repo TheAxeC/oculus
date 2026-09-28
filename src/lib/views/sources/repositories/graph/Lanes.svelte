@@ -5,6 +5,7 @@
     // and row units scaled to the row's own height, so it lines up with the row whatever the text
     // size is.
 
+    import { HUES } from '$lib/ui/display/hues';
     import type { LaneRow } from '$lib/state/sources/repositories/graph-lanes';
 
     type Props = { row: LaneRow; head: boolean };
@@ -13,9 +14,6 @@
 
     /** How wide one lane is, in the drawing's units, against a row one unit tall. */
     const LANE = 0.7;
-
-    /** The hues lanes cycle through, as colour tokens every theme defines. */
-    const HUES = ['blue', 'green', 'amber', 'violet', 'red', 'teal'];
 
     function hue(lane: number): string {
         return `var(--c-${HUES[lane % HUES.length]}-txt)`;

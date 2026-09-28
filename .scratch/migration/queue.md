@@ -1,7 +1,6 @@
 /plan-orchestration oculus/migration
 
 In flight:
-- Q92 (inbox and calendar): repair round 1 answered; its refutation next.
 - Q79a (the library audit's server fixes): building.
 - Q79c (the library audit's page fixes, with the 11 raw buttons): building.
 Queued, in order:

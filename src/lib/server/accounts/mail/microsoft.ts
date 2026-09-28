@@ -5,7 +5,8 @@
 // each candidate's conversation is read once, which answers in one call how many messages it holds,
 // which of them is newest, whether that one is the reader's own and whether it sits in the trash.
 // `$select` names the fields read, so the body of a message is never fetched; what the payload
-// carries is the `bodyPreview` Graph puts in its own list.
+// carries is the `bodyPreview` Graph puts in its own list, its HTML entities decoded as Gmail's
+// snippet is, so the payload holds the words themselves.
 //
 // Every call is inside the mail scopes the consent asks for. Which messages are the reader's own is
 // decided by the sent-items folder rather than by asking who the reader is, since the user resource
@@ -22,6 +23,7 @@
 // creates a draft, and `/me/messages/{id}/createReply` and a POST of a draft message are called by
 // nothing in this file.
 
+import { decodeHTML } from 'entities';
 import { isMap, str } from '../../../data/helpers/guards.ts';
 import { getJson, httpsLink, postJson, rowsOf } from '../connect/api.ts';
 import {
@@ -214,7 +216,7 @@ function threadOf(
         replyTo: replyToOf(newest),
         subject: str(newest.subject) ?? '',
         received: str(newest.receivedDateTime) ?? '',
-        snippet: str(newest.bodyPreview) ?? '',
+        snippet: decodeHTML(str(newest.bodyPreview) ?? ''),
         messages: messages.length,
         ...(link === undefined ? {} : { url: link }),
         ownNewest: facts.sentFolder !== '' && folder === facts.sentFolder,

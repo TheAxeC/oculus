@@ -5,6 +5,10 @@
 // has classified yet has none and is drawn in its own section ahead of the three, since it is the
 // one thing on the plate that nothing has said anything about. A triaged thread leaves its section
 // whatever its kind.
+//
+// A card is titled by who wrote the thread, read from the From line as the provider gave it: the
+// display name alone, with the address beside it in smaller words, or the address when the line
+// names nobody.
 
 import { ageOf, mailKey } from '../../data/accounts/mail.ts';
 import { t } from '../shared/words/text.ts';
@@ -106,6 +110,23 @@ export function accountOf(accounts: MailAccount[], thread: InboxThread): MailAcc
 /** How old one thread is at the moment the page is in, or null when the time cannot be read. */
 export function threadAge(thread: InboxThread, now: number): ReturnType<typeof ageOf> {
     return ageOf(thread.received, now);
+}
+
+/**
+ * A From line read as `Name <address>`, the name unquoted: what comes before the angle brackets.
+ */
+const FROM_LINE = /^\s*(.*?)\s*<([^<>]*)>\s*$/;
+
+/**
+ * A From line split into the display name and the address, reading `Name <addr>`,
+ * `"Name, Quoted" <addr>` and a bare `addr`; a line with no display name has the empty name.
+ */
+export function senderParts(from: string): { name: string; address: string } {
+    const match = FROM_LINE.exec(from);
+    if (match === null) return { name: '', address: from.trim() };
+    const quoted = /^"(.*)"$/.exec(match[1]);
+    const name = quoted === null ? match[1] : quoted[1].replace(/\\(.)/g, '$1');
+    return { name: name.trim(), address: match[2].trim() };
 }
 
 /**

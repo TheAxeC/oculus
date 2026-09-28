@@ -3,6 +3,9 @@
     // label, the provider, when it was last read, the Connect control, and a row menu whose Remove
     // asks first, naming the account.
     //
+    // A published calendar link signs in nowhere, so its row has no Connect: it is read, or it
+    // says why not in its hint, at every poll. Its Remove says that the file keeping its link goes.
+    //
     // Connect is shown only while an account has no refresh token, and is unpressable while the
     // press it answered is still opening the provider's consent page. An account whose provider has
     // no client half on this machine says so and offers the account setup page in place of
@@ -18,15 +21,16 @@
     import { clock } from '$lib/state/shared/words/format';
     import {
         connectKey,
+        signsIn,
+        type AccountProvider,
         type ConnectAccountStatus,
-        type ConnectKind,
-        type ConnectProvider
+        type ConnectKind
     } from '$lib/state/life/accounts';
     import { useState } from '$lib/state/client/use';
 
     /** What one row draws, which a calendar and a mail account both carry. */
     type Row = {
-        provider: ConnectProvider;
+        provider: AccountProvider;
         label: string;
         status: ConnectAccountStatus;
         lastOk?: string;
@@ -47,6 +51,7 @@
 
     /** The provider's own name, in the words of the connector the row belongs to. */
     function provider(row: Row): string {
+        if (row.provider === 'ics') return t('calendar.provider_ics');
         if (kind === 'calendar') {
             return row.provider === 'google'
                 ? t('calendar.provider_google')
@@ -109,7 +114,7 @@
                         glyph={t('views.account_setup_glyph')}
                         onclick={openSetup}
                     />
-                {:else if row.status !== 'connected'}
+                {:else if row.status !== 'connected' && signsIn(row)}
                     <ToolButton
                         label={connecting(kind, row)
                             ? t('accounts.connecting')
@@ -149,6 +154,7 @@
     <RemoveAccount
         label={asking.label}
         ownHalf={asking.ownHalf === true}
+        published={asking.provider === 'ics'}
         provider={provider(asking)}
         onconfirm={() => void removeAsked()}
         oncancel={() => (asking = null)}

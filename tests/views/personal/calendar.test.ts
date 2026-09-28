@@ -1,21 +1,24 @@
-// The Calendar view rendered to HTML over one synthetic socket payload: the day groups, the today
-// heading, the account rows and their Connect control, the tags an event carries, and the cancelled
-// event's rule.
+// The Calendar view rendered to HTML over one synthetic socket payload: the calendar library drawn
+// in the view the instance keeps, the account rows and their Connect control, the Add form's
+// providers, the connector head and the window in the footer.
 //
 // No provider is reached and no file is read: the payload is the fixture, exactly as the socket
 // would deliver it.
 
+import { existsSync, readFileSync } from 'node:fs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render } from 'svelte/server';
 import Calendar from '../../../src/lib/views/personal/calendar/Calendar.svelte';
+import AddAccount from '../../../src/lib/views/shared/accounts/AddAccount.svelte';
 import {
+    calendarSettings,
     engineDir,
     glyphCatalog,
     loadConfig,
     textCatalog
 } from '../../../src/lib/data/sources/config.ts';
 import { setCatalog, setGlyphs } from '../../../src/lib/state/shared/words/text.ts';
-import type { CalendarPayload } from '../../../src/lib/data/model/index.ts';
+import type { AccountProvider, CalendarPayload } from '../../../src/lib/data/model/index.ts';
 import {
     badgeOf,
     type Registration
@@ -26,7 +29,8 @@ import { vocabCatalog } from '../../../src/lib/data/sources/config.ts';
 import { clientContext, createClientState, type ClientState } from '../../fixtures/client.ts';
 
 const { config } = loadConfig(engineDir());
-setCatalog(textCatalog(config));
+const catalog = textCatalog(config);
+setCatalog(catalog);
 setGlyphs(glyphCatalog(config));
 setVocab(vocabCatalog(config));
 
@@ -111,12 +115,37 @@ beforeEach(() => {
     client = createClientState();
 });
 
-/** The view drawn from one payload, with the page's clock standing at the fixture's moment. */
-function draw(data: CalendarPayload, version = 1): string {
+/**
+ * The view drawn from one payload, with the page's clock standing at the fixture's moment and the
+ * instance holding the state the case gives it.
+ */
+function draw(data: CalendarPayload, held: Record<string, unknown> = {}, version = 1): string {
     return atFixtureMoment(() => {
         client.entities.receive({ channel: 'calendar', version, payload: data });
+        client.ui.setInstanceState(instance.id, held);
         return render(Calendar, { context: clientContext(client), props: { instance } }).body;
     });
+}
+
+/** The Add form of one connector, drawn open on one provider. */
+function addForm(kind: 'calendar' | 'mail', provider?: AccountProvider): string {
+    return render(AddAccount, {
+        context: clientContext(client),
+        props: { kind, onclose: () => undefined, ...(provider === undefined ? {} : { provider }) }
+    }).body;
+}
+
+/** A button whose words are `words`, as the ToolButton primitive draws them. */
+function button(words: string): RegExp {
+    const escaped = words.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return new RegExp(`<span class="label">${escaped}</span>(?:<!--[^>]*-->|\\s)*</button>`);
+}
+
+/** The words of every option of the provider list, in order, the empty choice left out. */
+function providerChoices(markup: string): string[] {
+    return [...markup.matchAll(/<option value="([^"]+)"[^>]*>([^<]*)<\/option>/g)].map(
+        (match) => match[2]
+    );
 }
 
 /** One reading with a fresh client whose minute clock stands at the fixture's moment. */
@@ -163,38 +192,62 @@ describe("the Calendar view's badge", () => {
 });
 
 describe('the Calendar view', () => {
-    it('groups the events by day and marks today', () => {
+    it('draws the calendar in week view while the instance keeps no view', () => {
         const body = draw(payload);
-        expect(body).toContain(`data-day="${TODAY}"`);
-        expect(body).toContain(`data-day="${TOMORROW}"`);
-        // The two days come in the order the payload sorted them, today first.
-        expect(body.indexOf(`data-day="${TODAY}"`)).toBeLessThan(
-            body.indexOf(`data-day="${TOMORROW}"`)
-        );
-        expect(body).toContain('today');
-        // Each event is one line under its own day.
-        for (const event of payload.events) expect(body).toContain(`data-event="${event.id}"`);
+        expect(body).toMatch(/class="ec ec-time-grid ec-week-view"/);
+        // The toolbar's words are the catalog's, one control per view, the week the one chosen.
+        for (const key of [
+            'calendar.view_day',
+            'calendar.view_week',
+            'calendar.view_month',
+            'calendar.view_list'
+        ]) {
+            expect(body).toMatch(button(catalog[key]));
+        }
+        expect(body).toMatch(/aria-checked="true">(?:<!--[^>]*-->|\s)*<span class="label">Week</);
+        expect(body).toMatch(button(catalog['calendar.today']));
+        expect(body).toMatch(button(catalog['calendar.prev_week']));
+        expect(body).toMatch(button(catalog['calendar.next_week']));
+        // The library's own toolbar draws no button of its own.
+        expect(body).not.toMatch(/class="ec-button/);
     });
 
-    it('draws the clock of a timed event and the all-day word of an all-day one', () => {
-        const body = draw(payload);
-        expect(body).toContain('09:00');
-        expect(body).toContain('all day');
+    // The page is drawn in the browser only (src/routes/+layout.ts turns server rendering off), and
+    // the library's server render prints its height option as a function, so the box's height is
+    // read from the view's own style rules, beside the height calendarOptions hands the library.
+    it("audits that the library's box takes the pane's height and paints its cells with no surface of their own", () => {
+        const source = readFileSync('src/lib/views/personal/calendar/Calendar.svelte', 'utf8');
+        const style = source.slice(source.indexOf('<style>'));
+        /** The declarations of the first rule whose selector is exactly `selector`. */
+        const rule = (selector: string): string => {
+            const at = style.indexOf(`\n    ${selector} {`);
+            expect(at).toBeGreaterThan(-1);
+            return style.slice(at, style.indexOf('}', at));
+        };
+        expect(rule('.calendar')).toMatch(/\n\s*height: 100%;/);
+        expect(rule('.calendar')).toMatch(/\n\s*flex-direction: column;/);
+        expect(rule('.grid')).toMatch(/\n\s*flex: 1;/);
+        expect(rule('.grid')).toMatch(/\n\s*min-height: 0;/);
+        const library = rule('.grid :global(.ec)');
+        expect(library).toMatch(/--ec-bg-color: transparent;/);
+        expect(library).toMatch(/--ec-today-bg-color: var\(--chip\);/);
+        // A height fixed on the library's box would stop it following the pane.
+        expect(library).not.toMatch(/\n\s*height:/);
     });
 
-    it('tags each line with its account label and its calendar', () => {
-        const body = draw(payload);
-        expect(body).toContain('Standup');
-        expect(body).toContain('work');
-        expect(body).toContain('Work');
-        expect(body).toContain('Room 1');
+    it('draws the calendar in month view for an instance that keeps the month', () => {
+        const body = draw(payload, { view: 'dayGridMonth' });
+        expect(body).toMatch(/class="ec ec-day-grid ec-month-view"/);
+        // The library draws one view at a time, so the month replaces the week.
+        expect(body).not.toContain('ec-week-view');
     });
 
-    it('strikes a cancelled event through and marks a tentative one', () => {
-        const body = draw(payload);
-        expect(body).toContain('cancelled');
-        expect(body).toContain('tentative');
-        expect(body).toMatch(/class="[^"]*cancelled[^"]*"[^>]*>\s*Called off/);
+    it('draws the calendar in week view for an instance that keeps the retired agenda', () => {
+        expect(draw(payload, { view: 'agenda' })).toMatch(/class="ec ec-time-grid ec-week-view"/);
+    });
+
+    it('audits that the agenda partial is gone', () => {
+        expect(existsSync('src/lib/views/personal/calendar/Agenda.svelte')).toBe(false);
     });
 
     it('shows Connect on the account with no token and not on the connected one', () => {
@@ -222,7 +275,7 @@ describe('the Calendar view', () => {
 
     it('offers Add account in the empty state and in the head', () => {
         const body = draw({ ...payload, status: 'unconfigured', accounts: [], events: [] });
-        expect(body).toContain('No calendar account yet. Add one to read its agenda here.');
+        expect(body).toContain(catalog['accounts.empty_calendar']);
         expect([...body.matchAll(/>Add account</g)]).toHaveLength(2);
         expect(body).toContain('aria-label="Account actions"');
     });
@@ -234,6 +287,17 @@ describe('the Calendar view', () => {
         expect(body).toContain('every 15m');
         expect(body).toContain('Refresh now');
         expect(body).toContain('Read-only over 1 day back and 14 days ahead.');
+    });
+
+    it('says the calendar window the shipped behaviour file sets, 31 days back and 62 ahead', () => {
+        const shipped = calendarSettings(config);
+        expect([shipped.daysBack, shipped.daysAhead]).toEqual([31, 62]);
+        const body = draw({
+            ...payload,
+            daysBack: shipped.daysBack,
+            daysAhead: shipped.daysAhead
+        });
+        expect(body).toContain('Read-only over 31 days back and 62 days ahead.');
     });
 
     it('says one day for a number that is 1, back or ahead, and days for any other', () => {
@@ -253,18 +317,12 @@ describe('the Calendar view', () => {
         );
     });
 
-    it('says the agenda is empty when the window holds nothing', () => {
-        const body = draw({ ...payload, events: [] });
-        expect(body).toContain('No events in this window.');
-    });
-
-    it('says the machine names no account, and draws no agenda, when it is unconfigured', () => {
+    it('says the machine names no account, and draws no calendar, when it is unconfigured', () => {
         const body = draw({ ...payload, status: 'unconfigured', accounts: [], events: [] });
         expect(body).toContain('No calendar account yet.');
         expect(body).toContain('not configured');
-        // no account is configured, so the sentence drawn is that one rather than the empty
-        // agenda's
-        expect(body).not.toContain('No events in this window.');
+        // no account is configured, so there is no calendar to draw
+        expect(body).not.toContain('class="ec ');
     });
 
     it('carries the retry cadence and the failure tone while a provider is refusing', () => {
@@ -284,8 +342,8 @@ describe('the Calendar view', () => {
         });
         expect(body).toContain('retrying every 2m');
         expect(body).toContain('google: 403 PERMISSION_DENIED');
-        // The last good events are still drawn under the state word.
-        expect(body).toContain('Standup');
+        // The calendar is still drawn under the state word, over the last good events.
+        expect(body).toContain('class="ec ');
     });
 
     it('shows the Connect control as connecting and unpressable while a press is open', () => {
@@ -312,5 +370,42 @@ describe('the Calendar view', () => {
         expect(body).not.toContain('x-oculus-token');
         // nor an address of the calendar it came from
         expect(body).not.toContain('https://www.google.com/calendar/event');
+    });
+});
+
+describe('the published calendar link', () => {
+    it('is offered as a third provider by the Add form of the calendar, with a link field', () => {
+        const google = addForm('calendar');
+        expect(providerChoices(google)).toEqual([
+            catalog['accounts.provider_google'],
+            catalog['accounts.provider_microsoft'],
+            catalog['accounts.provider_ics']
+        ]);
+        // The link field is drawn only while the published link is the provider chosen.
+        expect(google).not.toContain(catalog['accounts.add_link']);
+        const ics = addForm('calendar', 'ics');
+        expect(ics).toContain(catalog['accounts.add_link']);
+        expect(ics).toContain(catalog['accounts.add_link_hint']);
+        expect(ics).toMatch(/<option value="ics" selected[^>]*>/);
+    });
+
+    it('is not offered by the Add form of the mail', () => {
+        expect(providerChoices(addForm('mail'))).toEqual([
+            catalog['accounts.provider_google'],
+            catalog['accounts.provider_microsoft']
+        ]);
+    });
+
+    it('names an ics account "Published link" and draws no Connect control on its row', () => {
+        const body = draw({
+            ...payload,
+            accounts: [
+                { provider: 'ics', label: 'rooster', status: 'not-connected', calendars: [] }
+            ]
+        });
+        expect(body).toContain('data-calendar-account="ics-rooster"');
+        expect(body).toContain(`>${catalog['calendar.provider_ics']}</span>`);
+        expect(catalog['calendar.provider_ics']).toBe('Published link');
+        expect(body).not.toMatch(/>Connect</);
     });
 });

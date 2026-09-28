@@ -12,6 +12,7 @@
 // palette hue that hex stands for, which is what keeps every pair on a slide inside the set
 // contrast.test.ts measures.
 
+import { decodeHTML } from 'entities';
 import {
     PRESENT_DOC,
     catalogKeys,
@@ -57,16 +58,6 @@ export type {
     Project
 } from '../../data/model/index.ts';
 
-/** The entities a `&` escape in a deck title stands for, for the plain words the overview draws. */
-const ENTITIES: Record<string, string> = {
-    amp: '&',
-    lt: '<',
-    gt: '>',
-    quot: '"',
-    apos: "'",
-    nbsp: ' '
-};
-
 /**
  * Whether a slide was written as a slide. A PRESENT.md with no `present:` front matter still has a
  * slide in the deck, carrying its narrative and nothing else, and that is the one the view draws as
@@ -104,18 +95,13 @@ export function parsePresentState(value: unknown): PresentState {
 
 export { PRESENT_DOC, slideKey };
 
-/** A title written as HTML, as the plain words an overview tile and a pane title draw. */
+/**
+ * A title written as HTML, as the plain words an overview tile and a pane title draw. The escapes
+ * are decoded by `entities`, the parser the mail snippet and the manual use; a no-break space it
+ * gives is folded into a plain one with the rest of the white space.
+ */
 export function plainTitle(html: string): string {
-    return html
-        .replace(/<[^>]+>/g, ' ')
-        .replace(/&(#\d+|#x[0-9a-f]+|\w+);/gi, (whole, name: string) => {
-            if (name.startsWith('#x') || name.startsWith('#X')) {
-                return String.fromCodePoint(Number.parseInt(name.slice(2), 16));
-            }
-            if (name.startsWith('#'))
-                return String.fromCodePoint(Number.parseInt(name.slice(1), 10));
-            return ENTITIES[name.toLowerCase()] ?? whole;
-        })
+    return decodeHTML(html.replace(/<[^>]+>/g, ' '))
         .replace(/\s+/g, ' ')
         .trim();
 }

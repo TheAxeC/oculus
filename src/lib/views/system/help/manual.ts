@@ -7,6 +7,8 @@
 // the image is taken out of the HTML here, with the paragraph it sits alone in, and drawn by
 // Diagram.svelte from the diagram route instead. Any other image stays in the prose untouched.
 
+import { decodeHTML } from 'entities';
+
 /** One run of the manual: HTML to draw as prose, or one diagram with its alternative text. */
 export type ManualPart =
     { kind: 'html'; html: string } | { kind: 'diagram'; name: string; alt: string };
@@ -17,20 +19,13 @@ const IMAGE = /(?:<p>\s*)?<img\b[^>]*>(?:\s*<\/p>)?/g;
 /** The address HELP.md gives a diagram, relative to the manual, and the name it carries. */
 const SOURCE = /^docs\/diagrams\/([a-z0-9][a-z0-9-]*)\.svg$/;
 
-/** The entities marked writes into an attribute, so the alternative text reads as written. */
-const ENTITIES: Record<string, string> = {
-    '&amp;': '&',
-    '&lt;': '<',
-    '&gt;': '>',
-    '&quot;': '"',
-    '&#39;': "'"
-};
-
-/** One attribute of an element's markup, decoded, or the empty string when it has none. */
+/**
+ * One attribute of an element's markup, its entities decoded so the alternative text reads as
+ * written, or the empty string when it has none.
+ */
 function attribute(element: string, name: string): string {
     const found = new RegExp(`\\s${name}="([^"]*)"`).exec(element);
-    if (found === null) return '';
-    return found[1].replace(/&(?:amp|lt|gt|quot|#39);/g, (entity) => ENTITIES[entity] ?? entity);
+    return found === null ? '' : decodeHTML(found[1]);
 }
 
 /** The address the page fetches one diagram at: the diagram route, by file name. */

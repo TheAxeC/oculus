@@ -7,10 +7,11 @@
 // browser arrives there from the provider and not from the page, so what guards it is the `state`
 // this process minted ten minutes earlier and holds in memory, which is taken once and never again.
 //
-// The page never hands this module a URL. Connect names an account and the consent URL is built
-// from its client half; the link control names an event and the URL is read from the state the
-// poller published, so the only addresses the operating system is ever given are the two
-// providers' own.
+// The page hands this module one URL, the published link an Add of a provider `ics` carries, which
+// is written to the account's own file and never opened. Connect names an account and the consent
+// URL is built from its client half; the link control names an event and the URL is read from the
+// state the poller published, so the only addresses the operating system is ever given are the
+// providers' own and the https `URL` a published calendar gives one of its events.
 //
 // No answer of this module carries a token, a secret, an authorization code or an event's contents.
 

@@ -1,30 +1,46 @@
 # Oculus text owned by the calendar view.
 text:
     calendar:
-        agenda_empty: No events in this window.
         badge_today: left today
         all_day: all day
         as_of: as of {0}
         as_of_late: as of {0}, the next poll is late
         callback_bad: That link was not recognised. Press Connect again in the Calendar view.
         callback_ok: The account is connected. This tab can be closed.
-        cancelled: cancelled
         error: error
         every: every {0}m
         days_n: '{0} days'
         days_one: 1 day
         footer: Read-only over {0} back and {1} ahead. A Google account reads the calendars ticked in Google's own calendar list, and no others.
+        ics_failed: 'The published calendar {0} could not be read. Check that its link still opens in a browser.'
+        ics_no_link: 'No link is kept for this published calendar. Remove it and add it again with its link.'
         live: live
-        open_event: open at the provider
+        next_day: Next day
+        next_month: Next month
+        next_week: Next week
+        no_events: No events in this window.
+        no_earlier: 'Nothing before {0} is read.'
+        no_later: 'Nothing after {0} is read.'
         polling: reading calendars...
         provider_google: Google
+        provider_ics: Published link
         provider_microsoft: Microsoft
+        prev_day: Previous day
+        prev_month: Previous month
+        prev_week: Previous week
         refresh_now: Refresh now
         refused: 'Refused: {0}'
         retrying: retrying every {0}m
         tentative: tentative
-        today: today
+        time_range: '{0} to {1}'
+        today: Today
+        today_shown: Today is in view.
         unconfigured: not configured
+        view: Calendar view
+        view_day: Day
+        view_list: List
+        view_month: Month
+        view_week: Week
     views:
         calendar: Calendar
         calendar_glyph: calendar

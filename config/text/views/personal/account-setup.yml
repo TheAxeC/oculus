@@ -8,8 +8,11 @@ text:
         add: Add account
         add_glyph: expand
         add_go: Add and connect
+        add_go_link: Add
         add_label: Label
         add_label_hint: 'Lower-case letters, digits and hyphens, for example work'
+        add_link: Link
+        add_link_hint: "The address the calendar is published at, starting https:// or webcal://. It is kept in this machine's calendar folder and never shown again."
         add_provider: Provider
         adding: adding...
         cancel: Cancel
@@ -20,7 +23,7 @@ text:
         copy: Copy
         copy_glyph: copy
         copy_value: 'Copy {0}'
-        empty_calendar: 'No calendar account yet. Add one to read its agenda here.'
+        empty_calendar: 'No calendar account yet. Add one to read its events here.'
         empty_mail: 'No mail account yet. Add one to read its inbox here.'
         google_client_id: Client ID
         google_client_secret: Client secret
@@ -61,6 +64,7 @@ text:
         not_ready: not set up
         open_setup: 'Set up {0}'
         provider_google: Google
+        provider_ics: Published link
         provider_microsoft: Microsoft
         ready: set up
         refused: 'Refused: {0}'
@@ -68,12 +72,14 @@ text:
         refused_google_id: 'A Google client ID ends with .apps.googleusercontent.com.'
         refused_google_secret: 'The client secret is empty or holds a space.'
         refused_label: 'A label is lower-case letters, digits and hyphens, and starts with a letter or a digit.'
+        refused_link: 'A published link starts https:// or webcal:// and holds no space.'
         refused_microsoft_id: 'An application ID is a GUID, like 0f0e0d0c-0b0a-0908-0706-050403020100.'
-        refused_provider: 'Pick Google or Microsoft.'
+        refused_provider: 'Pick one of the providers offered.'
         refused_taken: 'An account of that provider is already called {0}.'
         refused_tenant: 'A directory ID is a GUID, or left empty.'
         remove: Remove
         remove_confirm: 'Remove the account {0}? Its token file is deleted; the provider stays set up for the other accounts.'
+        remove_confirm_link: 'Remove the published calendar {0}? The file that keeps its link is deleted.'
         remove_confirm_own: 'Remove the account {0}? Its token file is deleted, and its own client id is deleted with it.'
         remove_glyph: trash
         reading: reading the setup...
@@ -82,6 +88,7 @@ text:
         saving: saving...
         set_up_provider: Set up provider
         setup_intro: 'Each provider is set up once on this machine: the application you register there serves every account of it, in the Calendar and the Inbox. The values below are the ones this server uses.'
+        timed_out: 'The provider did not answer within {0} s.'
         unreachable: 'The server did not answer. Try again once oculus is running.'
         unreadable: "The server's answer could not be read. Open the view again to see what it holds now."
         waiting: 'The account {0} is added once {1} is saved below.'

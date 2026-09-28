@@ -13,25 +13,25 @@
 // to find out.
 //
 // The account types are the connector's shared ones: an account of either connector is a provider
-// and a label, and the calendar's names for them are what its own readers already say.
+// and a label, and the calendar's names for them are what its own readers already say. The calendar
+// alone takes a third provider, `ics`, a published link read with no consent. Its events' times
+// are the file's own, a date alone for an all-day event and a clock with its own offset otherwise.
 
-import type {
-    ConnectAccountConfig,
-    ConnectAccountStatus,
-    ConnectProvider,
-    ConnectStatus
-} from './model-connect.ts';
+import type { ConnectAccountStatus, ConnectProvider, ConnectStatus } from './model-connect.ts';
 
-/** The two providers a calendar account is read from, in the order they are offered. */
-export type CalendarProvider = ConnectProvider;
+/** The three providers a calendar account is read from, in the order they are offered. */
+export type CalendarProvider = ConnectProvider | 'ics';
 
 /** One account of `calendars:` in the machine's own config/local.yml. */
-export type CalendarAccountConfig = ConnectAccountConfig;
+export type CalendarAccountConfig = { provider: CalendarProvider; label: string };
 
 /** The connector as a whole: `unconfigured` when the machine names no account. */
 export type CalendarStatus = ConnectStatus;
 
-/** One account: `not-connected` until its credential file holds a refresh token. */
+/**
+ * One account: `not-connected` until its credential file holds a refresh token, or, for a published
+ * link, until its file holds the link.
+ */
 export type CalendarAccountStatus = ConnectAccountStatus;
 
 /** One calendar of an account, as the provider names it. */
@@ -63,7 +63,7 @@ export type CalendarEventStatus = 'confirmed' | 'tentative' | 'cancelled';
 export type CalendarEvent = {
     /** Unique across accounts: the account key, the calendar and the provider's own event id. */
     id: string;
-    /** The account's label, which is what the agenda chips each line with. */
+    /** The account's label, which names the account the event was read from. */
     account: string;
     /** The calendar's name, as the provider gave it. */
     calendar: string;

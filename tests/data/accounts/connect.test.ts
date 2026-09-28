@@ -1,6 +1,6 @@
 // The rules the page and the server share for a new account and a provider's client half: which
-// label an account may take, and what shape a Google or a Microsoft client id must have, each
-// refusal one word the page puts into a sentence.
+// provider each connector takes, which label an account may take, and what shape a Google or a
+// Microsoft client id must have, each refusal one word the page puts into a sentence.
 
 import { describe, expect, it } from 'vitest';
 import { accountRefusal, providerHalf } from '../../../src/lib/data/accounts/connect.ts';
@@ -11,12 +11,17 @@ const GUID = '0f0e0d0c-0b0a-0908-0706-050403020100';
 describe('a new account', () => {
     it('is refused for an unknown provider, a label of the wrong shape and a label taken', () => {
         const rows = [{ provider: 'google', label: 'work' }] as const;
-        expect(accountRefusal(rows, 'yahoo', 'box')).toBe('provider');
-        expect(accountRefusal(rows, 'google', 'Work')).toBe('label');
-        expect(accountRefusal(rows, 'google', '../up')).toBe('label');
-        expect(accountRefusal(rows, 'google', 'work')).toBe('taken');
+        expect(accountRefusal('mail', rows, 'yahoo', 'box')).toBe('provider');
+        expect(accountRefusal('mail', rows, 'google', 'Work')).toBe('label');
+        expect(accountRefusal('mail', rows, 'google', '../up')).toBe('label');
+        expect(accountRefusal('mail', rows, 'google', 'work')).toBe('taken');
         // The same label under the other provider is another account.
-        expect(accountRefusal(rows, 'microsoft', 'work')).toBe(null);
+        expect(accountRefusal('mail', rows, 'microsoft', 'work')).toBe(null);
+    });
+
+    it('takes a published link on a calendar and refuses it on the mail', () => {
+        expect(accountRefusal('calendar', [], 'ics', 'rooster')).toBe(null);
+        expect(accountRefusal('mail', [], 'ics', 'rooster')).toBe('provider');
     });
 });
 

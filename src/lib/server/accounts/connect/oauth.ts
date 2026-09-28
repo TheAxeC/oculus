@@ -26,6 +26,65 @@ import type { Credentials } from './store.ts';
 /** How the providers are called, injected so no test opens a connection. */
 export type Fetcher = typeof fetch;
 
+/** How long one request of a poll round waits for its answer before the account is in error. */
+export const READ_TIMEOUT_MS = 30000;
+
+/** What a request throws when it had no answer within its time, so a poller can say so. */
+export class ReadTimeout extends Error {
+    /** The time the request waited, in milliseconds. */
+    readonly ms: number;
+
+    constructor(ms: number) {
+        super(`no answer within ${String(ms)} ms`);
+        this.name = 'ReadTimeout';
+        this.ms = ms;
+    }
+}
+
+/**
+ * A fetcher whose every call gives up after `ms`: the call's signal is the time limit, joined with
+ * any signal the caller passed, so a provider that never answers costs one account its round and
+ * never holds the round. The limit covers the whole answer, its body included, and a call or a
+ * body read it cut off throws ReadTimeout; any other failure is thrown as it came.
+ */
+export function timedFetcher(fetcher: Fetcher, ms: number = READ_TIMEOUT_MS): Fetcher {
+    return async (input, init) => {
+        const limit = AbortSignal.timeout(ms);
+        const own = init?.signal;
+        const signal = own ? AbortSignal.any([own, limit]) : limit;
+        /** Whether a failure was the limit's doing rather than the caller's or the provider's. */
+        const cutOff = (): boolean => limit.aborted && own?.aborted !== true;
+        let response: Response;
+        try {
+            response = await fetcher(input, { ...init, signal });
+        } catch (error) {
+            if (cutOff()) throw new ReadTimeout(ms);
+            throw error;
+        }
+        if (response.body === null) return response;
+        const reader = response.body.getReader();
+        const body = new ReadableStream<Uint8Array>({
+            async pull(controller) {
+                try {
+                    const { done, value } = await reader.read();
+                    if (done) controller.close();
+                    else controller.enqueue(value);
+                } catch (error) {
+                    controller.error(cutOff() ? new ReadTimeout(ms) : error);
+                }
+            },
+            cancel(reason) {
+                return reader.cancel(reason);
+            }
+        });
+        return new Response(body, {
+            status: response.status,
+            statusText: response.statusText,
+            headers: response.headers
+        });
+    };
+}
+
 /**
  * How an `https` address reaches the operating system, for the calendar's and the mail's consent
  * and event links. It is injectable so route tests open nothing. It is declared here, with the
@@ -209,7 +268,8 @@ async function post(
     let body: unknown;
     try {
         body = await response.json();
-    } catch {
+    } catch (error) {
+        if (error instanceof ReadTimeout) throw error;
         body = null;
     }
     if (!response.ok) throw new Error(refusal(credentials.provider, response.status, body));

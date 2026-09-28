@@ -45,9 +45,9 @@ export function slurmSettings(config: Record<string, unknown>): SlurmSettings {
 /** The calendar connector's settings of config/behavior.yml, every key required. */
 export type CalendarSettings = {
     pollMin: number;
-    /** Days before now the agenda window opens. */
+    /** Days before now the calendar window opens. */
     daysBack: number;
-    /** Days after now the agenda window closes. */
+    /** Days after now the calendar window closes. */
     daysAhead: number;
 };
 

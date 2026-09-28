@@ -2,6 +2,11 @@
     // Layer 3, view partial. The Add form the Calendar and the Inbox share: the provider, the
     // label, and the one press that adds the account and starts its Connect.
     //
+    // The Calendar's form also offers a published link, the one provider that signs in nowhere:
+    // while it is chosen the form asks for the link under the label, drawn as dots and never
+    // offered to the browser's autofill since the link is the key to the calendar, and the press
+    // adds the account with no Connect after it.
+    //
     // The label's rule and its uniqueness are checked before anything is sent, and a refusal is
     // said in words under the form. A provider with no client half on this machine opens the
     // account setup page, and the account is added there once that provider is saved; the form
@@ -12,29 +17,50 @@
     import TextInput from '$lib/ui/forms/TextInput.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { t } from '$lib/state/shared/words/text';
-    import { PROVIDERS, type ConnectKind, type ConnectProvider } from '$lib/state/life/accounts';
+    import { untrack } from 'svelte';
+    import {
+        PROVIDERS_OF,
+        signsIn,
+        type AccountProvider,
+        type ConnectKind
+    } from '$lib/state/life/accounts';
     import { useState } from '$lib/state/client/use';
 
     const {
         accounts: { add, busy, waiting }
     } = useState();
-    let { kind, onclose }: { kind: ConnectKind; onclose: () => void } = $props();
+    type Props = {
+        kind: ConnectKind;
+        onclose: () => void;
+        /** The provider chosen when the form opens; the first the connector offers by default. */
+        provider?: AccountProvider;
+    };
 
-    let provider: string = $state('google');
+    let { kind, onclose, provider: first = 'google' }: Props = $props();
+
+    let provider: string = $state(untrack(() => first));
     let label = $state('');
+    let url = $state('');
     let said = $state('');
 
     const held = $derived(waiting());
 
     /** The provider's own name, as the setup page and the rows name it. */
-    function named(id: ConnectProvider): string {
+    function named(id: AccountProvider): string {
+        if (id === 'ics') return t('accounts.provider_ics');
         return id === 'google' ? t('accounts.provider_google') : t('accounts.provider_microsoft');
     }
 
+    /** The provider chosen now, as one the connector offers, or null for a value it does not. */
+    const chosen = $derived(PROVIDERS_OF[kind].find((one) => one === provider) ?? null);
+    /** Whether the chosen provider is the published link, which asks for its link. */
+    const linked = $derived(chosen !== null && !signsIn({ provider: chosen, label: '' }));
+
     async function submit(): Promise<void> {
-        said = await add(kind, provider as ConnectProvider, label);
+        said = await add(kind, provider as AccountProvider, label, linked ? url : '');
         if (said === '' && waiting() === null) {
             label = '';
+            url = '';
             onclose();
         }
     }
@@ -46,7 +72,7 @@
             value={provider}
             label={t('accounts.add_provider')}
             empty={t('accounts.refused_provider')}
-            choices={PROVIDERS.map((id) => ({ id, label: named(id) }))}
+            choices={PROVIDERS_OF[kind].map((id) => ({ id, label: named(id) }))}
             onchange={(value: string) => (provider = value)}
         />
     </Field>
@@ -57,9 +83,23 @@
             oninput={(value: string) => (label = value)}
         />
     </Field>
+    {#if linked}
+        <Field label={t('accounts.add_link')} help={t('accounts.add_link_hint')}>
+            <TextInput
+                value={url}
+                label={t('accounts.add_link')}
+                secret
+                oninput={(value: string) => (url = value)}
+            />
+        </Field>
+    {/if}
     <div class="buttons">
         <ToolButton
-            label={busy(kind) ? t('accounts.adding') : t('accounts.add_go')}
+            label={busy(kind)
+                ? t('accounts.adding')
+                : linked
+                  ? t('accounts.add_go_link')
+                  : t('accounts.add_go')}
             disabled={busy(kind)}
             onclick={() => void submit()}
         />

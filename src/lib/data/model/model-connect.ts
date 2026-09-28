@@ -1,18 +1,32 @@
-// Layer 1, data. What the calendar connector and the mail connector share: the two providers, the
-// shape of a configured account, and the two state words an account can be in.
+// Layer 1, data. What the calendar connector and the mail connector share: the two providers that
+// sign in, the calendar's published link beside them, the shape of a configured account, and the
+// state words an account can be in.
 //
 // It exists so that one account rule is written once. Both connectors name an account by a provider
-// and a label, keep one credential file per account in a folder of their own, and answer with the
-// same three state words; the only things that differ are the scopes asked for and the folder the
-// file sits in, which the kind selects.
+// and a label, keep one file per account in a folder of their own, and answer with the same three
+// state words; the only things that differ are the scopes asked for and the folder the file sits
+// in, which the kind selects. A published link is a calendar provider alone: it is read with no
+// consent, so the rows, the files and the cadence are shared and the sign-in is not.
 
 /** The two connectors an account belongs to, which select the scopes and the credential folder. */
 export type ConnectKind = 'calendar' | 'mail';
 
-/** The two providers an account is read from, in the order they are offered. */
+/** The two providers an account signs in to, in the order they are offered. */
 export type ConnectProvider = 'google' | 'microsoft';
 
-/** One account row of `calendars:` or `mail:` in the machine's own config/local.yml. */
+/**
+ * Every provider an account row may name: the two that sign in, and `ics`, a calendar's published
+ * link, which is read with no consent and is offered for a calendar alone.
+ */
+export type AccountProvider = ConnectProvider | 'ics';
+
+/**
+ * One account row of `calendars:` or `mail:` as the rows, the files and the cadence handle it
+ * alike, whatever its provider.
+ */
+export type AccountRow = { provider: AccountProvider; label: string };
+
+/** One account row of a provider that signs in, which is every row of `mail:`. */
 export type ConnectAccountConfig = { provider: ConnectProvider; label: string };
 
 /** One account: `not-connected` until its credential file holds a refresh token. */

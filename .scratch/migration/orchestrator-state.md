@@ -28,18 +28,6 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 
 ```yaml
 dispatch:      # Q92 of set 2, repair round 1 answered, its refutation next; Q79a and Q79c of set 3 building.
-- step: Q92
-  executor: agent
-  worker: claude:opus
-  session_id: a137b223fbd2bd7e2
-  worktree: .agents/worktrees/Q92
-  base: 09e58eb1
-  launched: 2026-09-28
-  report: agents/reviews/Q92-report.md
-  landing: not-started
-  reviewer_report: agents/reviews/Q92-refuter.md (reviewer ae7ef61fd1dab9cc6, 38 tool calls, 30 min); round 1 refuted by a5d9c213a64127d8d (30 tool calls, 11 min), appended to the same file
-  round: 1   # sent 2026-09-28 from worktree commit abe17f5f, agents/briefs/Q92-round1-sent.md
-  shared_paths: package.json and package-lock.json with Q80 (Q80 adds cloc, Q92 adds @event-calendar/core, ical.js and entities and moves svelte; the later landing reruns npm install), HELP.md and DESIGN.md with Q80 and Q89 (different sentences: Q92's are the Inbox, the Calendar and the accounts at HELP.md:119, 137, 244, 246 and DESIGN.md:134, 298), docs/diagrams (a rerun of npm run diagrams), type-scale.test.ts (one entry each)
 - step: Q79a
   executor: agent
   worker: claude:opus
@@ -124,6 +112,11 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
   - (c) Keep both. This is the lazy option.
   - Recommended (a): it is what Q89 was for, and the tab-per-terminal is the part that doubles it.
 - Z41, typed `;` and Return lost or late in a terminal (raised 2026-09-28, from the look of Axel's report). Through the Chrome tool on TEST, `echo x;echo y` arrived as `echo xecho y`, every `;` of a longer line was dropped, and a Return ran its line tens of seconds late. The server keeps one terminal's input in order (`server/machine/pty/channel.ts:370-377`) and a quoted `;` passes a scratch tmux control client whole (`a;b;c;;d` arrived as sent), so no cause is found, and the tool's synthetic key events may be the cause. What would settle it: Axel types `echo a;b` and Return by hand in a shell on the TEST page. If `;` is lost by hand too, the cause is found by reading xterm's key handling for that key and booked into Q99.
+
+- Z42, the Calendar's sticky strips over a wallpaper (raised 2026-09-28, from Q92's landing look). Over a wallpaper theme the week and day views' header row and the list view's date headings stay put while the rows scroll under them, and those rows show through them (seen under tokyo night on TEST: the hour label 06:00 behind the day headings, "Leerlabo violet 10" behind "Tuesday, September 29, 2026"). Two checks decide what may paint there: `tests/ui/colours.test.ts` allows a colour mix only as `background: color-mix(in srgb, var(--panel) var(--wall-panel), transparent)`, and `tests/views/whole/tinted.test.ts` counts that same declaration as a surface of the view's own, which a view that asks the pane for its tint may not have. The Calendar asks for the tint, since its cells paint nothing. So the strips are transparent with the wallpaper blur (2 px), which does not hide text. The library draws the header and the rows in one scrolling grid (`.ec-main`, `overflow: auto`, the header `position: sticky` over subgrid rows), so the rows cannot be moved out from under the header without breaking the columns. Options:
+  - (a) `tinted.test.ts` lets a sticky strip carry the pane's wall mix: a rule whose selector names only strips that stay in place over scrolling content is not counted as a surface of the view's own. The strips then cover the rows as they do under a plain theme, one step darker than the pane. Recommended: it is the one option that ends the show-through, and the tint rule's purpose (text never straight on the picture, one translucent layer per surface) still holds.
+  - (b) The Calendar stops asking for the tint and paints its own surfaces with the wall mix: the head rows, the grid box and the footer, with the strips over the grid box. More rules, and the strips still double over the grid box as in (a).
+  - (c) Keep the strips transparent with the blur, the rows readable under them (the lazy option).
 
 ## Time per step (Axel asked 2026-09-27 for how it evolves with Q77; measured from each builder's transcript: each tool call from call to result, each background wait from the builder stopping to the run waking it)
 
@@ -416,6 +409,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-09-28. Q92 landed through /spec, /refute and /land (the Inbox and Calendar views beautified, a published calendar link read with ical.js); one repair round, refuted again; three fixes at landing: the colour and tint rules together, a view test's title, an event's title first in its tooltip. Verify on main: `verify: 6 commands passed` (Test Files 344 passed, Tests 5465 passed). Z42 raised from the look. Q79a and Q79c are building; Q99 is next into the freed slot.
 - 2026-09-28. Q79a and Q79c launched (the library audit's server and page halves), beside Q92, whose repair round 1 is answered. Q79c's plan line corrected at `/spec`: the Config view holds no highlight.js to drop, so the item is its YAML drawn through the highlighter, as the audit found. Next: `/refute` Q92 over round 1.
 - 2026-09-28. Q89 landed through /spec, /refute and /land (the terminal as VS Code's terminal, Split in the row's own folder by Z39 (a)); two repair rounds, each refuted again; four fixes at landing, the last review's findings. Verify on main: `verify: 6 commands passed` (Test Files 343 passed, Tests 5408 passed). In flight: Q92 (repair round 1). Next: `/spec` Q79a and Q79c.
 - 2026-09-28. Q80 landed through /spec, /refute and /land (line counts on the Status view with cloc); one repair round, refuted again; five fixes at landing, the round review's findings. Verify on main: `verify: 6 commands passed` (Test Files 342 passed, Tests 5370 passed). In flight: Q89 (the review over round 2) and Q92 (its first review). Next: `/spec` Q79a.

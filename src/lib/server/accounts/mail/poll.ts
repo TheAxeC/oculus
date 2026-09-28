@@ -25,6 +25,7 @@
 
 import { mkdirSync } from 'node:fs';
 import { mailKey } from '../../../data/accounts/mail.ts';
+import { fillPlaceholders } from '../../../data/helpers/finding-text.ts';
 import type {
     InboxPayload,
     InboxThread,
@@ -38,7 +39,7 @@ import type { Hub } from '../../core/channels.ts';
 import { POLL, pollFile, systemClock, type Clock, type FilePoll } from '../../core/file-poll.ts';
 import { accountLoop, signIn, type AccountLoop } from '../connect/loop.ts';
 import { hasOwnHalf } from '../connect/store.ts';
-import type { Fetcher } from '../connect/oauth.ts';
+import { ReadTimeout, timedFetcher, type Fetcher } from '../connect/oauth.ts';
 import { readGoogleMail } from './google.ts';
 import { readMicrosoftMail } from './microsoft.ts';
 import { plate, type Candidate, type MailReadArgs, type PlateThread } from './plate.ts';
@@ -56,6 +57,10 @@ export type MailOptions = {
      * How the providers are called; injected so a test reaches every branch without the network.
      */
     fetcher?: Fetcher;
+    /** How long one request waits for its answer; READ_TIMEOUT_MS unless a test shortens it. */
+    readTimeoutMs?: number;
+    /** The catalog's sentences an account's row may carry. */
+    words: MailWords;
     /** The moment the payload is stamped with, so a test can pin it. */
     now?: () => Date;
     /** Whether the notes file is polled; a test that drives the poll itself turns it off. */
@@ -65,6 +70,9 @@ export type MailOptions = {
     /** Milliseconds between two stats of the notes file. */
     notesEvery?: number;
 };
+
+/** A request that had no answer in time, from the catalog, with `{0}` for the seconds waited. */
+export type MailWords = { timedOut: string };
 
 export type MailWatcher = {
     refresh(): Promise<void>;
@@ -108,7 +116,7 @@ function triageOf(held: TriageFile, id: string): InboxTriage {
 }
 
 export function watchMail(hub: Hub, options: MailOptions): MailWatcher {
-    const fetcher = options.fetcher ?? fetch;
+    const fetcher = timedFetcher(options.fetcher ?? fetch, options.readTimeoutMs);
     const providerDir = options.providerDir;
     const now = options.now ?? ((): Date => new Date());
     /** Every account's state word and hint, and the plate its last good poll left. */
@@ -230,7 +238,11 @@ export function watchMail(hub: Hub, options: MailOptions): MailWatcher {
             return true;
         } catch (error) {
             if (!live()) return false;
-            state.set(key, { ...base, status: 'error', hint: reason(error) });
+            const hint =
+                error instanceof ReadTimeout
+                    ? fillPlaceholders(options.words.timedOut, [String(error.ms / 1000)])
+                    : reason(error);
+            state.set(key, { ...base, status: 'error', hint });
             return false;
         }
     };
@@ -258,7 +270,7 @@ export function watchMail(hub: Hub, options: MailOptions): MailWatcher {
         notesPoll.reading();
     };
 
-    const loop: AccountLoop = accountLoop(options, {
+    const loop: AccountLoop<MailAccountConfig> = accountLoop(options, {
         retryMin: RETRY_MIN,
         now,
         read: pollAccount,

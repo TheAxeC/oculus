@@ -11,7 +11,7 @@ import { accountLoop, type AccountLoop } from '../../../../src/lib/server/accoun
 const WORK: ConnectAccountConfig = { provider: 'google', label: 'work' };
 const UNI: ConnectAccountConfig = { provider: 'microsoft', label: 'uni' };
 
-const loops: AccountLoop[] = [];
+const loops: AccountLoop<ConnectAccountConfig>[] = [];
 
 afterEach(() => {
     for (const loop of loops.splice(0)) loop.close();

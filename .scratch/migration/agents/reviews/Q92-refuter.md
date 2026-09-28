@@ -182,3 +182,15 @@ The "seen failing with the change undone" quotes (item 8) were not reproduced, b
 - Whether a legitimate read that takes longer than 30 s (a large published calendar on a slow link, a slow Graph page) occurs in practice. The limit covers the body too (`oauth.ts:273-294`).
 
 Reviewer usage: 27 tool calls, about 25 minutes (two full verify runs of about 2 minutes each included).
+
+## Closed
+
+- First review: every finding was sent in repair round 1 and closed there, as the round's refutation reads.
+- Round 1, Spec, `min-height: 480px`: kept at landing; the booking names the second scroll bar in a pane shorter than 480 px.
+- Round 1, Proof, `eventDidMount` and the options passed through: not covered by a unit test; both seen in the look (25 events with their tooltip, the week, month and list views drawn by the options); named in the booking.
+- Round 1, Proof, the view test's title: renamed at landing to "...takes the pane's height and paints its cells with no surface of their own".
+- Round 1, Proof, the report's first line: the verify list is green on main after the landing fixes.
+- Round 1, Standards, the two colour-rule breaks: fixed at landing, the strips transparent with the wallpaper blur and the popup on `--panel`, since `tinted.test.ts` refuses the `background:` wall mix in a view that asks for the tint. What that leaves under a wallpaper is raised as open item Z42.
+
+- Round 1, Behaviour, `plainTitle` through `decodeHTML`: stated in the booking with its before and after (`Q&amp A` now `Q& A`; `&#99999999;` now U+FFFD where it threw).
+- Round 1, Not checked, the browser points: taken in the landing look (the wallpaper, the height and one scroll bar in the grid, the tooltip, the grid lines, the header over scrolled rows, which is Z42).
