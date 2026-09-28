@@ -31,7 +31,7 @@ dispatch:      # set 1 of the queue: Q95 + Q94 + Q97 (Z34 (a)); then Q98 + Q92 +
 - step: Q94
   executor: agent
   worker: claude:opus
-  session_id: addd1c8ce53bf3aff
+  session_id: aad2cd0ba33fee440   # continuation builder; the first one was stopped during its final verify run
   worktree: .agents/worktrees/Q94
   base: 4120beb7
   launched: 2026-09-28
@@ -41,7 +41,7 @@ dispatch:      # set 1 of the queue: Q95 + Q94 + Q97 (Z34 (a)); then Q98 + Q92 +
 - step: Q95
   executor: agent
   worker: claude:opus
-  session_id: a70a56accfe788e07
+  session_id: a7e725ab4541badd3   # continuation builder; the first one was stopped during its final verify run
   worktree: .agents/worktrees/Q95
   base: c53af148
   launched: 2026-09-28
@@ -51,7 +51,7 @@ dispatch:      # set 1 of the queue: Q95 + Q94 + Q97 (Z34 (a)); then Q98 + Q92 +
 - step: Q97
   executor: agent
   worker: claude:opus
-  session_id: ae8c16c1d9fd2ba16
+  session_id: ac17969c2ab41b218   # continuation builder; the first one was stopped during its final verify run
   worktree: .agents/worktrees/Q97
   base: 4e33d99e
   launched: 2026-09-28
