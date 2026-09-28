@@ -2,7 +2,7 @@
 
 In flight:
 - Q89 (the terminal as VS Code's terminal): repair round 2 (Split in the row's own folder, Z39 (a); Delete and Backspace made safe), then its review.
-- Q80 (line counts on the Status view, with cloc): repair round 1 running.
+- Q80 (line counts on the Status view, with cloc): repair round 1 done, its review running.
 - Q92 (inbox and calendar): building.
 Queued, in order:
 - Q79a and Q79c (the library audit's fixes that need no new library: the server; the page, with the 11 raw buttons).

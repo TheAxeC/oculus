@@ -27,7 +27,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:      # Q89 of set 2 in repair round 2 (Z39 (a), an unbuilt acceptance item), Q80 of set 3 in repair round 1, Q92 of set 2 building.
+dispatch:      # Q89 of set 2 in repair round 2 (Z39 (a), an unbuilt acceptance item), Q80 of set 3 under review over round 1, Q92 of set 2 building.
 - step: Q89
   executor: agent
   worker: claude:opus
@@ -53,6 +53,7 @@ dispatch:      # Q89 of set 2 in repair round 2 (Z39 (a), an unbuilt acceptance 
   report: agents/reviews/Q80-report.md
   landing: not-started
   reviewer_report: agents/reviews/Q80-refuter.md (reviewer a59a84cb98d926c8b, 40 tool calls, 14 min)
+  reviewer_report_round1: agents/reviews/Q80-refuter.md "Repair round 1, refuted" (reviewer aa0e2181b19c92109, running)
   round: 1
   shared_paths: HELP.md and DESIGN.md (Q80 changes HELP.md:128 and DESIGN.md:128, other sentences than Q89's and Q98's), docs/diagrams (a rerun of npm run diagrams at landing), any whole-tree test list such as type-scale.test.ts (one added name per step)
 - step: Q92
@@ -69,6 +70,7 @@ dispatch:      # Q89 of set 2 in repair round 2 (Z39 (a), an unbuilt acceptance 
 ```
 
 ## The standing demands (from Axel, in force)
+- Paused (Axel, 2026-09-28, before a session restart): the running agents finish (Q80's round review, Q89's repair round 2, Q92's build) and their reports are saved; nothing new is dispatched, reviewed or landed until Axel says to continue.
 - `queue.md` beside this file is the list of steps in flight and queued, in the shape Axel reads it (Axel, 2026-09-28). It is rewritten in the same commit as every launch, repair round, landing and ruling that moves a step, and a resume point never leaves it behind the dispatch block or the queue line of `plan.md`.
 - Libraries: the orchestrator checks, Axel decides (Axel, 2026-09-26). Less code is the aim: oculus is over 100,000 lines, and a library that covers a capability can remove code that would otherwise be kept up; code is written by hand only where no library covers the capability, never by cutting a feature. Before any brief is written, `/spec` includes a library check for every capability the step builds or changes: the candidates found (npm and the ecosystem oculus uses), each with its version, license, maintainer, last release, compatibility with what oculus runs (Svelte 5, SvelteKit, `marked` 18 and the rest of `package.json`), what it would replace and what would stay, and how it takes oculus's theme tokens and layer rules. A candidate that could replace or avoid hand-built code is an open item for Axel with options, pros, cons and one recommendation (a library, or keeping the code), and the step waits for his ruling. Bundle size is not a criterion. The brief names the library ruled, and a builder adds no dependency the brief did not name (`agents/spec.md`), and reports an unnamed library that would cover its work instead of installing it. The Ordo `/spec` skill and its brief template carry no library check yet; this file carries it until they do, and the Ordo change goes through the session that holds that repository.
 - The library audit (Axel, 2026-09-26: a proper and full audit, before any new step is launched): every capability oculus builds by hand, across `src/`, `bin/`, the config loaders and the test and check tooling, with X3b's worktree changes included, audited for a library that covers it; the result is a set of open items, one per capability where a library is a real option, each with options, pros, cons and a recommendation. Done and ruled 2026-09-26 (LA1 to LA22, closed log); a step whose brief uses a ruled library names it, and a builder adds no other dependency. X3b, already in flight, continues through its round's refutation and its landing.

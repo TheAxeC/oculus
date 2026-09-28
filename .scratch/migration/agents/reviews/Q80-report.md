@@ -1,10 +1,10 @@
-# Q80 report: line counts on the Status view
+# Q80 report: line counts on the Status view (after repair round 1)
 
-Everything in the brief is done.
+Everything in the brief and in repair round 1 is done. As round 1 asked, the full verify list was not rerun in this round: the orchestrator runs it on main at landing.
 
 ## Open items of the state file, verbatim
 
-Read from `/Users/axelfaes/workspace/research-hub/tools/oculus/.scratch/migration/orchestrator-state.md` lines 106-110 (`sed -n 106,111p`):
+Read from the main checkout's `tools/oculus/.scratch/migration/orchestrator-state.md`, from its `## Open items` heading to the next heading, at the end of the round:
 
 > ## Open items (only what Axel must rule on; every report opens with this list verbatim and repeats it until he has ruled)
 >
@@ -12,125 +12,152 @@ Read from `/Users/axelfaes/workspace/research-hub/tools/oculus/.scratch/migratio
 >
 > None.
 
-## The cases' first run, on the unchanged tree
+## Checks run at the end of round 1
 
-Every case of the brief was written as a test before any code changed and run with `npx vitest run tests/server/machine/lines.test.ts tests/routes/machine/lines.test.ts tests/state/system/lines.test.ts tests/views/system/status.test.ts tests/server/core/git.test.ts`. Result: `Test Files 5 failed (5)`, `Tests 6 failed | 36 passed (42)`. Each new case failed:
+From the worktree's `tools/oculus`:
 
-- Folder rule, TODO rule and counter cases (`tests/server/machine/lines.test.ts`): `Error: Cannot find module '../../../src/lib/server/machine/lines.ts'`.
-- Route cases (`tests/routes/machine/lines.test.ts`): the same missing module.
-- Store cases (`tests/state/system/lines.test.ts`): `Error: Cannot find module '../../../src/lib/state/system/lines.svelte.ts'`.
-- View cases (`tests/views/system/status.test.ts`): `Error: Cannot find module '/src/lib/views/system/status/LineCounts.svelte'`.
-- The git form (`tests/server/core/git.test.ts`): `TypeError: trackedFiles is not a function` on the two new tracked-files cases and in `everyRead`, and the source gate `expected [ 'blame', 'check-ignore', ...(15) ] to deeply equal [ ..., (16) ]` (no `ls-files` call site).
+- `npx vitest run tests/server/machine/lines.test.ts tests/routes/machine/lines.test.ts tests/state/system/lines.test.ts tests/views/system/status.test.ts tests/state/shared/words/format.test.ts tests/checks/tree/duplication.test.ts tests/checks/source tests/checks/diagrams` printed `Test Files 16 passed (16)` and `Tests 178 passed (178)`.
+- `npm run check` printed `COMPLETED 1437 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS`.
+- `npm run format:check` printed `All matched files use Prettier code style!`.
+- `npm run lint` exited 0.
+- `LC_ALL=C grep -n '[^ -~]'` over every file this round touched printed nothing.
 
-No case gave a result the brief's own rules get wrong, so no stop. One unrelated case of `git.test.ts` in that run, "cuts every list it publishes at the cap", timed out at 5000 ms; it passed in every later run (it is a file this step touches, but the case is not one of its cases, and it passed in the final verify).
+These results come from the step's first round, before round 1:
+- **Full verify list:** exit 0, `verify: 6 commands passed`, 5344 of 5344 tests passing.
+- **`npm ls cloc`:** prints `cloc@2.6.0-cloc`.
 
-cloc's numbers for the two counter files, recorded by running cloc 2.06 on them in a scratch folder (`printf 'a.ts\nsrc/lib/x/b.svelte\n' | perl <cloc> --list-file=- --by-file --json --quiet`): `a.ts` TypeScript blank 1, comment 2, code 1; `src/lib/x/b.svelte` Svelte blank 1, comment 0, code 4. The test asserts these.
+## The cases' first run, on the unchanged tree (before any code changed)
 
-## What to build, item by item
+`npx vitest run` over the five test files printed `Test Files 5 failed (5)` and `Tests 6 failed | 36 passed (42)`. Each new case failed because the code did not exist yet:
+- **Four new test files:** each failed with "Cannot find module" for the counter, the store or the view.
+- **`git.test.ts`:** failed with `trackedFiles is not a function`, and the source check failed with `expected [ 'blame', 'check-ignore', ...(15) ] to deeply equal [ ..., (16) ]`.
+
+No case gave a result the brief's own rules get wrong. The unrelated case "cuts every list it publishes at the cap" timed out in that run and passed in every later run.
+
+## Round 1, item by item
 
 | Item | State | Where | Proof |
 | --- | --- | --- | --- |
-| 1. The dependency | DONE | `package.json:42` `"cloc": "2.6.0-cloc"`, `package-lock.json` `node_modules/cloc` | `npm ls cloc` prints `cloc@2.6.0-cloc` |
-| 2. The git read | DONE | `src/lib/server/core/git.ts:25,36-38,48,214-223` (`trackedFiles`, `run(root, ['ls-files', '-z'], ...)`); `DESIGN.md:128` | `tests/server/core/git.test.ts` (ALLOWED, PINNED, PINNED_SOURCE take `ls-files`; `everyRead` runs it; "the tracked files" describe, two cases) passes |
-| 3. The counter | DONE | `src/lib/server/machine/lines.ts` (`counted`, `folderOf`, `todoLine`, `countLines`, `handleLines`) | `tests/server/machine/lines.test.ts`, 13 cases, pass |
-| 4. The route | DONE | `src/routes/api/(machine)/lines/+server.ts` | `tests/routes/machine/lines.test.ts`, 3 cases, pass; `npm run build` in the verify list |
-| 5. The store | DONE | `src/lib/state/system/lines.svelte.ts`, registered at `src/lib/state/client/context.ts` (import, type, `createLines()`, returned) | `tests/state/system/lines.test.ts`, 8 cases, and `tests/state/client/client-state.test.ts` pass |
-| 6. The view | DONE | `src/lib/views/system/status/LineCounts.svelte`, drawn at `Status.svelte:87` between the git line and `<Hooks>`; words in `config/text/views/system/status.yml` | `tests/views/system/status.test.ts`, 6 new cases, pass; `tests/views/whole/type-scale.test.ts` lists the new file |
-| 7. The docs | DONE | `HELP.md:128`, `README.md:5`, `README.md:13`, `DESIGN.md:128` | quoted under "User-visible changes" below |
+| 1. The perl-missing failure | DONE | `lines.ts`: `LinesOptions` gains `perl`; `runCloc` spawns `run.perl` | case "answers an error naming perl and cloc when perl cannot be started" passes |
+| 2. The store's missing cases | DONE | `tests/state/system/lines.test.ts` | five new cases pass (listed in the table below) |
+| 3. A body that is not JSON | DONE | `lines.svelte.ts` `bodyOf()` parses in its own `try`; a failure holds `t('status.lines_bad_status', status)` | case "says the status, and no parser message, when the answer is not JSON" passes |
+| 4. A failed Count again keeps the table | DONE | `lines.svelte.ts` `failed()` keeps `held.lines?.count` | store case "keeps the last table when a later count fails" and view case "keeps the last table under the sentence" pass |
+| 5. An aborted request | DONE | `handleLines` hands `count` the `request.signal`; the route passes it to `countLines`; `runCloc` gives it to `spawn` (`signal` option), and an abort answers "The request was closed, so cloc was stopped."; `countLines` checks `closed(signal)` before cloc and before each file read | case "kills cloc and answers no count when the request is closed while it runs" passes, with the recorded child's `killed` true and `signalCode` `SIGTERM`; case "starts no cloc for a request already closed"; route case asserts `count` was called with the request's signal |
+| 6. Tests that stayed green with their change reverted | DONE | `lines.test.ts`: the three sentences asserted exactly; `lines.test.ts` (store): `asked` is `[]` before `settle()`; `status.test.ts`: `location` stubbed and the lines title asserted before `status.hooks_title` | failures quoted below |
+| 7. `grouped()` | DONE | `format.ts`: the finite-number branch removed, with its test; the head comment says the line store refuses a non-integer first | `tests/state/shared/words/format.test.ts` passes |
+| 8-11. Report corrections | DONE | this report | sections below |
 
-The verify list, run once at the end from the worktree's `tools/oculus` with `sh /Users/axelfaes/.claude-work/skills/land/templates/verify.sh /Users/axelfaes/workspace/research-hub/tools/oculus/.scratch/migration/orchestrator-state.md` (exit 0). The lines it prints that carry a result, verbatim:
+## Each new or tightened case, failing with its change undone
 
-```
- Test Files  341 passed (341)
-      Tests  5344 passed (5344)
-Checking formatting...
-All matched files use Prettier code style!
-verify: 6 commands passed
-```
+I undid each change in its file, ran the named case with `npx vitest run <file> -t <pattern>`, and wrote the file back from a copy held in memory. The script is `q80-undo.py` in the session scratchpad. Afterwards all 16 files passed again. Output, as printed:
 
-The ASCII gate of the rules file over `src tests bin config` plus `HELP.md README.md DESIGN.md` printed nothing. `bin/folder-check.sh` runs inside the unit suite (`tests/checks/tree/size.test.ts`) and passed.
+| Change undone | Case | Failure |
+| --- | --- | --- |
+| spawn ignores `options.perl` | perl cannot be started | `AssertionError: expected false to be true // Object.is equality` |
+| `signal` not given to `spawn` | kills cloc ... while it runs | `Error: Test timed out in 5000ms.` (the count waits the whole `sleep 5`) |
+| no closed-request check before cloc | starts no cloc for a request already closed | `AssertionError: expected { Object (error) } to deeply equal { error: 'The request was closed.' }` |
+| the `code !== 0` branch removed | cloc exits non-zero | `AssertionError: expected { Object (error) } to deeply equal { error: 'cloc exited with code 1.' }` |
+| the signal branch skipped | cloc runs past its time | `AssertionError: expected { Object (error) } to deeply equal { Object (error) }` |
+| git's refusal not answered | a folder that is no repository | `AssertionError: expected false to be true // Object.is equality` (the sentence no longer starts "git could not list the tracked files") |
+| the route hands a fresh signal | answers a same-origin request with the count | `AssertionError: expected "vi.fn()" to be called with arguments: [ AbortSignal { aborted: false } ]` |
+| the fetch sent at once, not on a microtask | starts one fetch on the first read | `AssertionError: expected [ '/api/lines' ] to deeply equal []` |
+| no `lines_bad_status` for a failure with no sentence | carries no sentence | `AssertionError: expected { count: null, error: '', ...(1) } to deeply equal { count: null, ...(2) }` |
+| the body parsed without its own `try` | the answer is not JSON | `AssertionError: expected { count: null, ...(2) } to deeply equal { count: null, ...(2) }` (the error held the parser's message) |
+| no total check in `readCount` | no total, or no time | `AssertionError: expected '' to be 'the answer holds no total'` |
+| no time check in `readCount` | no total, or no time | `AssertionError: expected '' to be 'the answer does not say when it count...'` |
+| a rejected fetch holds no sentence | failed before any answer | `AssertionError: expected { count: null, error: '', ...(1) } to deeply equal { count: null, ...(2) }` |
+| a failed count clears the table | keeps the last table when a later count fails | `AssertionError: expected { count: null, ...(2) } to deeply equal { ...(3) }` |
+| the view hides the table on a failure | keeps the last table under the sentence | `AssertionError: expected [] to have a length of 6 but got +0` |
+| `<LineCounts />` after `<Hooks>` | after the git line and before the hooks block | `AssertionError: expected 509 to be greater than 1829` |
 
-## Which undoing turns each new test red
+From the step's first round, each of these reverts turns a case red:
+- **Folder rule:** changing a `folderOf` branch.
+- **Left-out paths:** removing an entry of `LEFT_OUT_FOLDERS` or `LEFT_OUT_FILES`.
+- **TODO rule:** dropping the colon rule, `(?!\w)` or a comment marker, or adding the `i` flag.
+- **Counter:** dropping `counted()` from the path filter, or listing files by a directory walk.
+- **Duplicate files:** removing `--skip-uniqueness`.
+- **Route:** removing the `sameOrigin` check.
+- **Store:** removing the `inflight` guard.
+- **View:** drawing the total first, dropping the language or total classes, or wiring Count again to anything but `recount`.
 
-- Folder cases: changing the `src/lib/<x>` branch of `folderOf` from `parts.length >= 4` to `>= 3` counts `src/lib/highlight-languages.d.ts` under a folder of its own name and turns the `src` case red; dropping the `src/routes` branch turns the routes case red; returning `parts[0]` for a bare name turns the top-level case red.
-- Left-out case: removing an entry of `LEFT_OUT_FOLDERS` or `LEFT_OUT_FILES` turns it red, and the counter's "appear nowhere" assertion too.
-- TODO cases: making the colon after an opening tag optional counts `TODO the thing`; dropping `(?!\w)` counts `TODOs are fine` and `TODO_PATTERN = 1`; adding the `i` flag counts `todo: add(c)`; dropping a marker (`<!--`, `#`) turns its counted case red.
-- Counter, main case: dropping `counted(path)` from the path filter puts the Markdown, SVG and JSON files in the answer; summing languages into the folder wrongly or sorting rows out of path order turns the `rows` equality red.
-- Untracked case: listing files with anything other than `git ls-files` (for example a directory walk) counts `loose.ts` and `c.svelte`.
-- Duplicate-bytes case: removing `--skip-uniqueness` from the cloc arguments drops one of the two identical `b.svelte` files (verified in scratch: cloc without the flag reported one of two identical files).
-- Not-a-repository case: throwing instead of answering when `trackedFiles` refuses turns it red.
-- cloc exit 1, timeout and not-JSON cases: treating a non-zero exit, a signal or unparsable output as success turns the matching case red; dropping the `timeout` spawn option makes the timeout case run past its 4 s bound.
-- git tracked-files cases: removing `trackedFiles` or running `ls-files` without `-z` (quoted names, different split) turns them red; the source gate goes red if the call is written other than `['ls-files', '-z']`.
-- Route cases: removing the `sameOrigin` check turns the 403 case red; answering 200 for `{ error }` turns the 500 case red.
-- Store cases: sending the fetch synchronously or twice turns the one-fetch cases red; dropping the `inflight` guard in `request()` turns "asks once for a recount pressed while a count is on its way" red; holding a body without `rows` as an empty table turns the malformed case red; dropping the window check turns the server-render case red.
-- View cases: drawing the total before the folders, leaving out language rows or not grouping thousands turns the row case red; dropping the `language`/`total` classes turns the marking case red; drawing the table or no "Counting lines..." while loading, or no Count again on failure, turns those red; wiring Count again to anything but `recount` turns the press case red; removing `<LineCounts />` from `Status.svelte` turns the placement case red.
-- `grouped` cases (`tests/state/shared/words/format.test.ts`): a formatter without the separator, or one that writes `NaN`, turns them red.
+## Report corrections
 
-## Files, line counts (before is the main checkout's copy now, read with `wc -l`; after is the worktree)
+- **The same-origin check (item 8).** The brief asks for "the same-origin check the other machine GETs make", but the tree has no machine GET. The two machine routes (`hpc`, `usage/refresh`) are POSTs behind the write token (`gatedBody`). There are two `sameOrigin` functions:
+  - `server/core/auth.ts:38` refuses a request with neither `Sec-Fetch-Site` nor `Origin`.
+  - `server/content/images.ts:298` admits such a request as the command line's.
+
+  I used `auth.ts`'s, the stricter of the two. A `curl` without an `Origin` header gets 403.
+- **The `ls-files` output cap (item 9).** `trackedFiles` runs through `git.ts`'s `spawnSync` call site, which caps output at 1 MiB, its default `maxBuffer`. oculus's own tree lists about 80 KB (1700 paths). A tree whose NUL-separated path list passes 1 MiB would fail with a sentence naming git, not a count.
+- **Before and after (items 10 and 11):** in the last section.
+
+## Rulings carried out as given
+
+- `--skip-uniqueness` stays.
+- `grouped()` and `app.thousands_separator` stay.
+- The paths beyond the brief's list stay.
+- `trackedFiles` stays on `git.ts`'s one call site.
+- One count per page store stays, with no module state on the server.
+
+## Files, line counts (before is worktree commit 56f1749d as I left it; after is now)
 
 | File | Before | After |
 | --- | --- | --- |
-| `package.json` | 51 | 52 |
-| `package-lock.json` | | + the `cloc` entries |
-| `src/lib/server/core/git.ts` | 803 | 818 |
-| `src/lib/server/machine/lines.ts` | new | 275 |
-| `src/routes/api/(machine)/lines/+server.ts` | new | 9 |
-| `src/lib/state/system/lines.svelte.ts` | new | 151 |
-| `src/lib/state/client/context.ts` | 293 | 298 |
-| `src/lib/views/system/status/LineCounts.svelte` | new | 164 |
-| `src/lib/views/system/status/Status.svelte` | 107 | 110 |
-| `src/lib/data/model/index.ts` | 449 | 473 |
-| `src/lib/state/shared/words/format.ts` | 123 | 137 |
-| `config/text/views/system/status.yml` | 12 | 32 |
-| `config/text/app.yml` | 65 | 66 |
-| `tests/server/machine/lines.test.ts` | new | 185 |
-| `tests/server/machine/line-counts.ts` | new | 41 |
-| `tests/routes/machine/lines.test.ts` | new | 37 |
-| `tests/state/system/lines.test.ts` | new | 121 |
-| `tests/server/core/git.test.ts` | 830 | 864 |
-| `tests/views/system/status.test.ts` | 72 | 185 |
-| `tests/views/whole/type-scale.test.ts` | 345 | 345 (one entry line added; the main checkout's copy has moved since the worktree was cut, so this pair is not a clean before and after) |
-| `tests/state/shared/words/format.test.ts` | 147 | 164 |
-| `tests/state/client/client-state.test.ts` | 101 | 102 |
-| `HELP.md`, `README.md`, `DESIGN.md` | 294, 36, 320 | 294, 36, 320 (lines edited in place) |
-| `docs/diagrams/*.dot`, `*.svg` | | regenerated by `npm run diagrams`; `tests/checks/diagrams` passes |
+| `src/lib/server/machine/lines.ts` | 275 | 306 |
+| `src/lib/state/system/lines.svelte.ts` | 151 | 161 |
+| `src/routes/api/(machine)/lines/+server.ts` | 9 | 10 |
+| `src/lib/state/shared/words/format.ts` | 137 | 137 |
+| `tests/server/machine/lines.test.ts` | 185 | 244 |
+| `tests/routes/machine/lines.test.ts` | 37 | 43 |
+| `tests/state/system/lines.test.ts` | 121 | 183 |
+| `tests/views/system/status.test.ts` | 185 | 203 |
+| `tests/state/shared/words/format.test.ts` | 164 | 159 |
 
-The grep the rules file asks for after a change of shape: `grep -rn "twelve subcommands\|pinned six\|six subcommands" src tests config HELP.md DESIGN.md README.md` prints nothing (exit 1). `grep -rn "ls-files" src DESIGN.md` finds the new form at `git.ts:25,36,48,221` and `DESIGN.md:128`, and `server/git/deposit-git.ts:9,79,192`, which is the deposit's own writing module running `ls-files` on its mirror through its own call site; that is outside `server/core/git.ts` and unchanged.
+Round 1 changed no other file. The step as a whole also writes these files, all unchanged in this round:
+- **Dependency:** `package.json` and `package-lock.json` (cloc 2.6.0-cloc).
+- **Code:** `src/lib/server/core/git.ts` (`trackedFiles`), `src/lib/state/client/context.ts`, `src/lib/views/system/status/LineCounts.svelte` and `Status.svelte`, `src/lib/data/model/index.ts`.
+- **Words:** `config/text/views/system/status.yml` and `config/text/app.yml`.
+- **Tests:** `tests/server/core/git.test.ts`, `tests/server/machine/line-counts.ts`, `tests/state/client/client-state.test.ts` and `tests/views/whole/type-scale.test.ts`.
+- **Docs:** `HELP.md:128`, `README.md:5,13` and `DESIGN.md:128`.
+- **Diagrams:** `docs/diagrams/`, regenerated with `npm run diagrams`.
 
-## Judgment calls the brief did not cover (each reversible)
+## Judgment calls in this round (each reversible)
 
-1. `--skip-uniqueness` is added to cloc's arguments. Without it cloc counts only one of two tracked files with identical bytes, so a copied fixture would vanish from its folder's row. On today's tree nothing changes: `md5 -r` over `src tests bin config demo assets` found no two identical files. This is one flag beyond the argument list the brief names; the orchestrator may take it out.
-2. The paths are listed in the engine folder by `trackedFiles`, which runs through `git.ts`'s one synchronous call site (5 s timeout); only the cloc run is asynchronous. The server is blocked for the `ls-files` call itself (fast on this tree, not measured separately).
-3. A tracked path holding a line break is left out, since cloc reads one path per line. The tree holds none (not verified by a git command, which I may not run; the rule is in `countLines`).
-4. A tracked file cloc does not recognise (`.gitignore`, `LICENSE`, `.prettierrc` and the like) is in no row, as cloc leaves it out of its answer; the Files column counts the files cloc counted.
-5. The top level is the empty folder name on the wire (`TOP_LEVEL = ''`) and is drawn as "top level" from the catalog (`status.lines_top`).
-6. Thousands grouping: no grouping formatter existed in `state/` or `ui/` (searched for `toLocale`, `Intl.`, `grouped`, `thousand`), so `grouped()` is added to `state/shared/words/format.ts` with the separator in the catalog as `app.thousands_separator: ','`. The time is `stamp()` from the same module (the clock alone today, the date before it otherwise).
-7. The shared type `LineCount` (with `LineTally`, `FolderLines`, `LanguageLines`) lives in `data/model/index.ts`, since both the server module and the client store read it; the view reads it through the store module's re-export, since a view may not import `data/model`.
-8. The store's recount keeps the previous table on screen while the new count runs, with "Counting lines..." in place of "Counted at"; Count again is hidden while a count is out, and a second press during a count sends nothing.
-9. The failure line is coloured with `--c-red-txt`, the token the other views use for a refusal.
-10. The route answers 403 with `{ error: 'forbidden' }`, as `gatedBody` does, and uses `Response.json`.
-11. The server sentences are English strings in `lines.ts` (for example "cloc exited with code 1."), as the brief's `{ error }` with one sentence asks; the store's own malformed-answer sentences are catalog keys (`status.lines_bad_*`).
-12. The request is refused before it is queued on a server render (the window check sits in `request()`, not in `load()`), which also keeps the store from sharing eight lines with `memories.svelte.ts` that `tests/checks/tree/duplication.test.ts` refuses.
-13. The TODO-rule cases are written with the tag in a constant (`const TAG = 'TODO'`), so the test file itself holds no counted line. Run over every file under `src tests config bin demo` and the three docs that mention the word, the rule counts no line (`node --experimental-strip-types` over the files `grep -rl TODO` lists; it printed nothing).
-
-## Paths written beyond the brief's list
-
-`src/lib/data/model/index.ts` (the shared type), `src/lib/state/shared/words/format.ts` and `tests/state/shared/words/format.test.ts` (the grouping formatter and its cases), `config/text/app.yml` (the separator key), `tests/routes/machine/lines.test.ts` (the route test, beside the HPC route's), `tests/server/machine/line-counts.ts` (the fixture the four test files share, which the duplication check requires), `tests/state/client/client-state.test.ts` (the store list).
+1. An abort answers `{ error: 'The request was closed, so cloc was stopped.' }` from `runCloc`, and `{ error: 'The request was closed.' }` when the request was already closed before cloc or during the file reads. The route sends the response into a closed connection, and nobody reads it.
+2. The abort check is a function, `closed(signal)`, rather than an inline `signal?.aborted`. The type checker narrows an inline second read to `false` after the first, and the second read is the one that catches an abort during the file reads.
+3. A 200 answer whose body is not JSON is held as `lines_bad_status` with the status, which reads "the server answered 200 and said nothing more". Round 1 named the sentence for the non-JSON case without naming a status.
+4. A rejected fetch holds the browser's own message (for example "Failed to fetch"), as round 1 says ("says its sentence").
+5. The kill test wraps `node:child_process`'s `spawn` with `vi.mock`, so the real spawn still runs. It records each child, and the case waits for the killed child's `close` before asserting `signalCode` is `SIGTERM`.
 
 ## Limitations and sharp edges
 
-- The count over a scratch copy of this worktree (copied with rsync, `git init`, `git add -A`, 1700 paths, then `countLines`) took 2900 ms and gave 1152 files, code 171441, TODO 0; its rows match the brief's Decision 2 table plus this step's own files. That run is a scratch copy, not the worktree itself, since I may not run git in the worktree.
-- `perl` missing from the PATH is not exercised by a test; the code answers "perl could not be started to run cloc (...)" for it (`runCloc`, the `error` handler).
-- cloc writes "Unable to read" to its standard error for a tracked path deleted from disk and leaves it out; such a file is in no row.
+- `ls-files` runs synchronously through `git.ts`'s call site (5 s timeout, 1 MiB output cap), so the server is blocked for that call. Only cloc runs asynchronously.
+- A tracked path holding a line break is left out, since cloc reads one path per line.
+- Files cloc does not recognise are in no row. So is a tracked file deleted from disk, which cloc reports on its standard error and leaves out.
+- The case for an abort during the file reads, after cloc has answered, is not exercised by a test. Its check is the same `closed(signal)` read as the case that is tested before cloc.
+- The count was timed on a scratch git copy of the worktree in the first round, not on the worktree itself, since I may not run git there: 1700 paths, 1152 files counted, 2900 ms, TODO 0.
 
 ## User-visible changes, before and after
 
-**The Status view.** Put it on the TEST page. Before: socket line, snapshot counts, sessions and git lines, then the Claude Code hooks block. After: between the git line and the hooks block, a section headed "Lines of code", the line "Oculus's own tracked files, counted by cloc. The plan's ledger, the lock file and the generated diagrams are left out.", then "Counting lines..." for about three seconds, then "Counted at HH:MM" with a Count again button, and a table with columns Folder, Files, Blank, Comment, Code, TODO, Lines: one row per folder (top level, assets, bin, config, demo, src, src/lib/assets ... src/routes, tests), each followed by its languages indented and muted, and a bold Total row last. Numbers right-aligned in tabular figures with commas. Narrowing the pane scrolls the table sideways inside the view. Pressing Count again shows "Counting lines..." over the old table until the new count arrives.
+**The Status view, normal case.** Put the view on the TEST page.
+- **Before:** the socket line, the snapshot counts, the sessions and git lines, then the Claude Code hooks block.
+- **After:** between the git line and the hooks block, a "Lines of code" section with a line saying what is counted. It shows "Counting lines..." for about three seconds, then "Counted at HH:MM" with a Count again button.
+- **The table:** columns Folder, Files, Blank, Comment, Code, TODO and Lines. Each folder row is followed by its languages, indented and muted, and a bold Total row comes last. Numbers are right-aligned in tabular figures with commas. A narrow pane scrolls the table sideways inside the view.
 
-**HELP.md:128.** Before: "Whether the socket is up, which snapshot the page holds and how much is in it." After: "Whether the socket is up, which snapshot the page holds and how much is in it, and the line counts of oculus's own files by folder and language, with a TODO count."
+**The Status view over a folder that is not a git checkout.** Before, there was no section. After, the section shows the red line "The line count failed: git could not list the tracked files: not a git repository (or any of the parent directories): .git." with Count again beside it, and no table. The sentence after the prefix is what `countLines` answered over an empty temporary folder (`node --experimental-strip-types` running `countLines` on a `mktemp -d` folder printed `{"error":"git could not list the tracked files: not a git repository (or any of the parent directories): .git."}`).
 
-**README.md:5.** Adds: "The Status view's line counts also need Perl on the PATH to run cloc; macOS and most Linux systems carry it."
+**The Status view on a machine without perl.** After, the section shows the red line "The line count failed: perl could not be started to run cloc (ENOENT)." with Count again beside it, and no table. The perl case asserts the sentence's start and `ENOENT`; the whole sentence is the code's template (`lines.ts`, the `error` handler of `runCloc`).
 
-**README.md:13.** The list now ends: "`lucide-static` (ISC) ships the line icons `config/catalogs/icons.yml` names, which the server reads off disk and pushes with the configuration, and `cloc` (GPL-2.0) is run as a separate Perl program, never imported, to count the Status view's lines."
+**A failed Count again after a good count.** After, the red failure sentence appears above the table, the last table stays on screen under it, and Count again sits beside the sentence. Before this round, the store cleared the table and only the sentence stayed.
 
-**DESIGN.md:128.** "twelve subcommands" is "thirteen subcommands"; after the check-ignore sentence: "For the Status view's line counts, GET /api/lines asks it for the paths tracked under the engine folder (`ls-files -z`, `trackedFiles`), which `server/machine/lines.ts` hands to cloc."; and `ls-files` joins the list held to exact vectors.
+**HELP.md:128.**
+- **Before:** "Whether the socket is up, which snapshot the page holds and how much is in it."
+- **After:** "Whether the socket is up, which snapshot the page holds and how much is in it, and the line counts of oculus's own files by folder and language, with a TODO count."
+
+**README.md:5** adds: "The Status view's line counts also need Perl on the PATH to run cloc; macOS and most Linux systems carry it."
+
+**README.md:13** now ends: "`lucide-static` (ISC) ships the line icons ... and `cloc` (GPL-2.0) is run as a separate Perl program, never imported, to count the Status view's lines."
+
+**DESIGN.md:128** changes in three places:
+- "twelve subcommands" is now "thirteen subcommands".
+- New sentence: "For the Status view's line counts, GET /api/lines asks it for the paths tracked under the engine folder (`ls-files -z`, `trackedFiles`), which `server/machine/lines.ts` hands to cloc."
+- `ls-files` joins the commands held to their exact form.
