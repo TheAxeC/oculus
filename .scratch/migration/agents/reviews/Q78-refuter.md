@@ -215,3 +215,7 @@ Found by the orchestrator at landing:
 
 - The tree row's controls and status letter followed the name (open item R1): Axel ruled (a), fixed at landing in `TreeItem.svelte` with a case in `views.spec.ts`.
 - Two tooltips open at once when the pointer is over a row action inside a row that carries its own words: a defect of the Tooltip primitive older than this step, booked on Q81's line in `plan.md` (menus, tooltips and dialogs on bits-ui).
+
+## Reviewer usage (added 2026-09-28 from the state file's usage table)
+
+The review, claude:opus, agent `a4e9f46c3ef0c954a`: 42 messages, 42 tool uses, 15.6 minutes. The run over round 1, claude:opus, agent `ab8486ac284a14abd`: 34 messages, 35 tool uses, 14.3 minutes.

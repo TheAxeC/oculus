@@ -94,3 +94,7 @@ Q90 review. I ran every command below from `.agents/worktrees/Q90/tools/oculus`,
 - Behaviour, the Audit's count on this hub drops from 64 to 1 and the address shapes no longer looked for on disk: stated in the landing report.
 - Proof, no test ties two copies of the rule: no second copy exists after this step, which is what item 1 made so; nothing to change.
 - Proof, `tests/checks/tree/scratch.test.ts` timing out once under load: not caused by this step; the whole unit suite on main at landing is its check, and a recurrence there is fixed at landing.
+
+## Reviewer usage (added 2026-09-28 from the state file's usage table)
+
+claude:opus, agent `a9e667bfb1d4ee931`: 123,361 tokens, 39 tool uses, 14.0 minutes.

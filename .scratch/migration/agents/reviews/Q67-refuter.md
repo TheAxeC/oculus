@@ -122,3 +122,28 @@ All commands were run from `.agents/worktrees/Q67/tools/oculus`.
 - A live Connect against a real provider.
 
 Reviewer usage: tokens not measured; about 35 tool uses; about 45 minutes, most of it the vitest, Playwright and revert-check runs.
+
+## Closed (the orchestrator's disposition of every finding above, added 2026-09-28 from the round message, `Q67-report.md` and `Q67-landing.md`)
+
+First review:
+- Remove drops comments (`rows.ts:131-136`): round item 1.
+- `open_bin`: ruled by Axel 2026-09-26, option (a) (plan.md, Q67's Step 0), unit cases in round item 6.
+- The Personal group's chord: ruled by Axel 2026-09-26, option (a), `p`.
+- The Microsoft admin sentence: round item 9.
+- The write chain untested: round item 2.
+- `open_bin` untested: round item 6. DESIGN.md:300 made false: round item 6 (Doc text, applied at landing).
+- Setup-first Add not proven: round item 7. Browser case order: round item 8.
+- DRY, the chain: round item 3. DRY, the client POST: round item 4.
+- The hard-wrapped comment line: round item 14. The misnamed catalog key: round item 10.
+- The selector change not reported, and the `data-account` collision: round item 11, the before and after in round item 15.
+- The builder's two read-only git commands: the round message repeated the ban; none in the round.
+- Remove deletes an account's own client half: round item 12. Provider naming: round item 13. The keyboard move: round item 15.
+- Errors escape unhandled: round item 5.
+- Premise check, the `allow-duplication.txt` removals, the reviewer's own unrun browser reverts: no finding.
+- Paths written outside the brief's list (the `secret` prop on `ui/forms/TextInput.svelte`, the `gatedBody` fold into the hpc and usage routes): no round item and no disposition in the landing. Raised to Axel as open item Z15.
+- The boundaries allowlist widened (`tests/checks/tree/boundaries.test.ts:106`, `data/accounts/connect` allowed to state): no round item and no disposition in the landing. Raised to Axel as open item Z15.
+
+Repair round 1, refuted:
+- The Inbox and Calendar failure sentences: fixed at landing (`Q67-landing.md`, Fixed at landing, first bullet).
+- An Add into an emptied flow list drops a comment inside the brackets: fixed at landing, second bullet.
+- `removeServedHomeFile` does not check the home is inside the temporary directory: fixed at landing, third bullet.

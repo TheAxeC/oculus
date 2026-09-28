@@ -120,3 +120,16 @@ Findings 1 to 16 closed, each with red directives named by the reviewer (listed 
 ## Not checked
 
 The builder's timing for finding 15; the AU/UA rows on screen; the full browser suite and a revert-check over every changed file (excluded by the brief); the look; the catch-branch guard at Diff.svelte:136, which has no directive.
+
+## Closed (the orchestrator's disposition of every finding above, added 2026-09-28 from `X3b-landing.md`)
+
+- First review, findings 1 to 16: closed in repair round 1, each closure reproduced by the round's reviewer (see "The round's closures" above).
+- Round, Proof 1 (`layer.test.ts` source-text case): fixed at landing, landing item 8.
+- Round, Proof 2 (Cmd+Enter unproven): fixed at landing, item 2.
+- Round, Proof 3 (Complete Merge on a UD row): fixed at landing, item 3.
+- Round, Proof 4 (no case reads `mergeSides` for AU or UA): fixed at landing with Behaviour 1, item 1 (a case in `git-reads.test.ts`).
+- Round, Proof 5 (`controls.test.ts` a source scan): the reviewer judged it acceptable; no finding.
+- Round, Standards 1 to 4: fixed at landing, items 4, 5, 6 and 7.
+- Round, Behaviour 1 (AU and UA read as a deletion): fixed at landing, item 1.
+- Round, Spec 1 (`git.ts:403-412`, `:420-427`, the `refs()` read and the conditional stash and remote reads go beyond finding 15's ruling): no disposition in the landing. Raised to Axel as open item Z14.
+- Round, Behaviour 2 (the gutter's cost on a long file with blame on, not measured): no disposition in the landing. Raised to Axel as open item Z14.

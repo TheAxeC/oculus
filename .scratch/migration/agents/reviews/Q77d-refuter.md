@@ -101,3 +101,7 @@ Revert sample. I applied each revert by hand in a scratch copy of the worktree (
 - Proof and Behaviour, the portfolio negative checks' `sleep(150)` can miss a rebuild slower than 150 ms under heavy load: written into Q72's list in `plan.md` (a barrier write that must rebuild, waited for, in place of each fixed negative wait), under Axel's rule that a step ends at its rounds.
 - Standards, the comment placement in the launch recipe case: left; not a rule breach.
 - Behaviour, `started()` no longer waits for the root page and the template folder is left to `sweepScratch`: stated in the landing report; neither changes what a case asserts.
+
+## Reviewer usage (added 2026-09-28 from the state file's usage table)
+
+claude:opus, agent `ae53e90c150350a15`, sampled: 135,488 tokens, 40 tool uses, 112.0 minutes.
