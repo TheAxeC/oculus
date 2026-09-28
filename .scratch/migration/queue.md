@@ -1,6 +1,7 @@
 /plan-orchestration oculus/migration
 
 In flight:
+- Q86 (the Map laid out by Graphviz's neato in the page): building.
 - Q101 (each Terminal tab a terminal panel of its own, Z40 (d)): built, review next.
 Queued, in order:
 - Q87 (the import-graph checks on dependency-cruiser, the duplication check on jscpd): stopped at /spec, waiting on Axel's ruling Z45.
@@ -13,7 +14,7 @@ Queued, in order:
 - X3a (the Files view as VS Code's Explorer, once Q82 has landed).
 - Q91 and Q83 (the project view and its editor, once X3a has landed; small libraries: culori and the others).
 - Q84 and L4 (the fetch-and-hold stores on @tanstack/svelte-query; floating panes; together only when their briefs name no shared file).
-- Q85 and Q86 (checking untyped input with zod; the Map's layout tried on @viz-js/viz).
+- Q85 (checking untyped input with zod).
 - Q66 and Q35 (a hidden tab defers its work; the session views).
 - D11 and D14 (the debug client for rite; LaTeX everywhere).
 - D23, D15 and D17 (language servers in the Monaco editor, once D13 has landed; PDF reading, once D14 has landed; project commands).
