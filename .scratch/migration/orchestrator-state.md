@@ -27,7 +27,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:      # Q101 in repair round 1; Q86 building.
+dispatch:      # Q101 in repair round 1; Q86 resumed on its cases ruling.
 - step: Q101
   executor: agent
   worker: claude:opus
@@ -50,8 +50,9 @@ dispatch:      # Q101 in repair round 1; Q86 building.
   launched: 2026-09-29
   report: agents/reviews/Q86-report.md
   landing: not-started
-  round: 0
-  shared_paths: with Q101, DESIGN.md (Q86 line 290, Q101 lines 266 and 273 and the terminal sentences: different lines), docs/diagrams (a rerun of npm run diagrams)
+  builder_usage: 66 tool uses, 249k tokens, 19 min, the cases hand-back
+  round: 0   # cases ruled in agents/briefs/Q86-cases.md, sent 2026-09-29
+  shared_paths: with Q101, DESIGN.md (Q86 line 290, Q101 lines 266 and 273 and the terminal sentences: different lines), docs/diagrams (a rerun of npm run diagrams), src/lib/state/client/context.ts (Q86 one import, one ClientState field and one returned key; Q101 the terminals wiring at 160-195 and the imports at 73-92: a hand merge of a few lines)
 ```
 
 ## The standing demands (from Axel, in force)
