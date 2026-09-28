@@ -27,7 +27,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:      # Q92 of set 2, repair round 1 answered, its refutation next; Q79a and Q79c of set 3 building.
+dispatch:      # Q79a, Q79c and Q99 building.
 - step: Q79a
   executor: agent
   worker: claude:opus
@@ -50,6 +50,17 @@ dispatch:      # Q92 of set 2, repair round 1 answered, its refutation next; Q79
   landing: not-started
   round: 0
   shared_paths: with Q79a, server/content/docs.ts (Q79a changes the json call in answer() and drops the origin check in handleDocs; Q79c changes figures(), renderManual() and adds parts to the body in answer(): a hand merge of answer()); with Q92, views/system/help/manual.ts (Q92 decodes attribute() through entities, Q79c removes attribute() with the regex cut: the landing takes Q79c's file) and tests/views/system/help.test.ts (different cases); with both, docs/diagrams (a rerun of npm run diagrams), DESIGN.md and HELP.md (different sentences)
+- step: Q99
+  executor: agent
+  worker: claude:opus
+  session_id: a0884ca05cb40cf56
+  worktree: .agents/worktrees/Q99
+  base: d3cd52a4
+  launched: 2026-09-28
+  report: agents/reviews/Q99-report.md
+  landing: not-started
+  round: 0
+  shared_paths: with Q79a and Q79c, DESIGN.md and HELP.md (different sentences: Q99's are the terminal's input, the scrollback, a tab closing on its terminal's end and the Pages view; Q79a's the Auth section; Q79c's the Help view's cut and the controls check) and docs/diagrams (a rerun of npm run diagrams); no code file is shared (Q79a changes no file under server/machine/pty or state/client; Q79c's Terminal.svelte is not in Q99's paths)
 ```
 
 ## The standing demands (from Axel, in force)
