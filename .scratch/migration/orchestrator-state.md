@@ -27,7 +27,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:      # Q89 of set 2 in repair round 1 (Z39 open), Q80 of set 3 building; Q92 of set 2 is prepared next.
+dispatch:      # Q89 of set 2 in repair round 1 (Z39 open), Q80 of set 3 under review; Q92 of set 2 is prepared next.
 - step: Q89
   executor: agent
   worker: claude:opus
@@ -51,6 +51,7 @@ dispatch:      # Q89 of set 2 in repair round 1 (Z39 open), Q80 of set 3 buildin
   launched: 2026-09-28
   report: agents/reviews/Q80-report.md
   landing: not-started
+  reviewer_report: agents/reviews/Q80-refuter.md (reviewer a59a84cb98d926c8b, running)
   round: 0
   shared_paths: HELP.md and DESIGN.md (Q80 changes HELP.md:128 and DESIGN.md:128, other sentences than Q89's and Q98's), docs/diagrams (a rerun of npm run diagrams at landing), any whole-tree test list such as type-scale.test.ts (one added name per step)
 ```
