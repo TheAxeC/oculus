@@ -132,3 +132,85 @@ It then walks every rail arrangement. Output: 49 rows `ok <id> group=<g> pages=<
   - the rail and Pages confirms opening;
   - the empty-pane line being drawn.
 - The unit suite failure is in row V1 above.
+
+
+## Repair round 1 (the builder's report, 2026-09-28)
+
+Everything in the round is done.
+
+| # | Item | State | Where | Proving command |
+|---|---|---|---|---|
+| 1 | Z18: a Help group (key `help`, label Help, chord `h`), which is no page | DONE | See the detail below this table. | `npx vitest run tests/checks/config/config-folder.test.ts` gives 26 passed. It includes "keys every catalogue group by the rail page it holds, in rail order, Help after System", which asserts that `arrangements` has no `help`, and the chord list f m p e s c l r t y h w. |
+| 2 | The keyless-entries case replaced | DONE | `tests/views/system/workbench/catalogue.test.ts:66` "draws a key beside every entry of every group, System y1 to y6 and Help h1 to h5". It checks key count equals entry count for every drawn group, and that the headings are the rail labels with Help after System. `tests/state/workbench/navigation/catalogue.test.ts:234,260` and the chord list: `y` is status to gallery, `h` is help, memories and the three docs; `Help:h:page` in the glyph list. | the verify run below; both files also ran alone, passed |
+| 3 | A reset asks each unsaved tab, one at a time, after the reset confirm; a no ends it with nothing changed | DONE | See the detail below this table. | `npx vitest run tests/state/workbench/layout/pages.test.ts tests/state/workbench/navigation/pages.test.ts` gives 61 passed |
+| 4 | The Leads to Applications work moved into state, with its cases | DONE | See the detail below this table. | `npx vitest run tests/state/feeds/lead-application.test.ts tests/views/feeds/leads.test.ts` gives 25 passed |
+| 5 | The false comments | DONE | `rail.test.ts:6` now reads "Nothing here renders; every case is over a pure function." `src/lib/shell/Workbench.svelte:84-85`: the direct chord counts "views no catalogue group holds". `type-scale.test.ts:339`: the reference to `bin/revert-check/revert-check.mjs` is gone, and the comment now says what turns the case red. | read of the lines |
+| 6 | Judgment calls kept as built | DONE | no change | none |
+
+**Item 1 detail:**
+- `config/layout.yml:35` `help: { label: "Help", glyph: page, chord: h }`, after `info`. The `page` glyph is carried by no view of the group: help is `question`, memories is `memories`, doc is `book`.
+- The three `docs:` entries have `group: help` (`:179-181`).
+- `Help.svelte:10` and `Memories.svelte:10` have `group: 'help'` (orders 0 and 1).
+- `arrangements.info` is unchanged; the System group keeps status, findings, audit, history, config and gallery.
+- HELP.md: `:67` is `y1-y6`, `:68` is `h1-h5`, and a sentence in the rail paragraph names the Help group. The key sheet in `config/text/app.yml` has the same rows.
+- DESIGN.md: the `:81` folders paragraph, the chord list and the Memories paragraph.
+- `catalogue.ts` head comment.
+
+**Item 3 detail:**
+- `src/lib/state/workbench/navigation/pages.ts:156` `questionFor`: an asker over a held question.
+- `pages.ts:181` `resetAfterAsking`: the reset question first. Then, for each tab of the pages rebuilt or removed where `closeQuestion([id], unsaved)` is `'dirty'`, it asks `ui.tab_close_dirty`. A no returns false before `act` runs.
+- `resetAsk` no longer takes or counts unsaved tabs, and `workbench.reset_unsaved` is removed from `config/text/views/system/workbench.yml`.
+- The three reset surfaces call it: `ActivityRail.svelte`, `Pages.svelte` and `PagesReset.svelte`. All three draw the held question through the new primitive `src/lib/ui/controls/HeldQuestion.svelte`.
+- Cases in `tests/state/workbench/layout/pages.test.ts`:
+  - `:546` "asks each unsaved tab of a reset, one at a time, after the reset question": two unsaved tabs, each asked, reset runs.
+  - `:581` "leaves every page as it was when the second unsaved tab is answered no": pages JSON unchanged, the tab's state kept.
+- `navigation/pages.test.ts` has a case for `questionFor`.
+
+**Item 4 detail:**
+- `src/lib/state/feeds/lead-application.ts` now holds `applicationFromLead`, `holdsTyped`, `prefillFromLead` (`:87`), `addFromLead`, `leadAddFor` (`:136`, which clears `lead` once the entry is written) and `closeAddForm` (`:157`).
+- `views/feeds/leads/application.ts` is removed.
+- `Leads.svelte:129` calls `prefillFromLead`; `Collection.svelte:156` calls `leadAddFor` and `:288` calls `closeAddForm`.
+- Cases in `tests/state/feeds/lead-application.test.ts`:
+  - `:148` the prefill clears the drafts, sets each field by its schema kind, sets `adding` and names the lead;
+  - `:197` a written entry writes the lead applied and clears `lead`;
+  - `:211` a refused add writes nothing to the lead;
+  - `:221` a cancel writes nothing to the lead.
+
+## Judgment calls this round (reversible)
+- A tab's unsaved-text question shows the page's name as its second line, since the tab itself is not on screen.
+- `tests/views/system/help.test.ts` "names every catalogue group that has a chord" and "writes down every letter a catalogue group is reached by" required every letter's row to read `x1-x9`. They now accept `x1-x9`, or `x1-xn` where n is that group's exact entry count below nine. The ruled `y1-y6` and `h1-h5` rows need this. A row claiming a range other than those two still fails.
+- The lead's title is kept untrimmed in the tab's state, as the file holds it. That is the id `LeadCard`'s own status write uses.
+- `HeldQuestion.svelte` is the 10th item in `ui/controls`, which is at the folder limit. It is listed in `type-scale.test.ts`'s pass-through audit and in DESIGN.md beside `CloseQuestion`.
+- `tests/views/system/help.test.ts` is now a changed file, so its 8 `// revert:` lines were deleted and prettier was run.
+
+## Report corrections
+- `landing.test.ts` has 14 cases (`grep -c "it(" tests/state/workbench/layout/open/landing.test.ts` gives 14).
+- The first round deleted 159 `// revert:` lines over 15 files. This round deleted 8 more, in `tests/views/system/help.test.ts`.
+
+**Before and after, for the look, additionally:**
+- A page already saved in the browser keeps its layout until its Reset or Reset all is pressed, so a browser with saved pages sees the new layouts only after a reset.
+- An applied lead no longer offers decline.
+- Declined leads are hidden by default, behind the toggle.
+- `applied` is shown on declined and expired leads too, and saving its form sets them `applied`.
+- The catalogue shows a Help heading after System, with h1 to h5.
+- A reset over unsaved tabs asks one confirm per tab after the reset confirm.
+
+## Verify, from `.agents/worktrees/L7/tools/oculus`
+`sh /Users/axelfaes/.claude-work/skills/land/templates/verify.sh /Users/axelfaes/workspace/research-hub/tools/oculus/.scratch/migration/orchestrator-state.md` exits 0. Lines it printed:
+```
+ Test Files  345 passed (345)
+      Tests  5432 passed (5432)
+1790558355436 COMPLETED 1523 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+✓ built in 1.41s
+✓ built in 5.19s
+All matched files use Prettier code style!
+verify: 6 commands passed
+```
+The runner was run more than once in this round. Only the run quoted above is on the final tree. The earlier runs went red on defects of this round's own changes: HeldQuestion missing from the pass-through audit, the help key-table checks, a lint error in HeldQuestion, and the help.test directive lines. Each is fixed, and each fixed file was run alone before this last run. Under load, one earlier run's full suite also had `tests/checks/tree/scratch.test.ts` time out at 5475 ms; it passed alone and in the final run.
+
+Other checks:
+- The `// revert:` grep over all 101 files the step changes or adds prints nothing (exit 1).
+- `diff -r .../L7-base/tools/oculus/tests/browser tests/browser` prints nothing (exit 0).
+- `sh bin/size-check.sh` and `sh bin/folder-check.sh` both exit 0.
+- `npm run diagrams` twice: the second run changed nothing (`diff -r` of a copy taken after run 1 prints nothing).
+- `ls -d $TMPDIR/oculus-* | wc -l` gives 1, the same as before.
