@@ -62,6 +62,8 @@ Every agent dispatched on an oculus package runs under this file plus one brief 
 
 Run every command the brief lists, from `tools/oculus` in the worktree, and fix until each passes. At minimum: `npm test`, `npm run check`, `npm run build`, `npm run format:check`. Then `LC_ALL=C grep -n '[^ -~]'` over every file you touched, which must print nothing.
 
+The tests that count are the ones the step can influence: the test files it adds, changes or deletes, and the tests that exercise the files it changes. A failure or timeout in any other test file (`tests/server/core/git.test.ts` is the usual one) is not the step's: the report names it in one line, and nobody reruns it, investigates it, or changes code, a test, a timeout or any configuration because of it, since several suites run on this machine at once. A reviewer does not count such a failure as a finding.
+
 ## Report
 
 First line: anything NOT done, or "Everything in the brief is done". Then a DONE / NOT DONE table, one row per deliverable in the brief, each naming the command that proves it and its output. Then: files changed with line counts; every judgment call the brief did not cover, as a decision the orchestrator may reverse; anything in the brief or the design that turned out wrong or impossible, said plainly; every limitation, sharp edge or compromise you know of, however small. Never present partial work as complete; never state a measurement you did not take.
