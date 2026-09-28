@@ -49,7 +49,7 @@ dispatch:      # Q79a, Q79c and Q99 building.
   launched: 2026-09-28
   report: agents/reviews/Q79c-report.md
   landing: not-started
-  reviewer_report: agents/reviews/Q79c-refuter.md (reviewer a98d284f504829f77, 60 tool uses, 229k tokens, 14 min)
+  reviewer_report: agents/reviews/Q79c-refuter.md (reviewer a98d284f504829f77, 60 tool uses, 229k tokens, 14 min; round 1 builder report saved, 71 tool uses, 303k tokens, 24 min; round 1 reviewer ac94066d2b35fd982, running)
   round: 1   # sent 2026-09-28 in agents/briefs/Q79c-round1-sent.md, from worktree commit 787dc14c
   shared_paths: with Q79a, server/content/docs.ts (Q79a changes the json call in answer() and drops the origin check in handleDocs; Q79c changes figures(), renderManual() and adds parts to the body in answer(): a hand merge of answer()); with Q92, views/system/help/manual.ts (Q92 decodes attribute() through entities, Q79c removes attribute() with the regex cut: the landing takes Q79c's file) and tests/views/system/help.test.ts (different cases); with both, docs/diagrams (a rerun of npm run diagrams), DESIGN.md and HELP.md (different sentences)
 - step: Q99
@@ -61,6 +61,7 @@ dispatch:      # Q79a, Q79c and Q99 building.
   launched: 2026-09-28
   report: agents/reviews/Q99-report.md
   landing: not-started
+  reviewer_report: agents/reviews/Q99-refuter.md (reviewer a5f962d7aba868b83, running; builder 139 tool uses, 328k tokens, 33 min)
   round: 0   # the cases ruled 2026-09-28 in agents/briefs/Q99-cases.md (commit bbb278d3), the builder resumed
   shared_paths: with Q79a and Q79c, DESIGN.md and HELP.md (different sentences: Q99's are the terminal's input, the scrollback, a tab closing on its terminal's end and the Pages view; Q79a's the Auth section; Q79c's the Help view's cut and the controls check) and docs/diagrams (a rerun of npm run diagrams); no code file is shared (Q79a changes no file under server/machine/pty or state/client; Q79c's Terminal.svelte is not in Q99's paths)
 ```
@@ -119,7 +120,11 @@ None. Axel lifted it on 2026-09-23 with `/plan-orchestration oculus/migration` a
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is booked as its own step in `plan.md` and carried in the Booked section below, since it needs no ruling from him.
 
-- None.
+- Z43, the shape of the `sessions` message while tmux has not answered yet (raised 2026-09-28, from Q99's builder). Q99 closes a Terminal tab when its terminal has ended, read off the `terminals` list the server sends in the `sessions` message. Until tmux has answered the server's first `list-sessions` (just after a server start, or when that first read times out), the server has no list, and today it sends an empty one, which the page would read as every terminal having ended and close every Terminal tab while the terminals run on. The message between the server and the page is a wire format, so its shape is yours to rule. Options:
+  - (a) As built: `terminals` is left out of the message until tmux has answered once, and a page reads a message without it as saying nothing about any terminal. Pros: the smallest change; the page's reading needs no new field; an old page and a new server still agree. Cons: one field of the message becomes optional, so every reader must handle its absence. Recommended.
+  - (b) `terminals` always present, plus a field `terminalsRead: boolean` that says whether tmux has answered. Pros: no optional field. Cons: two fields to keep in step, and a reader that forgets the flag makes the same mistake as today.
+  - (c) The server sends no `sessions` message at all until tmux has answered. Pros: no shape change. Cons: the Sessions list of Claude and Codex sessions waits on tmux at every start, and waits for good when tmux does not answer.
+  - The lazy option is sending the empty list as today, which closes every Terminal tab after a restart.
 
 ## Time per step (Axel asked 2026-09-27 for how it evolves with Q77; measured from each builder's transcript: each tool call from call to result, each background wait from the builder stopping to the run waking it)
 

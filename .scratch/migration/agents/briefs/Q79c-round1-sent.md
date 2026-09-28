@@ -29,3 +29,7 @@ The round starts at the worktree commit `787dc14c` (the step's work as you left 
 Run only the test files you change while working, then `npm run check`, `npm run format:check` and `npm run lint`. Do not run the full verify list: the orchestrator runs it on main at landing.
 
 Rewrite the report at `.agents/worktrees/Q79c/tools/oculus/.scratch/migration/agents/reviews/Q79c-report.md` with these items, in the brief's shape, its first section the open items as the main checkout's `tools/oculus/.scratch/migration/orchestrator-state.md` lists them when you finish.
+
+## Ruled on the builder's report (2026-09-28)
+
+- Item 1's "the case names drop audits" is withdrawn. `tests/checks/tree/audits.test.ts` names every case under `tests/views/` that renders nothing an audit, and the two grid-look cases render nothing, so they keep the prefix (the builder's option (a)). They test `gridOptions` and `applyLook`, the two functions `Terminal.svelte` calls, and the report cites them as coverage of those functions and not of the component. The lazy option was (c), adding them to `allow-audits.txt`, which takes no new entries.
