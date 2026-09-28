@@ -412,6 +412,7 @@ Independent of each other; two may run side by side under R9's rule when their b
 - Open item Z30 (2026-09-28): a backticked word of a catalog line is drawn as code by one shared piece used by the Config, Audit and Person views; step Q98 (the user).
 - Open item Z31 (2026-09-28): the Calendar footer gets a second line for one day; step Q98 (the user).
 - Open item Z32 (2026-09-28): Ordo v2.0.0 is pinned; `libraries: check` is in the `oculus` project of `.agents/plan.yaml` (the user).
+- Open item Z33 (2026-09-28): the queue runs L7; Q95; Q94; Q97; Q98; Q92; ... Q81; Q96; Q82, as booked (the user).
 
 ## Blocked, and by what
 - O16: no longer blocked. The `Notification` and `Stop` hooks exist since 2026-09-10 in the hub's and cathedra's local settings, written by Axel.
