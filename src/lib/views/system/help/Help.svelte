@@ -1,6 +1,6 @@
 <script module lang="ts">
-    // Layer 3, view registration. Help opens the Help group, which is no page: its entries are
-    // drawn on the System page.
+    // Layer 3, view registration. Help opens the Help page's group, and is drawn in the Help
+    // page's left pane beside the HPC how-to.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
 
     export const registration: ViewRegistration = {

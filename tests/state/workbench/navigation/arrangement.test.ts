@@ -245,7 +245,7 @@ describe('the shipped pages', () => {
         );
     }
 
-    it('draws the eleven buttons in the ruled order, Incoming new and Info/more named System', () => {
+    it('draws the twelve buttons in the ruled order, Help right after System', () => {
         expect(railPages(shipped).map((entry) => `${entry.label}:${entry.page}`)).toEqual([
             'Focus:focus',
             'Sessions:sessions',
@@ -257,6 +257,7 @@ describe('the shipped pages', () => {
             'References:references',
             'Present:present',
             'System:info',
+            'Help:help',
             'Views and Settings:views'
         ]);
     });
@@ -281,17 +282,9 @@ describe('the shipped pages', () => {
             pillars: [['pillars', 'domains', 'map']],
             references: [['venues', 'data', 'code', 'statements']],
             present: [['present']],
-            info: [
-                [
-                    'status',
-                    'findings',
-                    'audit',
-                    'history',
-                    'config',
-                    'gallery',
-                    'help',
-                    'doc:docs/HPC-UTwente-howto.md'
-                ],
+            info: [['status', 'findings', 'audit', 'history', 'config', 'gallery']],
+            help: [
+                ['help', 'doc:docs/HPC-UTwente-howto.md'],
                 ['doc:docs/RESEARCH-APPROACH.md', 'doc:docs/AGENT-APPROACH.md', 'memories']
             ],
             views: [['catalogue'], ['settings', 'account-setup'], ['pages']]
@@ -321,6 +314,105 @@ describe('the shipped pages', () => {
         expect(pagesOf('files')).toEqual(['sessions', 'explorer']);
         // Nothing sits on a page that is not one of the entries.
         expect(seen.filter((one) => !wanted.includes(one.tab))).toEqual([]);
+    });
+});
+
+describe('a System page saved before the Help page was its own', () => {
+    const shipped = loadConfig(engineDir()).config;
+    const arrangements = shipped.arrangements as Record<string, unknown>;
+
+    /** A hub document tab as layout.yml writes one. */
+    function docTab(path: string, label: string): unknown {
+        return { view: 'doc', state: { id: path, path, label } };
+    }
+
+    /** The System arrangement that held the manual, the documents and the photo wall. */
+    const OLD_INFO = {
+        root: {
+            kind: 'split',
+            dir: 'row',
+            sizes: [0.6, 0.4],
+            children: [
+                {
+                    kind: 'pane',
+                    view: [
+                        'status',
+                        'findings',
+                        'audit',
+                        'history',
+                        'config',
+                        'gallery',
+                        'help',
+                        docTab('docs/HPC-UTwente-howto.md', 'HPC how-to')
+                    ]
+                },
+                {
+                    kind: 'pane',
+                    view: [
+                        docTab('docs/RESEARCH-APPROACH.md', 'Research approach'),
+                        docTab('docs/AGENT-APPROACH.md', 'Agent approach'),
+                        'memories'
+                    ]
+                }
+            ]
+        }
+    };
+
+    /** The tabs on screen, pane by pane: a view id, or a document's path. */
+    function tabsOnScreen(state: ClientState): string[][] {
+        return panes(state.layout.layout()).map(({ pane: node }) =>
+            node.tabs.map((tab) => {
+                const path = (tab.state as { path?: unknown } | null)?.path;
+                return tab.view === 'doc' && typeof path === 'string' ? `doc:${path}` : tab.view;
+            })
+        );
+    }
+
+    /** A browser whose saved layout holds a System page made from the old arrangement. */
+    function savedBrowser(): ClientState {
+        const storage = fakeStorage();
+        loadLayout(storage);
+        expect(openRailPage('info', 'System', OLD_INFO)).toBe(true);
+        const again = createClientState();
+        again.layout.loadLayout(storage);
+        return again;
+    }
+
+    const OLD_TABS = [
+        [
+            'status',
+            'findings',
+            'audit',
+            'history',
+            'config',
+            'gallery',
+            'help',
+            'doc:docs/HPC-UTwente-howto.md'
+        ],
+        ['doc:docs/RESEARCH-APPROACH.md', 'doc:docs/AGENT-APPROACH.md', 'memories']
+    ];
+
+    it('shows the saved System page with its old tabs, whatever the shipped arrangement says', () => {
+        const browser = savedBrowser();
+        const saved = browser.layout.pages().find((page) => page.rail === 'info');
+        expect(browser.layout.openRailPage('info', 'System', arrangements.info)).toBe(true);
+        expect(browser.layout.currentPage().id).toBe(saved?.id);
+        expect(tabsOnScreen(browser)).toEqual(OLD_TABS);
+    });
+
+    it('makes the Help page from its shipped arrangement on its first press, tied to help', () => {
+        const browser = savedBrowser();
+        const before = browser.layout.pages().length;
+        expect(browser.layout.openRailPage('help', 'Help', arrangements.help)).toBe(true);
+        expect(browser.layout.pages()).toHaveLength(before + 1);
+        expect(browser.layout.currentPage().rail).toBe('help');
+        expect(tabsOnScreen(browser)).toEqual([
+            ['help', 'doc:docs/HPC-UTwente-howto.md'],
+            ['doc:docs/RESEARCH-APPROACH.md', 'doc:docs/AGENT-APPROACH.md', 'memories']
+        ]);
+        // The System page the browser saved is still the one its button shows.
+        browser.layout.openRailPage('info', 'System', arrangements.info);
+        expect(tabsOnScreen(browser)).toEqual(OLD_TABS);
     });
 });
 

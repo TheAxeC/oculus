@@ -11,7 +11,6 @@ import { collectionKeys } from '../../../../src/lib/data/sources/config.ts';
 import { registerAll, registerCollections } from '../../../../src/routes/views.ts';
 import { clientContext, type ClientState } from '../../../fixtures/client.ts';
 import { catalog, config, configured, words } from './workbench-fixture.ts';
-import { SHIPPED_RAIL_LABELS } from '../../../shell/rail/shipped-rail.ts';
 
 let client: ClientState;
 
@@ -51,13 +50,9 @@ describe('the Views catalogue', () => {
     it('draws each group under its heading, with its chord letter where it has one', () => {
         const body = draw();
         const headings = [...body.matchAll(/data-group="([^"]+)"/g)].map((found) => found[1]);
-        // One heading per rail page, and the Help group, which is no page, after System.
-        const system = SHIPPED_RAIL_LABELS.indexOf('System') + 1;
-        expect(headings).toEqual([
-            ...SHIPPED_RAIL_LABELS.slice(0, system),
-            'Help',
-            ...SHIPPED_RAIL_LABELS.slice(system)
-        ]);
+        // One heading per rail page, in rail order, Help right after System.
+        expect(headings).toEqual((config.rail as { label: string }[]).map((entry) => entry.label));
+        expect(headings.indexOf('Help')).toBe(headings.indexOf('System') + 1);
         const sessions = body.slice(body.indexOf('data-group="Sessions"'));
         expect(sessions).toMatch(/class="chord[^"]*">m</);
     });

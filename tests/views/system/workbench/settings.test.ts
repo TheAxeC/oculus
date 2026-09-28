@@ -107,7 +107,7 @@ describe('the appearance half', () => {
 describe('the rail half', () => {
     it('draws one row per button of the file, holding its label', () => {
         const body = draw();
-        expect([...body.matchAll(/data-rail-row="/g)]).toHaveLength(11);
+        expect([...body.matchAll(/data-rail-row="/g)]).toHaveLength(12);
         expect(body).toContain('value="Views and Settings"');
     });
 
@@ -150,11 +150,11 @@ describe('the rail half', () => {
             withRailDraft({}, [...saved, { label: '', glyph: '', page: '' }])
         );
         const body = draw();
-        expect([...body.matchAll(/data-rail-row="/g)]).toHaveLength(12);
-        expect(markOf(body, 11)).not.toBe('');
+        expect([...body.matchAll(/data-rail-row="/g)]).toHaveLength(saved.length + 1);
+        expect(markOf(body, saved.length)).not.toBe('');
         // a new row names no glyph yet, and an empty name is none the vocabulary holds
-        expect(markOf(body, 11)).not.toContain('data-glyph');
-        expect(body).toContain(why('workbench.rail_why_label', 12));
+        expect(markOf(body, saved.length)).not.toContain('data-glyph');
+        expect(body).toContain(why('workbench.rail_why_label', saved.length + 1));
         expect(buttonNamed(body, catalog['workbench.rail_save'])).toMatch(/\sdisabled/);
     });
 

@@ -27,24 +27,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:      # set 1 of the queue: Q95 and Q94 landed; Q97 in flight (Z34 (a)); then Q98 + Q92 + Q89.
-- step: Q97
-  executor: agent
-  worker: claude:opus
-  session_id: ac17969c2ab41b218   # continuation builder; the first one was stopped during its final verify run
-  worktree: .agents/worktrees/Q97
-  base: 4e33d99e
-  launched: 2026-09-28
-  report: agents/reviews/Q97-report.md
-  reviewer: claude:opus ad765807871077cac
-  reviewer_report: agents/reviews/Q97-refuter.md
-  reviewer_round1: claude:opus adf0fa839f6739d7d   # the run over round 1, appended to the same refuter report
-  landing: not-started
-  round: 1   # sent 2026-09-28 from worktree commit 4da494a5; agents/briefs/Q97-round1-sent.md
-  shared_paths:
-  - tools/oculus/tests/views/system/workbench/settings.test.ts: Q95 adds rail cases inside the rail half and Q97 changes the row count at line 98; the second landing also moves the three places of Q95's Add case that count the saved rail (toHaveLength 12, markOf 11, rail_why_label 12) by one
-  - tools/oculus/HELP.md and tools/oculus/DESIGN.md: Q94 writes HELP.md 127, 240, 242 and DESIGN.md 116, 124, 125; Q97 writes HELP.md 19, 68 and DESIGN.md 269, 282; different lines
-  - tools/oculus/docs/diagrams/: Q94 changes them and Q97 only if its comments move them; a rerun of npm run diagrams on the second landing
+dispatch: []   # set 1 of the queue (Q95, Q94, Q97) landed; next set Q98 + Q92 + Q89.
 ```
 
 ## The standing demands (from Axel, in force)
@@ -354,6 +337,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-09-28. Set 1 of the queue landed through /spec, /refute and /land: Q95 (Add a button no longer takes the Rail section down, b927aae0), Q94 (the launch note removed, 6b73371d) and Q97 (Help its own rail button after System, with its own page; one repair round, refuted again with no finding; one fix at landing, the merge of Q95's Add case with the twelve-button rail). Verify on main after Q97: `verify: 6 commands passed` (Test Files 338 passed, Tests 5309 passed). Nothing in flight. Next: set 2, Q98 + Q92 + Q89.
 - 2026-09-28. Axel ruled Z22 to Z26, Z28 to Z32 and closed Z11. Booked: Q95 (the Add a button crash) before Q94, Q97 (Help's rail button) and Q98 (the four look findings) after Q94, Q96 (the Rail section's labels and icon dropdown) after Q81; their order is open item Z33. `libraries: check` added to `.agents/plan.yaml` and `check_config.py` exits 0. D16's source-tab control seen on a probe `.rtf`. No agent is started, on Axel's word; next, once he rules on Z33: `/spec` Q95.
 - 2026-09-28. Every owed look taken on the TEST page of Axel's Chrome on 8790 (Z27 closed): Q70, Q52, Q38, Q34, Q29 and D19c, and again Q13, M2, D16 and Q33. One finding fixed on main: the Changes view draws the session control its empty text names (S2's brief item 8), with a case. Raised: Z28 to Z32. Verify on main: `verify: 6 commands passed` (Test Files 341 passed, Tests 5355 passed). Paused for Axel on Z22 to Z26 and Z28 to Z32. Q94 is prepared and not launched; nothing is dispatched until he rules on Z22.
 - 2026-09-28. The owed looks of Q90, Q93 and L7 taken on the TEST page of Axel's Chrome on 8790 (Q93's demo hub and L7's System and Explorer pages on a second server over `demo/` on 8791); one finding, Q93's lead comment in `demo/feeds/position-leads.yml`, fixed; the false look lines of Q90, Q93, L7 and R14 corrected. Paused for Axel on Z22 to Z27. Q94 is prepared and not launched; nothing is dispatched until he rules on Z22.

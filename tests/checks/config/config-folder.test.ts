@@ -451,13 +451,12 @@ describe("oculus's own config directory", () => {
         const { config } = loadConfig(engineDir());
         const groups = config.nav_groups as Record<string, { label: string }>;
         const rail = config.rail as { label: string; page: string }[];
-        // The Help group is the one group that is no page: it adds no button and no arrangement.
-        const pages = Object.keys(groups).filter((key) => key !== 'help');
+        const pages = Object.keys(groups);
         expect(pages).toEqual(rail.map((entry) => entry.page));
         expect(pages.map((key) => groups[key].label)).toEqual(rail.map((entry) => entry.label));
-        expect(Object.keys(groups).indexOf('help')).toBe(Object.keys(groups).indexOf('info') + 1);
+        expect(pages.indexOf('help')).toBe(pages.indexOf('info') + 1);
         expect(groups.help.label).toBe('Help');
-        expect(config.arrangements).not.toHaveProperty('help');
+        expect(config.arrangements).toHaveProperty('help');
     });
 
     it('keeps view lists out of every navigation group', () => {

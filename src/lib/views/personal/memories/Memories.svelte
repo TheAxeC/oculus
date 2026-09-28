@@ -1,6 +1,6 @@
 <script module lang="ts">
-    // Layer 3, view registration. The photo wall follows Help in the Help group, and is drawn in
-    // the System page's right pane with two of the hub's documents.
+    // Layer 3, view registration. The photo wall follows Help in the Help page's group, and is
+    // drawn in the Help page's right pane with two of the hub's documents.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
 
     export const registration: ViewRegistration = {

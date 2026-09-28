@@ -17,10 +17,11 @@ rail:
   - { label: "References", glyph: venue, page: references }
   - { label: "Present", glyph: poster, page: present }
   - { label: "System", glyph: info, page: info }
+  - { label: "Help", glyph: question, page: help }
   - { label: "Views and Settings", glyph: sliders, page: views }
 
 
-# The view catalogue's groups, in the order the Views view lists them: one group per rail page, keyed by the page's arrangement key and labelled with its button's words, so the catalogue lists each page's views under the page they sit on, and the `help` group, which is no page: the manual, the photo wall and the hub's documents, drawn on the System page, gathered under a letter of their own. A view names its group and position in its registration, and a document of `docs:` below names its group. A group with no registered views is not listed. `glyph` is the group heading's glyph name, one no view of the group carries, so the heading does not read as one of its entries, and `chord` its one-letter keyboard prefix: the letter, then a digit for the entry's place in the group, its views first and its documents after them. A group with no `chord` is counted under `direct_chord`.
+# The view catalogue's groups, in the order the Views view lists them: every group is one rail page, keyed by the page's arrangement key and labelled with its button's words, so the catalogue lists each page's views under the page they sit on. A view names its group and position in its registration, and a document of `docs:` below names its group. A group with no registered views is not listed. `glyph` is the group heading's glyph name, one no view of the group carries, so the heading does not read as one of its entries, and `chord` its one-letter keyboard prefix: the letter, then a digit for the entry's place in the group, its views first and its documents after them. A group with no `chord` is counted under `direct_chord`.
 nav_groups:
   focus: { label: "Focus", glyph: focus, chord: f }
   sessions: { label: "Sessions", glyph: live, chord: m }
@@ -95,12 +96,14 @@ arrangements:
   present:
     root: { kind: pane, view: present }
   info:
+    root: { kind: pane, view: [status, findings, audit, history, config, gallery] }
+  help:
     root:
       kind: split
       dir: row
       sizes: [0.6, 0.4]
       children:
-        - { kind: pane, view: [status, findings, audit, history, config, gallery, help, { view: doc, state: { id: docs/HPC-UTwente-howto.md, path: docs/HPC-UTwente-howto.md, label: "HPC how-to" } }] }
+        - { kind: pane, view: [help, { view: doc, state: { id: docs/HPC-UTwente-howto.md, path: docs/HPC-UTwente-howto.md, label: "HPC how-to" } }] }
         - { kind: pane, view: [{ view: doc, state: { id: docs/RESEARCH-APPROACH.md, path: docs/RESEARCH-APPROACH.md, label: "Research approach" } }, { view: doc, state: { id: docs/AGENT-APPROACH.md, path: docs/AGENT-APPROACH.md, label: "Agent approach" } }, memories] }
   views:
     root:

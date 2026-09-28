@@ -259,30 +259,11 @@ describe('the catalogue of the real config', () => {
 
     it('lists one group per rail page, in rail order, labelled with its button, and Help after System', () => {
         const rail = config.rail as { label: string; page: string }[];
-        const at = rail.findIndex((entry) => entry.page === 'info') + 1;
-        const withHelp = <T>(list: T[], help: T): T[] => [
-            ...list.slice(0, at),
-            help,
-            ...list.slice(at)
-        ];
-        expect(groups.map((group) => group.id)).toEqual(
-            withHelp(
-                rail.map((entry) => entry.page),
-                'help'
-            )
-        );
-        expect(groups.map((group) => group.label)).toEqual(
-            withHelp(
-                rail.map((entry) => entry.label),
-                'Help'
-            )
-        );
-        expect(sections.map((section) => section.label)).toEqual(
-            withHelp(
-                rail.map((entry) => entry.label),
-                'Help'
-            )
-        );
+        expect(groups.map((group) => group.id)).toEqual(rail.map((entry) => entry.page));
+        expect(groups.map((group) => group.label)).toEqual(rail.map((entry) => entry.label));
+        const labels = sections.map((section) => section.label);
+        expect(labels).toEqual(rail.map((entry) => entry.label));
+        expect(labels.indexOf('Help')).toBe(labels.indexOf('System') + 1);
     });
 
     it('gives every group a letter and a glyph, and one letter to one list', () => {

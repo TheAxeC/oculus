@@ -1,6 +1,6 @@
 // Layer 2, client state. The view catalogue: every listed registration and every configured hub
-// document under the `nav_groups` heading it belongs to, which is the rail page it sits on or the
-// Help group, which is no page, and the key order the chords count into.
+// document under the `nav_groups` heading it belongs to, which is the rail page it sits on, the
+// Help page's included, and the key order the chords count into.
 // The Views view on the Views and Settings page draws the sections and the shell's keyboard counts
 // the chords over the same sections, so a key and the entry it opens are read from one fold.
 //

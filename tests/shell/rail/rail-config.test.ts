@@ -27,7 +27,7 @@ beforeEach(() => {
 });
 
 describe('the rail of the real config', () => {
-    it('draws the eleven pages of layout.yml in their order, Views and Settings last', () => {
+    it('draws the twelve pages of layout.yml in their order, Views and Settings last', () => {
         const body = render(ActivityRail, {
             context: clientContext(client),
             props: { pages: railPages(config) }
@@ -35,6 +35,15 @@ describe('the rail of the real config', () => {
         expect([...body.matchAll(/data-rail-page="([^"]+)"/g)].map((found) => found[1])).toEqual(
             SHIPPED_RAIL_KEYS
         );
+    });
+
+    it("draws the Help button with the question glyph, the Help view's own", () => {
+        const body = render(ActivityRail, {
+            context: clientContext(client),
+            props: { pages: railPages(config) }
+        }).body;
+        const button = /data-rail-page="help"[\s\S]*?<\/button>/.exec(body)?.[0] ?? '';
+        expect(button).toContain('data-glyph="question"');
     });
 
     it("draws each page's glyph from the vocabulary", () => {
