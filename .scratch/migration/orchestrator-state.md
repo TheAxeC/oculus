@@ -48,6 +48,20 @@ dispatch:      # set 1 of the queue: Q95 + Q94 + Q97 (Z34 (a)); then Q98 + Q92 +
   report: agents/reviews/Q95-report.md
   landing: not-started
   round: 0
+- step: Q97
+  executor: agent
+  worker: claude:opus
+  session_id: ae8c16c1d9fd2ba16
+  worktree: .agents/worktrees/Q97
+  base: 4e33d99e
+  launched: 2026-09-28
+  report: agents/reviews/Q97-report.md
+  landing: not-started
+  round: 0
+  shared_paths:
+  - tools/oculus/tests/views/system/workbench/settings.test.ts: Q95 adds rail cases at the end of the rail half and Q97 changes the row count at line 98; the second landing also moves Q95's added-row count from 12 to 13, one number
+  - tools/oculus/HELP.md and tools/oculus/DESIGN.md: Q94 writes HELP.md 127, 240, 242 and DESIGN.md 116, 124, 125; Q97 writes HELP.md 19, 68 and DESIGN.md 269, 282; different lines
+  - tools/oculus/docs/diagrams/: Q94 changes them and Q97 only if its comments move them; a rerun of npm run diagrams on the second landing
 ```
 
 ## The standing demands (from Axel, in force)
