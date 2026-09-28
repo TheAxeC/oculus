@@ -360,6 +360,13 @@ describe('the changes view', () => {
         select(null);
         expect(html(Changes)).toContain(catalog['sessions.detail_empty']);
     });
+
+    it('draws the session control on its bar that its empty state names', () => {
+        select(null);
+        expect(html(Changes)).toContain('data-session-picker');
+        select('live-one');
+        expect(html(Changes)).toContain('data-session-picker');
+    });
 });
 
 describe('the branch-state sentence both git views draw', () => {

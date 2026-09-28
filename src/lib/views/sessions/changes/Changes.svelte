@@ -20,6 +20,7 @@
     import AskConfirm from '$lib/views/shared/AskConfirm.svelte';
     import type { Ask } from '$lib/views/shared/ask';
     import PickSession from '$lib/views/shared/sessions/PickSession.svelte';
+    import SessionPicker from '$lib/views/shared/sessions/SessionPicker.svelte';
     import type { MenuItem } from '$lib/ui/menu/menu-items';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
@@ -163,6 +164,7 @@
 
 {#snippet tools()}
     <Toolbar label={t('sessions.view_changes')}>
+        <SessionPicker instance={instance.id} />
         {#if record !== null || panePin !== null}
             <ToolButton
                 label={panePin === null ? t('sessions.pin_pane') : t('sessions.unpin_pane')}

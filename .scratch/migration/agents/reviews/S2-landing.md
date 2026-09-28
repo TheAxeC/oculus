@@ -46,3 +46,7 @@ On the TEST page of the dev server on 8790, under light and under mocha (a rice 
 ## Next
 
 X3b's repair round is running; X3a is specced into the freed slot; X3c after X3b; then L4, Q66, Q35 and the rest of the queue.
+
+## Found after landing, fixed 2026-09-28
+
+Q52's owed look found the Changes view without the session control its empty text names, against this brief's item 8. `Changes.svelte` draws `SessionPicker` first on its bar; the case "draws the session control on its bar that its empty state names" in `tests/views/sessions/changes.test.ts` failed before the fix (1 failed, 23 passed) and passes after it (24 passed).
