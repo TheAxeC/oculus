@@ -27,10 +27,11 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:      # L7 landed 2026-09-28; next Q95, then Q94, Q97, Q98, Q92 and the queue of plan.md (Z33 open).
+dispatch:      # set 1 of the queue: Q95 + Q94 + Q97 (Z34 (a)); then Q98 + Q92 + Q89.
 - step: Q94
   executor: agent
   worker: claude:opus
+  session_id: addd1c8ce53bf3aff
   worktree: .agents/worktrees/Q94
   base: 4120beb7
   launched: 2026-09-28
