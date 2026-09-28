@@ -49,8 +49,8 @@ dispatch:      # Q79a, Q79c and Q99 building.
   launched: 2026-09-28
   report: agents/reviews/Q79c-report.md
   landing: not-started
-  reviewer_report: agents/reviews/Q79c-refuter.md (reviewer a98d284f504829f77, running)
-  round: 0
+  reviewer_report: agents/reviews/Q79c-refuter.md (reviewer a98d284f504829f77, 60 tool uses, 229k tokens, 14 min)
+  round: 1   # sent 2026-09-28 in agents/briefs/Q79c-round1-sent.md, from worktree commit 787dc14c
   shared_paths: with Q79a, server/content/docs.ts (Q79a changes the json call in answer() and drops the origin check in handleDocs; Q79c changes figures(), renderManual() and adds parts to the body in answer(): a hand merge of answer()); with Q92, views/system/help/manual.ts (Q92 decodes attribute() through entities, Q79c removes attribute() with the regex cut: the landing takes Q79c's file) and tests/views/system/help.test.ts (different cases); with both, docs/diagrams (a rerun of npm run diagrams), DESIGN.md and HELP.md (different sentences)
 - step: Q99
   executor: agent
@@ -61,7 +61,7 @@ dispatch:      # Q79a, Q79c and Q99 building.
   launched: 2026-09-28
   report: agents/reviews/Q99-report.md
   landing: not-started
-  round: 0
+  round: 0   # the cases ruled 2026-09-28 in agents/briefs/Q99-cases.md (commit bbb278d3), the builder resumed
   shared_paths: with Q79a and Q79c, DESIGN.md and HELP.md (different sentences: Q99's are the terminal's input, the scrollback, a tab closing on its terminal's end and the Pages view; Q79a's the Auth section; Q79c's the Help view's cut and the controls check) and docs/diagrams (a rerun of npm run diagrams); no code file is shared (Q79a changes no file under server/machine/pty or state/client; Q79c's Terminal.svelte is not in Q99's paths)
 ```
 
