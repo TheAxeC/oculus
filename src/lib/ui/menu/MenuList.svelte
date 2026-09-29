@@ -118,7 +118,10 @@
                  which an entry not yet drawn is in the record, so the binding reads null for
                  it. -->
             <DropdownMenu.SubTrigger
-                bind:ref={() => subTriggers[at] ?? null, (node) => (subTriggers[at] = node)}
+                bind:ref={
+                    () => subTriggers[at] ?? null,
+                    (node: HTMLElement | null) => (subTriggers[at] = node)
+                }
             >
                 {#snippet child({ props })}
                     <div
