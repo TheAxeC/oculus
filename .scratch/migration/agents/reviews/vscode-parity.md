@@ -237,24 +237,24 @@ Status words for this section: **has** (oculus has the action today, the menu ca
 |---|---|---|
 | Open Changes | a changed file (staged, changes, untracked) | has: Open Changes |
 | Open File | a changed file | has |
-| Open File (HEAD) | a changed file | not checked |
+| Open File (HEAD) | a changed file | new: no read of a file at HEAD (`show` in `server/core/git.ts` reads index stages and commit diffs only) |
 | Stage Changes, Unstage Changes, Discard Changes | a file or a folder row, by group | has: stage, unstage, discard |
 | Stage All / Unstage All / Discard All (Tracked, Untracked) Changes | a group header | has: Stage All Changes, Unstage All Changes, Discard All Changes, Stage All Untracked |
-| Compare with Workspace | a file inside a worktree | not checked |
+| Compare with Workspace | a file inside a worktree | new: `worktreeDiff` reads the whole worktree against its base, no one-file compare with the main checkout |
 | Add to .gitignore | a changed or untracked file or folder | new: a write to `.gitignore` |
 | Reveal in Finder | desktop build | part, as in the Explorer |
 | Reveal in Explorer View | a changed file | has: the Files view's show path |
 | Share | any | out |
-| Close Repository, Close Other Repositories | a repository row | not checked |
-| Open Worktree in Current Window / New Window, Delete Worktree | a worktree repository row | part: worktrees are removed (`removeWorktree`); opening one is not checked |
+| Close Repository, Close Other Repositories | a repository row | new: the list is every root of the `git` channel (`pickerRoots`), with no way to leave one out |
+| Open Worktree in Current Window / New Window, Delete Worktree | a worktree repository row | part: Delete Worktree has `removeWorktree`; opening one is new, a worktree is no root the list offers |
 | Open in Integrated Terminal | a repository row | has: the terminal composer |
 | Open Changes | a graph commit | has: the commit's files |
-| Checkout (Detached) | a graph commit | not checked |
-| Create Branch..., Create Tag... | a graph commit | part: `createBranch` and `createTag` exist at HEAD; from a chosen commit not checked |
+| Checkout (Detached) | a graph commit | new: `switchBranch` takes a branch name only |
+| Create Branch..., Create Tag... | a graph commit | part: `createBranch` and `createTag` exist at HEAD; from a chosen commit is new, neither takes a start point |
 | Cherry Pick | a graph commit | new |
-| Compare with Remote, Compare with Merge Base, Compare with... | a graph commit | not checked |
+| Compare with Remote, Compare with Merge Base, Compare with... | a graph commit | new: `commitDiff` reads a commit against its first parent only |
 | Copy Commit Hash, Copy Commit Message | a graph commit | has: Copy Commit ID, Copy Commit Message |
-| Checkout, Delete Branch, Delete Tag | a branch or tag label on the graph | part: checkout and `deleteTag` exist; deleting a branch not checked |
+| Checkout, Delete Branch, Delete Tag | a branch or tag label on the graph | part: checkout and `deleteTag` exist; Delete Branch is new, a branch goes only with its worktree (`removeWorktree`) |
 | Add to Chat, Explain Changes | a graph commit, chat on | out |
 
 ### Pane header (oculus's pane is VS Code's editor group; its title strip is `EditorTabsBarContext`, an empty pane `EmptyEditorGroupContext`; the tab's own menu is X3c's)
@@ -264,7 +264,7 @@ Status words for this section: **has** (oculus has the action today, the menu ca
 | New Text File, Open File... | the strip, an empty group | part: Open File is the palette; a new text file is new |
 | Split Up, Split Down, Split Left, Split Right | the strip, an empty group | part: split right and split down |
 | Move into New Window, Copy into New Window, New Window | the strip, an empty group | out: oculus is one browser tab |
-| Lock Group | an empty group | not checked |
+| Lock Group | an empty group | new: no pane holds a lock |
 | Close | an empty group, with more than one group | has: close the pane |
 | Tab Bar (Multiple Tabs, Single Tab, Hidden), Editor Actions Position, Configure Tabs | the strip | new: settings oculus lacks (X3c holds `wrap_tabs`) |
 | New Terminal | the strip, an empty group | has: new terminal |
@@ -274,7 +274,7 @@ Status words for this section: **has** (oculus has the action today, the menu ca
 
 | VS Code item | Shows on | oculus |
 |---|---|---|
-| Copy, Paste, Select All | the terminal | part: paste has a confirm for several lines; copy and select all in xterm not checked |
+| Copy, Paste, Select All | the terminal | clipboard: paste has a confirm for several lines; Copy is xterm's `getSelection()` to the clipboard, Select All is xterm's `selectAll()` |
 | Copy as HTML | the terminal | new |
 | Clear | the terminal | new: clears the view, tmux keeps its history |
 | Kill Terminal | the terminal, a tab | has: Kill |
@@ -283,7 +283,7 @@ Status words for this section: **has** (oculus has the action today, the menu ca
 | Split Terminal | a tab | has: Split |
 | Move Terminal into Editor Area, Move Terminal into New Window | a tab | out: every oculus terminal is a pane already; oculus is one browser tab |
 | Rename..., Change Icon..., Change Color... | a tab | new |
-| Join Terminals, Unsplit Terminal | several tabs, a split tab | not checked |
+| Join Terminals, Unsplit Terminal | several tabs, a split tab | has: `moveTerminal` of `state/sessions/terminals.svelte.ts` moves a terminal between Terminal tabs, and a terminal no tab owns opens in a new tab (`showTerminal`) |
 | New Terminal, New Terminal With Profile... | the empty tab list | has: new terminal, with its kind (shell, Claude, Codex) |
 
 ### Text selection and documents (`WebviewContext`, `textInputActions.ts`)
