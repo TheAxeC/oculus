@@ -104,3 +104,33 @@ Monaco 0.57 API (`editor.api.d.ts`): `getLineChanges` (:6516), `onDidUpdateDiff`
 - The rename read, the partial new-file patch, the conflicted-file read: shape decisions for the orchestrator or Axel.
 
 Agent usage: 64 tool uses, 230k tokens, 13 min (from the completion notice).
+
+# Closed
+
+Each finding is closed in `agents/briefs/D13b.md` on main at 88e6a1c3 (Q88 landed); the brief's premises, cases and paths were re-anchored there.
+
+- Names 1: `tests/server/core/paths.test.ts` line 99 added to the paths; item 7 says it loses the `MergeSide.svelte` `inside()` line.
+- Names 2: `tests/state/sources/repositories/repositories.test.ts` lines 130-150 added (the assertions now sit at 138-144); item 7 says they read the view state; a case covers `diffViewOf` dropping a stored `opened`.
+- Names 3: `boundaries.test.ts` 240-252, `colours.test.ts` 564, `DESIGN.md` 289 and `languages.ts` 9 added to the paths; item 7 names them as path strings and prose the move updates.
+- Names 4: `src/lib/data/model/index.ts` added; item 1 says `DiffSides` is re-exported beside `GitMergeSides`.
+- Names 5: `glyphs.yml` 58 and `icons.yml` 57 added; item 7 removes `unfold` when nothing else draws it.
+- Step line 1: item 5 keeps the hunk head (`repositories.hunk_head`) in each bar.
+- Step line 2: item 3 steps over hunks, as today.
+- Premises 1: `diff-patch.ts:11` added to the importers.
+- Premises 2: the one-sided deletion and the stable regions' missing lengths added to the node-diff3 premise, with how item 6 derives the spans.
+- Premises 3: HELP rows re-read at 84, 179, 181, 189 on 88e6a1c3 and written into the premise, item 8, the paths and the documents check.
+- Cases 1: item 1 has the commit read find the old path from `show --name-status -M` and diff `-- <old> <path>` (decision 12).
+- Cases 2: item 3 takes a pure deletion after line N for a selection holding N or N+1; a case covers 20, 21 and 22.
+- Cases 3: a three-empty case and a one-sided deletion case added to the merge cases.
+- Cases 4: item 3 keeps `hunkNear`'s rule; the case now reads line 12 against hunks at 10-11 and 17, which opens at 17 under today's rule and at 10 under nearest.
+- Cases 5: item 5 keeps the `asked` sequence and a closed pane creating nothing; a case covers a malformed or foreign stored view state.
+- Cases 6: the look list gains reopen, lazy creation, opened at a line and a narrow pane.
+- Cases 7: the keys are cited as they read, `Stage {0} Selected Lines`.
+- Cases 8: decision 9 states Monaco's hide rule as a change.
+- Cases 9: item 2 and decision 11: Monaco's own widget words stay Monaco's.
+- Question 1: a case compares the hunks built over Monaco's `DefaultLinesDiffComputer` with `git diff -U3` for five pairs.
+- Question 2: item 3 and a case: a selection ending at column 1 of a line excludes that line.
+- Question 3: item 2 restores the view state after the first `onDidUpdateDiff`.
+- Question 4: the grep case adds `function common` and one `node-diff3` import in `merge-regions.ts`; the one-sided deletion case added.
+- Question 5: the look list extended (Cases 6).
+- Implied inputs: item 1 (rename, untracked stash files from `^3`, conflicted path at stage 2, symlink, submodule, `files: []`), item 2 (`maxComputationTime: 0`, `useInlineViewWhenSpaceIsLimited: false`, `renderGutterMenu: false`), item 4 (line endings kept byte for byte), item 5 (new or deleted file whole-file only; carriage returns or git conversion withhold block and line actions with `repositories.diff_whole`; equal texts draw path and head, no editor; empty file), item 6 (a zero-line side, undo reopening the conflict, a choice not read as typing), and the answer-edge and withheld-action cases (no newline at the end on one side, unstaged deletion).
