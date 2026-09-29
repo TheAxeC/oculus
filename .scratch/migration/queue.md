@@ -1,7 +1,7 @@
 /plan-orchestration oculus/migration
 
 In flight:
-- Q79b (the tests, runs alone): building from base 89a83e3b, dispatched 2026-09-29.
+- Q79b (the tests; beside Q96 and Q88 by Z50 (a)): building from base 89a83e3b, dispatched 2026-09-29.
 Queued, in order:
 - Q96 and Q88 (the Rail section's field labels and its icon dropdown on bits-ui; right-click menus wherever vscode.dev gives one, the tab's menu left to X3c).
 - Q86b (the Map's drag after neato's placement, Z49 (a)); its look also takes the Map's labels after Q86's fix at landing.
