@@ -48,11 +48,13 @@ text:
         copy_id: Copy Commit ID
         copy_message: Copy Commit Message
         diff_binary: Binary file, no lines to show.
+        diff_conflicted: Resolve this file in the merge editor from Merge Changes
+        diff_eol_only: Only the line endings differ
         diff_inline: Inline
         diff_open: Open Changes
         diff_side: Side by Side
+        diff_whole: Stage or revert this file from Changes
         fetch: Fetch
-        fold_open: Show {0} unchanged lines
         graph: Graph
         graph_failed: The graph could not be read.
         graph_more: Load More
@@ -63,8 +65,6 @@ text:
         hunk_stage: Stage Block
         hunk_unstage: Unstage Block
         incoming: Incoming
-        line_choose: Choose line {0}
-        line_choose_title: Choose this line, so the block's actions act on the chosen lines only
         lines_revert: Revert {0} Selected Lines
         lines_revert_confirm: Revert {0} chosen lines of {1}?
         lines_stage: Stage {0} Selected Lines

@@ -15,7 +15,7 @@
 //     git -C <root> status --porcelain=v1 -z --untracked-files=normal
 //     git -C <root> diff --numstat -z
 //     git -C <root> diff --no-color --no-ext-diff -U0 -- <path>
-//     git -C <root> diff --no-color --no-ext-diff -U<all> <stash>^1 <stash>
+//     git -C <root> diff --no-color --no-ext-diff -U0 -M <stash>^1 <stash>
 //     git -C <root> log -<n> --format=...
 //     git -C <root> log --topo-order --format=... --skip=<n> -<n> HEAD --
 //     git -C <root> log --topo-order --format=... -<n> <HEAD..@{upstream} | @{upstream}..HEAD> --
@@ -27,9 +27,15 @@
 //     git -C <root> remote
 //     git -C <root> blame --porcelain -- <path>
 //     git -C <root> show :<1|2|3>:<path>
-//     git -C <root> show --format= --name-status -z --diff-merges=first-parent <commit>
-//     git -C <root> show --format= --no-color --no-ext-diff -U<all> --diff-merges=first-parent
-//         <commit> -- <path>
+//     git -C <root> show --no-textconv <revision>:<path>
+//     git -C <root> show --format= --name-status -z [-M] --diff-merges=first-parent <commit>
+//     git -C <root> show --format= --no-color --no-ext-diff -U0 -M --diff-merges=first-parent
+//         <commit> -- [<old path>] <path>
+//     git -C <root> show -s --format=%P <stash>
+//     git -C <root> show --format= --no-color --no-ext-diff -U0 <stash>^3
+//     git -C <root> merge-base <branch> HEAD
+//     git -C <root> check-attr filter text eol working-tree-encoding ident -- <path>
+//     git -C <root> config --get --default= core.autocrlf
 //
 // `check-ignore` is the file browser's: which entries of one listed folder the repository ignores,
 // the names handed on its standard input, so the tree can leave them out (ignoredIn below).
@@ -40,30 +46,36 @@
 // by GET /api/git, since each is text or a page a reader asked for rather than state every event
 // carries. A stash is listed from its reflog and diffed against its first parent, which is what
 // `stash list` and `stash show -p` print, so no command here is a form of a writing subcommand.
+// The diff pane's reads answer each file's two versions whole, read by `show`, beside the head
+// lines of the diff; `merge-base` names where a worktree's diff starts, and `check-attr` and
+// `config --get` say whether git converts a file's text, which decides whether the pane may cut a
+// partial patch from it. `config` is held to its one reading vector.
 //
 // Nothing here may ever change a repository. Every writing subcommand belongs to Axel alone, and a
 // dashboard watcher must never be the thing that runs one. tests/server/core/git.test.ts holds two
 // gates over that: the source names no writing subcommand, and the suite records every argument
 // vector the process runs and asserts the whole suite ran only the commands above, `for-each-ref`,
-// `worktree`, `symbolic-ref`, `check-ignore`, `ls-files`, `remote` and `rev-parse` only as the
-// vectors written here.
+// `worktree`, `symbolic-ref`, `check-ignore`, `ls-files`, `remote`, `config` and `rev-parse` only
+// as the vectors written here.
 //
 // A repository on a slow mount must not stall a watcher, so the one call site takes a list argument
 // (never a shell string), carries a timeout, and collapses any failure into the empty shape with a
 // short reason. Data only, no rendered strings: the wording comes from the text catalog.
 //
 // Whether a path lies in a folder is read from server/core/paths.ts (`inside`); the records of
-// `status --porcelain=v1 -z` are split by core/git-parse.ts's `statusRecords`.
+// `status --porcelain=v1 -z` are split by core/git-parse.ts's `statusRecords` and sorted into the
+// change lists by its `statusLists`.
 
-import { scalar } from '../../data/helpers/guards.ts';
 import { spawnSync } from 'node:child_process';
-import { existsSync, lstatSync, readFileSync, realpathSync, statSync } from 'node:fs';
+import { isUtf8 } from 'node:buffer';
+import { existsSync, lstatSync, readFileSync, readlinkSync, realpathSync, statSync } from 'node:fs';
 import { isAbsolute, join, sep } from 'node:path';
 import type {
+    DiffAttributes,
+    DiffSides,
     GitBlameLine,
     GitCommit,
     GitCommitFile,
-    GitEntry,
     GitGraphCommit,
     GitGraphPage,
     GitLineMark,
@@ -80,21 +92,31 @@ import {
     STASH_FORMAT,
     STASH_REF,
     REFS_FORMAT,
-    WHOLE_FILE,
+    NO_CONTEXT,
+    diffHeads,
+    parseAttributes,
     parseBlame,
     parseGraph,
     parseLineMarks,
     parseLog,
     parseNameStatus,
+    parseNumstat,
     parseStashes,
     parseRefs,
     parseWorktrees,
+    shortReason,
+    statusLists,
     statusRecords,
+    submoduleText,
     type RefRows
 } from './git-parse.ts';
 import { inside } from './paths.ts';
 
 export const GIT = 'git';
+/** The most output one read takes, which a whole version of a large file read by `show` needs. */
+const MAX_OUTPUT = 32 * 1024 * 1024;
+/** How many characters of git's reason the channel carries. */
+const REASON_WIDTH = 120;
 /** Milliseconds one git command is given before it is given up on. */
 export const TIMEOUT_MS = 5000;
 /** One workspace with 4000 untracked files, or 4000 branches, must not become the payload. */
@@ -105,24 +127,12 @@ export const MAX_ENTRIES = 200;
 export const LOG_ENTRIES = 20;
 /** How many commits one page of the graph holds; Load More asks for the next as many. */
 export const GRAPH_PAGE = 50;
-/** git's own letter for a path it does not track. */
-export const UNTRACKED = '?';
-/** An index or worktree column saying "nothing here". */
-const QUIET = [' ', UNTRACKED, '!'];
-/** The pairs `status --porcelain` reports an unmerged path by: both columns name the conflict. */
-const UNMERGED = ['DD', 'AU', 'UD', 'UA', 'DU', 'AA', 'UU'];
 /** A commit named on a request: a whole or abbreviated hash and nothing a revision could mean. */
 const HASH = /^[0-9a-f]{4,40}$/;
 /**
  * The one refusal of git's that means the root holds no repository; it opens every wording of it.
  */
 const NO_REPOSITORY = 'not a git repository';
-
-/** path to (added, deleted) for the worktree; null where git reported a binary file. */
-type Counts = Map<string, [number | null, number | null]>;
-
-/** One row of the porcelain output: the index letter, the worktree letter, and the path. */
-type Row = [string, string, string];
 
 /**
  * What one command came back with. `answered` is whether anything about the root can be read from
@@ -131,7 +141,7 @@ type Row = [string, string, string];
  * git is missing. `ran` is the narrower fact, whether git itself executed and set the exit status,
  * which is what tells git's own refusal of a root from this machine having no git to ask.
  */
-type Outcome = { ok: boolean; answered: boolean; ran: boolean; text: string };
+type Outcome = { ok: boolean; answered: boolean; ran: boolean; text: string; utf8: boolean };
 
 /** The shape every caller can count on, with nothing in it. */
 export function empty(error: string | null = null): GitState {
@@ -302,41 +312,176 @@ export function commitFiles(
     return done.ok ? { ok: true, value: parseNameStatus(done.text) } : refused(done.text);
 }
 
-/** One commit's diff of one path against its first parent, every unchanged line with it. */
+/**
+ * One commit's diff of one path against its first parent, as the two versions of each file. A path
+ * the commit renamed is diffed from its old path, which the commit's own file list names.
+ */
 export function commitDiff(
     root: string,
     hash: string,
     path: string,
     timeout: number = TIMEOUT_MS
-): Read<string> {
+): Read<DiffSides[]> {
     if (!HASH.test(hash)) return refused('that is not a commit');
     if (!pathInside(root, path)) return refused(`the path ${path} is not inside the repository`);
+    const ms = milliseconds(timeout);
+    const listed = show(
+        root,
+        ['--format=', '--name-status', '-z', '-M', '--diff-merges=first-parent', hash],
+        ms
+    );
+    if (!listed.ok) return refused(listed.text);
+    const renamed = parseNameStatus(listed.text).find((file) => file.path === path && file.from);
+    const paths = renamed ? [renamed.from, path] : [path];
     const done = show(
         root,
         [
             '--format=',
             '--no-color',
             '--no-ext-diff',
-            WHOLE_FILE,
+            NO_CONTEXT,
+            '-M',
             '--diff-merges=first-parent',
             hash,
             '--',
-            path
+            ...paths
         ],
-        milliseconds(timeout)
+        ms
     );
-    return done.ok ? { ok: true, value: done.text } : refused(done.text);
+    if (!done.ok) return refused(done.text);
+    return sidesOf(root, done.text, `${hash}^:`, `${hash}:`, ms);
 }
 
-/** One stash's diff against the commit it was made on, which is what `stash show -p` prints. */
-export function stashDiff(root: string, ref: string, timeout: number = TIMEOUT_MS): Read<string> {
+/**
+ * One stash's files against the commit it was made on, which is what `stash show -p` prints, as the
+ * two versions of each; a stash that kept untracked files lists them after, each from nothing.
+ */
+export function stashDiff(
+    root: string,
+    ref: string,
+    timeout: number = TIMEOUT_MS
+): Read<DiffSides[]> {
     if (!STASH_REF.test(ref)) return refused('that is not a stash');
+    const ms = milliseconds(timeout);
     const done = readDiff(
         root,
-        ['--no-color', '--no-ext-diff', WHOLE_FILE, `${ref}^1`, ref],
-        milliseconds(timeout)
+        ['--no-color', '--no-ext-diff', NO_CONTEXT, '-M', `${ref}^1`, ref],
+        ms
     );
-    return done.ok ? { ok: true, value: done.text } : refused(done.text);
+    if (!done.ok) return refused(done.text);
+    const tracked = sidesOf(root, done.text, `${ref}^1:`, `${ref}:`, ms);
+    if (!tracked.ok) return tracked;
+    const parents = show(root, ['-s', '--format=%P', ref], ms);
+    if (!parents.ok) return refused(parents.text);
+    if (parents.text.trim().split(/\s+/).length < 3) return tracked;
+    // The untracked files are a third parent with no parent of its own, so `show` lists each as
+    // new.
+    const loose = show(
+        root,
+        ['--format=', '--no-color', '--no-ext-diff', NO_CONTEXT, `${ref}^3`],
+        ms
+    );
+    if (!loose.ok) return refused(loose.text);
+    const added = sidesOf(root, loose.text, `${ref}^3:`, `${ref}^3:`, ms);
+    return added.ok ? { ok: true, value: [...tracked.value, ...added.value] } : added;
+}
+
+/**
+ * The two versions of each file of a diff: its head lines cut from the diff's text, and each side
+ * read whole, `before` and `after` naming where (a revision and a colon, `:` for the index, `:2:`
+ * for Current's stage of a conflict, or null for the worktree). A binary file, and the side a file
+ * was created or deleted on, is the empty string; a submodule's sides are git's own lines for it.
+ * `encoded` says whether both sides' bytes were UTF-8 before they were decoded.
+ */
+export function sidesOf(
+    root: string,
+    diffText: string,
+    before: string | null,
+    after: string | null,
+    timeout: number = TIMEOUT_MS
+): Read<DiffSides[]> {
+    const ms = milliseconds(timeout);
+    const files: DiffSides[] = [];
+    for (const file of diffHeads(diffText)) {
+        const sides = { oldPath: file.oldPath, newPath: file.newPath, head: file.head };
+        if (file.binary || file.submodule) {
+            const original = file.binary ? '' : submoduleText(file, '-');
+            const modified = file.binary ? '' : submoduleText(file, '+');
+            files.push({ ...sides, binary: file.binary, encoded: true, original, modified });
+            continue;
+        }
+        const original = file.created ? NOTHING : version(root, before, file.oldPath, ms);
+        const modified = file.deleted ? NOTHING : version(root, after, file.newPath, ms);
+        if (!original.ok) return refused(original.text);
+        if (!modified.ok) return refused(modified.text);
+        files.push({
+            ...sides,
+            binary: false,
+            encoded: original.utf8 && modified.utf8,
+            original: original.text,
+            modified: modified.text
+        });
+    }
+    return { ok: true, value: files };
+}
+
+/** The side of a file a diff created or deleted it on. */
+const NOTHING: Version = { ok: true, text: '', utf8: true };
+
+/** One version of a file: its text, and whether its bytes were UTF-8 before they were decoded. */
+type Version = { ok: boolean; text: string; utf8: boolean };
+
+/** One file's text at a revision (`show <at><path>`), or as the worktree holds it for null; a
+ * symbolic link is its target, as git stores it. */
+function version(root: string, at: string | null, path: string, timeout: number): Version {
+    if (!pathInside(root, path))
+        return { ok: false, text: `the path ${path} is not inside the repository`, utf8: true };
+    if (at !== null) return show(root, ['--no-textconv', `${at}${path}`], timeout);
+    const full = join(root, path);
+    try {
+        const bytes = lstatSync(full).isSymbolicLink()
+            ? readlinkSync(full, { encoding: 'buffer' })
+            : readFileSync(full);
+        return { ok: true, text: bytes.toString('utf8'), utf8: isUtf8(bytes) };
+    } catch {
+        // A file the worktree deleted is read as git reads it: nothing.
+        return NOTHING;
+    }
+}
+
+/**
+ * Where a branch and a worktree's HEAD parted: the commit a worktree's three-dot diff starts at.
+ */
+export function mergeBase(root: string, from: string, timeout: number = TIMEOUT_MS): Read<string> {
+    if (from.startsWith('-')) return refused('that is not a branch');
+    const done = run(root, ['merge-base', from, 'HEAD'], milliseconds(timeout));
+    return done.ok ? { ok: true, value: done.text.trim() } : refused(done.text);
+}
+
+/**
+ * What git says of converting one file's text: `check-attr`'s `filter`, `text`, `eol`,
+ * `working-tree-encoding` and `ident`, and `core.autocrlf` (the empty string when it is not set),
+ * so the diff pane withholds its partial patches from a file git converts.
+ */
+export function attributesOf(
+    root: string,
+    path: string,
+    timeout: number = TIMEOUT_MS
+): Read<DiffAttributes> {
+    if (!pathInside(root, path)) return refused(`the path ${path} is not inside the repository`);
+    const ms = milliseconds(timeout);
+    const checked = run(
+        root,
+        ['check-attr', 'filter', 'text', 'eol', 'working-tree-encoding', 'ident', '--', path],
+        ms
+    );
+    if (!checked.ok) return refused(checked.text);
+    const autocrlf = run(root, ['config', '--get', '--default=', 'core.autocrlf'], ms);
+    if (!autocrlf.ok) return refused(autocrlf.text);
+    return {
+        ok: true,
+        value: { ...parseAttributes(checked.text), autocrlf: autocrlf.text.trim() }
+    };
 }
 
 /** Who last changed each line of one file as the worktree holds it. */
@@ -458,12 +603,18 @@ function state(root: string, timeout: number): GitState {
     found.worktrees = worktrees(root, timeout);
     found.ignoresWorktrees = ignored(root);
     sequenceOf(root, gitDir.text.trim(), found);
-    const rows = porcelain(root, timeout);
-    if (rows.rows === null) {
-        found.error = rows.reason || 'git status failed';
+    const listing = run(
+        root,
+        ['status', '--porcelain=v1', '-z', '--untracked-files=normal'],
+        timeout
+    );
+    if (!listing.ok) {
+        found.error = listing.text || 'git status failed';
         return found;
     }
-    fill(found, rows.rows, numstat(root, timeout));
+    const counts = run(root, ['diff', '--numstat', '-z'], timeout);
+    const lines = parseNumstat(counts.ok ? counts.text : '');
+    Object.assign(found, statusLists(statusRecords(listing.text), lines, MAX_ENTRIES));
     return found;
 }
 
@@ -625,86 +776,7 @@ function upstream(root: string, found: GitState, timeout: number): void {
     found.ahead = whole(parts[1]);
 }
 
-function fill(found: GitState, rows: Row[], counts: Counts): void {
-    for (const [index, work, path] of rows) {
-        if (UNMERGED.includes(`${index}${work}`)) {
-            found.conflicted.push(entry(path, `${index}${work}`, undefined));
-            continue;
-        }
-        if (index === UNTRACKED || work === UNTRACKED) {
-            found.untracked.push(entry(path, UNTRACKED, undefined));
-            continue;
-        }
-        if (!QUIET.includes(index)) {
-            // Line counts come from the worktree diff, which says nothing about the index, so a
-            // file in the index reports its letter and no numbers rather than the wrong ones.
-            found.staged.push(entry(path, index, undefined));
-        }
-        if (!QUIET.includes(work)) found.unstaged.push(entry(path, work, counts.get(path)));
-    }
-    found.staged.length = Math.min(found.staged.length, MAX_ENTRIES);
-    found.unstaged.length = Math.min(found.unstaged.length, MAX_ENTRIES);
-    found.untracked.length = Math.min(found.untracked.length, MAX_ENTRIES);
-    found.conflicted.length = Math.min(found.conflicted.length, MAX_ENTRIES);
-}
-
-function entry(
-    path: string,
-    status: string,
-    counts: [number | null, number | null] | undefined
-): GitEntry {
-    return {
-        path,
-        status,
-        added: counts === undefined ? 0 : counts[0],
-        deleted: counts === undefined ? 0 : counts[1]
-    };
-}
-
 // ---------------------------------------------------------------- git output
-
-/**
- * The porcelain rows, or null with a reason, read through statusRecords: `-z` output is NUL
- * separated and never quoted, and the path of a rename is its new one, which is what the view
- * shows.
- */
-function porcelain(root: string, timeout: number): { rows: Row[] | null; reason: string } {
-    const done = run(root, ['status', '--porcelain=v1', '-z', '--untracked-files=normal'], timeout);
-    if (!done.ok) return { rows: null, reason: done.text };
-    const rows = statusRecords(done.text).map((record): Row => [
-        record.code[0],
-        record.code[1],
-        record.path
-    ]);
-    return { rows, reason: '' };
-}
-
-/**
- * path to (added, deleted) for the worktree. A binary file reports `-` and becomes null. In `-z`
- * output a rename ends its record after the tab and puts both paths in their own fields.
- */
-function numstat(root: string, timeout: number): Counts {
-    const out: Counts = new Map();
-    const done = run(root, ['diff', '--numstat', '-z'], timeout);
-    if (!done.ok) return out;
-    const fields = done.text.split('\0');
-    let i = 0;
-    while (i < fields.length) {
-        const field = fields[i];
-        i += 1;
-        const parts = field.split('\t');
-        if (parts.length < 3) continue;
-        let path = parts[2];
-        if (path === '') {
-            if (i + 1 >= fields.length) break;
-            // The old path, then the new one.
-            path = fields[i + 1];
-            i += 2;
-        }
-        out.set(path, [count(parts[0]), count(parts[1])]);
-    }
-    return out;
-}
 
 /** The one `show` call site: an index stage of a path, and a commit's files and diffs. */
 function show(root: string, args: string[], timeout: number): Outcome {
@@ -719,27 +791,31 @@ function readDiff(root: string, args: string[], timeout: number): Outcome {
 /**
  * One git command, as a list, with a timeout. A non-zero exit, a broken git, or a repository too
  * slow to answer all come back as not ok with a short reason, and only the non-zero exit as
- * answered. This is the module's one call site.
+ * answered. The output is read as bytes, `utf8` says whether they were UTF-8, and `text` is them
+ * decoded as UTF-8. This is the module's one call site.
  */
 function run(root: string, args: string[], timeout: number, input?: string): Outcome {
     // Every read runs without optional locks, so a status refresh never writes .git/index.lock and
     // never collides with a commit the owner is making in the same repository.
     const argv = ['-C', root, '--no-optional-locks', ...args];
     // A list, never a shell, and a timeout: a hung git must not hang a watcher.
-    const done = spawnSync(GIT, argv, { encoding: 'utf8', timeout, input });
+    const done = spawnSync(GIT, argv, { timeout, input, maxBuffer: MAX_OUTPUT });
     if (done.error !== undefined) {
         const failure = done.error as NodeJS.ErrnoException;
         const text = failure.code === 'ETIMEDOUT' ? 'git timed out' : short(failure);
-        return { ok: false, answered: failure.code !== 'ETIMEDOUT', ran: false, text };
+        return { ok: false, answered: failure.code !== 'ETIMEDOUT', ran: false, text, utf8: true };
     }
     if (done.status !== 0) {
-        return { ok: false, answered: true, ran: true, text: short(done.stderr) || 'git failed' };
+        const text = short(bytesOf(done.stderr).toString('utf8')) || 'git failed';
+        return { ok: false, answered: true, ran: true, text, utf8: true };
     }
+    const bytes = bytesOf(done.stdout);
     return {
         ok: true,
         answered: true,
         ran: true,
-        text: typeof done.stdout === 'string' ? done.stdout : ''
+        text: bytes.toString('utf8'),
+        utf8: isUtf8(bytes)
     };
 }
 
@@ -798,15 +874,12 @@ function whole(token: string): number {
     return Number.isInteger(value) ? value : 0;
 }
 
-function count(token: string): number | null {
-    return token === '-' ? null : whole(token);
+/** What a spawned process wrote, as bytes; nothing when it wrote nothing. */
+function bytesOf(output: unknown): Buffer {
+    return Buffer.isBuffer(output) ? output : Buffer.alloc(0);
 }
 
-/** A one-line reason fit for a tooltip. git's own `fatal: ` prefix says nothing worth the width. */
+/** A one-line reason fit for a tooltip. */
 function short(value: unknown): string {
-    const text = value instanceof Error ? value.message : scalar(value);
-    const lines = text.trim().split('\n');
-    let line = lines.length > 0 ? lines[0].trim() : '';
-    if (line.toLowerCase().startsWith('fatal: ')) line = line.slice(7);
-    return line.slice(0, 120);
+    return shortReason(value, REASON_WIDTH);
 }

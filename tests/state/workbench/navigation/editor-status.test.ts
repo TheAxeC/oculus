@@ -6,6 +6,7 @@
 import { describe, expect, it } from 'vitest';
 import {
     createEditorStatus,
+    editorOnScreen,
     sourceOnScreen,
     type EditorStatus
 } from '../../../../src/lib/state/workbench/navigation/editor-status.svelte.ts';
@@ -77,5 +78,18 @@ describe('the editor status store', () => {
         expect(sourceOnScreen({ id: 'one', view: 'file' }, store.statusOf)).toBe(null);
         expect(sourceOnScreen({ id: 'two', view: 'source' }, store.statusOf)).toBe(null);
         expect(sourceOnScreen(null, store.statusOf)).toBe(null);
+    });
+
+    it('finds the tab whose editor actions the palette lists: a source tab or a diff pane', () => {
+        const store = createEditorStatus();
+        store.publish('one', SAID);
+        store.publish('diff', { ...SAID, caret: null });
+        expect(editorOnScreen({ id: 'one', view: 'source' }, store.statusOf)?.instance).toBe('one');
+        const diff = { id: 'diff', view: 'repositories-diff' };
+        expect(editorOnScreen(diff, store.statusOf)?.instance).toBe('diff');
+        // The status bar's items stay the source tab's alone.
+        expect(sourceOnScreen(diff, store.statusOf)).toBe(null);
+        expect(editorOnScreen({ id: 'diff', view: 'file' }, store.statusOf)).toBe(null);
+        expect(editorOnScreen(null, store.statusOf)).toBe(null);
     });
 });

@@ -21,6 +21,7 @@ import {
 import { mintToken } from '../../../src/lib/server/core/auth.ts';
 import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
 import type { GitOptions } from '../../../src/lib/server/git/git-routes.ts';
+import type { DiffAttributes, DiffSides } from '../../../src/lib/data/model/index.ts';
 import { contextFixture } from '../../server/root/context-fixture.ts';
 
 const SERVER = contextFixture({ token: mintToken() });
@@ -30,6 +31,29 @@ const URL_ = `http://${HOST}/api/git`;
 
 /** The one root every case is allowed to name. It is a name: nothing opens it. */
 const ROOT = '/hub';
+
+/** One file of a diff answer, as the reads answer it. */
+function sidesFor(path: string): DiffSides {
+    return {
+        oldPath: path,
+        newPath: path,
+        head: [`diff --git a/${path} b/${path}`],
+        binary: false,
+        encoded: true,
+        original: 'old\n',
+        modified: 'new\n'
+    };
+}
+
+/** What git's attributes say of a file git converts nothing in. */
+const PLAIN: DiffAttributes = {
+    filter: 'unspecified',
+    text: 'unspecified',
+    eol: 'unspecified',
+    workingTreeEncoding: 'unspecified',
+    ident: 'unspecified',
+    autocrlf: ''
+};
 
 describe('the commit-message instruction', () => {
     it('reads the required catalog key and reports it clearly when absent', () => {
@@ -278,7 +302,10 @@ describe('the diff reads', () => {
         const into = options({
             diff: (root, path, staged) => {
                 seen.push({ root, path, staged });
-                return Promise.resolve({ ok: true, output: 'diff --git a b\n', error: '' });
+                return Promise.resolve({
+                    ok: true as const,
+                    value: { files: [sidesFor('a.txt')], attributes: PLAIN, conflicted: false }
+                });
             }
         });
         const response = await handleGitGet(
@@ -286,7 +313,12 @@ describe('the diff reads', () => {
             into
         );
         expect(response.status).toBe(200);
-        expect(await response.json()).toEqual({ ok: true, output: 'diff --git a b\n' });
+        expect(await response.json()).toEqual({
+            ok: true,
+            files: [sidesFor('a.txt')],
+            attributes: PLAIN,
+            conflicted: false
+        });
         expect(seen).toEqual([{ root: ROOT, path: 'a.txt', staged: true }]);
 
         await handleGitGet(get(`diff=${encodeURIComponent(ROOT)}&path=a.txt&staged=0`), into);
@@ -306,14 +338,14 @@ describe('the diff reads', () => {
             options({
                 worktree: (root, asked) => {
                     seen.push({ root, path: asked });
-                    return Promise.resolve({ ok: true, output: 'diff --git a b\n', error: '' });
+                    return Promise.resolve({ ok: true as const, value: [sidesFor('w.txt')] });
                 }
             })
         );
         expect(response.status).toBe(200);
         expect(seen).toEqual([{ root: ROOT, path }]);
-        // The answer is the text alone: the pane draws a diff and reads no state.
-        expect(await response.json()).toEqual({ ok: true, output: 'diff --git a b\n' });
+        // The answer is the files alone: the pane draws a diff and reads no state.
+        expect(await response.json()).toEqual({ ok: true, files: [sidesFor('w.txt')] });
     });
 
     it('checks the repository it was given and never the worktree it names', async () => {
@@ -461,11 +493,11 @@ describe('the reads on demand', () => {
         },
         commit: (...args: unknown[]) => {
             asked.push(['commit', ...args]);
-            return { ok: true as const, value: 'diff --git a/a.txt b/a.txt\n' };
+            return { ok: true as const, value: [sidesFor('a.txt')] };
         },
         stash: (...args: unknown[]) => {
             asked.push(['stash', ...args]);
-            return { ok: true as const, value: 'diff --git a/b b/b\n' };
+            return { ok: true as const, value: [sidesFor('b')] };
         },
         blame: (...args: unknown[]) => {
             asked.push(['blame', ...args]);
@@ -491,12 +523,8 @@ describe('the reads on demand', () => {
                 { commits: [], more: false, incoming: [], outgoing: [] }
             ],
             [`commit=abc123&root=${root}`, 'files', [{ status: 'M', path: 'a.txt', from: '' }]],
-            [`commit=abc123&root=${root}&path=a.txt`, 'output', 'diff --git a/a.txt b/a.txt\n'],
-            [
-                `stash=${encodeURIComponent('stash@{0}')}&root=${root}`,
-                'output',
-                'diff --git a/b b/b\n'
-            ],
+            [`commit=abc123&root=${root}&path=a.txt`, 'files', [sidesFor('a.txt')]],
+            [`stash=${encodeURIComponent('stash@{0}')}&root=${root}`, 'files', [sidesFor('b')]],
             [`blame=${root}&path=a.txt`, 'lines', []],
             [`marks=${root}&path=a.txt`, 'marks', [{ kind: 'added', line: 2, count: 1 }]]
         ];

@@ -35,3 +35,36 @@ export function armBefore(armed: boolean, press: KeyFacts): boolean {
 export function armAfter(armed: boolean, press: KeyFacts): boolean {
     return press.key === 'Escape' ? !press.defaultPrevented : armed;
 }
+
+/** What these rules read of a key event. */
+function factsOf(event: KeyboardEvent): KeyFacts {
+    const { key, ctrlKey, metaKey, altKey, defaultPrevented } = event;
+    return { key, ctrlKey, metaKey, altKey, defaultPrevented };
+}
+
+/** The two listeners an editor's host reads each key with, the arm held between them. */
+export type TabOut = {
+    /** A key before Monaco reads it: a Tab that leaves is kept from Monaco for the browser. */
+    before: (event: KeyboardEvent) => void;
+    /** A key Monaco let through: an Escape it did not take arms the next Tab. */
+    after: (event: KeyboardEvent) => void;
+};
+
+/** The listeners of one editor, disarmed. */
+export function tabOut(): TabOut {
+    let armed = false;
+    return {
+        before(event) {
+            const press = factsOf(event);
+            if (leaves(armed, press)) {
+                armed = false;
+                event.stopPropagation();
+                return;
+            }
+            armed = armBefore(armed, press);
+        },
+        after(event) {
+            armed = armAfter(armed, factsOf(event));
+        }
+    };
+}

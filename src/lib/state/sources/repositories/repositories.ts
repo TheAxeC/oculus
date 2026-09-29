@@ -10,6 +10,8 @@
 // owns its own requests, and these are the strings they are made from.
 
 import type {
+    DiffAttributes,
+    DiffSides,
     GitBlameLine,
     GitCommitFile,
     GitEntry,
@@ -27,6 +29,8 @@ import { worktreePath, worktreesDir } from '../../../data/helpers/worktrees.ts';
 export { validName, worktreePath, worktreesDir } from '../../../data/helpers/worktrees.ts';
 
 export type {
+    DiffAttributes,
+    DiffSides,
     GitBlameLine,
     GitCommitFile,
     GitGraphCommit,
@@ -147,21 +151,125 @@ export function diffActs(state: DiffSubject): boolean {
 /** How a diff pane lays its two sides out, kept per pane. */
 export type DiffMode = 'side' | 'inline';
 
-/** A diff pane's own remembered choices: its layout, and the folds the reader opened. */
-export type DiffView = { mode: DiffMode; opened: number[] };
+/**
+ * A diff pane's own remembered choices: its layout, and each file's diff editor view state (the
+ * unchanged runs the reader revealed and the scroll), by the file's path, as Monaco's
+ * `saveViewState` gives it and `restoreViewState` takes it back.
+ */
+export type DiffView = { mode: DiffMode; views: Record<string, object> };
 
-/** A diff pane's remembered choices, every field defaulted: side by side, nothing opened. */
-export function diffViewOf(state: unknown): DiffView {
-    const map =
-        typeof state === 'object' && state !== null && !Array.isArray(state)
-            ? (state as Record<string, unknown>)
-            : {};
+/** A plain object, and nothing else, as the instance state stores one. */
+function objectOf(value: unknown): Record<string, unknown> | null {
+    return typeof value === 'object' && value !== null && !Array.isArray(value)
+        ? (value as Record<string, unknown>)
+        : null;
+}
+
+/**
+ * A diff pane's remembered choices, every field defaulted: side by side, no view state. A view
+ * state that is not an object is dropped, and so is one keyed to a path not among `paths`, the
+ * files of the diff, when they are given.
+ */
+export function diffViewOf(state: unknown, paths?: readonly string[]): DiffView {
+    const map = objectOf(state) ?? {};
+    const views: Record<string, object> = {};
+    for (const [path, view] of Object.entries(objectOf(map.views) ?? {})) {
+        const kept = objectOf(view);
+        if (kept !== null && (paths === undefined || paths.includes(path))) views[path] = kept;
+    }
+    return { mode: map.mode === 'inline' ? 'inline' : 'side', views };
+}
+
+/**
+ * The key of each file of a diff, for its section, its view state and its models: its path (the
+ * old one for a deleted file), and for a path git lists again, as it does for a type change, the
+ * path, a NUL and its place among that path's entries (`x`, then `x` NUL `2`). No git path holds a
+ * NUL, so the key of an entry listed again never equals another file's path.
+ */
+export function fileKeys(files: readonly DiffSides[]): string[] {
+    const seen = new Map<string, number>();
+    return files.map((file) => {
+        const path = file.newPath === '' ? file.oldPath : file.newPath;
+        const place = (seen.get(path) ?? 0) + 1;
+        seen.set(path, place);
+        return place === 1 ? path : `${path}\0${String(place)}`;
+    });
+}
+
+/**
+ * What keeps a diff pane's view states: `viewed` says one, `keep` writes those said so far, and
+ * `close` ends the keeping when the pane is torn down, told whether its tab is still open.
+ */
+export type ViewKeeper = {
+    viewed: (key: string, state: object) => void;
+    keep: () => void;
+    close: (open: () => boolean) => void;
+};
+
+/**
+ * The keeping of a diff pane's view states: those its editors say within `after` milliseconds
+ * are written in one write over what `read` gives, through `write`. At `close`, a pane whose tab
+ * is still open (a page switch, a tab moved, a split changed) writes what is pending, and each
+ * view state its editors say as they are torn down after it is written at once, so the reopened
+ * pane shows the last scroll and caret. A pane whose tab has closed writes nothing again: its
+ * instance state is gone with the tab, and an editor torn down after it would write it back.
+ */
+export function viewKeeper(
+    read: () => unknown,
+    write: (state: DiffView) => void,
+    after: number
+): ViewKeeper {
+    let pending: Record<string, object> = {};
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    // Open while the pane is drawn; `torn` once it is torn down with its tab open, `gone` with it
+    // closed.
+    let phase: 'open' | 'torn' | 'gone' = 'open';
+    function keep(): void {
+        if (phase === 'gone') return;
+        if (timer !== null) clearTimeout(timer);
+        timer = null;
+        if (Object.keys(pending).length === 0) return;
+        const now = diffViewOf(read());
+        write({ ...now, views: { ...now.views, ...pending } });
+        pending = {};
+    }
     return {
-        mode: map.mode === 'inline' ? 'inline' : 'side',
-        opened: Array.isArray(map.opened)
-            ? map.opened.filter((one): one is number => typeof one === 'number')
-            : []
+        viewed(key, state) {
+            if (phase === 'gone') return;
+            pending = { ...pending, [key]: state };
+            if (phase === 'torn') keep();
+            else timer ??= setTimeout(keep, after);
+        },
+        keep,
+        close(open) {
+            if (open()) {
+                keep();
+                phase = 'torn';
+                return;
+            }
+            phase = 'gone';
+            if (timer !== null) clearTimeout(timer);
+            timer = null;
+            pending = {};
+        }
     };
+}
+
+/** Whether two answers of a diff read hold the same files, so a re-read keeps the view state. */
+export function sameFiles(a: readonly DiffSides[], b: readonly DiffSides[]): boolean {
+    return (
+        a.length === b.length &&
+        a.every(
+            (file, at) =>
+                file.oldPath === b[at].oldPath &&
+                file.newPath === b[at].newPath &&
+                file.binary === b[at].binary &&
+                file.encoded === b[at].encoded &&
+                file.original === b[at].original &&
+                file.modified === b[at].modified &&
+                file.head.join('\n') === b[at].head.join('\n')
+        )
+    );
 }
 
 /** The name a worktree is shown under: its folder name, which is the branch it was made on. */

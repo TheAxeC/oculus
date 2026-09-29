@@ -3,7 +3,7 @@
 
 import { bundledLanguages } from 'shiki';
 import { describe, expect, it } from 'vitest';
-import { SHIKI_LANGUAGES, shikiId } from '../../../../src/lib/ui/controls/editor/grammars.ts';
+import { SHIKI_LANGUAGES, shikiId } from '../../../../src/lib/ui/controls/editor/kit/grammars.ts';
 import { registered } from '../../../../src/lib/state/shared/words/languages.ts';
 
 describe('the language map', () => {

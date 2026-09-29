@@ -4,7 +4,10 @@
 
 import { describe, expect, it } from 'vitest';
 import {
+    chooseIn,
     chosenLines,
+    editIn,
+    historyOf,
     initialPieces,
     linesOf,
     openCount,
@@ -40,6 +43,41 @@ describe('the regions of a three-way merge', () => {
         expect(conflict.theirs).toEqual(['B-theirs']);
         expect(conflict.at.ours).toEqual({ start: 1, count: 1 });
         expect(conflict.at.theirs).toEqual({ start: 1, count: 1 });
+    });
+
+    it('answers one settled region for three empty versions', () => {
+        expect(regionsOf('', '', '')).toEqual([
+            {
+                kind: 'settled',
+                lines: [],
+                ours: { start: 0, count: 0 },
+                theirs: { start: 0, count: 0 }
+            }
+        ]);
+    });
+
+    it('settles a deletion one side made where the other left the lines as they were', () => {
+        // Current took line b out; the settled regions either side of it join into one.
+        expect(regionsOf('a\nb\nc\n', 'a\nc\n', 'a\nb\nc\n')).toEqual([
+            {
+                kind: 'settled',
+                lines: ['a', 'c'],
+                ours: { start: 0, count: 2 },
+                theirs: { start: 0, count: 3 }
+            }
+        ]);
+    });
+
+    it('settles a change one side made, each side counting its own lines', () => {
+        // Incoming wrote two lines where b was; Current kept b, so Current's span holds one line.
+        expect(regionsOf('a\nb\nc\n', 'a\nb\nc\n', 'a\nx\ny\nc\n')).toEqual([
+            {
+                kind: 'settled',
+                lines: ['a', 'x', 'y', 'c'],
+                ours: { start: 0, count: 3 },
+                theirs: { start: 0, count: 4 }
+            }
+        ]);
     });
 
     it('cuts a text into lines without an empty line for the final newline', () => {
@@ -100,6 +138,64 @@ describe('the result typed into by hand', () => {
                 typed.touched.map(() => 'edited')
             )
         ).toBe(0);
+    });
+});
+
+describe('undo and redo of a choice', () => {
+    // Two conflicts, at b and at d, each side changing both its own way.
+    const regions = regionsOf('a\nb\nc\nd\ne\n', 'a\nB1\nc\nD1\ne\n', 'a\nB2\nc\nD2\ne\n');
+    const [first, second] = regions.flatMap((region, at) =>
+        region.kind === 'conflict' ? [at] : []
+    );
+    const start = historyOf({ pieces: initialPieces(regions), choices: regions.map(() => 'open') });
+    const text = (history: typeof start): string => history.held.pieces.join('');
+
+    it('takes a choice back by undo and puts it again by redo', () => {
+        const chosen = chooseIn(start, regions, first, 'incoming');
+        const undone = editIn(chosen, regions, text(start), 'undo');
+        expect(undone.held.choices[first]).toBe('open');
+        const redone = editIn(undone, regions, text(chosen), 'redo');
+        expect(redone.held.choices[first]).toBe('incoming');
+    });
+
+    it('keeps a choice to redo across the undo and redo of typing made before it', () => {
+        const typedText = text(start).replace('a\n', 'A\n');
+        const typed = editIn(start, regions, typedText, 'type');
+        const chosen = chooseIn(typed, regions, first, 'incoming');
+        // Undo the choice, then the typing; redo the typing, then the choice.
+        let history = editIn(chosen, regions, text(typed), 'undo');
+        history = editIn(history, regions, text(start), 'undo');
+        history = editIn(history, regions, typedText, 'redo');
+        history = editIn(history, regions, text(chosen), 'redo');
+        expect(history.held.choices[first]).toBe('incoming');
+    });
+
+    it('ends what redo could put back once the reader types after an undo', () => {
+        // Revert: in editIn of merge-regions.ts, keep `history.redoable` on typing, and the redo
+        // below puts the undone choice back.
+        const chosen = chooseIn(start, regions, first, 'incoming');
+        let history = editIn(chosen, regions, text(start), 'undo');
+        // Typing after the undo, then typed back to the same text.
+        const typedText = text(start).replace('a\n', 'A\n');
+        history = editIn(history, regions, typedText, 'type');
+        history = editIn(history, regions, text(start), 'type');
+        expect(history.redoable).toEqual([]);
+        // A redo from the editor now lands on text the undone choice made, and is read as typing.
+        history = editIn(history, regions, text(chosen), 'redo');
+        expect(history.held.choices[first]).toBe('edited');
+    });
+
+    it('reads typing that lands on the text before a choice as typing, never as its undo', () => {
+        let history = chooseIn(start, regions, first, 'incoming');
+        const after = text(history);
+        // Another conflict typed into and back: settled by hand, the text the choice's again.
+        history = editIn(history, regions, after.replace('d\n', 'X\n'), 'type');
+        history = editIn(history, regions, after, 'type');
+        expect(history.held.choices[second]).toBe('edited');
+        // The chosen conflict typed back to what it was before the choice.
+        history = editIn(history, regions, text(start), 'type');
+        expect(history.held.choices[second]).toBe('edited');
+        expect(history.held.choices[first]).toBe('edited');
     });
 });
 

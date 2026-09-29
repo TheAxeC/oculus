@@ -5,18 +5,26 @@
 // and each is read when a pane asks rather than published, since the channel carries state and
 // these are text or a page of history a reader asked for.
 //
-// The diffs a pane draws come from server/git/git-write.ts, whose `diff` call site has always
-// answered them; everything else is server/core/git.ts's, the read-only module. Every read is an
-// option with a real default, so tests/routes/git/git.test.ts drives the endpoint without git.
+// The four diff reads answer `files`, the two versions of each file with git's head lines for it
+// (`DiffSides`); a file's own diff also answers what git's attributes say of converting it, which
+// decides whether the pane may cut a partial patch from it. A file's and a worktree's diff text
+// comes from server/git/git-write.ts, whose `diff` call site has always answered them, and the
+// versions from server/core/git.ts, the read-only module, which answers every other read. Every
+// read is an option with a real default, so tests/routes/git/git.test.ts drives the endpoint
+// without git.
 
 import { json } from '@sveltejs/kit';
+import type { DiffAttributes, DiffSides } from '../../data/model/index.ts';
 import {
+    attributesOf,
     blameOf,
     commitDiff,
     commitFiles,
     graphPage,
     lineMarks,
+    mergeBase,
     mergeSides,
+    sidesOf,
     stashDiff,
     type Read
 } from '../core/git.ts';
@@ -26,18 +34,29 @@ import {
     fileDiff,
     parseBranches,
     permitted,
-    worktreeDiff,
-    type Outcome
+    worktreeFrom,
+    worktreeRange
 } from './git-write.ts';
+
+/**
+ * A file's own diff: its files, what git's attributes say of converting it, and whether the path is
+ * in conflict, where its worktree side is read against Current's version (stage 2).
+ */
+export type FileDiff = { files: DiffSides[]; attributes: DiffAttributes; conflicted: boolean };
 
 /** The reads a GET may be answered by, each the real one when the option is absent. */
 export type ReadOptions = {
     /** Which roots a request may name; the published workspaces and the hub when absent. */
     rootsFor?: () => string[];
-    /** One file's diff; the real `git diff` when absent. */
-    diff?: (root: string, path: string, staged: boolean, roots: string[]) => Promise<Outcome>;
+    /** One file's diff; the real `git diff` and `show` when absent. */
+    diff?: (
+        root: string,
+        path: string,
+        staged: boolean,
+        roots: string[]
+    ) => Promise<Read<FileDiff>>;
     /** A worktree's diff against its repository's branch; the real one when absent. */
-    worktree?: (root: string, path: string, roots: string[]) => Promise<Outcome>;
+    worktree?: (root: string, path: string, roots: string[]) => Promise<Read<DiffSides[]>>;
     /** The on-demand reads of server/core/git.ts, by name; the real ones when absent. */
     reads?: Partial<CoreReads>;
 };
@@ -74,10 +93,42 @@ function answer<T>(read: Read<T>, key: string): Response {
     return json({ ok: true, [key]: read.value }, { headers: NO_STORE });
 }
 
-/** An outcome of the writing module's reads, answered the same way. */
-function outcome(done: Outcome): Response {
-    if (!done.ok) return json({ error: done.error }, { status: 400, headers: NO_STORE });
-    return json({ ok: true, output: done.output }, { headers: NO_STORE });
+/**
+ * One file's diff as its two versions: the index against the worktree, or HEAD against the index
+ * when staged, and for a path in conflict Current's version (stage 2) against the worktree.
+ */
+export async function fileSides(
+    root: string,
+    path: string,
+    staged: boolean,
+    roots: string[] = allowedRoots()
+): Promise<Read<FileDiff>> {
+    const read = await fileDiff(root, path, staged, roots);
+    if (!read.ok) return { ok: false, error: read.error };
+    const before = staged ? 'HEAD:' : read.ours ? ':2:' : ':';
+    const files = sidesOf(root, read.output, before, staged ? ':' : null);
+    if (!files.ok) return files;
+    const attributes = attributesOf(root, path);
+    if (!attributes.ok) return attributes;
+    return {
+        ok: true,
+        value: { files: files.value, attributes: attributes.value, conflicted: read.ours }
+    };
+}
+
+/** A worktree's diff as its two versions: where it parted from the branch against its HEAD. */
+export async function worktreeSides(
+    root: string,
+    path: string,
+    roots: string[] = allowedRoots()
+): Promise<Read<DiffSides[]>> {
+    const from = await worktreeFrom(root, path, roots);
+    if (!from.ok) return { ok: false, error: from.error };
+    const read = await worktreeRange(path, from.output);
+    if (!read.ok) return { ok: false, error: read.error };
+    const base = mergeBase(path, from.output);
+    if (!base.ok) return base;
+    return sidesOf(path, read.output, `${base.value}:`, 'HEAD:');
 }
 
 /**
@@ -101,13 +152,15 @@ export async function handleGitGet(request: Request, options: ReadOptions): Prom
         const root = named('diff');
         if (root === null) return json(UNKNOWN, { status: 400, headers: NO_STORE });
         const staged = parameters.get('staged') === '1';
-        return outcome(await (options.diff ?? fileDiff)(root, path, staged, roots));
+        const read = await (options.diff ?? fileSides)(root, path, staged, roots);
+        if (!read.ok) return json({ error: read.error }, { status: 400, headers: NO_STORE });
+        return json({ ok: true, ...read.value }, { headers: NO_STORE });
     }
     if (parameters.has('worktree')) {
         const root = named('root');
         if (root === null) return json(UNKNOWN, { status: 400, headers: NO_STORE });
         const tree = parameters.get('worktree') ?? '';
-        return outcome(await (options.worktree ?? worktreeDiff)(root, tree, roots));
+        return answer(await (options.worktree ?? worktreeSides)(root, tree, roots), 'files');
     }
     if (parameters.has('graph')) {
         const root = named('graph');
@@ -120,12 +173,12 @@ export async function handleGitGet(request: Request, options: ReadOptions): Prom
         if (root === null) return json(UNKNOWN, { status: 400, headers: NO_STORE });
         const hash = parameters.get('commit') ?? '';
         if (path === '') return answer(reads.files(root, hash), 'files');
-        return answer(reads.commit(root, hash, path), 'output');
+        return answer(reads.commit(root, hash, path), 'files');
     }
     if (parameters.has('stash')) {
         const root = named('root');
         if (root === null) return json(UNKNOWN, { status: 400, headers: NO_STORE });
-        return answer(reads.stash(root, parameters.get('stash') ?? ''), 'output');
+        return answer(reads.stash(root, parameters.get('stash') ?? ''), 'files');
     }
     for (const key of ['blame', 'marks', 'sides'] as const) {
         if (!parameters.has(key)) continue;

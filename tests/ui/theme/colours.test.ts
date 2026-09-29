@@ -610,7 +610,7 @@ describe('the code window palette', () => {
     // leaves one out. The behaviour, that Shiki colours the tokens in those hues, is tested by
     // tests/ui/controls/editor/theme.test.ts:158-176.
     it("paints the editor's scopes through those six and nothing else", () => {
-        const file = join(SRC, 'lib', 'ui', 'controls', 'editor', 'theme.ts');
+        const file = join(SRC, 'lib', 'ui', 'controls', 'editor', 'kit', 'theme.ts');
         const source = readFileSync(file, 'utf8');
         const painted = [...source.matchAll(/'(--c-code-[a-z]+)(-txt)?'/g)];
         const bare = painted.filter((found) => !found[0].endsWith("-txt'"));

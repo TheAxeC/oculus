@@ -27,9 +27,9 @@
 
 import type * as Monaco from 'monaco-editor';
 import { SHIKI_LANGUAGES } from './grammars';
-import { freedKeys, type KeyPress } from './chords';
+import { freedKeys, type KeyPress } from '../chords';
 import { editorTheme } from './theme';
-import type { EditorEnding } from './types';
+import type { EditorEnding } from '../types';
 import type { ThemeRegistration } from 'shiki';
 
 /** What an editor needs of the loaded page: Monaco, and the one call that sets its theme. */

@@ -22,8 +22,6 @@ src/lib/data/sources/config/merge.ts src/lib/server/transcripts/stores.ts 6ba7db
 src/lib/server/accounts/connect/store.ts src/lib/server/accounts/mail/triage.ts 46984edf819e the same 9 lines at 102 and 63, to fold into one place
 src/lib/server/content/audit/rules.ts src/lib/server/edit/deck-edit.ts 3a43caa175b4 the same 11 lines at 73 and 30, to fold into one place
 src/lib/server/content/audit/rules.ts src/lib/server/git/deposit.ts 3a43caa175b4 the same 10 lines at 73 and 206, to fold into one place
-src/lib/server/core/git.ts src/lib/server/git/deposit-git.ts 059961e8667b the same 9 lines at 802 and 310, to fold into one place
-src/lib/server/core/git.ts src/lib/server/git/git-write.ts 059961e8667b the same 9 lines at 802 and 671, to fold into one place
 src/lib/server/edit/deck-edit.ts src/lib/server/edit/writes/audit-mute.ts 1e0e0eb0f6b5 the same 15 lines at 30 and 35, to fold into one place
 src/lib/server/edit/entry-edit/lines.ts src/lib/server/edit/yaml-edit.ts 22e246596d51 the same 9 lines at 107 and 317, to fold into one place
 src/lib/server/edit/entry-edit/lines.ts src/lib/server/edit/yaml-edit.ts a4f9b3ef79e0 the same 11 lines at 289 and 385, to fold into one place

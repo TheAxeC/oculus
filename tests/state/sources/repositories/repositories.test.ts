@@ -58,6 +58,7 @@ import {
     isConflict,
     repoListRows,
     repoShape,
+    sameFiles,
     upstreamOf
 } from '../../../../src/lib/state/sources/repositories/repositories.ts';
 
@@ -135,13 +136,42 @@ describe('the repository a view shows', () => {
         });
     });
 
-    it('reads a diff pane layout and its opened folds, side by side by default', () => {
-        expect(diffViewOf({ mode: 'inline', opened: [4, 'x', 12] })).toEqual({
+    it('reads a diff pane layout and its view state per file, side by side by default', () => {
+        const kept = { original: {}, modified: {}, modelState: { collapsedRegions: [] } };
+        // The folds a pane opened before its diffs were Monaco's are dropped.
+        expect(diffViewOf({ mode: 'inline', opened: [4, 12] })).toEqual({
             mode: 'inline',
-            opened: [4, 12]
+            views: {}
         });
-        expect(diffViewOf({ mode: 'odd' })).toEqual({ mode: 'side', opened: [] });
-        expect(diffViewOf(null)).toEqual({ mode: 'side', opened: [] });
+        expect(diffViewOf({ mode: 'odd' })).toEqual({ mode: 'side', views: {} });
+        expect(diffViewOf(null)).toEqual({ mode: 'side', views: {} });
+        // A stored view state comes back for its file, to be handed to the diff editor again.
+        expect(diffViewOf({ views: { 'a.txt': kept } }, ['a.txt']).views['a.txt']).toEqual(kept);
+        // One that is not an object is dropped, and so is one keyed to a file not in the diff.
+        expect(diffViewOf({ views: 'scrolled' }, ['a.txt'])).toEqual({ mode: 'side', views: {} });
+        expect(diffViewOf({ views: { 'a.txt': 7, 'b.txt': [] } }, ['a.txt', 'b.txt'])).toEqual({
+            mode: 'side',
+            views: {}
+        });
+        expect(diffViewOf({ views: { 'a.txt': kept, 'gone.txt': kept } }, ['a.txt']).views).toEqual(
+            { 'a.txt': kept }
+        );
+    });
+
+    it('keeps the files of a re-read that changed nothing, so the view state stays', () => {
+        const file = {
+            oldPath: 'a.txt',
+            newPath: 'a.txt',
+            head: ['diff --git a/a.txt b/a.txt'],
+            binary: false,
+            encoded: true,
+            original: 'a\n',
+            modified: 'b\n'
+        };
+        expect(sameFiles([file], [{ ...file, head: [...file.head] }])).toBe(true);
+        expect(sameFiles([file], [{ ...file, modified: 'c\n' }])).toBe(false);
+        expect(sameFiles([file], [{ ...file, encoded: false }])).toBe(false);
+        expect(sameFiles([file], [])).toBe(false);
     });
 
     it('offers every root the channel carries a state for, in the channel order', () => {

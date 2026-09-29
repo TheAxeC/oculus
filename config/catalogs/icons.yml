@@ -54,7 +54,6 @@ icons:
     inline_diff: rows-2
     prev_change: chevron-up
     next_change: chevron-down
-    unfold: unfold-vertical
     open_file: file-symlink
     # status + markers
     check: check

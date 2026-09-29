@@ -55,7 +55,6 @@ glyphs:
   inline_diff: "="
   prev_change: "^"
   next_change: "v"
-  unfold: "<>"
   open_file: "[f]"
   # status + markers
   check: "+"

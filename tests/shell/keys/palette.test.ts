@@ -260,6 +260,16 @@ describe("the editor's Cmd+K actions in the palette", () => {
         // the tab on screen is no source tab, so there is no editor whose actions could be run
         expect(body).not.toContain('Add Line Comment');
     });
+
+    // Red when the palette lists the source tab's actions alone, leaving a diff pane's out.
+    it("lists the actions of a diff pane's editor while the pane is on screen", () => {
+        client.layout.loadLayout(fakeStorage());
+        const id = client.layout.openView('repositories-diff', { root: 'hub', path: 'run.py' });
+        client.editorStatus.publish(id, { ...EDITING, caret: null, writable: false });
+        const body = opened('comment');
+        expect(body).toContain('Add Line Comment');
+        expect(body).toContain(`>${catalog['app.palette.kind_editor']}<`);
+    });
 });
 
 describe('UpdateTray', () => {

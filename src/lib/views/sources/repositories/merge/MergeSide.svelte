@@ -8,13 +8,15 @@
 
 <script lang="ts">
     // Layer 3, partial of views/sources/repositories/merge/Merge.svelte. One input of the three-way
-    // merge editor, Incoming or Current: the whole version git holds for that side, its line
-    // numbers down the left, each conflict's lines marked, and above each conflict the choices this
-    // side offers for it (this side's lines, both with this side's first, or neither). A conflict
-    // already settled says how, so the reader sees which have been handled.
+    // merge editor, Incoming or Current: the whole version git holds for that side in a read-only
+    // Monaco editor (ui/controls/editor/Editor.svelte), each conflict's lines tinted, and above
+    // each conflict a bar with the choices this side offers for it (this side's lines, both with
+    // this side's first, or neither). A conflict with no lines on this side draws its bar where its
+    // lines would sit and tints none. A conflict already settled says how, so the reader sees which
+    // have been handled.
 
+    import Editor from '$lib/ui/controls/editor/Editor.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import { linesOf } from '$lib/state/sources/repositories/merge-regions';
     import { t } from '$lib/state/shared/words/text';
 
     type Props = {
@@ -22,24 +24,25 @@
         side: 'incoming' | 'current';
         text: string;
         conflicts: SideConflict[];
+        /** A name unique to the pane instance and this side, which names the editor's model. */
+        model: string;
+        path: string;
+        language: string;
+        look: string;
         onchoose: (region: number, choice: Choice) => void;
     };
 
-    let { side, text, conflicts, onchoose }: Props = $props();
+    let { side, text, conflicts, model, path, language, look, onchoose }: Props = $props();
 
-    const lines = $derived(linesOf(text));
-
-    /** The conflict whose lines start at a line, or undefined. */
-    function startingAt(line: number): SideConflict | undefined {
-        return conflicts.find((one) => one.span.start === line);
-    }
-
-    /** The conflict a line is inside, or undefined. */
-    function inside(line: number): SideConflict | undefined {
-        return conflicts.find(
-            (one) => line >= one.span.start && line < one.span.start + one.span.count
-        );
-    }
+    /** Each conflict's bar, above its first line here (a span counts lines from 0). */
+    const bars = $derived(
+        conflicts.map((one) => ({ id: String(one.region), after: one.span.start }))
+    );
+    const highlights = $derived(
+        conflicts
+            .filter((one) => one.span.count > 0)
+            .map((one) => ({ line: one.span.start + 1, count: one.span.count }))
+    );
 
     /** The words saying how a conflict is settled, the empty string for one still open. */
     function settledAs(choice: Choice): string {
@@ -54,34 +57,37 @@
     }
 </script>
 
-{#snippet bar(conflict: SideConflict)}
-    <div class="bar" data-conflict={conflict.region} class:open={conflict.choice === 'open'}>
-        {#if side === 'incoming'}
+{#snippet conflictBar(id: string)}
+    {@const conflict = conflicts.find((one) => String(one.region) === id)}
+    {#if conflict !== undefined}
+        <div class="bar" data-conflict={conflict.region} class:open={conflict.choice === 'open'}>
+            {#if side === 'incoming'}
+                <ToolButton
+                    label={t('repositories.accept_incoming')}
+                    onclick={() => onchoose(conflict.region, 'incoming')}
+                />
+                <ToolButton
+                    label={t('repositories.accept_both_incoming')}
+                    onclick={() => onchoose(conflict.region, 'both-incoming')}
+                />
+            {:else}
+                <ToolButton
+                    label={t('repositories.accept_current')}
+                    onclick={() => onchoose(conflict.region, 'current')}
+                />
+                <ToolButton
+                    label={t('repositories.accept_both_current')}
+                    onclick={() => onchoose(conflict.region, 'both-current')}
+                />
+            {/if}
             <ToolButton
-                label={t('repositories.accept_incoming')}
-                onclick={() => onchoose(conflict.region, 'incoming')}
+                label={t('repositories.accept_none')}
+                title={t('repositories.accept_none_title')}
+                onclick={() => onchoose(conflict.region, 'base')}
             />
-            <ToolButton
-                label={t('repositories.accept_both_incoming')}
-                onclick={() => onchoose(conflict.region, 'both-incoming')}
-            />
-        {:else}
-            <ToolButton
-                label={t('repositories.accept_current')}
-                onclick={() => onchoose(conflict.region, 'current')}
-            />
-            <ToolButton
-                label={t('repositories.accept_both_current')}
-                onclick={() => onchoose(conflict.region, 'both-current')}
-            />
-        {/if}
-        <ToolButton
-            label={t('repositories.accept_none')}
-            title={t('repositories.accept_none_title')}
-            onclick={() => onchoose(conflict.region, 'base')}
-        />
-        <span class="said">{settledAs(conflict.choice)}</span>
-    </div>
+            <span class="said">{settledAs(conflict.choice)}</span>
+        </div>
+    {/if}
 {/snippet}
 
 <section class="side" data-merge-side={side}>
@@ -89,21 +95,17 @@
         {side === 'incoming' ? t('repositories.merge_incoming') : t('repositories.merge_current')}
     </p>
     <div class="text">
-        {#each lines as line, at (at)}
-            {@const starts = startingAt(at)}
-            {#if starts !== undefined}
-                <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-                {@render bar(starts)}
-            {/if}
-            <div class="line" class:conflict={inside(at) !== undefined}>
-                <span class="num">{at + 1}</span>
-                <span class="cell">{line}</span>
-            </div>
-        {/each}
-        {#each conflicts.filter((one) => one.span.count === 0 && one.span.start >= lines.length) as conflict (conflict.region)}
-            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-            {@render bar(conflict)}
-        {/each}
+        <Editor
+            {text}
+            {language}
+            writable={false}
+            {model}
+            {path}
+            {look}
+            {highlights}
+            {bars}
+            bar={conflictBar}
+        />
     </div>
 </section>
 
@@ -125,37 +127,9 @@
     .text {
         flex: 1 1 auto;
         min-height: 0;
-        overflow: auto;
         border: 1px solid var(--line);
         border-radius: var(--radius-sm);
-        background: var(--chip);
-        font-family: var(--font-mono);
-        font-size: var(--fs-sm);
-        line-height: 1.45;
-    }
-
-    :global(body.wall) .text {
-        background: color-mix(in srgb, var(--chip) var(--wall-panel), transparent);
-    }
-
-    .line {
-        display: grid;
-        grid-template-columns: 3.5em minmax(0, 1fr);
-    }
-
-    .line.conflict {
-        background: var(--c-scm-conflict-bg);
-    }
-
-    .num {
-        padding: 0 6px;
-        color: var(--muted-txt, var(--muted));
-        text-align: right;
-        user-select: none;
-    }
-
-    .cell {
-        white-space: pre;
+        overflow: hidden;
     }
 
     .bar {
@@ -164,7 +138,8 @@
         gap: 4px;
         padding: 1px 6px;
         border-top: 1px solid var(--line);
-        font-family: var(--font-sans, inherit);
+        background: var(--chip);
+        white-space: nowrap;
     }
 
     .bar.open {
@@ -173,5 +148,9 @@
 
     .said {
         color: var(--muted-txt, var(--muted));
+    }
+
+    :global(body.wall) .bar {
+        background: color-mix(in srgb, var(--chip) var(--wall-panel), transparent);
     }
 </style>

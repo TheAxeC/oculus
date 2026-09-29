@@ -11,6 +11,9 @@ export type EditorIndent = { tabs: boolean; size: number };
 /** A line ending a text is written with. */
 export type EditorEnding = 'LF' | 'CRLF';
 
+/** How a change of the text came about: the reader's typing, or the editor's undo or redo. */
+export type EditorEdit = 'type' | 'undo' | 'redo';
+
 /**
  * One of the editor's actions the palette offers: its id, its label, and its keys as the hint (a
  * removed chord's old chord, or a mark action's key), empty for an action with none.
@@ -31,3 +34,31 @@ export type EditorCommand =
 
 /** The editor as its parent holds it through `bind:this`. */
 export type EditorHandle = { perform: (command: EditorCommand) => void };
+
+/** One line change as the diff editor answers it: an empty side ends at 0, after its start. */
+export type DiffLineChange = {
+    originalStartLineNumber: number;
+    originalEndLineNumber: number;
+    modifiedStartLineNumber: number;
+    modifiedEndLineNumber: number;
+};
+
+/** One selection of a diff side, as Monaco holds it. */
+export type DiffSelection = {
+    startLineNumber: number;
+    startColumn: number;
+    endLineNumber: number;
+    endColumn: number;
+};
+
+/** The selections of both sides of a diff. */
+export type DiffSelections = { original: DiffSelection[]; modified: DiffSelection[] };
+
+/** One bar a parent draws above a line of an editor: its key, and the line it sits after. */
+export type EditorBar = { id: string; after: number };
+
+/** What a parent asks a diff editor to do: run a palette action, or bring a line into view. */
+export type DiffCommand = { kind: 'action'; id: string } | { kind: 'reveal'; line: number };
+
+/** The diff editor as its parent holds it through `bind:this`. */
+export type DiffHandle = { perform: (command: DiffCommand) => void };

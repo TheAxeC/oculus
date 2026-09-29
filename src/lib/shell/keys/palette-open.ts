@@ -3,8 +3,8 @@
 // not create a second tab for the same feed or collection view. The saved search of the instance is
 // cleared with it, so a card the search would hide is mounted for the reveal.
 //
-// An editor action opens nothing: it asks the source tab it names to run the action, and answers
-// that tab's instance.
+// An editor action opens nothing: it asks the source tab or diff pane it names to run the action,
+// and answers that tab's instance.
 
 import type { LayoutStore } from '$lib/state/workbench/layout.svelte';
 import type { PaletteItem } from '$lib/state/workbench/palette';

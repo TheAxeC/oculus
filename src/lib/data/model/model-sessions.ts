@@ -413,6 +413,39 @@ export type GitMergeSides = {
     deleted: GitMergeDeleted;
 };
 
+/**
+ * One file of a diff as the diff pane reads it: its two paths (the same but for a rename), git's
+ * head lines for it (from `diff --git` to the line before its first hunk, or its `Binary files`
+ * line), which a patch cut from it repeats, whether git called it binary, whether both versions'
+ * bytes are UTF-8, and the two whole texts. A side that does not hold the file, and a binary file,
+ * has the empty string. A side that is not UTF-8 is decoded with U+FFFD for each byte it cannot
+ * read, so its text is for reading only: no patch may be cut from it.
+ */
+export type DiffSides = {
+    oldPath: string;
+    newPath: string;
+    head: string[];
+    binary: boolean;
+    encoded: boolean;
+    original: string;
+    modified: string;
+};
+
+/**
+ * What git says of converting one file's text: `check-attr`'s values for `filter`, `text`, `eol`,
+ * `working-tree-encoding` and `ident` (`unspecified`, `unset`, `set` or a value), and
+ * `core.autocrlf`, the empty string when it is not set. The diff pane withholds its partial
+ * patches from a file git converts.
+ */
+export type DiffAttributes = {
+    filter: string;
+    text: string;
+    eol: string;
+    workingTreeEncoding: string;
+    ident: string;
+    autocrlf: string;
+};
+
 /** Which side of a conflict deleted the path, or the empty string when neither did. */
 export type GitMergeDeleted = '' | 'ours' | 'theirs' | 'both';
 

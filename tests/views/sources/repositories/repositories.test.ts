@@ -16,10 +16,12 @@ import Repositories from '../../../../src/lib/views/sources/repositories/Reposit
 import Repo from '../../../../src/lib/views/sources/repositories/Repo.svelte';
 import Diff from '../../../../src/lib/views/sources/repositories/diff/Diff.svelte';
 import Merge from '../../../../src/lib/views/sources/repositories/merge/Merge.svelte';
+import DiffSection from '../../../../src/lib/views/sources/repositories/diff/DiffSection.svelte';
+import { fileKeys } from '../../../../src/lib/state/sources/repositories/repositories.ts';
 import type { Component } from 'svelte';
 import type { ViewProps } from '../../../../src/lib/state/workbench/navigation/registry.ts';
 import { shapeBadgeTone } from '../../../../src/lib/views/shared/changes/repo-shape.ts';
-import type { GitState } from '../../../../src/lib/data/model/index.ts';
+import type { DiffSides, GitState } from '../../../../src/lib/data/model/index.ts';
 import {
     engineDir,
     glyphCatalog,
@@ -685,6 +687,67 @@ describe('the diff pane', () => {
         const commit = pane(Diff, 'repositories-diff', { ...FILE, commit: 'abc' });
         // A commit's version of a file is not the file on disk, so there is no file to open.
         expect(commit).not.toContain(`aria-label="${catalog['repositories.open_file']}"`);
+    });
+});
+
+/** One file of a diff drawn by its section, read-only, as a stash's or a commit's is. */
+function section(file: DiffSides, key: string): string {
+    const noop = (): void => undefined;
+    return render(DiffSection, {
+        props: {
+            file,
+            index: 0,
+            key,
+            model: `diff-one:${key}`,
+            mode: 'side',
+            look: 'dark 1',
+            several: false,
+            headed: true,
+            scroller: undefined,
+            view: null,
+            actions: 'read',
+            staged: false,
+            busy: false,
+            current: -1,
+            onchanges: noop,
+            onview: noop,
+            onactions: noop,
+            onact: noop
+        }
+    }).body;
+}
+
+/** One entry of a diff at `x`. */
+function sidesAt(original: string, modified: string, head: string[] = []): DiffSides {
+    return {
+        oldPath: 'x',
+        newPath: 'x',
+        head: ['diff --git a/x b/x', ...head],
+        binary: false,
+        encoded: true,
+        original,
+        modified
+    };
+}
+
+describe('a file of the diff pane', () => {
+    it('draws both entries of a type change, each under a key of its own', () => {
+        const entries = [
+            sidesAt('text\n', '', ['deleted file mode 100644']),
+            sidesAt('', 'target', ['new file mode 120000'])
+        ];
+        const keys = fileKeys(entries);
+        const drawn = entries.map((file, at) => section(file, keys[at]));
+        expect(drawn[0]).toContain('data-diff-key="x"');
+        expect(drawn[1]).toContain('data-diff-key="x\u00002"');
+        expect(drawn[1]).toContain('target');
+    });
+
+    it('says a file whose line endings alone changed differs only there', () => {
+        const body = section(sidesAt('a\r\nb\r\n', 'a\nb\n'), 'x');
+        expect(body).toContain('Only the line endings differ');
+        // A change of the lines themselves is drawn by Monaco, so the head has nothing to add.
+        expect(section(sidesAt('a\n', 'b\n'), 'x')).not.toContain('Only the line endings differ');
     });
 });
 

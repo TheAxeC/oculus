@@ -1,7 +1,8 @@
 // The git reads beside the changes (src/lib/server/core/git.ts): the tags, the stashes, the
 // remotes and a merge or a rebase in progress on the `git` channel, and the reads on demand behind
 // GET /api/git, a page of the graph, a commit's files and diff, a stash's diff, the blame, the
-// gutter marks and the three versions of a conflicted path.
+// gutter marks and the three versions of a conflicted path; and the diff answer those reads give
+// the diff pane through the endpoint, both versions of each file with git's head lines for it.
 //
 // Every repository is built inside a temporary directory and thrown away, through the git watcher's
 // own helpers, which confine every git command to that directory and pass the author on the command
@@ -9,7 +10,7 @@
 // runs are tests/server/core/git.test.ts's, whose last cases run each of these reads once.
 // @module-tag slow: its cases time out or fail on a loaded machine, so npm test leaves it out.
 
-import { writeFileSync } from 'node:fs';
+import { readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { beforeEach, describe, expect } from 'vitest';
@@ -26,7 +27,8 @@ import {
     statusFor,
     type Read
 } from '../../../src/lib/server/core/git.ts';
-import type { GitState } from '../../../src/lib/data/model/index.ts';
+import { handleGitGet } from '../../../src/lib/server/git/git-reads.ts';
+import type { DiffSides, GitState } from '../../../src/lib/data/model/index.ts';
 import { it, scratchDir } from '../../fixtures/scratch.ts';
 import { DELETED, deletionConflicts } from '../git/deletions.ts';
 import { gitText as git, put, repositoryIn, tryGit } from '../root/watch/repos.ts';
@@ -92,7 +94,7 @@ describe('the state beside the changes', () => {
         expect(stashes.map((one) => one.ref)).toEqual(['stash@{0}', 'stash@{1}']);
         expect(stashes[0].message).toContain('second stash');
         expect(stashes[1].message).toContain('first stash');
-        expect(value(stashDiff(repo, 'stash@{1}'))).toContain('+stashed');
+        expect(value(stashDiff(repo, 'stash@{1}'))[0].modified).toBe('one\nstashed\nthree\n');
     });
 
     it('names the remotes of the repository', () => {
@@ -206,12 +208,10 @@ describe('the reads on demand', () => {
             { status: 'A', path: 'added.txt', from: '' },
             { status: 'M', path: 'kept.txt', from: '' }
         ]);
-        const text = value(commitDiff(repo, hash, 'kept.txt'));
-        expect(text).toContain('-two');
-        expect(text).toContain('+2');
-        // Every unchanged line comes with the diff, so the pane can open a folded run.
-        expect(text).toContain(' one');
-        expect(text).toContain(' three');
+        // Both versions come whole, so the pane's diff editor draws every unchanged line.
+        const [file] = value(commitDiff(repo, hash, 'kept.txt'));
+        expect(file.original).toBe('one\ntwo\nthree\n');
+        expect(file.modified).toBe('one\n2\nthree\n');
     });
 
     it('refuses a commit that is not a hash and a path outside the repository', () => {
@@ -294,5 +294,311 @@ describe('the reads on demand', () => {
         const read = mergeSides(repo, 'kept.txt');
         expect(read.ok).toBe(false);
         expect(read.ok ? '' : read.error).toContain('not in conflict');
+    });
+});
+
+/** What GET /api/git answered: its status and its body. */
+type Answer = {
+    status: number;
+    body: {
+        ok?: boolean;
+        files?: DiffSides[];
+        attributes?: unknown;
+        conflicted?: boolean;
+        error?: string;
+    };
+};
+
+/** One GET of the endpoint over the real reads, with the roots it may name. */
+async function ask(query: string, roots: string[] = [repo]): Promise<Answer> {
+    const response = await handleGitGet(new Request(`http://localhost/api/git?${query}`), {
+        rootsFor: () => roots
+    });
+    return { status: response.status, body: (await response.json()) as Answer['body'] };
+}
+
+/** The files a diff read answered, which must have answered. */
+async function filesOf(query: string, roots: string[] = [repo]): Promise<DiffSides[]> {
+    const answer = await ask(query, roots);
+    expect(answer.status, JSON.stringify(answer.body)).toBe(200);
+    expect(Array.isArray(answer.body.files), JSON.stringify(answer.body)).toBe(true);
+    return answer.body.files ?? [];
+}
+
+/** A file's own diff read, staged or as the worktree has it. */
+function fileQuery(path: string, staged = false): string {
+    return `diff=${encodeURIComponent(repo)}&path=${encodeURIComponent(path)}&staged=${staged ? 1 : 0}`;
+}
+
+/** One commit's diff of one path. */
+function commitQuery(hash: string, path: string): string {
+    return `commit=${hash}&root=${encodeURIComponent(repo)}&path=${encodeURIComponent(path)}`;
+}
+
+/** A stash's diff. */
+function stashQuery(ref: string): string {
+    return `stash=${encodeURIComponent(ref)}&root=${encodeURIComponent(repo)}`;
+}
+
+/** What a file of the repository's worktree holds. */
+function onDisk(name: string): string {
+    return readFileSync(join(repo, name), 'utf8');
+}
+
+describe('the diff answer: both versions of each file', () => {
+    it("answers a file's changes as the index's text against the worktree's", async () => {
+        const lines = Array.from({ length: 12 }, (_, at) => `line ${at + 1}\n`).join('');
+        write('a.txt', lines);
+        git(repo, 'add', 'a.txt');
+        git(repo, 'commit', '-m', 'twelve');
+        write('a.txt', lines.replace('line 10\n', 'line ten\n'));
+        const [file, ...rest] = await filesOf(fileQuery('a.txt'));
+        expect(rest).toEqual([]);
+        expect(file.oldPath).toBe('a.txt');
+        expect(file.newPath).toBe('a.txt');
+        expect(file.head[0]).toBe('diff --git a/a.txt b/a.txt');
+        expect(file.head.at(-1)).toBe('+++ b/a.txt');
+        expect(file.binary).toBe(false);
+        expect(file.original).toBe(git(repo, 'show', ':a.txt'));
+        expect(file.modified).toBe(onDisk('a.txt'));
+    });
+
+    it('answers a staged new file from nothing, and a staged deletion to nothing', async () => {
+        write('n.txt', 'new\n');
+        git(repo, 'add', 'n.txt');
+        const [created] = await filesOf(fileQuery('n.txt', true));
+        expect(created.original).toBe('');
+        expect(created.modified).toBe('new\n');
+        expect(created.head).toContain('new file mode 100644');
+        git(repo, 'rm', '-q', 'kept.txt');
+        const [deleted] = await filesOf(fileQuery('kept.txt', true));
+        expect(deleted.original).toBe('one\ntwo\nthree\n');
+        expect(deleted.modified).toBe('');
+    });
+
+    it("answers a root commit's file from nothing, and a renamed file from its old path", async () => {
+        const first = git(repo, 'rev-parse', 'HEAD').trim();
+        const [root] = await filesOf(commitQuery(first, 'kept.txt'));
+        expect(root.original).toBe('');
+        expect(root.modified).toBe('one\ntwo\nthree\n');
+        const body = 'alpha\nbeta\ngamma\ndelta\nepsilon\nzeta\n';
+        write('x.txt', body);
+        git(repo, 'add', 'x.txt');
+        git(repo, 'commit', '-m', 'x');
+        git(repo, 'mv', 'x.txt', 'y.txt');
+        write('y.txt', body.replace('gamma', 'GAMMA'));
+        git(repo, 'commit', '-am', 'x to y');
+        const hash = git(repo, 'rev-parse', 'HEAD').trim();
+        const [renamed] = await filesOf(commitQuery(hash, 'y.txt'));
+        expect(renamed.oldPath).toBe('x.txt');
+        expect(renamed.newPath).toBe('y.txt');
+        expect(renamed.original).toBe(body);
+        expect(renamed.modified).toBe(body.replace('gamma', 'GAMMA'));
+        expect(renamed.head).toContain('rename from x.txt');
+        expect(renamed.head).toContain('rename to y.txt');
+    });
+
+    it('answers a rename with no change of content as two equal texts', async () => {
+        git(repo, 'mv', 'kept.txt', 'moved.txt');
+        git(repo, 'commit', '-m', 'moved');
+        const hash = git(repo, 'rev-parse', 'HEAD').trim();
+        const [moved] = await filesOf(commitQuery(hash, 'moved.txt'));
+        expect(moved.oldPath).toBe('kept.txt');
+        expect(moved.original).toBe('one\ntwo\nthree\n');
+        expect(moved.modified).toBe('one\ntwo\nthree\n');
+        expect(moved.head).toContain('rename from kept.txt');
+        expect(moved.head).toContain('rename to moved.txt');
+    });
+
+    it('answers every file of a stash in git order, an untracked one from nothing', async () => {
+        write('b.txt', 'bee\n');
+        git(repo, 'add', 'b.txt');
+        git(repo, 'commit', '-m', 'bee');
+        write('b.txt', 'BEE\n');
+        write('kept.txt', 'one\nTWO\nthree\n');
+        write('loose.txt', 'loose\n');
+        git(repo, 'stash', 'push', '--include-untracked');
+        const files = await filesOf(stashQuery('stash@{0}'));
+        expect(files.map((one) => one.newPath)).toEqual(['b.txt', 'kept.txt', 'loose.txt']);
+        expect(files[0]).toMatchObject({ original: 'bee\n', modified: 'BEE\n' });
+        expect(files[1]).toMatchObject({
+            original: 'one\ntwo\nthree\n',
+            modified: 'one\nTWO\nthree\n'
+        });
+        expect(files[2]).toMatchObject({ original: '', modified: 'loose\n' });
+    });
+
+    it("answers every file of a worktree from the merge base to the worktree's HEAD", async () => {
+        const path = join(repo, '.agents', 'worktrees', 'wt');
+        git(repo, 'worktree', 'add', '-q', '-b', 'wt', path);
+        put(path, 'kept.txt', 'one\ntwo\nthree in the worktree\n');
+        put(path, 'w.txt', 'made there\n');
+        git(path, 'add', '.');
+        git(path, 'commit', '-m', 'worktree work');
+        // The branch moves on after the worktree left it: the base is where they parted.
+        write('kept.txt', 'one\ntwo\nthree\nfour\n');
+        git(repo, 'commit', '-am', 'branch work');
+        const query = `worktree=${encodeURIComponent(path)}&root=${encodeURIComponent(repo)}`;
+        const files = await filesOf(query);
+        expect(files.map((one) => one.newPath)).toEqual(['kept.txt', 'w.txt']);
+        expect(files[0]).toMatchObject({
+            original: 'one\ntwo\nthree\n',
+            modified: 'one\ntwo\nthree in the worktree\n'
+        });
+        expect(files[1]).toMatchObject({ original: '', modified: 'made there\n' });
+    });
+
+    it("answers a binary file as git's call, both texts empty", async () => {
+        writeFileSync(join(repo, 'p.bin'), Buffer.from([0, 1, 2, 3]));
+        git(repo, 'add', 'p.bin');
+        git(repo, 'commit', '-m', 'binary');
+        writeFileSync(join(repo, 'p.bin'), Buffer.from([0, 1, 2, 4]));
+        const [file] = await filesOf(fileQuery('p.bin'));
+        expect(file.binary).toBe(true);
+        expect(file.original).toBe('');
+        expect(file.modified).toBe('');
+        expect(file.head.some((line) => line.startsWith('Binary files'))).toBe(true);
+    });
+
+    it('refuses what it refused before: a root, a path, a commit and a stash it may not read', async () => {
+        const root = await ask('diff=/somewhere/else&path=a.txt&staged=0');
+        expect(root.status).toBe(400);
+        expect(root.body.error).toBe('that directory is not a workspace oculus knows');
+        const outside = await ask(fileQuery('../x'));
+        expect(outside.body.error).toBe('the path ../x is not inside the workspace');
+        const commit = await ask(commitQuery('HEAD~1', 'kept.txt'));
+        expect(commit.body.error).toBe('that is not a commit');
+        const stash = await ask(stashQuery('HEAD'));
+        expect(stash.body.error).toBe('that is not a stash');
+    });
+
+    it('answers a last line with no newline as git stores it', async () => {
+        write('kept.txt', 'one\ntwo\nthree');
+        const [file] = await filesOf(fileQuery('kept.txt'));
+        expect(file.original).toBe('one\ntwo\nthree\n');
+        expect(file.modified).toBe('one\ntwo\nthree');
+    });
+
+    it('answers a deletion in the worktree to nothing, and a new empty file as two empty texts', async () => {
+        rmSync(join(repo, 'kept.txt'));
+        const [deleted] = await filesOf(fileQuery('kept.txt'));
+        expect(deleted.modified).toBe('');
+        expect(deleted.original).toBe('one\ntwo\nthree\n');
+        expect(deleted.head).toContain('deleted file mode 100644');
+        write('empty.txt', '');
+        git(repo, 'add', 'empty.txt');
+        const [empty] = await filesOf(fileQuery('empty.txt', true));
+        expect(empty.original).toBe('');
+        expect(empty.modified).toBe('');
+        expect(empty.head).toContain('new file mode 100644');
+    });
+
+    it("answers a path in conflict as Current's version against the worktree", async () => {
+        conflict();
+        const [file, ...rest] = await filesOf(fileQuery('kept.txt'));
+        expect(rest).toEqual([]);
+        expect(file.original).toBe('one\nTWO FROM WORK\nthree\n');
+        expect(file.modified).toBe(onDisk('kept.txt'));
+        expect(file.modified).toContain('<<<<<<<');
+    });
+
+    it('answers no file for a path with no change', async () => {
+        expect(await filesOf(fileQuery('kept.txt'))).toEqual([]);
+        expect(await filesOf(fileQuery('kept.txt', true))).toEqual([]);
+    });
+
+    it("answers a symbolic link's target and a submodule's commit as git shows them", async () => {
+        symlinkSync('kept.txt', join(repo, 'link'));
+        git(repo, 'add', 'link');
+        git(repo, 'commit', '-m', 'link');
+        rmSync(join(repo, 'link'));
+        symlinkSync('other.txt', join(repo, 'link'));
+        const [link] = await filesOf(fileQuery('link'));
+        expect(link.original).toBe('kept.txt');
+        expect(link.modified).toBe('other.txt');
+
+        const library = repositoryIn(dir, 'library');
+        git(repo, '-c', 'protocol.file.allow=always', 'submodule', 'add', '-q', library, 'sub');
+        git(repo, 'commit', '-m', 'sub');
+        const before = git(join(repo, 'sub'), 'rev-parse', 'HEAD').trim();
+        put(join(repo, 'sub'), 'kept.txt', 'moved on\n');
+        git(join(repo, 'sub'), 'commit', '-am', 'moved on');
+        const after = git(join(repo, 'sub'), 'rev-parse', 'HEAD').trim();
+        const [sub] = await filesOf(fileQuery('sub'));
+        expect(sub.original).toBe(`Subproject commit ${before}\n`);
+        expect(sub.modified).toBe(`Subproject commit ${after}\n`);
+    });
+
+    it('answers both versions of a file larger than a mebibyte whole', async () => {
+        const large = 'x'.repeat(99) + '\n';
+        write('kept.txt', large.repeat(20000));
+        git(repo, 'commit', '-qam', 'large');
+        write('kept.txt', large.repeat(20000) + 'end\n');
+        const read = await ask(fileQuery('kept.txt'));
+        expect(read.body.files?.[0]?.original).toBe(large.repeat(20000));
+        git(repo, 'add', 'kept.txt');
+        const staged = await ask(fileQuery('kept.txt', true));
+        expect(staged.body.files?.[0]?.original).toBe(large.repeat(20000));
+        expect(staged.body.files?.[0]?.modified).toBe(large.repeat(20000) + 'end\n');
+    });
+
+    it("answers what git's attributes say of a file's conversion beside its diff", async () => {
+        write('kept.txt', 'one\nTWO\nthree\n');
+        const plain = await ask(fileQuery('kept.txt'));
+        expect(plain.body.attributes).toMatchObject({
+            filter: 'unspecified',
+            text: 'unspecified',
+            eol: 'unspecified'
+        });
+        write('.gitattributes', '*.txt text eol=lf\n');
+        const converted = await ask(fileQuery('kept.txt'));
+        expect(converted.body.attributes).toMatchObject({
+            filter: 'unspecified',
+            text: 'set',
+            eol: 'lf'
+        });
+        git(repo, 'config', 'core.autocrlf', 'input');
+        expect((await ask(fileQuery('kept.txt'))).body.attributes).toMatchObject({
+            autocrlf: 'input'
+        });
+        write('.gitattributes', '*.txt ident working-tree-encoding=ISO-8859-1\n');
+        expect((await ask(fileQuery('kept.txt'))).body.attributes).toMatchObject({
+            workingTreeEncoding: 'ISO-8859-1',
+            ident: 'set'
+        });
+    });
+
+    it("says whether the path of a file's own diff is in conflict", async () => {
+        write('kept.txt', 'one\nTWO\nthree\n');
+        expect((await ask(fileQuery('kept.txt'))).body.conflicted).toBe(false);
+        git(repo, 'checkout', '--', 'kept.txt');
+        conflict();
+        const read = await ask(fileQuery('kept.txt'));
+        expect(read.status).toBe(200);
+        expect(read.body.conflicted).toBe(true);
+    });
+
+    it('answers whether both versions of a file are UTF-8, a Latin-1 side on either as not', async () => {
+        const latin = (text: string): Buffer => Buffer.from(text, 'latin1');
+        writeFileSync(join(repo, 'l.txt'), 'plain\n');
+        git(repo, 'add', 'l.txt');
+        git(repo, 'commit', '-qm', 'plain');
+        writeFileSync(join(repo, 'l.txt'), latin('caf\u00e9\n'));
+        expect((await filesOf(fileQuery('l.txt')))[0].encoded).toBe(false);
+        git(repo, 'commit', '-qam', 'latin');
+        writeFileSync(join(repo, 'l.txt'), 'caf\u00e9\n');
+        expect((await filesOf(fileQuery('l.txt')))[0].encoded).toBe(false);
+        git(repo, 'commit', '-qam', 'utf-8');
+        writeFileSync(join(repo, 'l.txt'), 'caf\u00e9s\n');
+        expect((await filesOf(fileQuery('l.txt')))[0].encoded).toBe(true);
+    });
+
+    it("reads a symlink's target as bytes, a Latin-1 target as not UTF-8", async () => {
+        symlinkSync('old', join(repo, 's'));
+        git(repo, 'add', 's');
+        git(repo, 'commit', '-qm', 'link');
+        rmSync(join(repo, 's'));
+        symlinkSync(Buffer.from('caf\u00e9', 'latin1'), join(repo, 's'));
+        expect((await filesOf(fileQuery('s')))[0].encoded).toBe(false);
     });
 });

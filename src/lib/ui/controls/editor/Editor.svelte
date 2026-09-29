@@ -5,11 +5,12 @@
     // the shell; the values it takes and what its parent asks of it are types.ts.
     //
     // The page renders no component on the server (`ssr = false` in src/routes/+layout.ts). Until
-    // Monaco has loaded (load.ts, once per page) the text is a plain block, which the unit suite's
-    // server render draws too; the parent's `perform` calls made before then wait for it.
+    // Monaco has loaded (kit/load.ts, once per page) the text is a plain block, which the unit
+    // suite's server render draws too; the parent's `perform` calls made before then wait for it.
     //
     // The text the parent hands in is the model's while the reader types: every change of the
-    // model is handed back through `onchange`, as the model writes it, in its own line ending, and
+    // model is handed back through `onchange`, as the model writes it, in its own line ending, with
+    // whether the change was typing or the editor's undo or redo, as its change event says; and
     // a text the parent hands in that the model does not hold already (a load, a revert) replaces
     // the model's as one edit, which undo takes back. A line ending asked for is set on the model,
     // and the text it gives is handed back as a change, as a conversion of the indentation is.
@@ -21,15 +22,19 @@
     //
     // The keyboard reaches the quick diff marks through three editor actions, which the palette
     // lists while the text holds a mark (gutter.ts `changeActions`): Next, Previous, Open Change.
+    // A parent may also tint runs of lines (`highlights`, the merge editor's conflicts) and draw
+    // bars of its own above lines (`bars`, rendered by its `bar` snippet, placed by zones.ts).
     //
     // Tab inserts indentation. An Escape Monaco did not take arms the next Tab to move the focus
     // on (tab-out.ts): the key is read before Monaco, where a Tab that leaves is kept from it, and
     // after it, where an Escape it left untaken arms.
 
-    import { onDestroy, untrack } from 'svelte';
+    import { onDestroy, untrack, type Snippet } from 'svelte';
     import type * as Monaco from 'monaco-editor';
-    import { eolOf, keyCode, loadEditor, modelUri, type EditorKit } from './load';
-    import { shikiId } from './grammars';
+    import { eolOf, keyCode, modelUri, type EditorKit } from './kit/load';
+    import { buildWhenHosted } from './kit/built.svelte';
+    import { shikiId } from './kit/grammars';
+    import { font, repaint, token } from './kit/look';
     import { chordActions } from './chords';
     import {
         blameDecorations,
@@ -43,19 +48,24 @@
         type EditorBlame,
         type EditorMark
     } from './gutter';
-    import { armAfter, armBefore, leaves, type KeyFacts } from './tab-out';
+    import { tabOut } from './tab-out';
+    import { runCommand } from './commands';
+    import { lineBars } from './zones';
+    import LineBars from './LineBars.svelte';
     import type {
         EditorAction,
+        EditorBar,
         EditorCaret,
         EditorChangeWords,
         EditorCommand,
+        EditorEdit,
         EditorEnding,
         EditorIndent
     } from './types';
 
     type Props = {
         text: string;
-        /** Oculus's name for the language, which grammars.ts answers the Shiki id of. */
+        /** Oculus's name for the language, which kit/grammars.ts answers the Shiki id of. */
         language: string;
         /** Whether the reader may change the text. */
         writable?: boolean;
@@ -72,7 +82,7 @@
         blame?: EditorBlame[];
         /** The lines a breakpoint sits on. */
         breakpoints?: number[];
-        onchange?: (text: string) => void;
+        onchange?: (text: string, edit: EditorEdit) => void;
         oncaret?: (caret: EditorCaret) => void;
         /** How far the text is scrolled, 0 at the top and 1 at the bottom. */
         onscroll?: (fraction: number) => void;
@@ -83,6 +93,11 @@
         changeWords?: EditorChangeWords;
         /** The actions the palette lists, said once loaded and again when the labels change. */
         onactions?: (actions: EditorAction[]) => void;
+        /** Runs of lines tinted, each from its first line (from one) for its count. */
+        highlights?: { line: number; count: number }[];
+        /** Bars above lines, each drawn by `bar` with its id. */
+        bars?: EditorBar[];
+        bar?: Snippet<[string]>;
     };
 
     let {
@@ -104,7 +119,10 @@
         onblame,
         onglyph,
         changeWords,
-        onactions
+        onactions,
+        highlights = [],
+        bars = [],
+        bar
     }: Props = $props();
 
     let host: HTMLDivElement | undefined = $state();
@@ -116,8 +134,7 @@
     let mounted = $state(false);
     /** Whether the model's text is being set from the parent's, which is no change to hand back. */
     let applying = false;
-    /** Whether an Escape Monaco left untaken has armed the next Tab to leave. */
-    let armed = false;
+    const keys = tabOut();
     /** The asks made before the editor loaded, performed once it has. */
     let waiting: EditorCommand[] = [];
     let alive = true;
@@ -128,35 +145,18 @@
         marks: Monaco.editor.IEditorDecorationsCollection;
         blame: Monaco.editor.IEditorDecorationsCollection;
         breakpoints: Monaco.editor.IEditorDecorationsCollection;
+        highlights: Monaco.editor.IEditorDecorationsCollection;
     } | null = null;
+    const placed = lineBars();
 
     const lines = $derived(text.split('\n').length);
 
-    /** A token's value on the body, where the theme's class sets it. */
-    function token(name: string): string {
-        return getComputedStyle(document.body).getPropertyValue(name).trim();
-    }
-
-    /** The font the code window draws in: the monospace token, the host's size, its line height. */
-    function font(): Monaco.editor.IEditorOptions {
-        const size = host === undefined ? 0 : Number.parseFloat(getComputedStyle(host).fontSize);
-        const fontSize = Number.isFinite(size) && size > 0 ? size : 12;
-        return {
-            fontFamily: token('--font-mono'),
-            fontSize,
-            lineHeight: Math.round(fontSize * 1.45)
-        };
-    }
-
     // Load the editor once the host is drawn, and build it in the host.
-    $effect(() => {
-        const box = host;
-        if (box === undefined) return;
-        void loadEditor().then((loaded) => {
-            if (!alive) return;
-            untrack(() => build(loaded, box));
-        });
-    });
+    buildWhenHosted(
+        () => host,
+        () => alive,
+        build
+    );
 
     function build(loaded: EditorKit, box: HTMLDivElement): void {
         const made = loaded.monaco.editor.create(box, {
@@ -167,13 +167,15 @@
             detectIndentation: false,
             ariaLabel: path,
             model: null,
-            ...font()
+            ...font(host)
         });
         collections = {
             marks: made.createDecorationsCollection(),
             blame: made.createDecorationsCollection(),
-            breakpoints: made.createDecorationsCollection()
+            breakpoints: made.createDecorationsCollection(),
+            highlights: made.createDecorationsCollection()
         };
+        placed.mount(made, made.getOption(loaded.monaco.editor.EditorOption.lineHeight));
         listeners.push(
             made.onDidChangeCursorSelection((event) => caretMoved(event.selection)),
             made.onDidScrollChange((event) => {
@@ -266,8 +268,9 @@
             });
             return fresh;
         });
-        const changes = created.onDidChangeContent(() => {
-            if (!applying) onchange?.(created.getValue());
+        const changes = created.onDidChangeContent((event) => {
+            const edit = event.isUndoing ? 'undo' : event.isRedoing ? 'redo' : 'type';
+            if (!applying) onchange?.(created.getValue(), edit);
         });
         made.setModel(created);
         model = created;
@@ -335,6 +338,21 @@
         });
     });
 
+    $effect(() => {
+        const runs = highlights;
+        collections?.highlights.set(
+            runs.map(({ line, count }) => ({
+                range: {
+                    startLineNumber: line,
+                    startColumn: 1,
+                    endLineNumber: line + count - 1,
+                    endColumn: 1
+                },
+                options: { isWholeLine: true, className: 'oculus-highlight' }
+            }))
+        );
+    });
+
     // The theme and the font again whenever the look changes from the one the editor was built
     // or last painted under, on the next frame, once the body carries the new theme's tokens.
     $effect(() => {
@@ -342,12 +360,7 @@
         const loaded = kit;
         const made = editor;
         if (loaded === null || made === null || wanted === painted) return;
-        const frame = requestAnimationFrame(() => {
-            painted = wanted;
-            void loaded.paint(token);
-            made.updateOptions(font());
-        });
-        return () => cancelAnimationFrame(frame);
+        return repaint(loaded, made, host, () => (painted = wanted));
     });
 
     /** Perform what the parent asks; an ask made before the editor loaded waits for it. */
@@ -356,7 +369,7 @@
             waiting.push(command);
             return;
         }
-        run(kit, editor, model, command);
+        runCommand(kit.monaco, editor, model, command);
     }
 
     function flush(): void {
@@ -365,60 +378,10 @@
         for (const command of asks) perform(command);
     }
 
-    function run(
-        loaded: EditorKit,
-        made: Monaco.editor.IStandaloneCodeEditor,
-        held: Monaco.editor.ITextModel,
-        command: EditorCommand
-    ): void {
-        if (command.kind === 'goto') {
-            const line = Math.min(Math.max(1, command.line), held.getLineCount());
-            made.setPosition({ lineNumber: line, column: 1 });
-            made.revealLineInCenter(line);
-            made.focus();
-        } else if (command.kind === 'indent') {
-            const { tabs, size } = command.indent;
-            held.updateOptions({ tabSize: size, indentSize: size, insertSpaces: !tabs });
-        } else if (command.kind === 'convert') {
-            const id = command.tabs
-                ? 'editor.action.indentationToTabs'
-                : 'editor.action.indentationToSpaces';
-            void made.getAction(id)?.run();
-        } else if (command.kind === 'ending') {
-            held.pushEOL(eolOf(loaded.monaco, command.ending));
-        } else if (command.kind === 'language') {
-            loaded.monaco.editor.setModelLanguage(held, shikiId(command.language));
-        } else {
-            made.focus();
-            void made.getAction(command.id)?.run();
-        }
-    }
-
-    /** What the Tab and Escape rules read of a key press. */
-    function facts(event: KeyboardEvent): KeyFacts {
-        const { key, ctrlKey, metaKey, altKey, defaultPrevented } = event;
-        return { key, ctrlKey, metaKey, altKey, defaultPrevented };
-    }
-
-    /** A key before Monaco reads it: a Tab that leaves is kept from Monaco for the browser. */
-    function before(event: KeyboardEvent): void {
-        const press = facts(event);
-        if (leaves(armed, press)) {
-            armed = false;
-            event.stopPropagation();
-            return;
-        }
-        armed = armBefore(armed, press);
-    }
-
-    /** A key Monaco let through: an Escape it did not take arms the next Tab. */
-    function after(event: KeyboardEvent): void {
-        armed = armAfter(armed, facts(event));
-    }
-
     onDestroy(() => {
         alive = false;
         for (const listener of listeners.splice(0)) listener.dispose();
+        placed.unmount();
         editor?.dispose();
         editor = null;
     });
@@ -429,12 +392,15 @@
     class="editor"
     data-editor-host={path}
     data-editor-writable={writable ? 'true' : 'false'}
-    onkeydowncapture={before}
-    onkeydown={after}
+    onkeydowncapture={keys.before}
+    onkeydown={keys.after}
 >
     <div class="monaco" bind:this={host}></div>
     {#if !mounted}
         <pre class="plain">{text}</pre>
+    {/if}
+    {#if bar !== undefined}
+        <LineBars {bars} {bar} {placed} />
     {/if}
 </div>
 
@@ -530,6 +496,10 @@
 
     .editor :global(.oculus-blame) {
         cursor: pointer;
+    }
+
+    .editor :global(.oculus-highlight) {
+        background: var(--c-scm-conflict-bg);
     }
 
     .editor :global(.oculus-blame-uncommitted) {

@@ -5,7 +5,8 @@
 // the gutter marks on demand, and server/git/git-write.ts and server/git/deposit.ts read the
 // branches for their branch menus. Every reader of `status --porcelain=v1 -z` (core/git.ts, and
 // git-write.ts, git-refs.ts, git-index.ts and deposit.ts under server/git) splits its records
-// through statusRecords. One parser with one format beside it is what keeps them from
+// through statusRecords, and core/git.ts sorts them into the change lists by statusLists with
+// the line counts of parseNumstat. One parser with one format beside it is what keeps them from
 // disagreeing about what a row is: a branch row is read from REFS_FORMAT by parseRefs, whether
 // `for-each-ref` or `branch` printed it.
 //
@@ -13,16 +14,20 @@
 // that is not what was asked for.
 
 import type {
+    DiffAttributes,
     GitBlameLine,
     GitBranch,
     GitCommit,
     GitCommitFile,
+    GitEntry,
     GitGraphCommit,
     GitLineMark,
     GitStash,
+    GitState,
     GitTag,
     GitWorktree
 } from '../../data/model/index.ts';
+import { scalar } from '../../data/helpers/guards.ts';
 
 /**
  * The log's format: the hash, the abbreviated hash, the subject and the author date, unit
@@ -229,6 +234,95 @@ export function statusRecords(output: string): StatusRecord[] {
     return records;
 }
 
+/** git's own letter for a path it does not track. */
+export const UNTRACKED = '?';
+/** An index or worktree column saying "nothing here". */
+const QUIET = [' ', UNTRACKED, '!'];
+/** The pairs `status --porcelain` reports an unmerged path by: both columns name the conflict. */
+const UNMERGED = ['DD', 'AU', 'UD', 'UA', 'DU', 'AA', 'UU'];
+
+/** path to (added, deleted) in the worktree; null where git reported a binary file. */
+export type LineCounts = Map<string, [number | null, number | null]>;
+
+/** The four change lists of a repository's state. */
+export type StatusLists = Pick<GitState, 'staged' | 'unstaged' | 'untracked' | 'conflicted'>;
+
+/**
+ * The rows of `diff --numstat -z` by path. A binary file reports `-` and becomes null. A rename
+ * ends its record after the tab and puts both paths in their own fields, the old then the new.
+ */
+export function parseNumstat(output: string): LineCounts {
+    const out: LineCounts = new Map();
+    const fields = output.split('\0');
+    const count = (token: string): number | null => {
+        const value = Number.parseInt(token, 10);
+        return token === '-' ? null : Number.isInteger(value) ? value : 0;
+    };
+    let i = 0;
+    while (i < fields.length) {
+        const parts = fields[i].split('\t');
+        i += 1;
+        if (parts.length < 3) continue;
+        let path = parts[2];
+        if (path === '') {
+            if (i + 1 >= fields.length) break;
+            path = fields[i + 1];
+            i += 2;
+        }
+        out.set(path, [count(parts[0]), count(parts[1])]);
+    }
+    return out;
+}
+
+/**
+ * The status records sorted into the four lists, each cut to `cap`. Line counts come from the
+ * worktree diff, which says nothing about the index, so a staged file reports its letter and no
+ * numbers rather than the wrong ones.
+ */
+export function statusLists(records: StatusRecord[], counts: LineCounts, cap: number): StatusLists {
+    const lists: StatusLists = { staged: [], unstaged: [], untracked: [], conflicted: [] };
+    const entry = (path: string, status: string, lines?: [number | null, number | null]) =>
+        ({
+            path,
+            status,
+            added: lines === undefined ? 0 : lines[0],
+            deleted: lines === undefined ? 0 : lines[1]
+        }) satisfies GitEntry;
+    for (const { code, path } of records) {
+        const [index, work] = [code[0], code[1]];
+        if (UNMERGED.includes(index + work)) {
+            lists.conflicted.push(entry(path, index + work));
+        } else if (index === UNTRACKED || work === UNTRACKED) {
+            lists.untracked.push(entry(path, UNTRACKED));
+        } else {
+            if (!QUIET.includes(index)) lists.staged.push(entry(path, index));
+            if (!QUIET.includes(work)) lists.unstaged.push(entry(path, work, counts.get(path)));
+        }
+    }
+    for (const list of Object.values(lists)) list.length = Math.min(list.length, cap);
+    return lists;
+}
+
+/**
+ * `check-attr filter text eol working-tree-encoding ident -- <path>`: one line per attribute in the
+ * order asked, each `<path>: <attribute>: <value>`; a line missing reads as git's `unspecified`.
+ */
+export function parseAttributes(output: string): Omit<DiffAttributes, 'autocrlf'> {
+    const lines = output.split('\n');
+    const value = (at: number): string => {
+        const line = lines[at] ?? '';
+        const cut = line.lastIndexOf(': ');
+        return cut === -1 ? 'unspecified' : line.slice(cut + 2);
+    };
+    return {
+        filter: value(0),
+        text: value(1),
+        eol: value(2),
+        workingTreeEncoding: value(3),
+        ident: value(4)
+    };
+}
+
 /**
  * The records of `--name-status -z`: a letter (a rename or a copy with its score) and a path, and
  * for a rename or a copy the old path before the new one.
@@ -320,7 +414,145 @@ export function parseLineMarks(output: string): GitLineMark[] {
 }
 
 /**
- * The context a diff pane reads with: every unchanged line of the file, so the pane folds the long
- * unchanged runs itself and opens one on a press without asking git again.
+ * The context the diff pane's reads run `git diff` and `show` with: none, since the diff is read
+ * for each file's head lines and the two texts come whole from `show`.
  */
-export const WHOLE_FILE = '-U2147483647';
+export const NO_CONTEXT = '-U0';
+
+/**
+ * One file of a diff as its head lines say: the lines from `diff --git` to the line before the
+ * first `@@` (every line of a file with no hunk, a binary file's `Binary files` line among them),
+ * its two paths, whether git called it binary, whether it was created or deleted, whether it is a
+ * submodule (mode 160000), and its hunk lines, which hold a submodule's two commits.
+ */
+export type DiffHead = {
+    head: string[];
+    oldPath: string;
+    newPath: string;
+    binary: boolean;
+    created: boolean;
+    deleted: boolean;
+    submodule: boolean;
+    body: string[];
+};
+
+/** A path as git writes it in a diff: C-quoted with octal bytes when it holds an unusual byte. */
+export function unquotePath(value: string): string {
+    if (!value.startsWith('"') || !value.endsWith('"') || value.length < 2) return value;
+    const bytes: number[] = [];
+    const escapes: Record<string, number> = { n: 10, t: 9, r: 13, a: 7, b: 8, f: 12, v: 11 };
+    const body = value.slice(1, -1);
+    for (let at = 0; at < body.length; at += 1) {
+        const char = body[at];
+        if (char !== '\\') {
+            bytes.push(...Buffer.from(char, 'utf8'));
+            continue;
+        }
+        const next = body[at + 1] ?? '';
+        const octal = /^[0-7]{3}/.exec(body.slice(at + 1, at + 4));
+        if (octal) {
+            bytes.push(Number.parseInt(octal[0], 8));
+            at += 3;
+        } else {
+            bytes.push(escapes[next] ?? next.charCodeAt(0));
+            at += 1;
+        }
+    }
+    return Buffer.from(bytes).toString('utf8');
+}
+
+/** The path after a `a/` or `b/` prefix, unquoted, and the empty string for `/dev/null`. */
+function prefixed(value: string): string {
+    const path = unquotePath(value.replace(/\t$/, ''));
+    return path === '/dev/null' ? '' : path.replace(/^[ab]\//, '');
+}
+
+/** The two paths of a `diff --git a/<old> b/<new>` line, read where the halves are equal. */
+function gitLinePaths(line: string): [string, string] {
+    const rest = line.slice('diff --git '.length);
+    if (rest.startsWith('"')) {
+        const end = rest.indexOf('" ', 1);
+        if (end !== -1) return [prefixed(rest.slice(0, end + 1)), prefixed(rest.slice(end + 2))];
+    }
+    const half = (rest.length - 1) / 2;
+    if (Number.isInteger(half) && rest.slice(2, half) === rest.slice(half + 3)) {
+        const path = rest.slice(2, half);
+        return [path, path];
+    }
+    const split = rest.indexOf(' b/');
+    return split === -1
+        ? [rest, rest]
+        : [prefixed(rest.slice(0, split)), prefixed(rest.slice(split + 1))];
+}
+
+/** Every file of a `git diff` or `show` output, in git's order, by its head lines. */
+export function diffHeads(output: string): DiffHead[] {
+    const files: DiffHead[] = [];
+    let file: DiffHead | null = null;
+    let inBody = false;
+    for (const line of output.split('\n')) {
+        if (line.startsWith('diff --git ')) {
+            const [oldPath, newPath] = gitLinePaths(line);
+            file = {
+                head: [line],
+                oldPath,
+                newPath,
+                binary: false,
+                created: false,
+                deleted: false,
+                submodule: false,
+                body: []
+            };
+            files.push(file);
+            inBody = false;
+            continue;
+        }
+        if (file === null) continue;
+        if (inBody || line.startsWith('@@')) {
+            inBody = true;
+            if (line !== '') file.body.push(line);
+            continue;
+        }
+        if (line === '') continue;
+        file.head.push(line);
+        if (line.startsWith('rename from ')) file.oldPath = unquotePath(line.slice(12));
+        else if (line.startsWith('rename to ')) file.newPath = unquotePath(line.slice(10));
+        else if (line.startsWith('--- ') && line !== '--- /dev/null')
+            file.oldPath = prefixed(line.slice(4));
+        else if (line.startsWith('+++ ') && line !== '+++ /dev/null')
+            file.newPath = prefixed(line.slice(4));
+        else if (line.startsWith('new file mode ')) file.created = true;
+        else if (line.startsWith('deleted file mode ')) file.deleted = true;
+        else if (line.startsWith('Binary files ')) file.binary = true;
+        if (
+            /^(new file mode|deleted file mode|new mode|old mode|index [0-9a-f.]+) ?160000$/.test(
+                line
+            )
+        ) {
+            file.submodule = true;
+        }
+    }
+    return files;
+}
+
+/**
+ * One side of a submodule's change, as git writes it: `Subproject commit <sha>` and its newline.
+ */
+export function submoduleText(head: DiffHead, mark: '-' | '+'): string {
+    return head.body
+        .filter((line) => line.startsWith(`${mark}Subproject commit `))
+        .map((line) => `${line.slice(1)}\n`)
+        .join('');
+}
+
+/**
+ * A one-line reason out of what git or the system answered: its first line, git's own `fatal: `
+ * prefix dropped since it says nothing worth the width, cut to `width` characters.
+ */
+export function shortReason(value: unknown, width: number): string {
+    const text = value instanceof Error ? value.message : scalar(value);
+    const lines = text.trim().split('\n');
+    let line = lines.length > 0 ? lines[0].trim() : '';
+    if (line.toLowerCase().startsWith('fatal: ')) line = line.slice('fatal: '.length);
+    return line.slice(0, width);
+}

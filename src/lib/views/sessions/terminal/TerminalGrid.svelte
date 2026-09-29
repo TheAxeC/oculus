@@ -74,7 +74,7 @@
     import type { SearchAddon } from '@xterm/addon-search';
     import type { Terminal as Grid } from '@xterm/xterm';
     import { useState } from '$lib/state/client/use';
-    import { onMac } from '$lib/ui/controls/editor/load';
+    import { onMac } from '$lib/ui/controls/editor/kit/load';
 
     type Props = {
         /** The terminal this grid shows. */

@@ -142,7 +142,7 @@
 <g id="node21" class="node">
 <title>folder server/git to layer data</title>
 <polygon fill="none" stroke="none" points="172.88,-870.2 163.12,-870.2 163.12,-857.72 172.88,-857.72 172.88,-870.2"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="168" y="-861.56" font-family="Helvetica,Arial,sans-serif" font-size="8.00">8</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="168" y="-861.56" font-family="Helvetica,Arial,sans-serif" font-size="8.00">7</text>
 </g>
 <!-- folder server/git&#45;&gt;folder server/git to layer data -->
 <g id="edge30" class="edge">

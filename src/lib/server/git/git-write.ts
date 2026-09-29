@@ -21,7 +21,8 @@
 //     git -C <root> switch [-c] <name>
 //     git -C <root> check-ref-format [--branch <name> | refs/tags/<name>]
 //     git -C <root> status --porcelain=v1 -z
-//     git -C <root> diff [--cached] [-U<all>] [--name-only --diff-filter=U | <range>] [-- <path>]
+//     git -C <root> diff [--cached | --ours] [-U0] [--name-only --diff-filter=U | <range>]
+//         [-- <path>]
 //     git -C <root> rev-parse [--abbrev-ref] <rev> | rev-parse --verify --quiet MERGE_HEAD |
 //         rev-parse --git-path <rebase-merge | rebase-apply>
 //     git -C <root> worktree [add -b <name> <path> HEAD | remove <path>]
@@ -64,7 +65,13 @@ import { scalar } from '../../data/helpers/guards.ts';
 import type { GitBranch } from '../../data/model/index.ts';
 import { isWorktreePath, validName, worktreePath } from '../../data/helpers/worktrees.ts';
 import { defaultMirrorsDir } from './deposit-git.ts';
-import { REFS_FORMAT, WHOLE_FILE, parseBranches, statusRecords } from '../core/git-parse.ts';
+import {
+    NO_CONTEXT,
+    REFS_FORMAT,
+    parseBranches,
+    shortReason,
+    statusRecords
+} from '../core/git-parse.ts';
 import { GIT, pathInside } from '../core/git.ts';
 import { inside, realPath } from '../core/paths.ts';
 
@@ -72,6 +79,8 @@ export { parseBranches };
 
 /** Milliseconds one git command is given, for everything that stays on this machine. */
 export const TIMEOUT_MS = 10000;
+/** How many characters of a failed command's reason the page is given. */
+const REASON_WIDTH = 200;
 
 /** A push, a pull or a fetch crosses the network, so it is given a minute, not ten seconds. */
 export const PUSH_TIMEOUT_MS = 60000;
@@ -336,38 +345,38 @@ export async function stagedDiff(root: string, roots: string[] = allowedRoots())
 }
 
 /**
- * One file's diff, staged or not, for the pane the Repositories view opens over a row. A read: the
- * `git` channel carries the paths and this answers the text of one of them, since a diff of every
- * changed file of every root on every event is what the channel's throttle is there to avoid.
+ * One file's diff, staged or not, for the pane the Repositories view opens over a row: its head
+ * lines, which the read answers beside the file's two versions. A read: the `git` channel carries
+ * the paths and this answers one of them, since a diff of every changed file of every root on every
+ * event is what the channel's throttle is there to avoid. A path in conflict, which `git diff`
+ * answers as a combined diff, is read as Current's version (stage 2, `--ours`) against the
+ * worktree, the side the reader's edits go to.
  */
 export async function fileDiff(
     root: string,
     path: string,
     staged: boolean,
     roots: string[] = allowedRoots()
-): Promise<Outcome> {
+): Promise<Outcome & { ours: boolean }> {
     const wrong = checkPaths(root, [path], roots);
-    if (wrong !== '') return failed(wrong);
-    return diff(root, [
-        ...(staged ? ['--cached'] : []),
-        '--no-color',
-        '--no-ext-diff',
-        WHOLE_FILE,
-        '--',
-        path
-    ]);
+    if (wrong !== '') return { ...failed(wrong), ours: false };
+    const flags = ['--no-color', '--no-ext-diff', NO_CONTEXT, '--', path];
+    const read = await diff(root, [...(staged ? ['--cached'] : []), ...flags]);
+    if (staged || !read.ok || !read.output.startsWith('diff --cc '))
+        return { ...read, ours: false };
+    return { ...(await diff(root, ['--ours', ...flags])), ours: true };
 }
 
 /**
- * What a worktree holds that the repository's checked-out branch does not: the three-dot diff from
- * that branch to the worktree's own HEAD, which is what the reader is about to merge back. A
- * detached checkout has no branch to name, so its HEAD stands in.
+ * The branch a worktree's diff starts from: the repository's checked-out branch, or its HEAD for a
+ * detached checkout, which has no branch to name. The worktree's diff is the three-dot diff from it
+ * to the worktree's own HEAD, which is what the reader is about to merge back.
  *
  * The repository is named by the caller and never worked out from the path: a worktree of the hub
  * is itself a workspace on the `git` channel and therefore a root of its own, so a path would
  * answer with itself and every worktree this hub makes would be refused.
  */
-export async function worktreeDiff(
+export async function worktreeFrom(
     root: string,
     path: string,
     roots: string[] = allowedRoots()
@@ -378,8 +387,22 @@ export async function worktreeDiff(
     if (!head.ok) return head;
     const name = head.output.trim();
     const from = name === '' || name === 'HEAD' ? await revParse(root, ['HEAD']) : head;
-    if (!from.ok) return from;
-    return diff(path, ['--no-color', '--no-ext-diff', WHOLE_FILE, `${from.output.trim()}...HEAD`]);
+    return from.ok ? { ...from, output: from.output.trim() } : from;
+}
+
+/** What a worktree holds that the repository's checked-out branch does not, as a diff. */
+export async function worktreeDiff(
+    root: string,
+    path: string,
+    roots: string[] = allowedRoots()
+): Promise<Outcome> {
+    const from = await worktreeFrom(root, path, roots);
+    return from.ok ? worktreeRange(path, from.output) : from;
+}
+
+/** The three-dot diff of a worktree from the branch `worktreeFrom` named, which it checked. */
+export function worktreeRange(path: string, from: string): Promise<Outcome> {
+    return diff(path, ['--no-color', '--no-ext-diff', NO_CONTEXT, `${from}...HEAD`]);
 }
 
 // ---------------------------------------------------------------- worktrees and the merge back
@@ -671,10 +694,7 @@ export function untrackedIn(output: string): Set<string> {
     );
 }
 
+/** A one-line reason for the page, git's first line of it. */
 function short(value: unknown): string {
-    const text = value instanceof Error ? value.message : scalar(value);
-    const lines = text.trim().split('\n');
-    let line = lines.length > 0 ? lines[0].trim() : '';
-    if (line.toLowerCase().startsWith('fatal: ')) line = line.slice(7);
-    return line.slice(0, 200);
+    return shortReason(value, REASON_WIDTH);
 }

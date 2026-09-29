@@ -21,7 +21,8 @@
     // editor's actions are listed with the other results: Go to Next Change and Go to Previous
     // Change with their keys beside them, and Open Change, while the file has quick diff marks, and
     // the Cmd+K chords the editor gave up so that Cmd+K opens the palette from inside it, each with
-    // its old chord beside it. Choosing one asks the tab to run it.
+    // its old chord beside it. Choosing one asks the tab to run it. A diff pane on screen lists its
+    // diff editor's actions the same way, and takes no line or language query.
 
     import { Command } from 'bits-ui';
     import Modal from '$lib/ui/frame/Modal.svelte';
@@ -45,7 +46,10 @@
         type LanguageChoice,
         type LanguageMatch
     } from '$lib/state/workbench/navigation/status';
-    import { sourceOnScreen } from '$lib/state/workbench/navigation/editor-status.svelte';
+    import {
+        editorOnScreen,
+        sourceOnScreen
+    } from '$lib/state/workbench/navigation/editor-status.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { registrationLabel } from '$lib/state/workbench/navigation/registry';
     import { untrack } from 'svelte';
@@ -85,9 +89,11 @@
     );
     /** The source tab on screen and what it last said, or null when the tab on screen is none. */
     const source = $derived(sourceOnScreen(activeInstance(), statusOf));
+    /** The tab on screen whose editor actions are listed: a source tab or a diff pane. */
+    const acting = $derived(editorOnScreen(activeInstance(), statusOf));
     const index = $derived(
         open
-            ? [...buildIndex(current.snapshot, current.feeds, knownViews), ...editorItems(source)]
+            ? [...buildIndex(current.snapshot, current.feeds, knownViews), ...editorItems(acting)]
             : []
     );
     const parsed = $derived(parseCommand(query));

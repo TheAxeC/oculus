@@ -10,7 +10,8 @@
 // state asks it too, which language a file's extension names, so the table of names and aliases
 // is highlight.js's own and oculus keeps only the extensions it does not know. Its names are also
 // the languages the source tab's editor opens a file under and the status bar lists; the editor
-// colours them through Shiki's grammars (ui/controls/editor/grammars.ts), not this highlighter.
+// colours them through Shiki's grammars (ui/controls/editor/kit/grammars.ts), not this
+// highlighter.
 //
 // The core build rather than the whole package, which carries close to two hundred languages
 // against the eighteen a research tree actually holds. The registration runs once at load and is

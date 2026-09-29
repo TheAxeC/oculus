@@ -76,7 +76,7 @@ describe('the derived tokens', () => {
         const files = [
             join(SRC, 'lib', 'themes', 'derive.ts'),
             join(SRC, '..', 'tests', 'checks', 'look', 'lane-distance.test.ts'),
-            join(SRC, 'lib', 'ui', 'controls', 'editor', 'theme.ts')
+            join(SRC, 'lib', 'ui', 'controls', 'editor', 'kit', 'theme.ts')
         ];
         const hand = /function (?:luminance|ratio|lab|ciede2000|hueAngle)\b/;
         for (const file of files) {

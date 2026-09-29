@@ -400,6 +400,8 @@ export type {
 
 export type {
     Area,
+    DiffAttributes,
+    DiffSides,
     FilesPayload,
     GitBranch,
     GitCommit,

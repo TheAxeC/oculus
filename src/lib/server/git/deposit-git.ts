@@ -24,18 +24,19 @@
 //
 // Whether a path lies in a folder is read from server/core/paths.ts (`inside`).
 
-import { scalar } from '../../data/helpers/guards.ts';
 import { execFile } from 'node:child_process';
 import { homedir } from 'node:os';
 import { isAbsolute, join } from 'node:path';
 import { GIT } from '../core/git.ts';
 import { inside } from '../core/paths.ts';
-import { parseBranches } from '../core/git-parse.ts';
+import { parseBranches, shortReason } from '../core/git-parse.ts';
 
 export { parseBranches };
 
 /** Milliseconds one command that stays on this machine is given. */
 export const TIMEOUT_MS = 10000;
+/** How many characters of a failed command's reason the page is given. */
+const REASON_WIDTH = 200;
 
 /** A clone, a push and every `gh` call cross the network, so they are given two minutes. */
 export const NETWORK_TIMEOUT_MS = 120000;
@@ -310,10 +311,7 @@ export function slugOf(url: string): string {
     return at === -1 ? bare : bare.slice(at + 'github.com/'.length);
 }
 
+/** A one-line reason for the page, git's first line of it. */
 function short(value: unknown): string {
-    const text = value instanceof Error ? value.message : scalar(value);
-    const lines = text.trim().split('\n');
-    let line = lines.length > 0 ? lines[0].trim() : '';
-    if (line.toLowerCase().startsWith('fatal: ')) line = line.slice(7);
-    return line.slice(0, 200);
+    return shortReason(value, REASON_WIDTH);
 }

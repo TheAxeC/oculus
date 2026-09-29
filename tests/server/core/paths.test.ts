@@ -68,10 +68,10 @@ describe('realPath', () => {
 });
 
 // An audit over the source text, not coverage: the copies the shared helpers replaced are gone
-// from src, so a new one shows here rather than in a later duplication pass. Four functions still
+// from src, so a new one shows here rather than in a later duplication pass. Three functions still
 // match the pattern and are listed by name: the shared `inside` itself, the manifest-path rule
-// `insideHub` (which calls `below`), and two that test no path at all, a calendar event inside a
-// time window and a merge conflict holding a line. Any new match, a new containment copy or a new
+// `insideHub` (which calls `below`), and one that tests no path at all, a calendar event inside a
+// time window. Any new match, a new containment copy or a new
 // function named `inside...`, turns this red until the list is read again. The yaml library's own
 // `isMap` is imported under another name wherever it is used, in src and in utils, so `isMap` is
 // the guard everywhere.
@@ -85,7 +85,7 @@ describe('the copies the shared helpers replaced', () => {
         return treeFiles(dir).map((rel) => join(dir, rel));
     }
 
-    it('are written nowhere under src, and the four named matches are all that remain', () => {
+    it('are written nowhere under src, and the three named matches are all that remain', () => {
         const found = files(SRC).flatMap((file) =>
             readFileSync(file, 'utf8')
                 .split('\n')
@@ -96,8 +96,7 @@ describe('the copies the shared helpers replaced', () => {
         expect(found.sort()).toEqual([
             'lib/server/accounts/calendar/ics.ts: function inside(start: ICAL.Time, end: ICAL.Time, window: Window): boolean {',
             'lib/server/core/paths.ts: export function inside(path: string, dir: string): boolean {',
-            'lib/server/edit/writes/manifest.ts: export function insideHub(hub: string, config: PortfolioConfig, file: string): boolean {',
-            'lib/views/sources/repositories/merge/MergeSide.svelte: function inside(line: number): SideConflict | undefined {'
+            'lib/server/edit/writes/manifest.ts: export function insideHub(hub: string, config: PortfolioConfig, file: string): boolean {'
         ]);
     });
 

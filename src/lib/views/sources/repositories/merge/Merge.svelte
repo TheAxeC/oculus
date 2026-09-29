@@ -23,36 +23,48 @@
     // Incoming, Accept Current, Accept Both in either order, and Ignore, which leaves the common
     // ancestor's lines; an open conflict shows the ancestor's lines in the Result until then.
     //
-    // The Result is text the reader may also edit, and typing into a conflict's lines settles it
-    // by hand. The count of conflicts still open is in the bar. Complete Merge writes the Result
-    // over the file and stages it, which is what tells git the conflict is resolved; with conflicts
-    // still open it asks first. Where a side deleted the file, the pane says which, Accept Deletion
-    // takes the deletion (the file leaves the index and the worktree) after a confirm, and Complete
-    // Merge over an empty Result does the same, since an empty Result is the deleted side.
+    // Incoming and Current are read-only Monaco editors, each conflict's lines tinted and its
+    // choices on a bar above it; the Result is a writable Monaco editor the reader may also type
+    // into, and typing into a conflict's lines settles it by hand. A choice rewrites the Result as
+    // one edit of the editor's, so undo takes it back, and the choice goes with it: the conflict
+    // reads open again, as it did before; the Result editor says whether an edit was its undo, its
+    // redo or typing. The count of conflicts still open is in the bar. Complete
+    // Merge writes the Result over the file and stages it, which is what tells git the conflict is
+    // resolved; with conflicts still open it asks first. Where a side deleted the file, the pane
+    // says which, Accept Deletion takes the deletion (the file leaves the index and the worktree)
+    // after a confirm, and Complete Merge over an empty Result does the same, since an empty Result
+    // is the deleted side.
 
     import Confirm from '$lib/ui/controls/Confirm.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
-    import TextArea from '$lib/ui/forms/TextArea.svelte';
+    import Editor from '$lib/ui/controls/editor/Editor.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Toolbar from '$lib/ui/frame/Toolbar.svelte';
     import MergeSide, { type SideConflict } from './MergeSide.svelte';
     import {
+        chooseIn,
+        editIn,
+        historyOf,
         initialPieces,
         openCount,
         regionsOf,
-        settlePiece,
         takesDeletion,
-        typedPieces,
         type Choice,
+        type EditKind,
+        type MergeHistory,
         type Region
     } from '$lib/state/sources/repositories/merge-regions';
     import { sidesUrl, type GitMergeSides } from '$lib/state/sources/repositories/repositories';
+    import { languageOf } from '$lib/state/sources/fs';
     import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 
-    const { repositories } = useState();
+    const {
+        repositories,
+        ui: { theme, textScale }
+    } = useState();
 
     let { instance }: ViewProps = $props();
 
@@ -62,17 +74,21 @@
     let sides: GitMergeSides | null = $state(null);
     let failure = $state('');
     let regions: Region[] = $state([]);
-    let choices: Choice[] = $state([]);
-    let pieces: string[] = $state([]);
+    /** The Result's pieces and each region's choice, with the choices undo and redo can move. */
+    let history: MergeHistory = $state.raw(historyOf({ pieces: [], choices: [] }));
     let done = $state(false);
     let asking = $state(false);
     let deleting = $state(false);
     /** What the last read was over, so a redraw does not read again. */
     let taken = '';
 
+    const pieces = $derived(history.held.pieces);
+    const choices = $derived(history.held.choices);
     const result = $derived(pieces.join(''));
     const left = $derived(openCount(regions, choices));
     const busy = $derived(repositories.busy(root));
+    const language = $derived(languageOf(path));
+    const look = $derived(`${theme()} ${String(textScale() ?? 1)}`);
 
     function read(state: unknown, key: string): string {
         if (typeof state !== 'object' || state === null || Array.isArray(state)) return '';
@@ -99,8 +115,10 @@
             }
             sides = body.sides;
             regions = regionsOf(body.sides.base, body.sides.ours, body.sides.theirs);
-            choices = regions.map(() => 'open');
-            pieces = initialPieces(regions);
+            history = historyOf({
+                pieces: initialPieces(regions),
+                choices: regions.map((): Choice => 'open')
+            });
         } catch {
             failure = t('repositories.merge_failed');
         }
@@ -117,16 +135,12 @@
     }
 
     function choose(region: number, choice: Choice): void {
-        pieces = settlePiece(pieces, regions, region, choice);
-        choices = choices.map((held, at) => (at === region ? choice : held));
+        history = chooseIn(history, regions, region, choice);
     }
 
-    function typed(next: string): void {
-        const edit = typedPieces(pieces, next);
-        pieces = edit.pieces;
-        choices = choices.map((held, at) =>
-            edit.touched.includes(at) && regions[at].kind === 'conflict' ? 'edited' : held
-        );
+    /** The Result's text after an edit, and whether the editor made it by undo, redo or typing. */
+    function typed(next: string, edit: EditKind): void {
+        history = editIn(history, regions, next, edit);
     }
 
     async function complete(): Promise<void> {
@@ -193,25 +207,35 @@
                     side="incoming"
                     text={sides.theirs}
                     conflicts={conflictsOf('theirs')}
+                    model={`${instance.id}:incoming`}
+                    {path}
+                    {language}
+                    {look}
                     onchoose={choose}
                 />
                 <MergeSide
                     side="current"
                     text={sides.ours}
                     conflicts={conflictsOf('ours')}
+                    model={`${instance.id}:current`}
+                    {path}
+                    {language}
+                    {look}
                     onchoose={choose}
                 />
             </div>
             <div class="result" data-merge-result>
                 <p class="head">{t('repositories.merge_result')}</p>
-                <TextArea
-                    value={result}
-                    label={t('repositories.merge_result')}
-                    rows={12}
-                    spellcheck={false}
-                    code
-                    oninput={typed}
-                />
+                <div class="text">
+                    <Editor
+                        text={result}
+                        {language}
+                        model={`${instance.id}:result`}
+                        {path}
+                        {look}
+                        onchange={typed}
+                    />
+                </div>
             </div>
         {/if}
     </div>
@@ -263,6 +287,14 @@
         display: flex;
         flex-direction: column;
         min-height: 0;
+    }
+
+    .text {
+        flex: 1 1 auto;
+        min-height: 0;
+        border: 1px solid var(--line);
+        border-radius: var(--radius-sm);
+        overflow: hidden;
     }
 
     .head {

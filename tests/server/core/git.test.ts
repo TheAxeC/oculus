@@ -8,8 +8,9 @@
 //
 // Two gates sit at the end. The module's source names no writing subcommand, and the recorder in
 // git.ts reports every argument vector the module ran over this whole file, which must use nothing
-// but the allowed subcommands, with `branch`, `symbolic-ref` and `worktree` (each of which has
-// writing forms) and `rev-parse` held to the exact vectors the module reads with.
+// but the allowed subcommands, with `branch`, `config`, `symbolic-ref` and `worktree` (each of
+// which has writing forms), and `rev-parse` and `check-attr`, held to the exact vectors the module
+// reads with.
 //
 // The recorder can also stand in for git on one vector, answering as a git that timed out or never
 // started would, since neither can be made to happen on demand with a real repository, and it can
@@ -34,6 +35,7 @@ import { beforeEach, describe, expect, vi } from 'vitest';
 import {
     LOG_ENTRIES,
     MAX_ENTRIES,
+    attributesOf,
     blameOf,
     commitDiff,
     commitFiles,
@@ -41,6 +43,7 @@ import {
     graphPage,
     ignoredIn,
     lineMarks,
+    mergeBase,
     mergeSides,
     stashDiff,
     statusFor,
@@ -63,11 +66,14 @@ const MODULE = resolve(
 /** Everything git.ts is allowed to run. The source scan below asserts it holds no other. */
 const ALLOWED = [
     'blame',
+    'check-attr',
     'check-ignore',
+    'config',
     'diff',
     'for-each-ref',
     'log',
     'ls-files',
+    'merge-base',
     'remote',
     'rev-list',
     'rev-parse',
@@ -86,15 +92,21 @@ const ALLOWED = [
 const CALLS = [...ALLOWED, 'rev-parse', 'diff', 'log', 'log', 'log'].sort();
 
 /**
- * The exact vectors seven subcommands may run as. `symbolic-ref HEAD <ref>` moves HEAD, `worktree
+ * The exact vectors nine subcommands may run as. `symbolic-ref HEAD <ref>` moves HEAD, `worktree
  * add` makes a checkout and `remote add` adds a remote, so each of those is held to its one reading
  * vector; `rev-parse` has no writing form and is held to the module's two reads so a third use is a
  * change this gate sees, `check-ignore` to the one form the file browser reads its ignored entries
- * by, `for-each-ref` to the one ref listing over the branches, the tags and the stash ref, and
- * `ls-files` to the one listing of the tracked paths the Status view's line counts read.
+ * by, `for-each-ref` to the one ref listing over the branches, the tags and the stash ref,
+ * `ls-files` to the one listing of the tracked paths the Status view's line counts read, `config`
+ * (which has writing forms) to the one read of `core.autocrlf`, and `check-attr` to the five
+ * attributes the diff pane reads, over the one path this file asks for.
  */
 const PINNED: Partial<Record<string, string[][]>> = {
+    'check-attr': [
+        ['check-attr', 'filter', 'text', 'eol', 'working-tree-encoding', 'ident', '--', 'kept.txt']
+    ],
     'check-ignore': [['check-ignore', '--stdin', '-z']],
+    config: [['config', '--get', '--default=', 'core.autocrlf']],
     'for-each-ref': [['for-each-ref', REFS_FORMAT, 'refs/heads', 'refs/tags', 'refs/stash']],
     'ls-files': [['ls-files', '-z']],
     remote: [['remote']],
@@ -108,7 +120,9 @@ const PINNED: Partial<Record<string, string[][]>> = {
 
 /** The same vectors as the module's source writes them, one list literal per call. */
 const PINNED_SOURCE = [
+    "['check-attr', 'filter', 'text', 'eol', 'working-tree-encoding', 'ident', '--', path]",
     "['check-ignore', '--stdin', '-z']",
+    "['config', '--get', '--default=', 'core.autocrlf']",
     "['for-each-ref', REFS_FORMAT, 'refs/heads', 'refs/tags', 'refs/stash']",
     "['ls-files', '-z']",
     "['remote']",
@@ -784,6 +798,8 @@ describe('read only', () => {
         expect(commitDiff(repo, hash, 'kept.txt').ok).toBe(true);
         expect(blameOf(repo, 'kept.txt').ok).toBe(true);
         expect(lineMarks(repo, 'kept.txt').ok).toBe(true);
+        expect(attributesOf(repo, 'kept.txt').ok).toBe(true);
+        expect(mergeBase(repo, hash).ok).toBe(true);
         // kept.txt is in no conflict, which the read says after asking git for each stage.
         expect(mergeSides(repo, 'kept.txt').ok).toBe(false);
         write('kept.txt', 'stashed\n');
@@ -823,7 +839,7 @@ describe('read only', () => {
     });
 
     // Revert: write the `symbolic-ref` call in server/core/git.ts as `['symbolic-ref', 'HEAD']`.
-    it('holds only the allowed subcommands at its call site, the pinned seven as their exact vectors', () => {
+    it('holds only the allowed subcommands at its call site, the pinned nine as their exact vectors', () => {
         const source = readFileSync(MODULE, 'utf8');
         const calls = [...source.matchAll(/\brun\(\s*root\s*,\s*\[\s*'([a-z-]+)'/g)];
         expect(calls.map((call) => call[1]).sort()).toEqual(CALLS);
@@ -840,7 +856,7 @@ describe('read only', () => {
         }
     });
 
-    it('ran nothing but those commands over this file, the pinned seven as their vectors', () => {
+    it('ran nothing but those commands over this file, the pinned nine as their vectors', () => {
         everyRead();
         expect(ran.length).toBeGreaterThan(0);
         const used = new Set<string>();

@@ -11,7 +11,8 @@
 // does not perform it.
 //
 // A tab also publishes the editor actions it offers the palette, the Cmd+K chords the editor gave
-// up so Cmd+K reaches the palette, and the palette asks the tab to run one by its id.
+// up so Cmd+K reaches the palette, and the palette asks the tab to run one by its id. A diff pane
+// publishes its diff editor's actions the same way, and says nothing else of use to the bar.
 
 import { untrack } from 'svelte';
 import type { Caret, Indent, LineEnding } from './editor-text.ts';
@@ -77,6 +78,23 @@ export function sourceOnScreen(
     statusOf: (instance: string) => EditorStatus | null
 ): SourceOnScreen | null {
     if (tab?.view !== 'source') return null;
+    const said = statusOf(tab.id);
+    return said === null ? null : { instance: tab.id, status: said };
+}
+
+/** The views whose tab lists editor actions for the palette: a source tab and a diff pane. */
+const ACTION_VIEWS: readonly string[] = ['source', 'repositories-diff'];
+
+/**
+ * The tab on screen whose editor actions the palette lists, a source tab or a diff pane, and what
+ * it last said; null for any other tab and for none. The status bar reads the source tab alone
+ * (`sourceOnScreen`), since a diff pane holds no caret, indentation or language to change.
+ */
+export function editorOnScreen(
+    tab: { id: string; view: string } | null,
+    statusOf: (instance: string) => EditorStatus | null
+): SourceOnScreen | null {
+    if (tab === null || !ACTION_VIEWS.includes(tab.view)) return null;
     const said = statusOf(tab.id);
     return said === null ? null : { instance: tab.id, status: said };
 }

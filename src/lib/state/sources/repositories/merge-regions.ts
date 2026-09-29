@@ -2,18 +2,20 @@
 // file (the common ancestor, Current, which is ours, and Incoming, which is theirs, as git holds
 // them at stages 1, 2 and 3) cut into the regions the result is made of, and the result itself.
 //
-// The regions come from comparing each side with the ancestor, line by line (diff-words.ts's
-// common()). Where the two sides agree with the ancestor, or only one of them changed a stretch,
-// or both changed it the same way, the region is settled and its lines are what the merge takes.
-// Where both changed the same stretch differently, the region is a conflict, and the reader
-// settles it: Incoming, Current, both in either order, or neither (the ancestor's lines, which is
-// what Ignore leaves).
+// The regions come from node-diff3's three-way cut (`diff3MergeRegions`), each side compared with
+// the ancestor line by line. Where the two sides agree with the ancestor, or only one of them
+// changed a stretch, or both changed it the same way, the region is settled and its lines are what
+// the merge takes. Where both changed the same stretch differently, the region is a conflict, and
+// the reader settles it: Incoming, Current, both in either order, or neither (the ancestor's
+// lines, which is what Ignore leaves).
 //
 // The result is one text the reader may also type into. It is held as one piece per region, so an
 // accept rewrites its conflict's piece wherever the reader's own typing has moved it, and typing
-// that reaches into a conflict's piece counts that conflict as settled by hand.
+// that reaches into a conflict's piece counts that conflict as settled by hand. A choice is one
+// edit of the Result, which the editor's undo takes back and its redo puts again, the choice with
+// it; the editor's change event says whether an edit was an undo, a redo or typing.
 
-import { common } from './diff-words.ts';
+import { diff3MergeRegions } from 'node-diff3';
 
 /** How a conflict is settled; `open` is not yet. */
 export type Choice =
@@ -44,89 +46,104 @@ export function linesOf(text: string): string[] {
     return lines;
 }
 
-/**
- * For each line of the ancestor, the line of the other version it is matched with, or -1. Null
- * when the two are too different to compare, which reads as every line changed.
- */
-function matchOf(base: readonly string[], other: readonly string[]): Int32Array {
-    const matched = new Int32Array(base.length).fill(-1);
-    for (const [from, to] of common(base, other) ?? []) matched[from] = to;
-    return matched;
+/** Whether two runs of lines are the same lines. */
+function same(x: readonly string[], y: readonly string[]): boolean {
+    return x.length === y.length && x.every((line, at) => line === y[at]);
 }
 
-/** The regions of a three-way merge, in file order. */
+/** Whether a version holds the given lines from a line on. */
+function holds(version: readonly string[], from: number, lines: readonly string[]): boolean {
+    return same(version.slice(from, from + lines.length), lines);
+}
+
+/**
+ * The regions of a three-way merge, in file order. node-diff3 answers each stretch both sides keep
+ * from the ancestor with its place there, each stretch only one side changed with that side's lines
+ * and their place in it, and each stretch both changed with every version's lines and places; the
+ * places of the rest follow from the gaps between the ancestor places. A stretch one side deleted
+ * leaves only such a gap, and the side that deleted it is the one that no longer holds its lines.
+ */
 export function regionsOf(baseText: string, oursText: string, theirsText: string): Region[] {
     const base = linesOf(baseText);
     const ours = linesOf(oursText);
     const theirs = linesOf(theirsText);
-    const toOurs = matchOf(base, ours);
-    const toTheirs = matchOf(base, theirs);
     const regions: Region[] = [];
     let b = 0;
     let o = 0;
     let t = 0;
-    const settle = (
-        lines: string[],
-        ourStart: number,
-        ourCount: number,
-        theirStart: number,
-        theirCount: number
-    ): void => {
+    const settle = (lines: string[], ourCount: number, theirCount: number): void => {
         if (lines.length === 0 && ourCount === 0 && theirCount === 0) return;
         const last = regions.at(-1);
         if (last?.kind === 'settled') {
             last.lines.push(...lines);
             last.ours.count += ourCount;
             last.theirs.count += theirCount;
-            return;
-        }
-        regions.push({
-            kind: 'settled',
-            lines: [...lines],
-            ours: { start: ourStart, count: ourCount },
-            theirs: { start: theirStart, count: theirCount }
-        });
-    };
-    while (b <= base.length) {
-        // A stable line: the ancestor's line matched in both sides, exactly where each side is.
-        if (b < base.length && toOurs[b] === o && toTheirs[b] === t) {
-            settle([base[b]], o, 1, t, 1);
-            b += 1;
-            o += 1;
-            t += 1;
-            continue;
-        }
-        // An unstable stretch: up to the next ancestor line both sides still hold, in order.
-        let nb = b;
-        while (nb < base.length && !(toOurs[nb] >= o && toTheirs[nb] >= t)) nb += 1;
-        const no = nb < base.length ? toOurs[nb] : ours.length;
-        const nt = nb < base.length ? toTheirs[nb] : theirs.length;
-        const baseLines = base.slice(b, nb);
-        const ourLines = ours.slice(o, no);
-        const theirLines = theirs.slice(t, nt);
-        const same = (x: string[], y: string[]): boolean =>
-            x.length === y.length && x.every((line, at) => line === y[at]);
-        if (same(ourLines, baseLines)) settle(theirLines, o, ourLines.length, t, theirLines.length);
-        else if (same(theirLines, baseLines) || same(ourLines, theirLines)) {
-            settle(ourLines, o, ourLines.length, t, theirLines.length);
         } else {
             regions.push({
-                kind: 'conflict',
-                base: baseLines,
-                ours: ourLines,
-                theirs: theirLines,
-                at: {
-                    base: { start: b, count: baseLines.length },
-                    ours: { start: o, count: ourLines.length },
-                    theirs: { start: t, count: theirLines.length }
-                }
+                kind: 'settled',
+                lines: [...lines],
+                ours: { start: o, count: ourCount },
+                theirs: { start: t, count: theirCount }
             });
         }
-        b = nb;
-        o = no;
-        t = nt;
-        if (nb >= base.length) break;
+        o += ourCount;
+        t += theirCount;
+    };
+    // The one stretch only one side changed since the last ancestor place, which node-diff3 gives
+    // with that side's lines; the ancestor lines it replaced are the gap up to the next place.
+    let changed: { side: 'a' | 'b'; lines: string[] } | null = null;
+    const reach = (at: number): void => {
+        const gap = base.slice(b, at);
+        if (changed !== null) {
+            const count = changed.lines.length;
+            if (changed.side === 'a') settle(changed.lines, count, gap.length);
+            else settle(changed.lines, gap.length, count);
+        } else if (gap.length > 0) {
+            // A deletion by one side: the side still holding the lines kept them.
+            const oursKept = holds(ours, o, gap);
+            const theirsKept = holds(theirs, t, gap);
+            if (oursKept && !theirsKept) settle([], gap.length, 0);
+            else settle([], 0, gap.length);
+        }
+        changed = null;
+        b = at;
+    };
+    for (const region of diff3MergeRegions(ours, base, theirs)) {
+        if (region.stable && region.buffer === 'o') {
+            reach(region.bufferStart);
+            settle(region.bufferContent, region.bufferLength, region.bufferLength);
+            b += region.bufferLength;
+        } else if (region.stable) {
+            changed = { side: region.buffer === 'a' ? 'a' : 'b', lines: region.bufferContent };
+        } else {
+            reach(region.oStart);
+            const [baseLines, ourLines, theirLines] = [
+                region.oContent,
+                region.aContent,
+                region.bContent
+            ];
+            if (same(ourLines, baseLines)) settle(theirLines, ourLines.length, theirLines.length);
+            else if (same(theirLines, baseLines) || same(ourLines, theirLines)) {
+                settle(ourLines, ourLines.length, theirLines.length);
+            } else {
+                regions.push({
+                    kind: 'conflict',
+                    base: baseLines,
+                    ours: ourLines,
+                    theirs: theirLines,
+                    at: {
+                        base: { start: region.oStart, count: region.oLength },
+                        ours: { start: region.aStart, count: region.aLength },
+                        theirs: { start: region.bStart, count: region.bLength }
+                    }
+                });
+                o = region.aStart + region.aLength;
+                t = region.bStart + region.bLength;
+            }
+            b = region.oStart + region.oLength;
+        }
     }
+    reach(base.length);
     // Every version empty, or both sides emptied it, still leaves one region, so the result the
     // reader types into has a piece to hold the typing.
     if (regions.length === 0) {
@@ -225,6 +242,83 @@ export function typedPieces(
     const touched: number[] = [];
     for (let at = first; at <= last; at += 1) touched.push(at);
     return { pieces: out, touched };
+}
+
+/** The merge's state at one moment: the Result's pieces and each region's choice. */
+export type MergeHeld = { pieces: string[]; choices: Choice[] };
+
+/** One choice made: the Result's text before and after it, and the state either side. */
+export type MergeMade = { before: string; after: string; was: MergeHeld; now: MergeHeld };
+
+/** The merge's state, the choices undo can take back (the last on top), and those it took back. */
+export type MergeHistory = { held: MergeHeld; undoable: MergeMade[]; redoable: MergeMade[] };
+
+/** How an edit of the Result came about, as the editor's change event says. */
+export type EditKind = 'type' | 'undo' | 'redo';
+
+/** A merge's history before anything was chosen. */
+export function historyOf(held: MergeHeld): MergeHistory {
+    return { held, undoable: [], redoable: [] };
+}
+
+/** The history after one conflict is settled one way, which undo can take back. */
+export function chooseIn(
+    history: MergeHistory,
+    regions: readonly Region[],
+    region: number,
+    choice: Choice
+): MergeHistory {
+    const was = history.held;
+    const pieces = settlePiece(was.pieces, regions, region, choice);
+    const choices = was.choices.map((held, at) => (at === region ? choice : held));
+    const made = {
+        before: was.pieces.join(''),
+        after: pieces.join(''),
+        was,
+        now: { pieces, choices }
+    };
+    return { held: made.now, undoable: [...history.undoable, made], redoable: [] };
+}
+
+/**
+ * The history after an edit of the Result, `next` its whole text. An undo that lands on the text
+ * before the last choice takes that choice back, and a redo that lands on the text after the choice
+ * last taken back puts it again; the editor's own flag says which an edit is, since typing can land
+ * on the same text. Any other edit is typing, which settles by hand the conflicts it reaches into;
+ * new typing ends what redo could put back.
+ */
+export function editIn(
+    history: MergeHistory,
+    regions: readonly Region[],
+    next: string,
+    kind: EditKind
+): MergeHistory {
+    const current = history.held.pieces.join('');
+    const last = history.undoable.at(-1);
+    if (kind === 'undo' && last?.after === current && next === last.before) {
+        return {
+            held: last.was,
+            undoable: history.undoable.slice(0, -1),
+            redoable: [...history.redoable, last]
+        };
+    }
+    const again = history.redoable.at(-1);
+    if (kind === 'redo' && again?.before === current && next === again.after) {
+        return {
+            held: again.now,
+            undoable: [...history.undoable, again],
+            redoable: history.redoable.slice(0, -1)
+        };
+    }
+    const edit = typedPieces(history.held.pieces, next);
+    const choices = history.held.choices.map((held, at) =>
+        edit.touched.includes(at) && regions[at].kind === 'conflict' ? 'edited' : held
+    );
+    return {
+        held: { pieces: edit.pieces, choices },
+        undoable: history.undoable,
+        redoable: kind === 'type' ? [] : history.redoable
+    };
 }
 
 /** How many conflicts are still open. */

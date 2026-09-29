@@ -8,7 +8,7 @@
 import { shikiToMonaco } from '@shikijs/monaco';
 import { createHighlighter } from 'shiki';
 import { describe, expect, it } from 'vitest';
-import { THEME, painter } from '../../../../src/lib/ui/controls/editor/load.ts';
+import { THEME, painter } from '../../../../src/lib/ui/controls/editor/kit/load.ts';
 
 type Rule = { token: string; foreground?: string; fontStyle?: string };
 type Theme = { rules: Rule[]; colors: Record<string, string> };

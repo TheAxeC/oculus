@@ -1,14 +1,13 @@
 /plan-orchestration oculus/migration
 
 In flight:
-- D13b (the diffs and the merge on Monaco): round 1 refuted, its landing next, waiting on Axel's go.
-- Q86c (the Map's forces back on d3-force; Z60 (a)): built, its report saved, its review next, waiting on Axel's go.
+- Q86c (the Map's forces back on d3-force; Z60 (a)): repair round 1 answered, its refutation running.
 Queued, in order:
 - Q102 (the terminal working as VS Code's, seen working in the page): stopped at `/spec` on Z69 (Copy as HTML: `@xterm/addon-serialize` or hand code), waiting on Axel's ruling.
-- Q88b (the right-click menus' new capabilities, and Chrome's own menu blocked), once D13b has landed.
+- Q88b (the right-click menus' new capabilities, and Chrome's own menu blocked), next at a free slot.
 - D13c (the code theme key; Z46 (a)); runs alone, since it changes a configuration file.
 - X3c (the tab strip as VS Code's editor tabs; Z47 (a)); runs alone, since it adds `wrap_tabs` to `config/appearance.yml`.
-- X3a (the Files view as VS Code's Explorer), once D13b has landed.
+- X3a (the Files view as VS Code's Explorer).
 - Q91 (the project view and its editor), once X3a has landed.
 - Q84 and L4 (the fetch-and-hold stores on @tanstack/query-core, next at a free slot; floating panes).
 - Q85 (checking untyped input with zod).
@@ -27,6 +26,7 @@ Queued, in order:
 The loop fills three slots as they free up; a line above is only an order, never a barrier, apart from the "once ... has landed" notes. A step's line moves to Landed, at the top of that list, in its landing commit.
 
 Landed, newest first: every step ticked in `plan.md`, each with the date and the commit that ticked it (the 15 steps dated 2026-09-10 at f8af492b were landed before the ledger was opened):
+- D13b (the diffs and the merge on Monaco), 2026-09-30, the commit after 1df5554f.
 - Q105 (`bin/` renamed to `utils/`; Z65), 2026-09-29, ae8999e5.
 - Q104 (the load-sensitive test files tagged slow, the tree checks on their own verify line; Z64), 2026-09-29, eecbd8f0.
 - Q83 (small libraries in place of hand code), 2026-09-29, d1986845.
