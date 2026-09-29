@@ -2,7 +2,7 @@
 
 In flight:
 - Q88 (right-click menus wherever vscode.dev gives one, the tab's menu left to X3c; beside Q79b by Z50 (a)): built from base 2a72d052 with its cases ruled at round 0 (`agents/briefs/Q88-cases.md`); reviewed (`agents/reviews/Q88-refuter.md`), repair round 1 sent; Z53 open for its text boxes.
-- Q86b (the Map's drag after neato's placement, Z49 (a): circles kept apart among the movers, no repulsion or centre pull, no creep, the node under the pointer, labels kept off other nodes): brief checked (`agents/reviews/Q86b-brief-check.md`, 18 findings closed in the brief), building from base 38c12da7.
+- Q86b (the Map's drag after neato's placement, Z49 (a): circles kept apart among the movers, no repulsion or centre pull, no creep, the node under the pointer, labels kept off other nodes): brief checked (`agents/reviews/Q86b-brief-check.md`, 18 findings closed in the brief), building from base 38c12da7, its cases ruled at round 0 (`agents/briefs/Q86b-cases.md`).
 Queued, in order:
 - Q88b (the right-click menus' new capabilities: file writes under the roots with Delete to the Trash, discarding an untracked file to the Trash, a two-file compare, .gitignore, cherry-pick, the graph's commit and branch actions (detached checkout, a branch or tag from a commit, the compares, Delete Branch), Open File (HEAD), closing a repository, opening a worktree, Lock Group, the terminal's name, icon, colour and Clear; Z52 (b)), after Q88.
 - D13b (the diffs and the merge on Monaco) and D13c (the code theme key), after D13a (Z46 (a)).
