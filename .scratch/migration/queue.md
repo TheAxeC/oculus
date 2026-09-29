@@ -3,20 +3,20 @@
 In flight:
 - Q81 (menus, context menus, tooltips and dialogs on bits-ui; the palette on its Command list with fuzzysort): building.
 Queued, in order:
-- Q87 (the import-graph checks on dependency-cruiser, the duplication check on jscpd): stopped at /spec, waiting on Axel's ruling Z45.
+- Q87 (the duplication check on jscpd; the import checks stay hand-written, Z45 (a)).
 - Q79b (the tests, runs alone).
-- Q96 and Q88 (the Rail section's field labels and its icon dropdown on bits-ui, once Q81 has landed; right-click menus wherever vscode.dev gives one).
+- Q96 and Q88 (the Rail section's field labels and its icon dropdown on bits-ui, once Q81 has landed; right-click menus wherever vscode.dev gives one, the tab's menu left to X3c).
 - Q82 (the tree on @zag-js/tree-view).
 - Q86b (the Map's drag after neato's placement, Z49 (a)); its look also takes the Map's labels after Q86's fix at landing.
-- D13 (the editor replaced by Monaco): stopped at /spec, waiting on Axel's ruling Z46.
-- X3c (the tab strip as VS Code's editor tabs): stopped at /spec, waiting on Axel's ruling Z47.
+- D13a (the source tab on Monaco), then D13b (the diffs and the merge on Monaco) and D13c (the code theme key), after D13a (Z46 (a)).
+- X3c (the tab strip as VS Code's editor tabs, once Q81 has landed; Z47 (a)).
 - X3a (the Files view as VS Code's Explorer, once Q82 has landed).
 - Q91 and Q83 (the project view and its editor, once X3a has landed; small libraries: culori and the others).
 - Q84 and L4 (the fetch-and-hold stores on @tanstack/svelte-query; floating panes; together only when their briefs name no shared file).
 - Q85 (checking untyped input with zod).
 - Q66 and Q35 (a hidden tab defers its work; the session views).
 - D11 and D14 (the debug client for rite; LaTeX everywhere).
-- D23, D15 and D17 (language servers in the Monaco editor, once D13 has landed; PDF reading, once D14 has landed; project commands).
+- D23, D15 and D17 (language servers in the Monaco editor, once D13a has landed; PDF reading, once D14 has landed; project commands).
 - D18, D20 and D24 (the Processes view; an agent started on a task; the Personal board).
 - A1, A2 and A3 (review with feedback; a session in a new worktree; scheduled runs, once D17 has landed).
 - M3, E1 and M4 (the resources registry; apps added while oculus runs; the Present view's equations drawn live from LaTeX).
