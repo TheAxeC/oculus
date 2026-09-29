@@ -195,3 +195,65 @@ The two cases ruled in `Q86b-cases.md` (the single push pass and damping 0.88 wi
 - The bounds clamp runs after each push pass, so a mover pushed toward the edge stays inside the box at the price of the gap against a node near the edge; no case reached that on the fixture (the gap case passes over three drags; the 15-drag probe before the ruling showed a largest shortfall of 0.0001).
 - `docs/diagrams/` files were rewritten by `npm run diagrams`; whether their content differs from main is not verified here.
 - The comments over 100 columns in five files were rewrapped by a script over each paragraph that held a long line; `tests/checks/source/comment-width.test.ts` passes.
+
+## Repair round 1
+
+Every ruling of `briefs/Q86b-round1-sent.md` is done.
+
+| Ruling | What changed | Check |
+|---|---|---|
+| 1. The snap on the first move (Behaviour 1) | At the press `nodeDown` stores `grab`, the node's centre less the pointer in graph units (`toGraph` of the press point, against the node's position after `pressHold`). Each move and the drop (`pointerup`, not `pointercancel`) put the node at the pointer plus `grab`, through the new pure `dragTarget(at, grab, node)` in `pointer.ts` and `dragTo()` in `Graph.svelte`. | `map-pointer.test.ts` 'audits that the node keeps the offset it was grabbed at, with no jump at the first move'; red with the offset ignored: `expected { x: 503, y: 342 } to be null` |
+| 2a. No reheat at the same place (Standards 1) | `dragTarget` answers null when the target equals the dragged node's current position. `dragTo` then places nothing and starts no loop, so a repeated pointer event at the same place moves nothing. | 'audits that a pointer event at the place the node already stands moves nothing'; red with the guard removed: `expected { x: 600, y: 300 } to be null` |
+| 2b. The sentences (Standards 1) | `DESIGN.md:291` and the `settle` docstring now say: a drag comes to rest at the springs' balance; a pointer event where the dragged node already stands does not start a settle; a settle started again at the same pointer moves each node less than `REST` in its first frame and stops there. `DESIGN.md:291` and `Graph.svelte`'s head comment also name the grab offset. | `grep -n "moves nothing further" DESIGN.md src/lib/state/boards/structure/graph.ts`: no hit |
+| 3. The clamp inside each pass (Proof 2) | New case 'keeps a mover pushed at the edge of the box inside it on every pass of the push': movers `left` at `bounds.pad` and `right` 12 units to its right, radii 8, no fixed node. After `physics`, `left.x` is `bounds.pad` and the pair is at least 20 - 0.01 apart. | Red with the clamp moved to once after all passes: `expected 16 to be greater than or equal to 19.99` |
+| 4. The close pair's drag half (Proof 3) | 'keeps a close pair at its distance at the press' drags `held` 5 units toward `other` (right), which pulls `mover` into `other`. | Red with the push removed: `expected 5.365076809659399 to be greater than or equal to 9.99` |
+| 5. The frame cap (Proof 1) | No change. The cap in `settle` (`while (frames < MAX_FRAMES)`) and in the page loop (`frames < MAX_FRAMES` in `step()`) is an audit: read, not proven by a test. No input found reaches it, and none was hunted for. | Read, `graph.ts` `settle`, `Graph.svelte` `step()` |
+| 6. The scratch folder (Spec 1) | `.scratch-builder/` is removed from the worktree root. `reverts.py`, which the revert table above names, was in it. | `ls -a` of the worktree root after removal (below) |
+
+Also in this round:
+- **`nearestProject` moved** from `Graph.svelte` into `pointer.ts` as `nearestProject(nodes, at, except)`, with its reach as the named constant `LINK_REACH` (12, the same value). This keeps `Graph.svelte` under 540 lines after `dragTo` and `grab`, at 536.
+- **New case for the link pointer:** 'audits that the nearest project within its radius and the reach is taken'. It is red with the reach removed: `expected undefined to be 'nearer'`.
+- **`backgroundDown`:** now one line shorter.
+- **Scratch output:** logs from this round were written to the session scratchpad, outside the worktree.
+
+**Correction to the before and after above:** the first bullet should read that the node stays under the pointer at the point it was grabbed. It no longer jumps at the press or at the first move past 3 units; the unrepaired build still snapped its centre to the pointer by up to its radius. The third bullet should read that a pointer event at the same place moves nothing and starts no settle.
+
+**Before and after for the look:**
+- Before: in any pane, pressing a node off its centre and moving past 3 px snaps its centre to the pointer.
+- After: the node moves by exactly the pointer's movement, the grab point staying under the pointer.
+
+**Verify list** (`PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH sh ~/.claude/skills/land/templates/checks.sh /Users/axelfaes/workspace/research-hub/tools/oculus/.scratch/migration/orchestrator-state.md </dev/null`, from the worktree's `tools/oculus`, exit 0):
+
+```
+$ npm test
+ Test Files  366 passed (366)
+      Tests  5815 passed | 1 skipped (5816)
+$ npm run check
+1790699887164 COMPLETED 2113 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+$ npm run build
+$ npm run format:check
+All matched files use Prettier code style!
+$ npm run lint
+$ ! LC_ALL=C grep -rna '[^ -~]' src tests
+checks: 6 commands passed
+```
+
+**Other gates:**
+- `bash bin/folder-check.sh` exit 0.
+- `npm run diagrams` exit 0, and `npx prettier --check .` exit 0 after it.
+- The brief's `grep -nwE "repulse|collide|center|cool|DRAG_PHYSICS" ...` prints nothing.
+- The perl ASCII gate prints nothing.
+- After the round's reverts were restored: `npx vitest run tests/state/boards/structure/graph.test.ts tests/views/structure` `Tests 99 passed (99)`.
+
+**Files this round (`wc -l`):**
+- `src/lib/views/structure/map/Graph.svelte` 536
+- `src/lib/views/structure/map/pointer.ts` 66
+- `src/lib/state/boards/structure/graph.ts` 715
+- `tests/state/boards/structure/graph.test.ts` 703
+- `tests/views/structure/map-pointer.test.ts` 100
+- `DESIGN.md` line 291
+
+**Limitations of this round:**
+- **The drop:** it reads the `pointerup` event's position. A `pointercancel` leaves the node where the last move put it, since a cancelled pointer's coordinates are not a drop point.
+- **The same-place guard:** it compares exact positions. A pointer that jitters by a fraction of a unit still starts a settle, and that settle moves each node less than `REST` in its first frame and stops there.
+- **The page:** the grab offset and the guard are seen on the page only at the look.

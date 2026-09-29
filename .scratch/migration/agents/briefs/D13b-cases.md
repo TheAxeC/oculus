@@ -1,0 +1,12 @@
+# D13b, the cases ruled at the first run
+
+The builder's first run handed back one case the brief's own rules get wrong and seven defaults. Each is ruled here; the builder goes on under the brief with these rulings.
+
+1. **The merge case (ours deleting `b` of `a,b,c`).** The brief's case is wrong: item 6 keeps today's rule that adjacent settled regions merge, and every case of `merge.test.ts` depends on it. Ruled (a): the rule is kept, and the case reads "`regionsOf('a\nb\nc\n', 'a\nc\n', 'a\nb\nc\n')` answers one settled region with lines `a, c`, ours `{ start: 0, count: 2 }` and theirs `{ start: 0, count: 3 }`", the spans derived from the gaps between node-diff3's `o` positions.
+2. **The attribute answer.** Yes: the `diff=` answer carries `attributes: { filter, text, eol, autocrlf }` beside `files`, git's raw values (`autocrlf` `''` when unset), typed `DiffAttributes` in `model-sessions.ts` and re-exported from `data/model/index.ts`; the other three reads answer `files` alone.
+3. **The conversion rule.** Not the literal reading, which would withhold the actions where git converts nothing. Block and line actions are withheld when either text holds a carriage return, or when git converts the file: `filter` is set to a driver (a value other than `unspecified` and `unset`), or `text` is not `unset` and (`eol` is `crlf`, or `autocrlf` is `true` or `input`). A `-text` file and `autocrlf=false` keep the actions. Add cases for `-text`, `autocrlf=false`, `eol=crlf` and a `filter` driver.
+4. **An empty selection.** Yes: only a non-empty selection chooses rows; the caret alone chooses nothing, so the hunk bar reads Stage Block until lines are selected.
+5. **The type-scale entry.** Yes: `DiffEditor.svelte` is listed beside `Editor.svelte` in `tests/views/whole/type-scale.test.ts`; the step's paths widen to that entry.
+6. **The palette.** The palette listing is part of item 2 ("the same palette listing as `Editor.svelte`"), so the step's paths widen to `src/lib/state/workbench/navigation/editor-status.svelte.ts` and its test: the palette reads the chord actions of a diff pane on screen as it reads a source tab's. Build it; do not report it as outside the step.
+7. **The stash's file list.** Yes: the files come from the head lines of the stash's whole-file diff, and the untracked files from `<ref>^3` when `show -s --format=%P <ref>` names a third parent.
+8. **The hunk a pane opens at.** Yes: a hunk is the span of its changes for this rule (no context rows), so the case holds as written.
