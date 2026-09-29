@@ -27,7 +27,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:      # Q81 and Q82 building.
+dispatch:      # Q81 building.
 - step: Q81
   executor: agent
   worker: claude:opus
@@ -38,23 +38,11 @@ dispatch:      # Q81 and Q82 building.
   report: agents/reviews/Q81-report.md
   landing: not-started
   round: 1, sent 2026-09-29 from worktree commit 67d7fef0, agents/briefs/Q81-round1-sent.md
-  builder_usage: 63 tool uses, 291k tokens, 11 min, the cases hand-back; 203 tool uses, 117k tokens, 57 min, the build after the ruling
+  builder_usage: 63 tool uses, 291k tokens, 11 min, the cases hand-back; 203 tool uses, 117k tokens, 57 min, the build after the ruling; 44 tool uses, 229k tokens, 11 min, round 1
   reviewer_report: agents/reviews/Q81-refuter.md, reviewer acab87030fa9fa19d, 325k tokens, 124 tool uses, 24 min
+  round_1_reviewer: a6239bdf249f7be41, launched 2026-09-29 (refutation of round 1, running)
+  owed_look: Q82's look is taken on TEST with Q81's (the tab was on Axel's Focus page at Q82's landing): the Files tree, the Repositories changes and the Graph; the keys, `a` type-ahead, Cmd+A, Cmd+Enter on a row, Tab to a scrolled-away stop, the focus kept on a wheel scroll, the Graph's Left and Right and its open commit, the gaps, the first ten rows, the indent guides.
   cases: ruled at round 0 in agents/briefs/Q81-cases.md (case 5 to the look, the overlays' Escape through bits-ui with the shell's three Escape branches removed)
-- step: Q82
-  executor: agent
-  worker: claude:opus
-  session_id: ab130210b0db7c06c
-  worktree: .agents/worktrees/Q82
-  base: 03a8747b
-  launched: 2026-09-29
-  report: agents/reviews/Q82-report.md
-  landing: not-started
-  round: 1, sent 2026-09-29 from worktree commit ec1939ba, agents/briefs/Q82-round1-sent.md
-  builder_usage: 97 tool uses, 339k tokens, 30 min; 55 tool uses, 167k tokens, 27 min, round 1
-  reviewer_report: agents/reviews/Q82-refuter.md, reviewer a6d13a2b6f68312ca, 246k tokens, 72 tool uses, 17 min
-  round_1_reviewer: a5a90f3a6f893eeab, launched 2026-09-29 (refutation of round 1, running)
-  shared_paths: with Q81, package.json and package-lock.json (each adds its own dependencies: a hand merge of the dependency lines, then npm install), DESIGN.md (Q81 lines 216 and 306, Q82 line 309: different lines), HELP.md (Q81 lines 42 and 86, Q82 lines 55-56: different lines), docs/diagrams (a rerun of npm run diagrams), tests/ui/primitives.test.ts, tests/ui/wall.test.ts, tests/views/whole/type-scale.test.ts and tests/checks/tree/allow-styling.ts (keyed entries or cases of different components: a hand merge of separate lines)
 ```
 
 ## The standing demands (from Axel, in force)
@@ -448,6 +436,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-09-29. Q82 landed through /spec, /refute and /land (the explorer tree on zag's tree-view, the long lists virtualized); one repair round, refuted again; fixes at landing: the long-tree audit split out of `files.test.ts`, the reasons above two absences, a case for the kept stop row, Cmd+Enter handed to the tree again. Verify on main: `checks: 6 commands passed` (Test Files 355 passed, Tests 5692 passed). The look is owed, taken with Q81's, since the tab was on Axel's Focus page. In flight: Q81 (the review over round 1). Next: land Q81 with both looks, then Q79b alone.
 - 2026-09-29. Q87 landed through /spec, /refute and /land (the duplication check on jscpd, the import checks hand-written by Z45 (a)); cases ruled at round 0, one repair round, refuted again; fixes at landing: the markup run reads every component as HTML, since jscpd's Svelte format skipped a component whose script and style hold fewer than fifty tokens, with a case; the false comment removed; the head comment on the eight-line floor and the smaller extent. Verify on main: `npm test` failed only on `tests/server/git/git-ops.test.ts`, which passes alone (37 of 37); the other five commands passed. In flight: Q81 (its first review) and Q82 (round 1 answered, its review next). Next: `/refute` Q82 over round 1.
 - 2026-09-29. Q86 landed through /spec, /refute and /land (the Map laid out by Graphviz's neato in the page); cases ruled at round 0, two repair rounds, each refuted again; fixes at landing: the diagrams merge, `context.ts` merged with Q101, the neato edge-length sentence in `layout.ts` and `DESIGN.md:290`, and the labels measured again once Graphviz has placed the nodes (found at the look). Verify on main: `npm test` had one failure in `tests/server/machine/hpc/ssh.test.ts`, a file the step does not change, passing alone; the other five commands exit 0. The look after the label fix is not taken: Axel took the tab to his own page. Next: `/spec` Q81 and Q82, then Q86b; Q87, D13 and X3c wait on Z45, Z46 and Z47.
 - 2026-09-29. Q101 landed through /spec, /refute and /land (each Terminal tab a terminal panel of its own, Z40 (d)); cases ruled at round 0, one repair round, refuted again; fixes at landing: the tab bar's New through the store's `composeInTab`, `DESIGN.md:208`, three composer sentences, the diagrams merge, the `saved.ts` conflict, and the scratch test's refused plant named after the run's directory (Z48 (a), Axel). Verify on main: `checks: 6 commands passed` (Test Files 352 passed, Tests 5642 passed). Axel ruled Z48 (a) and Z49 (a); step Q86b booked. Q86 reviewed after its two rounds. Next: land Q86 on top of Q101 with the look at the Map on TEST, then Q81 and Q82, which waited for Q101; Q87, D13 and X3c wait on Z45, Z46 and Z47.

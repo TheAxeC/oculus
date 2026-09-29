@@ -1,16 +1,51 @@
 <script lang="ts">
-    // Layer 3, primitive. The tree an explorer's rows are drawn in: one stop of the browser's focus
-    // order, moved along the rows with the arrow keys by ui/tree/tree-keys.ts's rowMove(). The
-    // caller hands the rows as the keyboard reads them and draws them with the `nav` this passes to
-    // its snippet, which is what gives each row its place in the focus order and its key handler.
+    // Layer 3, primitive. The tree an explorer's rows are drawn in, run by zag's tree-view machine
+    // (@zag-js/tree-view through @zag-js/svelte): one stop of the browser's focus order, moved
+    // along the rows by the machine's keys. Up and Down step a row, Home and End go to the ends,
+    // Right opens a closed row and steps into an open one, Left closes an open row and steps out to
+    // its parent, and a letter moves to the next row whose label starts with it. A character with
+    // Meta or Ctrl held never reaches the machine, so Cmd+A and Ctrl+A stay the browser's, and a
+    // lowercase `a`, which the machine's key map reads as select-all and drops, is sent to it as a
+    // type-ahead letter (ui/tree/tree-keys.ts's keyRoute).
     //
-    // The row at the stop is the caller's when it says so (a view that keeps its selection in its
-    // instance state), and otherwise the last row the focus was on, held here. A key that moves the
-    // stop puts the focus on the row it moved to once the tree has drawn it; that is the one thing
-    // done to the page rather than to state, since a focus is the browser's.
+    // The caller hands the rows as the keyboard reads them and draws them with the `nav` this
+    // passes to its snippet, so a caller's rows remain the one statement of what is drawn: the
+    // machine's collection is built from them (ui/tree/tree-keys.ts), its expanded value is read
+    // from each row's `open`, and a change it asks for is the caller's `ontoggle` for the row it
+    // changes, never for a row held `fixed`. Left on a `fixed` row steps out to its parent rather
+    // than asking to close it. The row at the stop is the caller's `current` when it gives one and
+    // the row is drawn, else the last row the focus was on, else the first row. A focus move made
+    // by a key of the tree is the caller's `onfocusrow`.
+    //
+    // The tree box carries the machine's tabindex of -1, so it is no stop of the focus order itself
+    // and a press on its blank space keeps the focus inside it.
+    //
+    // A press on a row stays the row's own (ui/tree/TreeItem.svelte), so the machine's click
+    // handlers are not spread and its selection is not drawn: selecting and opening are the
+    // caller's. The machine's keys are taken only from a row element itself, never from a control
+    // inside a row, and neither `*` (open every sibling) nor Space outside a type-ahead reaches it,
+    // since neither is a key of this tree. A list that draws only the rows in view registers here
+    // through `nav.list`, and a key moving to one of its rows not drawn hands the move to it. The
+    // list keeps drawn the rows `nav.kept` names, the row at the stop and the row the focus is in,
+    // so Tab always finds the stop and a scroll never takes the focus out of the page. Each row's
+    // index path in the collection is read from a map built once per collection, and the labels
+    // the type-ahead reads are kept to the rows the caller hands.
 
-    import { tick, type Snippet } from 'svelte';
-    import { rowMove, stopOf, type KeyRow, type TreeNav } from './tree-keys.ts';
+    import type { Snippet } from 'svelte';
+    import * as tree from '@zag-js/tree-view';
+    import { normalizeProps, useMachine } from '@zag-js/svelte';
+    import {
+        expandedOf,
+        focusOf,
+        indexPaths,
+        keyRoute,
+        toggledBy,
+        treeNodes,
+        type KeyRow,
+        type RowList,
+        type RowNode,
+        type TreeNav
+    } from './tree-keys.ts';
 
     type Props = {
         /** The tree's accessible name, already translated. */
@@ -27,48 +62,183 @@
 
     let { label, rows, current, onfocusrow, ontoggle, children }: Props = $props();
 
-    let box: HTMLDivElement | undefined = $state();
+    const uid = $props.id();
+
     /** The last row the focus was on, for a tree whose caller keeps no stop of its own. */
     let held = $state('');
+    /** The row the focus is in (on the row or one of its controls), the empty string for none. */
+    let inside = $state('');
+    /** Whether the focus is moving by a key of the tree, which is when the caller is told. */
+    let keyed = false;
+    /** The labels of the rows drawn, which the type-ahead reads. */
+    // eslint-disable-next-line svelte/prefer-svelte-reactivity -- written while a row is drawn and read only by a key, so nothing is drawn from it
+    const labels = new Map<string, string>();
+    /** The lists drawing only the rows in view, which hold rows the tree may not have drawn. */
+    // eslint-disable-next-line svelte/prefer-svelte-reactivity -- registered by the lists and read only by a key, so nothing is drawn from it
+    const lists = new Set<RowList>();
 
-    const stop = $derived(stopOf(rows, current ?? held));
+    const byId = $derived(new Map(rows.map((row) => [row.id, row])));
+    const expanded = $derived(expandedOf(rows));
+    const root = $derived(treeNodes(rows));
+    const paths = $derived(indexPaths(root));
+    const collection = $derived(
+        tree.collection<RowNode>({
+            rootNode: root,
+            nodeToString: (node) => labelOf(node.value)
+        })
+    );
+    /** The row holding the stop: the machine's focused row, else its first row. */
+    const stop = $derived(focusOf(rows, current ?? held) ?? root.children.at(0)?.value ?? '');
 
-    /** Put the focus on one row once the tree has drawn the move that asked for it. */
-    async function focusRow(id: string): Promise<void> {
-        await tick();
-        for (const node of box?.querySelectorAll<HTMLElement>('[data-row-id]') ?? []) {
-            if (node.dataset.rowId === id) node.focus();
+    /** A label is kept only while its row is among the rows. */
+    $effect.pre(() => {
+        const ids = new Set(rows.map((row) => row.id));
+        for (const id of [...labels.keys()]) {
+            if (!ids.has(id)) labels.delete(id);
         }
+    });
+
+    /** A row's label for the type-ahead: the one drawn, else its list's, else its id. */
+    function labelOf(id: string): string {
+        const drawn = labels.get(id);
+        if (drawn !== undefined) return drawn;
+        for (const list of lists) {
+            const listed = list.label(id);
+            if (listed !== undefined) return listed;
+        }
+        return id;
+    }
+
+    const service = useMachine(tree.machine, () => ({
+        id: uid,
+        collection,
+        expandedValue: expanded,
+        focusedValue: focusOf(rows, current ?? held),
+        translations: { treeLabel: label },
+        onExpandedChange: (details: tree.ExpandedChangeDetails<RowNode>) => {
+            for (const id of toggledBy(rows, expanded, details.expandedValue)) ontoggle?.(id);
+        },
+        onFocusChange: (details: tree.FocusChangeDetails<RowNode>) => {
+            const id = details.focusedValue;
+            if (id === null) return;
+            held = id;
+            if (keyed) onfocusrow?.(id);
+        },
+        scrollToIndexFn: (details: tree.ScrollToIndexDetails<RowNode>) => {
+            for (const list of lists) {
+                if (list.reveal(details.node.value)) return;
+            }
+        }
+    }));
+
+    const api = $derived(tree.connect(service, normalizeProps));
+    /** The machine's own attributes of the tree box, and its key handler. */
+    const treeProps = $derived(api.getTreeProps() as Record<string, unknown>);
+    const boxProps: Record<string, unknown> = $derived({
+        id: treeProps.id,
+        'data-scope': treeProps['data-scope'],
+        'data-part': treeProps['data-part'],
+        tabindex: treeProps.tabindex
+    });
+
+    /**
+     * What one row spreads from the machine. A row that opens is the machine's branch control,
+     * which Right and Left open and close; any other row is its item. The role is a treeitem either
+     * way, with the level and the open state the machine reads from the rows.
+     */
+    function rowProps(id: string, text: string): Record<string, unknown> {
+        labels.set(id, text);
+        const indexPath = paths.get(id);
+        const node = indexPath === undefined ? undefined : collection.at(indexPath);
+        if (indexPath === undefined || node === undefined) return {};
+        const at = { node, indexPath };
+        const state = api.getNodeState(at);
+        const branch = byId.get(id)?.open !== undefined;
+        const own = (branch ? api.getBranchControlProps(at) : api.getItemProps(at)) as Record<
+            string,
+            unknown
+        >;
+        return {
+            id: own.id,
+            'data-scope': own['data-scope'],
+            'data-part': own['data-part'],
+            'data-value': own['data-value'],
+            'data-path': own['data-path'],
+            role: 'treeitem',
+            'aria-level': state.depth,
+            'aria-expanded': branch ? state.expanded : undefined,
+            tabindex: own.tabindex,
+            onfocus: (event: FocusEvent) => {
+                if (event.target === event.currentTarget) service.send({ type: 'NODE.FOCUS', id });
+            }
+        };
     }
 
     const nav: TreeNav = {
-        tabindex: (id: string) => (id === stop ? 0 : -1),
-        onkeydown: (id: string) => (event: KeyboardEvent) => {
-            const move = rowMove(rows, id, event.key);
-            if (move === null) return;
-            event.preventDefault();
-            held = move.id;
-            if (move.kind === 'toggle') {
-                ontoggle?.(move.id);
-                return;
-            }
-            onfocusrow?.(move.id);
-            void focusRow(move.id);
-        }
+        row: rowProps,
+        list: (list: RowList) => {
+            lists.add(list);
+            return () => lists.delete(list);
+        },
+        focus: (id: string) => api.focus(id),
+        kept: () => [...new Set([stop, inside])].filter((id) => id !== '')
     };
 
-    /**
-     * A row a pointer or a Tab put the focus on becomes the stop, so the next Tab leaves from it.
-     */
+    /** The keys of a row element, handed to the machine as the tree's own. */
+    function pressedKey(event: KeyboardEvent): void {
+        const target = event.target;
+        if (!(target instanceof HTMLElement)) return;
+        const part = target.dataset.part;
+        if (part !== 'item' && part !== 'branch-control') return;
+        const row = byId.get(target.dataset.value ?? '');
+        if (row === undefined) return;
+        const held = { meta: event.metaKey, ctrl: event.ctrlKey };
+        const route = keyRoute(event.key, held, service.computed('isTypingAhead'));
+        if (route === 'withhold') return;
+        keyed = true;
+        if (route === 'type-ahead') {
+            event.preventDefault();
+            service.send({ type: 'TREE.TYPEAHEAD', key: event.key, id: row.id });
+            return;
+        }
+        if (event.key === 'ArrowLeft' && row.fixed === true && !event.altKey && !event.shiftKey) {
+            event.preventDefault();
+            service.send({ type: 'NODE.ARROW_LEFT', id: row.id });
+            return;
+        }
+        (treeProps.onkeydown as ((event: KeyboardEvent) => void) | undefined)?.(event);
+    }
+
+    /** The row the focus went into, which a list keeps drawn while the focus is in it. */
     function entered(event: FocusEvent): void {
         const target = event.target;
-        if (target instanceof HTMLElement && target.dataset.rowId !== undefined) {
-            held = target.dataset.rowId;
+        if (!(target instanceof Element)) return;
+        const row = target.closest<HTMLElement>('[data-part="item"], [data-part="branch-control"]');
+        const id = row?.dataset.value ?? '';
+        inside = byId.has(id) ? id : '';
+    }
+
+    /** The focus leaving the tree, or a pointer pressing in it, ends a run of key moves. */
+    function left(event: FocusEvent): void {
+        const next = event.relatedTarget;
+        if (next instanceof Node && event.currentTarget instanceof Node) {
+            if (event.currentTarget.contains(next)) return;
         }
+        keyed = false;
+        inside = '';
     }
 </script>
 
-<div class="tree" role="tree" aria-label={label} bind:this={box} onfocusin={entered}>
+<div
+    class="tree"
+    {...boxProps}
+    role="tree"
+    aria-label={label}
+    onkeydown={pressedKey}
+    onfocusin={entered}
+    onfocusout={left}
+    onpointerdown={() => (keyed = false)}
+>
     {@render children(nav)}
 </div>
 

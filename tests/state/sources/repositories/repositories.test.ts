@@ -249,13 +249,18 @@ describe('the rows of one repository', () => {
                 { path: '/hub/.agents/worktrees/x', branch: 'x', head: 'h2', main: false }
             ]
         });
-        expect(repositoryKeyRows(held, [], ['commit:h1'])).toEqual([
+        const graph = [
+            { id: 'commit:h1', parent: 'graph', open: true, fixed: true },
+            { id: 'file:h1:a.md', parent: 'commit:h1' }
+        ];
+        expect(repositoryKeyRows(held, [], graph)).toEqual([
             { id: 'changes', parent: null, open: true },
             { id: 'group:changed', parent: 'changes', open: true },
             { id: 'change:changed:a.md', parent: 'group:changed' },
             { id: 'group:untracked', parent: 'changes', open: true },
             { id: 'graph', parent: null, open: true },
-            { id: 'commit:h1', parent: 'graph' },
+            { id: 'commit:h1', parent: 'graph', open: true, fixed: true },
+            { id: 'file:h1:a.md', parent: 'commit:h1' },
             { id: 'stashes', parent: null, open: true },
             { id: 'stash:stash@{0}', parent: 'stashes' },
             { id: 'tags', parent: null, open: true },
@@ -266,7 +271,7 @@ describe('the rows of one repository', () => {
             { id: 'worktree:/hub/.agents/worktrees/x', parent: 'worktrees' }
         ]);
         expect(
-            repositoryKeyRows(held, ['changes', 'graph', 'stashes', 'tags'], ['commit:h1']).map(
+            repositoryKeyRows(held, ['changes', 'graph', 'stashes', 'tags'], graph).map(
                 (row) => row.id
             )
         ).toEqual([

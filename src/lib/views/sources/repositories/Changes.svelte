@@ -19,11 +19,17 @@
     // The colour of a status is state/sources/repositories/repositories.ts's statusStyle() and the
     // line counts are shared/changes/ChangeCounts.svelte, which is what the session views' Changes
     // panel draws them with, so the two lists agree.
+    //
+    // A group's paths have no cap, so each group draws them through ui/tree/VirtualRows.svelte,
+    // which draws only the rows in view of the pane and holds the height of the rest; a key moving
+    // to a row not drawn has it scrolled in first, and the type-ahead reads every file's name.
 
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
     import TreeSection from '$lib/ui/tree/TreeSection.svelte';
+    import VirtualRows from '$lib/ui/tree/VirtualRows.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import type { TreeNav } from '$lib/ui/tree/tree-keys';
+    import type { Attachment } from 'svelte/attachments';
     import ChangeCounts from '$lib/views/shared/changes/ChangeCounts.svelte';
     import { nameOf } from '$lib/state/sources/fs';
     import {
@@ -76,6 +82,19 @@
         return group === 'staged'
             ? t('repositories.diff_staged_title')
             : t('repositories.diff_title');
+    }
+
+    /** The row id of one path of a group, which is what the tree and the keys know it by. */
+    function rowId(group: string, path: string): string {
+        return `change:${group}:${path}`;
+    }
+
+    /** The index of the path a row id names in its group's paths, or -1 for another group's row. */
+    function indexIn(group: string, entries: GitEntry[], id: string): number {
+        const prefix = rowId(group, '');
+        if (!id.startsWith(prefix)) return -1;
+        const path = id.slice(prefix.length);
+        return entries.findIndex((entry) => entry.path === path);
     }
 
     function discard(path: string): void {
@@ -160,21 +179,32 @@
                 </li>
             {/if}
             {#if open}
-                {#each group.entries as entry (entry.path)}
-                    <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-                    {@render row(entry, group.id)}
-                {/each}
+                <VirtualRows
+                    count={group.entries.length}
+                    key={(at: number) => group.entries[at].path}
+                    {nav}
+                    owns={(id: string) => indexIn(group.id, group.entries, id)}
+                    label={(id: string) => {
+                        const at = indexIn(group.id, group.entries, id);
+                        return at < 0 ? undefined : nameOf(group.entries[at].path);
+                    }}
+                >
+                    {#snippet item(at: number, measure: Attachment<HTMLElement>)}
+                        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                        {@render row(group.entries[at], group.id, measure)}
+                    {/snippet}
+                </VirtualRows>
             {/if}
         {/each}
     </TreeSection>
 </div>
 
-{#snippet row(entry: GitEntry, group: string)}
-    <li role="none" data-entry={entry.path}>
+{#snippet row(entry: GitEntry, group: string, measure: Attachment<HTMLElement>)}
+    <li role="none" data-entry={entry.path} {@attach measure}>
         <TreeItem
             label={nameOf(entry.path)}
             name={t('repositories.change_name', entry.path, t(statusWordKey(entry.status)))}
-            id={`change:${group}:${entry.path}`}
+            id={rowId(group, entry.path)}
             {nav}
             level={3}
             depth={1}

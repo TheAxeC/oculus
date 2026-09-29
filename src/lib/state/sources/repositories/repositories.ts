@@ -274,8 +274,11 @@ export function changeGroups(git: GitState): { id: string; entries: GitEntry[] }
     );
 }
 
-/** One row of the keyboard's order: its id, the row it sits under, and whether it is open. */
-export type KeyRow = { id: string; parent: string | null; open?: boolean };
+/**
+ * One row of the keyboard's order: its id, the row it sits under, whether it is open, and whether
+ * it is held as it is drawn, so a key never opens or closes it.
+ */
+export type KeyRow = { id: string; parent: string | null; open?: boolean; fixed?: boolean };
 
 /**
  * The rows of the Repositories section as its keyboard reads them: its head, and under it while it
@@ -297,7 +300,7 @@ export function repoListRows(roots: readonly string[], collapsed: readonly strin
 export function repositoryKeyRows(
     git: GitState,
     collapsed: string[],
-    graph: readonly string[] = []
+    graph: readonly KeyRow[] = []
 ): KeyRow[] {
     const rows: KeyRow[] = [];
     const head = (id: string): boolean => {
@@ -320,8 +323,9 @@ export function repositoryKeyRows(
             }
         }
     }
-    // The graph's rows are read on demand, so the view hands in the ids it has drawn.
-    if (head('graph')) under('graph', [...graph]);
+    // The graph's rows are read on demand, so the view hands in the rows it has drawn, each under
+    // the section or under the commit whose files it is.
+    if (head('graph')) rows.push(...graph);
     if (head('stashes'))
         under(
             'stashes',

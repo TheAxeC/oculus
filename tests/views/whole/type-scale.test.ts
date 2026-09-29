@@ -296,6 +296,7 @@ const PASS_THROUGH: Record<string, string> = {
     'src/lib/ui/tree/TreeItem.svelte': '.detail, .count, .end=fs-sm',
     'src/lib/ui/tree/TreeSection.svelte': '',
     'src/lib/ui/tree/TreeView.svelte': '',
+    'src/lib/ui/tree/VirtualRows.svelte': '',
     'src/lib/shell/rail/ActivityRail.svelte': '',
     'src/lib/shell/rail/RailFoot.svelte': '',
     'src/lib/shell/rail/RailPages.svelte': '',

@@ -28,6 +28,7 @@ import {
 } from '../../../../src/lib/data/sources/config.ts';
 import { setCatalog, setGlyphs } from '../../../../src/lib/state/shared/words/text.ts';
 import type { Instance } from '../../../../src/lib/state/workbench/layout/index.ts';
+import { OVERSCAN } from '../../../../src/lib/ui/tree/virtual.ts';
 import { git } from '../../../fixtures/sessions-fixture.ts';
 import { clientContext, createClientState, type ClientState } from '../../../fixtures/client.ts';
 
@@ -302,6 +303,43 @@ describe('the Repositories view', () => {
         expect(graph).toContain(catalog['repositories.log_empty']);
     });
 
+    // Revert: draw `{#each group.entries}` in Changes.svelte, or `{#each commits}` in
+    // graph/Graph.svelte, straight into the section rather than through
+    // ui/tree/VirtualRows.svelte, or set `shown` to `count` in ui/tree/virtual.ts's firstWindow.
+    // An audit of the markup: a server rendering has no scroll box, so each list draws its first
+    // window and holds the rest after it; which rows a browser draws once scrolled it says nothing
+    // of, and the Graph, which reads its commits only in a browser, draws an empty list.
+    it('audits that draws the first changed files of a long group and holds the rest in a spacer after them', () => {
+        const loose = Array.from({ length: 30 }, (_, at) => ({
+            path: `loose/f${String(at).padStart(2, '0')}.txt`,
+            status: '?',
+            added: 0,
+            deleted: 0
+        }));
+        const body = html({ [HUB]: { ...HUB_GIT, untracked: loose } });
+        const changes = group(body, 'changes');
+        const graph = group(body, 'graph');
+        const shown = OVERSCAN * 2;
+
+        expect(count(changes, 'data-virtual="before"')).toBe(3);
+        expect(count(changes, 'data-virtual="after"')).toBe(3);
+        expect(count(changes, 'data-entry="loose/')).toBe(shown);
+        expect(changes).toContain(`data-entry="loose/f${String(shown - 1).padStart(2, '0')}.txt"`);
+        // The group draws its files from the first, so the window ends on the tenth: the eleventh
+        // is past the rows a list draws before it has found its scroll box.
+        expect(changes).not.toContain(`data-entry="loose/f${String(shown).padStart(2, '0')}.txt"`);
+        const last = changes.lastIndexOf('data-virtual="after"');
+        expect(last).toBeGreaterThan(changes.lastIndexOf('data-entry="loose/'));
+        expect(changes.slice(last, changes.indexOf('>', last))).toContain(
+            `calc(${String(30 - shown)} * var(--tree-row)`
+        );
+        const staged = changes.indexOf('data-entry="code/one.py"');
+        expect(staged).toBeGreaterThan(changes.indexOf('data-virtual="before"'));
+        expect(staged).toBeLessThan(changes.indexOf('data-virtual="after"'));
+        expect(count(graph, 'data-virtual="before"')).toBe(1);
+        expect(count(graph, 'data-virtual="after"')).toBe(1);
+    });
+
     it('lists the stashes, each with Apply, Pop and Drop, and says when there is none', () => {
         const held = {
             ...HUB_GIT,
@@ -496,8 +534,10 @@ describe('the Repositories view', () => {
         // A root whose check timed out names no branch, so the row has the path alone above it.
         const unnamed = html({ [OTHER]: git({ branch: '', error: 'git timed out' }) });
         expect(unnamed).toContain('data-repo="failed"');
-        // No branch was ever read, so the row must not print a heading for one.
-        expect(unnamed).not.toContain(catalog['sessions.ch_branch']);
+        // No branch was ever read, so the row must not print a heading for one. The heading is
+        // looked for as the words drawn, since the tree's rows carry the word in an attribute.
+        expect(unnamed).not.toContain(`>${catalog['sessions.ch_branch']}<`);
+        expect(named).toContain(`>${catalog['sessions.ch_branch']}<`);
         expect(unnamed).toContain('class="path');
     });
 

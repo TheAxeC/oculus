@@ -23,7 +23,7 @@
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
     import TreeView from '$lib/ui/tree/TreeView.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import type { TreeNav } from '$lib/ui/tree/tree-keys';
+    import type { KeyRow, TreeNav } from '$lib/ui/tree/tree-keys';
     import Branches from './Branches.svelte';
     import Changes from './Changes.svelte';
     import Worktrees from './Worktrees.svelte';
@@ -78,7 +78,7 @@
 
     const { repositories } = useState();
 
-    let graphRows: string[] = $state([]);
+    let graphRows: KeyRow[] = $state([]);
 
     const keyRows = $derived(repositoryKeyRows(git, collapsed, graphRows));
     const shape = $derived(repoShape(root, git));
@@ -170,7 +170,7 @@
                     ontoggle={() => ontoggle('graph')}
                     {commit}
                     onpick={oncommit}
-                    onrows={(ids: string[]) => (graphRows = ids)}
+                    onrows={(rows: KeyRow[]) => (graphRows = rows)}
                 />
 
                 <Stashes

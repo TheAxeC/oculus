@@ -1,147 +1,134 @@
-Everything in the brief is done, with one exception. The one full `checks.sh` run stopped at `npm test` on a 5-second timeout in `tests/server/git/git-ops.test.ts`, a file this step does not touch. That file passes when run alone (37 of 37). The verify commands after `npm test` were run by hand and all exit 0. The full suite has therefore not been green in a single run.
+Everything in the brief and in repair round 1 is done. The full verify list was not run in this round, as the round brief says; the orchestrator runs it on main at landing.
 
-# Q81 report: menus, context menus, tooltips and dialogs on bits-ui 2.19.3, the palette on bits-ui's Command with fuzzysort 4.0.2
+# Q81 report, repair round 1: menus, context menus, tooltips and dialogs on bits-ui 2.19.3, the palette on bits-ui's Command with fuzzysort 4.0.2
 
-## Open items (verbatim, worktree `orchestrator-state.md` lines 84 to 101)
+## Open items (verbatim, main checkout `tools/oculus/.scratch/migration/orchestrator-state.md`, read at the end of this round)
 
 ## Open items (only what Axel must rule on; every report opens with this list verbatim and repeats it until he has ruled)
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is booked as its own step in `plan.md` and carried in the Booked section below, since it needs no ruling from him.
 
-- Z45, Q87's import-graph half cannot rest on dependency-cruiser as LA11 (a) assumed (raised 2026-09-29, by the orchestrator at `/spec` Q87). Probed on main at 703aec66 with dependency-cruiser 18.4.0 (MIT, 2026-09-20) in a scratch folder: it resolves `$lib` (with the alias given) and reads an `import()` in a component's markup as a dynamic import, as the plan asked to prove. But it compiles every `.svelte` file with the Svelte compiler before reading it (`src/extract/transpile/svelte-wrap.mjs`), so a component's type-only imports never reach it. Over `src/lib` the hand reader (`tests/checks/imports/graph.ts` `importGraph(..., true)`) finds 2877 import edges and dependency-cruiser finds every one of them except 199, all from `.svelte` files, 198 of them `import type` and one an inline `{ type Tab }` (`ui/tabs/TabFace.svelte:19`). The folder order (`order.ts`) and the boundary rows (`boundaries.test.ts`) read type-only imports, by DESIGN.md:174 ("a type a folder takes from a folder above it ties the two as an import does"). The runtime edges agree. `bin/diagrams/imports.mjs` stays whichever way, since `code.mjs` and `parsed.mjs` read comments and calls through its parses. The jscpd half works: jscpd 5.3.3 read 1255 files of `src/lib` in 1.6 s and found 132 clones at eight lines, a component split into its script, markup and style blocks. Options:
-  - (a) Keep the import checks hand-written (LA11 (c)), and Q87 is the duplication check on jscpd alone (LA12 (a)); Q72's measures run through the hand checks. Pros: every check keeps reading every import, types in components included, through one reader for the checks and the diagrams, as DESIGN.md:174 requires. Cons: about 740 lines of the import checks stay, among them the cycle finder (`graph.ts` `findCycles` and `walk`, about 75 lines).
-  - (b) dependency-cruiser for what reads runtime imports only (the cycle check and the diagrams' import edges), the hand reader for the folder order, the boundary rows and the augmentation check. Pros: the cycle finder goes, and the cycle rule is dependency-cruiser's `no-circular`. Cons: two readers and two resolvers of one module, which DESIGN.md:174 rules out so that the checks and the diagrams cannot read a module apart; about 75 lines removed against a new dependency and its configuration.
-  - Not offered: dependency-cruiser alone with the components' type-only imports left out of the folder order and the boundary rows, which drops 199 checked imports, a loosened check.
-  - Recommendation: (a). The library cannot see what the order and the boundary rows hold, and (b) buys the cycle finder's 75 lines with a second reader the design forbids. (a) is also the cheaper option; it is recommended because it keeps the checks whole, not for its cost.
-- Z46, D13 as one step or three (raised 2026-09-29, by the orchestrator at `/spec` D13). D13 replaces the source tab's editor, X3b's diff pane and the merge view with Monaco. Counted on main at c9d79698 with `wc -l`: the code it rewrites or removes is 3,272 lines (`views/sources/source/` Editor 431, Source 421, Gutter 185, Preview 79; `views/sources/repositories/diff/` Diff 402, DiffFile 391; `merge/` Merge 290, MergeSide 177; `views/shared/code/Code.svelte` 151; `state/sources/repositories/` diff-rows 295, merge-regions 242, diff-words 132, diff-patch 76). The library audit's spike estimates 1,500 to 2,100 new hand-written lines (`library-audit.md` LA9). The step also changes the `api/git` answer to carry both versions of a file (a wire change), adds the `code_theme:` key to `config/appearance.yml` with a Settings control (LA22 (a)), and starts with a proof that `@shikijs/monaco` 4.4.3 works with monaco-editor 0.57, which the spike did not prove. As one step that is one builder for many hours and a diff of several thousand lines that must be read whole, sharing files with the repositories, Settings and key-handling steps. Options:
-  - (a) Split D13 into three steps, each with its own brief, review and landing. D13a: the source tab on Monaco, meaning the `ui/editor/` primitive, the theme read from the tokens with 3-digit hex expanded, `typingIn` treating Monaco's EditContext as typing, Cmd+K kept for the palette with Monaco's Cmd+K chords removed and their actions listed in the palette (LA21 (a)), the languages through `@shikijs/monaco` with its fit proven first, and the gutter D11 needs. D13b, after D13a: every single-file diff in Monaco's diff editor, `api/git` answering both versions, hunk and line staging over `diff-patch.ts`, X3b's hand diff removed, and the three-way regions from `node-diff3` drawn as Monaco editors. D13c, after D13a and beside D13b: the `code_theme:` key and its Appearance control. D23 then waits on D13a. Pros: each diff can be read whole and reviewed, and a failed fit (the Shiki proof) stops only D13a. Cons: three dispatches, three landings.
-  - (b) D13 as one step, as the plan has it. Pros: one landing. Cons: the review and the landing read a diff of several thousand lines, and nothing that touches the repositories views, Settings or the keys can run beside it.
-  - Recommendation: (a), for the same reason Q79 was split (Z37). (b) is the lazy option.
-- Z47, X3c's order and three names and settings it would otherwise choose (raised 2026-09-29, by the orchestrator at `/spec` X3c). X3c is every row of the Editor tabs table of `agents/reviews/vscode-parity.md` (pinned tabs, the tab context menu with close others, to the right and all, editor actions at the strip's end, breadcrumbs, wrapped tabs). On main at 3ca25c13: the tab strip has no context menu (`grep -rn contextmenu src/lib/ui/tabs src/lib/shell/panes` prints nothing); the strip scrolls (`ui/tabs/tab-scroll.svelte.ts`) and nothing wraps it; `ui/tabs/Breadcrumb.svelte` has one user, the Files view; and oculus's "pin" ties a view to a session (`state/workbench/layout/instances.ts:99` `pinInstance`, labelled "Pin this pane" at `config/text/views/sessions/session-list.yml:43`), which is not VS Code's pinned tab (a tab kept at the strip's start that Close Others leaves open). Q88 also builds a right-click menu for tabs, on the menus Q81 moves to bits-ui. Questions:
-  1. Order. (a) X3c after Q81 lands, so the tab menu is built once, on bits-ui, as Q96 waits for Q81; Q88 then leaves the tab menu to X3c. (b) X3c now, with the tab menu on the hand-written `ui/menu`, which Q81 then moves to bits-ui with the other menus. Recommendation (a). (b) is the lazy option: it starts sooner and builds the menu twice.
-  2. The two pins. (a) VS Code's pinned tab is called "Pin", as in VS Code, and oculus's session pin is renamed "Lock to this session" (labels only, the state unchanged). (b) VS Code's pinned tab is called "Keep at start", and the session pin keeps "Pin this pane". Recommendation (a), since the migration copies VS Code's words. (b) is the lazy option.
-  3. Wrapped tabs. VS Code has it as a setting, off by default. (a) A key in `config/appearance.yml`, `wrap_tabs: false` by default, with a toggle in the Settings view's Appearance section. (b) The strip always wraps. (c) The strip always scrolls, and the row is dropped from X3c. Recommendation (a), as VS Code has it; the key's name is yours to rule. (c) is the lazy option.
-  4. Breadcrumbs. (a) The path of a file tab (the source tab, a document, a PDF) shown above its body as `Breadcrumb.svelte` segments, a segment opening the Files view at that folder; symbols in the path wait for D23's language servers. (b) Breadcrumbs only after D23, with symbols. Recommendation (a). (b) is the lazy option.
+- None.
 
-## The cases' first run, against the unchanged tree, and the ruling
+## The cases' first run, and the ruling
 
-Each case the brief lists that a server test can show was written as a test and run before any code changed.
+Each case a server test can show was written as a test and run against the unchanged tree before any code changed. Rows follow the brief's case numbers. The cases this round changed (3, 6, 7 and 8) were run again against the base sources; those results are in the last column.
 
-| Case | First run on the unchanged tree |
-|---|---|
-| 1 (fuzzy palette match) | red |
-| 2 (files filter) | green |
-| 3 (language list) | green |
-| 4 (marked letters) | red |
-| 5 (combobox, listbox, option ids) | red |
-| 6 (palette ranking) | red |
-| 7 (views alone for no word) | red |
-| 8 (submenu trigger, no Back) | did not load: `Cannot find package 'bits-ui'` |
-| 9 (item check, dot, glyph, badge) | did not load: `Cannot find package 'bits-ui'` |
-| 10, "the wrapper is the trigger" | red |
-| 10, other parts | green |
-| 11 (Confirm in place) | green |
-| 12 (Prompt field and verb) | green |
-| 13 (greps) | 15 lines each, as the brief counted |
-| 14, sheet, palette, tray as bits-ui dialogs | red |
-| 14, Memories | look only |
-| 15 | look only |
+| Brief case | First run (before any code change) | Rerun this round against the base sources |
+|---|---|---|
+| 1, fuzzy match of `rpls`, `raw pls`, `zzzq` | red | red: `TypeError: ranked is not a function` (the test now calls `ranked`) |
+| 2, views alone for no word | green | red: `TypeError: ranked is not a function` |
+| 3, title match first | green | red: `TypeError: ranked is not a function` |
+| 4, marked letters in the palette row | red | not changed |
+| 5, combobox, listbox, option ids | red | not changed |
+| 6, language list | red | red: `TypeError: languageMatches is not a function` |
+| 7, files filter | red | red: `1 failed` (the `mntx` case) |
+| 8, submenu trigger, no Back | did not load: `Cannot find package 'bits-ui'` | red: `expected '<button type="button" class="item sve...' to match /^<[a-z]+ [^>]*data-dropdown-menu-sub-.../` (old in-place `MenuList.svelte`, `menu-items.ts` and `on-body.ts` from the base; `menu_back` is already absent from `config/text/ui.yml`) |
+| 9, item check, dot, glyph, badge | did not load: `Cannot find package 'bits-ui'` | not changed; green on the base, now marked an audit |
+| 10, "the wrapper is the trigger" | red | not changed |
+| 10, empty string; presentational describes nothing | green | not changed; the presentational case now marked an audit |
+| 11, Confirm in place | green | not changed; now marked an audit |
+| 12, Prompt field and verb | green | not changed; now marked an audit |
+| 13, greps | 15 lines (`on-body\|onBody` in src) and 14 lines (`menuLevel\|menu_back` in src, config and tests) | not changed |
+| 14, sheet, palette, tray as bits-ui dialogs | red | not changed |
+| 14, Memories | look only | not changed |
+| 15 | look only | not changed |
 
-The hand-back raised case 5, item 6 and case 10. The coordinator's ruling (`tools/oculus/.scratch/migration/agents/briefs/Q81-cases.md` in the main checkout) says:
+The coordinator's ruling (main checkout `tools/oculus/.scratch/migration/agents/briefs/Q81-cases.md`):
 
-1. Case 5, ruled (a). `aria-activedescendant` belongs to the Command and is a look case. The server test shows only `role="combobox"` on the input, `role="listbox"` on the list, and `role="option"` with an `id` on each row. No selected id is written by hand.
-2. Item 6. The key sheet, the palette and the tray close through bits-ui's Escape layer, calling the `onclose` the shell passes. A Confirm inside the tray takes the first Escape. The shell's three Escape branches in `shell/keys/workbench-keys.svelte.ts`, and the tests that assert them, are removed. Every other key stays: `?`, Cmd-K, `:`, and the sheet's early return.
-3. Case 10. The always-on description stays through `tip-ids.ts` and `tooltip-target.ts`, and the "wrapper is the trigger" test stays as written.
-4. Case 14, Memories. Left to the look.
+1. Case 5 is ruled (a). `aria-activedescendant` belongs to the Command and is a look case. The server test shows `role="combobox"` on the input, `role="listbox"` on the list, and `role="option"` with an `id` on each row. No selected id is written by hand.
+2. Item 6: the key sheet, the palette and the tray close through bits-ui's Escape layer, calling the shell's `onclose`. A Confirm inside the tray takes the first Escape. The shell's three Escape branches in `shell/keys/workbench-keys.svelte.ts` and the tests that asserted them are removed; `?`, Cmd-K, `:` and the sheet's early return stay.
+3. Case 10: the always-on description stays through `tip-ids.ts` and `tooltip-target.ts`, and the "wrapper is the trigger" test stays.
+4. Case 14, Memories: left to the look.
 
-All four are carried out as ruled.
+The repair round's rulings are listed under the user-visible changes and the judgment calls below.
 
 ## DONE / NOT DONE
 
 | Item | State | Proof |
 |---|---|---|
-| bits-ui 2.19.3 and fuzzysort 4.0.2, pinned, in `dependencies` | DONE | `grep -n '"bits-ui"\|"fuzzysort"' package.json` gives `44: "bits-ui": "2.19.3",` and `48: "fuzzysort": "4.0.2",` |
-| Menu, ContextMenu, MenuList on bits-ui menus; submenus open to the side; Back choice removed | DONE | `tests/ui/menu/menu.test.ts` |
-| Tooltip on bits-ui Tooltip, always-on description kept | DONE | `tests/ui/menu/tooltip.test.ts` |
-| Confirm, Prompt, KeySheet, UpdateTray, Palette on bits-ui Dialog / AlertDialog through the new `ui/frame/Modal.svelte` | DONE | primitives.test, palette.test, prompt.test |
-| Palette on bits-ui Command with fuzzysort; files filter and language list on fuzzysort | DONE | status, files and palette state tests; palette.test |
-| `on-body.ts` removed; its users on bits-ui's Portal | DONE | `grep -rn "on-body\|onBody\|menuLevel\|menu_back" src config tests` prints nothing (exit 1) |
-| Shell Escape branches for sheet, palette and tray removed | DONE | workbench-keys.test |
-| Memories overlay on bits-ui Dialog | DONE, look only | none possible on the server |
-| `npm run check` | DONE | `COMPLETED 1960 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS` |
-| `npm run build` | DONE | exit 0, `built in 12.69s` |
-| `npm run format:check` | DONE | `All matched files use Prettier code style!` |
-| `npm run lint` | DONE | exit 0, no output after `eslint .` |
-| ASCII gate | DONE | exit 0. The one non-ASCII file under src, config and tests is `config/present.yml`, which `cmp` shows is byte-identical to main |
-| `npm test` in the full run | NOT DONE (green in one run) | see below |
-| Files under 1000 lines | DONE | largest `.svelte`/`.ts` under `src` is `src/lib/state/sources/fs.svelte.ts`, 881 lines |
-| At most 10 items per folder | DONE | ui/menu 10, ui/frame 7, ui/controls 9, state/shared/words 9, tests/ui/menu 4 |
+| Change 1: a dialog's focus is quiet on opening and on going | DONE | `ui/frame/Modal.svelte` `opened` always prevents bits-ui's first focus, calls `onopen` or `focusFirstQuietly(box)`, and gives the focus back with `focusQuietly(came)`; `focusFirstQuietly` added to `ui/menu/tooltip-target.ts`; DESIGN.md:306 and Modal's head comment name it. Browser-only, so left to the look; no test over source text |
+| Change 2: `.hit` is the Search view's match look | DONE | `Palette.svelte` `.hit { background: none; color: var(--accent-txt, var(--accent)); font-weight: 700; }` |
+| Change 3: `match` and `languageChoices` removed | DONE | `grep -rn "languageChoices\|match(index" src tests DESIGN.md HELP.md README.md bin` prints nothing; tests read `ranked(...).map((found) => found.item...)` and `languageMatches(...).map((found) => found.choice...)` |
+| Change 4: case 8 held by the submenu | DONE | red quoted above |
+| Change 5: case 3 held by the title-first rule | DONE | red quoted under "Reds" below |
+| Change 6: comments and a title | DONE | `grep -rn "no longer\|as the palette did" tests/shell/keys/workbench-keys.test.ts src/lib/shell/keys/Palette.svelte` prints nothing; files.test title reads "are the rows whose path the query fuzzily matches" |
+| Change 7: audits marked | DONE | the five comments below |
+| Changed test files | green | `npx vitest run` over the 9 changed or touched test files: `Test Files  9 passed (9)`, `Tests  171 passed (171)` |
+| `npm run check` | green | `COMPLETED 1960 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS` |
+| `npm run format:check` | green | `All matched files use Prettier code style!` |
+| `npm run lint` | green | exit 0, no output after `eslint .` |
+| `npm run diagrams` | run | regenerated `docs/diagrams/`, last lines `docs/diagrams/channels.svg`, `writes.dot`, `writes.svg` |
+| ASCII | clean | `LC_ALL=C grep -rn '[^ -~<tab>]' src tests DESIGN.md HELP.md` prints nothing |
+| Full verify list | NOT RUN in this round | the round brief reserves it for landing. The refuter's run of `checks.sh` over the step before this round: `Test Files  354 passed (354)`, `checks: 6 commands passed` |
 
-The `npm test` output from the one full `checks.sh` run, verbatim:
+These green results do not cover the browser behaviour: the quiet focus, the keys, the placement and the traps are look cases.
 
-```
- FAIL  tests/server/git/git-ops.test.ts > through the endpoint, with the real operations > routes each action to its own operation with its own fields
-Error: Test timed out in 5000ms.
-If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
- ❯ tests/server/git/git-ops.test.ts:697:5
+## Reds for the new or changed cases (the guarded change undone, then the file put back; `shasum` matched before and after each)
 
- Test Files  1 failed | 353 passed (354)
-      Tests  1 failed | 5671 passed | 1 skipped (5673)
-   Start at  11:13:16
-   Duration  149.24s (transform 26.48s, setup 0ms, import 225.16s, tests 314.91s, environment 90ms)
+- **Case 3, title first.** Removed `Number(right.titled) - Number(left.titled) || ` from `ranked` in `state/workbench/palette.ts`: `FAIL ranks the item whose title matches above one whose text alone does`, `AssertionError: expected [ 'project:beta', 'project:spread' ] to deeply equal [ 'project:spread', 'project:beta' ]`, `Tests  1 failed | 17 passed (18)`. The two items are `Beta study` with text `kappa`, and `Kinetic appraisal of pain`, whose title holds the letters of `kappa` spread out; fuzzysort's score alone ranks the text match first.
+- **Case 8, submenu.** Put back the base `MenuList.svelte` (in-place list), with the base `menu-items.ts` and `on-body.ts` it imports: `FAIL is a submenu trigger, and the menu draws no Back choice`, `AssertionError: expected '<button type="button" class="item sve...' to match /^<[a-z]+ [^>]*data-dropdown-menu-sub-.../`, `Tests  1 failed | 1 passed (2)`. The attribute name is `data-dropdown-menu-sub-trigger`, from `getBitsAttr("sub-trigger")` (`bits-ui/dist/bits/menu/menu.svelte.js:1215`) with the prefix `data-${variant}-` (`internal/attrs.js`).
+- **Case 1 (rewritten onto `ranked`).** `ranked` filtered by lowercased substrings of title, label and text before scoring: `FAIL finds a title by letters in its order, ...` with `AssertionError: expected [] to include 'project:raw'`, and case 3 red with `expected [ 'project:beta' ] to deeply equal [ 'project:spread', 'project:beta' ]`, `Tests  2 failed | 16 passed (18)`.
+- **Case 6 (rewritten onto `languageMatches`).** `languageMatches` changed to a substring filter: `FAIL lists Plain Text first ...` (`expected [ 'javascript', 'bash', 'typescript' ] to deeply equal [ 'javascript', 'typescript', 'bash' ]`) and `FAIL matches a language by the letters of its name in their order` (`expected [] to include 'TypeScript'`), `Tests  2 failed | 17 passed (19)`.
+- **Case 7 (title changed).** `matchingFiles` changed to a substring filter: `FAIL keeps every row for no query, a row whose path holds the letters in order, ...`, `AssertionError: expected [] to include 'manuscript/main.tex'`, `Tests  1 failed | 7 passed (8)`.
 
-checks: failed with exit 1: npm test
-```
+## Audits (green with the step undone, as the review ran them; each comment now says so)
 
-The same file run alone (`npx vitest run tests/server/git/git-ops.test.ts`) gives `Test Files  1 passed (1)` and `Tests  37 passed (37)`. The step does not change that file or anything under `src/lib/server`. The failure is a timeout under the load of the full parallel run, and the orchestrator's landing run is what settles whether it recurs. A code cause in this step has not been found; that the cause is load alone is not verified.
+- `tests/shell/keys/workbench-keys.test.ts` "restores no pane on the Escape the dialog has taken".
+- `tests/ui/controls/prompt.test.ts` "draws each field by its label with the text it begins with, and its yes and its cancel".
+- `tests/ui/primitives.test.ts` "is drawn in place as a modal alert dialog with its message, detail and two buttons" (its comment keeps the Portal as the change that turns it red).
+- `tests/ui/menu/tooltip.test.ts` "draws a presentational wrapper that describes nothing".
+- `tests/ui/menu/menu.test.ts` "draws its check, its dot, its glyph and its badge, hidden from its name".
+- The tooltip-markup edits in rail, workbench, inbox, radar, data, cardlinks and projects tests, the `wall.test.ts` selector key, the `type-scale.test.ts` entry and the `paneview.test.ts` removal follow the markup and names the step changed; they hold what they held before.
 
 ## Files, lines before and after
 
-"Main" is the main checkout's `tools/oculus`; "here" is the worktree. Counts come from `wc -l` and `diff` against main, run read-only. `package-lock.json` and `docs/diagrams/*` changed as well (the install and `npm run diagrams`) and are not counted.
+"Before" is the step's base. Main has moved since the base (Q82 and Q87 landed), so for the four files main has changed since (`DESIGN.md`, `HELP.md`, `package.json`, `tests/views/whole/type-scale.test.ts`) the counts are the base's and the step's own edits, not a diff against today's main. Every other row is `wc -l` and `diff` against the main checkout, whose copy of these files is still the base's. `package-lock.json` and `docs/diagrams/*` are not counted.
 
-| File | Main | Here | Added | Removed |
+| File | Before | After | Added | Removed |
 |---|---|---|---|---|
-| config/text/ui.yml | 64 | 63 | 0 | 1 |
 | DESIGN.md | 322 | 322 | 2 | 2 |
 | HELP.md | 294 | 294 | 2 | 2 |
 | package.json | 56 | 58 | 2 | 0 |
-| shell/keys/Palette.svelte | 387 | 462 | 245 | 170 |
-| shell/keys/workbench-keys.svelte.ts | 432 | 421 | 7 | 18 |
-| shell/rail/UpdateTray.svelte | 258 | 248 | 69 | 79 |
-| shell/status/Bell.svelte | 106 | 110 | 10 | 6 |
-| shell/status/NoticeCentre.svelte | 165 | 166 | 56 | 55 |
-| shell/status/RepoItems.svelte | 172 | 172 | 5 | 5 |
-| state/shared/words/fuzzy.ts | 0 | 66 | 66 | 0 |
-| state/sources/files.svelte.ts | 154 | 160 | 10 | 4 |
-| state/workbench/navigation/status.ts | 296 | 306 | 20 | 10 |
-| state/workbench/palette.ts | 196 | 223 | 44 | 17 |
-| ui/controls/Confirm.svelte | 176 | 114 | 24 | 86 |
-| ui/controls/Search.svelte | 79 | 86 | 8 | 1 |
-| ui/forms/Prompt.svelte | 173 | 131 | 33 | 75 |
-| ui/frame/Modal.svelte | 0 | 159 | 159 | 0 |
-| ui/frame/on-body.ts | 16 | 0 | 0 | 16 |
-| ui/menu/ContextMenu.svelte | 103 | 124 | 76 | 55 |
-| ui/menu/KeySheet.svelte | 121 | 113 | 29 | 37 |
-| ui/menu/Menu.svelte | 199 | 163 | 62 | 98 |
-| ui/menu/MenuList.svelte | 394 | 286 | 160 | 268 |
-| ui/menu/MenuOpener.svelte | 214 | 208 | 13 | 19 |
-| ui/menu/Tooltip.svelte | 327 | 381 | 175 | 121 |
-| ui/menu/menu-items.ts | 49 | 113 | 75 | 11 |
-| ui/shown.ts | 19 | 37 | 20 | 2 |
-| views/personal/memories/Memories.svelte | 419 | 444 | 55 | 30 |
+| config/text/ui.yml | 64 | 63 | 0 | 1 |
+| src/lib/shell/keys/Palette.svelte | 387 | 463 | 246 | 170 |
+| src/lib/shell/keys/workbench-keys.svelte.ts | 432 | 421 | 7 | 18 |
+| src/lib/shell/rail/UpdateTray.svelte | 258 | 248 | 69 | 79 |
+| src/lib/shell/status/Bell.svelte | 106 | 110 | 10 | 6 |
+| src/lib/shell/status/NoticeCentre.svelte | 165 | 166 | 56 | 55 |
+| src/lib/shell/status/RepoItems.svelte | 172 | 172 | 5 | 5 |
+| src/lib/state/shared/words/fuzzy.ts | 0 | 66 | 66 | 0 |
+| src/lib/state/sources/files.svelte.ts | 154 | 160 | 10 | 4 |
+| src/lib/state/workbench/navigation/status.ts | 296 | 301 | 15 | 10 |
+| src/lib/state/workbench/palette.ts | 196 | 218 | 40 | 18 |
+| src/lib/ui/controls/Confirm.svelte | 176 | 114 | 24 | 86 |
+| src/lib/ui/controls/Search.svelte | 79 | 86 | 8 | 1 |
+| src/lib/ui/forms/Prompt.svelte | 173 | 131 | 33 | 75 |
+| src/lib/ui/frame/Modal.svelte | 0 | 170 | 170 | 0 |
+| src/lib/ui/frame/on-body.ts | 16 | 0 | 0 | 16 |
+| src/lib/ui/menu/ContextMenu.svelte | 103 | 124 | 76 | 55 |
+| src/lib/ui/menu/KeySheet.svelte | 121 | 113 | 29 | 37 |
+| src/lib/ui/menu/Menu.svelte | 199 | 163 | 62 | 98 |
+| src/lib/ui/menu/MenuList.svelte | 394 | 286 | 160 | 268 |
+| src/lib/ui/menu/MenuOpener.svelte | 214 | 208 | 13 | 19 |
+| src/lib/ui/menu/Tooltip.svelte | 327 | 381 | 175 | 121 |
+| src/lib/ui/menu/menu-items.ts | 49 | 113 | 75 | 11 |
+| src/lib/ui/menu/tooltip-target.ts | 48 | 62 | 16 | 2 |
+| src/lib/ui/shown.ts | 19 | 37 | 20 | 2 |
+| src/lib/views/personal/memories/Memories.svelte | 419 | 444 | 55 | 30 |
 | tests/shell/keys/palette.test.ts | 225 | 276 | 53 | 2 |
-| tests/shell/keys/workbench-keys.test.ts | 425 | 421 | 14 | 18 |
+| tests/shell/keys/workbench-keys.test.ts | 425 | 422 | 15 | 18 |
 | tests/shell/panes/paneview.test.ts | 224 | 190 | 0 | 34 |
 | tests/shell/rail/rail.test.ts | 282 | 283 | 2 | 1 |
 | tests/shell/workbench.test.ts | 842 | 845 | 4 | 1 |
-| tests/state/sources/files.test.ts | 155 | 166 | 11 | 0 |
-| tests/state/workbench/navigation/status.test.ts | 287 | 299 | 15 | 3 |
-| tests/state/workbench/palette.test.ts | 249 | 287 | 39 | 1 |
+| tests/state/sources/files.test.ts | 155 | 166 | 12 | 1 |
+| tests/state/workbench/navigation/status.test.ts | 287 | 301 | 22 | 8 |
+| tests/state/workbench/palette.test.ts | 249 | 291 | 52 | 10 |
 | tests/ui/controls/prompt.test.ts | 59 | 60 | 1 | 0 |
-| tests/ui/menu/menu.test.ts | 0 | 86 | 86 | 0 |
 | tests/ui/menu/OpenMenu.svelte | 0 | 23 | 23 | 0 |
-| tests/ui/menu/tooltip.test.ts | 110 | 137 | 37 | 10 |
-| tests/ui/primitives.test.ts | 808 | 836 | 30 | 2 |
+| tests/ui/menu/menu.test.ts | 0 | 91 | 91 | 0 |
+| tests/ui/menu/tooltip.test.ts | 110 | 138 | 38 | 10 |
+| tests/ui/primitives.test.ts | 808 | 838 | 32 | 2 |
 | tests/ui/wall.test.ts | 206 | 206 | 2 | 2 |
 | tests/views/boards/projects.test.ts | 858 | 860 | 4 | 2 |
 | tests/views/feeds/inbox.test.ts | 449 | 451 | 4 | 2 |
@@ -150,59 +137,91 @@ The same file run alone (`npx vitest run tests/server/git/git-ops.test.ts`) give
 | tests/views/sources/data.test.ts | 340 | 340 | 1 | 1 |
 | tests/views/whole/type-scale.test.ts | 349 | 350 | 1 | 0 |
 
-In all: 1761 lines added and 1279 removed, a net growth of 482. `config/local.yml` also shows in the diff; it exists only in the main checkout and is the user's own file, not part of this step, so it is left out of these totals. The six menu and tooltip primitives went from 1286 lines to 1275. The four dialogs (Confirm, Prompt, KeySheet, UpdateTray) went from 728 to 606, plus the 159-line Modal they now share. The palette grew by 75 lines: the marked letters, the Command parts, and the dialog wiring that the shell's Escape branches used to handle.
+In all, 1810 lines added and 1297 removed. The six menu and tooltip primitives went from 1286 lines to 1275. The four dialogs went from 728 to 606, plus the 170-line `Modal.svelte` they share. Because main has moved, the landing cherry-pick meets main's changes in `DESIGN.md` (line 309, the Files and Repositories paragraph), `HELP.md`, `package.json` and `type-scale.test.ts`. The changed lines do not overlap.
 
-## Judgment calls the brief left open
+## Paths beyond the brief's list (widenings)
 
-- **Highlight token.** Neither the theme nor the config has a highlight or match token (checked with grep). The marked letters in the palette use `--accent-txt` with a fallback of `--accent`, at weight 600 and with no background. The search view's `.match` uses the same colour at weight 700.
-- **Submenu trigger.** It shows a trailing `chevron` glyph (`.more`), as VS Code does for an item with its own list.
-- **Type-ahead.** The label comes first in each item's DOM, with the dot and glyph moved before it by CSS `order: -1`, so bits-ui's type-ahead reads the label from `textContent`. bits-ui's `textValue` prop is not declared on Item and would be rendered as an attribute, so it is not used.
-- **`ui/frame/Modal.svelte`.** This is a new primitive that the five modal boxes stand on, which widens the brief's path list. It also clears the duplication check, which flagged the five copies of the same Dialog wiring.
-- **`watchShown` in `ui/shown.ts`.** Added next to `onShown`, which is unchanged. It lets a dialog left open in a hidden tab switch off its focus trap and Escape until the tab shows again. This also widens the path list.
-- **`field` prop on `Search.svelte`.** This lets `Command.Input` put its combobox attributes on the Search input, and widens the path list.
-- **`menuClosing` in `menu-items.ts`.** Menu and ContextMenu share it. On close, focus goes back to the opener quietly (no tooltip opens), unless the menu was left by Tab or by a press elsewhere. The pick is carried out only once focus is back, so a dialog the pick opens keeps the focus it takes.
-- **Tray's first focus.** bits-ui's first tabbable element, which is the Close button.
-- **Palette rows.** Each row keeps its tabbable ToolButton. The row's action runs from `Command.Item`'s `onSelect`.
-- **`aria-controls` on the palette input.** It names `palette-list` by hand, because no `Command.Viewport` is used.
-- **ContextMenu with no items.** It still prevents the browser's own menu, as before.
-- **A browser-raised context menu at (0,0) and the ContextMenu / Shift+F10 keys.** These open the list at the focused control's right edge by dispatching a `contextmenu` event there.
-- **Tooltip and Escape.** The Tooltip closes its bubble on Escape in the capture phase, before bits-ui's escape layer, so the key still reaches whatever answers it next.
-- **Z-order.** Dialog 60, tray 65, palette, sheet and menu list 70, tooltip bubble 80. The tray's Confirm is drawn in Modal's `over` snippet, on the tray's own ground, so it stands above the tray.
-- **`TextPart`.** Re-exported from `state/workbench/palette.ts`, because the boundaries rule does not let `shell/` import `state/shared/words/fuzzy`.
+- `src/lib/ui/frame/Modal.svelte` (new primitive, with its `level` values `dialog`, `tray`, `palette`, `sheet`).
+- `watchShown` in `src/lib/ui/shown.ts`.
+- The `field` prop on `src/lib/ui/controls/Search.svelte`.
+- `src/lib/state/shared/words/fuzzy.ts` (new, the one fuzzysort wrapper for the palette, the language list and the files filter).
+- `focusFirstQuietly` in `src/lib/ui/menu/tooltip-target.ts` (this round, change 1).
+- Seven test files outside the brief's list: `tests/shell/rail/rail.test.ts`, `tests/shell/keys/workbench-keys.test.ts`, `tests/views/boards/projects.test.ts`, `tests/views/feeds/inbox.test.ts`, `tests/views/feeds/radar.test.ts`, `tests/views/shared/card/cardlinks.test.ts`, `tests/views/sources/data.test.ts`.
+
+## Dependencies
+
+`package.json` adds two, pinned, in `dependencies`: `"bits-ui": "2.19.3"` and `"fuzzysort": "4.0.2"`. `package-lock.json`, compared with python against the main checkout's lock, adds these packages. Licences are from the lock entries unless noted.
+
+| Package | Version | Licence | Brought by |
+|---|---|---|---|
+| bits-ui | 2.19.3 | MIT | direct |
+| fuzzysort | 4.0.2 | MIT | direct |
+| @floating-ui/core | 1.8.0 | MIT | bits-ui |
+| @floating-ui/dom | 1.8.0 | MIT | bits-ui |
+| @floating-ui/utils | 0.2.12 | MIT | bits-ui |
+| runed | 0.35.1 | MIT | bits-ui |
+| dequal | 2.0.3 | MIT | runed |
+| lz-string | 1.5.0 | MIT | runed |
+| svelte-toolbelt | 0.10.6 | MIT by its `LICENSE` file; no licence field in the lock | bits-ui |
+| style-to-object | 1.0.14 | MIT | svelte-toolbelt |
+| inline-style-parser | 0.2.7 | MIT | style-to-object |
+| tabbable | 6.5.0 | MIT | bits-ui |
+| @internationalized/date | 3.12.4 | Apache-2.0 | peer |
+| @swc/helpers | 0.5.23 | Apache-2.0 | peer |
+| tslib | 2.8.1 | 0BSD | peer |
+
+`runed` declares `@sveltejs/kit` as an optional peer (`node_modules/runed/package.json:60-62`). With it, the lock changes the flags of 58 existing entries: 31 go from `"dev": true` to `"devOptional": true` and 27 lose the `dev` flag. Among them are `@sveltejs/kit`, `@sveltejs/vite-plugin-svelte`, `vite`, `rolldown` and its bindings, `lightningcss` and its bindings, `typescript`, `cookie`, `mrmime`, `sirv` and `postcss`. What this changes for an install is not verified: a full install takes every entry either way, and whether a production-only install (`npm ci --omit=dev`) now keeps the entries that lost the flag was not run.
+
+## Judgment calls
+
+- **Highlight.** The theme has no highlight or match token (grep of `themes/tokens.css`). `.hit` is `var(--accent-txt, var(--accent))` at weight 700 with no fill, as `views/sources/search/Results.svelte`'s `.match` draws, so oculus has one match look. Brief decision 4 named `--accent` at weight 600 when no token exists; the colour here is the accent's text variant, which is what the theme already uses for search matches, and the weight is 700 against the decision's 600. This was ruled in this round (change 2).
+- **Submenu chevron.** A trailing `chevron` glyph on a choice with its own list, as VS Code draws one. Ruled in.
+- **Type-ahead.** The label is first in each item's DOM, with the dot and glyph drawn before it by CSS `order: -1`. bits-ui 2.19.3 declares `textValue` on Item (`bits/menu/types.d.ts:58`), but its type-ahead reads only `textContent` (`internal/dom-typeahead.svelte.js:29-32`), so a `textValue` would change nothing. Ruled in.
+- **`menuClosing`** in `ui/menu/menu-items.ts`, shared by Menu and ContextMenu. On close, focus goes back to the opener quietly, unless the menu was left by Tab or a press elsewhere. The pick is held until the focus is back, so a dialog the pick opens keeps its focus. Ruled in.
+- **`ui/frame/Modal.svelte`** with its levels, **`watchShown`**, **Search's `field`**, the hand-written **`aria-controls`** on the palette input (naming `palette-list`, since no `Command.Viewport` is used), the **context menu opened from the keyboard** by a dispatched `contextmenu` event at the control's right edge, the **Tooltip's capture-phase Escape**, and **`TextPart`** re-exported from `state/workbench/palette.ts` for the boundaries rule. All ruled in.
+- **The dialog's first focus.** `onopen` when the box gives one; otherwise the first control inside the dialog's `role="dialog"` or `role="alertdialog"` element that is not disabled, in the order `a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])`. The `onopen` focuses of Confirm (its yes button), Prompt (its first input) and the palette (its input) stay plain `focus()` calls. None of those controls has a tooltip.
+- **Z-order.** Dialog ground 60, tray 65, palette, sheet and menu lists 70, tooltip bubble 80. The tray's Confirm is drawn in Modal's `over` snippet, on the tray's ground.
 
 ## User-visible changes, before and after
 
-- **Escape on the key sheet.** Before: the shell closed the sheet on Escape or `?`. After: bits-ui closes it on Escape, and the shell still closes it on `?`.
+- **Escape on the key sheet.** Before: the shell closed it on Escape or `?`. After: bits-ui closes it on Escape; the shell closes it on `?`.
 - **Escape on the palette.** Before: the shell closed it. After: bits-ui closes it.
-- **Escape on the update tray.** Before: the shell closed it unless the key had already been `defaultPrevented` (by a Confirm over it). After: bits-ui's escape layer closes it; a Confirm over the tray takes the first Escape, and the next Escape closes the tray.
-- **Submenus.** Before: a choice with its own list replaced the menu's contents in place, with a Back choice (`ui.menu_back`). After: the list opens to the side. ArrowRight or Enter opens it; ArrowLeft or Escape closes it and puts focus back on its choice. The Back choice and its string are gone.
-- **Menu keys.** The arrows, Home, End and type-ahead are now bits-ui's.
-- **Palette matching.** Before: substring matching. After: fuzzysort matching, where the letters of each typed word match in order. Rows are ranked by score, with a title match above a text-only match, and the matched letters are marked. The files filter and the language list match the same way.
-- **Palette selection.** The selected row is now bits-ui Command's, announced through `aria-activedescendant` (a look case).
-- **Focus return.** The palette, tray and sheet now give focus back to the control that held it when they opened. Before, they did not.
-- **Tooltips.** The bubble is now placed by bits-ui's floating positioning on the body, and its accessible text is a hidden span under the tooltip id. The on-screen look and the delay are the same as before.
-- **Menu height.** A menu list longer than the room it has now scrolls, within `--bits-floating-available-height`.
+- **Escape on the update tray.** Before: the shell closed it unless a Confirm over it had already taken the key. After: bits-ui's escape layer closes it; a Confirm over the tray takes the first Escape and the next closes the tray.
+- **A dialog's focus is quiet (change 1).** Before: no dialog gave focus quietly, and the tray, palette and sheet gave no focus back at all. After: a dialog puts its first focus and gives the focus back through `focusQuietly`, so the control it lands on opens no tooltip, even when the focus is `:focus-visible`.
+- **The tray's first focus.** Before: none; the keyboard stayed where it was. After: the Close button, quietly.
+- **Focus given back after a dialog closes.** Before: the palette, tray and sheet gave none. After: the control that held the focus when the ground was drawn gets it back, quietly, while it is still on the page.
+- **When a pick is answered.** Before: `onpick` ran inside the click, after the focus went back to the opener. After: it runs once bits-ui has closed the menu and the focus is back.
+- **The chevron.** Before: no mark on a choice with its own list. After: a trailing chevron.
+- **Submenus.** Before: a choice with its own list replaced the menu's contents in place, with a Back choice (`ui.menu_back`). After: the list opens to the side; ArrowRight or Enter opens it, ArrowLeft or Escape closes it and puts the focus back on its choice. The Back choice and its string are gone.
+- **Tab in an open menu.** Before: the list stayed open and the focus moved on. After: bits-ui closes the menu and the focus goes to the next tabbable element after the opener.
+- **Opening a menu.** Before: the list focused its first choice however it was opened. After: a pointer open focuses the list and an arrow key reaches the first choice; ArrowDown, Enter and Space on the opener open the list through bits-ui's trigger.
+- **Tooltip placement near an edge.** Before: a bubble below its control was clamped left and right only. After: bits-ui flips it to the other side near the window's bottom edge.
+- **Palette Home and End.** Before: they moved the caret in the query. After: they move the selection.
+- **The keyboard held by a Confirm and the Memories overlay.** Before: the Memories overlay did not trap the focus, and a press in another pane gave that pane the keyboard. After: bits-ui's focus trap holds the keyboard for the whole workbench while a Confirm in a visible tab or the Memories overlay shows.
+- **Menu lists.** Before: a menu list hung against its button at z-index 2 inside its surface. After: every list is on the body at z-index 70, above the tray (65) and the dialog grounds (60).
+- **Dismissing a ground.** Before: a press on the palette or tray ground closed it on `click`. After: bits-ui's outside interaction closes it on pointer down.
+- **Palette search.** Before: substring words matched over the label and text; the title was not searched. After: fuzzysort matches every typed word, letters in order, over the title, the label and the text; a title match ranks first, then the better score; the matched letters of the title are drawn in the match look (change 2: accent text colour, weight 700). The files filter and the language list match the same way.
+- **Palette selection.** Now bits-ui Command's, announced through `aria-activedescendant` (a look case).
+- **Tooltips.** The bubble is drawn on the body and placed by bits-ui; its accessible words are a hidden span under the tooltip id. The delay is the same.
+- **Menu height.** A list longer than its room scrolls within `--bits-floating-available-height`.
 
 ## Cases left to the look
 
 - Case 5: the input's `aria-activedescendant` names the selected row and follows ArrowUp, ArrowDown, Home and End.
-- Case 14, Memories: the lightbox is a bits-ui dialog, and Escape and the arrows behave as before.
-- Case 15, in full.
-- Focus goes back to the opener after each menu, dialog, tray, palette and sheet closes, and no tooltip opens on it.
-- Menus opened by pointer, and submenus placed to the side near the window's edges.
-- A dialog left open in a hidden tab holds nothing of the page, and takes the keyboard again when its tab shows.
+- Case 14, Memories: the lightbox is a bits-ui dialog; Escape and the arrows behave as before.
+- Case 15 in full.
+- The quiet focus of change 1: the tray opened from the palette's `:update` puts the focus on Close with no tooltip; a dialog closed with Escape gives the focus back with no tooltip.
+- Focus goes back to the opener after each menu closes, with no tooltip.
+- Menus opened by pointer; submenus placed to the side near the window's edges.
+- A dialog left open in a hidden tab holds nothing of the page and takes the keyboard again when its tab shows.
 - The tray's Confirm takes the first Escape.
 
 ## What in the brief was wrong or impossible
 
-- **Item 6 / Decision 3.** The brief expected the shell's Escape branches to keep working under bits-ui. `node_modules/bits-ui/dist/bits/utilities/escape-layer/use-escape-layer.svelte.js:32-36` calls `preventDefault()` on the Escape key for the responsible layer before it reads `escapeKeydownBehavior`, and `workbench-keys.svelte.ts` checked `defaultPrevented`, so those branches would never have closed anything. The coordinator's ruling resolves this (point 2 above).
-- **Case 5, the selected id.** The brief had the selected row's id written onto the input or the list. The Command sets `aria-activedescendant` itself, only in the page. This was ruled as point 1.
-- **Case 10, `aria-describedby`.** bits-ui's Tooltip gives the trigger `aria-describedby` only while the bubble is open (`tooltip/tooltip.svelte.js:595`), so the always-on description stays in oculus's own code. This was ruled as point 3.
+- **Item 6 / Decision 3.** The brief expected the shell's Escape branches to keep working under bits-ui. `bits-ui/dist/bits/utilities/escape-layer/use-escape-layer.svelte.js:32-36` calls `preventDefault()` on Escape for the responsible layer before it reads `escapeKeydownBehavior`, and `workbench-keys.svelte.ts` checked `defaultPrevented`, so those branches would never have closed anything. Ruled as point 2 above.
+- **Case 5.** The brief had the listbox carry `aria-activedescendant`; bits-ui puts it on the Command input, and only in the page. Ruled as point 1.
+- **Case 10.** bits-ui's Tooltip gives the trigger `aria-describedby` only while the bubble is open (`tooltip/tooltip.svelte.js:595`), so the always-on description stays in oculus's code. Ruled as point 3.
 
-## Rule breaches
+## Git
 
-- One read-only `git -C . status` was run in the worktree, against the "run no git command" rule. It changed nothing.
-
-## Which revert turns each new or changed test red
-
-Every new or changed test carries a comment of the form "Red when ..." naming its revert. `grep -c "Red when"` counts 4 in palette.test, 2 in workbench-keys.test, 1 in files.test, 1 in status.test, 3 in palette state test, 4 in tooltip.test and 2 in menu.test. In primitives.test, the Confirm, KeySheet and tool-button tooltip checks each have one, and prompt.test has one. The tooltip-markup edits in rail, workbench, inbox, radar, data, cardlinks and projects tests, the wall.test selector key, the type-scale entry and the paneview removal have no revert of their own. They follow the markup and selectors this step changed, and they are audits of those names, not tests of new behaviour.
+A read-only `git -C . status` was run once in the worktree while the step was being built, against the rule. It changed nothing. No git command was run in this round.

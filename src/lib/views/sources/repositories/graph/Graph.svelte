@@ -12,15 +12,25 @@
     //
     // The history is not on the `git` channel, which carries twenty commits for a glance: it is
     // read from GET /api/git a page at a time, again from the first page whenever the branch's
-    // head, its distance from the upstream or its names move, and the ids of the rows drawn are
-    // handed up for the keyboard's order. A repository with no commit yet has no history to read,
-    // so the section says so without asking git, whose log refuses such a branch.
+    // head, its distance from the upstream or its names move, and the rows drawn are handed up for
+    // the keyboard's order, the open commit's files under the commit. A commit row opens and closes
+    // by a press or by the blame, never by a key, so it is handed up held as it is drawn. A
+    // repository with no commit yet has no history to read, so the section says so without asking
+    // git, whose log refuses such a branch.
+    //
+    // The loaded commits grow a page at a time with no cap, so they are drawn through
+    // ui/tree/VirtualRows.svelte, which draws only the commits in view of the pane and holds the
+    // height of the rest, each commit one item with its files when it is the open one. The open
+    // commit stays drawn wherever the list is scrolled, so its files are read once; a key moving to
+    // a commit not drawn has it scrolled in first, and the type-ahead reads every commit's subject.
 
     import { untrack } from 'svelte';
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
     import TreeSection from '$lib/ui/tree/TreeSection.svelte';
+    import VirtualRows from '$lib/ui/tree/VirtualRows.svelte';
     import Menu from '$lib/ui/menu/Menu.svelte';
-    import type { TreeNav } from '$lib/ui/tree/tree-keys';
+    import type { KeyRow, TreeNav } from '$lib/ui/tree/tree-keys';
+    import type { Attachment } from 'svelte/attachments';
     import Lanes from './Lanes.svelte';
     import CommitFiles from './CommitFiles.svelte';
     import { stamp } from '$lib/state/shared/words/format';
@@ -43,8 +53,8 @@
         /** The commit whose files are open, the empty string for none. */
         commit: string;
         onpick: (hash: string) => void;
-        /** Handed the row ids drawn under the section, in order, for the keyboard. */
-        onrows: (ids: string[]) => void;
+        /** Handed the rows drawn under the section, in order, for the keyboard. */
+        onrows: (rows: KeyRow[]) => void;
     };
 
     let { root, git, nav, open, ontoggle, commit, onpick, onrows }: Props = $props();
@@ -94,25 +104,49 @@
     });
 
     $effect(() => {
-        const ids: string[] = [];
-        /** A commit's row, and its files after it when it is the open one. */
+        const rows: KeyRow[] = [];
+        const under = (id: string): void => {
+            rows.push({ id, parent: 'graph' });
+        };
+        /** A commit's row, and its files under it when it is the open one. */
         const row = (id: string, hash: string): void => {
-            ids.push(id);
-            if (hash === commit) ids.push(...fileRows);
+            const open = hash === commit;
+            rows.push({ id, parent: 'graph', open, fixed: true });
+            if (open) for (const file of fileRows) rows.push({ id: file, parent: id });
         };
         if (missing) row(`commit:${commit}`, commit);
         if (incoming.length > 0) {
-            ids.push('graph:incoming');
+            under('graph:incoming');
             for (const one of incoming) row(`in:${one.hash}`, one.hash);
         }
         if (outgoing.length > 0) {
-            ids.push('graph:outgoing');
+            under('graph:outgoing');
             for (const one of outgoing) row(`out:${one.hash}`, one.hash);
         }
         for (const one of commits) row(`commit:${one.hash}`, one.hash);
-        if (more) ids.push('graph:more');
-        onrows(ids);
+        if (more) under('graph:more');
+        onrows(rows);
     });
+
+    /** The index of the loaded commit drawing the row `id`: its own, or a file of the open one. */
+    function commitAt(id: string): number {
+        const hash = id.startsWith('commit:') ? id.slice('commit:'.length) : '';
+        const held = fileRows.includes(id) ? commit : hash;
+        return held === '' ? -1 : commits.findIndex((one) => one.hash === held);
+    }
+
+    /** The open commit's index among the loaded ones, kept drawn so its files are read once. */
+    const opened = $derived.by(() => {
+        const at = commits.findIndex((one) => one.hash === commit);
+        return at < 0 ? [] : [at];
+    });
+
+    /** The subject of a loaded commit by its row id, for the type-ahead. */
+    function subjectOf(id: string): string | undefined {
+        if (!id.startsWith('commit:')) return undefined;
+        const hash = id.slice('commit:'.length);
+        return commits.find((one) => one.hash === hash)?.subject;
+    }
 
     async function load(skip: number): Promise<void> {
         asked += 1;
@@ -269,10 +303,23 @@
                 />
             </li>
         {/if}
-        {#each commits as one, at (one.hash)}
-            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-            {@render row(one, `commit:${one.hash}`, at)}
-        {/each}
+        <VirtualRows
+            count={commits.length}
+            key={(at: number) => commits[at].hash}
+            {nav}
+            owns={commitAt}
+            label={subjectOf}
+            keep={opened}
+        >
+            {#snippet item(at: number, measure: Attachment<HTMLElement>)}
+                <li role="none" class="entry" {@attach measure}>
+                    <ul class="entry-rows" role="none">
+                        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                        {@render row(commits[at], `commit:${commits[at].hash}`, at)}
+                    </ul>
+                </li>
+            {/snippet}
+        </VirtualRows>
         {#if more}
             <li role="none" data-graph="more">
                 <TreeItem
@@ -289,6 +336,20 @@
 </div>
 
 <style>
+    /* One commit of the list and its files when it is the open one, measured as one item. */
+    .entry {
+        min-width: 0;
+    }
+
+    .entry-rows {
+        display: flex;
+        flex-direction: column;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        min-width: 0;
+    }
+
     .commit {
         display: flex;
         align-items: center;

@@ -14,14 +14,16 @@
     // `showActions` draws them at full strength always, for a section head whose one control adds
     // to the section and is looked for before the pointer is over it.
     //
-    // A row drawn in a ui/tree/TreeView.svelte is a treeitem with its level, and the treeitem is
-    // what takes the keyboard's focus: it reads its place in the focus order and its key handler
-    // from the tree's `nav`, and Enter on it presses its button. The button is no stop of its own,
-    // and a press on it puts the focus on the treeitem, so the arrow keys go on from there. The
-    // row's controls are no stop either until the focus is inside the row: the caller's `actions`
-    // snippet is handed the tabindex to give them, 0 while the row holds the focus and -1
-    // otherwise, so Tab from a focused row reaches its controls and a Tab from outside the tree
-    // never does.
+    // A row drawn in a ui/tree/TreeView.svelte is a treeitem, and the treeitem is what takes the
+    // keyboard's focus: it spreads what the tree's `nav` hands it from zag's tree-view machine (its
+    // id, role, level, open state, place in the focus order and focus handler), and hands the tree
+    // its label for the type-ahead. The tree answers the arrow keys; Enter on the row presses its
+    // button. The button is no stop of its own, and a press on it puts the focus on the treeitem,
+    // so the arrow keys go on from there. The row's controls are no stop either until the focus is
+    // inside the row: the caller's `actions` snippet is handed the tabindex to give them, 0 while
+    // the row holds the focus and -1 otherwise, so Tab from a focused row reaches its controls and
+    // a Tab from outside the tree never does. A row given a `level` outside a tree is a treeitem
+    // at that level, with the open state its `expanded` says.
     //
     // Selected is the reader's cursor and is drawn with the accent tint under the ink; current is
     // what is in force (a checked-out branch, the workspace in use) and is drawn as a bold name
@@ -43,7 +45,10 @@
         glyph?: string;
         /** How many indent guides the row draws. */
         depth?: number;
-        /** The row's level in its tree, 1 for the top; given, the row is a treeitem. */
+        /**
+         * Given, the row is a treeitem: at this level outside a tree, and at the level the tree
+         * reads from its rows inside one.
+         */
         level?: number;
         /** Whether the row is open: omitted for a row that does not open, which draws no arrow. */
         expanded?: boolean;
@@ -117,14 +122,16 @@
     /** Whether the row is a stop of a tree, which is what makes the treeitem the focus target. */
     const inTree = $derived(id !== undefined && nav !== undefined && level !== undefined);
 
+    /** What the tree's `nav` hands the row, while it is a row of a tree. */
+    const fromTree = $derived(inTree && id !== undefined ? (nav?.row(id, label) ?? {}) : {});
+
+    /** Enter on the row presses its button; the tree's own keys go on to the tree. */
     function keyed(event: KeyboardEvent): void {
-        if (event.target !== box || id === undefined || nav === undefined) return;
+        if (event.target !== box || !inTree) return;
         if (event.key === 'Enter' && button !== undefined) {
             event.preventDefault();
             button.click();
-            return;
         }
-        nav.onkeydown(id)(event);
     }
 
     function pressed(event: MouseEvent): void {
@@ -167,9 +174,6 @@
     {/if}
 {/snippet}
 
-<!-- The row is a treeitem whenever it is a stop of a tree, which is the one case it takes a
-     tabindex; the check cannot see a role chosen by a prop. -->
-<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 <div
     class="item"
     class:selected
@@ -184,8 +188,7 @@
     aria-expanded={level === undefined ? undefined : expanded}
     aria-selected={level === undefined ? undefined : selected}
     aria-current={current ? 'true' : undefined}
-    data-row-id={id}
-    tabindex={inTree ? nav?.tabindex(id ?? '') : undefined}
+    {...fromTree}
     bind:this={box}
     onclick={pressedRow}
     onkeydown={keyed}

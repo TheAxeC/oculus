@@ -54,6 +54,7 @@ The layout is saved as it is changed, so the window comes back as it was left.
 | Ctrl+] / Ctrl+[ | next / previous tab in the focused pane |
 | arrows | along the rail or a tab strip, when one holds the focus |
 | Home / End | first / last control of the rail or a tab strip |
+| arrows, Home / End, a letter | in a tree (Files, Repositories and the other explorers): up and down a row, into and out of a folder, the first and last row, and the next row whose name starts with that letter (Cmd or Ctrl with a letter is the browser's, so Cmd+A still selects all) |
 | Delete | close the focused tab, asking first when it holds unsaved text |
 | f1-f3 | open a view of the Focus page's group |
 | m1-m7 | open a view of the Sessions page's group |

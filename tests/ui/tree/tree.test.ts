@@ -12,7 +12,7 @@ import { createRawSnippet } from 'svelte';
 import Breadcrumb from '../../../src/lib/ui/tabs/Breadcrumb.svelte';
 import TreeItem from '../../../src/lib/ui/tree/TreeItem.svelte';
 import TreeSection from '../../../src/lib/ui/tree/TreeSection.svelte';
-import TreeView from '../../../src/lib/ui/tree/TreeView.svelte';
+import TreeHarness from './TreeHarness.svelte';
 import type { TreeNav } from '../../../src/lib/ui/tree/tree-keys.ts';
 import {
     engineDir,
@@ -41,9 +41,18 @@ const control = createRawSnippet((reach: () => number) => ({
     render: () => `<button type="button" tabindex="${String(reach())}">star</button>`
 }));
 
-/** A tree whose stop is the row `stop`, as ui/tree/TreeView.svelte hands it to its rows. */
+/**
+ * A tree whose stop is the row `stop`, handing each row the stop's tabindex as
+ * ui/tree/TreeView.svelte's machine does, and nothing of its level or open state, so a row's own
+ * `level` and `expanded` are what it draws.
+ */
 function navAt(stop: string): TreeNav {
-    return { tabindex: (id) => (id === stop ? 0 : -1), onkeydown: () => noop };
+    return {
+        row: (id) => ({ role: 'treeitem', tabindex: id === stop ? 0 : -1 }),
+        list: () => noop,
+        focus: noop,
+        kept: () => [stop]
+    };
 }
 
 /** The opening tag of the row element, the treeitem when the row is one. */
@@ -191,26 +200,77 @@ describe('a section of rows', () => {
 });
 
 describe('the tree', () => {
-    // Revert: drop `role="tree"` from TreeView.svelte.
-    it('is a tree named by its label, and hands its first row the stop while none is asked for', () => {
-        const children = createRawSnippet((nav: () => TreeNav) => ({
-            render: () =>
-                `<p data-first="${String(nav().tabindex('a'))}" data-second="${String(nav().tabindex('b'))}"></p>`
-        }));
-        const rows = [
-            { id: 'a', parent: null },
-            { id: 'b', parent: null }
-        ];
-        const plain = render(TreeView, { context, props: { label: 'Roots', rows, children } }).body;
-        const asked = render(TreeView, {
-            context,
-            props: { label: 'Roots', rows, current: 'b', children }
-        }).body;
+    /** Rows `a` open over `a/b`, and `c` closed, as a caller hands them. */
+    const ROWS = [
+        { id: 'a', parent: null, open: true, label: 'alpha' },
+        { id: 'a/b', parent: 'a', label: 'beta' },
+        { id: 'c', parent: null, open: false, label: 'gamma' }
+    ];
 
-        expect(plain).toContain('role="tree"');
-        expect(plain).toContain('aria-label="Roots"');
-        expect(plain).toContain('data-first="0" data-second="-1"');
-        expect(asked).toContain('data-first="-1" data-second="0"');
+    /** The one attribute `name` of an opening tag, or null when the tag has none. */
+    function attr(tag: string, name: string): string | null {
+        const found = new RegExp(`\\s${name}="([^"]*)"`).exec(tag);
+        return found === null ? null : found[1];
+    }
+
+    /** The opening tag of every row element a rendering of the rows draws, in order. */
+    function tags(current?: string): string[] {
+        const { body } = render(TreeHarness, { context, props: { rows: ROWS, current } });
+        return body
+            .split('<div')
+            .map((one) => `<div${one.slice(0, one.indexOf('>') + 1)}`)
+            .filter((tag) => tag.includes(' class="item'));
+    }
+
+    // Revert: drop `role="tree"` from TreeView.svelte, or `aria-label={label}` with it.
+    it('is a tree named by its label', () => {
+        const { body } = render(TreeHarness, { context, props: { rows: ROWS } });
+
+        expect(body).toContain('role="tree"');
+        expect(body).toContain('aria-label="Harness"');
+    });
+
+    // Revert: spread TreeItem's own `level` over the tree's in TreeItem.svelte.
+    it('draws each row as a treeitem at the level its parent gives it, whatever level the row was handed', () => {
+        const drawn = tags();
+
+        expect(drawn.map((tag) => attr(tag, 'role'))).toEqual(['treeitem', 'treeitem', 'treeitem']);
+        expect(drawn.map((tag) => attr(tag, 'aria-level'))).toEqual(['1', '2', '1']);
+        expect(attr(drawn[0], 'aria-expanded')).toBe('true');
+    });
+
+    // Revert: give every row's `aria-expanded` from `open ?? false` in the tree.
+    it('says a closed row is closed, and says nothing of a row that does not open', () => {
+        const drawn = tags();
+
+        expect(attr(drawn[2], 'aria-expanded')).toBe('false');
+        expect(attr(drawn[1], 'aria-expanded')).toBeNull();
+    });
+
+    // Revert: hand the machine `current` as its focused value whether or not it is drawn.
+    it('gives exactly one row the stop: the current one while it is drawn, else the first', () => {
+        const stops = (current?: string): (string | null)[] =>
+            tags(current).map((tag) => attr(tag, 'tabindex'));
+
+        expect(stops()).toEqual(['0', '-1', '-1']);
+        expect(stops('c')).toEqual(['-1', '-1', '0']);
+        expect(stops('a/b')).toEqual(['-1', '0', '-1']);
+        expect(stops('gone')).toEqual(['0', '-1', '-1']);
+        expect(stops('')).toEqual(['0', '-1', '-1']);
+    });
+
+    // Revert: return [] from `kept` in TreeView.svelte's nav, or fall back to the last row for the
+    // stop rather than the first.
+    it('keeps drawn the row holding the stop: the current one while it is drawn, else the first', () => {
+        const kept = (current?: string): string | undefined => {
+            const { body } = render(TreeHarness, { context, props: { rows: ROWS, current } });
+            return /data-kept="([^"]*)"/.exec(body)?.[1];
+        };
+
+        expect(kept()).toBe('a');
+        expect(kept('c')).toBe('c');
+        expect(kept('a/b')).toBe('a/b');
+        expect(kept('gone')).toBe('a');
     });
 });
 

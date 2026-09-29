@@ -21,12 +21,19 @@
     // holds open is stepped through by Right and Left and never opened or closed, so clearing the
     // filter gives back the folders that were open before it.
     //
+    // The rows of the open folders have no cap, so they are drawn through
+    // ui/tree/VirtualRows.svelte, which draws only the rows in view of the pane and holds the
+    // height of the rest; a key moving to a row not drawn has it scrolled in first, and the
+    // type-ahead reads every row's name.
+    //
     // A file row is draggable and carries its absolute path under the file drag type, which a drop
     // target that takes a file (the composer's prompt box) reads.
 
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
     import TreeView from '$lib/ui/tree/TreeView.svelte';
+    import VirtualRows from '$lib/ui/tree/VirtualRows.svelte';
     import type { TreeNav } from '$lib/ui/tree/tree-keys';
+    import type { Attachment } from 'svelte/attachments';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import {
         FILE_DRAG,
@@ -97,8 +104,12 @@
         return selected !== null && rowKey(selected) === rowKey(row);
     }
 
+    /** Each row's index by its key, for the key moves and the type-ahead. */
+    const indexes = $derived(new Map(rows.map((row, at) => [rowKey(row), at])));
+
     function rowOf(id: string): TreeRow | undefined {
-        return rows.find((row) => rowKey(row) === id);
+        const at = indexes.get(id);
+        return at === undefined ? undefined : rows[at];
     }
 
     /** Put a file row's absolute path on the drag, for a drop target that takes a file. */
@@ -192,66 +203,76 @@
 >
     {#snippet children(nav: TreeNav)}
         <ul class="rows" role="none">
-            {#each rows as row (rowKey(row))}
-                <li
-                    class="row"
-                    class:head={row.depth === 0}
-                    role="none"
-                    data-fs-row={rowKey(row)}
-                    draggable={row.kind === 'file' && roots !== undefined ? 'true' : undefined}
-                    ondragstart={(event) => dragged(event, row)}
-                >
-                    {#if row.depth === 0}
-                        <TreeItem
-                            label={row.name}
-                            id={rowKey(row)}
-                            {nav}
-                            level={1}
-                            heading
-                            expanded={row.open}
-                            selected={isSelected(row)}
-                            title={titleOf(row)}
-                            onclick={() => pressed(row)}
-                        >
-                            {#snippet actions(reach: number)}
-                                <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-                                {@render rootActions(row, reach)}
-                            {/snippet}
-                        </TreeItem>
-                    {:else if row.kind === 'dir'}
-                        <TreeItem
-                            label={row.name}
-                            id={rowKey(row)}
-                            {nav}
-                            level={row.depth + 1}
-                            glyph={glyphOf(row)}
-                            depth={row.depth - 1}
-                            expanded={row.open}
-                            selected={isSelected(row)}
-                            title={titleOf(row)}
-                            onclick={() => pressed(row)}
-                        />
-                    {:else}
-                        <TreeItem
-                            label={row.name}
-                            id={rowKey(row)}
-                            {nav}
-                            level={row.depth + 1}
-                            glyph={glyphOf(row)}
-                            depth={row.depth - 1}
-                            selected={isSelected(row)}
-                            title={titleOf(row)}
-                            onclick={() => pressed(row)}
-                            ondblclick={() => onopen(row, false)}
-                        >
-                            {#snippet actions(reach: number)}
-                                <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-                                {@render fileActions(row, reach)}
-                            {/snippet}
-                        </TreeItem>
-                    {/if}
-                </li>
-            {/each}
+            <VirtualRows
+                count={rows.length}
+                key={(at: number) => rowKey(rows[at])}
+                {nav}
+                owns={(id: string) => indexes.get(id) ?? -1}
+                label={(id: string) => rowOf(id)?.name}
+            >
+                {#snippet item(at: number, measure: Attachment<HTMLElement>)}
+                    {@const row = rows[at]}
+                    <li
+                        class="row"
+                        class:apart={row.depth === 0 && at > 0}
+                        role="none"
+                        data-fs-row={rowKey(row)}
+                        draggable={row.kind === 'file' && roots !== undefined ? 'true' : undefined}
+                        ondragstart={(event) => dragged(event, row)}
+                        {@attach measure}
+                    >
+                        {#if row.depth === 0}
+                            <TreeItem
+                                label={row.name}
+                                id={rowKey(row)}
+                                {nav}
+                                level={1}
+                                heading
+                                expanded={row.open}
+                                selected={isSelected(row)}
+                                title={titleOf(row)}
+                                onclick={() => pressed(row)}
+                            >
+                                {#snippet actions(reach: number)}
+                                    <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                                    {@render rootActions(row, reach)}
+                                {/snippet}
+                            </TreeItem>
+                        {:else if row.kind === 'dir'}
+                            <TreeItem
+                                label={row.name}
+                                id={rowKey(row)}
+                                {nav}
+                                level={row.depth + 1}
+                                glyph={glyphOf(row)}
+                                depth={row.depth - 1}
+                                expanded={row.open}
+                                selected={isSelected(row)}
+                                title={titleOf(row)}
+                                onclick={() => pressed(row)}
+                            />
+                        {:else}
+                            <TreeItem
+                                label={row.name}
+                                id={rowKey(row)}
+                                {nav}
+                                level={row.depth + 1}
+                                glyph={glyphOf(row)}
+                                depth={row.depth - 1}
+                                selected={isSelected(row)}
+                                title={titleOf(row)}
+                                onclick={() => pressed(row)}
+                                ondblclick={() => onopen(row, false)}
+                            >
+                                {#snippet actions(reach: number)}
+                                    <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                                    {@render fileActions(row, reach)}
+                                {/snippet}
+                            </TreeItem>
+                        {/if}
+                    </li>
+                {/snippet}
+            </VirtualRows>
         </ul>
     {/snippet}
 </TreeView>
@@ -271,8 +292,9 @@
     }
 
     /* A root's head opens a tree of its own, so the heads after the first stand apart from the rows
-       above them. */
-    .row.head:not(:first-child) {
-        margin-top: 6px;
+       above them. The gap is padding inside the row's own box, so the list measures it with the
+       row. */
+    .row.apart {
+        padding-top: 6px;
     }
 </style>

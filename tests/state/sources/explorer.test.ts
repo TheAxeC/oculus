@@ -1,7 +1,8 @@
 // The explorer over the file browser's rows, the pure half in state/sources/fs.ts: what a filter
 // leaves, the rows the keyboard reads, the label a row's star bookmarks under, what the breadcrumb
 // names, what one instance keeps, and which form a press or an answer leaves open. Where a key
-// moves is ui/tree/tree-keys.ts, tests/ui/tree/tree-keys.test.ts.
+// moves is zag's tree-view machine over the collection ui/tree/tree-keys.ts builds from these rows,
+// tests/ui/tree/tree-keys.test.ts.
 //
 // What this does NOT cover: the rows drawn, which are tests/views/sources/files/files.test.ts; the
 // keys pressed; and the forms pressed: the bookmark and root forms kept across a switch and a
