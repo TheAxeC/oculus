@@ -32,3 +32,35 @@
 The builder's reverts by run; `npm run diagrams` by rerun; `@viz-js/viz` in a browser; placement time on the hub's graph; how far a drag moves the real picture.
 
 Reviewer usage: 28 tool uses, 166k tokens, 11 min (from the completion notice). The reviewer wrote five log files to `$TMPDIR` and removed them in the same run.
+
+## Repair round 1, refuted (reviewer abae33b8a8a765dfa, round delta `git diff 6051e84f`)
+
+### Verification
+
+`checks.sh`: `Test Files  1 failed | 351 passed (352)`, `Tests  1 failed | 5611 passed | 1 skipped (5613)`, `checks: failed with exit 1: npm test`; the one failure is `tests/checks/tree/scratch.test.ts` (open item Z48), which fails alone too (`Tests  1 failed | 9 passed (10)`). Then each exit 0: `npm run check` (`COMPLETED 1491 FILES 0 ERRORS 0 WARNINGS`), `npm run build`, `npm run format:check`, `npm run lint`, the ASCII grep. The two greps of the cases ruling item 4 and `grep -rl viz-js build/server` print nothing. The step's four test files: `Tests  62 passed (62)`. `Graph.svelte` 531 lines.
+
+A drag probe (a scratch script importing the worktree's `layout.ts` and `graph.ts`; a 44-node graph, neato seed 1, the loop of `Graph.svelte` `step` from alpha 0.4 to 0.03 with `dragPhysics(scale)` and `neighbours()`): scale 0.799; 9 pairs closer than the tick's collision separation; no node outside the movers moves; without movers 44 of 44 move. A press on `line::a` with no displacement moves its neighbours up to 52.9 px, from 91 to 117 px as placed to 99 to 159 px, against a drawn link length of 85; on `project::p0` up to 14.1 px.
+
+### 1. Spec
+
+1. `graph.ts:515-523` `dragPhysics`: `center: 0` is within round item 1; `repulse * scale ** 3` and `collide * scale` go beyond it, and on the probe they do not make the drag more local (52.9 px with them, 45.7 px with the link length alone).
+
+### 2. Proof
+
+1. `graph.test.ts:314-328` "moves only the movers of a drag" has no pair within the collision separation, so the collision guard (`graph.ts:453-460`) is an audit.
+2. Reverting `repulse * scale ** 3` or `collide * scale` leaves every test green, by reading; the report neither claims nor marks them as audits.
+3. The report's after ("only the dragged node's direct neighbours move, toward the drawn link length from it") is not reproduced: on the probe they move away from it.
+
+### 3. Standards
+
+1. `graph.ts:510-514` ("so a neighbour settles at the picture's own spacing") and `layout.ts:97-99` ("so a dragged node's neighbours keep the picture's spacing") are false under the parameters `dragPhysics` returns.
+
+### 4. Behaviour
+
+1. A press on a node, even a click with a little pointer jitter, jolts its neighbours outward: `pointerMove` (`Graph.svelte:227-239`) reheats to alpha 0.4 on any move while a node is held, under the 3 px threshold too, and the neighbours are pushed by every node's repulsion and by the collision push, which alpha does not scale. The report does not state it.
+
+### Not checked
+
+The drag in a browser; the hub's own graph; whether blocking the Graphviz chunk shows the failure line at the look; `npm run diagrams` by rerun; the builder's reverts by run.
+
+Reviewer usage: 30 tool uses, 154k tokens, 7 min (from the completion notice).
