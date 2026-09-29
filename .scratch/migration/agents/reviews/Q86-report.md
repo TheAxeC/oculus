@@ -1,6 +1,6 @@
-# Q86 report: the Map laid out by Graphviz's neato in the page (after repair round 1)
+# Q86 report: the Map laid out by Graphviz's neato in the page (after repair round 2)
 
-Everything in the brief, the cases ruling and repair round 1 is done. The verify list's `checks.sh` stops at `npm test` on `tests/checks/tree/scratch.test.ts`, a file this step does not change. It fails when run alone on a file in the system temporary directory that this step did not write (cases ruling item 5). Every command after it was run one by one and is quoted below.
+Everything in the brief, the cases ruling and repair rounds 1 and 2 is done. The one verify failure is `tests/checks/tree/scratch.test.ts`: `checks.sh` stops at `npm test` on it. This step does not change that file, and it fails when run alone, on a file in the system temporary directory that this step did not write (cases ruling item 5, open item Z48). Every command after it was run one by one and is quoted below.
 
 ## Open items of the main checkout's state file (verbatim)
 
@@ -26,6 +26,7 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
   - (a) Change the test so the refused plant names a file unique to the run (a name built from the scratch directory's own name, `../<dir name>-out.txt`), and landing Q101 carries that two-line change as a fix at landing. The test then checks the refusal without depending on what other programs leave in the temporary directory. Recommended.
   - (b) Remove `$TMPDIR/out.txt` and land. It removes a file another session wrote, and the test stays open to the same failure from any other program; this is the lazy option.
   - (c) Land with the red line named in the booking, as for a test that passes alone.
+
 ## The cases' first run, on the unchanged tree
 
 Commands: `npx vitest run tests/state/boards/structure/layout.test.ts tests/state/boards/structure/graph.test.ts`, then `npm run build` and `grep -rl "viz-js" build/server`.
@@ -58,32 +59,63 @@ From `briefs/Q86-round1-sent.md`:
 6. The node's index is ruled: each node is written to Graphviz under its index (`n<at>`, `layout.ts` `graphDot`), as built, in place of the id brief item 1 named. The odd-id case holds under it.
 7. The `'graphviz'` line of `tests/state/client/client-state.test.ts` stays, as a direct consequence of the ruled key, since its `STORES` list names every key of `ClientState`.
 
-## What repair round 1 changed
+From `briefs/Q86-round2-sent.md`: each edge rests at the length it had when the press began, the drag tick is the springs alone (`DRAG_PHYSICS`), the tick starts only once the pointer has passed the move threshold, and the placement's scale goes.
 
-- **The drag moves only the dragged node's direct neighbours, at the drawn link length.**
-  - `physics(nodes, edges, alpha, params, bounds, movers?)` in `graph.ts` takes the set of nodes that may move, in place of the single `fixed` id. A node outside the set takes no force and no collision push and keeps its position; without a set every node moves.
-  - `neighbours(edges, id)` answers the nodes an edge joins to the dragged node.
-  - `dragPhysics(scale)` answers the tick's parameters for the fitted picture: the link length is `DEFAULT_PHYSICS.linkLength * scale`.
-  - `placeGraph` answers `{ nodes, scale }`, and `mapPlacement` passes the scale to the view.
-  - `Graph.svelte` sets the movers to the dragged node's neighbours on press and ticks with `dragPhysics(chosen.scale)`. The dragged node is held because it is not a mover, and its position follows the pointer as before.
-- **The comment at `layout.ts:96-99`** now says that neato lays edges out at the tick's link length, `placeGraph` scales the picture to fit the box, and the drag tick runs at the drawn length.
-- **`DESIGN.md:290`** now says the drag moves the neighbours alone at the drawn length.
+## What the drag is now (rounds 1 and 2)
+
+- `physics(nodes, edges, alpha, params, bounds, movers?, lengths?)` in `graph.ts` is the one tick.
+  - A node outside `movers` takes no force and no collision push and keeps its position; without `movers` every node moves.
+  - An edge rests at its length in `lengths` (by edge id), and at `params.linkLength` when it has none there.
+  - The collision push runs only when `params.collide > 0`.
+- `DRAG_PHYSICS` is the defaults with `repulse`, `collide` and `center` at 0: the springs alone.
+- `edgeLengths(nodes, edges)` gives every edge's length as the nodes stand. `neighbours(edges, id)` gives the dragged node's direct neighbours. `holdFor(nodes, edges, id)` takes both at the press, and `dragTick(nodes, edges, alpha, hold)` is `physics` under `DRAG_PHYSICS` with them.
+- `Graph.svelte` takes the hold on press. `pointerMove` moves the dragged node and reheats the tick only once the pointer has passed the 3 px threshold (`if (!moved) return`), so a click never runs the tick. Each frame runs `dragTick`.
+- `placeGraph` answers `{ nodes }` alone, and `Placed` and `mapPlacement` carry no scale. `dragPhysics` is gone.
+- The comments of `physics`, `DRAG_PHYSICS`, `edgeLengths`, `holdFor` and `dragTick` in `graph.ts`, `layout.ts:96-100`, the head comment of `Graph.svelte` and `DESIGN.md:290` all say this: neato lays edges out at the tick's link length, the picture is scaled to fit, and a drag pulls the dragged node's neighbours toward the lengths their edges had when the press began.
+
+## The drag probe
+
+A scratch script, `probe.mjs` in the builder's own scratch folder (not in the tree), loads the worktree's `layout.ts` and `graph.ts` through Vite's `ssrLoadModule` with no config file.
+- The graph has 44 nodes: 4 pillars, 36 projects (each a member of one pillar, every third of two), 4 collaborators, and a related edge on every fifth project, 59 edges in all.
+- It is placed by neato from seed 1.
+- It runs the loop of `Graph.svelte` `step` (alpha from 0.4, times `cool`, until 0.03) through `holdFor` and `dragTick`.
+
+Its output:
+
+```
+press, no displacement: node line::a, 44 nodes, 59 edges, 12 movers; recorded lengths to it 55.4 to 124.1 px; largest move of a mover 0.0 px, of any other node 0.0 px; largest gap between an edge of it and its recorded length after the loop 0.0 px
+drag of 60 px: node line::a, 44 nodes, 59 edges, 12 movers; recorded lengths to it 55.4 to 124.1 px; largest move of a mover 75.5 px, of any other node 0.0 px; largest gap between an edge of it and its recorded length after the loop 18.0 px
+press, no displacement: node project::p0, 44 nodes, 59 edges, 4 movers; recorded lengths to it 87.3 to 124.1 px; largest move of a mover 0.0 px, of any other node 0.0 px; largest gap between an edge of it and its recorded length after the loop 0.0 px
+drag of 60 px: node project::p0, 44 nodes, 59 edges, 4 movers; recorded lengths to it 87.3 to 124.1 px; largest move of a mover 31.3 px, of any other node 0.0 px; largest gap between an edge of it and its recorded length after the loop 47.6 px
+p4 (joined to line::a alone): recorded 99.0 after one loop 99.0
+largest gap of an edge of line::a after one, two, three loops: 18.0, 18.0, 18.0
+```
+
+What the numbers say:
+- A press with no displacement moves nothing. Round 1 moved the pillar's neighbours up to 52.9 px there; now it is 0.0. In the Map a press below the threshold does not even start the tick.
+- On a 60 px drag of the pillar, no node outside its 12 neighbours moves.
+- A neighbour joined to the pillar alone (`project::p4`) ends at exactly its recorded 99.0 px.
+- A neighbour with other edges settles between them; the largest gap from a recorded length is 18.0 px. The same after two and three loops, so it is the balance of its springs, not an unsettled loop.
+- The largest move of a pillar neighbour, 75.5 px, is `project::p27`, which sat 110 px left of the pillar. Why it moves further than the pillar's 60 px is not analysed.
+- A spring restores a length, not a direction. A neighbour the drag passes over (p4 sat 34 px right of the pillar, which moved 60 px right) keeps its length from the far side.
 
 ## DONE / NOT DONE
 
 | Deliverable | State | Proof |
 | --- | --- | --- |
-| 1. `layout.ts` places by neato through `@viz-js/viz` (index-named nodes, radius sizes, undirected edges, JSON, fit into `DEFAULT_BOUNDS`, y flipped, `start=<seed>`, `ENGINE = 'neato'`) | DONE | `layout.test.ts` cases green (run below) |
+| 1. `layout.ts` places by neato through `@viz-js/viz` (index-named nodes, radius sizes, undirected edges, JSON, fit into `DEFAULT_BOUNDS`, y flipped, `start=<seed>`, `ENGINE = 'neato'`) | DONE | `layout.test.ts` green (run below) |
 | 1. One instance per page, shared by every pane (cases ruling 1) | DONE | layout.test "loads Graphviz once per loader ..." and "hands a load cancelled ... nothing"; `boundaries.test.ts` green in the full run |
-| 2. The search removed from `graph.ts`; `physics` and `DEFAULT_PHYSICS` kept as the drag tick | DONE | grep (a) below prints nothing |
-| Round 1 item 1: the drag moves only direct neighbours, at the drawn link length, through one `physics` taking the movers | DONE | graph.test "moves only the movers of a drag ..." and "leaves a neighbour at the drawn link length ... where it is"; the wiring in `Graph.svelte` is an audit, seen at the look |
+| 2. The search removed; `physics` kept as the drag tick, a drag pulling the neighbours | DONE | grep (a) prints nothing; graph.test drag cases; the probe above |
+| Round 2 items 1 and 2: each edge rests at its recorded length; springs alone | DONE | graph.test "leaves a picture at rest ...", "pulls a neighbour joined only to the dragged node after it ...", "rests an edge with no recorded length ..." |
+| Round 2 item 3: no tick before the move threshold | DONE, audit | `Graph.svelte` `pointerMove` `if (!moved) return`. The unit suite runs no pointer event, so it is seen at the look |
+| Round 2 item 4: the scale gone | DONE | `grep -rn "dragPhysics\|\.scale\b\|scale:" src tests DESIGN.md` hits only the text-scale code of `ui.svelte.ts` and `tokens.css` |
 | 3. `MapState.start`, `parseMapState`, `startFor` | DONE | graph.test and map.test cases green |
-| 4. `Graph.svelte` on `seed`; no node before the load; the `map.layout_failed` line; the drag tick | DONE | map.test "draws no node before Graphviz has loaded" and "says in one catalogued line why the engine refused" |
-| 5. Re-tune moves to the next seed; tip reworded | DONE | `nextStart` is the proof (graph.test "re-tunes to the seed one above"). The press itself (`Map.svelte` `retune`, `write({ start: nextStart(held, graph.nodes) })`) is covered by no test and is an audit, seen at the look |
+| 4. `Graph.svelte` on `seed`; no node before the load; the `map.layout_failed` line | DONE | map.test "draws no node before Graphviz has loaded" and "says in one catalogued line why the engine refused" |
+| 5. Re-tune moves to the next seed; tip reworded | DONE | `nextStart` is the proof (graph.test "re-tunes to the seed one above"). The press itself (`Map.svelte` `retune`) is covered by no test and is an audit, seen at the look |
 | 6. `@viz-js/viz` 3.30.0 in `dependencies`, lock updated | DONE | `package.json` `dependencies`; the lock's `node_modules/@viz-js/viz` entry carries no `dev` flag |
-| 7. `DESIGN.md:290`, head comments, `npm run diagrams` | DONE | `npm run diagrams` exit 0; it rewrote `layer-state`, `layer-views` and `layers` `.dot` and `.svg` (the edge counts of the new imports, as the refuter's read of the worktree showed) |
-| Cases ruling 2: `Graph.svelte` under 540 | DONE | `wc -l`: 531 |
-| Cases ruling 3: `seededRandom`, `Rng` gone | DONE | grep (a) below |
+| 7. `DESIGN.md:290`, head comments, `npm run diagrams` | DONE | `npm run diagrams` exit 0; it rewrites `layer-state`, `layer-views` and `layers` `.dot` and `.svg` (the edge counts of the new imports) |
+| Cases ruling 2: `Graph.svelte` under 540 | DONE | `wc -l`: 532 |
+| Cases ruling 3: `seededRandom`, `Rng` gone | DONE | grep (a) |
 
 ### The verify list
 
@@ -93,11 +125,11 @@ From `briefs/Q86-round1-sent.md`:
 $ npm test
  FAIL  tests/checks/tree/scratch.test.ts > a scratch directory > is planted with the files given, and refuses one whose path leaves it
  Test Files  1 failed | 351 passed (352)
-      Tests  1 failed | 5611 passed | 1 skipped (5613)
+      Tests  1 failed | 5614 passed | 1 skipped (5616)
 checks: failed with exit 1: npm test
 ```
 
-`npx vitest run tests/checks/tree/scratch.test.ts` alone gives `Tests  1 failed | 9 passed (10)`. It fails on `$TMPDIR/out.txt`, which this step did not write.
+`npx vitest run tests/checks/tree/scratch.test.ts` alone gives `Tests  1 failed | 9 passed (10)`.
 
 Then each command after it, one by one through `bash -o pipefail -c`:
 
@@ -121,29 +153,32 @@ The brief's other checks:
 - (b) `grep -rn "settle(" src/lib/state/boards/structure src/lib/views/structure tests/state/boards/structure tests/views/structure` printed nothing (exit 1).
 - `grep -rl viz-js build/server` after `npm run build` printed nothing (exit 1).
 - `npm run diagrams` exit 0.
-- The spec's ASCII gate (`LC_ALL=C perl ... $(find src tests bin config -type f ! -name local.yml)`) printed nothing, and `bash bin/folder-check.sh` exit 0.
-- The step's test files: `npx vitest run tests/state/boards/structure/layout.test.ts tests/state/boards/structure/graph.test.ts tests/views/structure/map.test.ts tests/state/client/client-state.test.ts` gives `Tests  62 passed (62)`.
+- The spec's ASCII gate printed nothing, and `bash bin/folder-check.sh` exit 0.
+- The step's test files: `npx vitest run tests/state/boards/structure/layout.test.ts tests/state/boards/structure/graph.test.ts tests/views/structure/map.test.ts tests/state/client/client-state.test.ts` gives `Tests  65 passed (65)`.
 
 ### The revert that turns each test red
 
-Every revert in this table was applied, the test was run and seen red, and the file was restored (`diff` against a saved copy printed nothing).
+Each revert here was applied, the test was run and seen red, and the file was restored (`diff` against a saved copy printed nothing).
 
 | Test | Revert that turns it red |
 | --- | --- |
+| graph: a picture at rest stays at rest under the drag tick | the rest length `params.linkLength` for every edge (red); `DRAG_PHYSICS` keeping the repulsion (red); the collision push without its `params.collide > 0` gate (red); `holdFor` recording no lengths (red) |
+| graph: a neighbour joined only to the dragged node follows to its recorded length | the rest length `params.linkLength` for every edge (red); no recorded lengths (red); repulsion kept (red) |
+| graph: an edge with no recorded length rests at `params.linkLength` | the fallback `?? 0` in place of `?? params.linkLength` (red); the lengths ignored (red) |
+| graph: two non-movers inside the collision separation stay | the pair skip `if (!moves(a) && !moves(b)) continue` removed and the collision push applied to both nodes regardless of movers (red). Either guard alone keeps it green, since each is enough |
+| graph: `neighbours` and `DRAG_PHYSICS` | repulsion kept in `DRAG_PHYSICS` (red) |
+| graph: moves only the movers | the movers set ignored (red, round 1) |
 | layout: moves a node when the seed changes (and the map.test seed cases) | drop `start=` from the graph line |
 | layout: id with a quote, a space or a backslash | write `node.id` as the Graphviz name in place of `n<index>` |
-| layout: inside the box | drop the fit (scale without the box terms) |
-| layout: one node at the centre of the box | anchor the fit at the box's corner (`bounds.pad + (x - minX) * scale`) in place of centring it; red |
+| layout: inside the box | drop the fit |
+| layout: one node at the centre of the box | anchor the fit at the box's corner in place of centring it (red) |
 | layout: an empty graph | an audit: it holds while `placeGraph` returns early on no node |
-| layout: y flip and the answered scale | `+` for `-` in the y mapping; answer `scale: 1` in place of the fitted scale; both red |
+| layout: y flip and the 1.5 cap | `+` for `-` in the y mapping (red) |
 | layout: loads once per loader | `loading = import(...)` for `loading ??=` |
 | layout: cancelled load gets nothing | call `done` without the `live` guard |
 | layout: `mapPlacement` | answer a failure before the load |
 | layout: `edgeEnds` | drop the mutual source pad |
 | layout: `placement` answers the error | remove its `try` |
-| graph: moves only the movers | ignore the movers set (every node moves); red |
-| graph: a neighbour at the drawn link length stays | `dragPhysics` without `* scale` on the link length; keep the centre pull; both red |
-| graph: `dragPhysics` and `neighbours` | the same two reverts; red |
 | graph: `parseMapState` start, map.test audit of malformed seeds | drop the whole-number check in `savedStart` |
 | graph: `startFor`; map.test seed for another node set | ignore the key in `startFor` |
 | graph: re-tune seed + 1 (`nextStart`) | `startFor(...)` without `+ 1` |
@@ -151,53 +186,55 @@ Every revert in this table was applied, the test was run and seen red, and the f
 | map.test: catalogued failure line | remove the `map.layout_failed` line from `Graph.svelte` |
 | map.test: no node before the load | an audit: no revert of the tree was run for it |
 | map.test: old `tuned` pane lays out from its default | an audit; it holds while `parseMapState` ignores `tuned` |
-| The press of re-tune (`Map.svelte` `retune`) | an audit: no test renders the press; a revert to `write({ start: undefined })` leaves every test green. Seen at the look |
-| The drag wiring in `Graph.svelte` (movers on press, `dragPhysics(chosen.scale)`) | an audit: the unit suite runs no pointer event. Seen at the look |
+| The re-tune press (`Map.svelte` `retune`) | an audit: no test renders the press. Seen at the look |
+| The drag wiring in `Graph.svelte` (the hold on press, the threshold, `dragTick` each frame) | an audit: the unit suite runs no pointer event. Seen at the look |
 
 ## Files, with line counts (`wc -l`)
 
-- `src/lib/state/boards/structure/layout.ts` (new) 240
-- `src/lib/state/boards/structure/graph.ts` 600
-- `src/lib/views/structure/map/Graph.svelte` 531
+- `src/lib/state/boards/structure/layout.ts` (new) 237
+- `src/lib/state/boards/structure/graph.ts` 626
+- `src/lib/views/structure/map/Graph.svelte` 532
 - `src/lib/views/structure/map/Map.svelte` 162
 - `src/lib/state/client/context.ts` 325 (the import, one type field, one returned key)
 - `config/text/views/structure/map.yml` 34
-- `tests/state/boards/structure/layout.test.ts` (new) 237
-- `tests/state/boards/structure/graph.test.ts` 473
+- `tests/state/boards/structure/layout.test.ts` (new) 235
+- `tests/state/boards/structure/graph.test.ts` 520
 - `tests/views/structure/map.test.ts` 505
 - `tests/state/client/client-state.test.ts` 103 (one line, ruled to stay)
 - `package.json`, `package-lock.json`
-- `DESIGN.md` line 290 (edited by a string replace of that line's text alone; the worktree has no git, and main has moved past the base, so a diff against main also shows main's own later lines)
+- `DESIGN.md` line 290 (edited by a string replace of that line's text alone. The worktree has no git, and main has moved past the base, so a diff against main also shows main's own later lines)
 - `docs/diagrams/`: `layer-state`, `layer-views` and `layers` `.dot` and `.svg`
 - `Controls.svelte` is unchanged, since its props did not change.
 
 ## Judgment calls the brief left open (each reversible)
 
 - Graph attributes: `overlap=false`, `splines=false`. Node size is `2 * radius / 72` inches, `fixedsize`. Edge `len` is `DEFAULT_PHYSICS.linkLength / 72` inches.
-- neato lays edges out at the tick's link length. `placeGraph` then scales the picture evenly to fit the box and centres it, capped at `MAX_SCALE = 1.5` so a small graph is not spread across the whole box, and answers that scale.
-- The drag tick runs at the drawn length, `linkLength * scale`, through `dragPhysics(scale)`. Two further choices in `dragPhysics`:
-  - The repulsion is scaled by `scale^3` and the collision gap by `scale`, so the pull and the push balance at the drawn spacing as they do at the unscaled one.
-  - The centre pull is 0, so a dragged node's neighbours are not drawn toward the middle of the box.
-- The movers of a drag stay those of the last node pressed while the tick cools after the release.
+- `placeGraph` scales the picture evenly to fit the box and centres it, capped at `MAX_SCALE = 1.5` so a small graph is not spread across the whole box.
+- The collision push is gated on `params.collide > 0`, so `DRAG_PHYSICS`'s zero collision gap pushes nothing even where two nodes' circles overlap. Without the gate, `collide: 0` would still separate overlapping circles.
+- The dragged node itself does not follow the pointer until the 3 px threshold is passed, so a click with a little jitter moves nothing at all. Past it, it jumps to the pointer.
+- The hold (movers and lengths) of the last node pressed stays while the tick cools after the release.
+- `holdFor` and `dragTick` in `graph.ts` keep `Graph.svelte` under 540 lines. `dragTick` is `physics` with `DRAG_PHYSICS` and the hold; the rule stays one function.
 - `parseMapState` keeps a seed only when it is a non-negative safe integer.
-- The placement no longer runs the tick after it is drawn; the tick runs only from a drag.
 - Load and placement failures are logged by an `$effect` in `Graph.svelte`.
-- `edgeEnds()` sits in `layout.ts`, moved there from `Graph.svelte` to bring the component under 540 lines, as the cases ruling allowed.
-- `map.head` no longer says "a self-tuning spring layout"; it says the layout is Graphviz's neato and re-tune lays it out again from another start.
-- New key `map.layout_failed`: "The map could not be laid out: {0}".
+- `edgeEnds()` sits in `layout.ts`, as the cases ruling allowed.
+- `map.head` no longer says "a self-tuning spring layout"; new key `map.layout_failed` reads "The map could not be laid out: {0}".
 
 ## User-visible changes, before and after (for the look)
 
-- **The Map's picture.** Before: a spring layout tuned by a random parameter search. After: neato's layout, fitted into the box. `fdp` is one word away (`ENGINE` in `layout.ts`) if neato reads worse.
-- **The drag.** Before: the picture on screen was the tick's own settled output, and a drag reheated the tick over every node. Since the picture was at rest, mostly the dragged node's neighbourhood moved. After: only the dragged node's direct neighbours move, toward the drawn link length from it. Every other node stays exactly where it is, whether neato placed it or an earlier drag moved it. To look: drag a pillar node; its projects follow and nothing else moves.
+- **The Map's picture.** Before: a spring layout tuned by a random parameter search. After: neato's layout, fitted into the box. `fdp` is one word away (`ENGINE` in `layout.ts`).
+- **The drag.**
+  - Before the step: the picture on screen was the tick's own settled output, so a drag moved it locally.
+  - After round 1: a press alone moved a pillar's neighbours up to 52.9 px outward (the review's probe).
+  - After this round: a press that does not move the pointer moves nothing (probe: 0.0 px). A drag moves only the dragged node's direct neighbours, each held toward the length its edges had when the press began: a neighbour joined to it alone keeps its length exactly, and one with other edges settles between them. Every other node stays where it is (probe: 0.0 px).
+  - To look: click a pillar (nothing moves), then drag it (its projects follow, nothing else moves).
 - **Re-tune.** Tip before: "Re-optimise the layout for this graph". After: "Lay the map out again from another start". Each press gives a new picture that stays when the page is reopened.
-- **The failure line.** Before: there was no failure path; the old placement could not fail. After: one status line "The map could not be laid out: <reason>" above an empty drawing, logged to the console. It is not provokable at the look without a code change.
-- **The first paint.** Before: the server render drew the placed nodes. After: every page load draws no node until the Graphviz chunk has loaded (1356054 bytes, 484070 gzipped; `ls -la build/client/_app/immutable/chunks/` shows the 1356054-byte chunk). A Map pane opened after that places at once.
-- **An old pane saved with `tuned`.** It lays out on its first open from its node set's default seed; the old tuning is ignored.
+- **The failure line.** Before: there was no failure path. After: one status line "The map could not be laid out: <reason>" above an empty drawing, logged to the console. Not provokable at the look without a code change.
+- **The first paint.** Before: the server render drew the placed nodes. After: every page load draws no node until the Graphviz chunk has loaded (1356054 bytes, 484070 gzipped). A Map pane opened after that places at once.
+- **An old pane saved with `tuned`.** It lays out on its first open from its node set's default seed.
 
 ## Limitations and sharp edges
 
-- The browser run of `@viz-js/viz` (WebAssembly in the page) is not verified by any test here.
-- The drag's neighbours still feel the repulsion of every node, including the ones that do not move, so a neighbour settles where the link pull and those pushes balance. That is close to the drawn length but not exactly on it.
-- The server-rendered unit suite runs no effect and no pointer event. The pane's wait for the load, the cancel on close, the drag and the re-tune press are covered only through the pure functions they call, and are seen at the look.
+- The browser run of `@viz-js/viz` is not verified by any test here.
+- A spring restores a length, not a direction: a neighbour the dragged node passes over stays on the far side at its length.
+- The server-rendered unit suite runs no effect and no pointer event. The load wait, the cancel on close, the drag threshold, the drag and the re-tune press are covered through the pure functions they call and are seen at the look.
 - `context.ts` is shared with Q101; this step adds three lines there, a hand merge at landing.

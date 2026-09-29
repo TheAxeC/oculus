@@ -27,7 +27,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:      # Q101 round 1 answered, its review running; Q86 in repair round 2.
+dispatch:      # Q101 round 1 answered, its review running; Q86 reviewed after round 2, waiting on Z49 and on Q101's landing.
 - step: Q101
   executor: agent
   worker: claude:opus
@@ -50,8 +50,8 @@ dispatch:      # Q101 round 1 answered, its review running; Q86 in repair round 
   launched: 2026-09-29
   report: agents/reviews/Q86-report.md
   landing: not-started
-  builder_usage: 66 tool uses, 249k tokens, 19 min, the cases hand-back; the build after the ruling: 49 tool uses, 550k tokens, 18 min (two completion notices, 19 and 30 tool uses); round 1: 20 tool uses, 320k tokens, 8 min
-  reviewer_report: agents/reviews/Q86-refuter.md (reviewer a8593cf041460a438, 28 tool uses, 166k tokens, 11 min). Round 1 review: reviewer abae33b8a8a765dfa, 30 tool uses, 154k tokens, 7 min.
+  builder_usage: 66 tool uses, 249k tokens, 19 min, the cases hand-back; the build after the ruling: 49 tool uses, 550k tokens, 18 min (two completion notices, 19 and 30 tool uses); round 1: 20 tool uses, 320k tokens, 8 min; round 2: 24 tool uses, 361k tokens, 8 min
+  reviewer_report: agents/reviews/Q86-refuter.md (reviewer a8593cf041460a438, 28 tool uses, 166k tokens, 11 min). Round 1 review: reviewer abae33b8a8a765dfa, 30 tool uses, 154k tokens, 7 min. Round 2 review: reviewer af3fa0908358bb2b5, 31 tool uses, 168k tokens, 8 min.
   round: 2   # round 2 sent 2026-09-29 from 7bc5e1ad under the cap's exception (brief item 2 unbuilt, fix too large for landing), agents/briefs/Q86-round2-sent.md; round 1 from 6051e84f, agents/briefs/Q86-round1-sent.md; cases ruled in agents/briefs/Q86-cases.md
   shared_paths: with Q101, DESIGN.md (Q86 line 290, Q101 lines 266 and 273 and the terminal sentences: different lines), docs/diagrams (a rerun of npm run diagrams), src/lib/state/client/context.ts (Q86 one import, one ClientState field and one returned key; Q101 the terminals wiring at 160-195 and the imports at 73-92: a hand merge of a few lines)
 ```
@@ -129,6 +129,10 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
   - (a) Change the test so the refused plant names a file unique to the run (a name built from the scratch directory's own name, `../<dir name>-out.txt`), and landing Q101 carries that two-line change as a fix at landing. The test then checks the refusal without depending on what other programs leave in the temporary directory. Recommended.
   - (b) Remove `$TMPDIR/out.txt` and land. It removes a file another session wrote, and the test stays open to the same failure from any other program; this is the lazy option.
   - (c) Land with the red line named in the booking, as for a test that passes alone.
+- Z49, Q86's drag after its last repair round (raised 2026-09-29, by the orchestrator after the review of Q86's round 2, `agents/reviews/Q86-refuter.md`). Q86 used its rounds (`repair_rounds: 1` and the one more the cap allows). The drag now leaves a press at rest and moves only the dragged node's neighbours, each edge held to its length at the press. The round's review found three things no landing fix covers: (1) the drag has no collision push, so a drag can leave circles on top of each other (the probe: 0 before, 1 after a 60 px drag of a pillar, 9 after 200 px); before the step the push kept them apart; (2) `physics` keeps the pair repulsion, the centre pull and their parameters, which no caller in `src` runs any more (`dragTick` is the only caller, always with them at 0), and its pair loop runs each frame adding zero; (3) the neighbours creep on across reheats of one held drag (the largest move 60.4, 65.1, 68.5 px over one, two and three loops), cause not found. The placement itself, the seed, re-tune and the failure line are built and reviewed. Options:
+  - (a) Land Q86 as it is once Z48 is ruled, and add a step Q86b that makes the drag tick springs at the recorded lengths plus a push that keeps circles apart among the movers, removes the repulsion and the centre pull from `physics` and `DEFAULT_PHYSICS`, and ends the creep (its cause found at `/spec` before the brief), after the look on TEST has judged neato's picture, since LA10's fallbacks (`fdp`, `d3-force` for the tick) would change the drag again. Recommended.
+  - (b) The orchestrator makes those changes at Q86's landing. They are larger than a landing fix (the tick, its parameters and about ten tests), and they would land unreviewed.
+  - (c) Land Q86 and keep the drag as it is. This is the lazy option: overlapping circles and dead code stay.
 
 ## Time per step (Axel asked 2026-09-27 for how it evolves with Q77; measured from each builder's transcript: each tool call from call to result, each background wait from the builder stopping to the run waking it)
 

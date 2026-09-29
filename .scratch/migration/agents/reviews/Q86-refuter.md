@@ -64,3 +64,47 @@ A drag probe (a scratch script importing the worktree's `layout.ts` and `graph.t
 The drag in a browser; the hub's own graph; whether blocking the Graphviz chunk shows the failure line at the look; `npm run diagrams` by rerun; the builder's reverts by run.
 
 Reviewer usage: 30 tool uses, 154k tokens, 7 min (from the completion notice).
+
+## Repair round 2, refuted (reviewer af3fa0908358bb2b5, round delta `git diff 7bc5e1ad`)
+
+### Verification
+
+`checks.sh`: `Test Files  1 failed | 351 passed (352)`, `Tests  1 failed | 5614 passed | 1 skipped (5616)`, `checks: failed with exit 1: npm test`; the one failure is `tests/checks/tree/scratch.test.ts:239` (Z48), failing alone too (`Tests  1 failed | 9 passed (10)`). Then each exit 0: `npm run check` (`COMPLETED 1491 FILES 0 ERRORS 0 WARNINGS`), `npm run build`, `npm run format:check`, `npm run lint`, the ASCII grep. The cases ruling item 4's greps and `grep -rl viz-js build/server` print nothing; `bin/folder-check.sh` exit 0; `Graph.svelte` 532. The step's four test files: `Tests  65 passed (65)`.
+
+The reviewer's own drag probe (44 nodes, 62 edges, neato seed 1, the loop of `step` with `holdFor` and `dragTick`): a press with no displacement moves nothing (line and project); a 60 px drag of `line::a` moves its 14 neighbours at most 60.4 px and no other node, largest gap from a recorded length 32.7 px; `project::p0` 60 px: at most 31.3 px, gap 50.5 px; a neighbour joined to the dragged node alone keeps its length exactly (133.99 before and after). The loop run two and three times: largest move 65.1 then 68.5 px, gap 32.7 px each time. Overlapping circles after a drag of `line::a`: 1 at 60 px, 9 at 200 px, 3 at -200 px, 0 before.
+
+### 1. Spec
+
+none
+
+### 2. Proof
+
+1. The report's "the same after two and three loops, so it is the balance of its springs, not an unsettled loop" is not reproduced for positions: the largest move grows 60.4, 65.1, 68.5 px over one, two and three loops.
+2. `graph.test.ts:376-393` (two non-movers inside the collision separation) is skipped by the pair guard (`graph.ts:438`) before the push guard (`:456-463`) is reached; the push guard is still an audit, while the DONE table counts it as proof.
+3. `graph.test.ts:397-399` asserts the fields of the constant `DRAG_PHYSICS`, an audit by spec.md; the at-rest test (`:332-350`) is the proof.
+
+### 3. Standards
+
+1. After the round the only caller of `physics` in `src` is `dragTick`, always under `DRAG_PHYSICS` with every edge recorded, so the pair repulsion, the collision push, the centre pull, `DEFAULT_PHYSICS`'s `repulse`, `collide` and `center`, the `params` default and the `linkLength` fallback have no reader in `src` (spec.md, YAGNI), the pair loop runs each frame adding zero, and the `physics` doc comment (`graph.ts:414-420`) describes forces no caller runs.
+2. `layout.ts:96-97` and `DESIGN.md:290` ("neato lays edges out at the tick's link length") name a link to the drag tick that no longer exists: the tick rests every edge at its recorded length.
+
+### 4. Behaviour
+
+1. A drag can leave circles on top of each other, since the drag has no collision push (the probe's counts above); before the step, and after round 1, the collision push kept them apart. Not stated in the report.
+2. A press while the previous drag's tick is still cooling replaces the hold under the running tick, so the previous drag's other neighbours stop where they are (by reading). Not stated.
+3. A click and a drag of 3 px or less now move nothing and open the node; a press past the threshold jumps the node to the pointer (stated); link mode is unchanged.
+
+### Not checked
+
+The drag in a browser; the builder's exact probe graph; the hub's graph; `npm run diagrams` by rerun; the reverts by run.
+
+Reviewer usage: 31 tool uses, 168k tokens, 8 min (from the completion notice).
+
+## Closed
+
+Round 2 was the step's last. Each finding of the three reviews:
+- First review and round 1's review: closed by rounds 1 and 2, as the round 2 review's verification shows, except as below.
+- Round 2, Standards 2 (`layout.ts:96-97`, `DESIGN.md:290`): fixed on main at landing, the sentence saying neato lays edges out at `DEFAULT_PHYSICS.linkLength`.
+- Round 2, Proof 1, 2 and 3: corrected in the landing booking (the creep, the collision guard and the constant as audits).
+- Round 2, Behaviour 3: stated in the landing booking with its before and after.
+- Round 2, Standards 1, Behaviour 1 and 2, and Proof 1's creep: raised to Axel as open item Z49.
