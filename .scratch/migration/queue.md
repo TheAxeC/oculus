@@ -4,7 +4,7 @@ In flight:
 - Q79b (the tests; beside Q96 and Q88 by Z50 (a)): building from base 89a83e3b, dispatched 2026-09-29; cases ruled at round 0.
 - Q96 (the Rail section's field words and icon dropdown on bits-ui, one tooltip open at a time): building from base 43936573, dispatched 2026-09-29.
 Queued, in order:
-- Q88 (right-click menus wherever vscode.dev gives one, the tab's menu left to X3c; beside Q79b and Q96 by Z50 (a)).
+- Q88 (right-click menus wherever vscode.dev gives one, the tab's menu left to X3c; beside Q79b and Q96 by Z50 (a)): stopped at /spec on open item Z51, where its inventory is taken.
 - Q86b (the Map's drag after neato's placement, Z49 (a)); its look also takes the Map's labels after Q86's fix at landing.
 - D13a (the source tab on Monaco), then D13b (the diffs and the merge on Monaco) and D13c (the code theme key), after D13a (Z46 (a)).
 - X3c (the tab strip as VS Code's editor tabs; Z47 (a)).
