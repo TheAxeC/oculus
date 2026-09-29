@@ -2,7 +2,7 @@
 
 In flight:
 - Q79b (the tests; beside Q96 and Q88 by Z50 (a)): built from base 89a83e3b (cases ruled at round 0), reviewed; repair round 1 sent.
-- D13a (the source tab on Monaco, the primitive under ui/controls/editor): built from base fcde80b7, reviewed; repair round 1 next.
+- D13a (the source tab on Monaco, the primitive under ui/controls/editor): built from base fcde80b7, reviewed; repair round 1 sent.
 Queued, in order:
 - Q88 (right-click menus wherever vscode.dev gives one, the tab's menu left to X3c; beside Q79b by Z50 (a)): inventory taken (Z51 (c)); Z52 ruled (b): the items oculus can run, next into the slot Q96 freed.
 - Q88b (the right-click menus' new capabilities: file writes under the roots with Delete to the Trash, a two-file compare, .gitignore, cherry-pick, the graph's commit and branch actions (detached checkout, a branch or tag from a commit, the compares, Delete Branch), Open File (HEAD), closing a repository, opening a worktree, Lock Group, the terminal's name, icon, colour and Clear; Z52 (b)), after Q88.
@@ -28,7 +28,7 @@ Queued, in order:
 The loop fills three slots as they free up; a line above is only an order, never a barrier, apart from the "once ... has landed" notes. A step's line moves to Landed, at the top of that list, in its landing commit.
 
 Landed, newest first: every step ticked in `plan.md`, each with the date and the commit that ticked it (the 15 steps dated 2026-09-10 at f8af492b were landed before the ledger was opened):
-- Q96 (the Rail section's field words and icon dropdown on bits-ui, one tooltip open at a time; its look owed with Q81's and Q82's), 2026-09-29, the landing commit.
+- Q96 (the Rail section's field words and icon dropdown on bits-ui, one tooltip open at a time; its look owed with Q81's and Q82's), 2026-09-29, 7e2c0360.
 - Q81 (menus, context menus, tooltips and dialogs on bits-ui; the palette on its Command list with fuzzysort; its look owed with Q82's), 2026-09-29, a5bdc88b.
 - Q82 (the tree on @zag-js/tree-view, the long explorer lists virtualized; its look owed with Q81's), 2026-09-29, 2349e0fb.
 - Q87 (the duplication check on jscpd; the import checks stay hand-written), 2026-09-29, 5c395891.
