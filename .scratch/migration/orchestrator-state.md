@@ -124,7 +124,9 @@ None. Axel lifted it on 2026-09-23 with `/plan-orchestration oculus/migration` a
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is booked as its own step in `plan.md` and carried in the Booked section below, since it needs no ruling from him.
 
-None.
+- **Z57 (2026-09-29), the look on TEST may start and close its own terminals.** A standing demand says the Chrome checks start and stop no terminals, so no landing look has ever started one, and Q101's Split, list and a terminal's end were never seen in the page (`agents/reviews/Q101-landing.md:30`). Q102 cannot be diagnosed or checked without it. Options:
+    - (a) Recommended: the look on the page named TEST may start terminals through the view's own controls, split, rename and close them, and ends every terminal it started before it finishes; it never types into, stops or closes a terminal it did not start. Q102's cause is then found by seeing it, and its landing shows each behaviour working.
+    - (b) Keep the rule: Q102 is checked by the store's cases alone, which is how Q101 landed with Split not working. This is the lazy option.
 
 ## Time per step (Axel asked 2026-09-27 for how it evolves with Q77; measured from each builder's transcript: each tool call from call to result, each background wait from the builder stopping to the run waking it)
 
