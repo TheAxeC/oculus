@@ -3,8 +3,8 @@
 In flight:
 - Q79b (the tests; beside Q96 and Q88 by Z50 (a)): built from base 89a83e3b (cases ruled at round 0), reviewed; repair round 1 back, under review.
 - D13a (the source tab on Monaco, the primitive under ui/controls/editor): built from base fcde80b7, reviewed; repair round 1 sent.
+- Q88 (right-click menus wherever vscode.dev gives one, the tab's menu left to X3c; beside Q79b by Z50 (a)): building from base 2a72d052.
 Queued, in order:
-- Q88 (right-click menus wherever vscode.dev gives one, the tab's menu left to X3c; beside Q79b by Z50 (a)): inventory taken (Z51 (c)); Z52 ruled (b): the items oculus can run, next into the slot Q96 freed.
 - Q88b (the right-click menus' new capabilities: file writes under the roots with Delete to the Trash, a two-file compare, .gitignore, cherry-pick, the graph's commit and branch actions (detached checkout, a branch or tag from a commit, the compares, Delete Branch), Open File (HEAD), closing a repository, opening a worktree, Lock Group, the terminal's name, icon, colour and Clear; Z52 (b)), after Q88.
 - Q86b (the Map's drag after neato's placement, Z49 (a)); its look also takes the Map's labels after Q86's fix at landing; waits for Q86's look on TEST, owed while the tab shows Axel's page (Z49); the creep's cause and the push are in its Step 0.
 - D13b (the diffs and the merge on Monaco) and D13c (the code theme key), after D13a (Z46 (a)).
