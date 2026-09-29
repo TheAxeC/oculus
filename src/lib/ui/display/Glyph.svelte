@@ -2,8 +2,9 @@
     // Layer 3, primitive. The one place a glyph reaches the DOM. Every other component names a
     // glyph and this draws it, so config/catalogs/glyphs.yml stays the vocabulary and no source
     // file carries a drawing or a stand-in. It is decoration beside a label that already says the
-    // same thing, so it is hidden from a screen reader. It sits in ui/display, below the controls,
-    // the menus and the frames that draw it, so the primitives' folders import downward only.
+    // same thing, so it is hidden from a screen reader. It sits in ui/display, below the forms, the
+    // controls, the menus and the frames that draw it, so the primitives' folders import downward
+    // only.
     //
     // What it draws is the line icon config/catalogs/icons.yml maps the name to, as the drawing the
     // server read out of the icon package, and nothing else. A terminal palette has no icons: there

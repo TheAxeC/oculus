@@ -6,11 +6,12 @@
     // the one list serves both.
     //
     // It is drawn inside the opener's bits-ui content, whose attributes it is handed as `list` and
-    // puts on the box it paints, so the box, its items and their looks live here once. The keys
-    // are bits-ui's: the arrows, Home and End, type-ahead on each label, ArrowRight or Enter on a
-    // choice with a list of its own to open it to the side, and ArrowLeft or Escape in that list
-    // to close it and give the keyboard back to its choice. Where the list is placed is bits-ui's
-    // too; a list longer than the room it is given scrolls.
+    // hands on to ui/frame/FloatingList.svelte, which paints the box and the look its items share
+    // with the icon dropdown's; what a menu item holds and how it answers the pointer is here. The
+    // keys are bits-ui's: the arrows, Home and End, type-ahead on each label, ArrowRight or Enter
+    // on a choice with a list of its own to open it to the side, and ArrowLeft or Escape in that
+    // list to close it and give the keyboard back to its choice. Where the list is placed is
+    // bits-ui's too; a list longer than the room it is given scrolls.
     //
     // Each entry holds its label first and draws its dot and glyph before it by the flex order, so
     // the text of an entry begins with its label, which is what bits-ui's type-ahead reads.
@@ -18,6 +19,7 @@
     import { DropdownMenu } from 'bits-ui';
     import type { MenuGroup, MenuItem } from '$lib/ui/menu/menu-items';
     import Glyph from '../display/Glyph.svelte';
+    import FloatingList from '../frame/FloatingList.svelte';
     import MenuList from './MenuList.svelte';
 
     type Props = {
@@ -150,7 +152,7 @@
     {/if}
 {/snippet}
 
-<div {...list} class="list" class:grouped={groups !== undefined} aria-label={label}>
+<FloatingList {label} {list} shape={groups === undefined ? 'menu' : 'grouped'}>
     {#if groups !== undefined}
         {#each groups as group, g (group.id)}
             <DropdownMenu.Group>
@@ -175,39 +177,9 @@
             {@render entry(item, `${index}`)}
         {/each}
     {/if}
-</div>
+</FloatingList>
 
 <style>
-    /* The box bits-ui places: over every overlay a tooltip is under, never taller than the room
-       bits-ui measured for it, and scrolling past that. */
-    .list {
-        z-index: 70;
-        display: flex;
-        flex-direction: column;
-        box-sizing: border-box;
-        min-width: 160px;
-        max-height: var(--bits-floating-available-height, none);
-        overflow-y: auto;
-        padding: 4px;
-        border: 1px solid var(--line);
-        border-radius: var(--radius-sm);
-        background: var(--panel);
-        box-shadow: var(--shadow);
-        outline: none;
-    }
-
-    /* A list floats over a pane, so at the pane's own opacity it would be read through two
-       translucent layers and the picture. It keeps more of its colour than the pane does. */
-    :global(body.wall) .list {
-        background: color-mix(in srgb, var(--panel) var(--wall-popover), transparent);
-        backdrop-filter: blur(var(--wall-blur));
-    }
-
-    /* A list of several headed groups can be longer than the pane under it, so it scrolls. */
-    .list.grouped {
-        max-height: min(60vh, 520px, var(--bits-floating-available-height, 520px));
-    }
-
     .group {
         display: flex;
         flex-direction: column;
@@ -229,24 +201,6 @@
         border-radius: 50%;
         background: var(--tone);
         flex: none;
-    }
-
-    .item .lead {
-        order: -1;
-        display: inline-flex;
-    }
-
-    .item {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        border-radius: var(--radius-sm);
-        color: var(--ink-txt, var(--ink));
-        font-size: var(--fs-sm);
-        text-align: left;
-        padding: 4px 6px;
-        cursor: pointer;
-        outline: none;
     }
 
     .item-badge {

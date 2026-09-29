@@ -1,5 +1,9 @@
 <script lang="ts">
+    // Layer 3, route. The page's root: the theme's styles and the icon, and the one tooltip group
+    // every control of the page is drawn under, so one tooltip is open at a time.
+
     import type { Snippet } from 'svelte';
+    import TooltipGroup from '$lib/ui/menu/TooltipGroup.svelte';
 
     import '$lib/themes/tokens.css';
     import '$lib/themes/themes.css';
@@ -12,7 +16,9 @@
     <link rel="icon" href={favicon} />
 </svelte:head>
 
-{@render children()}
+<TooltipGroup>
+    {@render children()}
+</TooltipGroup>
 
 <style>
     /* The page's own two colours. Every other surface is a component's, and every component reads

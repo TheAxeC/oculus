@@ -33,9 +33,9 @@
     import DateInput from '$lib/ui/forms/DateInput.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Field from '$lib/ui/forms/Field.svelte';
-    import MultiSelect from '$lib/ui/forms/MultiSelect.svelte';
+    import MultiSelect from '$lib/ui/forms/choice/MultiSelect.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
-    import Select from '$lib/ui/forms/Select.svelte';
+    import Select from '$lib/ui/forms/choice/Select.svelte';
     import TextArea from '$lib/ui/forms/TextArea.svelte';
     import TextInput from '$lib/ui/forms/TextInput.svelte';
     import Toolbar from '$lib/ui/frame/Toolbar.svelte';

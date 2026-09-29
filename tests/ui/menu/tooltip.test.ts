@@ -1,15 +1,18 @@
 // Layer 3, primitive tests. The tooltip wrapper rendered on the server: its words kept in place,
-// which control it describes, and where it sits in the tab order. The bubble itself is drawn on the
-// body through bits-ui's Portal, which a server render leaves empty, so its delay, its placement
-// and its arrow are seen on the page.
+// which control it describes, where it sits in the tab order, and the one tooltip group it is drawn
+// under, which the page's layout holds and without which bits-ui refuses it. The bubble itself is
+// drawn on the body through bits-ui's Portal, which a server render leaves empty, so its delay,
+// its placement, its arrow and one bubble closing another are seen on the page.
 
 import { readFileSync } from 'node:fs';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { render } from 'svelte/server';
 import { createRawSnippet } from 'svelte';
 import Tooltip from '../../../src/lib/ui/menu/Tooltip.svelte';
-import { describedBy, describedControl } from '../../../src/lib/ui/menu/tooltip-target.ts';
+import { describedBy, describedControl } from '../../../src/lib/ui/menu/tooltip-rules.ts';
 import { clientContext, createClientState, type ClientState } from '../../fixtures/client.ts';
+import { TIP_KEY, createTipIds } from '../../../src/lib/ui/menu/tip-ids.ts';
+import LaidOutTooltip from './LaidOutTooltip.svelte';
 
 let client: ClientState;
 
@@ -125,6 +128,28 @@ describe('Tooltip', () => {
     it('puts only a focusable wrapper in the tab order', () => {
         expect(tip({ focusable: true })).toContain('tabindex="0"');
         expect(tip({})).not.toContain('tabindex=');
+    });
+
+    // Red when Tooltip.svelte draws a provider of its own again: bits-ui then draws it alone, and
+    // each bubble has a provider of its own that closes nothing when another opens.
+    it('is refused by bits-ui when drawn outside the one tooltip group', () => {
+        expect(
+            () =>
+                render(Tooltip, {
+                    context: new Map([[TIP_KEY, createTipIds()]]),
+                    props: { text: 'Put it back', children: control }
+                }).body
+        ).toThrow(/Tooltip\.Provider/);
+    });
+
+    // Red when the page's layout stops wrapping what it draws in the tooltip group: the tooltip
+    // under it is then refused.
+    it('is drawn under the page layout, which holds the one group', () => {
+        const body = render(LaidOutTooltip, {
+            context: new Map([[TIP_KEY, createTipIds()]])
+        }).body;
+        expect(body).toContain('data-tooltip-trigger');
+        expect(body).toContain('>Put it back</span>');
     });
 
     // There is no DOM in this suite, so the listener is read off the source rather than fired: an

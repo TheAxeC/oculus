@@ -1,23 +1,29 @@
 <script lang="ts">
     // Layer 3, view partial. The rail list of config/layout.yml as the Settings view edits it: one
-    // row per button with its label, glyph and page, the controls that move a row and take it away,
+    // row per button with its label, icon and page, the controls that move a row and take it away,
     // and Save, which writes the list through the `rail` write of api/write. The watcher pushes the
     // file back within a second, and the rail redraws from that push, so the rail always shows what
     // the file says.
+    //
+    // A sentence under the heading says what a row is, and each field has its word before it on
+    // the same line. The word is decoration beside a field whose accessible name already holds it,
+    // so it is hidden from a screen reader, and it wraps with its field at a narrow width. The icon
+    // field is ui/forms/choice/GlyphSelect.svelte, whose trigger draws the row's icon beside its
+    // name, so the row draws the icon nowhere else.
     //
     // What is being typed is the tab's own state, so it is there again after the tab is switched
     // away from and after a reload, and a tab holding a list that differs from the file's is one
     // holding unsaved text. A row the shared rule refuses is named under the list and Save waits
     // for it, so the server's own refusal is the answer to a race and never to a typo. A row whose
-    // glyph the vocabulary does not hold (a new row has none yet) draws an empty mark, and the
-    // rule's line names what the row lacks.
+    // glyph the vocabulary does not hold (a new row has none yet) draws its icon field with no
+    // icon, and the rule's line names what the row lacks.
     //
     // The rail's Settings choice opens the Settings view with `reveal: 'rail'` in its instance
     // state; the list is then scrolled into view and the ask is taken out of the state, so a later
     // switch back to the tab leaves the view where the reader scrolled it.
 
-    import Glyph from '$lib/ui/display/Glyph.svelte';
-    import Select from '$lib/ui/forms/Select.svelte';
+    import GlyphSelect from '$lib/ui/forms/choice/GlyphSelect.svelte';
+    import Select from '$lib/ui/forms/choice/Select.svelte';
     import TextInput from '$lib/ui/forms/TextInput.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import {
@@ -33,7 +39,7 @@
         type RailEntry,
         type RailProblem
     } from '$lib/state/workbench/navigation/rail';
-    import { hasGlyph, t } from '$lib/state/shared/words/text';
+    import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
 
     const {
@@ -133,6 +139,7 @@
 
 <section class="rail" data-settings="rail" bind:this={section}>
     <h3>{t('workbench.rail_title')}</h3>
+    <p class="about">{t('workbench.rail_about')}</p>
     {#if rows.length === 0}
         <p class="empty">{t('workbench.rail_empty')}</p>
     {/if}
@@ -140,30 +147,34 @@
          mended, and the rule names that row rather than the markup refusing it. -->
     {#each rows as row, at (at)}
         <div class="row" data-rail-row={at}>
-            <span class="mark" aria-hidden="true">
-                {#if hasGlyph(row.glyph)}
-                    <Glyph name={row.glyph} />
-                {/if}
+            <span class="field">
+                <span class="word" aria-hidden="true">{t('workbench.rail_word_label')}</span>
+                <TextInput
+                    value={row.label}
+                    label={t('workbench.rail_label', at + 1)}
+                    oninput={(value: string) => change(at, 'label', value)}
+                />
             </span>
-            <TextInput
-                value={row.label}
-                label={t('workbench.rail_label', at + 1)}
-                oninput={(value: string) => change(at, 'label', value)}
-            />
-            <Select
-                value={row.glyph}
-                label={t('workbench.rail_glyph', at + 1)}
-                empty={t('workbench.rail_glyph_empty')}
-                choices={glyphs.map((name) => ({ id: name, label: name }))}
-                onchange={(value: string) => change(at, 'glyph', value)}
-            />
-            <Select
-                value={row.page}
-                label={t('workbench.rail_page', at + 1)}
-                empty={t('workbench.rail_page_empty')}
-                choices={pages.map((key) => ({ id: key, label: key }))}
-                onchange={(value: string) => change(at, 'page', value)}
-            />
+            <span class="field">
+                <span class="word" aria-hidden="true">{t('workbench.rail_word_icon')}</span>
+                <GlyphSelect
+                    value={row.glyph}
+                    label={t('workbench.rail_glyph', at + 1)}
+                    empty={t('workbench.rail_glyph_empty')}
+                    choices={glyphs}
+                    onchange={(value: string) => change(at, 'glyph', value)}
+                />
+            </span>
+            <span class="field">
+                <span class="word" aria-hidden="true">{t('workbench.rail_word_page')}</span>
+                <Select
+                    value={row.page}
+                    label={t('workbench.rail_page', at + 1)}
+                    empty={t('workbench.rail_page_empty')}
+                    choices={pages.map((key) => ({ id: key, label: key }))}
+                    onchange={(value: string) => change(at, 'page', value)}
+                />
+            </span>
             <ToolButton
                 label={t('workbench.rail_up', at + 1)}
                 glyph="collapse"
@@ -242,11 +253,25 @@
         gap: 6px;
     }
 
-    .mark {
-        width: 1.4em;
-        text-align: center;
+    /* A field and its word stay on one line, so the row wraps between fields and never between a
+       word and the field it names. */
+    .field {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        min-width: 0;
     }
 
+    .word {
+        color: var(--muted-txt, var(--muted));
+        font-size: var(--fs-sm);
+    }
+
+    .about {
+        margin: 0;
+    }
+
+    .about,
     .empty,
     .outcome {
         color: var(--muted-txt, var(--muted));

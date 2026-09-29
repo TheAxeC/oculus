@@ -5,8 +5,8 @@
     // shows, stays inside it, and goes back where it was when it closes.
 
     import { Dialog } from 'bits-ui';
-    import Modal from '../frame/Modal.svelte';
-    import { sheetRows } from '$lib/ui/menu/key-rows';
+    import Modal from '../../frame/Modal.svelte';
+    import { sheetRows } from '$lib/ui/menu/keys/key-rows';
     type Props = {
         title: string;
         hint: string;

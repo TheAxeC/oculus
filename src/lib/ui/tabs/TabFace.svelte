@@ -57,7 +57,7 @@
     /**
      * The theme token pair a count badge is drawn from, or nothing for a badge that takes the
      * accent. It is written here rather than beside the strip's arithmetic because the token names
-     * are built from a hue, and tests/ui/colours.test.ts reads a built token name through the
+     * are built from a hue, and tests/ui/theme/colours.test.ts reads a built token name through the
      * component that sets it.
      */
     function badgeStyle(tone: string | undefined): string | undefined {

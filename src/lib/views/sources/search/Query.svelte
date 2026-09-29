@@ -7,7 +7,7 @@
     // every file of a root and a run per keystroke would be one process per letter.
 
     import Search from '$lib/ui/controls/Search.svelte';
-    import Select from '$lib/ui/forms/Select.svelte';
+    import Select from '$lib/ui/forms/choice/Select.svelte';
     import Toolbar from '$lib/ui/frame/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { ALL_ROOTS } from '$lib/state/sources/search';

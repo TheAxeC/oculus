@@ -19,11 +19,12 @@ text:
         pages_reset: Reset to its arrangement
         pages_rename_label: Name of {0}
         pages_unsaved: unsaved
+        rail_about: 'Each row is a button on the rail: its words, its icon, and the page it shows.'
         rail_add: Add a button
         rail_down: Move button {0} down
         rail_empty: The rail has no button.
-        rail_glyph: Glyph of button {0}
-        rail_glyph_empty: Choose a glyph
+        rail_glyph: Icon of button {0}
+        rail_glyph_empty: Choose an icon
         rail_invalid: the server refused the list
         rail_label: Label of button {0}
         rail_page: Page of button {0}
@@ -37,13 +38,16 @@ text:
         rail_title: Rail
         rail_unwritable: layout.yml could not be written
         rail_up: Move button {0} up
-        rail_why_glyph: 'button {0} names no glyph'
-        rail_why_glyph_unknown: 'button {0} names a glyph glyphs.yml does not hold'
+        rail_word_icon: Icon
+        rail_word_label: Label
+        rail_word_page: Page
+        rail_why_glyph: 'button {0} names no icon'
+        rail_why_glyph_unknown: 'button {0} names an icon glyphs.yml does not hold'
         rail_why_label: 'button {0} has no label'
         rail_why_page: 'button {0} names no page'
         rail_why_page_unknown: 'button {0} names a page arrangements does not hold'
         rail_why_repeated: 'button {0} names a page an earlier button already shows'
-        rail_why_shape: 'button {0} is not a label, a glyph and a page'
+        rail_why_shape: 'button {0} is not a label, an icon and a page'
         reset_all: Reset all pages
         reset_all_confirm: Reset every rail page to its arrangement?
         reset_all_none: Every rail page is as its arrangement makes it, and no page of a removed button is left.

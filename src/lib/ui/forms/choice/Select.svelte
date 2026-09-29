@@ -5,6 +5,8 @@
     // The empty choice is always there and always first: a field of the manifest that is set to
     // nothing is a field that is not there, and clearing one is as ordinary as setting it.
 
+    import { isStray } from './choices';
+
     type Props = {
         value: string;
         /** The control's accessible name, already translated by the view. */
@@ -23,7 +25,12 @@
     }
 
     /** A value the choices do not hold is still shown, so a manifest is never silently retyped. */
-    const stray = $derived(value !== '' && !choices.some((choice) => choice.id === value));
+    const stray = $derived(
+        isStray(
+            value,
+            choices.map((choice) => choice.id)
+        )
+    );
 </script>
 
 <select class="select" aria-label={label} onchange={picked}>

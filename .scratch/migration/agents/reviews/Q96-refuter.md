@@ -79,3 +79,57 @@ npm run diagrams was not run (it writes files); the diagrams test passes in the 
 - `npm run diagrams` output (not run, it writes files).
 
 Reviewer usage: 224840 tokens, 64 tool uses, 13 min (completion notice).
+
+## Repair round 1, refuted
+
+Verification (rerun by the reviewer, from .agents/worktrees/Q96/tools/oculus):
+
+```
+$ sh ~/.claude/skills/land/templates/checks.sh .../orchestrator-state.md </dev/null
+ FAIL  tests/server/git/git-ops.test.ts > through the endpoint, with the real operations > routes each action to its own operation with its own fields
+Error: Test timed out in 5000ms.
+ FAIL  tests/server/root/watch/bookmarks.test.ts > publishes once for a burst of writes, and nothing at all once it is closed
+AssertionError: expected [ { channel: 'files', ...(2) }, ...(1) ] to have a length of 1 but got 2
+ Test Files  2 failed | 355 passed (357)
+      Tests  2 failed | 5722 passed | 1 skipped (5725)
+checks: failed with exit 1: npm test
+$ npx vitest run tests/server/git/git-ops.test.ts        Test Files  1 passed (1)   Tests  37 passed (37)
+$ npx vitest run tests/server/root/watch/bookmarks.test.ts   Test Files  1 passed (1)   Tests  4 passed (4)
+(neither file is in git diff 43936573)
+npm run check exit 0 (0 ERRORS 0 WARNINGS); build exit 0; format:check exit 0; lint exit 0; ASCII grep exit 0
+sh bin/folder-check.sh: no output, exit 0
+grep -rn "Tooltip.Provider" src: TooltipGroup.svelte:20 and :27
+```
+
+Closures checked: Behaviour 1 (viewport; bits-ui gives it `flex: 1; overflow: auto`, `contentIsPositioned` set by the floating content's `onPlaced`), Behaviour 2 (`aria-labelledby` over `.unseen` and `.name`), Behaviour 3 and 4, Standards 1 list half (MenuList's own item rules compile at (0,3,0) and still win), the tables, Spec 3, Standards 3, 4, 5, Proof 1, and the new tests V1, N1, F1, F2 each red under its revert (reasoned).
+
+### Spec
+
+none
+
+### Proof
+
+- Report DONE row "One floating list box": F1 and F2 do not test that both lists draw through FloatingList; a GlyphList drawing its own box again keeps them green. The row is an audit (a source read).
+- Report DONE row "`rail_why_shape`": a source read; no test renders the shape refusal.
+
+### Standards
+
+- `src/lib/ui/frame/FloatingList.svelte:75-77`: "`:where` keeps these at the weight of one class, so a list's own rules ... always win". The compiled rule `.list.svelte-x :where(.item)` weighs (0,2,0), the same as a list's plain `.item.svelte-y`; the tie is decided by stylesheet order. The comment should state the weight as it is.
+- `src/lib/ui/menu/MenuList.svelte:8-15`: the head comment breaks mid-sentence ("here. The keys" on its own line), and says MenuList "puts" bits-ui's attributes on the box, which it now hands to FloatingList.
+
+### Behaviour
+
+- The icon list has no scrollbar: bits-ui's `select-viewport.svelte` styles hide every viewport's scrollbar with `!important` (`[data-select-viewport]{scrollbar-width:none!important}`, `::-webkit-scrollbar{display:none!important}`), both in the built CSS. Nothing shows the list goes on past its rows, and a mouse reader can move only by wheel. The native select before, and the menus, show a scrollbar. The report does not state it.
+
+### Not checked
+
+The look cases; Svelte's CSS order between equal-weight rules (none exists today); `npm run diagrams`; the builder's reverts (reasoned, not rerun). The worktree root holds the reviewers' untracked `.scratch-refute/` and `.scratch-refute-r1/`, not step work.
+
+Reviewer usage: 181020 tokens, 40 tool uses, 13 min (completion notice).
+
+### Closed (at landing)
+
+- Proof 1 and 2: stated as audits in the landing report.
+- Standards 1: FloatingList's comment rewritten to the real weight, fixed at landing.
+- Standards 2: MenuList's head comment reflowed and reworded, fixed at landing.
+- Behaviour 1: GlyphList restores the viewport's scrollbar over bits-ui's `!important`, fixed at landing.

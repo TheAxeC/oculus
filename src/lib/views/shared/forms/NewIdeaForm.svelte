@@ -4,7 +4,7 @@
     // Escape closes it only while it is on screen: a pane keeps the view of a tab it hides mounted,
     // and a key pressed in another tab is not one this form was asked to answer.
 
-    import Select from '$lib/ui/forms/Select.svelte';
+    import Select from '$lib/ui/forms/choice/Select.svelte';
     import TextInput from '$lib/ui/forms/TextInput.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { t } from '$lib/state/shared/words/text';

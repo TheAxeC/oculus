@@ -114,11 +114,15 @@ const SOLID: Record<string, string> = {
         'a control, the More opener drawn as the card controls beside it are',
     "src/lib/ui/menu/MenuList.svelte .item:hover, .item[data-state='open']":
         'a hover response inside a list that is translucent, kept while its submenu shows',
+    'src/lib/ui/forms/choice/GlyphList.svelte .item[data-highlighted]':
+        'a hover response inside a list that is translucent, saying which choice the keys are on',
+    'src/lib/ui/forms/choice/GlyphSelect.svelte .select': 'an input, whose choice is read back',
     'src/lib/ui/display/Meter.svelte .track':
         'a track, read as the proportion of it the fill covers',
-    'src/lib/ui/forms/MultiSelect.svelte .filter': 'an input, whose text is typed and read back',
+    'src/lib/ui/forms/choice/MultiSelect.svelte .filter':
+        'an input, whose text is typed and read back',
     'src/lib/ui/controls/Search.svelte .search': 'an input, whose text is typed and read back',
-    'src/lib/ui/forms/Select.svelte .select': 'an input, whose choice is read back',
+    'src/lib/ui/forms/choice/Select.svelte .select': 'an input, whose choice is read back',
     'src/lib/ui/display/Table.svelte tbody tr:hover td':
         'a hover response, saying which row the pointer is on',
     'src/lib/ui/forms/TextArea.svelte .area': 'an input, whose text is typed and read back',

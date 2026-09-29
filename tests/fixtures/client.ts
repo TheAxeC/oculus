@@ -2,18 +2,40 @@
 // component reads them from. A case builds one in beforeEach, so no state is carried from the case
 // before it and no case resets anything by hand.
 
+import { render } from 'svelte/server';
 import { createClientState, type ClientState } from '../../src/lib/state/client/context.ts';
 import { STATE_KEY } from '../../src/lib/state/client/use.ts';
 import { TIP_KEY, createTipIds } from '../../src/lib/ui/menu/tip-ids.ts';
+import GroupContexts from '../ui/menu/GroupContexts.svelte';
 
 export { createClientState, type ClientState };
 
 /**
+ * The contexts the page's one tooltip group gives what it wraps, drawn fresh for each caller: every
+ * tooltip is refused outside the group, and the page's layout draws every control inside it.
+ */
+function tooltipGroup(): Map<unknown, unknown> {
+    let held = new Map<unknown, unknown>();
+    // The render runs when its body is read, which is when the group hands its contexts over.
+    const drawn = render(GroupContexts, {
+        props: {
+            onheld: (contexts: Map<unknown, unknown>) => {
+                held = contexts;
+            }
+        }
+    }).body;
+    if (held.size === 0) throw new Error(`the tooltip group handed over no context: ${drawn}`);
+    return held;
+}
+
+/**
  * What render() and mount() are handed so the component under test reads this case's stores, with
- * a tooltip counter of its own, as the page root provides one beside the client.
+ * a tooltip counter of its own, as the page root provides one beside the client, under the
+ * page's one tooltip group, as the page's layout draws it.
  */
 export function clientContext(client: ClientState): Map<unknown, unknown> {
     return new Map<unknown, unknown>([
+        ...tooltipGroup(),
         [STATE_KEY, client],
         [TIP_KEY, createTipIds()]
     ]);

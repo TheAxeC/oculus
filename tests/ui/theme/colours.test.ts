@@ -39,16 +39,20 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterAll, describe, expect, it } from 'vitest';
-import { deriveTokens, ratio } from '../../src/lib/themes/derive.ts';
-import { parseBlocks, resolveTheme } from '../../src/lib/themes/parse.ts';
-import { engineDir, loadConfig } from '../../src/lib/data/sources/config.ts';
-import { byKey } from '../../src/lib/data/helpers/guards.ts';
-import { setAppearance, themeClass, themes } from '../../src/lib/state/shared/words/appearance.ts';
-import { plantScratch, sweepScratch } from '../fixtures/scratch.ts';
+import { deriveTokens, ratio } from '../../../src/lib/themes/derive.ts';
+import { parseBlocks, resolveTheme } from '../../../src/lib/themes/parse.ts';
+import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
+import { byKey } from '../../../src/lib/data/helpers/guards.ts';
+import {
+    setAppearance,
+    themeClass,
+    themes
+} from '../../../src/lib/state/shared/words/appearance.ts';
+import { plantScratch, sweepScratch } from '../../fixtures/scratch.ts';
 
 afterAll(sweepScratch);
 
-const SRC = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', 'src');
+const SRC = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', 'src');
 
 /** The folders the rule holds in: the three layer-3 folders, and the page shell above them. */
 const ROOTS = ['lib/ui', 'lib/shell', 'lib/views', 'routes'];

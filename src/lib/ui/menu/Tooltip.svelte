@@ -16,6 +16,10 @@
     // it again. A pointer that arrives with a button held is a drag passing over it, which opens no
     // words, as no hover opens during a drag in VS Code.
     //
+    // It draws bits-ui's Root alone: the Provider is ui/menu/TooltipGroup.svelte's, one for the
+    // whole page, so a bubble opening closes the one that was open, and bits-ui refuses a tooltip
+    // drawn outside the group.
+    //
     // The focus is this wrapper's own, since the control the reader focuses is inside the trigger
     // and a focus there reaches the trigger only as `focusin`: focus shows the words only when the
     // browser draws the control's focus ring, which is its answer to whether the focus came from
@@ -28,7 +32,7 @@
 
     import { Tooltip } from 'bits-ui';
     import { QUIET_FOCUS } from '$lib/ui/frame/quiet-focus';
-    import { describedBy, describedControl } from '$lib/ui/menu/tooltip-target';
+    import { DELAY, describedBy, describedControl } from '$lib/ui/menu/tooltip-rules';
     import { useTipIds } from '$lib/ui/menu/tip-ids';
     import type { Snippet } from 'svelte';
 
@@ -78,9 +82,6 @@
         over,
         children
     }: Props = $props();
-
-    /** How long the pointer rests before the words appear. */
-    const DELAY = 150;
 
     /** The gap between the control and the bubble; a bubble beside it has its arrow across it. */
     const GAP = 6;
@@ -239,67 +240,60 @@
         {@render children()}
     </span>
 {:else}
-    <Tooltip.Provider
-        delayDuration={DELAY}
-        skipDelayDuration={0}
-        disableHoverableContent
-        ignoreNonKeyboardFocus
-    >
-        <Tooltip.Root bind:open>
-            <Tooltip.Trigger
-                onpointerenter={dragging}
-                onpointermove={dragging}
-                onfocus={passed}
-                onblur={passed}
-            >
-                {#snippet child({ props })}
-                    <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-                    <span
-                        {...wrapperOf(props)}
-                        class="tip"
-                        class:block
-                        role={presentational ? 'presentation' : undefined}
-                        tabindex={focusable ? 0 : undefined}
-                        bind:this={box}
-                        onfocusin={focused}
-                        onfocusout={left}
-                    >
-                        {@render children()}
-                        <span {id} class="words" hidden>{text}</span>
-                    </span>
-                {/snippet}
-            </Tooltip.Trigger>
-            <Tooltip.Portal>
-                <Tooltip.Content
-                    {side}
-                    align={placement === 'beside' ? 'center' : 'start'}
-                    sideOffset={placement === 'beside' ? 0 : GAP}
-                    collisionPadding={MARGIN}
-                    strategy="fixed"
+    <Tooltip.Root bind:open>
+        <Tooltip.Trigger
+            onpointerenter={dragging}
+            onpointermove={dragging}
+            onfocus={passed}
+            onblur={passed}
+        >
+            {#snippet child({ props })}
+                <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+                <span
+                    {...wrapperOf(props)}
+                    class="tip"
+                    class:block
+                    role={presentational ? 'presentation' : undefined}
+                    tabindex={focusable ? 0 : undefined}
+                    bind:this={box}
+                    onfocusin={focused}
+                    onfocusout={left}
                 >
-                    {#snippet child({ wrapperProps, props })}
-                        <div {...wrapperProps}>
-                            <div
-                                {...props}
-                                class="bubble"
-                                class:beside={placement === 'beside'}
-                                role="tooltip"
-                            >
-                                {text}
-                                {#if placement === 'beside'}
-                                    <Tooltip.Arrow>
-                                        {#snippet child({ props: arrow })}
-                                            <span {...arrow} class="arrow"></span>
-                                        {/snippet}
-                                    </Tooltip.Arrow>
-                                {/if}
-                            </div>
+                    {@render children()}
+                    <span {id} class="words" hidden>{text}</span>
+                </span>
+            {/snippet}
+        </Tooltip.Trigger>
+        <Tooltip.Portal>
+            <Tooltip.Content
+                {side}
+                align={placement === 'beside' ? 'center' : 'start'}
+                sideOffset={placement === 'beside' ? 0 : GAP}
+                collisionPadding={MARGIN}
+                strategy="fixed"
+            >
+                {#snippet child({ wrapperProps, props })}
+                    <div {...wrapperProps}>
+                        <div
+                            {...props}
+                            class="bubble"
+                            class:beside={placement === 'beside'}
+                            role="tooltip"
+                        >
+                            {text}
+                            {#if placement === 'beside'}
+                                <Tooltip.Arrow>
+                                    {#snippet child({ props: arrow })}
+                                        <span {...arrow} class="arrow"></span>
+                                    {/snippet}
+                                </Tooltip.Arrow>
+                            {/if}
                         </div>
-                    {/snippet}
-                </Tooltip.Content>
-            </Tooltip.Portal>
-        </Tooltip.Root>
-    </Tooltip.Provider>
+                    </div>
+                {/snippet}
+            </Tooltip.Content>
+        </Tooltip.Portal>
+    </Tooltip.Root>
 {/if}
 
 <style>

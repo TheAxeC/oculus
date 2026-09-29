@@ -24,7 +24,7 @@
     import PaneView from './panes/PaneView.svelte';
     import SplitView from './panes/SplitView.svelte';
     import UpdateTray from './rail/UpdateTray.svelte';
-    import KeySheet from '$lib/ui/menu/KeySheet.svelte';
+    import KeySheet from '$lib/ui/menu/keys/KeySheet.svelte';
     import { WALL_CLASS, applyTheme, applyWallpaper } from '$lib/ui/theme';
     import { paneAt, resize, type Layout } from '$lib/state/workbench/layout';
     import {

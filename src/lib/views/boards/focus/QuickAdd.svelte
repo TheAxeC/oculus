@@ -9,7 +9,7 @@
     // key pressed in another tab is not one this form was asked to answer.
 
     import DateInput from '$lib/ui/forms/DateInput.svelte';
-    import Select from '$lib/ui/forms/Select.svelte';
+    import Select from '$lib/ui/forms/choice/Select.svelte';
     import TextInput from '$lib/ui/forms/TextInput.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { labelOf, type Project } from '$lib/state/boards/focus';

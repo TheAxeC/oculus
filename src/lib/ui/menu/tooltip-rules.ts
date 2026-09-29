@@ -1,8 +1,13 @@
-// Layer 3, primitive. Which element a tooltip's words describe and by which id. A screen reader
-// reads a description off the control being used, so the wrapper hands it to the control it holds;
-// apart from the component so both choices can be read without a DOM.
+// Layer 3, primitive. The tooltip's rules that need no DOM: how long the pointer rests before the
+// words appear, which ui/menu/TooltipGroup.svelte's provider and ui/menu/Tooltip.svelte's own rest
+// both wait, and which element the words describe and by which id. A screen reader reads a
+// description off the control being used, so the wrapper hands it to the control it holds; apart
+// from the component so both choices can be read without a DOM.
 
 import { FOCUSABLE } from '../frame/quiet-focus';
+
+/** How long the pointer rests on a control before its words appear, in milliseconds. */
+export const DELAY = 150;
 
 /** What the description is put on: the element's own attributes, and what it holds. */
 type Described = {

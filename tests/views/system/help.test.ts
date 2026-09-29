@@ -16,7 +16,7 @@ import { NAMES, OUT } from '../../../bin/diagrams/diagrams.mjs';
 import { renderManual, renderManualParts } from '../../../src/lib/server/content/docs.ts';
 import { portfolioConfigFrom } from '../../../src/lib/data/index.ts';
 import { descriptionKey } from '../../../src/lib/views/system/config/files.ts';
-import { sheetRows } from '../../../src/lib/ui/menu/key-rows.ts';
+import { sheetRows } from '../../../src/lib/ui/menu/keys/key-rows.ts';
 import {
     collectionKeys,
     engineDir,

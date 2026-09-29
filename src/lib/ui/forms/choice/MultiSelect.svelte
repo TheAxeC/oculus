@@ -7,8 +7,8 @@
     // choice of its own, which is how `authors` and `waiting-on` take a person the registries do
     // not hold.
 
-    import Tag from '../controls/Tag.svelte';
-    import ToolButton from '../controls/ToolButton.svelte';
+    import Tag from '../../controls/Tag.svelte';
+    import ToolButton from '../../controls/ToolButton.svelte';
 
     type Choice = { id: string; label: string };
 

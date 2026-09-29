@@ -5,8 +5,8 @@
 // What this does NOT cover: anything that needs a DOM. There is no browser in this suite, so a sort
 // is not clicked, Escape is not pressed and no $effect runs; the sort itself is checked through the
 // exported order() and the interactions need a DOM and are not run here. The colours are covered by
-// tests/ui/colours.test.ts and tests/checks/look/contrast.test.ts, which read the style rather than
-// the markup.
+// tests/ui/theme/colours.test.ts and tests/checks/look/contrast.test.ts, which read the style
+// rather than the markup.
 
 import { readFileSync } from 'node:fs';
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -17,8 +17,8 @@ import Card from '../../src/lib/ui/frame/Card.svelte';
 import Chip from '../../src/lib/ui/controls/Chip.svelte';
 import Confirm from '../../src/lib/ui/controls/Confirm.svelte';
 import Empty from '../../src/lib/ui/frame/Empty.svelte';
-import KeySheet from '../../src/lib/ui/menu/KeySheet.svelte';
-import { sheetRows } from '../../src/lib/ui/menu/key-rows.ts';
+import KeySheet from '../../src/lib/ui/menu/keys/KeySheet.svelte';
+import { sheetRows } from '../../src/lib/ui/menu/keys/key-rows.ts';
 import Menu from '../../src/lib/ui/menu/Menu.svelte';
 import Meter from '../../src/lib/ui/display/Meter.svelte';
 import Pane from '../../src/lib/ui/frame/Pane.svelte';

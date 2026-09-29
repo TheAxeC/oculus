@@ -19,8 +19,8 @@ import {
     applyTheme,
     applyWallpaper,
     type Themeable
-} from '../../src/lib/ui/theme.ts';
-import { engineDir, glyphCatalog, loadConfig } from '../../src/lib/data/sources/config.ts';
+} from '../../../src/lib/ui/theme.ts';
+import { engineDir, glyphCatalog, loadConfig } from '../../../src/lib/data/sources/config.ts';
 import {
     setAppearance,
     terminalFontPx,
@@ -28,12 +28,13 @@ import {
     themeLabel,
     themes,
     wallpaperSettings
-} from '../../src/lib/state/shared/words/appearance.ts';
-import { setGlyphMode, setGlyphs } from '../../src/lib/state/shared/words/text.ts';
-import { parseBlocks } from '../../src/lib/themes/parse.ts';
+} from '../../../src/lib/state/shared/words/appearance.ts';
+import { setGlyphMode, setGlyphs } from '../../../src/lib/state/shared/words/text.ts';
+import { parseBlocks } from '../../../src/lib/themes/parse.ts';
 
 const THEMES_DIR = resolve(
     dirname(fileURLToPath(import.meta.url)),
+    '..',
     '..',
     '..',
     'src',

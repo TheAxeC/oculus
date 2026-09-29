@@ -24,7 +24,7 @@
     import Confirm from '$lib/ui/controls/Confirm.svelte';
     import DateInput from '$lib/ui/forms/DateInput.svelte';
     import Field from '$lib/ui/forms/Field.svelte';
-    import Select from '$lib/ui/forms/Select.svelte';
+    import Select from '$lib/ui/forms/choice/Select.svelte';
     import TextArea from '$lib/ui/forms/TextArea.svelte';
     import TextInput from '$lib/ui/forms/TextInput.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';

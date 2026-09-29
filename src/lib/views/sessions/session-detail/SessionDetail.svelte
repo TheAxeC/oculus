@@ -25,7 +25,7 @@
     import SessionPicker from '$lib/views/shared/sessions/SessionPicker.svelte';
     import Meter from '$lib/ui/display/Meter.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
-    import Select from '$lib/ui/forms/Select.svelte';
+    import Select from '$lib/ui/forms/choice/Select.svelte';
     import TextInput from '$lib/ui/forms/TextInput.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Toolbar from '$lib/ui/frame/Toolbar.svelte';

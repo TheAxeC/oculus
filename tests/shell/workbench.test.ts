@@ -6,9 +6,9 @@
 //
 // What this does NOT cover: the theme effect, the menus opening, the drags. There is no DOM in this
 // suite, so an $effect never runs and a pointer is never pressed; applyTheme is covered on its own
-// in tests/ui/theme.test.ts, the drag store is tests/state/workbench/drag.test.ts, and the drag
-// itself needs a DOM and is not run here. The insertion mark below is rendered from a prop, not
-// from a pointer.
+// in tests/ui/theme/theme.test.ts, the drag store is tests/state/workbench/drag.test.ts, and the
+// drag itself needs a DOM and is not run here. The insertion mark below is rendered from a prop,
+// not from a pointer.
 
 import { readFileSync } from 'node:fs';
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest';

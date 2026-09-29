@@ -175,9 +175,9 @@ tests/state/workbench/layout/layout-fixture.ts tests/state/workbench/layout/layo
 tests/state/workbench/layout/layout-fixture.ts tests/state/workbench/ui.test.ts 3d6329a7c2d7 the same 9 lines at 88 and 82, to fold into one place
 tests/state/workbench/layout/layout-parts.test.ts tests/state/workbench/ui.test.ts 6dba6fcd1479 the same 11 lines at 31 and 83, to fold into one place
 tests/ui/controls/tag.test.ts tests/ui/display/glyph.test.ts 16634b701b23 the same 17 lines at 23 and 32, to fold into one place
-tests/ui/controls/tag.test.ts tests/ui/wall.test.ts 6a052e828733 the same 13 lines at 28 and 57, to fold into one place
-tests/ui/wall.test.ts tests/views/whole/tinted.test.ts 914c58ab6986 the same 11 lines at 47 and 96, to fold into one place
-tests/ui/wall.test.ts tests/views/whole/type-scale.test.ts 9580a566ba4e the same 9 lines at 49 and 12, to fold into one place
+tests/ui/controls/tag.test.ts tests/ui/theme/wall.test.ts 6a052e828733 the same 13 lines at 28 and 57, to fold into one place
+tests/ui/theme/wall.test.ts tests/views/whole/tinted.test.ts 914c58ab6986 the same 11 lines at 47 and 96, to fold into one place
+tests/ui/theme/wall.test.ts tests/views/whole/type-scale.test.ts 9580a566ba4e the same 9 lines at 49 and 12, to fold into one place
 tests/views/academic/present.test.ts tests/views/academic/slides.test.ts b3566a3a49e4 the same 12 lines at 89 and 72, to fold into one place
 tests/views/academic/present.test.ts tests/views/academic/slides.test.ts b6d46e646b71 the same 22 lines at 65 and 36, to fold into one place
 tests/views/boards/editor.test.ts tests/views/boards/project.test.ts 99623c9dbf4a the same 11 lines at 35 and 57, to fold into one place
