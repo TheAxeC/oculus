@@ -3,11 +3,11 @@
 In flight:
 - none.
 Queued, in order:
-- Q102 (the terminal working as VS Code's, seen working in the page): stopped at `/spec` on Z69 (Copy as HTML: `@xterm/addon-serialize` or hand code), waiting on Axel's ruling.
-- Q88b (the right-click menus' new capabilities, and Chrome's own menu blocked): stopped at `/spec` on Z70 (the keys of the Tab Bar and Editor Actions settings), waiting on Axel's ruling.
-- D13c (the code theme key; Z46 (a)); runs alone, since it changes a configuration file.
-- X3c (the tab strip as VS Code's editor tabs; Z47 (a)); runs alone, since it adds `wrap_tabs` to `config/appearance.yml`.
-- X3a (the Files view as VS Code's Explorer).
+- Q102 (the terminal working as VS Code's, seen working in the page): Z69 ruled (a), Copy as HTML through `@xterm/addon-serialize`.
+- Q88b (the right-click menus' new capabilities, and Chrome's own menu blocked): Z70 ruled (a), `show_tabs` and `editor_actions` in `config/appearance.yml`.
+- D13c (the code theme key; Z46 (a)).
+- X3c (the tab strip as VS Code's editor tabs; Z47 (a)), once Q88b has landed: both change the pane strip (`PaneView.svelte`, `Tabs.svelte`, `pane-view.ts`), Q88b through `show_tabs`, `editor_actions` and its strip items.
+- X3a (the Files view as VS Code's Explorer), once Q88b has landed: X3a's New File, Rename, Delete, Cut, Copy, Paste and Compare rest on the server routes Q88b builds for the same items of the Files row menu.
 - Q91 (the project view and its editor), once X3a has landed.
 - Q84 and L4 (the fetch-and-hold stores on @tanstack/query-core, next at a free slot; floating panes).
 - Q85 (checking untyped input with zod).
@@ -26,7 +26,7 @@ Queued, in order:
 The loop fills three slots as they free up; a line above is only an order, never a barrier, apart from the "once ... has landed" notes. A step's line moves to Landed, at the top of that list, in its landing commit.
 
 Landed, newest first: every step ticked in `plan.md`, each with the date and the commit that ticked it (the 15 steps dated 2026-09-10 at f8af492b were landed before the ledger was opened):
-- Q86c (the Map's forces back on d3-force; Z60 (a)), 2026-09-30, the commit after 25cf42d8.
+- Q86c (the Map's forces back on d3-force; Z60 (a)), 2026-09-30, de5f74cd.
 - D13b (the diffs and the merge on Monaco), 2026-09-30, f6403f40.
 - Q105 (`bin/` renamed to `utils/`; Z65), 2026-09-29, ae8999e5.
 - Q104 (the load-sensitive test files tagged slow, the tree checks on their own verify line; Z64), 2026-09-29, eecbd8f0.
