@@ -1,13 +1,13 @@
 /plan-orchestration oculus/migration
 
 In flight:
-- Q86b (the Map's drag after neato's placement, Z49 (a): circles kept apart among the movers, no repulsion or centre pull, no creep, the node under the pointer, labels kept off other nodes): brief checked (`agents/reviews/Q86b-brief-check.md`, 18 findings closed in the brief), built from base 38c12da7 with its cases ruled at round 0 (`agents/briefs/Q86b-cases.md`); report saved, in /refute.
-- D13b (the diffs and the merge on Monaco): brief checked (`agents/reviews/D13b-brief-check.md`, every finding closed in the brief), built from base 444b9601; builder running.
+- Q86b (the Map's drag after neato's placement, Z49 (a): circles kept apart among the movers, no repulsion or centre pull, no creep, the node under the pointer, labels kept off other nodes): brief checked (`agents/reviews/Q86b-brief-check.md`, 18 findings closed in the brief), built from base 38c12da7 with its cases ruled at round 0 (`agents/briefs/Q86b-cases.md`); refuted (`agents/reviews/Q86b-refuter.md`); repair round 1 sent (`agents/briefs/Q86b-round1-sent.md`).
+- D13b (the diffs and the merge on Monaco): brief checked (`agents/reviews/D13b-brief-check.md`, every finding closed in the brief), base 444b9601; builder running.
 Queued, in order:
-- Q88b (the right-click menus' new capabilities: file writes under the roots with Delete to the Trash, discarding an untracked file to the Trash, a two-file compare, .gitignore, cherry-pick, the graph's commit and branch actions (detached checkout, a branch or tag from a commit, the compares, Delete Branch), Open File (HEAD), closing a repository, opening a worktree, Lock Group, the terminal's name, icon, colour and Clear; Z52 (b)); Q88 has landed, next to /spec.
+- Q88b (the right-click menus' new capabilities: file writes under the roots with Delete to the Trash, discarding an untracked file to the Trash, a two-file compare, .gitignore, cherry-pick, the graph's commit and branch actions (detached checkout, a branch or tag from a commit, the compares, Delete Branch), Open File (HEAD), closing a repository, opening a worktree, Lock Group, the terminal's name, icon, colour and Clear; Z52 (b)); waits for D13b to land: its compares (Compare Selected, Compare with Workspace, with Remote, with Merge Base, Open File (HEAD)) are new diff reads in `fileDiff`, `worktreeDiff`, `commitDiff`, `diffUrl` and the diff pane, which D13b rewrites onto the two-version answer, so a merge at landing would be a rebuild, not a rerun.
 - D13c (the code theme key), after D13a (Z46 (a)); runs alone, since it changes a configuration file.
-- X3c (the tab strip as VS Code's editor tabs; Z47 (a)).
-- X3a (the Files view as VS Code's Explorer).
+- X3c (the tab strip as VS Code's editor tabs; Z47 (a)); runs alone, since it adds `wrap_tabs` to `config/appearance.yml`.
+- X3a (the Files view as VS Code's Explorer); waits for D13b to land: its Compare Selected row is a two-file diff read and the diff pane, which D13b rewrites.
 - Q91 and Q83 (the project view and its editor, once X3a has landed; small libraries: culori and the others).
 - Q84 and L4 (the fetch-and-hold stores on @tanstack/svelte-query; floating panes; together only when their briefs name no shared file).
 - Q85 (checking untyped input with zod).
