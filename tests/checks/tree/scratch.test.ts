@@ -24,7 +24,7 @@ import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
 import { describe, expect } from 'vitest';
 import { it, plantScratch, scratchDir, scratchMade, sweepScratch } from '../../fixtures/scratch.ts';
-import { parsed } from '../../../bin/diagrams/imports.mjs';
+import { parsed } from '../../../utils/diagrams/imports.mjs';
 import { fileCode } from '../source/code.ts';
 import { treeFiles } from '../walk.ts';
 

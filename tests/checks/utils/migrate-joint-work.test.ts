@@ -68,7 +68,7 @@ function people(hub: string): PersonEntry[] {
 }
 
 function run(...args: string[]): { status: number | null; stdout: string; stderr: string } {
-    const out = spawnSync('node', ['bin/migrations/migrate-joint-work.mjs', ...args], {
+    const out = spawnSync('node', ['utils/migrations/migrate-joint-work.mjs', ...args], {
         cwd: process.cwd(),
         encoding: 'utf8'
     });
@@ -179,7 +179,7 @@ describe('migrate-joint-work.mjs', () => {
         for (const line of [[hub, '--bogus'], [hub, '--self-key'], ['--from']]) {
             const out = run(...line);
             expect(out.status).toBe(2);
-            expect(out.stderr).toContain('usage: node bin/migrations/migrate-joint-work.mjs');
+            expect(out.stderr).toContain('usage: node utils/migrations/migrate-joint-work.mjs');
         }
         expect(existsSync(join(hub, 'registries/people.yml'))).toBe(false);
 

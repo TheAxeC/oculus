@@ -14,7 +14,7 @@ import {
     migrateHub,
     rootsOf,
     theRename
-} from '../../../bin/migrations/rename-program-to-pillar.ts';
+} from '../../../utils/migrations/rename-program-to-pillar.ts';
 import { it, scratchDir, test } from '../../fixtures/scratch.ts';
 
 // The fixture hub, under the system temporary directory; nothing outside it is read or written.

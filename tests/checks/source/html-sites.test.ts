@@ -9,7 +9,7 @@ import { byKey } from '../../../src/lib/data/helpers/guards.ts';
 import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect } from 'vitest';
-import { component } from '../../../bin/diagrams/imports.mjs';
+import { component } from '../../../utils/diagrams/imports.mjs';
 import { it, scratchDir } from '../../fixtures/scratch.ts';
 import { treeFiles } from '../walk.ts';
 

@@ -1,7 +1,7 @@
 <script lang="ts">
     // Layer 3, view partial. One diagram of the manual, drawn in the page's own text colour.
     //
-    // The drawing is the diagram route's SVG, which bin/diagrams/diagrams.mjs writes with no
+    // The drawing is the diagram route's SVG, which utils/diagrams/diagrams.mjs writes with no
     // background and every line and letter in `currentColor`. Drawn by an `img` it would keep black
     // under every theme, since an image is a document of its own, so the file is fetched as text,
     // passed through ui/html.ts's graph filter and put into the page, where `currentColor` is the

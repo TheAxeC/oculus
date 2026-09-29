@@ -1,5 +1,5 @@
 // Layer 4, tool. The one reader of a module's imports, which the import checks under
-// tests/checks/imports/ and the diagrams of bin/diagrams/ both call, so the two cannot read a
+// tests/checks/imports/ and the diagrams of utils/diagrams/ both call, so the two cannot read a
 // module apart.
 //
 // A module is read by the parsers the project already builds with, never by a pattern over its

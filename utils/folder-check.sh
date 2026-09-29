@@ -1,5 +1,5 @@
 #!/bin/sh
-# Layer 4, test. Refuse a folder under src, tests, bin or config that holds more than ten items.
+# Layer 4, test. Refuse a folder under src, tests, utils or config that holds more than ten items.
 #
 # An item is a file or a folder directly inside it, counted over what git tracks or would track: a
 # file the repository ignores, such as config/local.yml, is this machine's own and is not counted,
@@ -15,11 +15,11 @@ cd "$(dirname "$0")/.."
 # file on disk under the four folders.
 paths() {
     if git rev-parse --is-inside-work-tree > /dev/null 2>&1; then
-        git ls-files -co --exclude-standard -- src tests bin config | while IFS= read -r path; do
+        git ls-files -co --exclude-standard -- src tests utils config | while IFS= read -r path; do
             if [ -e "$path" ]; then printf '%s\n' "$path"; fi
         done
     else
-        find src tests bin config \( -type f -o -type l \) 2> /dev/null
+        find src tests utils config \( -type f -o -type l \) 2> /dev/null
     fi
 }
 

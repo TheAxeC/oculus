@@ -1,15 +1,15 @@
 // The diagrams of docs/diagrams/ against the source they are drawn from.
 //
-// The first case runs bin/diagrams/diagrams.mjs's staleFiles() in memory over this tree and fails,
-// naming every committed `.dot` and `.svg` that differs from what the source gives now, byte for
-// byte; the second shows it does so for a source change, over a copy of the tree with one import
-// and one publish added, and that the diagrams share one cache of parses: the engine's generation
-// parses each file once for its imports and once for its code, the copy's the two changed files
-// alone. The cases after them hand the readers a small source of their own and show that each finds
-// what a change adds (a new import, a new channel, a new write module), that the overview and each
-// layer's diagram count runtime imports and leave a type-only one out, and that what a reader
-// cannot place or follow is drawn, with its file and line, in a group that says so. The last cases
-// hold the rendered file to its colours, its edge titles and its standalone style.
+// The first case runs utils/diagrams/diagrams.mjs's staleFiles() in memory over this tree and
+// fails, naming every committed `.dot` and `.svg` that differs from what the source gives now, byte
+// for byte; the second shows it does so for a source change, over a copy of the tree with one
+// import and one publish added, and that the diagrams share one cache of parses: the engine's
+// generation parses each file once for its imports and once for its code, the copy's the two
+// changed files alone. The cases after them hand the readers a small source of their own and show
+// that each finds what a change adds (a new import, a new channel, a new write module), that the
+// overview and each layer's diagram count runtime imports and leave a type-only one out, and that
+// what a reader cannot place or follow is drawn, with its file and line, in a group that says so.
+// The last cases hold the rendered file to its colours, its edge titles and its standalone style.
 //
 // The copy of the tree is made under the system temporary directory and removed after the run;
 // nothing else is written. What this does not cover is the Help view drawing a diagram.
@@ -17,7 +17,7 @@
 import { appendFileSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, vi } from 'vitest';
-import { codeOf } from '../../../bin/diagrams/code.mjs';
+import { codeOf } from '../../../utils/diagrams/code.mjs';
 import {
     BOUNDARIES,
     NAMES,
@@ -37,23 +37,23 @@ import {
     renderSvg,
     staleFiles,
     writesDot
-} from '../../../bin/diagrams/diagrams.mjs';
-import { importsOf } from '../../../bin/diagrams/imports.mjs';
+} from '../../../utils/diagrams/diagrams.mjs';
+import { importsOf } from '../../../utils/diagrams/imports.mjs';
 import { it } from '../../fixtures/scratch.ts';
 import { CountedCache, ENGINE, copyOfTree, parsedSince } from './tree.ts';
 
 // The two parsers wrapped in counters that call the real ones, so a case sees what was parsed.
-vi.mock('../../../bin/diagrams/imports.mjs', async (original) =>
+vi.mock('../../../utils/diagrams/imports.mjs', async (original) =>
     (await import('./counted.ts')).counted(await original<Record<string, unknown>>(), 'importsOf')
 );
-vi.mock('../../../bin/diagrams/code.mjs', async (original) =>
+vi.mock('../../../utils/diagrams/code.mjs', async (original) =>
     (await import('./counted.ts')).counted(await original<Record<string, unknown>>(), 'codeOf')
 );
 
 // The engine's drawings take seconds to generate, so the cases over them share one generation,
 // made by the first of them that runs; a case that reads no engine drawing never waits for it. Its
 // parses, and the paths each of PARSERS was called with during it, are kept for the file's cases.
-const parses = new CountedCache<import('../../../bin/diagrams/parsed.mjs').Parsed>();
+const parses = new CountedCache<import('../../../utils/diagrams/parsed.mjs').Parsed>();
 const PARSERS = [importsOf, codeOf];
 const engineParsed: string[][] = [];
 let engineGenerated: ReturnType<typeof generate> | null = null;
@@ -135,7 +135,7 @@ describe('the committed diagrams', () => {
     });
 
     it('reads imports with the one reader the import checks read them with', () => {
-        // The diagrams and the checks both call bin/diagrams/imports.mjs, so they read alike.
+        // The diagrams and the checks both call utils/diagrams/imports.mjs, so they read alike.
         expect(drawnImports).toBe(importsOf);
     });
 });

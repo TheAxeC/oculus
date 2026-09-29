@@ -29,7 +29,7 @@ describe('claude-usage.sh', () => {
             const home = scratch();
             const config = join(home, '.claude');
             const run = (input: string) =>
-                spawnSync('sh', ['bin/claude-usage.sh'], {
+                spawnSync('sh', ['utils/claude-usage.sh'], {
                     cwd: process.cwd(),
                     env: { ...process.env, HOME: home, CLAUDE_CONFIG_DIR: config },
                     input,
@@ -56,7 +56,7 @@ describe('claude-usage.sh', () => {
         const config = join(home, '.claude-work');
         const fixture =
             '{"session_id":"abc-123","model":{"id":"claude-opus","display_name":"Opus"},"context_window":{"used_percentage":12},"rate_limits":{"five_hour":{"used_percentage":34,"resets_at":1},"seven_day":{"used_percentage":56,"resets_at":2}},"cost":{"total_cost_usd":1.2},"cwd":"/tmp/work"}\n';
-        const run = spawnSync('sh', ['bin/claude-usage.sh'], {
+        const run = spawnSync('sh', ['utils/claude-usage.sh'], {
             cwd: process.cwd(),
             env: { ...process.env, HOME: home, CLAUDE_CONFIG_DIR: config },
             input: fixture,
@@ -75,7 +75,7 @@ describe('claude-usage.sh', () => {
     it('leaves absent status parts out', () => {
         const home = scratch();
         const fixture = '{"session_id":"only-id","context_window":{"context_window_size":200000}}';
-        const run = spawnSync('sh', ['bin/claude-usage.sh'], {
+        const run = spawnSync('sh', ['utils/claude-usage.sh'], {
             cwd: process.cwd(),
             env: { ...process.env, HOME: home, CLAUDE_CONFIG_DIR: join(home, '.claude') },
             input: fixture,

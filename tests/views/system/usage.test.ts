@@ -356,7 +356,7 @@ describe('Usage', () => {
             days: [],
             builtAt: '2026-09-13T12:00:00.000Z'
         });
-        expect(html).toContain('Install bin/claude-usage.sh');
+        expect(html).toContain('Install utils/claude-usage.sh');
     });
 
     it('draws each Claude account refresh control and its refresher state', () => {

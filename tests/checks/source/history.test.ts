@@ -1,9 +1,9 @@
 // Source audit. A comment says what the code does and why, never when it was written, which package
 // or session wrote it, what bug came before it or what was reverted, and a document says what the
-// tool is and does. Every comment line under src, tests, bin and config, every line of a text file
-// there, and every line of the three documents, is read and matched against the migration plan's id
-// vocabulary, a date and the session phrases below; every hit is printed with its file and line, so
-// a failure names the lines to rewrite rather than only the count of them.
+// tool is and does. Every comment line under src, tests, utils and config, every line of a text
+// file there, and every line of the three documents, is read and matched against the migration
+// plan's id vocabulary, a date and the session phrases below; every hit is printed with its file
+// and line, so a failure names the lines to rewrite rather than only the count of them.
 //
 // This file holds the vocabulary it searches for, so it excludes itself by the marker below rather
 // than by its name: a rename keeps the audit working and keeps it from reporting its own data.
@@ -15,7 +15,7 @@ import { it, scratchDir } from '../../fixtures/scratch.ts';
 import { commentText } from './code.ts';
 import { treeFiles } from '../walk.ts';
 
-const ROOTS = ['src', 'tests', 'bin', 'config'];
+const ROOTS = ['src', 'tests', 'utils', 'config'];
 
 /** The documents, read whole: every line of one is prose a reader takes as the tool's present. */
 const DOCS = ['HELP.md', 'DESIGN.md', 'README.md'];
@@ -136,7 +136,8 @@ describe('no history in code', () => {
 
     // Revert: in proseLines of tests/checks/source/history.test.ts, read a code line only when it
     // opens with its comment (commentLines), and the trailing comments of src/trail.ts and
-    // bin/trail.sh go unread; read a code line whole, and src/url.ts and src/quartile.ts are hits.
+    // utils/trail.sh go unread; read a code line whole, and src/url.ts and
+    // src/quartile.ts are hits.
     it('reads every line of a text file and every comment of code, trailing ones included', () => {
         const dir = scratchDir('oculus-history-');
         const plant = (rel: string, body: string): void => {
@@ -146,14 +147,14 @@ describe('no history in code', () => {
             writeFileSync(full, body, 'utf8');
         };
         plant('tests/list.txt', 'a.ts b.ts the clone the split of Q51 made\n');
-        plant('bin/run.sh', '#!/bin/sh\n# written for D22\necho "#D22 is data"\n');
+        plant('utils/run.sh', '#!/bin/sh\n# written for D22\necho "#D22 is data"\n');
         plant('config/keys.yml', 'key: 1 # kept since 2026-09-10\n');
         plant('src/url.ts', "const url = 'http://x/Q12';\n");
         plant('src/trail.ts', 'const a = 1; // written for Q12\n');
         plant('src/quartile.ts', 'const Q1 = 1;\n/*\n * kept until\n * the split of Q51\n */\n');
         plant('src/Page.svelte', '<!-- drawn for O17 -->\n<p>{x /* since Q3 */}</p>\n');
         plant('src/app.html', '<html>\n<!-- the page of D19c -->\n</html>\n');
-        plant('bin/trail.sh', 'x=1 # Q12\n');
+        plant('utils/trail.sh', 'x=1 # Q12\n');
         expect(commentHits(dir)).toEqual([
             'src/Page.svelte:1: <!-- drawn for O17 -->',
             'src/Page.svelte:2: <p>{x /* since Q3 */}</p>',
@@ -161,8 +162,8 @@ describe('no history in code', () => {
             'src/quartile.ts:4: * the split of Q51',
             'src/trail.ts:1: const a = 1; // written for Q12',
             'tests/list.txt:1: a.ts b.ts the clone the split of Q51 made',
-            'bin/run.sh:2: # written for D22',
-            'bin/trail.sh:1: x=1 # Q12',
+            'utils/run.sh:2: # written for D22',
+            'utils/trail.sh:1: x=1 # Q12',
             'config/keys.yml:1: key: 1 # kept since 2026-09-10'
         ]);
     });

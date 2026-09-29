@@ -73,8 +73,8 @@ describe('realPath', () => {
 // `insideHub` (which calls `below`), and two that test no path at all, a calendar event inside a
 // time window and a merge conflict holding a line. Any new match, a new containment copy or a new
 // function named `inside...`, turns this red until the list is read again. The yaml library's own
-// `isMap` is imported under another name wherever it is used, in src and in bin, so `isMap` is the
-// guard everywhere.
+// `isMap` is imported under another name wherever it is used, in src and in utils, so `isMap` is
+// the guard everywhere.
 describe('the copies the shared helpers replaced', () => {
     const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
     const SRC = join(ROOT, 'src');
@@ -103,7 +103,7 @@ describe('the copies the shared helpers replaced', () => {
 
     it("leave `isMap` to the guard: no file imports the yaml library's test under that name", () => {
         const yamlMap = /import \{[^}]*\bisMap\b(?! as )[^}]*\} from 'yaml'/;
-        const found = [...files(SRC), ...files(join(ROOT, 'bin'))].filter((file) =>
+        const found = [...files(SRC), ...files(join(ROOT, 'utils'))].filter((file) =>
             yamlMap.test(readFileSync(file, 'utf8'))
         );
         expect(found.map((file) => file.slice(ROOT.length + 1))).toEqual([]);

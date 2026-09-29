@@ -3,15 +3,15 @@
 //
 // The rule is the spec's: one source file under 1000 lines and a component under about 600, checked
 // at 900 and 540 so a file is caught while it still has room to be split. Every source file the
-// tree holds is measured, a script under bin/ as much as a module under src/. Membership of the
+// tree holds is measured, a script under utils/ as much as a module under src/. Membership of the
 // list is not a pass: an entry carries a number, the file may not pass it, a file that falls back
 // under the line comes off the list, and an entry naming a file the tree no longer holds fails too.
 //
-// bin/size-allow.txt is read by this and by the one-line command of the verification list, which
+// utils/size-allow.txt is read by this and by the one-line command of the verification list, which
 // holds the same rule in awk; the two are checked against each other by the case at the end.
 //
-// The folder rule is bin/folder-check.sh's: a folder under src, tests, bin or config holds at most
-// ten items, and the last block runs it over the tree and over trees of its own.
+// The folder rule is utils/folder-check.sh's: a folder under src, tests, utils or config holds at
+// most ten items, and the last block runs it over the tree and over trees of its own.
 
 import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve, sep } from 'node:path';
@@ -22,7 +22,7 @@ import { it, scratchDir } from '../../fixtures/scratch.ts';
 import { treeFiles } from '../walk.ts';
 
 const ROOT = resolve(fileURLToPath(import.meta.url), '..', '..', '..', '..');
-const ALLOW = join(ROOT, 'bin', 'size-allow.txt');
+const ALLOW = join(ROOT, 'utils', 'size-allow.txt');
 
 /** The line count a file may not pass, by the kind of file it is. */
 const LINES = 900;
@@ -52,7 +52,7 @@ function sourceFiles(root: string, prefix: string): string[] {
 }
 
 /** Every file the size rule refuses, and every allow line that is no longer right. */
-export function findOversize(root: string, allowText: string, roots = ['src', 'tests', 'bin']) {
+export function findOversize(root: string, allowText: string, roots = ['src', 'tests', 'utils']) {
     const { cap, bad } = parseAllow(allowText);
     const found = [...bad];
     const left = new Set(Object.keys(cap));
@@ -131,8 +131,8 @@ describe('a file over the size line', () => {
     });
 
     it('audits the awk of the verification list against this rule, over the tree as it stands', () => {
-        const command = readFileSync(join(ROOT, 'bin', 'size-check.sh'), 'utf8');
-        const held = spawnSync('sh', [join(ROOT, 'bin', 'size-check.sh')], {
+        const command = readFileSync(join(ROOT, 'utils', 'size-check.sh'), 'utf8');
+        const held = spawnSync('sh', [join(ROOT, 'utils', 'size-check.sh')], {
             cwd: ROOT,
             encoding: 'utf8'
         });
@@ -145,8 +145,8 @@ describe('a file over the size line', () => {
 /** A tree of its own holding the folder check and, unless asked not to, a git repository. */
 function folderTree(files: string[], ignored: string[] = [], git = true): string {
     const dir = scratchDir('oculus-folders-');
-    mkdirSync(join(dir, 'bin'), { recursive: true });
-    copyFileSync(join(ROOT, 'bin', 'folder-check.sh'), join(dir, 'bin', 'folder-check.sh'));
+    mkdirSync(join(dir, 'utils'), { recursive: true });
+    copyFileSync(join(ROOT, 'utils', 'folder-check.sh'), join(dir, 'utils', 'folder-check.sh'));
     for (const rel of files) {
         const full = join(dir, rel);
         expect(resolve(full).startsWith(resolve(dir) + sep)).toBe(true);
@@ -160,7 +160,7 @@ function folderTree(files: string[], ignored: string[] = [], git = true): string
 
 /** What the folder check says over a tree, and whether it passed. */
 function folders(dir: string): { out: string; status: number | null } {
-    const held = spawnSync('sh', [join(dir, 'bin', 'folder-check.sh')], {
+    const held = spawnSync('sh', [join(dir, 'utils', 'folder-check.sh')], {
         cwd: dir,
         encoding: 'utf8'
     });

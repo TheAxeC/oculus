@@ -6,8 +6,8 @@
 // Each language is read by its own parser, never by a pattern over the text, since only a parse
 // tells a regular expression after `return` from a division. A module is read by TypeScript's
 // parse: its comments are the trivia before every token and after it on its line, as
-// bin/diagrams/code.mjs finds them, and its strings are its literal tokens. A component is read by
-// svelte/compiler's parse: its scripts as a module at their offsets, the comments of its markup
+// utils/diagrams/code.mjs finds them, and its strings are its literal tokens. A component is read
+// by svelte/compiler's parse: its scripts as a module at their offsets, the comments of its markup
 // expressions from the parse's list, its HTML comments by their nodes and its style comments from
 // the style block's list; its markup text is code and holds no string. A page or an image written
 // as markup (.html, .svg) is read the same way. A stylesheet's comments are those parseCss reports.
@@ -19,7 +19,7 @@
 
 import ts from 'typescript';
 import { parseCss } from 'svelte/compiler';
-import { component, parsed } from '../../../bin/diagrams/imports.mjs';
+import { component, parsed } from '../../../utils/diagrams/imports.mjs';
 
 /** What one character of a file is. */
 export type Kind = 'code' | 'string' | 'comment';

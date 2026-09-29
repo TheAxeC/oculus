@@ -5,7 +5,7 @@
 // not open with `import type` or `export type`, since those two leave nothing behind once the
 // TypeScript is compiled and so cannot join two modules at run time; the cycle check reads those
 // alone, and the folder order and the boundary test read the type-only ones too. A module is
-// parsed, never matched as text, by bin/diagrams/imports.mjs, the one reader the diagrams call
+// parsed, never matched as text, by utils/diagrams/imports.mjs, the one reader the diagrams call
 // too, so a comment is never read as code. The boundary test, the cycle check, the folder order
 // and the augmentation check all read their modules through sourceFiles(), their imports through
 // runtimeImports() or augmentations(), and resolve a specifier through target(), so they agree on
@@ -13,7 +13,7 @@
 
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { dirname, join, normalize, sep } from 'node:path';
-import { augmentationsOf, importsOf, moduleAt } from '../../../bin/diagrams/imports.mjs';
+import { augmentationsOf, importsOf, moduleAt } from '../../../utils/diagrams/imports.mjs';
 import { treeFiles } from '../walk.ts';
 
 /** Every .ts and .svelte file under a root, as paths relative to it with forward slashes. */
@@ -44,7 +44,7 @@ export type RuntimeImport = { spec: string; id: string; line: number };
 
 /**
  * Every import of one module's text that names a module of the tree, in the order its lines give,
- * as bin/diagrams/imports.mjs's importsOf() parses them: the runtime ones alone, or with `types`
+ * as utils/diagrams/imports.mjs's importsOf() parses them: the runtime ones alone, or with `types`
  * the type-only ones as well, which is what the folder order holds, since a type is a dependency
  * of the design even when the built code keeps nothing of it. An `import()` whose specifier could
  * not be read names nothing here, and neither does an `import.meta.glob`, which names a pattern.
@@ -67,7 +67,7 @@ export function runtimeImports(
 /**
  * Every `declare module` block and every `/// <reference path>` directive of one module's text
  * that names a module of the tree, with its line, as augmentationsOf() in
- * bin/diagrams/imports.mjs parses them. A package's own augmentation (`declare module
+ * utils/diagrams/imports.mjs parses them. A package's own augmentation (`declare module
  * 'some-package'`) names no module of the tree and is not one; a directive's path is read as a
  * path beside the file, as the compiler reads it.
  */
@@ -82,7 +82,7 @@ export function augmentations(fileRel: string, text: string, lib = ''): RuntimeI
 }
 
 /**
- * The file a module id is, by moduleAt() of bin/diagrams/imports.mjs, which resolves an ending as
+ * The file a module id is, by moduleAt() of utils/diagrams/imports.mjs, which resolves an ending as
  * Vite does; the id itself, with the ending the specifier wrote, where no file answers, so an
  * import of a module that is not there still names where it points.
  */

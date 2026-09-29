@@ -27,7 +27,7 @@ Queued, in order:
 The loop fills three slots as they free up; a line above is only an order, never a barrier, apart from the "once ... has landed" notes. A step's line moves to Landed, at the top of that list, in its landing commit.
 
 Landed, newest first: every step ticked in `plan.md`, each with the date and the commit that ticked it (the 15 steps dated 2026-09-10 at f8af492b were landed before the ledger was opened):
-- Q104 (the load-sensitive test files tagged slow, the tree checks on their own verify line; Z64), 2026-09-29, this commit.
+- Q104 (the load-sensitive test files tagged slow, the tree checks on their own verify line; Z64), 2026-09-29, eecbd8f0.
 - Q83 (small libraries in place of hand code), 2026-09-29, d1986845.
 - Q86b (the Map's drag after neato's placement), 2026-09-29, 1e8fdcda.
 - Q88 (right-click menus wherever vscode.dev gives one), 2026-09-29, 88e6a1c3.

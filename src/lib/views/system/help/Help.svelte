@@ -20,7 +20,7 @@
     // api/docs, the one route that turns Markdown into HTML, which serves that one path of the
     // engine directory and nothing else around it.
     //
-    // The manual shows the diagrams bin/diagrams/diagrams.mjs draws from the source. Each is an
+    // The manual shows the diagrams utils/diagrams/diagrams.mjs draws from the source. Each is an
     // image of docs/diagrams/ in HELP.md, which the server cuts out of the manual's answer as a
     // part of its own (server/content/docs.ts, renderManualParts) so Diagram.svelte can draw it in
     // the page's text colour; the prose between them is drawn by the Markdown partial, one run at a

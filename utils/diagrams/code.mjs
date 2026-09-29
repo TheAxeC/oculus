@@ -1,5 +1,6 @@
 // Layer 4, tool. A module's text with everything that is not code blanked, for the channel and
-// write readers of bin/diagrams/, which match calls in text: a call named in a comment is no call.
+// write readers of utils/diagrams/, which match calls in text:
+// a call named in a comment is no call.
 //
 // The comments are found by the parsers imports.mjs reads imports with, never by a pattern over
 // the text, so a string, a template or a regular expression that holds `/*`, `*/` or `//` is kept

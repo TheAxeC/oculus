@@ -13,7 +13,7 @@
 // A citation may name one line (`src/lib/server/core/git.ts:121`), a range (`:138-144`) or a list
 // (`:55,185,193`); every line named is printed. Usage:
 //
-//     node bin/cited-lines.mjs [--root <dir>] <report>
+//     node utils/cited-lines.mjs [--root <dir>] <report>
 
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve, sep } from 'node:path';
@@ -171,7 +171,7 @@ function main() {
     const { root, report } = readArgs(process.argv.slice(2));
     const base = resolve(root ?? join(dirname(fileURLToPath(import.meta.url)), '..'));
     if (report === null) {
-        process.stdout.write('usage: node bin/cited-lines.mjs [--root <dir>] <report>\n');
+        process.stdout.write('usage: node utils/cited-lines.mjs [--root <dir>] <report>\n');
         process.exitCode = 2;
         return;
     }

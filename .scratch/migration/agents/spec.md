@@ -39,7 +39,7 @@ Every agent dispatched on an oculus package runs under this file plus one brief 
 - No history in code or comments: a comment says what the code does and why, never which package, session, date, earlier bug or reverted attempt it came from. A comment naming a package id (O17, Q14, D19c) or a date is a defect.
 
 - One source file under 1000 lines. A file approaching it is split by concern.
-- At most ten tracked items in a folder under `src`, `tests`, `bin` or `config`; `bin/folder-check.sh` holds it. A folder that would pass that is split into folders named for what they hold, and a new file goes where its concern already lives.
+- At most ten tracked items in a folder under `src`, `tests`, `utils` or `config`; `utils/folder-check.sh` holds it. A folder that would pass that is split into folders named for what they hold, and a new file goes where its concern already lives.
 - Four-space indentation everywhere. Prettier is pinned in `.prettierrc`; run `npm run format` on what you wrote and `npm run format:check` before you report. Never hand-format to satisfy the check.
 - ASCII only in every file you author. Glyphs come from `config/catalogs/glyphs.yml`; every user-facing string from a catalog file under `config/text/` through `t("group.key")`, in a component and in a state module alike; colours from `themes/tokens.css`. A literal string, a raw hex or a literal glyph anywhere a reader sees it is a defect. A catalog group lives in exactly one file: a new key joins its group where that group already is, and a group is never declared in two.
 - Every module and component you add opens with the head comment the tree's files open with: its layer ("Layer 2, server" and so on), what it is, and why it is shaped as it is. A file without one is a defect.

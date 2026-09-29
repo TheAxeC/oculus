@@ -1,6 +1,6 @@
-// Layer 4, tool. What the diagram readers of bin/diagrams/ share: the source tree read into memory,
-// the layer rows and folder order the checks declare, an import specifier resolved to a module,
-// and the pieces of Graphviz text every diagram is written with (a quoted id, the header, a
+// Layer 4, tool. What the diagram readers of utils/diagrams/ share: the source tree read into
+// memory, the layer rows and folder order the checks declare, an import specifier resolved to a
+// module, and the pieces of Graphviz text every diagram is written with (a quoted id, the header, a
 // cluster, the node of something a reader could not follow). A module's imports are read by
 // imports.mjs, the reader the checks call, and its code apart from its comments by code.mjs.
 

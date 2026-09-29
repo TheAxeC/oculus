@@ -12,7 +12,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { render } from 'svelte/server';
 import Help from '../../../src/lib/views/system/help/Help.svelte';
 import { newestAnswer } from '../../../src/lib/views/system/help/newest.ts';
-import { NAMES, OUT } from '../../../bin/diagrams/diagrams.mjs';
+import { NAMES, OUT } from '../../../utils/diagrams/diagrams.mjs';
 import { renderManual, renderManualParts } from '../../../src/lib/server/content/docs.ts';
 import { portfolioConfigFrom } from '../../../src/lib/data/index.ts';
 import { descriptionKey } from '../../../src/lib/views/system/config/files.ts';

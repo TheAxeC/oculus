@@ -14,7 +14,7 @@
         "test:slow": "vitest run --tagsFilter slow",
         "format": "prettier --write .",
         "format:check": "prettier --check .",
-        "diagrams": "node bin/diagrams/diagrams.mjs"
+        "diagrams": "node utils/diagrams/diagrams.mjs"
     },
     "devDependencies": {
         "@eslint/js": "^10.0.1",

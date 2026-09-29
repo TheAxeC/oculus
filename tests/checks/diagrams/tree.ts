@@ -11,7 +11,7 @@ import { cpSync, mkdirSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { vi } from 'vitest';
-import { BOUNDARIES, ORDERING, OUT } from '../../../bin/diagrams/diagrams.mjs';
+import { BOUNDARIES, ORDERING, OUT } from '../../../utils/diagrams/diagrams.mjs';
 import { scratchDir } from '../../fixtures/scratch.ts';
 
 /** The engine directory, tools/oculus. */

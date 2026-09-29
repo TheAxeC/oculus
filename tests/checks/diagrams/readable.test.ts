@@ -25,7 +25,7 @@ import {
     renderSvg,
     writesDot,
     writesDrawn
-} from '../../../bin/diagrams/diagrams.mjs';
+} from '../../../utils/diagrams/diagrams.mjs';
 
 const ENGINE = resolve(fileURLToPath(import.meta.url), '..', '..', '..', '..');
 

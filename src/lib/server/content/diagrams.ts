@@ -1,4 +1,4 @@
-// Layer 2, server. The diagrams bin/diagrams/diagrams.mjs draws from the source, served
+// Layer 2, server. The diagrams utils/diagrams/diagrams.mjs draws from the source, served
 // read-only to the Help view: one `.svg` file of the engine's docs/diagrams/ folder, by its file
 // name, and nothing else of that folder or around it.
 //
@@ -19,7 +19,7 @@
 import { readFileSync, realpathSync, statSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
-/** The folder of the engine directory the diagrams are written to, as bin/diagrams/ names it. */
+/** The folder of the engine directory the diagrams are written to, as utils/diagrams/ names it. */
 export const DIAGRAM_DIR = join('docs', 'diagrams');
 
 /** The one shape of name this route serves: what the generator writes, and nothing else. */

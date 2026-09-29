@@ -1,4 +1,4 @@
-// The reader every diagram parses a source file through, bin/diagrams/parsed.mjs's parseReader().
+// The reader every diagram parses a source file through, utils/diagrams/parsed.mjs's parseReader().
 //
 // The parsers it calls, importsOf() and codeOf(), are wrapped in counters that call the real ones,
 // so a case sees how often a file was parsed as well as what the parse gave. The cases show that a
@@ -9,15 +9,15 @@
 // shown over the engine by tests/checks/diagrams/diagrams.test.ts.
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { codeOf } from '../../../bin/diagrams/code.mjs';
-import { importsOf } from '../../../bin/diagrams/imports.mjs';
-import { parseReader } from '../../../bin/diagrams/parsed.mjs';
+import { codeOf } from '../../../utils/diagrams/code.mjs';
+import { importsOf } from '../../../utils/diagrams/imports.mjs';
+import { parseReader } from '../../../utils/diagrams/parsed.mjs';
 
-vi.mock('../../../bin/diagrams/imports.mjs', async (original) =>
+vi.mock('../../../utils/diagrams/imports.mjs', async (original) =>
     (await import('./counted.ts')).counted(await original<Record<string, unknown>>(), 'importsOf')
 );
 
-vi.mock('../../../bin/diagrams/code.mjs', async (original) =>
+vi.mock('../../../utils/diagrams/code.mjs', async (original) =>
     (await import('./counted.ts')).counted(await original<Record<string, unknown>>(), 'codeOf')
 );
 

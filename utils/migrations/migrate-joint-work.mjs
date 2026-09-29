@@ -18,8 +18,8 @@
 // are, so a second run over a migrated hub writes the same bytes, and a run over a hub that has
 // gained a collaborations entry since adds that one and touches nothing else. Run it as
 //
-//     node bin/migrations/migrate-joint-work.mjs <hub> [--from f] [--self-key k] [--self-name n] \
-//         [--self-role r] [--self-affiliation a]
+//     node utils/migrations/migrate-joint-work.mjs <hub> [--from f] [--self-key k] \
+//         [--self-name n] [--self-role r] [--self-affiliation a]
 //
 // and it prints, per file, what it wrote and what it could not fill in.
 
@@ -453,7 +453,7 @@ function migrate(hub, self, from) {
 }
 
 const USAGE =
-    'usage: node bin/migrations/migrate-joint-work.mjs <hub> [--from f] [--self-key k] [--self-name n] [--self-role r] [--self-affiliation a]';
+    'usage: node utils/migrations/migrate-joint-work.mjs <hub> [--from f] [--self-key k] [--self-name n] [--self-role r] [--self-affiliation a]';
 
 /**
  * The command line: the hub, then the hub owner's own person entry. A flag this does not know, or

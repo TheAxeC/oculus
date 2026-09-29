@@ -20,7 +20,7 @@ text:
         no_accounts: No usage accounts are configured.
         no_data: No current rate-limit data was found.
         no_history: No token use was recorded in the last seven days.
-        no_line: No Claude status-line data yet. Install bin/claude-usage.sh as Claude Code's statusLine command.
+        no_line: No Claude status-line data yet. Install utils/claude-usage.sh as Claude Code's statusLine command.
         no_window: no window open
         primary: Primary
         refresh: Refresh now

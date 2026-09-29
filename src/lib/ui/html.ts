@@ -265,7 +265,7 @@ export function sanitiseSvg(svg: string): string {
 }
 
 /**
- * The elements a graph drawn by bin/diagrams/diagrams.mjs is made of: what Graphviz writes for a
+ * The elements a graph drawn by utils/diagrams/diagrams.mjs is made of: what Graphviz writes for a
  * group, a box, an ellipse, a cylinder, an edge and its arrowhead, the text of each label, and the
  * `title` of a node or an edge, which the browser shows on hover and which carries the functions a
  * write edge calls. There is no `a`, no `style` and nothing that loads, runs or embeds, so a

@@ -8,7 +8,7 @@
 // nothing else, so the comments, the ordering and the quoting a hand-written manifest carries come
 // through untouched. A manifest the rename is refused over is reported and left alone.
 //
-// Usage: node bin/migrations/rename-program-to-pillar.ts <hub-root> [<hub-root> ...]
+// Usage: node utils/migrations/rename-program-to-pillar.ts <hub-root> [<hub-root> ...]
 
 import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import type { Dirent } from 'node:fs';
@@ -100,7 +100,7 @@ function main(argv: string[]): number {
     const roots = rootsOf(argv);
     if (roots === null) {
         process.stderr.write(
-            'usage: node bin/migrations/rename-program-to-pillar.ts <hub-root> ...\n'
+            'usage: node utils/migrations/rename-program-to-pillar.ts <hub-root> ...\n'
         );
         return 2;
     }

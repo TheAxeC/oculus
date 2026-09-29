@@ -6,7 +6,7 @@ import { join, resolve, sep } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { afterEach, describe, expect } from 'vitest';
 import { it, scratchDir } from '../../fixtures/scratch.ts';
-import { readArgs } from '../../../bin/cited-lines.mjs';
+import { readArgs } from '../../../utils/cited-lines.mjs';
 
 const made: string[] = [];
 
@@ -35,7 +35,7 @@ function fixture(report: string, more: Record<string, string> = {}): { dir: stri
 
 /** The check over a report, as the verification list runs it. */
 function run(dir: string, report: string): { out: string; status: number | null } {
-    const held = spawnSync('node', ['bin/cited-lines.mjs', '--root', dir, report], {
+    const held = spawnSync('node', ['utils/cited-lines.mjs', '--root', dir, report], {
         cwd: process.cwd(),
         encoding: 'utf8'
     });
@@ -105,8 +105,8 @@ describe('the citation check', () => {
     });
 
     it('calls a citation that climbs out of the tree MISSING, and reads nothing there', () => {
-        // Revert: in under of bin/cited-lines.mjs, let every path pass, and a report citing a file
-        // above the tree is read and counted among the lines that are there.
+        // Revert: in under of utils/cited-lines.mjs, let every path pass, and a report citing a
+        // file above the tree is read and counted among the lines that are there.
         // The tree sits one folder down in a scratch directory, so the file above it is written
         // inside that directory and swept with it, never beside the temporary directory's others.
         const outer = scratchDir('oculus-cited-lines-outer-');
@@ -143,8 +143,8 @@ describe('the command line', () => {
     it('names no report for a line that does not read, so the usage is printed', () => {
         expect(readArgs(['--root'])).toEqual({ root: null, report: null });
         expect(readArgs(['--bogus', 'a.md'])).toEqual({ root: null, report: null });
-        const held = spawnSync('node', ['bin/cited-lines.mjs', '--bogus'], { encoding: 'utf8' });
-        expect(held.stdout).toContain('usage: node bin/cited-lines.mjs');
+        const held = spawnSync('node', ['utils/cited-lines.mjs', '--bogus'], { encoding: 'utf8' });
+        expect(held.stdout).toContain('usage: node utils/cited-lines.mjs');
         expect(held.status).toBe(2);
     });
 });

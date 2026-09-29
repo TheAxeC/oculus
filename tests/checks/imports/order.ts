@@ -23,7 +23,7 @@
 // an augmentation adds to a module from outside it, which ties the two in whichever direction it
 // runs, so no order could hold it. Every folder a layer holds is listed, so a new
 // folder is placed before it is used, and a listed folder the tree no longer holds is named too;
-// the same holds for the sub-folders of a folder INNER names. bin/diagrams/ reads ORDER from this
+// the same holds for the sub-folders of a folder INNER names. utils/diagrams/ reads ORDER from this
 // file to draw each layer's folders top down, so the list keeps the one shape its reader parses:
 // `name: [...]` per layer, the folders quoted.
 
