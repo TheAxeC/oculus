@@ -6,7 +6,7 @@ In flight:
 - Q83 (small libraries: culori, marked-highlight, the xterm addons and six server helpers): building.
 Queued, in order:
 - Q103 (the Live HPC view's failure text in its own type, the capacity table collapsible), at the next free slot.
-- Q102 (the terminal working as VS Code's, seen working in the page), once Q83 has landed; its look needs open item Z57.
+- Q102 (the terminal working as VS Code's, seen working in the page), once Q83 has landed.
 - Q88b (the right-click menus' new capabilities, and Chrome's own menu blocked), once D13b has landed.
 - D13c (the code theme key; Z46 (a)); runs alone, since it changes a configuration file.
 - X3c (the tab strip as VS Code's editor tabs; Z47 (a)); runs alone, since it adds `wrap_tabs` to `config/appearance.yml`.
