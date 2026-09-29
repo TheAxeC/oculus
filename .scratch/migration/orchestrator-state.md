@@ -38,6 +38,8 @@ dispatch:      # Q81, Q82 and Q87 building.
   report: agents/reviews/Q81-report.md
   landing: not-started
   round: 0
+  builder_usage: 63 tool uses, 291k tokens, 11 min, the cases hand-back
+  cases: ruled at round 0 in agents/briefs/Q81-cases.md (case 5 to the look, the overlays' Escape through bits-ui with the shell's three Escape branches removed)
 - step: Q82
   executor: agent
   worker: claude:opus
