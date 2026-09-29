@@ -1,7 +1,7 @@
 /plan-orchestration oculus/migration
 
 In flight:
-- Q79b (the tests; beside Q96 and Q88 by Z50 (a)): built from base 89a83e3b (cases ruled at round 0), under review.
+- Q79b (the tests; beside Q96 and Q88 by Z50 (a)): built from base 89a83e3b (cases ruled at round 0), reviewed; repair round 1 sent.
 - Q96 (the Rail section's field words and icon dropdown on bits-ui, one tooltip open at a time): built from base 43936573, reviewed; repair round 1 sent.
 - D13a (the source tab on Monaco, the primitive under ui/controls/editor): building from base fcde80b7, dispatched 2026-09-29.
 Queued, in order:

@@ -27,7 +27,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:      # D13a building, Q96 in repair round 1, Q79b under review; Q88 next into a free slot (Z52 ruled (b)); Q86b waits for Q86's look on TEST (Z49).
+dispatch:      # D13a building, Q96 and Q79b in repair round 1; Q88 next into a free slot (Z52 ruled (b)); Q86b waits for Q86's look on TEST (Z49).
 - step: Q79b
   executor: agent
   worker: claude:opus
@@ -37,9 +37,9 @@ dispatch:      # D13a building, Q96 in repair round 1, Q79b under review; Q88 ne
   launched: 2026-09-29
   report: agents/reviews/Q79b-report.md
   landing: not-started
-  round: 0, cases ruled in agents/briefs/Q79b-cases.md (history audit option A, the scratchDir escape, 102 suites, app.html and favicon.svg read as HTML)
+  round: 1, sent 2026-09-29 in agents/briefs/Q79b-round1-sent.md (the remaining comment strippers, no module-level or plain-hook scratch directories, dot entries in the walkers); round 0, cases ruled in agents/briefs/Q79b-cases.md (history audit option A, the scratchDir escape, 102 suites, app.html and favicon.svg read as HTML)
   builder_usage: 36 tool uses, 187k tokens, 8 min, the cases hand-back; 196 tool uses, 141k tokens, 74 min, the build
-  reviewer_report: agents/reviews/Q79b-refuter.md (running, agent a6943b38cce68a90b)
+  reviewer_report: agents/reviews/Q79b-refuter.md (280k tokens, 84 tool uses, 25 min)
 - step: Q96
   executor: agent
   worker: claude:opus
