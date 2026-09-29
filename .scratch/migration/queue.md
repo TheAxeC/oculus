@@ -27,7 +27,7 @@ Queued, in order:
 The loop fills three slots as they free up; a line above is only an order, never a barrier, apart from the "once ... has landed" notes. A step's line moves to Landed, at the top of that list, in its landing commit.
 
 Landed, newest first: every step ticked in `plan.md`, each with the date and the commit that ticked it (the 15 steps dated 2026-09-10 at f8af492b were landed before the ledger was opened):
-- Q82 (the tree on @zag-js/tree-view, the long explorer lists virtualized; its look taken with Q81's), 2026-09-29, the landing commit.
+- Q82 (the tree on @zag-js/tree-view, the long explorer lists virtualized; its look taken with Q81's), 2026-09-29, 2349e0fb.
 - Q87 (the duplication check on jscpd; the import checks stay hand-written), 2026-09-29, 5c395891.
 - Q86 (the Map laid out by Graphviz's neato in the page), 2026-09-29, 27e7e27f.
 - Q101 (each Terminal tab a terminal panel of its own), 2026-09-29, 4490d3fc.
