@@ -1,14 +1,14 @@
 /plan-orchestration oculus/migration
 
 In flight:
-- Q86 (the Map laid out by Graphviz's neato in the page): reviewed after two rounds, landing next.
+- none.
 Queued, in order:
 - Q87 (the import-graph checks on dependency-cruiser, the duplication check on jscpd): stopped at /spec, waiting on Axel's ruling Z45.
 - Q81 (menus, context menus, tooltips and dialogs on bits-ui).
 - Q79b (the tests, runs alone).
 - Q96 and Q88 (the Rail section's field labels and its icon dropdown on bits-ui, once Q81 has landed; right-click menus wherever vscode.dev gives one).
 - Q82 (the tree on @zag-js/tree-view).
-- Q86b (the Map's drag after neato's placement, Z49 (a)), after Q86's look.
+- Q86b (the Map's drag after neato's placement, Z49 (a)); its look also takes the Map's labels after Q86's fix at landing.
 - D13 (the editor replaced by Monaco): stopped at /spec, waiting on Axel's ruling Z46.
 - X3c (the tab strip as VS Code's editor tabs): stopped at /spec, waiting on Axel's ruling Z47.
 - X3a (the Files view as VS Code's Explorer, once Q82 has landed).
@@ -30,6 +30,7 @@ Queued, in order:
 The loop fills three slots as they free up; a line above is only an order, never a barrier, apart from the "once ... has landed" notes. A step's line moves to Landed, at the top of that list, in its landing commit.
 
 Landed, newest first: every step ticked in `plan.md`, each with the date and the commit that ticked it (the 15 steps dated 2026-09-10 at f8af492b were landed before the ledger was opened):
+- Q86 (the Map laid out by Graphviz's neato in the page), 2026-09-29, 27e7e27f.
 - Q101 (each Terminal tab a terminal panel of its own), 2026-09-29, 4490d3fc.
 - Q79d (the library audit's shared helpers, each written once), 2026-09-29, 703aec66.
 - Q100 (the Calendar's fixed strips over a wallpaper), 2026-09-29, a26286e1.
