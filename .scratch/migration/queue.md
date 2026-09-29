@@ -3,8 +3,8 @@
 In flight:
 - D13b (the diffs and the merge on Monaco): building, its cases ruled.
 - Q83 (small libraries: culori, marked-highlight, the xterm addons and six server helpers): its stop ruled, building.
+- Q103 (the Live HPC view's failure text and a collapsible capacity section): brief check running.
 Queued, in order:
-- Q103 (the Live HPC view's failure text in its own type, the capacity table collapsible), at the next free slot.
 - Q102 (the terminal working as VS Code's, seen working in the page), once Q83 has landed.
 - Q88b (the right-click menus' new capabilities, and Chrome's own menu blocked), once D13b has landed.
 - D13c (the code theme key; Z46 (a)); runs alone, since it changes a configuration file.
