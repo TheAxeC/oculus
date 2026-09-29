@@ -2,11 +2,11 @@
 
 In flight:
 - Q81 (menus, context menus, tooltips and dialogs on bits-ui; the palette on its Command list with fuzzysort): building.
+- Q82 (the tree on @zag-js/tree-view, the long explorer lists virtualized): building.
 Queued, in order:
 - Q87 (the duplication check on jscpd; the import checks stay hand-written, Z45 (a)).
 - Q79b (the tests, runs alone).
 - Q96 and Q88 (the Rail section's field labels and its icon dropdown on bits-ui, once Q81 has landed; right-click menus wherever vscode.dev gives one, the tab's menu left to X3c).
-- Q82 (the tree on @zag-js/tree-view).
 - Q86b (the Map's drag after neato's placement, Z49 (a)); its look also takes the Map's labels after Q86's fix at landing.
 - D13a (the source tab on Monaco), then D13b (the diffs and the merge on Monaco) and D13c (the code theme key), after D13a (Z46 (a)).
 - X3c (the tab strip as VS Code's editor tabs, once Q81 has landed; Z47 (a)).

@@ -27,7 +27,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:      # Q81 building.
+dispatch:      # Q81 and Q82 building.
 - step: Q81
   executor: agent
   worker: claude:opus
@@ -38,6 +38,17 @@ dispatch:      # Q81 building.
   report: agents/reviews/Q81-report.md
   landing: not-started
   round: 0
+- step: Q82
+  executor: agent
+  worker: claude:opus
+  session_id: ab130210b0db7c06c
+  worktree: .agents/worktrees/Q82
+  base: 03a8747b
+  launched: 2026-09-29
+  report: agents/reviews/Q82-report.md
+  landing: not-started
+  round: 0
+  shared_paths: with Q81, package.json and package-lock.json (each adds its own dependencies: a hand merge of the dependency lines, then npm install), DESIGN.md (Q81 lines 216 and 306, Q82 line 309: different lines), HELP.md (Q81 lines 42 and 86, Q82 lines 55-56: different lines), docs/diagrams (a rerun of npm run diagrams), tests/ui/primitives.test.ts, tests/ui/wall.test.ts, tests/views/whole/type-scale.test.ts and tests/checks/tree/allow-styling.ts (keyed entries or cases of different components: a hand merge of separate lines)
 ```
 
 ## The standing demands (from Axel, in force)
