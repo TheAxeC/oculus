@@ -27,7 +27,17 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch: []      # nothing in flight; Q79b is next and runs alone.
+dispatch:      # Q79b building, alone.
+- step: Q79b
+  executor: agent
+  worker: claude:opus
+  session_id: a4835b1ff7c423ca1
+  worktree: .agents/worktrees/Q79b
+  base: 89a83e3b
+  launched: 2026-09-29
+  report: agents/reviews/Q79b-report.md
+  landing: not-started
+  round: 0
 ```
 
 ## The standing demands (from Axel, in force)
