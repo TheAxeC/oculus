@@ -8,8 +8,11 @@ text:
         code: '{0}, read only'
         failed: failed
         locked_glyph: lock
+        next_change: Go to Next Change
+        open_change: Open Change
         preview: Preview
         preview_glyph: page
+        previous_change: Go to Previous Change
         readonly: This file is read-only on this machine; the editor shows it and saves nothing.
         save_failed: save failed
         saved: saved

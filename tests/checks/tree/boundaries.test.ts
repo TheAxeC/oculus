@@ -239,8 +239,14 @@ export function findGlobalState(sourceRoot: string): string[] {
  * state/shared/words/glyphmode.svelte.ts, are what makes those reads redraw: a generation held per
  * client would say a push had landed for one client and not for another over the one set of maps
  * they both read.
+ *
+ * And the editor's load, ui/controls/editor/load.ts's `loading`: Monaco keeps one theme, one set of
+ * key rules and its workers for the whole page, not per client, so the promise that loads it once
+ * per page is page state by Monaco's own design, and a second load would register everything
+ * twice.
  */
 const FROZEN = [
+    'lib/ui/controls/editor/load.ts:loading',
     'lib/server/content/audit/publications.ts:STOPWORDS',
     'lib/server/machine/pty/channel.ts:CHANGE_EVENTS',
     'lib/server/machine/pty/tmux.ts:SINGLES',

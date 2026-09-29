@@ -5,7 +5,6 @@ import {
     loadSource,
     sourceFileUrl,
     sourceInfoUrl,
-    lineStart,
     sourceTabState
 } from '../../../src/lib/state/sessions/source.svelte.ts';
 import { stateId } from '../../../src/lib/state/workbench/layout/instance.ts';
@@ -72,15 +71,6 @@ describe('source tab state', () => {
             line: 12
         });
         expect('line' in sourceTabState('hub', 'src/a.ts')).toBe(false);
-    });
-
-    it('finds where a line begins, and lands on the last line for one past the end', () => {
-        const text = 'one\ntwo\nthree\n';
-        expect(lineStart(text, 1)).toBe(0);
-        expect(lineStart(text, 2)).toBe(4);
-        expect(lineStart(text, 3)).toBe(8);
-        expect(lineStart(text, 400)).toBe(14);
-        expect(lineStart(text, 0)).toBe(0);
     });
 
     it('distinguishes roots, paths, and delimiters in file identities', () => {

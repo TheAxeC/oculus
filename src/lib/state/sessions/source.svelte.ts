@@ -97,18 +97,6 @@ export function sourceTabState(root: string, path: string, line?: number): Sourc
     return line === undefined ? state : { ...state, line };
 }
 
-/**
- * Where one line of a text begins, counting the line from one. A line past the end is the last
- * line's own beginning, so a stale line number lands at the end of the file rather than nowhere.
- */
-export function lineStart(text: string, line: number): number {
-    const lines = text.split('\n');
-    const at = Math.min(Math.max(Math.floor(line), 1), lines.length);
-    let offset = 0;
-    for (let index = 0; index < at - 1; index += 1) offset += lines[index].length + 1;
-    return offset;
-}
-
 /** The api/file URL, escaping each path segment without escaping its separators. */
 export function sourceFileUrl(root: string, path: string): string {
     const parts = path

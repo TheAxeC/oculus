@@ -125,10 +125,6 @@ export const HELD: Styling[] = [
         why: 'the rule at src/lib/views/shared/card/ProjectCard.svelte:403 reaches into the primitive rather than asking it for the difference'
     },
     {
-        line: 'views/sources/source/Editor.svelte styles .area of ui/forms/TextArea.svelte through .input :global(.area)',
-        why: 'the rule at src/lib/views/sources/source/Editor.svelte:267 reaches into the primitive rather than asking it for the difference'
-    },
-    {
         line: 'views/sources/venues/Ribbon.svelte styles .glyph of ui/display/Glyph.svelte through .deadline :global(.tag .glyph)',
         why: 'the rule at src/lib/views/sources/venues/Ribbon.svelte:210 reaches into the primitive rather than asking it for the difference'
     },

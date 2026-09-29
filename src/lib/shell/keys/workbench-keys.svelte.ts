@@ -407,15 +407,20 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
         rememberPane(event.target);
     }
 
-    /** Whether a key target is an editor that keeps ordinary typing shortcuts for itself. */
-    function typingIn(target: EventTarget | null): boolean {
-        if (!(target instanceof HTMLElement)) return false;
-        return (
-            target.matches('input, textarea, select') ||
-            target.isContentEditable ||
-            target.closest('[contenteditable="true"]') !== null
-        );
-    }
-
     return { keys, paneFocused, panePressed, clearCursor, syncCards, stopCards };
+}
+
+/**
+ * Whether a key target is an editor that keeps ordinary typing shortcuts for itself: a form field,
+ * a content-editable element, or anything inside the source tab's editor, whose focused element
+ * (Monaco's edit context, a plain `div`) is neither.
+ */
+export function typingIn(target: EventTarget | null): boolean {
+    if (!(target instanceof HTMLElement)) return false;
+    return (
+        target.matches('input, textarea, select') ||
+        target.isContentEditable ||
+        target.closest('[contenteditable="true"]') !== null ||
+        target.closest('.monaco-editor') !== null
+    );
 }

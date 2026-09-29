@@ -1,7 +1,10 @@
-// The source tab rendered on the server: the escaped highlight mirror, the save status words from
-// the catalog, the rendered half a Markdown tab draws beside the editor, and the code window it
-// draws instead of an editor for a file it may not write. The code window's own languages are here
-// too, since it is the source tab that reaches them.
+// The source tab rendered on the server: the editor's host with the language it opens under, the
+// save status words from the catalog, the rendered half a Markdown tab draws beside the editor, and
+// the code window it draws instead of an editor for a file it may not write. The code window's own
+// languages are here too, since it is the source tab that reaches them.
+//
+// The editor itself is Monaco, which mounts in the browser alone; what it does with the text, the
+// keys and the gutter is the look's, and its pure parts are tests/ui/controls/editor/.
 //
 // What this does NOT cover: what the sanitiser does to markup a file carries. The suite runs in
 // node, where DOMPurify has no document and ui/html.ts hands the text back, which its own head
@@ -19,7 +22,7 @@ import {
 } from '../../../src/lib/state/shared/words/languages.ts';
 import { paintLimit, requirePaintLimit } from '../../../src/lib/data/helpers/editor.ts';
 import { TEXT_LIMIT, languageOf } from '../../../src/lib/state/sources/fs.ts';
-import { lineStart, sourceTabState } from '../../../src/lib/state/sessions/source.svelte.ts';
+import { sourceTabState } from '../../../src/lib/state/sessions/source.svelte.ts';
 import {
     engineDir,
     glyphCatalog,
@@ -112,6 +115,7 @@ describe('the source editor', () => {
         ).toContain('saved original');
     });
 
+    // Red when a saved writable file is drawn without the editor's host.
     it('renders Source with the saved word after a save of the working copy', async () => {
         vi.stubGlobal('fetch', (_url: string, init?: RequestInit) =>
             Promise.resolve(
@@ -130,17 +134,19 @@ describe('the source editor', () => {
             context: clientContext(client),
             props: { instance }
         }).body;
-        expect(editable).toMatch(/class="mirror(?:\s|")/);
+        expect(editable).toContain('data-editor-host');
         expect(editable).toContain(`>${catalog['editor.save']}</span>`);
         expect(editable).toContain(catalog['source.saved']);
     });
 
-    it('draws the highlight mirror and the editable textarea, and no control row of its own', () => {
+    // Red when the editor's host drops the text it shows before the editor has loaded, or grows a
+    // bar of its own.
+    it('draws the editor host with the text escaped until the editor loads, and no control row', () => {
         const { body } = render(Editor, {
             context: clientContext(client),
             props: { path: 'notes.md', text: 'title: "A < B"', ...actions }
         });
-        expect(body).toMatch(/class="mirror(?:\s|")/);
+        expect(body).toContain('data-editor-host');
         expect(body).toContain('&lt; B');
         // Save, Revert and the rendered half are the pane's bar, which Source draws, so the
         // editor draws no bar of its own
@@ -149,8 +155,8 @@ describe('the source editor', () => {
         expect(body).not.toContain(`>${catalog['editor.save']}</span>`);
         // nor the control that takes the rendered half away
         expect(body).not.toContain(`>${catalog['source.preview']}</span>`);
-        // a file the reader may change is drawn without the flag that locks the editor
-        expect(body).not.toContain('readonly');
+        // a file the reader may change is handed to the editor as writable
+        expect(body).toContain('data-editor-writable="true"');
     });
 
     it('draws a refused save with the cross glyph beside its words, and a later word without it', async () => {
@@ -241,27 +247,25 @@ describe('the source editor', () => {
         expect(tab('notes.md')).not.toContain(words);
     });
 
-    // The mirror is the code window's highlighter, so a file being written is coloured exactly as
-    // the same file shown read only is, for every language the highlighter has registered.
-    it('paints the mirror of a writable file through the highlighter of the code window', () => {
-        const painted = (path: string, text: string): string =>
+    // Red when the editor is handed a language other than the one the file name gives, as a
+    // `data-language` other than python, latex, r or makefile for these four names.
+    it('opens a writable file in the editor under the language its name gives', () => {
+        const opened = (path: string, text: string): string =>
             render(Editor, {
                 context: clientContext(client),
                 props: { path, text, ...actions }
             }).body;
 
-        expect(painted('code/run.py', 'import sys\n\n\ndef main():\n    return "one"\n')).toContain(
-            'hljs-keyword'
-        );
-        expect(painted('paper/main.tex', '\\section{One}\n')).toContain('hljs-keyword');
-        expect(painted('fit.R', 'fit <- lm(y ~ x, data = frame)\n')).toContain('hljs-operator');
-        expect(painted('Makefile', 'all:\n\techo one\n')).toContain('hljs-section');
-        // Nothing of the retired mirror's own vocabulary is left on the page.
-        expect(painted('notes.yml', 'title: one\n')).not.toContain('source-key');
+        expect(opened('code/run.py', 'import sys\n')).toContain('data-language="python"');
+        expect(opened('paper/main.tex', '\\section{One}\n')).toContain('data-language="latex"');
+        expect(opened('fit.R', 'fit <- lm(y ~ x)\n')).toContain('data-language="r"');
+        expect(opened('Makefile', 'all:\n\techo one\n')).toContain('data-language="makefile"');
     });
 
-    it('paints a file past the configured cap as escaped text, since it is painted on every keystroke', () => {
-        const painted = (text: string): string =>
+    // Red when the editor colours a file past the configured cap, which is what the key exists to
+    // stop.
+    it('opens a file past the configured cap as plaintext, and one under it in its language', () => {
+        const opened = (text: string): string =>
             render(Editor, {
                 context: clientContext(client),
                 props: { path: 'code/run.py', text, ...actions }
@@ -272,23 +276,20 @@ describe('the source editor', () => {
         const large = line.repeat(Math.ceil(cap / line.length) + 1);
         expect(small.length).toBeLessThanOrEqual(cap);
         expect(large.length).toBeGreaterThan(cap);
-        expect(painted(small)).toContain('hljs-keyword');
-        const plain = painted(large);
-        // the file is over the paint limit, so it is drawn as plain text
-        expect(plain).not.toContain('hljs-keyword');
-        expect(plain).toContain('&lt;one&gt;');
+        expect(opened(small)).toContain('data-language="python"');
+        expect(opened(large)).toContain('data-language="plaintext"');
     });
 
-    // The cap is a key of the configuration rather than a constant, so a client that has been sent
-    // a smaller one paints the same file plain, and one sent nothing at all paints plain as well.
-    it('paints under the cap the configuration it was sent carries, and plain before there is one', () => {
+    // Red when the limit is a constant rather than the key of the configuration the client was
+    // sent: a smaller key opens the same file as plaintext, and no configuration yet does too.
+    it('opens under the cap the configuration it was sent carries, and plaintext before there is one', () => {
         const text = 'import sys  # <one>\n'.repeat(4);
-        const painted = (): string =>
+        const opened = (): string =>
             render(Editor, {
                 context: clientContext(client),
                 props: { path: 'code/run.py', text, ...actions }
             }).body;
-        expect(painted()).toContain('hljs-keyword');
+        expect(opened()).toContain('data-language="python"');
 
         receive({
             channel: 'config',
@@ -300,8 +301,7 @@ describe('the source editor', () => {
             }
         });
         expect(paintLimit({ ...config, editor: { paint_limit_kb: 0.01 } })).toBe(10.24);
-        // the limit the configuration carries is under the file's size, so nothing is painted
-        expect(painted()).not.toContain('hljs-keyword');
+        expect(opened()).toContain('data-language="plaintext"');
 
         const bare = createClientState();
         expect(bare.selectors.paintLimit()).toBeNull();
@@ -310,16 +310,7 @@ describe('the source editor', () => {
                 context: clientContext(bare),
                 props: { path: 'code/run.py', text, ...actions }
             }).body
-            // a client that was sent no configuration has no limit to paint under
-        ).not.toContain('hljs-keyword');
-    });
-
-    it("keeps one mirror line under the textarea's empty last line", () => {
-        const body = render(Editor, {
-            context: clientContext(client),
-            props: { path: 'notes.txt', text: 'one\n', ...actions }
-        }).body;
-        expect(body).toMatch(/one\n\n(<!---->)?<\/code>/);
+        ).toContain('data-language="plaintext"');
     });
 
     it('draws the rendered half beside a Markdown file and nothing beside a YAML one', () => {
@@ -413,7 +404,7 @@ describe('a file the source tab may not write', () => {
         expect(body).toContain(catalog['source.readonly']);
         expect(body).toContain('data-fs-code="code/run.py"');
         expect(body).toContain('data-language="python"');
-        // No editor at all: no textarea to type into and no Save to press.
+        // No editor at all: nothing to type into and no Save to press.
         expect(body).not.toContain('data-source-editor');
         // this machine locks the file, so there is nothing to save
         expect(body).not.toContain(`>${catalog['editor.save']}</span>`);
@@ -455,9 +446,6 @@ describe('a file the source tab may not write', () => {
             props: { instance: opened }
         }).body;
         expect(body).toContain('data-source-line="2"');
-        // The cursor the editor places is the offset of that line; the offset rule itself is
-        // tests/state/sessions/source.test.ts.
-        expect(lineStart('one\ntwo\nthree\n', 2)).toBe(4);
     });
 });
 

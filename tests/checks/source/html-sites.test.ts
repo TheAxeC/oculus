@@ -34,9 +34,7 @@ const ALLOWED: Record<string, string> = {
     'views/academic/present/parts/Equation.svelte:tex(slide.equation, true)':
         "tex() is KaTeX's own markup over escaped source with trust off, so the slide's LaTeX reaches the page as text nodes and the elements around them are KaTeX's; the sanitiser would drop the style attributes that position them.",
     'views/academic/present/Panel.svelte:diagram':
-        "the panel's diagram markup is put through sanitiseDiagram() where it is derived, one line above the site: the ordinary profile with `style` added, because a diagram is a grid of boxes whose columns and per-box colour are written on the elements themselves and the ordinary profile would keep the boxes and throw the diagram away. Every other rule of the profile stands, so no handler, script or frame survives; what the profile does not check is the style value itself, so a url() written there is fetched by the browser, which is a slide author's own doing.",
-    'views/sources/source/Editor.svelte:painted':
-        'highlight.js escapes every & < > of the file text before it emits its own fixed span classes, so the mirror holds no markup the file could put there.'
+        "the panel's diagram markup is put through sanitiseDiagram() where it is derived, one line above the site: the ordinary profile with `style` added, because a diagram is a grid of boxes whose columns and per-box colour are written on the elements themselves and the ordinary profile would keep the boxes and throw the diagram away. Every other rule of the profile stands, so no handler, script or frame survives; what the profile does not check is the style value itself, so a url() written there is fetched by the browser, which is a slide author's own doing."
 };
 
 /** Every component under a folder, as paths relative to it, in name order. */

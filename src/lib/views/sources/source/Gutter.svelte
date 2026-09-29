@@ -1,10 +1,11 @@
 <script lang="ts">
-    // Layer 3, partial of views/sources/source/Source.svelte, drawn by Editor.svelte and
-    // views/shared/code/Code.svelte. The source tab's gutter as VS Code draws it for a file in a
-    // repository: the line numbers, and beside them the quick diff marks against the index (a bar
-    // for an added or a modified run, a wedge where lines were deleted, at the top of the line
-    // after them or at the foot of the last line for a deletion at the end) and, while blame is
-    // on, each line's blame.
+    // Layer 3, partial of views/sources/source/Source.svelte, drawn by
+    // views/shared/code/Code.svelte for a file the tab may not write; the editor draws its own
+    // gutter as Monaco decorations (ui/controls/editor/gutter.ts) from the same marks and blame.
+    // The source tab's gutter as VS Code draws it for a file in a repository: the line numbers, and
+    // beside them the quick diff marks against the index (a bar for an added or a modified run, a
+    // wedge where lines were deleted, at the top of the line after them or at the foot of the last
+    // line for a deletion at the end) and, while blame is on, each line's blame.
     //
     // A mark is a button that opens the file's diff at that change, as a press on VS Code's gutter
     // mark peeks it. The blame writes its author and how long ago on the first line of each run
@@ -19,9 +20,9 @@
     import {
         blameStarts,
         blameWords,
+        markWords,
         type LineMark
     } from '$lib/state/sources/repositories/file-git';
-    import { t } from '$lib/state/shared/words/text';
 
     type Props = {
         /** How many lines the text holds. */
@@ -43,13 +44,6 @@
     const numbers = $derived(Array.from({ length: Math.max(1, lines) }, (_, at) => at + 1));
     const byLine = $derived(new Map((blame ?? []).map((one) => [one.line, one])));
     const starts = $derived(blameStarts(blame ?? []));
-
-    /** The words a mark's button says, which name what it marks. */
-    function markWords(mark: LineMark): string {
-        if (mark.kind === 'added') return t('repositories.mark_added', mark.start);
-        if (mark.kind === 'deleted') return t('repositories.mark_deleted', mark.start);
-        return t('repositories.mark_modified', mark.start);
-    }
 </script>
 
 <div class="gutter" class:blamed={blame !== null} data-gutter>

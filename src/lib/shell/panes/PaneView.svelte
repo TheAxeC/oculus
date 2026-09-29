@@ -114,6 +114,16 @@
     const activePane = $derived(active !== '' && openingInstance()?.id === active);
 
     /**
+     * A press or the focus inside the pane makes it the active one, as a click in an editor group
+     * does in VS Code, so the palette's editor items and go-to-line answer for the tab the reader
+     * is typing in and not only for the tab last chosen from a strip.
+     */
+    function entered(): void {
+        touchPane(page);
+        if (active !== '' && !activePane) activateInstance(active, page);
+    }
+
+    /**
      * The tabs this pane has shown, in the order they were first shown. A closed tab, or one moved
      * to another pane, is dropped as soon as the pane no longer holds it.
      */
@@ -343,8 +353,8 @@
     data-pane
     data-pane-path={path.join('.')}
     data-pane-page={page}
-    onpointerdowncapture={() => touchPane(page)}
-    onfocusin={() => touchPane(page)}
+    onpointerdowncapture={entered}
+    onfocusin={entered}
     data-pane-active={active}
     data-pane-view={shown?.view}
 >

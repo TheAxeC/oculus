@@ -543,18 +543,31 @@ describe('the code window palette', () => {
         expect(tokens.filter((name) => !/^#[0-9a-f]{6}$/i.test(root[name]))).toEqual([]);
     });
 
-    // The code window and the editor's mirror paint the same highlighter's classes, so each must
-    // paint every role and nothing else: a file is coloured the same whether it is read or written.
-    it.each(['shared/code/Code.svelte', 'sources/source/Editor.svelte'])(
-        'paints %s through those six and nothing else',
-        (file) => {
-            const source = readFileSync(join(SRC, 'lib', 'views', file), 'utf8');
-            const painted = [...source.matchAll(/color:\s*var\((--c-code-[a-z-]+)-txt\)/g)].map(
-                (found) => found[1]
-            );
-            expect([...new Set(painted)].sort()).toEqual(tokens);
-        }
-    );
+    // The code window paints the highlighter's classes and the editor's theme paints the TextMate
+    // scopes, each with every role's `-txt` form and nothing else, so a file is coloured the same
+    // whether it is read or written.
+    it('paints the code window through those six and nothing else', () => {
+        const source = readFileSync(
+            join(SRC, 'lib', 'views', 'shared', 'code', 'Code.svelte'),
+            'utf8'
+        );
+        const painted = [...source.matchAll(/color:\s*var\((--c-code-[a-z-]+)-txt\)/g)].map(
+            (found) => found[1]
+        );
+        expect([...new Set(painted)].sort()).toEqual(tokens);
+    });
+
+    // An audit, a read of theme.ts's text: red when that text names a code role by its bare hue or
+    // leaves one out. The behaviour, that Shiki colours the tokens in those hues, is tested by
+    // tests/ui/controls/editor/theme.test.ts:158-176.
+    it("paints the editor's scopes through those six and nothing else", () => {
+        const file = join(SRC, 'lib', 'ui', 'controls', 'editor', 'theme.ts');
+        const source = readFileSync(file, 'utf8');
+        const painted = [...source.matchAll(/'(--c-code-[a-z]+)(-txt)?'/g)];
+        const bare = painted.filter((found) => !found[0].endsWith("-txt'"));
+        expect(bare.map((found) => found[0])).toEqual([]);
+        expect([...new Set(painted.map((found) => found[1]))].sort()).toEqual(tokens);
+    });
 });
 
 describe('the colour rule', () => {

@@ -124,7 +124,7 @@ export function createSelectors(
     }
 
     /**
-     * The size in bytes above which the source editor paints its mirror without colour,
+     * The size in bytes above which the source editor opens a file as plaintext, without colour,
      * `editor.paint_limit_kb` of config/behavior.yml, and null until the config channel has spoken.
      */
     function editorPaintLimit(): number | null {

@@ -15,6 +15,10 @@ import {
 import { setCatalog, setGlyphMode, setGlyphs } from '../../../src/lib/state/shared/words/text.ts';
 import { noop } from '../../fixtures/doubles.ts';
 import { clientContext, createClientState, type ClientState } from '../../fixtures/client.ts';
+import { fakeStorage } from '../../state/workbench/layout/layout-fixture.ts';
+import { editorItems, ranked } from '../../../src/lib/state/workbench/palette.ts';
+import { changeActions } from '../../../src/lib/ui/controls/editor/gutter.ts';
+import type { EditorStatus } from '../../../src/lib/state/workbench/navigation/editor-status.svelte.ts';
 
 let client: ClientState;
 let receive: ClientState['entities']['receive'];
@@ -163,6 +167,98 @@ describe('the palette on the Command list', () => {
         const content = /<[^>]*data-dialog-content[^>]*>/.exec(body)?.[0] ?? '';
         expect(content).toContain('role="dialog"');
         expect(content).toContain('aria-modal="true"');
+    });
+});
+
+/** A writable source tab's status, with the editor actions its editor labelled. */
+const EDITING: EditorStatus = {
+    caret: { line: 1, column: 1, selected: 0 },
+    lines: 3,
+    indent: { tabs: false, size: 4 },
+    ending: 'LF',
+    language: 'python',
+    writable: true,
+    blame: '',
+    actions: [
+        { id: 'editor.action.addCommentLine', label: 'Add Line Comment', hint: 'Cmd+K Cmd+C' },
+        {
+            id: 'editor.action.removeCommentLine',
+            label: 'Remove Line Comment',
+            hint: 'Cmd+K Cmd+U'
+        },
+        { id: 'editor.foldAll', label: 'Fold All', hint: 'Cmd+K Cmd+0' }
+    ]
+};
+
+describe("the editor's Cmd+K actions in the palette", () => {
+    /** Put a source tab on screen that has said what it holds, and answer its instance. */
+    function sourceTab(said: EditorStatus = EDITING): string {
+        client.layout.loadLayout(fakeStorage());
+        const id = client.layout.openView('source', { root: 'hub', path: 'run.py' });
+        client.editorStatus.publish(id, said);
+        return id;
+    }
+
+    function opened(prefill: string): string {
+        return render(Palette, {
+            context: clientContext(client),
+            props: { ...props, open: true, prefill }
+        }).body.replace(/<!--[^>]*-->/g, '');
+    }
+
+    // Red when editorItems lists nothing, or the index is built without the source tab's actions.
+    it('ranks the two line comment actions among the editor items for the query comment', () => {
+        const instance = sourceTab();
+        const items = editorItems({ instance, status: EDITING });
+        expect(items.every((item) => item.kind === 'editor')).toBe(true);
+        const found = ranked(items, 'comment').map((match) => match.item.label);
+        expect(found).toContain('Add Line Comment');
+        expect(found).toContain('Remove Line Comment');
+        const body = opened('comment');
+        expect(body).toContain('Add Line Comment');
+        expect(body).toContain('Remove Line Comment');
+        expect(body).toContain(`>${catalog['app.palette.kind_editor']}<`);
+        expect(body).toContain('Cmd+K Cmd+C');
+    });
+
+    // Red when the actions over the marks are left out of the palette, lose their keys, or an
+    // action without keys is drawn with an empty hint.
+    it("lists the actions over the marks under the view's words, with their keys", () => {
+        const words = {
+            next: catalog['source.next_change'] ?? '',
+            previous: catalog['source.previous_change'] ?? '',
+            open: catalog['source.open_change'] ?? ''
+        };
+        expect(Object.values(words)).toEqual([
+            'Go to Next Change',
+            'Go to Previous Change',
+            'Open Change'
+        ]);
+        const said = changeActions(words, true, true).map(({ id, label, hint }) => ({
+            id,
+            label,
+            hint
+        }));
+        const status = { ...EDITING, actions: [...said, ...EDITING.actions] };
+        const instance = sourceTab(status);
+        const items = editorItems({ instance, status });
+        const hint = (label: string) => items.find((item) => item.label === label)?.hint;
+        expect(hint('Go to Next Change')).toBe('Alt+F5');
+        expect(hint('Go to Previous Change')).toBe('Shift+Alt+F5');
+        expect(items.find((item) => item.label === 'Open Change')?.hint).toBe(undefined);
+        const body = opened('change');
+        for (const shown of [...Object.values(words), 'Alt+F5', 'Shift+Alt+F5']) {
+            expect(body).toContain(shown);
+        }
+    });
+
+    // Red when the editor items are listed whatever tab is on screen.
+    it('lists no editor item with no source tab on screen', () => {
+        client.layout.loadLayout(fakeStorage());
+        expect(editorItems(null)).toEqual([]);
+        const body = opened('comment');
+        // the tab on screen is no source tab, so there is no editor whose actions could be run
+        expect(body).not.toContain('Add Line Comment');
     });
 });
 

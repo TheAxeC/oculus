@@ -36,18 +36,22 @@
     // What the status bar draws for the tab is published from here to the editor status store,
     // keyed by the instance, while the tab is mounted: the caret the editor reports, the
     // indentation (the one chosen from the bar, or the file's own), the line ending of the text,
-    // the language (the one chosen from the bar, or the file name's) and whether the file may be
-    // written. What the bar asks of the tab, a line to go to, an indentation, a conversion, a line
-    // ending or a language, is performed here on the draft, once per ask, and a rewrite of the text
-    // is an edit like typing, unsaved until Save. The textarea hands back every line ending as a
-    // line feed, so typing into a CRLF file is kept in CRLF.
+    // the language (the one chosen from the bar, or the file name's), whether the file may be
+    // written, and the editor's actions the palette lists. What the bar and the palette ask of the
+    // tab is performed here once per ask: an indentation and a language are kept with the draft and
+    // handed to the editor, and a line to go to, a conversion of the indentation, a line ending and
+    // an editor action are performed by the editor on its model (Editor.svelte's `perform`). A
+    // rewrite of the text is an edit like typing, handed back as one and unsaved until Save. The
+    // editor keeps the text in the line ending it was opened in, so typing into a CRLF file is kept
+    // in CRLF.
     //
-    // For a file in a repository the gutter (Gutter.svelte) carries VS Code's quick diff marks
-    // against the index, and the bar's Blame toggle, kept with the draft, adds each line's blame to
-    // it and the caret line's blame to the status bar. Both are read from GET /api/git for the
-    // repository holding the file, again whenever the repository's state on the `git` channel
-    // moves and after every save, and a press on a mark opens the file's diff at its change while
-    // a press on a line's blame opens its commit in the Repositories view's graph.
+    // For a file in a repository the gutter carries VS Code's quick diff marks against the index,
+    // and the bar's Blame toggle, kept with the draft, adds each line's blame to it and the caret
+    // line's blame to the status bar. Both are read from GET /api/git for the repository holding
+    // the file, again whenever the repository's state on the `git` channel moves and after every
+    // save, and a press on a mark opens the file's diff at its change while a press on a line's
+    // blame opens its commit in the Repositories view's graph. The editor draws them as its own
+    // decorations; the code window draws them with Gutter.svelte.
 
     import { onDestroy, untrack } from 'svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
@@ -62,7 +66,9 @@
     import Gutter from './Gutter.svelte';
     import { languageOf, opensInProgram } from '$lib/state/sources/fs';
     import {
+        blameRows,
         blameStatus,
+        markWords,
         marksByLine,
         repoOfFile,
         type RepoFile
@@ -75,13 +81,14 @@
     } from '$lib/state/sources/repositories/repositories';
     import {
         START,
-        convertIndent,
         detectIndent,
         lineCount,
         lineEnding,
-        withEnding,
         type Caret
     } from '$lib/state/workbench/navigation/editor-text';
+    import type { EditorAction } from '$lib/state/workbench/navigation/editor-status.svelte';
+    import type { EditorBlame, EditorMark } from '$lib/ui/controls/editor/gutter';
+    import type { EditorHandle } from '$lib/ui/controls/editor/types';
     import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
@@ -155,11 +162,21 @@
     const lines = $derived(lineCount(draft.text));
     const markMap = $derived(marksByLine(marks, lines));
     const blameMap = $derived(new Map((blame ?? []).map((one) => [one.line, one])));
+    /** The quick diff marks as the editor draws them, each with the words its hover says. */
+    const editorMarks = $derived<EditorMark[]>(
+        marks.map((mark) => ({ ...mark, words: markWords({ kind: mark.kind, start: mark.line }) }))
+    );
+    /** The blame as the editor's line-number column draws it, none while blame is off. */
+    const editorBlame = $derived<EditorBlame[]>(
+        draft.blame && blame !== null ? blameRows(blame, readAt) : []
+    );
 
     /** Where the editor's caret is, as it last reported. */
     let caret: Caret = $state(START);
-    /** The line the status bar asked the editor to go to, and the ask's number. */
-    let jump: { line: number; seq: number } | null = $state(null);
+    /** The editor, which performs the asks that act on its model. */
+    let editor: EditorHandle | undefined = $state();
+    /** The editor's actions the palette lists, as the editor labelled them once it loaded. */
+    let actions: EditorAction[] = $state([]);
     /** The last ask of this instance already performed, so a remount does not perform it again. */
     let performed = untrack(() => asked(instance.id)?.seq ?? 0);
 
@@ -178,7 +195,8 @@
             ending,
             language,
             writable: editing,
-            blame: draft.blame ? blameStatus(blameMap.get(caret.line), readAt) : ''
+            blame: draft.blame ? blameStatus(blameMap.get(caret.line), readAt) : '',
+            actions: editing ? actions : []
         });
     });
 
@@ -245,10 +263,7 @@
         performed = ask.seq;
         untrack(() => {
             const id = instance.id;
-            const held = sourceDraft(id);
-            if (ask.kind === 'goto') {
-                jump = { line: ask.line, seq: ask.seq };
-            } else if (ask.kind === 'commit') {
+            if (ask.kind === 'commit') {
                 openBlamed(blameMap.get(caret.line));
             } else if (ask.kind === 'language') {
                 setSourceLanguage(id, ask.language);
@@ -257,12 +272,10 @@
             } else if (!editing) {
                 return;
             } else if (ask.kind === 'convert') {
-                keepPreview(id);
-                editSourceDraft(id, convertIndent(held.text, ask.tabs, indent.size));
                 setSourceIndent(id, { tabs: ask.tabs, size: indent.size });
+                editor?.perform(ask);
             } else {
-                keepPreview(id);
-                editSourceDraft(id, withEnding(held.text, ask.ending));
+                editor?.perform(ask);
             }
         });
     });
@@ -293,11 +306,11 @@
 
     /**
      * Typing is the reader working in this tab, so a preview tab becomes one that is kept. The
-     * textarea's value has line feeds, so the text keeps the line ending it had.
+     * editor hands the text back in the line ending it holds it in.
      */
     function typed(value: string): void {
         keepPreview(instance.id);
-        editSourceDraft(instance.id, withEnding(value, ending));
+        editSourceDraft(instance.id, value);
     }
 </script>
 
@@ -375,17 +388,22 @@
             />
         {:else}
             <Editor
+                bind:this={editor}
                 {path}
                 {line}
                 {language}
                 {indent}
-                {jump}
+                {ending}
+                instance={instance.id}
                 text={draft.text}
                 rendered={draft.rendered}
+                marks={editorMarks}
+                blame={editorBlame}
                 oninput={typed}
                 oncaret={(at: Caret) => (caret = at)}
-                gutter={margin}
-                onscrolled={(next: number) => (top = next)}
+                onmark={(mark: EditorMark) => openMark(mark.line)}
+                onblame={(row: EditorBlame) => openBlamed(blameMap.get(row.line))}
+                onactions={(offered: EditorAction[]) => (actions = offered)}
             />
         {/if}
     </div>

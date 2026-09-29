@@ -1,9 +1,15 @@
 // Layer 2, client state. Pure indexing, fuzzy matching and command parsing for the shell palette.
 // The source store adapter is beside this file; this module accepts plain values so every search
 // and command rule is tested without a browser or a live socket.
+//
+// While a source tab is on screen the index also holds its editor's actions: those that step
+// through and open the quick diff marks, and the Cmd+K chords the editor gave up so that Cmd+K
+// opens the palette from inside it. Each is under the editor's own label with its keys as the
+// hint, none for an action without keys, and choosing one asks that tab to run it.
 
 import type { FeedEntry, FeedKind, Snapshot } from '../../data/model/index.ts';
 import { feedIdents, nestedStrings } from '../feeds/idents.ts';
+import type { SourceOnScreen } from './navigation/editor-status.svelte.ts';
 import {
     byScore,
     fuzzyMatches,
@@ -20,12 +26,14 @@ export type PaletteFeeds = Partial<Record<FeedKind, PaletteFeed>>;
 
 export type PaletteItem = {
     id: string;
-    kind: 'view' | 'project' | 'collection' | 'feed';
+    kind: 'view' | 'project' | 'collection' | 'feed' | 'editor';
     label: string;
     title: string;
     text: string;
     view: string;
     state?: Record<string, unknown>;
+    /** The keys a result is known by, drawn beside it: an editor action's keys or old chord. */
+    hint?: string;
 };
 
 export type PaletteCommand = {
@@ -126,6 +134,24 @@ export function buildIndex(
     return found;
 }
 
+/**
+ * The editor actions of the source tab on screen, as palette items, and none while no source tab
+ * is on screen. Each carries the instance and the action id the ask to run it names.
+ */
+export function editorItems(source: SourceOnScreen | null): PaletteItem[] {
+    if (source === null) return [];
+    return source.status.actions.map((action) => ({
+        id: `editor:${action.id}`,
+        kind: 'editor',
+        label: action.label,
+        title: action.label,
+        text: action.id,
+        view: 'source',
+        ...(action.hint === '' ? {} : { hint: action.hint }),
+        state: { instance: source.instance, action: action.id }
+    }));
+}
+
 export type { TextPart };
 
 /** One result the palette draws: the item, and its title in matched and unmatched runs. */
@@ -168,6 +194,7 @@ export function kindWord(
     if (kind === 'view') return t('app.palette.kind_view');
     if (kind === 'project') return t('app.palette.kind_project');
     if (kind === 'collection') return t('app.palette.kind_collection');
+    if (kind === 'editor') return t('app.palette.kind_editor');
     return t('app.palette.kind_feed');
 }
 

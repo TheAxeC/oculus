@@ -53,7 +53,8 @@ const SOURCE: EditorStatus = {
     ending: 'CRLF',
     language: 'python',
     writable: true,
-    blame: ''
+    blame: '',
+    actions: []
 };
 
 let client: ClientState;

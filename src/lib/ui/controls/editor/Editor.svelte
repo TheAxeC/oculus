@@ -1,0 +1,539 @@
+<script lang="ts">
+    // Layer 3, primitive. The text editor: Monaco, holding one model per tab instance, coloured by
+    // the Shiki grammars under a theme built from the tokens, with the gutter drawn as Monaco
+    // decorations. It takes values and callbacks, and imports nothing of the state, the views or
+    // the shell; the values it takes and what its parent asks of it are types.ts.
+    //
+    // The page renders no component on the server (`ssr = false` in src/routes/+layout.ts). Until
+    // Monaco has loaded (load.ts, once per page) the text is a plain block, which the unit suite's
+    // server render draws too; the parent's `perform` calls made before then wait for it.
+    //
+    // The text the parent hands in is the model's while the reader types: every change of the
+    // model is handed back through `onchange`, as the model writes it, in its own line ending, and
+    // a text the parent hands in that the model does not hold already (a load, a revert) replaces
+    // the model's as one edit, which undo takes back. A line ending asked for is set on the model,
+    // and the text it gives is handed back as a change, as a conversion of the indentation is.
+    //
+    // Theme and font are values Monaco holds, so they are read off the computed tokens of the body
+    // when the editor mounts and again whenever `look` changes, one frame later, after the body has
+    // taken the new theme's class; the parent hands in a value that changes with the theme and the
+    // text size, as the terminal follows them.
+    //
+    // The keyboard reaches the quick diff marks through three editor actions, which the palette
+    // lists while the text holds a mark (gutter.ts `changeActions`): Next, Previous, Open Change.
+    //
+    // Tab inserts indentation. An Escape Monaco did not take arms the next Tab to move the focus
+    // on (tab-out.ts): the key is read before Monaco, where a Tab that leaves is kept from it, and
+    // after it, where an Escape it left untaken arms.
+
+    import { onDestroy, untrack } from 'svelte';
+    import type * as Monaco from 'monaco-editor';
+    import { eolOf, keyCode, loadEditor, modelUri, type EditorKit } from './load';
+    import { shikiId } from './grammars';
+    import { chordActions } from './chords';
+    import {
+        blameDecorations,
+        blameNumbers,
+        blameWidth,
+        breakpointDecorations,
+        changeActions,
+        markAction,
+        markDecorations,
+        type ChangeAction,
+        type EditorBlame,
+        type EditorMark
+    } from './gutter';
+    import { armAfter, armBefore, leaves, type KeyFacts } from './tab-out';
+    import type {
+        EditorAction,
+        EditorCaret,
+        EditorChangeWords,
+        EditorCommand,
+        EditorEnding,
+        EditorIndent
+    } from './types';
+
+    type Props = {
+        text: string;
+        /** Oculus's name for the language, which grammars.ts answers the Shiki id of. */
+        language: string;
+        /** Whether the reader may change the text. */
+        writable?: boolean;
+        indent?: EditorIndent;
+        /** The line ending the model is written in when it is made or its text is replaced. */
+        ending?: EditorEnding;
+        /** A name unique to the tab instance, which names the model. */
+        model: string;
+        /** The file's path, which names the model after the instance and labels the editor. */
+        path: string;
+        /** A value that changes whenever the tokens or the text size do. */
+        look?: string;
+        marks?: EditorMark[];
+        blame?: EditorBlame[];
+        /** The lines a breakpoint sits on. */
+        breakpoints?: number[];
+        onchange?: (text: string) => void;
+        oncaret?: (caret: EditorCaret) => void;
+        /** How far the text is scrolled, 0 at the top and 1 at the bottom. */
+        onscroll?: (fraction: number) => void;
+        onmark?: (mark: EditorMark) => void;
+        onblame?: (row: EditorBlame) => void;
+        onglyph?: (line: number) => void;
+        /** The labels of the actions over the marks; without them the editor adds none. */
+        changeWords?: EditorChangeWords;
+        /** The actions the palette lists, said once loaded and again when the labels change. */
+        onactions?: (actions: EditorAction[]) => void;
+    };
+
+    let {
+        text,
+        language,
+        writable = true,
+        indent = { tabs: false, size: 4 },
+        ending = 'LF',
+        model: name,
+        path,
+        look = '',
+        marks = [],
+        blame = [],
+        breakpoints = [],
+        onchange,
+        oncaret,
+        onscroll,
+        onmark,
+        onblame,
+        onglyph,
+        changeWords,
+        onactions
+    }: Props = $props();
+
+    let host: HTMLDivElement | undefined = $state();
+    // Monaco's objects are held as they are, never wrapped in a proxy.
+    let kit: EditorKit | null = $state.raw(null);
+    let editor: Monaco.editor.IStandaloneCodeEditor | null = $state.raw(null);
+    let model: Monaco.editor.ITextModel | null = $state.raw(null);
+    /** Whether Monaco has put the editor in the host, which takes the plain block away. */
+    let mounted = $state(false);
+    /** Whether the model's text is being set from the parent's, which is no change to hand back. */
+    let applying = false;
+    /** Whether an Escape Monaco left untaken has armed the next Tab to leave. */
+    let armed = false;
+    /** The asks made before the editor loaded, performed once it has. */
+    let waiting: EditorCommand[] = [];
+    let alive = true;
+    /** The look the editor's theme and font were last read under. */
+    let painted: string | null = null;
+    const listeners: Monaco.IDisposable[] = [];
+    let collections: {
+        marks: Monaco.editor.IEditorDecorationsCollection;
+        blame: Monaco.editor.IEditorDecorationsCollection;
+        breakpoints: Monaco.editor.IEditorDecorationsCollection;
+    } | null = null;
+
+    const lines = $derived(text.split('\n').length);
+
+    /** A token's value on the body, where the theme's class sets it. */
+    function token(name: string): string {
+        return getComputedStyle(document.body).getPropertyValue(name).trim();
+    }
+
+    /** The font the code window draws in: the monospace token, the host's size, its line height. */
+    function font(): Monaco.editor.IEditorOptions {
+        const size = host === undefined ? 0 : Number.parseFloat(getComputedStyle(host).fontSize);
+        const fontSize = Number.isFinite(size) && size > 0 ? size : 12;
+        return {
+            fontFamily: token('--font-mono'),
+            fontSize,
+            lineHeight: Math.round(fontSize * 1.45)
+        };
+    }
+
+    // Load the editor once the host is drawn, and build it in the host.
+    $effect(() => {
+        const box = host;
+        if (box === undefined) return;
+        void loadEditor().then((loaded) => {
+            if (!alive) return;
+            untrack(() => build(loaded, box));
+        });
+    });
+
+    function build(loaded: EditorKit, box: HTMLDivElement): void {
+        const made = loaded.monaco.editor.create(box, {
+            automaticLayout: true,
+            glyphMargin: true,
+            readOnly: !writable,
+            contextmenu: true,
+            detectIndentation: false,
+            ariaLabel: path,
+            model: null,
+            ...font()
+        });
+        collections = {
+            marks: made.createDecorationsCollection(),
+            blame: made.createDecorationsCollection(),
+            breakpoints: made.createDecorationsCollection()
+        };
+        listeners.push(
+            made.onDidChangeCursorSelection((event) => caretMoved(event.selection)),
+            made.onDidScrollChange((event) => {
+                const room = event.scrollHeight - made.getLayoutInfo().height;
+                onscroll?.(room > 0 ? Math.min(1, event.scrollTop / room) : 0);
+            }),
+            made.onMouseDown((event) => pressed(loaded, event.target))
+        );
+        editor = made;
+        kit = loaded;
+        mounted = true;
+        painted = look;
+        void loaded.paint(token);
+    }
+
+    /** Whether the text holds a mark, which is when the actions over the marks are there. */
+    const marked = $derived(marks.length > 0);
+
+    // The actions over the marks, added under the parent's labels while the text holds a mark and
+    // added again when either changes, and the palette's list said with them.
+    $effect(() => {
+        const loaded = kit;
+        const made = editor;
+        const words = changeWords;
+        if (loaded === null || made === null) return;
+        const listed = words === undefined ? [] : changeActions(words, loaded.mac, marked);
+        const added = listed.map(({ id, label, press, does }) => {
+            const keybindings = press === null ? [] : [keyCode(loaded.monaco, press)];
+            return made.addAction({ id, label, keybindings, run: () => act(made, does) });
+        });
+        const said = listed.map(({ id, label, hint }): EditorAction => ({ id, label, hint }));
+        untrack(() => onactions?.([...said, ...chordActions(made, loaded.mac)]));
+        return () => {
+            for (const action of added) action.dispose();
+        };
+    });
+
+    /** An action over the marks, from the caret's line: the mark opened, or the caret moved. */
+    function act(made: Monaco.editor.IStandaloneCodeEditor, does: ChangeAction['does']): void {
+        const line = made.getPosition()?.lineNumber ?? 1;
+        const done = markAction(does, marks, line, model?.getLineCount() ?? lines);
+        if (done?.mark !== undefined) onmark?.(done.mark);
+        if (done?.line === undefined) return;
+        made.setPosition({ lineNumber: done.line, column: 1 });
+        made.revealLineInCenterIfOutsideViewport(done.line);
+    }
+
+    function caretMoved(selection: Monaco.Selection): void {
+        const held = model;
+        if (held === null || kit === null) return;
+        const LF = kit.monaco.editor.EndOfLinePreference.LF;
+        oncaret?.({
+            line: selection.positionLineNumber,
+            column: selection.positionColumn,
+            selected: held.getValueLengthInRange(selection, LF)
+        });
+    }
+
+    /** A press in the gutter: a quick diff mark, a blamed line number, or the glyph margin. */
+    function pressed(loaded: EditorKit, target: Monaco.editor.IMouseTarget): void {
+        const line = target.position?.lineNumber;
+        if (line === undefined) return;
+        const { MouseTargetType } = loaded.monaco.editor;
+        if (target.type === MouseTargetType.GUTTER_LINE_DECORATIONS) {
+            const done = markAction('open', marks, line, model?.getLineCount() ?? lines);
+            if (done?.mark !== undefined) onmark?.(done.mark);
+        } else if (target.type === MouseTargetType.GUTTER_LINE_NUMBERS) {
+            const row = blame.find((one) => one.line === line);
+            if (row !== undefined && row.commit !== '') onblame?.(row);
+        } else if (target.type === MouseTargetType.GUTTER_GLYPH_MARGIN) {
+            onglyph?.(line);
+        }
+    }
+
+    // The instance's model, made on its own URI and set on the editor, and made again when the
+    // tab is pointed at another file. The one before it is disposed with it.
+    $effect(() => {
+        const loaded = kit;
+        const made = editor;
+        if (loaded === null || made === null) return;
+        const uri = modelUri(loaded.monaco, name, path);
+        const created = untrack(() => {
+            loaded.monaco.editor.getModel(uri)?.dispose();
+            const fresh = loaded.monaco.editor.createModel(text, shikiId(language), uri);
+            fresh.setEOL(eolOf(loaded.monaco, ending));
+            fresh.updateOptions({
+                tabSize: indent.size,
+                indentSize: indent.size,
+                insertSpaces: !indent.tabs
+            });
+            return fresh;
+        });
+        const changes = created.onDidChangeContent(() => {
+            if (!applying) onchange?.(created.getValue());
+        });
+        made.setModel(created);
+        model = created;
+        untrack(flush);
+        return () => {
+            changes.dispose();
+            // An editor already disposed with the component holds no model to take away.
+            if (alive && made.getModel() === created) made.setModel(null);
+            created.dispose();
+            model = null;
+        };
+    });
+
+    // A text the parent hands in that the model does not hold already replaces the model's as one
+    // edit, in the line ending asked for; the text the reader typed comes back equal and is left.
+    $effect(() => {
+        const held = model;
+        const wanted = text;
+        if (held === null || kit === null) return;
+        const LF = kit.monaco.editor.EndOfLinePreference.LF;
+        if (held.getValue(LF) === wanted.replace(/\r\n/g, '\n')) return;
+        const loaded = kit;
+        untrack(() => {
+            applying = true;
+            try {
+                held.pushEditOperations(
+                    [],
+                    [{ range: held.getFullModelRange(), text: wanted }],
+                    () => null
+                );
+                held.pushEOL(eolOf(loaded.monaco, ending));
+            } finally {
+                applying = false;
+            }
+        });
+    });
+
+    $effect(() => {
+        const held = model;
+        const id = shikiId(language);
+        if (held === null || kit === null) return;
+        if (held.getLanguageId() !== id) kit.monaco.editor.setModelLanguage(held, id);
+    });
+
+    $effect(() => {
+        const { tabs, size } = indent;
+        model?.updateOptions({ tabSize: size, indentSize: size, insertSpaces: !tabs });
+    });
+
+    $effect(() => {
+        editor?.updateOptions({ readOnly: !writable });
+    });
+
+    // The gutter: the marks and the breakpoints as decorations, the blame in the number column.
+    $effect(() => {
+        const count = lines;
+        const held = [marks, blame, breakpoints] as const;
+        if (editor === null || model === null || collections === null) return;
+        collections.marks.set(markDecorations(held[0], model.getLineCount()));
+        collections.breakpoints.set(breakpointDecorations(held[2]));
+        collections.blame.set(blameDecorations(held[1]));
+        editor.updateOptions({
+            lineNumbers: held[1].length === 0 ? 'on' : blameNumbers(held[1], count),
+            lineNumbersMinChars: blameWidth(held[1], count)
+        });
+    });
+
+    // The theme and the font again whenever the look changes from the one the editor was built
+    // or last painted under, on the next frame, once the body carries the new theme's tokens.
+    $effect(() => {
+        const wanted = look;
+        const loaded = kit;
+        const made = editor;
+        if (loaded === null || made === null || wanted === painted) return;
+        const frame = requestAnimationFrame(() => {
+            painted = wanted;
+            void loaded.paint(token);
+            made.updateOptions(font());
+        });
+        return () => cancelAnimationFrame(frame);
+    });
+
+    /** Perform what the parent asks; an ask made before the editor loaded waits for it. */
+    export function perform(command: EditorCommand): void {
+        if (editor === null || model === null || kit === null) {
+            waiting.push(command);
+            return;
+        }
+        run(kit, editor, model, command);
+    }
+
+    function flush(): void {
+        const asks = waiting;
+        waiting = [];
+        for (const command of asks) perform(command);
+    }
+
+    function run(
+        loaded: EditorKit,
+        made: Monaco.editor.IStandaloneCodeEditor,
+        held: Monaco.editor.ITextModel,
+        command: EditorCommand
+    ): void {
+        if (command.kind === 'goto') {
+            const line = Math.min(Math.max(1, command.line), held.getLineCount());
+            made.setPosition({ lineNumber: line, column: 1 });
+            made.revealLineInCenter(line);
+            made.focus();
+        } else if (command.kind === 'indent') {
+            const { tabs, size } = command.indent;
+            held.updateOptions({ tabSize: size, indentSize: size, insertSpaces: !tabs });
+        } else if (command.kind === 'convert') {
+            const id = command.tabs
+                ? 'editor.action.indentationToTabs'
+                : 'editor.action.indentationToSpaces';
+            void made.getAction(id)?.run();
+        } else if (command.kind === 'ending') {
+            held.pushEOL(eolOf(loaded.monaco, command.ending));
+        } else if (command.kind === 'language') {
+            loaded.monaco.editor.setModelLanguage(held, shikiId(command.language));
+        } else {
+            made.focus();
+            void made.getAction(command.id)?.run();
+        }
+    }
+
+    /** What the Tab and Escape rules read of a key press. */
+    function facts(event: KeyboardEvent): KeyFacts {
+        const { key, ctrlKey, metaKey, altKey, defaultPrevented } = event;
+        return { key, ctrlKey, metaKey, altKey, defaultPrevented };
+    }
+
+    /** A key before Monaco reads it: a Tab that leaves is kept from Monaco for the browser. */
+    function before(event: KeyboardEvent): void {
+        const press = facts(event);
+        if (leaves(armed, press)) {
+            armed = false;
+            event.stopPropagation();
+            return;
+        }
+        armed = armBefore(armed, press);
+    }
+
+    /** A key Monaco let through: an Escape it did not take arms the next Tab. */
+    function after(event: KeyboardEvent): void {
+        armed = armAfter(armed, facts(event));
+    }
+
+    onDestroy(() => {
+        alive = false;
+        for (const listener of listeners.splice(0)) listener.dispose();
+        editor?.dispose();
+        editor = null;
+    });
+</script>
+
+<!-- svelte-ignore a11y_no_static_element_interactions -->
+<div
+    class="editor"
+    data-editor-host={path}
+    data-editor-writable={writable ? 'true' : 'false'}
+    onkeydowncapture={before}
+    onkeydown={after}
+>
+    <div class="monaco" bind:this={host}></div>
+    {#if !mounted}
+        <pre class="plain">{text}</pre>
+    {/if}
+</div>
+
+<style>
+    .editor {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        min-height: 0;
+        font-size: var(--fs-sm);
+    }
+
+    .monaco,
+    .plain {
+        position: absolute;
+        inset: 0;
+    }
+
+    .plain {
+        box-sizing: border-box;
+        margin: 0;
+        overflow: hidden;
+        padding: 0 0 0 8ch;
+        background: var(--panel);
+        color: var(--ink-txt, var(--ink));
+        font-family: var(--font-mono);
+        line-height: 1.45;
+        white-space: pre;
+    }
+
+    /* Under the wall the editor is a translucent pane over the picture, as the rest of the page
+       is: its surfaces, which Monaco paints in the panel's colour from the theme, and the plain
+       text drawn before it loads take the pane's share of the panel. */
+    :global(body.wall) .editor {
+        backdrop-filter: blur(var(--wall-blur));
+    }
+
+    :global(body.wall) .plain {
+        background: color-mix(in srgb, var(--panel) var(--wall-panel), transparent);
+    }
+
+    :global(body.wall) .editor :global(.monaco-editor),
+    :global(body.wall) .editor :global(.monaco-editor-background),
+    :global(body.wall) .editor :global(.monaco-editor .margin) {
+        background: color-mix(in srgb, var(--panel) var(--wall-panel), transparent);
+    }
+
+    /* The blame's padding is spaces, which the number column keeps only drawn as written. */
+    .editor :global(.monaco-editor .line-numbers) {
+        white-space: pre;
+    }
+
+    .editor :global(.oculus-mark) {
+        width: 3px !important;
+        margin-left: 3px;
+    }
+
+    .editor :global(.oculus-mark-added) {
+        background: var(--c-scm-added);
+    }
+
+    .editor :global(.oculus-mark-modified) {
+        background: var(--c-scm-modified);
+    }
+
+    .editor :global(.oculus-mark-deleted) {
+        border-top: 3px solid var(--c-scm-deleted);
+        box-sizing: border-box;
+    }
+
+    .editor :global(.oculus-mark-deleted-foot) {
+        border-bottom: 3px solid var(--c-scm-deleted);
+        box-sizing: border-box;
+    }
+
+    .editor :global(.oculus-mark:hover) {
+        cursor: pointer;
+    }
+
+    .editor :global(.oculus-breakpoint) {
+        cursor: pointer;
+    }
+
+    .editor :global(.oculus-breakpoint::before) {
+        content: '';
+        display: block;
+        width: 10px;
+        height: 10px;
+        margin: 4px auto 0;
+        border-radius: 50%;
+        background: var(--c-red);
+    }
+
+    .editor :global(.oculus-blame) {
+        cursor: pointer;
+    }
+
+    .editor :global(.oculus-blame-uncommitted) {
+        cursor: default;
+        font-style: italic;
+    }
+</style>

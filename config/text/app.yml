@@ -18,6 +18,7 @@ text:
             cmd_unknown: '# unknown command'
             cmdk_placeholder: Search projects, entries, tabs...
             kind_collection: Collection
+            kind_editor: Editor
             kind_feed: Feed
             kind_project: Project
             kind_view: View

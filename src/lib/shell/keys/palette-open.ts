@@ -2,14 +2,30 @@
 // the UI store of the activated instance. Project state remains layout identity; reveal state does
 // not create a second tab for the same feed or collection view. The saved search of the instance is
 // cleared with it, so a card the search would hide is mounted for the reveal.
+//
+// An editor action opens nothing: it asks the source tab it names to run the action, and answers
+// that tab's instance.
 
 import type { LayoutStore } from '$lib/state/workbench/layout.svelte';
 import type { PaletteItem } from '$lib/state/workbench/palette';
 import type { UiStore } from '$lib/state/workbench/ui.svelte';
+import type { EditorStatusStore } from '$lib/state/workbench/navigation/editor-status.svelte';
 
 /** Open one result and return the instance the layout activated or created. */
-export function openPaletteItem(layout: LayoutStore, ui: UiStore, item: PaletteItem): string {
+export function openPaletteItem(
+    layout: LayoutStore,
+    ui: UiStore,
+    item: PaletteItem,
+    editor: Pick<EditorStatusStore, 'ask'>
+): string {
     if (item.kind === 'project') return layout.openView(item.view, item.state);
+    if (item.kind === 'editor') {
+        const instance = item.state?.instance;
+        const action = item.state?.action;
+        if (typeof instance !== 'string' || typeof action !== 'string') return '';
+        editor.ask(instance, { kind: 'action', id: action });
+        return instance;
+    }
 
     const id = layout.openView(item.view);
     const reveal = item.state?.reveal;

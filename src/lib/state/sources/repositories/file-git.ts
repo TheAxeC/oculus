@@ -1,6 +1,8 @@
 // Layer 2, client state. What the source tab needs to put git in its gutter: which repository holds
 // the file it has open and the file's path there, the words a blamed line carries, how long ago a
-// commit was made, and which gutter mark each line draws.
+// commit was made, which gutter mark each line draws and the words a mark says. The read-only code
+// window's gutter (views/sources/source/Gutter.svelte) and the editor's (the blame rows and the
+// marks handed to ui/controls/editor) both read them here, so the two say the same thing.
 //
 // A source tab names its file by the key of the root the file routes serve it under and a path
 // under that root; the `git` channel names a repository by its folder. The repository holding a
@@ -111,6 +113,33 @@ export function blameStatus(line: GitBlameLine | undefined, now: number = Date.n
     if (line === undefined) return '';
     if (line.uncommitted) return t('repositories.blame_uncommitted');
     return t('repositories.blame_status', line.author, ago(line.when, now), line.subject);
+}
+
+/** A blamed line as the editor's line-number column draws it: its words, hover and commit. */
+export type BlameRow = { line: number; words: string; title: string; commit: string };
+
+/**
+ * The blame as the editor's rows: the gutter words on the first line of each run and on no other,
+ * the hover words on every line, and the commit, the empty string for a line no commit holds.
+ */
+export function blameRows(lines: readonly GitBlameLine[], now: number = Date.now()): BlameRow[] {
+    const starts = blameStarts(lines);
+    return lines.map((line) => {
+        const words = blameWords(line, now);
+        return {
+            line: line.line,
+            words: starts.has(line.line) ? words.gutter : '',
+            title: words.title,
+            commit: line.uncommitted ? '' : line.hash
+        };
+    });
+}
+
+/** The words a quick diff mark says, which name what it marks and that a press opens it. */
+export function markWords(mark: { kind: GitLineMark['kind']; start: number }): string {
+    if (mark.kind === 'added') return t('repositories.mark_added', mark.start);
+    if (mark.kind === 'deleted') return t('repositories.mark_deleted', mark.start);
+    return t('repositories.mark_modified', mark.start);
 }
 
 /** The mark each line of a file draws, by line from one: added, modified, or a deletion above. */

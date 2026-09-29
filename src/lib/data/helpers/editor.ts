@@ -1,5 +1,5 @@
 // Layer 1, data. The `editor:` block of config/behavior.yml: the size above which the source tab's
-// editor paints its mirror without colour.
+// editor opens a file as plaintext, without colour.
 //
 // Both readers of the block are here because the two sides must give the same answer. The server
 // requires the key at start, so a missing or mistyped one stops it with the key named instead of

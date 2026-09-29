@@ -7,7 +7,10 @@
 // holding the active instance): every case here puts the pane under document.activeElement.
 
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createWorkbenchKeys } from '../../../src/lib/shell/keys/workbench-keys.svelte.ts';
+import {
+    createWorkbenchKeys,
+    typingIn
+} from '../../../src/lib/shell/keys/workbench-keys.svelte.ts';
 import { paneAt } from '../../../src/lib/state/workbench/layout/index.ts';
 import { readTab } from '../../../src/lib/state/sessions/terminal/terminal-tabs.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
@@ -418,5 +421,84 @@ describe('the n key', () => {
         const fresh = tabs.filter((one) => one.view === 'terminal');
         expect(fresh).toHaveLength(1);
         expect(readTab(fresh[0].state)).toMatchObject({ terminals: [], composing: true });
+    });
+});
+
+/**
+ * An element with a tag, its classes, its attributes and a parent, answering the three selectors
+ * typingIn asks: a comma list of tag names, one class, and the content-editable attribute.
+ */
+class NodeStandin extends PaneStandin {
+    readonly tag: string;
+    readonly classes: string[];
+    readonly attributes: Record<string, string>;
+    readonly parent: NodeStandin | null;
+    readonly isContentEditable: boolean;
+
+    constructor(
+        tag: string,
+        parent: NodeStandin | null = null,
+        classes: string[] = [],
+        attributes: Record<string, string> = {}
+    ) {
+        super('', '');
+        this.tag = tag;
+        this.parent = parent;
+        this.classes = classes;
+        this.attributes = attributes;
+        this.isContentEditable = attributes.contenteditable === 'true';
+    }
+
+    override matches(selector?: string): boolean {
+        return (selector ?? '').split(',').some((one) => {
+            const part = one.trim();
+            if (part.startsWith('.')) return this.classes.includes(part.slice(1));
+            const attribute = /^\[([a-z-]+)="([^"]*)"\]$/.exec(part);
+            if (attribute !== null) return this.attributes[attribute[1]] === attribute[2];
+            return part === this.tag;
+        });
+    }
+
+    override closest(selector?: string): this {
+        if (this.matches(selector)) return this;
+        return (this.parent?.closest(selector) ?? null) as unknown as this;
+    }
+}
+
+describe('typing inside the editor', () => {
+    const editor = new NodeStandin('div', null, ['monaco-editor']);
+    const lines = new NodeStandin('div', editor, ['view-lines']);
+
+    // Red when typingIn leaves out an element inside `.monaco-editor`.
+    it('counts the edit context, the input area and any element of the editor as typing', () => {
+        const context = new NodeStandin('div', lines, ['native-edit-context'], {
+            contenteditable: 'false'
+        });
+        const area = new NodeStandin('textarea', lines, ['inputarea']);
+        expect(typingIn(context as unknown as HTMLElement)).toBe(true);
+        expect(typingIn(area as unknown as HTMLElement)).toBe(true);
+        expect(typingIn(lines as unknown as HTMLElement)).toBe(true);
+    });
+
+    // Red when typingIn counts every element as typing, or no longer counts a form field.
+    it('counts a div outside the editor as none, and an input anywhere as typing', () => {
+        const outside = new NodeStandin('div', new NodeStandin('div', null, ['pane']));
+        expect(typingIn(outside as unknown as HTMLElement)).toBe(false);
+        expect(typingIn(new NodeStandin('input', null) as unknown as HTMLElement)).toBe(true);
+        expect(typingIn(null)).toBe(false);
+    });
+
+    // Red when the key handler reads a key typed in the editor as the shell's.
+    it('leaves a digit and a colon typed in the editor to the editor', () => {
+        const context = new NodeStandin('div', lines, ['native-edit-context']);
+        const railPage = vi.fn(() => true);
+        const keys = handler('', undefined, () => null, {}, noop, railPage);
+        const digit = keyEvent('1', false, { target: context as unknown as HTMLElement });
+        keys.keys(digit.event);
+        const colon = keyEvent(':', false, { target: context as unknown as HTMLElement });
+        keys.keys(colon.event);
+        expect(railPage).not.toHaveBeenCalled();
+        expect(digit.prevented).not.toHaveBeenCalled();
+        expect(colon.prevented).not.toHaveBeenCalled();
     });
 });

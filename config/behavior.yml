@@ -112,7 +112,7 @@ notify:
 
 
 # === The source editor ======================================================
-# The editor's mirror is painted again on every keystroke, so a file larger than this many kilobytes is written over plain escaped text instead; the read-only code window, painted once, colours every size.
+# The editor colours a file by running its grammar over the text in the page as it is typed, so a file larger than this many kilobytes opens as plaintext instead; the read-only code window, painted once, colours every size.
 editor:
   paint_limit_kb: 64
 

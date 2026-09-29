@@ -1,8 +1,7 @@
 /plan-orchestration oculus/migration
 
 In flight:
-- D13a (the source tab on Monaco, the primitive under ui/controls/editor): built from base fcde80b7, reviewed; repair round 1 back, under review.
-- Q88 (right-click menus wherever vscode.dev gives one, the tab's menu left to X3c; beside Q79b by Z50 (a)): building from base 2a72d052, cases ruled at round 0 (`agents/briefs/Q88-cases.md`).
+- Q88 (right-click menus wherever vscode.dev gives one, the tab's menu left to X3c; beside Q79b by Z50 (a)): built from base 2a72d052 with its cases ruled at round 0 (`agents/briefs/Q88-cases.md`); report saved, review next.
 Queued, in order:
 - Q88b (the right-click menus' new capabilities: file writes under the roots with Delete to the Trash, discarding an untracked file to the Trash, a two-file compare, .gitignore, cherry-pick, the graph's commit and branch actions (detached checkout, a branch or tag from a commit, the compares, Delete Branch), Open File (HEAD), closing a repository, opening a worktree, Lock Group, the terminal's name, icon, colour and Clear; Z52 (b)), after Q88.
 - Q86b (the Map's drag after neato's placement, Z49 (a)); its look also takes the Map's labels after Q86's fix at landing; waits for Q86's look on TEST, owed while the tab shows Axel's page (Z49); the creep's cause and the push are in its Step 0.
@@ -27,7 +26,8 @@ Queued, in order:
 The loop fills three slots as they free up; a line above is only an order, never a barrier, apart from the "once ... has landed" notes. A step's line moves to Landed, at the top of that list, in its landing commit.
 
 Landed, newest first: every step ticked in `plan.md`, each with the date and the commit that ticked it (the 15 steps dated 2026-09-10 at f8af492b were landed before the ledger was opened):
-- Q79b (the test half of section D: the scratch sweep as a file fixture, the shared walkers and comment strippers), 2026-09-29, the commit "Land Q79b".
+- D13a (the source tab on Monaco: the editor primitive, Shiki's grammars, the Cmd+K chords in the palette, the quick diff marks from the keyboard; a press inside a pane makes it active), 2026-09-29, the commit "Land D13a".
+- Q79b (the test half of section D: the scratch sweep as a file fixture, the shared walkers and comment strippers), 2026-09-29, 9390421c.
 - Q96 (the Rail section's field words and icon dropdown on bits-ui, one tooltip open at a time; looked at on TEST 2026-09-29, the pick not made), 2026-09-29, 7e2c0360.
 - Q81 (menus, context menus, tooltips and dialogs on bits-ui; the palette on its Command list with fuzzysort; looked at on TEST 2026-09-29, the focus parts still owed), 2026-09-29, a5bdc88b.
 - Q82 (the tree on @zag-js/tree-view, the long explorer lists virtualized; looked at on TEST 2026-09-29, the keys still owed), 2026-09-29, 2349e0fb.

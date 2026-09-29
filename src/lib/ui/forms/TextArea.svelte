@@ -21,8 +21,6 @@
          * caller decides whether the key still types, since only it knows.
          */
         onkeydown?: (event: KeyboardEvent) => void;
-        /** The caller may keep a visual mirror aligned with this field. */
-        onscroll?: (event: Event) => void;
         /**
          * No border, fill or padding of its own and no resize handle, for a field inside a box that
          * draws them, as the composer's box holds its prompt and its controls under one border.
@@ -41,7 +39,6 @@
         spellcheck = true,
         code = false,
         onkeydown,
-        onscroll,
         bare = false,
         placeholder
     }: Props = $props();
@@ -64,8 +61,7 @@
     readonly={readOnly}
     {spellcheck}
     oninput={typed}
-    {onkeydown}
-    {onscroll}></textarea>
+    {onkeydown}></textarea>
 
 <style>
     .area {

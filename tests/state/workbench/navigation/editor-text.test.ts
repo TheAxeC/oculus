@@ -1,19 +1,17 @@
-// The rules the status bar's source items read a file's text by and rewrite it with: the caret's
-// line and column, the indentation a file's own lines give, its line ending, and the two
-// conversions, over hand-written texts.
+// The rules the status bar's source items read a file's text by: the indentation a file's own
+// lines give, its line ending, how many lines it holds, and the language the editor opens it under,
+// over hand-written texts.
 //
-// What this does NOT cover: the source tab applying them to its draft and the bar drawing them.
+// What this does NOT cover: the editor moving the caret and rewriting the indentation and the line
+// endings on its model, which the look does, and the bar drawing them.
 
 import { describe, expect, it } from 'vitest';
 import {
     DEFAULT_INDENT,
-    caretOf,
-    convertIndent,
     detectIndent,
-    indentUnit,
     lineCount,
     lineEnding,
-    withEnding
+    shownLanguage
 } from '../../../../src/lib/state/workbench/navigation/editor-text.ts';
 
 describe('the indentation a file gives', () => {
@@ -47,41 +45,19 @@ describe('the line ending a file gives', () => {
         expect(lineEnding('a\nb\n')).toBe('LF');
         expect(lineEnding('')).toBe('LF');
     });
+});
 
-    it('rewrites every line ending to the one asked for, and back', () => {
-        expect(withEnding('a\r\nb\nc', 'LF')).toBe('a\nb\nc');
-        expect(withEnding('a\nb\r\nc\n', 'CRLF')).toBe('a\r\nb\r\nc\r\n');
-        expect(withEnding(withEnding('a\nb\n', 'CRLF'), 'LF')).toBe('a\nb\n');
+describe('the language the editor opens a text under', () => {
+    // Red when a text past the paint limit is opened in its language, or the limit is not read.
+    it('is the one asked for under the limit, and plaintext past it or with no limit yet', () => {
+        expect(shownLanguage('python', 'import os\n', 100)).toBe('python');
+        expect(shownLanguage('python', 'x'.repeat(100), 100)).toBe('python');
+        expect(shownLanguage('python', 'x'.repeat(101), 100)).toBe('plaintext');
+        expect(shownLanguage('python', 'import os\n', null)).toBe('plaintext');
     });
 });
 
-describe('the conversions of the indentation', () => {
-    it('turns leading tabs into the step of spaces and leaves the rest of the line alone', () => {
-        expect(convertIndent('a\n\tb\t c\n\t\td\n', false, 4)).toBe('a\n    b\t c\n        d\n');
-        expect(convertIndent('\tx\n', false, 2)).toBe('  x\n');
-    });
-
-    it('turns leading spaces into tabs, keeping a part step as spaces after them', () => {
-        expect(convertIndent('a\n    b\n      c\n', true, 4)).toBe('a\n\tb\n\t  c\n');
-        expect(convertIndent('  \tx\n', true, 4)).toBe('\tx\n');
-    });
-
-    it('inserts a tab for a tab file and its width of spaces for a space file', () => {
-        expect(indentUnit({ tabs: true, size: 4 })).toBe('\t');
-        expect(indentUnit({ tabs: false, size: 2 })).toBe('  ');
-    });
-});
-
-describe('the caret', () => {
-    it('counts the line and the column of its active end from one, and the selection', () => {
-        const text = 'one\ntwo\nthree';
-        expect(caretOf(text, 0, 0, false)).toEqual({ line: 1, column: 1, selected: 0 });
-        expect(caretOf(text, 5, 5, false)).toEqual({ line: 2, column: 2, selected: 0 });
-        expect(caretOf(text, 2, 9, false)).toEqual({ line: 3, column: 2, selected: 7 });
-        expect(caretOf(text, 2, 9, true)).toEqual({ line: 1, column: 3, selected: 7 });
-        expect(caretOf(text, 99, 99, false)).toEqual({ line: 3, column: 6, selected: 0 });
-    });
-
+describe('the lines', () => {
     it('counts the lines of a text, one for an empty one', () => {
         expect(lineCount('')).toBe(1);
         expect(lineCount('a\nb\n')).toBe(3);

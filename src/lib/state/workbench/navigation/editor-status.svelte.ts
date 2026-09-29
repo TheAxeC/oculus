@@ -9,9 +9,18 @@
 // is asked of the instance, and the view that holds the text performs it. Every ask carries a
 // sequence number, so a view performs one ask once, and a view that mounts after an ask was made
 // does not perform it.
+//
+// A tab also publishes the editor actions it offers the palette, the Cmd+K chords the editor gave
+// up so Cmd+K reaches the palette, and the palette asks the tab to run one by its id.
 
 import { untrack } from 'svelte';
 import type { Caret, Indent, LineEnding } from './editor-text.ts';
+
+/**
+ * One editor action a tab offers the palette: its id, the editor's label, and its keys as the hint
+ * (a removed chord's old chord, or a mark action's key), empty for an action with none.
+ */
+export type EditorAction = { id: string; label: string; hint: string };
 
 /** What one source tab publishes. `caret` is null for a tab drawing no editor. */
 export type EditorStatus = {
@@ -26,6 +35,8 @@ export type EditorStatus = {
     writable: boolean;
     /** The caret line's blame in the bar's words while blame is on, and the empty string else. */
     blame: string;
+    /** The editor actions the tab offers the palette, none for a tab drawing no editor. */
+    actions: EditorAction[];
 };
 
 /** One change the status bar asks of a source tab. */
@@ -35,7 +46,8 @@ export type EditorAsk =
     | { kind: 'convert'; tabs: boolean }
     | { kind: 'ending'; ending: LineEnding }
     | { kind: 'language'; language: string }
-    | { kind: 'commit' };
+    | { kind: 'commit' }
+    | { kind: 'action'; id: string };
 
 /** An ask as the instance reads it, numbered so it is performed once. */
 export type EditorRequest = EditorAsk & { instance: string; seq: number };

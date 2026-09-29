@@ -17,7 +17,8 @@ const SAID: EditorStatus = {
     ending: 'LF',
     language: 'python',
     writable: true,
-    blame: ''
+    blame: '',
+    actions: []
 };
 
 describe('the editor status store', () => {
@@ -50,6 +51,20 @@ describe('the editor status store', () => {
         // The last ask was the other tab's, so this one has nothing waiting.
         expect(store.asked('one')).toBe(null);
         expect(store.asked('two')).toMatchObject({ language: 'r', seq: 3 });
+    });
+
+    // An audit at run time, since the store keeps any ask it is handed: red under `npm run check`
+    // when EditorAsk has no `action` kind.
+    it('asks a tab to run one editor action by its id', () => {
+        const store = createEditorStatus();
+        store.publish('one', SAID);
+        expect(store.ask('one', { kind: 'action', id: 'editor.action.addCommentLine' })).toBe(true);
+        expect(store.asked('one')).toEqual({
+            kind: 'action',
+            id: 'editor.action.addCommentLine',
+            instance: 'one',
+            seq: 1
+        });
     });
 
     it('finds the source tab on screen that has said something, and no other tab', () => {

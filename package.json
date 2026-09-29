@@ -38,6 +38,7 @@
     },
     "dependencies": {
         "@event-calendar/core": "^5.15.0",
+        "@shikijs/monaco": "4.4.3",
         "@tanstack/virtual-core": "^3.17.11",
         "@viz-js/viz": "3.30.0",
         "@vscode/ripgrep": "^1.18.0",
@@ -56,6 +57,8 @@
         "lucide-static": "1.46.0",
         "marked": "^18.0.12",
         "marked-gfm-heading-id": "4.1.4",
+        "monaco-editor": "0.57.0",
+        "shiki": "4.4.3",
         "ws": "^8.21.3",
         "yaml": "^2.9.0"
     }

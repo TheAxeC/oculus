@@ -144,3 +144,12 @@ None beyond Spec 1 and 2.
 Case 14's look; whether Monaco's tokenizer can call a disposed highlighter's provider from a pass scheduled before the new providers (needs a live Monaco); the palette tests' reverts (they render through the tree's SvelteKit configuration); Monaco's `editor.action.toggleHighContrast` registration; the inline-edit gutter indicator (no inline-completions provider is registered).
 
 Reviewer usage: 212738 tokens, 57 tool uses, 10 min (completion notice).
+
+# Closed
+
+Each finding of the review over repair round 1, fixed on main at landing:
+- Spec 1, the mark actions listed for a text with no mark: `changeActions(words, mac, marked)` returns none while the text holds no mark, and `Editor.svelte` adds them again when `marked` changes, as VS Code's Next and Previous Change carry `quickDiffDecorationCount != 0` (`quickDiffWidget.ts:841,881`). Case in `gutter.test.ts`, red without the guard. Seen on TEST: no `oculus.editor` item for `behavior.yml`, the three for HELP.md.
+- Spec 2, the `Alt` literal on every platform: the hint is now written from the key through `chordHint`, and Alt keeps its name on macOS, as HELP.md:82 and the builder's judgment call 13 write it; macOS's Cmd stays Cmd in the same function.
+- Proof 1, `numbersWidth` over the escaped text: it reads the entities back as one character each, and the width case carries the author `A & B`; red with the old helper.
+- Standards 1, `gutter.ts:105-108` and the hint written twice: `ChangeAction` carries the `KeyPress`, the hint is `chordHint([press], mac)` and the binding is `keyCode(monaco, press)`; the hint case checks both platforms and is red with Alt dropped from `pressHint`.
+- Standards 2, `types.ts:15`, `Palette.svelte:18-21`, `DESIGN.md:284`: each names the mark actions beside the removed chords, as does `editor-status.svelte.ts`'s copy of the type and HELP.md's gutter paragraph.

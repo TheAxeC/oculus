@@ -17,7 +17,11 @@
     // a colon and a number goes to that line, a colon alone says which line the caret is on and how
     // many there are, and `:language` lists every language the highlighter paints, the words after
     // it narrowing the list. Both are asked of the tab through the editor status store, and with no
-    // source tab on screen the palette says there is none.
+    // source tab on screen the palette says there is none. While a source tab is on screen its
+    // editor's actions are listed with the other results: Go to Next Change and Go to Previous
+    // Change with their keys beside them, and Open Change, while the file has quick diff marks, and
+    // the Cmd+K chords the editor gave up so that Cmd+K opens the palette from inside it, each with
+    // its old chord beside it. Choosing one asks the tab to run it.
 
     import { Command } from 'bits-ui';
     import Modal from '$lib/ui/frame/Modal.svelte';
@@ -27,6 +31,7 @@
     import {
         buildIndex,
         commands,
+        editorItems,
         kindWord,
         lineQuery,
         parseCommand,
@@ -78,11 +83,14 @@
     const knownViews = $derived(
         views().map((view) => ({ id: view.id, label: registrationLabel(view) }))
     );
-    const index = $derived(open ? buildIndex(current.snapshot, current.feeds, knownViews) : []);
-    const parsed = $derived(parseCommand(query));
-
     /** The source tab on screen and what it last said, or null when the tab on screen is none. */
     const source = $derived(sourceOnScreen(activeInstance(), statusOf));
+    const index = $derived(
+        open
+            ? [...buildIndex(current.snapshot, current.feeds, knownViews), ...editorItems(source)]
+            : []
+    );
+    const parsed = $derived(parseCommand(query));
     /** The source tab's caret, which a go-to-line needs: a tab drawing no editor has none. */
     const caret = $derived(source?.status.caret ?? null);
 
@@ -145,7 +153,7 @@
 
     function choose(item: PaletteItem): void {
         onclose();
-        openPaletteItem(client.layout, client.ui, item);
+        openPaletteItem(client.layout, client.ui, item, client.editorStatus);
     }
 
     /** Send the source tab on screen to a line. */
@@ -255,6 +263,11 @@
                                                                             found.title
                                                                         )}
                                                                     </ToolButton>
+                                                                    {#if found.item.hint !== undefined}
+                                                                        <span class="hint"
+                                                                            >{found.item.hint}</span
+                                                                        >
+                                                                    {/if}
                                                                 </div>
                                                             {/snippet}
                                                         </Command.Item>
@@ -462,6 +475,7 @@
 
     .kind,
     .unavailable,
+    .hint,
     .empty {
         color: var(--muted-txt, var(--muted));
         font-size: var(--fs-xs);

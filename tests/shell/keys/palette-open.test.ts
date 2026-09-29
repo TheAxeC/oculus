@@ -59,14 +59,55 @@ describe('palette result activation', () => {
     });
 
     it('reuses a collection tab and puts reveal in that instance UI state', () => {
-        const id = openPaletteItem(client.layout, client.ui, entry('first'));
+        const id = openPaletteItem(client.layout, client.ui, entry('first'), client.editorStatus);
         setInstanceState(id, { search: 'saved', reveal: 'first' });
 
-        const reused = openPaletteItem(client.layout, client.ui, entry('second'));
+        const reused = openPaletteItem(
+            client.layout,
+            client.ui,
+            entry('second'),
+            client.editorStatus
+        );
 
         expect(reused).toBe(id);
         expect(viewsOf(layout())).toEqual(['status', 'events']);
         expect(instanceState(id)).toEqual({ search: '', reveal: 'second' });
         expect(findView(layout(), 'events')?.state).toEqual({});
+    });
+});
+
+describe('an editor action chosen in the palette', () => {
+    // Red when openPaletteItem opens the item as a view instead of asking the tab to run it.
+    it('asks the source tab it names to run the action, and opens no view', () => {
+        const instance = openView('source', { root: 'hub', path: 'run.py' });
+        client.editorStatus.publish(instance, {
+            caret: { line: 1, column: 1, selected: 0 },
+            lines: 1,
+            indent: { tabs: false, size: 4 },
+            ending: 'LF',
+            language: 'python',
+            writable: true,
+            blame: '',
+            actions: []
+        });
+        const before = viewsOf(layout());
+        const item: PaletteItem = {
+            id: 'editor:editor.action.addCommentLine',
+            kind: 'editor',
+            label: 'Add Line Comment',
+            title: 'Add Line Comment',
+            text: 'Add Line Comment',
+            view: 'source',
+            hint: 'Cmd+K Cmd+C',
+            state: { instance, action: 'editor.action.addCommentLine' }
+        };
+        expect(openPaletteItem(client.layout, client.ui, item, client.editorStatus)).toBe(instance);
+        expect(client.editorStatus.asked(instance)).toEqual({
+            kind: 'action',
+            id: 'editor.action.addCommentLine',
+            instance,
+            seq: 1
+        });
+        expect(viewsOf(layout())).toEqual(before);
     });
 });
