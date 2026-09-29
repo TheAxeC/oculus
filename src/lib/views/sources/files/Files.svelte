@@ -70,7 +70,7 @@
     import Breadcrumb from '$lib/ui/tabs/Breadcrumb.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
-    import Search from '$lib/ui/controls/Search.svelte';
+    import Search from '$lib/ui/controls/text/Search.svelte';
     import BookmarkForm from './sections/BookmarkForm.svelte';
     import Controls from './tree/Controls.svelte';
     import RootForm from './sections/RootForm.svelte';
@@ -481,6 +481,7 @@
                 onrefresh={invalidate}
                 oncollapse={(root: string) =>
                     patch({ expanded: collapseRoot(view.expanded, root, follow.top?.path) })}
+                onaddroot={view.form === 'root' ? undefined : () => show('root')}
             />
             {#if filtering && matchedNothing(shown)}
                 <p class="said">{t('files.filter_none')}</p>

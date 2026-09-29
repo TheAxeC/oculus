@@ -35,9 +35,23 @@
     // force is a different mark: it says which page is shown, not where a view opens. The split
     // button is the pointer's shortcut to an item the menu already holds, so it takes no stop of
     // its own and the pane's stops stay the strip and the menu.
+    //
+    // A right-click on the strip's empty area or in an empty pane's body opens VS Code's editor
+    // group menu (pane-view.ts's stripMenu): Open File..., the four splits of the active tab, Close
+    // through the pane menu's own close and its question, and New Terminal on the pane's page. A
+    // right-click on a tab is left to the tab's own menu, so the strip's menu opens only where no
+    // tab is under the pointer.
 
     import { untrack } from 'svelte';
-    import { EMBED, PAGE, foldable, pageListItems } from '$lib/shell/panes/pane-view';
+    import {
+        EMBED,
+        PAGE,
+        foldable,
+        pageListItems,
+        stripMenu,
+        stripPicked
+    } from '$lib/shell/panes/pane-view';
+    import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
     import { closeQuestion } from '$lib/state/workbench/navigation/pages';
     import CloseQuestion from '$lib/ui/controls/CloseQuestion.svelte';
     import Menu from '$lib/ui/menu/Menu.svelte';
@@ -53,7 +67,7 @@
         registrationLabel
     } from '$lib/state/workbench/navigation/registry';
     import TabView from './TabView.svelte';
-    import { showable, type Instance, type Layout } from '$lib/state/workbench/layout';
+    import { panes, showable, type Instance, type Layout } from '$lib/state/workbench/layout';
     import { useState } from '$lib/state/client/use';
 
     const client = useState();
@@ -79,6 +93,7 @@
         },
         drag: { dragging, hover, start },
         registry: { viewFor },
+        terminals: { composeIn },
         ui: { unsaved }
     } = client;
 
@@ -97,9 +112,11 @@
          * This pane's path in the page's tree, which is what a drop and every menu item name it by.
          */
         path?: number[];
+        /** Open the palette with a prefill, as Cmd+K opens it; the strip menu's Open File... */
+        onpalette?: (prefill: string) => void;
     };
 
-    let { node, page = currentPage().id, path = [] }: Props = $props();
+    let { node, page = currentPage().id, path = [], onpalette = () => undefined }: Props = $props();
 
     let body: HTMLDivElement | undefined = $state();
 
@@ -223,6 +240,35 @@
         { id: 'split_right', label: t('ui.split_right') },
         { id: 'split_down', label: t('ui.split_down') }
     ]);
+
+    /** The strip's and the empty body's right-click menu. */
+    const stripItems = $derived<MenuItem[]>(
+        stripMenu({ holdsTab: active !== '', panes: panes(layout(page)).length }, t)
+    );
+
+    function stripPick(id: string): void {
+        stripPicked(
+            id,
+            { active, path, page },
+            {
+                splitInstance,
+                openPalette: onpalette,
+                close: () => pick('close'),
+                composeIn
+            }
+        );
+    }
+
+    /**
+     * Keep a right-click on a tab from reaching the strip's menu: a tab has a menu of its own, and
+     * a right-click on it is not a right-click on the strip's empty area. A key's menu, dispatched
+     * by the menu itself at the focused control, is let through.
+     */
+    function onTab(event: MouseEvent): void {
+        const target = event.target;
+        if (!event.isTrusted || !(target instanceof Element)) return;
+        if (target.closest('[role="tab"]') !== null) event.stopPropagation();
+    }
 
     /** Whether a drop is this pane's: the same page, and the same path inside that page's tree. */
     function here(drop: { path: number[]; page?: string }): boolean {
@@ -358,18 +404,23 @@
     data-pane-active={active}
     data-pane-view={shown?.view}
 >
-    <Tabs
-        {tabs}
-        {active}
-        {dropIndex}
-        onselect={(id: string) => activateInstance(id, page)}
-        onclose={closeTab}
-        ondblclick={(id: string) => keepPreview(id)}
-        onpointerdown={press}
-        onhoverindex={held === null ? undefined : stripHover}
-        menu={paneMenu}
-        focused={activePane}
-    />
+    <ContextMenu label={t('ui.pane_menu')} items={stripItems} onpick={stripPick}>
+        <!-- svelte-ignore a11y_no_static_element_interactions -->
+        <div class="tabs-menu" oncontextmenu={onTab}>
+            <Tabs
+                {tabs}
+                {active}
+                {dropIndex}
+                onselect={(id: string) => activateInstance(id, page)}
+                onclose={closeTab}
+                ondblclick={(id: string) => keepPreview(id)}
+                onpointerdown={press}
+                onhoverindex={held === null ? undefined : stripHover}
+                menu={paneMenu}
+                focused={activePane}
+            />
+        </div>
+    </ContextMenu>
     <!-- The body is where a view is mounted, and the two pointer handlers only report where a drop
          would land while a drag is in progress. Every drop they report has an item in the pane
          menu, which is the keyboard path. -->
@@ -390,9 +441,11 @@
         <!-- A pane holding no tab is where a view opened for something lands on the page, so it
              says so rather than drawing nothing. -->
         {#if instances.length === 0}
-            <p class="empty" data-pane-empty>
-                {t('ui.pane_empty')}
-            </p>
+            <ContextMenu label={t('ui.pane_menu')} items={stripItems} onpick={stripPick}>
+                <p class="empty" data-pane-empty>
+                    {t('ui.pane_empty')}
+                </p>
+            </ContextMenu>
         {/if}
     </div>
 </div>
@@ -456,8 +509,16 @@
         overflow: hidden;
     }
 
-    /* The one line of a pane with no tab, in the muted ink, clear of the strip above it. */
+    /* The strip's menu wrapper, which draws nothing of its own around the tab strip. */
+    .tabs-menu {
+        display: contents;
+    }
+
+    /* The one line of a pane with no tab, in the muted ink, clear of the strip above it. It fills
+       the body, so a right-click anywhere in an empty pane opens the strip's menu. */
     .empty {
+        box-sizing: border-box;
+        height: 100%;
         margin: 0;
         padding: 12px;
         color: var(--muted-txt, var(--muted));

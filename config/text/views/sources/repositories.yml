@@ -200,6 +200,17 @@ text:
         worktrees: Worktrees
         worktrees_empty: This repository has no worktree beside itself.
         worktrees_unignored: The .gitignore of this repository does not carry /.agents/worktrees/, so a worktree made here becomes content of the repository.
+        menu_checkout: Checkout
+        menu_delete_worktree: Delete Worktree
+        menu_discard: Discard Changes
+        menu_open_changes: Open Changes
+        menu_reveal: Reveal in Explorer View
+        menu_reveal_finder: Reveal in Finder
+        menu_stage: Stage Changes
+        menu_terminal: Open in Integrated Terminal
+        menu_unstage: Unstage Changes
+        reveal_failed: 'Finder could not show it: {0}'
+        reveal_unserved: No served folder holds {0}, so the Files view cannot show it.
     views:
         repositories: Repositories
         repositories_glyph: repositories

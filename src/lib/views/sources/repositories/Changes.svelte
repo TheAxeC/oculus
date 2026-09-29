@@ -23,11 +23,17 @@
     // A group's paths have no cap, so each group draws them through ui/tree/VirtualRows.svelte,
     // which draws only the rows in view of the pane and holds the height of the rest; a key moving
     // to a row not drawn has it scrolled in first, and the type-ahead reads every file's name.
+    //
+    // A file row of Changes, Staged and Untracked, and the head of each of those groups, opens a
+    // right-click menu of what its controls do (menus/change-menu.ts), with Reveal in Explorer View
+    // besides; the merge group keeps its own controls and has none. A Discard picked there asks the
+    // question the row's Discard control asks.
 
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
     import TreeSection from '$lib/ui/tree/TreeSection.svelte';
     import VirtualRows from '$lib/ui/tree/VirtualRows.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
     import type { TreeNav } from '$lib/ui/tree/tree-keys';
     import type { Attachment } from 'svelte/attachments';
     import ChangeCounts from '$lib/views/shared/changes/ChangeCounts.svelte';
@@ -41,6 +47,17 @@
     import type { GitEntry, GitState } from '$lib/state/client/selectors.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
+    import {
+        GROUP_DISCARD_ALL,
+        GROUP_STAGE_ALL,
+        GROUP_STAGE_UNTRACKED,
+        GROUP_UNSTAGE_ALL,
+        askDiscard,
+        changeMenu,
+        changePicked,
+        groupMenu,
+        hasMenu
+    } from './menus/change-menu';
 
     type Props = {
         root: string;
@@ -97,10 +114,28 @@
         return entries.findIndex((entry) => entry.path === path);
     }
 
+    /** The calls a pick from a row's menu runs, the row's own controls' among them. */
+    const deps = {
+        ask: (message: string, detail: string, act: () => void) => ask(message, detail, act),
+        discard: (at: string, path: string) => void repositories.discard(at, path),
+        openChange: (at: string, group: string, path: string) =>
+            repositories.openChange(at, group, path),
+        openFile: (at: string, path: string) => void repositories.openFile(at, path),
+        stage: (at: string, path: string) => void repositories.stage(at, path),
+        unstage: (at: string, path: string) => void repositories.unstage(at, path),
+        reveal: (at: string, path: string) => void repositories.revealFile(at, path)
+    };
+
     function discard(path: string): void {
-        ask(t('git.discard_confirm', path), t('git.discard_detail'), () => {
-            void repositories.discard(root, path);
-        });
+        askDiscard(root, path, deps, t);
+    }
+
+    /** A pick from a group head's menu: what the head's control of the same name does. */
+    function groupPicked(pick: string): void {
+        if (pick === GROUP_UNSTAGE_ALL) void repositories.unstageAll(root);
+        else if (pick === GROUP_STAGE_ALL) void repositories.stageAll(root, 'changed');
+        else if (pick === GROUP_STAGE_UNTRACKED) void repositories.stageAll(root, 'untracked');
+        else if (pick === GROUP_DISCARD_ALL) discardAll();
     }
 
     function discardAll(): void {
@@ -123,55 +158,19 @@
         {#each groups as group (group.id)}
             {@const open = !collapsed.includes(group.id)}
             <li role="none" data-changes={group.id}>
-                <TreeItem
-                    label={labelOf(group.id)}
-                    id={`group:${group.id}`}
-                    {nav}
-                    level={2}
-                    count={group.entries.length}
-                    expanded={open}
-                    tone={group.id === 'merge' ? 'error' : undefined}
-                    onclick={() => ontoggle(group.id)}
-                >
-                    {#snippet actions(reach: number)}
-                        {#if group.id === 'staged'}
-                            <ToolButton
-                                label={t('git.unstage_all')}
-                                glyph="collapse"
-                                compact
-                                tabindex={reach}
-                                disabled={busy}
-                                onclick={() => void repositories.unstageAll(root)}
-                            />
-                        {:else if group.id === 'changed' && group.entries.length > 0}
-                            <ToolButton
-                                label={t('git.discard_all')}
-                                glyph="note_back"
-                                compact
-                                tabindex={reach}
-                                disabled={busy}
-                                onclick={discardAll}
-                            />
-                            <ToolButton
-                                label={t('git.stage_all')}
-                                glyph="expand"
-                                compact
-                                tabindex={reach}
-                                disabled={busy}
-                                onclick={() => void repositories.stageAll(root, 'changed')}
-                            />
-                        {:else if group.id === 'untracked' && group.entries.length > 0}
-                            <ToolButton
-                                label={t('git.stage_all_untracked')}
-                                glyph="expand"
-                                compact
-                                tabindex={reach}
-                                disabled={busy}
-                                onclick={() => void repositories.stageAll(root, 'untracked')}
-                            />
-                        {/if}
-                    {/snippet}
-                </TreeItem>
+                {#if hasMenu(group.id)}
+                    <ContextMenu
+                        label={labelOf(group.id)}
+                        items={groupMenu(group.id, group.entries.length, busy, t)}
+                        onpick={groupPicked}
+                    >
+                        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                        {@render groupHead(group, open)}
+                    </ContextMenu>
+                {:else}
+                    <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                    {@render groupHead(group, open)}
+                {/if}
             </li>
             {#if open && group.entries.length === 0}
                 <li role="none">
@@ -201,93 +200,162 @@
 
 {#snippet row(entry: GitEntry, group: string, measure: Attachment<HTMLElement>)}
     <li role="none" data-entry={entry.path} {@attach measure}>
-        <TreeItem
-            label={nameOf(entry.path)}
-            name={t('repositories.change_name', entry.path, t(statusWordKey(entry.status)))}
-            id={rowId(group, entry.path)}
-            {nav}
-            level={3}
-            depth={1}
-            title={titleOf(group)}
-            onclick={() => repositories.openChange(root, group, entry.path)}
-        >
-            {#snippet detail()}
-                <span class="folder">{folderOf(entry.path)}</span>
-                {#if group !== 'merge'}
-                    <span class="detail-counts"><ChangeCounts {entry} /></span>
-                {/if}
-            {/snippet}
-            {#snippet actions(reach: number)}
-                {#if group === 'merge'}
-                    <ToolButton
-                        label={t('repositories.merge_open')}
-                        glyph="merge"
-                        compact
-                        tabindex={reach}
-                        onclick={() => repositories.openMerge(root, entry.path)}
-                    />
-                {:else if group !== 'untracked'}
-                    <ToolButton
-                        label={t('repositories.diff')}
-                        title={titleOf(group)}
-                        glyph="diff"
-                        compact
-                        tabindex={reach}
-                        onclick={() => repositories.openChange(root, group, entry.path)}
-                    />
-                {/if}
+        {#if hasMenu(group)}
+            <ContextMenu
+                label={entry.path}
+                items={changeMenu(group, busy, t)}
+                onpick={(pick: string) =>
+                    changePicked(pick, { root, group, path: entry.path }, deps, t)}
+            >
+                <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                {@render rowItem(entry, group)}
+            </ContextMenu>
+        {:else}
+            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+            {@render rowItem(entry, group)}
+        {/if}
+    </li>
+{/snippet}
+
+{#snippet groupHead(group: { id: string; entries: GitEntry[] }, open: boolean)}
+    <TreeItem
+        label={labelOf(group.id)}
+        id={`group:${group.id}`}
+        {nav}
+        level={2}
+        count={group.entries.length}
+        expanded={open}
+        tone={group.id === 'merge' ? 'error' : undefined}
+        onclick={() => ontoggle(group.id)}
+    >
+        {#snippet actions(reach: number)}
+            {#if group.id === 'staged'}
                 <ToolButton
-                    label={t('repositories.open_file')}
-                    glyph="open_file"
+                    label={t('git.unstage_all')}
+                    glyph="collapse"
                     compact
                     tabindex={reach}
-                    onclick={() => repositories.openFile(root, entry.path)}
+                    disabled={busy}
+                    onclick={() => void repositories.unstageAll(root)}
                 />
-                {#if group === 'staged'}
-                    <ToolButton
-                        label={t('git.unstage')}
-                        title={t('git.unstage_title')}
-                        glyph="collapse"
-                        compact
-                        tabindex={reach}
-                        disabled={busy}
-                        onclick={() => void repositories.unstage(root, entry.path)}
-                    />
-                {:else}
-                    <ToolButton
-                        label={group === 'merge' ? t('repositories.merge_mark') : t('git.stage')}
-                        title={group === 'merge'
-                            ? t('repositories.merge_mark_title')
-                            : t('git.stage_title')}
-                        glyph="expand"
-                        compact
-                        tabindex={reach}
-                        disabled={busy}
-                        onclick={() =>
-                            void (group === 'merge'
-                                ? repositories.markResolved(root, entry.path)
-                                : repositories.stage(root, entry.path))}
-                    />
-                {/if}
-                {#if group === 'changed'}
-                    <ToolButton
-                        label={t('git.discard')}
-                        title={t('git.discard_title')}
-                        glyph="note_back"
-                        compact
-                        tabindex={reach}
-                        disabled={busy}
-                        onclick={() => discard(entry.path)}
-                    />
-                {/if}
-            {/snippet}
-            {#snippet end()}
-                <span class="st" style={statusStyle(entry.status)}>
-                    {entry.status}
-                </span>
-            {/snippet}
-        </TreeItem>
-    </li>
+            {:else if group.id === 'changed' && group.entries.length > 0}
+                <ToolButton
+                    label={t('git.discard_all')}
+                    glyph="note_back"
+                    compact
+                    tabindex={reach}
+                    disabled={busy}
+                    onclick={discardAll}
+                />
+                <ToolButton
+                    label={t('git.stage_all')}
+                    glyph="expand"
+                    compact
+                    tabindex={reach}
+                    disabled={busy}
+                    onclick={() => void repositories.stageAll(root, 'changed')}
+                />
+            {:else if group.id === 'untracked' && group.entries.length > 0}
+                <ToolButton
+                    label={t('git.stage_all_untracked')}
+                    glyph="expand"
+                    compact
+                    tabindex={reach}
+                    disabled={busy}
+                    onclick={() => void repositories.stageAll(root, 'untracked')}
+                />
+            {/if}
+        {/snippet}
+    </TreeItem>
+{/snippet}
+
+{#snippet rowItem(entry: GitEntry, group: string)}
+    <TreeItem
+        label={nameOf(entry.path)}
+        name={t('repositories.change_name', entry.path, t(statusWordKey(entry.status)))}
+        id={rowId(group, entry.path)}
+        {nav}
+        level={3}
+        depth={1}
+        title={titleOf(group)}
+        onclick={() => repositories.openChange(root, group, entry.path)}
+    >
+        {#snippet detail()}
+            <span class="folder">{folderOf(entry.path)}</span>
+            {#if group !== 'merge'}
+                <span class="detail-counts"><ChangeCounts {entry} /></span>
+            {/if}
+        {/snippet}
+        {#snippet actions(reach: number)}
+            {#if group === 'merge'}
+                <ToolButton
+                    label={t('repositories.merge_open')}
+                    glyph="merge"
+                    compact
+                    tabindex={reach}
+                    onclick={() => repositories.openMerge(root, entry.path)}
+                />
+            {:else if group !== 'untracked'}
+                <ToolButton
+                    label={t('repositories.diff')}
+                    title={titleOf(group)}
+                    glyph="diff"
+                    compact
+                    tabindex={reach}
+                    onclick={() => repositories.openChange(root, group, entry.path)}
+                />
+            {/if}
+            <ToolButton
+                label={t('repositories.open_file')}
+                glyph="open_file"
+                compact
+                tabindex={reach}
+                onclick={() => repositories.openFile(root, entry.path)}
+            />
+            {#if group === 'staged'}
+                <ToolButton
+                    label={t('git.unstage')}
+                    title={t('git.unstage_title')}
+                    glyph="collapse"
+                    compact
+                    tabindex={reach}
+                    disabled={busy}
+                    onclick={() => void repositories.unstage(root, entry.path)}
+                />
+            {:else}
+                <ToolButton
+                    label={group === 'merge' ? t('repositories.merge_mark') : t('git.stage')}
+                    title={group === 'merge'
+                        ? t('repositories.merge_mark_title')
+                        : t('git.stage_title')}
+                    glyph="expand"
+                    compact
+                    tabindex={reach}
+                    disabled={busy}
+                    onclick={() =>
+                        void (group === 'merge'
+                            ? repositories.markResolved(root, entry.path)
+                            : repositories.stage(root, entry.path))}
+                />
+            {/if}
+            {#if group === 'changed'}
+                <ToolButton
+                    label={t('git.discard')}
+                    title={t('git.discard_title')}
+                    glyph="note_back"
+                    compact
+                    tabindex={reach}
+                    disabled={busy}
+                    onclick={() => discard(entry.path)}
+                />
+            {/if}
+        {/snippet}
+        {#snippet end()}
+            <span class="st" style={statusStyle(entry.status)}>
+                {entry.status}
+            </span>
+        {/snippet}
+    </TreeItem>
 {/snippet}
 
 <style>

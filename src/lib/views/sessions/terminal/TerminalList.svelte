@@ -15,8 +15,9 @@
     // kills it as Kill does, the first press arming and the second killing; the two controls are
     // the pointer's way to the same two actions, shown on hover. An armed Kill is disarmed when the
     // stop moves or focus leaves the list, and a held key arms nothing (terminal-list.ts, `rowKey`
-    // and `armKept`). A pointer press on a row shows it and hands the keyboard to its grid, so the
-    // list holds focus only for a reader who came to it by the keyboard.
+    // and `armKept`). The arm is held by the tab (Terminal.svelte), since the grid's menu arms and
+    // kills through the same `pressKill`. A pointer press on a row shows it and hands the keyboard
+    // to its grid, so the list holds focus only for a reader who came to it by the keyboard.
     //
     // Split divides this tab: the row's terminal on the left, and on the right the composer in the
     // row's own folder and kind, offered as a place of its own when no place of the composer holds
@@ -25,21 +26,47 @@
     // A row dragged within the list moves there, in the tab's own order, kept in the tab's layout
     // state. A row dropped on another Terminal tab's list moves to that tab at the drop mark, by
     // the terminals store's `moveTerminal`, and a tab it leaves owning nothing closes.
+    //
+    // A right-click on a row opens VS Code's terminal tab menu (terminal-list.ts,
+    // `terminalRowMenu`): Split Terminal and Kill Terminal, which the tab runs as the grid's menu
+    // does, Kill Terminal arming first as the row's Kill does, Unsplit Terminal on a half of the
+    // split the tab shows, which shows that terminal alone, and Join Terminals, which moves a
+    // terminal another Terminal tab owns into this tab after the row and shows it split with the
+    // row. A right-click on the list's empty area offers New Terminal, the composer in this tab as
+    // the bar's New shows it, and New Terminal With Profile, the same composer set to the kind
+    // picked.
 
     import { untrack } from 'svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import { splitState } from '$lib/state/sessions/terminal/composer';
+    import { composerOf, withComposer } from '$lib/state/sessions/terminal/composer';
     import {
+        readTab,
         reordered,
+        showingOne,
         showingRow,
-        splitAt,
+        splitWith,
         type TerminalTabState
     } from '$lib/state/sessions/terminal/terminal-tabs';
+    import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
     import type { TerminalChoice } from '$lib/state/sessions/folds';
     import { t } from '$lib/state/shared/words/text';
     import { nextStop } from '$lib/ui/tree/roving';
-    import { ROW_DRAG, armKept, movedOrder, rowKey, terminalTip } from './terminal-list';
+    import {
+        MENU_KILL,
+        MENU_NEW,
+        MENU_SPLIT,
+        MENU_UNSPLIT,
+        ROW_DRAG,
+        armKept,
+        emptyListMenu,
+        joinedOf,
+        movedOrder,
+        profileOf,
+        rowKey,
+        terminalRowMenu,
+        terminalTip
+    } from './terminal-list';
     import { useState } from '$lib/state/client/use';
 
     type Props = {
@@ -55,15 +82,44 @@
         current: string[];
         /** The terminal whose bell is ringing in this tab, or null. */
         ringing: string | null;
+        /** The terminals the other Terminal tabs own, by name, which Join Terminals offers. */
+        others: { terminal: string; title: string }[];
         /** Called with a row's terminal when a pointer press shows it, before it is shown. */
         onshown: (terminal: string) => void;
+        /** Split the tab on a row's terminal, as the row's Split and its menu do. */
+        onsplit: (terminal: string) => void;
+        /** The terminal whose Kill was pressed or picked once and waits for the second, or ''. */
+        arming: string;
+        /** A kill the server refused, said below the rows until the next one. */
+        failure: string;
+        /**
+         * A press of a row's Kill, a Delete or Backspace on it, or Kill Terminal from its menu: the
+         * tab's `pressKill`, which arms the terminal first and kills it on the second.
+         */
+        onkill: (terminal: string) => void;
+        /** Take the arm off, when the stop moves off the armed row or focus leaves the list. */
+        ondisarm: () => void;
     };
 
-    let { instance, page, tab, rows, current, ringing, onshown }: Props = $props();
+    let {
+        instance,
+        page,
+        tab,
+        rows,
+        current,
+        ringing,
+        others,
+        onshown,
+        onsplit,
+        arming,
+        failure,
+        onkill,
+        ondisarm
+    }: Props = $props();
 
     const {
-        layout: { restateInstance },
-        terminals: { moveTerminal, stopTerminal, terminalById },
+        layout: { instanceLayoutState, restateInstance },
+        terminals: { composeInTab, moveTerminal, terminalById },
         ui: { instanceState, setInstanceState }
     } = useState();
 
@@ -71,11 +127,8 @@
 
     /** The row the keyboard stop was moved to, while it is still a row. */
     let stopped = $state('');
-    /** The row whose Kill was pressed once and waits for the second press. */
-    let arming = $state('');
     /** Where a dragged row would be dropped, as an index of the rows drawn, or null. */
     let dropIndex: number | null = $state(null);
-    let failure = $state('');
 
     const order = $derived(rows.map((row) => row.terminal));
     const stop = $derived(
@@ -89,7 +142,7 @@
     $effect(() => {
         const at = stop;
         untrack(() => {
-            if (arming !== '' && !armKept(arming, at)) arming = '';
+            if (arming !== '' && !armKept(arming, at)) ondisarm();
         });
     });
 
@@ -113,9 +166,35 @@
 
     /** Split this tab: the row on the left, the composer in its folder and kind on the right. */
     function split(row: TerminalChoice): void {
-        const folder = terminalById(row.terminal)?.cwd ?? '';
-        setInstanceState(instance, splitState(folder, row.kind, instanceState(instance)));
-        restateInstance(instance, splitAt(tab, row.terminal));
+        onsplit(row.terminal);
+    }
+
+    /**
+     * Join Terminals: the terminal another tab owns moves into this tab after the row, and the tab
+     * shows the row with it beside. The tab's state is read again after the move, which changed it.
+     */
+    function join(row: TerminalChoice, moving: string): void {
+        moveTerminal(moving, instance, page, tab.terminals.indexOf(row.terminal) + 1);
+        const moved = readTab(instanceLayoutState(instance));
+        restateInstance(instance, splitWith(showingOne(moved, row.terminal), moving));
+    }
+
+    function rowPicked(row: TerminalChoice, pick: string): void {
+        const joining = joinedOf(pick);
+        if (joining !== null) join(row, joining);
+        else if (pick === MENU_SPLIT) split(row);
+        else if (pick === MENU_KILL) kill(row);
+        else if (pick === MENU_UNSPLIT) restateInstance(instance, showingOne(tab, row.terminal));
+    }
+
+    /** New Terminal, or New Terminal With Profile, which sets the composer to the kind picked. */
+    function emptyPicked(pick: string): void {
+        const kind = profileOf(pick);
+        if (pick !== MENU_NEW && kind === null) return;
+        composeInTab(instance);
+        if (kind === null) return;
+        const held = instanceState(instance);
+        setInstanceState(instance, withComposer(held, { ...composerOf(held), agent: kind }));
     }
 
     /** A press on a row: a pointer's hands the keyboard to the grid, a key's leaves it here. */
@@ -124,23 +203,21 @@
         show(row);
     }
 
-    /** Focus leaving the list disarms Kill, so a later Delete or Backspace arms it again. */
+    /**
+     * Focus leaving the list disarms Kill, so a later Delete or Backspace arms it again. A row's
+     * menu takes the focus into its own content, outside the list, as it opens; that keeps the
+     * arm, so Kill Terminal picked from it a second time kills.
+     */
     function left(event: FocusEvent): void {
         const to = event.relatedTarget;
         if (to instanceof Node && list?.contains(to) === true) return;
-        arming = '';
+        if (to instanceof Element && to.closest('[role="menu"]') !== null) return;
+        if (arming !== '') ondisarm();
     }
 
     /** The first press arms Kill and the second stops the terminal, as the Sessions list's does. */
-    async function kill(row: TerminalChoice): Promise<void> {
-        if (arming !== row.terminal) {
-            arming = row.terminal;
-            return;
-        }
-        arming = '';
-        failure = '';
-        const answer = await stopTerminal(row.terminal);
-        if (!answer.ok) failure = answer.error;
+    function kill(row: TerminalChoice): void {
+        onkill(row.terminal);
     }
 
     /**
@@ -154,7 +231,7 @@
             event.preventDefault();
             if (action === 'show') show(rows[index]);
             else if (action === 'split') split(rows[index]);
-            else void kill(rows[index]);
+            else kill(rows[index]);
             return;
         }
         const next = nextStop(event.key, index, rows.length, 'column');
@@ -207,89 +284,105 @@
 
 <!-- The drag handlers report where a dragged row would land and take the drop, and focus leaving
      the list disarms Kill; the rows' own controls carry the keyboard. -->
-<!-- svelte-ignore a11y_no_static_element_interactions -->
-<div
-    class="list"
-    data-terminal-list
-    role="group"
-    aria-label={t('sessions.terminal_list')}
-    bind:this={list}
-    onfocusout={left}
-    ondragover={listOver}
-    ondrop={dropped}
-    ondragleave={(event: DragEvent) => {
-        if (!list?.contains(event.relatedTarget as Node | null)) dropIndex = null;
-    }}
->
-    {#each rows as row, index (row.terminal)}
-        {#if dropIndex === index}
+<ContextMenu label={t('sessions.terminal_list')} items={emptyListMenu(t)} onpick={emptyPicked}>
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <div
+        class="list"
+        data-terminal-list
+        role="group"
+        aria-label={t('sessions.terminal_list')}
+        bind:this={list}
+        onfocusout={left}
+        ondragover={listOver}
+        ondrop={dropped}
+        ondragleave={(event: DragEvent) => {
+            if (!list?.contains(event.relatedTarget as Node | null)) dropIndex = null;
+        }}
+    >
+        {#each rows as row, index (row.terminal)}
+            {#if dropIndex === index}
+                <span class="mark" aria-hidden="true"></span>
+            {/if}
+            <ContextMenu
+                label={row.title}
+                read={() => terminalRowMenu(tab, row.terminal, others, arming === row.terminal, t)}
+                own
+                onpick={(pick: string) => rowPicked(row, pick)}
+            >
+                <div
+                    class="row"
+                    class:current={current.includes(row.terminal)}
+                    class:armed={arming === row.terminal}
+                    data-terminal-row={row.terminal}
+                    data-current={current.includes(row.terminal) || undefined}
+                    draggable="true"
+                    ondragstart={(event: DragEvent) => dragStart(event, row)}
+                    ondragover={(event: DragEvent) => dragOver(event, index)}
+                >
+                    <span class="pick">
+                        <ToolButton
+                            cell
+                            label={`${row.title} ${row.description}`}
+                            title={tip(row)}
+                            tabindex={row.terminal === stop ? 0 : -1}
+                            stop={row.terminal}
+                            onclick={(event: MouseEvent) => pressed(event, row)}
+                            onkeydown={(event: KeyboardEvent) => keys(event, index)}
+                        >
+                            <span class="face">
+                                <Glyph name={kindGlyph(row.kind)} />
+                                <span class="title" data-row-title>{row.title}</span>
+                                <span class="description" data-row-description
+                                    >{row.description}</span
+                                >
+                                {#if ringing === row.terminal}
+                                    <span
+                                        class="bell"
+                                        data-bell
+                                        title={t('sessions.terminal_bell')}
+                                    >
+                                        <Glyph name="bell" />
+                                    </span>
+                                {/if}
+                            </span>
+                        </ToolButton>
+                    </span>
+                    <span class="actions">
+                        <ToolButton
+                            compact
+                            bare
+                            label={t('sessions.terminal_split')}
+                            title={t('sessions.terminal_split_tip')}
+                            glyph="split_right"
+                            tabindex={-1}
+                            onclick={() => split(row)}
+                        />
+                        <ToolButton
+                            compact
+                            bare
+                            label={arming === row.terminal
+                                ? t('sessions.terminal_kill_armed')
+                                : t('sessions.terminal_kill')}
+                            title={arming === row.terminal
+                                ? t('sessions.terminal_kill_armed')
+                                : t('sessions.terminal_kill_tip')}
+                            glyph="trash"
+                            pressed={arming === row.terminal}
+                            tabindex={-1}
+                            onclick={() => kill(row)}
+                        />
+                    </span>
+                </div>
+            </ContextMenu>
+        {/each}
+        {#if dropIndex !== null && dropIndex >= rows.length}
             <span class="mark" aria-hidden="true"></span>
         {/if}
-        <div
-            class="row"
-            class:current={current.includes(row.terminal)}
-            data-terminal-row={row.terminal}
-            data-current={current.includes(row.terminal) || undefined}
-            draggable="true"
-            ondragstart={(event: DragEvent) => dragStart(event, row)}
-            ondragover={(event: DragEvent) => dragOver(event, index)}
-        >
-            <span class="pick">
-                <ToolButton
-                    cell
-                    label={`${row.title} ${row.description}`}
-                    title={tip(row)}
-                    tabindex={row.terminal === stop ? 0 : -1}
-                    stop={row.terminal}
-                    onclick={(event: MouseEvent) => pressed(event, row)}
-                    onkeydown={(event: KeyboardEvent) => keys(event, index)}
-                >
-                    <span class="face">
-                        <Glyph name={kindGlyph(row.kind)} />
-                        <span class="title" data-row-title>{row.title}</span>
-                        <span class="description" data-row-description>{row.description}</span>
-                        {#if ringing === row.terminal}
-                            <span class="bell" data-bell title={t('sessions.terminal_bell')}>
-                                <Glyph name="bell" />
-                            </span>
-                        {/if}
-                    </span>
-                </ToolButton>
-            </span>
-            <span class="actions">
-                <ToolButton
-                    compact
-                    bare
-                    label={t('sessions.terminal_split')}
-                    title={t('sessions.terminal_split_tip')}
-                    glyph="split_right"
-                    tabindex={-1}
-                    onclick={() => split(row)}
-                />
-                <ToolButton
-                    compact
-                    bare
-                    label={arming === row.terminal
-                        ? t('sessions.terminal_kill_armed')
-                        : t('sessions.terminal_kill')}
-                    title={arming === row.terminal
-                        ? t('sessions.terminal_kill_armed')
-                        : t('sessions.terminal_kill_tip')}
-                    glyph="trash"
-                    pressed={arming === row.terminal}
-                    tabindex={-1}
-                    onclick={() => void kill(row)}
-                />
-            </span>
-        </div>
-    {/each}
-    {#if dropIndex !== null && dropIndex >= rows.length}
-        <span class="mark" aria-hidden="true"></span>
-    {/if}
-    {#if failure !== ''}
-        <p class="failure" role="alert">{failure}</p>
-    {/if}
-</div>
+        {#if failure !== ''}
+            <p class="failure" role="alert">{failure}</p>
+        {/if}
+    </div>
+</ContextMenu>
 
 <style>
     .list {
@@ -364,7 +457,8 @@
     }
 
     /* The row's controls are drawn clear, and drawn while the pointer or the keyboard's stop is on
-       the row, so the armed Kill shows while a Delete or Backspace waits for its second press. */
+       the row, or while its Kill is armed, so the armed Kill shows while a Delete, a Backspace or
+       a menu's Kill Terminal waits for its second press. */
     .actions {
         display: flex;
         flex: 0 0 auto;
@@ -372,7 +466,8 @@
     }
 
     .row:hover .actions,
-    .row:focus-within .actions {
+    .row:focus-within .actions,
+    .row.armed .actions {
         opacity: 1;
     }
 

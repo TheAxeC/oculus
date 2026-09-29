@@ -25,7 +25,7 @@
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
-    import Search from '$lib/ui/controls/Search.svelte';
+    import Search from '$lib/ui/controls/text/Search.svelte';
     import Toolbar from '$lib/ui/frame/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Intro from '../../shared/prose/Intro.svelte';

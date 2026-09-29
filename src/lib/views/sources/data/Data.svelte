@@ -16,7 +16,7 @@
     // writes.
 
     import Pane from '$lib/ui/frame/Pane.svelte';
-    import Search from '$lib/ui/controls/Search.svelte';
+    import Search from '$lib/ui/controls/text/Search.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Intro from '../../shared/prose/Intro.svelte';
     import SourceToolbar from '$lib/views/shared/links/SourceToolbar.svelte';

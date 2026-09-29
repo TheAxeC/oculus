@@ -31,6 +31,12 @@
     //
     // The tab's label is the shown terminal's name, kept in its state as a terminal is renamed
     // while it runs.
+    //
+    // The grid's and the list's right-click menus act through this tab: Split Terminal splits it as
+    // a row's Split does, Kill Terminal arms the terminal and kills it on a second pick or press,
+    // as the row's Kill does (terminal-list.ts, `pressKill`), the arm taken off when a terminal
+    // joins or leaves the tab, and Join Terminals is offered the terminals the other Terminal tabs
+    // own, each by its name.
 
     import Composer from './Composer.svelte';
     import TerminalGrid from './TerminalGrid.svelte';
@@ -42,7 +48,10 @@
     import Toolbar from '$lib/ui/frame/Toolbar.svelte';
     import {
         readTab,
+        splitAt,
         splitDrawn,
+        tabTerminals,
+        TERMINAL_VIEW,
         withLabel,
         withShare,
         withStarted,
@@ -50,12 +59,14 @@
         type TerminalTabState
     } from '$lib/state/sessions/terminal/terminal-tabs';
     import { sessionRows, terminalChoices } from '$lib/state/sessions/folds';
+    import { splitState } from '$lib/state/sessions/terminal/composer';
     import { tabsOf } from '$lib/state/workbench/layout';
     import {
         BELL_MS,
         ROW_DRAG,
         gridFontSize,
         listDrawn,
+        pressKill,
         tabRows,
         terminalTip
     } from './terminal-list';
@@ -66,8 +77,8 @@
     const {
         layout: { instanceLayoutState, pages, restateInstance },
         selectors: { sessionsByWorkspace },
-        terminals: { composeInTab, moveTerminal, terminalById, terminals },
-        ui: { setTerminalFont, terminalFont, textScale }
+        terminals: { composeInTab, moveTerminal, stopTerminal, terminalById, terminals },
+        ui: { instanceState, setInstanceState, setTerminalFont, terminalFont, textScale }
     } = useState();
 
     let { instance }: ViewProps = $props();
@@ -92,6 +103,32 @@
         )
     );
 
+    /**
+     * The terminals the other Terminal tabs own, on every page, each by its name: what Join
+     * Terminals on a row offers to move into this tab.
+     */
+    const others = $derived(
+        pages()
+            .flatMap((one) => tabsOf(one.workbench.root))
+            .filter((one) => one.view === TERMINAL_VIEW && one.id !== instance.id)
+            .flatMap((one) => tabTerminals(one.state))
+            .map((id) => terminalById(id))
+            .filter((one): one is NonNullable<typeof one> => one !== null && one.foreign !== true)
+            .map((one) => ({ terminal: one.id, title: one.name }))
+    );
+
+    /**
+     * The terminal whose Kill was pressed or picked once and waits for the second, held here since
+     * the list's Kill and the grid's menu arm and kill the same way; the list takes it off when its
+     * stop moves or focus leaves it (TerminalList.svelte).
+     */
+    let arming = $state('');
+    /**
+     * A kill the server refused, said below the list's rows while the list is drawn and on the bar
+     * otherwise, until the next kill.
+     */
+    let failure = $state('');
+
     /** The terminal whose bell rang in this tab, while its mark shows. */
     let ringing: string | null = $state(null);
     let bellTimer: ReturnType<typeof setTimeout> | null = null;
@@ -112,6 +149,17 @@
         restate(withLabel(tab, live.name));
     });
 
+    // An arm holds only while the tab's terminals stay the same: one joining or leaving takes it
+    // off, so an arm set from the grid of a lone terminal never turns a later Delete on its row
+    // into a kill.
+    let armedAmong = '';
+    $effect(() => {
+        const now = tab.terminals.join(' ');
+        if (now === armedAmong) return;
+        armedAmong = now;
+        arming = '';
+    });
+
     // The bell's mark goes with the tab.
     $effect(() => () => {
         if (bellTimer !== null) clearTimeout(bellTimer);
@@ -121,6 +169,26 @@
     function stepFont(by: number): void {
         const current = gridFontSize(terminalFont(), textScale() ?? 1);
         if (current !== undefined) setTerminalFont(current + by);
+    }
+
+    /**
+     * Split this tab on one of its terminals: that terminal on the left, the composer in its
+     * folder and kind on the right, which the list row's Split and both menus do.
+     */
+    function splitOn(terminal: string): void {
+        const held = terminalById(terminal);
+        if (held === null) return;
+        setInstanceState(instance.id, splitState(held.cwd, held.kind, instanceState(instance.id)));
+        restate(splitAt(tab, terminal));
+    }
+
+    /** A press of a row's Kill, or Kill Terminal from a menu: the first arms, the second kills. */
+    function kill(terminal: string): void {
+        void pressKill(arming, terminal, {
+            arm: (one) => (arming = one),
+            stop: stopTerminal,
+            fail: (error) => (failure = error)
+        });
     }
 
     /** What a start from the composer does: the terminal joins this tab (terminal-tabs.ts). */
@@ -168,6 +236,9 @@
 
 {#snippet tools()}
     <Toolbar label={t('sessions.view_terminal')}>
+        {#if failure !== '' && !listed}
+            <span class="failure" role="alert">{failure}</span>
+        {/if}
         {#if !listed && shownRow !== null}
             <TerminalTitle
                 shown={shownRow}
@@ -203,7 +274,15 @@
 {/snippet}
 
 {#snippet grid(id: string)}
-    <TerminalGrid {id} {focusing} onfocused={() => (focusing = null)} onbell={ring} />
+    <TerminalGrid
+        {id}
+        {focusing}
+        onfocused={() => (focusing = null)}
+        onbell={ring}
+        onsplit={splitOn}
+        armed={arming === id}
+        onkill={kill}
+    />
 {/snippet}
 
 <Pane title={t('sessions.view_terminal')} toolbar={tools} tinted>
@@ -254,7 +333,13 @@
                 {rows}
                 {current}
                 {ringing}
+                {others}
                 onshown={(one: string) => (focusing = one)}
+                onsplit={splitOn}
+                {arming}
+                {failure}
+                onkill={kill}
+                ondisarm={() => (arming = '')}
             />
         {/if}
     </div>
@@ -281,6 +366,12 @@
         display: flex;
         min-width: 0;
         min-height: 0;
+    }
+
+    /* A refused Kill Terminal from a menu, on the bar. */
+    .failure {
+        color: var(--c-red-txt, var(--ink));
+        font-size: var(--fs-xs);
     }
 
     .start {

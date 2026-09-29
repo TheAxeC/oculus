@@ -43,6 +43,10 @@ text:
         pane_more_glyph: more
         pane_restore: Restore panes
         preview_tab: 'The next single click replaces this tab; double-click to keep it.'
+        prose_copy: Copy
+        prose_copy_image: Copy Image
+        prose_menu: Document
+        prose_open_image: Open Image
         rail: Pages
         rail_hide: Hide
         rail_reset: Reset to its arrangement
@@ -52,10 +56,23 @@ text:
         split_down: Split tab downwards
         split_right: Split tab to the right
         split_right_glyph: split_right
+        strip_close: Close
+        strip_new_terminal: New Terminal
+        strip_open_file: Open File...
+        strip_split_down: Split Down
+        strip_split_left: Split Left
+        strip_split_right: Split Right
+        strip_split_up: Split Up
         tab_close_dirty: Close this tab and lose its unsaved changes?
         tab_unsaved: '{0}, unsaved'
         tabs_scroll_left: Scroll tabs left
         tabs_scroll_right: Scroll tabs right
+        text_copy: Copy
+        text_cut: Cut
+        text_paste: Paste
+        text_redo: Redo
+        text_select_all: Select All
+        text_undo: Undo
         theme: Theme
         theme_glyph: darkmode
         unknown_view: 'Unknown view: {0}'

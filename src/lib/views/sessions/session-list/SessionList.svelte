@@ -28,7 +28,7 @@
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Menu from '$lib/ui/menu/Menu.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
-    import Search from '$lib/ui/controls/Search.svelte';
+    import Search from '$lib/ui/controls/text/Search.svelte';
     import Toolbar from '$lib/ui/frame/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import type { GroupedSession } from '$lib/state/client/selectors.svelte';

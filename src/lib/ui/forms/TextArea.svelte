@@ -1,6 +1,13 @@
 <script lang="ts">
     // Layer 3, primitive. Several lines of text: the prose fields, and the list fields that are one
     // item per line. Like every control here it holds nothing of its own.
+    //
+    // A right-click on the box opens its editing menu (TextBoxMenu.svelte), read from the box as
+    // the right-click arrives; the menu is the box's own, so a menu of a row or a view around it
+    // does not open over it.
+
+    import TextBoxMenu from '../controls/text/TextBoxMenu.svelte';
+    import { boxValue } from '../controls/text/text-menu';
 
     type Props = {
         value: string;
@@ -43,25 +50,30 @@
         placeholder
     }: Props = $props();
 
+    let box: HTMLTextAreaElement | null = $state(null);
+
     function typed(event: Event): void {
-        const field = event.currentTarget;
-        if (field instanceof HTMLTextAreaElement) oninput(field.value);
+        const typedValue = boxValue(event);
+        if (typedValue !== null) oninput(typedValue);
     }
 </script>
 
-<textarea
-    class="area"
-    class:bare
-    class:code
-    wrap={code ? 'off' : undefined}
-    {rows}
-    aria-label={label}
-    {placeholder}
-    {value}
-    readonly={readOnly}
-    {spellcheck}
-    oninput={typed}
-    {onkeydown}></textarea>
+<TextBoxMenu {label} box={() => box}>
+    <textarea
+        class="area"
+        class:bare
+        class:code
+        wrap={code ? 'off' : undefined}
+        {rows}
+        aria-label={label}
+        {placeholder}
+        {value}
+        readonly={readOnly}
+        {spellcheck}
+        oninput={typed}
+        {onkeydown}
+        bind:this={box}></textarea>
+</TextBoxMenu>
 
 <style>
     .area {

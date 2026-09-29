@@ -131,3 +131,87 @@ Cases of the brief's "Cases":
 - Touch long-press on a bits-ui context trigger opens the menu without `pointed` (stale or empty `read` items). This was not judged, since oculus runs on a desktop pointer.
 
 Reviewer usage: 68 tool uses, 286k tokens, 13 min (from the completion notice). One stray file outside the reviewer's scratch folder, `/tmp/q88-gm.bak`, was created during a revert run and deleted in the same run.
+
+# Repair round 1, refuted
+
+Worktree `.agents/worktrees/Q88`, base 2a72d052, the round's delta read against the whole diff since the base. The reviewer changed nothing; its logs are in `.scratch-refute-r1/` at the worktree root.
+
+## Verification lines (verbatim)
+
+From the worktree's `tools/oculus`: `PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH sh ~/.claude/skills/land/templates/checks.sh /Users/axelfaes/workspace/research-hub/tools/oculus/.scratch/migration/orchestrator-state.md </dev/null`
+
+```
+$ npm test
+ Test Files  366 passed (366)
+      Tests  5791 passed | 1 skipped (5792)
+$ npm run check
+1790695731329 COMPLETED 2066 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+$ npm run build
+built in 4.08s
+built in 10.73s
+$ npm run format:check
+All matched files use Prettier code style!
+$ npm run lint
+$ ! LC_ALL=C grep -rna '[^ -~]' src tests
+checks: 6 commands passed
+exit 0
+```
+
+`grep -c "timed out" .scratch-refute-r1/checks.log` 0; `bash bin/folder-check.sh` exit 0; the perl ASCII gate over `src tests bin config` plus HELP.md and DESIGN.md prints nothing; `npm run diagrams` on a copy exits 0 and `diff -r` of its `docs/diagrams` against the worktree's prints nothing; `wc -l` matches the report for every file it counts (Terminal.svelte 372, TerminalGrid.svelte 320, TerminalList.svelte 479, terminal-list.ts 329, shell.ts 32, repositories.svelte.ts 364, row-menu.ts 194, Graph.svelte 447, HELP.md 297).
+
+The builder's reverts, rerun on a copy (each file restored, `diff` against the worktree empty):
+
+| Revert | Result | Matches |
+|---|---|---|
+| `pressKill` stops on the first pick | Failed Tests 3, "expected [ 'arm:', 'stop:aaaaaa-shell' ] to deeply equal [ 'arm:aaaaaa-shell' ]" | yes |
+| `killItem` always `sessions.menu_kill` | Tests 1 failed / 12 passed (13) | yes |
+| `askTagDelete` deletes before and outside the ask | Tests 2 failed / 15 passed (17) | yes |
+| `rowPicker.shell` keeps its own body | Tests 1 failed / 13 passed (14) | yes |
+| `shellIn` keeps its own body | Tests 1 failed / 47 passed (48) | yes |
+
+## Verdicts over the whole diff since the base
+
+Items: 1 holds; 2 holds (Open in Integrated Terminal through `openShell`, `row-menu.ts:173`); 3 holds (a name with no items is a bare span, `Graph.svelte:226-238`); 4 holds; 5 violated (Behaviour 1: Kill Terminal from a row's menu cannot kill; the grid's Kill, the row's control, Delete/Backspace, Paste, Copy, Select All, Split, Unsplit, Join, New and New With Profile hold); 6 holds (the spelling menu's loss stated, open item Z53); 7 holds (the armed label reuses `sessions.terminal_kill_armed`); 8 holds, with Standards 1 on one clause of the Terminal row.
+
+Cases: 1 to 17 met (6 and 17 as ruled; 16 for what a unit test reaches, the separator drawn and skipped by the keys left to the look).
+
+## Findings
+
+### Spec
+
+None.
+
+### Proof
+
+None. Every closure the round claims reproduced. Noted, not a finding: no unit test turns red if `Terminal.svelte`'s `kill` calls `stopTerminal` directly instead of `pressKill`; that wiring is seen at the look.
+
+### Standards
+
+1. `HELP.md`, the Terminal row: "Kill Terminal (picked twice, as Kill is pressed twice: the first pick arms the row's Kill and the item then reads "Press again to kill this terminal")". A tab with one terminal draws no list (`listDrawn(1, false)` is false, `terminal-list.ts:81-83`), so there is no row whose Kill is armed; and the row-menu half is false by Behaviour 1. `Terminal.svelte`'s head comment ("Kill Terminal arms the terminal and kills it on a second pick or press, as the row's Kill does") is false for the row menu for the same reason. Failure scenario: a reader in a one-terminal tab looks for an armed control on a row that is not drawn; in a listed tab, picking Kill Terminal twice from a row's menu leaves the terminal running.
+
+### Behaviour
+
+1. `TerminalList.svelte:207-211` (`left`, the list's focus-out) with the row's reactive `items` (`terminalRowMenu(tab, row.terminal, others, arming === row.terminal, t)`). bits-ui moves the focus into the menu content one frame after it opens (`focus-scope.svelte.js`, `#handleOpenAutoFocus`); the content is portalled to the body, outside the list, and `ContextMenu.svelte` does not override `onOpenAutoFocus`. So a row menu opened while the focus is in the list fires `left` with a target outside it, which disarms; the row's items are reactive, so the item falls back to "Kill Terminal", and a pick calls `pressKill('', terminal)`, which arms again. After the first pick `menuClosing`'s `onCloseAutoFocus` (`menu-items.ts:129-133`) returns the focus to the row's button, so every later opening starts inside the list. Failure scenario: two shells in a tab; right-click row B, pick Kill Terminal: B armed, focus back on B's row; right-click B again: the focus leaves the list, `left` disarms, the item reads "Kill Terminal", the pick arms again, B is never killed, by pointer or Shift+F10. The grid's menu is not affected (its origin is xterm's textarea and it reads its items at the right-click); Delete/Backspace on a row still arms first. Derived by reading, not run in a browser. Makes item 5 violated.
+2. `Terminal.svelte`, `let arming = $state('')` with `kill` through `pressKill`: an arm set from the grid's menu is removed only by the list (the keyboard's stop moving off the row, or the focus leaving the list). In a one-terminal tab there is no list, so a grid arm stays set; when a second terminal later mounts the list, its `$effect` computes `stop` as the shown terminal, usually the armed one, `armKept` is true, the row's Kill shows armed and a single Delete or Backspace kills it. Failure scenario: the reader picks Kill Terminal once from a lone Claude session's grid and dismisses the menu; later starts a shell in the tab, moves to the Claude row with the keyboard and presses Delete expecting an arm; the session is killed at once. Derived by reading. No verdict: a new state the lifted arm creates.
+
+## Declined to judge
+
+- Everything that needs a DOM (menus opening, focus returning, the bare span letting the right-click through, Behaviours 1 and 2 on screen): the landing's look on TEST.
+- `openShell` in `state/shared/stores/`: the builder's reason (a failure in `tests/checks/imports/order.test.ts`) not rerun; the folder holds 3 items and the head comment gives the reason.
+- `vi.mock(...)` between import lines in `repositories.test.ts`: hoisted by vitest, style only.
+- The first review's Spec 2 and Standards 2 (the first-run record, the scratch folders at the worktree root): the orchestrator's at landing.
+
+Reviewer usage: 41 tool uses, 184k tokens, 7 min (from the completion notice).
+
+# Closed
+
+- First review, Spec 1 (Kill Terminal from a menu without arming): closed in repair round 1 (`pressKill`), and at landing for the row menu (fix 1).
+- First review, Spec 2 (the first-run record): closed at landing, `agents/reviews/Q88-first-run.txt` saved from the builder's log; the four new modules absent at base (`git cat-file -e 2a72d052:<path>` exits 1).
+- First review, Proof 1 (the tag-delete test green under its revert): closed in repair round 1; the round-1 reviewer's rerun of the revert: 2 failed.
+- First review, Proof 2 and Behaviour 1 (a busy name opens no menu): closed in repair round 1, the bare span in `Graph.svelte`.
+- First review, Standards 1 (the shell body twice): closed in repair round 1, `openShell` in `state/shared/stores/shell.ts`.
+- First review, Standards 2 (scratch folders at the worktree root): closed at landing, the three folders removed before the add.
+- First review, Behaviour 2 (the spelling menu's loss): raised as Z53, ruled (b) by Axel, no code change.
+- Round 1, Standards 1 (HELP.md's Terminal row and the head comment): fixed at landing (fix 3).
+- Round 1, Behaviour 1 (the row menu's Kill never kills): fixed at landing (fix 1), `left` keeps the arm when the focus moves into a menu, and the row's items are read at the right-click.
+- Round 1, Behaviour 2 (a grid arm surviving into a listed tab): fixed at landing (fix 2), the arm taken off when the tab's terminals change.

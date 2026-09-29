@@ -14,8 +14,14 @@
     // The checkout itself is not a row: it is not a worktree to remove, to merge back, or to open a
     // diff of. The merge back is offered only while the repository has a branch checked out, since
     // a detached HEAD has nothing to merge into.
+    //
+    // A worktree row opens a right-click menu (menus/repo-menu.ts) of its shell and Delete
+    // Worktree, which run the row's own terminal and removal controls, the removal behind its
+    // question.
 
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
+    import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
+    import { REPO_TERMINAL, WORKTREE_DELETE, worktreeMenu } from './menus/repo-menu';
     import TreeSection from '$lib/ui/tree/TreeSection.svelte';
     import type { TreeNav } from '$lib/ui/tree/tree-keys';
     import TextInput from '$lib/ui/forms/TextInput.svelte';
@@ -69,6 +75,12 @@
         oncreate(wanted);
     }
 
+    /** A pick from a worktree row's menu: what the row's own control of that name does. */
+    function picked(path: string, label: string, pick: string): void {
+        if (pick === REPO_TERMINAL) onterminal(path, label);
+        else if (pick === WORKTREE_DELETE) onremove(path, label);
+    }
+
     function diff(path: string, label: string): void {
         ondiff({ root, path, staged: false, worktree: true }, label);
     }
@@ -96,57 +108,63 @@
         {#each others as tree (tree.path)}
             {@const label = worktreeLabel(root, tree.path)}
             <li role="none" data-entry={tree.path}>
-                <TreeItem
+                <ContextMenu
                     {label}
-                    id={`worktree:${tree.path}`}
-                    {nav}
-                    level={2}
-                    glyph="worktree"
-                    title={tree.path}
-                    onclick={() => diff(tree.path, label)}
+                    items={worktreeMenu(busy, t)}
+                    onpick={(pick: string) => picked(tree.path, label, pick)}
                 >
-                    {#snippet detail()}
-                        {tree.branch === '' ? t('repositories.worktree_detached') : tree.branch}
-                    {/snippet}
-                    {#snippet actions(reach: number)}
-                        <ToolButton
-                            label={t('repositories.diff')}
-                            title={t('repositories.diff_worktree_title')}
-                            glyph="diff"
-                            compact
-                            tabindex={reach}
-                            onclick={() => diff(tree.path, label)}
-                        />
-                        <ToolButton
-                            label={t('repositories.terminal')}
-                            title={t('repositories.terminal_title')}
-                            glyph="terminal"
-                            compact
-                            tabindex={reach}
-                            onclick={() => onterminal(tree.path, label)}
-                        />
-                        <ToolButton
-                            label={t('repositories.merge')}
-                            title={git.detached
-                                ? t('repositories.merge_detached')
-                                : t('repositories.merge_title')}
-                            glyph="merge"
-                            compact
-                            tabindex={reach}
-                            disabled={busy || tree.branch === '' || git.detached}
-                            onclick={() => onmerge(tree.branch, git.branch)}
-                        />
-                        <ToolButton
-                            label={t('repositories.remove')}
-                            title={t('repositories.remove_title')}
-                            glyph="trash"
-                            compact
-                            tabindex={reach}
-                            disabled={busy}
-                            onclick={() => onremove(tree.path, label)}
-                        />
-                    {/snippet}
-                </TreeItem>
+                    <TreeItem
+                        {label}
+                        id={`worktree:${tree.path}`}
+                        {nav}
+                        level={2}
+                        glyph="worktree"
+                        title={tree.path}
+                        onclick={() => diff(tree.path, label)}
+                    >
+                        {#snippet detail()}
+                            {tree.branch === '' ? t('repositories.worktree_detached') : tree.branch}
+                        {/snippet}
+                        {#snippet actions(reach: number)}
+                            <ToolButton
+                                label={t('repositories.diff')}
+                                title={t('repositories.diff_worktree_title')}
+                                glyph="diff"
+                                compact
+                                tabindex={reach}
+                                onclick={() => diff(tree.path, label)}
+                            />
+                            <ToolButton
+                                label={t('repositories.terminal')}
+                                title={t('repositories.terminal_title')}
+                                glyph="terminal"
+                                compact
+                                tabindex={reach}
+                                onclick={() => onterminal(tree.path, label)}
+                            />
+                            <ToolButton
+                                label={t('repositories.merge')}
+                                title={git.detached
+                                    ? t('repositories.merge_detached')
+                                    : t('repositories.merge_title')}
+                                glyph="merge"
+                                compact
+                                tabindex={reach}
+                                disabled={busy || tree.branch === '' || git.detached}
+                                onclick={() => onmerge(tree.branch, git.branch)}
+                            />
+                            <ToolButton
+                                label={t('repositories.remove')}
+                                title={t('repositories.remove_title')}
+                                glyph="trash"
+                                compact
+                                tabindex={reach}
+                                disabled={busy}
+                                onclick={() => onremove(tree.path, label)}
+                            />
+                        {/snippet}
+                    </TreeItem>
+                </ContextMenu>
             </li>
         {/each}
         <li role="none" data-form="worktree">

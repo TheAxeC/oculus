@@ -21,7 +21,7 @@ export const HELD: Styling[] = [
         why: 'the rule at src/lib/views/boards/collection/Collection.svelte:403 reaches into the primitive rather than asking it for the difference'
     },
     {
-        line: 'views/sources/data/Data.svelte styles .search of ui/controls/Search.svelte through .controls :global(.search)',
+        line: 'views/sources/data/Data.svelte styles .search of ui/controls/text/Search.svelte through .controls :global(.search)',
         why: 'the rule at src/lib/views/sources/data/Data.svelte:190 reaches into the primitive rather than asking it for the difference'
     },
     {
@@ -101,8 +101,8 @@ export const HELD: Styling[] = [
         why: 'the rule at src/lib/views/shared/links/CrossLinks.svelte:142 reaches into the primitive rather than asking it for the difference'
     },
     {
-        line: 'views/shared/forms/NewIdeaForm.svelte styles .text of ui/display/Meter.svelte, ui/forms/TextInput.svelte, ui/tree/TreeItem.svelte through .form > :global(.text)',
-        why: 'the rule at src/lib/views/shared/forms/NewIdeaForm.svelte:105 reaches into the primitive rather than asking it for the difference'
+        line: 'views/shared/forms/NewIdeaForm.svelte styles .text of ui/display/Meter.svelte, ui/forms/TextInput.svelte, ui/tree/TreeItem.svelte through .form :global(.text)',
+        why: 'the rule at src/lib/views/shared/forms/NewIdeaForm.svelte:110 reaches into the primitive rather than asking it for the difference'
     },
     {
         line: 'views/shared/card/ProjectCard.svelte styles .bar of ui/frame/Card.svelte through .slot > :global(.card > .bar)',

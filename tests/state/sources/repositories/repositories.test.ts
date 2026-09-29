@@ -6,6 +6,10 @@
 // is tests/routes/git/git.test.ts and tests/server/git/git-write.test.ts.
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { openShell } from '../../../../src/lib/state/shared/stores/shell.ts';
+
+// The one start-and-show path of a shell, watched so a case sees the store reach it.
+vi.mock('../../../../src/lib/state/shared/stores/shell.ts', { spy: true });
 import type { GitEntry, GitState } from '../../../../src/lib/data/model/index.ts';
 import { git } from '../../../fixtures/sessions-fixture.ts';
 import {
@@ -552,6 +556,16 @@ describe('what a press leaves behind', () => {
         expect(shells).toEqual([]);
         expect(shown).toEqual([]);
         expect(store.outcome(ROOT)).toBe('git said no');
+    });
+
+    // Revert: start and show the shell in shellIn with its own copy of openShell's body.
+    it('starts the shell through the one start-and-show path', async () => {
+        const path = plannedPath(ROOT, 'package-one');
+        const { store } = harness();
+        vi.mocked(openShell).mockClear();
+        await store.shellIn(ROOT, path, 'package-one');
+        expect(vi.mocked(openShell)).toHaveBeenCalledTimes(1);
+        expect(vi.mocked(openShell).mock.calls[0].slice(1)).toEqual([path, 'package-one']);
     });
 
     it('keeps the write sentence and says the terminal failure after it', async () => {

@@ -219,7 +219,7 @@ describe('an empty scan', () => {
 describe('the view as it is written', () => {
     it('draws a card with the primitive and filters with the search primitive', () => {
         expect(source).toContain("import Card from '$lib/ui/frame/Card.svelte'");
-        expect(source).toContain("import Search from '$lib/ui/controls/Search.svelte'");
+        expect(source).toContain("import Search from '$lib/ui/controls/text/Search.svelte'");
         expect(source).not.toMatch(/<input\b/);
         expect(source).not.toMatch(/<button\b/);
     });

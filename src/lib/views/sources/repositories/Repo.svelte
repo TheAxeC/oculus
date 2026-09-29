@@ -17,14 +17,16 @@
     // whatever failed.
     //
     // The sections press through the Source Control store themselves; what asks first is asked in
-    // the view's dialog, handed in as `ask`. Which sections are closed and which commit of the
-    // graph is open are the view's instance state, handed in, so both survive a tab switch.
+    // the view's dialog, handed in as `ask`. The graph's menus check a branch out through the
+    // view's switch and delete a tag through the Tags section's question. Which sections are closed
+    // and which commit of the graph is open are the view's instance state, handed in, so both
+    // survive a tab switch.
 
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
     import TreeView from '$lib/ui/tree/TreeView.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import type { KeyRow, TreeNav } from '$lib/ui/tree/tree-keys';
-    import Branches from './Branches.svelte';
+    import Branches from './refs/Branches.svelte';
     import Changes from './Changes.svelte';
     import Worktrees from './Worktrees.svelte';
     import Graph from './graph/Graph.svelte';
@@ -41,6 +43,7 @@
     import { t } from '$lib/state/shared/words/text';
     import { branchState } from '$lib/views/shared/changes/branch-state';
     import { useState } from '$lib/state/client/use';
+    import { askTagDelete } from './menus/graph-menu';
 
     type Props = {
         root: string;
@@ -101,6 +104,15 @@
         ask(t('repositories.abort_confirm'), t('repositories.abort_detail'), () => {
             void repositories.abortMerge(root);
         });
+    }
+
+    /** Delete a tag named on a graph commit, through the Tags section's question. */
+    function deleteTag(name: string): void {
+        askTagDelete(
+            name,
+            { ask, deleteTag: (tag: string) => void repositories.deleteTag(root, tag) },
+            t
+        );
     }
 
     function carryOn(): void {
@@ -171,6 +183,9 @@
                     {commit}
                     onpick={oncommit}
                     onrows={(rows: KeyRow[]) => (graphRows = rows)}
+                    {busy}
+                    {onswitch}
+                    ondeletetag={deleteTag}
                 />
 
                 <Stashes

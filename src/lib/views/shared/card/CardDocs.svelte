@@ -15,7 +15,7 @@
 
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
-    import Search from '$lib/ui/controls/Search.svelte';
+    import Search from '$lib/ui/controls/text/Search.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { humanSize, type BoardItem } from '$lib/state/boards/board';
     import { opensInProgram } from '$lib/state/sources/fs';

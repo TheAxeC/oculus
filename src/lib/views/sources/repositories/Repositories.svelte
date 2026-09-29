@@ -38,6 +38,10 @@
     // The state is the channel's, pushed, so nothing here polls: a commit made in a terminal moves
     // the sections within the watcher's two seconds. A diff, a page of the graph and a commit's
     // files are text rather than state and are read when a pane or a section asks for them.
+    //
+    // A repository row's right-click menu starts a shell in the repository through the store, as a
+    // worktree's terminal control does, and reveals its folder in Finder through the open endpoint;
+    // a reveal Finder refused is said on one line over the list until the next one.
 
     import AskConfirm from '$lib/views/shared/AskConfirm.svelte';
     import type { Ask } from '$lib/views/shared/ask';
@@ -70,7 +74,8 @@
     const {
         repositories,
         selectors: { gitFor, gitRoots },
-        ui: { instanceState, setInstanceState }
+        ui: { instanceState, setInstanceState },
+        writes: { openFolder }
     } = useState();
 
     let { instance }: ViewProps = $props();
@@ -83,6 +88,10 @@
     const readable = $derived(held !== null && repoShape(shown, held) === 'readable');
     let asking: Ask | null = $state(null);
     let prompting: PromptRequest | null = $state(null);
+    /** What the last reveal of a repository's folder was refused with, or the empty string. */
+    let refused = $state('');
+    /** The reveals asked so far, so an answer a later one superseded is dropped. */
+    let reveals = 0;
 
     /** Write part of what this instance remembers, keeping the rest of it as it was. */
     function patch(part: Partial<RepositoriesView>): void {
@@ -248,6 +257,15 @@
         });
     }
 
+    async function reveal(root: string): Promise<void> {
+        reveals += 1;
+        const mine = reveals;
+        refused = '';
+        const answer = await openFolder(root);
+        if (mine !== reveals || answer.ok) return;
+        refused = t('repositories.reveal_failed', answer.error ?? '');
+    }
+
     function mergeBack(root: string, branch: string, onto: string): void {
         ask(t('repositories.merge_confirm', branch, onto), t('repositories.merge_detail'), () => {
             void repositories.merge(root, branch);
@@ -280,6 +298,9 @@
         {#if roots.length === 0}
             <Empty message={t('repositories.empty')} glyph={t('repositories.empty_glyph')} />
         {:else}
+            {#if refused !== ''}
+                <p class="refused" role="alert">{refused}</p>
+            {/if}
             <RepoList
                 {roots}
                 {labels}
@@ -288,6 +309,9 @@
                 collapsed={view.collapsed}
                 ontoggle={(id: string) => patch({ collapsed: toggleExpanded(view.collapsed, id) })}
                 onpick={(root: string) => patch({ root, commit: '' })}
+                onterminal={(root: string) =>
+                    void repositories.shellIn(root, root, labels[root] ?? root)}
+                onreveal={(root: string) => void reveal(root)}
             />
             {#if held !== null}
                 {#key shown}
@@ -326,6 +350,12 @@
 {/if}
 
 <style>
+    .refused {
+        margin: 0;
+        color: var(--c-red-txt);
+        font-size: var(--fs-sm);
+    }
+
     .repos {
         display: flex;
         flex-direction: column;

@@ -6,9 +6,13 @@
     // marked, fifty at a time with a Load More row after them.
     //
     // Pressing a commit opens its changed files under it, each of which opens that commit's diff of
-    // the file; a commit's own menu copies its id or its message. The commit whose files are open
-    // is the view's instance state, so the blame of the source tab can open a commit here: one the
-    // loaded pages do not reach is drawn above them, with its files, rather than paged for.
+    // the file. A commit's menu (menus/graph-menu.ts), opened by a right-click on the commit or by
+    // its "more" control, opens its files, copies its id or its message, checks out a local branch
+    // named on it and deletes a tag on it, each through the question the Branches or Tags section
+    // asks. A right-click on a local branch or a tag name opens that name's own menu. The commit
+    // whose files are open is the view's instance state, so the blame of the source tab can open a
+    // commit here: one the loaded pages do not reach is drawn above them, with its files, rather
+    // than paged for.
     //
     // The history is not on the `git` channel, which carries twenty commits for a glance: it is
     // read from GET /api/git a page at a time, again from the first page whenever the branch's
@@ -29,6 +33,9 @@
     import TreeSection from '$lib/ui/tree/TreeSection.svelte';
     import VirtualRows from '$lib/ui/tree/VirtualRows.svelte';
     import Menu from '$lib/ui/menu/Menu.svelte';
+    import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
+    import type { MenuItem } from '$lib/ui/menu/menu-items';
+    import { commitMenu, graphPick, refKind, refMenu, type BranchFacts } from '../menus/graph-menu';
     import type { KeyRow, TreeNav } from '$lib/ui/tree/tree-keys';
     import type { Attachment } from 'svelte/attachments';
     import Lanes from './Lanes.svelte';
@@ -55,9 +62,27 @@
         onpick: (hash: string) => void;
         /** Handed the rows drawn under the section, in order, for the keyboard. */
         onrows: (rows: KeyRow[]) => void;
+        /** Whether a write is in flight on the repository, which offers no checkout or removal. */
+        busy: boolean;
+        /** Check a local branch out, through the Branches section's question. */
+        onswitch: (name: string) => void;
+        /** Delete a tag, through the Tags section's question. */
+        ondeletetag: (name: string) => void;
     };
 
-    let { root, git, nav, open, ontoggle, commit, onpick, onrows }: Props = $props();
+    let {
+        root,
+        git,
+        nav,
+        open,
+        ontoggle,
+        commit,
+        onpick,
+        onrows,
+        busy,
+        onswitch,
+        ondeletetag
+    }: Props = $props();
 
     let commits: GitGraphCommit[] = $state([]);
     let incoming: GitGraphCommit[] = $state([]);
@@ -175,16 +200,42 @@
         }
     }
 
-    /** A commit's menu: its id or its whole message to the clipboard. */
-    function copied(one: GitGraphCommit, id: string): void {
-        void navigator.clipboard.writeText(id === 'id' ? one.hash : one.message);
+    /** The local branches a name on a commit is read against. */
+    const branches = $derived<BranchFacts>({
+        local: git.branches.map((branch) => branch.name),
+        current: git.detached ? '' : git.branch
+    });
+
+    /** A commit's menu, the same for its right-click and its "more" control. */
+    function menuOf(one: GitGraphCommit): MenuItem[] {
+        return commitMenu(one, branches, busy, t);
     }
 
-    const menu = [
-        { id: 'id', label: t('repositories.copy_id') },
-        { id: 'message', label: t('repositories.copy_message') }
-    ];
+    /** A pick from a commit's menu or from a name's on it. */
+    function picked(one: GitGraphCommit, id: string): void {
+        const pick = graphPick(id);
+        if (pick === null) return;
+        if (pick.kind === 'open') onpick(one.hash);
+        else if (pick.kind === 'copy-id') void navigator.clipboard.writeText(one.hash);
+        else if (pick.kind === 'copy-message') void navigator.clipboard.writeText(one.message);
+        else if (pick.kind === 'checkout') onswitch(pick.name);
+        else ondeletetag(pick.name);
+    }
 </script>
+
+<!-- A name's own menu, which keeps its right-click from the commit's while it offers an item; a
+     name offering none (a write in flight) is drawn with no menu of its own, so its right-click
+     reaches the commit's menu. -->
+{#snippet named(one: GitGraphCommit, name: string, kind: 'branch' | 'tag')}
+    {@const items = refMenu(name, kind, busy, t)}
+    {#if items.length > 0}
+        <ContextMenu label={name} {items} own onpick={(id: string) => picked(one, id)}>
+            <span class="ref" class:tag={kind === 'tag'}>{name}</span>
+        </ContextMenu>
+    {:else}
+        <span class="ref" class:tag={kind === 'tag'}>{name}</span>
+    {/if}
+{/snippet}
 
 {#snippet row(one: GitGraphCommit, id: string, drawn: number)}
     <li role="none" class="commit" data-commit={one.hash}>
@@ -192,42 +243,59 @@
             <Lanes row={lanes[drawn]} head={one.head} />
         {/if}
         <div class="item">
-            <TreeItem
+            <ContextMenu
                 label={one.subject}
-                {id}
-                {nav}
-                level={2}
-                current={one.head}
-                expanded={commit === one.hash}
-                title={t('repositories.commit_title', one.short, one.author, one.when.slice(0, 10))}
-                onclick={() => onpick(commit === one.hash ? '' : one.hash)}
+                items={menuOf(one)}
+                onpick={(id: string) => picked(one, id)}
             >
-                {#snippet detail()}
-                    {#each one.refs as name (name)}
-                        <span class="ref">{name}</span>
-                    {/each}
-                    {#each one.tags as name (name)}
-                        <span class="ref tag">{name}</span>
-                    {/each}
-                    <span class="hash">{one.short}</span>
-                {/snippet}
-                {#snippet actions(reach: number)}
-                    <Menu
-                        label={t('repositories.commit_menu')}
-                        glyph="more"
-                        compact
-                        bare
-                        tabindex={reach}
-                        placement="down"
-                        align="right"
-                        items={menu}
-                        onpick={(picked: string) => copied(one, picked)}
-                    />
-                {/snippet}
-                {#snippet end()}
-                    {stamp(one.when)}
-                {/snippet}
-            </TreeItem>
+                <TreeItem
+                    label={one.subject}
+                    {id}
+                    {nav}
+                    level={2}
+                    current={one.head}
+                    expanded={commit === one.hash}
+                    title={t(
+                        'repositories.commit_title',
+                        one.short,
+                        one.author,
+                        one.when.slice(0, 10)
+                    )}
+                    onclick={() => onpick(commit === one.hash ? '' : one.hash)}
+                >
+                    {#snippet detail()}
+                        {#each one.refs as name (name)}
+                            {#if refKind(name, branches) === 'branch'}
+                                <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                                {@render named(one, name, 'branch')}
+                            {:else}
+                                <span class="ref">{name}</span>
+                            {/if}
+                        {/each}
+                        {#each one.tags as name (name)}
+                            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                            {@render named(one, name, 'tag')}
+                        {/each}
+                        <span class="hash">{one.short}</span>
+                    {/snippet}
+                    {#snippet actions(reach: number)}
+                        <Menu
+                            label={t('repositories.commit_menu')}
+                            glyph="more"
+                            compact
+                            bare
+                            tabindex={reach}
+                            placement="down"
+                            align="right"
+                            items={menuOf(one)}
+                            onpick={(id: string) => picked(one, id)}
+                        />
+                    {/snippet}
+                    {#snippet end()}
+                        {stamp(one.when)}
+                    {/snippet}
+                </TreeItem>
+            </ContextMenu>
         </div>
     </li>
     {#if commit === one.hash}

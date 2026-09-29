@@ -11,6 +11,7 @@
     import { t } from '$lib/state/shared/words/text';
     import type { RefSectionProps } from './section';
     import { useState } from '$lib/state/client/use';
+    import { askTagDelete } from '../menus/graph-menu';
 
     let { root, git, nav, open, ontoggle, ask }: RefSectionProps = $props();
 
@@ -19,12 +20,10 @@
     const busy = $derived(repositories.busy(root));
 
     function remove(tag: GitTag): void {
-        ask(
-            t('repositories.tag_delete_confirm', tag.name),
-            t('repositories.tag_delete_detail'),
-            () => {
-                void repositories.deleteTag(root, tag.name);
-            }
+        askTagDelete(
+            tag.name,
+            { ask, deleteTag: (name: string) => void repositories.deleteTag(root, name) },
+            t
         );
     }
 </script>

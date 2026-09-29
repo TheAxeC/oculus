@@ -1,6 +1,7 @@
-// Layer 3, primitive. The menu's contract: what one choice holds, and how choices fall under
-// headings. Apart from the components so a caller builds its choices without importing one. Beside
-// it, how the two openers' lists close: Menu.svelte's and ContextMenu.svelte's, on bits-ui.
+// Layer 3, primitive. The menu's contract: what one choice holds, how choices fall under
+// headings, and where a rule is drawn between VS Code's groups. Apart from the components so a
+// caller builds its choices without importing one. Beside it, how the two openers' lists close:
+// Menu.svelte's and ContextMenu.svelte's, on bits-ui.
 
 import { focusQuietly } from '../frame/quiet-focus';
 
@@ -32,7 +33,30 @@ export type MenuItem = {
      * the caller is told of.
      */
     items?: MenuItem[];
+    /**
+     * Draw a rule above this choice, as VS Code draws a line between its menu groups. The list's
+     * first choice draws none, so a rule is never the list's first or last line.
+     */
+    rule?: boolean;
 };
+
+/** Whether the choice at `index` draws a rule above it: it asks for one and is not the first. */
+export function ruleAbove(items: readonly MenuItem[], index: number): boolean {
+    return index > 0 && items[index]?.rule === true;
+}
+
+/**
+ * One list out of VS Code's groups of a menu: the empty groups dropped, and the first choice of
+ * every group after the first drawing the rule above it. A builder lists its groups and leaves out
+ * the choices the state it is built for does not offer, and the rules follow.
+ */
+export function grouped(groups: readonly (readonly MenuItem[])[]): MenuItem[] {
+    return groups
+        .filter((group) => group.length > 0)
+        .flatMap((group, at) =>
+            group.map((item, index) => (at > 0 && index === 0 ? { ...item, rule: true } : item))
+        );
+}
 
 /**
  * One headed run of choices, for a list whose choices fall under several headings (the board's one

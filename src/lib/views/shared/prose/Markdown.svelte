@@ -11,8 +11,19 @@
     //
     // A press on a link to a fragment is handled inside the view by jump.ts, never through the
     // address.
+    //
+    // A right-click on the document opens the prose menu (prose-menu.ts), read as the right-click
+    // arrives: Copy over a selection, Copy Image over an image, and Open Image over an image the
+    // hub serves, which opens it in the file view. With neither, nothing opens.
 
     import { sanitise } from '$lib/ui/html';
+    import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
+    import type { MenuItem } from '$lib/ui/menu/menu-items';
+    import { t } from '$lib/state/shared/words/text';
+    import { getContext } from 'svelte';
+    import { STATE_KEY } from '$lib/state/client/use';
+    import type { ClientState } from '$lib/state/client/context';
+    import { proseAt, proseMenu, prosePicked } from './prose-menu';
     import type { DocState } from '$lib/state/system/docs.svelte';
     import { jump } from './jump';
 
@@ -33,6 +44,33 @@
     };
 
     let { doc, loading, failed, surface = true }: Props = $props();
+
+    /**
+     * The client's stores, which Open Image opens the file view through. A document drawn outside
+     * the workbench, as a test draws one, has none, and its Open Image opens nothing.
+     */
+    const client = getContext<ClientState | undefined>(STATE_KEY);
+
+    /** What the last right-click read: the selected text and the image under the pointer. */
+    let heard: { text: string; image: string | null } = { text: '', image: null };
+
+    /** The document's box, which a selection must start in for Copy to copy it. */
+    let box: HTMLDivElement | null = $state(null);
+
+    function pointed(event: MouseEvent): MenuItem[] {
+        const selection = window.getSelection();
+        const anchor = selection?.anchorNode ?? null;
+        const inside = anchor !== null && box?.contains(anchor) === true;
+        heard = proseAt(event.target, inside ? selection : null);
+        const origin = window.location.origin;
+        return proseMenu({ selection: heard.text !== '', image: heard.image, origin }, t);
+    }
+
+    function picked(pick: string): void {
+        prosePicked(pick, heard, {
+            openView: (view: string, state: unknown) => client?.layout.openView(view, state)
+        });
+    }
 </script>
 
 {#if doc.error !== ''}
@@ -42,11 +80,13 @@
 {:else}
     <!-- The press is the links' own: each link is a keyboard stop whose Enter is a click, and the
          box only hears it bubble up, so the box itself takes no key and no focus. -->
-    <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
-    <div class="doc" class:surfaced={surface} onclick={jump}>
-        <!-- eslint-disable-next-line svelte/no-at-html-tags -- the sanitiser writes this -->
-        {@html sanitise(doc.html)}
-    </div>
+    <ContextMenu label={t('ui.prose_menu')} read={pointed} onpick={picked}>
+        <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
+        <div class="doc" class:surfaced={surface} onclick={jump} bind:this={box}>
+            <!-- eslint-disable-next-line svelte/no-at-html-tags -- the sanitiser writes this -->
+            {@html sanitise(doc.html)}
+        </div>
+    </ContextMenu>
 {/if}
 
 <style>

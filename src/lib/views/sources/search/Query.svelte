@@ -6,7 +6,7 @@
     // Enter in the box and the Search control are the two ways a run starts, since a search reads
     // every file of a root and a run per keystroke would be one process per letter.
 
-    import Search from '$lib/ui/controls/Search.svelte';
+    import Search from '$lib/ui/controls/text/Search.svelte';
     import Select from '$lib/ui/forms/choice/Select.svelte';
     import Toolbar from '$lib/ui/frame/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';

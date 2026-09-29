@@ -21,6 +21,7 @@ import { tabOfFile, type ServedRoot } from './file-git.ts';
 import type { PatchMode } from './diff-patch.ts';
 import type { WritesStore } from '../../shared/stores/shapes.ts';
 import { t } from '../../shared/words/text.ts';
+import { openShell, type ShellStarter } from '../../shared/stores/shell.ts';
 
 /** The view id of the pane one diff opens in. */
 export const DIFF_VIEW = 'repositories-diff';
@@ -98,6 +99,11 @@ export type RepositoriesStore = {
     openChange: (root: string, group: string, path: string) => void;
     /** Open a repository's file in a source tab, at a line when one is given. */
     openFile: (root: string, path: string, line?: number) => boolean;
+    /**
+     * Show a repository's file in the Files view, under the served root holding it most closely,
+     * answering whether one does.
+     */
+    revealFile: (root: string, path: string) => boolean;
     /** Open the three-way merge editor over one conflicted path. */
     openMerge: (root: string, path: string) => void;
     /** Show one commit's files in the Repositories view's graph. */
@@ -105,25 +111,13 @@ export type RepositoriesStore = {
 };
 
 /**
- * What the store needs of the terminals store: a shell started in a folder, and a terminal shown in
- * the Terminal tab of the page on screen, or a new one. The terminals store in state/sessions
- * satisfies it.
- */
-export type ShellStarter = {
-    startTerminal: (
-        kind: 'shell',
-        cwd: string
-    ) => Promise<{ ok: boolean; id: string; error: string }>;
-    showTerminal: (id: string, label?: string) => void;
-};
-
-/**
- * What the store needs of the layout store: a view opened, and one opened beside the one being
- * read. The layout store in state/workbench satisfies it.
+ * What the store needs of the layout store: a view opened, one opened beside the one being read,
+ * and a path shown in the Files view. The layout store in state/workbench satisfies it.
  */
 export type ViewOpener = {
     openView: (view: string, state?: unknown) => string;
     openBeside: (view: string, state?: unknown) => string;
+    showInFiles: (path: string, root?: string) => string;
 };
 
 /**
@@ -213,13 +207,10 @@ export function createRepositories(
      * either way, and the reader needs both facts.
      */
     async function shellIn(root: string, cwd: string, label: string): Promise<void> {
-        const answer = await terminals.startTerminal('shell', cwd);
-        if (!answer.ok) {
-            const held = outcome(root);
-            say(root, held === '' ? answer.error : `${held} ${answer.error}`);
-            return;
-        }
-        terminals.showTerminal(answer.id, label);
+        const refused = await openShell(terminals, cwd, label);
+        if (refused === null) return;
+        const held = outcome(root);
+        say(root, held === '' ? refused : `${held} ${refused}`);
     }
 
     function openDiff(subject: DiffSubject, label: string): void {
@@ -238,6 +229,16 @@ export function createRepositories(
         }
         const state = { root: tab.root, path: tab.path, label: nameOf(path) };
         layout.openView('source', line === undefined || line <= 0 ? state : { ...state, line });
+        return true;
+    }
+
+    function revealFile(root: string, path: string): boolean {
+        const tab = tabOfFile(access.served(), { root, path });
+        if (tab === null) {
+            say(root, t('repositories.reveal_unserved', path));
+            return false;
+        }
+        layout.showInFiles(tab.path, tab.root);
         return true;
     }
 
@@ -347,6 +348,7 @@ export function createRepositories(
             else openDiff({ root, path, staged: group === 'staged', worktree: false }, path);
         },
         openFile,
+        revealFile,
         openMerge,
         openCommit(root, hash) {
             const id = layout.openView('repositories');

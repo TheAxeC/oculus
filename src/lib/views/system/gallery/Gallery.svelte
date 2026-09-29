@@ -25,7 +25,7 @@
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Meter from '$lib/ui/display/Meter.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
-    import Search from '$lib/ui/controls/Search.svelte';
+    import Search from '$lib/ui/controls/text/Search.svelte';
     import Segment from '$lib/ui/controls/Segment.svelte';
     import Table from '$lib/ui/display/Table.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';

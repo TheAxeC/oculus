@@ -105,7 +105,9 @@
         margin-bottom: 8px;
     }
 
-    .form > :global(.text) {
+    /* A box is inside the wrappers of its right-click menu, which draw no box, so it is still a
+       flex item of the form. */
+    .form :global(.text) {
         flex: 1 1 160px;
         width: auto;
     }

@@ -8,8 +8,13 @@
     // A root that is no repository, that is gone or whose read failed keeps its row, with the few
     // words and the tone of views/shared/changes/repo-shape.ts at its end and git's reason as the
     // badge's hover words, so a reader sees why a root has nothing to show before choosing it.
+    //
+    // A row whose folder is there opens a right-click menu (menus/repo-menu.ts) of a shell in the
+    // repository and Reveal in Finder, which the view answers.
 
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
+    import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
+    import { REPO_REVEAL, REPO_TERMINAL, repoRowMenu } from './menus/repo-menu';
     import TreeSection from '$lib/ui/tree/TreeSection.svelte';
     import TreeView from '$lib/ui/tree/TreeView.svelte';
     import type { TreeNav } from '$lib/ui/tree/tree-keys';
@@ -30,9 +35,29 @@
         collapsed: string[];
         ontoggle: (id: string) => void;
         onpick: (root: string) => void;
+        /** A shell started in a repository's folder. */
+        onterminal: (root: string) => void;
+        /** A repository's folder revealed in Finder. */
+        onreveal: (root: string) => void;
     };
 
-    let { roots, labels, shown, stateOf, collapsed, ontoggle, onpick }: Props = $props();
+    let {
+        roots,
+        labels,
+        shown,
+        stateOf,
+        collapsed,
+        ontoggle,
+        onpick,
+        onterminal,
+        onreveal
+    }: Props = $props();
+
+    /** A pick from a repository row's menu. */
+    function picked(root: string, pick: string): void {
+        if (pick === REPO_TERMINAL) onterminal(root);
+        else if (pick === REPO_REVEAL) onreveal(root);
+    }
 
     const rows = $derived(repoListRows(roots, collapsed));
 
@@ -61,34 +86,42 @@
                     {@const shape = repoShape(root, git)}
                     {@const count = git === null || shape !== 'readable' ? 0 : changeCount(git)}
                     <li role="none" data-repo-row={root}>
-                        <TreeItem
+                        <ContextMenu
                             label={labels[root] ?? root}
-                            id={`repo:${root}`}
-                            {nav}
-                            level={2}
-                            glyph="repositories"
-                            title={root}
-                            current={root === shown}
-                            onclick={() => onpick(root)}
+                            items={repoRowMenu(shape !== 'missing' && shape !== 'unplaced', t)}
+                            onpick={(pick: string) => picked(root, pick)}
                         >
-                            {#snippet detail()}
-                                {detailOf(root, git)}
-                            {/snippet}
-                            {#snippet end()}
-                                {#if shape !== 'readable'}
-                                    <span
-                                        class="badge"
-                                        style={`--tone-txt: var(--c-${shapeBadgeTone(shape) ?? 'grey'}-txt)`}
-                                        title={git?.error ?? undefined}>{shapeBadge(shape)}</span
-                                    >
-                                {:else if count > 0}
-                                    <span
-                                        class="count"
-                                        title={t('repositories.list_changes', count)}>{count}</span
-                                    >
-                                {/if}
-                            {/snippet}
-                        </TreeItem>
+                            <TreeItem
+                                label={labels[root] ?? root}
+                                id={`repo:${root}`}
+                                {nav}
+                                level={2}
+                                glyph="repositories"
+                                title={root}
+                                current={root === shown}
+                                onclick={() => onpick(root)}
+                            >
+                                {#snippet detail()}
+                                    {detailOf(root, git)}
+                                {/snippet}
+                                {#snippet end()}
+                                    {#if shape !== 'readable'}
+                                        <span
+                                            class="badge"
+                                            style={`--tone-txt: var(--c-${shapeBadgeTone(shape) ?? 'grey'}-txt)`}
+                                            title={git?.error ?? undefined}
+                                            >{shapeBadge(shape)}</span
+                                        >
+                                    {:else if count > 0}
+                                        <span
+                                            class="count"
+                                            title={t('repositories.list_changes', count)}
+                                            >{count}</span
+                                        >
+                                    {/if}
+                                {/snippet}
+                            </TreeItem>
+                        </ContextMenu>
                     </li>
                 {/each}
             </TreeSection>

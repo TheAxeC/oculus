@@ -1,8 +1,15 @@
 <script lang="ts">
     // Layer 3, primitive. One line of text. It holds nothing of its own: the value comes in as a
-    // prop and every keystroke goes out as a call, which is the rule ui/controls/Search.svelte
+    // prop and every keystroke goes out as a call, which is the rule ui/controls/text/Search.svelte
     // already follows, so a form that keeps a draft and one that writes straight through use the
     // same box.
+    //
+    // A right-click on the box opens its editing menu (TextBoxMenu.svelte), read from the box as
+    // the right-click arrives; the menu is the box's own, so a menu of a row or a view around it
+    // does not open over it.
+
+    import TextBoxMenu from '../controls/text/TextBoxMenu.svelte';
+    import { boxValue } from '../controls/text/text-menu';
 
     type Props = {
         value: string;
@@ -18,23 +25,28 @@
 
     let { value, label, oninput, readonly = false, placeholder, secret = false }: Props = $props();
 
+    let box: HTMLInputElement | null = $state(null);
+
     function typed(event: Event): void {
-        const field = event.currentTarget;
-        if (field instanceof HTMLInputElement) oninput(field.value);
+        const typedValue = boxValue(event);
+        if (typedValue !== null) oninput(typedValue);
     }
 </script>
 
-<input
-    class="text"
-    type={secret ? 'password' : 'text'}
-    autocomplete={secret ? 'off' : undefined}
-    {value}
-    {readonly}
-    {placeholder}
-    aria-label={label}
-    aria-readonly={readonly ? 'true' : undefined}
-    oninput={typed}
-/>
+<TextBoxMenu {label} box={() => box} {secret}>
+    <input
+        class="text"
+        type={secret ? 'password' : 'text'}
+        autocomplete={secret ? 'off' : undefined}
+        {value}
+        {readonly}
+        {placeholder}
+        aria-label={label}
+        aria-readonly={readonly ? 'true' : undefined}
+        oninput={typed}
+        bind:this={box}
+    />
+</TextBoxMenu>
 
 <style>
     .text {

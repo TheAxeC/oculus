@@ -2,11 +2,25 @@
 // drawn, the rows of one tab in the tab's order, the key a row answers, how long an armed Kill
 // stays armed, a dragged row's new place, the drag a row carries, the grid's font size, the line
 // count a paste is asked about and the listener that holds such a paste, the file drag the grid
-// takes, a dropped path quoted for the shell and a terminal's tooltip. The pure ones are here
-// rather than in the components so each is asserted without a DOM, which the grid's paste, drop and
-// drag need to happen at all.
+// takes, a dropped path quoted for the shell, a terminal's tooltip, and the items of the view's
+// right-click menus. The pure ones are here rather than in the components so each is asserted
+// without a DOM, which the grid's paste, drop and drag need to happen at all.
+//
+// The right-click menus are VS Code's terminal menus, with the items oculus runs: the grid's (Copy
+// while it holds a selection, Paste, Select All, then Split Terminal and Kill Terminal as the
+// list's controls do), a list row's (Split Terminal and Kill Terminal, Unsplit Terminal on a half
+// of the split the tab shows, Join Terminals over the terminals other Terminal tabs own) and the
+// list's empty area's (New Terminal, and New Terminal With Profile over the kinds the composer
+// starts). Kill Terminal goes through the row's Kill (`pressKill`): the first pick arms the
+// terminal and the item then reads as the armed control does, and a second pick or press kills
+// it. The context menu key and Shift+F10 open the grid's menu, which xterm would otherwise
+// send to the shell (`holdMenuKeys`). Every label is `t(...)` of a catalog key, except a terminal's
+// own name in Join Terminals, which is passed through as the list hands it.
 
 import { FILE_DRAG } from '$lib/state/sources/fs';
+import { grouped, type MenuItem } from '$lib/ui/menu/menu-items';
+import { splitDrawn, type TerminalTabState } from '$lib/state/sessions/terminal/terminal-tabs';
+import type { ComposerAgent } from '$lib/state/sessions/terminal/composer';
 import { stamp } from '$lib/state/shared/words/format';
 import { t } from '$lib/state/shared/words/text';
 import { terminalFontPx } from '$lib/state/shared/words/appearance';
@@ -133,6 +147,34 @@ export function holdPastes(
 }
 
 /**
+ * Open the grid's menu from the keyboard. xterm takes every key on its hidden textarea and stops
+ * it there, so the context menu key and Shift+F10 would reach the shell and never the menu; this
+ * listener sits above xterm in the capture phase, keeps those two keys from the shell, and raises
+ * the right-click the menu opens on at the textarea, which xterm keeps at the cursor. The returned
+ * function takes the listener off.
+ */
+export function holdMenuKeys(host: HTMLElement): () => void {
+    const pressed = (event: KeyboardEvent) => {
+        if (event.key !== 'ContextMenu' && !(event.shiftKey && event.key === 'F10')) return;
+        const target = event.target;
+        if (!(target instanceof Element)) return;
+        event.preventDefault();
+        event.stopPropagation();
+        const rect = target.getBoundingClientRect();
+        target.dispatchEvent(
+            new MouseEvent('contextmenu', {
+                bubbles: true,
+                cancelable: true,
+                clientX: rect.right,
+                clientY: rect.top
+            })
+        );
+    };
+    host.addEventListener('keydown', pressed, true);
+    return () => host.removeEventListener('keydown', pressed, true);
+}
+
+/**
  * A path as one word for a POSIX shell: wrapped in single quotes, inside which nothing is special,
  * and each single quote of its own written as close, escaped quote, open.
  */
@@ -143,4 +185,145 @@ export function shellQuote(path: string): string {
 /** A terminal's tooltip on its row and on the bar: its name, command, folder and start time. */
 export function terminalTip(held: Pick<Terminal, 'name' | 'command' | 'cwd' | 'created'>): string {
     return t('sessions.terminal_row_tip', held.name, held.command, held.cwd, stamp(held.created));
+}
+
+type Words = (key: string, ...args: (string | number)[]) => string;
+
+export const MENU_COPY = 'copy';
+export const MENU_PASTE = 'paste';
+export const MENU_SELECT_ALL = 'select-all';
+export const MENU_SPLIT = 'split';
+export const MENU_KILL = 'kill';
+export const MENU_UNSPLIT = 'unsplit';
+export const MENU_NEW = 'new';
+const JOIN_LIST = 'join';
+const JOIN = 'join:';
+const PROFILE_LIST = 'profile';
+const PROFILE = 'profile:';
+
+/** The kinds New Terminal With Profile offers, in the order its submenu lists them. */
+const PROFILES: readonly ComposerAgent[] = ['shell', 'claude', 'codex'];
+
+/**
+ * What a press of a row's Kill, a Delete or Backspace on the row, or a pick of Kill Terminal from
+ * the grid's or the row's menu does: a terminal not armed is armed, and the armed one is stopped,
+ * the arm taken off first. A refusal of the stop is handed to `fail`.
+ */
+export async function pressKill(
+    armed: string,
+    terminal: string,
+    deps: {
+        arm: (terminal: string) => void;
+        stop: (terminal: string) => Promise<{ ok: boolean; error: string }>;
+        fail: (error: string) => void;
+    }
+): Promise<void> {
+    if (armed !== terminal) {
+        deps.arm(terminal);
+        return;
+    }
+    deps.arm('');
+    deps.fail('');
+    const answer = await deps.stop(terminal);
+    if (!answer.ok) deps.fail(answer.error);
+}
+
+/**
+ * The Kill Terminal item: while the terminal is armed it carries the armed control's label, so the
+ * reader sees that this pick kills.
+ */
+export function killItem(armed: boolean, t: Words): MenuItem {
+    return {
+        id: MENU_KILL,
+        label: armed ? t('sessions.terminal_kill_armed') : t('sessions.menu_kill')
+    };
+}
+
+/** The two items the grid and a row both end with: the row's own Split and Kill. */
+function rowActions(armed: boolean, t: Words): MenuItem[] {
+    return [{ id: MENU_SPLIT, label: t('sessions.menu_split') }, killItem(armed, t)];
+}
+
+/**
+ * The grid's items: Copy while it holds a selection, Paste, Select All, Split and Kill, Kill with
+ * its armed label while the grid's terminal is armed.
+ */
+export function gridMenu(selected: boolean, armed: boolean, t: Words): MenuItem[] {
+    return grouped([
+        [
+            ...(selected ? [{ id: MENU_COPY, label: t('sessions.menu_copy') }] : []),
+            { id: MENU_PASTE, label: t('sessions.menu_paste') },
+            { id: MENU_SELECT_ALL, label: t('sessions.menu_select_all') }
+        ],
+        rowActions(armed, t)
+    ]);
+}
+
+/**
+ * Where a paste from the menu goes: a text of several lines is held for the question a browser
+ * paste of it is asked, with its line count, and a text of one line is sent as it is.
+ */
+export function pasteRoute(text: string): { ask: number } | { send: string } {
+    const lines = pasteLines(text);
+    return lines === null ? { send: text } : { ask: lines };
+}
+
+/** Whether a row is a half of the split its tab shows, which Unsplit Terminal shows alone. */
+function inShownSplit(tab: TerminalTabState, terminal: string): boolean {
+    if (!splitDrawn(tab)) return false;
+    return terminal === tab.shown || (!tab.composing && terminal === tab.beside);
+}
+
+/**
+ * A row's items: Split Terminal and Kill Terminal, Kill with its armed label while the row's
+ * terminal is armed; then Unsplit Terminal on a half of the split
+ * the tab shows, and Join Terminals, a submenu of the terminals other Terminal tabs own, each by
+ * the name it is handed.
+ */
+export function terminalRowMenu(
+    tab: TerminalTabState,
+    terminal: string,
+    others: readonly { terminal: string; title: string }[],
+    armed: boolean,
+    t: Words
+): MenuItem[] {
+    const joins = others.map((one) => ({ id: `${JOIN}${one.terminal}`, label: one.title }));
+    return grouped([
+        rowActions(armed, t),
+        [
+            ...(inShownSplit(tab, terminal)
+                ? [{ id: MENU_UNSPLIT, label: t('sessions.menu_unsplit') }]
+                : []),
+            ...(joins.length > 0
+                ? [{ id: JOIN_LIST, label: t('sessions.menu_join'), items: joins }]
+                : [])
+        ]
+    ]);
+}
+
+/** The list's empty area: New Terminal, and New Terminal With Profile over the composer's kinds. */
+export function emptyListMenu(t: Words): MenuItem[] {
+    return [
+        { id: MENU_NEW, label: t('sessions.menu_new') },
+        {
+            id: PROFILE_LIST,
+            label: t('sessions.menu_new_profile'),
+            items: [
+                { id: `${PROFILE}shell`, label: t('sessions.kind_shell') },
+                { id: `${PROFILE}claude`, label: t('sessions.kind_claude') },
+                { id: `${PROFILE}codex`, label: t('sessions.kind_codex') }
+            ]
+        }
+    ];
+}
+
+/** The terminal a Join Terminals pick names, or null for any other item. */
+export function joinedOf(id: string): string | null {
+    return id.startsWith(JOIN) && id.length > JOIN.length ? id.slice(JOIN.length) : null;
+}
+
+/** The kind a New Terminal With Profile pick names, or null for any other item. */
+export function profileOf(id: string): ComposerAgent | null {
+    if (!id.startsWith(PROFILE)) return null;
+    return PROFILES.find((kind) => `${PROFILE}${kind}` === id) ?? null;
 }

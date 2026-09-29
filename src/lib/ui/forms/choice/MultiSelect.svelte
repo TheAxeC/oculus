@@ -6,7 +6,10 @@
     // `free` is what tells a field of names from a field of keys: with it, what is typed is a
     // choice of its own, which is how `authors` and `waiting-on` take a person the registries do
     // not hold.
+    //
+    // The filter box carries the text boxes' editing menu (TextBoxMenu.svelte).
 
+    import TextBoxMenu from '../../controls/text/TextBoxMenu.svelte';
     import Tag from '../../controls/Tag.svelte';
     import ToolButton from '../../controls/ToolButton.svelte';
 
@@ -47,6 +50,7 @@
 
     let typed = $state('');
     let at = $state(0);
+    let box: HTMLInputElement | null = $state(null);
 
     const matches = $derived(filtered(typed));
     const shown = $derived(matches.slice(0, LIMIT));
@@ -122,15 +126,18 @@
             {/each}
         </div>
     {/if}
-    <input
-        class="filter"
-        type="search"
-        value={typed}
-        placeholder={search}
-        aria-label={search}
-        oninput={changed}
-        onkeydown={keys}
-    />
+    <TextBoxMenu label={search} box={() => box}>
+        <input
+            class="filter"
+            type="search"
+            value={typed}
+            placeholder={search}
+            aria-label={search}
+            oninput={changed}
+            onkeydown={keys}
+            bind:this={box}
+        />
+    </TextBoxMenu>
     <div class="choices">
         {#each shown as choice, index (choice.id)}
             <ToolButton

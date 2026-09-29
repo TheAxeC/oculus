@@ -11,6 +11,12 @@
     // A box that is the input of a list it steers, as the palette's is of its bits-ui Command list,
     // is handed that list's attributes as `field`: its role, the list it controls and the row that
     // is selected. The box's own value, name and keys stay its own.
+    //
+    // A right-click on the box opens the text boxes' editing menu (TextBoxMenu.svelte), as a
+    // TextInput's does.
+
+    import TextBoxMenu from './TextBoxMenu.svelte';
+    import { boxValue } from './text-menu';
 
     type Props = {
         value: string;
@@ -25,9 +31,11 @@
 
     let { value, placeholder, oninput, onenter, field = {} }: Props = $props();
 
+    let box: HTMLInputElement | null = $state(null);
+
     function typed(event: Event): void {
-        const field = event.currentTarget;
-        if (field instanceof HTMLInputElement) oninput(field.value);
+        const typedValue = boxValue(event);
+        if (typedValue !== null) oninput(typedValue);
     }
 
     function keys(event: KeyboardEvent): void {
@@ -42,17 +50,20 @@
     }
 </script>
 
-<input
-    {...field}
-    class="search"
-    data-search
-    type="search"
-    {value}
-    {placeholder}
-    aria-label={placeholder}
-    oninput={typed}
-    onkeydown={keys}
-/>
+<TextBoxMenu label={placeholder} box={() => box}>
+    <input
+        {...field}
+        class="search"
+        data-search
+        type="search"
+        {value}
+        {placeholder}
+        aria-label={placeholder}
+        oninput={typed}
+        onkeydown={keys}
+        bind:this={box}
+    />
+</TextBoxMenu>
 
 <style>
     .search {

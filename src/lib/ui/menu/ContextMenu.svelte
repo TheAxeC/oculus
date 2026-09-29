@@ -11,6 +11,12 @@
     // press outside it, and the focus goes back to the control the menu was opened on, without
     // opening that control's tooltip. A pick is answered once the focus is back, so a dialog the
     // pick raises keeps the focus it takes.
+    //
+    // A menu whose items depend on the moment of the right-click (what is selected, what is under
+    // the pointer) reads them from the right-click itself, through `read`, as it arrives. A menu
+    // that is `own` keeps its right-click from every menu around it, so a text box inside a row
+    // opens the box's menu and not the row's as well; the menu key and Shift+F10 open only the
+    // innermost menu around the control either way.
 
     import { ContextMenu } from 'bits-ui';
     import type { Snippet } from 'svelte';
@@ -20,15 +26,24 @@
     type Props = {
         /** The list's accessible name. */
         label: string;
-        items: MenuItem[];
+        /** The items, when they are known before the right-click. */
+        items?: MenuItem[];
+        /** The items read from the right-click as it arrives, in place of `items`. */
+        read?: (event: MouseEvent) => MenuItem[];
+        /** Keep the right-click from the menus around this one. */
+        own?: boolean;
         /** A pick, with the pointer event, so a caller can read its modifiers. */
         onpick: (id: string, event: MouseEvent) => void;
         children: Snippet;
     };
 
-    let { label, items, onpick, children }: Props = $props();
+    let { label, items = [], read, onpick, children, own = false }: Props = $props();
 
     let open = $state(false);
+
+    /** What the last right-click read, for a menu that reads its items then. */
+    let heard: MenuItem[] = $state([]);
+    const shown = $derived(read === undefined ? items : heard);
 
     /** The control the menu was opened on, which takes the focus back when it closes. */
     let origin: HTMLElement | null = null;
@@ -64,7 +79,9 @@
      * is kept away and nothing opens.
      */
     function pointed(event: MouseEvent): void {
-        if (items.length === 0) {
+        if (own) event.stopPropagation();
+        if (read !== undefined) heard = read(event);
+        if (shown.length === 0) {
             event.preventDefault();
             return;
         }
@@ -75,10 +92,15 @@
         }
     }
 
+    /**
+     * The menu key or Shift+F10 on a control inside. A key a menu nested inside this one already
+     * answered is left alone, so only the innermost menu around the control opens.
+     */
     function keys(event: KeyboardEvent): void {
         if (event.key !== 'ContextMenu' && !(event.shiftKey && event.key === 'F10')) return;
+        if (event.defaultPrevented) return;
         event.preventDefault();
-        if (items.length === 0) return;
+        if (read === undefined && items.length === 0) return;
         openAtEdge(event.target);
     }
 
@@ -110,7 +132,7 @@
         <ContextMenu.Content sideOffset={0} {...closing.content}>
             {#snippet child({ wrapperProps, props })}
                 <div {...wrapperProps}>
-                    <MenuList {label} {items} onpick={pick} list={props} />
+                    <MenuList {label} items={shown} onpick={pick} list={props} />
                 </div>
             {/snippet}
         </ContextMenu.Content>

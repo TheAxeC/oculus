@@ -40,7 +40,7 @@
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import Menu from '$lib/ui/menu/Menu.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
-    import Search from '$lib/ui/controls/Search.svelte';
+    import Search from '$lib/ui/controls/text/Search.svelte';
     import Segment from '$lib/ui/controls/Segment.svelte';
     import type { SegmentItem } from '$lib/ui/controls/segment-items';
     import Table from '$lib/ui/display/Table.svelte';

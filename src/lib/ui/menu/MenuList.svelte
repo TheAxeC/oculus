@@ -15,9 +15,13 @@
     //
     // Each entry holds its label first and draws its dot and glyph before it by the flex order, so
     // the text of an entry begins with its label, which is what bits-ui's type-ahead reads.
+    //
+    // A choice carrying `rule` draws bits-ui's separator above it, the line VS Code draws between
+    // its menu groups; a separator is no choice, so the arrow keys and the type-ahead pass over
+    // it, and the list's first choice draws none (menu-items.ts, `ruleAbove`).
 
     import { DropdownMenu } from 'bits-ui';
-    import type { MenuGroup, MenuItem } from '$lib/ui/menu/menu-items';
+    import { ruleAbove, type MenuGroup, type MenuItem } from '$lib/ui/menu/menu-items';
     import Glyph from '../display/Glyph.svelte';
     import FloatingList from '../frame/FloatingList.svelte';
     import MenuList from './MenuList.svelte';
@@ -93,6 +97,14 @@
             <Glyph name="chevron" />
         </span>
     {/if}
+{/snippet}
+
+{#snippet separator()}
+    <DropdownMenu.Separator>
+        {#snippet child({ props })}
+            <div {...props} class="rule"></div>
+        {/snippet}
+    </DropdownMenu.Separator>
 {/snippet}
 
 {#snippet entry(item: MenuItem, at: string, group?: MenuGroup)}
@@ -172,6 +184,10 @@
                             {/snippet}
                         </DropdownMenu.GroupHeading>
                         {#each group.items as item, index (item.id)}
+                            {#if ruleAbove(group.items, index)}
+                                <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                                {@render separator()}
+                            {/if}
                             <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
                             {@render entry(item, `${g}:${index}`, group)}
                         {/each}
@@ -181,6 +197,10 @@
         {/each}
     {:else}
         {#each items as item, index (item.id)}
+            {#if ruleAbove(items, index)}
+                <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                {@render separator()}
+            {/if}
             <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
             {@render entry(item, `${index}`)}
         {/each}
@@ -200,6 +220,14 @@
         text-transform: uppercase;
         letter-spacing: 0.04em;
         color: var(--muted-txt, var(--muted));
+    }
+
+    /* The line between two groups: one pixel of the border colour, clear of the choices above and
+       below it by the list's own padding. */
+    .rule {
+        height: 1px;
+        margin: 4px 0;
+        background: var(--line);
     }
 
     .item .dot {

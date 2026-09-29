@@ -166,13 +166,13 @@
 <!-- folder shell/panes to layer ui -->
 <g id="node17" class="node">
 <title>folder shell/panes to layer ui</title>
-<polygon fill="none" stroke="none" points="111.88,-180.68 102.12,-180.68 102.12,-168.2 111.88,-168.2 111.88,-180.68"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="107" y="-172.04" font-family="Helvetica,Arial,sans-serif" font-size="8.00">9</text>
+<polygon fill="none" stroke="none" points="115.88,-180.68 102.12,-180.68 102.12,-168.2 115.88,-168.2 115.88,-180.68"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="109" y="-172.04" font-family="Helvetica,Arial,sans-serif" font-size="8.00">11</text>
 </g>
 <!-- folder shell/panes&#45;&gt;folder shell/panes to layer ui -->
 <g id="edge27" class="edge">
 <title>folder shell/panes&#45;&gt;folder shell/panes to layer ui</title>
-<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M90.67,-220.84C94.86,-209.18 101.58,-190.5 104.95,-181.15"/>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M91.04,-220.84C95.65,-209.18 103.04,-190.5 106.74,-181.15"/>
 </g>
 <!-- folder shell/keys to layer state -->
 <g id="node18" class="node">
@@ -313,8 +313,8 @@
 <!-- folder shell/panes to layer ui&#45;&gt;layer ui from folder shell/panes -->
 <g id="edge28" class="edge">
 <title>folder shell/panes to layer ui&#45;&gt;layer ui from folder shell/panes</title>
-<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M112.12,-174.44C126.19,-174.44 140.25,-174.44 154.32,-174.44"/>
-<polygon fill="currentColor" stroke="currentColor" points="154.16,-176.54 160.16,-174.44 154.16,-172.34 154.16,-176.54"/>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M116.19,-174.44C128.87,-174.44 141.55,-174.44 154.23,-174.44"/>
+<polygon fill="currentColor" stroke="currentColor" points="154.18,-176.54 160.18,-174.44 154.18,-172.34 154.18,-176.54"/>
 </g>
 <!-- layer state from folder shell/keys -->
 <g id="node28" class="node">

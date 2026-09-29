@@ -236,7 +236,7 @@
 </script>
 
 {#snippet paneOf(node: Layout, path: number[], of: string)}
-    <PaneView {node} {path} page={of} />
+    <PaneView {node} {path} page={of} onpalette={openPalette} />
 {/snippet}
 
 {#snippet foldOf(node: Layout, dir: 'row' | 'col', onexpand: () => void)}
@@ -244,7 +244,7 @@
 {/snippet}
 
 {#snippet leafOf(nested: string, path: number[], of: string)}
-    <PageLeaf {nested} {path} host={of} />
+    <PageLeaf {nested} {path} host={of} onpalette={openPalette} />
 {/snippet}
 
 <svelte:window
@@ -278,7 +278,12 @@
                              twice. -->
                     {:else if zoomed !== null && focus !== null}
                         <div class="tree" style="flex: 1 1 0">
-                            <PaneView node={zoomed} path={focus.path} page={page.id} />
+                            <PaneView
+                                node={zoomed}
+                                path={focus.path}
+                                page={page.id}
+                                onpalette={openPalette}
+                            />
                         </div>
                     {:else}
                         <div class="tree" style="flex: 1 1 0">

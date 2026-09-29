@@ -28,6 +28,11 @@
     //
     // A file row is draggable and carries its absolute path under the file drag type, which a drop
     // target that takes a file (the composer's prompt box) reads.
+    //
+    // Every row opens its own right-click menu (tree/row-menu.ts), by the pointer or by Shift+F10
+    // and the context menu key on the focused row. A pick runs through the stores, and through the
+    // view's own add-root form and its removal question, handed in; a pick the server refuses is
+    // said on a line above the rows until the next pick.
 
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
     import TreeView from '$lib/ui/tree/TreeView.svelte';
@@ -35,6 +40,9 @@
     import type { TreeNav } from '$lib/ui/tree/tree-keys';
     import type { Attachment } from 'svelte/attachments';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
+    import { rowFacts, rowMenu, rowPicker, rowStores } from './row-menu';
+    import { useState } from '$lib/state/client/use';
     import {
         FILE_DRAG,
         absoluteOf,
@@ -66,6 +74,11 @@
         onbookmark: (row: TreeRow) => void;
         onrefresh: () => void;
         oncollapse: (root: string) => void;
+        /**
+         * Open the view's add-root form, the root menu's Add Folder to Workspace...; none while the
+         * form is open, when the item is not offered.
+         */
+        onaddroot?: () => void;
     };
 
     let {
@@ -81,8 +94,26 @@
         onremove,
         onbookmark,
         onrefresh,
-        oncollapse
+        oncollapse,
+        onaddroot
     }: Props = $props();
+
+    const client = useState();
+
+    /** A pick from a row's menu the server refused, said above the rows until the next pick. */
+    let refused = $state('');
+
+    /** What a pick from a row's right-click menu runs. */
+    const picked = rowPicker(
+        {
+            ...rowStores(client),
+            dirOf: (root: string) => roots?.find((one) => one.key === root)?.dir ?? '',
+            say: (note: string) => (refused = note),
+            addRoot: () => onaddroot?.(),
+            removeRoot: (root: string) => onremove(root)
+        },
+        t
+    );
 
     const keyRows = $derived(treeKeyRows(rows, filtering));
 
@@ -186,6 +217,10 @@
     />
 {/snippet}
 
+{#if refused !== ''}
+    <p class="refused" role="alert">{refused}</p>
+{/if}
+
 <TreeView
     label={t('files.tree')}
     rows={keyRows}
@@ -221,55 +256,64 @@
                         ondragstart={(event) => dragged(event, row)}
                         {@attach measure}
                     >
-                        {#if row.depth === 0}
-                            <TreeItem
-                                label={row.name}
-                                id={rowKey(row)}
-                                {nav}
-                                level={1}
-                                heading
-                                expanded={row.open}
-                                selected={isSelected(row)}
-                                title={titleOf(row)}
-                                onclick={() => pressed(row)}
-                            >
-                                {#snippet actions(reach: number)}
-                                    <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-                                    {@render rootActions(row, reach)}
-                                {/snippet}
-                            </TreeItem>
-                        {:else if row.kind === 'dir'}
-                            <TreeItem
-                                label={row.name}
-                                id={rowKey(row)}
-                                {nav}
-                                level={row.depth + 1}
-                                glyph={glyphOf(row)}
-                                depth={row.depth - 1}
-                                expanded={row.open}
-                                selected={isSelected(row)}
-                                title={titleOf(row)}
-                                onclick={() => pressed(row)}
-                            />
-                        {:else}
-                            <TreeItem
-                                label={row.name}
-                                id={rowKey(row)}
-                                {nav}
-                                level={row.depth + 1}
-                                glyph={glyphOf(row)}
-                                depth={row.depth - 1}
-                                selected={isSelected(row)}
-                                title={titleOf(row)}
-                                onclick={() => pressed(row)}
-                                ondblclick={() => onopen(row, false)}
-                            >
-                                {#snippet actions(reach: number)}
-                                    <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-                                    {@render fileActions(row, reach)}
-                                {/snippet}
-                            </TreeItem>
-                        {/if}
+                        <ContextMenu
+                            label={row.name}
+                            items={rowMenu(rowFacts(row, fixed, onaddroot !== undefined), t)}
+                            onpick={(pick: string) => {
+                                refused = '';
+                                picked(row, pick);
+                            }}
+                        >
+                            {#if row.depth === 0}
+                                <TreeItem
+                                    label={row.name}
+                                    id={rowKey(row)}
+                                    {nav}
+                                    level={1}
+                                    heading
+                                    expanded={row.open}
+                                    selected={isSelected(row)}
+                                    title={titleOf(row)}
+                                    onclick={() => pressed(row)}
+                                >
+                                    {#snippet actions(reach: number)}
+                                        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                                        {@render rootActions(row, reach)}
+                                    {/snippet}
+                                </TreeItem>
+                            {:else if row.kind === 'dir'}
+                                <TreeItem
+                                    label={row.name}
+                                    id={rowKey(row)}
+                                    {nav}
+                                    level={row.depth + 1}
+                                    glyph={glyphOf(row)}
+                                    depth={row.depth - 1}
+                                    expanded={row.open}
+                                    selected={isSelected(row)}
+                                    title={titleOf(row)}
+                                    onclick={() => pressed(row)}
+                                />
+                            {:else}
+                                <TreeItem
+                                    label={row.name}
+                                    id={rowKey(row)}
+                                    {nav}
+                                    level={row.depth + 1}
+                                    glyph={glyphOf(row)}
+                                    depth={row.depth - 1}
+                                    selected={isSelected(row)}
+                                    title={titleOf(row)}
+                                    onclick={() => pressed(row)}
+                                    ondblclick={() => onopen(row, false)}
+                                >
+                                    {#snippet actions(reach: number)}
+                                        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                                        {@render fileActions(row, reach)}
+                                    {/snippet}
+                                </TreeItem>
+                            {/if}
+                        </ContextMenu>
                     </li>
                 {/snippet}
             </VirtualRows>
@@ -278,6 +322,12 @@
 </TreeView>
 
 <style>
+    .refused {
+        margin: 0;
+        color: var(--c-red-txt);
+        font-size: var(--fs-sm);
+    }
+
     .rows {
         display: flex;
         flex-direction: column;

@@ -1,11 +1,10 @@
 /plan-orchestration oculus/migration
 
 In flight:
-- Q88 (right-click menus wherever vscode.dev gives one, the tab's menu left to X3c; beside Q79b by Z50 (a)): built from base 2a72d052 with its cases ruled at round 0 (`agents/briefs/Q88-cases.md`); reviewed (`agents/reviews/Q88-refuter.md`), repair round 1 sent; Z53 open for its text boxes.
-- Q86b (the Map's drag after neato's placement, Z49 (a): circles kept apart among the movers, no repulsion or centre pull, no creep, the node under the pointer, labels kept off other nodes): brief checked (`agents/reviews/Q86b-brief-check.md`, 18 findings closed in the brief), building from base 38c12da7, its cases ruled at round 0 (`agents/briefs/Q86b-cases.md`).
+- Q86b (the Map's drag after neato's placement, Z49 (a): circles kept apart among the movers, no repulsion or centre pull, no creep, the node under the pointer, labels kept off other nodes): brief checked (`agents/reviews/Q86b-brief-check.md`, 18 findings closed in the brief), built from base 38c12da7 with its cases ruled at round 0 (`agents/briefs/Q86b-cases.md`); report saved, to /refute.
 Queued, in order:
 - Q88b (the right-click menus' new capabilities: file writes under the roots with Delete to the Trash, discarding an untracked file to the Trash, a two-file compare, .gitignore, cherry-pick, the graph's commit and branch actions (detached checkout, a branch or tag from a commit, the compares, Delete Branch), Open File (HEAD), closing a repository, opening a worktree, Lock Group, the terminal's name, icon, colour and Clear; Z52 (b)), after Q88.
-- D13b (the diffs and the merge on Monaco) and D13c (the code theme key), after D13a (Z46 (a)).
+- D13b (the diffs and the merge on Monaco): brief written (`agents/briefs/D13b.md`) and checked (`agents/reviews/D13b-brief-check.md`), its findings to close before the preparation commit. D13c (the code theme key), after D13a (Z46 (a)); runs alone, since it changes a configuration file.
 - X3c (the tab strip as VS Code's editor tabs; Z47 (a)).
 - X3a (the Files view as VS Code's Explorer).
 - Q91 and Q83 (the project view and its editor, once X3a has landed; small libraries: culori and the others).

@@ -119,7 +119,7 @@ const SOLID: Record<string, string> = {
         'a track, read as the proportion of it the fill covers',
     'src/lib/ui/forms/choice/MultiSelect.svelte .filter':
         'an input, whose text is typed and read back',
-    'src/lib/ui/controls/Search.svelte .search': 'an input, whose text is typed and read back',
+    'src/lib/ui/controls/text/Search.svelte .search': 'an input, whose text is typed and read back',
     'src/lib/ui/forms/choice/Select.svelte .select': 'an input, whose choice is read back',
     'src/lib/ui/display/Table.svelte tbody tr:hover td':
         'a hover response, saying which row the pointer is on',

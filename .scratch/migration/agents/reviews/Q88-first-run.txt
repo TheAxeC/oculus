@@ -1,0 +1,239 @@
+
+ RUN  v4.1.11 /Users/axelfaes/workspace/research-hub/.agents/worktrees/Q88/tools/oculus
+
+ > tests/views/sources/files/files-menu.test.ts (0 test)
+ > tests/views/sources/repositories/repositories-menu.test.ts (0 test)
+ > tests/views/shared/prose/prose-menu.test.ts (0 test)
+ > tests/ui/forms/text-menu.test.ts (0 test)
+ > tests/ui/menu/menu-rule.test.ts (2 tests | 2 failed) 3ms
+     x is drawn above an item carrying it 2ms
+     x is never drawn above the first item 0ms
+ > tests/ui/menu/menu-words.test.ts (0 test)
+ > tests/shell/panes/pane-strip-menu.test.ts (4 tests | 4 failed) 4ms
+     x offers a pane holding a tab on a page of two panes every item 2ms
+     x offers an empty pane alone on its page Open File and New Terminal 0ms
+     x splits left on the left edge and up on the top edge 0ms
+     x hands splitInstance the active tab, the pane, the edge and the page 0ms
+ > tests/views/sessions/terminal-menu.test.ts (6 tests | 6 failed) 4ms
+     x offers Paste, Select All, Split and Kill with no selection 2ms
+     x offers Copy first with a selection 0ms
+     x holds a paste of several lines for the question and sends one line as it is 0ms
+     x offers Unsplit on the right half of the shown split and not on a row shown alone 0ms
+     x offers Join Terminals holding the terminals another tab owns, by name 0ms
+     x offers Split and Kill on every row 0ms
+
+------ Failed Suites 5 -------
+
+ FAIL  tests/ui/forms/text-menu.test.ts [ tests/ui/forms/text-menu.test.ts ]
+Error: Cannot find module '../../../src/lib/ui/forms/text-menu.ts' imported from /Users/axelfaes/workspace/research-hub/.agents/worktrees/Q88/tools/oculus/tests/ui/forms/text-menu.test.ts
+ > tests/ui/forms/text-menu.test.ts:10:1
+      8|
+      9| import { describe, expect, it } from 'vitest';
+     10| import { textMenu } from '../../../src/lib/ui/forms/text-menu.ts';
+       | ^
+     11|
+     12| const words = (key: string, ...args: (string | number)[]): string =>
+
+-----------------------[1/17]-
+
+ FAIL  tests/ui/menu/menu-words.test.ts [ tests/ui/menu/menu-words.test.ts ]
+Error: Cannot find module '../../../src/lib/views/sources/files/tree/row-menu.ts' imported from /Users/axelfaes/workspace/research-hub/.agents/worktrees/Q88/tools/oculus/tests/ui/menu/menu-words.test.ts
+ > tests/ui/menu/menu-words.test.ts:14:1
+     12| import { engineDir, loadConfig, textCatalog } from '../../../src/lib/d...
+     13| import type { MenuItem } from '../../../src/lib/ui/menu/menu-items.ts';
+     14| import { rowMenu } from '../../../src/lib/views/sources/files/tree/row...
+       | ^
+     15| import {
+     16|     changeMenu,
+
+-----------------------[2/17]-
+
+ FAIL  tests/views/shared/prose/prose-menu.test.ts [ tests/views/shared/prose/prose-menu.test.ts ]
+Error: Cannot find module '../../../../src/lib/views/shared/prose/prose-menu.ts' imported from /Users/axelfaes/workspace/research-hub/.agents/worktrees/Q88/tools/oculus/tests/views/shared/prose/prose-menu.test.ts
+ > tests/views/shared/prose/prose-menu.test.ts:11:1
+      9|
+     10| import { describe, expect, it } from 'vitest';
+     11| import { hubFileOf, proseMenu } from '../../../../src/lib/views/shared...
+       | ^
+     12|
+     13| const words = (key: string, ...args: (string | number)[]): string =>
+
+-----------------------[3/17]-
+
+ FAIL  tests/views/sources/files/files-menu.test.ts [ tests/views/sources/files/files-menu.test.ts ]
+Error: Cannot find module '../../../../src/lib/views/sources/files/tree/row-menu.ts' imported from /Users/axelfaes/workspace/research-hub/.agents/worktrees/Q88/tools/oculus/tests/views/sources/files/files-menu.test.ts
+ > tests/views/sources/files/files-menu.test.ts:14:1
+     12|
+     13| import { describe, expect, it } from 'vitest';
+     14| import {
+       | ^
+     15|     rowMenu,
+     16|     rowPaths,
+
+-----------------------[4/17]-
+
+ FAIL  tests/views/sources/repositories/repositories-menu.test.ts [ tests/views/sources/repositories/repositories-menu.test.ts ]
+Error: Cannot find module '../../../../src/lib/views/sources/repositories/menus/change-menu.ts' imported from /Users/axelfaes/workspace/research-hub/.agents/worktrees/Q88/tools/oculus/tests/views/sources/repositories/repositories-menu.test.ts
+ > tests/views/sources/repositories/repositories-menu.test.ts:13:1
+     11|
+     12| import { describe, expect, it } from 'vitest';
+     13| import {
+       | ^
+     14|     changeMenu,
+     15|     changePicked,
+
+-----------------------[5/17]-
+
+
+------ Failed Tests 12 -------
+
+ FAIL  tests/shell/panes/pane-strip-menu.test.ts > the pane strip menu > offers a pane holding a tab on a page of two panes every item
+TypeError: stripMenu is not a function
+ > tests/shell/panes/pane-strip-menu.test.ts:17:16
+     15| describe('the pane strip menu', () => {
+     16|     it('offers a pane holding a tab on a page of two panes every item'...
+     17|         expect(stripMenu({ holdsTab: true, panes: 2 }, words).map((ite...
+       |                ^
+     18|             '@ui.strip_open_file',
+     19|             '@ui.split_up',
+
+-----------------------[6/17]-
+
+ FAIL  tests/shell/panes/pane-strip-menu.test.ts > the pane strip menu > offers an empty pane alone on its page Open File and New Terminal
+TypeError: stripMenu is not a function
+ > tests/shell/panes/pane-strip-menu.test.ts:29:16
+     27|
+     28|     it('offers an empty pane alone on its page Open File and New Termi...
+     29|         expect(stripMenu({ holdsTab: false, panes: 1 }, words).map((it...
+       |                ^
+     30|             ['@ui.strip_open_file', '@ui.strip_new_terminal']
+     31|         );
+
+-----------------------[7/17]-
+
+ FAIL  tests/shell/panes/pane-strip-menu.test.ts > the edge a split takes > splits left on the left edge and up on the top edge
+TypeError: stripMenu is not a function
+ > tests/shell/panes/pane-strip-menu.test.ts:37:23
+     35| describe('the edge a split takes', () => {
+     36|     it('splits left on the left edge and up on the top edge', () => {
+     37|         const items = stripMenu({ holdsTab: true, panes: 1 }, words);
+       |                       ^
+     38|         const edges = items.map((item) => stripEdge(item.id));
+     39|         expect(edges).toEqual([null, 'top', 'bottom', 'left', 'right',...
+
+-----------------------[8/17]-
+
+ FAIL  tests/shell/panes/pane-strip-menu.test.ts > the edge a split takes > hands splitInstance the active tab, the pane, the edge and the page
+TypeError: stripMenu is not a function
+ > tests/shell/panes/pane-strip-menu.test.ts:50:23
+     48|             composeIn: () => undefined
+     49|         };
+     50|         const items = stripMenu({ holdsTab: true, panes: 1 }, words);
+       |                       ^
+     51|         const left = items.find((item) => item.label === '@ui.split_le...
+     52|         const up = items.find((item) => item.label === '@ui.split_up');
+
+-----------------------[9/17]-
+
+ FAIL  tests/ui/menu/menu-rule.test.ts > the rule between groups > is drawn above an item carrying it
+TypeError: ruleAbove is not a function
+ > tests/ui/menu/menu-rule.test.ts:18:16
+     16|
+     17|     it('is drawn above an item carrying it', () => {
+     18|         expect(ruleAbove(items, 2)).toBe(true);
+       |                ^
+     19|         expect(ruleAbove(items, 1)).toBe(false);
+     20|     });
+
+----------------------[10/17]-
+
+ FAIL  tests/ui/menu/menu-rule.test.ts > the rule between groups > is never drawn above the first item
+TypeError: ruleAbove is not a function
+ > tests/ui/menu/menu-rule.test.ts:23:16
+     21|
+     22|     it('is never drawn above the first item', () => {
+     23|         expect(ruleAbove(items, 0)).toBe(false);
+       |                ^
+     24|     });
+     25| });
+
+----------------------[11/17]-
+
+ FAIL  tests/views/sessions/terminal-menu.test.ts > the grid menu > offers Paste, Select All, Split and Kill with no selection
+TypeError: gridMenu is not a function
+ > tests/views/sessions/terminal-menu.test.ts:28:16
+     26| describe('the grid menu', () => {
+     27|     it('offers Paste, Select All, Split and Kill with no selection', (...
+     28|         expect(gridMenu(false, words).map((item) => item.label)).toEqu...
+       |                ^
+     29|             '@sessions.menu_paste',
+     30|             '@sessions.menu_select_all',
+
+----------------------[12/17]-
+
+ FAIL  tests/views/sessions/terminal-menu.test.ts > the grid menu > offers Copy first with a selection
+TypeError: gridMenu is not a function
+ > tests/views/sessions/terminal-menu.test.ts:37:16
+     35|
+     36|     it('offers Copy first with a selection', () => {
+     37|         expect(gridMenu(true, words).map((item) => item.label)).toEqua...
+       |                ^
+     38|             '@sessions.menu_copy',
+     39|             '@sessions.menu_paste',
+
+----------------------[13/17]-
+
+ FAIL  tests/views/sessions/terminal-menu.test.ts > a paste from the menu > holds a paste of several lines for the question and sends one line as it is
+TypeError: pasteRoute is not a function
+ > tests/views/sessions/terminal-menu.test.ts:49:16
+     47| describe('a paste from the menu', () => {
+     48|     it('holds a paste of several lines for the question and sends one ...
+     49|         expect(pasteRoute('a\nb\n')).toEqual({ ask: 2 });
+       |                ^
+     50|         expect(pasteRoute('a')).toEqual({ send: 'a' });
+     51|     });
+
+----------------------[14/17]-
+
+ FAIL  tests/views/sessions/terminal-menu.test.ts > a list row menu > offers Unsplit on the right half of the shown split and not on a row shown alone
+TypeError: terminalRowMenu is not a function
+ > tests/views/sessions/terminal-menu.test.ts:63:24
+     61|
+     62|     it('offers Unsplit on the right half of the shown split and not on...
+     63|         const labels = terminalRowMenu(split, B, [], words).map((item)...
+       |                        ^
+     64|         expect(labels).toContain('@sessions.menu_unsplit');
+     65|         const lone = terminalRowMenu(alone, A, [], words).map((item) =...
+
+----------------------[15/17]-
+
+ FAIL  tests/views/sessions/terminal-menu.test.ts > a list row menu > offers Join Terminals holding the terminals another tab owns, by name
+TypeError: terminalRowMenu is not a function
+ > tests/views/sessions/terminal-menu.test.ts:70:23
+     68|
+     69|     it('offers Join Terminals holding the terminals another tab owns, ...
+     70|         const items = terminalRowMenu(alone, A, others, words);
+       |                       ^
+     71|         const join = items.find((item) => item.label === '@sessions.me...
+     72|         expect(join?.items?.map((item) => item.label)).toEqual(['t2', ...
+
+----------------------[16/17]-
+
+ FAIL  tests/views/sessions/terminal-menu.test.ts > a list row menu > offers Split and Kill on every row
+TypeError: terminalRowMenu is not a function
+ > tests/views/sessions/terminal-menu.test.ts:78:24
+     76|
+     77|     it('offers Split and Kill on every row', () => {
+     78|         const labels = terminalRowMenu(readTab({ id: 't', terminals: [...
+       |                        ^
+     79|             (item) => item.label
+     80|         );
+
+----------------------[17/17]-
+
+
+ Test Files  8 failed (8)
+      Tests  12 failed (12)
+   Start at  15:40:30
+   Duration  5.38s (transform 2.67s, setup 0ms, import 4.25s, tests 10ms, environment 2ms)
+

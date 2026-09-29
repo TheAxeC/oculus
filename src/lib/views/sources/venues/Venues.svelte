@@ -15,7 +15,7 @@
     // Registry entities provide the display model while the matching collection provides editing.
 
     import Pane from '$lib/ui/frame/Pane.svelte';
-    import Search from '$lib/ui/controls/Search.svelte';
+    import Search from '$lib/ui/controls/text/Search.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Tooltip from '$lib/ui/menu/Tooltip.svelte';
     import Toolbar from '$lib/ui/frame/Toolbar.svelte';

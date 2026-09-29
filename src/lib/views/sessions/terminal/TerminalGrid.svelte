@@ -18,12 +18,35 @@
     // getComputedStyle by grid-look.ts, and its size by gridFontSize (terminal-list.ts). They
     // cannot be CSS: xterm paints the glyphs itself and takes its palette and its font as strings
     // through its own API.
+    //
+    // A right-click on the grid opens VS Code's terminal menu (terminal-list.ts, `gridMenu`): Copy
+    // while xterm holds a selection, Paste, Select All, then Split Terminal and Kill Terminal on
+    // this grid's terminal, Kill arming first as the row's Kill does and reading as the armed
+    // control while the terminal is armed. The items are read when the right-click arrives, so Copy
+    // follows the selection xterm holds at that moment. Paste reads the clipboard and takes the
+    // same path a browser paste takes, so a paste of several lines is asked about; a clipboard the
+    // browser refuses to read leaves the grid as it was. The context menu key and Shift+F10 open
+    // the menu at the cursor rather than reaching the shell (terminal-list.ts, `holdMenuKeys`).
 
     import SteerBox from '$lib/views/shared/sessions/SteerBox.svelte';
     import Confirm from '$lib/ui/controls/Confirm.svelte';
     import { titleStripper } from '$lib/state/sessions/terminals.svelte';
     import { FILE_DRAG } from '$lib/state/sources/fs';
-    import { fileOver, gridFontSize, holdPastes, shellQuote } from './terminal-list';
+    import {
+        MENU_COPY,
+        MENU_KILL,
+        MENU_PASTE,
+        MENU_SELECT_ALL,
+        MENU_SPLIT,
+        fileOver,
+        gridFontSize,
+        gridMenu,
+        holdMenuKeys,
+        holdPastes,
+        pasteRoute,
+        shellQuote
+    } from './terminal-list';
+    import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { scheduleReflow } from './reflow';
     import { applyLook, gridLook, gridOptions } from './grid-look';
@@ -40,9 +63,15 @@
         onfocused: () => void;
         /** Called when the terminal's bell rings. */
         onbell: (id: string) => void;
+        /** Split Terminal from the grid's menu, as the list row's Split does. */
+        onsplit: (id: string) => void;
+        /** Whether this grid's terminal is armed to be killed, as its row's armed Kill shows. */
+        armed: boolean;
+        /** Kill Terminal from the grid's menu, as a press of the row's Kill: arm, then kill. */
+        onkill: (id: string) => void;
     };
 
-    let { id, focusing, onfocused, onbell }: Props = $props();
+    let { id, focusing, onfocused, onbell, onsplit, armed, onkill }: Props = $props();
 
     const {
         terminals: {
@@ -79,6 +108,31 @@
         const size = measure?.() ?? null;
         if (size === null || size.cols < 1 || size.rows < 1) return;
         if (!sendResize(to, size.cols, size.rows)) void resizeTerminal(to, size.cols, size.rows);
+    }
+
+    /** Paste the clipboard's text the way a browser paste goes; a refused read changes nothing. */
+    async function pasteClipboard(): Promise<void> {
+        let text: string;
+        try {
+            text = await navigator.clipboard.readText();
+        } catch {
+            return;
+        }
+        if (grid === null || text === '') return;
+        const route = pasteRoute(text);
+        if ('ask' in route) pasting = { text, lines: route.ask };
+        else grid.paste(route.send);
+    }
+
+    function picked(pick: string): void {
+        if (pick === MENU_COPY) {
+            const selected = grid?.getSelection() ?? '';
+            if (selected !== '')
+                void navigator.clipboard.writeText(selected).catch(() => undefined);
+        } else if (pick === MENU_PASTE) void pasteClipboard();
+        else if (pick === MENU_SELECT_ALL) grid?.selectAll();
+        else if (pick === MENU_SPLIT) onsplit(id);
+        else if (pick === MENU_KILL) onkill(id);
     }
 
     /** Send the paste the question held, or drop it. */
@@ -138,6 +192,7 @@
             // declaration's null, so `at` would otherwise carry no methods it can resolve.
             const host: HTMLElement = at;
             const unhold = holdPastes(host, (held) => (pasting = held));
+            const unkey = holdMenuKeys(host);
             // A shell names its tmux window after the running command with `ESC k <name> ESC \`,
             // which xterm does not know and would print as the name itself; the title is dropped,
             // and a sequence cut across two chunks is carried to the next one.
@@ -167,6 +222,7 @@
                 typed.dispose();
                 rang.dispose();
                 unhold();
+                unkey();
                 pasting = null;
                 term.dispose();
                 grid = null;
@@ -215,15 +271,21 @@
 </script>
 
 <div class="half">
-    <!-- The grid takes a file dropped from the Files view; its keyboard is xterm's. -->
-    <!-- svelte-ignore a11y_no_static_element_interactions -->
-    <div
-        class="grid"
-        bind:this={body}
-        data-terminal={id}
-        ondragover={fileOver}
-        ondrop={droppedOnGrid}
-    ></div>
+    <ContextMenu
+        label={t('sessions.view_terminal')}
+        read={() => gridMenu(grid?.hasSelection() === true, armed, t)}
+        onpick={picked}
+    >
+        <!-- The grid takes a file dropped from the Files view; its keyboard is xterm's. -->
+        <!-- svelte-ignore a11y_no_static_element_interactions -->
+        <div
+            class="grid"
+            bind:this={body}
+            data-terminal={id}
+            ondragover={fileOver}
+            ondrop={droppedOnGrid}
+        ></div>
+    </ContextMenu>
     {#if agent}
         <SteerBox {terminal} />
     {/if}

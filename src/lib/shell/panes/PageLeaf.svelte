@@ -35,9 +35,11 @@
         path: number[];
         /** The page whose tree holds the leaf. */
         host: string;
+        /** The palette's opener, handed to every pane of the page shown here. */
+        onpalette?: (prefill: string) => void;
     };
 
-    let { nested, path, host }: Props = $props();
+    let { nested, path, host, onpalette }: Props = $props();
 
     let head: HTMLDivElement | undefined = $state();
 
@@ -68,7 +70,7 @@
 </script>
 
 {#snippet paneOf(node: Layout, at: number[], of: string)}
-    <PaneView {node} path={at} page={of} />
+    <PaneView {node} path={at} page={of} {onpalette} />
 {/snippet}
 
 {#snippet foldOf(node: Layout, dir: 'row' | 'col', onexpand: () => void)}
@@ -76,7 +78,7 @@
 {/snippet}
 
 {#snippet leafOf(inner: string, at: number[], of: string)}
-    <PageLeaf nested={inner} path={at} host={of} />
+    <PageLeaf nested={inner} path={at} host={of} {onpalette} />
 {/snippet}
 
 {#if page !== null}
@@ -93,7 +95,7 @@
         </div>
         <div class="tree">
             {#if zoomed !== null && focus !== null}
-                <PaneView node={zoomed} path={focus.path} page={nested} />
+                <PaneView node={zoomed} path={focus.path} page={nested} {onpalette} />
             {:else}
                 <SplitView
                     layout={layout(nested)}

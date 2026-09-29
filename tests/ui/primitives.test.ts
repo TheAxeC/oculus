@@ -24,7 +24,7 @@ import Meter from '../../src/lib/ui/display/Meter.svelte';
 import Pane from '../../src/lib/ui/frame/Pane.svelte';
 import { heldStop, nextStop } from '../../src/lib/ui/tree/roving.ts';
 import RowButton from '../../src/lib/ui/controls/RowButton.svelte';
-import Search from '../../src/lib/ui/controls/Search.svelte';
+import Search from '../../src/lib/ui/controls/text/Search.svelte';
 import Segment from '../../src/lib/ui/controls/Segment.svelte';
 import Tabs from '../../src/lib/ui/tabs/Tabs.svelte';
 import Table from '../../src/lib/ui/display/Table.svelte';

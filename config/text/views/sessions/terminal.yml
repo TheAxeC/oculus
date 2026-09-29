@@ -9,6 +9,15 @@ text:
         kind_observed: '{0} (read-only)'
         kind_shell: Shell
         kind_shell_glyph: terminal_shell
+        menu_copy: Copy
+        menu_join: Join Terminals
+        menu_kill: Kill Terminal
+        menu_new: New Terminal
+        menu_new_profile: New Terminal With Profile
+        menu_paste: Paste
+        menu_select_all: Select All
+        menu_split: Split Terminal
+        menu_unsplit: Unsplit Terminal
         new_terminal: new terminal
         new_terminal_title: Start a new terminal in this tab, from the composer
         stop_terminal: Stop this terminal

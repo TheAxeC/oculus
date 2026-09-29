@@ -25,7 +25,18 @@
     // the frame is not walled off from this page's origin, so it could reach the page through
     // window.parent; the file it holds is the owner's own document from the owner's own disk, which
     // is the same ground api/docs renders a README on.
+    //
+    // A right-click in the document opens the prose menu (views/shared/prose/prose-menu.ts), as it
+    // does on rendered Markdown. The frame is a document of its own whose right-clicks never reach
+    // this page, so the frame's own right-click is heard on the frame's document, each time a page
+    // loads in it: what it selects and the image under the pointer are read there, and the
+    // right-click is raised again on the frame element at the same point, where the menu opens.
+    // With no selection and no image the frame's right-click opens nothing.
 
+    import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
+    import type { MenuItem } from '$lib/ui/menu/menu-items';
+    import { useState } from '$lib/state/client/use';
+    import { proseAt, proseMenu, prosePicked } from '../../shared/prose/prose-menu';
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
@@ -35,6 +46,14 @@
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
 
     let { instance }: ViewProps = $props();
+
+    const {
+        layout: { openView }
+    } = useState();
+
+    let frame: HTMLIFrameElement | null = $state(null);
+    let menu: MenuItem[] = $state([]);
+    let heard: { text: string; image: string | null } = { text: '', image: null };
 
     const root = $derived(read(instance.state, 'root'));
     const path = $derived(read(instance.state, 'path'));
@@ -48,6 +67,49 @@
         if (typeof state !== 'object' || state === null || Array.isArray(state)) return '';
         const held = (state as Record<string, unknown>)[key];
         return typeof held === 'string' ? held : '';
+    }
+
+    /**
+     * A right-click inside the frame: read there, kept from the browser's own menu, and raised
+     * again on the frame element at the same point of this page, where the menu opens. A
+     * right-click the browser raises for a key comes at no point, and opens at the element it was
+     * raised on.
+     */
+    function inFrame(event: MouseEvent): void {
+        const held = frame;
+        if (held === null) return;
+        const view = held.contentWindow;
+        heard = proseAt(event.target, view === null ? null : view.getSelection());
+        const origin = window.location.origin;
+        menu = proseMenu({ selection: heard.text !== '', image: heard.image, origin }, t);
+        event.preventDefault();
+        if (menu.length === 0) return;
+        const box = held.getBoundingClientRect();
+        let x = event.clientX;
+        let y = event.clientY;
+        const target = event.target as { getBoundingClientRect?: () => DOMRect } | null;
+        if (x === 0 && y === 0 && typeof target?.getBoundingClientRect === 'function') {
+            const rect = target.getBoundingClientRect();
+            x = rect.right;
+            y = rect.top;
+        }
+        held.dispatchEvent(
+            new MouseEvent('contextmenu', {
+                bubbles: true,
+                cancelable: true,
+                clientX: box.left + x,
+                clientY: box.top + y
+            })
+        );
+    }
+
+    /** Each page the frame loads is heard for its right-clicks; a page of its own goes with it. */
+    function loaded(): void {
+        frame?.contentDocument?.addEventListener('contextmenu', inFrame);
+    }
+
+    function picked(pick: string): void {
+        prosePicked(pick, heard, { openView });
     }
 
     /** The same address in a browser tab of its own, for printing it or reading it full width. */
@@ -68,7 +130,16 @@
         {#if src === ''}
             <Empty message={t('document.none')} glyph={t('document.none_glyph')} />
         {:else}
-            <iframe class="frame" {title} {src} sandbox="allow-same-origin allow-scripts"></iframe>
+            <ContextMenu label={t('ui.prose_menu')} items={menu} onpick={picked}>
+                <iframe
+                    class="frame"
+                    {title}
+                    {src}
+                    sandbox="allow-same-origin allow-scripts"
+                    bind:this={frame}
+                    onload={loaded}
+                ></iframe>
+            </ContextMenu>
         {/if}
     </div>
 </Pane>
