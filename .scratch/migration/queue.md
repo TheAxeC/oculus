@@ -30,6 +30,7 @@ Landed, newest first: every step ticked in `plan.md`, each with the date and the
 - Q105 (`bin/` renamed to `utils/`; Z65), 2026-09-29, ae8999e5.
 - Q104 (the load-sensitive test files tagged slow, the tree checks on their own verify line; Z64), 2026-09-29, eecbd8f0.
 - Q83 (small libraries in place of hand code), 2026-09-29, d1986845.
+- Q103 (the Live HPC view's failure text and a collapsible capacity section), 2026-09-29, 8965f644.
 - Q86b (the Map's drag after neato's placement), 2026-09-29, 1e8fdcda.
 - Q88 (right-click menus wherever vscode.dev gives one), 2026-09-29, 88e6a1c3.
 - D13a (the source tab on Monaco), 2026-09-29, 2267831d.
