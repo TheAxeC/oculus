@@ -1,7 +1,7 @@
 /plan-orchestration oculus/migration
 
 In flight:
-- Q81 (menus, context menus, tooltips and dialogs on bits-ui; the palette on its Command list with fuzzysort): built, its first review running.
+- Q81 (menus, context menus, tooltips and dialogs on bits-ui; the palette on its Command list with fuzzysort): repair round 1 sent.
 - Q82 (the tree on @zag-js/tree-view, the long explorer lists virtualized): repair round 1 answered, its review next.
 Queued, in order:
 - Q79b (the tests, runs alone).

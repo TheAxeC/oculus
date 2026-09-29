@@ -37,9 +37,9 @@ dispatch:      # Q81 and Q82 building.
   launched: 2026-09-29
   report: agents/reviews/Q81-report.md
   landing: not-started
-  round: 0
+  round: 1, sent 2026-09-29 from worktree commit 67d7fef0, agents/briefs/Q81-round1-sent.md
   builder_usage: 63 tool uses, 291k tokens, 11 min, the cases hand-back; 203 tool uses, 117k tokens, 57 min, the build after the ruling
-  reviewer: acab87030fa9fa19d, launched 2026-09-29 (first refutation, running)
+  reviewer_report: agents/reviews/Q81-refuter.md, reviewer acab87030fa9fa19d, 325k tokens, 124 tool uses, 24 min
   cases: ruled at round 0 in agents/briefs/Q81-cases.md (case 5 to the look, the overlays' Escape through bits-ui with the shell's three Escape branches removed)
 - step: Q82
   executor: agent
@@ -53,6 +53,7 @@ dispatch:      # Q81 and Q82 building.
   round: 1, sent 2026-09-29 from worktree commit ec1939ba, agents/briefs/Q82-round1-sent.md
   builder_usage: 97 tool uses, 339k tokens, 30 min; 55 tool uses, 167k tokens, 27 min, round 1
   reviewer_report: agents/reviews/Q82-refuter.md, reviewer a6d13a2b6f68312ca, 246k tokens, 72 tool uses, 17 min
+  round_1_reviewer: a5a90f3a6f893eeab, launched 2026-09-29 (refutation of round 1, running)
   shared_paths: with Q81, package.json and package-lock.json (each adds its own dependencies: a hand merge of the dependency lines, then npm install), DESIGN.md (Q81 lines 216 and 306, Q82 line 309: different lines), HELP.md (Q81 lines 42 and 86, Q82 lines 55-56: different lines), docs/diagrams (a rerun of npm run diagrams), tests/ui/primitives.test.ts, tests/ui/wall.test.ts, tests/views/whole/type-scale.test.ts and tests/checks/tree/allow-styling.ts (keyed entries or cases of different components: a hand merge of separate lines)
 ```
 

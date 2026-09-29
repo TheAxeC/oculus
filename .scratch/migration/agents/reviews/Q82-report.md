@@ -1,10 +1,10 @@
-# Q82 report: the tree on zag's tree-view machine, the three long lists virtualized
+# Q82 report: the tree on zag's tree-view machine, the three long lists virtualized (with repair round 1)
 
-Everything in the brief is done. The cases that need a browser (case 10, and the key, focus and scroll behaviour of items 2 to 5) are left to the landing's look, as item 7 says; they are listed under "Cases left to the look".
+Everything in the brief and in repair round 1 is built. The cases that need a browser (case 10, and the key, focus and scroll behaviour, including the kept rows) are left to the landing's look, as item 7 says; they are listed under "Cases left to the look". The full verify list was not run in this round, as the round says; the commands that were run are named under DONE / NOT DONE.
 
 ## Open items of the state file (verbatim)
 
-`orchestrator-state.md:94-98`:
+`sed -n 125,130p` of the main checkout's `tools/oculus/.scratch/migration/orchestrator-state.md`, read at finish:
 
 > ## Open items (only what Axel must rule on; every report opens with this list verbatim and repeats it until he has ruled)
 >
@@ -14,157 +14,193 @@ Everything in the brief is done. The cases that need a browser (case 10, and the
 
 ## The cases' first run, on the unchanged source
 
-The case tests were written first and run against the unchanged source, with only the three dependencies installed (item 1): `npx vitest run tests/ui/tree tests/views/sources/files/files.test.ts tests/views/sources/repositories/repositories.test.ts` printed `Test Files  5 failed (5)`, `Tests  12 failed | 85 passed (97)`.
+The first run is the delivered case tests against the base source: `npx vitest run tests/ui/tree tests/views/sources/files/files.test.ts tests/views/sources/repositories/repositories.test.ts` gives `Tests  15 failed | 82 passed (97)` (the count the review reproduced, `agents/reviews/Q82-refuter.md:36` and `:62`; not re-run in this round). Three of the fifteen are the unchanged "one explorer row" cases of `tree.test.ts`, which failed because `navAt` in that file builds the new `TreeNav` shape the base source does not read.
 
 | Case | Test | First run |
 |---|---|---|
-| 1 | `tree.test.ts` "is a tree named by its label" | passed (the old TreeView had `role="tree"` and its label) |
-| 1 | `tree.test.ts` "draws each row as a treeitem at the level its parent gives it" | failed: `expected [ '1', '1', '1' ] to deeply equal [ '1', '2', '1' ]` (the old row drew the level its caller handed it) |
-| 2 | `tree.test.ts` "gives exactly one row the stop" | passed (the old `stopOf` gave the same stops) |
-| 3 | `tree.test.ts` "says a closed row is closed, and says nothing of a row that does not open" | passed (the harness hands `expanded` from `open`) |
-| 4 | `tree-keys.test.ts` four cases of the collection | failed: `TypeError: treeNodes is not a function` |
-| 5, 6 | `tree-keys.test.ts` three cases of `toggledBy`, one of `expandedOf`, one of `focusOf` | failed: `toggledBy`, `expandedOf`, `focusOf` "is not a function" |
+| 1 | `tree.test.ts` "is a tree named by its label" | passed |
+| 1 | `tree.test.ts` "draws each row as a treeitem at the level its parent gives it" | failed: `expected [ '1', '1', '1' ] to deeply equal [ '1', '2', '1' ]` |
+| 2 | `tree.test.ts` "gives exactly one row the stop" | passed |
+| 3 | `tree.test.ts` "says a closed row is closed, and says nothing of a row that does not open" | passed |
+| 1-3 | `tree.test.ts` the three "one explorer row" cases | failed on `navAt`'s new shape |
+| 4 | `tree-keys.test.ts` four cases of the collection | failed: `treeNodes is not a function` |
+| 5, 6 | `tree-keys.test.ts` cases of `toggledBy`, `expandedOf`, `focusOf` | failed: "is not a function" |
 | 7 | `virtual.test.ts` | failed: `Cannot find module '../../../src/lib/ui/tree/virtual.ts'` |
-| 8 | `files.test.ts` and `repositories.test.ts` audits of the spacers | failed: `expected -1 to be greater than -1`, `expected +0 to be 3` |
-| 9 | grep commands, not tests | run at the end, below |
+| 8 | the audits in `files.test.ts` and `repositories.test.ts` | failed |
+| 9 | grep commands | run at the end, below |
 | 10 | browser only | left to the look |
 
-No case turned out wrong under the brief's rules, so nothing was handed back. One reading is recorded: case 7 says "draws rows 95 to 125"; the virtualizer draws 30 rows, indexes 95 through 124, which is 95 to 125 read as a half-open range (visible rows 100 to 119 in 440 px, five past each edge). The test asserts first index 95, last index 124, 30 rows, and passes.
+Case 7: the brief's "rows 95 to 125" is off by one. By the round-1 ruling (`briefs/Q82-round1-sent.md:7`) the window is rows 95 through 124, 30 rows, and the test asserts exactly those indexes.
 
 ## DONE / NOT DONE
 
 | Item | State | Proof |
 |---|---|---|
-| 1 Dependencies | DONE | `grep -n "zag\|virtual-core" package.json` prints `40:        "@tanstack/virtual-core": "^3.17.11",`, `45:        "@zag-js/svelte": "^1.44.0",`, `46:        "@zag-js/tree-view": "^1.44.0",`, all in `dependencies`; installed versions read from `node_modules/<pkg>/package.json`: 1.44.0, 1.44.0, 3.17.11; `package-lock.json` written by `npm install` |
-| 2 TreeView on the machine | DONE | `tests/ui/tree/tree.test.ts` cases 1 to 3 (server render through `useMachine`, `connect`, `normalizeProps`); keys, focus and type-ahead left to the look |
-| 3 TreeNav and TreeItem | DONE | `tree.test.ts` cases; `grep -rn "rowMove\|stopOf" src` prints nothing (exit 1) |
-| 4 Virtualized lists | DONE | `tests/ui/tree/virtual.test.ts` (case 7); the audits of case 8 in `files.test.ts` and `repositories.test.ts`; windowing, scroll and reveal left to the look |
-| 5 Drag | DONE | Files rows keep `draggable` and `ondragstart` on the `li` (`Tree.svelte`); the tree spreads no pointer or click handler of the machine (`TreeView.svelte` `rowProps` spreads only attributes and `onfocus`); a drag itself left to the look |
-| 6 Documents | DONE | DESIGN.md:309 and HELP.md's key table rewritten; `npm run diagrams` rerun, which rewrote `docs/diagrams/layers.{dot,svg}` and `layer-views.{dot,svg}` (`diff -rq` against the main checkout) |
-| 7 Tests | DONE | every new or changed case names its revert; case 8 is named an audit |
-| Verify list | DONE | below |
+| 1 Dependencies | DONE | `grep -n "zag\|virtual-core" package.json` (round 0): `@tanstack/virtual-core ^3.17.11`, `@zag-js/svelte ^1.44.0`, `@zag-js/tree-view ^1.44.0` under `dependencies`; carets ruled in |
+| 2 TreeView on the machine | DONE | `tree.test.ts` cases 1 to 3; keys left to the look |
+| 3 TreeNav and TreeItem | DONE | `tree.test.ts`; `grep -rn "rowMove\|stopOf" src` printed nothing in round 0 (not re-run) |
+| 4 Virtualized lists | DONE | `virtual.test.ts`; the case 8 audits |
+| 5 Drag | DONE | unchanged from round 0; left to the look |
+| 6 Documents | DONE | DESIGN.md:309, HELP.md:57, head comments; `npm run diagrams` exit 0 |
+| 7 Tests | DONE | every new or changed case names its revert and was run red with it (below) |
+| R1.1 type-ahead on every letter, Cmd/Ctrl withheld | DONE | `keyRoute` in `tree-keys.ts`, six cases in `tree-keys.test.ts` |
+| R1.2 stop, focused row and open commit kept drawn | DONE | `keptRange`, `rowWindow` gaps, `TreeNav.kept`, Graph `keep`; three cases in `virtual.test.ts` |
+| R1.3 window from the first render | DONE | `firstWindow`; two cases in `virtual.test.ts`; case 8 audits rewritten |
+| R1.4 index-path map, label pruning | DONE | `indexPaths` with a case; `TreeView.svelte:93-98` prunes `labels` |
+| R1.5 documents | DONE | below |
+| R1.6 report corrections | DONE | this file |
+| Full verify list | NOT RUN | the round says the orchestrator runs it on main at landing |
 
-The verify list, `PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH sh ~/.claude/skills/land/templates/checks.sh /Users/axelfaes/workspace/research-hub/.agents/worktrees/Q82/tools/oculus/.scratch/migration/orchestrator-state.md </dev/null` from `tools/oculus`, exit 0; its lines:
+Commands run at finish, from the worktree's `tools/oculus` with node 24.21.0 first on PATH:
 
 ```
-$ npm test
- Test Files  354 passed (354)
-      Tests  5671 passed | 1 skipped (5672)
+$ npx vitest run tests/ui/tree tests/views/sources/files/files.test.ts tests/views/sources/repositories/repositories.test.ts tests/state/sources/repositories/repositories.test.ts tests/checks/source/comment-width.test.ts tests/views/whole/type-scale.test.ts
+      Tests  399 passed (399)
 $ npm run check
 COMPLETED 1572 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
-$ npm run build
-[check mark] built in 1.85s
-[check mark] built in 6.11s
 $ npm run format:check
+All matched files use Prettier code style!
 $ npm run lint
-$ ! LC_ALL=C grep -rna '[^ -~]' src tests
-checks: 6 commands passed
+(no findings, exit 0)
+$ npm run diagrams
+(exit 0)
+$ LC_ALL=C grep -rna '[^ -~]' src tests DESIGN.md HELP.md
+(nothing)
 ```
 
-(The build's check mark glyph is written `[check mark]` to keep this file ASCII. The `npm test` output also carries three `Rebasing (1/1)error: could not apply ...` lines, printed by git inside tests that build throwaway repositories; the suite passed.) Also run: `sh bin/folder-check.sh` exit 0; the spec's ASCII gate (`LC_ALL=C perl ...` over `src tests bin config`) printed nothing.
+`npm run diagrams` leaves `docs/diagrams/layers.{dot,svg}` and `layer-views.{dot,svg}` differing from the main checkout (`cmp` over the folder): the views-to-ui import counts go from 134 to 137 and 545 to 548, the three `VirtualRows` imports.
+
+## Each new or changed case, red with its change undone
+
+Each change below was applied to the source, the named test file run, and the file written back (a Python loop holding the original text in memory; `grep` after it found each original line back, and the six test files above then passed 399 of 399).
+
+| Change undone | Failure quoted |
+|---|---|
+| `indexPaths`: `paths.set(child.value, path)` | "is its place among its parent's children, under its parent's own path": `expected [] to deeply equal [ +0 ]` |
+| `keyRoute`: `a` returns `'machine'` | "sends a lowercase a as a type-ahead letter, since the machine drops it": `expected 'machine' to be 'type-ahead'` |
+| `keyRoute`: every letter returns `'type-ahead'` | "hands every other letter to the machine, which reads it as a type-ahead": `expected 'type-ahead' to be 'machine'` |
+| `keyRoute`: Meta/Ctrl test dropped | "withholds a key with Meta or Ctrl held, so Cmd+A and Ctrl+A stay the page's": `expected 'type-ahead' to be 'withhold'` |
+| `keyRoute`: `*` test dropped | "withholds the key that opens every sibling": `expected 'machine' to be 'withhold'` |
+| `keyRoute`: Space always `'machine'` | "withholds Space outside a type-ahead and hands it to the machine inside one": `expected 'machine' to be 'withhold'` |
+| `keyRoute`: last line `'withhold'` | "hands the tree's own keys to the machine": `expected 'withhold' to be 'machine'` |
+| `rowWindow`: `after` from the first drawn row's start | "draws rows 95 to 124 of 1,000 ...": `expected 19910 to be 19250` (and three more cases) |
+| `rowWindow`: `let end = 0` | "measures the gaps from the list, not from the top of the scroll box it sits in": `expected 2390 to be 2090` |
+| `keptRange`: `defaultRangeExtractor(range)` alone | "draws a kept row far above the window at its place, with the gaps around it": `expected [ 95, 96, ... ] to deeply equal [ 3, 95, 96, ... ]` |
+| `keptRange`: an array with each kept index pushed | "draws a kept row already inside the window once": `expected [ 95, ..., 100, 100, ... ] to deeply equal [ 95, ..., 100, 101, ... ]` |
+| `keptRange`: bounds test dropped | "ignores a kept index the list does not hold": failed |
+| `firstWindow`: `shown = count` | "draws the first two overscans of rows of a longer list": `expected [ +0, 1, ..., ...(991) ] to deeply equal [ +0, 1, ..., 9 ]`; Files audit `expected 31 to be 10`; Repositories audit `expected 30 to be 10` |
+| `firstWindow`: `shown = OVERSCAN * 2` always | "draws every row of a list shorter than that": `expected [ +0, 1, ..., 9 ] to deeply equal [ +0, 1, 2 ]` |
+
+The two case 8 tests are audits of the markup, named so: a server rendering has no scroll box, so they show the first window and the after spacer, and say nothing of which rows a browser draws once scrolled. `virtual.test.ts` has no empty-list case: `rowWindow` has no branch for it (an empty window holds the whole height after it, which is 0 for an empty list), so no revert could turn such a case red.
 
 ## Files, with line counts before and after
 
-Before counts are the brief's (`wc -l` on main at 8a98ede3) where it gives them, and otherwise `wc -l` on the main checkout.
+Before is the brief's count on main at 8a98ede3, or new; after is `wc -l` at finish.
 
 | File | Before | After |
 |---|---|---|
 | `package.json` | 56 | 59 |
-| `package-lock.json` | (regenerated by `npm install`) | |
-| `src/lib/ui/tree/TreeView.svelte` | 81 | 211 |
+| `src/lib/ui/tree/TreeView.svelte` | 81 | 251 |
 | `src/lib/ui/tree/TreeItem.svelte` | 454 | 457 |
-| `src/lib/ui/tree/tree-keys.ts` | 72 | 115 |
-| `src/lib/ui/tree/VirtualRows.svelte` | new | 230 |
-| `src/lib/ui/tree/virtual.ts` | new | 46 |
-| `src/lib/ui/tree/TreeSection.svelte`, `Disclosure.svelte`, `roving.ts` | 86, 64, 50 | unchanged |
+| `src/lib/ui/tree/tree-keys.ts` | 72 | 150 |
+| `src/lib/ui/tree/VirtualRows.svelte` | new | 270 |
+| `src/lib/ui/tree/virtual.ts` | new | 67 |
 | `src/lib/views/sources/files/tree/Tree.svelte` | 278 | 300 |
 | `src/lib/views/sources/repositories/Changes.svelte` | 280 | 310 |
-| `src/lib/views/sources/repositories/graph/Graph.svelte` | 318 | 372 |
+| `src/lib/views/sources/repositories/graph/Graph.svelte` | 318 | 379 |
 | `src/lib/views/sources/repositories/Repo.svelte` | 279 | 279 |
 | `src/lib/state/sources/repositories/repositories.ts` | 465 | 469 |
-| `DESIGN.md` | 322 | 322 (line 309 rewritten) |
+| `DESIGN.md` | 322 | 322 (line 309) |
 | `HELP.md` | 294 | 295 |
-| `docs/diagrams/layers.dot`, `.svg`, `layer-views.dot`, `.svg` | | regenerated |
-| `tests/ui/tree/tree.test.ts` | 242 | 287 |
-| `tests/ui/tree/tree-keys.test.ts` | 79 | 141 |
-| `tests/ui/tree/virtual.test.ts` | new | 74 |
+| `tests/ui/tree/tree.test.ts` | 242 | 288 |
+| `tests/ui/tree/tree-keys.test.ts` | 79 | 199 |
+| `tests/ui/tree/virtual.test.ts` | new | 134 |
 | `tests/ui/tree/TreeHarness.svelte` | new | 32 |
-| `tests/views/sources/files/files.test.ts` | 886 | 900 |
-| `tests/views/sources/repositories/repositories.test.ts` | 670 | 690 |
+| `tests/views/sources/files/files.test.ts` | 886 | 928 |
+| `tests/views/sources/repositories/repositories.test.ts` | 670 | 708 |
 | `tests/state/sources/repositories/repositories.test.ts` | 824 | 829 |
 | `tests/state/sources/explorer.test.ts` | 438 | 439 |
 | `tests/views/whole/type-scale.test.ts` | 349 | 350 |
 
-Paths outside the brief's list, each for a line the change made wrong: `Repo.svelte` (`graphRows` is now `KeyRow[]`), `state/sources/repositories/repositories.ts` (`KeyRow` gains `fixed`; `repositoryKeyRows` takes the graph's rows rather than ids), its test, `explorer.test.ts` (its head comment named `tree-keys.ts` as where a key moves), `type-scale.test.ts` (its audit lists every `ui` component, and `VirtualRows.svelte` is one). The rename grep: `grep -rn "rowMove\|stopOf\|onkeydown(id\|tabindex(" DESIGN.md HELP.md README.md src tests config` prints nothing outside the new code.
+`src/lib/ui/tree/` holds 8 files (`ls | wc -l`). `Repo.svelte`, `state/sources/repositories/repositories.ts` and its test are in the step's paths by the round-1 ruling.
 
 ## What was built, in code
 
-The rows a caller hands become the machine's collection, and the machine's expanded change becomes the caller's `ontoggle`:
+Where a key goes (`tree-keys.ts`), called from `TreeView.svelte`'s `pressedKey`:
 
 ```ts
-// ui/tree/TreeView.svelte
-const service = useMachine(tree.machine, () => ({
-    id: uid,
-    collection,                                   // tree.collection({ rootNode: treeNodes(rows), nodeToString })
-    expandedValue: expanded,                      // expandedOf(rows)
-    focusedValue: focusOf(rows, current ?? held),
-    onExpandedChange: (details) => {
-        for (const id of toggledBy(rows, expanded, details.expandedValue)) ontoggle?.(id);
-    },
-    onFocusChange: (details) => { /* held = id; onfocusrow(id) when a key moved it */ },
-    scrollToIndexFn: (details) => { for (const list of lists) if (list.reveal(details.node.value)) return; }
-}));
+export function keyRoute(key, held: { meta: boolean; ctrl: boolean }, typingAhead: boolean) {
+    if (held.meta || held.ctrl) return 'withhold';
+    if (key === '*') return 'withhold';
+    if (key === ' ') return typingAhead ? 'machine' : 'withhold';
+    if (key === 'a') return 'type-ahead';   // zag's map reads `a` as select-all and drops it
+    return 'machine';
+}
+// pressedKey: 'type-ahead' => event.preventDefault(); service.send({ type: 'TREE.TYPEAHEAD', key: event.key, id: row.id })
 ```
 
-`TreeNav` is now `{ row(id, label), list(list), focus(id) }`. `TreeItem` spreads `nav.row(id, label)` after its own attributes, so a row in a tree takes the machine's id, `data-part` (`item`, or `branch-control` for a row that opens), role, `aria-level`, `aria-expanded` and tabindex. A list is drawn through `VirtualRows`, whose snippet gets each item's index and a measuring attachment:
+The rows kept drawn, and the window with a gap before each drawn row (`virtual.ts`):
 
-```svelte
-<VirtualRows count={rows.length} key={(at) => rowKey(rows[at])} {nav} owns={...} label={...}>
-    {#snippet item(at, measure)}
-        <li class="row" ... {@attach measure}>...</li>
-    {/snippet}
-</VirtualRows>
+```ts
+export function keptRange(range: Range, kept: readonly number[]): number[] {
+    const drawn = new Set(defaultRangeExtractor(range));
+    for (const index of kept) if (index >= 0 && index < range.count) drawn.add(index);
+    return [...drawn].sort((one, two) => one - two);
+}
+// rowWindow: gap = item.start - end of the previous drawn row (or the list's top); after = total - last end
+// firstWindow(count): rows 0 .. min(count, OVERSCAN * 2) - 1
 ```
 
-## Judgment calls the brief left open (each reversible)
+`TreeNav.kept` is `[stop, inside]` (the row at the stop, and the row the focus is in, read by an `onfocusin` on the tree box); `VirtualRows` maps those ids through `owns`, adds the caller's `keep` (the Graph passes the open commit's index) and hands `rangeExtractor: (range) => keptRange(range, held)` to the virtualizer. It draws a `data-virtual="gap"` spacer `li` before each drawn row after the first whose gap is above 0; the before spacer holds the first row's gap. Until the list finds its scroll box it draws `firstWindow(count)` and the after spacer is `calc(<rows not drawn> * var(--tree-row) * var(--text-scale, 1))`.
 
-1. The machine's click handlers are not spread on a row, and neither is its `onFocus` as written: zag's item `onClick` sends `NODE.CLICK` with `stopPropagation`, and its branch control's toggles the branch, which would call `ontoggle` a second time after the row's own press; zag's `onFocus` maps to `onfocusin` with `stopPropagation`, which would fire for a control inside the row and stop the event for the page. The row spreads its own `onfocus`, which sends the machine's `NODE.FOCUS` only when the row element itself takes the focus.
-2. `aria-selected` stays the row's `selected` (brief decision 3); the machine's selection is not spread.
-3. The machine's keys reach it only from a row element (`data-part` `item` or `branch-control`), never from a control or a menu inside a row, as the old tree did. `*` (open every sibling) is not passed on, and Space only while a type-ahead is in progress (so "my file" matches); outside one, Space does what it did before (nothing in the tree). These keep the brief's "no other visible change".
-4. Left on a `fixed` row sends the machine's `NODE.ARROW_LEFT` (step to the parent): the machine alone would ask to close an open row, which the tree ignores for a `fixed` one, and the row would not be stepped through.
-5. `onfocusrow` is called for a focus move made by a key of the tree, as before, not for a pointer or a Tab landing on a row (a flag set by a key, cleared by a pointer press in the tree or the focus leaving it).
-6. The Graph hands up `KeyRow`s rather than ids: a commit row is `{ parent: 'graph', open: commit === hash, fixed: true }` and the open commit's files sit under it. Before, the files were listed under the Graph head, so the machine's level for them would have been 2 while they draw at 3. This changes two keys, listed below.
-7. The type-ahead reads the label a drawn row hands `nav.row`, else the label its list gives for a row not drawn, else the id. The open commit's file rows are labelled only once drawn (they belong to `CommitFiles`, not to the list).
-8. A virtualized list draws every row until it has found its scroll box (`[data-scroll]`, the Pane body), so the server render and the first pass on mount draw all rows; the window replaces them in the mount effect. A list with no `[data-scroll]` ancestor draws every row.
-9. Every drawn item is measured (`measureElement`), the estimate being the probe's height. The Files root head's 6 px gap moved from `margin-top` (on `:not(:first-child)`, which the spacer now always is) to `padding-top` on a row `class:apart` (a root head at index above 0), so the gap is part of the measured row.
-10. The graph's list item is one `li` holding a `ul role="none"` with the commit row and, when it is open, its files, so a commit and its files are measured as one item.
-11. The tree box takes the machine's `tabindex="-1"` (svelte-check warns on a keyed `role="tree"` without one).
-12. The test "keeps the branch line and the path above the error row" in `repositories.test.ts` looked for the word `branch` anywhere in the page; the machine's `data-part="branch-control"` on the repository list's head now contains it. The check now looks for the word as drawn, `>branch<`, and a new line asserts the named case draws it, so the check still fails if the heading appears.
+`nav.row` reads the index path from `indexPaths(root)`, a map built once per collection, then `collection.at(path)`. A `$effect.pre` deletes from `labels` every id not in `rows`.
+
+## Judgment calls (each reversible)
+
+1. The machine's click handlers are not spread on a row, and its `onFocus` (mapped to `onfocusin` with `stopPropagation`) is replaced by the row's own `onfocus`, which sends `NODE.FOCUS` only when the row element itself takes the focus. Ruled in.
+2. `aria-selected` stays the row's `selected` (brief decision 3).
+3. The machine's keys reach it only from a row element, never from a control inside a row. Which keys is `keyRoute`.
+4. Left on a `fixed` row sends `NODE.ARROW_LEFT` (step to the parent).
+5. `onfocusrow` is called for a focus move made by a key of the tree, as before.
+6. The Graph hands up `KeyRow`s with the open commit's files under the commit. Ruled in.
+7. The type-ahead reads the label a drawn row hands `nav.row`, else its list's `label` for a row not drawn, else the id. The open commit's file rows are labelled once drawn; with the open commit kept drawn, they stay drawn with it.
+8. Every drawn item is measured. The Files root head's gap is `padding-top` on a row `class:apart`, so it is part of the measured row.
+9. The Graph's item is one `li.entry` holding `ul.entry-rows` with the commit row and its files, measured as one item.
+10. The tree box takes the machine's `tabindex="-1"`. Ruled in.
+11. The `>branch<` check in `repositories.test.ts`, with a positive assertion beside it.
+12. The duplicate `KeyRow` in the state layer stays (ruled).
+13. The "stop" kept for a tree is the row carrying tabindex 0 (`current` when drawn, else the machine's last focused row, else the first row); the machine's focused value is the same row, so one id covers both.
 
 ## Every user-visible change, before and after (for the look)
 
 | View and state | Before | After |
 |---|---|---|
-| Any tree (Files, Repositories, the repository list, Notes, Bookmarks, Workspaces, Pages), focus on a row, type a letter | nothing | the focus moves to the next row whose name starts with it |
-| Files, a folder of several hundred files open | every row in the DOM | only the rows in view plus five each side; the scrollbar and the sections after the tree unchanged |
-| Repositories, a group with many changed files | every row in the DOM | only the rows in view plus five each side |
-| Repositories, Graph after several "more" presses | every loaded commit in the DOM | only the commits in view plus five each side; "more" after them |
+| Any tree, focus on a row, type a letter (`a` included) | nothing | the focus moves to the next row whose name starts with it |
+| Any tree, focus on a row, Cmd+A or Ctrl+A | the browser selects all | the browser selects all (the machine never sees a key with Meta or Ctrl) |
+| A pointer press on the blank space inside a tree, then the pointer leaves the tree | the focus leaves to the page and the indent guides hide | the tree box holds the focus (tabindex -1), `[role='tree']:focus-within .guide` (`TreeItem.svelte:329`) matches, and the indent guides stay drawn |
+| Graph, the loaded commits' markup | each commit `li` a direct child of the Graph section's list | each commit one level deeper, in `li.entry > ul.entry-rows`, with its files in the same `ul` when open |
 | Graph, a commit open, focus on one of its files, Left | focus to the Graph head | focus to the commit |
 | Graph, a commit open, focus on it, Right | nothing | focus to its first file |
-| A pointer press on the blank space inside a tree | the focus leaves to the page | the focus stays on the tree box (tabindex -1) |
+| Files, a folder of several hundred files open | every row in the DOM | the rows in view plus five each side, the kept rows, and spacers; the scrollbar and the sections after the tree unchanged |
+| Repositories, a group with many changed files | every row in the DOM | the rows in view plus five each side, the kept rows, and spacers |
+| Graph after several "more" presses | every loaded commit in the DOM | the commits in view plus five each side, the kept rows and the open commit; "more" after them |
+| A long list scrolled so the row at the stop, or the focused row, leaves the view | (every row drawn) | that row stays drawn at its place, so Tab still reaches the tree and the focus stays on the row |
+| Graph, a commit open, scrolled away and back | (every row drawn) | the open commit stays drawn, so its files are read once |
+| First render of a long list, and a server render | every row drawn | the first ten rows, the rest held at `--tree-row` times the text scale until the list finds its scroll box |
 
 ## Cases left to the look (browser only)
 
-Case 10 whole: Up, Down, Home, End, Right, Left and type-ahead in the Files tree and the Repositories tree; a `fixed` folder under a filter stepped through by Right and Left and not closed; Enter opening a row; Tab from a row reaching its controls; a folder of several hundred files scrolled smoothly with only the rows in view in the DOM; End in a long tree scrolling to the last row and focusing it; a row dragged to a pane. Also: the Files root heads' gap looking as before; the Graph's lanes drawing across the windowed commits; the two Graph key changes above; a text scale change keeping the window right.
+Case 10 whole: Up, Down, Home, End, Right, Left and type-ahead in the Files tree and the Repositories tree, `a` included; Cmd+A on a row selecting the page; a `fixed` folder under a filter stepped through and not closed; Enter opening a row; Tab from a row reaching its controls; a folder of several hundred files scrolled smoothly with only the rows in view in the DOM; End in a long tree scrolling to the last row and focusing it; a row dragged to a pane. Also: the stop row and the focused row staying drawn when scrolled out, and Tab into the tree after it; the open commit staying drawn with no second read of its files; the first render's window with no visible jump when the window replaces it; the indent guides after a press on blank tree space; the Files root heads' gap; the Graph's lanes across the windowed commits; the two Graph key changes; a text scale change keeping the window right.
 
 ## Limitations and sharp edges
 
-- Not verified in a browser: every key, focus move, scroll, reveal and drag above; the tests render on the server.
-- Mounting a virtualized list builds every row once before windowing (judgment call 8); on a folder of thousands of files that is one full build per mount (a tab coming back). Not measured.
-- In a pane hidden while it mounts, the probe measures 0 px, so the list draws every row until the probe is resized when the pane is shown. Not verified.
-- `VirtualRows`'s pending focus (a key moving to a row not drawn) is asynchronous: superseded by a later key it gives way (`pending !== id`), but no test covers it; it needs a DOM.
+- Not verified in a browser: every key, focus move, scroll, reveal, kept row and drag above; the tests render on the server.
+- A box 0 px tall draws no rows until it has a height. Not verified in a browser.
+- The first render's after spacer holds the rows at the tokens' row height; a list whose rows are taller (a Files root head's gap, an open commit with files) is a few px off until the window is measured on mount. Not measured.
+- `VirtualRows`'s pending focus (a key moving to a row not drawn) is asynchronous and superseded by a later key; no test covers it, since it needs a DOM.
 - The machine keeps its own selected value internally (Enter on a row with no button selects it there); nothing reads or draws it.
+- The type-ahead's reading of labels of rows not drawn goes through `nav.list`, registered in an effect, so no server test shows it.
 
 ## Anything in the brief wrong or impossible
 
-Nothing impossible. Case 7's "95 to 125" is read as a half-open range (above). Item 3's "the item or branch-control attributes and handlers": the attributes are spread; of the handlers, only focus is taken, re-sent as the machine's own event (judgment call 1), since the machine's click and focusin handlers as written would toggle twice and stop events for the page.
+Case 7's "95 to 125" is off by one, as ruled; the window is 95 through 124. Item 3's "handlers": only focus is taken from the machine's row handlers, re-sent as its own event (judgment call 1, ruled in).
