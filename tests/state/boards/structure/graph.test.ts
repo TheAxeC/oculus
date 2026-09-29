@@ -1,12 +1,18 @@
-// Pure relationship-graph visibility, directed-edge, start-seed and drag-tick checks.
+// Pure relationship-graph visibility, directed-edge, start-seed and drag-tick checks. The drag is
+// run on hand-placed nodes and on the dense graph of map-fixture.ts as neato places it at seed 1.
 
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
+import type { Viz } from '@viz-js/viz';
 import {
+    DEFAULT_BOUNDS,
     DEFAULT_PHYSICS,
+    MAX_FRAMES,
+    REST,
     buildGraph,
-    DRAG_PHYSICS,
     dragTick,
     holdFor,
+    pressHold,
+    settle,
     filterGraph,
     layoutKey,
     layoutSeed,
@@ -24,7 +30,13 @@ import {
     typeFilters,
     type Graph as MapGraph
 } from '../../../../src/lib/state/boards/structure/graph.ts';
-import type { GraphEdge, PointNode } from '../../../../src/lib/state/boards/structure/graph.ts';
+import type {
+    DragHold,
+    GraphEdge,
+    PointNode
+} from '../../../../src/lib/state/boards/structure/graph.ts';
+import { createGraphviz, placeGraph } from '../../../../src/lib/state/boards/structure/layout.ts';
+import { denseGraph, node } from './map-fixture.ts';
 import type { Project, Snapshot } from '../../../../src/lib/data/model/index.ts';
 import { NO_FEEDS } from '../../../fixtures/entities-fixture.ts';
 
@@ -294,25 +306,6 @@ describe('relationship graph', () => {
         );
     });
 
-    it('moves coincident nodes apart and pulls a linked pair toward link length', () => {
-        const still = [point('a', 400, 340), point('b', 400, 340)];
-        const separated = physics(still, [], 1);
-        expect(Math.abs(separated[0].x - separated[1].x)).toBeGreaterThan(0);
-
-        const linked = [point('a', 300, 340), point('b', 700, 340)];
-        const params = {
-            ...DEFAULT_PHYSICS,
-            repulse: 0,
-            collide: 0,
-            center: 0,
-            damping: 1,
-            linkLength: 100,
-            linkStrength: 0.1
-        };
-        const pulled = physics(linked, [edge('ab', 'a', 'b')], 1, params);
-        expect(Math.abs(pulled[0].x - pulled[1].x)).toBeLessThan(400);
-    });
-
     it('moves only the movers of a drag, and pulls a mover joined to the held node toward it', () => {
         const nodes = [
             point('held', 900, 340),
@@ -321,7 +314,8 @@ describe('relationship graph', () => {
             point('far', 120, 600)
         ];
         const edges = [edge('hp', 'held', 'partner'), edge('of', 'other', 'far')];
-        const ticked = physics(nodes, edges, 1, DEFAULT_PHYSICS, undefined, new Set(['partner']));
+        const hold = { movers: new Set(['partner']), lengths: new Map(), apart: new Map() };
+        const ticked = physics(nodes, edges, hold);
         const at = Object.fromEntries(ticked.map((one) => [one.id, [one.x, one.y]]));
         expect(at.held).toEqual([900, 340]);
         expect(at.other).toEqual([500, 200]);
@@ -330,8 +324,8 @@ describe('relationship graph', () => {
     });
 
     it('leaves a picture at rest under the drag tick with the lengths its edges have', () => {
-        // Edges of different lengths, and pairs well inside the default collision separation,
-        // one of them overlapping: nothing moves while nothing is dragged.
+        // Edges of different lengths, and a pair closer than their two radii and the gap, one of
+        // them overlapping: nothing moves while nothing is dragged.
         const nodes = [
             point('hub', 500, 340),
             point('near', 520, 340),
@@ -347,15 +341,14 @@ describe('relationship graph', () => {
         ];
         const hold = holdFor(nodes, edges, 'hub');
         expect([...hold.movers].sort()).toEqual(['far', 'mid', 'near']);
-        expect(dragTick(nodes, edges, 1, hold)).toEqual(nodes);
+        expect(dragTick(nodes, edges, hold)).toEqual({ nodes, moved: 0 });
     });
 
     it('pulls a neighbour joined only to the dragged node after it, to its recorded length', () => {
         const nodes = [point('held', 500, 340), point('partner', 560, 340)];
         const edges = [edge('hp', 'held', 'partner')];
         const hold = holdFor(nodes, edges, 'held');
-        let moved = [{ ...nodes[0], x: 400 }, nodes[1]];
-        for (let frame = 0; frame < 400; frame += 1) moved = dragTick(moved, edges, 1, hold);
+        const moved = settle([{ ...nodes[0], x: 400 }, nodes[1]], edges, hold).nodes;
         expect(moved[0].x).toBe(400);
         // The partner has followed 100 px left and rests 60 px from the dragged node again.
         expect(moved[1].x).toBeCloseTo(460, 0);
@@ -363,42 +356,30 @@ describe('relationship graph', () => {
     });
 
     it('rests an edge with no recorded length at the link length of the parameters', () => {
-        const params = { ...DRAG_PHYSICS, linkLength: 80 };
+        const params = { ...DEFAULT_PHYSICS, linkLength: 80 };
         const nodes = [point('held', 500, 340), point('partner', 580, 340)];
         const edges = [edge('hp', 'held', 'partner')];
         const movers = new Set(['partner']);
-        const still = physics(nodes, edges, 1, params, undefined, movers, new Map());
+        const still = physics(
+            nodes,
+            edges,
+            { movers, lengths: new Map(), apart: new Map() },
+            params
+        );
         expect(still[1].x).toBe(580);
-        const pulled = physics(nodes, edges, 1, params, undefined, movers, new Map([['hp', 40]]));
+        const pulled = physics(
+            nodes,
+            edges,
+            { movers, lengths: new Map([['hp', 40]]), apart: new Map() },
+            params
+        );
         expect(pulled[1].x).toBeLessThan(580);
     });
 
-    it('moves neither of two non-movers inside the collision separation of each other', () => {
-        const nodes = [
-            point('held', 900, 340),
-            point('partner', 700, 340),
-            point('left', 300, 340),
-            point('right', 310, 340)
-        ];
-        const ticked = physics(
-            nodes,
-            [edge('hp', 'held', 'partner')],
-            1,
-            DEFAULT_PHYSICS,
-            undefined,
-            new Set(['partner'])
-        );
-        expect(ticked[2]).toEqual(nodes[2]);
-        expect(ticked[3]).toEqual(nodes[3]);
-    });
-
-    it('answers the nodes an edge joins to a node, and a drag tick with no push or centre pull', () => {
+    it('answers the nodes an edge joins to a node', () => {
         const edges = [edge('ab', 'a', 'b'), edge('ca', 'c', 'a'), edge('bc', 'b', 'c')];
         expect([...neighbours(edges, 'a')].sort()).toEqual(['b', 'c']);
         expect([...neighbours(edges, 'gone')]).toEqual([]);
-        expect([DRAG_PHYSICS.repulse, DRAG_PHYSICS.collide, DRAG_PHYSICS.center]).toEqual([
-            0, 0, 0
-        ]);
     });
 
     it('keeps a saved start seed and drops a malformed one or an old tuning', () => {
@@ -516,5 +497,243 @@ describe('the Map chips over a graph', () => {
         expect(hasRelationships(of({ a: { pillarIds: [], relatedIds: ['b'] } }))).toBe(true);
         expect(hasRelationships(of({ a: { pillarIds: [], relatedIds: [] } }))).toBe(false);
         expect(hasRelationships(null)).toBe(false);
+    });
+});
+
+/** A node of the Map's project size, radius 8, at a place. */
+function at(id: string, x: number, y: number): PointNode {
+    return { ...point(id, x, y), radius: 8 };
+}
+
+/** The nodes with one of them moved along x by `dx`, which is where the pointer has taken it. */
+function moveX(nodes: PointNode[], id: string, dx: number): PointNode[] {
+    return nodes.map((one) => (one.id === id ? { ...one, x: one.x + dx } : one));
+}
+
+/** A drag of one node along x, settled under the hold its press took. */
+function dragOf(
+    nodes: PointNode[],
+    edges: GraphEdge[],
+    id: string,
+    dx: number
+): { hold: DragHold; nodes: PointNode[]; frames: number } {
+    const hold = holdFor(nodes, edges, id);
+    return { hold, ...settle(moveX(nodes, id, dx), edges, hold) };
+}
+
+/** The largest distance any node lies from where it lay in `before`. */
+function largestMove(before: PointNode[], after: PointNode[]): number {
+    return Math.max(
+        0,
+        ...after.map((one, i) => Math.hypot(one.x - before[i].x, one.y - before[i].y))
+    );
+}
+
+function finite(nodes: PointNode[]): boolean {
+    return nodes.every((one) => Number.isFinite(one.x) && Number.isFinite(one.y));
+}
+
+/** The nodes the dense graph's drags take: each pillar, and one project in two pillars. */
+const DRAGGED = ['line::a', 'line::b', 'line::c', 'line::d', 'project::p0'];
+
+describe('a drag on the dense graph neato places', () => {
+    const graph = denseGraph();
+    let placed: PointNode[] = [];
+
+    beforeAll(async () => {
+        const viz: Viz = await createGraphviz().ready();
+        placed = placeGraph(viz, graph, 1).nodes;
+    });
+
+    it('moves nothing on a press that does not move', () => {
+        for (const id of ['line::a', 'project::p0']) {
+            const hold = holdFor(placed, graph.edges, id);
+            expect(settle(placed, graph.edges, hold).nodes).toEqual(placed);
+        }
+    });
+
+    it('moves no other node on a drag of a node joined to nothing', async () => {
+        const viz = await createGraphviz().ready();
+        const alone = { nodes: [...graph.nodes, node('project::alone')], edges: graph.edges };
+        const nodes = placeGraph(viz, alone, 1).nodes;
+        const others = nodes.filter((one) => one.id !== 'project::alone');
+        const after = dragOf(nodes, alone.edges, 'project::alone', 60).nodes;
+        expect(after.filter((one) => one.id !== 'project::alone')).toEqual(others);
+        // Dropped onto a pillar, it still pushes nothing: only a mover takes the push.
+        const pillar = nodes.find((one) => one.id === 'line::a');
+        if (pillar === undefined) throw new Error('the dense graph holds line::a');
+        const hold = holdFor(nodes, alone.edges, 'project::alone');
+        const onto = nodes.map((one) =>
+            one.id === 'project::alone' ? { ...one, x: pillar.x + 5, y: pillar.y } : one
+        );
+        const dropped = settle(onto, alone.edges, hold).nodes;
+        expect(dropped.filter((one) => one.id !== 'project::alone')).toEqual(others);
+    });
+
+    it('keeps every circle but the dragged one off the others after a drag of 60, 200 and -200', () => {
+        for (const dx of [60, 200, -200]) {
+            const { hold, nodes } = dragOf(placed, graph.edges, 'line::a', dx);
+            for (let left = 0; left < nodes.length; left += 1) {
+                for (let right = left + 1; right < nodes.length; right += 1) {
+                    const a = nodes[left];
+                    const b = nodes[right];
+                    const now = Math.hypot(a.x - b.x, a.y - b.y);
+                    if (a.id !== 'line::a' && b.id !== 'line::a') {
+                        expect(now, `${dx}: ${a.id} over ${b.id}`).toBeGreaterThanOrEqual(
+                            a.radius + b.radius
+                        );
+                    }
+                    if (!hold.movers.has(a.id) && !hold.movers.has(b.id)) continue;
+                    const pressed = Math.hypot(
+                        placed[left].x - placed[right].x,
+                        placed[left].y - placed[right].y
+                    );
+                    const limit = Math.min(a.radius + b.radius + DEFAULT_PHYSICS.gap, pressed);
+                    expect(now, `${dx}: ${a.id} and ${b.id}`).toBeGreaterThanOrEqual(limit - 0.01);
+                }
+            }
+        }
+    });
+
+    it('settles every drag at rest before the frame cap, and a second settle moves nothing more', () => {
+        const largest: string[] = [];
+        for (const id of DRAGGED) {
+            for (const dx of [60, 200, -200]) {
+                const { hold, nodes, frames } = dragOf(placed, graph.edges, id, dx);
+                expect(frames, `${id} ${dx}`).toBeLessThan(MAX_FRAMES);
+                const again = settle(nodes, graph.edges, hold);
+                expect(again.frames, `${id} ${dx} again`).toBeLessThan(MAX_FRAMES);
+                const moved = largestMove(nodes, again.nodes);
+                largest.push(`${id} ${dx}: ${frames} frames, then ${moved}`);
+                expect(moved, `${id} ${dx}`).toBeLessThanOrEqual(REST);
+            }
+        }
+        console.log(
+            `the creep, each drag's frames and the largest move of a second settle:\n${largest.join('\n')}`
+        );
+    });
+
+    it('stops a settle at rest, before the frame cap', () => {
+        for (const id of DRAGGED) {
+            for (const dx of [60, 200, -200]) {
+                const { hold, nodes, frames } = dragOf(placed, graph.edges, id, dx);
+                expect(frames, `${id} ${dx}`).toBeLessThan(MAX_FRAMES);
+                expect(dragTick(nodes, graph.edges, hold).moved, `${id} ${dx}`).toBeLessThan(REST);
+            }
+        }
+    });
+
+    it('finishes a running settle at a press, and takes the new hold from where it ended', () => {
+        const running = holdFor(placed, graph.edges, 'line::a');
+        let nodes = moveX(placed, 'line::a', 200);
+        for (let frame = 0; frame < 10; frame += 1) {
+            nodes = dragTick(nodes, graph.edges, running).nodes;
+        }
+        const pressed = pressHold(nodes, graph.edges, 'project::p0', running);
+        // The pressed node is one of the running drag's movers and stays where it was caught; the
+        // other movers are at rest under the running hold without it.
+        const others = {
+            ...running,
+            movers: new Set([...running.movers].filter((id) => id !== 'project::p0'))
+        };
+        expect(dragTick(pressed.nodes, graph.edges, others).moved).toBeLessThan(REST);
+        expect(pressed.hold).toEqual(holdFor(pressed.nodes, graph.edges, 'project::p0'));
+    });
+});
+
+describe('a drag at its edges', () => {
+    it('keeps a close pair at its distance at the press', () => {
+        const nodes = [at('held', 500, 340), at('mover', 560, 340), at('other', 570, 340)];
+        const edges = [edge('hm', 'held', 'mover')];
+        const hold = holdFor(nodes, edges, 'held');
+        expect(settle(nodes, edges, hold).nodes).toEqual(nodes);
+        // A drag toward `other` pulls `mover` into it, so only the push keeps them apart.
+        const after = dragOf(nodes, edges, 'held', 5).nodes;
+        expect(Math.hypot(after[1].x - after[2].x, after[1].y - after[2].y)).toBeGreaterThanOrEqual(
+            10 - 0.01
+        );
+    });
+
+    it('keeps a mover pushed at the edge of the box inside it on every pass of the push', () => {
+        const left = at('left', DEFAULT_BOUNDS.pad, 340);
+        const right = at('right', DEFAULT_BOUNDS.pad + 12, 340);
+        const hold: DragHold = {
+            movers: new Set(['left', 'right']),
+            lengths: new Map(),
+            apart: new Map()
+        };
+        const [a, b] = physics([left, right], [], hold);
+        expect(a.x).toBe(DEFAULT_BOUNDS.pad);
+        expect(Math.hypot(a.x - b.x, a.y - b.y)).toBeGreaterThanOrEqual(
+            left.radius + right.radius + DEFAULT_PHYSICS.gap - 0.01
+        );
+    });
+
+    it("takes out a mover's speed into a contact, so neither presses on after the push", () => {
+        const hold: DragHold = {
+            movers: new Set(['a', 'b']),
+            lengths: new Map(),
+            apart: new Map()
+        };
+        const a = { ...at('a', 500, 340), vx: 5, vy: 1 };
+        const b = { ...at('b', 510, 340), vx: -5, vy: -1 };
+        const [left, right] = physics([a, b], [], hold);
+        const dx = right.x - left.x;
+        const dy = right.y - left.y;
+        // The speed of each along the line toward the other is zero or points away from it.
+        expect(left.vx * dx + left.vy * dy).toBeLessThanOrEqual(0);
+        expect(right.vx * -dx + right.vy * -dy).toBeLessThanOrEqual(0);
+    });
+
+    it('holds a pressed node where the press caught it while the last settle finishes', () => {
+        const nodes = [at('held', 500, 340), at('p', 560, 340), at('r', 500, 400)];
+        const edges = [edge('hp', 'held', 'p'), edge('hr', 'held', 'r')];
+        const running = holdFor(nodes, edges, 'held');
+        let caught = moveX(nodes, 'held', -50);
+        for (let frame = 0; frame < 5; frame += 1) caught = dragTick(caught, edges, running).nodes;
+        const pressed = pressHold(caught, edges, 'p', running);
+        const p = pressed.nodes[1];
+        expect([p.x, p.y]).toEqual([caught[1].x, caught[1].y]);
+        const reduced = { ...running, movers: new Set(['r']) };
+        expect(pressed.nodes[2]).toEqual(settle(caught, edges, reduced).nodes[2]);
+        expect(pressed.hold).toEqual(holdFor(pressed.nodes, edges, 'p'));
+    });
+
+    it('settles an empty node set at once', () => {
+        const hold: DragHold = { movers: new Set(), lengths: new Map(), apart: new Map() };
+        const done = settle([], [], hold);
+        expect(done.nodes).toEqual([]);
+        expect(done.frames).toBeLessThanOrEqual(1);
+    });
+
+    it('ends a press and a drag of one node at once, with no position lost', () => {
+        const nodes = [at('only', 500, 340)];
+        const pressed = dragOf(nodes, [], 'only', 0);
+        const dragged = dragOf(nodes, [], 'only', 60);
+        expect(pressed.frames).toBeLessThanOrEqual(1);
+        expect(dragged.frames).toBeLessThanOrEqual(1);
+        expect(pressed.nodes).toEqual(nodes);
+        expect(dragged.nodes[0].x).toBe(560);
+        expect(finite(dragged.nodes)).toBe(true);
+    });
+
+    it('moves neither of two nodes coincident at the press, one of them a mover', () => {
+        const nodes = [at('held', 500, 340), at('mover', 500, 340)];
+        const edges = [edge('hm', 'held', 'mover')];
+        const hold = holdFor(nodes, edges, 'held');
+        const after = settle(nodes, edges, hold).nodes;
+        expect(after).toEqual(nodes);
+        expect(finite(after)).toBe(true);
+    });
+
+    it('parts two nodes apart at the press that a frame finds coincident, along x', () => {
+        const nodes = [at('held', 500, 340), at('mover', 530, 340)];
+        const edges = [edge('hm', 'held', 'mover')];
+        const hold = holdFor(nodes, edges, 'held');
+        const ticked = dragTick([nodes[0], { ...nodes[1], x: 500 }], edges, hold).nodes;
+        expect(finite(ticked)).toBe(true);
+        expect(ticked[0]).toEqual(nodes[0]);
+        expect(ticked[1].y).toBe(340);
+        expect(Math.abs(ticked[1].x - 500)).toBeGreaterThan(0);
     });
 });

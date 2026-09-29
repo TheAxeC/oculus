@@ -6,8 +6,6 @@ import type { Viz } from '@viz-js/viz';
 import {
     DEFAULT_BOUNDS,
     type Graph,
-    type GraphEdge,
-    type GraphNode,
     type PointNode
 } from '../../../../src/lib/state/boards/structure/graph.ts';
 import {
@@ -17,28 +15,7 @@ import {
     placeGraph,
     placement
 } from '../../../../src/lib/state/boards/structure/layout.ts';
-
-function node(id: string, kind: GraphNode['kind'] = 'project'): GraphNode {
-    return {
-        id,
-        entityId: id,
-        label: id,
-        kind,
-        degree: 1,
-        radius: kind === 'project' ? 8 : 12
-    };
-}
-
-function edge(source: string, target: string, kind: GraphEdge['kind']): GraphEdge {
-    return {
-        id: `${kind}::${source}::${target}`,
-        source,
-        target,
-        kind,
-        direction: kind === 'related' ? 'one' : 'none',
-        archived: false
-    };
-}
+import { edge, node } from './map-fixture.ts';
 
 /** Two lines, five projects, one collaborator: every edge kind the Map draws. */
 const GRAPH: Graph = {

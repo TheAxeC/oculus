@@ -1,7 +1,6 @@
 /plan-orchestration oculus/migration
 
 In flight:
-- Q86b (the Map's drag after neato's placement): repair round 2 running.
 - D13b (the diffs and the merge on Monaco): building, its cases ruled.
 - Q83 (small libraries: culori, marked-highlight, the xterm addons and six server helpers): building.
 Queued, in order:
@@ -29,6 +28,7 @@ Queued, in order:
 The loop fills three slots as they free up; a line above is only an order, never a barrier, apart from the "once ... has landed" notes. A step's line moves to Landed, at the top of that list, in its landing commit.
 
 Landed, newest first: every step ticked in `plan.md`, each with the date and the commit that ticked it (the 15 steps dated 2026-09-10 at f8af492b were landed before the ledger was opened):
+- Q86b (the Map's drag after neato's placement), 2026-09-29, de1ce7e3.
 - Q88 (right-click menus wherever vscode.dev gives one), 2026-09-29, 88e6a1c3.
 - D13a (the source tab on Monaco), 2026-09-29, 2267831d.
 - Q79b (the test half of the library audit's section D), 2026-09-29, 9390421c.

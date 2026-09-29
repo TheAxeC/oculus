@@ -5,16 +5,20 @@
     // the start seed the pane hands down, and each edge is drawn between the ends edgeEnds() of
     // that module answers. The SVG draws the nodes once the placement has come back, draws nothing
     // before that, and says in one line why when the engine refuses the graph or does not load.
-    // Once a pressed node has moved past the click threshold, dragTick() of
-    // state/boards/structure/graph.ts runs each frame: `physics` under DRAG_PHYSICS over that
-    // node's direct neighbours alone, each edge held to the length it had when the press began, so
-    // the dragged node pulls its neighbours after it and every other node stays where it is.
+    // A pointer is mapped through the letterbox the SVG draws its box in, then the pan and zoom
+    // (views/structure/map/pointer.ts). Once a pressed node has moved past the click threshold,
+    // dragTick() of state/boards/structure/graph.ts runs each frame at a fixed step until a frame
+    // moves nothing by REST or MAX_FRAMES have run: the springs over that node's direct neighbours,
+    // each edge held to its length at the press, and the push keeping each neighbour off the other
+    // nodes; every other node stays put. The dragged node keeps the offset from the pointer it was
+    // grabbed at, and a pointer under one screen pixel from the last that placed it starts no new
+    // settle, while one already running goes on to its stop. A press while a drag settles finishes
+    // it for every node but the pressed one, which stays under the pointer (pressHold()).
     //
-    // The labels are one layer drawn over every node, so a label is never covered by a node drawn
-    // after it. A label that would overlap one already drawn is hidden, by the rule of
-    // views/structure/map/labels.ts over each label's measured width, until its node is hovered or
-    // holds the keyboard; those labels are drawn whatever they overlap, and last, so they sit on
-    // top.
+    // The labels are one layer over every node. By the rule of views/structure/map/labels.ts a
+    // label is hidden when it would overlap a label already drawn or any node but its own, the
+    // pillars' labels placed first, until its node is hovered or holds the keyboard; those labels
+    // are drawn whatever they overlap, and last, so they sit on top.
 
     import { tick } from 'svelte';
     import { onShown } from '$lib/ui/shown';
@@ -28,11 +32,13 @@
         shownLabels,
         type LabelSize
     } from './labels';
+    import { dragTarget, movedEnough, nearestProject, toBox, toGraph } from './pointer';
     import {
         DEFAULT_BOUNDS,
-        DEFAULT_PHYSICS,
+        MAX_FRAMES,
+        REST,
         dragTick,
-        holdFor,
+        pressHold,
         type DragHold,
         type Graph,
         type GraphNode,
@@ -65,9 +71,6 @@
     };
     let { graph, instanceId, linkMode, seed }: Props = $props();
 
-    const WIDTH = DEFAULT_BOUNDS.width;
-    const HEIGHT = DEFAULT_BOUNDS.height;
-
     /** The page's Graphviz once loaded, or the reason it did not load. */
     let viz = $state<GraphvizAnswer>(graphviz.loaded());
     /** Where neato put the nodes, or why the engine refused; no node until Graphviz loads. */
@@ -76,12 +79,17 @@
     let placed = $state<PointNode[] | null>(null);
     const positions = $derived(placed ?? chosen.nodes);
     const failure = $derived(chosen.failure);
-    let alpha = 0.12;
     let frame: number | null = null;
+    /** The frames the running drag loop has run since it started. */
+    let frames = 0;
     let svg: SVGSVGElement;
     let drag: PointNode | null = null;
+    /** The dragged node's centre less the pointer at the press, in graph units. */
+    let grab = { x: 0, y: 0 };
+    /** The screen point of the last event that placed the dragged node, the press first. */
+    let lastScreen = { x: 0, y: 0 };
     /** What the last drag moves and holds each edge to, taken when its press began. */
-    let hold: DragHold = { movers: new Set(), lengths: new Map() };
+    let hold: DragHold = { movers: new Set(), lengths: new Map(), apart: new Map() };
     let linkSource: PointNode | null = $state(null);
     let linkTarget: PointNode | null = $state(null);
     let status = $state('');
@@ -115,7 +123,8 @@
     const shown = $derived(
         shownLabels(
             positions.map((node) => labelBox(node, measured[node.id] ?? UNMEASURED)),
-            leading
+            leading,
+            positions
         )
     );
 
@@ -165,46 +174,27 @@
         return typeof color === 'string' ? toneOf(color) : 'grey';
     }
 
-    function local(event: PointerEvent | WheelEvent): { x: number; y: number } {
-        const rect = svg.getBoundingClientRect();
-        const x = ((event.clientX - rect.left) / Math.max(1, rect.width)) * WIDTH;
-        const y = ((event.clientY - rect.top) / Math.max(1, rect.height)) * HEIGHT;
-        return { x: (x - tx) / zoom, y: (y - ty) / zoom };
-    }
-
     function viewport(event: PointerEvent | WheelEvent): { x: number; y: number } {
-        const rect = svg.getBoundingClientRect();
-        return {
-            x: ((event.clientX - rect.left) / Math.max(1, rect.width)) * WIDTH,
-            y: ((event.clientY - rect.top) / Math.max(1, rect.height)) * HEIGHT
-        };
+        return toBox({ x: event.clientX, y: event.clientY }, svg.getBoundingClientRect());
     }
 
-    function nearestProject(at: { x: number; y: number }, except: string): PointNode | null {
-        let nearest: PointNode | null = null;
-        let distance = Infinity;
-        for (const node of positions) {
-            if (node.kind !== 'project' || node.id === except) continue;
-            const dx = node.x - at.x;
-            const dy = node.y - at.y;
-            const held = Math.sqrt(dx * dx + dy * dy);
-            if (held <= node.radius + 12 && held < distance) {
-                nearest = node;
-                distance = held;
-            }
-        }
-        return nearest;
+    function local(event: PointerEvent | WheelEvent): { x: number; y: number } {
+        return toGraph(viewport(event), { x: tx, y: ty }, zoom);
     }
 
-    function reheat(): void {
-        alpha = Math.max(alpha, 0.4);
-        frame ??= requestAnimationFrame(step);
+    /** Start the drag loop when none runs. */
+    function run(): void {
+        if (frame !== null) return;
+        frames = 0;
+        frame = requestAnimationFrame(step);
     }
 
+    /** One frame of the drag, and the next while the last one moved and the cap is not reached. */
     function step(): void {
-        placed = dragTick(positions, graph.edges, alpha, hold);
-        alpha *= DEFAULT_PHYSICS.cool;
-        frame = alpha > 0.03 ? requestAnimationFrame(step) : null;
+        const next = dragTick(positions, graph.edges, hold);
+        placed = next.nodes;
+        frames += 1;
+        frame = next.moved >= REST && frames < MAX_FRAMES ? requestAnimationFrame(step) : null;
     }
 
     function nodeDown(event: PointerEvent, node: PointNode): void {
@@ -215,31 +205,33 @@
         moved = false;
         if (linkMode && node.kind === 'project') linkSource = node;
         else {
+            const running = frame === null ? null : hold;
+            if (frame !== null) cancelAnimationFrame(frame);
+            frame = null;
+            const pressed = pressHold(positions, graph.edges, node.id, running);
+            if (running !== null) placed = pressed.nodes;
+            hold = pressed.hold;
             drag = node;
-            hold = holdFor(positions, graph.edges, node.id);
+            grab = { x: node.x - start.x, y: node.y - start.y };
+            lastScreen = { x: event.clientX, y: event.clientY };
         }
     }
 
     function backgroundDown(event: PointerEvent): void {
         svg.setPointerCapture(event.pointerId);
-        const at = viewport(event);
-        panStart = { ...at, tx, ty };
+        panStart = { ...viewport(event), tx, ty };
     }
 
     function pointerMove(event: PointerEvent): void {
         if (linkSource !== null) {
             pointer = local(event);
-            linkTarget = nearestProject(pointer, linkSource.id);
+            linkTarget = nearestProject(positions, pointer, linkSource.id);
             return;
         }
         if (drag !== null) {
             const at = local(event);
             moved = moved || Math.hypot(at.x - start.x, at.y - start.y) > 3;
-            if (!moved) return;
-            placed = positions.map((node) =>
-                node.id === drag?.id ? { ...node, x: at.x, y: at.y, vx: 0, vy: 0 } : node
-            );
-            reheat();
+            if (moved) dragTo(event);
             return;
         }
         if (panStart !== null) {
@@ -268,9 +260,22 @@
         }
     }
 
-    function pointerUp(): void {
+    /** Put the dragged node under the pointer where it was grabbed, once it has moved a pixel. */
+    function dragTo(event: PointerEvent): void {
+        const screen = { x: event.clientX, y: event.clientY };
+        if (!movedEnough(lastScreen, screen)) return;
+        lastScreen = screen;
+        const to = dragTarget(local(event), grab);
+        placed = positions.map((node) =>
+            node.id === drag?.id ? { ...node, ...to, vx: 0, vy: 0 } : node
+        );
+        run();
+    }
+
+    function pointerUp(event: PointerEvent): void {
         if (linkSource !== null && linkTarget !== null) void toggleRelated(linkSource, linkTarget);
         else if (drag !== null && !moved) open(drag);
+        else if (drag !== null && event.type === 'pointerup') dragTo(event);
         drag = null;
         linkSource = null;
         linkTarget = null;
@@ -306,7 +311,7 @@
     {/if}
     <svg
         bind:this={svg}
-        viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
+        viewBox={`0 0 ${DEFAULT_BOUNDS.width} ${DEFAULT_BOUNDS.height}`}
         preserveAspectRatio="xMidYMid meet"
         data-map-graph
         role="application"

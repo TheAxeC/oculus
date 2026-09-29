@@ -109,42 +109,55 @@ $ LC_ALL=C perl -ne '...' $(find src tests bin config -type f ! -name local.yml)
 
 The grep of the changed names across `src`, `tests`, `DESIGN.md`, `HELP.md`, `README.md` and `config` (`grep -rn -e DRAG_PHYSICS -e reheat -e alpha -e "\bcool\b" -e repulse ...` and `grep -rn -e shownLabels -e holdFor -e dragTick -e DragHold -e "physics(" ...`): no hit of a removed name; every `shownLabels` call passes nodes; the six `allow-audits.txt` reasons naming `shownLabels(boxes, ...)` now name the three-argument call; `tests/views/structure/map.test.ts:367` keeps `params: { repulse: 1 }` as the brief says, and passes.
 
-### Reverts, each run against its own case and restored (`python3 .scratch-builder/reverts.py` at the worktree root, `npx vitest run <file> -t <case>`)
+### Reverts, each run against its own case and restored
 
-| Test | Revert | Red |
+Each revert is a text replacement in one source file, run as `npx vitest run <test file> -t <case>` from `tools/oculus`, the file restored after it. The last run of all of them was on the tree after repair round 2; the sources were restored and `npx vitest run tests/state/boards/structure/graph.test.ts tests/views/structure` gave `Tests 102 passed (102)`.
+
+| Case (as `-t` matches it) | Revert: the change undone | Red |
 |---|---|---|
-| moves only the movers of a drag | every node moves | `expected [ 895.03056, 340 ] to deeply equal [ 900, 340 ]` |
-| leaves a picture at rest under the drag tick | the push ignores the distance at the press | `expected { nodes: [ ...(5) ], ...(1) } to deeply equal { nodes: [ ...(5) ], moved: +0 }` |
-| pulls a neighbour joined only to the dragged node | damping 0.88 | `expected 462.4369833893811 to be close to 460` |
-| rests an edge with no recorded length | an unrecorded edge rests at 0 | `expected 579.1936 to be 580` |
-| answers the nodes an edge joins to a node | neighbours by source only | `expected [ 'b' ] to deeply equal [ 'b', 'c' ]` |
-| moves nothing on a press that does not move | the centre pull put back | `expected [ { id: 'line::a', ...(9) }, ...(43) ] to deeply equal [...]` |
-| moves no other node on a drag of a node joined to nothing | every node takes the push (the push loop skips no node) | `expected [ { id: 'line::a', ...(9) }, ...(43) ] to deeply equal [...]` |
-| keeps every circle but the dragged one off the others | `PUSH_PASSES = 1` | `60: project::p0 and project::p36: expected 19.925216179593132 to be >= 19.99` |
-| settles every drag at rest, a second settle moves nothing more | damping 0.88 | `line::b -200: expected 4.767250159488997 to be <= 0.01` |
-| stops a settle at rest, before the frame cap | damping 0.88 | `line::b -200: expected 0.022716757605797812 to be < 0.01` |
-| finishes a running settle at a press | `pressHold` does not finish the running settle | `expected 3.863896710070812 to be less than 0.01` |
-| keeps a close pair at its distance at the press | the push ignores the distance at the press | `expected [ { id: 'held', ...(10) }, ...(2) ] to deeply equal [...]` |
-| settles an empty node set at once | settle runs to the frame cap | `expected 2000 to be less than or equal to 1` |
-| ends a press and a drag of one node at once | settle runs to the frame cap | `expected 2000 to be less than or equal to 1` |
-| moves neither of two nodes coincident at the press | the spring loses its zero-length guard | `expected [ { id: 'held', ...(10) }, ...(1) ] to deeply equal [...]` (NaN) |
-| parts two nodes apart at the press that a frame finds coincident | no x direction for a coincident pair | `expected false to be true` (finite) |
-| audits ... another project circle, and a project is a circle | no node check / a project as its square | `expected [ 'p1', 'p2' ] to deeply equal [ 'p2' ]` / `expected [ 'p2' ] to deeply equal [ 'p1', 'p2' ]` |
-| audits ... a pillar's square or a collaborator's square | every node as a circle | `expected [ 'p1', 's' ] to deeply equal [ 's' ]` |
-| audits ... a collaborator's label over a project's circle | no node check | `expected [ 'c', 'p' ] to deeply equal [ 'p' ]` |
-| audits ... over another pillar's square | no node check | `expected [ 'a', 'b' ] to deeply equal [ 'b' ]` |
-| audits ... over its own node alone is drawn | the own node counted | `expected [ 'q' ] to deeply equal [ 'p', 'q' ]` |
-| audits ... a pillar's label is placed before a project label | graph order only | `expected [ 'p' ] to deeply equal [ 'l' ]` |
-| audits ... of two pillar labels, the first in the graph order | pillars sorted by id | `expected [ 'a' ] to deeply equal [ 'b' ]` |
-| audits ... a leading label is drawn over a node | leading labels checked against nodes | `expected [ 'l', 'q' ] to deeply equal [ 'p', 'q' ]` |
-| audits ... a label of no width ... covers nothing | zero width checked / a kept zero-width label covers | `expected [ 'a', 'b', 'e', 'f' ] to deeply equal [...all six]` / `expected [ 'a', 'b', 'c', 'd', 'e' ] to deeply equal [...all six]` |
-| audits ... a wide pane | the old stretched mapping | `expected 143.2624113475178 to be close to 230.86` |
-| audits ... a pane of the picture size maps one to one | the two ratios crossed | `expected { x: -54.41176470588235, ...(1) } to deeply equal { x: 123, y: 456 }` |
-| audits ... a tall pane | no vertical centring | `expected 493.33333333333337 to be close to +0` |
-| audits ... a pane of no size | no zero-size guard | `expected { x: Infinity, y: Infinity } to deeply equal { x: +0, y: +0 }` |
-| audits ... the pan comes off first | zoom before pan | `expected { x: 150, y: 120 } to deeply equal { x: 200, y: 145 }` |
+| moves only the movers of a drag | every node moves: `const moves = (node: PointNode): boolean => hold.movers.has(node.id);` to `const moves = (node: PointNode): boolean => node.id !== '' \|\| hold.movers.has(node.id);` | `expected [ 895.03056, 340 ] to deeply equal [ 900, 340 ]` |
+| leaves a picture at rest | the push ignores the distance at the press: `const limit = Math.min(room, hold.apart.get(pairKey(a.id, b.id)) ?? room);` to `const limit = room;` | `expected { nodes: [ ...(5) ], ...(1) } to deeply equal { nodes: [ ...(5) ], moved: +0 }` |
+| pulls a neighbour joined only | damping 0.88: `damping: 0.6,` to `damping: 0.88,` | `expected 462.4369833893811 to be close to 460, received difference is 2.436983389381112, but expected 0.5` |
+| rests an edge with no recorded length | an unrecorded edge rests at 0: `?? params.linkLength;` to `?? 0;` | `expected 579.1936 to be 580 // Object.is equality` |
+| answers the nodes an edge joins | neighbours by source only: `if (edge.target === id && edge.source !== id) found.add(edge.source);` deleted | `expected [ 'b' ] to deeply equal [ 'b', 'c' ]` |
+| moves nothing on a press | the centre pull put back: `node.vx *= params.damping;` to `node.vx = (node.vx + (500 - node.x) * 0.012) * params.damping;` | `expected [ { id: 'line::a', ...(9) }, ...(43) ] to deeply equal [ { id: 'line::a', ...(9) }, ...(43) ]` |
+| joined to nothing | every node takes the push: `if (!hold.movers.has(a.id)) continue;` to `if (a.id === '') continue;` | `expected [ { id: 'line::a', ...(9) }, ...(43) ] to deeply equal [ { id: 'line::a', ...(9) }, ...(43) ]` |
+| keeps every circle | one push pass: `export const PUSH_PASSES = 10;` to `export const PUSH_PASSES = 1;` | `60: project::p0 and project::p36: expected 19.97040426885461 to be greater than or equal to 19.99` |
+| settles every drag at rest | damping 0.88: `damping: 0.6,` to `damping: 0.88,` | `project::p0 200: expected 0.21677345232697948 to be less than or equal to 0.01` |
+| stops a settle at rest | damping 0.88: `damping: 0.6,` to `damping: 0.88,` | `project::p0 200: expected 0.03263085048421701 to be less than 0.01` |
+| finishes a running settle | pressHold does not finish the running settle: `running === null ? nodes : settle(nodes, edges, withoutMover(running, id)).nodes` to `nodes` | `expected 3.863896710070812 to be less than 0.01` |
+| finishes a running settle | the running hold passed to settle unchanged: `settle(nodes, edges, withoutMover(running, id))` to `settle(nodes, edges, running)` | `expected 0.05640865116428925 to be less than 0.01` |
+| pressed node where the press caught it | the running hold passed to settle unchanged: `settle(nodes, edges, withoutMover(running, id))` to `settle(nodes, edges, running)` | `expected [ 510.37015875936675, 340 ] to deeply equal [ 555.5502771335535, 340 ]` |
+| keeps a close pair | the push ignores the distance at the press: `const limit = Math.min(room, hold.apart.get(pairKey(a.id, b.id)) ?? room);` to `const limit = room;` | `expected [ { id: 'held', ...(10) }, ...(2) ] to deeply equal [ { id: 'held', ...(10) }, ...(2) ]` |
+| keeps a close pair | the push removed: `const pushed = push(next, hold, params);` to `const pushed = false;` | `expected 5.365076809659399 to be greater than or equal to 9.99` |
+| edge of the box | the clamp once after all passes (in `graph.ts`, the lines of the push or the pass loop that do it) | `expected 16 to be greater than or equal to 19.99` |
+| speed into a contact | the speed into a contact kept (in `graph.ts`, the lines of the push or the pass loop that do it) | `expected 59.124301578897054 to be less than or equal to 0` |
+| settles an empty node set | settle runs to the frame cap: `if (tick.moved < REST) break;` deleted | `expected 2000 to be less than or equal to 1` |
+| ends a press and a drag of one node | settle runs to the frame cap: `if (tick.moved < REST) break;` deleted | `expected 2000 to be less than or equal to 1` |
+| moves neither of two nodes coincident | the spring loses its zero-length guard: `if (distance === 0) continue;` deleted | `expected [ { id: 'held', ...(10) }, ...(1) ] to deeply equal [ { id: 'held', ...(10) }, ...(1) ]` |
+| parts two nodes apart | no x direction for a coincident pair: `const ux = distance === 0 ? 1 : dx / distance;` to `const ux = dx / distance;` | `expected false to be true // Object.is equality` |
+| another project circle | no node check: `if (nodes.some((node) => node.id !== box.id && coversNode(box, node))) continue;` deleted | `expected [ 'p1', 'p2' ] to deeply equal [ 'p2' ]` |
+| another project circle | a project read as its square: `if (node.kind !== 'project') {` to `if (node.kind !== 'none') {` | `expected [ 'p2' ] to deeply equal [ 'p1', 'p2' ]` |
+| pillar's square or a collaborator's | every node read as a circle: `if (node.kind !== 'project') {` to `if (node.kind === 'none') {` | `expected [ 'p1', 's' ] to deeply equal [ 's' ]` |
+| collaborator's label over | no node check: `if (nodes.some((node) => node.id !== box.id && coversNode(box, node))) continue;` deleted | `expected [ 'c', 'p' ] to deeply equal [ 'p' ]` |
+| over another pillar's square | no node check: `if (nodes.some((node) => node.id !== box.id && coversNode(box, node))) continue;` deleted | `expected [ 'a', 'b' ] to deeply equal [ 'b' ]` |
+| over its own node alone | the own node counted: `nodes.some((node) => node.id !== box.id && coversNode(box, node))` to `nodes.some((node) => coversNode(box, node))` | `expected [ 'q' ] to deeply equal [ 'p', 'q' ]` |
+| placed before a project label | graph order only: `...boxes.filter((box) => pillars.has(box.id)),` deleted | `expected [ 'p' ] to deeply equal [ 'l' ]` |
+| first in the graph order | pillars sorted by id: `...boxes.filter((box) => pillars.has(box.id)),` to `...boxes.filter((box) => pillars.has(box.id)).sort((a, b) => a.id.localeCompare(b.id)),` | `expected [ 'a' ] to deeply equal [ 'b' ]` |
+| leading label is drawn over a node | leading labels checked against nodes: `if (!first.includes(box.id)) continue;` to `if (!first.includes(box.id) \|\| nodes.some((node) => node.id !== box.id && coversNode(box, node))) continue;` | `expected [ 'l', 'q' ] to deeply equal [ 'p', 'q' ]` |
+| label of no width | zero width checked like any width: `if (!empty(box)) {` to `if (!empty(box) \|\| empty(box)) {` | `expected [ 'a', 'b', 'e', 'f' ] to deeply equal [ 'a', 'b', 'c', 'd', 'e', 'f' ]` |
+| label of no width | a kept zero-width label covers: `kept.some((other) => !empty(other) && overlaps(box, other))` to `kept.some((other) => overlaps(box, other))` | `expected [ 'a', 'b', 'c', 'd', 'e' ] to deeply equal [ 'a', 'b', 'c', 'd', 'e', 'f' ]` |
+| wide pane | the stretched mapping: `return { x: (client.x - left) / scale, y: (client.y - top) / scale };` to `return { x: ((client.x - rect.left) / rect.width) * 1000, y: ((client.y - rect.top) / rect.height) * 680 };` | `expected 143.2624113475178 to be close to 230.86, received difference is 87.59758865248222, but expected 0.005` |
+| picture size maps one to one | the two ratios crossed: `const scale = Math.min(rect.width / DEFAULT_BOUNDS.width, rect.height / DEFAULT_BOUNDS.height);` to `const scale = Math.min(rect.width / DEFAULT_BOUNDS.height, rect.height / DEFAULT_BOUNDS.width);` | `expected { x: -54.41176470588235, ...(1) } to deeply equal { x: 123, y: 456 }` |
+| tall pane | no vertical centring: `const top = rect.top + (rect.height - DEFAULT_BOUNDS.height * scale) / 2;` to `const top = rect.top;` | `expected 493.33333333333337 to be close to +0, received difference is 493.33333333333337, but expected 5e-10` |
+| no size | no zero-size guard: `if (!(scale > 0)) return { x: 0, y: 0 };` deleted | `expected { x: Infinity, y: Infinity } to deeply equal { x: +0, y: +0 }` |
+| pan comes off first | zoom before pan: `return { x: (box.x - pan.x) / zoom, y: (box.y - pan.y) / zoom };` to `return { x: box.x / zoom - pan.x, y: box.y / zoom - pan.y };` | `expected { x: 150, y: 120 } to deeply equal { x: 200, y: 145 }` |
+| keeps the offset | the grab offset ignored: `return { x: at.x + grab.x, y: at.y + grab.y };` to `return { x: at.x, y: at.y };` | `expected { x: 503, y: 342 } to deeply equal { x: 500, y: 340 }` |
+| quarter pixel | no pixel guard: `return Math.hypot(at.x - last.x, at.y - last.y) >= DRAG_PIXEL;` to `return Math.hypot(at.x - last.x, at.y - last.y) >= 0;` | `expected 300 to be +0 // Object.is equality` |
+| one pixel away | no pixel guard: `return Math.hypot(at.x - last.x, at.y - last.y) >= DRAG_PIXEL;` to `return Math.hypot(at.x - last.x, at.y - last.y) >= 0;` | `expected true to be false // Object.is equality` |
+| nearest project within | no reach past the radius: `if (held <= node.radius + LINK_REACH && held < distance) {` to `if (held <= node.radius && held < distance) {` | `expected undefined to be 'nearer' // Object.is equality` |
 
-After the reverts the sources are restored: `npx vitest run tests/state/boards/structure/graph.test.ts tests/views/structure` `Tests 95 passed (95)`. The seven unchanged-name cases of `map-labels.test.ts` only gained the third argument `[]`; they are audits on `allow-audits.txt` and assert what they asserted before.
+The seven unchanged-name cases of `map-labels.test.ts` only gained the third argument `[]`; they are audits on `allow-audits.txt` and assert what they asserted before.
 
 ## Files, with line counts (`wc -l`)
 
@@ -208,7 +221,7 @@ Every ruling of `briefs/Q86b-round1-sent.md` is done.
 | 3. The clamp inside each pass (Proof 2) | New case 'keeps a mover pushed at the edge of the box inside it on every pass of the push': movers `left` at `bounds.pad` and `right` 12 units to its right, radii 8, no fixed node. After `physics`, `left.x` is `bounds.pad` and the pair is at least 20 - 0.01 apart. | Red with the clamp moved to once after all passes: `expected 16 to be greater than or equal to 19.99` |
 | 4. The close pair's drag half (Proof 3) | 'keeps a close pair at its distance at the press' drags `held` 5 units toward `other` (right), which pulls `mover` into `other`. | Red with the push removed: `expected 5.365076809659399 to be greater than or equal to 9.99` |
 | 5. The frame cap (Proof 1) | No change. The cap in `settle` (`while (frames < MAX_FRAMES)`) and in the page loop (`frames < MAX_FRAMES` in `step()`) is an audit: read, not proven by a test. No input found reaches it, and none was hunted for. | Read, `graph.ts` `settle`, `Graph.svelte` `step()` |
-| 6. The scratch folder (Spec 1) | `.scratch-builder/` is removed from the worktree root. `reverts.py`, which the revert table above names, was in it. | `ls -a` of the worktree root after removal (below) |
+| 6. The scratch folder (Spec 1) | `.scratch-builder/` is removed from the worktree root. | `ls -a` of the worktree root after removal (below) |
 
 Also in this round:
 - **`nearestProject` moved** from `Graph.svelte` into `pointer.ts` as `nearestProject(nodes, at, except)`, with its reach as the named constant `LINK_REACH` (12, the same value). This keeps `Graph.svelte` under 540 lines after `dragTo` and `grab`, at 536.
@@ -257,3 +270,89 @@ checks: 6 commands passed
 - **The drop:** it reads the `pointerup` event's position. A `pointercancel` leaves the node where the last move put it, since a cancelled pointer's coordinates are not a drop point.
 - **The same-place guard:** it compares exact positions. A pointer that jitters by a fraction of a unit still starts a settle, and that settle moves each node less than `REST` in its first frame and stops there.
 - **The page:** the grab offset and the guard are seen on the page only at the look.
+
+## Repair round 2
+
+Every item of `briefs/Q86b-round2-sent.md` is done, under Axel's ruling Z54.
+
+| Item | What changed | Check |
+|---|---|---|
+| 1. The jump at the press | `pressHold` finishes the running settle under `withoutMover(running, id)`: a copy of the running hold whose `movers` leave out the pressed node, every other field kept. The pressed node stays where the press caught it, and the last drag's other movers end at rest. `Graph.svelte` takes the grab offset from the pressed node as drawn, which `pressHold` no longer moves. | New case 'holds a pressed node where the press caught it while the last settle finishes': the pressed node's `x` and `y` equal its input exactly, the other mover equals `settle` under the reduced hold, and the new hold is `holdFor` of the result. Red with `running` passed unchanged to `settle`: `expected [ 510.37015875936675, 340 ] to deeply equal [ 555.5502771335535, 340 ]` |
+| 2. Speed into a contact | `push()` takes the speed into the contact out of each mover it moves: `inA < 0` for `a`, `inB > 0` for `b` when `b` is a mover, as the brief gives them. The `physics` and `push` docstrings say it. | New case "takes out a mover's speed into a contact, so neither presses on after the push": two movers 10 apart (limit 20), each with speed toward the other. After `physics`, each one's speed along the line toward the other is zero or points away. Red with the speed kept: `expected 59.124301578897054 to be less than or equal to 0` |
+| 3. A sub-pixel pointer starts no settle | Round 1's same-position guard is gone: `dragTarget(at, grab)` now only adds the grab offset. The new pure `movedEnough(last, at)` in `pointer.ts` answers whether two screen points are at least `DRAG_PIXEL` (1) apart. `Graph.svelte` keeps `lastScreen`, the screen point of the last event that placed the dragged node, set at the press. `dragTo(event)` places the node and starts the loop only when `movedEnough(lastScreen, screen)`, then keeps that point. The drop at `pointerup` goes through the same guard. | 'audits that 300 pointer events within a quarter pixel of the press place nothing': red with the guard removed, `expected 300 to be +0`. 'audits that an event one pixel away places the node, and one 0.99 pixel away does not': red with the guard removed, `expected true to be false` |
+| 4. The documents | `DESIGN.md:291` now says: the loop stops at the first frame in which no node moves `REST` or more, or at `MAX_FRAMES`, which can be short of the springs' balance; a pointer event less than one screen pixel from the last one that placed the dragged node places nothing and starts no settle, so nothing moves while the pointer rests or trembles; a press while the last drag settles finishes it for every node but the pressed one, which stays where the press caught it; the push takes out a pushed neighbour's speed into the contact. The same corrections are in the `settle`, `pressHold` and drag-constants docstrings of `graph.ts`, `Graph.svelte`'s head comment, and `pointer.ts`'s head comment and `dragTarget` docstring. The sentence about a restarted settle moving less than `REST` in its first frame is deleted everywhere. | `grep -rn -e "balance" -e "same pointer" -e "already stands" -e "same place" -e "comes to rest" -e "finishes that settle" DESIGN.md HELP.md src/lib/views/structure/map src/lib/state/boards/structure`: the remaining hits say "short of the springs' balance" and the `pressHold` rule. `HELP.md:103` is about labels and needed no change |
+| 5. The report | The revert table under "DONE / NOT DONE" is replaced. Each row now gives the case, the change undone as code, and the red, all 41 rerun on the tree after this round. No row names `reverts.py`. | `grep -n "reverts.py" Q86b-report.md`: no hit |
+
+**The existing press-during-settle case, carried into the Z54 rule:** 'finishes a running settle at a press, and takes the new hold from where it ended' presses `project::p0`, which is a mover of the running `line::a` hold. The case now asserts that one more `dragTick` under the running hold without the pressed node moves less than `REST`; under the whole running hold the held node would move by rule. Red with `pressHold` not finishing the settle: `expected 3.863896710070812 to be less than 0.01`. Red with `running` passed unchanged: `expected 0.05640865116428925 to be less than 0.01`.
+
+**Before and after for the look on TEST:**
+- **Item 1:** before, pressing a node the last drag was still settling made it leap away from under the pointer (up to 60 units a second after the drop) and drag at that distance. After, the pressed node no longer jumps: it stays under the pointer where it was grabbed, and the last drag's other neighbours finish their settle at the press.
+- **Item 2:** before, a neighbour held against another node kept pressing into it and slid along it on every settle. After, the push takes that speed out, so a neighbour in contact does not keep sliding along it.
+- **Item 3:** before, a pointer resting on a dragged node, trembling by under a pixel, restarted the settle on every event, and the neighbours crept (45 units over 300 events in the reviewer's probe). After, the neighbours no longer move under a still or sub-pixel pointer: an event under one screen pixel from the last one that placed the node does nothing.
+- **Settle stop:** a settle can stop short of the springs' balance (`DESIGN.md:291` says so).
+
+**Verify list** (`PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH sh ~/.claude/skills/land/templates/checks.sh /Users/axelfaes/workspace/research-hub/tools/oculus/.scratch/migration/orchestrator-state.md </dev/null` from the worktree's `tools/oculus`, at load average 11.6, exit 1):
+
+```
+$ npm test
+ FAIL  tests/checks/tree/audits.test.ts > a case that never draws anything > catches a case that asserts over source text alone
+ FAIL  tests/checks/tree/scratch.test.ts > a scratch directory > is swept by every file under tests that takes one
+ FAIL  tests/server/edit/writes.test.ts > writing one subtask line > snoozes and deletes a line of a collection entry
+ Test Files  3 failed | 363 passed (366)
+      Tests  3 failed | 5815 passed | 1 skipped (5819)
+checks: failed with exit 1: npm test
+```
+
+**The three `npm test` failures:**
+- Each is `Error: Test timed out in 5000ms.`, in a file this step does not change.
+- Alone, each passes: `tests/checks/tree/audits.test.ts` `Tests 11 passed (11)`, `tests/checks/tree/scratch.test.ts` `Tests 17 passed (17)`, `tests/server/edit/writes.test.ts` `Tests 28 passed (28)`.
+
+**The five commands after it, run one by one:**
+- `npm run check`: `COMPLETED 2113 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS`, exit 0.
+- `npm run build`: exit 0.
+- `npm run format:check`: `All matched files use Prettier code style!`.
+- `npm run lint`: exit 0.
+- `! LC_ALL=C grep -rna '[^ -~]' src tests`: exit 0.
+
+**Other gates:**
+- `bash bin/folder-check.sh`: exit 0.
+- `npm run diagrams`: exit 0, and `npx prettier --check .` exit 0 after it.
+- The brief's `grep -nwE "repulse|collide|center|cool|DRAG_PHYSICS" ...`: prints nothing.
+- The perl ASCII gate: prints nothing.
+- After every revert was restored: `npx vitest run tests/state/boards/structure/graph.test.ts tests/views/structure`, `Tests 102 passed (102)`.
+- `ls -a` of the worktree root holds nothing of mine: `.git .gitignore AGENTS.md applications CLAUDE.md CONTEXT.md education feeds funding network projects README.md registries skills-lock.json tasks tools`. The round's logs and revert script are in the session scratchpad.
+
+**Second-settle numbers after this round** (the creep case's printed line): every drag's second settle moves under 0.01. The frame counts moved with the speed change:
+
+| Drag | Frames | Largest second-settle move |
+|---|---|---|
+| `line::a` 60 | 859 | 0.00996 |
+| `line::a` 200 | 646 | 0.00992 |
+| `line::a` -200 | 656 | 0.00995 |
+| `line::b` 60 | 1033 | 0.00996 |
+| `line::b` 200 | 635 | 0.00994 |
+| `line::b` -200 | 640 | 0.00995 |
+| `line::c` 60 | 1127 | 0.00997 |
+| `line::c` 200 | 596 | 0.00968 |
+| `line::c` -200 | 714 | 0.00990 |
+| `line::d` 60 | 539 | 0.00995 |
+| `line::d` 200 | 496 | 0.00993 |
+| `line::d` -200 | 598 | 0.00994 |
+| `project::p0` 60 | 22 | 0.00802 |
+| `project::p0` 200 | 27 | 0.00810 |
+| `project::p0` -200 | 28 | 0.00652 |
+
+**Files this round (`wc -l`):**
+- `src/lib/state/boards/structure/graph.ts` 734
+- `src/lib/views/structure/map/Graph.svelte` 539, under 540
+- `src/lib/views/structure/map/pointer.ts` 75
+- `tests/state/boards/structure/graph.test.ts` 739
+- `tests/views/structure/map-pointer.test.ts` 112
+- `DESIGN.md` line 291
+- this report
+
+**Limitations:**
+- **The pixel guard:** it compares screen points, so at a high zoom a one-pixel step is a small graph step, and each such step starts a settle as a real move.
+- **The pressed node's speed:** a pressed node that was a mover keeps its speed in its record. It is no mover of its own drag, so `physics` zeroes it on the first frame.
+- **Not measured on this tree:** the reviewer's wobble probe (seed 2, `line::a` 200, 300 events of 0.25 unit). The brief's figure of 4.96 units for item 2 alone comes from the coordinator's measurement, not from a run here. In the page such events are stopped by item 3's guard before they reach the tick.
+- **The page:** the press, the drag and the tremble are seen only at the look on TEST.

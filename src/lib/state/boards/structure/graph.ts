@@ -57,25 +57,35 @@ export type GraphOptions = GraphFilter & {
 
 export type PointNode = GraphNode & { x: number; y: number; vx: number; vy: number };
 export type Bounds = { width: number; height: number; pad: number };
+/**
+ * The drag's forces: each edge's spring, the length an edge with no recorded length rests at, the
+ * share of its speed a moving node keeps from one frame to the next, and the room the push keeps
+ * between two nodes past their two radii.
+ */
 export type Physics = {
     linkLength: number;
     linkStrength: number;
-    repulse: number;
-    collide: number;
-    center: number;
     damping: number;
-    cool: number;
+    gap: number;
 };
 
 export const DEFAULT_PHYSICS: Physics = {
     linkLength: 107,
     linkStrength: 0.042,
-    repulse: 9200,
-    collide: 31,
-    center: 0.012,
-    damping: 0.88,
-    cool: 0.992
+    damping: 0.6,
+    gap: 4
 };
+
+/**
+ * How far a node moves per unit of speed in one frame of a drag, the largest move in a frame below
+ * which the drag stops, the most frames one settle runs, and the most passes the push makes in one
+ * frame. The step is fixed, so a settle runs until no mover moves REST in a frame; the push repeats
+ * because a pair pushed apart can push a node back into one an earlier pair pushed it off.
+ */
+export const DRAG_STEP = 0.4;
+export const REST = 0.01;
+export const MAX_FRAMES = 2000;
+export const PUSH_PASSES = 10;
 
 /** The box the Map draws into, which is the box every layout rule below places nodes in. */
 export const DEFAULT_BOUNDS: Bounds = { width: 1000, height: 680, pad: 48 };
@@ -411,93 +421,138 @@ function clone(nodes: PointNode[]): PointNode[] {
 }
 
 /**
- * One immutable force tick: every pair repels, every edge pulls toward its rest length and every
- * node is drawn to the centre. An edge rests at its length in `lengths`, by edge id, and at
- * `params.linkLength` when it has none there. Only the nodes in `movers` take the forces and move;
- * every other node stays where it is, and without `movers` every node moves. The Map runs it while
- * a node is dragged under DRAG_PHYSICS, with the lengths every edge had when the press began, the
- * dragged node's direct neighbours as the movers and the dragged node held, so the picture is at
- * rest until the pointer moves and a drag pulls the neighbours after the dragged node.
+ * What a drag holds from its press: the nodes it moves, every edge's length and every pair's
+ * distance.
+ */
+export type DragHold = {
+    movers: ReadonlySet<string>;
+    lengths: ReadonlyMap<string, number>;
+    /** Each pair of a mover and another node, by pairKey(), and how far apart they were. */
+    apart: ReadonlyMap<string, number>;
+};
+
+/**
+ * The key of a pair of node ids in `DragHold.apart`, the same whichever id comes first. The two ids
+ * are written as a JSON list, so no two pairs share a key whatever characters the ids hold.
+ */
+export function pairKey(a: string, b: string): string {
+    return JSON.stringify(a < b ? [a, b] : [b, a]);
+}
+
+/**
+ * One immutable frame of a drag over the hold's movers, every other node left where it is. Each
+ * edge pulls or pushes a mover toward the length the hold recorded for it, or `params.linkLength`
+ * when it has none; the speed is damped and the mover moves DRAG_STEP times its speed. Then the
+ * push, up to PUSH_PASSES passes with every mover kept inside the box after each, moves each mover
+ * off every other node closer than their two radii and `params.gap`, or closer than they were at
+ * the press when that is less, so a pair neato placed close is never pushed apart by a press: by
+ * the whole shortfall against a node that does not move and by half of it against another mover. A
+ * pair that met at the press is never pushed, and a pair the frame finds on one point is parted
+ * along x. A mover the push moves loses the part of its speed that points into the contact. The
+ * passes stop at the first that pushes nothing.
  */
 export function physics(
     nodes: PointNode[],
     edges: GraphEdge[],
-    alpha: number,
+    hold: DragHold,
     params: Physics = DEFAULT_PHYSICS,
-    bounds: Bounds = DEFAULT_BOUNDS,
-    movers?: ReadonlySet<string>,
-    lengths?: ReadonlyMap<string, number>
+    bounds: Bounds = DEFAULT_BOUNDS
 ): PointNode[] {
     const next = clone(nodes);
     const byId = new Map(next.map((node) => [node.id, node]));
-    const moves = (node: PointNode): boolean => movers === undefined || movers.has(node.id);
-    for (let left = 0; left < next.length; left += 1) {
-        for (let right = left + 1; right < next.length; right += 1) {
-            const a = next[left];
-            const b = next[right];
-            if (!moves(a) && !moves(b)) continue;
-            const rawDx = a.x - b.x;
-            const rawDy = a.y - b.y;
-            const coincident = rawDx === 0 && rawDy === 0;
-            const dx = coincident ? 0.1 : rawDx;
-            const dy = coincident ? 0 : rawDy;
-            const distanceSquared = dx * dx + dy * dy;
-            const distance = Math.sqrt(distanceSquared);
-            const ux = dx / distance;
-            const uy = dy / distance;
-            const force = params.repulse / distanceSquared;
-            a.vx += ux * force;
-            a.vy += uy * force;
-            b.vx -= ux * force;
-            b.vy -= uy * force;
-            const separation = a.radius + b.radius + params.collide;
-            if (params.collide > 0 && distance < separation) {
-                const push = (separation - distance) * 0.5;
-                if (moves(a)) {
-                    a.x += ux * push;
-                    a.y += uy * push;
-                }
-                if (moves(b)) {
-                    b.x -= ux * push;
-                    b.y -= uy * push;
-                }
-            }
-        }
-    }
+    const moves = (node: PointNode): boolean => hold.movers.has(node.id);
     for (const edge of edges) {
         const source = byId.get(edge.source);
         const target = byId.get(edge.target);
         if (source === undefined || target === undefined) continue;
         const dx = target.x - source.x;
         const dy = target.y - source.y;
-        const distance = Math.sqrt(dx * dx + dy * dy) || 0.01;
-        const rest = lengths?.get(edge.id) ?? params.linkLength;
+        const distance = Math.hypot(dx, dy);
+        if (distance === 0) continue;
+        const rest = hold.lengths.get(edge.id) ?? params.linkLength;
         const force = (distance - rest) * params.linkStrength;
         source.vx += (dx / distance) * force;
         source.vy += (dy / distance) * force;
         target.vx -= (dx / distance) * force;
         target.vy -= (dy / distance) * force;
     }
-    const cx = bounds.width / 2;
-    const cy = bounds.height / 2;
     for (const node of next) {
         if (!moves(node)) {
             node.vx = 0;
             node.vy = 0;
             continue;
         }
-        node.vx = (node.vx + (cx - node.x) * params.center) * params.damping;
-        node.vy = (node.vy + (cy - node.y) * params.center) * params.damping;
-        node.x = Math.max(
-            bounds.pad,
-            Math.min(bounds.width - bounds.pad, node.x + node.vx * alpha)
-        );
-        node.y = Math.max(
-            bounds.pad,
-            Math.min(bounds.height - bounds.pad, node.y + node.vy * alpha)
-        );
+        node.vx *= params.damping;
+        node.vy *= params.damping;
+        node.x += node.vx * DRAG_STEP;
+        node.y += node.vy * DRAG_STEP;
+    }
+    for (let pass = 0; pass < PUSH_PASSES; pass += 1) {
+        const pushed = push(next, hold, params);
+        for (const node of next) {
+            if (!moves(node)) continue;
+            node.x = Math.max(bounds.pad, Math.min(bounds.width - bounds.pad, node.x));
+            node.y = Math.max(bounds.pad, Math.min(bounds.height - bounds.pad, node.y));
+        }
+        if (!pushed) break;
     }
     return next;
+}
+
+/**
+ * One pass of the push of physics(), in place over nodes already cloned for this frame; answers
+ * whether it pushed anything. A mover pushed out of a contact also loses the part of its speed that
+ * points into it, so it does not keep pressing into the contact and sliding along it frame after
+ * frame; a node that is not a mover has no speed to lose. Only pairs holding a mover are looked at,
+ * each once, and a pair's key is built only once the two are inside their room, since the limit is
+ * never more than that.
+ */
+function push(nodes: PointNode[], hold: DragHold, params: Physics): boolean {
+    let pushed = false;
+    for (let left = 0; left < nodes.length; left += 1) {
+        const a = nodes[left];
+        if (!hold.movers.has(a.id)) continue;
+        for (let right = 0; right < nodes.length; right += 1) {
+            if (right === left) continue;
+            const b = nodes[right];
+            const movesB = hold.movers.has(b.id);
+            if (movesB && right < left) continue;
+            const room = a.radius + b.radius + params.gap;
+            const dx = a.x - b.x;
+            const dy = a.y - b.y;
+            const distance = Math.hypot(dx, dy);
+            if (distance >= room) continue;
+            const limit = Math.min(room, hold.apart.get(pairKey(a.id, b.id)) ?? room);
+            if (limit <= 0 || distance >= limit) continue;
+            const ux = distance === 0 ? 1 : dx / distance;
+            const uy = distance === 0 ? 0 : dy / distance;
+            const shortfall = limit - distance;
+            const share = movesB ? shortfall / 2 : shortfall;
+            pushed = true;
+            a.x += ux * share;
+            a.y += uy * share;
+            const inA = a.vx * ux + a.vy * uy;
+            if (inA < 0) {
+                a.vx -= inA * ux;
+                a.vy -= inA * uy;
+            }
+            if (movesB) {
+                b.x -= ux * share;
+                b.y -= uy * share;
+                const inB = b.vx * ux + b.vy * uy;
+                if (inB > 0) {
+                    b.vx -= inB * ux;
+                    b.vy -= inB * uy;
+                }
+            }
+        }
+    }
+    return pushed;
+}
+
+/** A hold with one node taken out of its movers, every other field kept. */
+function withoutMover(hold: DragHold, id: string): DragHold {
+    return { ...hold, movers: new Set([...hold.movers].filter((one) => one !== id)) };
 }
 
 /** The nodes an edge joins to one node, which are the nodes a drag of it moves. */
@@ -511,28 +566,80 @@ export function neighbours(edges: GraphEdge[], id: string): Set<string> {
 }
 
 /**
- * The tick a drag runs under: the springs alone, with no repulsion, no collision push and no pull
- * toward the centre, so a picture whose edges rest at their recorded lengths is at rest under it
- * and only a moved node sets anything moving.
+ * The hold of a drag of one node, taken at its press: its direct neighbours move, every edge keeps
+ * the length it has, and every pair of a mover and another node keeps the distance it has as the
+ * most the push asks of it, so the positions at the press are at rest under physics().
  */
-export const DRAG_PHYSICS: Physics = { ...DEFAULT_PHYSICS, repulse: 0, collide: 0, center: 0 };
-
-/** What a drag holds from its press: the nodes it moves and every edge's length at the press. */
-export type DragHold = { movers: ReadonlySet<string>; lengths: ReadonlyMap<string, number> };
-
-/** The hold of a drag of one node: its direct neighbours move, every edge keeps its length. */
 export function holdFor(nodes: PointNode[], edges: GraphEdge[], id: string): DragHold {
-    return { movers: neighbours(edges, id), lengths: edgeLengths(nodes, edges) };
+    const movers = neighbours(edges, id);
+    const apart = new Map<string, number>();
+    for (const mover of nodes) {
+        if (!movers.has(mover.id)) continue;
+        for (const other of nodes) {
+            if (other.id === mover.id) continue;
+            apart.set(
+                pairKey(mover.id, other.id),
+                Math.hypot(mover.x - other.x, mover.y - other.y)
+            );
+        }
+    }
+    return { movers, lengths: edgeLengths(nodes, edges), apart };
 }
 
-/** One frame of a drag: the tick under DRAG_PHYSICS over the hold's movers and lengths. */
+/**
+ * One frame of a drag: physics() under the hold, and the largest distance any node moved in it,
+ * which is what tells the drag it has come to rest. The dragged node is no mover, so it stays
+ * wherever the pointer put it.
+ */
 export function dragTick(
     nodes: PointNode[],
     edges: GraphEdge[],
-    alpha: number,
     hold: DragHold
-): PointNode[] {
-    return physics(nodes, edges, alpha, DRAG_PHYSICS, DEFAULT_BOUNDS, hold.movers, hold.lengths);
+): { nodes: PointNode[]; moved: number } {
+    const next = physics(nodes, edges, hold);
+    let moved = 0;
+    next.forEach((node, at) => {
+        moved = Math.max(moved, Math.hypot(node.x - nodes[at].x, node.y - nodes[at].y));
+    });
+    return { nodes: next, moved };
+}
+
+/**
+ * The frames of a drag run to rest: dragTick() until the first frame in which no node moves REST or
+ * more, or until MAX_FRAMES frames. That can be short of the springs' balance, since a node sliding
+ * slowly toward it moves less than REST in a frame.
+ */
+export function settle(
+    nodes: PointNode[],
+    edges: GraphEdge[],
+    hold: DragHold
+): { nodes: PointNode[]; frames: number } {
+    let current = nodes;
+    let frames = 0;
+    while (frames < MAX_FRAMES) {
+        const tick = dragTick(current, edges, hold);
+        current = tick.nodes;
+        frames += 1;
+        if (tick.moved < REST) break;
+    }
+    return { nodes: current, frames };
+}
+
+/**
+ * The positions and the hold a press of node `id` starts from. A press while the last drag is still
+ * settling under `running` first runs that settle to rest for every node but the pressed one, which
+ * is held where the press caught it, so it stays under the pointer and the new drag inherits none
+ * of the last one's movement; the new hold is taken from those positions.
+ */
+export function pressHold(
+    nodes: PointNode[],
+    edges: GraphEdge[],
+    id: string,
+    running: DragHold | null
+): { nodes: PointNode[]; hold: DragHold } {
+    const settled =
+        running === null ? nodes : settle(nodes, edges, withoutMover(running, id)).nodes;
+    return { nodes: settled, hold: holdFor(settled, edges, id) };
 }
 
 /** Every edge's length as the nodes stand, by edge id, which is what a drag holds each edge to. */

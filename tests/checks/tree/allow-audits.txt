@@ -64,13 +64,13 @@ tests/views/system/hpc.test.ts :: lays the disk meters out in responsive columns
 tests/views/shared/prose/intro.test.ts :: takes a catalog line as it is written and puts a hub value through the sanitiser | the case draws nothing and asserts over source
 tests/views/shared/prose/intro.test.ts :: uses the chip surface, accent rule and prose size | the case draws nothing and asserts over source
 tests/views/shared/prose/intro.test.ts :: wraps its row at every width, so a control beside a long line is not cut off | the case draws nothing and asserts over intro.slice(0, intro.indexOf('}'))
-tests/views/structure/map-labels.test.ts :: counts boxes that only touch as apart | the case draws nothing and asserts over [...shownLabels(boxes, [])].sort()
-tests/views/structure/map-labels.test.ts :: draws a hovered or selected label whatever it overlaps, and leaves out what it covers | the case draws nothing and asserts over [...shownLabels(boxes, ['b'])].sort()
-tests/views/structure/map-labels.test.ts :: draws every label when none overlap | the case draws nothing and asserts over [...shownLabels(boxes, [])].sort()
-tests/views/structure/map-labels.test.ts :: draws labels of no width, which have not been measured, whatever sits beside them | the case draws nothing and asserts over [...shownLabels(boxes, [])].sort()
-tests/views/structure/map-labels.test.ts :: ignores a leading id that names no label | the case draws nothing and asserts over [...shownLabels(boxes, ['gone'])]
+tests/views/structure/map-labels.test.ts :: counts boxes that only touch as apart | the case draws nothing and asserts over [...shownLabels(boxes, [], [])].sort()
+tests/views/structure/map-labels.test.ts :: draws a hovered or selected label whatever it overlaps, and leaves out what it covers | the case draws nothing and asserts over [...shownLabels(boxes, ['b'], [])].sort()
+tests/views/structure/map-labels.test.ts :: draws every label when none overlap | the case draws nothing and asserts over [...shownLabels(boxes, [], [])].sort()
+tests/views/structure/map-labels.test.ts :: draws labels of no width, which have not been measured, whatever sits beside them | the case draws nothing and asserts over [...shownLabels(boxes, [], [])].sort()
+tests/views/structure/map-labels.test.ts :: ignores a leading id that names no label | the case draws nothing and asserts over [...shownLabels(boxes, ['gone'], [])]
 tests/views/structure/map-labels.test.ts :: is an empty box before the label is measured | the case draws nothing and asserts over empty.right - empty.left
-tests/views/structure/map-labels.test.ts :: leaves out a label that overlaps one drawn before it, in the order given | the case draws nothing and asserts over [...shownLabels(boxes, [])].sort()
+tests/views/structure/map-labels.test.ts :: leaves out a label that overlaps one drawn before it, in the order given | the case draws nothing and asserts over [...shownLabels(boxes, [], [])].sort()
 tests/views/structure/map-labels.test.ts :: starts past the node and reaches above and below the baseline under its centre | the case draws nothing and asserts over labelBox({ id: 'a', x: 100, y: 50, radius: 8 }, { width: 60,
 tests/views/structure/map.test.ts :: draws the catalogued edge failure when the manifest write refuses related | the case draws nothing and asserts over writeRelated('alpha', ['beta'], write)
 tests/views/structure/map.test.ts :: reads every toggle back, so a reopened tab is the tab as it was left | the case draws nothing and asserts over parseMapState({ collaborators: true, enabled: ['published'],

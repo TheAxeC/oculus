@@ -121,3 +121,140 @@ I sent my review of Q86b's repair round 1. It finds two problems: new sentences 
 
 
 Usage: 31 tool uses, 178k tokens, 14.5 min.
+
+## Repair round 2, refuted
+
+A fresh reviewer over round 2 (the worktree after the round, against the whole diff since base 38c12da7). Its probes and logs: the session scratchpad `q86b-refute-r2/` (`checks.log`, `probe.log`, `tail2.log`, `contact.log`).
+
+Q86b repair round 2 refutation (worktree .agents/worktrees/Q86b, base 38c12da7). I changed no file in the worktree, the main checkout or the ledger. `git status --short` shows the same 17 entries as before the review. Probes, copies and logs are only in scratchpad/q86b-refute-r2/.
+
+## Verification lines, verbatim
+
+From the worktree's tools/oculus, at load average 8.50: `PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH sh ~/.claude/skills/land/templates/checks.sh /Users/axelfaes/workspace/research-hub/tools/oculus/.scratch/migration/orchestrator-state.md </dev/null`, exit 0, log at q86b-refute-r2/checks.log:
+```
+$ npm test
+ Test Files  366 passed (366)
+      Tests  5818 passed | 1 skipped (5819)
+$ npm run check
+1790703286531 COMPLETED 2113 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+$ npm run build
+$ npm run format:check
+All matched files use Prettier code style!
+$ npm run lint
+$ ! LC_ALL=C grep -rna '[^ -~]' src tests
+checks: 6 commands passed
+```
+No test failed, so no one-file rerun was needed.
+
+On my copy (q86b-refute-r2/oc):
+- `bash bin/folder-check.sh`: exit 0.
+- `npm run diagrams`: exit 0. `diff -r docs/diagrams <worktree>/docs/diagrams` finds the two identical.
+- The perl ASCII gate prints nothing (exit 0).
+- `grep -nwE "repulse|collide|center|cool|DRAG_PHYSICS"` over graph.ts, Graph.svelte and graph.test.ts prints nothing (exit 1).
+
+### The round's reverts, rerun on the copy
+
+Each is a `perl` replacement, then `npx vitest run <file>`, then the file restored. Every one gives the red the report quotes.
+- `settle(nodes, edges, withoutMover(running, id))` changed to `settle(nodes, edges, running)` gives 2 failed:
+  - `expected 0.05640865116428925 to be less than 0.01`
+  - `expected [ 510.37015875936675, 340 ] to deeply equal [ 555.5502771335535, 340 ]`
+  - Both match the report.
+- pressHold not finishing the settle (to `nodes`) gives 2 failed: `expected 3.863896710070812 to be less than 0.01`, which matches, and the new case's `r` row, which is also red.
+- `if (inA < 0)` changed to `if (false)` gives 1 failed: `expected 59.124301578897054 to be less than or equal to 0`, which matches. The `inB` half alone gives the same red, so each half is proven separately.
+- `>= DRAG_PIXEL` changed to `>= 0` gives 2 failed: `expected 300 to be +0` and `expected true to be false`, which match. `> 0` gives the same.
+
+## Probes (item 3 of the task)
+
+All from q86b-refute-r2/probe.log, tail2.log and contact.log, run by vitest on the copy.
+
+**Wobble through physics alone.** The round-1 probe unchanged: seed 2, `line::a` dragged 200, a settle after each event, the node placed at +0.25 and +0 units in turn. Largest move of any neighbour from the stop:
+- after 300 events: 2.842 (it was 45.482 before this round);
+- after 600 events: 4.955.
+
+The brief's figure "4.96" is the 600-event value, not the 300-event one.
+
+**The same wobble as the page sees it.** Pane 1410 by 595, so 0.25 unit is 0.219 px. `movedEnough` is applied to screen points, starting from the last point that placed the node. Result: 0 settles started in 300 events, and the largest move of any node is 0.0000. Ruling Z54's creep under a still or sub-pixel pointer is closed.
+
+**The press jump.** A press on each of the 14 movers of a running `line::a` 200 settle, at 10, 60, 120 and 300 frames after the drop, seeds 1 and 2:
+- The pressed node moved 0 in every run, with x and y exactly equal to their input. Closed.
+- Other nodes jump at the press by up to 113.82 (seed 1) and 160.00 (seed 2) at 10 frames, and 61.92 or 107.87 at 60 frames. That is the ruled finish of the last settle.
+- `pressHold` takes 129 ms, synchronously inside pointerdown, on the 44-node fixture (tail2.log).
+
+**The slow slide after a settle stops.** Frames run on after `settle` stopped:
+- seed 1 `line::c` 200: nodes move 54.35 by frame 20000. Motion ends only at frame 57294, 67.03 units from the stop (`project::p26`).
+- seed 2 `line::a` 200: 48.14. In 1312 later frames the move per frame rises back above REST.
+- seed 1 `line::a` 60: 3.41.
+- `project::p0` 200: 0.037.
+
+contact.log shows what the slide is. `project::p26` sits at gap 0.0000 on its limit against `project::p10`, and slides along that contact from (568.52, 79.19) to (627.78, 48.00) while the gap stays 0.0000.
+
+A pointer stepping 1.2 px back and forth (each step a real move, so each one placed) resumes the slide: 5.9 units after 10 events and 48.1 after 60. It then holds at 48.4, which is the stopping point measured above; it does not grow past it.
+
+What the documents say: `DESIGN.md:291` and the `settle` docstring (graph.ts:608-611) now say the stop "can be short of the springs' balance". That is true, but the documents give no size, and the shortfall is up to 67 units (about 59 px in the 1410 by 595 pane). They no longer claim the nodes rest at balance.
+
+## Verdicts, the whole diff since the base
+
+Items of "What to build":
+1. Drag physics: holds.
+2. Drag loop: holds by reading. `nodeDown`, `dragTo` and `pointerUp` at Graph.svelte:200-289; 539 lines; no new `$effect`.
+3. Pointer mapping: holds.
+4. Labels: holds.
+5. Tests: holds. The Graph.svelte wiring of `movedEnough` and `lastScreen` is DOM behaviour: no test turns red if it is removed, and it is seen at the look.
+6. Documents and comments: violated, by the one sentence in Standards 1 below (a small landing fix). Everything else matches the code.
+
+Cases:
+- Press with no move: met.
+- Drag of a node joined to nothing: met.
+- Circles apart after 60, 200 and -200: met.
+- Close pair kept at its distance: met.
+- The creep ends: met, as the cases ruling words it, and the page guard stops sub-pixel restarts. The slide that remains on a real move is Behaviour 1.
+- `settle` stops: met.
+- Press during a running settle: met, as Z54 rules it; red under both reverts.
+- Empty set, one node, coincident at press, apart then coincident: met.
+- The `toBox` and `toGraph` cases: met.
+- Labels with nodes, labels order, zero-width label: met.
+- The grep: met.
+- The look items: not verifiable here.
+
+## 1. Spec
+None.
+
+## 2. Proof
+None new.
+
+The page wiring of the pixel guard is an audit, seen only at the look: Graph.svelte:265, `if (!movedEnough(lastScreen, screen)) return;`, and :216, `lastScreen = {...}`. The report says so under Limitations.
+
+## 3. Standards
+
+1. **DESIGN.md:291** says: "A pointer event less than one screen pixel (`DRAG_PIXEL`) from the last one that placed the dragged node ... places nothing and starts no settle ..., so nothing moves while the pointer rests or trembles." Graph.svelte:14-15 says the same.
+   - What is wrong: a settle started by the last real move keeps running while the pointer rests. That lasts up to 1127 frames on the fixture, about 19 s, and on seed 2 `line::a` 200 the tail moves up to 48 units. The neighbours therefore do move while the pointer rests.
+   - Failure scenario: a reader of DESIGN takes the neighbours to be still once the pointer stops. At the look, a pillar's neighbours visibly keep sliding for seconds after the pointer comes to rest.
+   - The wording comes from the round's own brief. A landing fix: "starts no new settle; one already running goes on to its stop".
+2. **graph.ts:82-83** (whole diff): "rather than until a cooling budget runs out".
+   - What is wrong: this names a mechanism that no longer exists in the tree, which is history in a comment (spec.md "No history in code or comments").
+   - Failure scenario: a reader looks for the cooling budget and finds none.
+   - A landing fix.
+
+## 4. Behaviour
+
+1. **The report's "Repair round 2", Before and after, Item 2**: "After, the push takes that speed out, so a neighbour in contact does not keep sliding along it."
+   - What is wrong: only the speed into the contact is removed. The part along the contact stays, so a node on its limit still slides along it. `project::p26` on `project::p10` at gap 0.0000 slides 67 units over about 57,000 frames after a seed 1 `line::c` 200 settle.
+   - The page stops that slide at the first frame under REST, 67 units short. Every later real pointer move of 1 px or more resumes it (48 units within 60 alternating 1.2 px events on seed 2). DESIGN.md:291 itself only claims that the speed into the contact is removed, which is true.
+   - Failure scenario: at the look, a pillar is dragged, rests, then is nudged by a pixel or two. A neighbour slides tens of pixels along another circle on that nudge, while the report told the look that no neighbour keeps sliding along a contact.
+   - This is inside Z54's ruled design (option (a) was ruled, not a rest rule on speed). The report sentence is false, and the behaviour is worth watching at the look.
+
+## Declined to judge
+
+- The look items: a drag and a press in a letterboxed pane, the wheel anchor and the pan, which labels show in the dense middle, the pixel guard as wired on the page, the length of the slow tail on screen, and whether the 129 ms synchronous `pressHold` inside pointerdown is felt. These need the running page on TEST.
+- The cost of `pressHold` on the real portfolio (more nodes than the fixture): not measured.
+
+## Usage
+About 25 tool uses, 19:30 to 19:46 by the machine clock. Token count not measured.
+Usage: 32 tool uses, 198k tokens, 15 min.
+
+## Closed
+
+- Round 2, Standards 1 (`DESIGN.md:291` and `Graph.svelte:14-15` say nothing moves while the pointer rests, though a settle already running goes on to its stop): fixed at landing, the sentences say that a sub-pixel event starts no new settle and one already running goes on to its stop.
+- Round 2, Standards 2 (`graph.ts:82-83` names the cooling budget that no longer exists): fixed at landing, the clause removed.
+- Round 2, Behaviour 1 (a node on its push limit still slides along the contact, and each real pointer move of a pixel or more resumes the slide, 46.38 units of a neighbour over 60 alternating 1.2-unit events on seed 2 `line::a` 200): raised to Axel as open item Z58 with the orchestrator's measurement of a fix; the report's false sentence is not landed code.
+- Round 1's findings: closed by round 2 (the press jump and the creep under a still or sub-pixel pointer, per Z54), as this review's verdicts state.

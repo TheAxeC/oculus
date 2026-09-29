@@ -102,7 +102,7 @@ The status bar runs along the bottom under the rail. On the left: the machine oc
 | `archive` | Archive | The same board over finished work and dead ends. |
 | `pillars` | Pillars | The research pillars and which projects sit under each. |
 | `domains` | Domains | The application domains and the projects in each. |
-| `map` | Map | The portfolio as a graph of projects and what links them, filtered by project type, by pillar and to the projects that still hold a pillar membership. A label that would cover another is hidden until its node is hovered or holds the keyboard, and an archived project's label is dimmed with its node. |
+| `map` | Map | The portfolio as a graph of projects and what links them, filtered by project type, by pillar and to the projects that still hold a pillar membership. A label that would cover another label or any node but its own is hidden until its node is hovered or holds the keyboard; a pillar's label is placed before its projects', and an archived project's label is dimmed with its node. |
 | `venues` | Venues | The venue catalogue with its tiers, deadlines and concentration warning. A `wos:` or `scopus:` that opens with a check or a cross is drawn as the check or cross icon before its words, or as that icon's stand-in on a terminal theme. A venue whose `link` is a path of the hub opens that file in a tab of its own and carries Show in Files. |
 | `data` | Data | The dataset registry: where each set came from and how it is recovered. |
 | `code` | Code | The repositories registry, what the portfolio says about its own code, and the software projects of the `projects/software` tier with the papers each one names. |
