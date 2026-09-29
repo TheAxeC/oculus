@@ -3,17 +3,18 @@
 In flight:
 - Q86b (the Map's drag after neato's placement, Z49 (a): circles kept apart among the movers, no repulsion or centre pull, no creep, the node under the pointer, labels kept off other nodes): brief checked (`agents/reviews/Q86b-brief-check.md`, 18 findings closed in the brief), built from base 38c12da7 with its cases ruled at round 0 (`agents/briefs/Q86b-cases.md`); refuted (`agents/reviews/Q86b-refuter.md`); repair round 1 sent (`agents/briefs/Q86b-round1-sent.md`).
 - D13b (the diffs and the merge on Monaco): brief checked (`agents/reviews/D13b-brief-check.md`, every finding closed in the brief), base 444b9601; builder running.
+- Q83 (small libraries: colour math on culori, code colour in Markdown through marked-highlight with one code stylesheet, the terminal's find, links and wide characters on the xterm addons, and the six server helpers nodemailer, write-file-atomic, image-size, mime, smol-toml and perfect-debounce; LA5, LA13, LA14, LA15): in /spec, brief written (`agents/briefs/Q83.md`), brief check running; it shares only separate lines or mechanical reruns with D13b and Q86b.
 Queued, in order:
 - Q88b (the right-click menus' new capabilities: file writes under the roots with Delete to the Trash, discarding an untracked file to the Trash, a two-file compare, .gitignore, cherry-pick, the graph's commit and branch actions (detached checkout, a branch or tag from a commit, the compares, Delete Branch), Open File (HEAD), closing a repository, opening a worktree, Lock Group, the terminal's name, icon, colour and Clear; Z52 (b)); waits for D13b to land: its compares (Compare Selected, Compare with Workspace, with Remote, with Merge Base, Open File (HEAD)) are new diff reads in `fileDiff`, `worktreeDiff`, `commitDiff`, `diffUrl` and the diff pane, which D13b rewrites onto the two-version answer, so a merge at landing would be a rebuild, not a rerun.
-- D13c (the code theme key), after D13a (Z46 (a)); runs alone, since it changes a configuration file.
+- D13c (the code theme key; Z46 (a)); runs alone, since it changes a configuration file.
 - X3c (the tab strip as VS Code's editor tabs; Z47 (a)); runs alone, since it adds `wrap_tabs` to `config/appearance.yml`.
 - X3a (the Files view as VS Code's Explorer); waits for D13b to land: its Compare Selected row is a two-file diff read and the diff pane, which D13b rewrites.
-- Q91 and Q83 (the project view and its editor, once X3a has landed; small libraries: culori and the others).
+- Q91 (the project view and its editor), once X3a has landed.
 - Q84 and L4 (the fetch-and-hold stores on @tanstack/svelte-query; floating panes; together only when their briefs name no shared file).
 - Q85 (checking untyped input with zod).
 - Q66 and Q35 (a hidden tab defers its work; the session views).
 - D11 and D14 (the debug client for rite; LaTeX everywhere).
-- D23, D15 and D17 (language servers in the Monaco editor, once D13a has landed; PDF reading, once D14 has landed; project commands).
+- D23, D15 and D17 (language servers in the Monaco editor; PDF reading, once D14 has landed; project commands).
 - D18, D20 and D24 (the Processes view; an agent started on a task; the Personal board).
 - A1, A2 and A3 (review with feedback; a session in a new worktree; scheduled runs, once D17 has landed).
 - M3, E1 and M4 (the resources registry; apps added while oculus runs; the Present view's equations drawn live from LaTeX).
@@ -26,6 +27,7 @@ Queued, in order:
 The loop fills three slots as they free up; a line above is only an order, never a barrier, apart from the "once ... has landed" notes. A step's line moves to Landed, at the top of that list, in its landing commit.
 
 Landed, newest first: every step ticked in `plan.md`, each with the date and the commit that ticked it (the 15 steps dated 2026-09-10 at f8af492b were landed before the ledger was opened):
+- Q88 (right-click menus wherever vscode.dev gives one: the pane strip and an empty pane, the Files and Repositories rows, the terminal's grid and list, every text box, rendered Markdown and the Document frame; the new capabilities left to Q88b), 2026-09-29, 88e6a1c3.
 - D13a (the source tab on Monaco: the editor primitive, Shiki's grammars, the Cmd+K chords in the palette, the quick diff marks from the keyboard; a press inside a pane makes it active), 2026-09-29, 2267831d.
 - Q79b (the test half of section D: the scratch sweep as a file fixture, the shared walkers and comment strippers), 2026-09-29, 9390421c.
 - Q96 (the Rail section's field words and icon dropdown on bits-ui, one tooltip open at a time; looked at on TEST 2026-09-29, the pick not made), 2026-09-29, 7e2c0360.
