@@ -27,7 +27,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:      # Q79b building, alone.
+dispatch:      # Q79b and Q96 building; Q88 next (Z50 (a)).
 - step: Q79b
   executor: agent
   worker: claude:opus
@@ -39,6 +39,17 @@ dispatch:      # Q79b building, alone.
   landing: not-started
   round: 0, cases ruled in agents/briefs/Q79b-cases.md (history audit option A, the scratchDir escape, 102 suites, app.html and favicon.svg read as HTML)
   builder_usage: 36 tool uses, 187k tokens, 8 min, the cases hand-back
+- step: Q96
+  executor: agent
+  worker: claude:opus
+  session_id: af9bfee68777afc37
+  worktree: .agents/worktrees/Q96
+  base: 43936573
+  launched: 2026-09-29
+  report: agents/reviews/Q96-report.md
+  landing: not-started
+  round: 0
+  shared_paths: tests/views/whole/type-scale.test.ts with Q79b; Q79b converts its folder walk at the head of the file, Q96 adds entries to the size table further down, separate regions of one file
 ```
 
 ## The standing demands (from Axel, in force)
