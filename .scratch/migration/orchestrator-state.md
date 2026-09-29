@@ -27,7 +27,17 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:      # none in flight.
+dispatch:      # Q81 building.
+- step: Q81
+  executor: agent
+  worker: claude:opus
+  session_id: a7a748a26572c34bc
+  worktree: .agents/worktrees/Q81
+  base: d0ba72f5
+  launched: 2026-09-29
+  report: agents/reviews/Q81-report.md
+  landing: not-started
+  round: 0
 ```
 
 ## The standing demands (from Axel, in force)

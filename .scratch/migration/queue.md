@@ -1,10 +1,9 @@
 /plan-orchestration oculus/migration
 
 In flight:
-- none.
+- Q81 (menus, context menus, tooltips and dialogs on bits-ui; the palette on its Command list with fuzzysort): building.
 Queued, in order:
 - Q87 (the import-graph checks on dependency-cruiser, the duplication check on jscpd): stopped at /spec, waiting on Axel's ruling Z45.
-- Q81 (menus, context menus, tooltips and dialogs on bits-ui).
 - Q79b (the tests, runs alone).
 - Q96 and Q88 (the Rail section's field labels and its icon dropdown on bits-ui, once Q81 has landed; right-click menus wherever vscode.dev gives one).
 - Q82 (the tree on @zag-js/tree-view).
