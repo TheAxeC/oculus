@@ -1,0 +1,32 @@
+# Q82 repair round 1 (sent 2026-09-29)
+
+The round starts at the worktree commit `ec1939ba` (the step's work as you left it, committed by the orchestrator). The findings are those of `agents/reviews/Q82-refuter.md`. Every item below is a known change: nothing here asks you to find a cause, reproduce a fault or measure until a condition holds. You work in `/Users/axelfaes/workspace/research-hub/.agents/worktrees/Q82/tools/oculus` and nowhere else, run no git command of any kind in any checkout, start no tmux session on the default server, run no browser test and write under `.scratch/` only your report. The rules file and the brief still hold.
+
+## Rulings on what the review raised
+
+- Case 7: the brief's "rows 95 to 125" is off by one. The window is rows 95 through 124, 30 rows, as the test asserts. The report says so under the case, citing this ruling.
+- The Graph's rows handed up with the open commit's files under the commit (your call 6) are ruled in. The tree's own rule, DESIGN.md:309, says Right steps into an open row and Left steps out to its parent, and item 3 has the level read from the tree. So Left from a file goes to its commit and Right on an open commit steps into its first file. `Repo.svelte`, `state/sources/repositories/repositories.ts` and its test are added to this step's paths.
+- The tree box's tabindex -1, the filtered attributes with the row's own `onfocus` in place of zag's handlers, and the carets in `package.json` (as npm writes them, the shape of the file's other entries) are ruled in. The report states the indent guides staying drawn while the tree box holds the focus, with before and after.
+- The duplicate `KeyRow` in `state/sources/repositories/repositories.ts` stays: the state layer cannot import `ui`, and the type predates the step.
+
+## Change
+
+1. Type-ahead answers every letter. zag's key map holds an `a` entry that acts only with Meta and otherwise returns before the type-ahead (`tree-view.connect.mjs:213-216` and `:233-240`). In `TreeView.svelte`'s `pressedKey`, an `a` with no modifier sends `TREE.TYPEAHEAD` with the key and the row's id and prevents the default. A key with Meta or Ctrl held is never handed to the machine, so Cmd+A and Ctrl+A keep the browser's select-all. Cases in `tests/ui/tree/`: the keys handed to the machine are decided by a pure function beside `tree-keys.ts` (the key, its modifiers and whether a type-ahead is running, to one of "withhold", "type-ahead", "machine"), which `pressedKey` calls. Its cases cover `a`, `A`, `b`, `*`, Space outside and inside a type-ahead, Meta+a, Ctrl+a, ArrowLeft and Enter.
+2. The row holding the tree's stop, and the row holding the focus, stay drawn when scrolled out of the window, and in the Graph so does the open commit. `VirtualRows.svelte` passes the virtualizer a `rangeExtractor` that adds the indexes of the rows it is told to keep to `defaultRangeExtractor`'s range. `TreeNav` gains `kept: () => string[]`, the ids of the machine's focused row (or, with none focused, the row carrying tabindex 0) and the row the focus is on; the Graph adds the open commit's index. `rowWindow` returns each drawn index with the spacer height before it (its start less the previous drawn row's end, measured from the list), and the spacer after the last, so a kept row far from the window is drawn at its place with spacers around it. The list draws a spacer `li` before each drawn row whose gap is above 0. So Tab always has a stop in a tree, the focus is not lost to the page when a wheel scroll takes its row out of view, and the open commit's files are read once, not again at each scroll back. Cases in `tests/ui/tree/virtual.test.ts`: a window of rows 95 to 124 with index 3 kept draws 3 and 95 to 124, the gap before 3 is 3 rows, the gap before 95 is 91 rows, and every gap and row adds up to the total; a kept index already inside the window is drawn once. `virtual.test.ts` imports `OVERSCAN` rather than writing 5.
+3. The windowing starts at the first client render. Before the list has found its scroll box, it draws the first `OVERSCAN * 2` rows and holds the height of the rest in the after spacer at `--tree-row`'s 22 px, on the server too. The case 8 audits of `files.test.ts` and `repositories.test.ts` are rewritten against that: the server rendering of a list longer than `OVERSCAN * 2` rows draws that many and a spacer after them. The label of a row not drawn still comes from the list's `label`.
+4. `nav.row` reads the row's index path from a map built once per collection (id to index path, in `tree-keys.ts` beside `treeNodes`, with a case), not from `collection.getIndexPath` per row. The labels map is written by `nav.row` still, and is pruned to the ids of `rows` whenever `rows` changes.
+5. `DESIGN.md:309`: the virtualization sentences move after "Its controls take tabindex 0 only while the focus is inside the row, so Tab from a row reaches them and Tab from outside does not.", so "Its" names the row again; and they say that the stop row, the focused row and the Graph's open commit stay drawn. `HELP.md` and the head comments of `TreeView.svelte`, `VirtualRows.svelte` and `virtual.ts` say what the code now does.
+
+## Report corrections
+
+6. The cases' first run is the run of the delivered tests against the base source: 15 failed and 82 passed, with the three "one explorer row" cases of `tree.test.ts` failing on `navAt`'s new shape. The report says so.
+7. The hidden-pane sentence is replaced by what the code does: a box 0 px tall draws no rows until it has a height.
+8. Under the visible changes, with before and after: Cmd+A and Ctrl+A on a row (kept for the browser), the indent guides after a press on blank tree space, the Graph's loaded commits one level deeper in `li.entry > ul.entry-rows`, the Left and Right keys in the Graph as ruled above, the stop and focused rows kept drawn, the first render drawing a window.
+9. For each new or changed case, quote its failure with the change it guards undone, then put the file back.
+10. The report's first section is the open items as the main checkout's `tools/oculus/.scratch/migration/orchestrator-state.md` lists them when you finish.
+
+## Tests
+
+Run only the test files you change while working, then `npm run check`, `npm run format:check`, `npm run lint` and `npm run diagrams`. Do not run the full verify list: the orchestrator runs it on main at landing.
+
+Rewrite the report at `.agents/worktrees/Q82/tools/oculus/.scratch/migration/agents/reviews/Q82-report.md` with these items, in the brief's shape.

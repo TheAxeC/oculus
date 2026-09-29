@@ -49,9 +49,9 @@ dispatch:      # Q81, Q82 and Q87 building.
   launched: 2026-09-29
   report: agents/reviews/Q82-report.md
   landing: not-started
-  round: 0
+  round: 1, sent 2026-09-29 from worktree commit ec1939ba, agents/briefs/Q82-round1-sent.md
   builder_usage: 97 tool uses, 339k tokens, 30 min
-  reviewer: a6d13a2b6f68312ca, launched 2026-09-29 (first refutation, running)
+  reviewer_report: agents/reviews/Q82-refuter.md, reviewer a6d13a2b6f68312ca, 246k tokens, 72 tool uses, 17 min
   shared_paths: with Q81, package.json and package-lock.json (each adds its own dependencies: a hand merge of the dependency lines, then npm install), DESIGN.md (Q81 lines 216 and 306, Q82 line 309: different lines), HELP.md (Q81 lines 42 and 86, Q82 lines 55-56: different lines), docs/diagrams (a rerun of npm run diagrams), tests/ui/primitives.test.ts, tests/ui/wall.test.ts, tests/views/whole/type-scale.test.ts and tests/checks/tree/allow-styling.ts (keyed entries or cases of different components: a hand merge of separate lines)
 - step: Q87
   executor: agent
@@ -63,7 +63,7 @@ dispatch:      # Q81, Q82 and Q87 building.
   report: agents/reviews/Q87-report.md
   landing: not-started
   round: 1, sent 2026-09-29 from worktree commit 66772ee6, agents/briefs/Q87-round1-sent.md
-  builder_usage: 26 tool uses, 133k tokens, 6 min, the cases hand-back; 43 tool uses, 202k tokens, 14 min, the build after the ruling
+  builder_usage: 26 tool uses, 133k tokens, 6 min, the cases hand-back; 43 tool uses, 202k tokens, 14 min, the build after the ruling; 43 tool uses, 285k tokens, 12 min, round 1
   reviewer_report: agents/reviews/Q87-refuter.md, reviewer a261d09361fbf1ffa, 167k tokens, 44 tool uses, 10 min
   cases: ruled at round 0 in agents/briefs/Q87-cases.md (the import pattern, the launcher, same-file clones dropped, the mark over the TypeScript scanner's tokens)
   shared_paths: with Q81 and Q82, package.json and package-lock.json (each adds its own dependencies, Q87 a devDependency: a hand merge of the dependency lines, then npm install)
