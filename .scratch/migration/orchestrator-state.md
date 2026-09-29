@@ -28,7 +28,19 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:      # D13b and Q86c landed; Z69 and Z70 ruled (a); next at /spec: D13c, X3c, X3a.
+dispatch:      # D13c building; Q102 and Q88b at their brief checks; X3c and X3a wait for Q88b's landing.
+- step: D13c
+  executor: agent
+  worker: claude:sonnet
+  model: claude-sonnet-5-5 (the transcript's message.model, read after the launch)
+  session_id: a8b4eb6e79ef8fa63
+  worktree: .agents/worktrees/D13c
+  base: dc2ffdc3
+  launched: 2026-09-30 01:20 local
+  report: agents/reviews/D13c-report.md
+  brief_check: agents/reviews/D13c-brief-check.md, every finding closed in the brief (its Closed heading); claude-opus-5-5, 63 tool uses, 183k tokens, 9 min
+  landing: not-started
+  round: 0
 ```
 
 ## The standing demands (from Axel, in force)
