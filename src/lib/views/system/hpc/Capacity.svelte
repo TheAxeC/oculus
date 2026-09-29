@@ -1,12 +1,28 @@
 <script lang="ts">
     // Layer 3, view partial. Partition rows aggregate sinfo into idle, mixed, and allocated
-    // segments while retaining the full source table.
+    // segments while retaining the full source table. The meters and the table fold as one section,
+    // and the table folds again inside it; both folds stand as the pane holds them.
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Table from '$lib/ui/display/Table.svelte';
     import type { Column } from '$lib/ui/display/table-rows';
-    import { partitionMeters, type HpcPartition } from '$lib/state/system/hpc';
+    import {
+        partitionMeters,
+        toggledHpcState,
+        type HpcPartition,
+        type HpcViewState
+    } from '$lib/state/system/hpc';
     import { t } from '$lib/state/shared/words/text';
-    let { rows }: { rows: HpcPartition[] } = $props();
+    let {
+        rows,
+        held,
+        onheld
+    }: {
+        rows: HpcPartition[];
+        /** The folds as this pane holds them. */
+        held: HpcViewState;
+        /** Keep the folds' new state in the pane's instance state. */
+        onheld: (next: HpcViewState) => void;
+    } = $props();
     const meters = $derived(partitionMeters(rows));
     // sinfo answers one row per partition and node state, so the partition name repeats and cannot
     // key a row; the key is the row's position, which is unique and which the browser insists on.
@@ -18,34 +34,68 @@
         { key: 'state', label: t('hpc.col_state') },
         { key: 'gres', label: t('hpc.col_gres') }
     ];
+
+    /** The capacity section's heading: one partition, or that many partitions. */
+    function title(count: number): string {
+        return count === 1 ? t('hpc.capacity_title_one') : t('hpc.capacity_title', count);
+    }
+
+    /** The sinfo table's summary: one row, or that many rows. */
+    function summary(count: number): string {
+        return count === 1 ? t('hpc.capacity_summary_one') : t('hpc.capacity_summary', count);
+    }
+
+    /**
+     * Keep a fold's new state. The toggle the `open` attribute itself fires finds the fold already
+     * as held and writes nothing; `toggle` does not bubble, so the inner fold's never reaches here
+     * for the outer one.
+     */
+    function toggled(
+        key: keyof HpcViewState,
+        event: Event & { currentTarget: HTMLDetailsElement }
+    ): void {
+        const next = toggledHpcState(held, key, event.currentTarget.open);
+        if (next !== null) onheld(next);
+    }
 </script>
 
 <!-- A grid of small meters, several to a row, so twenty partitions do not push the queue off the
      screen: the queue is what the view is opened for, and the capacity is the glance above it. -->
-<div class="meters">
-    {#each meters as meter (meter.name)}
-        <div class="meter">
-            <span>{meter.name}</span>
-            {#if meter.gpu}<Tag label={t('hpc.gpu')} tone="violet" />{/if}
-            <span class="bar" aria-label={t('hpc.capacity_label', meter.name)}>
-                <i class="idle" style={`flex:${meter.idle}`}></i>
-                <i class="mixed" style={`flex:${meter.mixed}`}></i>
-                <i class="allocated" style={`flex:${meter.allocated}`}></i>
-            </span>
-            <span>{t('hpc.idle_count', meter.idle)}</span>
+{#if meters.length}
+    <details class="capacity" open={held.capacity} ontoggle={(event) => toggled('capacity', event)}>
+        <summary>{title(meters.length)}</summary>
+        <div class="meters">
+            {#each meters as meter (meter.name)}
+                <div class="meter">
+                    <span>{meter.name}</span>
+                    {#if meter.gpu}
+                        <Tag label={t('hpc.gpu')} tone="violet" />
+                    {/if}
+                    <span class="bar" aria-label={t('hpc.capacity_label', meter.name)}>
+                        <i class="idle" style={`flex:${meter.idle}`}></i>
+                        <i class="mixed" style={`flex:${meter.mixed}`}></i>
+                        <i class="allocated" style={`flex:${meter.allocated}`}></i>
+                    </span>
+                    <span>{t('hpc.idle_count', meter.idle)}</span>
+                </div>
+            {/each}
         </div>
-    {/each}
-</div>
-{#if rows.length}<details>
-        <summary>{t('hpc.capacity_summary', rows.length)}</summary>
-        <Table {columns} rows={tableRows} rowKey="key" />
-    </details>{/if}
+        <details class="sinfo" open={held.sinfo} ontoggle={(event) => toggled('sinfo', event)}>
+            <summary>{summary(rows.length)}</summary>
+            <Table {columns} rows={tableRows} rowKey="key" />
+        </details>
+    </details>
+{/if}
 
 <style>
     .meters {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
         gap: 4px 16px;
+    }
+    /* The view's own gap between its parts, kept inside the capacity fold. */
+    .capacity > .meters {
+        margin-block: 10px;
     }
     .meter {
         display: flex;

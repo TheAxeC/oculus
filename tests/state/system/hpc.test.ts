@@ -6,9 +6,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     efficiencyTone,
+    parseHpcState,
     partitionMeters,
     startLabel,
     stateTone,
+    toggledHpcState,
     walltimeFraction
 } from '../../../src/lib/state/system/hpc.ts';
 import { scalar } from '../../../src/lib/data/helpers/guards.ts';
@@ -103,6 +105,49 @@ describe('HPC state', () => {
 
         answering({});
         expect(await jobLog('4711')).toEqual({ status: 'error', output: '' });
+    });
+});
+
+describe('the Live HPC held state', () => {
+    const defaults = { capacity: true, sinfo: false };
+
+    it.each([[undefined], [null], ['x'], [{}]])('reads %j as the defaults', (raw) => {
+        expect(parseHpcState(raw)).toEqual(defaults);
+    });
+
+    it('falls back per key, keeping the key that is held', () => {
+        expect(parseHpcState({ capacity: false })).toEqual({ capacity: false, sinfo: false });
+        expect(parseHpcState({ sinfo: true })).toEqual({ capacity: true, sinfo: true });
+    });
+
+    it.each([[{ capacity: 'no', sinfo: 1 }], [{ capacity: null, sinfo: 'true' }], [[]]])(
+        'reads the non-boolean or non-map %j as the defaults',
+        (raw) => {
+            expect(parseHpcState(raw)).toEqual(defaults);
+        }
+    );
+
+    it('ignores every other key of the held map', () => {
+        expect(parseHpcState({ capacity: false, sinfo: true, label: 'x' })).toEqual({
+            capacity: false,
+            sinfo: true
+        });
+    });
+
+    it('writes nothing for a toggle that matches the held capacity, and the new state otherwise', () => {
+        expect(toggledHpcState({ capacity: true, sinfo: false }, 'capacity', true)).toBeNull();
+        expect(toggledHpcState({ capacity: true, sinfo: false }, 'capacity', false)).toEqual({
+            capacity: false,
+            sinfo: false
+        });
+    });
+
+    it('writes the new state for a toggle of the sinfo fold, and nothing when it matches', () => {
+        expect(toggledHpcState({ capacity: false, sinfo: false }, 'sinfo', true)).toEqual({
+            capacity: false,
+            sinfo: true
+        });
+        expect(toggledHpcState({ capacity: false, sinfo: false }, 'sinfo', false)).toBeNull();
     });
 });
 

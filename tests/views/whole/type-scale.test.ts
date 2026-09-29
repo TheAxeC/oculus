@@ -69,7 +69,7 @@ const VIEWS: Record<string, string> = {
         '.period=fs-md | footer=fs-sm | .grid :global(.ec)=fs-sm | .grid :global(.ec-list .ec-event-title)=fs-sm',
     'shared/accounts/AccountList.svelte': '.provider, .when, .hint=fs-sm | .said=fs-sm',
     'shared/accounts/ConnectorHead.svelte': '.meta=fs-sm',
-    'system/hpc/Hpc.svelte': 'footer=fs-sm',
+    'system/hpc/Hpc.svelte': '.said=fs-md | footer=fs-sm',
     'system/usage/Usage.svelte':
         '.window-name, .live-row=fs-sm | .refresher=fs-xs | .live h3, .history h2=fs-sm | .session=fs-xs',
     'feeds/inbox/Inbox.svelte': '.group h3=fs-lg',
@@ -121,7 +121,7 @@ const VIEWS: Record<string, string> = {
     // The HPC view draws its tables, header, disk and capacity labels at sm, its log heading at
     // sm and its monospace log body at xs.
     'system/hpc/Capacity.svelte': '.meter=fs-sm | summary=fs-sm | details :global(table)=fs-sm',
-    'system/hpc/Head.svelte': '.meta=fs-sm',
+    'system/hpc/Head.svelte': '.meta=fs-sm | code=fs-sm',
     'system/hpc/Jobs.svelte': 'table=fs-sm',
     'system/hpc/Log.svelte': 'header=fs-sm | pre=fs-xs',
     'system/hpc/Quota.svelte': '.quota=fs-sm | h3=fs-sm',

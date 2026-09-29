@@ -1,6 +1,7 @@
 // Layer 2, client state. Pure formatting and tone choices for the Live HPC view keep display policy
 // out of its components.
 import type { HpcJob, HpcPartition } from '../../data/model/index.ts';
+import { fields } from '../../data/helpers/guards.ts';
 export type {
     HpcJob,
     HpcPartition,
@@ -66,4 +67,35 @@ export function partitionMeters(rows: HpcPartition[]): PartitionMeter[] {
         found.set(row.partition, meter);
     }
     return [...found.values()];
+}
+
+/**
+ * What a Live HPC pane keeps of its own: whether its capacity section is open, and whether the
+ * sinfo table under the meters is open. Both are the reader's, per pane, and go when the tab
+ * closes.
+ */
+export type HpcViewState = { capacity: boolean; sinfo: boolean };
+
+/** The folds a new pane shows: the capacity open, since it is the glance, and the table closed. */
+const HPC_DEFAULTS: HpcViewState = { capacity: true, sinfo: false };
+
+/** The held state of a Live HPC pane, each missing or non-boolean key read as its default. */
+export function parseHpcState(raw: unknown): HpcViewState {
+    const held = fields(raw);
+    const flag = (key: keyof HpcViewState): boolean =>
+        typeof held[key] === 'boolean' ? held[key] : HPC_DEFAULTS[key];
+    return { capacity: flag('capacity'), sinfo: flag('sinfo') };
+}
+
+/**
+ * The state after one fold's toggle, or null when the fold already stands as held. The browser
+ * fires `toggle` when the `open` attribute drawn from the held state takes effect, and that event
+ * must write nothing.
+ */
+export function toggledHpcState(
+    held: HpcViewState,
+    key: keyof HpcViewState,
+    open: boolean
+): HpcViewState | null {
+    return held[key] === open ? null : { ...held, [key]: open };
 }

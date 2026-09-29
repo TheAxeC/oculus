@@ -67,9 +67,34 @@ const payload: HpcPayload = {
     host: 'fixture'
 };
 /** The view drawn from whatever the client already holds, with no new message. */
-function again(): string {
-    return render(Hpc, { context: clientContext(client), props: { instance } }).body;
+function again(pane: typeof instance = instance): string {
+    return render(Hpc, { context: clientContext(client), props: { instance: pane } }).body;
 }
+/** The view drawn from one payload, with the pane holding the state the case gives it. */
+function drawHeld(data: HpcPayload, held: unknown, version: number): string {
+    client.ui.setInstanceState(instance.id, held);
+    return draw(data, version);
+}
+/** The opening tag of the `<details>` whose class names the fold, or the empty string. */
+function foldTag(body: string, fold: 'capacity' | 'sinfo'): string {
+    return new RegExp(`<details[^>]*class="[^"]*\\b${fold}\\b[^"]*"[^>]*>`).exec(body)?.[0] ?? '';
+}
+/** The fold from its opening tag to its own closing tag, counting the folds nested in it. */
+function fold(body: string, which: 'capacity' | 'sinfo'): string {
+    const tag = foldTag(body, which);
+    if (tag === '') return '';
+    const start = body.indexOf(tag);
+    const marks = /<details\b|<\/details>/g;
+    marks.lastIndex = start + tag.length;
+    let depth = 1;
+    for (let mark = marks.exec(body); mark; mark = marks.exec(body)) {
+        depth += mark[0] === '</details>' ? -1 : 1;
+        if (depth === 0) return body.slice(start, mark.index + mark[0].length);
+    }
+    return body.slice(start);
+}
+/** Whether an opening tag carries the `open` attribute. */
+const isOpen = (tag: string): boolean => /\sopen(=|\s|>)/.test(tag);
 function draw(data: HpcPayload, version: number): string {
     receive({ channel: 'hpc', version, payload: data });
     return again();
@@ -96,7 +121,8 @@ describe('Live HPC view', () => {
         for (const text of [
             'Live HPC',
             '1 running',
-            'Cluster capacity (sinfo) - 3 rows',
+            'Cluster capacity (1 partition)',
+            'sinfo table (3 rows)',
             'disk',
             'Job',
             'Name',
@@ -270,4 +296,123 @@ describe('Live HPC view', () => {
         if (status === 'starting') expect(body).not.toMatch(/class="[^"]*bad[^"]*"/);
         else expect(body).toMatch(/class="[^"]*bad[^"]*"/);
     });
+
+    it('draws the capacity fold open and the sinfo fold closed while the pane holds nothing', () => {
+        const body = draw(payload, 20);
+        const outer = foldTag(body, 'capacity');
+        expect(outer).not.toBe('');
+        expect(isOpen(outer)).toBe(true);
+        expect(fold(body, 'capacity')).toContain('Cluster capacity (1 partition)');
+        expect(fold(body, 'sinfo')).toContain('sinfo table (3 rows)');
+        const inner = foldTag(body, 'sinfo');
+        expect(inner).not.toBe('');
+        expect(isOpen(inner)).toBe(false);
+    });
+    it('names the partitions in the plural when there are two', () => {
+        const body = draw(
+            {
+                ...payload,
+                sinfo: [
+                    ...payload.sinfo,
+                    { partition: 'cpu', avail: 'up', nodes: 4, state: 'idle', gres: '(null)' }
+                ]
+            },
+            21
+        );
+        expect(fold(body, 'capacity')).toContain('Cluster capacity (2 partitions)');
+        expect(fold(body, 'sinfo')).toContain('sinfo table (4 rows)');
+    });
+    it('draws the capacity fold closed, with the meters still inside it, for a pane that holds it closed', () => {
+        const body = drawHeld(payload, { capacity: false }, 22);
+        const outer = foldTag(body, 'capacity');
+        expect(outer).not.toBe('');
+        expect(isOpen(outer)).toBe(false);
+        expect(fold(body, 'capacity')).toMatch(/class="meters\s/);
+        expect(fold(body, 'capacity')).toMatch(/class="idle\s/);
+    });
+    it('draws the sinfo fold open for a pane that holds it open', () => {
+        const body = drawHeld(payload, { sinfo: true }, 23);
+        const inner = foldTag(body, 'sinfo');
+        expect(inner).not.toBe('');
+        expect(isOpen(inner)).toBe(true);
+    });
+    it('draws the open sinfo fold inside the closed capacity fold', () => {
+        const body = drawHeld(payload, { capacity: false, sinfo: true }, 24);
+        expect(isOpen(foldTag(body, 'capacity'))).toBe(false);
+        const inner = foldTag(body, 'sinfo');
+        expect(inner).not.toBe('');
+        expect(isOpen(inner)).toBe(true);
+        expect(fold(body, 'capacity')).toContain(inner);
+    });
+    it('names one sinfo row in the singular', () => {
+        const body = draw({ ...payload, sinfo: [payload.sinfo[0]] }, 25);
+        expect(fold(body, 'sinfo')).toContain('sinfo table (1 row)');
+        // one row takes the singular words, so the plural count is never said of it
+        expect(body).not.toContain('sinfo table (1 rows)');
+    });
+    it('draws each pane from its own held state', () => {
+        const other = { ...instance, id: 'hpc-two' };
+        client.ui.setInstanceState(instance.id, { capacity: false });
+        receive({ channel: 'hpc', version: 26, payload });
+        const closed = again();
+        const opened = again(other);
+        expect(isOpen(foldTag(closed, 'capacity'))).toBe(false);
+        expect(foldTag(opened, 'capacity')).not.toBe('');
+        expect(isOpen(foldTag(opened, 'capacity'))).toBe(true);
+    });
+    it('draws the unreachable line as a status message, and the hint in the head code', () => {
+        const body = draw({ ...payload, status: 'unreachable', hint: 'ssh timeout' }, 27);
+        expect(body).toMatch(
+            /<p[^>]*class="[^"]*\bsaid\b[^"]*"[^>]*>Cluster unreachable - on UT network \/ EduVPN\?<\/p>/
+        );
+        // an audit on the tree as it is: the hint is drawn in the head's code element
+        expect(body).toMatch(/<code[^>]*>ssh timeout<\/code>/);
+    });
+    it('draws the unreachable line as a status message and no code when there is no hint', () => {
+        const held = { ...payload, status: 'unreachable' as const };
+        delete held.hint;
+        const body = draw(held, 28);
+        expect(body).toMatch(/<p[^>]*class="[^"]*\bsaid\b[^"]*"[^>]*>Cluster unreachable/);
+        // the payload carries no failure text, so the head has none to print
+        expect(body).not.toContain('<code');
+    });
+    it('draws the same status message for an error payload', () => {
+        const body = draw({ ...payload, status: 'error', hint: 'fixture' }, 29);
+        expect(body).toMatch(/<p[^>]*class="[^"]*\bsaid\b[^"]*"[^>]*>Cluster unreachable/);
+    });
+    it('draws the fetching line through the empty primitive while the cluster is starting', () => {
+        const body = draw({ ...payload, status: 'starting' }, 30);
+        const at = body.search(/class="empty[\s"]/);
+        expect(at).toBeGreaterThan(-1);
+        expect(body.slice(at, body.indexOf('</p>', at))).toContain('Fetching job status...');
+    });
+    it.each([
+        ['an answering cluster', { ...payload, sinfo: [] }],
+        [
+            'an unreachable cluster with disk rows',
+            {
+                ...payload,
+                status: 'unreachable' as const,
+                hint: 'fixture',
+                sinfo: [],
+                jobs: [],
+                running: 0,
+                pending: 0,
+                total: 0,
+                recent: []
+            }
+        ]
+    ])(
+        'draws no capacity fold with no sinfo rows, for %s, and keeps the disk meters',
+        (_, data) => {
+            const body = draw(data, 31);
+            expect(foldTag(body, 'capacity')).toBe('');
+            // sinfo answered no partition, so there is no capacity to head
+            expect(body).not.toContain('Cluster capacity');
+            expect(body).not.toMatch(/<details[^>]*>\s*<summary[^>]*>sinfo/);
+            // the one meters grid left is the disk's: the capacity draws no empty grid of its own
+            expect(body.match(/class="meters\s/g)).toHaveLength(1);
+            expect(body).toContain('home disk usage');
+        }
+    );
 });

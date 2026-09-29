@@ -118,5 +118,7 @@
     }
     code {
         color: var(--c-red-txt);
+        font-family: var(--font-mono);
+        font-size: var(--fs-sm);
     }
 </style>

@@ -8,7 +8,10 @@ text:
         cancel_confirm: Cancel job {0}? This runs scancel and cannot be undone.
         cancel_ok: Cancel job
         capacity_label: '{0} partition capacity'
-        capacity_summary: Cluster capacity (sinfo) - {0} rows
+        capacity_summary: sinfo table ({0} rows)
+        capacity_summary_one: sinfo table (1 row)
+        capacity_title: Cluster capacity ({0} partitions)
+        capacity_title_one: Cluster capacity (1 partition)
         close: close
         col_actions: Actions
         col_avail: Avail

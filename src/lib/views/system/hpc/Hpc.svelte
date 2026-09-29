@@ -28,12 +28,21 @@
     import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
+    import Empty from '$lib/ui/frame/Empty.svelte';
+    import { parseHpcState, type HpcViewState } from '$lib/state/system/hpc';
 
     const {
-        hpc: { command, jobLog, queue }
+        hpc: { command, jobLog, queue },
+        ui: { instanceState, setInstanceState }
     } = useState();
     let { instance }: ViewProps = $props();
     const data = $derived(queue());
+    /** The capacity folds as this pane holds them. */
+    const held = $derived(parseHpcState(instanceState(instance.id)));
+    /** Keep the folds' new state in this pane's instance state, which goes when the tab closes. */
+    function keepHeld(next: HpcViewState): void {
+        setInstanceState(instance.id, next);
+    }
     let logId = $state('');
     let logStatus = $state('');
     let logOutput = $state('');
@@ -57,12 +66,12 @@
     <div class="hpc" data-instance={instance.id}>
         <Head {data} onrefresh={refresh} />
         {#if data?.status === 'starting'}
-            <p>{t('hpc.fetching')}</p>
+            <Empty message={t('hpc.fetching')} />
         {:else if data && data.status !== 'ok'}
-            <p>{t('hpc.unreachable_msg')}</p>
+            <p class="said">{t('hpc.unreachable_msg')}</p>
         {/if}
         {#if data && (data.status === 'ok' || data.sinfo.length > 0 || data.quota.length > 0)}
-            <Capacity rows={data.sinfo} />
+            <Capacity rows={data.sinfo} {held} onheld={keepHeld} />
             <Quota rows={data.quota} />
         {/if}
         {#if data && (data.status === 'ok' || data.jobs.length > 0 || data.recent.length > 0)}
@@ -91,6 +100,11 @@
         flex-direction: column;
         gap: 10px;
         min-width: 0;
+    }
+    .said {
+        margin: 0;
+        font-size: var(--fs-md);
+        color: var(--muted-txt, var(--muted));
     }
     footer {
         margin-top: 12px;
