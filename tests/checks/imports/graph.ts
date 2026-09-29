@@ -11,19 +11,14 @@
 // runtimeImports() or augmentations(), and resolve a specifier through target(), so they agree on
 // what a module is and which module an import names.
 
-import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import { dirname, join, normalize, sep } from 'node:path';
 import { augmentationsOf, importsOf, moduleAt } from '../../../bin/diagrams/imports.mjs';
+import { treeFiles } from '../walk.ts';
 
 /** Every .ts and .svelte file under a root, as paths relative to it with forward slashes. */
-export function sourceFiles(root: string, prefix = ''): string[] {
-    const found: string[] = [];
-    for (const entry of readdirSync(join(root, prefix), { withFileTypes: true })) {
-        const rel = prefix === '' ? entry.name : `${prefix}/${entry.name}`;
-        if (entry.isDirectory()) found.push(...sourceFiles(root, rel));
-        else if (/\.(ts|svelte)$/.test(entry.name)) found.push(rel);
-    }
-    return found.sort();
+export function sourceFiles(root: string): string[] {
+    return treeFiles(root).filter((rel) => /\.(ts|svelte)$/.test(rel));
 }
 
 /**

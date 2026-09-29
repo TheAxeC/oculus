@@ -41,54 +41,68 @@ expect(GONE.startsWith(HERE + sep)).toBe(true);
 
 expect(existsSync(GONE)).toBe(false);
 
-export const TASK_CONFIG = scratchDir('oculus-task-route-');
-
-expect(resolve(TASK_CONFIG).startsWith(HERE + sep)).toBe(true);
+/** One file's scratch folder, and the engines and the chat hub planted in it. */
+export type TaskConfig = {
+    /** The folder every directory below is made in. */
+    root: string;
+    /** The engine a case that reads no machine-local value is given: a config folder, empty. */
+    engine: string;
+    taskEngine: string;
+    defaultEngine: string;
+    chatHub: string;
+    chatState: string;
+    chatProject: string;
+    chatEngine: string;
+};
 
 /**
- * An engine directory of this suite's own: a config folder holding the machine-local file the case
- * under test reads. The route is handed the directory, so nothing here reads the checkout's own.
+ * An engine directory of this suite's own inside `root`: a config folder holding the machine-local
+ * file the case under test reads. The route is handed the directory, so nothing here reads the
+ * checkout's own.
  */
-export function engineWith(name: string, local = ''): string {
-    const dir = join(TASK_CONFIG, name);
-    expect(resolve(dir).startsWith(TASK_CONFIG + sep)).toBe(true);
+export function engineWith(root: string, name: string, local = ''): string {
+    const dir = join(root, name);
+    expect(resolve(dir).startsWith(root + sep)).toBe(true);
     mkdirSync(join(dir, 'config'), { recursive: true });
     if (local !== '') writeFileSync(join(dir, 'config', 'local.yml'), local);
     return dir;
 }
 
 /**
- * The engine a case that reads no machine-local value is given: a config folder and nothing in it.
+ * Make one file's scratch folder and plant the engines and the chat hub in it. Each file that
+ * imports this calls it from the fixture's test.beforeAll and keeps what it answers, so a file
+ * whose cases are all skipped makes nothing.
  */
-export const ENGINE = engineWith('engine');
-
-export const TASK_ENGINE = engineWith(
-    'task-engine',
-    `hub: ${HERE}\nclaude_bin: /opt/Claude CLI/claude\n`
-);
-
-export const TASK_DEFAULT_ENGINE = engineWith('default-engine', `hub: ${HERE}\n`);
-
-export const CHAT_HUB = join(TASK_CONFIG, 'hub');
-
-export const CHAT_STATE = join(TASK_CONFIG, 'state');
-
-export const CHAT_PROJECT = join(CHAT_HUB, 'projects', 'active', 'alpha');
-
-mkdirSync(join(CHAT_STATE, 'chat'), { recursive: true });
-
-mkdirSync(CHAT_PROJECT, { recursive: true });
-
-mkdirSync(join(CHAT_HUB, 'registries'), { recursive: true });
-
-writeFileSync(join(CHAT_PROJECT, 'project.yml'), 'id: alpha\ntitle: Alpha Study\n');
-
-writeFileSync(join(CHAT_HUB, 'registries', 'venues.yml'), 'entries: []\n');
-
-export const CHAT_ENGINE = engineWith(
-    'chat-engine',
-    `hub: ${CHAT_HUB}\nclaude_bin: /opt/Claude CLI/claude\nsessions_overrides: ${join(CHAT_STATE, 'sessions.json')}\n`
-);
+export function makeTaskConfig(): TaskConfig {
+    const root = scratchDir('oculus-task-route-');
+    expect(resolve(root).startsWith(HERE + sep)).toBe(true);
+    const chatHub = join(root, 'hub');
+    const chatState = join(root, 'state');
+    const chatProject = join(chatHub, 'projects', 'active', 'alpha');
+    mkdirSync(join(chatState, 'chat'), { recursive: true });
+    mkdirSync(chatProject, { recursive: true });
+    mkdirSync(join(chatHub, 'registries'), { recursive: true });
+    writeFileSync(join(chatProject, 'project.yml'), 'id: alpha\ntitle: Alpha Study\n');
+    writeFileSync(join(chatHub, 'registries', 'venues.yml'), 'entries: []\n');
+    return {
+        root,
+        engine: engineWith(root, 'engine'),
+        taskEngine: engineWith(
+            root,
+            'task-engine',
+            `hub: ${HERE}\nclaude_bin: /opt/Claude CLI/claude\n`
+        ),
+        defaultEngine: engineWith(root, 'default-engine', `hub: ${HERE}\n`),
+        chatHub,
+        chatState,
+        chatProject,
+        chatEngine: engineWith(
+            root,
+            'chat-engine',
+            `hub: ${chatHub}\nclaude_bin: /opt/Claude CLI/claude\nsessions_overrides: ${join(chatState, 'sessions.json')}\n`
+        )
+    };
+}
 
 export const BASE_CHAT_CONFIG = loadConfig(engineDir()).config;
 
@@ -154,12 +168,12 @@ export function configOf(engine: string): () => Record<string, unknown> {
     return () => loadConfig(engine).config;
 }
 
-export function options(over: Partial<TerminalOptions> = {}): TerminalOptions {
+export function options(engine: string, over: Partial<TerminalOptions> = {}): TerminalOptions {
     return {
-        engine: ENGINE,
+        engine,
         run: tmux().run,
         recordFor: () => null,
-        configFor: configOf(ENGINE),
+        configFor: configOf(engine),
         ...over
     };
 }

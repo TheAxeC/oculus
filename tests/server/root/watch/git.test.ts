@@ -9,10 +9,9 @@
 // changed is re-read" is checked by the thing that would fail if it were false.
 
 import { mkdirSync, rmSync, symlinkSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join, resolve, sep } from 'node:path';
+import { join } from 'node:path';
 import { byKey } from '../../../../src/lib/data/helpers/guards.ts';
-import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, vi } from 'vitest';
 import { Hub } from '../../../../src/lib/server/core/channels.ts';
 import { IGNORED, relevant, rootsOf, watchGit } from '../../../../src/lib/server/root/watch/git.ts';
 import type { Watcher } from '../../../../src/lib/server/root/watch/portfolio.ts';
@@ -25,9 +24,7 @@ import { recording } from './probe.ts';
 import { announce, commitAll, latest, manual, put, repositoryIn } from './repos.ts';
 import type { Manual } from './repos.ts';
 import { noop } from '../../../fixtures/doubles.ts';
-import { scratchDir, sweepScratch } from '../../../fixtures/scratch.ts';
-
-afterAll(sweepScratch);
+import { it, scratchDir } from '../../../fixtures/scratch.ts';
 
 // A watcher test waits on real file events and on git, and the suite runs several files at once, so
 // the waits are generous: they are how long a failure takes, not how long a pass takes.
@@ -58,7 +55,6 @@ vi.mock('node:child_process', async (importOriginal) => {
 
 beforeEach(() => {
     dir = scratchDir('oculus-watch-git-');
-    expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     ran.length = 0;
 });
 

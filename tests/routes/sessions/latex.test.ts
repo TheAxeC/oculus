@@ -3,22 +3,20 @@
 // nothing of the real hub is read and nothing at all is written outside it.
 
 import { mkdirSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
 import { dirname, join, resolve, sep } from 'node:path';
-import { afterAll, describe, expect, it } from 'vitest';
+import { describe, expect } from 'vitest';
 import {
     handleLatex,
     type LatexAnswer,
     type LatexTarget
 } from '../../../src/lib/server/content/latex.ts';
-import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
-
-afterAll(sweepScratch);
+import { it, scratchDir, test } from '../../fixtures/scratch.ts';
 
 const HOST = '127.0.0.1:8791';
 
-const HUB = scratchDir('oculus-latex-route-');
-expect(resolve(HUB).startsWith(resolve(tmpdir()) + sep)).toBe(true);
+// The synthetic hub, made and planted before the file's first case, so a run that skips every case
+// makes none.
+let HUB = '';
 
 const FOLDER = 'projects/manuscripts/alpha';
 
@@ -30,14 +28,18 @@ function write(rel: string, body: string): void {
     writeFileSync(full, body);
 }
 
-write(`${FOLDER}/manuscript/main.tex`, '\\documentclass{article}\n');
-write(`${FOLDER}/manuscript/supplement.tex`, '\\documentclass{article}\n');
-write(`${FOLDER}/manuscript/main.log`, './main.tex:5: Undefined control sequence.\n');
-
 const TARGET: LatexTarget = {
-    hub: HUB,
+    hub: '',
     project: (id) => (id === 'alpha' ? { folder: FOLDER } : null)
 };
+
+test.beforeAll(() => {
+    HUB = scratchDir('oculus-latex-route-');
+    TARGET.hub = HUB;
+    write(`${FOLDER}/manuscript/main.tex`, '\\documentclass{article}\n');
+    write(`${FOLDER}/manuscript/supplement.tex`, '\\documentclass{article}\n');
+    write(`${FOLDER}/manuscript/main.log`, './main.tex:5: Undefined control sequence.\n');
+});
 
 function request(query: string): Request {
     return new Request(`http://${HOST}/api/latex${query}`, {

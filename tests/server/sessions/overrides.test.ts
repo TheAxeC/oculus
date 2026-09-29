@@ -5,18 +5,15 @@
 // reach of this suite.
 
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
-import { afterAll, describe, expect, it } from 'vitest';
+import { describe, expect } from 'vitest';
 import {
     overrides,
     setFlag,
     setHidden,
     setOverride
 } from '../../../src/lib/server/sessions/overrides.ts';
-import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
-
-afterAll(sweepScratch);
+import { it, scratchDir } from '../../fixtures/scratch.ts';
 
 const ID = 'sess-1';
 const AREA = '/hub/projects/manuscripts/alpha';
@@ -24,7 +21,6 @@ const AREA = '/hub/projects/manuscripts/alpha';
 /** A fresh overrides file that does not exist yet, inside the system temporary directory. */
 function file(body?: unknown): string {
     const dir = scratchDir('oculus-overrides-');
-    expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     const path = join(dir, 'sessions.json');
     expect(resolve(path).startsWith(resolve(dir) + sep)).toBe(true);
     if (body !== undefined) {

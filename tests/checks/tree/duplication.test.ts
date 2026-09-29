@@ -34,11 +34,9 @@ import { readFileSync, realpathSync, rmSync } from 'node:fs';
 import { join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
-import { afterAll, describe, expect, it } from 'vitest';
+import { describe, expect } from 'vitest';
 import { isReason } from '../../fixtures/reason.ts';
-import { plantScratch, scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
-
-afterAll(sweepScratch);
+import { it, plantScratch, scratchDir } from '../../fixtures/scratch.ts';
 
 const ROOT = resolve(fileURLToPath(import.meta.url), '..', '..', '..', '..');
 

@@ -13,15 +13,13 @@
 // The folder rule is bin/folder-check.sh's: a folder under src, tests, bin or config holds at most
 // ten items, and the last block runs it over the tree and over trees of its own.
 
-import { copyFileSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
-import { afterAll, describe, expect, it } from 'vitest';
-import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
-
-afterAll(sweepScratch);
+import { describe, expect } from 'vitest';
+import { it, scratchDir } from '../../fixtures/scratch.ts';
+import { treeFiles } from '../walk.ts';
 
 const ROOT = resolve(fileURLToPath(import.meta.url), '..', '..', '..', '..');
 const ALLOW = join(ROOT, 'bin', 'size-allow.txt');
@@ -48,13 +46,9 @@ export function parseAllow(text: string): { cap: Record<string, number>; bad: st
 
 /** Every source file under the roots, as a path relative to the tree. */
 function sourceFiles(root: string, prefix: string): string[] {
-    const found: string[] = [];
-    for (const entry of readdirSync(join(root, prefix), { withFileTypes: true })) {
-        const rel = `${prefix}/${entry.name}`;
-        if (entry.isDirectory()) found.push(...sourceFiles(root, rel));
-        else if (/\.(ts|svelte|mjs|js|sh)$/.test(entry.name)) found.push(rel);
-    }
-    return found;
+    return treeFiles(join(root, prefix))
+        .filter((rel) => /\.(ts|svelte|mjs|js|sh)$/.test(rel))
+        .map((rel) => `${prefix}/${rel}`);
 }
 
 /** Every file the size rule refuses, and every allow line that is no longer right. */
@@ -151,7 +145,6 @@ describe('a file over the size line', () => {
 /** A tree of its own holding the folder check and, unless asked not to, a git repository. */
 function folderTree(files: string[], ignored: string[] = [], git = true): string {
     const dir = scratchDir('oculus-folders-');
-    expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     mkdirSync(join(dir, 'bin'), { recursive: true });
     copyFileSync(join(ROOT, 'bin', 'folder-check.sh'), join(dir, 'bin', 'folder-check.sh'));
     for (const rel of files) {

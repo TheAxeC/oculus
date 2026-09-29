@@ -18,9 +18,11 @@
 // The audit is a function of the sources it is given, so the two sides of the rule are also driven
 // over a synthetic pair below rather than only over whatever the tree happens to hold.
 
-import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { withoutComments } from '../../checks/source/code.ts';
+import { treeFiles } from '../../checks/walk.ts';
 
 const ROOT = 'src/lib/views';
 
@@ -57,7 +59,7 @@ const LIBRARY = /^\s*import\s+(?!type\b)[^;'"]*\bfrom\s+['"]@event-calendar\/cor
 /** Whether a component's script imports the calendar library, its comments removed. */
 function importsLibrary(source: string): boolean {
     return [...source.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/g)].some((match) =>
-        LIBRARY.test(match[1].replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, ''))
+        LIBRARY.test(withoutComments('script.ts', match[1]))
     );
 }
 
@@ -94,20 +96,16 @@ function beyondStrips(list: string, library: boolean): boolean {
 }
 
 function files(at: string): string[] {
-    return readdirSync(at)
-        .flatMap((name) => {
-            const path = join(at, name);
-            return statSync(path).isDirectory() ? files(path) : [path];
-        })
-        .filter((path) => path.endsWith('.svelte'));
+    return treeFiles(at)
+        .filter((rel) => rel.endsWith('.svelte'))
+        .map((rel) => join(at, rel));
 }
 
 /** The style blocks of a component, comments removed. */
 function css(source: string): string {
     return [...source.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)]
-        .map((match) => match[1])
-        .join('\n')
-        .replace(/\/\*[\s\S]*?\*\//g, ' ');
+        .map((match) => withoutComments('style.css', match[1]))
+        .join('\n');
 }
 
 /**
@@ -373,5 +371,15 @@ describe('the rule over a pair of sources', () => {
 
     it("audits that a comma inside a pseudo-class does not split a strip's selector", () => {
         expect(tinted(':global(body.wall) .grid:not(.a, .b) :global(.ec-header)')).toEqual(clean);
+    });
+
+    // Revert: in css() of tests/views/whole/tinted.test.ts, read each block as it is written, and
+    // the brace of the comment opens the first selector; put back a pattern that removes /* to */
+    // over the text, and the "/*" of the string swallows the rule after it.
+    it('audits that a style block is read by the stylesheet parse, a brace in a comment and a /* in a string', () => {
+        const source =
+            '<style>\n    /* a } */\n    .a { content: "/*"; }\n    .b { top: 0; }\n    /* c */\n</style>\n';
+        const found = [...css(source).matchAll(/([^{}]+)\{/g)].map((match) => match[1].trim());
+        expect(found).toEqual(['.a', '.b']);
     });
 });

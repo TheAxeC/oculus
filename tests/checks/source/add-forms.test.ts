@@ -9,21 +9,20 @@
 // An add form is an `<EntryForm` whose `entry` is `null` or absent; a card's edit form passes the
 // entry it edits and is one form per entry, so a list of them is no clash.
 
-import { readFileSync, readdirSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { fileCode } from './code.ts';
+import { treeFiles } from '../walk.ts';
 
 const ENGINE = resolve(fileURLToPath(import.meta.url), '..', '..', '..', '..');
 
 /** Every component under a folder, as paths relative to the engine. */
 function components(dir: string): string[] {
-    return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
-        const path = join(dir, entry.name);
-        if (entry.isDirectory()) return components(path);
-        return entry.name.endsWith('.svelte') ? [path] : [];
-    });
+    return treeFiles(dir)
+        .filter((rel) => rel.endsWith('.svelte'))
+        .map((rel) => join(dir, rel));
 }
 
 /**

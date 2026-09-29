@@ -10,7 +10,7 @@
 
 import { existsSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { afterAll, describe, expect, it } from 'vitest';
+import { describe, expect } from 'vitest';
 import {
     coerce,
     createEntry,
@@ -26,7 +26,7 @@ import {
 } from '../../../src/lib/server/edit/writes.ts';
 import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
 import { careerRules } from '../../../src/lib/server/edit/writes/subtasks.ts';
-import { sweepScratch } from '../../fixtures/scratch.ts';
+import { it } from '../../fixtures/scratch.ts';
 import {
     MANIFEST,
     configFor,
@@ -42,8 +42,6 @@ import {
     tasksOf,
     venuesOf
 } from './writes-fixture.ts';
-
-afterAll(sweepScratch);
 
 describe('what a write refuses', () => {
     it('parses the two feed write bodies whole', () => {

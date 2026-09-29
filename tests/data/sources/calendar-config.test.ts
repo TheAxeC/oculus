@@ -3,9 +3,8 @@
 // here, and the machine that names neither is checked to read as it did before.
 
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
-import { afterAll, afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect } from 'vitest';
 import {
     LOCAL_NAME,
     calendarSettings,
@@ -13,9 +12,7 @@ import {
     loadConfig,
     loadLocal
 } from '../../../src/lib/data/sources/config.ts';
-import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
-
-afterAll(sweepScratch);
+import { it, scratchDir } from '../../fixtures/scratch.ts';
 
 const made: string[] = [];
 
@@ -23,10 +20,9 @@ afterEach(() => {
     while (made.length > 0) rmSync(made.pop() ?? '', { recursive: true, force: true });
 });
 
-/** An engine directory of this case's own, asserted to be inside the temporary directory. */
+/** An engine directory of this case's own, which scratchDir makes inside the temp directory. */
 function scratch(): string {
     const dir = scratchDir('oculus-calendar-config-');
-    expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     made.push(dir);
     return dir;
 }

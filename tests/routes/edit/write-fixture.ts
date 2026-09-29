@@ -9,7 +9,6 @@
 // them back writes.
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
 import { expect } from 'vitest';
 import { parse } from 'yaml';
@@ -55,7 +54,6 @@ export const URL_ = `http://${HOST}/api/write`;
 
 export function target(): WriteTarget {
     const dir = scratchDir('oculus-route-');
-    expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     const folder = join(dir, 'projects', 'manuscripts', 'alpha');
     expect(resolve(folder).startsWith(resolve(dir) + sep)).toBe(true);
     mkdirSync(folder, { recursive: true });
@@ -221,7 +219,6 @@ export function slideProject(id: string, tier: Tier): Project {
  */
 export function deckTarget(): WriteTarget {
     const dir = scratchDir('oculus-deck-');
-    expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     const file = join(dir, 'present.yml');
     expect(resolve(file).startsWith(resolve(dir) + sep)).toBe(true);
     writeFileSync(file, DECK);

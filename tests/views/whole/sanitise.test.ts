@@ -8,7 +8,7 @@
 // the part that would rot if a later site drew the raw value instead. tests/ui/html.test.ts holds
 // the same note and the profile the browser is given.
 
-import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { marked } from 'marked';
 import { render } from 'svelte/server';
@@ -17,6 +17,7 @@ import Card from '../../../src/lib/ui/frame/Card.svelte';
 import { inlineMarkdown, sanitise } from '../../../src/lib/ui/html.ts';
 import { noop } from '../../fixtures/doubles.ts';
 import { clientContext, createClientState, type ClientState } from '../../fixtures/client.ts';
+import { treeFiles } from '../../checks/walk.ts';
 
 let client: ClientState;
 
@@ -27,12 +28,9 @@ beforeEach(() => {
 const VIEWS = 'src/lib/views';
 
 function files(at: string): string[] {
-    return readdirSync(at)
-        .flatMap((name) => {
-            const path = join(at, name);
-            return statSync(path).isDirectory() ? files(path) : [path];
-        })
-        .filter((path) => path.endsWith('.svelte'));
+    return treeFiles(at)
+        .filter((rel) => rel.endsWith('.svelte'))
+        .map((rel) => join(at, rel));
 }
 
 describe('a title out of a feed', () => {

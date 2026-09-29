@@ -1,9 +1,8 @@
 // The feed reader and writers over fixture files in a temporary hub, never the real feeds folder.
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
-import { afterAll, describe, expect, it } from 'vitest';
+import { describe, expect } from 'vitest';
 import {
     addLead,
     addLinkedinIdea,
@@ -18,9 +17,7 @@ import { portfolioConfigFrom } from '../../../src/lib/data/index.ts';
 import { localDate } from '../../../src/lib/data/helpers/dates.ts';
 import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
 import type { FeedKind, PortfolioConfig } from '../../../src/lib/data/model/index.ts';
-import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
-
-afterAll(sweepScratch);
+import { it, scratchDir } from '../../fixtures/scratch.ts';
 
 const FILES: Record<FeedKind, string> = {
     radar: 'fixture/radar.yml',
@@ -43,7 +40,6 @@ const LEAD_SCHEMA = `schema:
 
 function fixture(): { hub: string; config: PortfolioConfig } {
     const hub = scratchDir('oculus-feeds-');
-    expect(resolve(hub).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     const config = {
         ...portfolioConfigFrom(loadConfig(engineDir()).config, engineDir()),
         feeds: { ...FILES, linkedin: 'fixture/linkedin' }

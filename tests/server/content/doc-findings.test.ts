@@ -3,17 +3,13 @@
 // path written is asserted to be inside it first.
 
 import { mkdirSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
-import { afterAll, describe, expect, it } from 'vitest';
+import { describe, expect } from 'vitest';
 import { docFindings } from '../../../src/lib/server/content/docs.ts';
-import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
-
-afterAll(sweepScratch);
+import { it, scratchDir } from '../../fixtures/scratch.ts';
 
 function scratch(): string {
     const dir = scratchDir('oculus-docs-');
-    expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     return dir;
 }
 

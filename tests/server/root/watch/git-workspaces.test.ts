@@ -7,9 +7,8 @@
 // folder here is made inside a temporary directory, and every watcher a case opens is closed.
 
 import { chmodSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
 import { dirname, join, resolve, sep } from 'node:path';
-import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, vi } from 'vitest';
 import { byKey } from '../../../../src/lib/data/helpers/guards.ts';
 import { Hub } from '../../../../src/lib/server/core/channels.ts';
 import { watchGit } from '../../../../src/lib/server/root/watch/git.ts';
@@ -17,9 +16,7 @@ import type { Watcher } from '../../../../src/lib/server/root/watch/portfolio.ts
 import type { Message } from '../../../../src/lib/data/model/index.ts';
 import { recording, until } from './probe.ts';
 import { announce, latest, manual, payloads, repositoryIn } from './repos.ts';
-import { scratchDir, sweepScratch } from '../../../fixtures/scratch.ts';
-
-afterAll(sweepScratch);
+import { it, scratchDir } from '../../../fixtures/scratch.ts';
 
 // A case waits on git, and the suite runs several files at once, so the waits are generous: they
 // are how long a failure takes, not how long a pass takes.
@@ -33,7 +30,6 @@ let dir = '';
 
 beforeEach(() => {
     dir = scratchDir('oculus-watch-workspaces-');
-    expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
 });
 
 afterEach(() => {

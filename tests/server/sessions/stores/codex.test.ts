@@ -4,9 +4,8 @@
 // ~/.claude, and the process probe is a stub, so `ps` is never run and nothing is ever signalled.
 
 import { mkdirSync, utimesSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join, resolve, sep } from 'node:path';
-import { afterAll, describe, expect, it } from 'vitest';
+import { join } from 'node:path';
+import { describe, expect } from 'vitest';
 import { readSession, scan } from '../../../../src/lib/server/sessions/stores/transcripts.ts';
 import {
     CODEX_FRESH_SECONDS,
@@ -16,9 +15,7 @@ import {
     type CodexProbe
 } from '../../../../src/lib/server/sessions/stores/codex.ts';
 import type { SessionRecord } from '../../../../src/lib/data/model/index.ts';
-import { scratchDir, sweepScratch } from '../../../fixtures/scratch.ts';
-
-afterAll(sweepScratch);
+import { it, scratchDir } from '../../../fixtures/scratch.ts';
 
 const UUID = '01a07d03-c92a-7a91-8667-7f0520b8197f';
 const NAME = `rollout-2026-09-07T19-56-35-${UUID}.jsonl`;
@@ -61,7 +58,6 @@ class Rollout {
 
     constructor() {
         this.root = scratchDir('oculus-codex-');
-        expect(resolve(this.root).startsWith(resolve(tmpdir()) + sep)).toBe(true);
         this.store = join(this.root, 'sessions');
         mkdirSync(join(this.store, '2026', '09', '07'), { recursive: true });
         this.path = join(this.store, '2026', '09', '07', NAME);

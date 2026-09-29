@@ -2,9 +2,9 @@
 // folder oculus ships is read by tests/checks/config/config-folder.test.ts.
 
 import { cpSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { homedir, tmpdir } from 'node:os';
+import { homedir } from 'node:os';
 import { dirname, join, resolve, sep } from 'node:path';
-import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, vi } from 'vitest';
 import type { MockInstance } from 'vitest';
 import {
     DEFAULT_PORT,
@@ -23,13 +23,10 @@ import { ENGINE_ROOT, engineRoot, rootsFile } from '../../../src/lib/server/file
 import { layoutFile } from '../../../src/lib/server/content/docs.ts';
 import { parse } from 'yaml';
 import { noop } from '../../fixtures/doubles.ts';
-import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
-
-afterAll(sweepScratch);
+import { it, scratchDir } from '../../fixtures/scratch.ts';
 
 function scratch(): string {
     const dir = scratchDir('oculus-config-');
-    expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     return dir;
 }
 

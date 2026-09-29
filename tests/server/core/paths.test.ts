@@ -7,23 +7,14 @@
 // with nothing behind it and follows a symbolic link to where it points. Every file here is made
 // under the system temporary directory.
 
-import {
-    mkdirSync,
-    readFileSync,
-    readdirSync,
-    statSync,
-    symlinkSync,
-    writeFileSync
-} from 'node:fs';
+import { mkdirSync, readFileSync, symlinkSync, writeFileSync } from 'node:fs';
 import { realpathSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { dirname, join, resolve, sep } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { afterAll, describe, expect, it } from 'vitest';
+import { describe, expect } from 'vitest';
 import { below, inside, realPath } from '../../../src/lib/server/core/paths.ts';
-import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
-
-afterAll(sweepScratch);
+import { it, scratchDir } from '../../fixtures/scratch.ts';
+import { treeFiles } from '../../checks/walk.ts';
 
 describe('inside', () => {
     it('admits the folder itself and a path below it', () => {
@@ -65,7 +56,6 @@ describe('realPath', () => {
 
     it('follows a symbolic link to its target', () => {
         const dir = scratchDir('oculus-paths-test-');
-        expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
         const target = join(dir, 'target');
         mkdirSync(target);
         writeFileSync(join(target, 'f.txt'), 'x');
@@ -91,10 +81,7 @@ describe('the copies the shared helpers replaced', () => {
         /isRecord|isFieldMap|function inside|insideRepo|function real\(|function localDay|function basename/;
 
     function files(dir: string): string[] {
-        return readdirSync(dir).flatMap((name) => {
-            const full = join(dir, name);
-            return statSync(full).isDirectory() ? files(full) : [full];
-        });
+        return treeFiles(dir).map((rel) => join(dir, rel));
     }
 
     it('are written nowhere under src, and the four named matches are all that remain', () => {

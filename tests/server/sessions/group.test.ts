@@ -6,8 +6,8 @@
 
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join, resolve, sep } from 'node:path';
-import { afterAll, describe, expect, it } from 'vitest';
+import { join, sep } from 'node:path';
+import { describe, expect } from 'vitest';
 import {
     GENERAL,
     UNKNOWN_NAME,
@@ -17,9 +17,7 @@ import {
 } from '../../../src/lib/server/sessions/group.ts';
 import { defaultOverridesPath } from '../../../src/lib/server/sessions/overrides.ts';
 import type { Area, SessionRecord, Workspace } from '../../../src/lib/data/model/index.ts';
-import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
-
-afterAll(sweepScratch);
+import { it, scratchDir } from '../../fixtures/scratch.ts';
 
 const WS = '/synthetic/space/hub';
 const OTHER = '/synthetic/space/other';
@@ -56,7 +54,6 @@ function record(
 /** One temporary directory per case, for the `.git` markers and the overrides file. */
 function fixture(): { dir: string; overrides: string } {
     const dir = scratchDir('oculus-group-');
-    expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     return { dir, overrides: join(dir, 'sessions.json') };
 }
 

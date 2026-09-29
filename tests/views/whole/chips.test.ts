@@ -4,7 +4,7 @@
 // off one rendered card rather than left to each view's own test, so a mark that gains a capsule
 // somewhere fails here.
 
-import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { render } from 'svelte/server';
@@ -28,6 +28,7 @@ import {
 } from '../../../src/lib/state/shared/words/tones.ts';
 import { noop } from '../../fixtures/doubles.ts';
 import { clientContext, createClientState, type ClientState } from '../../fixtures/client.ts';
+import { treeFiles } from '../../checks/walk.ts';
 
 let client: ClientState;
 
@@ -138,15 +139,8 @@ const CHIP_TONES = ['statusTone(', 'typeTone(', 'item.tone'];
  */
 const TONE_HELPER = 'chipTone(';
 
-function svelteFiles(at: string, prefix = ''): string[] {
-    const found: string[] = [];
-    for (const name of readdirSync(at)) {
-        const path = join(at, name);
-        const rel = prefix === '' ? name : `${prefix}/${name}`;
-        if (statSync(path).isDirectory()) found.push(...svelteFiles(path, rel));
-        else if (name.endsWith('.svelte')) found.push(rel);
-    }
-    return found;
+function svelteFiles(at: string): string[] {
+    return treeFiles(at).filter((rel) => rel.endsWith('.svelte'));
 }
 
 /** Every `<Chip ... />` in one file, with the braces inside it balanced. */

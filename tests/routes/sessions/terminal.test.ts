@@ -7,9 +7,8 @@
 // instead of the bridge to the last published payload, so only the synthetic hub and state folder
 // are read.
 
-import { rmSync } from 'node:fs';
-import { afterAll, describe, expect, it } from 'vitest';
-import { sweepScratch } from '../../fixtures/scratch.ts';
+import { describe, expect } from 'vitest';
+import { it, test } from '../../fixtures/scratch.ts';
 import { handleTerminal, handleTerminalList } from '../../../src/lib/server/machine/pty/routes.ts';
 import { record } from '../../fixtures/sessions-fixture.ts';
 import {
@@ -19,8 +18,8 @@ import {
     SESSION,
     HERE,
     GONE,
-    TASK_CONFIG,
-    ENGINE,
+    makeTaskConfig,
+    type TaskConfig,
     tmux,
     options,
     source,
@@ -29,11 +28,15 @@ import {
     configOf
 } from './terminal-fixture.ts';
 
-afterAll(sweepScratch);
+/** This file's scratch folder and what the fixture planted in it, made before its first case. */
+let task: TaskConfig;
 
-afterAll(() => {
+test.beforeAll(() => {
+    task = makeTaskConfig();
+});
+
+test.afterAll(() => {
     SERVER.close();
-    rmSync(TASK_CONFIG, { recursive: true, force: true });
 });
 
 describe('GET /api/terminal after a write', () => {
@@ -42,7 +45,7 @@ describe('GET /api/terminal after a write', () => {
         const started = await handleTerminal(
             request({ action: 'start', kind: 'claude', cwd: HERE, cols: 80, rows: 24 }),
             TOKEN,
-            { engine: ENGINE, configFor: configOf(ENGINE), run: driver.run }
+            { engine: task.engine, configFor: configOf(task.engine), run: driver.run }
         );
         expect(started.status).toBe(200);
         const terminal = (await answer(started)).terminal as { id: string };
@@ -68,7 +71,7 @@ describe('POST /api/terminal, a session oculus did not start', () => {
             const response = await handleTerminal(
                 request({ action, id: 'scratch', cols: 80, rows: 24 }),
                 TOKEN,
-                { engine: ENGINE, configFor: configOf(ENGINE), run: driver.run }
+                { engine: task.engine, configFor: configOf(task.engine), run: driver.run }
             );
             expect(response.status).toBe(400);
             expect(String((await answer(response)).error)).toContain('not started by oculus');
@@ -82,7 +85,7 @@ describe('POST /api/terminal, the resume action', () => {
         const response = await handleTerminal(
             request({ action: 'resume', tool: 'claude', id: 'not-a-uuid', cols: 80, rows: 24 }),
             TOKEN,
-            options()
+            options(task.engine)
         );
         expect(response.status).toBe(400);
         expect((await answer(response)).error).toBe('id is not a session id');
@@ -92,7 +95,7 @@ describe('POST /api/terminal, the resume action', () => {
         const response = await handleTerminal(
             request({ action: 'resume', tool: 'shell', id: SESSION, cols: 80, rows: 24 }),
             TOKEN,
-            options()
+            options(task.engine)
         );
         expect(response.status).toBe(400);
         expect(String((await answer(response)).error)).toContain('tool must be one of');
@@ -102,7 +105,7 @@ describe('POST /api/terminal, the resume action', () => {
         const response = await handleTerminal(
             request({ action: 'resume', tool: 'claude', id: SESSION, cols: 80, rows: 24 }),
             TOKEN,
-            options({ recordFor: source() })
+            options(task.engine, { recordFor: source() })
         );
         expect(response.status).toBe(400);
         expect((await answer(response)).error).toBe('sessions.resume_unknown');
@@ -115,8 +118,8 @@ describe('POST /api/terminal, the resume action', () => {
             request({ action: 'resume', tool: 'claude', id: SESSION, cols: 80, rows: 24 }),
             TOKEN,
             {
-                engine: ENGINE,
-                configFor: configOf(ENGINE),
+                engine: task.engine,
+                configFor: configOf(task.engine),
                 run: driver.run,
                 recordFor: source(running)
             }
@@ -131,7 +134,7 @@ describe('POST /api/terminal, the resume action', () => {
         const response = await handleTerminal(
             request({ action: 'resume', tool: 'claude', id: SESSION, cols: 80, rows: 24 }),
             TOKEN,
-            options({ recordFor: source(ended) })
+            options(task.engine, { recordFor: source(ended) })
         );
         expect(response.status).toBe(400);
         expect((await answer(response)).error).toBe(`cwd does not exist: ${GONE}`);
@@ -144,8 +147,8 @@ describe('POST /api/terminal, the resume action', () => {
             request({ action: 'resume', tool: 'claude', id: SESSION, cols: 100, rows: 30 }),
             TOKEN,
             {
-                engine: ENGINE,
-                configFor: configOf(ENGINE),
+                engine: task.engine,
+                configFor: configOf(task.engine),
                 run: driver.run,
                 recordFor: source(ended)
             }
@@ -184,8 +187,8 @@ describe('POST /api/terminal, the resume action', () => {
             request({ action: 'resume', tool: 'codex', id: SESSION, cols: 80, rows: 24 }),
             TOKEN,
             {
-                engine: ENGINE,
-                configFor: configOf(ENGINE),
+                engine: task.engine,
+                configFor: configOf(task.engine),
                 run: driver.run,
                 recordFor: source(ended)
             }
@@ -208,8 +211,8 @@ describe('POST /api/terminal, the resume action', () => {
             request({ action: 'resume', tool: 'claude', id: SESSION }, 'stale'),
             TOKEN,
             {
-                engine: ENGINE,
-                configFor: configOf(ENGINE),
+                engine: task.engine,
+                configFor: configOf(task.engine),
                 run: driver.run,
                 recordFor: source(record(SESSION, { cwd: HERE }))
             }
@@ -226,8 +229,8 @@ describe('POST /api/terminal, the recover action', () => {
             request({ action: 'recover', key: 'mimic-iv', cols: 96, rows: 28 }),
             TOKEN,
             {
-                engine: ENGINE,
-                configFor: configOf(ENGINE),
+                engine: task.engine,
+                configFor: configOf(task.engine),
                 run: driver.run,
                 datasetIdsFor: () => ['mimic-iv'],
                 hubFor: () => HERE
@@ -250,8 +253,8 @@ describe('POST /api/terminal, the recover action', () => {
             request({ action: 'recover', key: 'unknown', cols: 80, rows: 24 }),
             TOKEN,
             {
-                engine: ENGINE,
-                configFor: configOf(ENGINE),
+                engine: task.engine,
+                configFor: configOf(task.engine),
                 run: driver.run,
                 datasetIdsFor: () => ['mimic-iv'],
                 hubFor: () => HERE
@@ -270,8 +273,8 @@ describe('POST /api/terminal, the recover action', () => {
             request({ action: 'recover', key: 'mimic; touch nope', cols: 80, rows: 24 }),
             TOKEN,
             {
-                engine: ENGINE,
-                configFor: configOf(ENGINE),
+                engine: task.engine,
+                configFor: configOf(task.engine),
                 run: driver.run,
                 datasetIdsFor: () => ['mimic-iv'],
                 hubFor: () => HERE
@@ -287,8 +290,8 @@ describe('POST /api/terminal, the recover action', () => {
             request({ action: 'recover', key: '--all', cols: 80, rows: 24 }),
             TOKEN,
             {
-                engine: ENGINE,
-                configFor: configOf(ENGINE),
+                engine: task.engine,
+                configFor: configOf(task.engine),
                 run: driver.run,
                 datasetIdsFor: () => ['--all'],
                 hubFor: () => HERE

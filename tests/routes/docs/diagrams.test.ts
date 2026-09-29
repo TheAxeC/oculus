@@ -7,24 +7,20 @@
 // view drawing the answer.
 
 import { mkdirSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
-import { afterAll, describe, expect, it } from 'vitest';
+import { describe, expect } from 'vitest';
 import {
     DIAGRAM_DIR,
     diagramPath,
     serveDiagram
 } from '../../../src/lib/server/content/diagrams.ts';
-import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
-
-afterAll(sweepScratch);
+import { it, scratchDir } from '../../fixtures/scratch.ts';
 
 const SVG = '<svg xmlns="http://www.w3.org/2000/svg"></svg>\n';
 
 /** An engine directory whose docs/diagrams/ holds the named files, and a file beside the folder. */
 function engine(names: string[]): string {
     const dir = scratchDir('oculus-diagrams-');
-    expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     const folder = join(dir, DIAGRAM_DIR);
     mkdirSync(folder, { recursive: true });
     for (const name of names) {
@@ -73,7 +69,6 @@ describe('the diagram route', () => {
         const away = engine(['layers.svg']);
         for (const linked of [DIAGRAM_DIR, 'docs']) {
             const dir = scratchDir('oculus-diagrams-linked-');
-            expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
             mkdirSync(join(dir, 'docs'), { recursive: true });
             if (linked === 'docs') rmSync(join(dir, 'docs'), { recursive: true });
             symlinkSync(join(away, linked), join(dir, linked));
@@ -87,7 +82,6 @@ describe('the diagram route', () => {
         mkdirSync(join(dir, DIAGRAM_DIR, 'nested.svg'));
         expect(serveDiagram(dir, 'nested.svg').status).toBe(404);
         const bare = scratchDir('oculus-diagrams-bare-');
-        expect(resolve(bare).startsWith(resolve(tmpdir()) + sep)).toBe(true);
         expect(serveDiagram(bare, 'layers.svg').status).toBe(404);
     });
 });

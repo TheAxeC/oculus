@@ -2,18 +2,15 @@
 // under mkdtemp. Nothing here touches the real hub.
 
 import { mkdirSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
 import { dirname, join, resolve, sep } from 'node:path';
-import { afterAll, describe, expect, it } from 'vitest';
+import { describe, expect } from 'vitest';
 import { CAREER_FILE, readCareer } from '../../../src/lib/data/sources/career.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
 import { career } from '../../../src/lib/data/snapshot/normalise.ts';
 import { validate } from '../../../src/lib/data/snapshot/validate.ts';
 import { NO_FEEDS } from '../../fixtures/entities-fixture.ts';
 import type { RawPortfolio, ValidationRules } from '../../../src/lib/data/model/index.ts';
-import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
-
-afterAll(sweepScratch);
+import { it, scratchDir, test } from '../../fixtures/scratch.ts';
 
 /** The catalog the findings are worded from: the one oculus ships, read as the server reads it. */
 const CATALOG = textCatalog(loadConfig(engineDir()).config);
@@ -47,7 +44,6 @@ dropped:
 
 function hub(body: string | null): string {
     const dir = scratchDir('oculus-career-');
-    expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     if (body !== null) {
         const full = join(dir, 'registries/career.yml');
         expect(resolve(full).startsWith(resolve(dir) + sep)).toBe(true);
@@ -88,8 +84,10 @@ describe('reading the career file', () => {
 });
 
 describe('normalising it', () => {
-    const raw = readCareer(hub(CAREER), CAREER_FILE, CATALOG).career;
-    const held = career(raw);
+    let held: ReturnType<typeof career> = null;
+    test.beforeAll(() => {
+        held = career(readCareer(hub(CAREER), CAREER_FILE, CATALOG).career);
+    });
 
     it('reads the title, the milestone and the situation strip', () => {
         expect(held?.title).toBe('Career strategy');

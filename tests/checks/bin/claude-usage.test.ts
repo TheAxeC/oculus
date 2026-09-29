@@ -4,10 +4,8 @@
 import { readFileSync, readdirSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { afterAll, afterEach, describe, expect, it } from 'vitest';
-import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
-
-afterAll(sweepScratch);
+import { afterEach, describe, expect } from 'vitest';
+import { it, scratchDir } from '../../fixtures/scratch.ts';
 
 const made: string[] = [];
 

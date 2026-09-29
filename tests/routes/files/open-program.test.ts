@@ -8,7 +8,7 @@
 import { execFileSync } from 'node:child_process';
 import { chmodSync, mkdirSync, realpathSync, statSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { afterAll, describe, expect, it, vi } from 'vitest';
+import { describe, expect, vi } from 'vitest';
 import type { ProgramApps } from '../../../src/lib/data/helpers/files/opens-in-program.ts';
 import type { Root } from '../../../src/lib/server/files/files.ts';
 import {
@@ -20,9 +20,7 @@ import {
     type FinderInfoReader
 } from '../../../src/lib/server/files/open.ts';
 import { APPS, TOKEN, checkedIn, opened, request, withFiles } from './open-fixture.ts';
-import { sweepScratch } from '../../fixtures/scratch.ts';
-
-afterAll(sweepScratch);
+import { it } from '../../fixtures/scratch.ts';
 
 const RUNS = 'the file would run rather than open';
 

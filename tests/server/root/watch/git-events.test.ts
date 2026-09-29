@@ -7,16 +7,15 @@
 // the reads and the throttle run on a clock the case holds.
 
 import { mkdirSync, rmSync, statSync, utimesSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join, resolve, sep } from 'node:path';
-import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { join } from 'node:path';
+import { afterEach, beforeEach, describe, expect, vi } from 'vitest';
 import { Hub } from '../../../../src/lib/server/core/channels.ts';
 import { watchGit } from '../../../../src/lib/server/root/watch/git.ts';
 import type { Watcher } from '../../../../src/lib/server/root/watch/portfolio.ts';
 import { recording, until } from './probe.ts';
 import { announce, manual, put, repositoryIn } from './repos.ts';
 import type { Manual } from './repos.ts';
-import { scratchDir, sweepScratch } from '../../../fixtures/scratch.ts';
+import { it, scratchDir } from '../../../fixtures/scratch.ts';
 
 /** What a watch hands each event to: the kind of event, and the path under what it watches. */
 type Listener = (event: string, name: string | null) => void;
@@ -35,8 +34,6 @@ vi.mock('node:fs', async (importOriginal) => {
     };
 });
 
-afterAll(sweepScratch);
-
 vi.setConfig({ testTimeout: 20000 });
 
 /** How long a publish is waited for before the assertion runs and fails. */
@@ -47,7 +44,6 @@ let dir = '';
 
 beforeEach(() => {
     dir = scratchDir('oculus-watch-events-');
-    expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     listeners.clear();
 });
 

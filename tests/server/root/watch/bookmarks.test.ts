@@ -1,25 +1,23 @@
 // Layer 4, test. watchBookmarks against a bookmarks file in a temporary directory.
 //
-// Every file this opens is inside a directory of the case's own, asserted to be under the system
-// temporary directory before anything is written; the reader's own ~/.oculus is never watched, read
-// or written here. Every watcher a case opens is closed when it ends.
+// Every file this opens is inside a scratch directory of the case's own, which the scratch helper
+// makes only under the system temporary directory, and each file is asserted to be inside it before
+// it is written; the reader's own ~/.oculus is never watched, read or written here. Every watcher a
+// case opens is closed when it ends.
 //
 // The waits are generous because the case waits on a real file observation and the suite runs
 // several files at once: they are how long a failure takes, not how long a pass takes.
 
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
-import { afterAll, afterEach, beforeEach, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, expect, vi } from 'vitest';
 import { Hub } from '../../../../src/lib/server/core/channels.ts';
 import { watchBookmarks } from '../../../../src/lib/server/root/watch/bookmarks.ts';
 import type { FilesPayload, Message } from '../../../../src/lib/data/model/index.ts';
 import type { Watcher } from '../../../../src/lib/server/root/watch/portfolio.ts';
 import { noop } from '../../../fixtures/doubles.ts';
 import { recording, sleep, until } from './probe.ts';
-import { scratchDir, sweepScratch } from '../../../fixtures/scratch.ts';
-
-afterAll(sweepScratch);
+import { it, scratchDir } from '../../../fixtures/scratch.ts';
 
 vi.setConfig({ testTimeout: 20000 });
 
@@ -35,7 +33,6 @@ let dir = '';
 
 beforeEach(() => {
     dir = scratchDir('oculus-watch-bookmarks-');
-    expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
 });
 
 afterEach(() => {

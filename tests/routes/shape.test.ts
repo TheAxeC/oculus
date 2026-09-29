@@ -4,10 +4,11 @@
 // endpoint does has to find the second file first. This reads the source of every route rather than
 // importing it, since importing a Kit route pulls its `./$types` in with it.
 
-import { readFileSync, readdirSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
+import { treeFiles } from '../checks/walk.ts';
 
 const API = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', 'src', 'routes', 'api');
 
@@ -19,13 +20,7 @@ const VERBS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS', 'fall
 
 /** Every file under the API tree, in one flat list. */
 function filesUnder(dir: string): string[] {
-    const found: string[] = [];
-    for (const entry of readdirSync(dir, { withFileTypes: true })) {
-        const full = join(dir, entry.name);
-        if (entry.isDirectory()) found.push(...filesUnder(full));
-        else found.push(full);
-    }
-    return found;
+    return treeFiles(dir).map((rel) => join(dir, rel));
 }
 
 describe('the API route modules', () => {

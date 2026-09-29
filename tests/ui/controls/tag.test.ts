@@ -5,6 +5,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { render } from 'svelte/server';
+import { withoutComments } from '../../checks/source/code.ts';
 import Tag from '../../../src/lib/ui/controls/Tag.svelte';
 import Chip from '../../../src/lib/ui/controls/Chip.svelte';
 import {
@@ -27,9 +28,8 @@ type Rule = { selector: string; body: string };
 
 function rules(file: string): Rule[] {
     const css = [...readFileSync(file, 'utf8').matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)]
-        .map((match) => match[1])
-        .join('\n')
-        .replace(/\/\*[\s\S]*?\*\//g, ' ');
+        .map((match) => withoutComments('style.css', match[1]))
+        .join('\n');
     return [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map((match) => ({
         selector: match[1].trim().replace(/\s+/g, ' '),
         body: match[2]
@@ -39,9 +39,8 @@ function rules(file: string): Rule[] {
 /** The declarations of one selector in the component's style block. */
 function declarations(file: string, selector: string): string {
     const css = [...readFileSync(file, 'utf8').matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)]
-        .map((match) => match[1])
-        .join('\n')
-        .replace(/\/\*[\s\S]*?\*\//g, ' ');
+        .map((match) => withoutComments('style.css', match[1]))
+        .join('\n');
     const found = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)].find(
         (match) => match[1].trim().replace(/\s+/g, ' ') === selector
     );

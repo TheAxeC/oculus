@@ -6,9 +6,8 @@
 // watcher a test opens is closed when the test ends.
 
 import { appendFileSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
 import { dirname, join, resolve, sep } from 'node:path';
-import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, vi } from 'vitest';
 import { Hub } from '../../../../src/lib/server/core/channels.ts';
 import {
     liveSignature,
@@ -22,10 +21,8 @@ import type { Probe } from '../../../../src/lib/server/sessions/registry.ts';
 import type { CodexProbe } from '../../../../src/lib/server/sessions/stores/codex.ts';
 import { recording } from './probe.ts';
 import { noop } from '../../../fixtures/doubles.ts';
-import { scratchDir, sweepScratch } from '../../../fixtures/scratch.ts';
+import { it, scratchDir } from '../../../fixtures/scratch.ts';
 import { CONTEXT, human as prompt, type Json } from '../../sessions/stores/transcript-fixture.ts';
-
-afterAll(sweepScratch);
 
 // A watcher test waits on real file events, and the suite runs several files at once, so the waits
 // are generous: they are how long a failure takes, not how long a pass takes.
@@ -79,7 +76,6 @@ class Fixture {
 
     constructor() {
         this.root = scratchDir('oculus-watch-sessions-');
-        expect(resolve(this.root).startsWith(resolve(tmpdir()) + sep)).toBe(true);
         this.store = join(this.root, 'projects');
         this.codexStore = join(this.root, 'codex');
         this.registry = join(this.root, 'registry');

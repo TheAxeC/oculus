@@ -4,20 +4,12 @@
 // Nothing here runs tmux, `claude` or `codex`. handleTerminal is called with an options bag holding
 // a `run` that records the argv and answers the list itself. The only real path any case touches is
 // the temporary directory: for the task cases, to hold an engine directory whose local.yml the
-// route reads and that afterAll removes.
+// route reads, made once per file from the fixture's test.beforeAll.
 
-import {
-    existsSync,
-    mkdirSync,
-    readFileSync,
-    readdirSync,
-    rmSync,
-    statSync,
-    writeFileSync
-} from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { join, resolve, sep } from 'node:path';
-import { afterAll, describe, expect, it } from 'vitest';
-import { sweepScratch } from '../../fixtures/scratch.ts';
+import { describe, expect } from 'vitest';
+import { it, test } from '../../fixtures/scratch.ts';
 import {
     handleTerminal,
     type TerminalOptions
@@ -30,15 +22,9 @@ import {
     SERVER,
     TOKEN,
     HERE,
-    TASK_CONFIG,
+    makeTaskConfig,
+    type TaskConfig,
     engineWith,
-    ENGINE,
-    TASK_ENGINE,
-    TASK_DEFAULT_ENGINE,
-    CHAT_HUB,
-    CHAT_STATE,
-    CHAT_PROJECT,
-    CHAT_ENGINE,
     BASE_CHAT_CONFIG,
     CHAT_CONFIG,
     CHAT_CATALOG,
@@ -50,11 +36,15 @@ import {
     configOf
 } from './terminal-fixture.ts';
 
-afterAll(sweepScratch);
+/** This file's scratch folder and what the fixture planted in it, made before its first case. */
+let task: TaskConfig;
 
-afterAll(() => {
+test.beforeAll(() => {
+    task = makeTaskConfig();
+});
+
+test.afterAll(() => {
     SERVER.close();
-    rmSync(TASK_CONFIG, { recursive: true, force: true });
 });
 
 describe('POST /api/terminal, the task action', () => {
@@ -68,8 +58,8 @@ describe('POST /api/terminal, the task action', () => {
             request({ action: 'task', kind, cols: 92, rows: 27 }),
             TOKEN,
             config === undefined
-                ? { engine: TASK_ENGINE, run: driver.run, configFor: configOf(TASK_ENGINE) }
-                : { engine: TASK_ENGINE, run: driver.run, configFor: () => config }
+                ? { engine: task.taskEngine, run: driver.run, configFor: configOf(task.taskEngine) }
+                : { engine: task.taskEngine, run: driver.run, configFor: () => config }
         );
         expect(response.status).toBe(200);
         const terminal = (await answer(response)).terminal as { name: string };
@@ -130,6 +120,7 @@ describe('POST /api/terminal, the task action', () => {
         // than a copy the context took at start: a reader who turns the key off in behavior.yml
         // sees the tray stop asking, and the next task must be started the same way.
         const engine = engineWith(
+            task.root,
             'live-engine',
             `hub: ${HERE}\nclaude_bin: /opt/Claude CLI/claude\n`
         );
@@ -211,7 +202,7 @@ describe('POST /api/terminal, the task action', () => {
         const response = await handleTerminal(
             request({ action: 'task', kind: 'audit', cols: 80, rows: 24 }),
             TOKEN,
-            { engine: TASK_ENGINE, run: driver.run, configFor: configOf(TASK_ENGINE) }
+            { engine: task.taskEngine, run: driver.run, configFor: configOf(task.taskEngine) }
         );
         expect(response.status).toBe(400);
         expect(driver.calls).toEqual([]);
@@ -223,9 +214,9 @@ describe('POST /api/terminal, the task action', () => {
             request({ action: 'task', kind: 'scout', cols: 80, rows: 24 }),
             TOKEN,
             {
-                engine: TASK_DEFAULT_ENGINE,
+                engine: task.defaultEngine,
                 run: driver.run,
-                configFor: configOf(TASK_DEFAULT_ENGINE)
+                configFor: configOf(task.defaultEngine)
             }
         );
         expect(response.status).toBe(200);
@@ -237,12 +228,17 @@ describe('POST /api/terminal, the task action', () => {
 describe('POST /api/terminal, the latex action', () => {
     /** A project of the synthetic chat hub whose manuscript holds one main file and one include. */
     const LATEX_PROJECT = 'projects/active/alpha';
-    mkdirSync(join(CHAT_HUB, LATEX_PROJECT, 'manuscript'), { recursive: true });
-    writeFileSync(
-        join(CHAT_HUB, LATEX_PROJECT, 'manuscript', 'main.tex'),
-        '\\documentclass{article}\n'
-    );
-    writeFileSync(join(CHAT_HUB, LATEX_PROJECT, 'manuscript', 'intro.tex'), '\\section{Intro}\n');
+    test.beforeAll(() => {
+        mkdirSync(join(task.chatHub, LATEX_PROJECT, 'manuscript'), { recursive: true });
+        writeFileSync(
+            join(task.chatHub, LATEX_PROJECT, 'manuscript', 'main.tex'),
+            '\\documentclass{article}\n'
+        );
+        writeFileSync(
+            join(task.chatHub, LATEX_PROJECT, 'manuscript', 'intro.tex'),
+            '\\section{Intro}\n'
+        );
+    });
 
     /** The name the terminals list shows, read through the catalog rather than typed here. */
     function latexName(step: string, id: string, main: string): string {
@@ -256,7 +252,7 @@ describe('POST /api/terminal, the latex action', () => {
         return {
             engine: engineDir(),
             run: driver.run,
-            hubFor: () => CHAT_HUB,
+            hubFor: () => task.chatHub,
             configFor: () => BASE_CHAT_CONFIG,
             projectFor: (id) =>
                 id === 'alpha' ? { title: 'Alpha Study', folder: LATEX_PROJECT } : null
@@ -282,7 +278,7 @@ describe('POST /api/terminal, the latex action', () => {
         expect(terminal.name).toBe(latexName('build', 'alpha', 'main.tex'));
         const started = driver.calls.find((args) => args[0] === 'new-session') ?? [];
         expect(started[started.indexOf('-c') + 1]).toBe(
-            join(CHAT_HUB, LATEX_PROJECT, 'manuscript')
+            join(task.chatHub, LATEX_PROJECT, 'manuscript')
         );
         expect(started[started.indexOf('-x') + 1]).toBe('88');
         expect(started[started.indexOf('-y') + 1]).toBe('25');
@@ -339,9 +335,9 @@ describe('POST /api/terminal, the latex action', () => {
             }),
             TOKEN,
             {
-                engine: ENGINE,
+                engine: task.engine,
                 run: driver.run,
-                hubFor: () => CHAT_HUB,
+                hubFor: () => task.chatHub,
                 configFor: () => BASE_CHAT_CONFIG,
                 projectFor: () => ({ title: 'Away', folder: '../elsewhere' })
             }
@@ -391,7 +387,7 @@ describe('POST /api/terminal, the latex action', () => {
 describe('POST /api/terminal, the chat action', () => {
     function chatOptions(driver: ReturnType<typeof tmux>): TerminalOptions {
         return {
-            engine: CHAT_ENGINE,
+            engine: task.chatEngine,
             run: driver.run,
             projectFor: (id) =>
                 id === 'alpha' ? { title: 'Alpha Study', folder: 'projects/active/alpha' } : null,
@@ -407,7 +403,7 @@ describe('POST /api/terminal, the chat action', () => {
         routed.run = async (args, options) => {
             if (args[0] === 'new-session') {
                 const id = (args[3] ?? '').replace(/^oculus-/, '');
-                indexAtStart = existsSync(chatIndexPath(join(CHAT_STATE, 'sessions.json'), id));
+                indexAtStart = existsSync(chatIndexPath(join(task.chatState, 'sessions.json'), id));
             }
             return run === undefined ? '' : run(args, options);
         };
@@ -422,22 +418,22 @@ describe('POST /api/terminal, the chat action', () => {
             CHAT_CATALOG['server.chat.chat_name_focus'].replace('{0}', 'Alpha Study')
         );
 
-        const index = chatIndexPath(join(CHAT_STATE, 'sessions.json'), terminal.id);
-        expect(index.startsWith(CHAT_STATE + sep)).toBe(true);
+        const index = chatIndexPath(join(task.chatState, 'sessions.json'), terminal.id);
+        expect(index.startsWith(task.chatState + sep)).toBe(true);
         expect(readFileSync(index, 'utf8')).toContain('## projects/active/alpha');
         expect(statSync(index).mode & 0o777).toBe(0o600);
         const system = [
             CHAT_CATALOG['server.chat.chat_instruction']
-                .replace('{0}', CHAT_HUB)
-                .replace('{1}', CHAT_PROJECT),
+                .replace('{0}', task.chatHub)
+                .replace('{1}', task.chatProject),
             CHAT_CATALOG['server.chat.chat_focus_note']
                 .replace('{0}', 'alpha')
                 .replace('{1}', 'Alpha Study')
-                .replace('{2}', CHAT_PROJECT),
+                .replace('{2}', task.chatProject),
             CHAT_CATALOG['server.chat.chat_index_note'].replace('{0}', index)
         ].join('\n\n');
-        expect(system).toContain(`The hub root is \`${CHAT_HUB}\``);
-        expect(system).toContain(`Your working directory is \`${CHAT_PROJECT}\``);
+        expect(system).toContain(`The hub root is \`${task.chatHub}\``);
+        expect(system).toContain(`Your working directory is \`${task.chatProject}\``);
         expect(system).not.toMatch(/\{[012]\}|CONTEXT\.md|NEXT\.md|METHOD_NOTES|RELATED_WORK/);
         const expected = command([
             '/opt/Claude CLI/claude',
@@ -450,7 +446,7 @@ describe('POST /api/terminal, the chat action', () => {
             CHAT_CATALOG['server.chat.seed_focus'].replace('{0}', 'Alpha Study')
         ]);
         const started = driver.calls.find((args) => args[0] === 'new-session') ?? [];
-        expect(started[started.indexOf('-c') + 1]).toBe(CHAT_PROJECT);
+        expect(started[started.indexOf('-c') + 1]).toBe(task.chatProject);
         expect(started[started.indexOf('-x') + 1]).toBe('101');
         expect(started[started.indexOf('-y') + 1]).toBe('31');
         expect(started[started.length - 1]).toBe(expected);
@@ -475,13 +471,13 @@ describe('POST /api/terminal, the chat action', () => {
         );
         expect(response.status).toBe(200);
         const terminal = (await answer(response)).terminal as { id: string; name: string };
-        const index = chatIndexPath(join(CHAT_STATE, 'sessions.json'), terminal.id);
+        const index = chatIndexPath(join(task.chatState, 'sessions.json'), terminal.id);
         expect(terminal.name).toBe(filled('server.chat.chat_name_focus', [title]));
         expect(terminal.name).toContain(title);
-        const focus = filled('server.chat.chat_focus_note', ['alpha', title, CHAT_PROJECT]);
+        const focus = filled('server.chat.chat_focus_note', ['alpha', title, task.chatProject]);
         expect(focus).toContain(title);
         const system = [
-            filled('server.chat.chat_instruction', [CHAT_HUB, CHAT_PROJECT]),
+            filled('server.chat.chat_instruction', [task.chatHub, task.chatProject]),
             focus,
             filled('server.chat.chat_index_note', [index])
         ].join('\n\n');
@@ -512,11 +508,11 @@ describe('POST /api/terminal, the chat action', () => {
         const terminal = (await answer(response)).terminal as { id: string; name: string };
         const catalog = textCatalog(config);
         expect(terminal.name).toBe(catalog['server.chat.chat_name'].replace('{0}', '1'));
-        const index = chatIndexPath(join(CHAT_STATE, 'sessions.json'), terminal.id);
+        const index = chatIndexPath(join(task.chatState, 'sessions.json'), terminal.id);
         const system = [
             catalog['server.chat.chat_instruction']
-                .replace('{0}', CHAT_HUB)
-                .replace('{1}', CHAT_HUB),
+                .replace('{0}', task.chatHub)
+                .replace('{1}', task.chatHub),
             catalog['server.chat.chat_index_note'].replace('{0}', index)
         ].join('\n\n');
         const expected = command([
@@ -528,7 +524,7 @@ describe('POST /api/terminal, the chat action', () => {
             catalog['server.chat.seed_portfolio']
         ]);
         const started = driver.calls.find((args) => args[0] === 'new-session') ?? [];
-        expect(started[started.indexOf('-c') + 1]).toBe(CHAT_HUB);
+        expect(started[started.indexOf('-c') + 1]).toBe(task.chatHub);
         expect(started[started.length - 1]).toBe(expected);
         expect(started[started.length - 1]).not.toContain("'--model'");
     });
@@ -547,7 +543,7 @@ describe('POST /api/terminal, the chat action', () => {
 
     it('leaves no index when zero columns are refused', async () => {
         const driver = tmux();
-        const before = readdirSync(join(CHAT_STATE, 'chat')).sort();
+        const before = readdirSync(join(task.chatState, 'chat')).sort();
         const response = await handleTerminal(
             request({ action: 'chat', id: 'alpha', cols: 0, rows: 24 }),
             TOKEN,
@@ -555,7 +551,7 @@ describe('POST /api/terminal, the chat action', () => {
         );
         expect(response.status).toBe(400);
         expect((await answer(response)).error).toContain('cols must be a whole number');
-        expect(readdirSync(join(CHAT_STATE, 'chat')).sort()).toEqual(before);
+        expect(readdirSync(join(task.chatState, 'chat')).sort()).toEqual(before);
         expect(driver.calls).toEqual([]);
     });
 
@@ -566,7 +562,7 @@ describe('POST /api/terminal, the chat action', () => {
         routed.run = async (args) => {
             if (args[0] === 'new-session') {
                 index = chatIndexPath(
-                    join(CHAT_STATE, 'sessions.json'),
+                    join(task.chatState, 'sessions.json'),
                     args[3].replace(/^oculus-/, '')
                 );
                 expect(existsSync(index)).toBe(true);
@@ -581,7 +577,7 @@ describe('POST /api/terminal, the chat action', () => {
         );
         expect(response.status).toBe(400);
         expect((await answer(response)).error).toBe('stub runner refused startup');
-        expect(index.startsWith(CHAT_STATE + sep)).toBe(true);
+        expect(index.startsWith(task.chatState + sep)).toBe(true);
         expect(existsSync(index)).toBe(false);
     });
 

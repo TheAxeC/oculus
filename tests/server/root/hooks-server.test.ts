@@ -7,25 +7,22 @@
 
 import { cpSync, readFileSync, writeFileSync } from 'node:fs';
 import type { IncomingMessage } from 'node:http';
-import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { RequestEvent } from '@sveltejs/kit';
-import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, vi } from 'vitest';
 import { handle } from '../../../src/hooks.server.ts';
 import * as config from '../../../src/lib/data/sources/config.ts';
 import { LOCAL_NAME } from '../../../src/lib/data/sources/config.ts';
 import { carryingHandler, type OculusRequest } from '../../../src/lib/server/root/context.ts';
 import { GET as searchGet } from '../../../src/routes/api/(files)/search/+server.ts';
 import { GET as mailCallbackGet } from '../../../src/routes/api/(accounts)/mail/callback/+server.ts';
-import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
+import { it, scratchDir } from '../../fixtures/scratch.ts';
 import { contextFixture } from './context-fixture.ts';
 
 afterEach(() => {
     vi.restoreAllMocks();
 });
-
-afterAll(sweepScratch);
 
 type Resolve = Parameters<typeof handle>[0]['resolve'];
 
@@ -238,7 +235,6 @@ describe('the origin guard on /api/', () => {
  */
 function scratchEngine(): { engine: string; hub: string } {
     const engine = scratchDir('oculus-hook-engine-');
-    expect(resolve(engine).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     cpSync(join(ENGINE, 'config'), join(engine, 'config'), {
         recursive: true,
         filter: (source) => !source.endsWith(LOCAL_NAME)

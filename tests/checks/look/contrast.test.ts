@@ -11,12 +11,13 @@
 // tokens.css or themes.css, and a failure is a finding about that value or about derive.ts, not
 // something this file repairs.
 
-import { readFileSync, readdirSync } from 'node:fs';
-import { dirname, join, relative, resolve } from 'node:path';
+import { readFileSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { SCROLL_THUMB_RATIO, deriveTokens, ratio } from '../../../src/lib/themes/derive.ts';
 import { NAMES, THEMES, TOKENS, blocks, themeTokens } from './themes.ts';
+import { treeFiles } from '../walk.ts';
 
 const MINIMUM = 4.5;
 
@@ -64,10 +65,7 @@ const measured = new Map(NAMES.map((name) => [name, pairs(name)]));
 
 /** Every file under a directory, by its path from that directory, with its text. */
 function sources(dir: string): [string, string][] {
-    return readdirSync(dir, { recursive: true, withFileTypes: true })
-        .filter((entry) => entry.isFile())
-        .map((entry) => join(entry.parentPath, entry.name))
-        .map((path) => [relative(dir, path), readFileSync(path, 'utf8')]);
+    return treeFiles(dir).map((rel) => [rel, readFileSync(join(dir, rel), 'utf8')]);
 }
 
 function escaped(text: string): string {

@@ -4,20 +4,16 @@
 // people the registry already holds.
 
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
 import { dirname, join, resolve, sep } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { parse } from 'yaml';
-import { afterAll, afterEach, describe, expect, it } from 'vitest';
-import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
-
-afterAll(sweepScratch);
+import { afterEach, describe, expect } from 'vitest';
+import { it, scratchDir } from '../../fixtures/scratch.ts';
 
 const made: string[] = [];
 
 function scratch(): string {
     const dir = scratchDir('oculus-migrate-');
-    expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     made.push(dir);
     return dir;
 }

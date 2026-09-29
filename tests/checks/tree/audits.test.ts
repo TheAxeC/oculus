@@ -11,17 +11,15 @@
 // one that is fetched and dropped, so it says which cases never render, not which assertions are
 // worth making.
 
-import { mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, normalize, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { afterAll, afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect } from 'vitest';
 
 import { isReason } from '../../fixtures/reason.ts';
 import { code } from '../source/code.ts';
-import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
-
-afterAll(sweepScratch);
+import { it, scratchDir } from '../../fixtures/scratch.ts';
+import { treeFiles } from '../walk.ts';
 
 const VIEWS = resolve(fileURLToPath(import.meta.url), '..', '..', '..', 'views');
 
@@ -188,17 +186,10 @@ function importedRenders(root: string, rel: string, text: string): string[] {
 
 /** Every case under a folder and the folders under it, with the file it sits in. */
 export function everyCase(
-    root: string,
-    prefix = ''
+    root: string
 ): { file: string; name: string; body: string; names: Set<string> }[] {
     const found: { file: string; name: string; body: string; names: Set<string> }[] = [];
-    for (const entry of readdirSync(join(root, prefix), { withFileTypes: true })) {
-        const rel = prefix === '' ? entry.name : `${prefix}/${entry.name}`;
-        if (entry.isDirectory()) {
-            found.push(...everyCase(root, rel));
-            continue;
-        }
-        if (!entry.name.endsWith('.test.ts')) continue;
+    for (const rel of treeFiles(root).filter((one) => one.endsWith('.test.ts'))) {
         const text = readFileSync(join(root, rel), 'utf8');
         const names = renderNames(text, importedRenders(root, rel, text));
         for (const one of cases(text))
@@ -229,7 +220,6 @@ afterEach(() => {
 /** A scratch folder with the one file a case plants, inside the temporary directory. */
 function scratch(body: string, rel = 'planted.test.ts'): string {
     const dir = scratchDir('oculus-audits-');
-    expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     made.push(dir);
     const full = join(dir, rel);
     expect(resolve(full).startsWith(resolve(dir) + sep)).toBe(true);

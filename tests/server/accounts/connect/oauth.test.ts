@@ -6,9 +6,8 @@
 
 import { createHash } from 'node:crypto';
 import { readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
-import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, vi } from 'vitest';
 import type { CalendarAccountConfig } from '../../../../src/lib/data/model/index.ts';
 import {
     CONNECT_MS,
@@ -24,9 +23,7 @@ import {
 import { credentialFile } from '../../../../src/lib/server/accounts/connect/store.ts';
 import { fsWrites } from '../../../../src/lib/server/core/json.ts';
 import { noop } from '../../../fixtures/doubles.ts';
-import { scratchDir, sweepScratch } from '../../../fixtures/scratch.ts';
-
-afterAll(sweepScratch);
+import { it, scratchDir } from '../../../fixtures/scratch.ts';
 
 const TOKEN = 'the-write-token-of-this-case';
 const GOOGLE: CalendarAccountConfig = { provider: 'google', label: 'work' };
@@ -41,10 +38,9 @@ afterEach(() => {
     while (made.length > 0) rmSync(made.pop() ?? '', { recursive: true, force: true });
 });
 
-/** A calendar directory of this case's own, asserted to be inside the temporary directory. */
+/** A calendar directory of the case's own, which scratchDir makes in the temporary directory. */
 function scratch(): string {
     const dir = scratchDir('oculus-calendar-oauth-');
-    expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     made.push(dir);
     return dir;
 }

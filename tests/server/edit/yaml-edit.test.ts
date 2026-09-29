@@ -10,7 +10,7 @@
 // holds on three fixtures and not on the ninety-one is not a rule. Nothing there is written; when
 // the hub is not on this machine the whole block skips and says so.
 
-import { readFileSync, readdirSync } from 'node:fs';
+import { globSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { parse } from 'yaml';
 import { describe, expect, it } from 'vitest';
@@ -471,19 +471,9 @@ if (!present) {
 
 /** Every project.yml under a scan directory, by a plain walk; nothing here writes. */
 function manifestFiles(dir: string): string[] {
-    let entries;
-    try {
-        entries = readdirSync(dir, { withFileTypes: true });
-    } catch {
-        return [];
-    }
-    const found: string[] = [];
-    for (const entry of entries) {
-        if (entry.name.startsWith('.') || entry.name === 'code' || entry.name === 'attic') continue;
-        if (entry.isFile() && entry.name === 'project.yml') found.push(join(dir, entry.name));
-        if (entry.isDirectory()) found.push(...manifestFiles(join(dir, entry.name)));
-    }
-    return found;
+    return globSync('**/project.yml', { cwd: dir, exclude: ['**/code', '**/attic'] }).map((rel) =>
+        join(dir, rel)
+    );
 }
 
 describe.skipIf(!present)('every manifest of the real hub, read only', () => {

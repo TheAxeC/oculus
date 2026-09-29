@@ -12,7 +12,7 @@
 // So the tree is counted a second way, without the code under test: a plain recursive walk for the
 // manifests, yaml.parse for each registry's entry list, and the collections config for the rest.
 
-import { readFileSync, readdirSync } from 'node:fs';
+import { globSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { parse } from 'yaml';
 import { describe, expect, it } from 'vitest';
@@ -60,21 +60,10 @@ const REGISTRY_LISTS: Record<string, string> = {
 
 /** Every project.yml under `dir`, at any depth, counted by walking the tree and nothing else. */
 function countManifests(dir: string): number {
-    let entries;
-    try {
-        entries = readdirSync(dir, { withFileTypes: true });
-    } catch {
-        return 0;
-    }
-    let found = 0;
-    for (const entry of entries) {
-        if (entry.name.startsWith('.')) continue;
-        if (entry.isFile() && entry.name === 'project.yml') found += 1;
-        if (entry.isDirectory() && !NEVER_DESCEND.includes(entry.name)) {
-            found += countManifests(join(dir, entry.name));
-        }
-    }
-    return found;
+    return globSync('**/project.yml', {
+        cwd: dir,
+        exclude: NEVER_DESCEND.map((name) => `**/${name}`)
+    }).length;
 }
 
 /** The length of one registry file's entry list, read straight out of the YAML. */

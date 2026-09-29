@@ -8,14 +8,14 @@
 
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { afterAll, describe, expect, it } from 'vitest';
+import { describe, expect } from 'vitest';
 import {
     createEntry,
     removeEntry,
     reorderCollection,
     writeEntry
 } from '../../../src/lib/server/edit/writes.ts';
-import { sweepScratch } from '../../fixtures/scratch.ts';
+import { it } from '../../fixtures/scratch.ts';
 import {
     configFor,
     record,
@@ -26,8 +26,6 @@ import {
     TYPED,
     typed
 } from './writes-fixture.ts';
-
-afterAll(sweepScratch);
 
 describe('writing one collection entry', () => {
     it('sets a field of the entry the id names', () => {

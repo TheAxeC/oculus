@@ -5,15 +5,12 @@
 // upward import, one that climbs the inner order of state/shared, and an unplaced folder in a
 // scratch tree and show the check names each.
 
-import { tmpdir } from 'node:os';
-import { resolve, sep } from 'node:path';
+import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { afterAll, describe, expect, it } from 'vitest';
+import { describe, expect } from 'vitest';
 import { moduleOf } from './graph.ts';
 import { INNER, ORDER, findUpward } from './order.ts';
-import { plantScratch, sweepScratch } from '../../fixtures/scratch.ts';
-
-afterAll(sweepScratch);
+import { it, plantScratch } from '../../fixtures/scratch.ts';
 
 const LIB = resolve(fileURLToPath(import.meta.url), '..', '..', '..', '..', 'src', 'lib');
 
@@ -25,7 +22,6 @@ function brokenIn(layer: string): string[] {
 /** A scratch tree of the given files, checked to be inside the temporary directory. */
 function plant(files: Record<string, string>): string {
     const dir = plantScratch('oculus-order-', files);
-    expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     return dir;
 }
 

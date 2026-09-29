@@ -2,14 +2,11 @@
 // list, a number past the end of the file, and a path the tree does not hold.
 
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { afterAll, afterEach, describe, expect, it } from 'vitest';
-import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
+import { afterEach, describe, expect } from 'vitest';
+import { it, scratchDir } from '../../fixtures/scratch.ts';
 import { readArgs } from '../../../bin/cited-lines.mjs';
-
-afterAll(sweepScratch);
 
 const made: string[] = [];
 
@@ -20,7 +17,6 @@ afterEach(() => {
 /** A tree of one file, with the report that cites it, inside the temporary directory. */
 function fixture(report: string, more: Record<string, string> = {}): { dir: string; path: string } {
     const dir = scratchDir('oculus-cited-lines-');
-    expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     made.push(dir);
     mkdirSync(join(dir, 'src'), { recursive: true });
     writeFileSync(
@@ -111,9 +107,15 @@ describe('the citation check', () => {
     it('calls a citation that climbs out of the tree MISSING, and reads nothing there', () => {
         // Revert: in under of bin/cited-lines.mjs, let every path pass, and a report citing a file
         // above the tree is read and counted among the lines that are there.
-        const held = fixture('The secret is at ../outside.md:1.\n');
-        writeFileSync(join(held.dir, '..', 'outside.md'), 'a line outside the tree\n');
-        const found = run(held.dir, held.path);
+        // The tree sits one folder down in a scratch directory, so the file above it is written
+        // inside that directory and swept with it, never beside the temporary directory's others.
+        const outer = scratchDir('oculus-cited-lines-outer-');
+        const tree = join(outer, 'tree');
+        mkdirSync(tree);
+        writeFileSync(join(outer, 'outside.md'), 'a line outside the tree\n');
+        const report = join(tree, 'report.md');
+        writeFileSync(report, 'The secret is at ../outside.md:1.\n');
+        const found = run(tree, report);
         expect(found.out).toContain('MISSING ../outside.md:1 the path leaves the tree');
         expect(found.out).not.toContain('a line outside the tree');
         expect(found.status).toBe(1);

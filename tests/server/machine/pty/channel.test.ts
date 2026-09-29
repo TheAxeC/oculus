@@ -4,9 +4,8 @@
 
 import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync, statSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join, resolve, sep } from 'node:path';
-import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
+import { join } from 'node:path';
+import { afterEach, describe, expect, vi } from 'vitest';
 import { Hub } from '../../../../src/lib/server/core/channels.ts';
 import type { Sink } from '../../../../src/lib/server/core/channels.ts';
 import {
@@ -21,9 +20,7 @@ import {
 import type { Message } from '../../../../src/lib/data/model/index.ts';
 import { run } from '../../../../src/lib/server/machine/pty/tmux.ts';
 import { noop } from '../../../fixtures/doubles.ts';
-import { scratchDir, sweepScratch } from '../../../fixtures/scratch.ts';
-
-afterAll(sweepScratch);
+import { it, scratchDir, test } from '../../../fixtures/scratch.ts';
 
 const ID = 'a1b2c3-shell';
 const CHANNEL = ptyChannel(ID);
@@ -534,13 +531,22 @@ if (TMUX && !PYTHON) {
 // server is never listed, started or killed, and afterAll kills this one whether or not a case
 // failed.
 describe('input through a real tmux', () => {
-    const dir = scratchDir('oculus-channel-');
-    expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
-    const tmux = { socket: join(dir, 'server.sock') };
+    let dir = '';
+    const tmux = { socket: '' };
     const id = 'd4e5f6-shell';
-    const file = join(dir, 'typed.bin');
+    let file = '';
 
-    afterAll(() => {
+    // Made before the first case of this block, so a run that skips it makes nothing.
+    test.beforeAll(() => {
+        dir = scratchDir('oculus-channel-');
+        tmux.socket = join(dir, 'server.sock');
+        file = join(dir, 'typed.bin');
+    });
+
+    // A socket still unset means the hook that makes it failed, and tmux is never run without
+    // this block's own socket.
+    test.afterAll(() => {
+        if (tmux.socket === '') return;
         spawnSync('tmux', ['-S', tmux.socket, 'kill-server'], { encoding: 'utf8' });
     });
 

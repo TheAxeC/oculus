@@ -8,11 +8,12 @@
 // and a line a tool reads as one line: an `eslint-disable` or `eslint-enable`, a `prettier-ignore`,
 // a `svelte-ignore`, a `@ts-expect-error`.
 
-import { readFileSync, readdirSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { commentLines } from './code.ts';
+import { treeFiles } from '../walk.ts';
 
 const ENGINE = resolve(fileURLToPath(import.meta.url), '..', '..', '..', '..');
 
@@ -43,25 +44,29 @@ export function tooWide(name: string, text: string): number[] {
     });
 }
 
+/** Every source file under a folder, as full paths, in name order. */
 function walk(dir: string): string[] {
-    return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
-        const path = join(dir, entry.name);
-        if (entry.isDirectory()) return walk(path);
-        return SOURCE.test(entry.name) ? [path] : [];
-    });
+    return treeFiles(dir)
+        .filter((rel) => SOURCE.test(rel))
+        .map((rel) => join(dir, rel));
 }
 
 describe('a comment line', () => {
-    it('ends by the hundredth column everywhere under src, tests and bin', () => {
-        const found = ['src', 'tests', 'bin'].flatMap((top) =>
-            walk(join(ENGINE, top)).flatMap((file) =>
-                tooWide(file, readFileSync(file, 'utf8')).map(
-                    (at) => `${relative(ENGINE, file)}:${at}`
+    // Every file under the three roots is parsed, which takes longer than a case's default limit.
+    it(
+        'ends by the hundredth column everywhere under src, tests and bin',
+        { timeout: 30000 },
+        () => {
+            const found = ['src', 'tests', 'bin'].flatMap((top) =>
+                walk(join(ENGINE, top)).flatMap((file) =>
+                    tooWide(file, readFileSync(file, 'utf8')).map(
+                        (at) => `${relative(ENGINE, file)}:${at}`
+                    )
                 )
-            )
-        );
-        expect(found).toEqual([]);
-    });
+            );
+            expect(found).toEqual([]);
+        }
+    );
 
     it('is found in each language the tree is written in', () => {
         const long = `${'word '.repeat(22)}end`;

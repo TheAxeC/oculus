@@ -7,9 +7,8 @@
 // it, so no case can write into the checkout. This does not cover the browser drawing the wall.
 
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
-import { afterAll, describe, expect, it } from 'vitest';
+import { describe, expect } from 'vitest';
 import { mintToken } from '../../../src/lib/server/core/auth.ts';
 import { loadConfig } from '../../../src/lib/data/sources/config.ts';
 import {
@@ -24,17 +23,15 @@ import {
     upload,
     write
 } from '../../../src/lib/server/content/memories.ts';
-import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
+import { it, scratchDir, test } from '../../fixtures/scratch.ts';
 import { pagePost } from '../../fixtures/doubles.ts';
-
-afterAll(sweepScratch);
 
 const TOKEN = mintToken();
 
 /** Every directory this file made, taken away when the file's cases are done. */
 const made: string[] = [];
 
-afterAll(() => {
+test.afterAll(() => {
     for (const dir of made) rmSync(dir, { recursive: true, force: true });
     made.length = 0;
 });
@@ -52,7 +49,6 @@ function scratch(prefix: string): string {
  */
 function pictures(names: string[], held: Record<string, Uint8Array> = {}): string {
     const dir = scratch('oculus-memories-');
-    expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     for (const name of names) {
         const full = join(dir, name);
         expect(resolve(full).startsWith(resolve(dir) + sep)).toBe(true);
@@ -303,7 +299,6 @@ describe('the configured folder', () => {
      */
     function fixture(body: string): { engine: string; hub: string } {
         const root = scratch('oculus-memories-config-');
-        expect(resolve(root).startsWith(resolve(tmpdir()) + sep)).toBe(true);
         const engine = join(root, 'engine');
         const hub = join(root, 'hub');
         mkdirSync(join(engine, 'config'), { recursive: true });

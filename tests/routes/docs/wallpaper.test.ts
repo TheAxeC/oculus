@@ -7,9 +7,8 @@
 // cover the browser painting the image.
 
 import { mkdirSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
-import { afterAll, describe, expect, it, vi } from 'vitest';
+import { describe, expect, vi } from 'vitest';
 import {
     choose,
     images,
@@ -19,14 +18,11 @@ import {
 } from '../../../src/lib/server/content/wallpaper.ts';
 import { loadConfig } from '../../../src/lib/data/sources/config.ts';
 import { noop } from '../../fixtures/doubles.ts';
-import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
-
-afterAll(sweepScratch);
+import { it, scratchDir } from '../../fixtures/scratch.ts';
 
 /** A directory holding the named files, each one byte, inside the system temporary directory. */
 function folder(names: string[]): string {
     const dir = scratchDir('oculus-wallpaper-');
-    expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     mkdirSync(dir, { recursive: true });
     for (const name of names) {
         const full = join(dir, name);
@@ -122,7 +118,6 @@ describe('the configured settings', () => {
      */
     function fixture(body: string): { engine: string; hub: string } {
         const root = scratchDir('oculus-wallpaper-config-');
-        expect(resolve(root).startsWith(resolve(tmpdir()) + sep)).toBe(true);
         const engine = join(root, 'engine');
         const hub = join(root, 'hub');
         const config = join(engine, 'config');

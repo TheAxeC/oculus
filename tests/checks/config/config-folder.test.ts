@@ -4,7 +4,7 @@
 // machine's own local.yml is left out of every list here, since a checkout has one or it has none
 // and neither may change a result.
 
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { parse } from 'yaml';
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -31,6 +31,7 @@ import {
 // Importing the route loader registers views; collection registrations use sources.yml keys.
 import { registerAll, registerCollections } from '../../../src/routes/views.ts';
 import { createClientState, type ClientState } from '../../fixtures/client.ts';
+import { treeFiles } from '../walk.ts';
 
 let client: ClientState;
 let views: ClientState['registry']['views'];
@@ -59,11 +60,7 @@ const NAMED = [
 function glyphReaders(engine: string): Set<string> {
     const found = new Set<string>();
     const walk = (dir: string, take: (file: string) => void): void => {
-        for (const entry of readdirSync(dir, { withFileTypes: true })) {
-            const path = join(dir, entry.name);
-            if (entry.isDirectory()) walk(path, take);
-            else take(path);
-        }
+        for (const rel of treeFiles(dir)) take(join(dir, rel));
     };
     const placeholders = (text: string): void => {
         for (const match of text.matchAll(/\bG\.(\w+)/g)) found.add(match[1]);

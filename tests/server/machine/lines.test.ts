@@ -10,10 +10,9 @@
 // that a closed request left no cloc running.
 
 import { chmodSync, writeFileSync } from 'node:fs';
-import { join, resolve, sep } from 'node:path';
-import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import type { ChildProcess } from 'node:child_process';
-import { afterAll, describe, expect, it, vi } from 'vitest';
+import { describe, expect, vi } from 'vitest';
 import {
     TOP_LEVEL,
     countLines,
@@ -22,11 +21,9 @@ import {
     todoLine
 } from '../../../src/lib/server/machine/lines.ts';
 import type { LineCount } from '../../../src/lib/data/model/index.ts';
-import { plantScratch, scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
+import { it, plantScratch, scratchDir } from '../../fixtures/scratch.ts';
 import { gitText as git } from '../root/watch/repos.ts';
 import { folder, language, tally } from './line-counts.ts';
-
-afterAll(sweepScratch);
 
 /** Every child the counter spawned, in order. */
 const spawned = vi.hoisted(() => [] as ChildProcess[]);
@@ -103,7 +100,6 @@ describe('the lines the TODO rule counts', () => {
 /** A scratch repository holding these files, every one of them added to the index. */
 function repository(files: Record<string, string>): string {
     const dir = plantScratch('oculus-lines-', files);
-    expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     git(dir, 'init', '--quiet');
     git(dir, 'add', '--', ...Object.keys(files));
     return dir;

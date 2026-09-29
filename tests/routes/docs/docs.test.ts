@@ -23,9 +23,8 @@ import {
     utimesSync,
     writeFileSync
 } from 'node:fs';
-import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
-import { afterAll, describe, expect, it } from 'vitest';
+import { describe, expect } from 'vitest';
 import { PROCESS_TAG, handleDocs } from '../../../src/lib/server/content/docs.ts';
 import { portfolioConfigFrom } from '../../../src/lib/data/index.ts';
 import {
@@ -37,9 +36,7 @@ import {
 import type { DocTarget } from '../../../src/lib/server/content/docs.ts';
 import type { Project } from '../../../src/lib/data/model/index.ts';
 import { fields } from '../../../src/lib/data/helpers/guards.ts';
-import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
-
-afterAll(sweepScratch);
+import { it, scratchDir } from '../../fixtures/scratch.ts';
 
 /** The one field of a project the document reader asks for, on an otherwise empty record. */
 function project(folder: string): Project {
@@ -57,7 +54,6 @@ const HOST = '127.0.0.1:8791';
 /** A hub holding one project with the documents named, each with the same body. */
 function target(docs: Record<string, string> = { 'README.md': README }): DocTarget {
     const dir = scratchDir('oculus-docs-');
-    expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     const folder = join(dir, 'projects', 'manuscripts', 'alpha');
     expect(resolve(folder).startsWith(resolve(dir) + sep)).toBe(true);
     mkdirSync(join(folder, 'code'), { recursive: true });
@@ -187,7 +183,6 @@ describe('the document endpoint', () => {
 
     it('finds the folder under a nested scan rule when no portfolio was published', async () => {
         const dir = scratchDir('oculus-docs-');
-        expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
         const folder = join(dir, 'projects', 'coauthor', 'active', 'alpha');
         expect(resolve(folder).startsWith(resolve(dir) + sep)).toBe(true);
         mkdirSync(folder, { recursive: true });
@@ -229,7 +224,6 @@ describe('the document endpoint', () => {
     it('refuses a project document reached through a link out of the hub', () => {
         const into = target();
         const outside = scratchDir('oculus-docs-outside-');
-        expect(resolve(outside).startsWith(resolve(tmpdir()) + sep)).toBe(true);
         writeFileSync(join(outside, 'secret.md'), '# Secret\n');
         const folder = join(into.hub, 'projects', 'manuscripts', 'alpha');
         rmSync(join(folder, 'README.md'), { force: true });
@@ -299,7 +293,6 @@ describe('a document of the hub', () => {
     it('refuses a document the hub reaches only through a link out of it', () => {
         const into = hubWith({});
         const outside = scratchDir('oculus-docs-outside-');
-        expect(resolve(outside).startsWith(resolve(tmpdir()) + sep)).toBe(true);
         writeFileSync(join(outside, 'secret.md'), '# Secret\n');
         const link = join(into.hub, 'linked.md');
         expect(resolve(link).startsWith(resolve(into.hub) + sep)).toBe(true);
@@ -318,7 +311,6 @@ describe('a document of the hub', () => {
 
     it('answers 404 for a missing document while the sentence file does not parse', async () => {
         const engine = scratchDir('oculus-docs-engine-');
-        expect(resolve(engine).startsWith(resolve(tmpdir()) + sep)).toBe(true);
         cpSync(join(engineDir(), 'config'), join(engine, 'config'), {
             recursive: true,
             filter: (source) => !source.endsWith(LOCAL_NAME)
@@ -486,7 +478,6 @@ describe("the manual's parts", () => {
     async function manualOf(text: string): Promise<Record<string, unknown>> {
         const into = target();
         const engine = scratchDir('oculus-manual-');
-        expect(resolve(engine).startsWith(resolve(tmpdir()) + sep)).toBe(true);
         const help = join(engine, 'HELP.md');
         expect(resolve(help).startsWith(resolve(engine) + sep)).toBe(true);
         writeFileSync(help, text);

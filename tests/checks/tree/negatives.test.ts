@@ -18,33 +18,26 @@
 // what that absence asserts, so explaining one buys no room for another, and an entry goes when its
 // absence gains its reason.
 
-import { mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join, resolve, sep } from 'node:path';
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { afterAll, afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect } from 'vitest';
 import { NEGATIVES } from './allow-negatives.ts';
 import { isReason, literalsIn } from '../../fixtures/reason.ts';
-import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
-
-afterAll(sweepScratch);
+import { it, scratchDir } from '../../fixtures/scratch.ts';
+import { commentLines } from '../source/code.ts';
+import { treeFiles } from '../walk.ts';
 
 const TESTS = resolve(fileURLToPath(import.meta.url), '..', '..', '..');
 
 /** The four ways a case says a thing is not there. */
 const ABSENCE = /\.not\.toContain\(|\.not\.toHaveAttribute\(|\.not\.toBeVisible\(|toHaveCount\(0\)/;
 
-/** Whether a line is a comment line, in either comment shape. */
-function commentLine(line: string): boolean {
-    const text = line.trim();
-    return text.startsWith('//') || text.startsWith('*') || text.startsWith('/*');
-}
-
 /** Whether the comment above an absence carries a reason for it, by the rule in reason.ts. */
 export function explains(comment: string, assertion = ''): boolean {
-    const lines = comment.split('\n');
-    if (!lines.every(commentLine)) return false;
-    const text = lines
+    if (comment.trim() === '') return false;
+    const text = comment
+        .split('\n')
         .map((line) =>
             line
                 .trim()
@@ -58,23 +51,25 @@ export function explains(comment: string, assertion = ''): boolean {
 
 /**
  * The comment directly above a line, its lines in order, so a reason written over two lines is read
- * whole; the empty string when the line above is no comment.
+ * whole; the empty string when the line above is no comment. The comment lines are those the code
+ * reader finds in the file, so a line of code that opens with a `*` or holds a `//` in a string is
+ * none. A caller reading many lines of one file hands over those comment lines, read once.
  */
-export function commentAbove(lines: string[], at: number): string {
+export function commentAbove(
+    lines: string[],
+    at: number,
+    comments = new Set(commentLines('case.test.ts', lines.join('\n')))
+): string {
     let from = at;
-    while (from > 0 && commentLine(lines[from - 1])) from -= 1;
+    while (from > 0 && comments.has(from)) from -= 1;
     return lines.slice(from, at).join('\n');
 }
 
 /** Every test file under a folder, as paths relative to the root the folder sits in. */
 function testFiles(root: string, folder: string): string[] {
-    const found: string[] = [];
-    for (const entry of readdirSync(join(root, folder), { withFileTypes: true })) {
-        const rel = `${folder}/${entry.name}`;
-        if (entry.isDirectory()) found.push(...testFiles(root, rel));
-        else if (/\.(test|spec)\.ts$/.test(entry.name)) found.push(rel);
-    }
-    return found;
+    return treeFiles(join(root, folder))
+        .filter((rel) => /\.(test|spec)\.ts$/.test(rel))
+        .map((rel) => `${folder}/${rel}`);
 }
 
 /**
@@ -91,10 +86,12 @@ export function bareAbsences(root: string, folders: string[]): Record<string, st
     const found: Record<string, string[]> = {};
     for (const folder of folders) {
         for (const rel of testFiles(root, folder)) {
-            const lines = readFileSync(join(root, rel), 'utf8').split('\n');
+            const text = readFileSync(join(root, rel), 'utf8');
+            const lines = text.split('\n');
+            const comments = new Set(commentLines(rel, text));
             for (let at = 0; at < lines.length; at += 1) {
                 if (!ABSENCE.test(lines[at])) continue;
-                if (explains(commentAbove(lines, at), lines[at])) continue;
+                if (explains(commentAbove(lines, at, comments), lines[at])) continue;
                 found[rel] = [...(found[rel] ?? []), absenceKey(lines[at])];
             }
         }
@@ -148,7 +145,6 @@ afterEach(() => {
 /** A scratch tree holding one spec file, checked to be inside the temporary directory. */
 function scratch(body: string): string {
     const dir = scratchDir('oculus-negatives-');
-    expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     made.push(dir);
     mkdirSync(join(dir, 'views'), { recursive: true });
     writeFileSync(join(dir, 'views', 'planted.test.ts'), body, 'utf8');
@@ -319,6 +315,19 @@ describe('an absence asserted with no reason', () => {
     it('holds the allow list to files the tree still has', () => {
         const held = new Set(testFiles(TESTS, 'views'));
         expect(Object.keys(NEGATIVES).filter((rel) => !held.has(rel))).toEqual([]);
+    });
+
+    // Revert: in commentAbove of tests/checks/tree/negatives.test.ts, take a line opening with `*`
+    // for a comment line, and the code line above the absence is read as its reason.
+    it('finds no comment above an absence when the line above is code opening with a star', () => {
+        const lines = [
+            'const held = f(',
+            '    1',
+            '    * 2,',
+            "    expect(body).not.toContain('data-open')",
+            ');'
+        ];
+        expect(commentAbove(lines, 3)).toBe('');
     });
 
     it('reads a reason written over two lines as one', () => {

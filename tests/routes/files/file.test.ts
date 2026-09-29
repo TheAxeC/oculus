@@ -9,9 +9,9 @@
 // the curl in the package's verification and by tests/checks/config/config.test.ts.
 
 import { mkdirSync, symlinkSync, writeFileSync } from 'node:fs';
-import { homedir, tmpdir } from 'node:os';
+import { homedir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
-import { afterAll, describe, expect, it, vi } from 'vitest';
+import { describe, expect, vi } from 'vitest';
 import {
     ENGINE_ROOT,
     HUB_ROOT,
@@ -27,9 +27,7 @@ import {
 import { loadConfig, loadLocalOrDefaults } from '../../../src/lib/data/sources/config.ts';
 import { ENGINE_ROOT as CLIENT_ENGINE_ROOT } from '../../../src/lib/state/sources/fs.ts';
 import type { Root } from '../../../src/lib/server/files/files.ts';
-import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
-
-afterAll(sweepScratch);
+import { it, scratchDir } from '../../fixtures/scratch.ts';
 
 const PAGE = '<!doctype html><title>manual</title><link rel=stylesheet href=css/manual.css>\n';
 
@@ -38,7 +36,6 @@ const SHEET = 'body { margin: 0; }\n';
 /** A directory under the temporary directory, with a file written at each of the paths named. */
 function folder(files: Record<string, string>): string {
     const dir = scratchDir('oculus-file-');
-    expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     for (const [name, body] of Object.entries(files)) {
         const full = join(dir, name);
         expect(resolve(full).startsWith(resolve(dir) + sep)).toBe(true);

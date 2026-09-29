@@ -158,3 +158,14 @@ The builder's quoted commands, rerun:
 - `npm run diagrams`, the Q96 overlap in `wall.test.ts` and `colours.test.ts`, and the `allow-duplication.txt` re-keys line by line.
 
 Reviewer usage: 260595 tokens, 76 tool uses, 21 min (completion notice).
+
+# Closed
+
+Each finding of the review over repair round 1, fixed on main at landing:
+- Spec, `terminal-fixture.ts` module state: `makeTaskConfig()` returns a `TaskConfig` object and holds nothing; `engineWith(root, ...)` and `options(engine, ...)` take what they need; `terminal.test.ts` and `terminal-actions.test.ts` keep the answer in a file-local `task` set from `test.beforeAll`, `compose.test.ts` takes `makeTaskConfig().root`.
+- Proof and Behaviour, a red `test.afterAll` leaving the file's directories: the fixture's `test.afterAll` wraps its hook in `sweepingOnError` (`tests/fixtures/scratch.ts`), which sweeps before the hook's error goes on, since vitest runs a file fixture's teardown in the same `try` as the afterAll hooks (`@vitest/runner` `chunk-artifact.js:3166-3177`). `scratch.test.ts`'s real-run case plants a file whose `test.afterAll` makes a directory and throws: green with the wrapper, red without it (the before and after directories left).
+- Standards, `scratch.ts:5-8` and `:62-66`: true with the wrapper, kept; the `test` docstring says the afterAll sweeps on a red hook.
+- Standards, `terminal-fixture.ts:44-47`: the sentence went with the module state.
+- Standards, `bookmarks.test.ts:3-4`: now says the scratch helper makes the directory under the system temporary directory and each file is asserted inside it.
+- Not checked, `tmux -S '' kill-server`: both `test.afterAll` hooks of `pty/channel.test.ts` and `pty/sessions.test.ts` return when the socket is still unset, so tmux never runs without the file's own socket.
+- Behaviour, `calendar.test.ts` `styleOf` reading to the first `</style>`: the component holds one style block, and the two audits pass; stated in the landing report.

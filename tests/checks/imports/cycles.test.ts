@@ -10,21 +10,17 @@
 // inside an HTML comment of a component is no script; and an `import()` in a component's markup
 // is read.
 
-import { tmpdir } from 'node:os';
-import { resolve, sep } from 'node:path';
+import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { afterAll, describe, expect, it } from 'vitest';
+import { describe, expect } from 'vitest';
 import { findCycles, importGraph, runtimeImports } from './graph.ts';
-import { plantScratch, sweepScratch } from '../../fixtures/scratch.ts';
-
-afterAll(sweepScratch);
+import { it, plantScratch } from '../../fixtures/scratch.ts';
 
 const SRC = resolve(fileURLToPath(import.meta.url), '..', '..', '..', '..', 'src');
 
 /** A scratch tree of the given files, checked to be inside the temporary directory. */
 function plant(files: Record<string, string>): string {
     const dir = plantScratch('oculus-cycles-', files);
-    expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     return dir;
 }
 

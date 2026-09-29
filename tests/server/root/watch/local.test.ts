@@ -3,18 +3,16 @@
 // one call after a short quiet; a write of any other file in the folder is none; a closed watcher
 // makes no call.
 //
-// Every file is inside a directory of the case's own, asserted to be under the system temporary
-// directory before anything is written. The waits are how long a failure takes, not a pass.
+// Every file is inside a directory of the case's own from scratchDir, which refuses a path outside
+// the system temporary directory before it makes one. The waits are how long a failure takes, not
+// a pass.
 
 import { mkdirSync, renameSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join, resolve, sep } from 'node:path';
-import { afterAll, afterEach, expect, it, vi } from 'vitest';
+import { join } from 'node:path';
+import { afterEach, expect, vi } from 'vitest';
 import { watchLocal, type LocalWatcher } from '../../../../src/lib/server/root/watch/local.ts';
 import { sleep, until } from './probe.ts';
-import { scratchDir, sweepScratch } from '../../../fixtures/scratch.ts';
-
-afterAll(sweepScratch);
+import { it, scratchDir } from '../../../fixtures/scratch.ts';
 
 vi.setConfig({ testTimeout: 20000 });
 
@@ -30,7 +28,6 @@ afterEach(() => {
 /** An engine of the case's own with its config folder made, and that folder. */
 function engine(): { root: string; config: string } {
     const root = scratchDir('oculus-watch-local-');
-    expect(resolve(root).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     const config = join(root, 'config');
     mkdirSync(config);
     return { root, config };

@@ -6,11 +6,11 @@
 // terminal-fixture.ts, which records every argv. The engine is a scratch folder holding a copy of
 // the shipped config/catalogs/agents.yml, and every account is a scratch folder.
 
-import { copyFileSync, mkdirSync, rmSync } from 'node:fs';
+import { copyFileSync, mkdirSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
-import { afterAll, describe, expect, it } from 'vitest';
-import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
+import { describe, expect } from 'vitest';
+import { it, scratchDir, test } from '../../fixtures/scratch.ts';
 import { handleTerminal } from '../../../src/lib/server/machine/pty/routes.ts';
 import { engineDir, localDefaults } from '../../../src/lib/data/sources/config.ts';
 import { record } from '../../fixtures/sessions-fixture.ts';
@@ -19,43 +19,55 @@ import {
     HERE,
     SERVER,
     SESSION,
-    TASK_CONFIG,
     TOKEN,
     answer,
     engineWith,
+    makeTaskConfig,
     request,
     source,
     tmux
 } from './terminal-fixture.ts';
 
-afterAll(sweepScratch);
-
-afterAll(() => {
+test.afterAll(() => {
     SERVER.close();
-    rmSync(TASK_CONFIG, { recursive: true, force: true });
 });
 
-/** An engine whose config folder holds the shipped agents catalog and nothing else. */
-const ENGINE = engineWith('compose-engine');
-mkdirSync(join(ENGINE, 'config', 'catalogs'), { recursive: true });
-copyFileSync(
-    join(engineDir(), 'config', 'catalogs', 'agents.yml'),
-    join(ENGINE, 'config', 'catalogs', 'agents.yml')
-);
-
 const BIN = '/opt/Claude CLI/claude';
-const SECOND = scratchDir('oculus-second-account-');
 
-const LOCAL = {
-    ...localDefaults(ENGINE),
-    hub: HERE,
-    claudeBin: BIN,
-    accounts: [
-        { tool: 'claude' as const, label: 'Home', dir: join(homedir(), '.claude') },
-        { tool: 'claude' as const, label: 'University', dir: SECOND },
-        { tool: 'codex' as const, label: 'Work', dir: join(homedir(), '.codex') }
-    ]
-};
+/** An engine whose config folder holds the shipped agents catalog and nothing else. */
+let ENGINE = '';
+
+/** The second Claude account's folder. */
+let SECOND = '';
+
+/** The machine-local values of the engine, with the three accounts. */
+function localOf(engine: string, second: string) {
+    return {
+        ...localDefaults(engine),
+        hub: HERE,
+        claudeBin: BIN,
+        accounts: [
+            { tool: 'claude' as const, label: 'Home', dir: join(homedir(), '.claude') },
+            { tool: 'claude' as const, label: 'University', dir: second },
+            { tool: 'codex' as const, label: 'Work', dir: join(homedir(), '.codex') }
+        ]
+    };
+}
+
+let LOCAL: ReturnType<typeof localOf>;
+
+// The engine and the account are made before the file's first case, so a run that skips every case
+// makes none.
+test.beforeAll(() => {
+    ENGINE = engineWith(makeTaskConfig().root, 'compose-engine');
+    mkdirSync(join(ENGINE, 'config', 'catalogs'), { recursive: true });
+    copyFileSync(
+        join(engineDir(), 'config', 'catalogs', 'agents.yml'),
+        join(ENGINE, 'config', 'catalogs', 'agents.yml')
+    );
+    SECOND = scratchDir('oculus-second-account-');
+    LOCAL = localOf(ENGINE, SECOND);
+});
 
 /** The route with the recording tmux, this suite's engine and its accounts. */
 async function post(body: Record<string, unknown>, recordFor = source()) {

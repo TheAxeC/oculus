@@ -5,8 +5,7 @@
 // the temporary directory the store asserts it is in, and the liveness check is a stub.
 
 import { appendFileSync, mkdirSync, readFileSync, utimesSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join, resolve, sep } from 'node:path';
+import { join } from 'node:path';
 import { expect } from 'vitest';
 import {
     readSession,
@@ -137,7 +136,6 @@ export class Fixture {
 
     constructor() {
         this.root = scratchDir('oculus-sessions-');
-        expect(resolve(this.root).startsWith(resolve(tmpdir()) + sep)).toBe(true);
         this.store = join(this.root, 'projects');
         mkdirSync(join(this.store, SLUG), { recursive: true });
         this.path = join(this.store, SLUG, `${SID}.jsonl`);

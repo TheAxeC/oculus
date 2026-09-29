@@ -16,7 +16,7 @@
 
 import { appendFileSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { afterAll, describe, expect, it, vi } from 'vitest';
+import { describe, expect, vi } from 'vitest';
 import { codeOf } from '../../../bin/diagrams/code.mjs';
 import {
     BOUNDARIES,
@@ -39,10 +39,8 @@ import {
     writesDot
 } from '../../../bin/diagrams/diagrams.mjs';
 import { importsOf } from '../../../bin/diagrams/imports.mjs';
-import { sweepScratch } from '../../fixtures/scratch.ts';
+import { it } from '../../fixtures/scratch.ts';
 import { CountedCache, ENGINE, copyOfTree, parsedSince } from './tree.ts';
-
-afterAll(sweepScratch);
 
 // The two parsers wrapped in counters that call the real ones, so a case sees what was parsed.
 vi.mock('../../../bin/diagrams/imports.mjs', async (original) =>

@@ -6,16 +6,13 @@
 // stubs: no test reads ~/.claude, ~/.claude-work, ~/.codex or ~/.oculus, and nothing is signalled.
 
 import { mkdirSync, symlinkSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join, resolve, sep } from 'node:path';
-import { afterAll, describe, expect, it } from 'vitest';
+import { join } from 'node:path';
+import { describe, expect } from 'vitest';
 import { distinctFolders, sessionFolders } from '../../../src/lib/server/sessions/folders.ts';
 import { scan } from '../../../src/lib/server/sessions/stores/transcripts.ts';
 import type { Probe } from '../../../src/lib/server/sessions/registry.ts';
 import type { SessionRecord, UsageAccountConfig } from '../../../src/lib/data/model/index.ts';
-import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
-
-afterAll(sweepScratch);
+import { it, scratchDir } from '../../fixtures/scratch.ts';
 
 const SLUG = '-tmp-fixture-workspace';
 const FIRST = 'aaaaaaaa-0000-0000-0000-000000000001';
@@ -40,10 +37,6 @@ function prompt(text: string): string {
 class Home {
     root = scratchDir('oculus-accounts-');
     alive = new Set<number>();
-
-    constructor() {
-        expect(resolve(this.root).startsWith(resolve(tmpdir()) + sep)).toBe(true);
-    }
 
     /** An account folder under this home. */
     dir(name: string): string {

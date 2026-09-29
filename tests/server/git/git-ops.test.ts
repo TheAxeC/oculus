@@ -19,7 +19,7 @@ import {
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, vi } from 'vitest';
 import { allowedRoots, commit } from '../../../src/lib/server/git/git-write.ts';
 import { fetchAll, publish, pull, pushTags, sync } from '../../../src/lib/server/git/git-remote.ts';
 import {
@@ -38,11 +38,9 @@ import { createTag, deleteTag, stash, stashAct } from '../../../src/lib/server/g
 import { handleGit } from '../../../src/lib/server/git/git-routes.ts';
 import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
 import { ALLOWED } from './allowed.ts';
-import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
+import { it, scratchDir, test } from '../../fixtures/scratch.ts';
 import { pageRequest } from './page.ts';
 import { DELETED, deletionConflicts } from './deletions.ts';
-
-afterAll(sweepScratch);
 
 /** Every argument vector the modules ran, over the whole file. Asserted by the last gate. */
 const ran = vi.hoisted(() => [] as string[][]);
@@ -133,9 +131,8 @@ const CLONES = ['seed', 'repo', 'other'];
 /** The remote and its clones, built once; every case starts from a copy of this folder. */
 let template = '';
 
-beforeAll(() => {
+test.beforeAll(() => {
     dir = scratchDir('oculus-git-ops-template-');
-    expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     remote = join(dir, 'remote.git');
     execFileSync('git', ['init', '-q', '--bare', '-b', 'main', remote]);
     const seed = cloneAs('seed');
@@ -152,7 +149,6 @@ beforeEach(() => {
     // A copy of the template per case, its clones pointed at the copied remote, so every case
     // starts from a remote and clones no other case has touched.
     dir = scratchDir('oculus-git-ops-');
-    expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     cpSync(template, dir, { recursive: true });
     remote = join(dir, 'remote.git');
     for (const name of CLONES) git(join(dir, name), 'remote', 'set-url', 'origin', remote);
@@ -161,7 +157,7 @@ beforeEach(() => {
     ROOTS = allowedRoots([repo, other]);
 });
 
-afterAll(() => {
+test.afterAll(() => {
     if (dir !== '') rmSync(dir, { recursive: true, force: true });
 });
 

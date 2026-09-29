@@ -14,7 +14,7 @@ import {
     writeFileSync
 } from 'node:fs';
 import { join } from 'node:path';
-import { afterAll, describe, expect, it } from 'vitest';
+import { describe, expect } from 'vitest';
 import { readSession } from '../../../../src/lib/server/sessions/stores/transcripts.ts';
 import {
     formatStamp,
@@ -26,7 +26,7 @@ import { hiddenIds, setHidden } from '../../../../src/lib/server/sessions/overri
 import { CACHE_VERSION } from '../../../../src/lib/server/sessions/cache.ts';
 import { spentTokens } from '../../../../src/lib/server/sessions/fold.ts';
 import type { LiveEntry } from '../../../../src/lib/data/model/index.ts';
-import { sweepScratch } from '../../../fixtures/scratch.ts';
+import { it } from '../../../fixtures/scratch.ts';
 import {
     CONTEXT,
     PID,
@@ -46,8 +46,6 @@ function liveSessions(registries: string[], probe: Probe): Map<string, LiveEntry
     const candidates = registryCandidates(registries, probe);
     return liveFrom(candidates, probe.starts(candidates.map((entry) => entry.pid)));
 }
-
-afterAll(sweepScratch);
 
 describe('the fold', () => {
     it('turns a minimal transcript into a record', () => {

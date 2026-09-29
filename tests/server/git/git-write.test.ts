@@ -14,7 +14,7 @@ import { existsSync, mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSync
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { describe, expect, vi } from 'vitest';
 import { defaultMirrorsDir } from '../../../src/lib/server/git/deposit-git.ts';
 import {
     allowedRoots,
@@ -39,9 +39,7 @@ import { worktreePath } from '../../../src/lib/data/helpers/worktrees.ts';
 import { suggestMessage } from '../../../src/lib/server/git/git-message.ts';
 import { abortMerge } from '../../../src/lib/server/git/git-index.ts';
 import { ALLOWED } from './allowed.ts';
-import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
-
-afterAll(sweepScratch);
+import { it, scratchDir, test } from '../../fixtures/scratch.ts';
 
 const MODULE = resolve(
     dirname(fileURLToPath(import.meta.url)),
@@ -93,9 +91,8 @@ function write(root: string, name: string, body: string): void {
     writeFileSync(full, body);
 }
 
-beforeAll(() => {
+test.beforeAll(() => {
     dir = scratchDir('oculus-git-write-');
-    expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     repo = join(dir, 'repo');
     remote = join(dir, 'remote.git');
     outside = join(dir, 'outside');
@@ -114,7 +111,7 @@ beforeAll(() => {
     ROOTS = allowedRoots([], repo);
 });
 
-afterAll(() => {
+test.afterAll(() => {
     if (dir !== '') rmSync(dir, { recursive: true, force: true });
 });
 

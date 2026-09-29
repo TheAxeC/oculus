@@ -8,22 +8,18 @@
 // name, and a LaTeX warning that names the line it is on.
 
 import { lstatSync, mkdirSync, symlinkSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
 import { dirname, join, resolve, sep } from 'node:path';
-import { afterAll, describe, expect, it } from 'vitest';
+import { describe, expect } from 'vitest';
 import {
     buildState,
     declaresClass,
     mains,
     parseLog
 } from '../../../src/lib/server/content/latex.ts';
-import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
-
-afterAll(sweepScratch);
+import { it, scratchDir } from '../../fixtures/scratch.ts';
 
 function scratch(): string {
     const dir = scratchDir('oculus-latex-');
-    expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     return dir;
 }
 

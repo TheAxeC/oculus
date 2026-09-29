@@ -11,7 +11,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
-import { afterAll, describe, expect, it } from 'vitest';
+import { describe, expect } from 'vitest';
 import { handleWrite } from '../../../src/lib/server/edit/writes.ts';
 import { PAGE, logChanges, readChanges } from '../../../src/lib/server/core/changes.ts';
 import { fsWrites } from '../../../src/lib/server/core/json.ts';
@@ -22,11 +22,9 @@ import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
 import type { Project, Tier } from '../../../src/lib/data/model/index.ts';
 import type { Change, ChangeLog, ChangeRecord } from '../../../src/lib/server/core/changes.ts';
 import type { WriteTarget } from '../../../src/lib/server/edit/writes.ts';
-import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
+import { it, scratchDir } from '../../fixtures/scratch.ts';
 import { careerRules } from '../../../src/lib/server/edit/writes/subtasks.ts';
 import { targetOver } from '../../routes/edit/write-fixture.ts';
-
-afterAll(sweepScratch);
 
 const MANIFEST = 'id: alpha\ntype: manuscript\ntitle: "A title"\nstatus:\n  line: "the line"\n';
 
@@ -55,7 +53,6 @@ const HOST = '127.0.0.1:8791';
  */
 function target(keep = 500): WriteTarget {
     const dir = scratchDir('oculus-changes-');
-    expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     const folder = join(dir, 'projects', 'manuscripts', 'alpha');
     mkdirSync(folder, { recursive: true });
     writeFileSync(join(folder, 'project.yml'), MANIFEST);
@@ -121,7 +118,6 @@ function slideProject(id: string, tier: Tier): Project {
 /** A target whose deck file and log are both under the system temporary directory. */
 function deckTarget(): WriteTarget {
     const dir = scratchDir('oculus-changes-deck-');
-    expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     const file = join(dir, 'present.yml');
     const log = join(dir, 'changes.jsonl');
     for (const path of [file, log]) {

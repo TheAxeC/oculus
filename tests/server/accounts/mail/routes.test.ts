@@ -7,7 +7,7 @@
 
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, vi } from 'vitest';
 import type { InboxThread } from '../../../../src/lib/data/model/index.ts';
 import {
     SCOPE,
@@ -28,9 +28,7 @@ import { fsWrites } from '../../../../src/lib/server/core/json.ts';
 import { readTriage } from '../../../../src/lib/server/accounts/mail/triage.ts';
 import { ACCESS, GOOGLE, REFRESH, cleanup, fakeFetcher, scratch, writeAccount } from './fixture.ts';
 import { noop } from '../../../fixtures/doubles.ts';
-import { sweepScratch } from '../../../fixtures/scratch.ts';
-
-afterAll(sweepScratch);
+import { it } from '../../../fixtures/scratch.ts';
 
 afterEach(cleanup);
 

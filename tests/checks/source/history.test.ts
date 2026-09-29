@@ -8,13 +8,12 @@
 // This file holds the vocabulary it searches for, so it excludes itself by the marker below rather
 // than by its name: a rename keeps the audit working and keeps it from reporting its own data.
 
-import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative, resolve, sep } from 'node:path';
-import { tmpdir } from 'node:os';
-import { afterAll, describe, expect, it } from 'vitest';
-import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
-
-afterAll(sweepScratch);
+import { describe, expect } from 'vitest';
+import { it, scratchDir } from '../../fixtures/scratch.ts';
+import { commentText } from './code.ts';
+import { treeFiles } from '../walk.ts';
 
 const ROOTS = ['src', 'tests', 'bin', 'config'];
 
@@ -69,34 +68,30 @@ const HISTORY = new RegExp(
     ].join('|')
 );
 
+/** Every file under a folder, as paths from where the folder was named, in name order. */
 function files(at: string): string[] {
-    return readdirSync(at).flatMap((name) => {
-        const path = join(at, name);
-        return statSync(path).isDirectory() ? files(path) : [path];
-    });
+    return treeFiles(at).map((rel) => join(at, rel));
 }
 
 /**
- * Whether a line is read as prose: a comment, in the forms the tree writes them in with YAML's and
- * the shell's `#` among them, or any line of a text file, whose every line is a reader's words.
+ * The prose of each line of a file, by line: every line of a text file whole, the comment of a YAML
+ * line (a `#` opening the line or following a space), and for a file of code the comment text the
+ * code reader finds on the line, trailing comments included and code and strings left out.
  */
-function isComment(line: string, file: string): boolean {
-    if (file.endsWith('.txt')) return true;
-    if (file.endsWith('.yml') || file.endsWith('.sh')) {
-        return line.trimStart().startsWith('#') || line.includes(' # ');
+function proseLines(file: string, source: string): string[] {
+    const lines = source.split('\n');
+    if (file.endsWith('.txt')) return lines;
+    if (file.endsWith('.yml')) {
+        return lines.map((line) =>
+            line.trimStart().startsWith('#') || line.includes(' # ') ? line : ''
+        );
     }
-    return (
-        line.includes('//') ||
-        line.includes('/*') ||
-        line.includes('<!--') ||
-        line.trimStart().startsWith('*')
-    );
+    return commentText(file, source).split('\n');
 }
 
 /**
  * Every comment line under the roots naming a package id, a date or a session, as
- * `file:line: text`. A block comment's continuation lines carry no marker of their own, so the walk
- * keeps whether it is inside a `/*` or `<!--` block and reads those lines as comments too.
+ * `file:line: text`.
  */
 function commentHits(base = '.'): string[] {
     const found: string[] = [];
@@ -106,21 +101,9 @@ function commentHits(base = '.'): string[] {
             const file = relative(base, full);
             const source = readFileSync(full, 'utf8');
             if (source.includes(MARKER)) continue;
-            let open = false;
-            source.split('\n').forEach((line, index) => {
-                const inside = open;
-                if (open && (line.includes('*/') || line.includes('-->'))) open = false;
-                else if (
-                    !open &&
-                    (line.includes('/*') || line.includes('<!--')) &&
-                    !line.includes('*/') &&
-                    !line.includes('-->')
-                ) {
-                    open = true;
-                }
-                if ((inside || isComment(line, file)) && HISTORY.test(line)) {
-                    found.push(`${file}:${index + 1}: ${line.trim()}`);
-                }
+            const lines = source.split('\n');
+            proseLines(file, source).forEach((prose, index) => {
+                if (HISTORY.test(prose)) found.push(`${file}:${index + 1}: ${lines[index].trim()}`);
             });
         }
     }
@@ -142,7 +125,8 @@ function documentHits(base = '.'): string[] {
 }
 
 describe('no history in code', () => {
-    it('names no package id, date or session in any comment', () => {
+    // Every file under the four roots is parsed, which takes longer than a case's default limit.
+    it('names no package id, date or session in any comment', { timeout: 30000 }, () => {
         expect(commentHits().join('\n')).toBe('');
     });
 
@@ -150,9 +134,11 @@ describe('no history in code', () => {
         expect(documentHits().join('\n')).toBe('');
     });
 
-    it('reads every line of a text file and the comments of a shell script and a YAML file', () => {
+    // Revert: in proseLines of tests/checks/source/history.test.ts, read a code line only when it
+    // opens with its comment (commentLines), and the trailing comments of src/trail.ts and
+    // bin/trail.sh go unread; read a code line whole, and src/url.ts and src/quartile.ts are hits.
+    it('reads every line of a text file and every comment of code, trailing ones included', () => {
         const dir = scratchDir('oculus-history-');
-        expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
         const plant = (rel: string, body: string): void => {
             const full = join(dir, rel);
             expect(resolve(full).startsWith(resolve(dir) + sep)).toBe(true);
@@ -162,9 +148,21 @@ describe('no history in code', () => {
         plant('tests/list.txt', 'a.ts b.ts the clone the split of Q51 made\n');
         plant('bin/run.sh', '#!/bin/sh\n# written for D22\necho "#D22 is data"\n');
         plant('config/keys.yml', 'key: 1 # kept since 2026-09-10\n');
+        plant('src/url.ts', "const url = 'http://x/Q12';\n");
+        plant('src/trail.ts', 'const a = 1; // written for Q12\n');
+        plant('src/quartile.ts', 'const Q1 = 1;\n/*\n * kept until\n * the split of Q51\n */\n');
+        plant('src/Page.svelte', '<!-- drawn for O17 -->\n<p>{x /* since Q3 */}</p>\n');
+        plant('src/app.html', '<html>\n<!-- the page of D19c -->\n</html>\n');
+        plant('bin/trail.sh', 'x=1 # Q12\n');
         expect(commentHits(dir)).toEqual([
+            'src/Page.svelte:1: <!-- drawn for O17 -->',
+            'src/Page.svelte:2: <p>{x /* since Q3 */}</p>',
+            'src/app.html:2: <!-- the page of D19c -->',
+            'src/quartile.ts:4: * the split of Q51',
+            'src/trail.ts:1: const a = 1; // written for Q12',
             'tests/list.txt:1: a.ts b.ts the clone the split of Q51 made',
             'bin/run.sh:2: # written for D22',
+            'bin/trail.sh:1: x=1 # Q12',
             'config/keys.yml:1: key: 1 # kept since 2026-09-10'
         ]);
     });

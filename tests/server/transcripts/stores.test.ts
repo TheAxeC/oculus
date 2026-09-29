@@ -1,20 +1,16 @@
 // Layer 4, test. Direct coverage of the shared Claude transcript and Codex rollout finders.
 
 import { chmodSync, mkdirSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
 import { basename, dirname, join, resolve, sep } from 'node:path';
-import { afterAll, afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect } from 'vitest';
 import { claudeTranscripts, codexRollouts } from '../../../src/lib/server/transcripts/stores.ts';
-import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
-
-afterAll(sweepScratch);
+import { it, scratchDir } from '../../fixtures/scratch.ts';
 
 const DAY = 86400 * 1000;
 const made: string[] = [];
 
 function scratch(): string {
     const root = scratchDir('oculus-transcript-stores-');
-    expect(resolve(root).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     made.push(root);
     return root;
 }

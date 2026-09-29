@@ -2,10 +2,10 @@
 // account's credential file in it, and a fetcher that answers from a table of addresses.
 //
 // Nothing here opens a connection and nothing reads or writes outside the directory the case made,
-// which is asserted to be inside the system temporary directory before anything is written.
+// which scratchDir makes inside the system temporary directory, and each file written is asserted
+// to be inside that directory first.
 
 import { rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
 import { resolve, sep } from 'node:path';
 import { expect } from 'vitest';
 import type { MailAccountConfig } from '../../../../src/lib/data/model/index.ts';
@@ -27,7 +27,6 @@ export function cleanup(): void {
 
 export function scratch(name = 'oculus-mail-'): string {
     const dir = scratchDir(name);
-    expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     made.push(dir);
     return dir;
 }

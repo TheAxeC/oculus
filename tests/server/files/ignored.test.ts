@@ -19,7 +19,7 @@ import {
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
-import { afterAll, afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect } from 'vitest';
 import { ignoredIn } from '../../../src/lib/server/core/git.ts';
 import {
     cachedIgnored,
@@ -28,9 +28,7 @@ import {
     shownOf,
     type Shown
 } from '../../../src/lib/server/files/fs.ts';
-import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
-
-afterAll(sweepScratch);
+import { it, scratchDir } from '../../fixtures/scratch.ts';
 
 const path = process.env.PATH;
 afterEach(() => {

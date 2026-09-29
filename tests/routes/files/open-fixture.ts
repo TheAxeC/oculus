@@ -26,11 +26,9 @@ export function checkedIn(): ProgramApps {
     return APPS;
 }
 
-/** A directory of the case's own under the system temporary directory, asserted to be inside it. */
+/** A directory of the case's own, which scratchDir makes inside the system temporary directory. */
 export function scratch(prefix: string): string {
-    const dir = scratchDir(prefix);
-    expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
-    return dir;
+    return scratchDir(prefix);
 }
 
 /** A hub with one project folder in it. */

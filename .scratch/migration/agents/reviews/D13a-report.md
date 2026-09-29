@@ -1,63 +1,94 @@
-# D13a report: the source tab's editor on Monaco
+# D13a report: the source tab's editor on Monaco (repair round 1 done, every item of the round built and the verify list green)
 
-Everything in the brief is done. The editor's behaviour in a browser (case 14, the look) is not verified: the builder runs no browser, so every runtime claim about Monaco below is from reading the code and the package, and the look at landing is its check. The scope map paints the `-txt` forms of the code hues rather than the bare hues the brief names (evidence in "Anything in the brief that was wrong").
+Not done: case 14, the look. The builder runs no browser, so what Monaco draws, the keys Alt+F5 and Shift+Alt+F5 pressed in a live editor, the blame column's padding on screen and the bold and italic drawn in Markdown are seen at the look at landing. Everything else in the brief and in round 1 is built, and each claim below names the command that shows it.
 
-## Open items of the state file (verbatim, `orchestrator-state.md` lines 110-113)
+## Open items of the state file (verbatim, main checkout `orchestrator-state.md` lines 120-124)
 
-- Z52, which of VS Code's right-click menu items Q88 builds (raised 2026-09-29 at /spec Q88). The inventory from VS Code's source (Z51 (c)) is in `agents/reviews/vscode-parity.md`, section "Right-click menus (owner Q88)", every item with its condition and oculus's side. About half the items run on an action oculus has (open, open beside, stage, unstage, discard, the stage and discard alls, open changes, reveal in the Files view, add and remove a root, download, kill, split, new terminal, close a pane, copy commit id and message) or need only the clipboard (copy path, copy relative path, cut, copy and paste in a preview or a text box, select all). The rest need a capability oculus lacks: in the Files view, New File, New Folder, Rename, Delete, Cut, Copy and Paste of files and folders, and Upload, each a write to the reader's disk through a new server route; Select for Compare and Compare Selected (a diff of two chosen files); in Source Control, Add to .gitignore and Cherry Pick; in the terminal, Rename, Change Icon, Change Color, Clear and Copy as HTML; on the pane's strip, a New Text File and the Tab Bar and Editor Actions Position settings. Items with no oculus counterpart (Timeline, Tests, Chat, Share, extensions, a second window, dictation) are left out in every option. Options:
-  - (a) Q88 builds every item, the new capabilities included, in one step: the menus on every surface and the server routes for the file writes (Delete moving to the macOS Trash, as VS Code does where a trash exists), the two-file compare, the `.gitignore` write, cherry-pick, and the terminal's name, icon and colour. Complete in one landing, but one brief then carries new write routes on the reader's disk beside menus on six surfaces, which is the largest review in the plan.
-  - (b) Q88 builds the menus on every surface with every item whose action oculus has or that needs only the clipboard; a step Q88b, next on the queue after Q88, builds every new capability the inventory names (the list above, each item named in the parity file), with Delete moving to the macOS Trash, and adds its items to the menus Q88 built. Recommended: the file writes are a new capability with their own safety rules (roots only, the Trash, a confirm), reviewed on their own, and nothing in the inventory is dropped.
-  - Building only the items oculus has today and leaving the new ones out is the lazy option and is not offered.
+An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is booked as its own step in `plan.md` and carried in the Booked section below, since it needs no ruling from him.
 
-## The cases' first run (unchanged tree, tests written first; log `scratchpad/D13a-builder/first-run.log`)
+- None.
 
-`npx vitest run` over the nine new or changed test files: `Test Files  8 failed | 1 passed (9)`, `Tests  11 failed | 62 passed (73)`.
+## Round 1, item by item
 
-| Case | First run on the unchanged tree |
-| --- | --- |
-| 1 Shiki's fit | No test, as the brief says; checked at the look |
-| 2 Hex expansion | Red: `tests/ui/controls/editor/theme.test.ts` fails to import (no module, no `shiki`) |
-| 3 Every colour key mapped | Red: same file |
-| 4 Scope map | Red: same file |
-| 5 Language map | Red: `grammars.test.ts` fails to import |
-| 6 Removed chords | Red: `chords.test.ts` fails to import |
-| 7 `typingIn` | Red: 3 cases, `typingIn` is not exported; a digit typed in the editor calls `railPage` |
-| 8 Palette | Red: 2 cases in `palette.test.ts` (`editorItems` is not a function), 1 in `palette-open.test.ts` |
-| 9 Paint limit | Red: `source.test.ts` finds no `data-language` on the editor |
-| 10 Gutter decorations | Red: `gutter.test.ts` fails to import |
-| 11 Breakpoints | Red: same file |
-| 12 Server build | Green: `npm run build` exit 0, grep printed nothing (exit 1) |
-| 13 Read-only window | Green: the code window, locked and cut file cases of `source.test.ts` pass |
-| 14 The look | Taken at landing |
+| Item | State | Proof |
+| --- | --- | --- |
+| 1 Blame escaped, column padded | DONE | `gutter.ts` `blameNumbers` hands every character of `& < > " '` as its entity; the primitive's style holds `.editor :global(.monaco-editor .line-numbers) { white-space: pre; }`, built into `.svelte-kit/output/client/_app/immutable/assets/2.CFr4d0vi.css` (`grep -loF ".monaco-editor .line-numbers{white-space:pre}"`). Case in `gutter.test.ts` "hands an author's markup to the column as entities, and counts the width as written" (`<img src=x onerror=alert(1)>` and `A & B`); red with the escape taken out |
+| 2 Bold and italic drawn | DONE | `theme.ts` rules `markup.bold` and `markup.italic` take `--ink-txt` with their font style. `tests/ui/controls/editor/paint.test.ts` "answers markup.bold and markup.italic for markdown, drawn bold and italic", through the installed shiki 4.4.3 and @shikijs/monaco 4.4.3 with a stand-in Monaco recording `defineTheme` and `setTokensProvider`; red with `token: null` on the two rules (2 tests failed) |
+| 3 A theme switch replaces the theme | DONE | `load.ts` `painter`: each paint makes a highlighter holding the one theme `oculus` and the grammars, bridges it over Monaco's own `setTheme` and `create`, then disposes the one before; the signature check and the queue stay. `paint.test.ts` "replaces the theme on a second paint, defining only oculus in the second colours" (only `oculus` defined, `editor.foreground` and the bold rule in the second reading's ink, `[true, false]` disposed); red when one highlighter is kept and `loadTheme` reused. "makes no highlighter for a paint whose tokens have not moved"; red with the signature check removed |
+| 4 The marks from the keyboard | DONE, keys at the look | Go to Next Change (Alt+F5), Go to Previous Change (Shift+Alt+F5), Open Change (no key), added with `editor.addAction` under the view's words `source.next_change`, `source.previous_change`, `source.open_change` and said through `onactions` ahead of the removed chords' actions, so the palette lists them. Pure functions in `gutter.ts`: `stepMark` (the next or previous mark's first line, going round), `markAction` (open, step, or nothing) and `changeActions` (ids, labels, hints, key codes). HELP.md line 199 names the three, and the key table row at line 82 now covers the source tab's editor. The keys themselves are seen at the look |
+| 5 Comments and the dead prop | DONE | `load.ts:6-11` and `Editor.svelte:7-9` say the page renders no component on the server (`ssr = false`), and the plain block is drawn until Monaco has loaded and by the unit suite's server render. `TextArea.svelte`'s `onscroll` prop and its comment are gone (`grep -n onscroll src/lib/ui/forms/TextArea.svelte` prints nothing). `source.test.ts:250-251` one comment for its one test. `tests/ui/colours.test.ts` names its case an audit of `theme.ts`'s text and points at `theme.test.ts:158-176` (the test spans 158 to 176, one line above the brief's 159). `chords.test.ts:99-102` says it compares the primitive's list with CMD_K, the 31 ids read from monaco-editor 0.57.0, read again for a later Monaco |
+| 7 Contrast figures | DONE | Measured again, below |
+| 8 Visible changes | DONE | Section below |
 
-The `action` ask case in `editor-status.test.ts` passed at run time on the unchanged tree (the store keeps any ask); only `npm run check` turns it red, so it is an audit. No case was found that the brief's rules get wrong.
+### Each round-1 case red under its revert
+
+Every revert was a temporary edit of the source, the file restored from a copy in the scratch folder, and the file's run green again afterwards.
+
+| Case (file) | Revert | Result |
+| --- | --- | --- |
+| markup escaped (`gutter.test.ts`) | escape removed from `blameNumbers` | red |
+| bold and italic scopes (`paint.test.ts`) | `token: null` on the two rules | `Tests  2 failed \| 1 passed (3)` |
+| second paint replaces the theme (`paint.test.ts`) | one highlighter kept, `loadTheme` on it each paint | `Tests  1 failed \| 2 passed (3)` |
+| no highlighter for an unchanged paint (`paint.test.ts`) | signature check removed | `Tests  1 failed \| 2 passed (3)` |
+| caret before the first mark (`gutter.test.ts`) | marks taken in the order handed, no sort | `Tests  1 failed \| 12 passed (13)` |
+| caret between two marks | Previous takes the first mark before the caret | 3 failed, this case among them |
+| caret after the last, going round | no going round at the ends | 3 failed, this case among them |
+| caret on a deletion's wedge, and a wedge at the foot | `>=` for the next mark; the raw `mark.line` in place of the drawn line | each `Tests  1 failed \| 12 passed (13)`, this case |
+| no mark | an empty list answers the caret's line | `Tests  1 failed \| 12 passed (13)` |
+| Open Change on the caret's line (`gutter.test.ts`) | a line with no mark opens the first mark | `Tests  1 failed \| 14 passed (15)` |
+| the keys of the three actions (`gutter.test.ts`) | Previous bound without Shift | `Tests  1 failed \| 14 passed (15)` |
+| the palette lists the three with their keys (`palette.test.ts`) | `hint: action.hint` kept when empty; Next's hint emptied | each `Tests  1 failed \| 16 passed (17)` |
+
+### The contrast figures (item 7)
+
+A scratch vitest probe (`scratchpad/D13a-builder/probe/contrast.test.ts`, run with `npx vitest run --config <scratch>/probe/vc.mts`) reads each of the 17 themes through `tests/checks/look/themes.ts` (`NAMES`, `themeTokens`) and measures with `derive.ts`'s `ratio` on `--panel`. It prints:
+
+```
+themes 17
+code roles bare under 4.5: 79 of 102
+code roles -txt on --panel: 4.82 to 5.95, under 4.5: 0 of 102
+green and red -txt on --panel: 4.88 to 13.06, under 4.5: 0 of 34
+```
+
+The range of the six code roles' `-txt` forms is 4.82 to 5.95, as the reviewer measured; the 5.01 to 5.82 in the round-0 report was wrong.
+
+## The rulings of the round, carried
+
+- The scope rules paint the `-txt` forms of the code hues and of green and red, which supersedes the brief's item 3 and case 4 on that point: the bare hues fall under 4.5:1 on `--panel` on 79 of the 102 theme and role pairs (measured above), and the code window already paints the `-txt` forms (`Code.svelte:98-150`).
+- The meta hue goes on `meta.preprocessor`, `meta.directive`, `meta.tag`, `entity.name.tag`, `punctuation` and `variable`, not the bare `meta` scope, which wraps whole functions: accepted.
+- TypeScript and JavaScript semantic checking is off and syntax checking on: accepted, since a one-file model has no project and the semantic check would underline every import. It is listed among the visible changes.
+- `load.ts`'s module-level `loading` and `self.MonacoEnvironment` stay: they are the brief's mechanism, and `lib/ui/controls/editor/load.ts:loading` is in `FROZEN` of `tests/checks/tree/boundaries.test.ts` with its reason (Monaco keeps one theme, one set of key rules and its workers per page), as `generation.svelte.ts:held` and `glyphmode.svelte.ts:held` are.
+- `EditorAction` and `EditorBlame` stay in both layers: `ui` may import only `ui`, `themes`, the text catalog and the markdown rule (`boundaries.test.ts:90`), and `state` imports no `ui`. The source view hands the one to the other, so svelte-check refuses a drift between the two definitions.
+- Case 12 and verify item 2 are audits: under `ssr = false` the adapter's server output holds no component, so the grep is empty whatever `Editor.svelte` imports. `grep -rlE "data-editor-host" build/server` and `grep -rlE "StandaloneCodeEditor|shikiToMonaco" build/server` both print nothing. The intermediate `.svelte-kit/output/server/entries/pages/_page.svelte.js` does hold the compiled component (`grep -c -F data-editor-host` prints 1) and no Monaco or Shiki code (`StandaloneCodeEditor`, `shikiToMonaco`, `createHighlighter`, `MonacoEnvironment` each count 0); its only `monaco-editor` text is the primitive's CSS selectors.
+- The paths outside "Paths this step writes" are named below with their reasons. The overlaps with Q79b (`tests/ui/colours.test.ts`, `tests/views/whole/type-scale.test.ts`, `tests/checks/source/html-sites.test.ts`, `tests/checks/tree/boundaries.test.ts`) and with Q96, now on main (`tests/ui/colours.test.ts` moved to `tests/ui/theme/colours.test.ts`, `DESIGN.md`), are merged by the orchestrator at landing; round 1 changed only the audit comment in `tests/ui/colours.test.ts` among them, as item 5 asked.
 
 ## DONE / NOT DONE
 
 | Row | State | Proof |
 | --- | --- | --- |
-| Three libraries pinned exactly | DONE | `package.json`: `"@shikijs/monaco": "4.4.3"`, `"monaco-editor": "0.57.0"`, `"shiki": "4.4.3"`; the lock gained 47 packages and removed none |
+| Three libraries pinned exactly | DONE | `package.json`: `"@shikijs/monaco": "4.4.3"`, `"monaco-editor": "0.57.0"`, `"shiki": "4.4.3"` |
 | Primitive `ui/controls/editor/` (10 items) | DONE | `ls src/lib/ui/controls/editor \| wc -l` prints 10 |
 | Source tab on the primitive, asks on the model, `action` ask | DONE | `tests/views/sources/source.test.ts`, `editor-status.test.ts` |
-| Palette `editor` kind, `app.palette.kind_editor` | DONE | `tests/shell/keys/palette.test.ts`, `palette-open.test.ts` |
+| Palette `editor` kind, the three mark actions listed with their keys | DONE | `tests/shell/keys/palette.test.ts`, `palette-open.test.ts` |
 | `typingIn` covers `.monaco-editor` | DONE | `tests/shell/keys/workbench-keys.test.ts` |
-| DESIGN.md 284, 288, new 289, 295 (was 294); HELP.md 85, 87, 199 | DONE | read back after the edit |
-| `docs/diagrams/` regenerated | DONE | `npm run diagrams` printed each `.dot` and `.svg` |
+| Round 1 items 1 to 5, 7, 8 | DONE | table above |
+| `docs/diagrams/` regenerated | DONE | `npm run diagrams` printed each `.dot` and `.svg`; `tests/checks/diagrams/diagrams.test.ts` green in the final run |
 | Checks | DONE | output below |
-| Server build holds no Monaco or Shiki | DONE | `npm run build` exit 0, then `grep -rlE "StandaloneCodeEditor\|shikiToMonaco" build/server` printed nothing, exit 1 |
+| Server build holds no Monaco or Shiki (case 12, verify item 2) | DONE, an audit | `grep -rlE "StandaloneCodeEditor\|shikiToMonaco" build/server` prints nothing; an audit under `ssr = false`, as ruled |
 | `bash bin/folder-check.sh` | DONE | exit 0 |
-| Case 14, the look | NOT DONE | taken at landing; no browser here |
+| Case 14, the look, with the Alt+F5 keys | NOT DONE | taken at landing; no browser here |
 
-`sh ~/.claude/skills/land/templates/checks.sh .../orchestrator-state.md`, run from `tools/oculus`, the lines it prints for each command (quoted as printed; the check mark is Vite's own output):
+`PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH sh ~/.claude/skills/land/templates/checks.sh /Users/axelfaes/workspace/research-hub/tools/oculus/.scratch/migration/orchestrator-state.md </dev/null`, run once from `tools/oculus` after the last change, exit 0; the lines it prints for each command:
 
 ```
 $ npm test
- Test Files  361 passed (361)
-      Tests  5734 passed | 1 skipped (5735)
+ Test Files  362 passed (362)
+      Tests  5746 passed | 1 skipped (5747)
 $ npm run check
-1790685688438 COMPLETED 2096 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+1790690033907 COMPLETED 2097 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
 $ npm run build
-✓ built in 18.71s
+✓ built in 7.00s
+✓ built in 16.74s
 $ npm run format:check
 All matched files use Prettier code style!
 $ npm run lint
@@ -65,70 +96,75 @@ $ ! LC_ALL=C grep -rna '[^ -~]' src tests
 checks: 6 commands passed
 ```
 
-Two earlier runs of the same script failed in `npm test` on timeouts in `tests/server/git/git-ops.test.ts` and `tests/server/core/git.test.ts` ("Test timed out in 5000ms") while `uptime` showed a load average of 11 to 13 from other agents' suites; both files pass alone (`npx vitest run tests/server/core/git.test.ts tests/server/git/git-ops.test.ts`: `Tests  79 passed (79)`) and touch nothing this step changed. They can time out again under the same load.
-
-Non-ASCII in the documents and config: `LC_ALL=C grep -rnla '[^ -~]' DESIGN.md HELP.md config/text/app.yml config/behavior.yml` printed nothing.
-
-Each new or changed test carries a `// Red when ...` line naming its revert, except `editor-status.test.ts`'s action case, whose comment names it as an audit at run time (red under `npm run check`).
+No test file timed out in that run. Under the load of another suite running in the main checkout, `tests/server/machine/pty/sessions.test.ts` (unchanged by this step) has failed once on `expected 'zsh' to be 'cat'` (the tmux pane's command read before `cat` started); alone, `npx vitest run tests/server/machine/pty/sessions.test.ts` prints `Tests  19 passed (19)`. The git test files named in the round-0 report can time out under the same load.
 
 ## Files with line counts (`wc -l`)
 
-New: `src/lib/ui/controls/editor/` Editor.svelte 521, colours.ts 523, theme.ts 154, load.ts 115, chords.ts 110, gutter.ts 131, grammars.ts 40, tab-out.ts 37, workers.ts 29, types.ts 27; `tests/ui/controls/editor/` theme.test.ts 177, chords.test.ts 155, gutter.test.ts 130, tab-out.test.ts 52, grammars.test.ts 43, monaco-sources.ts 24.
+The primitive, `src/lib/ui/controls/editor/`: Editor.svelte 537, colours.ts 523, gutter.ts 226, load.ts 168, theme.ts 153, chords.ts 126, grammars.ts 40, tab-out.ts 37, types.ts 30, workers.ts 29. Its tests, `tests/ui/controls/editor/`: gutter.test.ts 213, theme.test.ts 177, chords.test.ts 158, paint.test.ts 127 (new in round 1), tab-out.test.ts 52, grammars.test.ts 43, monaco-sources.ts 24.
 
-Changed in the brief's paths: package.json 65, package-lock.json, views/sources/source/Editor.svelte 210, Source.svelte 439, editor-status.svelte.ts 118, editor-text.ts 82, palette.ts 244, Palette.svelte 476, palette-open.ts 38, workbench-keys.svelte.ts 426, file-git.ts 183, config/text/app.yml 67, DESIGN.md 323, HELP.md 295, docs/diagrams/, tests source.test.ts 535, workbench-keys.test.ts 504, palette.test.ts 340, palette-open.test.ts 113, editor-status.test.ts 81.
+Changed in round 1 beyond the primitive and its tests: `views/sources/source/Editor.svelte` 216 (hands `changeWords`), `state/workbench/palette.ts` 245 (no hint for an action without keys), `ui/forms/TextArea.svelte` 114 (`onscroll` removed), `config/text/views/sources/source.yml` 24 (the three words), `HELP.md` 295 (lines 82 and 199), `tests/shell/keys/palette.test.ts` 372, `tests/views/sources/source.test.ts` 534, `tests/ui/colours.test.ts` 632, `docs/diagrams/` regenerated.
 
-Unchanged in the brief's paths: `Preview.svelte` (79) needs nothing, since it takes the fraction as before; `src/app.d.ts`, since `npm run check` resolves the `?worker` imports through `vite/client` with no declaration added.
+Changed in round 0 in the brief's paths: package.json, package-lock.json (47 packages added, none removed), `Source.svelte`, `editor-status.svelte.ts`, `editor-text.ts`, `Palette.svelte`, `palette-open.ts`, `workbench-keys.svelte.ts`, `file-git.ts`, `config/text/app.yml`, `DESIGN.md`, and the tests `workbench-keys.test.ts`, `palette-open.test.ts`, `editor-status.test.ts`. `Preview.svelte` and `src/app.d.ts` need nothing.
 
-Paths widened, each for a reason inside the step:
-- `views/sources/source/Gutter.svelte` (179): its `markWords` moved to `file-git.ts` so the editor's marks and the code window's say the same words; head comment updated.
-- `state/sessions/source.svelte.ts` (354) and `tests/state/sessions/source.test.ts` (461): `lineStart` removed with its test, since only the textarea editor used it.
-- `tests/state/workbench/navigation/editor-text.test.ts` (65): `withEnding`, `indentUnit`, `convertIndent` and `caretOf` removed from `editor-text.ts` with their tests, since Monaco now does each on its model; `shownLanguage` (the paint limit) added with a test.
-- `tests/shell/status/status-bar.test.ts` (295): `actions: []` in its status literal.
-- `state/shared/words/languages.ts` (107), `data/helpers/editor.ts` (31), `state/client/selectors.svelte.ts` (494), `config/behavior.yml` (163): comments that described the mirror now describe the plaintext rule.
-- `tests/ui/colours.test.ts` (630): the "code window palette" case for the view's Editor.svelte became a case over `ui/controls/editor/theme.ts`, holding it to the six `-txt` forms.
-- `tests/ui/controls/editor/theme.test.ts` reads `tests/checks/look/themes.ts` to hold `bad` at none under all 17 themes.
-- `tests/checks/tree/boundaries.test.ts` (599): `lib/ui/controls/editor/load.ts:loading` added to `FROZEN`, its reason in the docstring (Monaco keeps one theme, one set of key rules and its workers per page).
-- `tests/checks/tree/allow-styling.ts` (147), `tests/checks/source/html-sites.test.ts` (317): the entries for the removed `.input :global(.area)` rule and `{@html painted}` site removed, since they would fail as stale.
-- `tests/views/whole/type-scale.test.ts` (352): the view Editor now sets no type role (`''`), and the primitive is listed as `.editor=fs-sm`.
+Paths outside the brief, each for a reason inside the step:
+- `views/sources/source/Gutter.svelte`: its `markWords` moved to `file-git.ts`, so the editor's marks and the code window's say the same words.
+- `state/sessions/source.svelte.ts` and `tests/state/sessions/source.test.ts`: `lineStart` removed with its test, since only the textarea editor used it.
+- `tests/state/workbench/navigation/editor-text.test.ts`: `withEnding`, `indentUnit`, `convertIndent` and `caretOf` removed with their tests, since Monaco does each on its model; `shownLanguage` (the paint limit) tested.
+- `tests/shell/status/status-bar.test.ts`: `actions: []` in its status literal.
+- `state/shared/words/languages.ts`, `data/helpers/editor.ts`, `state/client/selectors.svelte.ts`, `config/behavior.yml`: comments that described the highlight.js mirror now describe the plaintext rule.
+- `ui/forms/TextArea.svelte`: the dead `onscroll` prop (round 1, item 5).
+- `config/text/views/sources/source.yml`: the three action words (round 1, item 4).
+- `tests/ui/colours.test.ts`: the code window palette case over `ui/controls/editor/theme.ts`, now marked an audit.
+- `tests/checks/tree/boundaries.test.ts`: `lib/ui/controls/editor/load.ts:loading` in `FROZEN` with its reason.
+- `tests/checks/tree/allow-styling.ts`, `tests/checks/source/html-sites.test.ts`: the entries for the removed `.input :global(.area)` rule and `{@html painted}` site removed, since they would fail as stale.
+- `tests/views/whole/type-scale.test.ts`: the view's Editor sets no type role, and the primitive is listed as `.editor=fs-sm`.
 
 ## Judgment calls the brief left open
 
-1. **Colour keys with no VS Code default.** Monaco applies some null-default text keys unconditionally (`editor.findMatchForeground` at `findWidget.js:1208`, `editorBracketMatch.foreground` with `!important` at `bracketMatching.js:363`), so a transparent value would hide the text. The rule used: an unset border or fill is transparent, an unset text colour is the ink, and `editor.selectionForeground` is `--ink 00`, which Monaco skips when transparent (`selections.js:329`), so a selection keeps its syntax colours.
-2. **Text colours in their `-txt` form.** 131 foreground keys (not the overview ruler, the minimap or `--c-on`) paint from the token's `-txt` form, as every text of the page does, and a `-txt` token the body does not carry yet falls back to its hue, as `var(--ink-txt, var(--ink))` does.
-3. **Two more chords under Cmd+K.** `workbench.action.showHover` (K Cmd+I) and `togglePeekWidgetFocus` (K F2) are bound under Cmd+K too. They are freed with the rest; the palette leaves them out, since `editor.getAction` has no action for a command.
-4. **`meta` scope.** The meta hue goes to `meta.preprocessor`, `meta.directive`, `meta.tag`, `entity.name.tag`, `punctuation` and `variable`, not the bare `meta` scope, which wraps whole functions in the grammars.
-5. **TypeScript and JavaScript semantic checking off.** A one-file model has no project, so the semantic check would underline every import; syntax checking stays on.
+1. **Colour keys with no VS Code default.** Monaco applies some null-default text keys unconditionally (`editor.findMatchForeground` at `findWidget.js:1208`, `editorBracketMatch.foreground` with `!important` at `bracketMatching.js:363`), so a transparent value would hide the text. An unset border or fill is transparent, an unset text colour is the ink, and `editor.selectionForeground` is `--ink 00`, which Monaco skips when transparent (`selections.js:329`), so a selection keeps its syntax colours.
+2. **Text colours in their `-txt` form.** 131 foreground keys paint from the token's `-txt` form, as every text of the page does, and a `-txt` token the body does not carry yet falls back to its hue.
+3. **Two more chords under Cmd+K.** `workbench.action.showHover` (K Cmd+I) and `togglePeekWidgetFocus` (K F2) are freed with the rest; the palette leaves them out, since `editor.getAction` has no action for a command.
+4. **`meta` scope** (ruled, above).
+5. **TypeScript and JavaScript semantic checking off** (ruled, above).
 6. **Escape before Monaco drops the arm.** Monaco stops a key it took (`standaloneServices.js:235-241`), so the capture listener drops the arm on Escape and the bubble listener sets it only for an Escape Monaco let through.
-7. **The line ending.** The model is made in the tab's line ending and handed back in it; a load or a revert replaces the model's text as one undoable edit without calling back. Opening a mixed-ending file does not mark it dirty.
-8. **The palette hint** is drawn in the result row's third column, in the kind word's muted style.
+7. **The line ending.** The model is made in the tab's line ending and handed back in it; a load or a revert replaces the model's text as one undoable edit without calling back.
+8. **The palette hint** is drawn in the result row's third column in the kind word's muted style; an action with no keys (Open Change) carries no hint and draws none.
 9. **The `look` value** is the view's `"<theme> <text scale>"`; the primitive repaints one frame after it changes.
-10. **The wall.** Under `body.wall` Monaco's editor, background and margin surfaces and the loading placeholder take `color-mix(in srgb, var(--panel) var(--wall-panel), transparent)`, with the pane's blur, in the primitive.
-11. **Model URI** is `inmemory://oculus/<instance>/<path>`, each segment URI-encoded; a leftover model on the same URI is disposed before a new one is made.
+10. **The wall.** Under `body.wall` Monaco's surfaces and the plain block take `color-mix(in srgb, var(--panel) var(--wall-panel), transparent)`, with the pane's blur.
+11. **Model URI** is `inmemory://oculus/<instance>/<path>`, each segment URI-encoded (`load.ts` `modelUri`).
+12. **Where a mark step goes** (round 1). Next goes to the first mark whose drawn first line is after the caret's line and Previous to the last one before it, so a caret inside a run steps back to that run's first line; a wedge counts at the line it is drawn on, the foot of the last line for a deletion at the end. The three action ids are `oculus.editor.nextChange`, `oculus.editor.previousChange` and `oculus.editor.openChange`. The palette lists the three whenever a source tab is on screen, a file with no marks included, where they do nothing.
+13. **The hint's modifier name** is `Alt` on every platform, as HELP.md's key table writes the Diff view's same keys; macOS calls the key Option.
 
 ## Visible changes, before and after
 
-- The source tab's editor: before, a textarea over a highlight.js mirror on `--chip`; after, Monaco on `--panel`, coloured by Shiki, with the minimap, sticky scroll, find widget, suggestions, hovers and Monaco's right-click menu, all in the tokens' colours.
-- The gutter in the editor: before, `Gutter.svelte` rows beside the textarea; after, the quick diff marks in Monaco's line-decorations lane (3px bar, 3px deletion wedge), the blame in the line-number column on each run's first line with the hover over the number, breakpoints as a red dot in the glyph margin (nothing hands any yet; D11 does). The read-only code window is unchanged.
-- The palette: while a source tab is on screen, the editor actions among the removed chords are listed, 29 ids off macOS and 30 on it with Delete All Right, each one whose `editor.getAction` answers at run time (not verified without a browser), under Monaco's labels with the kind word "Editor" and the old chord as the hint, for example "Add Line Comment" and `Cmd+K Cmd+C`. Before, none.
-- Cmd+K and Ctrl+K inside the editor open the palette. Before, the textarea let them through too; Monaco would otherwise take them.
-- Tab and Escape: Tab inserts indentation as before. After, an Escape that closed a Monaco widget no longer arms Tab to leave.
+- The source tab's editor: before, a textarea over a highlight.js mirror on `--chip`; after, Monaco on `--panel`, coloured by Shiki, with the minimap, sticky scroll, find widget, suggestions, hovers and Monaco's right-click menu, in the tokens' colours.
+- Diagnostics: before, the textarea drew none; after, a TypeScript or JavaScript file shows Monaco's syntax errors underlined, and no semantic errors (no unresolved imports).
+- The gutter: before, `Gutter.svelte` rows beside the textarea; after, the quick diff marks in Monaco's line-decorations lane (3px bar, 3px deletion wedge), the blame in the line-number column on each run's first line with the hover over the number, breakpoints as a red dot in the glyph margin (nothing hands any yet; D11 does). The read-only code window is unchanged.
+- The blame column's text (round 1): before the round, an author's name was written into the margin's HTML as it was, so a name holding markup was drawn as markup, and the padding spaces collapsed, so the numbers of a blamed text did not line up; after, a name is drawn as its characters and the numbers sit in one column.
+- Bold and italic in a Markdown file (round 1): before the round, `**bold**` and `*it*` were drawn in the plain text style; after, in bold and in italic, in the text colour.
+- A theme switch (round 1): before the round, each switch added a theme to Shiki and to Monaco for the rest of the page's life; after, the page holds one theme, `oculus`, and one highlighter. On screen the colours follow the theme in both.
+- The quick diff marks from the keyboard (round 1): before the round, the marks as Monaco decorations were reached only by the mouse, a loss against the old `ToolButton` marks a keyboard reached; after, Alt+F5 and Shift+Alt+F5 in the editor put the caret on the next or previous mark, going round at the ends, and Open Change opens the diff at the mark on the caret's line. The palette lists the three under "Editor" with `Alt+F5` and `Shift+Alt+F5` beside the first two.
+- The palette: while a source tab is on screen, the three mark actions and the editor actions among the removed chords, 29 ids off macOS and 30 on it with Delete All Right, each one whose `editor.getAction` answers at run time, under Monaco's labels with the kind word "Editor" and the old chord as the hint, for example "Add Line Comment" and `Cmd+K Cmd+C`. Before, none.
+- Cmd+K and Ctrl+K inside the editor open the palette, as they did from the textarea.
+- Tab and Escape: Tab inserts indentation as before; an Escape that closed a Monaco widget no longer arms Tab to leave.
 - A file past `editor.paint_limit_kb` opens as plaintext (`data-language="plaintext"`) instead of an uncoloured mirror.
-- Blame press: before, a button in the blame column; after, a press on the blamed line's number (which Monaco also uses to select the line).
-- Bundle: the client page chunk `nodes/2` grew from 1700.39 kB to 1730.35 kB. Monaco (2737 kB), Shiki's grammars and the workers (`ts.worker` 6916 kB, `css.worker` 1078 kB, `html.worker` 743 kB, `json.worker` 432 kB) are separate chunks loaded only when an editor mounts (sizes from the build log). The ">500 kB chunk" warning was already printed on the unchanged tree.
+- Blame press: before, a button in the blame column; after, a press on the blamed line's number.
+- Bundle, from the final run's build log: the client page chunk `nodes/2` is 1732.61 kB (1700.39 kB on the unchanged tree). Monaco (`chunks/I7Dj73QH.js`, 2737.06 kB), Shiki's grammars and the workers (`ts.worker` 6916.04 kB, `css.worker` 1077.70 kB, `html.worker` 742.76 kB, `json.worker` 432.42 kB) are separate chunks loaded when an editor mounts. The ">500 kB chunk" warning was already printed on the unchanged tree.
 
 ## Monaco action ids and Shiki ids
 
-- The 29 Cmd+K ids of the brief are confirmed against `node_modules/monaco-editor/esm`, each with the keys the package binds (`tests/ui/controls/editor/chords.test.ts`, "names each action an id the installed monaco-editor binds to those very keys").
-- Found beyond the brief: `workbench.action.showHover` (K Cmd+I) and `togglePeekWidgetFocus` (K F2), both registered with `KeybindingsRegistry.registerCommandAndKeybindingRule` (`hoverService.js:97`, `referencesController.js:286`), so commands, not editor actions. `revealDefinitionAside` is K F12, and also K Cmd+F12 in a web context; the second binding is freed by the same first key.
-- Ctrl+K on macOS is `deleteAllRight`, confirmed (WinCtrl+K, with a secondary Cmd+Delete binding that is not freed).
-- The conversion runs `editor.action.indentationToTabs` and `editor.action.indentationToSpaces`, confirmed at `contrib/indentation/browser/indentation.js:30,61`.
-- Shiki ids confirmed against `bundledLanguages`: `bash` is `shellscript`, `lisp` is `common-lisp`, `makefile` is `make`, the other 15 by their own name, plaintext is Monaco's own (`grammars.test.ts`).
+- The 29 Cmd+K ids of the brief are confirmed against `node_modules/monaco-editor/esm`, each with the keys the package binds (`chords.test.ts`), plus `workbench.action.showHover` (K Cmd+I) and `togglePeekWidgetFocus` (K F2), both commands (`hoverService.js:97`, `referencesController.js:286`); 31 in all.
+- Ctrl+K on macOS is `deleteAllRight` (WinCtrl+K).
+- Monaco 0.57.0 binds nothing to F5 under `esm/vs/editor` (`grep -rn "KeyCode.F5\b"` prints nothing), so Alt+F5 and Shift+Alt+F5 take no key from it.
+- The conversion runs `editor.action.indentationToTabs` and `editor.action.indentationToSpaces` (`contrib/indentation/browser/indentation.js:30,61`).
+- Shiki ids against `bundledLanguages`: `bash` is `shellscript`, `lisp` is `common-lisp`, `makefile` is `make`, the other 15 by their own name; plaintext is Monaco's own (`grammars.test.ts`).
+- The bridge maps a colour and a style to a scope only for a rule with a foreground (`@shikijs/monaco` `dist/index.mjs`, the `setTheme` wrapper), which is why bold and italic carry `--ink-txt`; `setTokensProvider` for a language replaces its entry, so a new paint's providers replace the old ones.
 
 ## Anything in the brief that was wrong
 
-- **The scope map's hues.** The brief maps scopes to the bare `--c-code-*` hues and `--c-green`/`--c-red`. Measured over all 17 themes (a scratch vitest probe using `tests/checks/look/themes.ts` and `derive.ts`'s `ratio`), 79 of the 102 theme and role pairs of the bare hues fall under 4.5:1 on `--panel` (for example solarized `name` `#2563eb` 2.52, kanagawa `comment` `#6b7280` 2.93), while every `-txt` form clears it (5.01 to 5.82). The code window paints the `-txt` forms, and `tests/ui/colours.test.ts` holds that a file is coloured the same whether read or written. So the rules paint `--c-code-*-txt`, `--c-green-txt` and `--c-red-txt`, and case 4's test expects those names. The orchestrator may rule the bare hues instead; that is the same six tokens with the suffix dropped in `theme.ts` and its test.
-- The brief's `typingIn` line (`:411`) and palette key line (`:93`) were right on the unchanged tree.
+- The scope map's hues: ruled in round 1, above.
+- `theme.test.ts:159-176` in round 1's item 5 is 158-176 on the tree; the comment names 158-176.
 
 ## Rule compliance
 
-One read-only `git -C . diff --stat` was run in the worktree while checking the size of the change; it wrote nothing. No other git command was run apart from the ones inside `bin/folder-check.sh` and the test suite's own temporary repositories.
+Round 1 ran no git command; `bash bin/folder-check.sh` and the test suite's temporary repositories run git themselves. Round 0 ran one read-only `git -C . diff --stat`, which the round-0 review recorded. No browser, no tmux on the default server, no server on 8787 or 8790, no `// revert:` line. Logs and probes are under `scratchpad/D13a-builder/`. The reviewer's `.scratch-refute/` at the worktree root was read and left as it was.

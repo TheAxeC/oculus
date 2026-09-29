@@ -3,20 +3,16 @@
 // written, and every path written is asserted to be inside it first.
 
 import { mkdirSync, utimesSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
 import { dirname, join, resolve, sep } from 'node:path';
-import { afterAll, describe, expect, it } from 'vitest';
+import { describe, expect } from 'vitest';
 import { SKIP_DIRS, fileIndex, projectFiles } from '../../../src/lib/server/files/project-files.ts';
-import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
-
-afterAll(sweepScratch);
+import { it, scratchDir } from '../../fixtures/scratch.ts';
 
 /** The config the walk is given unless a case wants another. */
 const SETTINGS = { file_index: { enabled: true, max_per_project: 400, ext: ['.md', '.py'] } };
 
 function scratch(): string {
     const dir = scratchDir('oculus-files-');
-    expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     return dir;
 }
 

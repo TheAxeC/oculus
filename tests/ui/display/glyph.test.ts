@@ -12,6 +12,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { render } from 'svelte/server';
+import { withoutComments } from '../../checks/source/code.ts';
 import Glyph from '../../../src/lib/ui/display/Glyph.svelte';
 import { SVG_ATTR, SVG_PROFILE, SVG_TAGS } from '../../../src/lib/ui/html.ts';
 import {
@@ -36,9 +37,8 @@ type Rule = { selector: string; body: string };
 
 function rules(file: string): Rule[] {
     const css = [...readFileSync(file, 'utf8').matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)]
-        .map((match) => match[1])
-        .join('\n')
-        .replace(/\/\*[\s\S]*?\*\//g, ' ');
+        .map((match) => withoutComments('style.css', match[1]))
+        .join('\n');
     return [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map((match) => ({
         selector: match[1].trim().replace(/\s+/g, ' '),
         body: match[2]

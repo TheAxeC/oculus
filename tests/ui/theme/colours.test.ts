@@ -34,11 +34,11 @@
 // the inline `style` a component writes for a tone, which is the one place a token name is built at
 // run time.
 
-import { readFileSync, readdirSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { dirname, join, resolve, sep } from 'node:path';
+import { readFileSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { afterAll, describe, expect, it } from 'vitest';
+import { describe, expect } from 'vitest';
+import { withoutComments } from '../../checks/source/code.ts';
 import { deriveTokens, ratio } from '../../../src/lib/themes/derive.ts';
 import { parseBlocks, resolveTheme } from '../../../src/lib/themes/parse.ts';
 import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
@@ -48,9 +48,8 @@ import {
     themeClass,
     themes
 } from '../../../src/lib/state/shared/words/appearance.ts';
-import { plantScratch, sweepScratch } from '../../fixtures/scratch.ts';
-
-afterAll(sweepScratch);
+import { it, plantScratch } from '../../fixtures/scratch.ts';
+import { treeFiles } from '../../checks/walk.ts';
 
 const SRC = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', 'src');
 
@@ -244,7 +243,7 @@ function unquote(value: string): string {
 function styles(source: string): string[] {
     const found: string[] = [];
     for (const match of source.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)) {
-        found.push(match[1].replace(/\/\*[\s\S]*?\*\//g, ' '));
+        found.push(withoutComments('style.css', match[1]));
     }
     return found;
 }
@@ -388,14 +387,8 @@ function allowedFill(value: string, set: Record<string, string[]>): boolean {
     return found.fallback === null || allowedFill(found.fallback, set);
 }
 
-function svelteFiles(root: string, prefix = ''): string[] {
-    const found: string[] = [];
-    for (const entry of readdirSync(join(root, prefix), { withFileTypes: true })) {
-        const rel = prefix === '' ? entry.name : `${prefix}/${entry.name}`;
-        if (entry.isDirectory()) found.push(...svelteFiles(root, rel));
-        else if (entry.name.endsWith('.svelte')) found.push(rel);
-    }
-    return found;
+function svelteFiles(root: string): string[] {
+    return treeFiles(root).filter((rel) => rel.endsWith('.svelte'));
 }
 
 /** Every declaration under `roots` that the rule refuses, as file, selector and declaration. */
@@ -605,7 +598,6 @@ describe('the colour rule', () => {
                 '</style>'
             ].join('\n')
         });
-        expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
 
         expect(findColourViolations(dir, ['ui'])).toEqual([
             'ui/Hex.svelte: .a: color: #ff0000 (raw colour)',

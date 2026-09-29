@@ -2,9 +2,9 @@
 // carries its token, and reports a missing raw-request carrier clearly.
 
 import { readFileSync, writeFileSync } from 'node:fs';
-import { hostname, tmpdir } from 'node:os';
-import { join, resolve, sep } from 'node:path';
-import { afterAll, describe, expect, it, vi } from 'vitest';
+import { hostname } from 'node:os';
+import { join } from 'node:path';
+import { describe, expect, vi } from 'vitest';
 import type { LocalConfig } from '../../../src/lib/data/sources/config.ts';
 import { Hub } from '../../../src/lib/server/core/channels.ts';
 import {
@@ -17,9 +17,7 @@ import {
 import { Terminals, type TerminalDriver } from '../../../src/lib/server/machine/pty/channel.ts';
 import { macOpenAddress } from '../../../src/lib/server/files/open.ts';
 import { noop, noopAsync } from '../../fixtures/doubles.ts';
-import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
-
-afterAll(sweepScratch);
+import { it, scratchDir } from '../../fixtures/scratch.ts';
 
 const driver = (close: () => void = noop): TerminalDriver => ({
     run: () => Promise.resolve(''),
@@ -346,7 +344,6 @@ describe('ServerContext', () => {
 
     it('hands an address to the program open_bin names, and to macOS open when it names none', async () => {
         const dir = scratchDir('oculus-open-bin-');
-        expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
         const recorded = join(dir, 'opened.txt');
         const recorder = join(dir, 'recorder');
         writeFileSync(recorder, `#!/bin/sh\nprintf '%s' "$1" > ${JSON.stringify(recorded)}\n`, {

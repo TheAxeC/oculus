@@ -2,9 +2,8 @@
 // read or written, and every write asserts its path is inside the temporary directory first.
 
 import { mkdirSync, statSync, utimesSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
 import { dirname, join, resolve, sep } from 'node:path';
-import { afterAll, describe, expect, it } from 'vitest';
+import { describe, expect } from 'vitest';
 import {
     PROJECT_DOCS,
     isFinding,
@@ -13,13 +12,10 @@ import {
 } from '../../../src/lib/data/sources/docs.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
 import type { DocPresence } from '../../../src/lib/data/model/index.ts';
-import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
-
-afterAll(sweepScratch);
+import { it, scratchDir } from '../../fixtures/scratch.ts';
 
 function scratch(): string {
     const dir = scratchDir('oculus-docs-');
-    expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     return dir;
 }
 

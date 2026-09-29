@@ -12,10 +12,9 @@
 // Nothing there is written; when the hub is not on this machine the whole block skips and says so.
 
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join, resolve, sep } from 'node:path';
+import { join } from 'node:path';
 import { parse } from 'yaml';
-import { afterAll, describe, expect, it } from 'vitest';
+import { describe, expect } from 'vitest';
 import {
     addSubtask,
     appendEntry,
@@ -34,10 +33,8 @@ import {
 import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
 import { portfolioConfigFrom } from '../../../src/lib/data/index.ts';
 import { fieldNames } from '../../../src/lib/data/snapshot/validate.ts';
-import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
+import { it, scratchDir } from '../../fixtures/scratch.ts';
 import { realHub } from '../../fixtures/real-hub.ts';
-
-afterAll(sweepScratch);
 
 const ENTRIES = [
     'title: Things',
@@ -203,7 +200,6 @@ describe('entry raw maps', () => {
         expect(out.changed).toEqual(['retrieval']);
 
         const dir = scratchDir('oculus-entry-edit-');
-        expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
         const file = join(dir, 'data.yml');
         writeFileSync(file, out.text, 'utf8');
         expect(parse(readFileSync(file, 'utf8'))).toEqual({

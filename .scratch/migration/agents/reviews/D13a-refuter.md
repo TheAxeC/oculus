@@ -90,3 +90,57 @@ Claims rerun:
 - The report's file line counts and the bundle-size figures (no decision rests on them).
 
 Reviewer usage: not measured exactly; about 65 tool uses, roughly 300k tokens, about 35 minutes.
+
+# Repair round 1, refuted
+
+Tree hash after the round: `(git diff fcde80b7; git status --short) | md5` = f9faf3d3ebb7fe9afc7e33ca0b698235.
+
+## Verification (from the worktree's `tools/oculus`)
+
+```
+$ npm test
+ Test Files  362 passed (362)
+      Tests  5746 passed | 1 skipped (5747)
+$ npm run check
+COMPLETED 2097 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+$ npm run build
+✓ built in 6.52s
+✓ built in 17.96s
+$ npm run format:check
+All matched files use Prettier code style!
+$ npm run lint
+$ ! LC_ALL=C grep -rna '[^ -~]' src tests
+checks: 6 commands passed
+```
+
+The report's quoted commands, rerun, each reproduced: the `.line-numbers{white-space:pre}` rule in the built CSS; no `onscroll` in `TextArea.svelte` or its callers; no editor code in `build/server`; the editor folder at 10 items and `bin/folder-check.sh` exit 0; the contrast probe (17 themes, bare hues under 4.5:1 on 79 of 102 pairs, the `-txt` code roles 4.82 to 5.95 with none under, green and red `-txt` 4.88 to 13.06 with none under); no Monaco binding of F5; every `wc -l` the report gives.
+
+Reverts run on copies under `.scratch-refute-r1/`, the unreverted copy green: the escape removed, `token: null` on bold and italic, one highlighter kept across paints, the dispose removed, the signature check removed, `stepMark` unsorted, Open Change falling back to the first mark, Previous bound without Shift; each red.
+
+## Verdicts
+
+Every item of "What to build" holds (Documents except the sentences under Standards 2). Cases 2 to 13 met (4 as ruled, 12 as an audit, 13 by reading); cases 1 and 14 not verifiable here (the look).
+
+## Spec
+
+1. `Editor.svelte:194-210`, `palette.ts:141-153`: the three mark actions are listed for a source tab with no marks, where choosing them does nothing (judgment call 12). Round item 4 did not say. A user-visible choice nothing named. The ids `oculus.editor.*` are search text, so the query `oculus` lists the three.
+2. `gutter.ts:118,125`: the hints are the literals `Alt+F5` and `Shift+Alt+F5` on every platform, while `chordHint` (`chords.ts:97-110`) writes per platform (judgment call 13). `HELP.md:82` writes `Alt+F5` for the Diff view, and the round said "Alt+F5".
+
+## Proof
+
+1. `gutter.test.ts:209-212` (`numbersWidth`, used at 192-196) measures the escaped text while the column holds the unescaped length (`blameWidth`, `gutter.ts:222-225`); the case holds only because its authors carry no escaped character. With the author `A & B` it goes red on correct code.
+
+## Standards
+
+1. `gutter.ts:105-108` says the palette's hint is written from `codes`; the hints are literals, and `KeyPress` has no `alt`, so a change to `keys` leaves the hint wrong and `gutter.test.ts:116-124` checks the two apart.
+2. `types.ts:15`, `Palette.svelte:18-21`, `DESIGN.md:284` describe the palette's editor items as the removed Cmd+K chords with their old chord only; the mark actions made that untrue.
+
+## Behaviour
+
+None beyond Spec 1 and 2.
+
+## Declined to judge
+
+Case 14's look; whether Monaco's tokenizer can call a disposed highlighter's provider from a pass scheduled before the new providers (needs a live Monaco); the palette tests' reverts (they render through the tree's SvelteKit configuration); Monaco's `editor.action.toggleHighContrast` registration; the inline-edit gutter indicator (no inline-completions provider is registered).
+
+Reviewer usage: 212738 tokens, 57 tool uses, 10 min (completion notice).

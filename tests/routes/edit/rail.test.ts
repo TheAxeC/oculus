@@ -10,13 +10,11 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { resolve, sep } from 'node:path';
-import { afterAll, describe, expect, it } from 'vitest';
+import { describe, expect } from 'vitest';
 import { parse } from 'yaml';
 import { handleWrite, railWrite, type WriteTarget } from '../../../src/lib/server/edit/writes.ts';
-import { sweepScratch } from '../../fixtures/scratch.ts';
+import { it } from '../../fixtures/scratch.ts';
 import { TOKEN, changesOf, request, target } from './write-fixture.ts';
-
-afterAll(sweepScratch);
 
 /** A layout.yml of the engine's shape, with the comments and the other keys the edit must keep. */
 const LAYOUT = `# The rail: one button per page.

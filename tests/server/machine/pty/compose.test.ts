@@ -13,7 +13,7 @@ import { spawnSync } from 'node:child_process';
 import { chmodSync, existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
-import { afterAll, describe, expect, it, vi } from 'vitest';
+import { describe, expect, vi } from 'vitest';
 import {
     accountChoices,
     accountEnv,
@@ -34,24 +34,30 @@ import type {
     AgentsAnswer,
     ComposeStart
 } from '../../../../src/lib/data/model/index.ts';
-import { scratchDir, sweepScratch } from '../../../fixtures/scratch.ts';
-
-afterAll(sweepScratch);
+import { it, scratchDir, test } from '../../../fixtures/scratch.ts';
 
 vi.setConfig({ testTimeout: 30000 });
 
 const ENGINE = engineDir();
 const CHOICES = readAgentsFile(ENGINE).agents;
 const BIN = '/opt/Claude Code/claude';
-const WORK = scratchDir('oculus-compose-');
-const SECOND = scratchDir('oculus-account-');
+// The scratch folders are made before the file's first case, so a run that skips every case makes
+// none.
+let WORK = '';
+let SECOND = '';
 
 /** Two Claude accounts, the tool's own folder first, and one Codex account of a scratch folder. */
-const ACCOUNTS: AgentAccount[] = [
-    { tool: 'claude', label: 'Home', dir: join(homedir(), '.claude') },
-    { tool: 'claude', label: 'University', dir: SECOND },
-    { tool: 'codex', label: 'Work', dir: SECOND }
-];
+const ACCOUNTS: AgentAccount[] = [];
+
+test.beforeAll(() => {
+    WORK = scratchDir('oculus-compose-');
+    SECOND = scratchDir('oculus-account-');
+    ACCOUNTS.push(
+        { tool: 'claude', label: 'Home', dir: join(homedir(), '.claude') },
+        { tool: 'claude', label: 'University', dir: SECOND },
+        { tool: 'codex', label: 'Work', dir: SECOND }
+    );
+});
 
 function start(over: Partial<ComposeStart>): ComposeStart {
     return {
@@ -267,26 +273,33 @@ if (!TMUX)
     console.error('tests/server/machine/pty/compose.test.ts: skipped, tmux is not on the PATH');
 
 describe('a composed start in a real tmux', () => {
-    const dir = scratchDir('oculus-inject-');
-    const socket = join(dir, 's');
-    const stub = join(dir, 'claude');
-    const argvFile = join(dir, 'argv.out');
-    const envFile = join(dir, 'env.out');
-    // The stub writes the variable first and its arguments second, NUL-separated, then waits.
-    writeFileSync(
-        stub,
-        [
-            '#!/bin/sh',
-            `printf '%s' "\${CLAUDE_CONFIG_DIR-unset}" > '${envFile}'`,
-            `for a in "$@"; do printf '%s\\0' "$a"; done > '${argvFile}.tmp'`,
-            `mv '${argvFile}.tmp' '${argvFile}'`,
-            'sleep 30'
-        ].join('\n')
-    );
-    chmodSync(stub, 0o755);
+    let dir = '';
+    let stub = '';
+    let argvFile = '';
+    let envFile = '';
 
-    afterAll(() => {
-        spawnSync('tmux', ['-S', socket, 'kill-server'], { encoding: 'utf8' });
+    test.beforeAll(() => {
+        dir = scratchDir('oculus-inject-');
+        options.socket = join(dir, 's');
+        stub = join(dir, 'claude');
+        argvFile = join(dir, 'argv.out');
+        envFile = join(dir, 'env.out');
+        // The stub writes the variable first and its arguments second, NUL-separated, then waits.
+        writeFileSync(
+            stub,
+            [
+                '#!/bin/sh',
+                `printf '%s' "\${CLAUDE_CONFIG_DIR-unset}" > '${envFile}'`,
+                `for a in "$@"; do printf '%s\\0' "$a"; done > '${argvFile}.tmp'`,
+                `mv '${argvFile}.tmp' '${argvFile}'`,
+                'sleep 30'
+            ].join('\n')
+        );
+        chmodSync(stub, 0o755);
+    });
+
+    test.afterAll(() => {
+        spawnSync('tmux', ['-S', options.socket, 'kill-server'], { encoding: 'utf8' });
     });
 
     /** Every new-session call the real tmux was given, as it was given. */
@@ -294,7 +307,7 @@ describe('a composed start in a real tmux', () => {
 
     /** The real tmux, with the pane's HOME pointed at the scratch directory. */
     const options = {
-        socket,
+        socket: '',
         run: (args: string[], held?: TmuxOptions) => {
             if (args[0] === 'new-session') started.push(args);
             return run(

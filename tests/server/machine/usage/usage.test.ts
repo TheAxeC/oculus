@@ -3,7 +3,7 @@
 
 import { mkdirSync, rmSync, symlinkSync, utimesSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve, sep } from 'node:path';
-import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, vi } from 'vitest';
 import type { UsageAccountConfig, UsagePayload } from '../../../../src/lib/data/model/index.ts';
 import { Hub } from '../../../../src/lib/server/core/channels.ts';
 import {
@@ -19,9 +19,7 @@ import { UsageTranscriptFold } from '../../../../src/lib/server/machine/usage/tr
 import { watchUsage } from '../../../../src/lib/server/machine/usage/watch.ts';
 import { noop } from '../../../fixtures/doubles.ts';
 import { present } from '../../../fixtures/present.ts';
-import { scratchDir, sweepScratch } from '../../../fixtures/scratch.ts';
-
-afterAll(sweepScratch);
+import { it, scratchDir } from '../../../fixtures/scratch.ts';
 
 const NOW = Date.parse('2026-09-13T12:00:00.000Z');
 const made: string[] = [];

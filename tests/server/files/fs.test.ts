@@ -19,9 +19,8 @@ import {
     utimesSync,
     writeFileSync
 } from 'node:fs';
-import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
-import { afterAll, describe, expect, it } from 'vitest';
+import { describe, expect } from 'vitest';
 import {
     addedRoots,
     listDir,
@@ -55,14 +54,11 @@ import {
 import { portfolioConfigFrom } from '../../../src/lib/data/index.ts';
 import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
 import type { Root } from '../../../src/lib/server/files/files.ts';
-import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
-
-afterAll(sweepScratch);
+import { it, scratchDir } from '../../fixtures/scratch.ts';
 
 /** A directory under the temporary directory, with a file written at each of the paths named. */
 function folder(files: Record<string, string> = {}, dirs: string[] = []): string {
     const dir = scratchDir('oculus-fs-');
-    expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     for (const name of dirs) {
         const full = join(dir, name);
         expect(resolve(full).startsWith(resolve(dir) + sep)).toBe(true);
@@ -82,7 +78,6 @@ function folder(files: Record<string, string> = {}, dirs: string[] = []): string
 /** The path of a workspaces file inside a fresh temporary directory. */
 function savedFile(): string {
     const dir = scratchDir('oculus-workspaces-');
-    expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     return join(dir, 'workspaces.json');
 }
 
@@ -380,7 +375,6 @@ describe("the reader's own bookmarks", () => {
     /** A bookmarks path inside a fresh temporary directory, with nothing written at it yet. */
     function bookmarksFile(): { hub: string; file: string } {
         const dir = scratchDir('oculus-bookmarks-');
-        expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
         return { hub: dir, file: join(dir, 'bookmarks.yml') };
     }
 
@@ -553,7 +547,6 @@ describe('the scratch notes', () => {
     /** A notes folder inside a fresh temporary directory, with nothing in it yet. */
     function notesDir(): string {
         const dir = scratchDir('oculus-notes-');
-        expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
         return join(dir, 'notes');
     }
 
@@ -609,7 +602,6 @@ describe('the scratch notes', () => {
         const dir = notesDir();
         mkdirSync(dir, { recursive: true });
         const outside = scratchDir('oculus-notes-out-');
-        expect(resolve(outside).startsWith(resolve(tmpdir()) + sep)).toBe(true);
         writeFileSync(join(outside, 'secret.md'), 'a secret title\nthe secret\n');
         symlinkSync(join(outside, 'secret.md'), join(dir, 'link.md'));
 

@@ -6,13 +6,10 @@
 // a test.
 
 import { appendFileSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join, resolve, sep } from 'node:path';
-import { afterAll, describe, expect, it } from 'vitest';
+import { join } from 'node:path';
+import { describe, expect } from 'vitest';
 import { TURN_CHARS, readTurns } from '../../../../src/lib/server/sessions/stores/turns.ts';
-import { scratchDir, sweepScratch } from '../../../fixtures/scratch.ts';
-
-afterAll(sweepScratch);
+import { it, scratchDir } from '../../../fixtures/scratch.ts';
 
 type Json = Record<string, unknown>;
 
@@ -79,7 +76,6 @@ function item(timestamp: string, body: Json): Json {
  */
 function store(): string {
     const root = scratchDir('oculus-turns-');
-    expect(resolve(root).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     return root;
 }
 

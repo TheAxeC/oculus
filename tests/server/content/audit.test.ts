@@ -8,9 +8,8 @@
 // which is tests/views/system/audit.test.ts.
 
 import { mkdirSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
 import { basename, dirname, join, resolve, sep } from 'node:path';
-import { afterAll, describe, expect, it } from 'vitest';
+import { describe, expect } from 'vitest';
 import {
     auditFindings,
     auditRules,
@@ -23,9 +22,7 @@ import {
 } from '../../../src/lib/server/content/audit.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
 import type { AuditFinding, Collection, Project } from '../../../src/lib/data/model/index.ts';
-import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
-
-afterAll(sweepScratch);
+import { it, scratchDir } from '../../fixtures/scratch.ts';
 
 const catalog = textCatalog(loadConfig(engineDir()).config);
 
@@ -49,7 +46,6 @@ const RULES = auditRules({
 
 function scratch(): string {
     const dir = scratchDir('oculus-audit-');
-    expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     return dir;
 }
 

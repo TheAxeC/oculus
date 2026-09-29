@@ -8,9 +8,8 @@
 // be inside it before anything is written; the opener is a recorder and no network call is made.
 
 import { chmodSync, existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
-import { afterAll, describe, expect, it, vi } from 'vitest';
+import { describe, expect, vi } from 'vitest';
 import type {
     CalendarAccountConfig,
     ConnectAccountConfig,
@@ -38,9 +37,7 @@ import {
 } from '../../../../src/lib/server/accounts/connect/store.ts';
 import { fsWrites } from '../../../../src/lib/server/core/json.ts';
 import { pagePost } from '../../../fixtures/doubles.ts';
-import { scratchDir, sweepScratch } from '../../../fixtures/scratch.ts';
-
-afterAll(sweepScratch);
+import { it, scratchDir } from '../../../fixtures/scratch.ts';
 
 const TOKEN = 'the-write-token-of-this-case';
 const GOOGLE_ID = '1234-abcd.apps.googleusercontent.com';
@@ -57,7 +54,6 @@ calendars:
 /** A machine of this case's own: its file, its account folders and its provider folder. */
 function machine(local = LOCAL) {
     const root = scratchDir('oculus-accounts-');
-    expect(resolve(root).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     const file = join(root, 'local.yml');
     writeFileSync(file, local);
     return {

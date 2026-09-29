@@ -4,15 +4,14 @@
 // that draws anything else is listed below by file and expression with the reason it is safe, or
 // this test fails. Adding a {@html} to a view is therefore a choice a reader of this file can see.
 
-import { mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { byKey } from '../../../src/lib/data/helpers/guards.ts';
 import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { afterAll, describe, expect, it } from 'vitest';
-import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
-
-afterAll(sweepScratch);
+import { describe, expect } from 'vitest';
+import { component } from '../../../bin/diagrams/imports.mjs';
+import { it, scratchDir } from '../../fixtures/scratch.ts';
+import { treeFiles } from '../walk.ts';
 
 const LIB = resolve(fileURLToPath(import.meta.url), '..', '..', '..', '..', 'src', 'lib');
 
@@ -40,37 +39,36 @@ const ALLOWED: Record<string, string> = {
         'highlight.js escapes every & < > of the file text before it emits its own fixed span classes, so the mirror holds no markup the file could put there.'
 };
 
-function svelteFiles(at: string, prefix = ''): string[] {
-    const found: string[] = [];
-    for (const name of readdirSync(at)) {
-        const path = join(at, name);
-        const rel = prefix === '' ? name : `${prefix}/${name}`;
-        if (statSync(path).isDirectory()) found.push(...svelteFiles(path, rel));
-        else if (name.endsWith('.svelte')) found.push(rel);
-    }
-    return found;
+/** Every component under a folder, as paths relative to it, in name order. */
+function svelteFiles(at: string): string[] {
+    return treeFiles(at).filter((rel) => rel.endsWith('.svelte'));
 }
 
-/** The expression of every {@html ...} in one file, with the braces inside it balanced. */
-export function htmlSites(source: string): string[] {
-    const code = source
-        .split('\n')
-        .map((line) => (line.trimStart().startsWith('//') ? '' : line))
-        .join('\n');
-    const sites: string[] = [];
-    const opener = /\{@html\s/g;
-    for (const match of code.matchAll(opener)) {
-        let depth = 1;
-        let at = match.index + match[0].length;
-        const from = at;
-        while (at < code.length && depth > 0) {
-            if (code[at] === '{') depth += 1;
-            if (code[at] === '}') depth -= 1;
-            at += 1;
-        }
-        sites.push(code.slice(from, at - 1).trim());
+/** Every `{@html}` node of a component's markup, wherever it is nested. */
+function htmlTags(node: unknown, found: { start: number; end: number }[]): void {
+    if (node === null || typeof node !== 'object') return;
+    if (Array.isArray(node)) {
+        for (const one of node) htmlTags(one, found);
+        return;
     }
-    return sites;
+    const held = node as Record<string, unknown>;
+    if (held.type === 'HtmlTag') {
+        found.push(held.expression as { start: number; end: number });
+        return;
+    }
+    for (const [key, value] of Object.entries(held)) {
+        if (key !== 'parent' && key !== 'metadata') htmlTags(value, found);
+    }
+}
+
+/**
+ * The expression of every {@html ...} in one component, as its source text, read from the
+ * HtmlTag nodes of svelte/compiler's parse, so one written in an HTML comment or a script is none.
+ */
+export function htmlSites(source: string): string[] {
+    const found: { start: number; end: number }[] = [];
+    htmlTags(component(source).tree.fragment, found);
+    return found.map(({ start, end }) => source.slice(start, end));
 }
 
 /**
@@ -289,9 +287,14 @@ describe('every {@html} site', () => {
         expect(Object.keys(ALLOWED).filter((named) => !live.includes(named))).toEqual([]);
     });
 
+    // Revert: in htmlSites of tests/checks/source/html-sites.test.ts, match `{@html` in the text,
+    // and the site inside the HTML comment is read as a site.
+    it('reads a site inside an HTML comment as none', () => {
+        expect(htmlSites('<!-- {@html bad} -->\n{@html good(x)}\n')).toEqual(['good(x)']);
+    });
+
     it('catches a site that draws a value nothing filtered', () => {
         const dir = scratchDir('oculus-html-sites-');
-        expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
         const write = (rel: string, body: string) => {
             const full = join(dir, rel);
             expect(resolve(full).startsWith(resolve(dir) + sep)).toBe(true);

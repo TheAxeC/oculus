@@ -9,7 +9,7 @@
 
 import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { afterAll, describe, expect, it } from 'vitest';
+import { describe, expect } from 'vitest';
 import { parse } from 'yaml';
 import { handleWrite } from '../../../src/lib/server/edit/writes.ts';
 import { localDate } from '../../../src/lib/data/helpers/dates.ts';
@@ -29,9 +29,7 @@ import {
     request,
     target
 } from './write-fixture.ts';
-import { sweepScratch } from '../../fixtures/scratch.ts';
-
-afterAll(sweepScratch);
+import { it } from '../../fixtures/scratch.ts';
 
 describe('the write endpoint', () => {
     it('adds and promotes LinkedIn files through the two write kinds', async () => {

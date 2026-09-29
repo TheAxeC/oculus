@@ -12,9 +12,8 @@ import {
     symlinkSync,
     writeFileSync
 } from 'node:fs';
-import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
-import { afterAll, afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect } from 'vitest';
 import { mintToken, TOKEN_HEADER } from '../../../src/lib/server/core/auth.ts';
 import {
     handleSource,
@@ -23,9 +22,7 @@ import {
 } from '../../../src/lib/server/files/source.ts';
 import { ENGINE_ROOT, engineRoot } from '../../../src/lib/server/files/files.ts';
 import type { Root } from '../../../src/lib/server/files/files.ts';
-import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
-
-afterAll(sweepScratch);
+import { it, scratchDir } from '../../fixtures/scratch.ts';
 
 const HOST = '127.0.0.1:8790';
 const temporary: string[] = [];
@@ -36,7 +33,6 @@ afterEach(() => {
 
 function fixture(): { dir: string; root: Root; file: string; outside: string } {
     const dir = scratchDir('oculus-source-');
-    expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     temporary.push(dir);
     const rootDir = join(dir, 'root');
     mkdirSync(rootDir);
@@ -283,7 +279,6 @@ describe('a config file of the engine', () => {
     /** An engine directory with its config folder, which is what the `engine` root serves. */
     function engineFixture(): { engine: string; file: string } {
         const dir = scratchDir('oculus-source-engine-');
-        expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
         temporary.push(dir);
         const folder = join(dir, 'config');
         mkdirSync(folder);

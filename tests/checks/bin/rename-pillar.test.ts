@@ -7,7 +7,7 @@
 
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve, sep } from 'node:path';
-import { afterAll, describe, expect, it } from 'vitest';
+import { describe, expect } from 'vitest';
 import { RENAMED_FIELDS } from '../../../src/lib/data/snapshot/validate.ts';
 import {
     manifestsUnder,
@@ -15,12 +15,11 @@ import {
     rootsOf,
     theRename
 } from '../../../bin/migrations/rename-program-to-pillar.ts';
-import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
-
-afterAll(sweepScratch);
+import { it, scratchDir, test } from '../../fixtures/scratch.ts';
 
 // The fixture hub, under the system temporary directory; nothing outside it is read or written.
-const root = scratchDir('oculus-pillar-');
+// It is made and planted before the file's first case, so a run that skips every case makes none.
+let root = '';
 
 /**
  * Write one manifest under the fixture hub, asserting the path stays inside it before any write.
@@ -51,9 +50,16 @@ const WITH_KEY = [
 
 const WITHOUT_KEY = ['id: beta', 'type: idea', 'title: "No tags"', ''].join('\n');
 
-const alpha = manifest('active/alpha', WITH_KEY);
-const beta = manifest('ideas/beta', WITHOUT_KEY);
-const nested = manifest('archive/published/2026/gamma', WITH_KEY);
+let alpha = '';
+let beta = '';
+let nested = '';
+
+test.beforeAll(() => {
+    root = scratchDir('oculus-pillar-');
+    alpha = manifest('active/alpha', WITH_KEY);
+    beta = manifest('ideas/beta', WITHOUT_KEY);
+    nested = manifest('archive/published/2026/gamma', WITH_KEY);
+});
 
 const { from, to } = theRename();
 
@@ -71,7 +77,10 @@ describe('the manifest scan', () => {
 });
 
 describe('the migration over a fixture hub', () => {
-    const first = migrateHub(root, from, to);
+    let first: ReturnType<typeof migrateHub>;
+    test.beforeAll(() => {
+        first = migrateHub(root, from, to);
+    });
 
     it('writes the manifests that carried the old key and no others', () => {
         expect(first.written.sort()).toEqual([alpha, nested].sort());

@@ -2,9 +2,8 @@
 // recovery, cadence, live filtering and route authorization without starting processes.
 
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
 import { dirname, join, resolve, sep } from 'node:path';
-import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, vi } from 'vitest';
 import type { UsageAccountConfig, UsagePayload } from '../../../../src/lib/data/model/index.ts';
 import {
     paneReason,
@@ -31,9 +30,7 @@ import { watchUsage } from '../../../../src/lib/server/machine/usage/watch.ts';
 import { Hub } from '../../../../src/lib/server/core/channels.ts';
 import { contextFixture } from '../../root/context-fixture.ts';
 import { noop } from '../../../fixtures/doubles.ts';
-import { scratchDir, sweepScratch } from '../../../fixtures/scratch.ts';
-
-afterAll(sweepScratch);
+import { it, scratchDir } from '../../../fixtures/scratch.ts';
 
 const NOW = Date.parse('2026-09-13T12:00:00Z');
 const BIN = '/opt/Claude Code/claude';
@@ -56,7 +53,6 @@ function fetched(timestamp: number): void {
 
 beforeEach(() => {
     root = scratchDir('oculus-refresh-');
-    expect(resolve(root).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     vi.stubEnv('HOME', root);
     vi.stubEnv('CLAUDE_CONFIG_DIR', join(root, '.claude'));
     account = { tool: 'claude', dir: join(root, 'a', '.claude'), label: 'University' };

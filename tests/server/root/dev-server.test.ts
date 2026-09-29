@@ -24,11 +24,9 @@ import { cpSync, mkdirSync, readdirSync, symlinkSync, writeFileSync } from 'node
 import { createServer } from 'node:net';
 import { join, resolve, sep } from 'node:path';
 import { tmpdir } from 'node:os';
-import { afterAll, describe, expect, it } from 'vitest';
+import { describe, expect } from 'vitest';
 import { engineDir, LOCAL_NAME } from '../../../src/lib/data/sources/config.ts';
-import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
-
-afterAll(sweepScratch);
+import { it, scratchDir } from '../../fixtures/scratch.ts';
 
 const engine = engineDir();
 

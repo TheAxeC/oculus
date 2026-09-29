@@ -29,7 +29,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
-import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, vi } from 'vitest';
 import {
     LOG_ENTRIES,
     MAX_ENTRIES,
@@ -51,10 +51,8 @@ import {
     shownRoot
 } from '../../../src/lib/state/sources/repositories/repositories.ts';
 import type { GitEntry, GitState } from '../../../src/lib/data/model/index.ts';
-import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
+import { it, scratchDir } from '../../fixtures/scratch.ts';
 import { gitText as git } from '../root/watch/repos.ts';
-
-afterAll(sweepScratch);
 
 const MODULE = resolve(
     dirname(fileURLToPath(import.meta.url)),
@@ -225,7 +223,6 @@ function byPath(entries: GitEntry[]): Record<string, GitEntry> {
 
 beforeEach(() => {
     dir = scratchDir('oculus-git-');
-    expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     repo = join(dir, 'repo');
     mkdirSync(repo);
     git(repo, 'init', '--initial-branch=work');

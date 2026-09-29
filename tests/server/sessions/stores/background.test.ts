@@ -6,14 +6,11 @@
 // is a stub, so nothing reads ~/.claude and nothing is signalled.
 
 import { mkdirSync, statSync, utimesSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
-import { afterAll, describe, expect, it } from 'vitest';
+import { describe, expect } from 'vitest';
 import { scan } from '../../../../src/lib/server/sessions/stores/transcripts.ts';
 import type { SessionRecord } from '../../../../src/lib/data/model/index.ts';
-import { scratchDir, sweepScratch } from '../../../fixtures/scratch.ts';
-
-afterAll(sweepScratch);
+import { it, scratchDir } from '../../../fixtures/scratch.ts';
 
 const SLUG = '-tmp-fixture-workspace';
 const SID = 'dddddddd-1111-2222-3333-eeeeeeeeeeee';
@@ -57,7 +54,6 @@ class Fixture {
     alive = new Set<number>();
 
     constructor() {
-        expect(resolve(this.root).startsWith(resolve(tmpdir()) + sep)).toBe(true);
         this.store = join(this.root, 'projects');
         mkdirSync(join(this.store, SLUG), { recursive: true });
         this.path = join(this.store, SLUG, `${SID}.jsonl`);

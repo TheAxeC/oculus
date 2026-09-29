@@ -7,21 +7,17 @@
 // layers, a reference directive, a block named only in comments, and a package's own augmentation;
 // each shows what the check names.
 
-import { tmpdir } from 'node:os';
-import { resolve, sep } from 'node:path';
+import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { afterAll, describe, expect, it } from 'vitest';
+import { describe, expect } from 'vitest';
 import { findAugments } from './augments.ts';
-import { plantScratch, sweepScratch } from '../../fixtures/scratch.ts';
-
-afterAll(sweepScratch);
+import { it, plantScratch } from '../../fixtures/scratch.ts';
 
 const SRC = resolve(fileURLToPath(import.meta.url), '..', '..', '..', '..', 'src');
 
 /** A scratch src of the given files, checked to be inside the temporary directory. */
 function plant(files: Record<string, string>): string {
     const dir = plantScratch('oculus-augments-', files);
-    expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     return dir;
 }
 

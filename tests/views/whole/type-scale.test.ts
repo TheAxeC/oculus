@@ -1,28 +1,26 @@
 // Layer 4, view test. Every view and partial declares its type-scale token for each local text
 // role, and shared primitives keep the same audited scale at the view boundary.
 
-import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { withoutComments } from '../../checks/source/code.ts';
+import { treeFiles } from '../../checks/walk.ts';
 
 const ROOT = 'src/lib/views';
 
 function files(at: string): string[] {
-    return readdirSync(at)
-        .flatMap((name) => {
-            const path = join(at, name);
-            return statSync(path).isDirectory() ? files(path) : [path];
-        })
-        .filter((path) => path.endsWith('.svelte'));
+    return treeFiles(at)
+        .filter((rel) => rel.endsWith('.svelte'))
+        .map((rel) => join(at, rel));
 }
 
 /** Local selectors and their type token, in source order. */
 function typeRules(file: string): string {
     const source = readFileSync(file, 'utf8');
     const css = [...source.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)]
-        .map((match) => match[1])
-        .join('\n')
-        .replace(/\/\*[\s\S]*?\*\//g, ' ');
+        .map((match) => withoutComments('style.css', match[1]))
+        .join('\n');
     const rules: string[] = [];
     for (const match of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
         const size = /font-size\s*:\s*var\(--(fs-[^)]+)\)/.exec(match[2]);

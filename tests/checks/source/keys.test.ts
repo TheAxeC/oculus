@@ -7,10 +7,9 @@
 import { statusWordKey } from '../../../src/lib/state/sources/repositories/repositories.ts';
 import { registered } from '../../../src/lib/state/shared/words/languages.ts';
 import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
 import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { afterAll, beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect } from 'vitest';
 import { parse } from 'yaml';
 import {
     collectionKeys,
@@ -23,9 +22,9 @@ import { descriptionKey } from '../../../src/lib/views/system/config/files.ts';
 import { registerAll, registerCollections } from '../../../src/routes/views.ts';
 import { recordedKinds } from '../../fixtures/kinds.ts';
 import { createClientState, type ClientState } from '../../fixtures/client.ts';
-import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
-
-afterAll(sweepScratch);
+import { it, scratchDir } from '../../fixtures/scratch.ts';
+import { withoutComments } from './code.ts';
+import { treeFiles } from '../walk.ts';
 
 let client: ClientState;
 let views: ClientState['registry']['views'];
@@ -111,7 +110,7 @@ const COMPUTED_FINDING_KEYS = [{ file: 'lib/server/content/audit/rules.ts', key:
 export function computedFindingKeys(root: string): { file: string; key: string }[] {
     const found: { file: string; key: string }[] = [];
     for (const file of sources(root)) {
-        const source = stripComments(readFileSync(file, 'utf8'));
+        const source = withoutComments(file, readFileSync(file, 'utf8'));
         for (const match of source.matchAll(FINDING_CALL)) {
             const key = match[1].trim();
             if (!WHOLE_FINDING_KEY.test(key))
@@ -191,22 +190,11 @@ const REGISTRATION_LOOKUPS = [
     { file: 'lib/state/workbench/navigation/registry.ts', start: 'lookup(means)' }
 ] as const;
 
-/** Remove comments so prose about a reader is not mistaken for a call. */
-function stripComments(source: string): string {
-    return source
-        .replace(/\/\*[\s\S]*?\*\//g, ' ')
-        .replace(/<!--[\s\S]*?-->/g, ' ')
-        .replace(/(^|[^:])\/\/[^\n]*/g, '$1');
-}
-
+/** Every module and component under a folder, as full paths, in name order. */
 function sources(dir: string): string[] {
-    const found: string[] = [];
-    for (const entry of readdirSync(dir, { withFileTypes: true })) {
-        const path = join(dir, entry.name);
-        if (entry.isDirectory()) found.push(...sources(path));
-        else if (/\.(ts|svelte)$/.test(entry.name)) found.push(path);
-    }
-    return found;
+    return treeFiles(dir)
+        .filter((rel) => /\.(ts|svelte)$/.test(rel))
+        .map((rel) => join(dir, rel));
 }
 
 type Call = { file: string; reader: string; key: string | null; text: string };
@@ -215,7 +203,7 @@ type Call = { file: string; reader: string; key: string | null; text: string };
 export function calls(root: string): Call[] {
     const found: Call[] = [];
     for (const file of sources(root)) {
-        const source = stripComments(readFileSync(file, 'utf8'));
+        const source = withoutComments(file, readFileSync(file, 'utf8'));
         for (const match of source.matchAll(CALL)) {
             const at = match.index + match[0].length;
             if (/function\s+$/.test(source.slice(0, match.index))) continue;
@@ -256,7 +244,7 @@ export function calls(root: string): Call[] {
 export function findingLiterals(root: string): { file: string; key: string }[] {
     const found: { file: string; key: string }[] = [];
     for (const file of sources(root)) {
-        const source = stripComments(readFileSync(file, 'utf8'));
+        const source = withoutComments(file, readFileSync(file, 'utf8'));
         for (const match of source.matchAll(FINDING_LITERAL)) {
             found.push({ file: file.slice(root.length + 1), key: match[2] });
         }
@@ -358,7 +346,6 @@ describe('text keys', () => {
 
     it('reads a findings. literal whatever holds the catalog, and none written in a comment', () => {
         const dir = scratchDir('oculus-finding-keys-');
-        expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
         const file = join(dir, 'Rules.ts');
         expect(resolve(file).startsWith(resolve(dir) + sep)).toBe(true);
         writeFileSync(
@@ -381,7 +368,6 @@ describe('text keys', () => {
     // `catalog`.
     it('catches a computed key and a literal key, and reads past neither', () => {
         const dir = scratchDir('oculus-keys-');
-        expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
         const write = (name: string, body: string) => {
             const full = join(dir, name);
             expect(resolve(full).startsWith(resolve(dir) + sep)).toBe(true);

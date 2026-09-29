@@ -11,7 +11,7 @@
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { afterAll, beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect } from 'vitest';
 import {
     GRAPH_PAGE,
     blameOf,
@@ -26,11 +26,9 @@ import {
     type Read
 } from '../../../src/lib/server/core/git.ts';
 import type { GitState } from '../../../src/lib/data/model/index.ts';
-import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
+import { it, scratchDir } from '../../fixtures/scratch.ts';
 import { DELETED, deletionConflicts } from '../git/deletions.ts';
 import { gitText as git, put, repositoryIn, tryGit } from '../root/watch/repos.ts';
-
-afterAll(sweepScratch);
 
 let dir = '';
 let repo = '';

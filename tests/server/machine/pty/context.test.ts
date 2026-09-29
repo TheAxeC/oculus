@@ -1,19 +1,17 @@
 // Layer 2, server tests. The private portfolio index uses a temporary hub whose project tiers and
 // collection files make the order, missing-file behavior and exact byte size observable.
 
-import { chmodSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { dirname, join, resolve, sep } from 'node:path';
-import { afterAll, describe, expect, it } from 'vitest';
+import { chmodSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { dirname, join, sep } from 'node:path';
+import { describe, expect } from 'vitest';
 import { portfolioContext } from '../../../../src/lib/server/machine/pty/context.ts';
 import { engineDir } from '../../../../src/lib/data/sources/config.ts';
 import { writeTextAtomic } from '../../../../src/lib/server/core/json.ts';
-import { scratchDir, sweepScratch } from '../../../fixtures/scratch.ts';
+import { it, scratchDir, test } from '../../../fixtures/scratch.ts';
 
-afterAll(sweepScratch);
-
-const ROOT = scratchDir('oculus-chat-context-');
-expect(ROOT.startsWith(resolve(tmpdir()) + sep)).toBe(true);
+// The temporary hub, made and planted before the file's first case, so a run that skips every case
+// makes none.
+let ROOT = '';
 
 function write(path: string, content: string): void {
     const file = join(ROOT, path);
@@ -21,17 +19,20 @@ function write(path: string, content: string): void {
     writeFileSync(file, content);
 }
 
-write('registries/venues.yml', 'venue: fixture\n');
-write('projects/active/alpha/project.yml', 'id: alpha\ntitle: Alpha\n');
-write('projects/archive/published/zulu/project.yml', 'id: zulu\ntitle: Zulu\n');
-write('projects/archive/project.yml', 'id: scan-root-decoy\n');
-write('projects/archive/published/zulu/code/project.yml', 'id: decoy\n');
-write('registries/pillars.yml', 'pillar: fixture\n');
-write('funding/funding.yml', 'funding: fixture\n');
-write('network/events.yml', 'events: fixture\n');
-write('education/education.yml', 'education: fixture\n');
-write('network/joint-work.yml', 'joint-work: fixture\n');
-write('tasks/tasks.yml', 'tasks: fixture\n');
+test.beforeAll(() => {
+    ROOT = scratchDir('oculus-chat-context-');
+    write('registries/venues.yml', 'venue: fixture\n');
+    write('projects/active/alpha/project.yml', 'id: alpha\ntitle: Alpha\n');
+    write('projects/archive/published/zulu/project.yml', 'id: zulu\ntitle: Zulu\n');
+    write('projects/archive/project.yml', 'id: scan-root-decoy\n');
+    write('projects/archive/published/zulu/code/project.yml', 'id: decoy\n');
+    write('registries/pillars.yml', 'pillar: fixture\n');
+    write('funding/funding.yml', 'funding: fixture\n');
+    write('network/events.yml', 'events: fixture\n');
+    write('education/education.yml', 'education: fixture\n');
+    write('network/joint-work.yml', 'joint-work: fixture\n');
+    write('tasks/tasks.yml', 'tasks: fixture\n');
+});
 
 const config: Record<string, unknown> = {
     scan: [
@@ -50,12 +51,11 @@ const config: Record<string, unknown> = {
     ]
 };
 
-afterAll(() => {
-    rmSync(ROOT, { recursive: true, force: true });
-});
-
 describe('portfolioContext', () => {
-    const index = portfolioContext(ROOT, config, engineDir());
+    let index = '';
+    test.beforeAll(() => {
+        index = portfolioContext(ROOT, config, engineDir());
+    });
 
     it('keeps the configured files in portfolio order and skips a missing file', () => {
         const headings = [

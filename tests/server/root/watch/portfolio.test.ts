@@ -3,9 +3,8 @@
 // watcher is closed when the test ends.
 
 import { cpSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
 import { dirname, join, resolve, sep } from 'node:path';
-import { afterAll, afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect } from 'vitest';
 import { Hub } from '../../../../src/lib/server/core/channels.ts';
 import { handleWrite } from '../../../../src/lib/server/edit/writes.ts';
 import { handleSource } from '../../../../src/lib/server/files/source.ts';
@@ -28,10 +27,8 @@ import type {
     Snapshot
 } from '../../../../src/lib/data/model/index.ts';
 import { recording } from './probe.ts';
-import { scratchDir, sweepScratch } from '../../../fixtures/scratch.ts';
+import { it, scratchDir } from '../../../fixtures/scratch.ts';
 import { careerRules } from '../../../../src/lib/server/edit/writes/subtasks.ts';
-
-afterAll(sweepScratch);
 
 const LAYOUT = [
     'scan:',
@@ -82,7 +79,6 @@ afterEach(() => {
 
 function scratch(name: string): string {
     const dir = scratchDir(`oculus-${name}-`);
-    expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     return dir;
 }
 

@@ -8,9 +8,8 @@
 
 import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync, realpathSync, rmSync, statSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join, resolve, sep } from 'node:path';
-import { afterAll, describe, expect, it, vi } from 'vitest';
+import { join } from 'node:path';
+import { describe, expect, vi } from 'vitest';
 import {
     isSessionId,
     listTerminals,
@@ -38,9 +37,7 @@ import {
     run
 } from '../../../../src/lib/server/machine/pty/tmux.ts';
 import { noop } from '../../../fixtures/doubles.ts';
-import { scratchDir, sweepScratch } from '../../../fixtures/scratch.ts';
-
-afterAll(sweepScratch);
+import { it, scratchDir, test } from '../../../fixtures/scratch.ts';
 
 vi.setConfig({ testTimeout: 30000 });
 
@@ -56,9 +53,15 @@ const TMUX = (() => {
 if (!TMUX)
     console.error('tests/server/machine/pty/sessions.test.ts: skipped, tmux is not on the PATH');
 
-const dir = scratchDir('oculus-tmux-');
-expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
-const options = { socket: join(dir, 'server.sock') };
+// The directory of the socket is made before the file's first case, so a run that skips every case
+// makes none.
+let dir = '';
+const options = { socket: '' };
+
+test.beforeAll(() => {
+    dir = scratchDir('oculus-tmux-');
+    options.socket = join(dir, 'server.sock');
+});
 
 // A line with a dash at its start, a dollar, a double quote and a backslash: everything the quoting
 // and the `--` of send-keys have to survive. tmux expands $name inside double quotes, so HOME here
@@ -66,7 +69,10 @@ const options = { socket: join(dir, 'server.sock') };
 const TYPED = '-x "$HOME" a\\b';
 const STEERED = '-y "$HOME" steered';
 
-afterAll(() => {
+// A socket still unset means the hook that makes it failed: no server was started, and tmux is
+// never run without this file's own socket.
+test.afterAll(() => {
+    if (options.socket === '') return;
     try {
         spawnSync('tmux', ['-S', options.socket, 'kill-server'], { encoding: 'utf8' });
     } finally {

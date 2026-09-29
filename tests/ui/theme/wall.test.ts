@@ -7,9 +7,11 @@
 // is left unpaired is solid on purpose and is listed here with its reason, so a surface added
 // without the rule fails and an entry that stops being needed fails too.
 
-import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { withoutComments } from '../../checks/source/code.ts';
+import { treeFiles } from '../../checks/walk.ts';
 
 const ROOTS = ['src/lib/ui', 'src/lib/shell', 'src/lib/views'];
 
@@ -45,20 +47,16 @@ export function answersForWallpaper(body: string): boolean {
 type Rule = { selector: string; body: string };
 
 function files(at: string): string[] {
-    return readdirSync(at)
-        .flatMap((name) => {
-            const path = join(at, name);
-            return statSync(path).isDirectory() ? files(path) : [path];
-        })
-        .filter((path) => path.endsWith('.svelte'));
+    return treeFiles(at)
+        .filter((rel) => rel.endsWith('.svelte'))
+        .map((rel) => join(at, rel));
 }
 
 /** Every rule of a component's style blocks, comments removed. */
 function rules(file: string): Rule[] {
     const css = [...readFileSync(file, 'utf8').matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)]
-        .map((match) => match[1])
-        .join('\n')
-        .replace(/\/\*[\s\S]*?\*\//g, ' ');
+        .map((match) => withoutComments('style.css', match[1]))
+        .join('\n');
     return [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map((match) => ({
         selector: match[1].trim().replace(/\s+/g, ' '),
         body: match[2]

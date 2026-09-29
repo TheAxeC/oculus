@@ -6,9 +6,8 @@
 // inside the temporary directory first; nothing under the reader's own home is touched.
 
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
-import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, vi } from 'vitest';
 import type {
     CalendarAccountConfig,
     CalendarPayload
@@ -19,10 +18,8 @@ import { credentialFile } from '../../../../src/lib/server/accounts/connect/stor
 import type { Fetcher } from '../../../../src/lib/server/accounts/connect/oauth.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sources/config.ts';
 import { fillPlaceholders } from '../../../../src/lib/data/helpers/finding-text.ts';
-import { scratchDir, sweepScratch } from '../../../fixtures/scratch.ts';
+import { it, scratchDir } from '../../../fixtures/scratch.ts';
 import { DAYS_AHEAD, DAYS_BACK, EVENT_PAGE, ICS_TEXT, WINDOW_NOW } from './ics-fixture.ts';
-
-afterAll(sweepScratch);
 
 const MINUTE = 60000;
 const POLL_MIN = 15;
@@ -47,7 +44,6 @@ afterEach(() => {
 
 function scratch(): string {
     const dir = scratchDir('oculus-calendar-poll-');
-    expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     made.push(dir);
     return dir;
 }

@@ -11,11 +11,9 @@ import { execFileSync } from 'node:child_process';
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
-import { afterAll, describe, expect, it } from 'vitest';
+import { describe, expect } from 'vitest';
 import { SEGMENTS, readSize, sizeOf, type ReadAt } from '../../../src/lib/server/content/images.ts';
-import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
-
-afterAll(sweepScratch);
+import { it, scratchDir, test } from '../../fixtures/scratch.ts';
 
 /** One pixel of a real JPEG, as base64: a JFIF header, tables, a baseline frame and a scan. */
 const REAL_JPEG =
@@ -24,7 +22,7 @@ const REAL_JPEG =
 /** Every directory this file made, taken away when the file's cases are done. */
 const made: string[] = [];
 
-afterAll(() => {
+test.afterAll(() => {
     for (const dir of made) rmSync(dir, { recursive: true, force: true });
     made.length = 0;
 });
@@ -39,7 +37,6 @@ function scratch(): string {
 /** A file of these bytes under a directory of this case's own, and its path. */
 function file(name: string, bytes: Uint8Array | string): string {
     const dir = scratch();
-    expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     const full = join(dir, name);
     expect(resolve(full).startsWith(resolve(dir) + sep)).toBe(true);
     writeFileSync(full, bytes);
@@ -433,7 +430,6 @@ describe('a file that gives no size', () => {
 
     it('is a path that is not there, and a folder under a picture name', () => {
         const dir = scratch();
-        expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
         expect(sizeOf(join(dir, 'gone.png'))).toBeNull();
         mkdirSync(join(dir, 'folder.png'));
         expect(sizeOf(join(dir, 'folder.png'))).toBeNull();

@@ -7,7 +7,7 @@
 
 import { homedir } from 'node:os';
 import { join } from 'node:path';
-import { afterAll, describe, expect, it } from 'vitest';
+import { describe, expect } from 'vitest';
 import {
     CUSTOMIZATION_KINDS,
     CUSTOMIZATION_MAX,
@@ -24,9 +24,7 @@ import type {
     CustomizationRow,
     CustomizationsAnswer
 } from '../../../../src/lib/data/model/index.ts';
-import { plantScratch, sweepScratch } from '../../../fixtures/scratch.ts';
-
-afterAll(sweepScratch);
+import { it, plantScratch, test } from '../../../fixtures/scratch.ts';
 
 const settings = {
     hooks: {
@@ -37,35 +35,49 @@ const settings = {
     mcpServers: { global: { command: 'g' } }
 };
 
-const ACCOUNT = plantScratch('oculus-custom-account-', {
-    'CLAUDE.md': '# account',
-    'settings.json': JSON.stringify(settings),
-    'skills/review/SKILL.md': '# review',
-    'skills/empty/notes.txt': 'no skill here',
-    'agents/explorer.md': '# explorer',
-    'agents/notes.txt': 'not an agent',
-    'plugins/installed_plugins.json': JSON.stringify({ plugins: { 'a@b': {}, 'c@d': {} } }),
-    '.claude.json': JSON.stringify({ projects: {} }),
-    'AGENTS.md': '# codex account',
-    'config.toml':
-        '[mcp_servers.docs]\ncommand = "d"\n[mcp_servers."two words"]\n[model]\n' +
-        '[tools]\nweb_search = true # on\nview_image = false\n'
+// The account folder and the workspace are planted before the file's first case, so a run that
+// skips every case plants neither.
+let ACCOUNT = '';
+let ROOT = '';
+let WORK = '';
+
+test.beforeAll(() => {
+    ACCOUNT = plantAccount();
+    ROOT = plantRoot();
+    WORK = join(ROOT, 'work');
 });
 
-const ROOT = plantScratch('oculus-custom-root-', {
-    'CLAUDE.md': '# root',
-    'work/CLAUDE.local.md': '# local',
-    'work/.claude/CLAUDE.md': '# nested',
-    'work/.claude/settings.json': '{ not json',
-    'work/.claude/settings.local.json': JSON.stringify({ hooks: { Stop: 'nope' } }),
-    'work/.claude/skills/fix/SKILL.md': '# fix',
-    'work/.claude/agents/writer.md': '# writer',
-    'work/.mcp.json': JSON.stringify({ mcpServers: { local: {}, global: {} } }),
-    'work/AGENTS.md': '# codex work',
-    'work/AGENTS.override.md': '# codex override'
-});
+function plantAccount(): string {
+    return plantScratch('oculus-custom-account-', {
+        'CLAUDE.md': '# account',
+        'settings.json': JSON.stringify(settings),
+        'skills/review/SKILL.md': '# review',
+        'skills/empty/notes.txt': 'no skill here',
+        'agents/explorer.md': '# explorer',
+        'agents/notes.txt': 'not an agent',
+        'plugins/installed_plugins.json': JSON.stringify({ plugins: { 'a@b': {}, 'c@d': {} } }),
+        '.claude.json': JSON.stringify({ projects: {} }),
+        'AGENTS.md': '# codex account',
+        'config.toml':
+            '[mcp_servers.docs]\ncommand = "d"\n[mcp_servers."two words"]\n[model]\n' +
+            '[tools]\nweb_search = true # on\nview_image = false\n'
+    });
+}
 
-const WORK = join(ROOT, 'work');
+function plantRoot(): string {
+    return plantScratch('oculus-custom-root-', {
+        'CLAUDE.md': '# root',
+        'work/CLAUDE.local.md': '# local',
+        'work/.claude/CLAUDE.md': '# nested',
+        'work/.claude/settings.json': '{ not json',
+        'work/.claude/settings.local.json': JSON.stringify({ hooks: { Stop: 'nope' } }),
+        'work/.claude/skills/fix/SKILL.md': '# fix',
+        'work/.claude/agents/writer.md': '# writer',
+        'work/.mcp.json': JSON.stringify({ mcpServers: { local: {}, global: {} } }),
+        'work/AGENTS.md': '# codex work',
+        'work/AGENTS.override.md': '# codex override'
+    });
+}
 
 function scope(over: Partial<CustomizationScope> = {}): CustomizationScope {
     return { agent: 'claude', account: ACCOUNT, workspace: WORK, roots: [ROOT], ...over };
@@ -78,7 +90,10 @@ function row(rows: CustomizationRow[], kind: string): CustomizationRow {
 }
 
 describe('the customizations of a Claude workspace', () => {
-    const rows = customizationRows(scope());
+    let rows: CustomizationRow[] = [];
+    test.beforeAll(() => {
+        rows = customizationRows(scope());
+    });
 
     it('audits that lists the seven rows in the section order', () => {
         expect(rows.map((one) => one.kind)).toEqual([
@@ -146,7 +161,10 @@ describe('the customizations of a Claude workspace', () => {
 });
 
 describe('the customizations of a Codex workspace', () => {
-    const rows = customizationRows(scope({ agent: 'codex' }));
+    let rows: CustomizationRow[] = [];
+    test.beforeAll(() => {
+        rows = customizationRows(scope({ agent: 'codex' }));
+    });
 
     it('reads AGENTS files and the config.toml servers, and nothing a Codex account does not have', () => {
         expect(row(rows, 'instructions').items.map((item) => item.path)).toEqual([
@@ -208,10 +226,13 @@ describe('a customization file for the viewer', () => {
 });
 
 describe('GET /api/customizations', () => {
-    const ACCOUNTS = [
-        { tool: 'claude', label: 'Home', dir: ACCOUNT },
-        { tool: 'codex', label: 'Work', dir: ACCOUNT }
-    ];
+    const ACCOUNTS: Parameters<typeof handleCustomizations>[1] = [];
+    test.beforeAll(() => {
+        ACCOUNTS.push(
+            { tool: 'claude', label: 'Home', dir: ACCOUNT },
+            { tool: 'codex', label: 'Work', dir: ACCOUNT }
+        );
+    });
 
     function get(query: Record<string, string>): Response {
         const url = new URL('http://127.0.0.1:8792/api/customizations');

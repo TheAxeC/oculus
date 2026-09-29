@@ -8,10 +8,9 @@
 // changes a file of the copy never writes into the checkout.
 
 import { cpSync, mkdirSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { dirname, join, resolve, sep } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { expect, vi } from 'vitest';
+import { vi } from 'vitest';
 import { BOUNDARIES, ORDERING, OUT } from '../../../bin/diagrams/diagrams.mjs';
 import { scratchDir } from '../../fixtures/scratch.ts';
 
@@ -21,7 +20,6 @@ export const ENGINE = resolve(fileURLToPath(import.meta.url), '..', '..', '..', 
 /** A copy of what the generator reads (src, the boundary test, the order, the diagrams). */
 export function copyOfTree(): string {
     const dir = scratchDir('oculus-diagrams-tree-');
-    expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     for (const part of ['src', BOUNDARIES, ORDERING, OUT]) {
         mkdirSync(dirname(join(dir, part)), { recursive: true });
         cpSync(join(ENGINE, part), join(dir, part), { recursive: true });

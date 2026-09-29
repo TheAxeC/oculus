@@ -5,16 +5,14 @@
 // violation: the table's "May import" column is the whole permission.
 
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
 import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { afterAll, afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect } from 'vitest';
 import { DELIBERATE, HELD } from './allow-styling.ts';
 import { runtimeImports, sourceFiles } from '../imports/graph.ts';
 import { isReason } from '../../fixtures/reason.ts';
-import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
-
-afterAll(sweepScratch);
+import { it, scratchDir } from '../../fixtures/scratch.ts';
+import { withoutComments } from '../source/code.ts';
 
 const LIB = resolve(fileURLToPath(import.meta.url), '..', '..', '..', '..', 'src', 'lib');
 const SRC = resolve(LIB, '..');
@@ -373,13 +371,11 @@ export function findPrimitiveStyling(libRoot: string, allow: string[] = []): str
  * unrelated rule for the same class in a file already on the list is a violation of its own.
  */
 function selectorAt(style: string, at: number): string {
-    const before = Math.max(style.lastIndexOf('}', at), style.lastIndexOf('{', at));
-    const brace = style.indexOf('{', at);
-    const span = style.slice(before + 1, brace === -1 ? style.length : brace);
-    return span
-        .replace(/\/\*[\s\S]*?\*\//g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim();
+    const bare = withoutComments('style.css', style);
+    const before = Math.max(bare.lastIndexOf('}', at), bare.lastIndexOf('{', at));
+    const brace = bare.indexOf('{', at);
+    const span = bare.slice(before + 1, brace === -1 ? bare.length : brace);
+    return span.replace(/\s+/g, ' ').trim();
 }
 
 const made: string[] = [];
@@ -391,7 +387,6 @@ afterEach(() => {
 /** A scratch root inside the temporary directory, removed when the case ends. */
 function scratch(name: string): string {
     const dir = scratchDir(name);
-    expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     made.push(dir);
     return dir;
 }
@@ -558,9 +553,11 @@ describe('layer boundaries', () => {
             'views/Bad.svelte',
             '<div class="row"></div>\n<style>\n    .row :global(.tool) {\n        gap: 0;\n    }\n</style>'
         );
+        // Revert: in selectorAt of tests/checks/tree/boundaries.test.ts, strip comments from the
+        // span alone, and the brace inside the comment above the rule cuts its selector short.
         write(
             'shell/AlsoBad.svelte',
-            '<div class="strip"></div>\n<style>\n    .strip :global(.tool:hover) {\n        gap: 0;\n    }\n</style>'
+            '<div class="strip"></div>\n<style>\n    /* a } in prose */\n    .strip :global(.tool:hover) {\n        gap: 0;\n    }\n</style>'
         );
         write(
             'views/Good.svelte',

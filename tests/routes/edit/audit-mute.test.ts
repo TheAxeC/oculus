@@ -7,9 +7,8 @@
 // configuration.
 
 import { readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
-import { afterAll, describe, expect, it } from 'vitest';
+import { describe, expect } from 'vitest';
 import { parse } from 'yaml';
 import { handleWrite } from '../../../src/lib/server/edit/writes.ts';
 import { mintToken } from '../../../src/lib/server/core/auth.ts';
@@ -17,10 +16,8 @@ import { portfolioConfigFrom } from '../../../src/lib/data/index.ts';
 import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
 import { mutedSignatures } from '../../../src/lib/server/content/audit.ts';
 import type { WriteTarget } from '../../../src/lib/server/edit/writes.ts';
-import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
+import { it, scratchDir } from '../../fixtures/scratch.ts';
 import { careerRules } from '../../../src/lib/server/edit/writes/subtasks.ts';
-
-afterAll(sweepScratch);
 
 const TOKEN = mintToken();
 const HOST = '127.0.0.1:8791';
@@ -62,7 +59,6 @@ const OTHER = 'fedcba987654';
  */
 function muteTarget(body = BEHAVIOR): WriteTarget {
     const dir = scratchDir('oculus-mute-');
-    expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     const file = join(dir, 'behavior.yml');
     expect(resolve(file).startsWith(resolve(dir) + sep)).toBe(true);
     writeFileSync(file, body);

@@ -8,6 +8,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render } from 'svelte/server';
+import { withoutComments } from '../../checks/source/code.ts';
 import Calendar from '../../../src/lib/views/personal/calendar/Calendar.svelte';
 import AddAccount from '../../../src/lib/views/shared/accounts/AddAccount.svelte';
 import {
@@ -148,6 +149,12 @@ function providerChoices(markup: string): string[] {
     );
 }
 
+/** The text of a component's one style block, between its tags. */
+function styleOf(source: string): string {
+    const start = source.indexOf('<style>') + '<style>'.length;
+    return source.slice(start, source.indexOf('</style>', start));
+}
+
 /** One reading with a fresh client whose minute clock stands at the fixture's moment. */
 function atFixtureMoment<T>(run: () => T): T {
     vi.useFakeTimers();
@@ -240,7 +247,7 @@ describe('the Calendar view', () => {
     // chip over it.
     it('audits that over a wallpaper both fixed strips paint the popover mix with the blur, and the date heading its chip after it', () => {
         const source = readFileSync('src/lib/views/personal/calendar/Calendar.svelte', 'utf8');
-        const style = source.slice(source.indexOf('<style>')).replace(/\/\*[\s\S]*?\*\//g, ' ');
+        const style = withoutComments('style.css', styleOf(source));
         const rules = [...style.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map((match) => ({
             at: match.index,
             selectors: match[1]
@@ -269,7 +276,7 @@ describe('the Calendar view', () => {
 
     it("audits that a list view's event title takes the calendar's size rather than the root's", () => {
         const source = readFileSync('src/lib/views/personal/calendar/Calendar.svelte', 'utf8');
-        const style = source.slice(source.indexOf('<style>')).replace(/\/\*[\s\S]*?\*\//g, ' ');
+        const style = withoutComments('style.css', styleOf(source));
         expect(style).toMatch(
             /\.grid :global\(\.ec-list \.ec-event-title\) \{\s*font-size: var\(--fs-sm\);\s*\}/
         );

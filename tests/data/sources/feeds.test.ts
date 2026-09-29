@@ -5,15 +5,11 @@
 // What this does NOT cover: the feed views themselves. This reads the counts and run dates the
 // command center needs, and the Inbox, Lit Watch and Position Leads views read the entries.
 
-import { tmpdir } from 'node:os';
-import { resolve, sep } from 'node:path';
-import { afterAll, describe, expect, it } from 'vitest';
+import { describe, expect } from 'vitest';
 import { readFeeds } from '../../../src/lib/data/sources/feeds.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
 import type { FeedFiles } from '../../../src/lib/data/model/index.ts';
-import { plantScratch, sweepScratch } from '../../fixtures/scratch.ts';
-
-afterAll(sweepScratch);
+import { it, plantScratch, test } from '../../fixtures/scratch.ts';
 
 /** The catalog the findings are worded from: the one oculus ships, read as the server reads it. */
 const CATALOG = textCatalog(loadConfig(engineDir()).config);
@@ -27,8 +23,19 @@ const FILES: FeedFiles = {
 /** A hub of its own, with the given files written into it. */
 function hub(files: Record<string, string>): string {
     const dir = plantScratch('oculus-feeds-', files);
-    expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     return dir;
+}
+
+/**
+ * What readFeeds answers over a hub planted with the files, read by the block's own beforeAll from
+ * the fixture, so a run that skips the block plants nothing.
+ */
+function readHub(files: Record<string, string>): ReturnType<typeof readFeeds> {
+    const read = {} as ReturnType<typeof readFeeds>;
+    test.beforeAll(() => {
+        Object.assign(read, readFeeds(hub(files), FILES, CATALOG));
+    });
+    return read;
 }
 
 const LEADS = `meta:
@@ -70,45 +77,43 @@ body
 `;
 
 describe('the three feeds, all present', () => {
-    const dir = hub({
+    const read = readHub({
         'feeds/position-leads.yml': LEADS,
         'feeds/literature-radar.yml': RADAR,
         'site/_linkedin/01-a.md': POST,
         'site/_linkedin/02-b.md': NEWER,
         'site/_linkedin/xx-idea.md': IDEA
     });
-    const { feeds, findings } = readFeeds(dir, FILES, CATALOG);
 
     it('keeps the live leads with the ISO date inside their deadline text, dismissed ones out', () => {
-        expect(feeds.leads).toEqual([
+        expect(read.feeds.leads).toEqual([
             { title: 'Postdoc AI', deadline: '2026-09-20', status: 'open', fit: 'strong' },
             { title: 'No date', deadline: null, status: 'open', fit: null }
         ]);
     });
 
     it('takes the scout run date from the newest scout line of the leads log', () => {
-        expect(feeds.scout).toEqual({ lastRun: '2026-09-09' });
+        expect(read.feeds.scout).toEqual({ lastRun: '2026-09-09' });
     });
 
     it('reads the radar run date', () => {
-        expect(feeds.radar).toEqual({ lastRun: '2026-09-07' });
+        expect(read.feeds.radar).toEqual({ lastRun: '2026-09-07' });
     });
 
     it('takes the newest posted LinkedIn date and ignores the xx- ideas', () => {
-        expect(feeds.linkedin).toEqual({ lastPost: '2026-08-20' });
+        expect(read.feeds.linkedin).toEqual({ lastPost: '2026-08-20' });
     });
 
     it('reports nothing about a hub whose feeds are all well formed', () => {
-        expect(findings).toEqual([]);
+        expect(read.findings).toEqual([]);
     });
 });
 
 describe('a hub with no feeds at all', () => {
-    const dir = hub({});
-    const { feeds, findings } = readFeeds(dir, FILES, CATALOG);
+    const read = readHub({});
 
     it('answers null for every feed, which is not the same as an empty one', () => {
-        expect(feeds).toEqual({
+        expect(read.feeds).toEqual({
             leads: null,
             radar: null,
             scout: null,
@@ -117,34 +122,34 @@ describe('a hub with no feeds at all', () => {
     });
 
     it('reports no finding, because the feeds are generated and a hub may have none', () => {
-        expect(findings).toEqual([]);
+        expect(read.findings).toEqual([]);
     });
 });
 
 describe('a feed that is there and broken', () => {
-    const dir = hub({
+    const read = readHub({
         'feeds/literature-radar.yml': '- a list, not a map\n',
         'feeds/position-leads.yml': 'meta: {}\n'
     });
-    const { feeds, findings } = readFeeds(dir, FILES, CATALOG);
 
     it('is a finding, and costs that feed alone', () => {
-        expect(findings).toHaveLength(1);
-        expect(findings.map((one) => one.message.split(':')[0])).toEqual(['is not a map of keys']);
-        expect(feeds.radar).toBeNull();
+        expect(read.findings).toHaveLength(1);
+        expect(read.findings.map((one) => one.message.split(':')[0])).toEqual([
+            'is not a map of keys'
+        ]);
+        expect(read.feeds.radar).toBeNull();
     });
 
     it('still answers for a feed that parsed but holds nothing', () => {
-        expect(feeds.leads).toEqual([]);
-        expect(feeds.scout).toEqual({ lastRun: null });
+        expect(read.feeds.leads).toEqual([]);
+        expect(read.feeds.scout).toEqual({ lastRun: null });
     });
 });
 
 describe('a LinkedIn folder with no dated post', () => {
-    const dir = hub({ 'site/_linkedin/xx-idea.md': IDEA });
-    const { feeds } = readFeeds(dir, FILES, CATALOG);
+    const read = readHub({ 'site/_linkedin/xx-idea.md': IDEA });
 
     it('says the folder is there and holds no post date', () => {
-        expect(feeds.linkedin).toEqual({ lastPost: null });
+        expect(read.feeds.linkedin).toEqual({ lastPost: null });
     });
 });

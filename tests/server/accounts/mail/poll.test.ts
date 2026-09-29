@@ -7,7 +7,7 @@
 
 import { existsSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, vi } from 'vitest';
 import type { InboxPayload } from '../../../../src/lib/data/model/index.ts';
 import { Hub } from '../../../../src/lib/server/core/channels.ts';
 import {
@@ -30,12 +30,10 @@ import {
     urlOf,
     writeAccount
 } from './fixture.ts';
-import { sweepScratch } from '../../../fixtures/scratch.ts';
+import { it } from '../../../fixtures/scratch.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sources/config.ts';
 import { fillPlaceholders } from '../../../../src/lib/data/helpers/finding-text.ts';
 import { manual } from '../../root/watch/repos.ts';
-
-afterAll(sweepScratch);
 
 const MINUTE = 60000;
 const POLL_MIN = 10;

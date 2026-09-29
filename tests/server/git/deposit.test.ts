@@ -16,7 +16,7 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { describe, expect, vi } from 'vitest';
 import {
     adopt,
     branches,
@@ -41,10 +41,8 @@ import { knownIds } from '../../../src/lib/server/git/deposit-routes.ts';
 import { portfolioConfigFrom } from '../../../src/lib/data/index.ts';
 import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
 import type { WriteTarget } from '../../../src/lib/server/edit/writes.ts';
-import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
+import { it, scratchDir, test } from '../../fixtures/scratch.ts';
 import { careerRules } from '../../../src/lib/server/edit/writes/subtasks.ts';
-
-afterAll(sweepScratch);
 
 const MODULE = resolve(
     dirname(fileURLToPath(import.meta.url)),
@@ -167,9 +165,8 @@ function remoteCommits(repo: string): string[] {
         .filter((one) => one !== '');
 }
 
-beforeAll(() => {
+test.beforeAll(() => {
     dir = scratchDir('oculus-deposit-test-');
-    expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     hub = join(dir, 'hub');
     mirrors = join(dir, 'mirrors');
     outside = join(dir, 'outside');
@@ -237,7 +234,7 @@ beforeAll(() => {
     };
 });
 
-afterAll(() => {
+test.afterAll(() => {
     if (dir !== '') rmSync(dir, { recursive: true, force: true });
 });
 
