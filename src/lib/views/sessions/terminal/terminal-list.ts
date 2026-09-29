@@ -2,8 +2,9 @@
 // drawn, the rows of one tab in the tab's order, the key a row answers, how long an armed Kill
 // stays armed, a dragged row's new place, the drag a row carries, the grid's font size, the line
 // count a paste is asked about and the listener that holds such a paste, the file drag the grid
-// takes, a dropped path quoted for the shell, a terminal's tooltip, and the items of the view's
-// right-click menus. The pure ones are here rather than in the components so each is asserted
+// takes, a dropped path quoted for the shell, a terminal's tooltip, the items of the view's
+// right-click menus, the find bar's count, options and keys, and the handler a link in the grid
+// opens by. The pure ones are here rather than in the components so each is asserted
 // without a DOM, which the grid's paste, drop and drag need to happen at all.
 //
 // The right-click menus are VS Code's terminal menus, with the items oculus runs: the grid's (Copy
@@ -17,6 +18,7 @@
 // send to the shell (`holdMenuKeys`). Every label is `t(...)` of a catalog key, except a terminal's
 // own name in Join Terminals, which is passed through as the list hands it.
 
+import type { ISearchOptions } from '@xterm/addon-search';
 import { FILE_DRAG } from '$lib/state/sources/fs';
 import { grouped, type MenuItem } from '$lib/ui/menu/menu-items';
 import { splitDrawn, type TerminalTabState } from '$lib/state/sessions/terminal/terminal-tabs';
@@ -326,4 +328,116 @@ export function joinedOf(id: string): string | null {
 export function profileOf(id: string): ComposerAgent | null {
     if (!id.startsWith(PROFILE)) return null;
     return PROFILES.find((kind) => `${PROFILE}${kind}` === id) ?? null;
+}
+
+/** How many matches the search addon marks, its own default; the count says more as `1000+`. */
+export const FIND_LIMIT = 1000;
+
+/** What the search addon reports after a search: the active match's index and the count. */
+export type FindResults = { resultIndex: number; resultCount: number };
+
+/**
+ * The find bar's count, as VS Code's find widget words it: "No results", else the active match's
+ * place and the count, "3 of 12". A place the addon does not know (-1, past its limit) is the
+ * catalog's `?`, and a count at the limit reads as the limit and a plus, in the catalog's words.
+ */
+export function findCount(results: FindResults | null, t: Words): string {
+    if (results === null || results.resultCount <= 0) return t('sessions.find_none');
+    const place =
+        results.resultIndex >= 0
+            ? String(results.resultIndex + 1)
+            : t('sessions.find_place_unknown');
+    const count =
+        results.resultCount >= FIND_LIMIT
+            ? t('sessions.find_over_limit', FIND_LIMIT)
+            : results.resultCount;
+    return t('sessions.find_count', place, count);
+}
+
+/** The find bar's three toggles. */
+export type FindToggles = { matchCase: boolean; wholeWord: boolean; regex: boolean };
+
+/**
+ * Whether the search addon could not compile the find text: with Use Regular Expression on, a text
+ * that is no regular expression (`(`, `[a`) throws a SyntaxError out of the addon, which compiles
+ * it with these flags, at every search until the pattern closes. The bar then shows no results,
+ * as VS Code's does. A plain text search compiles nothing and is never refused.
+ */
+export function findUnparsable(term: string, toggles: FindToggles): boolean {
+    if (!toggles.regex) return false;
+    try {
+        new RegExp(term, toggles.matchCase ? 'g' : 'gi');
+        return false;
+    } catch (error) {
+        if (error instanceof SyntaxError) return true;
+        throw error;
+    }
+}
+
+/**
+ * The options a search runs with: the three toggles in the addon's names, and the match colours,
+ * without which the addon neither marks every match nor reports a count.
+ */
+export function findOptions(
+    toggles: FindToggles,
+    colours: NonNullable<ISearchOptions['decorations']>
+): ISearchOptions {
+    return {
+        caseSensitive: toggles.matchCase,
+        wholeWord: toggles.wholeWord,
+        regex: toggles.regex,
+        decorations: colours
+    };
+}
+
+/** What a key does to the find: open the bar, move to a match, or close it. */
+export type FindAction = 'open' | 'next' | 'previous' | 'close';
+
+/** The keys and the modifiers a find key is read from. */
+type FindPress = Pick<KeyboardEvent, 'key' | 'shiftKey' | 'metaKey' | 'ctrlKey' | 'altKey'>;
+
+/**
+ * The find key a press is, as VS Code's terminal find binds them: Cmd+F (Ctrl+F off macOS) opens
+ * the bar; while it is open, F3 and Cmd+G find the next match and Shift+F3 and Cmd+Shift+G the
+ * previous (Cmd+G on macOS alone, where Ctrl+G stays the shell's), and Escape closes it. In the
+ * bar's text box Enter also finds the previous match and Shift+Enter the next, since the search
+ * runs upward from the bottom of the output; at the grid Enter is the shell's. Null for any
+ * other press, which then goes where it was going.
+ */
+export function findKey(
+    press: FindPress,
+    at: { mac: boolean; where: 'grid' | 'bar'; open: boolean }
+): FindAction | null {
+    const mod = at.mac ? press.metaKey && !press.ctrlKey : press.ctrlKey && !press.metaKey;
+    const plain = !press.metaKey && !press.ctrlKey && !press.altKey;
+    const key = press.key.toLowerCase();
+    if (mod && !press.altKey && !press.shiftKey && key === 'f') return 'open';
+    if (!at.open) return null;
+    if (plain && key === 'f3') return press.shiftKey ? 'previous' : 'next';
+    if (at.mac && mod && !press.altKey && key === 'g') return press.shiftKey ? 'previous' : 'next';
+    if (plain && !press.shiftKey && key === 'escape') return 'close';
+    if (at.where === 'bar' && plain && key === 'enter') return press.shiftKey ? 'next' : 'previous';
+    return null;
+}
+
+/**
+ * The web links addon's handler: a URL in the output opens in a new browser tab on Cmd+click
+ * (Ctrl+click off macOS), as VS Code opens a detected link, and a plain click stays the program's.
+ * Only an `http:` or `https:` address opens; the addon's rule finds those alone, and the check
+ * here keeps anything else it might hand over from reaching the browser.
+ */
+export function linkHandler(
+    mac: boolean,
+    open: (url: string) => void
+): (event: Pick<MouseEvent, 'metaKey' | 'ctrlKey'>, uri: string) => void {
+    return (event, uri) => {
+        if (!(mac ? event.metaKey : event.ctrlKey)) return;
+        let protocol: string;
+        try {
+            protocol = new URL(uri).protocol;
+        } catch {
+            return;
+        }
+        if (protocol === 'http:' || protocol === 'https:') open(uri);
+    };
 }

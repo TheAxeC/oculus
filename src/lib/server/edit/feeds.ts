@@ -6,14 +6,7 @@
 //
 // Whether a path lies in a folder is read from server/core/paths.ts (`inside`).
 
-import {
-    existsSync,
-    readFileSync,
-    readdirSync,
-    renameSync,
-    statSync,
-    writeFileSync
-} from 'node:fs';
+import { existsSync, readFileSync, readdirSync, renameSync, statSync } from 'node:fs';
 import { basename, join, resolve } from 'node:path';
 import { parse } from 'yaml';
 import { localDate } from '../../data/helpers/dates.ts';
@@ -21,6 +14,7 @@ import { isMap, scalar } from '../../data/helpers/guards.ts';
 import { collectionSchema } from '../../data/snapshot/normalise.ts';
 import { fieldNames } from '../../data/snapshot/validate.ts';
 import { plain } from '../core/changes.ts';
+import { writeTextAtomic } from '../core/json.ts';
 import {
     appendEntry,
     deleteEntry,
@@ -244,7 +238,7 @@ export function addLinkedinIdea(
         '',
         ''
     ].join('\n');
-    writeFileSync(join(folder, file), source, 'utf8');
+    writeTextAtomic(join(folder, file), source);
     // A scaffolded Markdown file has no inverse writer: deleting a post is done in the folder, not
     // from a list, so the record says what was made and offers no way back.
     return {

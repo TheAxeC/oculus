@@ -69,7 +69,9 @@ const LAYERS = ['data', 'server', 'server/transcripts', 'state', 'ui', 'shell', 
 // `data/prose/markdown` is in the primitives' row, the one module of layer 1 there: a Markdown
 // document is rendered by the document route on the server and by ui/html.ts on the page, and the
 // heading ids and the table of contents are one rule for both, so a document reads the same in the
-// doc view and in the source tab's preview. It holds no reader and no I/O.
+// doc view and in the source tab's preview. It holds no reader and no I/O. `data/prose/languages`,
+// the highlighter, is in the state row for the same reason: the server paints a document's and a
+// transcript turn's code with it, and the page reaches it through state/shared/words/languages.ts.
 //
 // The shell's row names the state modules the workbench is made of, one at a time, and the folder
 // `state/workbench/navigation/`, whose modules (the rail's pages, the view catalogue and its keys,
@@ -123,7 +125,8 @@ const ALLOWED: Record<string, string[]> = {
         'data/helpers/search',
         'data/helpers/finding-text',
         'data/sources/config/rail',
-        'data/hub-address'
+        'data/hub-address',
+        'data/prose/languages'
     ],
     data: ['data/**'],
     server: ['server/**', 'data/**'],

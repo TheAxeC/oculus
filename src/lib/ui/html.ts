@@ -39,7 +39,9 @@ export const HEADING_ID_PREFIX = HEADING_PREFIX;
  * The elements a rendered document, an assistant turn and one line of inline Markdown are made of:
  * what marked emits, plus the formatting and grouping tags the hub's own Markdown writes by hand
  * (a README holds `b`, `i`, `small`, `sub`, `sup`, `div` and a `details` block) and the
- * `b` the catalog's own lines carry. Nothing here runs, loads or collects.
+ * `b` the catalog's own lines carry, and the `span` the highlighter paints a fenced block's code
+ * with, each carrying a highlight.js class and nothing else this profile keeps, which
+ * themes/code.css colours. Nothing here runs, loads or collects.
  */
 export const ALLOWED_TAGS = [
     'a',
@@ -66,6 +68,7 @@ export const ALLOWED_TAGS = [
     'p',
     'pre',
     'small',
+    'span',
     'strong',
     'sub',
     'summary',
@@ -134,7 +137,8 @@ export const PROFILE = {
  * boxes whose geometry and per-box colour are written on the elements themselves (the columns of
  * the grid, the border of a node), so the profile above would keep the boxes and throw the diagram
  * away. It is the profile above with `style` added and no other difference: the same elements, the
- * same addresses, no handler, no script, no frame.
+ * same addresses, no handler, no script, no frame. A `span` there may therefore carry a style, as a
+ * `div` already may.
  */
 export const DIAGRAM_ATTR = [...ALLOWED_ATTR, 'style'];
 

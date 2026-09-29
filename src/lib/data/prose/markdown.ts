@@ -14,11 +14,15 @@
 // itself draws. A link written by hand to `#method` still reaches `user-content-method`, since the
 // press on a link (views/shared/prose/Markdown.svelte) tries the fragment with the prefix too.
 //
+// A fenced block is painted by the highlighter's extension (data/prose/languages.ts, `codeColour`),
+// so a document's code is coloured wherever the document is drawn, by themes/code.css.
+//
 // The renderer is each call's own `Marked`, never `marked.use`, so nothing here changes how any
 // other reader of the package renders.
 
 import { Marked, type MarkedExtension, type Tokens } from 'marked';
 import { getHeadingList, gfmHeadingId } from 'marked-gfm-heading-id';
+import { codeColour } from './languages.ts';
 
 /** What every heading id starts with, as GitHub renders one. */
 export const HEADING_PREFIX = 'user-content-';
@@ -91,8 +95,8 @@ export function tocList(headings: { level: number; text: string; id: string }[])
 }
 
 /**
- * One Markdown document as HTML, unsanitised, with the extensions a caller adds (the document
- * route's figures) after the heading ids and the table of contents.
+ * One Markdown document as HTML, unsanitised, its fenced code painted, with the extensions a caller
+ * adds (the document route's figures) after the heading ids and the table of contents.
  *
  * The list needs every heading, and a `[TOC]` paragraph is drawn before the headings after it are,
  * so the paragraph leaves a mark that only this call can have written, and the list replaces it
@@ -114,6 +118,7 @@ export function renderDocument(text: string, ...extra: MarkedExtension[]): strin
             }
         }
     };
-    const reader = new Marked(gfmHeadingId({ prefix: HEADING_PREFIX }), contents, ...extra);
+    const heads = gfmHeadingId({ prefix: HEADING_PREFIX });
+    const reader = new Marked(heads, contents, codeColour, ...extra);
     return reader.parse(text, { async: false });
 }

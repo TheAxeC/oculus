@@ -56,6 +56,9 @@ const THREAD: InboxThread = {
     triage: { triaged: false }
 };
 
+/** Gmail's profile answer for the account a reply is sent from: its Message-ID's domain. */
+const GOOGLE_PROFILE = { emailAddress: 'axel@example.nl' };
+
 const GOOGLE_THREAD = {
     id: 'one',
     messages: [
@@ -213,6 +216,7 @@ describe('the mail endpoint', () => {
         writeAccount(dir, GOOGLE);
         const fake = fakeFetcher([
             { when: (url) => url.includes('/threads/one'), body: GOOGLE_THREAD },
+            { when: (url) => url.endsWith('/users/me/profile'), body: GOOGLE_PROFILE },
             { when: (url) => url.includes('/messages/send'), body: { id: 'sent-1' } }
         ]);
         const refresh = vi.fn(() => Promise.resolve());
@@ -231,6 +235,7 @@ describe('the mail endpoint', () => {
         writeAccount(dir, GOOGLE);
         const fake = fakeFetcher([
             { when: (url) => url.includes('/threads/one'), body: GOOGLE_THREAD },
+            { when: (url) => url.endsWith('/users/me/profile'), body: GOOGLE_PROFILE },
             {
                 when: (url) => url.includes('/messages/send'),
                 body: { error: { status: 'PERMISSION_DENIED' } },

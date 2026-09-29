@@ -24,6 +24,9 @@ const NO_FETCH: typeof fetch = () => Promise.reject(new Error('no fetcher was in
 
 const ARGS = { token: ACCESS, key: 'google-work', perSignal: 25, fetcher: NO_FETCH };
 
+/** Gmail's profile answer for the account a write is made from: its own address. */
+const PROFILE = { emailAddress: 'axel@example.nl', messagesTotal: 3, threadsTotal: 2 };
+
 /** The whole address one call was made to, so a case fails on a path that is nearly right. */
 function pathOf(url: string): string {
     return new URL(url).pathname;
@@ -77,8 +80,9 @@ function noDraftsCalled(fake: Fake): void {
 }
 
 describe('the raw message a Google reply is sent as', () => {
-    it('carries the recipient, the threading headers and the body, each on one line', () => {
-        const raw = rawMessage({
+    it('carries the recipient, the threading headers and the body, each on one line', async () => {
+        const raw = await rawMessage({
+            sender: 'axel@example.nl',
             to: 'Ada <ada@example.invalid>',
             subject: 'Re: A new thing',
             inReplyTo: '<m1@example.invalid>',
@@ -91,21 +95,126 @@ describe('the raw message a Google reply is sent as', () => {
         expect(decoded).toContain('In-Reply-To: <m1@example.invalid>\r\n');
         expect(decoded).toContain('References: <m0@example.invalid> <m1@example.invalid>\r\n');
         expect(decoded).toContain('\r\n\r\nBeste Ada,\n\nGraag.\r\n');
+        expect(decoded).toMatch(/\r\nMessage-ID: <[^>\r\n]+>\r\n/);
+        expect(decoded).toMatch(/\r\nDate: [^\r\n]+\r\n/);
     });
 
-    it('folds a newline inside a header value away rather than starting a header with it', () => {
-        const decoded = Buffer.from(
-            rawMessage({
-                to: 'Ada\r\nBcc: someone@example.invalid',
-                subject: 'One',
-                inReplyTo: '',
-                references: '',
-                body: 'text'
-            }),
-            'base64url'
-        ).toString('utf8');
-        expect(decoded).toContain('To: Ada Bcc: someone@example.invalid\r\n');
-        expect(decoded.split('\r\n').filter((line) => line.startsWith('Bcc:'))).toEqual([]);
+    it('carries a Message-ID on the domain of the account it is sent from', async () => {
+        const { headers } = await readRaw({ ...REPLY, sender: 'axel@mail.example.nl' });
+        const id = headerOf(headers, 'Message-ID') ?? '';
+        expect(id).toMatch(/^<[0-9a-f-]{36}@mail\.example\.nl>$/);
+        expect(id).not.toContain('localhost');
+    });
+
+    it('keeps a newline inside the recipient on its one header rather than starting one', async () => {
+        const { headers } = await readRaw({
+            sender: 'axel@example.nl',
+            to: 'Ada\r\nBcc: someone@example.invalid',
+            subject: 'One',
+            inReplyTo: '',
+            references: '',
+            body: 'text'
+        });
+        expect(headerOf(headers, 'To')).toContain('someone@example.invalid');
+        expect(headers.filter((line) => line.toLowerCase().startsWith('bcc:'))).toEqual([]);
+    });
+});
+
+/** A raw message decoded to its text, its header lines unfolded and its body apart. */
+async function readRaw(fields: Parameters<typeof rawMessage>[0]): Promise<{
+    headers: string[];
+    body: string;
+}> {
+    const decoded = Buffer.from(await rawMessage(fields), 'base64url').toString('utf8');
+    const cut = decoded.indexOf('\r\n\r\n');
+    const head = decoded.slice(0, cut).replace(/\r\n[ \t]+/g, ' ');
+    return { headers: head.split('\r\n'), body: decoded.slice(cut + 4) };
+}
+
+/** The value of one header, by name, or undefined when the message carries none. */
+function headerOf(headers: string[], name: string): string | undefined {
+    const line = headers.find((one) => one.toLowerCase().startsWith(`${name.toLowerCase()}:`));
+    return line?.slice(name.length + 1).trim();
+}
+
+/** A header value with its RFC 2047 encoded words decoded, B and Q alike. */
+function decodeWords(value: string): string {
+    return value
+        .replace(/\?=\s+=\?/g, '?==?')
+        .replace(
+            /=\?([^?]+)\?([BbQq])\?([^?]*)\?=/g,
+            (_whole, _set, kind: string, text: string) => {
+                if (kind.toUpperCase() === 'B') return Buffer.from(text, 'base64').toString('utf8');
+                const bytes = text
+                    .replace(/_/g, ' ')
+                    .replace(/=([0-9A-Fa-f]{2})/g, (_hex, code: string) => `%${code}`);
+                return decodeURIComponent(bytes);
+            }
+        );
+}
+
+/** A quoted-printable body decoded to its text. */
+function fromQuotedPrintable(body: string): string {
+    const joined = body.replace(/=\r\n/g, '');
+    return decodeURIComponent(joined.replace(/%/g, '%25').replace(/=([0-9A-Fa-f]{2})/g, '%$1'));
+}
+
+const REPLY = {
+    sender: 'axel@example.nl',
+    to: 'Jens <j@example.se>',
+    subject: 'Re: Linkoping rapport',
+    inReplyTo: '<m1@example.invalid>',
+    references: '<m0@example.invalid> <m1@example.invalid>',
+    body: 'Hej Jens,'
+};
+
+describe('the headers a Google reply is written with', () => {
+    it('keeps an ASCII subject and recipient as given', async () => {
+        const { headers } = await readRaw(REPLY);
+        expect(headerOf(headers, 'Subject')).toBe('Re: Linkoping rapport');
+        expect(headerOf(headers, 'To')).toBe('Jens <j@example.se>');
+    });
+
+    it('writes a subject and a name outside ASCII as encoded words that decode to them', async () => {
+        const { headers } = await readRaw({
+            ...REPLY,
+            to: 'J\u00f6ns <j@example.se>',
+            subject: 'Re: Link\u00f6ping rapport'
+        });
+        const subject = headerOf(headers, 'Subject') ?? '';
+        const to = headerOf(headers, 'To') ?? '';
+        expect(subject).toMatch(/^=\?UTF-8\?[BQ]\?/i);
+        expect(to).toMatch(/^=\?UTF-8\?[BQ]\?/i);
+        expect(decodeWords(subject)).toBe('Re: Link\u00f6ping rapport');
+        expect(decodeWords(to)).toBe('J\u00f6ns <j@example.se>');
+        expect(headers.join('\n')).toMatch(/^[\x20-\x7e\n]*$/);
+    });
+
+    it('carries a body outside ASCII in a transfer encoding that decodes back to it', async () => {
+        const { headers, body } = await readRaw({ ...REPLY, body: 'Hej J\u00e5ns,\nTack.' });
+        const encoding = headerOf(headers, 'Content-Transfer-Encoding');
+        expect(encoding).toMatch(/^(quoted-printable|base64)$/);
+        const text =
+            encoding === 'base64'
+                ? Buffer.from(body, 'base64').toString('utf8')
+                : fromQuotedPrintable(body);
+        expect(text.replace(/\r\n/g, '\n').trimEnd()).toBe('Hej J\u00e5ns,\nTack.');
+    });
+
+    it('carries the threading headers when given and leaves them out when empty', async () => {
+        const given = await readRaw(REPLY);
+        expect(headerOf(given.headers, 'In-Reply-To')).toBe('<m1@example.invalid>');
+        expect(headerOf(given.headers, 'References')).toBe(
+            '<m0@example.invalid> <m1@example.invalid>'
+        );
+        const empty = await readRaw({ ...REPLY, inReplyTo: '', references: '' });
+        expect(headerOf(empty.headers, 'In-Reply-To')).toBeUndefined();
+        expect(headerOf(empty.headers, 'References')).toBeUndefined();
+    });
+
+    it('starts no Bcc header from a line break inside the subject', async () => {
+        const { headers } = await readRaw({ ...REPLY, subject: 'hi\r\nBcc: x@y' });
+        expect(headers.filter((line) => /^bcc:/i.test(line))).toEqual([]);
     });
 });
 
@@ -113,6 +222,7 @@ describe('a Google write', () => {
     it('sends the reply on the thread through messages/send and creates no draft', async () => {
         const fake = fakeFetcher([
             { when: (url) => url.includes('/threads/one'), body: THREAD },
+            { when: (url) => url.endsWith('/users/me/profile'), body: PROFILE },
             { when: (url) => url.includes('/messages/send'), body: { id: 'sent-1' } }
         ]);
         await replyGoogle({ ...ARGS, fetcher: fake.fetcher }, 'one', 'Beste Ada,');
@@ -125,6 +235,8 @@ describe('a Google write', () => {
         expect(decoded).toContain('Subject: Re: A new thing');
         expect(decoded).toContain('In-Reply-To: <m1@example.invalid>');
         expect(decoded).toContain('References: <m0@example.invalid> <m1@example.invalid>');
+        expect(decoded).toMatch(/\r\nMessage-ID: <[0-9a-f-]{36}@example\.nl>\r\n/);
+        expect(decoded).not.toContain('@localhost');
         noDraftsCalled(fake);
     });
 
@@ -142,6 +254,7 @@ describe('a Google write', () => {
     it('answers the provider own refusal line and sends nothing further', async () => {
         const fake = fakeFetcher([
             { when: (url) => url.includes('/threads/one'), body: THREAD },
+            { when: (url) => url.endsWith('/users/me/profile'), body: PROFILE },
             {
                 when: (url) => url.includes('/messages/send'),
                 body: { error: { status: 'PERMISSION_DENIED', message: 'ada@example.invalid' } },
@@ -153,6 +266,34 @@ describe('a Google write', () => {
         ).rejects.toThrow('google: 403 PERMISSION_DENIED');
         // The provider's own body can name the correspondent; the line the view shows does not.
         noDraftsCalled(fake);
+    });
+
+    it('answers a profile read that fails, and sends nothing', async () => {
+        const fake = fakeFetcher([
+            { when: (url) => url.includes('/threads/one'), body: THREAD },
+            {
+                when: (url) => url.endsWith('/users/me/profile'),
+                body: { error: { status: 'UNAVAILABLE', message: 'try later' } },
+                status: 503
+            },
+            { when: (url) => url.includes('/messages/send'), body: { id: 'sent-1' } }
+        ]);
+        await expect(
+            replyGoogle({ ...ARGS, fetcher: fake.fetcher }, 'one', 'Beste Ada,')
+        ).rejects.toThrow('google: 503 UNAVAILABLE');
+        expect(fake.calls.filter((call) => call.url.includes('/messages/send'))).toEqual([]);
+    });
+
+    it('answers a profile with no address, and sends nothing', async () => {
+        const fake = fakeFetcher([
+            { when: (url) => url.includes('/threads/one'), body: THREAD },
+            { when: (url) => url.endsWith('/users/me/profile'), body: { messagesTotal: 3 } },
+            { when: (url) => url.includes('/messages/send'), body: { id: 'sent-1' } }
+        ]);
+        await expect(
+            replyGoogle({ ...ARGS, fetcher: fake.fetcher }, 'one', 'Beste Ada,')
+        ).rejects.toThrow('google: the account has no address to send from');
+        expect(fake.calls.filter((call) => call.url.includes('/messages/send'))).toEqual([]);
     });
 });
 

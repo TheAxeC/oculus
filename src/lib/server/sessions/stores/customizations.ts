@@ -15,6 +15,7 @@ import { json } from '@sveltejs/kit';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { basename, dirname, isAbsolute, join, resolve } from 'node:path';
+import { parse as parseToml } from 'smol-toml';
 import type {
     AgentId,
     CustomizationFinding,
@@ -253,26 +254,32 @@ function serversOf(servers: Record<string, unknown> | null, path: string, found:
 }
 
 /**
- * The table names under `[mcp_servers.<name>]` in a Codex config.toml. The file is read by its
- * table headers only, which is all a count needs; a header that does not close is a finding.
+ * A Codex config.toml parsed whole by smol-toml, or null for one that does not parse: a file with
+ * one error in it is a finding, and names nothing, since what a broken file means is not known.
+ */
+function tomlDocument(text: string): Record<string, unknown> | null {
+    try {
+        return parseToml(text);
+    } catch {
+        return null;
+    }
+}
+
+/** A TOML value when it is a table, and null for a scalar, a date or an array. */
+function tomlTable(value: unknown): Record<string, unknown> | null {
+    return value instanceof Date ? null : mapOf(value);
+}
+
+/**
+ * The servers a Codex config.toml names: the keys of its `mcp_servers` table, however the file
+ * writes it (`[mcp_servers.<name>]` headers, dotted keys or an inline table). A value of
+ * `mcp_servers` that is not a table names none; a file that does not parse is malformed and names
+ * none.
  */
 export function tomlServers(text: string): { names: string[]; malformed: boolean } {
-    const names: string[] = [];
-    let malformed = false;
-    for (const raw of text.split('\n')) {
-        const line = raw.trim();
-        if (!line.startsWith('[') || line.startsWith('[[')) continue;
-        const close = line.indexOf(']');
-        if (close < 0) {
-            malformed = true;
-            continue;
-        }
-        const header = line.slice(1, close).trim();
-        const match = /^mcp_servers\.(?:"([^"]+)"|([A-Za-z0-9_-]+))$/.exec(header);
-        const name = match?.[1] ?? match?.[2];
-        if (name !== undefined && !names.includes(name)) names.push(name);
-    }
-    return { names, malformed };
+    const document = tomlDocument(text);
+    if (document === null) return { names: [], malformed: true };
+    return { names: Object.keys(tomlTable(document.mcp_servers) ?? {}), malformed: false };
 }
 
 /** A Codex config.toml's text, or null for a file that is not there or cannot be read. */
@@ -321,24 +328,13 @@ function plugins(scope: CustomizationScope): Collect {
 }
 
 /**
- * The tools a Codex config.toml switches on in its `[tools]` table, one per key set to `true`, each
- * named once. Only that table is read; a key set to anything else names no tool that is on.
+ * The tools a Codex config.toml switches on in its `tools` table, one per key set to `true`. A key
+ * set to anything else names no tool that is on, a value of `tools` that is not a table names
+ * none, and so does a file that does not parse.
  */
 export function tomlTools(text: string): string[] {
-    const names: string[] = [];
-    let inTools = false;
-    for (const raw of text.split('\n')) {
-        const line = raw.replace(/#.*$/, '').trim();
-        if (line.startsWith('[')) {
-            inTools = line === '[tools]';
-            continue;
-        }
-        if (!inTools) continue;
-        const match = /^([A-Za-z0-9_-]+)\s*=\s*true$/.exec(line);
-        const name = match?.[1];
-        if (name !== undefined && !names.includes(name)) names.push(name);
-    }
-    return names;
+    const table = tomlTable(tomlDocument(text)?.tools) ?? {};
+    return Object.keys(table).filter((name) => table[name] === true);
 }
 
 /**

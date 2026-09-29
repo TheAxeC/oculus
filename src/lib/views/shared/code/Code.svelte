@@ -10,8 +10,9 @@
     // text under fixed numbers and nothing has to be kept in step by hand. The source tab hands its
     // own gutter (Gutter.svelte) in place of the plain numbers, which draws them with the quick
     // diff marks and the blame, and is told every scroll of the text so its lines follow. The
-    // highlighter's token classes are coloured from the palette's own code hues, so the window
-    // follows the theme the reader picked instead of carrying a stylesheet of its own.
+    // highlighter's token classes are coloured by themes/code.css from the palette's own code hues,
+    // the one stylesheet a painted Markdown block is coloured by too, so the window follows the
+    // theme the reader picked.
 
     import type { Snippet } from 'svelte';
     import { codeHtml, lineNumbers } from '$lib/state/shared/words/languages';
@@ -93,59 +94,5 @@
     .text {
         color: var(--ink-txt, var(--ink));
         overflow: auto;
-    }
-
-    .text :global(.hljs-keyword),
-    .text :global(.hljs-built_in),
-    .text :global(.hljs-literal),
-    .text :global(.hljs-type),
-    .text :global(.hljs-selector-tag) {
-        color: var(--c-code-keyword-txt);
-    }
-
-    .text :global(.hljs-string),
-    .text :global(.hljs-regexp),
-    .text :global(.hljs-addition),
-    .text :global(.hljs-quote) {
-        color: var(--c-code-string-txt);
-    }
-
-    .text :global(.hljs-number),
-    .text :global(.hljs-symbol),
-    .text :global(.hljs-bullet),
-    .text :global(.hljs-deletion) {
-        color: var(--c-code-number-txt);
-    }
-
-    .text :global(.hljs-title),
-    .text :global(.hljs-name),
-    .text :global(.hljs-attr),
-    .text :global(.hljs-attribute),
-    .text :global(.hljs-section),
-    .text :global(.hljs-selector-id),
-    .text :global(.hljs-selector-class) {
-        color: var(--c-code-name-txt);
-    }
-
-    .text :global(.hljs-meta),
-    .text :global(.hljs-doctag),
-    .text :global(.hljs-tag),
-    .text :global(.hljs-params),
-    .text :global(.hljs-punctuation),
-    .text :global(.hljs-variable),
-    .text :global(.hljs-template-variable) {
-        color: var(--c-code-meta-txt);
-    }
-
-    .text :global(.hljs-comment) {
-        color: var(--c-code-comment-txt);
-    }
-
-    .text :global(.hljs-strong) {
-        font-weight: 700;
-    }
-
-    .text :global(.hljs-emphasis) {
-        font-style: italic;
     }
 </style>

@@ -188,6 +188,7 @@ const VIEWS: Record<string, string> = {
     'sessions/customization/CustomizationView.svelte': '.path, .line=fs-sm | .text=fs-sm',
     'sessions/terminal/Terminal.svelte': '.failure=fs-xs',
     'sessions/terminal/TerminalGrid.svelte': '',
+    'sessions/terminal/FindBar.svelte': '.count=fs-xs',
     'sessions/terminal/AttachPicker.svelte': '.where=fs-sm | .line=fs-sm',
     'sessions/terminal/Composer.svelte': '.branch=fs-sm | .findings=fs-sm | .failure=fs-md',
     'sessions/terminal/TerminalList.svelte': '.title=fs-sm | .description=fs-xs | .failure=fs-xs',
@@ -293,6 +294,7 @@ const PASS_THROUGH: Record<string, string> = {
     'src/lib/ui/forms/TextArea.svelte': '.area=fs-sm',
     'src/lib/ui/forms/TextInput.svelte': '.text=fs-sm',
     'src/lib/ui/frame/FloatingList.svelte': '.list :global(:where(.item))=fs-sm',
+    'src/lib/ui/frame/FloatingBar.svelte': '',
     'src/lib/ui/frame/Modal.svelte': '',
     'src/lib/ui/frame/Sash.svelte': '',
     'src/lib/ui/menu/keys/KeySheet.svelte':

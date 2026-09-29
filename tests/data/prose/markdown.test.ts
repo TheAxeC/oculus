@@ -167,3 +167,41 @@ describe('the callers of the rule', () => {
         ]);
     });
 });
+
+describe('the code of a document', () => {
+    it('paints a fenced block of a language the highlighter knows', () => {
+        expect(renderDocument('```ts\nconst a = 1;\n```\n')).toContain(
+            '<span class="hljs-keyword">const</span>'
+        );
+    });
+
+    it('escapes a fenced block with no language and draws no element of its text', () => {
+        const html = renderDocument('```\n<b>x</b>\n```\n');
+        expect(html).toContain('&lt;b&gt;');
+        expect(html).not.toContain('<b>');
+    });
+
+    it('draws a fence of an unknown language as its escaped text, with no span', () => {
+        const html = renderDocument('```nosuchlang\nx\n```\n');
+        expect(html).toContain('>x\n</code>');
+        expect(html).not.toContain('<span');
+    });
+
+    it('escapes an indented block', () => {
+        const html = renderDocument('Text.\n\n    <i>y</i>\n');
+        expect(html).toContain('&lt;i&gt;y&lt;/i&gt;');
+        expect(html).not.toContain('<i>');
+    });
+
+    it('lets no script out of a fenced block that closes its own code element', () => {
+        const html = renderDocument('```js\n</code><script>alert(1)</script>\n```\n');
+        expect(html).not.toContain('<script');
+        expect(html.split('</code>')).toHaveLength(2);
+        expect(html).toContain('&lt;script&gt;');
+    });
+
+    it('paints the fenced code of a document the route renders', () => {
+        const html = renderMarkdown('# A\n\n```python\ndef f():\n    return 1\n```\n', null);
+        expect(html).toContain('<span class="hljs-keyword">def</span>');
+    });
+});

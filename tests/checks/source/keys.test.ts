@@ -166,7 +166,7 @@ const COMPUTED_PREFIXES = [
     },
     {
         // A language is named by the highlighter's own name for it, so a language registered in
-        // state/shared/words/languages.ts without a name in config/text/statusbar.yml fails here.
+        // data/prose/languages.ts without a name in config/text/statusbar.yml fails here.
         file: 'lib/state/workbench/navigation/status.ts',
         start: 't(`statusbar.language_${known}`',
         keys: () => registered().map((name) => `statusbar.language_${name}`)

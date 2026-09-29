@@ -16,7 +16,7 @@ import { watchBookmarks } from '../../../../src/lib/server/root/watch/bookmarks.
 import type { FilesPayload, Message } from '../../../../src/lib/data/model/index.ts';
 import type { Watcher } from '../../../../src/lib/server/root/watch/portfolio.ts';
 import { noop } from '../../../fixtures/doubles.ts';
-import { recording, sleep, until } from './probe.ts';
+import { holdsDebounce, recording, sleep, until, type HeldWatches } from './probe.ts';
 import { it, scratchDir } from '../../../fixtures/scratch.ts';
 
 vi.setConfig({ testTimeout: 20000 });
@@ -31,12 +31,20 @@ const watchers: Watcher[] = [];
 
 let dir = '';
 
+const watches = vi.hoisted((): HeldWatches => ({ held: false, listeners: new Map() }));
+
+vi.mock('node:fs', async (original) =>
+    (await import('./probe.ts')).heldWatches(await original(), watches)
+);
+
 beforeEach(() => {
     dir = scratchDir('oculus-watch-bookmarks-');
 });
 
 afterEach(() => {
     while (watchers.length > 0) watchers.pop()?.close();
+    watches.held = false;
+    vi.useRealTimers();
 });
 
 /** One file inside the case's own directory, and nowhere else. */
@@ -152,4 +160,23 @@ it('makes the folder it watches when the machine has none, and publishes for the
     put(folder, 'bookmarks.yml', 'title: Bookmarks\n');
     await until(() => client.got.length > 0, WAIT);
     expect(client.got).toHaveLength(1);
+});
+
+it('debounces a burst into one message, waits the whole quiet again, and sends none after close', async () => {
+    const file = bookmarksFile();
+    const hub = new Hub();
+    const client = recording();
+    hub.subscribe(client.sink, ['files']);
+    watches.held = true;
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    const watcher = watchBookmarks(hub, { file, debounce: DEBOUNCE });
+    watchers.push(watcher);
+    const listener = watches.listeners.get(file);
+    expect(listener).toBeDefined();
+    await holdsDebounce(
+        () => listener?.(),
+        DEBOUNCE,
+        () => client.got.length,
+        () => watcher.close()
+    );
 });

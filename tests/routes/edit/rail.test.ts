@@ -7,7 +7,7 @@
 // to be inside it before anything is written, so no case here writes the engine's own
 // config/layout.yml.
 
-import { readFileSync, writeFileSync } from 'node:fs';
+import { chmodSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { resolve, sep } from 'node:path';
 import { describe, expect } from 'vitest';
@@ -104,6 +104,17 @@ describe('the rail write', () => {
         const response = await send(into, [FOCUS]);
         expect(response.status).toBe(500);
         expect(await response.json()).toEqual({ error: 'unwritable' });
+    });
+
+    it('answers unwritable for a read-only file, and leaves it and its mode as they were', async () => {
+        const into = railTarget();
+        chmodSync(into.layoutFile, 0o444);
+        const response = await send(into, [INBOX, FOCUS]);
+        expect(response.status).toBe(500);
+        expect(await response.json()).toEqual({ error: 'unwritable' });
+        expect(layoutOf(into)).toBe(LAYOUT);
+        expect(statSync(into.layoutFile).mode & 0o777).toBe(0o444);
+        expect(changesOf(into)).toEqual([]);
     });
 
     it('writes nothing and records nothing for the list the file already holds', async () => {

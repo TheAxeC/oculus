@@ -1,11 +1,10 @@
 /plan-orchestration oculus/migration
 
 In flight:
-- D13b (the diffs and the merge on Monaco): repair round 1 (Z59 (a) and the review's findings).
-- Q83 (small libraries in place of hand code): repair round 1 (Z61 (a) and the review's findings).
-- Q86c (the Map's forces back on d3-force; Z60 (a)): building.
+- D13b (the diffs and the merge on Monaco): round 1 refuted, its landing next, waiting on Axel's go.
+- Q86c (the Map's forces back on d3-force; Z60 (a)): built, its report saved, its review next, waiting on Axel's go.
 Queued, in order:
-- Q102 (the terminal working as VS Code's, seen working in the page), once Q83 has landed.
+- Q102 (the terminal working as VS Code's, seen working in the page), next at a free slot once Axel says go.
 - Q88b (the right-click menus' new capabilities, and Chrome's own menu blocked), once D13b has landed.
 - D13c (the code theme key; Z46 (a)); runs alone, since it changes a configuration file.
 - X3c (the tab strip as VS Code's editor tabs; Z47 (a)); runs alone, since it adds `wrap_tabs` to `config/appearance.yml`.
@@ -28,6 +27,7 @@ Queued, in order:
 The loop fills three slots as they free up; a line above is only an order, never a barrier, apart from the "once ... has landed" notes. A step's line moves to Landed, at the top of that list, in its landing commit.
 
 Landed, newest first: every step ticked in `plan.md`, each with the date and the commit that ticked it (the 15 steps dated 2026-09-10 at f8af492b were landed before the ledger was opened):
+- Q83 (small libraries in place of hand code), 2026-09-29, this landing's commit.
 - Q86b (the Map's drag after neato's placement), 2026-09-29, 1e8fdcda.
 - Q88 (right-click menus wherever vscode.dev gives one), 2026-09-29, 88e6a1c3.
 - D13a (the source tab on Monaco), 2026-09-29, 2267831d.

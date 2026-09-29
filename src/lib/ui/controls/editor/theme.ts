@@ -16,6 +16,7 @@
 // A bare `meta` scope wraps whole functions and classes in the grammars, so the meta hue goes to
 // the preprocessor, directive and tag scopes alone, and to punctuation and variables.
 
+import { wcagLuminance } from 'culori';
 import type { ThemeRegistration } from 'shiki';
 import { COLOURS } from './colours';
 
@@ -97,13 +98,9 @@ export function scopeToken(scope: string): string | null {
     return best?.token ?? null;
 }
 
-/** Whether a 6 or 8 digit hex is a dark colour, by its relative luminance. */
-function isDark(hex: string): boolean {
-    const [red, green, blue] = [1, 3, 5].map((at) => {
-        const channel = Number.parseInt(hex.slice(at, at + 2), 16) / 255;
-        return channel <= 0.03928 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
-    });
-    return 0.2126 * red + 0.7152 * green + 0.0722 * blue < 0.18;
+/** Whether a 6 or 8 digit hex is a dark colour, by its WCAG relative luminance, alpha aside. */
+export function isDark(hex: string): boolean {
+    return wcagLuminance(hex) < 0.18;
 }
 
 /**

@@ -12,9 +12,10 @@
 // second and the audit is published again with the new muted list; there is no build step and
 // nothing to invalidate.
 
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { isDeepStrictEqual } from 'node:util';
 import { parse } from 'yaml';
+import { writeTextAtomic } from '../../core/json.ts';
 import { othersThan, readBack, setList } from '../list-edit.ts';
 import { SIGNATURE } from '../../content/audit.ts';
 
@@ -82,7 +83,7 @@ export function writeMute(file: string, signature: string, muted: boolean): Mute
     if (!kept(source, edited, wanted)) return { error: 'invalid' };
     if (edited === source) return { changed: [], refused: [] };
     try {
-        writeFileSync(file, edited, 'utf8');
+        writeTextAtomic(file, edited);
     } catch {
         return { error: 'unwritable' };
     }

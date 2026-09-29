@@ -266,3 +266,55 @@ Further gates, run after checks.sh:
 - `find src tests config bin -type f | xargs wc -l | sort -rn | head -3`: largest files `tests/state/boards/collection.test.ts` and `tests/server/root/watch/portfolio.test.ts`, 896 lines each.
 
 This verification does not cover the find bar in a browser: no browser test was run, as the brief requires.
+
+## Repair round 1
+
+Open items: none. All nine rulings of `agents/briefs/Q83-round1.md` are done. No git command was run. The changed cases together, `npx vitest run` over the ten test files this round changes, give `Test Files  10 passed (10)` and `Tests  138 passed (138)`.
+
+1. **Z61 (a), JPEG back to the hand walk.**
+   - `src/lib/server/content/images.ts:79` `isFrame` (0xC0 to 0xCF less 0xC4, 0xC8, 0xCC), `:159` `exifOrientation`, `:171` `jpeg`, a walk over the head: fill bytes skipped, the first EXIF block's first directory read at the offset its offset field gives through `tiffOrientation`, a damaged block read as no orientation. `:209` `measured` sends a head that starts FF D8 FF to `jpeg` and hands every other head to image-size, which keeps PNG and WebP. The walk is the one of the main checkout's `images.ts`, which I read as the base; with no git command I did not compare it with `c56819b6` itself. The segment cap `SEGMENTS` does not come back: the walk runs over a head of at most READ_CAP bytes, so it ends at the end of the head, and the existing case "sizes a JPEG whose frame comes after five hundred and twelve other segments" stays as it was.
+   - The head comment, `images.ts:12-25`, says per format what the code does: JPEG walked here (fill bytes, every frame kind, EXIF directory at its offset, damaged block as none, a frame past the head gives no size), PNG sized by image-size and turned by its `eXIf` chunk walked here, WebP sized by image-size and never turned, any other format no size. `README.md:13` now says `image-size` reads a PNG's and a WebP's size.
+   - Cases, `tests/server/content/images.test.ts`: `:393` "sizes a JPEG with fill bytes before a marker" (was the `toBeNull` case), `:383` "reads no orientation from a damaged EXIF block" (was the 200x300 case), `:375` "reads the first directory at the offset the EXIF block names" (directory at 16, orientation 6), `:406` "sizes a lossless, a differential and an arithmetic-coded frame" (0xC3, 0xC5, 0xC9, 0xCA). `tiff()` takes the directory's offset as a fourth argument.
+   - Red, on the unchanged code: `AssertionError: expected { width: 300, height: 200 } to deeply equal { width: 200, height: 300 }` (offset 16); `AssertionError: expected { width: 200, height: 300 } to deeply equal { width: 300, height: 200 }` (damaged); `AssertionError: expected null to deeply equal { width: 10, height: 20 }` (fill bytes, and the four frames).
+   - Green: `Test Files  4 passed (4)`, `Tests  97 passed (97)` over `tests/server/content`.
+2. **B4, a head of the file's own size.** `images.ts:236` `want = Math.min(stat.size, READ_CAP)` from the stat already taken; the buffer and the read loop use `want`. Case `images.test.ts:492` "reads a two kilobyte picture into a buffer of its own size": the `readSync` mock now records each buffer's length, and the case asserts `reads.bytes` is 2048 and the buffers are `[2048]`. Red: `AssertionError: expected [ 524288, 524288 ] to deeply equal [ 2048 ]`. Green in the same run as item 1.
+3. **B1, a read-only file refused.** `src/lib/server/core/json.ts:67` `refuseReadonly`, called at `:86` before the library: `accessSync(path, constants.W_OK)`; a file that is not there passes; otherwise `openSync(path, 'r+')` raises the error an in-place write gives (`EACCES`, syscall `open`, the path), and should that open succeed the access error is thrown. The head comment says so.
+   - Cases: `tests/server/core/json.test.ts:55` (a 0444 file: the atomic write throws the same message `writeFileSync` throws on it, `code: 'EACCES', syscall: 'open', path`, with and without a new mode; content and mode 0444 kept); `tests/routes/edit/rail.test.ts:109` (the rail route on a 0444 layout answers 500 `{ error: 'unwritable' }`, the file, its mode and the change log unchanged).
+   - Red: `AssertionError: expected [Function] to throw an error` (json) and `AssertionError: expected 200 to be 500 // Object.is equality` (rail).
+   - Green: `Test Files  13 passed (13)`, `Tests  239 passed (239)` over json.test, `tests/routes/edit`, `tests/routes/files` and pty/context.test.
+4. **B3, an unparsable pattern.** `src/lib/views/sessions/terminal/terminal-list.ts:366` `findUnparsable(term, toggles)`: with the regex toggle on, it compiles the text with the addon's own flags (`g`, or `gi` without Match Case) and answers true on a SyntaxError; any other error is thrown. `TerminalGrid.svelte:152` `runFind` asks it before the addon runs, and on true clears the marks and sets the count to `{ resultIndex: -1, resultCount: 0 }`, which the bar shows as "No results". Case `tests/views/sessions/terminal.test.ts:506`: `(` and `[a` are unparsable, `(a)|[b]` and the empty text are not, and with the toggle off neither is. Red: `TypeError: findUnparsable is not a function`. Green: `Tests  41 passed (41)`. What the bar shows on screen is not verified: no browser test was run.
+5. **B5, the Message-ID's domain.** `src/lib/server/accounts/mail/google.ts:189` `replyGoogle` reads `users/me/profile` (covered by the `gmail.modify` scope, `connect/oauth.ts:125`) and hands its `emailAddress` to `rawMessage` as `sender`; `:140` `domainOf` takes the part after the last `@`; `:167` passes `messageId: <randomUUID()@domain>` to MailComposer; a sender with no domain throws rather than falling back to `localhost`. The head comment and `rawMessage`'s comment say so.
+   - Cases: `tests/server/accounts/mail/write.test.ts:102` (`rawMessage` with `axel@mail.example.nl` gives a Message-ID `<uuid@mail.example.nl>` and no `localhost`); `:222` (the Google send case asserts the sent message's Message-ID is on `example.nl`, the profile's domain, and no `@localhost`). The fakes of the two Google reply cases in `write.test.ts` and `tests/server/accounts/mail/routes.test.ts` answer the profile read.
+   - Red: `Received: "<2a22a8ff-71d9-0ce8-4bd6-6fc7e0719ab3@localhost>"` against `/^<[0-9a-f-]{36}@mail\.example\.nl>$/`, and the send case `AssertionError: expected 'To: Ada <ada@example.invalid>\r\nIn-R...' to match /\r\nMessage-ID: <[0-9a-f-]{36}@exampl.../`.
+   - Green: `Test Files  5 passed (5)`, `Tests  61 passed (61)` over `tests/server/accounts/mail`. Whether Gmail keeps the submitted Message-ID is not verified; it needs a real send.
+6. **B6, the career file watched through its folder.** `src/lib/server/root/watch/portfolio.ts:193` `watchFile(file, changed)`: a flat watch of the file's folder, filtered on its name. `openFile` (`:277`) uses it and now needs only the folder to exist, so a career file made later is heard as it appears; its comment sits on it again, and the `watchedDirectories` comment names `watchFile`. Case `tests/server/root/watch/file-watch.test.ts` (new; `portfolio.test.ts` is at 896 of the 900-line cap): two `writeTextAtomic` writes in a row to a watched file both reach the callback. Red, with `watchFile` first extracted holding the old `watch(file, ...)` body: `AssertionError: expected 0 to be greater than 0`. Green: `Test Files  2 passed (2)`, `Tests  34 passed (34)` with `portfolio.test.ts`.
+7. **St1, the count's words.** `config/text/views/sessions/terminal.yml:45-46` `find_place_unknown: '?'` and `find_over_limit: '{0}+'`; `terminal-list.ts:349` and `:352` read them. Case `terminal.test.ts:495` renders the count through a `t` that returns its key and arguments, so a literal shows. Red: `Expected: "sessions.find_count(sessions.find_place_unknown(),sessions.find_over_limit(1000))"` / `Received: "sessions.find_count(?,1000+)"`. Green: `Tests  41 passed (41)`; the existing case "? of 1000+" through the real catalog stays green.
+8. **St2, test names and comments.** `tests/themes/derive.test.ts:1-9` says the digests are the tokens each theme derives with the WCAG 2 luminance and contrast ratio, the measure culori computes; `:68` is now "are the captured tokens of every theme, one digest a theme". `tests/checks/look/lane-distance.test.ts:49-53` says LIGHT holds reference differences computed apart from culori; `:201-204` is now "measures the light theme within 0.01 of the reference differences". The case bodies are unchanged, so no red run exists for them. Green: `Test Files  2 passed (2)`, `Tests  24 passed (24)`. The audit at `derive.test.ts:72-85` still says "hand WCAG or CIEDE2000", since it names what the audit refuses in the source.
+9. **St5, one macOS test.** `src/lib/ui/controls/editor/load.ts:80` exports `onMac`, which now answers false where there is no navigator; `TerminalGrid.svelte:125` is `const mac = onMac();`. `grep -rn "Macintosh" src` finds it only in `load.ts`. Case `tests/ui/controls/editor/platform.test.ts` (new): the user agent decides, and no navigator gives false. Red: `TypeError: onMac is not a function`. Green: `Test Files  9 passed (9)`, `Tests  95 passed (95)` with `tests/ui/controls/editor`, terminal.test and boundaries.test. The new import of `load.ts` by `TerminalGrid.svelte` changed the layer diagrams, which `npm run diagrams` regenerated (exit 0).
+
+### Verify list
+
+`PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH sh ~/.claude/skills/land/templates/checks.sh .../orchestrator-state.md </dev/null` from the worktree's `tools/oculus`. The first run exited 1 at `npm test` with `Test Files  2 failed | 378 passed (380)`:
+- `tests/checks/diagrams/diagrams.test.ts`, two cases: the diagrams were stale after item 9's import. `npm run diagrams` regenerated them; alone, `Test Files  1 passed (1)`, `Tests  47 passed (47)`.
+- `tests/server/git/git-ops.test.ts` "routes each action to its own operation with its own fields": `Error: Test timed out in 5000ms.` The round does not change this file; alone, `npx vitest run tests/server/git/git-ops.test.ts` gives `Test Files  1 passed (1)`, `Tests  37 passed (37)`.
+
+The second and last run exited 0 (load averages 12.73, 13.14, 10.84):
+
+```
+$ npm test
+ Test Files  380 passed (380)
+      Tests  5915 passed | 1 skipped (5916)
+$ npm run check
+$ npm run build
+$ npm run format:check
+All matched files use Prettier code style!
+$ npm run lint
+$ ! LC_ALL=C grep -rna '[^ -~]' src tests
+checks: 6 commands passed
+```
+
+The `npm test` log also prints `warning: You appear to have cloned an empty repository.` and three `Rebasing (1/1)error: could not apply ... Main` lines inside the passing run; which test prints them is not verified.
+
+After it: `bash bin/folder-check.sh` exit 0; `grep -rlE "addon-search|addon-web-links|addon-unicode11" build/server` finds no file (exit 1); `LC_ALL=C grep -rna --exclude=glyphs.yml '[^ -~]' src tests bin config` gives only `config/present.yml:255`; `grep -rn "// revert:" src tests` finds nothing.
+
+Not covered: the find bar's "No results" on an unparsable pattern and the career file's rebuild in a running server are not seen in a browser; Gmail's handling of the Message-ID needs a real send.

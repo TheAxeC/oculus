@@ -25,6 +25,7 @@
 
 import { existsSync, mkdirSync, unwatchFile, watchFile } from 'node:fs';
 import { dirname } from 'node:path';
+import { debounce as debounced } from 'perfect-debounce';
 import type { FilesPayload } from '../../../data/model/index.ts';
 import type { Hub } from '../../core/channels.ts';
 import type { Watcher } from './portfolio.ts';
@@ -57,7 +58,6 @@ function reason(error: unknown): string {
 export function watchBookmarks(hub: Hub, options: BookmarksWatchOptions): Watcher {
     const debounce = options.debounce ?? DEBOUNCE;
     const folder = dirname(options.file);
-    let timer: ReturnType<typeof setTimeout> | null = null;
     let closed = false;
     let watching = false;
 
@@ -66,13 +66,13 @@ export function watchBookmarks(hub: Hub, options: BookmarksWatchOptions): Watche
         hub.publish('files', { root: '', bookmarks: true } satisfies FilesPayload);
     };
 
+    const queued = debounced(() => {
+        publish();
+    }, debounce);
+
     const queue = (): void => {
         if (closed) return;
-        if (timer !== null) clearTimeout(timer);
-        timer = setTimeout(() => {
-            timer = null;
-            publish();
-        }, debounce);
+        void queued();
     };
 
     try {
@@ -90,8 +90,7 @@ export function watchBookmarks(hub: Hub, options: BookmarksWatchOptions): Watche
     return {
         close(): void {
             closed = true;
-            if (timer !== null) clearTimeout(timer);
-            timer = null;
+            queued.cancel();
             if (watching) unwatchFile(options.file, queue);
             watching = false;
         }

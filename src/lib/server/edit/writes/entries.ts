@@ -19,7 +19,7 @@
 //
 // Whether a path lies in a folder is read from server/core/paths.ts (`below`).
 
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { parse } from 'yaml';
 import { isMap, byKey, scalar } from '../../../data/helpers/guards.ts';
@@ -34,6 +34,7 @@ import {
     startEntries
 } from '../entry-edit/index.ts';
 import { plain } from '../../core/changes.ts';
+import { writeTextAtomic } from '../../core/json.ts';
 import { BOOKMARKS, ensureBookmarksFile } from '../../files/fs/bookmarks.ts';
 import { NOT_A_FIELD_VALUE, asFieldValue } from '../yaml-edit.ts';
 import type { ChangeRecord } from '../../core/changes.ts';
@@ -47,7 +48,7 @@ const REGISTRY_IDENTITY_FIELDS: Record<string, string> = { venues: 'id' };
 
 /** One edit put on disk the way writeManifest does it: only when the edit changed something. */
 export function saved(file: string, source: string, edit: EditResult): WriteOutcome {
-    if (edit.changed.length > 0 && edit.text !== source) writeFileSync(file, edit.text, 'utf8');
+    if (edit.changed.length > 0 && edit.text !== source) writeTextAtomic(file, edit.text);
     return { found: true, changed: edit.changed, refused: edit.refused };
 }
 

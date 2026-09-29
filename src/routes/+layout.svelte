@@ -1,12 +1,14 @@
 <script lang="ts">
-    // Layer 3, route. The page's root: the theme's styles and the icon, and the one tooltip group
-    // every control of the page is drawn under, so one tooltip is open at a time.
+    // Layer 3, route. The page's root: the theme's styles, the code colours every painted block of
+    // code takes (themes/code.css) and the icon, and the one tooltip group every control of the
+    // page is drawn under, so one tooltip is open at a time.
 
     import type { Snippet } from 'svelte';
     import TooltipGroup from '$lib/ui/menu/TooltipGroup.svelte';
 
     import '$lib/themes/tokens.css';
     import '$lib/themes/themes.css';
+    import '$lib/themes/code.css';
     import favicon from '$lib/assets/favicon.svg';
 
     let { children }: { children: Snippet } = $props();

@@ -38,3 +38,18 @@ text:
         paste_ok: Paste
         terminals: Terminals
         view_terminal: Terminal
+        find_bar: Find in the terminal
+        find_input: Find
+        find_none: No results
+        find_count: '{0} of {1}'
+        find_place_unknown: '?'
+        find_over_limit: '{0}+'
+        find_case: Match Case
+        find_case_mark: Aa
+        find_word: Match Whole Word
+        find_word_mark: ab
+        find_regex: Use Regular Expression
+        find_regex_mark: .*
+        find_previous: Previous Match (Enter)
+        find_next: Next Match (Shift+Enter)
+        find_close: Close (Escape)

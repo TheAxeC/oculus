@@ -14,10 +14,11 @@
 // and the file is left exactly as it was, and so is a file the edit could not keep or could not
 // read.
 
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { parse } from 'yaml';
 import { catalogKeys, deckOrder, deckSources, savedKeys } from '../../../data/helpers/deck.ts';
 import { fields } from '../../../data/helpers/guards.ts';
+import { writeTextAtomic } from '../../core/json.ts';
 import { setDeckLists } from '../deck-edit.ts';
 import type { ChangeRecord } from '../../core/changes.ts';
 import type { PortfolioConfig, Project } from '../../../data/model/index.ts';
@@ -95,7 +96,7 @@ export function writeDeck(
     // record says what was there rather than what the request's config was built with.
     const before = deckLists(source);
     try {
-        writeFileSync(path, text, 'utf8');
+        writeTextAtomic(path, text);
     } catch {
         return { error: 'unwritable' };
     }

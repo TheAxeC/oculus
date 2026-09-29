@@ -215,6 +215,7 @@ describe('POST /api/source', () => {
         const one = fixture();
         const token = mintToken();
         const inode = statSync(one.file).ino;
+        const held = readdirSync(one.root.dir).sort();
         const response = await handleSource(
             request(token, {
                 root: one.root.key,
@@ -228,9 +229,7 @@ describe('POST /api/source', () => {
         expect(await response.json()).toEqual({ ok: true });
         expect(readFileSync(one.file, 'utf8')).toBe('whole replacement\n');
         expect(statSync(one.file).ino).not.toBe(inode);
-        expect(
-            readdirSync(one.root.dir).filter((name) => name.startsWith('.oculus-write-'))
-        ).toEqual([]);
+        expect(readdirSync(one.root.dir).sort()).toEqual(held);
     });
 });
 

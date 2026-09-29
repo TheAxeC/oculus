@@ -1,9 +1,14 @@
 // Layer 2, server. Watch usage snapshots and session changes, debounce one rebuild, and publish the
 // complete usage channel. Claude status folders are watched here. The owning context injects its
 // session watcher signal for Codex rollout changes.
+//
+// The debounce is perfect-debounce's, handed a function that starts the rebuild and returns at
+// once: handed the rebuild's promise, it would run the next rebuild without the wait while one is
+// still pending, and a burst during a slow fold would rebuild at each event.
 
 import { mkdirSync, watch } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
+import { debounce as debounced } from 'perfect-debounce';
 import type {
     UsageAccountConfig,
     UsagePayload,
@@ -60,7 +65,6 @@ export function watchUsage(hub: Hub, options: UsageWatchOptions): UsageWatcher {
         ((folder: string, changed: (filename: string | Buffer | null) => void) =>
             watch(folder, { recursive: false }, (_event, filename) => changed(filename)));
     const handles: { close(): void }[] = [];
-    let timer: ReturnType<typeof setTimeout> | null = null;
     let closed = false;
     let pending = Promise.resolve();
 
@@ -87,13 +91,13 @@ export function watchUsage(hub: Hub, options: UsageWatchOptions): UsageWatcher {
         return pending;
     };
 
+    const queued = debounced(() => {
+        void refresh();
+    }, debounce);
+
     const queue = (): void => {
         if (closed) return;
-        if (timer !== null) clearTimeout(timer);
-        timer = setTimeout(() => {
-            timer = null;
-            void refresh();
-        }, debounce);
+        void queued();
     };
 
     const open = (folder: string, changed: (filename: string | Buffer | null) => boolean): void => {
@@ -139,8 +143,7 @@ export function watchUsage(hub: Hub, options: UsageWatchOptions): UsageWatcher {
             closed = true;
             offSessions();
             clearInterval(clock);
-            if (timer !== null) clearTimeout(timer);
-            timer = null;
+            queued.cancel();
             for (const handle of handles) handle.close();
             handles.length = 0;
         }

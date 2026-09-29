@@ -9,32 +9,37 @@
 // file name is refused outright. A second copy of that would be a second place for one of the four
 // to go missing. server/content/wallpaper.ts and server/content/memories.ts are the two readers.
 //
-// A picture's width and height are read here too, from its header bytes, since the Memories wall
-// draws each tile at its picture's proportions before the picture arrives. The format is taken from
-// the bytes rather than the extension, as the browser does when it draws one, and only as many
-// bytes as the header needs are read through a file handle: a folder of photographs is megabytes a
-// picture and a listing reads a few hundred bytes of each. No image library is used, since three
-// header layouts are all the four extensions carry. The size is the one the browser draws: a JPEG's
-// EXIF block and a PNG's `eXIf` chunk are read for an orientation that turns the picture a quarter,
-// and a WebP's is not, since the browser does not turn a WebP. A walk stops after SEGMENTS chunks,
-// so a picture whose orientation tag sits past that is drawn here at its stored shape.
+// A picture's width and height are read here too, since the Memories wall draws each tile at its
+// picture's proportions before the picture arrives. The head of the file, its first READ_CAP bytes
+// or the whole file when it is smaller, is read through one file handle, and the format is taken
+// from the bytes rather than the extension, as the browser does when it draws one. The size is the
+// one the browser draws, a quarter turn applied where the picture's orientation says so:
+// - A JPEG is walked here, segment by segment by their lengths, to its first frame: fill bytes
+//   before a marker are stepped over, every frame kind the standard names is read, and the first
+//   EXIF block met on the way gives the orientation, its first directory read at the offset the
+//   block names and a damaged block read as none.
+// - A PNG is sized by image-size, and its `eXIf` chunk, which image-size does not read, is walked
+//   here for the orientation as far as the first image data.
+// - A WebP is sized by image-size and never turned, since the browser does not turn a WebP.
+// - Any other format gives no size.
+// Both walks read at their position through the same handle once they pass the head, so a frame or
+// a chunk behind a large colour profile is still reached, and a walk makes at most SEGMENTS reads
+// past the head, so no file is read whole: a JPEG whose frame is further on gives no size, and a
+// PNG whose `eXIf` chunk is further on is sized at its stored shape.
+// The type a picture is served as is mime's for its extension.
 //
 // Whether a path lies in a folder is read from server/core/paths.ts (`inside`).
 
 import { closeSync, createReadStream, openSync, readdirSync, readSync, statSync } from 'node:fs';
 import { extname, join, resolve } from 'node:path';
 import { Readable } from 'node:stream';
-import { byKey } from '../../data/helpers/guards.ts';
+import { imageSize } from 'image-size';
+import mime from 'mime';
 import { loadLocalOrDefaults } from '../../data/sources/config.ts';
 import { inside } from '../core/paths.ts';
 
-/** The extensions a picture folder is filtered to, and the type each one is served as. */
-const TYPES: Record<string, string> = {
-    '.jpg': 'image/jpeg',
-    '.jpeg': 'image/jpeg',
-    '.png': 'image/png',
-    '.webp': 'image/webp'
-};
+/** The extensions a picture folder is filtered to, and the only ones a folder's route serves. */
+const PICTURES: readonly string[] = ['.jpg', '.jpeg', '.png', '.webp'];
 
 /** An hour: long enough that a reload does not re-read the file, short enough to swap a picture. */
 const CACHE = 'private, max-age=3600';
@@ -48,7 +53,7 @@ export function images(dir: string): string[] {
         return [];
     }
     return names
-        .filter((name) => !name.startsWith('.') && extname(name).toLowerCase() in TYPES)
+        .filter((name) => !name.startsWith('.') && PICTURES.includes(extname(name).toLowerCase()))
         .sort();
 }
 
@@ -57,18 +62,19 @@ export function images(dir: string): string[] {
  */
 export type Size = { width: number; height: number };
 
-/** The bytes of one file from a position, as many as are there up to `length`. */
-export type ReadAt = (position: number, length: number) => Uint8Array;
-
 /**
- * The bytes a PNG or WebP header's size sits within: the PNG IHDR and the widest WebP chunk head.
+ * How much of a file its size is read from at most. A JPEG's frame comes after its EXIF block and
+ * colour profile, which a camera keeps well inside this; a folder of photographs is megabytes a
+ * picture, and no more than this is read of any of them.
  */
-const HEAD = 30;
+export const READ_CAP = 512 * 1024;
+
+/** The bytes of one file from a position, as many as are there up to `length`. */
+type ReadAt = (position: number, length: number) => Uint8Array;
 
 /**
- * The JPEG segments or PNG chunks a walk passes before it gives up, so no file is read whole. A PNG
- * whose orientation chunk comes after that many chunks is sized at its stored shape, and a JPEG
- * whose frame comes after that many segments gives no size.
+ * The reads a walk makes past the head before it gives up, about one for each JPEG segment or PNG
+ * chunk it passes there, so no file is read whole.
  */
 export const SEGMENTS = 512;
 
@@ -118,10 +124,13 @@ function turned(orientation: number, width: number, height: number): Size | null
 /**
  * The orientation a PNG's `eXIf` chunk names, or 0 when it has none. The chunks after IHDR are
  * walked by their lengths as far as the first image data, where the chunk must already have come,
- * under the JPEG walk's two caps; a chunk head that is not four letters ends the walk.
+ * or the end of what `read` gives; a chunk head that is not four letters ends the walk.
  */
-function pngOrientation(read: ReadAt, at: number): number {
-    for (let passed = 0; passed < SEGMENTS; passed += 1) {
+function pngOrientation(read: ReadAt): number {
+    const ihdr = read(8, 4);
+    if (ihdr.byteLength < 4) return 0;
+    let at = 8 + 12 + new DataView(ihdr.buffer, ihdr.byteOffset, 4).getUint32(0);
+    for (;;) {
         const head = read(at, 8);
         if (head.byteLength < 8) return 0;
         const code = String.fromCharCode(head[4], head[5], head[6], head[7]);
@@ -130,54 +139,6 @@ function pngOrientation(read: ReadAt, at: number): number {
         if (code === 'eXIf') return tiffOrientation(read(at + 8, Math.min(length, EXIF)));
         at += 12 + length;
     }
-    return 0;
-}
-
-/**
- * A PNG's size, from its IHDR chunk, which the format puts first, turned by the orientation of an
- * `eXIf` chunk before the image data, since the browser draws such a PNG turned.
- */
-function png(read: ReadAt, head: Uint8Array): Size | null {
-    if (head.byteLength < 24 || !spells(head, 12, 'IHDR')) return null;
-    const view = new DataView(head.buffer, head.byteOffset, head.byteLength);
-    const width = view.getUint32(16);
-    const height = view.getUint32(20);
-    return turned(pngOrientation(read, 8 + 12 + view.getUint32(8)), width, height);
-}
-
-/** A WebP's size, from the lossy (VP8), lossless (VP8L) or extended (VP8X) chunk that opens it. */
-function webp(head: Uint8Array): Size | null {
-    const view = new DataView(head.buffer, head.byteOffset, head.byteLength);
-    if (spells(head, 12, 'VP8 ')) {
-        // The key frame's start code, then fourteen bits of each side and two of scaling.
-        if (head.byteLength < 30) return null;
-        if (head[23] !== 0x9d || head[24] !== 0x01 || head[25] !== 0x2a) return null;
-        return sized(view.getUint16(26, true) & 0x3fff, view.getUint16(28, true) & 0x3fff);
-    }
-    if (spells(head, 12, 'VP8L')) {
-        // The signature byte, then each side less one in fourteen bits, least significant first.
-        if (head.byteLength < 25 || head[20] !== 0x2f) return null;
-        const bits = view.getUint32(21, true);
-        return sized((bits & 0x3fff) + 1, ((bits >>> 14) & 0x3fff) + 1);
-    }
-    if (spells(head, 12, 'VP8X')) {
-        // Flags and three reserved bytes, then the canvas's sides less one in three bytes each.
-        if (head.byteLength < 30) return null;
-        const width = head[24] | (head[25] << 8) | (head[26] << 16);
-        const height = head[27] | (head[28] << 8) | (head[29] << 16);
-        return sized(width + 1, height + 1);
-    }
-    return null;
-}
-
-/**
- * The orientation a JPEG APP1 segment's body names, or 0 when it names none: an `Exif` header and
- * then the TIFF structure a PNG's `eXIf` chunk holds bare. An APP1 of another kind (XMP) names
- * none.
- */
-function exifOrientation(body: Uint8Array): number {
-    if (!spells(body, 0, 'Exif') || body[4] !== 0 || body[5] !== 0) return 0;
-    return tiffOrientation(body.subarray(6));
 }
 
 /**
@@ -204,16 +165,26 @@ function tiffOrientation(body: Uint8Array): number {
 }
 
 /**
+ * The orientation a JPEG APP1 segment's body names, or 0 when it names none: an `Exif` header and
+ * then the TIFF structure a PNG's `eXIf` chunk holds bare. An APP1 of another kind (XMP) names
+ * none.
+ */
+function exifOrientation(body: Uint8Array): number {
+    if (!spells(body, 0, 'Exif') || body[4] !== 0 || body[5] !== 0) return 0;
+    return tiffOrientation(body.subarray(6));
+}
+
+/**
  * A JPEG's size, from the first frame header, walking the segments before it by their lengths, so a
- * large EXIF block or colour profile before the frame is stepped over rather than read whole. The
- * first EXIF block met on the way is read as far as its orientation, and a quarter turn swaps the
- * two sides, since the browser draws the picture turned. A scan or the end of the file before any
- * frame gives no size.
+ * large EXIF block or colour profile before the frame is stepped over. The first EXIF block met on
+ * the way is read as far as its orientation, and a quarter turn swaps the two sides, since the
+ * browser draws the picture turned. A scan, the end of what `read` gives or a broken segment before
+ * any frame gives no size.
  */
 function jpeg(read: ReadAt): Size | null {
     let at = 2;
     let turn = 0;
-    for (let passed = 0; passed < SEGMENTS; passed += 1) {
+    for (;;) {
         const mark = read(at, 4);
         if (mark.byteLength < 2 || mark[0] !== 0xff) return null;
         const code = mark[1];
@@ -241,41 +212,63 @@ function jpeg(read: ReadAt): Size | null {
         }
         at += 2 + length;
     }
-    return null;
 }
 
 /**
- * A picture's size read through `read`, the format told by its first bytes: PNG, JPEG or WebP.
- * Anything else, and a header cut short, gives null.
+ * A picture's size from its head, with `read` for the bytes a walk needs past it: a JPEG walked
+ * here and turned by its EXIF orientation, a PNG sized by image-size and turned by its `eXIf`
+ * chunk, a WebP sized by image-size as stored. Any other format, and a head image-size cannot read,
+ * give null.
  */
-export function readSize(read: ReadAt): Size | null {
-    const head = read(0, HEAD);
+function measured(head: Uint8Array, read: ReadAt): Size | null {
     if (head[0] === 0xff && head[1] === 0xd8 && head[2] === 0xff) return jpeg(read);
-    if (head[0] === 0x89 && spells(head, 1, 'PNG')) return png(read, head);
-    if (spells(head, 0, 'RIFF') && spells(head, 8, 'WEBP')) return webp(head);
+    let found: ReturnType<typeof imageSize>;
+    try {
+        found = imageSize(head);
+    } catch {
+        return null;
+    }
+    if (found.type === 'png') return turned(pngOrientation(read), found.width, found.height);
+    if (found.type === 'webp') return sized(found.width, found.height);
     return null;
 }
 
 /**
- * The size of the picture at `path`, read from its header through one file handle, and null when
- * the path is not a regular file or its header cannot be read. It never throws, since one
+ * The size of the picture at `path`, read from its head through one file handle, and null when the
+ * path is not a regular file or its head gives no size. The head is READ_CAP bytes, or the file's
+ * own size when that is smaller, so a small picture is not read into a buffer of READ_CAP; a walk
+ * that passes the head reads on at its position through the same handle. It never throws, since one
  * unreadable file must not take the rest of a listing with it. The regular-file check comes before
  * the open because opening a named pipe waits for a writer, and a listing is read on the request.
  */
 export function sizeOf(path: string): Size | null {
     let handle: number;
+    let want: number;
     try {
-        if (!statSync(path).isFile()) return null;
+        const stat = statSync(path);
+        if (!stat.isFile()) return null;
+        want = Math.min(stat.size, READ_CAP);
         handle = openSync(path, 'r');
     } catch {
         return null;
     }
     try {
-        return readSize((position, length) => {
+        const head = new Uint8Array(want);
+        let got = 0;
+        while (got < want) {
+            const read = readSync(handle, head, got, want - got, got);
+            if (read === 0) break;
+            got += read;
+        }
+        let past = 0;
+        const read: ReadAt = (position, length) => {
+            if (position + length <= got) return head.subarray(position, position + length);
+            if (got < want || past === SEGMENTS) return new Uint8Array(0);
+            past += 1;
             const bytes = new Uint8Array(length);
-            const got = readSync(handle, bytes, 0, length, position);
-            return bytes.subarray(0, got);
-        });
+            return bytes.subarray(0, readSync(handle, bytes, 0, length, position));
+        };
+        return measured(head.subarray(0, got), read);
     } catch {
         return null;
     } finally {
@@ -297,8 +290,9 @@ export function isName(name: string): boolean {
  */
 export function stream(dir: string, name: string | null): Response {
     if (name === null || !isName(name)) return new Response(null, { status: 404 });
-    const type = byKey(TYPES, extname(name).toLowerCase());
-    if (type === undefined) return new Response(null, { status: 404 });
+    const extension = extname(name).toLowerCase();
+    const type = PICTURES.includes(extension) ? mime.getType(extension) : null;
+    if (type === null) return new Response(null, { status: 404 });
     const path = join(dir, name);
     if (!inside(path, dir)) return new Response(null, { status: 404 });
     try {

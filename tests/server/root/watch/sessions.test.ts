@@ -19,7 +19,7 @@ import type { Watcher } from '../../../../src/lib/server/root/watch/portfolio.ts
 import type { Message, SessionsPayload, Terminal } from '../../../../src/lib/data/model/index.ts';
 import type { Probe } from '../../../../src/lib/server/sessions/registry.ts';
 import type { CodexProbe } from '../../../../src/lib/server/sessions/stores/codex.ts';
-import { recording } from './probe.ts';
+import { holdsDebounce, recording, type HeldWatches } from './probe.ts';
 import { noop } from '../../../fixtures/doubles.ts';
 import { it, scratchDir } from '../../../fixtures/scratch.ts';
 import { CONTEXT, human as prompt, type Json } from '../../sessions/stores/transcript-fixture.ts';
@@ -36,8 +36,16 @@ const SID = 'cccccccc-1111-2222-3333-dddddddddddd';
 const PID = 5151;
 const watchers: Watcher[] = [];
 
+const watches = vi.hoisted((): HeldWatches => ({ held: false, listeners: new Map() }));
+
+vi.mock('node:fs', async (original) =>
+    (await import('./probe.ts')).heldWatches(await original(), watches)
+);
+
 afterEach(() => {
     while (watchers.length > 0) watchers.pop()?.close();
+    watches.held = false;
+    vi.useRealTimers();
 });
 
 function answer(stamp: string, text: string): Json {
@@ -469,6 +477,28 @@ describe('watchSessions', () => {
         terminals = [];
         await sleep(600);
         expect(started.got.length).toBe(after);
+    });
+
+    it('debounces a burst into one rescan, waits the whole quiet again, and runs none after close', async () => {
+        const fixture = new Fixture();
+        fixture.transcript([prompt('2026-09-10T10:00:00.000Z', 'first question')]);
+        let moved = noop;
+        const source: TerminalSource = {
+            list: () => null,
+            onChange: (listener) => {
+                moved = listener;
+                return noop;
+            }
+        };
+        watches.held = true;
+        vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+        const started = start(fixture, 0, 0, source);
+        await holdsDebounce(
+            () => moved(),
+            100,
+            () => started.got.length,
+            () => watchers.pop()?.close()
+        );
     });
 
     it('carries no terminal list when it was given no terminal source', async () => {

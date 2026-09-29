@@ -189,10 +189,19 @@ describe('the customizations of a Codex workspace', () => {
         expect(none.looked).toEqual([join(bare, 'config.toml')]);
     });
 
-    it('reads a tool only inside the tools table, each once', () => {
-        expect(
-            tomlTools('a = true\n[tools]\nx = true\nx = true\ny = 1\n[tools.z]\nz = true\n')
-        ).toEqual(['x']);
+    it('reads a tool only inside the tools table', () => {
+        expect(tomlTools('a = true\n[tools]\nx = true\ny = 1\n[tools.z]\nz = true\n')).toEqual([
+            'x'
+        ]);
+    });
+
+    it('reads the tools a table or a dotted key switches on, and none from a broken file', () => {
+        expect(tomlTools('[tools]\nweb_search = true\nview_image = false\n')).toEqual([
+            'web_search'
+        ]);
+        expect(tomlTools('tools.web_search = true\n')).toEqual(['web_search']);
+        expect(tomlTools('tools = 3\n')).toEqual([]);
+        expect(tomlTools('[tools]\nweb_search = true\n[mcp_servers.a\n')).toEqual([]);
     });
 
     it('reads a server table name bare or quoted, and a header that does not close as a finding', () => {
@@ -200,7 +209,38 @@ describe('the customizations of a Codex workspace', () => {
             names: ['a', 'b c'],
             malformed: false
         });
-        expect(tomlServers('[mcp_servers.a\n').malformed).toBe(true);
+        expect(tomlServers('[mcp_servers.a\n')).toEqual({ names: [], malformed: true });
+    });
+
+    it('reads a server named by a header, a dotted key, an inline table or a quoted key', () => {
+        const names = (text: string): string[] => tomlServers(text).names;
+        expect(names('[mcp_servers.a]\ncommand = "x"\n[mcp_servers.b]\ncommand = "y"\n')).toEqual([
+            'a',
+            'b'
+        ]);
+        expect(names('mcp_servers.c.command = "x"\n')).toEqual(['c']);
+        expect(names('mcp_servers = { d = { command = "x" } }\n')).toEqual(['d']);
+        expect(names('[mcp_servers.\'e f\']\ncommand = "x"\n')).toEqual(['e f']);
+    });
+
+    it('names no server from a bracket inside a string, a value that is not a table or nothing', () => {
+        expect(tomlServers('note = """\n[mcp_servers.fake]\n"""\n')).toEqual({
+            names: [],
+            malformed: false
+        });
+        expect(tomlServers('mcp_servers = 3\n')).toEqual({ names: [], malformed: false });
+        expect(tomlServers('[[mcp_servers]]\ncommand = "x"\n')).toEqual({
+            names: [],
+            malformed: false
+        });
+        expect(tomlServers('')).toEqual({ names: [], malformed: false });
+    });
+
+    it('lists no server of a file whose last header does not close, and marks it', () => {
+        expect(tomlServers('[mcp_servers.a]\ncommand="x"\n[mcp_servers.b\n')).toEqual({
+            names: [],
+            malformed: true
+        });
     });
 });
 

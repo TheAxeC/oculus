@@ -11,8 +11,14 @@ import { mkdirSync, renameSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, expect, vi } from 'vitest';
 import { watchLocal, type LocalWatcher } from '../../../../src/lib/server/root/watch/local.ts';
-import { sleep, until } from './probe.ts';
+import { holdsDebounce, sleep, until, type HeldWatches } from './probe.ts';
 import { it, scratchDir } from '../../../fixtures/scratch.ts';
+
+const watches = vi.hoisted((): HeldWatches => ({ held: false, listeners: new Map() }));
+
+vi.mock('node:fs', async (original) =>
+    (await import('./probe.ts')).heldWatches(await original(), watches)
+);
 
 vi.setConfig({ testTimeout: 20000 });
 
@@ -23,6 +29,8 @@ const watchers: LocalWatcher[] = [];
 
 afterEach(() => {
     while (watchers.length > 0) watchers.pop()?.close();
+    watches.held = false;
+    vi.useRealTimers();
 });
 
 /** An engine of the case's own with its config folder made, and that folder. */
@@ -62,4 +70,21 @@ it('makes no call after it is closed', async () => {
     await sleep(quiet + 500);
 
     expect(changed).toHaveBeenCalledTimes(0);
+});
+
+it('debounces a burst into one call, waits the whole quiet again, and calls none after close', async () => {
+    const { root, config } = engine();
+    const changed = vi.fn();
+    watches.held = true;
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    const watcher = watchLocal(root, changed, { debounce: DEBOUNCE });
+    watchers.push(watcher);
+    const listener = watches.listeners.get(config);
+    expect(listener).toBeDefined();
+    await holdsDebounce(
+        () => listener?.('rename', 'local.yml'),
+        DEBOUNCE,
+        () => changed.mock.calls.length,
+        () => watcher.close()
+    );
 });

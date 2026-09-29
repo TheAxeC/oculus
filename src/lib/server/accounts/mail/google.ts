@@ -6,11 +6,14 @@
 // with HTML entities and which is decoded here so the payload holds the words themselves.
 //
 // The two writes are a reply on the thread and an archive. A reply is one `messages/send` of a raw
-// RFC 2822 message carrying the thread's own `In-Reply-To` and `References`, so the answer lands in
-// the thread rather than beside it; no draft is ever created, and `users.drafts` is not called by
+// RFC 5322 message carrying the thread's own `In-Reply-To` and `References`, so the answer lands in
+// the thread rather than beside it, and a `Message-ID` on the domain of the account's own address,
+// which one `profile` read answers; no draft is ever created, and `users.drafts` is not called by
 // anything in this file. An archive is one `threads/modify` taking the `INBOX` label off.
 
+import { randomUUID } from 'node:crypto';
 import { decodeHTML } from 'entities';
+import MailComposer from 'nodemailer/lib/mail-composer';
 import { str } from '../../../data/helpers/guards.ts';
 import { getJson, httpsLink, postJson, rowsOf } from '../connect/api.ts';
 import {
@@ -132,30 +135,44 @@ function replySubject(subject: string): string {
 }
 
 /**
- * One RFC 2822 message, as base64url, which is the one form `messages.send` takes. The two
- * threading headers carry the newest message's own `Message-Id`, which is what puts the answer in
- * the thread; a header value is written on one line, so a newline inside one is dropped rather than
- * allowed to start a header of its own.
+ * The domain of an address, the part after its last `@`, or null when there is none to take.
  */
-export function rawMessage(fields: {
+function domainOf(address: string): string | null {
+    const at = address.lastIndexOf('@');
+    const domain = at < 0 ? '' : address.slice(at + 1).trim();
+    return /^[^\s<>@]+$/.test(domain) ? domain : null;
+}
+
+/**
+ * One RFC 5322 message, as base64url, which is the one form `messages.send` takes, built by
+ * nodemailer's MailComposer: a name or a subject outside ASCII is written as RFC 2047 encoded
+ * words, a body outside ASCII carries a transfer encoding, the message gains its `Date`, and a line
+ * break inside a header value never starts a header of its own. Its `Message-ID` is a random UUID
+ * on the domain of `sender`, the address of the account the reply is sent from, since MailComposer
+ * left to itself names `localhost`, which is no host of the sender's. The two threading headers
+ * carry the newest message's own `Message-Id`, which is what puts the answer in the thread; an
+ * empty one is left out. Throws when `sender` has no domain.
+ */
+export async function rawMessage(fields: {
+    sender: string;
     to: string;
     subject: string;
     inReplyTo: string;
     references: string;
     body: string;
-}): string {
-    const line = (value: string): string => value.replace(/[\r\n]+/g, ' ').trim();
-    const lines = [
-        `To: ${line(fields.to)}`,
-        `Subject: ${line(fields.subject)}`,
-        'Content-Type: text/plain; charset="UTF-8"',
-        'MIME-Version: 1.0'
-    ];
-    if (fields.inReplyTo !== '') lines.push(`In-Reply-To: ${line(fields.inReplyTo)}`);
-    if (fields.references !== '') lines.push(`References: ${line(fields.references)}`);
-    return Buffer.from(`${lines.join('\r\n')}\r\n\r\n${fields.body}\r\n`, 'utf8').toString(
-        'base64url'
-    );
+}): Promise<string> {
+    const domain = domainOf(fields.sender);
+    if (domain === null) throw new Error('google: the account has no address to send from');
+    const message = new MailComposer({
+        messageId: `<${randomUUID()}@${domain}>`,
+        to: fields.to,
+        subject: fields.subject,
+        inReplyTo: fields.inReplyTo === '' ? undefined : fields.inReplyTo,
+        references: fields.references === '' ? undefined : fields.references,
+        text: fields.body
+    });
+    const built = await message.compile().build();
+    return built.toString('base64url');
 }
 
 /** Send one reply on the thread. Nothing here creates a draft; only `messages/send` is called. */
@@ -169,7 +186,9 @@ export async function replyGoogle(
     if (newest === undefined) throw new Error('google: the thread holds no message');
     const messageId = header(newest, 'message-id');
     const references = header(newest, 'references');
-    const raw = rawMessage({
+    const profile = await getJson('google', `${BASE}/profile`, args);
+    const raw = await rawMessage({
+        sender: str(profile.emailAddress) ?? '',
         to: replyTo(newest),
         subject: replySubject(header(newest, 'subject')),
         inReplyTo: messageId,

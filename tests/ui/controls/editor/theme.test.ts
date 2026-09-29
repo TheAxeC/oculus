@@ -13,6 +13,7 @@ import { COLOURS } from '../../../../src/lib/ui/controls/editor/colours.ts';
 import {
     editorTheme,
     expandHex,
+    isDark,
     scopeToken
 } from '../../../../src/lib/ui/controls/editor/theme.ts';
 import { NAMES, themeTokens } from '../../../checks/look/themes.ts';
@@ -173,5 +174,14 @@ describe('the scope map', () => {
         expect(colour('import')).toBe(read('--c-code-keyword-txt'));
         expect(colour('"s"') ?? colour('s')).toBe(read('--c-code-string-txt'));
         highlighter.dispose();
+    });
+});
+
+describe('whether a panel is dark', () => {
+    // The cut is a WCAG relative luminance of 0.18; an eight-digit hex is read by its colour alone.
+    it('reads a near-black panel as dark, white as light and a half grey with alpha as light', () => {
+        expect(isDark('#1e1e1e')).toBe(true);
+        expect(isDark('#ffffff')).toBe(false);
+        expect(isDark('#80808080')).toBe(false);
     });
 });

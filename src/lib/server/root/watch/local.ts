@@ -6,9 +6,10 @@
 // a rename, and an editor saves the same way, so a watch on the file itself would be left on the
 // file that was replaced. An event for any other name in the folder is not this watcher's; the
 // portfolio watcher (watch/portfolio.ts) owns the config push. A burst of events is one call after
-// a short quiet, since a save is several events on darwin.
+// a short quiet, since a save is several events on darwin; the quiet is perfect-debounce's.
 
 import { existsSync, watch, type FSWatcher } from 'node:fs';
+import { debounce as debounced } from 'perfect-debounce';
 import { LOCAL_NAME, configDir } from '../../../data/sources/config.ts';
 
 export type LocalWatchOptions = {
@@ -28,18 +29,16 @@ export function watchLocal(
 ): LocalWatcher {
     const debounce = options.debounce ?? DEBOUNCE;
     const folder = configDir(engine);
-    let timer: ReturnType<typeof setTimeout> | null = null;
+    const queued = debounced(() => {
+        changed();
+    }, debounce);
     let closed = false;
     let handle: FSWatcher | null = null;
     if (existsSync(folder)) {
         try {
             handle = watch(folder, { recursive: false }, (_event, filename) => {
                 if (closed || filename !== LOCAL_NAME) return;
-                if (timer !== null) clearTimeout(timer);
-                timer = setTimeout(() => {
-                    timer = null;
-                    changed();
-                }, debounce);
+                void queued();
             });
         } catch (error) {
             const reason = error instanceof Error ? error.message : String(error);
@@ -49,8 +48,7 @@ export function watchLocal(
     return {
         close(): void {
             closed = true;
-            if (timer !== null) clearTimeout(timer);
-            timer = null;
+            queued.cancel();
             handle?.close();
             handle = null;
         }

@@ -270,3 +270,51 @@ Each revert was applied to the source by a script in the builder's scratch folde
 - Item 6's merge case, ruled in ruling 1.
 - Ruling 6 widens the paths only to `editor-status.svelte.ts` and its test, while the palette's listing is drawn in `Palette.svelte` (see "Paths widened", 1).
 - The brief's paths did not foresee the size line (900) that `git.ts` and `git-ops.test.ts` would cross, or the duplication check between the two editors (see "Paths widened", 2 to 5).
+
+## Repair round 1
+
+### Not done, and limits stated
+
+- **Ruling 2's view case renders each section, not the whole pane.** Svelte's server `each` never checks duplicate keys (the check is only in the client `each.js`), the test run has no DOM, and `Diff.svelte` fills its files by `fetch` in an effect that server rendering does not run. The view case therefore renders the two `DiffSection`s of a type change under the keys `fileKeys` gives and asserts `data-diff-key="x"` and `data-diff-key="x#2"`. That the pane's keyed `{#each}` no longer throws in a browser is not verified (browser tests are outside this round).
+- **Ruling 3's case runs the keeper `Diff.svelte` uses, not the component.** `viewKeeper` (repositories.ts:211) holds the pending states, the timer and the closed flag, and `Diff.svelte:321` calls `keeper.close()` first in `onDestroy`. The case drives `viewKeeper` with fake timers. The trade-off of closing first: a view state said within 400 ms before the pane is destroyed is dropped, and so is the one `DiffEditor`'s own `onDestroy` says as it goes. Whether a diff pane is ever destroyed while its tab stays open (a layout move) is not verified; if it is, the scroll and revealed runs of the last 400 ms are lost there.
+
+### DONE / NOT DONE
+
+| Row | State | Command |
+| --- | --- | --- |
+| Verify list | DONE | `PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH sh ~/.claude/skills/land/templates/checks.sh .../orchestrator-state.md` from tools/oculus: `Test Files  377 passed (377)`, `Tests  5919 passed \| 1 skipped (5920)`, `checks: 6 commands passed` |
+| The case added after that run | DONE | `npx vitest run tests/state/sources/repositories/merge.test.ts`: `Tests  16 passed (16)`; `npm run check`: `0 ERRORS 0 WARNINGS`; prettier and eslint over the file clean. It is a test file only; `merge-regions.ts` is byte-identical to the tree checks.sh ran (`cmp` prints `same`) |
+| First checks.sh run | red, fixed | `tests/checks/tree/negatives.test.ts`: `"views/sources/repositories/repositories.test.ts asserts an absence with no reason: Only the line endings differ"`. The absence in my new view case gained its reason comment; `npx vitest run tests/views/sources/repositories/repositories.test.ts tests/checks/tree/negatives.test.ts`: `Tests  51 passed (51)` |
+| Case grep | DONE | `grep -rn "diff-rows\|diff-words\|DiffFile\|pairedWords\|wordDiff\|function common" src tests`: exit 1 |
+| node-diff3 import | DONE | `merge-regions.ts:18:import { diff3MergeRegions } from 'node-diff3';` |
+| Server bundle | DONE | `grep -rlE "StandaloneCodeEditor\|createDiffEditor" build/server`: exit 1 |
+| No `// revert:` | DONE | `grep -rn "// revert:" src tests`: exit 1 |
+| ASCII | DONE | perl non-ASCII scan over HELP.md, the catalog, and every file under the changed folders: prints nothing |
+| Comment width, sizes, folders | DONE | awk over comment lines above 100 columns: nothing; largest `git.ts` 885, `repositories.test.ts` (state) 873, `git.test.ts` 877; `bash bin/folder-check.sh` exit 0 |
+
+### Per ruling
+
+**1. Not UTF-8, `working-tree-encoding`, `ident`.**
+- `model-sessions.ts:429` `DiffSides.encoded`; `DiffAttributes` gains `workingTreeEncoding` and `ident`.
+- `git.ts:70` imports `isUtf8`. `run()` spawns without an encoding, decodes the bytes and sets `utf8: isUtf8(bytes)` (git.ts:818). `version()` reads the worktree file as bytes (git.ts:445). `sidesOf` sets `encoded: original.utf8 && modified.utf8` (git.ts:420), and `true` for a binary file or a submodule (git.ts:410).
+- `git.ts:475` asks `check-attr filter text eol working-tree-encoding ident`; `git-parse.ts:321` reads the two new values.
+- `diff-hunks.ts:256` answers `'none'` for `!sides.encoded`; `diff-hunks.ts:242-243` count the two attributes as a conversion.
+- Red: `AssertionError: expected undefined to be false // Object.is equality` (Latin-1); `AssertionError: expected 'lines' to be 'none'` (twice); `AssertionError: expected { filter: 'unspecified', ...(3) } to match object { ...(2) }` (git-reads attributes); `AssertionError: expected { filter: 'lfs', text: 'unset', ...(1) } to deeply equal { filter: 'lfs', text: 'unset', ...(3) }` (git-parse); the two git.test gate cases on the pinned vector.
+- Green: `... answers whether both versions of a file are UTF-8, a Latin-1 side on either as not`; `... answers what git's attributes say of a file's conversion beside its diff`; `... offers nothing on a file whose text is not UTF-8 on either side`; `... offers nothing on a file with a working-tree-encoding or an ident attribute`; `... reads the five attributes in the order asked, and a missing line as unspecified`; `... holds only the allowed subcommands at its call site, the pinned nine as their exact vectors`; `... ran nothing but those commands over this file, the pinned nine as their vectors`.
+- `sameFiles` also compares `encoded` (repositories.ts); case line `repositories.test.ts:173`, red `AssertionError: expected true to be false // Object.is equality` with the comparison taken out, green `... keeps the files of a re-read that changed nothing, so the view state stays`.
+
+**2. Type change keys.** `fileKeys` (repositories.ts:188) gives `x`, `x#2`. `Diff.svelte:119` `keys = fileKeys(files)`; the `{#each}` (Diff.svelte:405), the view state key (:417, :423) and the model name `${instance.id}:${keys[index]}` (:411) use it; `DiffSection.svelte:228` draws `data-diff-key`. Red: `TypeError: fileKeys is not a function` (state case and view case). Green: `... keys a path git lists twice, as a type change is, by its place among its entries`; `... draws both entries of a type change, each under a key of its own`.
+
+**3. No write after close.** `viewKeeper` (repositories.ts:211): `close()` sets the flag, clears the timer and drops what is pending; `viewed` and `keep` return at once once closed. `Diff.svelte:113` builds it; `Diff.svelte:321` `keeper.close()` is the first line of `onDestroy`. Red: `TypeError: viewKeeper is not a function` (both cases). Green: `... writes the view states said in one pause as one write`; `... writes nothing once the pane has closed, whatever was pending or is said after`.
+
+**4. Line endings only.** `endingsOnly` (diff-hunks.ts:215). `DiffSection.svelte:236` draws `t('repositories.diff_eol_only')`; `DiffSection.svelte:254` passes `hideUnchanged={!endings}`; `DiffEditor.svelte:59`, `:134` and the effect at `:270-273` apply it. Catalog `repositories.yml:51` `diff_eol_only: Only the line endings differ`. `DiffEditor.svelte:310` cancels its frame only when one is pending, so the component renders on the server. Red: `TypeError: endingsOnly is not a function`; `ReferenceError: cancelAnimationFrame is not defined` (view case). Green: `... finds a file whose line endings alone changed, where Monaco draws no change`; `... says a file whose line endings alone changed differs only there`.
+
+**5. No stop on a file without an editor.** `countsOf` (diff-hunks.ts:224) gives 0 for a binary file, equal texts, and line endings alone; `Diff.svelte:170` uses it on each new read. Red: `TypeError: countsOf is not a function`. Green: `... steps over a binary file and a rename alone, which draw no diff editor`.
+
+**6. Undo and redo by the event's flags.** `types.ts:15` `EditorEdit`; `Editor.svelte:272` passes `'undo'`, `'redo'` or `'type'` from `isUndoing` and `isRedoing` as `onchange`'s second argument. `merge-regions.ts:260` `historyOf`, `:265` `chooseIn`, `:290` `editIn`: undo applies only on kind `'undo'`, redo only on `'redo'`, anything else is typing. `Merge.svelte:138` and `:143` call them. Typing clears what redo holds; an undo or redo of typing does not, so a choice taken back stays redoable across the undo and redo of earlier typing. Red: `TypeError: historyOf is not a function` (the two ruled cases); the third case, `keeps a choice to redo across the undo and redo of typing made before it`, red with redo cleared on every edit: `AssertionError: expected 'edited' to be 'incoming' // Object.is equality`. Green: `... takes a choice back by undo and puts it again by redo`; `... reads typing that lands on the text before a choice as typing, never as its undo`; `... keeps a choice to redo across the undo and redo of typing made before it`.
+
+**7. HELP.md:181.** It now reads: a file has no block or line actions, and its bar says to stage or revert it from Changes, when it holds a carriage return, when its text is not UTF-8, or when git converts it: a `filter`, `working-tree-encoding` or `ident` attribute, or, where the `text` attribute is not unset, `eol=crlf` or `core.autocrlf` set to `true` or `input`. That is `diffActions` and `converted` in diff-hunks.ts as they stand: any `filter` value other than `unspecified`/`unset` counts, whether or not a driver is configured, and `eol=crlf` counts with `text` unspecified.
+
+**8. HELP.md:179.** A stash's diff and a worktree's diff list each file under its path; a commit's diff opens one file per pane. The same line now says a file whose line endings alone changed says so and shows all its lines, and that Next Change passes over a binary file and a file whose text did not change.
+
+**9. Editor.svelte:68** (the Props comment ruled as :66, moved down two lines by the new head comment) names `kit/grammars.ts`.

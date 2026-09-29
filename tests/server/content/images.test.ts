@@ -1,6 +1,6 @@
-// A picture's width and height read from its header: PNG and JPEG (with the EXIF orientation that
-// turns each) and the three kinds of WebP, a header cut short or not a picture at all, and how far
-// into a file the reading goes.
+// A picture's width and height read from its head: PNG and JPEG (with the EXIF orientation that
+// turns each) and the three kinds of WebP, a header cut short or not a picture at all, how far into
+// a file the reading goes, and which files of a folder are pictures the wall lists and serves.
 //
 // Every picture here is built byte by byte by the case itself, the header the format defines and no
 // more, and written under the system temporary directory, asserted inside it before the write. The
@@ -8,12 +8,39 @@
 // not cover: the tile the size is drawn into, which is tests/views/personal/memories.test.ts.
 
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, rmSync, truncateSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
-import { describe, expect } from 'vitest';
-import { SEGMENTS, readSize, sizeOf, type ReadAt } from '../../../src/lib/server/content/images.ts';
+import { describe, expect, vi } from 'vitest';
+import {
+    images,
+    READ_CAP,
+    SEGMENTS,
+    sizeOf,
+    stream
+} from '../../../src/lib/server/content/images.ts';
 import { it, scratchDir, test } from '../../fixtures/scratch.ts';
+
+/**
+ * Every byte a read of the file system handed back, and the length of each buffer it read into,
+ * which the reading cases count.
+ */
+const reads = vi.hoisted(() => ({ bytes: 0, buffers: [] as number[] }));
+
+// The file system as it is, with every readSync counted, so a case can say how much of a file the
+// size was read from and into how large a buffer.
+vi.mock('node:fs', async (original) => {
+    const actual = await original<typeof import('node:fs')>();
+    return {
+        ...actual,
+        readSync: (...args: Parameters<typeof actual.readSync>): number => {
+            const got = actual.readSync(...args);
+            reads.bytes += got;
+            reads.buffers.push(args[1].byteLength);
+            return got;
+        }
+    };
+});
 
 /** One pixel of a real JPEG, as base64: a JFIF header, tables, a baseline frame and a scan. */
 const REAL_JPEG =
@@ -135,15 +162,17 @@ function exif(orientation: number, order: 'II' | 'MM', padding = 0): number[] {
 /**
  * A TIFF structure whose first directory names `orientation` after a Make entry, as a camera writes
  * one, followed by `padding` bytes: the body of an EXIF block after its header, and the whole body
- * of a PNG `eXIf` chunk.
+ * of a PNG `eXIf` chunk. The first directory sits at `directory`, the offset its header names, with
+ * zero bytes between the header and it.
  */
-function tiff(orientation: number, order: 'II' | 'MM', padding = 0): number[] {
+function tiff(orientation: number, order: 'II' | 'MM', padding = 0, directory = 8): number[] {
     const u16 = order === 'II' ? le16 : be16;
     const u32 = order === 'II' ? le32 : be32;
     return [
         ...ascii(order),
         ...u16(42),
-        ...u32(8),
+        ...u32(directory),
+        ...new Array<number>(directory - 8).fill(0),
         ...u16(2),
         // A Make entry before the orientation, as a camera writes one: tag, type, count, offset.
         ...u16(0x010f),
@@ -232,19 +261,6 @@ function vp8x(width: number, height: number): Uint8Array {
     ]);
 }
 
-/** A reader over bytes in memory that counts every byte it hands back. */
-function counted(bytes: Uint8Array): { read: ReadAt; total: () => number } {
-    let total = 0;
-    return {
-        read: (position, length) => {
-            const got = bytes.subarray(position, position + length);
-            total += got.byteLength;
-            return got;
-        },
-        total: () => total
-    };
-}
-
 describe('the size of a PNG', () => {
     it('is the width and height of its IHDR chunk', () => {
         expect(sizeOf(file('wide.png', png(870, 691)))).toEqual({ width: 870, height: 691 });
@@ -309,7 +325,7 @@ describe('the size of a JPEG', () => {
             height: 4032
         });
         for (const turn of [5, 7, 8]) {
-            expect(readSize(counted(jpeg(exif(turn, 'MM'), frame(300, 200))).read)).toEqual({
+            expect(sizeOf(file('turn.jpg', jpeg(exif(turn, 'MM'), frame(300, 200))))).toEqual({
                 width: 200,
                 height: 300
             });
@@ -318,7 +334,7 @@ describe('the size of a JPEG', () => {
 
     it('keeps the sides for an orientation that is not a quarter turn', () => {
         for (const turn of [1, 2, 3, 4]) {
-            expect(readSize(counted(jpeg(exif(turn, 'II'), frame(300, 200))).read)).toEqual({
+            expect(sizeOf(file('upright.jpg', jpeg(exif(turn, 'II'), frame(300, 200))))).toEqual({
                 width: 300,
                 height: 200
             });
@@ -362,7 +378,25 @@ describe('the size of a JPEG', () => {
         });
     });
 
-    it('steps over fill bytes before a marker', () => {
+    it('reads the first directory at the offset the EXIF block names', () => {
+        const block = segment(0xe1, [...ascii('Exif'), 0, 0, ...tiff(6, 'MM', 0, 16)]);
+        expect(sizeOf(file('offset.jpg', jpeg(block, frame(300, 200))))).toEqual({
+            width: 200,
+            height: 300
+        });
+    });
+
+    it('reads no orientation from a damaged EXIF block', () => {
+        const block = exif(6, 'MM');
+        // The first directory's offset points past the end of the block.
+        block.splice(4 + 6 + 4, 4, ...be32(0xfffff));
+        expect(sizeOf(file('damaged.jpg', jpeg(block, frame(300, 200))))).toEqual({
+            width: 300,
+            height: 200
+        });
+    });
+
+    it('sizes a JPEG with fill bytes before a marker', () => {
         const padded = Uint8Array.from([
             0xff,
             0xd8,
@@ -372,7 +406,24 @@ describe('the size of a JPEG', () => {
             ...frame(10, 20),
             ...SCAN
         ]);
-        expect(readSize(counted(padded).read)).toEqual({ width: 10, height: 20 });
+        expect(sizeOf(file('padded.jpg', padded))).toEqual({ width: 10, height: 20 });
+    });
+
+    it('sizes a lossless, a differential and an arithmetic-coded frame', () => {
+        for (const code of [0xc3, 0xc5, 0xc9, 0xca]) {
+            expect(sizeOf(file('frame.jpg', jpeg(JFIF, frame(10, 20, code))))).toEqual({
+                width: 10,
+                height: 20
+            });
+        }
+    });
+
+    it('sizes a JPEG whose frame comes after five hundred and twelve other segments', () => {
+        const before = Array.from({ length: 512 }, () => segment(0xfe, ascii('a comment')));
+        expect(sizeOf(file('late.jpg', jpeg(...before, frame(640, 480))))).toEqual({
+            width: 640,
+            height: 480
+        });
     });
 });
 
@@ -418,16 +469,6 @@ describe('a file that gives no size', () => {
         expect(sizeOf(file('zero.png', png(0, 10)))).toBeNull();
     });
 
-    it('is a damaged EXIF block, which gives the frame unturned rather than no size', () => {
-        const block = exif(6, 'MM');
-        // The first directory's offset pointed past the end of the block.
-        block.splice(4 + 6 + 4, 4, ...be32(0xfffff));
-        expect(readSize(counted(jpeg(block, frame(300, 200))).read)).toEqual({
-            width: 300,
-            height: 200
-        });
-    });
-
     it('is a path that is not there, and a folder under a picture name', () => {
         const dir = scratch();
         expect(sizeOf(join(dir, 'gone.png'))).toBeNull();
@@ -445,79 +486,85 @@ describe('a file that gives no size', () => {
 });
 
 describe('how far into a file the size is read', () => {
-    it('reads the thirty header bytes of a WebP and nothing after them', () => {
-        const large = new Uint8Array(1024 * 1024);
-        large.set(vp8x(870, 691));
-        const reading = counted(large);
-        expect(readSize(reading.read)).toEqual({ width: 870, height: 691 });
-        expect(reading.total()).toBe(30);
+    it('reads a twenty megabyte picture no further than its first 512 KB', () => {
+        const path = file('large.png', pngWith(870, 691, chunk('eXIf', tiff(6, 'MM'))));
+        truncateSync(path, 20 * 1024 * 1024);
+        reads.bytes = 0;
+        expect(sizeOf(path)).toEqual({ width: 691, height: 870 });
+        expect(reads.bytes).toBeGreaterThan(0);
+        expect(reads.bytes).toBeLessThanOrEqual(512 * 1024);
     });
 
-    it('steps over PNG chunks by their lengths and stops at the image data', () => {
-        const reading = counted(
-            pngWith(
-                870,
-                691,
-                chunk('iCCP', new Uint8Array(60000).fill(7)),
-                chunk('IDAT', new Uint8Array(1024 * 1024)),
-                chunk('eXIf', tiff(6, 'MM'))
-            )
-        );
-        expect(readSize(reading.read)).toEqual({ width: 870, height: 691 });
-        expect(reading.total()).toBeLessThan(100);
+    it('reads a two kilobyte picture into a buffer of its own size', () => {
+        const path = file('small.png', png(870, 691));
+        truncateSync(path, 2048);
+        reads.bytes = 0;
+        reads.buffers.length = 0;
+        expect(sizeOf(path)).toEqual({ width: 870, height: 691 });
+        expect(reads.bytes).toBe(2048);
+        expect(reads.buffers).toEqual([2048]);
     });
 
-    it('reads a PNG eXIf chunk only as far as its first directory needs', () => {
-        const reading = counted(pngWith(640, 480, chunk('eXIf', tiff(8, 'II', 60000))));
-        expect(readSize(reading.read)).toEqual({ width: 480, height: 640 });
-        expect(reading.total()).toBeLessThan(1200);
+    /** Eight APP2 segments of the largest length a segment can name, 512 KB of colour profile. */
+    const PROFILE = Array.from({ length: 8 }, () =>
+        segment(0xe2, new Array<number>(65533).fill(0))
+    );
+
+    it('sizes a JPEG whose frame comes after 512 KB of colour profile, by reads past the head', () => {
+        const path = file('profile.jpg', jpeg(exif(6, 'II'), ...PROFILE, frame(640, 480)));
+        reads.bytes = 0;
+        reads.buffers.length = 0;
+        expect(sizeOf(path)).toEqual({ width: 480, height: 640 });
+        // The head, then one read for the marker past it and one for the frame's sides.
+        expect(reads.buffers).toEqual([READ_CAP, 4, 5]);
     });
 
-    it('ends the PNG chunk walk at a chunk head that is not four letters', () => {
-        const large = new Uint8Array(1024 * 1024);
-        large.set(png(870, 691));
-        const reading = counted(large);
-        expect(readSize(reading.read)).toEqual({ width: 870, height: 691 });
-        expect(reading.total()).toBe(38);
+    it('turns a PNG whose eXIf chunk comes after 512 KB of other chunks', () => {
+        const text = chunk('tEXt', new Uint8Array(READ_CAP));
+        const late = pngWith(400, 300, text, chunk('eXIf', tiff(6, 'MM')), chunk('IDAT', [1]));
+        expect(sizeOf(file('text.png', late))).toEqual({ width: 300, height: 400 });
     });
 
-    it('steps over a JPEG block by its length rather than reading it', () => {
-        const profile = segment(0xe2, new Array<number>(65000).fill(7));
-        const reading = counted(jpeg(JFIF, profile, frame(640, 480)));
-        expect(readSize(reading.read)).toEqual({ width: 640, height: 480 });
-        expect(reading.total()).toBeLessThan(100);
+    it('makes no more than SEGMENTS reads past the head before it gives up', () => {
+        const comments = Array.from({ length: SEGMENTS + 10 }, () => segment(0xfe, [0x61]));
+        const path = file('endless.jpg', jpeg(...PROFILE, ...comments, frame(640, 480)));
+        reads.buffers.length = 0;
+        expect(sizeOf(path)).toBeNull();
+        expect(reads.buffers.length).toBe(1 + SEGMENTS);
+    });
+});
+
+describe('the pictures of a folder', () => {
+    /** A folder holding a picture of each of the four kinds the wall takes, and two it does not. */
+    function folder(): string {
+        const dir = scratch();
+        for (const [name, bytes] of [
+            ['a.jpg', jpeg(JFIF, frame(4, 3))],
+            ['b.svg', '<svg xmlns="http://www.w3.org/2000/svg"/>'],
+            ['c.gif', 'GIF89a'],
+            ['d.png', png(4, 3)],
+            ['e.jpeg', jpeg(JFIF, frame(4, 3))],
+            ['f.webp', vp8(4, 3)],
+            ['.g.png', png(4, 3)]
+        ] as [string, Uint8Array | string][]) {
+            const full = join(dir, name);
+            expect(resolve(full).startsWith(resolve(dir) + sep)).toBe(true);
+            writeFileSync(full, bytes);
+        }
+        return dir;
+    }
+
+    it('lists the four picture extensions and leaves an SVG, a GIF and a dotfile out', () => {
+        expect(images(folder())).toEqual(['a.jpg', 'd.png', 'e.jpeg', 'f.webp']);
     });
 
-    it('reads an EXIF block only as far as its first directory needs', () => {
-        const reading = counted(jpeg(exif(6, 'MM', 60000), frame(640, 480)));
-        expect(readSize(reading.read)).toEqual({ width: 480, height: 640 });
-        expect(reading.total()).toBeLessThan(1200);
-    });
-
-    it('turns a PNG whose eXIf chunk is the last the walk reaches, and not one a chunk later', () => {
-        const before = (count: number): Uint8Array[] =>
-            Array.from({ length: count }, () => chunk('tEXt', ascii('k\0v')));
-        const inside = pngWith(400, 300, ...before(SEGMENTS - 1), chunk('eXIf', tiff(6, 'MM')));
-        expect(readSize(counted(inside).read)).toEqual({ width: 300, height: 400 });
-        const past = pngWith(400, 300, ...before(SEGMENTS), chunk('eXIf', tiff(6, 'MM')));
-        expect(readSize(counted(past).read)).toEqual({ width: 400, height: 300 });
-    });
-
-    it('sizes a JPEG whose frame is the last segment the walk reaches, and not one a segment later', () => {
-        const before = (count: number): number[][] =>
-            Array.from({ length: count }, () => segment(0xfe, ascii('a comment')));
-        expect(readSize(counted(jpeg(...before(SEGMENTS - 1), frame(640, 480))).read)).toEqual({
-            width: 640,
-            height: 480
-        });
-        expect(readSize(counted(jpeg(...before(SEGMENTS), frame(640, 480))).read)).toBeNull();
-    });
-
-    it('gives up on a file of fill bytes without reading it whole', () => {
-        const fill = new Uint8Array(1024 * 1024).fill(0xff);
-        fill.set([0xff, 0xd8]);
-        const reading = counted(fill);
-        expect(readSize(reading.read)).toBeNull();
-        expect(reading.total()).toBeLessThan(4096);
+    it('serves each picture with its type and refuses an SVG and a GIF', () => {
+        const dir = folder();
+        expect(stream(dir, 'a.jpg').headers.get('content-type')).toBe('image/jpeg');
+        expect(stream(dir, 'e.jpeg').headers.get('content-type')).toBe('image/jpeg');
+        expect(stream(dir, 'd.png').headers.get('content-type')).toBe('image/png');
+        expect(stream(dir, 'f.webp').headers.get('content-type')).toBe('image/webp');
+        expect(stream(dir, 'b.svg').status).toBe(404);
+        expect(stream(dir, 'c.gif').status).toBe(404);
     });
 });

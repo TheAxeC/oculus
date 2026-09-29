@@ -4,7 +4,8 @@
 // hues that differ by name can mix to one colour, or to two a reader cannot tell apart, in a theme
 // whose palette gives them near values. derive.ts measures contrast as a WCAG ratio, which says
 // nothing about two surfaces side by side, so the difference here is CIEDE2000, the standard
-// perceptual measure, on CIELAB under sRGB's white; 10 is a difference seen at a glance.
+// perceptual measure, on CIELAB under sRGB's white, both from culori; 10 is a difference seen at a
+// glance.
 //
 // The headers are read as the Focus view lays them out with every cluster's <details> open and
 // every band column drawn; a collapsed cluster or a column hidden for having no rows is not
@@ -24,6 +25,7 @@
 // repaired by choosing another colour in config/catalogs/vocab.yml, never by lowering the threshold
 // here.
 
+import { converter, differenceCiede2000 } from 'culori';
 import { describe, expect, it } from 'vitest';
 import { engineDir, loadConfig, vocabCatalog } from '../../../src/lib/data/sources/config.ts';
 import { CLUSTERS, holdingTone, lanes } from '../../../src/lib/state/boards/focus.ts';
@@ -35,76 +37,48 @@ setVocab(vocabCatalog(config));
 
 const MINIMUM = 10;
 
-type Lab = [number, number, number];
+/** A colour in CIELAB under sRGB's white, as culori takes one: lightness and the two axes. */
+type Lab = { mode: 'lab65'; l: number; a: number; b: number };
 
-/** sRGB hex to CIELAB, under the white point sRGB is defined with. */
-function lab(hex: string): Lab {
-    const linear = [1, 3, 5].map((at) => {
-        const value = parseInt(hex.slice(at, at + 2), 16) / 255;
-        return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
-    });
-    const [r, g, b] = linear;
-    const x = (0.4124564 * r + 0.3575761 * g + 0.1804375 * b) / 0.95047;
-    const y = 0.2126729 * r + 0.7151522 * g + 0.072175 * b;
-    const z = (0.0193339 * r + 0.119192 * g + 0.9503041 * b) / 1.08883;
-    const f = (t: number): number =>
-        t > 216 / 24389 ? Math.cbrt(t) : ((24389 / 27) * t + 16) / 116;
-    return [116 * f(y) - 16, 500 * (f(x) - f(y)), 200 * (f(y) - f(z))];
-}
+/** An sRGB hex colour in CIELAB under the white point sRGB is defined with. */
+const lab = converter('lab65');
 
-const DEGREE = Math.PI / 180;
+/** CIEDE2000 between two colours, the parametric factors at 1 (Sharma, Wu, Dalal 2005). */
+const ciede2000 = differenceCiede2000();
 
-/** The hue angle of a CIELAB point in degrees, 0 to 360, and 0 for a neutral. */
-function hueAngle(a: number, b: number): number {
-    if (a === 0 && b === 0) return 0;
-    const angle = Math.atan2(b, a) / DEGREE;
-    return angle < 0 ? angle + 360 : angle;
-}
+/**
+ * The light theme's touching pairs and each one's CIEDE2000 difference on CIELAB under sRGB's
+ * white, to four decimals, in the order pairs() finds them: reference values computed apart from
+ * culori, so the case that reads them compares the library with a second computation.
+ */
+const LIGHT: [string, number][] = [
+    ['run/push', 37.4689],
+    ['push/revise', 36.8379],
+    ['revise/review', 23.5726],
+    ['review/blocked', 26.5057],
+    ['blocked/backburner', 26.895],
+    ['backburner/scope', 16.0173],
+    ['scope/derisk', 35.3977],
+    ['derisk/build', 32.3084],
+    ['build/holding', 41.1274],
+    ['holding/funding', 26.8271],
+    ['funding/jobs', 21.0319],
+    ['jobs/teaching', 19.5039],
+    ['run/review', 25.7447],
+    ['push/blocked', 34.1812],
+    ['revise/backburner', 22.8082],
+    ['review/scope', 13.0639],
+    ['blocked/derisk', 30.1076],
+    ['backburner/build', 19.3963],
+    ['holding/scope', 36.7857],
+    ['holding/derisk', 32.748],
+    ['holding/jobs', 16.9652],
+    ['holding/teaching', 41.1274]
+];
 
-/** CIEDE2000 between two CIELAB colours, the parametric factors at 1 (Sharma, Wu, Dalal 2005). */
-function ciede2000([l1, a1, b1]: Lab, [l2, a2, b2]: Lab): number {
-    const chromaMean = (Math.hypot(a1, b1) + Math.hypot(a2, b2)) / 2;
-    const g = 0.5 * (1 - Math.sqrt(chromaMean ** 7 / (chromaMean ** 7 + 25 ** 7)));
-    const ap1 = (1 + g) * a1;
-    const ap2 = (1 + g) * a2;
-    const c1 = Math.hypot(ap1, b1);
-    const c2 = Math.hypot(ap2, b2);
-    const h1 = hueAngle(ap1, b1);
-    const h2 = hueAngle(ap2, b2);
-
-    let hueStep = 0;
-    if (c1 * c2 !== 0) {
-        hueStep = h2 - h1;
-        if (hueStep > 180) hueStep -= 360;
-        else if (hueStep < -180) hueStep += 360;
-    }
-    const deltaL = l2 - l1;
-    const deltaC = c2 - c1;
-    const deltaH = 2 * Math.sqrt(c1 * c2) * Math.sin((hueStep / 2) * DEGREE);
-
-    const lMean = (l1 + l2) / 2;
-    const cMean = (c1 + c2) / 2;
-    let hMean = h1 + h2;
-    if (c1 * c2 !== 0) {
-        if (Math.abs(h1 - h2) <= 180) hMean = (h1 + h2) / 2;
-        else hMean = h1 + h2 < 360 ? (h1 + h2 + 360) / 2 : (h1 + h2 - 360) / 2;
-    }
-    const t =
-        1 -
-        0.17 * Math.cos((hMean - 30) * DEGREE) +
-        0.24 * Math.cos(2 * hMean * DEGREE) +
-        0.32 * Math.cos((3 * hMean + 6) * DEGREE) -
-        0.2 * Math.cos((4 * hMean - 63) * DEGREE);
-    const rotation = 30 * Math.exp(-(((hMean - 275) / 25) ** 2));
-    const rc = 2 * Math.sqrt(cMean ** 7 / (cMean ** 7 + 25 ** 7));
-    const sl = 1 + (0.015 * (lMean - 50) ** 2) / Math.sqrt(20 + (lMean - 50) ** 2);
-    const sc = 1 + 0.045 * cMean;
-    const sh = 1 + 0.015 * cMean * t;
-    const rt = -Math.sin(2 * rotation * DEGREE) * rc;
-    const lightness = deltaL / sl;
-    const chroma = deltaC / sc;
-    const hue = deltaH / sh;
-    return Math.sqrt(lightness ** 2 + chroma ** 2 + hue ** 2 + rt * chroma * hue);
+/** A CIELAB colour written as the reference table writes one. */
+function point(l: number, a: number, b: number): Lab {
+    return { mode: 'lab65', l, a, b };
 }
 
 /** One header the Focus view draws: the words a failure names it by and its hue. */
@@ -181,7 +155,7 @@ function named(pair: Pair): string {
     return `${pair.one.name}/${pair.two.name}`;
 }
 
-type Measured = { kind: Kind; pair: string; difference: number };
+type Measured = { kind: Kind; pair: string; names: string; difference: number };
 
 /** Every touching pair's difference in one theme, the smallest first. */
 function measure(name: string): Measured[] {
@@ -190,40 +164,51 @@ function measure(name: string): Measured[] {
         .map(({ kind, one, two }) => ({
             kind,
             pair: `${one.name} (${one.tone}) / ${two.name} (${two.tone})`,
-            difference: ciede2000(
-                lab(derived[`--c-${one.tone}-lane`]),
-                lab(derived[`--c-${two.tone}-lane`])
-            )
+            names: named({ kind, one, two }),
+            difference: ciede2000(derived[`--c-${one.tone}-lane`], derived[`--c-${two.tone}-lane`])
         }))
         .sort((a, b) => a.difference - b.difference);
 }
 
 describe('lane distance', () => {
     // The published test pairs of Sharma, Wu and Dalal (2005), table 1 rows 1, 7, 9, 17 to 21 and
-    // 25, which exercise the hue wrap, the neutral axis and the blue rotation term. Revert: drop
-    // the `rt` term from ciede2000 and row 1 comes out at 1.608 against 2.0425.
-    it('computes CIEDE2000 as the reference pairs publish it', () => {
+    // 25, which exercise the hue wrap, the neutral axis and the blue rotation term, read through
+    // culori's measure; the table gives four decimals, so a pair agrees to half the last of them.
+    it('measures CIEDE2000 as the reference pairs publish it', () => {
         const rows: [Lab, Lab, number][] = [
-            [[50, 2.6772, -79.7751], [50, 0, -82.7485], 2.0425],
-            [[50, 0, 0], [50, -1, 2], 2.3669],
-            [[50, 2.49, -0.001], [50, -2.49, 0.0009], 7.1792],
-            [[50, 2.5, 0], [73, 25, -18], 27.1492],
-            [[50, 2.5, 0], [61, -5, 29], 22.8977],
-            [[50, 2.5, 0], [56, -27, -3], 31.903],
-            [[50, 2.5, 0], [58, 24, 15], 19.4535],
-            [[50, 2.5, 0], [50, 3.1736, 0.5854], 1],
-            [[60.2574, -34.0099, 36.2677], [60.4626, -34.1751, 39.4387], 1.2644]
+            [point(50, 2.6772, -79.7751), point(50, 0, -82.7485), 2.0425],
+            [point(50, 0, 0), point(50, -1, 2), 2.3669],
+            [point(50, 2.49, -0.001), point(50, -2.49, 0.0009), 7.1792],
+            [point(50, 2.5, 0), point(73, 25, -18), 27.1492],
+            [point(50, 2.5, 0), point(61, -5, 29), 22.8977],
+            [point(50, 2.5, 0), point(56, -27, -3), 31.903],
+            [point(50, 2.5, 0), point(58, 24, 15), 19.4535],
+            [point(50, 2.5, 0), point(50, 3.1736, 0.5854), 1],
+            [point(60.2574, -34.0099, 36.2677), point(60.4626, -34.1751, 39.4387), 1.2644]
         ];
         for (const [one, two, expected] of rows) {
             expect(ciede2000(one, two)).toBeCloseTo(expected, 4);
             expect(ciede2000(two, one)).toBeCloseTo(expected, 4);
         }
-        expect(lab('#ffffff').map((value) => Math.round(value * 100) / 100 + 0)).toEqual([
-            100, 0, 0
-        ]);
-        expect(lab('#ff0000').map((value) => Math.round(value * 100) / 100 + 0)).toEqual([
-            53.24, 80.09, 67.2
-        ]);
+        const rounded = (hex: string): number[] => {
+            const { l, a, b } = lab(hex) ?? point(Number.NaN, Number.NaN, Number.NaN);
+            return [l, a, b].map((value) => Math.round(value * 100) / 100 + 0);
+        };
+        expect(rounded('#ffffff')).toEqual([100, 0, 0]);
+        expect(rounded('#ff0000')).toEqual([53.24, 80.09, 67.2]);
+    });
+
+    // The light theme's 22 pairs, each within 0.01 of its reference difference in LIGHT: culori's
+    // sRGB to CIELAB differs from the reference computation in the third decimal at most, and no
+    // pair moves across the threshold.
+    it('measures the light theme within 0.01 of the reference differences', () => {
+        const light = measure('light');
+        const at = (pair: string): number =>
+            light.find((one) => one.names === pair)?.difference ?? Number.NaN;
+        expect(light).toHaveLength(LIGHT.length);
+        for (const [pair, captured] of LIGHT) {
+            expect(Math.abs(at(pair) - captured), pair).toBeLessThanOrEqual(0.01);
+        }
     });
 
     // Revert: draw the Ideas lane in `rows` as a row of three like the others, and the four pairs

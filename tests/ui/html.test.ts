@@ -43,6 +43,15 @@ describe('the sanitiser profile', () => {
         }
     });
 
+    // An audit of the lists, since the sanitiser does not run in this suite: a painted code block
+    // is spans carrying a class, so `span` is allowed and a style on one is not.
+    it('allows the span a painted code block is made of, with a class and no style', () => {
+        expect(ALLOWED_TAGS).toContain('span');
+        expect(DIAGRAM_PROFILE.ALLOWED_TAGS).toContain('span');
+        expect(ALLOWED_ATTR).toContain('class');
+        expect(ALLOWED_ATTR).not.toContain('style');
+    });
+
     it('allows no element that runs, loads or collects', () => {
         for (const tag of ['script', 'style', 'iframe', 'object', 'embed', 'form', 'svg']) {
             expect(ALLOWED_TAGS).not.toContain(tag);

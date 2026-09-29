@@ -72,9 +72,13 @@ export function eolOf(
     return wanted === 'CRLF' ? EndOfLineSequence.CRLF : EndOfLineSequence.LF;
 }
 
-/** Whether the page runs on macOS, by the test Monaco itself reads its platform with. */
-function onMac(): boolean {
-    return navigator.userAgent.includes('Macintosh');
+/**
+ * Whether the page runs on macOS, by the test Monaco itself reads its platform with: the one test
+ * of it in oculus, which the terminal grid's find and link modifier read too. It answers no on the
+ * server, where there is no navigator.
+ */
+export function onMac(): boolean {
+    return typeof navigator !== 'undefined' && navigator.userAgent.includes('Macintosh');
 }
 
 /** A key press as Monaco's key code with its modifiers. */

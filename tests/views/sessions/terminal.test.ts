@@ -17,10 +17,16 @@ import Terminal from '../../../src/lib/views/sessions/terminal/Terminal.svelte';
 import type { ITerminalOptions } from '@xterm/xterm';
 import {
     applyLook,
+    findLook,
     gridLook,
     gridOptions
 } from '../../../src/lib/views/sessions/terminal/grid-look.ts';
 import {
+    findCount,
+    findKey,
+    findOptions,
+    findUnparsable,
+    linkHandler,
     listDrawn,
     movedOrder,
     pasteLines,
@@ -32,6 +38,7 @@ import {
 import type { Instance } from '../../../src/lib/state/workbench/layout/index.ts';
 import { area, payload, record, terminal, workspace } from '../../fixtures/sessions-fixture.ts';
 import { clientContext, createClientState, type ClientState } from '../../fixtures/client.ts';
+import { t } from '../../../src/lib/state/shared/words/text.ts';
 import SessionList from '../../../src/lib/views/sessions/session-list/SessionList.svelte';
 import { ALPHA, HUB, catalog, installFixture, renderView, tree } from './views-fixture.ts';
 
@@ -432,6 +439,7 @@ describe("the grid's font and selection", () => {
         expect(options.theme?.background).toBe('#ffffff');
         expect(options.theme?.foreground).toBe('#111111');
         expect(options.convertEol).toBe(false);
+        expect(options.allowProposedApi).toBe(true);
         expect(options.fontSize).toBe(14);
         expect(gridOptions(gridLook(), undefined)).not.toHaveProperty('fontSize');
     });
@@ -452,5 +460,152 @@ describe("the grid's font and selection", () => {
     it('audits that the selection is drawn in the ink before a theme sets its own colour', () => {
         stubBody({ ...TOKENS, '--on-accent-bg': '' });
         expect(gridLook().theme.selectionForeground).toBe('#111111');
+    });
+});
+
+describe("the terminal's find", () => {
+    /** A key press with no modifier held but those named. */
+    function press(
+        key: string,
+        held: { shift?: boolean; meta?: boolean; ctrl?: boolean; alt?: boolean } = {}
+    ): { key: string; shiftKey: boolean; metaKey: boolean; ctrlKey: boolean; altKey: boolean } {
+        return {
+            key,
+            shiftKey: held.shift === true,
+            metaKey: held.meta === true,
+            ctrlKey: held.ctrl === true,
+            altKey: held.alt === true
+        };
+    }
+
+    afterEach(() => vi.unstubAllGlobals());
+
+    it('audits the count as VS Code words it: none, the one, and the active one of twelve', () => {
+        expect(findCount({ resultIndex: -1, resultCount: 0 }, t)).toBe('No results');
+        expect(findCount({ resultIndex: 0, resultCount: 1 }, t)).toBe('1 of 1');
+        expect(findCount({ resultIndex: 2, resultCount: 12 }, t)).toBe('3 of 12');
+        expect(findCount(null, t)).toBe('No results');
+    });
+
+    it('audits a place past the marked matches as ?, and a count at the limit with a plus', () => {
+        expect(findCount({ resultIndex: -1, resultCount: 1000 }, t)).toBe('? of 1000+');
+        expect(findCount({ resultIndex: 4, resultCount: 999 }, t)).toBe('5 of 999');
+    });
+
+    it("audits that the unknown place and the count at the limit are the catalog's words", () => {
+        const words = (key: string, ...args: (string | number)[]): string =>
+            `${key}(${args.join(',')})`;
+        expect(findCount({ resultIndex: -1, resultCount: 1000 }, words)).toBe(
+            'sessions.find_count(sessions.find_place_unknown(),sessions.find_over_limit(1000))'
+        );
+        expect(findCount({ resultIndex: 4, resultCount: 999 }, words)).toBe(
+            'sessions.find_count(5,999)'
+        );
+    });
+
+    it('audits which patterns the search could not compile: a regex that does not parse', () => {
+        const regex = { matchCase: false, wholeWord: false, regex: true };
+        expect(findUnparsable('(', regex)).toBe(true);
+        expect(findUnparsable('[a', regex)).toBe(true);
+        expect(findUnparsable('(a)|[b]', regex)).toBe(false);
+        expect(findUnparsable('', regex)).toBe(false);
+        expect(findUnparsable('(', { ...regex, regex: false })).toBe(false);
+        expect(findUnparsable('[a', { ...regex, regex: false, matchCase: true })).toBe(false);
+    });
+
+    it('audits that the three toggles reach the search as its options, with the colours', () => {
+        const colours = {
+            matchBackground: '#d0e4ff',
+            matchOverviewRuler: '#d0e4ff',
+            activeMatchBackground: '#3366ff',
+            activeMatchColorOverviewRuler: '#3366ff'
+        };
+        expect(findOptions({ matchCase: true, wholeWord: false, regex: true }, colours)).toEqual({
+            caseSensitive: true,
+            wholeWord: false,
+            regex: true,
+            decorations: colours
+        });
+        expect(findOptions({ matchCase: false, wholeWord: true, regex: false }, colours)).toEqual({
+            caseSensitive: false,
+            wholeWord: true,
+            regex: false,
+            decorations: colours
+        });
+    });
+
+    it('takes VS Code keys in the bar: Enter goes up, Shift+Enter down, Escape closes', () => {
+        const bar = { mac: true, where: 'bar' as const, open: true };
+        expect(findKey(press('Enter'), bar)).toBe('previous');
+        expect(findKey(press('F3', { shift: true }), bar)).toBe('previous');
+        expect(findKey(press('g', { meta: true, shift: true }), bar)).toBe('previous');
+        expect(findKey(press('G', { meta: true, shift: true }), bar)).toBe('previous');
+        expect(findKey(press('Enter', { shift: true }), bar)).toBe('next');
+        expect(findKey(press('F3'), bar)).toBe('next');
+        expect(findKey(press('g', { meta: true }), bar)).toBe('next');
+        expect(findKey(press('Escape'), bar)).toBe('close');
+        expect(findKey(press('a'), bar)).toBe(null);
+    });
+
+    it('opens from the grid on Cmd+F on macOS and Ctrl+F elsewhere, and nothing else', () => {
+        const mac = { mac: true, where: 'grid' as const, open: false };
+        const other = { mac: false, where: 'grid' as const, open: false };
+        expect(findKey(press('f', { meta: true }), mac)).toBe('open');
+        expect(findKey(press('f', { ctrl: true }), mac)).toBe(null);
+        expect(findKey(press('f', { ctrl: true }), other)).toBe('open');
+        expect(findKey(press('f', { meta: true }), other)).toBe(null);
+        expect(findKey(press('Enter'), mac)).toBe(null);
+        expect(findKey(press('Escape'), mac)).toBe(null);
+        expect(findKey(press('F3'), mac)).toBe(null);
+    });
+
+    it('moves and closes from the grid while the bar is open, and leaves Enter to the shell', () => {
+        const grid = { mac: false, where: 'grid' as const, open: true };
+        expect(findKey(press('F3'), grid)).toBe('next');
+        expect(findKey(press('F3', { shift: true }), grid)).toBe('previous');
+        expect(findKey(press('Escape'), grid)).toBe('close');
+        expect(findKey(press('Enter'), grid)).toBe(null);
+        expect(findKey(press('Enter', { shift: true }), grid)).toBe(null);
+        expect(findKey(press('f', { ctrl: true }), grid)).toBe('open');
+    });
+
+    it('draws a match on the accent surface and the active one in the accent, as six-digit hex', () => {
+        vi.stubGlobal('document', { body: {} });
+        vi.stubGlobal('getComputedStyle', () => ({
+            getPropertyValue: (name: string) =>
+                ({ '--accent-bg': ' #d0e4ff ', '--accent': '#36f' })[name] ?? ''
+        }));
+        expect(findLook()).toEqual({
+            matchBackground: '#d0e4ff',
+            matchOverviewRuler: '#d0e4ff',
+            activeMatchBackground: '#3366ff',
+            activeMatchColorOverviewRuler: '#3366ff'
+        });
+    });
+});
+
+describe("the terminal's links", () => {
+    it('audits that a web address opens on Cmd+click on macOS and Ctrl+click elsewhere', () => {
+        const opened: string[] = [];
+        const onMac = linkHandler(true, (url) => opened.push(url));
+        const elsewhere = linkHandler(false, (url) => opened.push(url));
+        const url = 'https://example.org/a?b=1';
+        onMac({ metaKey: false, ctrlKey: false }, url);
+        onMac({ metaKey: false, ctrlKey: true }, url);
+        expect(opened).toEqual([]);
+        onMac({ metaKey: true, ctrlKey: false }, url);
+        expect(opened).toEqual([url]);
+        elsewhere({ metaKey: true, ctrlKey: false }, url);
+        elsewhere({ metaKey: false, ctrlKey: true }, 'http://example.org/');
+        expect(opened).toEqual([url, 'http://example.org/']);
+    });
+
+    it('never opens a file, a script or an address that does not parse', () => {
+        const opened: string[] = [];
+        const open = linkHandler(true, (url) => opened.push(url));
+        for (const url of ['file:///etc/passwd', 'javascript:alert(1)', 'not a url', '']) {
+            open({ metaKey: true, ctrlKey: true }, url);
+        }
+        expect(opened).toEqual([]);
     });
 });

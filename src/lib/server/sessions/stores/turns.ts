@@ -14,9 +14,11 @@
 // The Markdown of an assistant turn is rendered here and filtered on the page, the way
 // server/content/docs.ts renders a README: ui/html.ts's sanitise runs over the HTML before
 // views/sessions/transcript/Transcript.svelte draws it, so the rendering and the filtering stay one
-// each and in one place.
+// each and in one place. Its fenced code is painted by the highlighter's extension
+// (data/prose/languages.ts, `codeColour`), as a document's is.
 
-import { marked } from 'marked';
+import { Marked } from 'marked';
+import { codeColour } from '../../../data/prose/languages.ts';
 import { isMap, list, text } from '../../core/json.ts';
 import { stampOf } from '../record.ts';
 import { foldFrom } from './transcripts.ts';
@@ -144,7 +146,7 @@ function blockText(content: unknown): string {
     return pieces.join('');
 }
 
-/** A said turn, cut at the cap. The assistant's Markdown is rendered; nothing else is. */
+/** A said turn, cut at the cap. The assistant's Markdown is rendered, its code painted. */
 function saidTurn(at: string | null, role: 'user' | 'assistant', said: string, cap: number): Turn {
     const cut = said.length > cap;
     const body = cut ? said.slice(0, cap) : said;
@@ -152,7 +154,7 @@ function saidTurn(at: string | null, role: 'user' | 'assistant', said: string, c
         at,
         role,
         text: body,
-        html: role === 'assistant' ? marked.parse(body, { async: false }) : '',
+        html: role === 'assistant' ? new Marked(codeColour).parse(body, { async: false }) : '',
         cut,
         tool: null
     };

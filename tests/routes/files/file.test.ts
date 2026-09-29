@@ -69,9 +69,46 @@ describe('the type a name is served as', () => {
         expect(typeOf('body.woff2')).toBe('font/woff2');
     });
 
-    it('falls back to bytes for anything else, an extension-less name included', () => {
-        expect(typeOf('archive.tar.gz')).toBe('application/octet-stream');
+    it('names every extension of the manual table as it did', () => {
+        const table: [string, string][] = [
+            ['a.html', 'text/html; charset=utf-8'],
+            ['a.css', 'text/css; charset=utf-8'],
+            ['a.js', 'text/javascript; charset=utf-8'],
+            ['a.png', 'image/png'],
+            ['a.jpg', 'image/jpeg'],
+            ['a.jpeg', 'image/jpeg'],
+            ['a.gif', 'image/gif'],
+            ['a.svg', 'image/svg+xml'],
+            ['a.webp', 'image/webp'],
+            ['a.woff', 'font/woff'],
+            ['a.woff2', 'font/woff2'],
+            ['a.json', 'application/json; charset=utf-8'],
+            ['a.txt', 'text/plain; charset=utf-8'],
+            ['a.md', 'text/markdown; charset=utf-8'],
+            ['a.pdf', 'application/pdf']
+        ];
+        expect(table.map(([name]) => [name, typeOf(name)])).toEqual(table);
+    });
+
+    it('names the types a manual may carry beyond that table, a text one with its charset', () => {
+        expect(typeOf('module.mjs')).toBe('text/javascript; charset=utf-8');
+        expect(typeOf('rows.csv')).toBe('text/csv; charset=utf-8');
+        expect(typeOf('favicon.ico')).toBe('image/vnd.microsoft.icon');
+        expect(typeOf('engine.wasm')).toBe('application/wasm');
+        expect(typeOf('photo.avif')).toBe('image/avif');
+        expect(typeOf('archive.tar.gz')).toBe('application/gzip');
+    });
+
+    it('serves TypeScript as bytes, which a type table reads as video', () => {
+        expect(typeOf('main.ts')).toBe('application/octet-stream');
+        expect(typeOf('main.mts')).toBe('application/octet-stream');
+        expect(typeOf('main.cts')).toBe('application/octet-stream');
+    });
+
+    it('falls back to bytes for a name it does not know, a bare dotfile and no extension', () => {
+        expect(typeOf('.png')).toBe('application/octet-stream');
         expect(typeOf('LICENSE')).toBe('application/octet-stream');
+        expect(typeOf('thing.nosuchext')).toBe('application/octet-stream');
     });
 });
 

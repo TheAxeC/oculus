@@ -124,6 +124,16 @@ describe('the turns of a Claude transcript', () => {
         expect(answer.turns[1].html).toContain('<p>and a line.</p>');
     });
 
+    it('paints the fenced code of an answer and leaves a prompt with code in it as typed', () => {
+        const path = write(store(), 'code.jsonl', [
+            human('2026-09-11T08:00:00.000Z', '```ts\nconst a = 1;\n```'),
+            assistant('2026-09-11T08:00:05.000Z', { text: '```ts\nconst b = 2;\n```' })
+        ]);
+        const answer = readTurns(path, 'claude', 0);
+        expect(answer.turns[0].html).toBe('');
+        expect(answer.turns[1].html).toContain('<span class="hljs-keyword">const</span>');
+    });
+
     it('drops a thinking block and keeps the text beside it', () => {
         const path = write(store(), 'three.jsonl', [
             assistant('2026-09-11T08:00:05.000Z', {

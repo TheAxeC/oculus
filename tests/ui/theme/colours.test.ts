@@ -56,6 +56,40 @@ const SRC = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', '
 /** The folders the rule holds in: the three layer-3 folders, and the page shell above them. */
 const ROOTS = ['lib/ui', 'lib/shell', 'lib/views', 'routes'];
 
+/** The highlighter classes the code window's stylesheet colours, sorted, each once. */
+const HIGHLIGHT_CLASSES = [
+    '.hljs-addition',
+    '.hljs-attr',
+    '.hljs-attribute',
+    '.hljs-built_in',
+    '.hljs-bullet',
+    '.hljs-comment',
+    '.hljs-deletion',
+    '.hljs-doctag',
+    '.hljs-emphasis',
+    '.hljs-keyword',
+    '.hljs-literal',
+    '.hljs-meta',
+    '.hljs-name',
+    '.hljs-number',
+    '.hljs-params',
+    '.hljs-punctuation',
+    '.hljs-quote',
+    '.hljs-regexp',
+    '.hljs-section',
+    '.hljs-selector-class',
+    '.hljs-selector-id',
+    '.hljs-selector-tag',
+    '.hljs-string',
+    '.hljs-strong',
+    '.hljs-symbol',
+    '.hljs-tag',
+    '.hljs-template-variable',
+    '.hljs-title',
+    '.hljs-type',
+    '.hljs-variable'
+];
+
 /** Backgrounds a component may name directly. */
 const SURFACES = ['--bg', '--panel', '--card', '--chip', '--line', '--accent', '--accent-bg'];
 
@@ -543,18 +577,33 @@ describe('the code window palette', () => {
         expect(tokens.filter((name) => !/^#[0-9a-f]{6}$/i.test(root[name]))).toEqual([]);
     });
 
-    // The code window paints the highlighter's classes and the editor's theme paints the TextMate
-    // scopes, each with every role's `-txt` form and nothing else, so a file is coloured the same
-    // whether it is read or written.
+    // The code window and every painted Markdown block take the highlighter's classes from one
+    // stylesheet, and the editor's theme paints the TextMate scopes, each with every role's `-txt`
+    // form and nothing else, so a file is coloured the same whether it is read or written.
     it('paints the code window through those six and nothing else', () => {
-        const source = readFileSync(
-            join(SRC, 'lib', 'views', 'shared', 'code', 'Code.svelte'),
-            'utf8'
-        );
+        const source = readFileSync(join(SRC, 'lib', 'themes', 'code.css'), 'utf8');
         const painted = [...source.matchAll(/color:\s*var\((--c-code-[a-z-]+)-txt\)/g)].map(
             (found) => found[1]
         );
         expect([...new Set(painted)].sort()).toEqual(tokens);
+    });
+
+    // An audit of the stylesheet's text and the layout's imports: every class the highlighter
+    // marks is coloured by one global stylesheet the page root loads, so a view carries none.
+    it('colours every highlighter class from one stylesheet the page root imports', () => {
+        const sheet = withoutComments(
+            'code.css',
+            readFileSync(join(SRC, 'lib', 'themes', 'code.css'), 'utf8')
+        );
+        const selectors = [...sheet.matchAll(/\.hljs-[a-z_-]+/g)].map((found) => found[0]).sort();
+        expect(selectors).toEqual(HIGHLIGHT_CLASSES);
+        const layout = readFileSync(join(SRC, 'routes', '+layout.svelte'), 'utf8');
+        expect(layout).toContain("import '$lib/themes/code.css';");
+        const viewsDir = join(SRC, 'lib', 'views');
+        const views = treeFiles(viewsDir).filter((file) =>
+            readFileSync(join(viewsDir, file), 'utf8').includes('hljs-')
+        );
+        expect(views).toEqual([]);
     });
 
     // An audit, a read of theme.ts's text: red when that text names a code role by its bare hue or

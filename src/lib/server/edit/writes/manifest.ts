@@ -10,13 +10,14 @@
 //
 // Whether a path lies in a folder is read from server/core/paths.ts (`below`).
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { basename, dirname, join, resolve } from 'node:path';
 import { parse } from 'yaml';
 import { isMap } from '../../../data/helpers/guards.ts';
 import { readManifests } from '../../../data/sources/manifests.ts';
 import { fieldNames } from '../../../data/snapshot/validate.ts';
 import { plain } from '../../core/changes.ts';
+import { writeTextAtomic } from '../../core/json.ts';
 import { renderScalar, setFields } from '../yaml-edit.ts';
 import type { ChangeRecord } from '../../core/changes.ts';
 import type { FieldValue, Refusal } from '../yaml-edit.ts';
@@ -200,7 +201,7 @@ export function writeManifest(
     }
 
     const edit = setFields(source, wanted);
-    if (edit.changed.length > 0) writeFileSync(manifest.file, edit.text, 'utf8');
+    if (edit.changed.length > 0) writeTextAtomic(manifest.file, edit.text);
     // The value each field had is read off the manifest the edit was computed against, so the
     // record is made where both halves are in hand rather than by reading the file again.
     const records: ChangeRecord[] = edit.changed.map((field) => ({
@@ -295,8 +296,8 @@ export function createIdea(hub: string, fields: Record<string, unknown>): WriteO
 
     mkdirSync(dirname(folder), { recursive: true });
     mkdirSync(folder);
-    writeFileSync(join(folder, 'project.yml'), manifest, 'utf8');
-    writeFileSync(join(folder, 'README.md'), readme, 'utf8');
+    writeTextAtomic(join(folder, 'project.yml'), manifest);
+    writeTextAtomic(join(folder, 'README.md'), readme);
     return {
         found: true,
         changed: [`${IDEA_DIR}/${id}/project.yml`, `${IDEA_DIR}/${id}/README.md`],

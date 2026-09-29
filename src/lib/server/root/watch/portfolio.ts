@@ -22,6 +22,7 @@
 import { existsSync, watch } from 'node:fs';
 import type { FSWatcher } from 'node:fs';
 import { basename, dirname, join, sep } from 'node:path';
+import { debounce as debounced } from 'perfect-debounce';
 import { buildPortfolio, portfolioConfigFrom } from '../../../data/index.ts';
 import { AUDIT_PATHS, auditFindings, auditRules, mutedSignatures } from '../../content/audit.ts';
 import {
@@ -150,8 +151,10 @@ export function namedByConfig(hub: string, config: PortfolioConfig): (path: stri
  * are watched too, since the Focus board reads them and a refreshed feed has to reach the page the
  * way a changed manifest does.
  *
- * The career file is not here: it sits in the hub root, where a recursive watch of its folder
- * would cover the whole hub a second time, so watchPortfolio watches that one file on its own.
+ * The career file is not here: it sits wherever `career_file` names it (configured as
+ * `registries/career.yml`), and a name in the hub root would make a recursive watch of its folder
+ * cover the whole hub a second time, so watchPortfolio watches that one file on its own, through a
+ * flat watch of its folder filtered on its name (`watchFile`).
  */
 export function watchedDirectories(hub: string, config: PortfolioConfig): string[] {
     const dirs = new Set(roleDirectories(hub, config));
@@ -178,6 +181,19 @@ function reason(error: unknown): string {
 }
 
 /**
+ * A watch on one file, kept through its folder and filtered on its name: a write through
+ * server/core/json.ts renames a new file over the old one, after which a watch on the file itself
+ * hears nothing more, while its folder still reports every rename to that name. A file made later
+ * in the folder is heard the same way. Throws when the folder cannot be watched.
+ */
+export function watchFile(file: string, changed: () => void): FSWatcher {
+    const name = basename(file);
+    return watch(dirname(file), { recursive: false }, (_event, filename) => {
+        if (filename === name) changed();
+    });
+}
+
+/**
  * Watch the hub and the engine's `config/`, publishing portfolio, config, and feed state. A config
  * change republishes all three; a feed change republishes feeds beside portfolio; another hub
  * change republishes portfolio alone. A rebuild that throws leaves the previous payloads standing.
@@ -188,7 +204,6 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
     const handles = new Map<string, FSWatcher>();
     /** Refusals are logged once until recovery; every rebuild still retries unopened paths. */
     const refused = new Set<string>();
-    let timer: ReturnType<typeof setTimeout> | null = null;
     /**
      * Whether a hub path is one the build reads; replaced by every rebuild from the config read.
      */
@@ -226,11 +241,6 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
     };
 
     /**
-     * One file watched on its own, for the career file, which sits in the hub root where a
-     * recursive watch would cover the whole hub a second time. A file that is not there is not
-     * watched and not refused, so a career file made later is picked up at the next rebuild.
-     */
-    /**
      * A watched directory that does not exist yet (a LinkedIn folder created after the server
      * started) gets a flat watch on its parent, keyed apart from the directory's own handle, so its
      * creation queues the rebuild that opens it; the parent watch is closed with the others.
@@ -258,12 +268,21 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
         }
     };
 
+    /**
+     * One file watched on its own, for the career file, which sits wherever `career_file` names
+     * it; a name in the hub root would make a recursive watch of its folder cover the whole hub a
+     * second time, and where its folder is already watched recursively (the configured
+     * `registries/career.yml`), the debounce makes the two one rebuild. It is watched through its
+     * folder (`watchFile`), so an atomic write over it keeps reaching the rebuild and a career file
+     * made after the server started is heard as it appears. A folder that is not there is not
+     * watched and not refused, so one made later is picked up at the next rebuild.
+     */
     const openFile = (file: string): void => {
-        if (handles.has(file) || !existsSync(file)) return;
+        if (handles.has(file) || !existsSync(dirname(file))) return;
         try {
             handles.set(
                 file,
-                watch(file, () => {
+                watchFile(file, () => {
                     queue(false, false);
                 })
             );
@@ -373,6 +392,15 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
         }
     };
 
+    /** One rebuild for a burst of events, of what the events of the burst touched. */
+    const queued = debounced(() => {
+        const withConfig = configTouched;
+        const withFeeds = feedsTouched;
+        configTouched = false;
+        feedsTouched = false;
+        rebuild(withConfig, withFeeds);
+    }, debounce);
+
     function queue(isConfig: boolean, isFeed: boolean): void {
         if (closed) return;
         if (isConfig) {
@@ -380,15 +408,7 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
             feedsTouched = true;
         }
         if (isFeed) feedsTouched = true;
-        if (timer !== null) clearTimeout(timer);
-        timer = setTimeout(() => {
-            timer = null;
-            const withConfig = configTouched;
-            const withFeeds = feedsTouched;
-            configTouched = false;
-            feedsTouched = false;
-            rebuild(withConfig, withFeeds);
-        }, debounce);
+        void queued();
     }
 
     rebuild(true, true);
@@ -396,8 +416,7 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
     return {
         close(): void {
             closed = true;
-            if (timer !== null) clearTimeout(timer);
-            timer = null;
+            queued.cancel();
             for (const handle of handles.values()) handle.close();
             handles.clear();
         }

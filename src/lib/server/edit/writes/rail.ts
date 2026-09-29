@@ -11,7 +11,7 @@
 // The watcher watches `config/`, so the file this writes is pushed on the `config` channel within a
 // second and the rail redraws from it; there is no build step and nothing to invalidate.
 
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { isDeepStrictEqual } from 'node:util';
 import { parse } from 'yaml';
 import {
@@ -20,6 +20,7 @@ import {
     readRail,
     type RailEntry
 } from '../../../data/sources/config/rail.ts';
+import { writeTextAtomic } from '../../core/json.ts';
 import { entryText, othersThan, readBack, setItems } from '../list-edit.ts';
 import type { ChangeRecord } from '../../core/changes.ts';
 
@@ -104,7 +105,7 @@ export function writeRail(file: string, rail: RailEntry[], glyphs: string[]): Ra
     if (edited === source) return { changed: [], refused: [] };
     const before = railLists(source);
     try {
-        writeFileSync(file, edited, 'utf8');
+        writeTextAtomic(file, edited);
     } catch {
         return { error: 'unwritable' };
     }

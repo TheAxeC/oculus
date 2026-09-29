@@ -4,7 +4,7 @@
 
 import { cpSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve, sep } from 'node:path';
-import { afterEach, describe, expect } from 'vitest';
+import { afterEach, describe, expect, vi } from 'vitest';
 import { Hub } from '../../../../src/lib/server/core/channels.ts';
 import { handleWrite } from '../../../../src/lib/server/edit/writes.ts';
 import { handleSource } from '../../../../src/lib/server/files/source.ts';
@@ -26,8 +26,14 @@ import type {
     Message,
     Snapshot
 } from '../../../../src/lib/data/model/index.ts';
-import { recording } from './probe.ts';
+import { holdsDebounce, recording, sleep, until, type HeldWatches } from './probe.ts';
 import { it, scratchDir } from '../../../fixtures/scratch.ts';
+
+const watches = vi.hoisted((): HeldWatches => ({ held: false, listeners: new Map() }));
+
+vi.mock('node:fs', async (original) =>
+    (await import('./probe.ts')).heldWatches(await original(), watches)
+);
 import { careerRules } from '../../../../src/lib/server/edit/writes/subtasks.ts';
 
 const LAYOUT = [
@@ -75,12 +81,9 @@ const HOST = { name: 'test-machine', address: 'http://127.0.0.1:8799' };
 
 afterEach(() => {
     while (watchers.length > 0) watchers.pop()?.close();
+    watches.held = false;
+    vi.useRealTimers();
 });
-
-function scratch(name: string): string {
-    const dir = scratchDir(`oculus-${name}-`);
-    return dir;
-}
 
 function write(root: string, rel: string, body: string): void {
     const full = join(root, rel);
@@ -91,7 +94,7 @@ function write(root: string, rel: string, body: string): void {
 
 /** An engine directory holding the four config files the build reads. */
 function buildEngine(): string {
-    const engine = scratch('engine');
+    const engine = scratchDir('oculus-engine-');
     // The block the source editor's cap lives in: a config without it is a finding of its own, and
     // what these cases are about is the findings the hub and the icon map produce.
     write(engine, 'config/behavior.yml', BEHAVIOR);
@@ -111,7 +114,7 @@ function buildEngine(): string {
 
 /** A hub with the five tiers, one project, the five registries and one collection. */
 function buildHub(): string {
-    const hub = scratch('hub');
+    const hub = scratchDir('oculus-hub-');
     for (const tier of ['ideas', 'active', 'manuscripts', 'coauthor', 'archive']) {
         mkdirSync(join(hub, 'projects', tier), { recursive: true });
     }
@@ -137,16 +140,6 @@ function on(got: Message[], channel: string): Message[] {
     return got.filter((message) => message.channel === channel);
 }
 
-function sleep(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-/** Poll until the predicate holds or the time runs out; the caller asserts what it wanted. */
-async function until(holds: () => boolean, ms: number): Promise<void> {
-    const deadline = Date.now() + ms;
-    while (!holds() && Date.now() < deadline) await sleep(20);
-}
-
 /**
  * Wait until the messages stop arriving. The first fs.watch of a process on darwin can deliver an
  * event for a write that happened shortly before the watch was opened, which is the fixture's own
@@ -167,12 +160,7 @@ async function quiet(got: Message[], ms = 100): Promise<number> {
 function start(
     prepare?: (hub: string, engine: string) => void,
     icons: IconMemory = { set: {} }
-): {
-    hub: string;
-    engine: string;
-    got: Message[];
-    icons: IconMemory;
-} {
+): { hub: string; engine: string; got: Message[]; icons: IconMemory } {
     const hub = buildHub();
     const engine = buildEngine();
     prepare?.(hub, engine);
@@ -505,6 +493,20 @@ describe('watchPortfolio', () => {
         expect((on(started.got, 'feeds').at(-1)?.payload as FeedsPayload).radar.entries).toEqual([
             { title: 'Source paper', bucket: 'method', dismissed: true }
         ]);
+    });
+
+    it('debounces a burst into one rebuild, waits the whole quiet again, and runs none after close', async () => {
+        watches.held = true;
+        vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+        const { engine, got } = start();
+        const listener = watches.listeners.get(join(engine, 'config'));
+        expect(listener).toBeDefined();
+        await holdsDebounce(
+            () => listener?.('change', 'layout.yml'),
+            20,
+            () => on(got, 'portfolio').length,
+            () => watchers.pop()?.close()
+        );
     });
 
     it('publishes portfolio, config, and feeds at start, each at version 1', async () => {

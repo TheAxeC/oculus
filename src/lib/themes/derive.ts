@@ -19,8 +19,13 @@
 //
 // The rule is WCAG relative luminance, a 0.02 lightness step, a bound of 50 steps, and the grounds
 // tried in a fixed order. Nothing here touches the document; ui/theme.ts sets the theme class and
-// applies these tokens. Pure functions, no imports, so the contrast test can run them over every
-// theme in a plain node run.
+// applies these tokens. Pure functions over one import, culori, whose wcagLuminance and
+// wcagContrast are the WCAG measure, so the contrast test can run them over every theme in a plain
+// node run. The HLS conversion, the mixing and the hex writing stay here: they are Python's
+// colorsys and a truncating byte, which the derived colours are computed with, and culori's
+// formatHex rounds a channel where `hex` truncates it, which would change the derived colours.
+
+import { wcagContrast, wcagLuminance } from 'culori';
 
 /** True black. A near-black scores lower and loses ties it should win. */
 const DARK_INK = '#000000';
@@ -73,21 +78,8 @@ function channels(hex: string): [number, number, number] {
     ];
 }
 
-/** WCAG relative luminance. */
-function luminance(hex: string): number {
-    const [r, g, b] = channels(hex).map((v) => {
-        const c = v / 255;
-        return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
-    });
-    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
-}
-
 /** WCAG contrast ratio between two colours: 1 is identical, 21 is black on white. */
-export function ratio(a: string, b: string): number {
-    const la = luminance(a);
-    const lb = luminance(b);
-    return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
-}
+export const ratio: (a: string, b: string) => number = wcagContrast;
 
 /**
  * The readable foreground for text placed ON this colour: whichever of black and white scores the
@@ -165,7 +157,7 @@ export function readable(fg: string, bg: string, minimum = 4.5): string {
     const [hue, lightness, saturation] = rgbToHls(r, g, b);
     let best = fg;
     let bestRatio = ratio(fg, bg);
-    const darkBackground = luminance(bg) < 0.4;
+    const darkBackground = wcagLuminance(bg) < 0.4;
 
     for (const direction of darkBackground ? [1, -1] : [-1, 1]) {
         let step = lightness;

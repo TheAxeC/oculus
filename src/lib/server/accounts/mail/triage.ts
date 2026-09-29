@@ -13,10 +13,11 @@
 // The folder is resolved by the caller, as the credential store's is, so a test and a served test
 // run write a directory of their own.
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { isMap, str } from '../../../data/helpers/guards.ts';
 import type { InboxKind, TriageFile, TriageNote } from '../../../data/model/index.ts';
+import { writeTextAtomic } from '../../core/json.ts';
 
 /** The mode the notes file is created and kept at, as the credential files are. */
 const MODE = 0o600;
@@ -80,7 +81,7 @@ export function readTriage(dir: string): TriageFile {
 /** Write the whole file, owner-readable alone, making the folder when it is not there yet. */
 function writeTriage(dir: string, held: TriageFile): void {
     mkdirSync(dir, { recursive: true, mode: DIR_MODE });
-    writeFileSync(triageFile(dir), `${JSON.stringify(held, null, 4)}\n`, { mode: MODE });
+    writeTextAtomic(triageFile(dir), `${JSON.stringify(held, null, 4)}\n`, MODE);
 }
 
 /** What one write of the page may set; a field it does not name is left as the note had it. */

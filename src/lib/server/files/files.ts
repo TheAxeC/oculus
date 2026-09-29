@@ -20,6 +20,7 @@ import { createReadStream, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { dirname, extname, isAbsolute, join, relative, resolve } from 'node:path';
 import { Readable } from 'node:stream';
+import mime from 'mime';
 import { configDir } from '../../data/sources/config.ts';
 import type { Finding } from '../../data/model/index.ts';
 import { inside, realPath } from '../core/paths.ts';
@@ -41,27 +42,14 @@ export function projectDirectory(hub: string, folder: string): string {
 /** One directory the server may serve files from: the key a URL names it by, and where it is. */
 export type Root = { key: string; dir: string };
 
-/** The extensions a manual and its assets are made of, and the type each one is served as. */
-const TYPES: Record<string, string> = {
-    '.html': 'text/html; charset=utf-8',
-    '.css': 'text/css; charset=utf-8',
-    '.js': 'text/javascript; charset=utf-8',
-    '.png': 'image/png',
-    '.jpg': 'image/jpeg',
-    '.jpeg': 'image/jpeg',
-    '.gif': 'image/gif',
-    '.svg': 'image/svg+xml',
-    '.webp': 'image/webp',
-    '.woff': 'font/woff',
-    '.woff2': 'font/woff2',
-    '.json': 'application/json; charset=utf-8',
-    '.txt': 'text/plain; charset=utf-8',
-    '.md': 'text/markdown; charset=utf-8',
-    '.pdf': 'application/pdf'
-};
-
-/** Anything the map does not name is bytes: the browser is told nothing it cannot check. */
+/** Anything mime does not name is bytes: the browser is told nothing it cannot check. */
 const FALLBACK = 'application/octet-stream';
+
+/**
+ * The extensions mime names as MPEG transport streams, which a code tree holds as TypeScript,
+ * served as bytes, as any other source file the browser is not meant to run.
+ */
+const TYPESCRIPT: readonly string[] = ['.ts', '.mts', '.cts'];
 
 /**
  * A minute. The file is the reader's own and changes under them, so it is re-read soon; it is
@@ -69,9 +57,17 @@ const FALLBACK = 'application/octet-stream';
  */
 export const CACHE = 'private, max-age=60';
 
-/** The type a name is served as, by its extension. */
+/**
+ * The type a name is served as, by its extension, as mime names it: a text type and JSON with the
+ * charset every file here is read in, anything mime does not know and TypeScript as bytes. A bare
+ * dotfile such as `.png` has no extension, and is bytes too.
+ */
 export function typeOf(name: string): string {
-    return TYPES[extname(name).toLowerCase()] ?? FALLBACK;
+    const extension = extname(name).toLowerCase();
+    const type = TYPESCRIPT.includes(extension) ? null : mime.getType(extension);
+    if (type === null) return FALLBACK;
+    const text = type.startsWith('text/') || type === 'application/json';
+    return text ? `${type}; charset=utf-8` : type;
 }
 
 /** Resolve an existing file under a named root, refusing missing roots, directories and escapes. */

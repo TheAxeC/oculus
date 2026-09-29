@@ -67,9 +67,9 @@ export function memoriesMemory(): MemoriesMemory {
 }
 
 /**
- * The pictures of a folder in name order, each with the size its header gives. The sizes are read
- * on every listing rather than kept, since a header is a few hundred bytes and a kept size would be
- * stale the moment a picture of the same name replaced it.
+ * The pictures of a folder in name order, each with the size the head of its file gives. The sizes
+ * are read on every listing rather than kept, since a kept size would be stale the moment a picture
+ * of the same name replaced it; a listing reads at most READ_CAP bytes of each (images.ts).
  */
 export function pictures(dir: string): Picture[] {
     return images(dir).map((name) => {
