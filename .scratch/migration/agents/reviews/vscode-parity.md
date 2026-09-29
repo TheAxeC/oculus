@@ -211,9 +211,9 @@ Status words for this section: **has** (oculus has the action today, the menu ca
 | New File..., New Folder... | a folder | new: file and folder creation under a root |
 | Open to the Side | a file | has: open beside (the Views catalogue's Open beside, Split right) |
 | Open With... | a file with several editors | out: oculus has one view per file kind |
-| Reveal in Finder | desktop build | part: `/api/open` reveals a folder (`open -R`); a file is opened in its program, so revealing a file is new |
+| Reveal in Finder | desktop build | part: `/api/open` reveals a folder (`open -R`), Q88; a file is opened in its program, so revealing a file is new, Q88b |
 | Open in Integrated Terminal | a file or folder | has: the terminal composer takes a folder |
-| Find in Folder... / Find in Workspace... | a folder / a root | part: the Search view is scoped to a root, not to a folder |
+| Find in Folder... / Find in Workspace... | a folder / a root | part: Find in Workspace is the Search view scoped to that root, Q88; Find in Folder is new, Q88b |
 | Open Timeline | a file with a timeline provider | out: oculus has no file timeline |
 | Select for Compare, Compare with Selected, Compare Selected | a file | new: a diff of two chosen files |
 | Cut | not a root, writable | new: move a file or folder |
@@ -262,7 +262,7 @@ Status words for this section: **has** (oculus has the action today, the menu ca
 | VS Code item | Shows on | oculus |
 |---|---|---|
 | New Text File, Open File... | the strip, an empty group | part: Open File is the palette; a new text file is new |
-| Split Up, Split Down, Split Left, Split Right | the strip, an empty group | part: split right and split down |
+| Split Up, Split Down, Split Left, Split Right | the strip, an empty group | has: `splitInstance` takes every edge |
 | Move into New Window, Copy into New Window, New Window | the strip, an empty group | out: oculus is one browser tab |
 | Lock Group | an empty group | new: no pane holds a lock |
 | Close | an empty group, with more than one group | has: close the pane |

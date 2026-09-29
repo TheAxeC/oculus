@@ -1,7 +1,7 @@
 /plan-orchestration oculus/migration
 
 In flight:
-- Q79b (the tests; beside Q96 and Q88 by Z50 (a)): built from base 89a83e3b (cases ruled at round 0), reviewed; repair round 1 sent.
+- Q79b (the tests; beside Q96 and Q88 by Z50 (a)): built from base 89a83e3b (cases ruled at round 0), reviewed; repair round 1 back, under review.
 - D13a (the source tab on Monaco, the primitive under ui/controls/editor): built from base fcde80b7, reviewed; repair round 1 sent.
 Queued, in order:
 - Q88 (right-click menus wherever vscode.dev gives one, the tab's menu left to X3c; beside Q79b by Z50 (a)): inventory taken (Z51 (c)); Z52 ruled (b): the items oculus can run, next into the slot Q96 freed.
