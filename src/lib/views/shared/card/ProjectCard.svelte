@@ -29,7 +29,6 @@
         type BoardItem
     } from '$lib/state/boards/board';
     import { contextText } from '$lib/state/boards/project-context';
-    import { findView } from '$lib/state/workbench/layout';
     import { personNames } from '$lib/state/boards/person';
     import { t } from '$lib/state/shared/words/text';
     import { chipGlyphName, chipLabel, statusTone } from '$lib/state/shared/words/tones';
@@ -39,9 +38,9 @@
 
     const {
         entities: { portfolio },
-        layout: { layout, openBeside, openView, showInFiles },
+        layout: { openBeside, openView, showInFiles },
         selection: { select },
-        terminals: { startChat },
+        terminals: { showTerminal, startChat },
         ui: { setInstanceState },
         writes: { openFolder, writeManifest }
     } = client;
@@ -263,7 +262,7 @@
         const answer = await openFolder(item.project.folder);
         if (!answer.ok) onsaid(t('project.card.folder_failed', answer.error ?? ''));
     }
-    /** Start a project chat, select it and ensure a terminal view is available. */
+    /** Start a project chat, select it and show it in the page's Terminal tab, or a new one. */
     async function ask(): Promise<void> {
         const answer = await startChat(item.id);
         if (!answer.ok) {
@@ -271,7 +270,7 @@
             return;
         }
         select(answer.id);
-        if (findView(layout(), 'terminal', null) === null) openView('terminal');
+        showTerminal(answer.id);
     }
 </script>
 

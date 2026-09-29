@@ -1,56 +1,51 @@
 // Layer 3, view helper. The rules the Terminal view's list and grid go by: whether the list is
-// drawn, the order the rows are drawn in, the key a row answers, how long an armed Kill stays
-// armed, a dragged row's new place, the order the page keeps, the line count a paste is asked about
-// and the listener that holds such a paste, the file drag the grid takes, a dropped path quoted for
-// the shell and a terminal's tooltip. The pure ones are here rather than in the components so each
-// is asserted without a DOM, which the grid's paste, drop and drag need to happen at all.
+// drawn, the rows of one tab in the tab's order, the key a row answers, how long an armed Kill
+// stays armed, a dragged row's new place, the drag a row carries, the grid's font size, the line
+// count a paste is asked about and the listener that holds such a paste, the file drag the grid
+// takes, a dropped path quoted for the shell and a terminal's tooltip. The pure ones are here
+// rather than in the components so each is asserted without a DOM, which the grid's paste, drop and
+// drag need to happen at all.
 
 import { FILE_DRAG } from '$lib/state/sources/fs';
 import { stamp } from '$lib/state/shared/words/format';
 import { t } from '$lib/state/shared/words/text';
+import { terminalFontPx } from '$lib/state/shared/words/appearance';
 import type { Terminal } from '$lib/state/sessions/terminals.svelte';
 
 /** How long a bell marks its row, which is VS Code's `terminal.integrated.bellDuration` default. */
 export const BELL_MS = 1000;
 
-/** The field of the page's stored state for the Terminal view that holds the reader's order. */
-const ORDER_FIELD = 'order';
+/**
+ * The type a dragged row carries its terminal id under, which no other drag carries. A row dropped
+ * on another Terminal tab's list, or on the body of one that draws no list, moves there.
+ */
+export const ROW_DRAG = 'application/x-oculus-terminal-row';
 
 /**
- * The reader's order out of what the page keeps for the Terminal view: the terminal ids it names,
- * each once, and none from a value that is not the view's own record.
+ * The grid's font size: the configured size, else the body type scale times the reader's text
+ * scale, read off the body since the scale is a CSS token. Undefined when neither gives a size.
  */
-export function storedOrder(state: unknown): string[] {
-    if (typeof state !== 'object' || state === null || Array.isArray(state)) return [];
-    const held = (state as Record<string, unknown>)[ORDER_FIELD];
-    if (!Array.isArray(held)) return [];
-    const ids = held.filter((one): one is string => typeof one === 'string' && one !== '');
-    return [...new Set(ids)];
-}
-
-/** What the page keeps for the Terminal view once the reader's order has changed. */
-export function withOrder(state: unknown, order: readonly string[]): Record<string, unknown> {
-    const held =
-        typeof state === 'object' && state !== null && !Array.isArray(state)
-            ? (state as Record<string, unknown>)
-            : {};
-    return { ...held, [ORDER_FIELD]: [...order] };
+export function gridFontSize(chosen: number | null, scale: number): number | undefined {
+    const configured = chosen ?? terminalFontPx();
+    if (configured !== null) return configured;
+    const root = getComputedStyle(document.body);
+    const base = Number.parseFloat(/[\d.]+px/.exec(root.getPropertyValue('--fs-md'))?.[0] ?? '');
+    const computed = base * scale;
+    return Number.isFinite(computed) && computed >= 1 ? computed : undefined;
 }
 
 /**
- * The rows in the order they are drawn: the ones the stored order names first, in its order, then
- * the rest in the order their terminals were started. An id the stored order names that no row
- * carries any more is passed over.
+ * The rows of one Terminal tab: the rows of the terminals the tab owns, in the tab's own order. A
+ * terminal the tab owns that no row carries (one started and not listed yet, or one oculus did not
+ * start) is passed over.
  */
-export function orderedRows<T extends { terminal: string; created: string }>(
+export function tabRows<T extends { terminal: string }>(
     rows: readonly T[],
-    stored: readonly string[]
+    owned: readonly string[]
 ): T[] {
-    const started = [...rows].sort((a, b) => a.created.localeCompare(b.created));
-    const named = stored
-        .map((id) => started.find((row) => row.terminal === id))
+    return owned
+        .map((id) => rows.find((row) => row.terminal === id))
         .filter((row): row is T => row !== undefined);
-    return [...named, ...started.filter((row) => !named.includes(row))];
 }
 
 /**

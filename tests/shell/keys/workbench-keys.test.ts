@@ -9,6 +9,7 @@
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createWorkbenchKeys } from '../../../src/lib/shell/keys/workbench-keys.svelte.ts';
 import { paneAt } from '../../../src/lib/state/workbench/layout/index.ts';
+import { readTab } from '../../../src/lib/state/sessions/terminal/terminal-tabs.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
 import { setCatalog } from '../../../src/lib/state/shared/words/text.ts';
 import { noop } from '../../fixtures/doubles.ts';
@@ -136,7 +137,8 @@ function handler(
     focus: () => null = () => null,
     overlays: Overlays = {},
     setUpdateOpen: (open: boolean) => void = noop,
-    railPage: (index: number) => boolean = () => false
+    railPage: (index: number) => boolean = () => false,
+    composeIn: (page: string) => void = noop
 ) {
     const element = paneElement(path, 'b', page);
     held.document = fakeDocument(element, overlays.confirm === true);
@@ -155,6 +157,7 @@ function handler(
         setSheetOpen: noop,
         openPalette: noop,
         openDoc: noop,
+        composeIn,
         railPage
     });
     keys.paneFocused({ target: element } as unknown as FocusEvent);
@@ -377,25 +380,46 @@ describe('the n key', () => {
         });
     }
 
-    it("shows a fresh composer in the page's Terminal tab that follows the selection", () => {
-        withTerminal(null);
-        const keys = handler('');
+    /** The handler with the terminals store's own New handed in, as the workbench hands it. */
+    function withNew(): ReturnType<typeof handler> {
+        return handler('', undefined, undefined, {}, noop, undefined, (page) =>
+            client.terminals.composeIn(page)
+        );
+    }
+
+    it('calls the New it was handed, for the page the focused pane is in', () => {
+        const asked: string[] = [];
+        const keys = handler('', 'page-two', undefined, {}, noop, undefined, (page) =>
+            asked.push(page)
+        );
         const { event, prevented } = keyEvent('n', false);
         keys.keys(event);
         expect(prevented).toHaveBeenCalledOnce();
-        const tab = paneAt(client.layout.layout(), [])?.tabs.find((one) => one.id === 't');
-        expect(tab?.state).toMatchObject({ follow: true });
+        expect(asked).toEqual(['page-two']);
+    });
+
+    it("shows the composer in the page's Terminal tab, which keeps the terminals it owns", () => {
+        withTerminal({ session: 'a1b2c3-shell' });
+        const keys = withNew();
+        const { event, prevented } = keyEvent('n', false);
+        keys.keys(event);
+        expect(prevented).toHaveBeenCalledOnce();
+        const tabs = paneAt(client.layout.layout(), [])?.tabs ?? [];
+        expect(tabs.filter((one) => one.view === 'terminal')).toHaveLength(1);
+        expect(readTab(tabs.find((one) => one.id === 't')?.state)).toMatchObject({
+            terminals: ['a1b2c3-shell'],
+            composing: true
+        });
         expect(client.layout.activeInstance()?.id).toBe('t');
     });
 
-    it('opens a new Terminal tab when the only one there is pinned to a terminal', () => {
-        withTerminal({ session: 'a1b2c3-shell' });
-        const keys = handler('');
+    it('opens a new Terminal tab showing the composer when the page has none', () => {
+        client.layout.apply({ root: { kind: 'pane', tabs: [instance('a')], active: 'a' } });
+        const keys = withNew();
         keys.keys(keyEvent('n', false).event);
         const tabs = paneAt(client.layout.layout(), [])?.tabs ?? [];
-        expect(tabs.find((one) => one.id === 't')?.state).toEqual({ session: 'a1b2c3-shell' });
-        const fresh = tabs.filter((one) => one.view === 'terminal' && one.id !== 't');
+        const fresh = tabs.filter((one) => one.view === 'terminal');
         expect(fresh).toHaveLength(1);
-        expect(fresh[0].state).toMatchObject({ follow: true });
+        expect(readTab(fresh[0].state)).toMatchObject({ terminals: [], composing: true });
     });
 });

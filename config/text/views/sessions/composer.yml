@@ -18,7 +18,6 @@ text:
         interrupt_title: Interrupt the turn with Escape; the session goes on
         outside: '{0} is not inside the workspace the session starts in.'
         prompt: The first message
-        selected_elsewhere: '{0} runs in a terminal of its own. Read it in Transcript, or start a new session with New.'
         send: Send
         send_title: Type the message into the session and press Enter
         start: Start

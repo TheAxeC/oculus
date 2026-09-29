@@ -1,4 +1,5 @@
-// Layer 3, view helper tests. Project-card paths, labels and deadlines are checked without a DOM.
+// Layer 3, view helper tests. Project-card paths, labels and deadlines, and whether a session
+// pressed on a card opens its detail view, are checked without a DOM.
 
 import { describe, expect, it } from 'vitest';
 import {
@@ -6,10 +7,29 @@ import {
     deadline,
     deckSlideOf,
     nameOf,
+    sessionViewShown,
     subOf,
     urlOf
 } from '../../../../src/lib/views/shared/card/card.ts';
 import type { Project } from '../../../../src/lib/data/model/index.ts';
+import type { Layout } from '../../../../src/lib/state/workbench/layout/index.ts';
+
+/** One pane holding tabs of these views, the first shown. */
+function paneOf(...views: string[]): Layout {
+    const tabs = views.map((view, at) => ({ id: `tab-${String(at)}`, view, state: {} }));
+    return { kind: 'pane', tabs, active: tabs[0].id };
+}
+
+describe('a session pressed on a project card', () => {
+    it('audits that it opens its detail view on a page whose only session view is a Terminal tab', () => {
+        expect(sessionViewShown(paneOf('projects', 'terminal'))).toBe(false);
+    });
+
+    it('audits that it opens nothing more on a page showing a view that follows the session', () => {
+        expect(sessionViewShown(paneOf('projects', 'terminal', 'session-list'))).toBe(true);
+        expect(sessionViewShown(paneOf('session-detail'))).toBe(true);
+    });
+});
 
 const translate = (key: string, ...args: (string | number)[]): string => `${key}:${args.join(',')}`;
 

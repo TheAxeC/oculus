@@ -13,7 +13,7 @@
 
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { dirname, join, normalize, resolve, sep } from 'node:path';
+import { basename, dirname, join, normalize, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterAll, describe, expect, it } from 'vitest';
 import { plantScratch, scratchDir, scratchMade, sweepScratch } from '../../fixtures/scratch.ts';
@@ -233,10 +233,13 @@ describe('a scratch directory', () => {
         const dir = plantScratch('oculus-scratch-plant-', { 'a/b.txt': 'held' });
         expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
         expect(readFileSync(join(dir, 'a', 'b.txt'), 'utf8')).toBe('held');
-        expect(() => plantScratch('oculus-scratch-plant-', { '../out.txt': 'x' })).toThrow(
+        // The refused file is named after this run's own directory, so a file another program
+        // left in the system temporary directory is never taken for one this plant wrote.
+        const outside = `${basename(dir)}-out.txt`;
+        expect(() => plantScratch('oculus-scratch-plant-', { [`../${outside}`]: 'x' })).toThrow(
             /outside its scratch directory/
         );
-        expect(existsSync(join(dir, '..', 'out.txt'))).toBe(false);
+        expect(existsSync(join(dir, '..', outside))).toBe(false);
         sweepScratch();
     });
 

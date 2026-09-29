@@ -221,17 +221,15 @@ export function isTop(row: ListedSession): boolean {
 }
 
 /**
- * One row of the Terminal view's list: a terminal oculus runs, the id a press selects (the session
- * running in it, else the terminal), its kind, the title it is named by after what runs in it, the
- * description drawn muted after the title, and when it was started, which orders the list.
+ * One row of a Terminal tab's list: a terminal oculus runs, its kind, the title it is named by
+ * after what runs in it, and the description drawn muted after the title. The tab orders its rows
+ * itself.
  */
 export type TerminalChoice = {
-    id: string;
     terminal: string;
     kind: Terminal['kind'];
     title: string;
     description: string;
-    created: string;
 };
 
 /** The last segment of a folder, or the folder itself when it has none (the root). */
@@ -254,17 +252,17 @@ function folderName(path: string): string {
 export function terminalChoices(
     terminals: readonly Pick<
         Terminal,
-        'id' | 'name' | 'kind' | 'command' | 'cwd' | 'created' | 'pid' | 'foreign' | 'resumes'
+        'id' | 'name' | 'kind' | 'command' | 'cwd' | 'pid' | 'foreign' | 'resumes'
     >[],
     sessions: readonly Pick<GroupedSession, 'id' | 'title' | 'pid'>[]
 ): TerminalChoice[] {
     return terminals
         .filter((one) => one.foreign !== true)
         .map((one) => {
-            const row = { terminal: one.id, kind: one.kind, created: one.created };
+            const row = { terminal: one.id, kind: one.kind };
             if (one.kind === 'shell') {
                 const title = one.command === '' ? t('sessions.terminal_title_shell') : one.command;
-                return { ...row, id: one.id, title, description: folderName(one.cwd) };
+                return { ...row, title, description: folderName(one.cwd) };
             }
             const title =
                 one.kind === 'claude' ? t('sessions.kind_claude') : t('sessions.kind_codex');
@@ -275,8 +273,8 @@ export function terminalChoices(
             );
             if (running !== undefined) {
                 const description = running.title === '' ? running.id : running.title;
-                return { ...row, id: running.id, title, description };
+                return { ...row, title, description };
             }
-            return { ...row, id: one.id, title, description: one.name === '' ? one.id : one.name };
+            return { ...row, title, description: one.name === '' ? one.id : one.name };
         });
 }

@@ -18,12 +18,7 @@ import {
     type Pages,
     type Workbench
 } from '../../../../src/lib/state/workbench/layout/index.ts';
-import {
-    LAYOUT_KEY,
-    PREVIOUS_KEY,
-    createLayout
-} from '../../../../src/lib/state/workbench/layout.svelte.ts';
-import { createUi } from '../../../../src/lib/state/workbench/ui.svelte.ts';
+import { LAYOUT_KEY, PREVIOUS_KEY } from '../../../../src/lib/state/workbench/layout.svelte.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sources/config.ts';
 import { setCatalog, t } from '../../../../src/lib/state/shared/words/text.ts';
 import {
@@ -615,94 +610,19 @@ describe('the page shown before the one on screen', () => {
     });
 });
 
-describe('what a page keeps for one of its views', () => {
-    /** One pane holding tabs of the given views, by id, the first one shown. */
-    function viewPane(...tabs: [string, string][]): Workbench['root'] {
-        const held = tabs.map(([id, view]) => ({ id, view, state: {} }));
-        return { kind: 'pane', tabs: held, active: held[0].id };
-    }
-
-    it('is saved with the pages and read back after a reload', () => {
-        const storage = fakeStorage();
-        const first = createLayout(createUi());
-        first.loadLayout(storage);
-        first.apply({ root: viewPane(['tab-1', 'terminal']) });
-        first.setPageViewState('tab-1', { order: ['d4e5f6-shell', 'a1b2c3-claude'] });
-        const again = createLayout(createUi());
-        again.registerViews((view) => view === 'terminal');
-        again.loadLayout(storage);
-        expect(again.pageViewState('tab-1')).toEqual({
-            order: ['d4e5f6-shell', 'a1b2c3-claude']
-        });
-    });
-
-    it('is shared by the tabs of one view on the page and read by no other view', () => {
-        const store = createLayout(createUi());
-        store.apply({
-            root: viewPane(['tab-1', 'terminal'], ['tab-2', 'terminal'], ['tab-3', 'status'])
-        });
-        store.setPageViewState('tab-1', { order: ['x'] });
-        expect(store.pageViewState('tab-2')).toEqual({ order: ['x'] });
-        expect(store.pageViewState('tab-3')).toBe(undefined);
-    });
-
-    it('is kept by no page for an instance no page holds', () => {
-        const store = createLayout(createUi());
-        store.setPageViewState('nowhere', { order: ['y'] });
-        expect(store.pageViewState('nowhere')).toBe(undefined);
-        expect(store.pages().every((page) => page.views === undefined)).toBe(true);
-    });
-
-    it('reads a saved value that is not a map as nothing kept', () => {
-        const page = newPage('one', { root: viewPane(['tab-1', 'terminal']) });
+describe('a saved page carrying a field the pages no longer hold', () => {
+    it('reads a page saved with a views field without it, and saves it again without the field', () => {
+        const held = { id: 'tab-1', view: 'terminal', state: {} };
+        const page = newPage('one', { root: { kind: 'pane', tabs: [held], active: held.id } });
         const saved = JSON.parse(serialiseLayout({ pages: [page], current: page.id })) as {
             pages: Record<string, unknown>[];
         };
-        const known = (view: string) => view === 'terminal';
-        saved.pages[0].views = ['not', 'a', 'map'];
-        const read = parseLayout(saved, 'one', known);
-        expect(read?.pages[0].views).toBe(undefined);
-        saved.pages[0].views = { terminal: { order: ['z'] } };
-        expect(parseLayout(saved, 'one', known)?.pages[0].views).toEqual({
-            terminal: { order: ['z'] }
-        });
-    });
-
-    it('keeps a saved value only under a registered view id, dropping an empty or unknown key', () => {
-        const page = newPage('one', { root: viewPane(['tab-1', 'terminal']) });
-        const saved = JSON.parse(serialiseLayout({ pages: [page], current: page.id })) as {
+        saved.pages[0].views = { terminal: { order: ['d4e5f6-shell', 'a1b2c3-claude'] } };
+        const read = parseLayout(saved, 'one');
+        expect(read?.pages.map((one) => one.id)).toEqual([page.id]);
+        const again = JSON.parse(serialiseLayout(read ?? defaultPages('one'))) as {
             pages: Record<string, unknown>[];
         };
-        const known = (view: string) => view === 'terminal' || view === '';
-        saved.pages[0].views = { '': { order: ['a'] }, gone: { order: ['b'] }, terminal: { x: 1 } };
-        expect(parseLayout(saved, 'one', known)?.pages[0].views).toEqual({ terminal: { x: 1 } });
-        saved.pages[0].views = { '': { order: ['a'] }, gone: { order: ['b'] } };
-        expect(parseLayout(saved, 'one', known)?.pages[0].views).toBe(undefined);
-    });
-
-    /** The Terminal view's registration with no component, which the store never draws here. */
-    function terminalView(): Parameters<ClientState['registry']['registerView']>[0] {
-        return {
-            id: 'terminal',
-            label: 'sessions.view_terminal',
-            glyph: 'sessions.terminal_glyph',
-            group: 'sessions',
-            order: 1
-        } as Parameters<ClientState['registry']['registerView']>[0];
-    }
-
-    it('reads back only what the registry of the client holds after a reload', () => {
-        const storage = fakeStorage();
-        const client = createClientState();
-        client.registry.registerView(terminalView());
-        client.layout.loadLayout(storage);
-        client.layout.apply({ root: viewPane(['tab-1', 'terminal'], ['tab-2', 'nowhere']) });
-        client.layout.setPageViewState('tab-1', { order: ['x'] });
-        client.layout.setPageViewState('tab-2', { order: ['y'] });
-        const again = createClientState();
-        again.registry.registerView(terminalView());
-        again.layout.loadLayout(storage);
-        expect(again.layout.pageViewState('tab-1')).toEqual({ order: ['x'] });
-        expect(again.layout.pageViewState('tab-2')).toBe(undefined);
+        expect(Object.keys(again.pages[0]).sort()).toEqual(['id', 'label', 'workbench']);
     });
 });

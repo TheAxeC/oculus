@@ -1,14 +1,14 @@
 /plan-orchestration oculus/migration
 
 In flight:
-- Q86 (the Map laid out by Graphviz's neato in the page): building.
-- Q101 (each Terminal tab a terminal panel of its own, Z40 (d)): repair round 1.
+- Q86 (the Map laid out by Graphviz's neato in the page): reviewed after two rounds, landing next.
 Queued, in order:
 - Q87 (the import-graph checks on dependency-cruiser, the duplication check on jscpd): stopped at /spec, waiting on Axel's ruling Z45.
-- Q81 (menus, context menus, tooltips and dialogs on bits-ui), once Q101 has landed, since both change the terminal views.
+- Q81 (menus, context menus, tooltips and dialogs on bits-ui).
 - Q79b (the tests, runs alone).
 - Q96 and Q88 (the Rail section's field labels and its icon dropdown on bits-ui, once Q81 has landed; right-click menus wherever vscode.dev gives one).
-- Q82 (the tree on @zag-js/tree-view), once Q101 has landed, since both change `TerminalList.svelte` and `Latex.svelte`.
+- Q82 (the tree on @zag-js/tree-view).
+- Q86b (the Map's drag after neato's placement, Z49 (a)), after Q86's look.
 - D13 (the editor replaced by Monaco): stopped at /spec, waiting on Axel's ruling Z46.
 - X3c (the tab strip as VS Code's editor tabs): stopped at /spec, waiting on Axel's ruling Z47.
 - X3a (the Files view as VS Code's Explorer, once Q82 has landed).

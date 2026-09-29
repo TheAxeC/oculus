@@ -9,11 +9,17 @@
 // (server/machine/pty/channel.ts, `#attach`), so the listener is told which of the two it was
 // handed and a reconnect repaints rather than appending a second copy of the scrollback.
 //
-// A terminal that ends leaves the `sessions` payload's list, and the store closes what showed it:
-// every Terminal tab pinned to it, on any page, and, when the selection showed it (the terminal
-// selected, or the one the selected session runs in), the tabs that follow the selection, with a
-// terminal selection cleared and a session selection kept. The workbench is handed in by
-// state/client/context.ts, since a hidden page mounts no view that could notice.
+// A Terminal tab is a terminal panel of its own, and this store keeps which tab owns which terminal
+// over every page's Terminal tabs (the rules over one tab's state are state/sessions/terminal/
+// terminal-tabs.ts): `showTerminal` shows a terminal in the tab that owns it, switching to its
+// page, or hands a terminal no tab owns to the Terminal tab of the page on screen, or a new one;
+// `moveTerminal` moves one from its tab to another; `composeIn` puts New's composer in the page's
+// Terminal tab, its folder and kind back to a new composer's own. A terminal that ends leaves the
+// `sessions` payload's list, and the store takes it out of every tab that owned it, closes a tab
+// left owning none, on any page, unless the reader is composing in it, and clears a selection that
+// was that terminal. A closed tab stops nothing, so its terminals run on unowned and
+// listed in the Sessions view. The workbench is handed in by state/client/context.ts, since a
+// hidden page mounts no view that could notice.
 //
 // Every action is a write in DESIGN.md's "Auth" sense, since it runs a process on the machine: the
 // POST carries the token state/client/writes.svelte.ts holds, and the socket carries it in its
@@ -34,6 +40,20 @@ import type {
     TerminalResume
 } from '../../data/model/index.ts';
 import { isMap } from '../../data/helpers/guards.ts';
+import {
+    TERMINAL_VIEW,
+    composingIn,
+    emptyTab,
+    isTerminalId,
+    ownerOf,
+    pageTarget,
+    readTab,
+    showingRow,
+    withTerminal,
+    withoutTerminal,
+    type TerminalTabState
+} from './terminal/terminal-tabs.ts';
+import { freshComposer } from './terminal/composer.ts';
 
 // The three model types a view needs of a terminal. The boundary table lets `state/` import
 // `data/model` and lets a view import `state/`, so they reach a view from here, the way
@@ -68,15 +88,6 @@ export type PtyListener = (bytes: Uint8Array, scrollback: boolean) => void;
 /** The channel one terminal's output travels on. */
 export function ptyChannel(id: string): string {
     return `${PREFIX}${id}`;
-}
-
-/**
- * Whether an id names a terminal. It is the same shape the server's `isTerminalId` tests, six hex
- * digits and the kind, and it cannot collide with a Claude session id (a UUID) or a Codex slug (a
- * day path), which is why a terminal selects through the one selection the session views share.
- */
-export function isTerminalId(id: unknown): id is string {
-    return typeof id === 'string' && /^[0-9a-f]{6}-(claude|codex|shell)$/.test(id);
 }
 
 /** The base64 of a string's UTF-8 bytes, which is how the wire carries a pane's input. */
@@ -177,48 +188,6 @@ function mapOf(value: unknown): Record<string, unknown> | null {
     return isMap(value) ? value : null;
 }
 
-/** The view a composer is drawn in. */
-export const COMPOSER_VIEW = 'terminal';
-
-/**
- * The layout state of a Terminal tab asked to show a fresh composer by New: an identity of its
- * own, so it draws the composer rather than the selected terminal, and `follow`, so what it starts
- * becomes the selection and the tab goes back to following it.
- */
-export function composerState(id: string): { id: string; follow: true } {
-    return { id, follow: true };
-}
-
-function identity(state: unknown): string | null {
-    const held = mapOf(state);
-    if (held === null) return null;
-    for (const key of ['id', 'session']) {
-        const value = held[key];
-        if (typeof value === 'string' && value !== '') return value;
-    }
-    return null;
-}
-
-/**
- * Whether a Terminal tab follows the selection rather than owning one terminal: it carries no
- * identity, or it is a composer New put there, which returns to following once it starts.
- */
-export function followsSelection(state: unknown): boolean {
-    return identity(state) === null || mapOf(state)?.follow === true;
-}
-
-/**
- * The Terminal tab New shows its composer in: the first that follows the selection, so a tab the
- * reader pinned to a terminal keeps it. Null when the page holds none, and New opens a tab.
- */
-export function composerTarget(
-    tabs: readonly { id: string; view: string; state: unknown }[]
-): string | null {
-    return (
-        tabs.find((tab) => tab.view === COMPOSER_VIEW && followsSelection(tab.state))?.id ?? null
-    );
-}
-
 /**
  * The terminals that have ended, as one `sessions` message says: those not in its list that an
  * earlier message listed, and, on the first message the page hears, those a tab or the selection
@@ -238,25 +207,31 @@ export function endedTerminals(
     return [...new Set(known)].filter((id) => !listed.has(id));
 }
 
-/** One Terminal tab of any page, as the layout holds it. */
-export type TerminalTab = { id: string; page: string; state: unknown };
+/** One tab of any page, as the layout holds it: its view is read to find the Terminal tabs. */
+export type TerminalTab = { id: string; page: string; view: string; state: unknown };
 
 /**
- * What the terminals store needs of the workbench to close the tabs of a terminal that ended: the
- * Terminal tabs of every page (a hidden page mounts no view, so no view can be the one that
- * notices), the terminal a tab's state pins, the layout's close, and the selection as it stands, a
- * terminal id, a session id or null.
+ * What the terminals store needs of the workbench to keep which tab owns which terminal: the tabs
+ * of every page in page and tab order (a hidden page mounts no view, so no view can be the one that
+ * keeps it), a tab's state replaced, a tab activated, a page switched to, the page on screen, the
+ * active tab of a page's focused pane, a tab opened on a page with a state (answering its id), a
+ * tab closed, and the selection as it stands.
  */
 export type TerminalTabs = {
     tabs: () => TerminalTab[];
-    pinned: (state: unknown) => string | null;
+    restate: (id: string, page: string, state: TerminalTabState) => void;
+    activate: (id: string, page: string) => void;
+    switchPage: (page: string) => void;
+    currentPage: () => string;
+    activeTab: (page: string) => string | null;
+    open: (page: string, state: TerminalTabState) => string;
     close: (id: string, page: string) => void;
+    /** A tab's instance state, which holds its composer record. */
+    instanceState: (id: string) => unknown;
+    setInstanceState: (id: string, state: unknown) => void;
     selected: () => string | null;
     select: (id: string | null) => void;
 };
-
-/** The terminal the selection shows, and the selection it was resolved from. */
-type Followed = { terminal: string; from: string };
 
 /** The terminals one client owns, and the actions it runs on them. */
 export type TerminalsStore = {
@@ -301,6 +276,23 @@ export type TerminalsStore = {
     sendResize: (id: string, cols: number, rows: number) => boolean;
     subscribePty: (id: string, onBytes: PtyListener) => () => void;
     unsubscribePty: (id: string) => void;
+    /**
+     * Show a terminal: in the tab that owns it, on its page, else in the Terminal tab of the page
+     * on screen or a new one, which takes it. The label names a tab that takes it until the
+     * terminal's own name arrives.
+     */
+    showTerminal: (id: string, label?: string) => void;
+    /**
+     * Move a terminal to a Terminal tab at an index of its order; a tab left owning none closes
+     * unless the reader is composing in it.
+     */
+    moveTerminal: (id: string, toTab: string, toPage: string, index: number) => void;
+    /**
+     * New: the composer in the Terminal tab of a page (the one on screen by default), or a new one.
+     */
+    composeIn: (page?: string) => void;
+    /** New in one Terminal tab, the bar's New: the composer there, as `composeIn` shows it. */
+    composeInTab: (tab: string) => void;
 };
 
 export function createTerminals(
@@ -310,52 +302,33 @@ export function createTerminals(
     workbench?: TerminalTabs
 ): TerminalsStore {
     /**
-     * Every terminal id a `sessions` message has listed, whether a message with a list has arrived
-     * yet, and the terminal the selection showed at the last one.
+     * Every terminal id a `sessions` message has listed, and whether a message with a list came.
      */
     const seen = new Set<string>();
     let heard = false;
-    let followed: Followed | null = null;
 
-    /**
-     * The terminal the selection shows now: the selection itself when it is a terminal, else the
-     * oculus terminal the selected session runs in, read off the payload just received.
-     */
-    function following(records: unknown): Followed | null {
-        const selected = workbench?.selected() ?? null;
-        if (selected === null) return null;
-        if (isTerminalId(selected)) return { terminal: selected, from: selected };
-        const record = Array.isArray(records)
-            ? records.map(mapOf).find((one) => one?.id === selected)
-            : undefined;
-        if (record === undefined || record === null) return null;
-        const pid = typeof record.pid === 'number' ? record.pid : null;
-        const terminal = terminalOfSession({ id: selected, pid });
-        return terminal === null ? null : { terminal: terminal.id, from: selected };
+    /** The Terminal tabs of every page. */
+    function terminalTabs(): TerminalTab[] {
+        return workbench?.tabs().filter((tab) => tab.view === TERMINAL_VIEW) ?? [];
     }
 
     /**
-     * Close what a terminal that ended leaves behind: every tab pinned to it on any page, and, when
-     * the selection showed it and has not moved since, every tab that follows the selection with no
-     * identity of its own. A terminal selection is cleared with them; a session selection is kept,
-     * since the session's other views still show it. A composer New put in a following tab carries
-     * an identity and stays, with what the reader typed into it.
+     * Take the ended terminals out of every tab that owned them, on any page; a tab left owning
+     * none closes unless the reader is composing in it, where it keeps its composer, shown alone,
+     * and what was typed. A selection that was one of them is cleared. A tab that owned none of
+     * them is left as it is, so a tab showing a composer it never started from stays.
      */
-    function closeEnded(ended: string[], shown: Followed | null): void {
+    function closeEnded(ended: string[]): void {
         if (workbench === undefined || ended.length === 0) return;
-        const gone = new Set(ended);
-        for (const tab of workbench.tabs()) {
-            const pin = workbench.pinned(tab.state);
-            if (pin !== null && gone.has(pin)) workbench.close(tab.id, tab.page);
+        for (const tab of terminalTabs()) {
+            const held = readTab(tab.state);
+            if (!ended.some((id) => held.terminals.includes(id))) continue;
+            const next = ended.reduce(withoutTerminal, held);
+            if (next.terminals.length === 0 && !held.composing) workbench.close(tab.id, tab.page);
+            else workbench.restate(tab.id, tab.page, next);
         }
-        if (shown === null || !gone.has(shown.terminal)) return;
-        if (workbench.selected() !== shown.from) return;
-        if (isTerminalId(shown.from)) workbench.select(null);
-        for (const tab of workbench.tabs()) {
-            if (followsSelection(tab.state) && identity(tab.state) === null) {
-                workbench.close(tab.id, tab.page);
-            }
-        }
+        const selected = workbench.selected();
+        if (selected !== null && ended.includes(selected)) workbench.select(null);
     }
 
     entities.afterReceive((message) => {
@@ -371,21 +344,112 @@ export function createTerminals(
             .filter((id): id is string => typeof id === 'string');
         if (workbench !== undefined) {
             const selected = workbench.selected();
-            // A selected terminal is what the following tabs show, whenever it was selected; a
-            // selected session shows the terminal it was found running in at the last message.
-            const shown =
-                selected !== null && isTerminalId(selected)
-                    ? { terminal: selected, from: selected }
-                    : followed;
-            const held = workbench.tabs().map((tab) => workbench.pinned(tab.state));
-            const holding = [...held, shown?.terminal ?? null].filter(
-                (id): id is string => id !== null
-            );
-            closeEnded(endedTerminals(seen, now, first, holding), shown);
-            followed = following(payload?.records);
+            const held = terminalTabs().flatMap((tab) => readTab(tab.state).terminals);
+            if (isTerminalId(selected)) held.push(selected);
+            closeEnded(endedTerminals(seen, now, first, held));
         }
         for (const id of now) seen.add(id);
     });
+
+    /**
+     * The Terminal tab of a page that a terminal no tab owns, or New, goes to: pageTarget's rule.
+     */
+    function pageTab(tabs: readonly TerminalTab[], page: string): TerminalTab | null {
+        if (workbench === undefined) return null;
+        const onPage = tabs.filter((tab) => tab.page === page);
+        const chosen = pageTarget(onPage, workbench.activeTab(page));
+        return onPage.find((tab) => tab.id === chosen) ?? null;
+    }
+
+    /**
+     * Show a terminal. The tab that owns it is activated, its page switched to when it is another,
+     * and shows it, alone unless it is one half of the tab's split. A terminal no tab owns joins
+     * the end of the Terminal tab of the page on screen, or of a new Terminal tab there, and is
+     * shown. An id that is not a terminal's shows nothing.
+     */
+    function showTerminal(id: string, label = ''): void {
+        if (workbench === undefined || !isTerminalId(id)) return;
+        const tabs = terminalTabs();
+        const owner = ownerOf(tabs, id);
+        if (owner !== null) {
+            if (owner.page !== workbench.currentPage()) workbench.switchPage(owner.page);
+            const held = readTab(owner.state);
+            const next = showingRow(held, id);
+            if (next !== held) workbench.restate(owner.id, owner.page, next);
+            workbench.activate(owner.id, owner.page);
+            return;
+        }
+        const page = workbench.currentPage();
+        const target = pageTab(tabs, page);
+        if (target === null) {
+            const joined = withTerminal(emptyTab(crypto.randomUUID()), id, 0);
+            workbench.open(page, { ...joined, label });
+            return;
+        }
+        const held = readTab(target.state);
+        const joined = withTerminal(held, id, held.terminals.length);
+        workbench.restate(target.id, page, label === '' ? joined : { ...joined, label });
+        workbench.activate(target.id, page);
+    }
+
+    /**
+     * Move a terminal into a Terminal tab before the row at `index` of that tab's order (`index`
+     * equal to its length puts it last), shown there. Within one tab it is a reorder. The tab it
+     * left closes when it owns nothing more, unless the reader is composing in it, where it keeps
+     * its composer shown alone. A tab id no page holds moves nothing.
+     */
+    function moveTerminal(id: string, toTab: string, toPage: string, index: number): void {
+        if (workbench === undefined || !isTerminalId(id)) return;
+        const tabs = terminalTabs();
+        const target =
+            tabs.find((tab) => tab.id === toTab && tab.page === toPage) ??
+            tabs.find((tab) => tab.id === toTab);
+        if (target === undefined) return;
+        const from = ownerOf(tabs, id);
+        if (from !== null && from.id !== target.id) {
+            const was = readTab(from.state);
+            const left = withoutTerminal(was, id);
+            if (left.terminals.length === 0 && !was.composing) workbench.close(from.id, from.page);
+            else workbench.restate(from.id, from.page, left);
+        }
+        const held = readTab(target.state);
+        const before = held.terminals.indexOf(id);
+        const at = before >= 0 && before < index ? index - 1 : index;
+        workbench.restate(target.id, target.page, withTerminal(held, id, at));
+        workbench.activate(target.id, target.page);
+    }
+
+    /**
+     * New: the composer in the Terminal tab of a page, which keeps the terminals it owns, or in a
+     * new Terminal tab there; the tab is activated. The page is the one on screen unless named.
+     */
+    function composeIn(page?: string): void {
+        if (workbench === undefined) return;
+        const on = page ?? workbench.currentPage();
+        const target = pageTab(terminalTabs(), on);
+        if (target === null) {
+            workbench.open(on, emptyTab(crypto.randomUUID()));
+            return;
+        }
+        showComposer(target);
+        workbench.activate(target.id, on);
+    }
+
+    /** New in the Terminal tab of this id; an id no page holds shows nothing. */
+    function composeInTab(id: string): void {
+        const target = terminalTabs().find((tab) => tab.id === id);
+        if (target !== undefined) showComposer(target);
+    }
+
+    /**
+     * The composer shown in a tab, which keeps the terminals it owns, its folder and kind back to a
+     * new composer's own, so a Split made in the tab earlier does not carry into New.
+     */
+    function showComposer(target: TerminalTab): void {
+        if (workbench === undefined) return;
+        workbench.setInstanceState(target.id, freshComposer(workbench.instanceState(target.id)));
+        workbench.restate(target.id, target.page, composingIn(readTab(target.state)));
+    }
 
     /** Every terminal oculus owns, as the last `sessions` payload reported them. */
     function terminals(): Terminal[] {
@@ -659,6 +723,10 @@ export function createTerminals(
         sendInput,
         sendResize,
         subscribePty,
-        unsubscribePty
+        unsubscribePty,
+        showTerminal,
+        moveTerminal,
+        composeIn,
+        composeInTab
     };
 }

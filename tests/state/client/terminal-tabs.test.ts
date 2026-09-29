@@ -1,14 +1,27 @@
-// Layer 4, client-state test. A Terminal tab whose terminal has ended is closed by the client's
-// own wiring (state/client/context.ts hands the terminals store the tabs of every page, the
-// layout's close and the selection), on whichever page the tab is, when a `sessions` message no
-// longer lists the terminal.
+// Layer 4, client-state test. The terminals store keeping which Terminal tab owns which terminal,
+// through the client's own wiring (state/client/context.ts hands it every page's Terminal tabs and
+// the layout's restate, activate, switch, open and close): a terminal shown in the tab that owns
+// it, on whichever page that is, or taken into the Terminal tab of the page on screen; a terminal
+// moved from one tab to another; New putting the composer in the page's Terminal tab; and a
+// terminal that ends leaving every tab that owned it, a tab left with none closing unless the
+// reader is composing in it.
 //
-// What this does NOT cover: the tab's grid, which needs a DOM the suite does not have.
+// What this does NOT cover: the tab's grid and its drag, which need a DOM the suite does not have,
+// and the presses of the components that start a terminal, which a server render cannot make; the
+// store call each of them makes is the one asserted here.
 
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createClientState, type ClientState } from '../../../src/lib/state/client/context.ts';
 import { tabsOf } from '../../../src/lib/state/workbench/layout/instance.ts';
-import { composerState } from '../../../src/lib/state/sessions/terminals.svelte.ts';
+import { readTab, splitAt } from '../../../src/lib/state/sessions/terminal/terminal-tabs.ts';
+import {
+    composerOf,
+    composerWorkspace,
+    offeredPlaces,
+    splitState,
+    withComposer,
+    type ComposerRecord
+} from '../../../src/lib/state/sessions/terminal/composer.ts';
 import type { Terminal } from '../../../src/lib/data/model/index.ts';
 import { fakeStorage } from '../workbench/layout/layout-fixture.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
@@ -21,6 +34,7 @@ const A = 'a1a1a1-shell';
 const B = 'b2b2b2-shell';
 const C = 'c3c3c3-claude';
 const D = 'd4d4d4-shell';
+const E = 'e5e5e5-shell';
 
 let client: ClientState;
 let version = 0;
@@ -30,6 +44,8 @@ beforeEach(() => {
     client.layout.loadLayout(fakeStorage());
     version = 0;
 });
+
+afterEach(() => vi.unstubAllGlobals());
 
 function terminal(id: string): Terminal {
     return {
@@ -53,87 +69,326 @@ function listed(ids: string[] | null): void {
     client.entities.receive({ channel: 'sessions', version, payload });
 }
 
-/** The Terminal tabs of every page, by page id. */
-function terminalTabs(): Record<string, string[]> {
-    const held: Record<string, string[]> = {};
-    for (const page of client.layout.pages()) {
-        held[page.id] = tabsOf(page.workbench.root)
+/** Every Terminal tab of every page, with the page and the state it holds. */
+function terminalTabs(): { id: string; page: string; state: unknown }[] {
+    return client.layout.pages().flatMap((page) =>
+        tabsOf(page.workbench.root)
             .filter((tab) => tab.view === 'terminal')
-            .map((tab) => tab.id);
-    }
-    return held;
+            .map((tab) => ({ id: tab.id, page: page.id, state: tab.state }))
+    );
 }
 
 function holds(tab: string): boolean {
-    return Object.values(terminalTabs()).some((tabs) => tabs.includes(tab));
+    return terminalTabs().some((one) => one.id === tab);
 }
 
-describe('a Terminal tab whose terminal ended', () => {
-    it('closes when pinned to it, on a page not on screen, and a tab pinned elsewhere stays', () => {
+/** What one tab owns and shows, read through the tab's own reader. */
+function tab(id: string) {
+    return readTab(terminalTabs().find((one) => one.id === id)?.state);
+}
+
+/** A Terminal tab on a page owning these terminals, the first shown. */
+function owning(page: string, terminals: string[]): string {
+    return client.layout.openView(
+        'terminal',
+        { id: `tab-${terminals.join('-')}`, terminals, shown: terminals[0] ?? null },
+        page
+    );
+}
+
+/** A composer record a reader has chosen in a tab: a folder, Codex, an account and a pick. */
+const CHOSEN: ComposerRecord = {
+    workspace: '/work/elsewhere',
+    agent: 'codex',
+    accounts: { codex: 'work' },
+    picks: { claude: {}, codex: { model: 'large' } }
+};
+
+/** A Terminal tab on a page owning these terminals and showing the composer alone, as New does. */
+function composingOwning(page: string, terminals: string[]): string {
+    const id = client.layout.openView(
+        'terminal',
+        { id: `composing-${terminals.join('-')}`, terminals, shown: null, composing: true },
+        page
+    );
+    client.ui.setInstanceState(id, withComposer({ typed: 'held' }, CHOSEN));
+    return id;
+}
+
+describe('a terminal moved to another tab', () => {
+    it('joins the tab at the index and is shown there; the tab it left, holding nothing now, closes', () => {
+        const page = client.layout.currentPage().id;
+        const t1 = owning(page, [A, B]);
+        const t2 = owning(page, [C]);
+        listed([A, B, C]);
+        client.terminals.moveTerminal(C, t1, page, 1);
+        expect(tab(t1).terminals).toEqual([A, C, B]);
+        expect(tab(t1).shown).toBe(C);
+        expect(holds(t2)).toBe(false);
+    });
+
+    it('leaves a tab that still owns another terminal open', () => {
+        const page = client.layout.currentPage().id;
+        const t1 = owning(page, [A]);
+        const t2 = owning(page, [B, C]);
+        client.terminals.moveTerminal(C, t1, page, 1);
+        expect(tab(t1).terminals).toEqual([A, C]);
+        expect(tab(t2).terminals).toEqual([B]);
+    });
+
+    it('leaves a tab the reader is composing in open, its composer alone and its record kept', () => {
+        const page = client.layout.currentPage().id;
+        const t1 = owning(page, [A]);
+        const composing = composingOwning(page, [B]);
+        const before = JSON.stringify(client.ui.instanceState(composing));
+        client.terminals.moveTerminal(B, t1, page, 1);
+        expect(holds(composing)).toBe(true);
+        expect(tab(composing)).toMatchObject({
+            terminals: [],
+            shown: null,
+            beside: null,
+            composing: true
+        });
+        expect(JSON.stringify(client.ui.instanceState(composing))).toBe(before);
+    });
+});
+
+describe('a terminal that ended', () => {
+    it('leaves the tab that owned it, and a tab owning only it closes, on a page not on screen too', () => {
         const first = client.layout.currentPage().id;
-        const onA = client.layout.openView('terminal', { session: A }, first);
+        const t1 = owning(first, [A, B]);
         client.layout.openPage('Other');
         const other = client.layout.currentPage().id;
         expect(other).not.toBe(first);
-        const onB = client.layout.openView('terminal', { session: B }, other);
-        listed([A, B]);
-        expect(holds(onA) && holds(onB)).toBe(true);
-
-        listed([B]);
-        expect(holds(onA)).toBe(false);
-        expect(holds(onB)).toBe(true);
-    });
-
-    it('closes when following the selection, and the selection is cleared', () => {
-        const page = client.layout.currentPage().id;
-        const following = client.layout.openView('terminal', undefined, page);
+        const onlyA = owning(first, [A]);
+        const t3 = owning(other, [C]);
+        listed([A, B, C]);
         client.selection.select(A);
-        listed([A, B]);
-        listed([B]);
+
+        listed([B, C]);
+        expect(tab(t1).terminals).toEqual([B]);
+        expect(holds(onlyA)).toBe(false);
+        expect(holds(t3)).toBe(true);
         expect(client.selection.selected()).toBe(null);
-        expect(holds(following)).toBe(false);
     });
 
-    it('stays when following a selected terminal that is still listed', () => {
+    it('keeps a selection that was not the ended terminal', () => {
         const page = client.layout.currentPage().id;
-        const following = client.layout.openView('terminal', undefined, page);
-        client.selection.select(A);
+        owning(page, [A]);
         listed([A, B]);
-        listed([A]);
-        expect(client.selection.selected()).toBe(A);
-        expect(holds(following)).toBe(true);
+        client.selection.select(B);
+        listed([B]);
+        expect(client.selection.selected()).toBe(B);
     });
 
-    it('keeps a composer the reader is filling in when the selected terminal ends', () => {
+    it('does not reach a tab owning a terminal started here and not listed yet', () => {
         const page = client.layout.currentPage().id;
-        const composing = client.layout.openView('terminal', composerState('fresh-one'), page);
-        client.selection.select(A);
+        const t1 = owning(page, [A]);
+        listed([A]);
+        const onD = owning(page, [D]);
+        listed([A]);
+        expect(holds(onD)).toBe(true);
+        expect(holds(t1)).toBe(true);
+    });
+
+    it('leaves a tab the reader is composing in open, its composer alone and its record kept', () => {
+        const page = client.layout.currentPage().id;
+        const composing = composingOwning(page, [A]);
+        const before = JSON.stringify(client.ui.instanceState(composing));
         listed([A]);
         listed([]);
-        expect(client.selection.selected()).toBe(null);
         expect(holds(composing)).toBe(true);
+        expect(tab(composing)).toMatchObject({
+            terminals: [],
+            shown: null,
+            beside: null,
+            composing: true
+        });
+        expect(JSON.stringify(client.ui.instanceState(composing))).toBe(before);
+    });
+
+    it('clears at the first message a selected terminal no tab owns that the message does not list', () => {
+        client.selection.select(E);
+        listed([A]);
+        expect(client.selection.selected()).toBe(null);
+    });
+
+    it('keeps at the first message a selected terminal no tab owns that the message lists', () => {
+        client.selection.select(A);
+        listed([A]);
+        expect(client.selection.selected()).toBe(A);
     });
 
     it('closes at the first message when that message does not list it', () => {
         const page = client.layout.currentPage().id;
-        const onC = client.layout.openView('terminal', { session: C }, page);
+        const onC = owning(page, [C]);
         listed([]);
         expect(holds(onC)).toBe(false);
     });
 
-    it('stays when started here after the first message and not listed yet', () => {
-        listed([A]);
+    it('closes nothing on a message that carries no terminal list', () => {
         const page = client.layout.currentPage().id;
-        const onD = client.layout.openView('terminal', { session: D }, page);
-        listed([A]);
-        expect(holds(onD)).toBe(true);
-    });
-
-    it('stays when a message carries no terminal list', () => {
-        const page = client.layout.currentPage().id;
-        const onA = client.layout.openView('terminal', { session: A }, page);
+        const onA = owning(page, [A]);
         listed([A]);
         listed(null);
         expect(holds(onA)).toBe(true);
+    });
+
+    it('leaves a tab that never held a terminal showing its composer', () => {
+        const page = client.layout.currentPage().id;
+        const fresh = client.layout.openView('terminal', { id: 'fresh-one' }, page);
+        listed([A]);
+        listed([]);
+        expect(holds(fresh)).toBe(true);
+        expect(tab(fresh).composing).toBe(true);
+    });
+});
+
+describe('showing a terminal', () => {
+    it('switches to the page of the tab that owns it, activates that tab and shows it', () => {
+        const p1 = client.layout.currentPage().id;
+        client.layout.openPage('Other');
+        const p2 = client.layout.currentPage().id;
+        const t2 = owning(p2, [B, C]);
+        client.layout.switchPage(p1);
+        owning(p1, [A]);
+        expect(client.layout.currentPage().id).toBe(p1);
+
+        client.terminals.showTerminal(C);
+        expect(client.layout.currentPage().id).toBe(p2);
+        expect(client.layout.activeInstance(p2)?.id).toBe(t2);
+        expect(tab(t2).shown).toBe(C);
+    });
+
+    it("keeps the split when the terminal is one half of the owning tab's split", () => {
+        const page = client.layout.currentPage().id;
+        const split = client.layout.openView(
+            'terminal',
+            { id: 'split', terminals: [A, B], shown: A, beside: B },
+            page
+        );
+        client.terminals.showTerminal(B);
+        expect(tab(split)).toMatchObject({ shown: A, beside: B });
+    });
+
+    it("hands a terminal no tab owns to the active Terminal tab of the page's focused pane", () => {
+        const page = client.layout.currentPage().id;
+        const first = owning(page, [A]);
+        const second = owning(page, [B]);
+        expect(client.layout.activeInstance(page)?.id).toBe(second);
+        client.terminals.showTerminal(E);
+        expect(tab(second).terminals).toEqual([B, E]);
+        expect(tab(second).shown).toBe(E);
+        expect(tab(first).terminals).toEqual([A]);
+    });
+
+    it('else to the first Terminal tab of the page, which is activated', () => {
+        const page = client.layout.currentPage().id;
+        const first = owning(page, [A]);
+        owning(page, [B]);
+        client.layout.openView('projects', undefined, page);
+        expect(client.layout.activeInstance(page)?.view).toBe('projects');
+        client.terminals.showTerminal(E);
+        expect(tab(first).terminals).toEqual([A, E]);
+        expect(tab(first).shown).toBe(E);
+        expect(client.layout.activeInstance(page)?.id).toBe(first);
+    });
+
+    it('else to a new Terminal tab on the page on screen', () => {
+        const page = client.layout.currentPage().id;
+        expect(terminalTabs()).toEqual([]);
+        client.terminals.showTerminal(E);
+        const made = terminalTabs();
+        expect(made).toHaveLength(1);
+        expect(made[0].page).toBe(page);
+        expect(readTab(made[0].state)).toMatchObject({ terminals: [E], shown: E });
+    });
+
+    it('opens no second Terminal tab when the page has one, however many terminals start', () => {
+        const page = client.layout.currentPage().id;
+        const only = owning(page, [A]);
+        client.selection.select(D);
+        client.terminals.showTerminal(D);
+        client.terminals.showTerminal(E);
+        expect(terminalTabs().map((one) => one.id)).toEqual([only]);
+        expect(tab(only).terminals).toEqual([A, D, E]);
+        expect(client.selection.selected()).toBe(D);
+    });
+
+    it('is refused for an id that is not a terminal', () => {
+        client.terminals.showTerminal('fix-one');
+        client.terminals.showTerminal('');
+        expect(terminalTabs()).toEqual([]);
+    });
+});
+
+describe('a Terminal tab closed', () => {
+    it('leaves its terminals running and unowned, listed, and taken by no tab until shown', () => {
+        const posts = vi.fn();
+        vi.stubGlobal('fetch', posts);
+        const page = client.layout.currentPage().id;
+        const t1 = owning(page, [A, B]);
+        listed([A, B]);
+        client.layout.closeInstance(t1, page);
+        expect(holds(t1)).toBe(false);
+        listed([A, B]);
+        expect(posts).not.toHaveBeenCalled();
+        expect(client.terminals.terminals().map((one) => one.id)).toEqual([A, B]);
+        const other = owning(page, [C]);
+        listed([A, B, C]);
+        expect(tab(other).terminals).toEqual([C]);
+        client.terminals.showTerminal(A);
+        expect(tab(other).terminals).toEqual([C, A]);
+    });
+});
+
+describe('New', () => {
+    it("puts the composer in the page's Terminal tab, keeping what the tab owns", () => {
+        const page = client.layout.currentPage().id;
+        const only = owning(page, [A]);
+        client.terminals.composeIn(page);
+        expect(terminalTabs().map((one) => one.id)).toEqual([only]);
+        expect(tab(only)).toMatchObject({ terminals: [A], composing: true });
+    });
+
+    it.each([
+        ['the page', (_split: string, page: string) => client.terminals.composeIn(page)],
+        ["the tab's bar", (split: string) => client.terminals.composeInTab(split)]
+    ])("clears a Split's folder and kind from the tab's composer, New from %s", (_from, press) => {
+        const page = client.layout.currentPage().id;
+        const split = owning(page, [A, B]);
+        client.ui.setInstanceState(split, withComposer({}, CHOSEN));
+        client.ui.setInstanceState(
+            split,
+            splitState('/work/split-row', 'shell', client.ui.instanceState(split))
+        );
+        client.layout.restateInstance(split, splitAt(tab(split), A));
+        press(split, page);
+        expect(tab(split)).toMatchObject({ terminals: [A, B], composing: true });
+        const record = composerOf(client.ui.instanceState(split));
+        expect(record).toEqual({
+            workspace: '',
+            agent: 'claude',
+            accounts: CHOSEN.accounts,
+            picks: CHOSEN.picks
+        });
+        const places = ['/hub', '/work/elsewhere'];
+        expect(composerWorkspace(record, offeredPlaces(places, record), '/hub')).toBe('/hub');
+    });
+
+    it('shows the composer in the tab whose bar was pressed, and in no other tab of the page', () => {
+        const page = client.layout.currentPage().id;
+        const first = owning(page, [A]);
+        const second = owning(page, [B]);
+        client.terminals.composeInTab(second);
+        expect(tab(second)).toMatchObject({ terminals: [B], composing: true });
+        expect(tab(first)).toMatchObject({ terminals: [A], composing: false });
+    });
+
+    it('opens a Terminal tab showing the composer when the page has none', () => {
+        client.terminals.composeIn();
+        const made = terminalTabs();
+        expect(made).toHaveLength(1);
+        expect(readTab(made[0].state)).toMatchObject({ terminals: [], composing: true });
     });
 });

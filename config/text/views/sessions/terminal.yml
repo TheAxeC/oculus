@@ -10,7 +10,7 @@ text:
         kind_shell: Shell
         kind_shell_glyph: terminal_shell
         new_terminal: new terminal
-        new_terminal_title: Open another terminal tab, which starts a terminal of its own
+        new_terminal_title: Start a new terminal in this tab, from the composer
         stop_terminal: Stop this terminal
         terminal_glyph: terminal
         terminal_larger: Larger terminal text
@@ -20,7 +20,7 @@ text:
         terminal_list: The terminals oculus runs; the arrow keys move between them and Enter shows one here
         terminal_row_tip: "{0}\nCommand: {1}\nFolder: {2}\nStarted: {3}"
         terminal_split: Split
-        terminal_split_tip: Open a new terminal beside this tab, in this terminal's folder and of its kind (Shift+Enter on the row)
+        terminal_split_tip: "Split this tab: this terminal on the left, a new terminal on the right in this terminal's folder and of its kind (Shift+Enter on the row)"
         terminal_kill: Kill
         terminal_kill_tip: Kill this terminal, ending its tmux session and everything running in it (Delete or Backspace on the row, twice)
         terminal_kill_armed: Press again to kill this terminal

@@ -12,14 +12,12 @@
     import { accessTone, type Dataset } from '$lib/state/sources/datasets';
     import { inlineMarkdown } from '$lib/ui/html';
     import type { Entry, Project, SchemaField } from '$lib/state/boards/collection';
-    import { findView } from '$lib/state/workbench/layout';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
 
     const {
-        layout: { layout, openView },
         selection: { select },
-        terminals: { recoverDataset }
+        terminals: { recoverDataset, showTerminal }
     } = useState();
 
     type Props = {
@@ -46,10 +44,6 @@
             : ''
     );
 
-    function terminalOpen(): boolean {
-        return findView(layout(), 'terminal', null) !== null;
-    }
-
     async function recover(): Promise<void> {
         recovering = true;
         const answer = await recoverDataset(dataset.id);
@@ -59,7 +53,7 @@
             return;
         }
         select(answer.id);
-        if (!terminalOpen()) openView('terminal');
+        showTerminal(answer.id);
     }
 </script>
 

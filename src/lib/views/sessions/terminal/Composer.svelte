@@ -2,13 +2,15 @@
     // Layer 3, view partial. The composer of a new session: one box holding the prompt, with its
     // controls in its foot as VS Code's chat input holds them, the attach control, the pickers
     // (workspace, agent, account, and the agent's own lists out of config/catalogs/agents.yml)
-    // and Start. The Terminal view draws it while a tab has no terminal.
+    // and Start. The Terminal view draws it alone while a tab shows no terminal, and in the right
+    // half of a split tab while the tab is composing (New in a split tab, or Split on a row).
     //
-    // What each picker last chose is kept in the tab's instance state (state/sessions/composer.ts),
-    // so the tab's next composer opens on it; the prompt being typed is this component's own. A
-    // Shell takes none of the agent pickers, and its prompt is the first command it runs. A tab
-    // opened by a terminal's Split starts in that terminal's folder, which the workspace picker
-    // offers first when none of its places holds it.
+    // What each picker last chose is kept in the tab's instance state
+    // (state/sessions/terminal/composer.ts), so the tab's next composer opens on the same accounts
+    // and picks; the prompt being typed is this component's own. A Shell takes none of the agent
+    // pickers, and its prompt is the first command it runs. A composer a Split shows starts in the
+    // split row's folder, which the workspace picker offers first when none of its places holds it;
+    // New puts the folder and kind back to a new composer's own.
     //
     // The prompt goes to the server as one field and reaches the agent as one argument; nothing on
     // this side quotes, splits or escapes it, since nothing on either side hands it to a shell.
@@ -36,7 +38,7 @@
         withComposer,
         type ComposerAgent,
         type ComposerRecord
-    } from '$lib/state/sessions/composer';
+    } from '$lib/state/sessions/terminal/composer';
     import type { AgentChoices, AgentChoicesFinding } from '$lib/state/sessions/agents.svelte';
     import { FILE_DRAG } from '$lib/state/sources/fs';
     import { t } from '$lib/state/shared/words/text';
@@ -185,7 +187,7 @@
         starting = true;
         failure = '';
         const shape = composeStart(agent, workspace, account, picks, prompt, attached);
-        // What the start used seeds the tab's next composer, whether or not it lands.
+        // The folder and kind the start used stay with this composer, whether or not it lands.
         keep({ workspace, agent });
         const answer = await composeTerminal(shape);
         starting = false;

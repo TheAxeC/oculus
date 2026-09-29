@@ -11,9 +11,10 @@
 
 // A terminal selects the same way. The server puts a record per terminal in the `sessions` payload,
 // and a terminal's id cannot collide with a session's, so one store holds both and the two readers
-// below are the whole of the difference.
+// below are the whole of the difference. Which Terminal tab shows a terminal is not the
+// selection's: a Terminal tab owns its terminals (state/sessions/terminal/terminal-tabs.ts).
 
-import { isTerminalId } from '../sessions/terminals.svelte.ts';
+import { isTerminalId } from '../sessions/terminal/terminal-tabs.ts';
 
 /**
  * The session a view instance pinned, from the state it saved, or null when it follows the
@@ -24,12 +25,6 @@ export function pinnedSession(state: unknown): string | null {
     if (typeof state !== 'object' || state === null || Array.isArray(state)) return null;
     const held = (state as Record<string, unknown>).session;
     return typeof held === 'string' && held !== '' ? held : null;
-}
-
-/** The terminal a view instance pinned, out of the same `session` field pinnedSession reads. */
-export function pinnedTerminal(state: unknown): string | null {
-    const held = pinnedSession(state);
-    return isTerminalId(held) ? held : null;
 }
 
 /** The workbench's current session or terminal, for one client. */

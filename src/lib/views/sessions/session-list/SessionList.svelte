@@ -14,8 +14,11 @@
 
 <script lang="ts">
     // Layer 3, sessions view. The sessions list of VS Code's Agents window: New, the filter menu
-    // and the search box in its header, the sessions grouped by workspace, the terminals oculus
-    // started, and the Customizations section at its foot.
+    // and the search box in its header, the sessions grouped by workspace, every terminal oculus
+    // started, and the Customizations section at its foot. A terminal row shows its terminal in the
+    // Terminal tab that owns it, or, for one no tab owns (its tab was closed, or a task, a hook or
+    // LaTeX started it), in the Terminal tab of the page on screen; `Open in its own pane` moves it
+    // into a new Terminal tab. New shows the composer in the page's Terminal tab.
     //
     // The filter and the search text are kept in the instance's state, so a list comes back as it
     // was left. The marks a row menu sets (pinned to the top, archived, a title) are writes to
@@ -28,7 +31,6 @@
     import Search from '$lib/ui/controls/Search.svelte';
     import Toolbar from '$lib/ui/frame/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import { findView, tabsOf } from '$lib/state/workbench/layout';
     import type { GroupedSession } from '$lib/state/client/selectors.svelte';
     import {
         LIST_AGENTS,
@@ -39,12 +41,8 @@
         toggled,
         type ListFilter
     } from '$lib/state/sessions/folds';
-    import {
-        composerState,
-        composerTarget,
-        resumeRefusal,
-        type Terminal
-    } from '$lib/state/sessions/terminals.svelte';
+    import { resumeRefusal, type Terminal } from '$lib/state/sessions/terminals.svelte';
+    import { TERMINAL_VIEW, emptyTab } from '$lib/state/sessions/terminal/terminal-tabs';
     import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import Customizations from './Customizations.svelte';
@@ -55,12 +53,20 @@
 
     const {
         agents: { exportSession },
-        layout: { activateInstance, layout, openView, restateInstance },
+        layout: { currentPage, openView },
         selection: { select },
         selectors: { sessionsByWorkspace },
         clock: { minuteNow, startMinuteClock },
         ui: { instanceState, setInstanceState },
-        terminals: { forkTerminal, resumeTerminal, stopTerminal, terminals },
+        terminals: {
+            composeIn,
+            forkTerminal,
+            moveTerminal,
+            resumeTerminal,
+            showTerminal,
+            stopTerminal,
+            terminals
+        },
         writes: { writeSession }
     } = useState();
 
@@ -111,18 +117,19 @@
     }
 
     /**
-     * Start a new session: the composer in the page's Terminal tab that follows the selection, or
-     * in a new Terminal tab when the page has none. The workbench's `n` key does the same.
+     * Start a new session: the composer in the Terminal tab of the page on screen, which keeps the
+     * terminals it owns, or in a new Terminal tab when the page has none. The workbench's `n` key
+     * does the same.
      */
     function newSession(): void {
-        const state = composerState(crypto.randomUUID());
-        const target = composerTarget(tabsOf(layout()));
-        if (target === null) {
-            openView('terminal', state);
-            return;
-        }
-        restateInstance(target, state);
-        activateInstance(target);
+        composeIn();
+    }
+
+    /** Open a new Terminal tab on the page on screen and move the terminal into it. */
+    function ownPane(entry: Terminal): void {
+        const page = currentPage().id;
+        const opened = openView(TERMINAL_VIEW, emptyTab(crypto.randomUUID()), page);
+        if (opened !== '') moveTerminal(entry.id, opened, page, 0);
     }
 
     async function stop(entry: Terminal): Promise<void> {
@@ -134,10 +141,6 @@
         failure = '';
         const answer = await stopTerminal(entry.id);
         if (!answer.ok) failure = answer.error;
-    }
-
-    function terminalOpen(): boolean {
-        return findView(layout(), 'terminal', null) !== null;
     }
 
     async function resume(row: GroupedSession): Promise<void> {
@@ -153,7 +156,7 @@
             return;
         }
         select(answer.id);
-        if (!terminalOpen()) openView('terminal');
+        showTerminal(answer.id);
     }
 
     async function fork(row: GroupedSession): Promise<void> {
@@ -164,7 +167,7 @@
             return;
         }
         select(answer.id);
-        if (!terminalOpen()) openView('terminal');
+        showTerminal(answer.id);
     }
 
     /** Flip one mark at once and write it; a write that does not land puts the mark back. */
@@ -269,14 +272,7 @@
                             void rename(row, title)}
                     />
                 {/each}
-                <TerminalRows
-                    entries={panes}
-                    {now}
-                    {arming}
-                    onstop={stop}
-                    onpinned={(entry: Terminal) =>
-                        openView('terminal', { session: entry.id, label: entry.name })}
-                />
+                <TerminalRows entries={panes} {now} {arming} onstop={stop} onpinned={ownPane} />
             {/if}
         </div>
         <Customizations owner={instance.id} />

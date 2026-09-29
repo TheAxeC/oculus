@@ -105,14 +105,16 @@ export type RepositoriesStore = {
 };
 
 /**
- * What the store needs of the terminals store: a shell started in a folder. The terminals store in
- * state/sessions satisfies it.
+ * What the store needs of the terminals store: a shell started in a folder, and a terminal shown in
+ * the Terminal tab of the page on screen, or a new one. The terminals store in state/sessions
+ * satisfies it.
  */
 export type ShellStarter = {
     startTerminal: (
         kind: 'shell',
         cwd: string
     ) => Promise<{ ok: boolean; id: string; error: string }>;
+    showTerminal: (id: string, label?: string) => void;
 };
 
 /**
@@ -205,9 +207,10 @@ export function createRepositories(
     }
 
     /**
-     * Start a shell where the reader is looking. A terminal that will not start is said after the
-     * write's own sentence rather than over it: the worktree is there either way, and the reader
-     * needs both facts.
+     * Start a shell where the reader is looking, shown in the Terminal tab of the page on screen,
+     * or a new one, which the label names until the shell's own name arrives. A terminal that will
+     * not start is said after the write's own sentence rather than over it: the worktree is there
+     * either way, and the reader needs both facts.
      */
     async function shellIn(root: string, cwd: string, label: string): Promise<void> {
         const answer = await terminals.startTerminal('shell', cwd);
@@ -216,7 +219,7 @@ export function createRepositories(
             say(root, held === '' ? answer.error : `${held} ${answer.error}`);
             return;
         }
-        layout.openView('terminal', { session: answer.id, label });
+        terminals.showTerminal(answer.id, label);
     }
 
     function openDiff(subject: DiffSubject, label: string): void {

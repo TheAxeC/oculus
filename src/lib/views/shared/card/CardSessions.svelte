@@ -5,7 +5,7 @@
     import RowButton from '$lib/ui/controls/RowButton.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import type { BoardItem } from '$lib/state/boards/board';
-    import { findView } from '$lib/state/workbench/layout';
+    import { sessionViewShown } from './card';
     import { folderOf, type GroupedSession } from '$lib/state/client/selectors.svelte';
     import { liveCount } from '$lib/state/sessions/folds';
     import { t } from '$lib/state/shared/words/text';
@@ -23,16 +23,6 @@
     };
     let { item }: Props = $props();
 
-    /** Views that already follow the selected session. */
-    const SESSION_VIEWS = [
-        'session-list',
-        'session-detail',
-        'terminal',
-        'timeline',
-        'changes',
-        'agents'
-    ] as const;
-
     const working = $derived.by(() => {
         const folder = folderOf(item.project);
         return folder === '' ? [] : sessionsForProject(folder);
@@ -46,18 +36,13 @@
         return '--tone: var(--c-slate)';
     }
 
-    /** Whether the page's tree already shows a session-following view. */
-    function sessionViewOpen(): boolean {
-        return SESSION_VIEWS.some((view) => findView(layout(), view, null) !== null);
-    }
-
     /**
-     * Select one session and, when no session view is visible, open that session's own detail tab
-     * beside the board.
+     * Select one session and, when the page shows no view that follows the selected session
+     * (card.ts, `sessionViewShown`), open that session's own detail tab beside the board.
      */
     function pick(entry: GroupedSession): void {
         select(entry.id);
-        if (!sessionViewOpen())
+        if (!sessionViewShown(layout()))
             openBeside('session-detail', { session: entry.id, label: entry.title });
     }
 </script>

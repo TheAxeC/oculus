@@ -73,20 +73,13 @@ import {
     createRepositories,
     type RepositoriesStore
 } from '../sources/repositories/repositories.svelte.ts';
-import {
-    createSelection,
-    pinnedTerminal,
-    type SelectionStore
-} from '../workbench/selection.svelte.ts';
+import { createSelection, type SelectionStore } from '../workbench/selection.svelte.ts';
 import { createSearch, type SearchStore } from '../sources/search.svelte.ts';
 import { createSelectors, type SelectorsStore } from './selectors.svelte.ts';
 import { createSocket, type SocketStore } from './socket.svelte.ts';
 import { createSource, type SourceStore } from '../sessions/source.svelte.ts';
-import {
-    COMPOSER_VIEW,
-    createTerminals,
-    type TerminalsStore
-} from '../sessions/terminals.svelte.ts';
+import { createTerminals, type TerminalsStore } from '../sessions/terminals.svelte.ts';
+import { TERMINAL_VIEW } from '../sessions/terminal/terminal-tabs.ts';
 import { createTranscripts, type TranscriptsStore } from '../sessions/transcript.svelte.ts';
 import { createUi, type UiStore } from '../workbench/ui.svelte.ts';
 import { createUsageRefresh, type UsageRefreshStore } from '../system/usage-refresh.svelte.ts';
@@ -167,18 +160,35 @@ export function createClientState(): ClientState {
     const clock = createClock();
     const changes = createChanges();
     const selection = createSelection();
-    // A Terminal tab whose terminal ended is closed on whichever page it is, and a hidden page
-    // mounts no view, so the terminals store is handed every page's Terminal tabs, the layout's
-    // close and the selection, and closes them itself when a `sessions` message stops listing it.
+    // A terminal belongs to exactly one Terminal tab, on whichever page it is, and a hidden page
+    // mounts no view, so the terminals store is handed every page's Terminal tabs and the layout's
+    // ways to change them, and keeps the ownership itself: a terminal shown, moved or ended changes
+    // the tabs of any page. A tab it opens is opened on the page it names; its state carries an
+    // identity of its own, so the layout opens it rather than activating another Terminal tab.
     const terminals = createTerminals(entities, socket, writes, {
         tabs: () =>
             layout.pages().flatMap((page) =>
                 tabsOf(page.workbench.root)
-                    .filter((tab) => tab.view === COMPOSER_VIEW)
-                    .map((tab) => ({ id: tab.id, page: page.id, state: tab.state }))
+                    .filter((tab) => tab.view === TERMINAL_VIEW)
+                    .map((tab) => ({
+                        id: tab.id,
+                        page: page.id,
+                        view: tab.view,
+                        state: tab.state
+                    }))
             ),
-        pinned: pinnedTerminal,
+        restate: (id, _page, state) => layout.restateInstance(id, state),
+        activate: (id, page) => layout.activateInstance(id, page),
+        switchPage: (page) => layout.switchPage(page),
+        currentPage: () => layout.currentPage().id,
+        activeTab: (page) => {
+            const active = layout.activeInstance(page);
+            return active?.view === TERMINAL_VIEW ? active.id : null;
+        },
+        open: (page, state) => layout.openView(TERMINAL_VIEW, state, page),
         close: (id, page) => layout.closeInstance(id, page),
+        instanceState: (id) => ui.instanceState(id),
+        setInstanceState: (id, state) => ui.setInstanceState(id, state),
         selected: selection.selected,
         select: selection.select
     });
@@ -277,8 +287,6 @@ export function createClientState(): ClientState {
     // document, a file), and the layout lands it apart from a page's tool views. The registry is
     // built over the layout, so the layout is told the rule once both exist.
     layout.registerOpened((view) => registry.viewFor(view)?.group === '');
-    // What a saved page keeps for a view is read back only under an id the registry holds.
-    layout.registerViews((view) => registry.viewFor(view) !== undefined);
     return {
         entities,
         writes,

@@ -21,8 +21,6 @@ import {
     type RailOrder
 } from './keys';
 import { DOC_PICK } from '$lib/state/workbench/navigation/catalogue';
-import { composerState, composerTarget } from '$lib/state/sessions/terminals.svelte';
-import { tabsOf } from '$lib/state/workbench/layout';
 
 type Options = {
     drag: DragStore;
@@ -40,6 +38,8 @@ type Options = {
     openPalette: (prefill: string) => void;
     /** Open one configured hub document by its path, in the page named, as the catalogue does. */
     openDoc: (path: string, page: string | undefined) => void;
+    /** New: the composer in the Terminal tab of the page named, the terminals store's rule. */
+    composeIn: (page: string) => void;
     /**
      * Show the page of the rail button at `index`, counting from 1, which is what the digits 1 to 9
      * do. It answers whether there was one, so the key is swallowed only when it did something.
@@ -159,21 +159,6 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
         return page ?? options.layout.currentPage().id;
     }
 
-    /**
-     * Start a new session on a page: the composer in its Terminal tab that follows the selection,
-     * or in a new Terminal tab when it has none, as the sessions list's New does.
-     */
-    function newSession(page: string): void {
-        const state = composerState(crypto.randomUUID());
-        const target = composerTarget(tabsOf(options.layout.layout(page)));
-        if (target === null) {
-            options.layout.openView('terminal', state, page);
-            return;
-        }
-        options.layout.restateInstance(target, state);
-        options.layout.activateInstance(target, page);
-    }
-
     /** Apply one resolved key action to shell state or the focused pane's DOM. */
     function perform(action: KeyAction, pane: HTMLElement | null): boolean {
         if (action.kind === 'open') {
@@ -203,7 +188,7 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
             return cycleTab(pane, action.by);
         } else if (action.kind === 'new-session') {
             clearCursor();
-            newSession(pageOf());
+            options.composeIn(pageOf());
         } else if (action.kind === 'sheet') {
             clearCursor();
             options.setSheetOpen(!options.sheetOpen());

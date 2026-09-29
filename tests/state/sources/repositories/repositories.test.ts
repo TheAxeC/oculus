@@ -432,6 +432,7 @@ describe('what a press leaves behind', () => {
         const sent: { action: string; root: string; fields: Record<string, unknown> }[] = [];
         const opened: { view: string; state: unknown; beside: boolean }[] = [];
         const shells: { kind: string; cwd: string }[] = [];
+        const shown: { id: string; label: string }[] = [];
         const writes = {
             writeGit: (action: string, root: string, fields: Record<string, unknown> = {}) => {
                 sent.push({ action, root, fields });
@@ -442,6 +443,9 @@ describe('what a press leaves behind', () => {
             startTerminal: (kind: string, cwd: string) => {
                 shells.push({ kind, cwd });
                 return started(kind as 'shell', cwd);
+            },
+            showTerminal: (id: string, label = '') => {
+                shown.push({ id, label });
             }
         } as unknown as TerminalsStore;
         const kept = new Map<string, unknown>();
@@ -463,7 +467,7 @@ describe('what a press leaves behind', () => {
             setInstanceState: (id: string, state: unknown) => kept.set(id, state)
         };
         const store = createRepositories(writes, terminals, layout, access);
-        return { store, sent, opened, shells, kept };
+        return { store, sent, opened, shells, shown, kept };
     }
 
     it('holds one root busy at a time and leaves every other root live', async () => {
@@ -511,8 +515,8 @@ describe('what a press leaves behind', () => {
         expect(store.outcome(ROOT)).toBe('the working tree is dirty');
     });
 
-    it('asks for a shell in the worktree it just made, and opens the terminal', async () => {
-        const { store, shells, opened, sent } = harness();
+    it('asks for a shell in the worktree it just made, and shows the terminal', async () => {
+        const { store, shells, opened, shown, sent } = harness();
         await store.createWorktree(ROOT, 'package-one');
         expect(sent[0]).toEqual({
             action: 'createWorktree',
@@ -520,24 +524,28 @@ describe('what a press leaves behind', () => {
             fields: { name: 'package-one', confirm: true }
         });
         expect(shells).toEqual([{ kind: 'shell', cwd: plannedPath(ROOT, 'package-one') }]);
-        expect(opened[0].view).toBe('terminal');
-        expect(opened[0].state).toEqual({ session: 'terminal-one', label: 'package-one' });
+        // the terminal is shown by the terminals store, in the Terminal tab of the page on screen
+        // or a new one, and nothing is opened here beside it
+        expect(shown).toEqual([{ id: 'terminal-one', label: 'package-one' }]);
+        expect(opened).toEqual([]);
     });
 
     it('asks for a shell in a worktree that is already there', async () => {
         const path = plannedPath(ROOT, 'package-one');
-        const { store, shells, opened } = harness();
+        const { store, shells, opened, shown } = harness();
         await store.shellIn(ROOT, path, 'package-one');
         expect(shells).toEqual([{ kind: 'shell', cwd: path }]);
-        expect(opened[0].view).toBe('terminal');
+        expect(shown).toEqual([{ id: 'terminal-one', label: 'package-one' }]);
+        expect(opened).toEqual([]);
     });
 
     it('starts no shell when the worktree was not made', async () => {
-        const { store, shells } = harness(() =>
+        const { store, shells, shown } = harness(() =>
             Promise.resolve({ ok: false, changed: [], refused: [], error: 'git said no' })
         );
         await store.createWorktree(ROOT, 'package-one');
         expect(shells).toEqual([]);
+        expect(shown).toEqual([]);
         expect(store.outcome(ROOT)).toBe('git said no');
     });
 

@@ -311,24 +311,21 @@ describe('the terminal view with nothing selected', () => {
         expect(body).not.toContain('data-picker="model"');
     });
 
-    it('draws the steer box disabled with its sentence for a selected session running outside oculus', () => {
+    it('draws the composer of a tab owning no terminal whatever session is selected, one running outside oculus included', () => {
         select('ended-one');
         const body = html(Terminal);
-        expect(body).toContain('data-runs-elsewhere');
-        expect(body).toContain('data-steer');
-        expect(body).toContain('data-steer-elsewhere');
-        expect(body).toMatch(/<textarea[^>]*readonly/);
-        // a session running elsewhere is read, not restarted, so no new-session composer is drawn
-        expect(body).not.toContain('data-composer-prompt');
+        expect(body).toContain('data-composer-prompt');
+        // a tab draws its own terminals and says nothing about what the selection names
+        expect(body).not.toContain('data-runs-elsewhere');
+        // it owns no agent terminal, so there is nothing to steer
+        expect(body).not.toContain('data-steer');
         select(null);
     });
 
-    it('draws the composer in the tab New put it in, whatever session is selected', () => {
+    it('draws the composer in a tab whose saved state names no terminal, whatever is selected', () => {
         select('ended-one');
         const body = html(Terminal, { id: 'new-from-the-list', follow: true });
         expect(body).toContain('data-composer-prompt');
-        // New asked for a composer, so the sentence about the selected session is not drawn
-        expect(body).not.toContain('data-runs-elsewhere');
         select(null);
     });
 
@@ -340,29 +337,28 @@ describe('the terminal view with nothing selected', () => {
     });
 });
 
-describe('the terminal toolbar pin', () => {
-    // The label follows the pinned terminal's name through an $effect, which no server render runs;
-    // the write it makes is read off the source, and the rename itself is not pressed here.
-    it('is a glyph button among the glyph buttons, not a word among them', () => {
+describe('the terminal toolbar', () => {
+    it('carries no pin control, since a tab owns what it shows', () => {
         select(null);
         const body = html(Terminal, { session: 'abc123-shell' });
-        const pin = /<button[^>]*aria-label="[^"]*"[^>]*>(?:(?!<\/button>)[\s\S])*?<\/button>/g;
-        const found = (body.match(pin) ?? []).filter((one) =>
-            one.includes(catalog['sessions.unpin_pane'])
-        );
-        expect(found).toHaveLength(1);
-        expect(found[0]).toContain('compact');
-        expect(found[0]).toContain(`data-glyph="${catalog['sessions.pin_glyph']}"`);
-        // it is drawn as a glyph among the glyph buttons, so it carries no label span
-        expect(found[0]).not.toContain('<span class="label">');
+        // a tab owns what it shows, so there is nothing to pin or unpin
+        expect(body).not.toContain(catalog['sessions.unpin_pane']);
+        // and no control offers to follow the selection instead
+        expect(body).not.toContain(catalog['sessions.pin_pane']);
+        expect(body).toContain(catalog['sessions.new_terminal']);
     });
 
-    it('audits that renames the pinned tab to the terminal own name rather than to the name at the pin', () => {
+    // The label follows the shown terminal's name through an $effect, which no server render runs;
+    // the write it makes is read off the source, and the rename itself is not seen here.
+    it("audits that the tab's label is set to the shown terminal's own name", () => {
         const source = readFileSync('src/lib/views/sessions/terminal/Terminal.svelte', 'utf8');
-        expect(source).toContain(
-            'restateInstance(instance.id, { session: held, label: live.name })'
-        );
-        expect(source).toContain('if (label === live.name) return;');
+        expect(source).toContain('restate(withLabel(tab, live.name))');
+        expect(source).toContain('tab.label === live.name');
+    });
+
+    it("audits that the bar's New is the terminals store's New for this tab", () => {
+        const source = readFileSync('src/lib/views/sessions/terminal/Terminal.svelte', 'utf8');
+        expect(source).toContain('onclick={() => composeInTab(instance.id)}');
     });
 });
 
@@ -489,13 +485,10 @@ describe('a terminal in the payload', () => {
         return result;
     }
 
-    it('draws the terminal grid without a composer when it is the selection', () => {
-        const body = withTerminals(() => {
-            select(pane.id);
-            return html(Terminal);
-        });
+    it('draws the terminal grid without a composer in the tab that owns it', () => {
+        const body = withTerminals(() => html(Terminal, { terminals: [pane.id] }));
         expect(body).toContain(`data-terminal="${pane.id}"`);
-        // the grid is the selection, so no composer is drawn
+        // the tab shows its terminal, so no composer is drawn
         expect(body).not.toContain('data-composer');
         // the terminal is a shell, which is typed into at the grid, so nothing steers it from below
         expect(body).not.toContain(catalog['composer.steer']);
@@ -513,17 +506,11 @@ describe('a terminal in the payload', () => {
         select(null);
     });
 
-    it('offers pin and unpin in place', () => {
-        const body = withTerminals(() => {
-            select(pane.id);
-            return html(Terminal);
-        });
-        expect(body).toContain(catalog['sessions.pin_pane']);
-        select(null);
+    it('draws a tab whose saved state names one terminal as `session` as the tab owning it', () => {
         const pinned = withTerminals(() => html(Terminal, { session: pane.id, label: pane.name }));
-        expect(pinned).toContain(catalog['sessions.unpin_pane']);
         expect(pinned).toContain(`data-terminal="${pane.id}"`);
-        select(null);
+        // a tab owning its terminal draws no control to let go of it
+        expect(pinned).not.toContain(catalog['sessions.unpin_pane']);
     });
 
     it('lists it under the terminals heading, with its directory and a stop control', () => {

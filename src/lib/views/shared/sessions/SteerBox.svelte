@@ -7,7 +7,7 @@
 
     import TextArea from '$lib/ui/forms/TextArea.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import { promptKey } from '$lib/state/sessions/composer';
+    import { promptKey } from '$lib/state/sessions/terminal/composer';
     import type { Terminal } from '$lib/state/sessions/terminals.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';

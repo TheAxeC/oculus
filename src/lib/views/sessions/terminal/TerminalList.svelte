@@ -1,12 +1,13 @@
 <script lang="ts">
-    // Layer 3, view partial. The Terminal view's list of terminals, drawn on the right of the
-    // view's body from two terminals on, as VS Code's terminal panel draws its tabs list there. One
-    // row per terminal oculus runs, titled after what runs in it, with its description muted after
-    // the title, the row this tab shows marked, and a bell mark while the shown terminal rings.
+    // Layer 3, view partial. A Terminal tab's list of its own terminals, drawn on the right of the
+    // tab's body from two terminals on, as VS Code's terminal panel draws its tabs list there. One
+    // row per terminal the tab owns, in the tab's own order, titled after what runs in it, with its
+    // description muted after the title, the rows the tab shows marked (both halves of a split),
+    // and a bell mark while a shown terminal rings.
     //
-    // A press on a row shows that terminal in this tab by the rule the tab already goes by: a tab
-    // that follows the selection selects it, so the other session views move with it, and a tab
-    // that owns its terminal is pinned to the one pressed.
+    // A press on a row shows that terminal in this tab, alone, unless it is a half of the split the
+    // tab draws, whose grid the press focuses (state/sessions/terminal/terminal-tabs.ts,
+    // `showingRow`).
     //
     // The list is one stop of the browser's focus order, by ui/tree/roving.ts's rule: the row at
     // the stop carries tabindex 0 and everything else in the list -1, Split and Kill included. The
@@ -17,48 +18,54 @@
     // and `armKept`). A pointer press on a row shows it and hands the keyboard to its grid, so the
     // list holds focus only for a reader who came to it by the keyboard.
     //
-    // Split opens a Terminal tab beside whose composer starts in the row's own folder, offered as
-    // a place of its own when no place of the composer holds it (state/sessions/composer.ts).
+    // Split divides this tab: the row's terminal on the left, and on the right the composer in the
+    // row's own folder and kind, offered as a place of its own when no place of the composer holds
+    // it (state/sessions/terminal/composer.ts); what it starts becomes the right half.
     //
-    // A row dragged within the list moves there. The order is the reader's and is kept in the
-    // page's layout state for the Terminal view, so every Terminal tab of the page draws the same
-    // order and it comes back after a reload.
+    // A row dragged within the list moves there, in the tab's own order, kept in the tab's layout
+    // state. A row dropped on another Terminal tab's list moves to that tab at the drop mark, by
+    // the terminals store's `moveTerminal`, and a tab it leaves owning nothing closes.
 
     import { untrack } from 'svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import { splitState } from '$lib/state/sessions/composer';
-    import { followsSelection } from '$lib/state/sessions/terminals.svelte';
+    import { splitState } from '$lib/state/sessions/terminal/composer';
+    import {
+        reordered,
+        showingRow,
+        splitAt,
+        type TerminalTabState
+    } from '$lib/state/sessions/terminal/terminal-tabs';
     import type { TerminalChoice } from '$lib/state/sessions/folds';
     import { t } from '$lib/state/shared/words/text';
     import { nextStop } from '$lib/ui/tree/roving';
-    import { armKept, movedOrder, rowKey, terminalTip, withOrder } from './terminal-list';
+    import { ROW_DRAG, armKept, movedOrder, rowKey, terminalTip } from './terminal-list';
     import { useState } from '$lib/state/client/use';
 
     type Props = {
         /** The Terminal tab the list is drawn in. */
         instance: string;
+        /** The page holding that tab. */
+        page: string;
+        /** The tab's own state. */
+        tab: TerminalTabState;
         /** The rows, in the order they are drawn. */
         rows: TerminalChoice[];
-        /** The terminal the tab shows now, or null. */
-        current: string | null;
+        /** The terminals the tab shows now: the shown one, and the right half of a split. */
+        current: string[];
         /** The terminal whose bell is ringing in this tab, or null. */
         ringing: string | null;
         /** Called with a row's terminal when a pointer press shows it, before it is shown. */
         onshown: (terminal: string) => void;
     };
 
-    let { instance, rows, current, ringing, onshown }: Props = $props();
+    let { instance, page, tab, rows, current, ringing, onshown }: Props = $props();
 
     const {
-        layout: { instanceLayoutState, openBeside, pageViewState, pinInstance, setPageViewState },
-        selection: { select },
-        terminals: { stopTerminal, terminalById },
-        ui: { setInstanceState }
+        layout: { restateInstance },
+        terminals: { moveTerminal, stopTerminal, terminalById },
+        ui: { instanceState, setInstanceState }
     } = useState();
-
-    /** The type a dragged row carries its terminal id under, which no other drag carries. */
-    const ROW_DRAG = 'application/x-oculus-terminal-row';
 
     let list: HTMLDivElement | null = $state(null);
 
@@ -74,9 +81,7 @@
     const stop = $derived(
         order.includes(stopped)
             ? stopped
-            : current !== null && order.includes(current)
-              ? current
-              : (order[0] ?? '')
+            : (current.find((one) => order.includes(one)) ?? (order.length > 0 ? order[0] : ''))
     );
 
     // Whatever moves the stop (the arrow keys, a selection made elsewhere, the stopped row going
@@ -102,16 +107,15 @@
 
     /** Show a row's terminal in this tab. */
     function show(row: TerminalChoice): void {
-        if (followsSelection(instanceLayoutState(instance))) select(row.id);
-        else pinInstance(instance, row.terminal, row.title);
+        const next = showingRow(tab, row.terminal);
+        if (next !== tab) restateInstance(instance, next);
     }
 
-    /** Open a Terminal tab beside, holding the composer in this row's own folder and kind. */
+    /** Split this tab: the row on the left, the composer in its folder and kind on the right. */
     function split(row: TerminalChoice): void {
         const folder = terminalById(row.terminal)?.cwd ?? '';
-        const opened = openBeside('terminal', { id: crypto.randomUUID() });
-        if (opened === '') return;
-        setInstanceState(opened, splitState(folder, row.kind));
+        setInstanceState(instance, splitState(folder, row.kind, instanceState(instance)));
+        restateInstance(instance, splitAt(tab, row.terminal));
     }
 
     /** A press on a row: a pointer's hands the keyboard to the grid, a key's leaves it here. */
@@ -169,18 +173,35 @@
     function dragOver(event: DragEvent, index: number): void {
         if (event.dataTransfer?.types.includes(ROW_DRAG) !== true) return;
         event.preventDefault();
+        event.stopPropagation();
         const box = (event.currentTarget as HTMLElement).getBoundingClientRect();
         dropIndex = event.clientY > box.top + box.height / 2 ? index + 1 : index;
     }
 
+    /** A dragged row over the list below its rows lands last. */
+    function listOver(event: DragEvent): void {
+        if (event.dataTransfer?.types.includes(ROW_DRAG) !== true) return;
+        event.preventDefault();
+        dropIndex = rows.length;
+    }
+
+    /**
+     * A row dropped at the mark: one of this tab's rows is reordered in the tab, and one of another
+     * tab moves into this one before the row at the mark, or last.
+     */
     function dropped(event: DragEvent): void {
         const moved = event.dataTransfer?.getData(ROW_DRAG) ?? '';
         const at = dropIndex;
         dropIndex = null;
         if (moved === '' || at === null) return;
         event.preventDefault();
-        const next = movedOrder(order, moved, at);
-        setPageViewState(instance, withOrder(pageViewState(instance), next));
+        if (order.includes(moved)) {
+            restateInstance(instance, reordered(tab, movedOrder(order, moved, at)));
+            return;
+        }
+        const index =
+            at < rows.length ? tab.terminals.indexOf(rows[at].terminal) : tab.terminals.length;
+        moveTerminal(moved, instance, page, index);
     }
 </script>
 
@@ -194,6 +215,7 @@
     aria-label={t('sessions.terminal_list')}
     bind:this={list}
     onfocusout={left}
+    ondragover={listOver}
     ondrop={dropped}
     ondragleave={(event: DragEvent) => {
         if (!list?.contains(event.relatedTarget as Node | null)) dropIndex = null;
@@ -205,9 +227,9 @@
         {/if}
         <div
             class="row"
-            class:current={row.terminal === current}
+            class:current={current.includes(row.terminal)}
             data-terminal-row={row.terminal}
-            data-current={row.terminal === current || undefined}
+            data-current={current.includes(row.terminal) || undefined}
             draggable="true"
             ondragstart={(event: DragEvent) => dragStart(event, row)}
             ondragover={(event: DragEvent) => dragOver(event, index)}

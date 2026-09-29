@@ -1,14 +1,15 @@
-// Layer 4, view test. The Terminal view as a terminal panel: the steer box drawn only under an
-// agent, the list of terminals on the right from two terminals on, each row titled after what runs
-// in it, the one terminal's title on the bar, the rows in the page's stored order, and the pure
-// rules the grid's paste question and file drop go by.
+// Layer 4, view test. The Terminal view as a terminal panel of its own: the tab draws the terminals
+// it owns and nothing the selection names, the steer box only under an agent, the list of the tab's
+// terminals on the right from two terminals on in the tab's own order, the one terminal's title on
+// the bar, a split tab's two halves and the composer in the right half, the Sessions view listing
+// every terminal, and the pure rules the grid's paste question and file drop go by.
 //
 // What this does NOT cover: anything that needs a DOM. The grid is xterm.js, which the server
-// render does not mount, so a paste, a drop, a bell, a hover, an arrow key and a drag are not
-// performed here; the rules they call (the line count, the quoting, the order) are asserted as
-// pure functions, named audits by the tree's rule for a case that draws nothing, and the look on
-// landing sees the rest. Keeping the stored order across a reload is the layout store's, and is
-// tested in tests/state/workbench/layout/pages.test.ts.
+// render does not mount, so a paste, a drop, a bell, a hover, an arrow key, a drag and the handle's
+// move are not performed here; the rules they call (the line count, the quoting, the order) are
+// asserted as pure functions, named audits by the tree's rule for a case that draws nothing, and
+// the look on landing sees the rest. What a drag, a press, New and Split do to a tab's state is
+// tests/state/sessions/terminal/terminal-tabs.test.ts and tests/state/client/terminal-tabs.test.ts.
 
 import { render } from 'svelte/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -22,17 +23,17 @@ import {
 import {
     listDrawn,
     movedOrder,
-    orderedRows,
     pasteLines,
     armKept,
     rowKey,
     shellQuote,
-    storedOrder
+    tabRows
 } from '../../../src/lib/views/sessions/terminal/terminal-list.ts';
 import type { Instance } from '../../../src/lib/state/workbench/layout/index.ts';
 import { area, payload, record, terminal, workspace } from '../../fixtures/sessions-fixture.ts';
 import { clientContext, createClientState, type ClientState } from '../../fixtures/client.ts';
-import { ALPHA, HUB, catalog, installFixture, tree } from './views-fixture.ts';
+import SessionList from '../../../src/lib/views/sessions/session-list/SessionList.svelte';
+import { ALPHA, HUB, catalog, installFixture, renderView, tree } from './views-fixture.ts';
 
 let client: ClientState;
 let version = 500;
@@ -89,13 +90,12 @@ function withTerminals(...panes: (typeof claude)[]): void {
     client.entities.receive({ channel: 'sessions', version: (version += 1), payload: whole });
 }
 
-/** One Terminal tab on the current page, with its page's stored state set before it renders. */
-function html(state: unknown = {}, page?: unknown): string {
+/** One Terminal tab on the current page, holding this state, rendered. */
+function html(state: unknown = {}): string {
     const id = `terminal-${(version += 1)}`;
     client.ui.setInstanceState(id, state);
     const instance: Instance = { id, view: 'terminal', state };
     client.layout.apply({ root: { kind: 'pane', tabs: [instance], active: id } });
-    if (page !== undefined) client.layout.setPageViewState(id, page);
     return render(Terminal, { context: clientContext(client), props: { instance } }).body;
 }
 
@@ -128,39 +128,52 @@ function textOf(body: string, attribute: string, from = 0): string {
         .trim();
 }
 
+/** A tab owning these terminals, the first shown unless the case says otherwise. */
+function owning(terminals: string[], over: Record<string, unknown> = {}): Record<string, unknown> {
+    return { id: 'own-tab', terminals, shown: terminals[0] ?? null, ...over };
+}
+
 describe('the steer box under the grid', () => {
     it('is drawn under an agent terminal', () => {
         withTerminals(claude);
-        client.selection.select(claude.id);
-        const body = html();
+        const body = html(owning([claude.id]));
         expect(body).toContain(`data-terminal="${claude.id}"`);
         expect(body).toContain('data-steer');
     });
 
     it('is not drawn under a shell, whose grid takes the whole height', () => {
         withTerminals(vim);
-        client.selection.select(vim.id);
-        const body = html();
+        const body = html(owning([vim.id]));
         expect(body).toContain(`data-terminal="${vim.id}"`);
         // a shell is typed into at the grid, so nothing steers it from below
         expect(body).not.toContain('data-steer');
     });
 
-    it('stays disabled with its sentence for an agent session running outside oculus', () => {
+    it('is not drawn for a selected session that runs elsewhere: a tab draws its own terminals', () => {
         withTerminals(claude);
         client.selection.select('ended-one');
-        const body = html();
-        expect(body).toContain('data-runs-elsewhere');
-        expect(body).toContain('data-steer-elsewhere');
-        expect(body).toMatch(/<textarea[^>]*readonly/);
+        const body = html(owning([]));
+        // a tab draws its own terminals, so no sentence about the selection is drawn
+        expect(body).not.toContain('data-runs-elsewhere');
+        // the tab owns no agent terminal, so there is nothing to steer
+        expect(body).not.toContain('data-steer');
+        expect(body).toContain('data-composer-prompt');
+    });
+
+    it('does not follow the selection: a selected terminal the tab does not own is not drawn', () => {
+        withTerminals(claude, vim);
+        client.selection.select(claude.id);
+        const body = html(owning([vim.id]));
+        expect(body).toContain(`data-terminal="${vim.id}"`);
+        // the selection does not reach a tab, which draws only what it owns
+        expect(body).not.toContain(`data-terminal="${claude.id}"`);
     });
 });
 
 describe('one terminal', () => {
     it('draws no list and puts its title and description on the bar', () => {
         withTerminals(vim);
-        client.selection.select(vim.id);
-        const body = html();
+        const body = html(owning([vim.id]));
         // one terminal leaves nothing to choose between, so no list is drawn
         expect(body).not.toContain('data-terminal-list');
         expect(textOf(body, 'data-terminal-title')).toBe('vim');
@@ -171,10 +184,21 @@ describe('one terminal', () => {
 });
 
 describe('the list of terminals', () => {
+    it("holds the tab's own terminals alone, with no pin control on the bar", () => {
+        withTerminals(claude, vim, bare);
+        const body = html(owning([claude.id, vim.id]));
+        expect(rowOrder(body)).toEqual([claude.id, vim.id]);
+        // that terminal runs, but this tab does not own it
+        expect(body).not.toContain(`data-terminal-row="${bare.id}"`);
+        // a tab owns what it shows, so there is nothing to pin
+        expect(body).not.toContain(`aria-label="${catalog['sessions.pin_pane']}"`);
+        // and no pin to take away, since nothing follows the selection
+        expect(body).not.toContain(`aria-label="${catalog['sessions.unpin_pane']}"`);
+    });
+
     it('draws one row per terminal, titled after what runs, the shown one marked current', () => {
         withTerminals(claude, vim);
-        client.selection.select(claude.id);
-        const body = html();
+        const body = html(owning([claude.id, vim.id]));
         expect(body).toContain('data-terminal-list');
         expect(rowOrder(body)).toEqual([claude.id, vim.id]);
         const first = body.indexOf(`data-terminal-row="${claude.id}"`);
@@ -192,8 +216,7 @@ describe('the list of terminals', () => {
 
     it('titles a shell tmux reports no command for "shell"', () => {
         withTerminals(vim, bare);
-        client.selection.select(vim.id);
-        const body = html();
+        const body = html(owning([vim.id, bare.id]));
         const at = body.indexOf(`data-terminal-row="${bare.id}"`);
         expect(textOf(body, 'data-row-title', at)).toBe(catalog['sessions.terminal_title_shell']);
         expect(catalog['sessions.terminal_title_shell']).toBe('shell');
@@ -202,15 +225,13 @@ describe('the list of terminals', () => {
 
     it('holds no row for a terminal oculus did not start', () => {
         withTerminals(claude, vim, outside);
-        client.selection.select(claude.id);
-        const body = html();
+        const body = html(owning([claude.id, vim.id, outside.id]));
         expect(rowOrder(body)).toEqual([claude.id, vim.id]);
     });
 
     it('offers Split and Kill on every row, and a tooltip naming the terminal', () => {
         withTerminals(claude, vim);
-        client.selection.select(claude.id);
-        const body = html();
+        const body = html(owning([claude.id, vim.id]));
         const rows = rowSlices(body);
         expect(rows).toHaveLength(2);
         for (const row of rows) {
@@ -223,36 +244,85 @@ describe('the list of terminals', () => {
 
     it('is one stop of the focus order: the row at the stop, and none of its controls', () => {
         withTerminals(claude, vim, bare);
-        client.selection.select(vim.id);
-        const list = listOf(html());
+        const list = listOf(html(owning([claude.id, vim.id, bare.id], { shown: vim.id })));
         expect(list.split('tabindex="0"')).toHaveLength(2);
         const stop = list.indexOf('tabindex="0"');
         const tag = list.slice(list.lastIndexOf('<', stop), list.indexOf('>', stop));
         expect(tag).toContain(`data-stop="${vim.id}"`);
     });
 
-    it('draws the one terminal there is as a row while the tab shows the composer', () => {
+    it('draws the one terminal the tab owns as a row while the tab shows the composer', () => {
         withTerminals(vim);
-        const body = html({ id: 'a-tab-of-its-own' });
+        const body = html(owning([vim.id], { shown: null, composing: true }));
         expect(body).toContain('data-composer-prompt');
         expect(rowOrder(body)).toEqual([vim.id]);
         const at = body.indexOf(`data-terminal-row="${vim.id}"`);
         expect(textOf(body, 'data-row-title', at)).toBe('vim');
     });
 
-    it('draws no list under the composer when no terminal runs', () => {
-        withTerminals();
+    it('draws no list under the composer of a tab that owns no terminal, whatever else runs', () => {
+        withTerminals(vim);
         const body = html({ id: 'a-tab-of-its-own' });
         expect(body).toContain('data-composer-prompt');
-        // with no terminal running there is no row to draw
+        // this tab owns no terminal, so its list would have no row
         expect(body).not.toContain('data-terminal-list');
     });
 
-    it("draws the rows in the page's stored order, a terminal missing from it last", () => {
+    it("draws the rows in the tab's own order", () => {
         withTerminals(claude, vim, bare);
-        client.selection.select(claude.id);
-        const body = html({}, { order: [vim.id, claude.id] });
-        expect(rowOrder(body)).toEqual([vim.id, claude.id, bare.id]);
+        const body = html(owning([vim.id, bare.id, claude.id]));
+        expect(rowOrder(body)).toEqual([vim.id, bare.id, claude.id]);
+    });
+});
+
+describe('a split tab', () => {
+    it('draws both halves with a handle between them, and marks both rows current', () => {
+        withTerminals(claude, vim, bare);
+        const body = html(owning([claude.id, vim.id, bare.id], { beside: vim.id, share: 0.3 }));
+        expect(body).toContain(`data-terminal="${claude.id}"`);
+        expect(body).toContain(`data-terminal="${vim.id}"`);
+        // the third terminal is in the list but in neither half
+        expect(body).not.toContain(`data-terminal="${bare.id}"`);
+        expect(body).toContain('role="separator"');
+        expect(body).toContain('aria-valuenow="30"');
+        const rows = rowSlices(body);
+        expect(rows[0]).toContain('data-current');
+        expect(rows[1]).toContain('data-current');
+        // the third row is in neither half, so it is not marked
+        expect(rows[2]).not.toContain('data-current');
+    });
+
+    it('draws the composer in the right half while a Split waits for its start', () => {
+        withTerminals(claude, vim);
+        const body = html(owning([claude.id, vim.id], { composing: true }));
+        expect(body).toContain(`data-terminal="${claude.id}"`);
+        expect(body).toContain('data-composer-prompt');
+        expect(body).toContain('role="separator"');
+        // the right half holds the composer until its start
+        expect(body).not.toContain(`data-terminal="${vim.id}"`);
+    });
+
+    it('draws the composer alone after New in a tab that is not split', () => {
+        withTerminals(claude, vim);
+        const body = html(owning([claude.id, vim.id], { shown: null, composing: true }));
+        expect(body).toContain('data-composer-prompt');
+        // New in a tab that is not split shows the composer alone, with no handle
+        expect(body).not.toContain('role="separator"');
+        // and no grid beside it
+        expect(body).not.toContain('data-terminal="');
+        expect(rowOrder(body)).toEqual([claude.id, vim.id]);
+    });
+});
+
+describe('the Sessions view', () => {
+    it('lists every terminal, those no tab owns among them', () => {
+        withTerminals(claude, vim, bare);
+        html(owning([claude.id]));
+        const body = renderView(client, SessionList, {});
+        const group = body.slice(body.indexOf('data-terminal-group'));
+        expect(group).toContain(claude.name);
+        expect(group).toContain(vim.name);
+        expect(group).toContain(bare.name);
     });
 });
 
@@ -284,20 +354,15 @@ describe('the rules the list and the grid go by', () => {
         expect(catalog['sessions.paste_confirm'].replace('{0}', '3')).toContain('3');
     });
 
-    it('audits the row order: the stored order first, the rest by start time', () => {
+    it("audits the rows of a tab: the tab's own terminals, in its order, a missing one passed over", () => {
         const rows = [
             { terminal: 'b', created: '2026-09-11T09:00:00.000Z' },
             { terminal: 'a', created: '2026-09-11T08:00:00.000Z' },
             { terminal: 'c', created: '2026-09-11T10:00:00.000Z' }
         ];
-        expect(orderedRows(rows, []).map((one) => one.terminal)).toEqual(['a', 'b', 'c']);
-        expect(orderedRows(rows, ['c', 'a']).map((one) => one.terminal)).toEqual(['c', 'a', 'b']);
-        // a stored id no terminal carries any more is passed over
-        expect(orderedRows(rows, ['gone', 'b']).map((one) => one.terminal)).toEqual([
-            'b',
-            'a',
-            'c'
-        ]);
+        expect(tabRows(rows, ['c', 'a']).map((one) => one.terminal)).toEqual(['c', 'a']);
+        expect(tabRows(rows, ['gone', 'b']).map((one) => one.terminal)).toEqual(['b']);
+        expect(tabRows(rows, [])).toEqual([]);
     });
 
     it('audits the order a dragged row leaves: the row where it was dropped', () => {
@@ -333,14 +398,6 @@ describe('the rules the list and the grid go by', () => {
         expect(armKept('a', 'a')).toBe(true);
         expect(armKept('a', 'b')).toBe(false);
         expect(armKept('', 'a')).toBe(false);
-    });
-
-    it('audits the stored order read back, and nothing from a value that is not one', () => {
-        expect(storedOrder({ order: ['a', 'b'] })).toEqual(['a', 'b']);
-        expect(storedOrder({ order: ['a', 3, ''] })).toEqual(['a']);
-        expect(storedOrder(undefined)).toEqual([]);
-        expect(storedOrder(['a'])).toEqual([]);
-        expect(storedOrder({ order: ['a', 'a'] })).toEqual(['a']);
     });
 });
 

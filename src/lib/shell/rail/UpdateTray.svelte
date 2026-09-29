@@ -1,6 +1,7 @@
 <script lang="ts">
     // Layer 3, shell. The update-task tray. Each task starts the server-built Claude command in a
-    // terminal, selects it, and opens the Terminal view; the snapshot's feed summary supplies the
+    // terminal, selects it, and shows it in the Terminal tab of the page on screen, or a new one
+    // (the terminals store's `showTerminal`); the snapshot's feed summary supplies the
     // last-run value beside each control, and the inbox triage's comes from the `inbox` channel,
     // whose notes file is what that task writes.
     //
@@ -14,16 +15,14 @@
     import Confirm from '$lib/ui/controls/Confirm.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import { findView } from '$lib/state/workbench/layout';
     import type { TaskKind } from '$lib/state/sessions/terminals.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
 
     const {
-        layout: { layout, openView },
         paletteSource: { paletteSource },
         selection: { select },
-        terminals: { startChat, startTask, taskSkipsPermissions }
+        terminals: { showTerminal, startChat, startTask, taskSkipsPermissions }
     } = useState();
 
     type Props = {
@@ -66,10 +65,6 @@
         }
     ]);
 
-    function terminalOpen(): boolean {
-        return findView(layout(), 'terminal', null) !== null;
-    }
-
     /** One task's words, for a sentence outside the row that draws it. */
     function taskLabel(kind: TaskKind): string {
         return tasks.find((task) => task.kind === kind)?.label ?? kind;
@@ -94,7 +89,7 @@
             return;
         }
         select(answer.id);
-        if (!terminalOpen()) openView('terminal');
+        showTerminal(answer.id);
         onclose();
     }
 
@@ -108,7 +103,7 @@
             return;
         }
         select(answer.id);
-        if (!terminalOpen()) openView('terminal');
+        showTerminal(answer.id);
         onclose();
     }
 </script>

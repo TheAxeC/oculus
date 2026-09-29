@@ -16,7 +16,6 @@ import {
     type Layout,
     type Page,
     type Pages,
-    type ViewId,
     type Workbench
 } from '../model.ts';
 import { refusedLeaves, settlePageLeaves, type Refusal } from '../nested.ts';
@@ -273,16 +272,11 @@ export function serialiseLayout(pages: Pages): string {
 
 /**
  * Read valid pages from the current envelope, or from either supported older one by migration: a
- * page that held two trees and a docked panel becomes a page holding one tree. What a page keeps
- * for its views is kept only under an id `known` says is a registered view, so an empty key or one
- * naming no view is dropped rather than carried and saved again; the layout does not import the
- * registry, so the rule is the caller's, and a caller that names none keeps nothing.
+ * page that held two trees and a docked panel becomes a page holding one tree. A page is read as
+ * its id, label, tree and rail key; any other field a saved page carries is dropped, so the next
+ * save writes it no more.
  */
-export function parseLayout(
-    value: unknown,
-    label: string,
-    known: (view: ViewId) => boolean = () => false
-): Pages | null {
+export function parseLayout(value: unknown, label: string): Pages | null {
     const envelope = asEnvelope(value);
     if (envelope === null) return null;
     if (envelope.version === WORKBENCH_VERSION) {
@@ -306,8 +300,6 @@ export function parseLayout(
         const page: Page = { id: entry.id, label: entry.label, workbench };
         const rail = railKey(entry.rail, pages);
         if (rail !== null) page.rail = rail;
-        const views = viewStates(entry.views, known);
-        if (views !== null) page.views = views;
         pages.push(page);
     }
     // A leaf naming a page this envelope does not hold, or one that would make a page show itself,
@@ -324,16 +316,6 @@ export function parseLayout(
 function railKey(value: unknown, earlier: Page[]): string | null {
     if (typeof value !== 'string' || value === '') return null;
     return earlier.some((page) => page.rail === value) ? null : value;
-}
-
-/** The saved view states whose keys are registered view ids, or null when none is left. */
-function viewStates(
-    value: unknown,
-    known: (view: ViewId) => boolean
-): Record<ViewId, unknown> | null {
-    if (!isMap(value)) return null;
-    const kept = Object.entries(value).filter(([view]) => view !== '' && known(view));
-    return kept.length === 0 ? null : Object.fromEntries(kept);
 }
 
 /** Make a one-page collection from a supported one-workbench envelope. */

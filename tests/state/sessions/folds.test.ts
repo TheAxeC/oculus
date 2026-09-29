@@ -295,7 +295,6 @@ describe("the Terminal view's list of terminals", () => {
     it('titles an agent terminal by its agent and describes it by the session running in it', () => {
         const [claude, codex] = terminalChoices([resumed, started], sessions);
         expect(claude).toMatchObject({
-            id: 'ended-one',
             terminal: 'd4e5f6-claude',
             kind: 'claude',
             title: catalog['sessions.kind_claude'],
@@ -304,7 +303,6 @@ describe("the Terminal view's list of terminals", () => {
         expect(claude.title).toBe('Claude');
         // a session found by its process with no title of its own is described by its id
         expect(codex).toMatchObject({
-            id: 'live-one',
             terminal: '0a0b0c-codex',
             kind: 'codex',
             title: 'Codex',
@@ -320,19 +318,17 @@ describe("the Terminal view's list of terminals", () => {
             ],
             sessions
         );
-        expect(lone).toMatchObject({ id: 'd4e5f6-claude', description: 'claude' });
-        expect(nameless).toMatchObject({ id: '0a0b0c-codex', description: '0a0b0c-codex' });
+        expect(lone).toMatchObject({ terminal: 'd4e5f6-claude', description: 'claude' });
+        expect(nameless).toMatchObject({ terminal: '0a0b0c-codex', description: '0a0b0c-codex' });
     });
 
     it('titles a shell by its running command and describes it by its folder', () => {
         expect(terminalChoices([shell], sessions)).toEqual([
             {
-                id: 'a1b2c3-shell',
                 terminal: 'a1b2c3-shell',
                 kind: 'shell',
                 title: 'vim',
-                description: 'oculus',
-                created: at
+                description: 'oculus'
             }
         ]);
     });

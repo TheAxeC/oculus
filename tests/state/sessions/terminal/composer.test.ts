@@ -1,12 +1,13 @@
-// Layer 2, client-state tests. The composer's own record and words (state/sessions/composer.ts),
-// the Terminal tab New shows its composer in (state/sessions/terminals.svelte.ts), the posts the
-// composer, the steer box and the row menu's Fork make, and the terminal a session runs in.
+// Layer 2, client-state tests. The composer's own record and words
+// (state/sessions/terminal/composer.ts), the record a Split writes into the tab it splits, the
+// posts the composer, the steer box and the row menu's Fork make, and the terminal a session runs
+// in.
 //
 // Nothing here opens a socket or reaches a server: `fetch` is a stub that records what it was
 // asked and answers what the case says.
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { scalar } from '../../../src/lib/data/helpers/guards.ts';
+import { scalar } from '../../../../src/lib/data/helpers/guards.ts';
 import {
     COMPOSER_EMPTY,
     accountFor,
@@ -28,19 +29,14 @@ import {
     splitState,
     withComposer,
     withCustomizationScope
-} from '../../../src/lib/state/sessions/composer.ts';
-import {
-    composerState,
-    composerTarget,
-    followsSelection
-} from '../../../src/lib/state/sessions/terminals.svelte.ts';
+} from '../../../../src/lib/state/sessions/terminal/composer.ts';
 import type {
     AgentAccount,
     AgentChoices,
     Terminal,
     Workspace
-} from '../../../src/lib/data/model/index.ts';
-import { createClientState, type ClientState } from '../../fixtures/client.ts';
+} from '../../../../src/lib/data/model/index.ts';
+import { createClientState, type ClientState } from '../../../fixtures/client.ts';
 
 const CLAUDE: AgentChoices = {
     agent: 'claude',
@@ -132,6 +128,28 @@ describe('a composer opened by Split', () => {
             workspace: '/hub/projects/foo/code',
             agent: 'shell',
             split: '/hub/projects/foo/code'
+        });
+    });
+
+    it("keeps the tab's other choices when a Split writes into a tab that holds a record", () => {
+        const held = withComposer(
+            { other: 1 },
+            {
+                ...COMPOSER_EMPTY,
+                workspace: '/hub',
+                agent: 'codex',
+                accounts: { codex: 'Work' },
+                picks: { claude: { model: 'opus' } }
+            }
+        );
+        const state = splitState('/hub/tools', 'claude', held);
+        expect(state.other).toBe(1);
+        expect(composerOf(state)).toEqual({
+            workspace: '/hub/tools',
+            agent: 'claude',
+            accounts: { claude: undefined, codex: 'Work' },
+            picks: { claude: { model: 'opus' }, codex: {} },
+            split: '/hub/tools'
         });
     });
 
@@ -255,24 +273,6 @@ describe("the Customizations section's scope", () => {
         expect(
             customizationScopeOf({ custom: { agent: 'shell', account: 3, expanded: ['a', 4] } })
         ).toEqual({ open: true, agent: 'claude', account: '', workspace: '', expanded: ['a'] });
-    });
-});
-
-describe('the Terminal tab New shows its composer in', () => {
-    it('is the first that follows the selection, a tab pinned to a terminal left alone', () => {
-        const tabs = [
-            { id: 'files', view: 'files', state: {} },
-            { id: 'pinned', view: 'terminal', state: { session: 'a1b2c3-shell' } },
-            { id: 'fresh', view: 'terminal', state: composerState('n1') },
-            { id: 'plain', view: 'terminal', state: {} }
-        ];
-        expect(composerTarget(tabs)).toBe('fresh');
-        expect(composerTarget(tabs.slice(0, 2))).toBe(null);
-        expect(composerTarget([])).toBe(null);
-        expect(followsSelection(null)).toBe(true);
-        expect(followsSelection({ id: '' })).toBe(true);
-        expect(followsSelection({ id: 'x' })).toBe(false);
-        expect(composerState('n2')).toEqual({ id: 'n2', follow: true });
     });
 });
 

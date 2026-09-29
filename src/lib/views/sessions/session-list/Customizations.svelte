@@ -20,7 +20,7 @@
         customizationScopeOf,
         withCustomizationScope,
         type CustomizationScopeState
-    } from '$lib/state/sessions/composer';
+    } from '$lib/state/sessions/terminal/composer';
     import type { CustomizationKind, CustomizationItem } from '$lib/state/sessions/agents.svelte';
     import { rootHolding } from '$lib/state/sources/fs';
     import { currentWorkspace } from '$lib/state/sources/fs-transport';

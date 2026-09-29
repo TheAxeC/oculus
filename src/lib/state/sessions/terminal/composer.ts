@@ -5,8 +5,10 @@
 //
 // The picks live in the tab's instance state under `composer`, one map of list key to value id per
 // agent, so switching from Claude to Codex and back keeps both agents' choices, and a tab's next
-// composer opens on what its last start used. A value the catalog no longer offers is dropped when
-// it is read, so a pick never reaches a start the server would refuse.
+// composer opens on the accounts and picks its last start used. Its folder and kind are what the
+// last start used until New sets them back to a new composer's own (`freshComposer`) or a Split
+// sets them to the split row's (`splitState`). A value the catalog no longer offers is dropped
+// when it is read, so a pick never reaches a start the server would refuse.
 
 import type {
     AgentAccount,
@@ -14,8 +16,8 @@ import type {
     AgentId,
     ComposeStart,
     Workspace
-} from '../../data/model/index.ts';
-import { isMap } from '../../data/helpers/guards.ts';
+} from '../../../data/model/index.ts';
+import { isMap } from '../../../data/helpers/guards.ts';
 
 /** What the composer starts: one of the two agents, or the reader's shell. */
 export type ComposerAgent = AgentId | 'shell';
@@ -109,9 +111,33 @@ export function withComposer(state: unknown, record: ComposerRecord): Record<str
     return { ...(mapOf(state) ?? {}), [COMPOSER_FIELD]: record };
 }
 
-/** The state of a tab Split opens: its composer in the split row's folder and kind. */
-export function splitState(folder: string, agent: ComposerAgent): Record<string, unknown> {
-    return withComposer(undefined, splitRecord(folder, agent));
+/**
+ * The instance state of a tab once Split on one of its rows puts the composer beside that row: the
+ * composer in the row's folder and kind, with the accounts and picks the tab's record already held
+ * and the rest of the tab's instance state kept.
+ */
+export function splitState(
+    folder: string,
+    agent: ComposerAgent,
+    held?: unknown
+): Record<string, unknown> {
+    const kept = composerOf(held);
+    return withComposer(held, {
+        ...splitRecord(folder, agent),
+        accounts: kept.accounts,
+        picks: kept.picks
+    });
+}
+
+/**
+ * The instance state of a tab once New shows its composer: the folder and kind back to a new
+ * composer's own (the hub, Claude) and no folder split from, with the accounts and picks the tab's
+ * record already held and the rest of the tab's instance state kept, so a Split's folder and kind
+ * do not carry into a later New.
+ */
+export function freshComposer(held?: unknown): Record<string, unknown> {
+    const kept = composerOf(held);
+    return withComposer(held, { ...COMPOSER_EMPTY, accounts: kept.accounts, picks: kept.picks });
 }
 
 /**

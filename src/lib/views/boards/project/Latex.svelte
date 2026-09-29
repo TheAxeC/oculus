@@ -10,9 +10,8 @@
     // Both controls are terminals, started through state/sessions/terminals.svelte.ts the way the
     // recovery and update-task controls are: the command and the folder it runs in are the
     // server's, the page sends the project and the file. The terminal the press opened is selected
-    // and the terminal pane is opened when the workbench has none, which is what
-    // views/sessions/session-list/SessionList.svelte does after a resume, so the output is in front
-    // of the reader while it runs.
+    // and shown in the Terminal tab of the page on screen, or a new one (the terminals store's
+    // `showTerminal`), as every start is, so the output is in front of the reader while it runs.
     //
     // The end of a build is the terminal leaving the list, which state/sessions/latex.svelte.ts
     // watches: it asks for the state again, and the row redraws with the new PDF time and the new
@@ -22,7 +21,6 @@
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { HUB_ROOT, nameOf } from '$lib/state/sources/fs';
     import { stamp } from '$lib/state/shared/words/format';
-    import { findView } from '$lib/state/workbench/layout';
     import type { LatexIssue, LatexMain } from '$lib/state/sessions/latex.svelte';
     import type { LatexStep } from '$lib/state/sessions/terminals.svelte';
     import { t } from '$lib/state/shared/words/text';
@@ -37,9 +35,9 @@
 
     const {
         latex: { state: latexOf, watch },
-        layout: { layout, openView },
+        layout: { openView },
         selection: { select },
-        terminals: { latex: startLatex }
+        terminals: { latex: startLatex, showTerminal }
     } = useState();
 
     const held = $derived(latexOf(id));
@@ -89,7 +87,7 @@
         }
         watch(id, answer.id);
         select(answer.id);
-        if (findView(layout(), 'terminal', null) === null) openView('terminal');
+        showTerminal(answer.id);
     }
 
     /** Open the built PDF as a file tab, which is where every PDF of the hub is read. */

@@ -157,6 +157,7 @@
             const entry = docs.find((one) => one.path === path);
             if (entry !== undefined) client.layout.openView('doc', docState(entry), at);
         },
+        composeIn: (page) => client.terminals.composeIn(page),
         railPage: (index) => {
             const entry = pages.at(index - 1);
             if (index < 1 || entry === undefined) return false;

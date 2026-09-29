@@ -98,7 +98,7 @@
 <g id="node12" class="node">
 <title>folder shell/rail to layer state</title>
 <polygon fill="none" stroke="none" points="129.88,-554.16 116.12,-554.16 116.12,-541.68 129.88,-541.68 129.88,-554.16"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="123" y="-545.52" font-family="Helvetica,Arial,sans-serif" font-size="8.00">16</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="123" y="-545.52" font-family="Helvetica,Arial,sans-serif" font-size="8.00">15</text>
 </g>
 <!-- folder shell/rail&#45;&gt;folder shell/rail to layer state -->
 <g id="edge17" class="edge">
@@ -178,7 +178,7 @@
 <g id="node18" class="node">
 <title>folder shell/keys to layer state</title>
 <polygon fill="none" stroke="none" points="142.88,-86.08 133.12,-86.08 133.12,-73.6 142.88,-73.6 142.88,-86.08"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="138" y="-77.44" font-family="Helvetica,Arial,sans-serif" font-size="8.00">9</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="138" y="-77.44" font-family="Helvetica,Arial,sans-serif" font-size="8.00">8</text>
 </g>
 <!-- folder shell/keys&#45;&gt;folder shell/keys to layer state -->
 <g id="edge29" class="edge">

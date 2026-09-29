@@ -1,0 +1,258 @@
+<script lang="ts">
+    // Layer 3, view partial. The grid of one terminal in a Terminal tab, drawn as VS Code's
+    // terminal panel draws one: xterm.js over the `pty:` channel, with the steer box under it only
+    // when Claude or Codex runs in it (a shell is typed into at the grid, which then takes the
+    // whole height). A split tab draws two of these side by side, so everything one grid holds (the
+    // mount, the subscription, the resize, the bell, the paste question and the file drop) is this
+    // component's own. A paste of several lines is asked about before it is sent, since each line
+    // would run; a file dropped from the Files view types its quoted path; a bell is reported to
+    // the tab, which marks the terminal's row.
+    //
+    // xterm.js is loaded inside the effect rather than at the top of the module: it needs a DOM,
+    // and this view renders on the server like every other. The effect runs in the browser alone,
+    // so the server render is the mount point and nothing else. Its stylesheet is loaded there too:
+    // a static import of it is folded into the route's own stylesheet, which every page then
+    // carries for a grid most readers never open.
+    //
+    // The grid's colours, its selection and its font are the theme's, read off the body with
+    // getComputedStyle by grid-look.ts, and its size by gridFontSize (terminal-list.ts). They
+    // cannot be CSS: xterm paints the glyphs itself and takes its palette and its font as strings
+    // through its own API.
+
+    import SteerBox from '$lib/views/shared/sessions/SteerBox.svelte';
+    import Confirm from '$lib/ui/controls/Confirm.svelte';
+    import { titleStripper } from '$lib/state/sessions/terminals.svelte';
+    import { FILE_DRAG } from '$lib/state/sources/fs';
+    import { fileOver, gridFontSize, holdPastes, shellQuote } from './terminal-list';
+    import { t } from '$lib/state/shared/words/text';
+    import { scheduleReflow } from './reflow';
+    import { applyLook, gridLook, gridOptions } from './grid-look';
+    import { untrack } from 'svelte';
+    import type { Terminal as Grid } from '@xterm/xterm';
+    import { useState } from '$lib/state/client/use';
+
+    type Props = {
+        /** The terminal this grid shows. */
+        id: string;
+        /** The terminal a pointer press asked to focus, whose grid takes focus; null for none. */
+        focusing: string | null;
+        /** Called once this grid took the focus it was asked for. */
+        onfocused: () => void;
+        /** Called when the terminal's bell rings. */
+        onbell: (id: string) => void;
+    };
+
+    let { id, focusing, onfocused, onbell }: Props = $props();
+
+    const {
+        terminals: {
+            resizeTerminal,
+            sendInput,
+            sendResize,
+            subscribePty,
+            terminalById,
+            unsubscribePty
+        },
+        ui: { terminalFont, textScale, theme }
+    } = useState();
+
+    /** How long the pane must hold still before the tmux window is told its new size. */
+    const SETTLE = 100;
+
+    /** The mount point, once the browser has it. */
+    let body: HTMLDivElement | null = $state(null);
+
+    /** The grid and its fit addon, while one is mounted. */
+    let grid: Grid | null = $state(null);
+    let measure: (() => { cols: number; rows: number } | null) | null = null;
+    let refit: (() => void) | null = null;
+
+    /** A paste of several lines waiting for its answer, and how many lines it holds. */
+    let pasting: { text: string; lines: number } | null = $state(null);
+
+    const terminal = $derived(terminalById(id));
+    /** Whether an agent runs in the terminal, which is what the steer box is drawn under. */
+    const agent = $derived(terminal !== null && terminal.kind !== 'shell');
+
+    /** Tell the terminal its pane's size, over the socket, or by the endpoint when it is closed. */
+    function resized(to: string): void {
+        const size = measure?.() ?? null;
+        if (size === null || size.cols < 1 || size.rows < 1) return;
+        if (!sendResize(to, size.cols, size.rows)) void resizeTerminal(to, size.cols, size.rows);
+    }
+
+    /** Send the paste the question held, or drop it. */
+    function answerPaste(send: boolean): void {
+        const held = pasting;
+        pasting = null;
+        if (held === null || grid === null) return;
+        if (send) grid.paste(held.text);
+        grid.focus();
+    }
+
+    /** A file dropped on the grid from the Files view: its path typed, quoted, and no Enter. */
+    function droppedOnGrid(event: DragEvent): void {
+        const path = event.dataTransfer?.getData(FILE_DRAG) ?? '';
+        if (path === '') return;
+        event.preventDefault();
+        sendInput(id, `${shellQuote(path)} `);
+        grid?.focus();
+    }
+
+    // A pointer press on this terminal's row hands the keyboard to the grid, mounted or mounting.
+    $effect(() => {
+        if (focusing !== id || grid === null) return;
+        grid.focus();
+        untrack(onfocused);
+    });
+
+    // One effect for one mounted grid: it is torn down and built again when the terminal changes,
+    // which is what leaves no listener behind.
+    $effect(() => {
+        const at = body;
+        const wanted = id;
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- bind:this fills body, which the checker does not see, so it reads the declaration's null here
+        if (at === null) return;
+        let alive = true;
+        let close: (() => void) | null = null;
+        void (async () => {
+            const [xterm, addon] = await Promise.all([
+                import('@xterm/xterm'),
+                import('@xterm/addon-fit'),
+                import('@xterm/xterm/css/xterm.css')
+            ]);
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- the teardown below sets the flag after this closure was written, which the checker does not see
+            if (!alive) return;
+            const fit = new addon.FitAddon();
+            const size = gridFontSize(untrack(terminalFont), untrack(textScale) ?? 1);
+            const term = new xterm.Terminal(gridOptions(gridLook(), size));
+            term.loadAddon(fit);
+            term.open(at);
+            fit.fit();
+            grid = term;
+            measure = () => ({ cols: term.cols, rows: term.rows });
+            refit = () => fit.fit();
+            const typed = term.onData((data: string) => sendInput(wanted, data));
+            const rang = term.onBell(() => onbell(wanted));
+            // The mount point typed as the element it is: the checker reads `body` as its
+            // declaration's null, so `at` would otherwise carry no methods it can resolve.
+            const host: HTMLElement = at;
+            const unhold = holdPastes(host, (held) => (pasting = held));
+            // A shell names its tmux window after the running command with `ESC k <name> ESC \`,
+            // which xterm does not know and would print as the name itself; the title is dropped,
+            // and a sequence cut across two chunks is carried to the next one.
+            const titles = titleStripper();
+            const off = subscribePty(wanted, (bytes, scrollback) => {
+                // The scrollback is sent to this socket alone at version 0, so a reconnect hands it
+                // over again; repainting from it is what keeps a second copy off the grid.
+                if (scrollback) term.reset();
+                term.write(titles(bytes));
+            });
+            resized(wanted);
+            let settle: ReturnType<typeof setTimeout> | null = null;
+            const watcher = new ResizeObserver(() => {
+                if (settle !== null) clearTimeout(settle);
+                settle = setTimeout(() => {
+                    settle = null;
+                    fit.fit();
+                    resized(wanted);
+                }, SETTLE);
+            });
+            watcher.observe(at);
+            close = () => {
+                if (settle !== null) clearTimeout(settle);
+                watcher.disconnect();
+                off();
+                unsubscribePty(wanted);
+                typed.dispose();
+                rang.dispose();
+                unhold();
+                pasting = null;
+                term.dispose();
+                grid = null;
+                measure = null;
+                refit = null;
+            };
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- the teardown below sets the flag after this closure was written, which the checker does not see
+            if (!alive) close();
+        })();
+        return () => {
+            alive = false;
+            close?.();
+        };
+    });
+
+    // A theme or terminal-size change updates the mounted grid: xterm holds the values it was given
+    // rather than reading CSS or the UI store again.
+    $effect(() => {
+        const name = theme();
+        const chosen = terminalFont();
+        const scale = textScale() ?? 1;
+        const wanted = id;
+        if (name === '') return;
+        // The class that carries the new tokens is put on the body by the workbench's own effect,
+        // and this one may run before it in the same flush; reading the palette on the next frame
+        // reads it after the body has changed, where reading it at once would read the old palette.
+        return scheduleReflow(
+            requestAnimationFrame,
+            cancelAnimationFrame,
+            () => {
+                const held = untrack(() => grid);
+                if (held === null) return false;
+                applyLook(held.options, gridLook());
+                const size = gridFontSize(chosen, scale);
+                if (size !== undefined && held.options.fontSize !== size) {
+                    held.options.fontSize = size;
+                }
+                return true;
+            },
+            () => {
+                refit?.();
+                resized(wanted);
+            }
+        );
+    });
+</script>
+
+<div class="half">
+    <!-- The grid takes a file dropped from the Files view; its keyboard is xterm's. -->
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <div
+        class="grid"
+        bind:this={body}
+        data-terminal={id}
+        ondragover={fileOver}
+        ondrop={droppedOnGrid}
+    ></div>
+    {#if agent}
+        <SteerBox {terminal} />
+    {/if}
+</div>
+
+{#if pasting !== null}
+    <Confirm
+        message={t('sessions.paste_confirm', pasting.lines)}
+        confirm={t('sessions.paste_ok')}
+        cancel={t('ui.confirm_cancel')}
+        onconfirm={() => answerPaste(true)}
+        oncancel={() => answerPaste(false)}
+    />
+{/if}
+
+<style>
+    .half {
+        display: flex;
+        flex-direction: column;
+        flex: 1 1 auto;
+        min-width: 0;
+        min-height: 0;
+        height: 100%;
+    }
+
+    .grid {
+        flex: 1 1 auto;
+        min-height: 0;
+        min-width: 0;
+        overflow: hidden;
+    }
+</style>

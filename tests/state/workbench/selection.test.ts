@@ -1,10 +1,7 @@
 // The workbench's current session, and the pin that lets one view stop following it.
 
 import { beforeEach, describe, expect, it } from 'vitest';
-import {
-    pinnedSession,
-    pinnedTerminal
-} from '../../../src/lib/state/workbench/selection.svelte.ts';
+import { pinnedSession } from '../../../src/lib/state/workbench/selection.svelte.ts';
 import { createClientState, type ClientState } from '../../fixtures/client.ts';
 
 let client: ClientState;
@@ -50,10 +47,5 @@ describe('the pin a view instance keeps', () => {
         expect(pinnedSession(undefined)).toBe(null);
         expect(pinnedSession(null)).toBe(null);
         expect(pinnedSession(['session'])).toBe(null);
-    });
-
-    it('accepts a terminal id as a terminal pin and rejects a session id', () => {
-        expect(pinnedTerminal({ session: 'a1b2c3-shell' })).toBe('a1b2c3-shell');
-        expect(pinnedTerminal({ session: 'abc' })).toBe(null);
     });
 });

@@ -1,10 +1,33 @@
-// Layer 3, view helpers. Project-card path, label and deadline calculations live here because pure
-// display rules change independently of Svelte markup.
+// Layer 3, view helpers. Project-card path, label and deadline calculations, and what a session
+// press on the card opens, live here because pure display rules change independently of Svelte
+// markup.
 
 import { DEADLINE_SOON, daysUntil, type BoardItem, type BoardTag } from '$lib/state/boards/board';
 import type { ClientState } from '$lib/state/client/context';
+import { findView, type Layout } from '$lib/state/workbench/layout';
 
 export type Translate = (key: string, ...args: (string | number)[]) => string;
+
+/**
+ * The views that follow the selected session, so a session pressed on a card shows in one of them
+ * when the page holds one. A Terminal tab draws only the terminals it owns and follows no
+ * selection, so it is not among them.
+ */
+export const SESSION_VIEWS = [
+    'session-list',
+    'session-detail',
+    'timeline',
+    'changes',
+    'agents'
+] as const;
+
+/**
+ * Whether a tree already shows a view that follows the selected session; when it shows none, a
+ * session pressed on a card opens that session's own detail tab.
+ */
+export function sessionViewShown(tree: Layout): boolean {
+    return SESSION_VIEWS.some((view) => findView(tree, view, null) !== null);
+}
 
 /** How many entries of one tag kind a collapsed card draws before the rest need its own control. */
 export const SHOWN = 3;

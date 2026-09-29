@@ -30,7 +30,6 @@
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Toolbar from '$lib/ui/frame/Toolbar.svelte';
     import { clock, compactCount, modelShort, stamp } from '$lib/state/shared/words/format';
-    import { findView } from '$lib/state/workbench/layout';
     import { pinnedSession } from '$lib/state/workbench/selection.svelte';
     import type { GroupedSession } from '$lib/state/client/selectors.svelte';
     import { resumeRefusal } from '$lib/state/sessions/terminals.svelte';
@@ -39,10 +38,10 @@
     import { useState } from '$lib/state/client/use';
 
     const {
-        layout: { instanceLayoutState, layout, openView },
+        layout: { instanceLayoutState, openView },
         selection: { select },
         selectors: { contextWindow, pinnableAreas, sessionFor },
-        terminals: { resumeTerminal },
+        terminals: { resumeTerminal, showTerminal },
         writes: { writeSession }
     } = useState();
 
@@ -184,16 +183,11 @@
         openView('transcript', { session: record.id, label: record.title });
     }
 
-    /** Whether an unpinned terminal is already up and will follow a resumed terminal. */
-    function terminalOpen(): boolean {
-        return findView(layout(), 'terminal', null) !== null;
-    }
-
     /**
      * Continue the session in a terminal. The first press arms the control and the second runs it;
      * the server reads the directory and the title off the record, so only the tool and the id go
-     * out. On success the new terminal becomes the selection, and a terminal view opens when none
-     * is showing, since the pane it starts in would otherwise be nowhere.
+     * out. On success the new terminal becomes the selection and is shown in the Terminal tab of
+     * the page on screen, or a new one, since the pane it starts in would otherwise be nowhere.
      */
     async function resume(): Promise<void> {
         if (record === null) return;
@@ -209,7 +203,7 @@
             return;
         }
         select(answer.id);
-        if (!terminalOpen()) openView('terminal');
+        showTerminal(answer.id);
     }
 </script>
 

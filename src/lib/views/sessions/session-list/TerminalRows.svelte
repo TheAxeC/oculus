@@ -1,6 +1,9 @@
 <script lang="ts">
-    // Layer 3, sessions view partial. Terminal rows live here because their stop and pin controls
-    // change independently of transcript-backed session rows.
+    // Layer 3, sessions view partial. Terminal rows live here because their stop and own-pane
+    // controls change independently of transcript-backed session rows. Every terminal oculus runs
+    // is a row, those no Terminal tab owns among them; a press selects it and shows it in the tab
+    // that owns it, or takes it into the Terminal tab of the page on screen (the terminals store's
+    // `showTerminal`).
 
     import RowButton from '$lib/ui/controls/RowButton.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
@@ -15,7 +18,8 @@
     import { useState } from '$lib/state/client/use';
 
     const {
-        selection: { select, selected }
+        selection: { select, selected },
+        terminals: { showTerminal }
     } = useState();
 
     type Props = {
@@ -42,7 +46,10 @@
         <RowButton
             title={t('sessions.select_tip')}
             selected={entry.id === selected()}
-            onclick={() => select(entry.id)}
+            onclick={() => {
+                select(entry.id);
+                showTerminal(entry.id);
+            }}
         >
             <span class="top"
                 ><Glyph name={kindGlyph(entry.kind)} />
