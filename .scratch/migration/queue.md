@@ -3,9 +3,9 @@
 In flight:
 - D13b (the diffs and the merge on Monaco): repair round 1 (Z59 (a) and the review's findings).
 - Q83 (small libraries in place of hand code): repair round 1 (Z61 (a) and the review's findings).
+- Q86c (the Map's forces back on d3-force; Z60 (a)): building.
 Queued, in order:
 - Q102 (the terminal working as VS Code's, seen working in the page), once Q83 has landed.
-- Q86c (the Map's forces back on d3-force; Z60 (a)), at the next free slot.
 - Q88b (the right-click menus' new capabilities, and Chrome's own menu blocked), once D13b has landed.
 - D13c (the code theme key; Z46 (a)); runs alone, since it changes a configuration file.
 - X3c (the tab strip as VS Code's editor tabs; Z47 (a)); runs alone, since it adds `wrap_tabs` to `config/appearance.yml`.
