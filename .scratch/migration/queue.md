@@ -1,11 +1,12 @@
 /plan-orchestration oculus/migration
 
 In flight:
-- D13b (the diffs and the merge on Monaco): building, its cases ruled.
-- Q83 (small libraries: culori, marked-highlight, the xterm addons and six server helpers): its stop ruled, building.
+- D13b (the diffs and the merge on Monaco): built, review running; Z59 (a) goes into its repair round.
+- Q83 (small libraries in place of hand code): built, review running.
 - Q103 (the Live HPC view's failure text and a collapsible capacity section): building.
 Queued, in order:
 - Q102 (the terminal working as VS Code's, seen working in the page), once Q83 has landed.
+- Q86c (the Map's forces back on d3-force; Z60 (a)), at the next free slot.
 - Q88b (the right-click menus' new capabilities, and Chrome's own menu blocked), once D13b has landed.
 - D13c (the code theme key; Z46 (a)); runs alone, since it changes a configuration file.
 - X3c (the tab strip as VS Code's editor tabs; Z47 (a)); runs alone, since it adds `wrap_tabs` to `config/appearance.yml`.
