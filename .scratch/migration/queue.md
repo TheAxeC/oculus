@@ -1,7 +1,7 @@
 /plan-orchestration oculus/migration
 
 In flight:
-- D13b (the diffs and the merge on Monaco): built, review running; Z59 (a) goes into its repair round.
+- D13b (the diffs and the merge on Monaco): repair round 1 (Z59 (a) and the review's findings).
 - Q83 (small libraries in place of hand code): repair round 1 (Z61 (a) and the review's findings).
 Queued, in order:
 - Q102 (the terminal working as VS Code's, seen working in the page), once Q83 has landed.
