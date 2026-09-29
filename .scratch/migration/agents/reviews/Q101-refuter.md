@@ -54,3 +54,42 @@ Both are the defects fixed on main at 703aec66; Q101 changes neither file, and i
 - The builder's `git.test.ts` timeout, which did not recur.
 
 Reviewer usage: 65 tool uses, 242k tokens, 15 min (from the completion notice).
+
+## Repair round 1, refuted (reviewer a2ac385aa42417d1e, round delta `git diff 55bea404`)
+
+### Verification
+
+`checks.sh` from the worktree's tools/oculus: `Test Files  3 failed | 345 passed (348)`, `Tests  3 failed | 5603 passed | 1 skipped (5607)`, `checks: failed with exit 1: npm test`. The three: comment-width (`Calendar.svelte:355`, `tinted.test.ts:13`, `:44`) and type-scale's Calendar entry, both fixed on main in 703aec66, and `tests/checks/tree/scratch.test.ts`, failing on a stray `$TMPDIR/out.txt` no step wrote. Run one by one after it, each exit 0: `npm run check` (`COMPLETED 1486 FILES 0 ERRORS 0 WARNINGS`), `npm run build`, `npm run format:check`, `npm run lint`, `! LC_ALL=C grep -rna '[^ -~]' src tests`. The round's 10 test files: `Test Files 10 passed (10)`, `Tests 269 passed (269)`. The grep of the removed names prints nothing. R1 to R9 judged by reading: each red but R6, which only an audit catches. The round's item 5 premise was wrong: the first message clears a selected terminal it does not list (`terminals.svelte.ts:343-346`, `:198-208`); the builder's test asserts what the code does.
+
+### 1. Spec
+
+1. `views/sessions/terminal/Terminal.svelte:128-135` `composeHere` writes New's rule a second time beside the store's `composeIn` (`terminals.svelte.ts:426-437`); round item 2 exists to give New one copy.
+
+### 2. Proof
+
+1. `tests/views/sessions/sessions.test.ts:359-363`: the bar's New has only a source-text audit.
+2. The report's R6 run quotes a source that carries the 55bea404 head comment, so it is not a run of the named revert alone.
+3. The report's "before" line counts for `folds.ts` (282, base 303), `folds.test.ts` (352, base 374), `layout/model.ts` (163, base 168), `saved/saved.ts` (447, base 445), `type-scale.test.ts` (348, base 347) are not the base's.
+
+### 3. Standards
+
+1. `DESIGN.md:208` still describes the saved `views` field, read back only under a registered view id; round item 1 removed it.
+2. Made false by round item 4 (`freshComposer`): `state/sessions/terminal/composer.ts:7-8` ("a tab's next composer opens on what its last start used"), `views/sessions/terminal/Composer.svelte:8-9` ("What each picker last chose ... so the tab's next composer opens on it") and `Composer.svelte:190` ("What the start used seeds the tab's next composer"), true now of the accounts and picks only.
+
+### 4. Behaviour
+
+none
+
+### Not checked
+
+`npm run diagrams` (it writes; three counts sampled); R1 to R9 by run; anything needing a DOM (the look covers it).
+
+Reviewer usage: 36 tool uses, 179k tokens, 9 min (from the completion notice).
+
+## Closed
+
+The round was the step's last (`repair_rounds: 1`); each finding of the round's review is small and inside the brief, and is fixed on main at landing:
+- Spec 1 and Proof 1: the bar's New calls the terminals store's rule for its own tab, so New has one copy, and the store's case covers it.
+- Proof 2 and 3: corrected in the landing booking (R6 judged by reading; the base line counts from `git diff 3d4f9bd4 --numstat`).
+- Standards 1: `DESIGN.md:208` rewritten to the saved arrangement without `views`.
+- Standards 2: the three sentences reworded to what a start keeps (the accounts and picks) and what New and Split set (the folder and kind).

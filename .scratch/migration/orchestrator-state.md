@@ -27,7 +27,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:      # Q101 in repair round 1; Q86 resumed on its cases ruling.
+dispatch:      # Q101 round 1 answered, its review running; Q86 built, its review running.
 - step: Q101
   executor: agent
   worker: claude:opus
@@ -36,9 +36,9 @@ dispatch:      # Q101 in repair round 1; Q86 resumed on its cases ruling.
   base: 3d4f9bd4
   launched: 2026-09-29
   report: agents/reviews/Q101-report.md
-  landing: not-started
-  builder_usage: 141 tool uses, 146k tokens, 40 min, with the cases hand-back
-  reviewer_report: agents/reviews/Q101-refuter.md (reviewer a1c2f1a2de69bc190, 65 tool uses, 242k tokens, 15 min; it ran one `git -C . diff` outside the allowed set)
+  landing: cherry-picking
+  builder_usage: 141 tool uses, 146k tokens, 40 min, with the cases hand-back; round 1: 84 tool uses, 301k tokens, 23 min
+  reviewer_report: agents/reviews/Q101-refuter.md (reviewer a1c2f1a2de69bc190, 65 tool uses, 242k tokens, 15 min; it ran one `git -C . diff` outside the allowed set). Round 1 review: reviewer a2ac385aa42417d1e, 36 tool uses, 179k tokens, 9 min; its findings fixed at landing.
   round: 1   # sent 2026-09-29 from 55bea404, agents/briefs/Q101-round1-sent.md; cases ruled in agents/briefs/Q101-cases.md
   shared_paths: with Q79d, views/sessions/session-list/TerminalRows.svelte (Q79d its nameOf import and the folder line, Q101 the row press and the menu pick: different lines, a hand merge), DESIGN.md (Q79d lines 169 and 305, Q101 lines 266 and 273 and the terminal sentences: different lines), docs/diagrams (a rerun of npm run diagrams)
 - step: Q86
@@ -50,7 +50,8 @@ dispatch:      # Q101 in repair round 1; Q86 resumed on its cases ruling.
   launched: 2026-09-29
   report: agents/reviews/Q86-report.md
   landing: not-started
-  builder_usage: 66 tool uses, 249k tokens, 19 min, the cases hand-back
+  builder_usage: 66 tool uses, 249k tokens, 19 min, the cases hand-back; the build after the ruling: 49 tool uses, 550k tokens, 18 min (two completion notices, 19 and 30 tool uses)
+  reviewer_report: agents/reviews/Q86-refuter.md (reviewer a8593cf041460a438, running)
   round: 0   # cases ruled in agents/briefs/Q86-cases.md, sent 2026-09-29
   shared_paths: with Q101, DESIGN.md (Q86 line 290, Q101 lines 266 and 273 and the terminal sentences: different lines), docs/diagrams (a rerun of npm run diagrams), src/lib/state/client/context.ts (Q86 one import, one ClientState field and one returned key; Q101 the terminals wiring at 160-195 and the imports at 73-92: a hand merge of a few lines)
 ```
@@ -124,6 +125,10 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
   2. The two pins. (a) VS Code's pinned tab is called "Pin", as in VS Code, and oculus's session pin is renamed "Lock to this session" (labels only, the state unchanged). (b) VS Code's pinned tab is called "Keep at start", and the session pin keeps "Pin this pane". Recommendation (a), since the migration copies VS Code's words. (b) is the lazy option.
   3. Wrapped tabs. VS Code has it as a setting, off by default. (a) A key in `config/appearance.yml`, `wrap_tabs: false` by default, with a toggle in the Settings view's Appearance section. (b) The strip always wraps. (c) The strip always scrolls, and the row is dropped from X3c. Recommendation (a), as VS Code has it; the key's name is yours to rule. (c) is the lazy option.
   4. Breadcrumbs. (a) The path of a file tab (the source tab, a document, a PDF) shown above its body as `Breadcrumb.svelte` segments, a segment opening the Files view at that folder; symbols in the path wait for D23's language servers. (b) Breadcrumbs only after D23, with symbols. Recommendation (a). (b) is the lazy option.
+- Z48, the verify list on main is red at Q101's landing on a file no step wrote (raised 2026-09-29, by the orchestrator at `/land` Q101). Q101's range and the round's review fixes are staged on main, and the verify list ran once: `Test Files  2 failed | 350 passed (352)`, `Tests  2 failed | 5640 passed | 1 skipped (5643)`. `tests/server/git/git-ops.test.ts` passes alone (`Tests  37 passed (37)`), so under the standing demand it is named and the landing goes on. `tests/checks/tree/scratch.test.ts` fails alone too (`Tests  1 failed | 9 passed (10)`): its line 239, `expect(existsSync(join(dir, '..', 'out.txt'))).toBe(false)`, reads the system temporary directory, where `$TMPDIR/out.txt` (38 bytes, 2026-09-29 01:16) holds the line "PASS: check_coverage.py scratch tests", written by a process outside oculus. The standing demand covers a test that passes alone, so this case is not covered. Neither Q101 nor Q86 touches the file. Options:
+  - (a) Change the test so the refused plant names a file unique to the run (a name built from the scratch directory's own name, `../<dir name>-out.txt`), and landing Q101 carries that two-line change as a fix at landing. The test then checks the refusal without depending on what other programs leave in the temporary directory. Recommended.
+  - (b) Remove `$TMPDIR/out.txt` and land. It removes a file another session wrote, and the test stays open to the same failure from any other program; this is the lazy option.
+  - (c) Land with the red line named in the booking, as for a test that passes alone.
 
 ## Time per step (Axel asked 2026-09-27 for how it evolves with Q77; measured from each builder's transcript: each tool call from call to result, each background wait from the builder stopping to the run waking it)
 
