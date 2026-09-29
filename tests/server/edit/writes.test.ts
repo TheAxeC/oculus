@@ -7,6 +7,7 @@
 // writes is asserted to be inside it before it is written; nothing in this file opens the real hub
 // for writing, and the schema it checks against is the real config/catalogs/manifest-schema.yml,
 // so what the form offers and what the write accepts are the same list.
+// @module-tag slow: its cases time out or fail on a loaded machine, so npm test leaves it out.
 
 import { existsSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';

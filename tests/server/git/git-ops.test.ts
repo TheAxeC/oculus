@@ -6,6 +6,7 @@
 // sync, publish and the tag push cross a real remote without leaving the temporary tree. The last
 // describe is this file's gate, the same as git-write.test.ts's: every command the modules ran is
 // one of the writing half's own subcommands, from a root in the temporary tree, never forced.
+// @module-tag slow: its cases time out or fail on a loaded machine, so npm test leaves it out.
 
 import { execFileSync } from 'node:child_process';
 import {

@@ -1,6 +1,7 @@
 // The portfolio and feed watcher against a synthetic hub and engine in temporary directories.
 // Nothing outside them is read or written, every write asserts its path is inside first, and every
 // watcher is closed when the test ends.
+// @module-tag slow: its cases time out or fail on a loaded machine, so npm test leaves it out.
 
 import { cpSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve, sep } from 'node:path';

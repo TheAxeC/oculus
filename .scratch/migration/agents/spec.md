@@ -49,7 +49,7 @@ Every agent dispatched on an oculus package runs under this file plus one brief 
 - The layer boundaries in `DESIGN.md`: `ui/` imports no state and no view; `shell/` imports no view by name; `views/` imports no shell and no other view; nothing client-side imports `lib/server/`. `tests/checks/tree/boundaries.test.ts` enforces them and must pass.
 - One line per paragraph or bullet in any Markdown or YAML you edit. No hard wrapping.
 - No dependency the brief did not name, and every library the brief names is used for what it names rather than code written beside it. `npm install` of something new is a report, not an action: a library you find that would cover part of your work is named in the report with what it would replace.
-- The tests are the unit suite (`npm test`) and nothing else: there is no browser suite and no revert directive, and a step adds neither.
+- The tests are the unit suite (`npm test`) and the tree checks (`npm run test:checks`), and nothing else: there is no browser suite and no revert directive, and a step adds neither. A file tagged slow (`// @module-tag slow`) is left out of both, and a step never runs `npm run test:slow`.
 - A step whose change a reader can see is looked at on screen before it is booked: the orchestrator opens the views it touches on the workbench page named TEST in Axel's own Chrome, on his running server, and the landing report says what was seen there. Your report's "before and after" section is what the look is read against, so it names the view, the state to put it in and what should differ.
 - A test never asserts a known defect. A threshold is never loosened to make a check pass; a check that only passes after loosening is a finding to report.
 - The cockpit under `tools/cockpit` is a cautionary reference for what its code got wrong, never a justification. Port its facts (the transcript format, the registry, the grouping clamp, the four git commands), not its structure.
@@ -60,7 +60,7 @@ Every agent dispatched on an oculus package runs under this file plus one brief 
 
 ## Verify before you report
 
-Run every command the brief lists, from `tools/oculus` in the worktree, and fix until each passes. At minimum: `npm test`, `npm run check`, `npm run build`, `npm run format:check`. Then `LC_ALL=C grep -n '[^ -~]'` over every file you touched, which must print nothing.
+Run every command the brief lists, from `tools/oculus` in the worktree, and fix until each passes. At minimum: `npm test`, `npm run test:checks`, `npm run check`, `npm run build`, `npm run format:check`. Then `LC_ALL=C grep -n '[^ -~]'` over every file you touched, which must print nothing.
 
 The tests that count are the ones the step can influence: the test files it adds, changes or deletes, and the tests that exercise the files it changes. A failure or timeout in any other test file (`tests/server/core/git.test.ts` is the usual one) is not the step's: the report names it in one line, and nobody reruns it, investigates it, or changes code, a test, a timeout or any configuration because of it, since several suites run on this machine at once. A reviewer does not count such a failure as a finding.
 

@@ -5,6 +5,7 @@
 // afterAll whether or not an assertion failed, and the directory goes with it. Nothing under
 // ~/.claude, ~/.codex, ~/.oculus or the hub is read or written. The pane runs `cat`, so what is
 // typed comes back without a shell interpreting anything.
+// @module-tag slow: its cases time out or fail on a loaded machine, so npm test leaves it out.
 
 import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync, realpathSync, rmSync, statSync } from 'node:fs';

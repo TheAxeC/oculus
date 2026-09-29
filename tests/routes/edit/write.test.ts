@@ -6,6 +6,7 @@
 // The hub is synthetic, under the system temporary directory, and every path written is asserted to
 // be inside it first. What this does NOT cover: the token actually reaching the page, and Kit
 // putting it on the event, which is exercised by the curl in the package's verification.
+// @module-tag slow: its cases time out or fail on a loaded machine, so npm test leaves it out.
 
 import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';

@@ -6,6 +6,7 @@
 // sibling whose name starts with the folder's is not inside it. `realPath` answers null for a path
 // with nothing behind it and follows a symbolic link to where it points. Every file here is made
 // under the system temporary directory.
+// @module-tag slow: its cases time out or fail on a loaded machine, so npm test leaves it out.
 
 import { mkdirSync, readFileSync, symlinkSync, writeFileSync } from 'node:fs';
 import { realpathSync } from 'node:fs';

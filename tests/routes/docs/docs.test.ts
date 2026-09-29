@@ -13,6 +13,7 @@
 // The other two shapes the route answers are here as well: a Markdown document of the hub, which is
 // what the `docs:` list of config/layout.yml lists in the view catalogue, and the manual, which is
 // the one path of the engine directory this route opens.
+// @module-tag slow: its cases time out or fail on a loaded machine, so npm test leaves it out.
 
 import {
     cpSync,

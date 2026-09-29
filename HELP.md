@@ -293,6 +293,8 @@ The server runs on this machine only, bound to the loopback address, on the port
 
 The checks, from `tools/oculus`:
 
-- `npm test` runs the unit suite over the data layer, the server, the stores, the shell and the views.
+- `npm test` runs the unit suite over the data layer, the server, the stores, the shell and the views, leaving out the tree checks and the files tagged slow.
+- `npm run test:checks` runs the tree checks under `tests/checks` (comment width, file size, duplication, import order and the rest) with no time limit.
+- `npm run test:slow` runs the files tagged slow (`// @module-tag slow` in a test file's head comment), whose cases spawn git, a shell or ssh, or read the whole hub, and so time out or fail on a loaded machine.
 - `npm run check` runs the TypeScript and Svelte check over every file.
 - `npm run lint` and `npm run format:check` hold the source to its conventions.

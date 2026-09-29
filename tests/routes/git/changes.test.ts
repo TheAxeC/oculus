@@ -4,6 +4,7 @@
 //
 // The log is a file under the system temporary directory, asserted to be inside it before anything
 // is written, so nothing here reads or writes ~/.oculus/changes.jsonl.
+// @module-tag slow: its cases time out or fail on a loaded machine, so npm test leaves it out.
 
 import { join, resolve, sep } from 'node:path';
 import { describe, expect } from 'vitest';

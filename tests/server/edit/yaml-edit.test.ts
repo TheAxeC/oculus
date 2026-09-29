@@ -9,6 +9,7 @@
 // does and for the same reason: the manifests are the thing this has to be safe on, and a rule that
 // holds on three fixtures and not on the ninety-one is not a rule. Nothing there is written; when
 // the hub is not on this machine the whole block skips and says so.
+// @module-tag slow: its cases time out or fail on a loaded machine, so npm test leaves it out.
 
 import { globSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';

@@ -242,7 +242,7 @@ A route reads the configuration through `locals.config()`, which reads `config/`
 
 - Every source file under 1000 lines, checked at 900 for a file and 540 for a component by `bin/size-check.sh`. A file approaching it is split by concern, never by line count.
 - At most ten items in a folder under `src`, `tests`, `bin` or `config`, checked by `bin/folder-check.sh`.
-- Four-space indentation in every source file. Prettier is the formatter, pinned in `.prettierrc` (`tabWidth: 4`, `useTabs: false`), with `npm run format` to apply it and `npm run format:check` as the fourth verification command beside `npm test`, `npm run check` and `npm run build`. A hand-formatted file is never the answer to a failing check.
+- Four-space indentation in every source file. Prettier is the formatter, pinned in `.prettierrc` (`tabWidth: 4`, `useTabs: false`), with `npm run format` to apply it and `npm run format:check` as a verification command beside `npm test`, `npm run test:checks`, `npm run check` and `npm run build`. A hand-formatted file is never the answer to a failing check.
 - ASCII only in every authored file. Glyphs come from `catalogs/glyphs.yml`, strings from the catalogs under `config/text/`, colours from `tokens.css`.
 - One continuous line per paragraph and per bullet in Markdown and YAML; no hard wrapping.
 - Plain prose in docs and comments; a comment says why, not what.

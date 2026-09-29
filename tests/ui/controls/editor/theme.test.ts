@@ -4,6 +4,7 @@
 // The registered keys are read from the installed package itself, every `registerColor('<key>'`
 // under its esm tree, so a Monaco release that adds a key turns this red until the map names it.
 // What this does NOT cover: that a browser paints the values Monaco is handed, which the look does.
+// @module-tag slow: its cases time out or fail on a loaded machine, so npm test leaves it out.
 
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';

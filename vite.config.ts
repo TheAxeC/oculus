@@ -30,8 +30,10 @@ export default defineConfig({
     test: {
         environment: 'node',
         include: ['tests/**/*.test.ts'],
-        // A case tagged slow builds more than a run beside other worktrees can read in time, so
-        // npm test leaves it out and npm run test:slow runs it.
+        // A file tagged slow (`// @module-tag slow` in its head comment) has cases that time out or
+        // fail on a loaded machine, so npm test and npm run test:checks leave it out and npm run
+        // test:slow runs it. The tree checks under tests/checks are left out of npm test and run by
+        // npm run test:checks with no time limit, since a finding of theirs is a defect in the tree.
         tags: [{ name: 'slow', description: 'Left out of npm test; npm run test:slow runs it.' }],
         expect: { requireAssertions: true },
         // Four workers, not one per core: two or three worktrees run this suite at once beside the

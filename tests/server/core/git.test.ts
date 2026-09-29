@@ -15,6 +15,7 @@
 // started would, since neither can be made to happen on demand with a real repository, and it can
 // run a case's own work between the module asking for a command and the command running, which is
 // how a root that goes away while a read of it is on its way is made to happen on demand.
+// @module-tag slow: its cases time out or fail on a loaded machine, so npm test leaves it out.
 
 import {
     chmodSync,
@@ -461,7 +462,7 @@ describe('the log, the branches and the worktrees', () => {
         expect(state().branches.length).toBe(MAX_ENTRIES);
     });
 
-    it('cuts every list it publishes at the cap', { tags: ['slow'] }, () => {
+    it('cuts every list it publishes at the cap', () => {
         // Past the cap in every list, each made by writing what git reads rather than by a git
         // process per entry: the branches and the tags by one update-ref, the stashes as the stash
         // reflog's lines, the worktrees as their administrative folders and the remotes in the

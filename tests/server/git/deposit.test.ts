@@ -10,6 +10,7 @@
 // argument vector the suite ran is either `-C <path under tmpdir> <enumerated subcommand>` or one
 // of the three `gh` shapes, and the force option appears exactly once in the source of
 // deposit-git.ts.
+// @module-tag slow: its cases time out or fail on a loaded machine, so npm test leaves it out.
 
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';

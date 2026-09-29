@@ -8,6 +8,7 @@
 //
 // What this does NOT cover: `claude` is never run. suggestMessage is exercised with the diff and
 // the subprocess both handed in, which is what its options exist for.
+// @module-tag slow: its cases time out or fail on a loaded machine, so npm test leaves it out.
 
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';

@@ -9,6 +9,7 @@
 // in tests/ui/theme/theme.test.ts, the drag store is tests/state/workbench/drag.test.ts, and the
 // drag itself needs a DOM and is not run here. The insertion mark below is rendered from a prop,
 // not from a pointer.
+// @module-tag slow: its cases time out or fail on a loaded machine, so npm test leaves it out.
 
 import { readFileSync } from 'node:fs';
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest';

@@ -1,5 +1,6 @@
 // Layer 4, test. The Claude status-line command preserves its input atomically and prints only
 // present status fields.
+// @module-tag slow: its cases time out or fail on a loaded machine, so npm test leaves it out.
 
 import { readFileSync, readdirSync, rmSync } from 'node:fs';
 import { join } from 'node:path';

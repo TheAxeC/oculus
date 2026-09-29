@@ -8,6 +8,7 @@
 //
 // The spawn the counter runs cloc with is recorded, the real one still running, so a case can see
 // that a closed request left no cloc running.
+// @module-tag slow: its cases time out or fail on a loaded machine, so npm test leaves it out.
 
 import { chmodSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';

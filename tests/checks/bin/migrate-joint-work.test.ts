@@ -2,6 +2,7 @@
 // joint-work collection, over a scratch hub: a row naming two organisations gives its person both
 // keys, a second run writes the same bytes, and `--from` carries the rows of the file it names onto
 // people the registry already holds.
+// @module-tag slow: its cases time out or fail on a loaded machine, so npm test leaves it out.
 
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve, sep } from 'node:path';

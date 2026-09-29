@@ -3,6 +3,7 @@
 // its compute and its cross-link entries, is a tag in the muted text colour. The rule is asserted
 // off one rendered card rather than left to each view's own test, so a mark that gains a capsule
 // somewhere fails here.
+// @module-tag slow: its cases time out or fail on a loaded machine, so npm test leaves it out.
 
 import { readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';

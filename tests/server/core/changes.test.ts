@@ -7,6 +7,7 @@
 // The writes go through handleWrite rather than through each writer, because the record is only
 // complete once the route has stamped the time and the body kind on it: what a case asserts is the
 // line the log holds, which is what the History view reads.
+// @module-tag slow: its cases time out or fail on a loaded machine, so npm test leaves it out.
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';

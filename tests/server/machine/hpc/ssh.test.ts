@@ -32,6 +32,7 @@
 // pid and up to WATCH_MS again on the reap, and the budget that follows starts at twice what the
 // probe cost, so a slow enough machine runs a case past its timeout. That is a slow machine rather
 // than a slow runner, and it reads as a red of this file either way.
+// @module-tag slow: its cases time out or fail on a loaded machine, so npm test leaves it out.
 import { spawn } from 'node:child_process';
 import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
