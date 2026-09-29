@@ -61,6 +61,8 @@ dispatch:      # Q81, Q82 and Q87 building.
   report: agents/reviews/Q87-report.md
   landing: not-started
   round: 0
+  builder_usage: 26 tool uses, 133k tokens, 6 min, the cases hand-back
+  cases: ruled at round 0 in agents/briefs/Q87-cases.md (the import pattern, the launcher, same-file clones dropped, the mark over the TypeScript scanner's tokens)
   shared_paths: with Q81 and Q82, package.json and package-lock.json (each adds its own dependencies, Q87 a devDependency: a hand merge of the dependency lines, then npm install)
 ```
 
