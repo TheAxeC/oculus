@@ -134,6 +134,7 @@ None.
 
 ## Closed items (kept as the log of what was raised and how it ended)
 
+- Z63, builders running the full verify list many times (raised 2026-09-29 from D13b's and Q83's build times): ruled (a) by Axel 2026-09-29. `agents/spec.md` now says the full list runs once after the last change, once more only after fixing a red line in a changed file, and never again for a red line in an unchanged file.
 - Z62, the builder git sentence in `agents/spec.md` (raised 2026-09-29 from Q83's review): ruled (a) by Axel 2026-09-29. The sentence now lets a reviewer read git state and says a builder runs no git command at all.
 - Z61, `image-size` on JPEG (raised 2026-09-29 from Q83's review): ruled (a) by Axel 2026-09-29. JPEG keeps the hand parser, `image-size` sizes the other formats; sent with Q83's repair round.
 - Z60, the Map's forces gone since Q86 (raised 2026-09-29 from Axel's two Map messages): ruled (a) by Axel 2026-09-29. Step Q86c puts the whole force simulation back on `d3-force` over every node, started from neato's placement and run to rest once before the first draw; the hand-written drag tick, its push and settle, `DRAG_PHYSICS`, Z58's friction and the neighbour-only drag go.

@@ -22,7 +22,7 @@ Every agent dispatched on an oculus package runs under this file plus one brief 
 
 ## Token discipline
 
-- While working, run the one test file that covers what you are changing (`npx vitest run tests/<file>`), not the whole suite. Run `npm test` once at the end; use `npx vitest run --reporter=dot` for that, and the verbose reporter only for the lines the report quotes.
+- While working, run only the test files that cover what you are changing (`npx vitest run tests/<file>`), never the whole suite. The full verify list (`checks.sh`) runs once, after your last change. A red line in a file the step changed is fixed and that file rerun alone, then the list runs once more. A red line in a file the step does not change is rerun alone and named with that run in the report, and the list is not run again for it. Use the dot reporter for whole runs, and the verbose reporter only for the lines the report quotes.
 - Batch independent reads into one turn. Do not re-read a file you wrote; the harness holds it.
 - Do not paste whole files into your reasoning or your report; quote the lines the report needs.
 

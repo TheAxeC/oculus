@@ -480,6 +480,7 @@ Independent of each other; two may run side by side under R9's rule when their b
 - D18 (2026-09-29): (a), the Processes view's command patterns are `processes: { patterns: [...] }` in `config/behavior.yml` (the user).
 - M3 (2026-09-29): (a), `registries/resources.yml` entries are `{ key, name, kind: cluster|machine|storage, host, access, links }`, `slurm.resource: <key>` names the cluster, and a manifest's `compute:` is a list of entry keys (the user).
 - O29 (2026-09-29): (b), step O29 edits the `research-cockpit` skill itself, and lists every deletion path by path for the user's yes before it is made (the user).
+- Open item Z63 (2026-09-29): (a), `agents/spec.md` says the full verify list runs once after the last change, once more only after a red line in a file the step changed, and never again for a red line in a file it does not change (the user).
 - Open item Z61 (2026-09-29): (a), JPEG sizes and orientation stay on the hand parser and `image-size` sizes the other picture formats (the user).
 - Open item Z62 (2026-09-29): (a), `agents/spec.md` lets a reviewer read git state and a builder runs no git command at all (the user).
 - A3 (2026-09-29): (a), a scheduled run is a cron-style `schedule:` field on each Update task entry (the user).
