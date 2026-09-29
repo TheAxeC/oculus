@@ -4,7 +4,7 @@ In flight:
 - D13b (the diffs and the merge on Monaco): round 1 refuted, its landing next, waiting on Axel's go.
 - Q86c (the Map's forces back on d3-force; Z60 (a)): built, its report saved, its review next, waiting on Axel's go.
 Queued, in order:
-- Q102 (the terminal working as VS Code's, seen working in the page), next at a free slot once Axel says go.
+- Q102 (the terminal working as VS Code's, seen working in the page): stopped at `/spec` on Z69 (Copy as HTML: `@xterm/addon-serialize` or hand code), waiting on Axel's ruling.
 - Q88b (the right-click menus' new capabilities, and Chrome's own menu blocked), once D13b has landed.
 - D13c (the code theme key; Z46 (a)); runs alone, since it changes a configuration file.
 - X3c (the tab strip as VS Code's editor tabs; Z47 (a)); runs alone, since it adds `wrap_tabs` to `config/appearance.yml`.

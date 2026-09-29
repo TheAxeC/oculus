@@ -55,6 +55,7 @@ dispatch:      # Q83 landed; D13b round 1 refuted, its landing next; Q86c built,
   launched: 2026-09-29
   report: agents/reviews/Q86c-report.md
   builder_usage: 110 tool uses, 323k tokens, 62 min
+  reviewer_report: running since 2026-09-30, model claude-opus-5-5 (read from its transcript)
   brief_check: agents/reviews/Q86c-brief-check.md, every finding closed in the brief (its Closed heading); 42 tool uses, 161k tokens, 8 min
   landing: not-started
   round: 0
@@ -111,13 +112,13 @@ dispatch:      # Q83 landed; D13b round 1 refuted, its landing next; Q86c built,
 
 ## The pause
 
-In force from 2026-09-29, Axel: the loop paused once D13b's reviewer and Q86c's builder were done; he then asked for Q83's landing and the slow-test work (Z64) done inline, with a report of how long each part of the verify list takes a builder. Nothing else is dispatched, no D13b landing, no Q86c review and no `/spec` Q102, until he says go. On his go the order is (Axel, 2026-09-30): `/refute` Q86c; `/spec` Q102 and its Sonnet 5.5 builder, the model check right after the launch; D13b's landing while those two run; Q88b into the slot D13b frees; Q103's look while the cluster answers.
+Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with the three slots kept filled, open items booked and reported without ending the turn, and the order below. Before that, in force from 2026-09-29, Axel: the loop paused once D13b's reviewer and Q86c's builder were done; he then asked for Q83's landing and the slow-test work (Z64) done inline, with a report of how long each part of the verify list takes a builder. Nothing else is dispatched, no D13b landing, no Q86c review and no `/spec` Q102, until he says go. On his go the order is (Axel, 2026-09-30): `/refute` Q86c; `/spec` Q102 and its Sonnet 5.5 builder, the model check right after the launch; D13b's landing while those two run; Q88b into the slot D13b frees; Q103's look while the cluster answers.
 
 ## Open items (only what Axel must rule on; every report opens with this list verbatim and repeats it until he has ruled)
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is booked as its own step in `plan.md` and carried in the Booked section below, since it needs no ruling from him.
 
-None.
+- Z69, Q102's Copy as HTML: a library or hand code (raised 2026-09-30 at `/spec` Q102, by the library check `libraries: check` requires). Copy as HTML turns the terminal's buffer, its colours and styles cell by cell, into HTML on the clipboard. xterm's own `@xterm/addon-serialize` does exactly that (`serializeAsHTML()`), and it is what VS Code's Copy as HTML calls. Facts (`npm view`): 0.14.0, MIT, maintained by the xterm.js team (tyriar), released 2025-12-22 in the same wave as the `@xterm/xterm` 6.0.0 oculus runs and the addon-search 0.16 and addon-fit 0.11 it already has; it would replace a hand-written walk over xterm's buffer cells and their attributes; nothing else of Q102 would use it. No ruling names it (`grep -i serialize plan.md` finds none; Q83's ruling covers the search, web-links and unicode11 addons only). The options: (a) `@xterm/addon-serialize` 0.14.0 for Copy as HTML; (b) hand code over xterm's buffer API. Recommendation: (a): it is the addon VS Code uses for this item, from the maintainers of the terminal oculus already runs, and hand code would reimplement its colour and style mapping and carry its own defects; (b) is the lazy option only in the sense of skipping the question, it costs more to write and to prove. Q102 is blocked until the ruling; nothing else is.
 
 ## Time per step (Axel asked 2026-09-27 for how it evolves with Q77; measured from each builder's transcript: each tool call from call to result, each background wait from the builder stopping to the run waking it)
 
