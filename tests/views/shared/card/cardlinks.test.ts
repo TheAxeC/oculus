@@ -175,13 +175,9 @@ describe('the card tag lines', () => {
         const [funding, pillars, datasets, collaborations] = lines(
             draw({ item: item({ funding: 1, pillars: 1, datasets: 1, collaborators: 1 }) })
         );
-        expect(funding).toContain(
-            `role="tooltip" hidden="" style="left: 0px; top: 0px">${openIn(LABELS[0])}<`
-        );
+        expect(funding).toContain(`class="words" hidden="">${openIn(LABELS[0])}<`);
         expect(funding).toContain('class="crosslink');
-        expect(collaborations).toContain(
-            `role="tooltip" hidden="" style="left: 0px; top: 0px">${openIn(LABELS[3])}<`
-        );
+        expect(collaborations).toContain(`class="words" hidden="">${openIn(LABELS[3])}<`);
         expect(collaborations).toContain('class="crosslink');
         // a pillar is not a kind that opens a view of its own, so its tags stay plain
         expect(pillars).not.toContain('class="crosslink');
@@ -255,9 +251,7 @@ describe('the card tag lines', () => {
         const software = drawn[4];
         expect(software.match(/class="tag/g)).toHaveLength(2);
         expect(software).toContain('class="crosslink');
-        expect(software).toContain(
-            `role="tooltip" hidden="" style="left: 0px; top: 0px">${openIn(SOFTWARE)}<`
-        );
+        expect(software).toContain(`class="words" hidden="">${openIn(SOFTWARE)}<`);
         expect(software).toContain('SOFT-1');
     });
 

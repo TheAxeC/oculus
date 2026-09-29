@@ -31,6 +31,8 @@ describe('Prompt', () => {
         expect(body).toContain('aria-label="Create Tag"');
     });
 
+    // An audit of the markup the prompt keeps. Red when a field loses its label or the text it
+    // begins with, or the yes or the cancel goes.
     it('draws each field by its label with the text it begins with, and its yes and its cancel', () => {
         const body = prompt();
         expect(body).toContain('aria-label="Tag name"');

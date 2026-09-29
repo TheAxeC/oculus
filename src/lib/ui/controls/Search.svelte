@@ -7,6 +7,10 @@
     // this is a component rather than an input a view writes out itself. Enter is the other: a box
     // that filters what is already on screen has nothing to do with it, and a box that asks the
     // server for an answer runs on it, so the caller says whether Enter means anything here.
+    //
+    // A box that is the input of a list it steers, as the palette's is of its bits-ui Command list,
+    // is handed that list's attributes as `field`: its role, the list it controls and the row that
+    // is selected. The box's own value, name and keys stay its own.
 
     type Props = {
         value: string;
@@ -15,9 +19,11 @@
         oninput: (value: string) => void;
         /** What Enter does, for a box whose value is asked for rather than filtered with. */
         onenter?: () => void;
+        /** The attributes of the list this box steers, put on the input under its own. */
+        field?: Record<string, unknown>;
     };
 
-    let { value, placeholder, oninput, onenter }: Props = $props();
+    let { value, placeholder, oninput, onenter, field = {} }: Props = $props();
 
     function typed(event: Event): void {
         const field = event.currentTarget;
@@ -37,6 +43,7 @@
 </script>
 
 <input
+    {...field}
     class="search"
     data-search
     type="search"

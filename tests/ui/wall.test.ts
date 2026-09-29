@@ -112,8 +112,8 @@ const SOLID: Record<string, string> = {
         'a hover response, saying which status bar item the pointer is on or has open',
     'src/lib/views/shared/card/CardActions.svelte [data-action-more] :global(.opener)':
         'a control, the More opener drawn as the card controls beside it are',
-    'src/lib/ui/menu/MenuList.svelte .item:hover':
-        'a hover response inside a list that is translucent',
+    "src/lib/ui/menu/MenuList.svelte .item:hover, .item[data-state='open']":
+        'a hover response inside a list that is translucent, kept while its submenu shows',
     'src/lib/ui/display/Meter.svelte .track':
         'a track, read as the proportion of it the fill covers',
     'src/lib/ui/forms/MultiSelect.svelte .filter': 'an input, whose text is typed and read back',

@@ -4,12 +4,12 @@
     // its head Clear All, Do Not Disturb, which stops the toasts and keeps the list, and Hide.
     // Escape hides it as Hide does, and the keyboard goes back to the bell.
     //
-    // It is drawn on the body, since over a wallpaper the bar filters what it holds and a panel
-    // laid out inside it would be cut to the bar's own box.
+    // It is drawn on the body through bits-ui's Portal, since over a wallpaper the bar filters what
+    // it holds and a panel laid out inside it would be cut to the bar's own box.
 
     import NoticeEntry from './NoticeEntry.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import { onBody } from '$lib/ui/frame/on-body';
+    import { Portal } from 'bits-ui';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
 
@@ -53,58 +53,59 @@
     });
 </script>
 
-<!-- A region the reader walks with Tab; it takes the focus itself on opening so Escape reaches it
-     before any of its controls is focused. -->
-<section
-    class="centre"
-    aria-label={t('statusbar.centre')}
-    data-notice-centre
-    tabindex="-1"
-    bind:this={panel}
-    use:onBody
->
-    <header class="head">
-        <h2 class="title">{t('statusbar.centre')}</h2>
-        <ToolButton
-            label={t('statusbar.centre_clear_all')}
-            glyph="clear_all"
-            compact
-            bare
-            disabled={held.length === 0}
-            onclick={clearAll}
-        />
-        <ToolButton
-            label={t('statusbar.centre_quiet')}
-            glyph="bell_quiet"
-            compact
-            bare
-            pressed={quiet}
-            onclick={() => setStatusQuiet(!quiet)}
-        />
-        <ToolButton
-            label={t('statusbar.centre_hide')}
-            glyph="disclosure"
-            compact
-            bare
-            onclick={onclose}
-        />
-    </header>
-    {#if held.length === 0}
-        <p class="empty">{t('statusbar.centre_empty')}</p>
-    {:else}
-        <ul class="list">
-            {#each held as notice (notice.id)}
-                <li>
-                    <NoticeEntry
-                        {notice}
-                        dismiss={t('statusbar.centre_clear')}
-                        ondismiss={() => clear(notice.id)}
-                    />
-                </li>
-            {/each}
-        </ul>
-    {/if}
-</section>
+<Portal>
+    <!-- A region the reader walks with Tab; it takes the focus itself on opening so Escape
+         reaches it before any of its controls is focused. -->
+    <section
+        class="centre"
+        aria-label={t('statusbar.centre')}
+        data-notice-centre
+        tabindex="-1"
+        bind:this={panel}
+    >
+        <header class="head">
+            <h2 class="title">{t('statusbar.centre')}</h2>
+            <ToolButton
+                label={t('statusbar.centre_clear_all')}
+                glyph="clear_all"
+                compact
+                bare
+                disabled={held.length === 0}
+                onclick={clearAll}
+            />
+            <ToolButton
+                label={t('statusbar.centre_quiet')}
+                glyph="bell_quiet"
+                compact
+                bare
+                pressed={quiet}
+                onclick={() => setStatusQuiet(!quiet)}
+            />
+            <ToolButton
+                label={t('statusbar.centre_hide')}
+                glyph="disclosure"
+                compact
+                bare
+                onclick={onclose}
+            />
+        </header>
+        {#if held.length === 0}
+            <p class="empty">{t('statusbar.centre_empty')}</p>
+        {:else}
+            <ul class="list">
+                {#each held as notice (notice.id)}
+                    <li>
+                        <NoticeEntry
+                            {notice}
+                            dismiss={t('statusbar.centre_clear')}
+                            ondismiss={() => clear(notice.id)}
+                        />
+                    </li>
+                {/each}
+            </ul>
+        {/if}
+    </section>
+</Portal>
 
 <style>
     .centre {

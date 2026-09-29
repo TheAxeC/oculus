@@ -1,22 +1,18 @@
 <script lang="ts">
-    // Layer 3, primitive. The one confirm dialog: a message, a confirm and a cancel. It holds
-    // nothing of its own, not even whether it is open; a caller draws it while it has something to
-    // ask and stops drawing it when the answer has come back.
+    // Layer 3, primitive. The one confirm dialog: a message, a confirm and a cancel, on the modal
+    // ground ui/frame/Modal.svelte draws as an alert dialog. It holds nothing of its own, not even
+    // whether it is asked; a caller draws it while it has something to ask and stops drawing it
+    // when the answer has come back.
     //
     // DESIGN.md's decision on git writes is that every write sits behind the token and
     // a confirm, and a confirm that is a second press of the same button is one the hand learns to
     // press twice. So it is a real dialog: modal, focus on the confirm, Escape cancels, Tab stays
-    // inside it. A click on the ground behind it cancels too, which is the way out for a pointer.
-    //
-    // A confirm left open in a tab the pane hides keeps no focus, so the confirm takes the keyboard
-    // again when its tab shows, and Escape and Tab reach it as before.
-    //
-    // The keyboard comes back to the control the dialog was raised from when the dialog goes, so a
-    // cancel leaves the reader where they pressed. A yes may take that control off the page, and
-    // the strip it was in is then what says where the keyboard lands, so a control that has gone is
-    // left alone here.
+    // inside it. A press on the ground behind it cancels too, which is the way out for a pointer.
+    // Drawn in a tab, it stays in that tab, and one left open in a tab the pane hides takes the
+    // keyboard again when its tab shows; the keyboard comes back to the control it was raised from
+    // when it goes, as the ground says.
 
-    import { onShown } from '$lib/ui/shown';
+    import Modal from '../frame/Modal.svelte';
 
     type Props = {
         /** What is about to happen, in the caller's own words, already translated. */
@@ -35,85 +31,27 @@
 
     let { message, confirm, cancel, onconfirm, oncancel, detail = '' }: Props = $props();
 
-    let box: HTMLDivElement | undefined = $state();
     let yes: HTMLButtonElement | undefined = $state();
-
-    /** The control that held the keyboard when the dialog was raised, read before it takes it. */
-    const came = typeof document === 'undefined' ? null : document.activeElement;
-
-    $effect(() => {
-        yes?.focus();
-    });
-
-    $effect(() => (box === undefined ? undefined : onShown(box, () => yes?.focus())));
-
-    // No dependency, so the body runs once and the cleanup runs when the dialog goes.
-    $effect(() => () => {
-        if (came instanceof HTMLElement && came.isConnected) came.focus();
-    });
-
-    /** Escape cancels, and Tab walks the two buttons and stops there: a modal owns the keyboard. */
-    function pressed(event: KeyboardEvent): void {
-        if (event.key === 'Escape') {
-            event.preventDefault();
-            oncancel();
-            return;
-        }
-        if (event.key !== 'Tab' || box === undefined) return;
-        const stops = [...box.querySelectorAll('button')];
-        if (stops.length === 0) return;
-        const first = stops[0];
-        const last = stops[stops.length - 1];
-        const on = document.activeElement;
-        if (event.shiftKey && on === first) {
-            event.preventDefault();
-            last.focus();
-        } else if (!event.shiftKey && on === last) {
-            event.preventDefault();
-            first.focus();
-        }
-    }
 </script>
 
-<!-- The ground is a button so a pointer can leave the dialog the way Escape does; the dialog itself
-     stops the press, so a click inside it never reaches the ground. -->
-<div class="ground" onkeydown={pressed} role="presentation">
-    <button type="button" class="behind" aria-label={cancel} onclick={oncancel}></button>
-    <div class="box" bind:this={box} role="alertdialog" aria-modal="true" aria-label={message}>
-        <p class="message">{message}</p>
-        {#if detail !== ''}
-            <p class="detail">{detail}</p>
-        {/if}
-        <div class="row">
-            <button type="button" class="cancel" onclick={oncancel}>{cancel}</button>
-            <button type="button" class="yes" bind:this={yes} onclick={onconfirm}>{confirm}</button>
+<Modal alert onclose={oncancel} onopen={() => yes?.focus()}>
+    {#snippet children(props)}
+        <div {...props} class="box" aria-label={message}>
+            <p class="message">{message}</p>
+            {#if detail !== ''}
+                <p class="detail">{detail}</p>
+            {/if}
+            <div class="row">
+                <button type="button" class="cancel" onclick={oncancel}>{cancel}</button>
+                <button type="button" class="yes" bind:this={yes} onclick={onconfirm}
+                    >{confirm}</button
+                >
+            </div>
         </div>
-    </div>
-</div>
+    {/snippet}
+</Modal>
 
 <style>
-    .ground {
-        position: fixed;
-        inset: 0;
-        z-index: 60;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 16px;
-    }
-
-    /* The ground behind the dialog: the page's own surface, most of the way opaque. A scrim of its
-       own colour keeps the rule that a component paints only with the theme's surfaces. */
-    .behind {
-        position: absolute;
-        inset: 0;
-        border: 0;
-        padding: 0;
-        background: var(--bg);
-        opacity: 0.72;
-        cursor: default;
-    }
-
     .box {
         position: relative;
         max-width: 30rem;

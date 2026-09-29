@@ -40,7 +40,6 @@ src/lib/state/workbench/layout.svelte.ts src/lib/state/workbench/layout/instance
 src/lib/state/workbench/layout.svelte.ts src/lib/state/workbench/layout/instances.ts f126c1015ffd the same 9 lines at 119 and 52, to fold into one place
 src/lib/state/workbench/layout.svelte.ts src/lib/state/workbench/layout/open/away.ts ec8245497946 the same 9 lines at 141 and 20, to fold into one place
 src/lib/state/workbench/layout/instance.ts src/lib/state/workbench/layout/tree.ts cb7b0e6155d3 the same 12 lines at 132 and 58, to fold into one place
-src/lib/ui/menu/Menu.svelte src/lib/ui/menu/MenuOpener.svelte b63ab0b84401 the same 22 lines at 53 and 21, to fold into one place
 src/lib/views/boards/collection/EntryCard.svelte src/lib/views/boards/focus/lanes/Lanes.svelte f83b8b1b6378 the same 10 lines at 187 and 127, to fold into one place
 src/lib/views/boards/collection/EntryCard.svelte src/lib/views/shared/card/ProjectCard.svelte 4dbfcc724444 the same 12 lines at 172 and 184, to fold into one place
 src/lib/views/boards/editor/Editor.svelte src/lib/views/boards/project/Project.svelte 5bb0e172c4a6 the same 10 lines at 80 and 86, to fold into one place

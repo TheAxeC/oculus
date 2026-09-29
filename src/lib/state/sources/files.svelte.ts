@@ -1,5 +1,5 @@
 // Layer 2, client state. The files of one project folder, fetched when a card is opened and held,
-// and the rows of it a filter keeps.
+// and the rows of it a filter keeps, matched fuzzily.
 //
 // It is state/system/docs.svelte.ts's shape over a different endpoint, and for the same reason: the
 // wire model keeps a folder listing out of the snapshot, so a board of fifty projects carries none
@@ -14,14 +14,20 @@
 // version cannot answer this: the snapshot is rebuilt only for a file the config names.
 
 import type { EntitiesStore } from '../shared/stores/shapes.ts';
+import { byScore, fuzzyMatches } from '../shared/words/fuzzy.ts';
 
 /** One file of a project folder, as the finder draws it. */
 export type FileRow = { path: string; size: number; mtime: number };
 
-/** The file rows whose folder-relative path holds the query, case aside; every row for none. */
+/**
+ * The file rows whose folder-relative path the query matches fuzzily, every word of it, best score
+ * first and ties in listing order; every row for no query.
+ */
 export function matchingFiles(all: FileRow[], needle: string): FileRow[] {
-    const text = needle.trim().toLowerCase();
-    return text === '' ? all : all.filter((row) => row.path.toLowerCase().includes(text));
+    if (needle.trim() === '') return all;
+    return fuzzyMatches(needle, all, [(row) => row.path])
+        .sort(byScore)
+        .map((found) => found.row);
 }
 
 /** One project's files as the view reads them. */

@@ -126,3 +126,162 @@ Each item below is a user-visible change the report does not state, or states wi
 - Screen-reader effects of bits-ui's `role="application"` on the Command root.
 
 Reviewer usage: about 310k tokens, about 100 tool uses, time not measured.
+
+## Repair round 1, refuted
+
+Two things block landing. First, the round leaves `npm test` red. `tests/checks/imports/order.test.ts` fails in the full run and again when run alone, because the new import in `Modal.svelte` goes up the ui folder order. Second, the round's change 1 stops the key sheet from taking the focus when it opens, which undoes brief item 6 for the sheet. I found this by reading the code; I did not check it in a browser.
+
+### Verification
+
+Run from `.agents/worktrees/Q81/tools/oculus`:
+```
+$ PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH sh ~/.claude/skills/land/templates/checks.sh /Users/axelfaes/workspace/research-hub/tools/oculus/.scratch/migration/orchestrator-state.md </dev/null   (exit 1, 110 s)
+$ npm test
+ FAIL  tests/checks/imports/order.test.ts > the folder order of each layer > holds the ui folders
++   "ui/frame/Modal.svelte:23 imports ui/menu/tooltip-target.ts (ui/menu, above ui/frame)",
+ FAIL  tests/server/git/git-ops.test.ts > through the endpoint, with the real operations > routes the deletion actions: take the deletion, and mark resolved
+Error: Test timed out in 5000ms.
+ Test Files  2 failed | 352 passed (354)
+      Tests  2 failed | 5670 passed | 1 skipped (5673)
+checks: failed with exit 1: npm test
+```
+
+Each failing file run alone:
+```
+$ npx vitest run tests/checks/imports/order.test.ts
+ FAIL  tests/checks/imports/order.test.ts > the folder order of each layer > holds the ui folders
++   "ui/frame/Modal.svelte:23 imports ui/menu/tooltip-target.ts (ui/menu, above ui/frame)",
+ Test Files  1 failed (1)
+      Tests  1 failed | 12 passed (13)
+$ npx vitest run tests/server/git/git-ops.test.ts
+ Test Files  1 passed (1)
+      Tests  37 passed (37)
+```
+- `order.test.ts` is not a file the step changes, but the failure comes from this round's delta (`Modal.svelte:23`, added by `git diff 67d7fef0`), and it stays red when the file runs alone.
+- `git-ops.test.ts` passes alone. It is the known flaky file and is not the step's.
+
+The remaining commands, run one by one:
+```
+$ npm run check          exit 0   COMPLETED 1960 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+$ npm run build          exit 0   ✓ built in 8.10s
+$ npm run format:check   exit 0   All matched files use Prettier code style!
+$ npm run lint           exit 0   (no output after eslint .)
+$ ! LC_ALL=C grep -rna '[^ -~]' src tests     grep exit 1 (nothing printed)
+spec.md's perl ASCII gate over src tests bin config    exit 0, nothing printed
+$ npm run diagrams   (on a scratch copy, node_modules linked)   exit 0; diff -rq against the worktree's docs/diagrams prints nothing
+```
+The regenerated `docs/diagrams/layer-ui.dot` gains the edge `"folder ui/frame to folder ui/menu"`, which is the same upward import the order check fails on.
+
+The commands the builder's report quotes, rerun:
+```
+grep -rn "languageChoices\|match(index" src tests DESIGN.md HELP.md README.md bin   -> nothing, exit 1
+npx vitest run (the 9 changed or touched test files)   -> Test Files 9 passed (9), Tests 171 passed (171)
+LC_ALL=C grep -n '[^ -~<tab>]' DESIGN.md HELP.md        -> nothing, exit 1
+grep -rn "no longer\|as the palette did" tests/shell/keys/workbench-keys.test.ts src/lib/shell/keys/Palette.svelte   -> nothing, exit 1
+lock against the base (python, lock rebuilt with the base diff reversed)   -> 15 packages added (bits-ui, fuzzysort, @floating-ui/core|dom|utils, runed, dequal, lz-string, svelte-toolbelt, style-to-object, inline-style-parser, tabbable, @internationalized/date, @swc/helpers, tslib); 31 entries dev -> devOptional, 27 lose dev
+```
+- The 27 entries that lose `dev` are all `@rolldown/binding-*`, `lightningcss-*` and `fsevents`, and each keeps `optional: true`. They are platform bindings, not vite or typescript.
+
+Reds reproduced on a scratch copy of `src`, `tests` and `config` with `node_modules` linked. `src` was restored after each run and `diff -r src <worktree>/src` came back clean each time.
+```
+case 3: Number(right.titled) - Number(left.titled) || removed from ranked
+  FAIL ... ranks the item whose title matches above one whose text alone does
+  AssertionError: expected [ 'project:beta', 'project:spread' ] to deeply equal [ 'project:spread', 'project:beta' ]
+  Tests  1 failed | 17 passed (18); restored: Tests 18 passed (18)
+case 8: base MenuList.svelte, menu-items.ts and on-body.ts put back
+  FAIL ... is a submenu trigger, and the menu draws no Back choice
+  AssertionError: expected '<button type="button" class="item sve…' to match /^<[a-z]+ [^>]*data-dropdown-menu-sub-…/
+  Tests  1 failed | 1 passed (2)
+case 1: substring filter over title, label and text added to ranked
+  FAIL finds a title by letters in its order ... expected [] to include 'project:raw'
+  FAIL ranks the item whose title matches ... expected [ 'project:beta' ] to deeply equal [ 'project:spread', 'project:beta' ]
+  Tests  2 failed | 16 passed (18)   (the same as the report)
+case 6: substring filter on the label added to languageMatches
+  FAIL matches a language by the letters of its name in their order: expected [] to include 'TypeScript'
+  Tests  1 failed | 18 passed (19)
+```
+- Case 6 gives 1 red here against the report's 2 because my substring revert keeps fuzzysort's order, so the `script` ordering assertion stays green. The case is red either way.
+
+### Spec
+
+- **The key sheet no longer takes the focus (brief item 6).** In `src/lib/ui/frame/Modal.svelte:81-89`, `opened` now always calls `event.preventDefault()`. For a box with no `onopen` it then calls `focusFirstQuietly(box)`, and when the box holds no focusable control that function does nothing (`tooltip-target.ts:55-62`).
+  - `KeySheet.svelte:21-44` passes no `onopen` and holds only `h2`, `span` and `kbd`, so nothing is focused and the keyboard stays on the control behind the sheet.
+  - Before this round the default was not prevented. bits-ui's `FocusScope.#handleOpenAutoFocus` (`bits-ui/dist/bits/utilities/focus-scope/focus-scope.svelte.js:57-72`) then focused the first tabbable element, or the content itself (`this.#container.focus()`) when there was none.
+  - bits-ui's trap only reacts to `focusin`, so nothing pulls the focus in. By reading, Enter or Space would press a button left focused behind the sheet. Not verified in a browser.
+  - The fallback that was missing: focus the box itself, quietly, when it holds no control.
+- **`focusFirstQuietly` picks more than tabbable controls** (`tooltip-target.ts:16`, `:55-62`).
+  - It takes the first match in document order of `a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])` and skips only `:disabled`. A `button` or `input` with `tabindex="-1"`, an `input type="hidden"`, or a control under `[hidden]` is picked, and a positive tabindex is not honoured. Its doc comment says "in the order the browser reaches them".
+  - Today's only boxes without `onopen` are the tray, whose first match is its Close `ToolButton` (the Tooltip wrapper strips `tabindex`, `Tooltip.svelte:107`), and the sheet. So nothing visible changes today beyond the sheet finding above.
+- Every other round item matches the round brief:
+  - `.hit` is `color: var(--accent-txt, var(--accent)); font-weight: 700`, the same declarations as `Results.svelte:160-163` `.match`. The palette draws a `<mark>` with `background: none` where Search draws a `<strong>`.
+  - `match` and `languageChoices` are removed and have no reader left.
+  - Case 8 asserts `data-dropdown-menu-sub-trigger`.
+  - Case 3 uses spread title letters.
+  - The five audits are marked.
+  - The three comment and title fixes are made.
+  - DESIGN.md:306 names the dialog's quiet focus.
+  - The widenings, dependencies, first-run labels, the 15 and 14 counts, the textValue reason, the git note and the open items (`- None.`, which matches main's `orchestrator-state.md:103`) are in the report.
+
+### Proof
+
+- `Q81-report.md:19-21`: the reruns "against the base sources" of cases 1, 2 and 3 are red only with `TypeError: ranked is not a function`, since the base has no `ranked`. For cases 2 and 3 that red shows nothing about the behaviour.
+  - The meaningful results are the first run (2 and 3 green on the base) and, for case 3, the `titled` revert, which I reproduced.
+  - Case 2 is in effect an audit, and its comment ("Red when the empty query lists every item...") is not marked as one. No decision rests on this beyond how the case is labelled.
+- `Q81-report.md:50` marks change 1 DONE. The sheet half does not hold (Spec above), and the report's own checks could not show it, since the round brief left the quiet focus to the look.
+- Report `:63` says "Full verify list NOT RUN". My run shows the round made `npm test` red, which bears on whether the step can land as it is.
+
+### Standards
+
+- **`tests/checks/imports/order.test.ts` "holds the ui folders" fails.** The cause is `src/lib/ui/frame/Modal.svelte:23`, `import { focusFirstQuietly, focusQuietly } from '$lib/ui/menu/tooltip-target';`: `ui/menu` is above `ui/frame` in `tests/checks/imports/order.ts:74`'s order. The regenerated `docs/diagrams/layer-ui.dot` shows the same upward import.
+- **Sentences the round made false about the sheet:**
+  - `DESIGN.md:216` says of the modal boxes, the key sheet among them, "the focus moves into the box".
+  - `src/lib/ui/menu/KeySheet.svelte:4-5`: "The focus moves into the sheet while it shows".
+  - `Modal.svelte:7`: "the focus moves into the box". None of these holds for the sheet now.
+  - `Modal.svelte:14` ("or to the first control the box holds") does not say what happens when there is none.
+- **Sentences that claim more than Modal does:**
+  - `DESIGN.md:306` says a dialog gives its focus "to its first control when it opens ... (`focusQuietly` ..., which `ui/frame/Modal.svelte` uses for both)".
+  - `Modal.svelte:17-18` says "Both moves ... go through `focusQuietly`".
+  - A box with `onopen` gets a plain `.focus()`: Confirm on its yes button, the second control and not the first (`Confirm.svelte:37`); Prompt's input (`Prompt.svelte:33`); the palette's input (`Palette.svelte:211`). None of these controls has a tooltip, so nothing visible changes.
+- **`tests/state/workbench/palette.test.ts:150`**: `describe('match', ...)` still names the removed function.
+- **Audit comments against the no-history rule.** Several of the new audit comments describe earlier code or the step itself, which `agents/spec.md` ("What every package obeys", no history in comments: "what the code did before") forbids:
+  - `tests/ui/primitives.test.ts:640-642`: "the hand-built confirm drew the same, so this stays green with the step undone";
+  - `tests/ui/controls/prompt.test.ts:34`: "drawn as before";
+  - `tests/shell/keys/workbench-keys.test.ts:329-330`: "stays green with the step undone";
+  - `tests/ui/menu/menu.test.ts` and `tests/ui/menu/tooltip.test.ts`: "green with the step undone".
+
+  Round brief item 7 asked for this wording. This is a clash between that item and the rules file, and the orchestrator needs to rule on it.
+- No non-ASCII (both gates above). No file over the limit: `Modal.svelte` 170 lines, `tooltip-target.ts` 62 (`cat -n`). No file was added to a folder.
+
+### Behaviour
+
+- **The key sheet's first focus.**
+  - At `67d7fef0`: bits-ui focused the sheet's box.
+  - After this round: nothing is focused and the keyboard stays on the control behind it.
+  - The report does not state this. Its change-1 row and its visible-changes list speak only of the tray and of focus given back. This is from reading the code, not from a browser.
+- **The first focus now runs synchronously.** For the tray, the first focus runs synchronously when bits-ui's focus scope mounts. Before, bits-ui's default ran it in a `requestAnimationFrame`. The report does not state this. I found no visible effect by reading.
+- Everything else the round changes that a reader can see is stated with a before and an after: the tray's Close focus, the quiet focus given back, and `.hit` going from weight 600 to 700.
+
+### Not checked
+
+- Every browser behaviour: the quiet focus on the tray's Close button and on the control a dialog returns to, what Enter, Space and Tab do while the key sheet shows, and whether the tray's content is fully mounted when `focusFirstQuietly` runs synchronously.
+- The report's per-file line counts table and its totals (1810 added, 1297 removed), apart from `Modal.svelte` and `tooltip-target.ts`.
+- Case 7's revert, whose test changed only its title in this round.
+- Whether `npm ci --omit=dev` behaves differently with the lock's flag changes. The 27 entries that lose `dev` all keep `optional: true`; no install was run.
+
+### Usage
+
+About 190k tokens, 40 tool uses; time not measured.
+
+## Closed
+
+Every finding of the first review was sent in repair round 1 and closed there, or ruled in the round brief (`agents/briefs/Q81-round1-sent.md`, "Rulings on what the review raised"). The findings of the run over round 1 were closed at landing on main, 2026-09-29:
+
+- The upward import (`Modal.svelte:23` into `ui/menu`): fixed at landing. `focusQuietly`, `focusFirstQuietly`, `QUIET_FOCUS` and the focusable selector moved to the new `src/lib/ui/frame/quiet-focus.ts`, below `ui/menu` in the order, since the ui root already holds the ten items a folder may hold. `tooltip-target.ts` keeps `describedControl` and `describedBy` and reads the selector from there; `menu-items.ts`, `Modal.svelte`, `Tooltip.svelte` and `shell/status/Bell.svelte` import from there. `npx vitest run tests/checks/imports/order.test.ts` failed on main with the review's line before the move and passes after it.
+- The key sheet taking no focus: fixed at landing. `focusFirstQuietly` focuses the box itself when it holds no control Tab reaches, as bits-ui's own fallback does (`focus-scope.svelte.js:124`); the content carries bits-ui's `tabindex="-1"` (`focus-scope.svelte.js:211`). Browser-only, left to the owed look.
+- `focusFirstQuietly` picking controls Tab does not reach: fixed at landing. It takes the first element in document order with `tabIndex >= 0`, not `:disabled`, not `input[type="hidden"]`, and under no `[hidden]` or `[inert]`. Browser-only, left to the owed look.
+- The sentences on the first focus: `DESIGN.md:216`, `KeySheet.svelte:4-5` and `Modal.svelte:7` hold again with the fallback. `Modal.svelte`'s head comment and its `onopen` doc now say what a box with no control gets, and that only the first focus of a box that names none and the focus given back go through `focusQuietly`. `DESIGN.md:306` says the same and names `ui/frame/quiet-focus.ts`. `Tooltip.svelte`'s head comment and `focused` doc name the dialog's focus beside the menu's.
+- `describe('match', ...)` in `tests/state/workbench/palette.test.ts`: renamed `describe('ranked', ...)` at landing.
+- The audit comments carrying history: the round brief's item 7 asked for wording that describes the step, which the rules file forbids; the rules file governs. Reworded at landing in present tense, each naming what turns it red, in `tests/ui/primitives.test.ts`, `tests/ui/controls/prompt.test.ts`, `tests/shell/keys/workbench-keys.test.ts`, `tests/ui/menu/menu.test.ts` and `tests/ui/menu/tooltip.test.ts`.
+- Case 2 of the palette not marked as an audit: marked at landing.
+- The key sheet's first focus and the tray's synchronous first focus, not stated in the report: stated with before and after in the booking and the landing report.
+- Found at landing by the verify list: the allow list of `tests/checks/tree/duplication.test.ts` held the clone between `ui/menu/Menu.svelte` and `ui/menu/MenuOpener.svelte` that this step removes; the entry was taken out, as the case "holds the lists to clones that are still shared" requires.

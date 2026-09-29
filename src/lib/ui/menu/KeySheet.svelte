@@ -1,7 +1,11 @@
 <script lang="ts">
-    // Layer 3, primitive. A modal reference sheet. Its words arrive translated and its only event
-    // closes it, whether the reader presses the ground or anywhere in the compact reference panel.
+    // Layer 3, primitive. A modal reference sheet on the modal ground ui/frame/Modal.svelte draws.
+    // Its words arrive translated and its only event closes it: Escape, a press on the ground, and
+    // a press anywhere in the compact reference panel. The focus moves into the sheet while it
+    // shows, stays inside it, and goes back where it was when it closes.
 
+    import { Dialog } from 'bits-ui';
+    import Modal from '../frame/Modal.svelte';
     import { sheetRows } from '$lib/ui/menu/key-rows';
     type Props = {
         title: string;
@@ -14,44 +18,32 @@
     const entries = $derived(sheetRows(rows));
 </script>
 
-<!-- The keyboard path is owned by the shell, and this ground is the pointer path out of the
-     sheet. -->
-<div class="ground" role="presentation" onclick={onclose}>
-    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="key-sheet-title">
-        <header>
-            <h2 id="key-sheet-title">{title}</h2>
-            <span>{hint}</span>
-        </header>
-        <div class="rows">
-            {#each entries as entry (`${entry.key}:${entry.meaning}`)}
-                <div class="row">
-                    <kbd>{entry.key}</kbd>
-                    <span>{entry.meaning}</span>
-                </div>
-            {/each}
+<Modal level="sheet" {onclose}>
+    {#snippet children(props)}
+        <!-- The panel is the pointer path out of the sheet as the ground is: a press anywhere on it
+             closes it, and Escape is the keyboard's. -->
+        <div {...props} class="sheet" onclick={onclose}>
+            <header>
+                <Dialog.Title>
+                    {#snippet child({ props: heading })}
+                        <h2 {...heading}>{title}</h2>
+                    {/snippet}
+                </Dialog.Title>
+                <span>{hint}</span>
+            </header>
+            <div class="rows">
+                {#each entries as entry (`${entry.key}:${entry.meaning}`)}
+                    <div class="row">
+                        <kbd>{entry.key}</kbd>
+                        <span>{entry.meaning}</span>
+                    </div>
+                {/each}
+            </div>
         </div>
-    </div>
-</div>
+    {/snippet}
+</Modal>
 
 <style>
-    .ground {
-        position: fixed;
-        inset: 0;
-        z-index: 70;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 16px;
-    }
-
-    .ground::before {
-        position: absolute;
-        inset: 0;
-        background: var(--bg);
-        content: '';
-        opacity: 0.72;
-    }
-
     .sheet {
         position: relative;
         width: min(34rem, 100%);

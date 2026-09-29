@@ -2,9 +2,10 @@
     // Layer 3, primitive. The button a Menu opens its list from, in the looks a menu takes: a word
     // with an optional glyph, the glyph alone in a narrow strip, a strip's bare icon box, an item
     // of the activity rail, drawn as ToolButton.svelte draws its rail control, and an item of the
-    // status bar, drawn as ToolButton.svelte draws its status item. It
-    // holds nothing: whether the list is open and what a press does are the menu's, and the menu
-    // reads the button itself through `button` to give it the focus back.
+    // status bar, drawn as ToolButton.svelte draws its status item. It holds nothing: it is the
+    // trigger of the menu's bits-ui Dropdown Menu, whose attributes and handlers the menu hands it
+    // as `trigger`, so whether the list is open, what a press or a key does and what the button
+    // says to assistive technology are the menu's.
 
     import Glyph from '../display/Glyph.svelte';
     import Tooltip from './Tooltip.svelte';
@@ -12,10 +13,12 @@
     type Props = {
         /** The button's own words, and its tooltip. */
         label: string;
-        /** Whether the menu's list is open, which the button says to assistive technology. */
-        open: boolean;
-        onclick: () => void;
-        /** The button element, bound so the menu can focus and measure it. */
+        /**
+         * The attributes and handlers of the menu's trigger: its id, whether the list is open, and
+         * the press and the keys that open it.
+         */
+        trigger: Record<string, unknown>;
+        /** The button element, bound so the menu can give it the focus back. */
         button?: HTMLButtonElement;
         glyph?: string;
         compact?: boolean;
@@ -33,15 +36,12 @@
         words?: string;
         /** The status item's tooltip, when it says more than the label. */
         title?: string;
-        tabindex?: number;
         stop?: string;
-        onkeydown?: (event: KeyboardEvent) => void;
     };
 
     let {
         label,
-        open,
-        onclick,
+        trigger,
         button = $bindable(),
         glyph,
         compact = false,
@@ -51,9 +51,7 @@
         status = false,
         words = '',
         title,
-        tabindex,
-        stop,
-        onkeydown
+        stop
     }: Props = $props();
 </script>
 
@@ -74,13 +72,9 @@
         class:rail
         class:status
         bind:this={button}
-        aria-haspopup="menu"
-        aria-expanded={open}
         aria-label={label}
         data-stop={stop}
-        {tabindex}
-        {onclick}
-        {onkeydown}
+        {...trigger}
     >
         {#if glyph !== undefined}
             <Glyph name={glyph} />

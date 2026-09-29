@@ -13,8 +13,8 @@
     import NoticeCentre from './NoticeCentre.svelte';
     import Toast from './Toast.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import { onBody } from '$lib/ui/frame/on-body';
-    import { focusQuietly } from '$lib/ui/menu/tooltip-target';
+    import { Portal } from 'bits-ui';
+    import { focusQuietly } from '$lib/ui/frame/quiet-focus';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
 
@@ -83,11 +83,15 @@
     <NoticeCentre onclose={close} />
 {/if}
 {#if showing.length > 0}
-    <div class="toasts" use:onBody>
-        {#each showing as notice (notice.id)}
-            <Toast {notice} />
-        {/each}
-    </div>
+    <!-- On the body, through bits-ui's Portal: over a wallpaper the bar filters what it holds, and
+         the toasts drawn inside it would be laid out in the bar's own box. -->
+    <Portal>
+        <div class="toasts">
+            {#each showing as notice (notice.id)}
+                <Toast {notice} />
+            {/each}
+        </div>
+    </Portal>
 {/if}
 
 <style>

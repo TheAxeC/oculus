@@ -18,7 +18,7 @@
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import type { MenuItem } from '$lib/ui/menu/menu-items';
     import Menu from '$lib/ui/menu/Menu.svelte';
-    import { onBody } from '$lib/ui/frame/on-body';
+    import { Portal } from 'bits-ui';
     import type { RepoStatus, StatusGit } from '$lib/state/workbench/navigation/status';
     import { t } from '$lib/state/shared/words/text';
 
@@ -157,9 +157,9 @@
     </span>
 {/if}
 {#if asking !== null}
-    <!-- On the body: over a wallpaper the bar filters what it holds, and a dialog drawn inside it
-         would be laid out in the bar's own box. -->
-    <div use:onBody>
+    <!-- On the body, through bits-ui's Portal: over a wallpaper the bar filters what it holds, and
+         a dialog drawn inside it would be laid out in the bar's own box. -->
+    <Portal>
         <Confirm
             message={asking.message}
             detail={asking.detail}
@@ -168,5 +168,5 @@
             onconfirm={answered}
             oncancel={() => (asking = null)}
         />
-    </div>
+    </Portal>
 {/if}

@@ -66,7 +66,12 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
     let observedPane: HTMLElement | null = null;
     let cardObserver: MutationObserver | null = null;
 
-    /** Dispatch one key. Escape closes overlays or restores panes unless a drag owns it. */
+    /**
+     * Dispatch one key. `?` closes the key sheet, and Escape restores panes unless a drag owns it.
+     * The key sheet, the palette and the update tray close on Escape through their own bits-ui
+     * dialog, which takes the key before it reaches here, and a confirm drawn inside the tray takes
+     * the first Escape the same way.
+     */
     function keys(event: KeyboardEvent): void {
         if (
             options.sheetOpen() &&
@@ -78,7 +83,7 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
             !event.metaKey &&
             !event.ctrlKey &&
             !event.altKey &&
-            (event.key === '?' || event.key === 'Escape')
+            event.key === '?'
         ) {
             event.preventDefault();
             options.setSheetOpen(false);
@@ -89,22 +94,6 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
             event.preventDefault();
             if (options.paletteOpen()) options.setPaletteOpen(false);
             else options.openPalette('');
-            return;
-        }
-        if (event.key === 'Escape' && options.paletteOpen()) {
-            event.preventDefault();
-            options.setPaletteOpen(false);
-            return;
-        }
-        if (event.key === 'Escape' && options.updateOpen()) {
-            // A confirmation drawn inside the tray answers Escape itself and swallows the key, so
-            // the tray stays open behind the dialog and the next Escape closes it. What says the
-            // dialog took it is the key's own state: the dialog is already off the document by the
-            // time the key reaches the window, since Svelte flushes between two listeners.
-            if (!event.defaultPrevented) {
-                event.preventDefault();
-                options.setUpdateOpen(false);
-            }
             return;
         }
         if (

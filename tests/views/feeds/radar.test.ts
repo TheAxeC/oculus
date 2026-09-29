@@ -172,11 +172,12 @@ describe('the Lit Watch view', () => {
         }).body.replace(/<!--[\s\S]*?-->/g, '');
         const at = body.indexOf('<span class="link');
         expect(at).toBeGreaterThan(-1);
-        // The link's box holds the button with the title as its label and the tooltip after it.
-        const link = body.slice(at, body.indexOf('role="tooltip"', at) + 400);
+        // The link's box holds the button with the title as its label and the tooltip's words
+        // after it, in place and hidden until the bubble draws them on the body.
+        const link = body.slice(at, body.indexOf('class="words"', at) + 400);
         expect(link).toMatch(/<button type="button" class="tool [^"]*\bcut\b/);
         expect(link).toMatch(new RegExp(`<span class="label">${long}</span>`));
-        expect(link).toMatch(new RegExp(`role="tooltip"[^>]*>${long}</span>`));
+        expect(link).toMatch(new RegExp(`class="words"[^>]*hidden[^>]*>${long}</span>`));
     });
 
     it('draws the intro legend as bucket glyphs in their hues beside the catalog words', () => {

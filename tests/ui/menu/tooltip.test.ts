@@ -1,5 +1,7 @@
-// Layer 3, primitive tests. The tooltip wrapper rendered on the server: its bubble, which control
-// it describes, and where it sits in the tab order.
+// Layer 3, primitive tests. The tooltip wrapper rendered on the server: its words kept in place,
+// which control it describes, and where it sits in the tab order. The bubble itself is drawn on the
+// body through bits-ui's Portal, which a server render leaves empty, so its delay, its placement
+// and its arrow are seen on the page.
 
 import { readFileSync } from 'node:fs';
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -50,15 +52,41 @@ describe('Tooltip', () => {
         };
     }
 
-    it('draws its bubble hidden, with no description on the wrapper itself', () => {
+    // Red when the words stop being kept in place under the page's tooltip id, which is what the
+    // control's description names, or when the wrapper carries a description of its own.
+    it('keeps its words hidden in place under its tooltip id, with no description on the wrapper', () => {
         const body = tip({});
-        const bubble = /id="(tip-\d+)"/.exec(body);
-        expect(bubble).not.toBe(null);
-        // The description is put on the control on mount, so the markup carries none of its own.
+        const words = /<span id="(tip-\d+)"[^>]*hidden[^>]*>Put it back<\/span>/.exec(body);
+        expect(words).not.toBe(null);
+        // The description is put on the control on mount, so the markup carries none of its own,
+        // and the bubble is drawn on the body, which a server render leaves empty.
         expect(body).not.toContain('aria-describedby');
-        expect(body).toContain('role="tooltip"');
-        expect(body).toContain('hidden');
-        expect(body).toContain('Put it back');
+        expect(body).not.toContain('role="tooltip"');
+    });
+
+    // Red when the empty string draws the tooltip machinery round its control.
+    it('draws a plain wrapper and no bubble for the empty string', () => {
+        const body = tip({ text: '' });
+        expect(body).toContain('<button');
+        expect(body).not.toContain('role="tooltip"');
+        expect(body).not.toContain('data-tooltip-trigger');
+    });
+
+    // Red when words stop making the wrapper the bubble's trigger, or the described id is lost.
+    it('makes the wrapper the trigger of a bubble for words, and describes the control by the bubble id', () => {
+        const body = tip({});
+        expect(body).toContain('data-tooltip-trigger');
+        const button = element();
+        const box = element(button as unknown as Element);
+        expect(describedControl(box, false)).toBe(button);
+        expect(describedBy('tip-1', 'Put it back', false)).toBe('tip-1');
+    });
+
+    // An audit of the markup the wrapper keeps. Red when a presentational wrapper loses its role
+    // or describes its control.
+    it('draws a presentational wrapper that describes nothing', () => {
+        expect(tip({ presentational: true })).toContain('role="presentation"');
+        expect(describedBy('tip-1', 'Put it back', true)).toBe('');
     });
 
     it('describes the control the wrapper holds, and not the wrapper', () => {
@@ -91,7 +119,7 @@ describe('Tooltip', () => {
         const body = tip({ presentational: true });
         expect(body).toContain('role="presentation"');
         expect(body).not.toContain('aria-describedby');
-        expect(body).toContain('role="tooltip"');
+        expect(body).toContain('data-tooltip-trigger');
     });
 
     it('puts only a focusable wrapper in the tab order', () => {

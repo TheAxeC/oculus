@@ -1,18 +1,21 @@
 <script lang="ts">
-    // Layer 3, primitive. The menu a right-click opens on what it wraps: the list MenuList.svelte
-    // draws, at the pointer, on the body. The keyboard opens the same list with the context menu
-    // key or Shift+F10 on the focused control inside, at that control's right edge, so every item a
-    // right-click offers is reached without a pointer. It holds only whether the list is open and
-    // where: what the items are and what a pick means are the caller's.
+    // Layer 3, primitive. The menu a right-click opens on what it wraps, on bits-ui's Context Menu:
+    // the list MenuList.svelte draws, on the body through bits-ui's Portal, at the pointer. The
+    // keyboard opens the same list with the context menu key or Shift+F10 on the focused control
+    // inside, at that control's right edge, so every item a right-click offers is reached without
+    // a pointer. It holds only where the list opens from: what the items are and what a pick means
+    // are the caller's, and the keys, the placing, the submenus and the closing are bits-ui's.
     //
     // The wrapper takes no box of its own, so what it wraps is laid out as if it were not there.
-    // The list closes on a pick, on Escape and on a pointer down outside it, and the focus goes
-    // back to the control the menu was opened on, without opening that control's tooltip.
+    // With no items a right-click opens nothing. The list closes on a pick, on Escape and on a
+    // press outside it, and the focus goes back to the control the menu was opened on, without
+    // opening that control's tooltip. A pick is answered once the focus is back, so a dialog the
+    // pick raises keeps the focus it takes.
 
+    import { ContextMenu } from 'bits-ui';
     import type { Snippet } from 'svelte';
-    import type { MenuItem } from '$lib/ui/menu/menu-items';
+    import { menuClosing, type MenuItem } from '$lib/ui/menu/menu-items';
     import MenuList from './MenuList.svelte';
-    import { focusQuietly } from './tooltip-target';
 
     type Props = {
         /** The list's accessible name. */
@@ -26,75 +29,93 @@
     let { label, items, onpick, children }: Props = $props();
 
     let open = $state(false);
-    let at = $state({ x: 0, y: 0 });
-    let list: HTMLDivElement | undefined = $state();
 
     /** The control the menu was opened on, which takes the focus back when it closes. */
     let origin: HTMLElement | null = null;
 
-    $effect(() => {
-        if (!open) return;
-        const outside = (event: PointerEvent): void => {
-            const target = event.target;
-            if (target instanceof Node && list?.contains(target) === true) return;
-            open = false;
-        };
-        // Capture, so a pointer down on a control that stops propagation still closes the menu.
-        document.addEventListener('pointerdown', outside, true);
-        return () => document.removeEventListener('pointerdown', outside, true);
-    });
+    const closing = menuClosing(() => origin);
 
-    /** Open at a point, remembering the control the focus goes back to. */
-    function show(point: { x: number; y: number }, from: EventTarget | null): void {
-        if (items.length === 0) return;
-        const control = from instanceof HTMLElement ? from.closest<HTMLElement>('button') : null;
-        origin = control ?? (from instanceof HTMLElement ? from : null);
-        at = point;
-        open = true;
+    /** The control a right-click or a key landed on: the button it is in, or the element itself. */
+    function controlOf(target: EventTarget | null): HTMLElement | null {
+        if (!(target instanceof HTMLElement)) return null;
+        return target.closest<HTMLElement>('button') ?? target;
     }
 
-    /** The right edge of the control the keyboard is on, where a list opened by a key goes. */
-    function edgeOf(target: EventTarget | null): { x: number; y: number } {
-        if (!(target instanceof Element)) return { x: 0, y: 0 };
+    /**
+     * Open the list at the right edge of the control the keyboard is on, by raising the right-click
+     * bits-ui's trigger opens at, at that point.
+     */
+    function openAtEdge(target: EventTarget | null): void {
+        if (!(target instanceof Element)) return;
         const rect = target.getBoundingClientRect();
-        return { x: rect.right, y: rect.top };
+        target.dispatchEvent(
+            new MouseEvent('contextmenu', {
+                bubbles: true,
+                cancelable: true,
+                clientX: rect.right,
+                clientY: rect.top
+            })
+        );
     }
 
-    /** A right-click, or the context menu a browser raises for a key it answers itself. */
+    /**
+     * A right-click, or the context menu a browser raises for a key it answers itself, at no
+     * point: that one is raised again at the control's edge. With no items the browser's own menu
+     * is kept away and nothing opens.
+     */
     function pointed(event: MouseEvent): void {
-        event.preventDefault();
-        const byKey = event.clientX === 0 && event.clientY === 0;
-        show(byKey ? edgeOf(event.target) : { x: event.clientX, y: event.clientY }, event.target);
+        if (items.length === 0) {
+            event.preventDefault();
+            return;
+        }
+        origin = controlOf(event.target);
+        if (event.isTrusted && event.clientX === 0 && event.clientY === 0) {
+            event.preventDefault();
+            openAtEdge(event.target);
+        }
     }
 
     function keys(event: KeyboardEvent): void {
         if (event.key !== 'ContextMenu' && !(event.shiftKey && event.key === 'F10')) return;
         event.preventDefault();
-        show(edgeOf(event.target), event.target);
-    }
-
-    function close(): void {
-        open = false;
-        const back = origin;
-        origin = null;
-        if (back?.isConnected === true) focusQuietly(back);
+        if (items.length === 0) return;
+        openAtEdge(event.target);
     }
 
     function pick(id: string, event: MouseEvent): void {
-        close();
-        onpick(id, event);
+        closing.hold(() => onpick(id, event));
+    }
+
+    /**
+     * The trigger's attributes on the wrapper, less a focus stop a wrapper with no box cannot be.
+     */
+    function wrapperOf(given: unknown): Record<string, unknown> {
+        const props = given as Record<string, unknown>;
+        const { tabindex: _tabindex, ...rest } = props;
+        return rest;
     }
 </script>
 
-<!-- The wrapper only hears the right-click and the menu keys of the controls inside it, which are
-     the controls; it is not one itself. -->
-<!-- svelte-ignore a11y_no_static_element_interactions -->
-<div class="context" oncontextmenu={pointed} onkeydown={keys}>
-    {@render children()}
-</div>
-{#if open}
-    <MenuList {label} {items} onpick={pick} onescape={close} {at} bind:element={list} />
-{/if}
+<ContextMenu.Root bind:open onOpenChange={closing.changed} onOpenChangeComplete={closing.completed}>
+    <!-- The wrapper only hears the right-click and the menu keys of the controls inside it, which
+         are the controls; it is not one itself. -->
+    <ContextMenu.Trigger oncontextmenu={pointed} onkeydown={keys}>
+        {#snippet child({ props })}
+            <div {...wrapperOf(props)} class="context">
+                {@render children()}
+            </div>
+        {/snippet}
+    </ContextMenu.Trigger>
+    <ContextMenu.Portal>
+        <ContextMenu.Content sideOffset={0} {...closing.content}>
+            {#snippet child({ wrapperProps, props })}
+                <div {...wrapperProps}>
+                    <MenuList {label} {items} onpick={pick} list={props} />
+                </div>
+            {/snippet}
+        </ContextMenu.Content>
+    </ContextMenu.Portal>
+</ContextMenu.Root>
 
 <style>
     .context {

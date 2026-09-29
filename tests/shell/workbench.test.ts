@@ -243,7 +243,10 @@ describe('the workbench', () => {
             context: clientContext(client),
             props: { groups: [] }
         }).body;
-        expect(body).toMatch(/Pinned session.*class="bubble[^"]*"[^>]*>Status</s);
+        // The bubble is drawn on the body while it shows; its words wait in place under its id.
+        expect(body).toMatch(
+            /Pinned session.*<span id="tip-\d+" class="words"[^>]*hidden[^>]*>Status</s
+        );
     });
 
     it('mounts the active instance of every pane', () => {

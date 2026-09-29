@@ -175,7 +175,7 @@
 <g id="node24" class="node">
 <title>folder state/workbench to folder state/shared</title>
 <polygon fill="none" stroke="none" points="305.88,-498.92 292.12,-498.92 292.12,-486.44 305.88,-486.44 305.88,-498.92"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="299" y="-490.28" font-family="Helvetica,Arial,sans-serif" font-size="8.00">11</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="299" y="-490.28" font-family="Helvetica,Arial,sans-serif" font-size="8.00">13</text>
 </g>
 <!-- folder state/workbench&#45;&gt;folder state/workbench to folder state/shared -->
 <g id="edge36" class="edge">
@@ -437,7 +437,7 @@
 <g id="node44" class="node">
 <title>folder state/sources to folder state/shared</title>
 <polygon fill="none" stroke="none" points="184.88,-180.68 175.12,-180.68 175.12,-168.2 184.88,-168.2 184.88,-180.68"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="180" y="-172.04" font-family="Helvetica,Arial,sans-serif" font-size="8.00">6</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="180" y="-172.04" font-family="Helvetica,Arial,sans-serif" font-size="8.00">7</text>
 </g>
 <!-- folder state/sources&#45;&gt;folder state/sources to folder state/shared -->
 <g id="edge76" class="edge">

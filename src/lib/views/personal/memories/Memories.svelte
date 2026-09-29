@@ -29,9 +29,12 @@
     //
     // The enlarged picture is this view's own overlay rather than a primitive, since it is the one
     // place in oculus where a picture is shown over the pane and `ui/` would gain a component with
-    // one reader. It closes on Escape, on a press outside the picture and on its own control, and
-    // the tile that opened it takes the keyboard back, so the wall is where the reader left it.
+    // one reader. It is a modal on bits-ui's Dialog, drawn in place in the pane: Tab stays inside
+    // it while it shows and while its tab shows. It closes on its own Escape, on a press outside
+    // the picture and on its own control, and the tile that opened it takes the keyboard back, so
+    // the wall is where the reader left it.
 
+    import { Dialog } from 'bits-ui';
     import { tick, untrack } from 'svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
@@ -43,6 +46,7 @@
     import { tileRatio } from '$lib/state/life/memories.svelte';
     import { useState } from '$lib/state/client/use';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
+    import { watchShown } from '$lib/ui/shown';
 
     const {
         memories: { wall, reload },
@@ -106,7 +110,16 @@
     /**
      * The overlay's own box, which takes the keyboard so Escape reaches it wherever it is pressed.
      */
-    let overlay: HTMLDivElement | null = $state(null);
+    let overlay: HTMLDivElement | undefined = $state();
+
+    /**
+     * Whether the overlay's tab shows, so its focus trap holds nothing of the page while hidden.
+     */
+    let overlayShown = $state(true);
+
+    $effect(() =>
+        overlay === undefined ? undefined : watchShown(overlay, (shown) => (overlayShown = shown))
+    );
 
     /** This pane's own box, so a second Memories pane keeps its own tiles and its own keyboard. */
     let box: HTMLDivElement | null = $state(null);
@@ -249,33 +262,45 @@
             </div>
         {/if}
         {#if open !== ''}
-            <div
-                bind:this={overlay}
-                class="lightbox"
-                role="dialog"
-                aria-modal="true"
-                aria-label={t('memories.lightbox', open)}
-                tabindex="-1"
-                onkeydown={keys}
-            >
-                <span class="backdrop">
-                    <ToolButton
-                        cell
-                        label={t('memories.close_outside')}
-                        onclick={() => void close()}
-                    />
-                </span>
-                <figure class="shown">
-                    <img src={source(open)} alt={t('memories.tile', open)} />
-                </figure>
-                <span class="shut">
-                    <ToolButton
-                        label={t('memories.close')}
-                        glyph={t('memories.close_glyph')}
-                        onclick={() => void close()}
-                    />
-                </span>
-            </div>
+            <Dialog.Root open={overlayShown}>
+                <Dialog.Content
+                    forceMount
+                    preventScroll={false}
+                    onEscapeKeydown={(event: KeyboardEvent) => event.preventDefault()}
+                    onInteractOutside={(event: PointerEvent) => event.preventDefault()}
+                    onOpenAutoFocus={(event: Event) => event.preventDefault()}
+                    onCloseAutoFocus={(event: Event) => event.preventDefault()}
+                >
+                    {#snippet child({ props })}
+                        <div
+                            {...props}
+                            bind:this={overlay}
+                            class="lightbox"
+                            aria-label={t('memories.lightbox', open)}
+                            tabindex="-1"
+                            onkeydown={keys}
+                        >
+                            <span class="backdrop">
+                                <ToolButton
+                                    cell
+                                    label={t('memories.close_outside')}
+                                    onclick={() => void close()}
+                                />
+                            </span>
+                            <figure class="shown">
+                                <img src={source(open)} alt={t('memories.tile', open)} />
+                            </figure>
+                            <span class="shut">
+                                <ToolButton
+                                    label={t('memories.close')}
+                                    glyph={t('memories.close_glyph')}
+                                    onclick={() => void close()}
+                                />
+                            </span>
+                        </div>
+                    {/snippet}
+                </Dialog.Content>
+            </Dialog.Root>
         {/if}
     </div>
 </Pane>

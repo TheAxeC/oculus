@@ -312,35 +312,32 @@ describe('a pane of a page shown inside another', () => {
     });
 });
 
+// The update tray, the palette and the key sheet close on Escape through their own bits-ui dialog,
+// which takes the key on the document before it reaches the window's handler, as a confirm drawn
+// inside the tray takes the first Escape. Whether the key closes the tray is the dialog's, seen at
+// the page; these cases hold that the shell's handler leaves the tray to it.
 describe('Escape while the update tray is open', () => {
-    it('closes the tray when nothing is asked over it', () => {
+    // Red when the shell's own Escape branch for the tray comes back.
+    it('leaves the tray to its dialog on an Escape no dialog has taken', () => {
         const closed = vi.fn();
         const keys = handler('', undefined, () => null, { tray: true }, closed);
-        const { event, prevented } = keyEvent('Escape', false);
+        const { event } = keyEvent('Escape', false);
         keys.keys(event);
-        expect(closed).toHaveBeenCalledWith(false);
-        expect(prevented).toHaveBeenCalledOnce();
+        expect(closed).not.toHaveBeenCalled();
     });
 
-    it('leaves the tray open on the Escape a confirmation over it has already answered', () => {
+    // An audit of the key handler: it passes over an Escape a dialog has taken. Red when the
+    // handler closes the tray or restores the pane on an Escape whose default is prevented.
+    it('restores no pane on the Escape the dialog has taken', () => {
+        client.layout.maximisePane([1]);
+        expect(client.layout.focused()).not.toBe(null);
         const closed = vi.fn();
-        const keys = handler('', undefined, () => null, { tray: true }, closed);
+        const keys = handler('1', undefined, () => null, { tray: true }, closed);
         const { event, prevented } = keyEvent('Escape', false, { defaultPrevented: true });
         keys.keys(event);
         expect(closed).not.toHaveBeenCalled();
-        // The key stops here, so it reaches no later branch either: no pane is restored by it.
+        expect(client.layout.focused()).not.toBe(null);
         expect(prevented).not.toHaveBeenCalled();
-    });
-
-    it('closes the tray on the next Escape, the one no dialog has taken', () => {
-        const closed = vi.fn();
-        const keys = handler('', undefined, () => null, { tray: true }, closed);
-        keys.keys(keyEvent('Escape', false, { defaultPrevented: true }).event);
-        expect(closed).not.toHaveBeenCalled();
-        const second = keyEvent('Escape', false);
-        keys.keys(second.event);
-        expect(closed).toHaveBeenCalledWith(false);
-        expect(second.prevented).toHaveBeenCalledOnce();
     });
 });
 

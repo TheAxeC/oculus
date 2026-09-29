@@ -1,8 +1,15 @@
 <script lang="ts">
-    // Layer 3, shell. The Cmd-K overlay over the workbench. It builds a fresh pure index whenever
-    // it opens, then either matches every query word or lists the colon commands; choosing a result
-    // changes layout or appearance state and never mounts a view of its own. Every row is one grid
-    // line: what it is in words, then the control that opens it filling the rest.
+    // Layer 3, shell. The Cmd-K overlay over the workbench, on the modal ground
+    // ui/frame/Modal.svelte draws, its list bits-ui's Command. It builds a fresh pure index
+    // whenever it opens, then either matches the query fuzzily or lists the colon commands;
+    // choosing a result changes layout or appearance state and never mounts a view of its own.
+    // Every row is one grid line: what it is in words, then the control that opens it filling the
+    // rest, its matched letters marked.
+    //
+    // The selection, ArrowUp and ArrowDown, Home and End, Enter and the row a screen reader is told
+    // is selected are the Command's; each query starts the selection on its first row. The focus
+    // moves to the input when it opens and stays inside the palette; Escape and a press on the
+    // ground beside it close it.
     //
     // It is also the quick input of the source tab on screen, as VS Code's is of the active editor:
     // a colon and a number goes to that line, a colon alone says which line the caret is on and how
@@ -10,6 +17,8 @@
     // it narrowing the list. Both are asked of the tab through the editor status store, and with no
     // source tab on screen the palette says there is none.
 
+    import { Command } from 'bits-ui';
+    import Modal from '$lib/ui/frame/Modal.svelte';
     import Search from '$lib/ui/controls/Search.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { openPaletteItem } from '$lib/shell/keys/palette-open';
@@ -18,12 +27,17 @@
         commands,
         kindWord,
         lineQuery,
-        match,
         parseCommand,
+        ranked,
         type PaletteCommand,
-        type PaletteItem
+        type PaletteItem,
+        type TextPart
     } from '$lib/state/workbench/palette';
-    import { languageChoices, type LanguageChoice } from '$lib/state/workbench/navigation/status';
+    import {
+        languageMatches,
+        type LanguageChoice,
+        type LanguageMatch
+    } from '$lib/state/workbench/navigation/status';
     import { sourceOnScreen } from '$lib/state/workbench/navigation/editor-status.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { registrationLabel } from '$lib/state/workbench/navigation/registry';
@@ -50,8 +64,13 @@
 
     let { open, onclose, onupdate, prefill = '' }: Props = $props();
     let query = $state(untrack(() => prefill));
-    let selected = $state(0);
-    let ground: HTMLDivElement | undefined = $state();
+    let box: HTMLDivElement | undefined = $state();
+
+    /** The Command's selected row, by its value. */
+    let chosen = $state('');
+
+    /** The list's id, which the input names as the list it controls. */
+    const LIST = 'palette-list';
 
     const current = $derived(paletteSource());
     const knownViews = $derived(
@@ -69,8 +88,8 @@
     const line = $derived(lineQuery(parsed));
     /** Whether the query is the language list. */
     const languageMode = $derived(parsed !== null && parsed.name === 'language');
-    const languages = $derived<LanguageChoice[]>(
-        languageMode && source !== null ? languageChoices(parsed?.argument ?? '') : []
+    const languages = $derived<LanguageMatch[]>(
+        languageMode && source !== null ? languageMatches(parsed?.argument ?? '') : []
     );
     const commandList = $derived(
         parsed === null || line !== null || languageMode
@@ -79,7 +98,7 @@
                   command.name.startsWith(parsed.name)
               )
     );
-    const matches = $derived(parsed === null ? match(index, query).slice(0, 30) : []);
+    const matches = $derived(parsed === null ? ranked(index, query).slice(0, 30) : []);
     const count = $derived(
         parsed === null
             ? matches.length
@@ -92,21 +111,34 @@
                 : commandList.length
     );
 
+    /** The value of each row the list draws, in its order, a row that cannot be run left out. */
+    const values = $derived(
+        parsed === null
+            ? matches.map((found) => found.item.id)
+            : line !== null
+              ? caret === null
+                  ? []
+                  : ['line']
+              : languageMode
+                ? languages.map((found) => `language:${found.choice.name}`)
+                : commandList
+                      .filter((command) => command.available)
+                      .map((command) => `command:${command.name}`)
+    );
+
+    // Each opening starts from its prefill; what is typed after that is read untracked, so typing
+    // does not start it again.
     $effect(() => {
-        if (!open || ground === undefined) return;
-        query = prefill;
-        selected = 0;
-        ground.querySelector<HTMLInputElement>('input')?.focus();
+        if (!open || box === undefined) return;
+        const start = prefill;
+        untrack(() => typed(start));
     });
 
-    $effect(() => {
-        if (count === 0) selected = 0;
-        else if (selected >= count) selected = count - 1;
-    });
-
-    function move(delta: number): void {
-        if (count === 0) return;
-        selected = (selected + delta + count) % count;
+    /** A new query, the selection on its first row. */
+    function typed(next: string): void {
+        query = next;
+        const first = values.at(0);
+        if (first !== undefined) chosen = first;
     }
 
     function choose(item: PaletteItem): void {
@@ -133,8 +165,7 @@
         const argument = parsed.argument;
         // The language list is a mode of its own: choosing the command opens it.
         if (command.name === 'language') {
-            query = ':language ';
-            selected = 0;
+            typed(':language ');
             return;
         }
         if (command.name === 'theme') {
@@ -164,162 +195,190 @@
         onclose();
     }
 
-    function keys(event: KeyboardEvent): void {
-        if (event.key === 'ArrowDown') {
-            event.preventDefault();
-            move(1);
-        } else if (event.key === 'ArrowUp') {
-            event.preventDefault();
-            move(-1);
-        } else if (event.key === 'Enter') {
-            event.preventDefault();
-            if (parsed === null) {
-                const item = matches.at(selected);
-                if (item !== undefined) choose(item);
-            } else if (line !== null) {
-                goLine(line);
-            } else if (languageMode) {
-                const choice = languages.at(selected);
-                if (choice !== undefined) chooseLanguage(choice);
-            } else {
-                const command = commandList.at(selected);
-                if (command !== undefined) run(command);
-            }
-        }
-    }
+    /** A row's control is pressed through its row, which the Command runs; it does nothing more. */
+    const pressed = (): undefined => undefined;
 </script>
 
+{#snippet marked(parts: TextPart[])}
+    {#each parts as part, at (at)}{#if part.hit}<mark class="hit">{part.text}</mark
+            >{:else}{part.text}{/if}{/each}
+{/snippet}
+
 {#if open}
-    <div
-        class="ground"
-        bind:this={ground}
-        role="presentation"
-        onkeydown={keys}
-        onclick={(event) => {
-            if (event.target === event.currentTarget) onclose();
-        }}
+    <Modal
+        level="palette"
+        {onclose}
+        onopen={() => box?.querySelector<HTMLInputElement>('input')?.focus()}
     >
-        <div class="palette" role="dialog" aria-modal="true" aria-label={t('app.search')}>
-            <Search
-                value={query}
-                placeholder={t('app.palette.cmdk_placeholder')}
-                oninput={(value: string) => {
-                    query = value;
-                    selected = 0;
-                }}
-            />
-            <div class="list" role="listbox">
-                {#if parsed === null}
-                    {#each matches as item, at (item.id)}
-                        <div
-                            class="result"
-                            class:selected={selected === at}
-                            role="option"
-                            aria-selected={selected === at}
-                        >
-                            <span class="kind">{kindWord(item.kind, t)}</span>
-                            <ToolButton label={item.label} onclick={() => choose(item)} />
+        {#snippet children(props)}
+            <div {...props} class="palette" aria-label={t('app.search')} bind:this={box}>
+                <Command.Root shouldFilter={false} loop vimBindings={false} bind:value={chosen}>
+                    {#snippet child({ props: root })}
+                        <div {...root} class="command">
+                            <Command.Input>
+                                {#snippet child({ props: input })}
+                                    <Search
+                                        value={query}
+                                        placeholder={t('app.palette.cmdk_placeholder')}
+                                        field={{ ...input, 'aria-controls': LIST }}
+                                        oninput={typed}
+                                    />
+                                {/snippet}
+                            </Command.Input>
+                            <Command.List id={LIST}>
+                                {#snippet child({ props: list })}
+                                    <div {...list} class="list">
+                                        {#if parsed === null}
+                                            {#each matches as found (found.item.id)}
+                                                <Command.Item
+                                                    value={found.item.id}
+                                                    onSelect={() => choose(found.item)}
+                                                >
+                                                    {#snippet child({ props: row })}
+                                                        <div {...row} class="result">
+                                                            <span class="kind"
+                                                                >{kindWord(
+                                                                    found.item.kind,
+                                                                    t
+                                                                )}</span
+                                                            >
+                                                            <ToolButton
+                                                                label={found.item.label}
+                                                                onclick={pressed}
+                                                            >
+                                                                <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                                                                {@render marked(found.title)}
+                                                            </ToolButton>
+                                                        </div>
+                                                    {/snippet}
+                                                </Command.Item>
+                                            {/each}
+                                        {:else if line !== null}
+                                            {#if caret !== null}
+                                                <Command.Item
+                                                    value="line"
+                                                    onSelect={() => goLine(line)}
+                                                >
+                                                    {#snippet child({ props: row })}
+                                                        <div {...row} class="result">
+                                                            <span class="kind"
+                                                                >{t(
+                                                                    'statusbar.palette_kind_line'
+                                                                )}</span
+                                                            >
+                                                            <ToolButton
+                                                                label={t(
+                                                                    'statusbar.palette_line',
+                                                                    line
+                                                                )}
+                                                                onclick={pressed}
+                                                            />
+                                                        </div>
+                                                    {/snippet}
+                                                </Command.Item>
+                                            {:else}
+                                                <p class="empty">
+                                                    {t('statusbar.palette_line_none')}
+                                                </p>
+                                            {/if}
+                                        {:else if languageMode}
+                                            {#if source === null}
+                                                <p class="empty">
+                                                    {t('statusbar.palette_language_none')}
+                                                </p>
+                                            {/if}
+                                            {#each languages as found (found.choice.name)}
+                                                <Command.Item
+                                                    value={`language:${found.choice.name}`}
+                                                    onSelect={() => chooseLanguage(found.choice)}
+                                                >
+                                                    {#snippet child({ props: row })}
+                                                        <div
+                                                            {...row}
+                                                            class="result"
+                                                            data-language={found.choice.name}
+                                                        >
+                                                            <span class="kind"
+                                                                >{t(
+                                                                    'statusbar.palette_kind_language'
+                                                                )}</span
+                                                            >
+                                                            <ToolButton
+                                                                label={found.choice.label}
+                                                                active={source?.status.language ===
+                                                                    found.choice.name}
+                                                                onclick={pressed}
+                                                            >
+                                                                <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                                                                {@render marked(found.label)}
+                                                            </ToolButton>
+                                                        </div>
+                                                    {/snippet}
+                                                </Command.Item>
+                                            {/each}
+                                        {:else}
+                                            {#if parsed.name === '' && caret !== null && source !== null}
+                                                <p class="empty" data-line-hint>
+                                                    {t(
+                                                        'statusbar.palette_line_hint',
+                                                        caret.line,
+                                                        caret.column,
+                                                        source.status.lines
+                                                    )}
+                                                </p>
+                                            {/if}
+                                            {#each commandList as command (command.name)}
+                                                <Command.Item
+                                                    value={`command:${command.name}`}
+                                                    disabled={!command.available}
+                                                    onSelect={() => run(command)}
+                                                >
+                                                    {#snippet child({ props: row })}
+                                                        <div {...row} class="result">
+                                                            <span class="kind">:</span>
+                                                            <ToolButton
+                                                                label={`${command.name}${command.hint === '' ? '' : ` ${command.hint}`}`}
+                                                                disabled={!command.available}
+                                                                title={!command.available
+                                                                    ? t('app.palette_unavailable')
+                                                                    : undefined}
+                                                                onclick={pressed}
+                                                            />
+                                                            {#if !command.available}
+                                                                <span class="unavailable"
+                                                                    >{t(
+                                                                        'app.palette_unavailable'
+                                                                    )}</span
+                                                                >
+                                                            {/if}
+                                                        </div>
+                                                    {/snippet}
+                                                </Command.Item>
+                                            {/each}
+                                        {/if}
+                                        {#if count === 0 && line === null && !languageMode}
+                                            <p class="empty">
+                                                {parsed === null
+                                                    ? t('app.palette_empty')
+                                                    : t('app.palette.cmd_unknown')}
+                                            </p>
+                                        {/if}
+                                    </div>
+                                {/snippet}
+                            </Command.List>
                         </div>
-                    {/each}
-                {:else if line !== null}
-                    {#if caret !== null}
-                        <div class="result selected" role="option" aria-selected="true">
-                            <span class="kind">{t('statusbar.palette_kind_line')}</span>
-                            <ToolButton
-                                label={t('statusbar.palette_line', line)}
-                                onclick={() => goLine(line)}
-                            />
-                        </div>
-                    {:else}
-                        <p class="empty">{t('statusbar.palette_line_none')}</p>
-                    {/if}
-                {:else if languageMode}
-                    {#if source === null}
-                        <p class="empty">{t('statusbar.palette_language_none')}</p>
-                    {/if}
-                    {#each languages as choice, at (choice.name)}
-                        <div
-                            class="result"
-                            class:selected={selected === at}
-                            role="option"
-                            aria-selected={selected === at}
-                            data-language={choice.name}
-                        >
-                            <span class="kind">{t('statusbar.palette_kind_language')}</span>
-                            <ToolButton
-                                label={choice.label}
-                                active={source?.status.language === choice.name}
-                                onclick={() => chooseLanguage(choice)}
-                            />
-                        </div>
-                    {/each}
-                {:else}
-                    {#if parsed.name === '' && caret !== null && source !== null}
-                        <p class="empty" data-line-hint>
-                            {t(
-                                'statusbar.palette_line_hint',
-                                caret.line,
-                                caret.column,
-                                source.status.lines
-                            )}
-                        </p>
-                    {/if}
-                    {#each commandList as command, at (command.name)}
-                        <div
-                            class="result"
-                            class:selected={selected === at}
-                            role="option"
-                            aria-selected={selected === at}
-                        >
-                            <span class="kind">:</span>
-                            <ToolButton
-                                label={`${command.name}${command.hint === '' ? '' : ` ${command.hint}`}`}
-                                disabled={!command.available}
-                                title={!command.available
-                                    ? t('app.palette_unavailable')
-                                    : undefined}
-                                onclick={() => run(command)}
-                            />
-                            {#if !command.available}
-                                <span class="unavailable">{t('app.palette_unavailable')}</span>
-                            {/if}
-                        </div>
-                    {/each}
-                {/if}
-                {#if count === 0 && line === null && !languageMode}
-                    <p class="empty">
-                        {parsed === null ? t('app.palette_empty') : t('app.palette.cmd_unknown')}
-                    </p>
-                {/if}
+                    {/snippet}
+                </Command.Root>
             </div>
-        </div>
-    </div>
+        {/snippet}
+    </Modal>
 {/if}
 
 <style>
-    .ground {
-        position: fixed;
-        inset: 0;
-        z-index: 70;
-        display: flex;
-        align-items: flex-start;
-        justify-content: center;
-        padding: 10vh 16px 16px;
-    }
-
-    .ground::before {
-        position: absolute;
-        inset: 0;
-        content: '';
-        background: var(--bg);
-        opacity: 0.72;
-    }
-
     .palette {
         position: relative;
         display: grid;
-        grid-template-rows: auto minmax(0, 1fr);
-        gap: 8px;
+        grid-template-rows: minmax(0, 1fr);
         width: min(42rem, 100%);
         max-height: 70vh;
         padding: 12px;
@@ -341,6 +400,14 @@
         box-sizing: border-box;
     }
 
+    /* The Command's own box: the input above, and under it the list, which scrolls. */
+    .command {
+        display: grid;
+        grid-template-rows: auto minmax(0, 1fr);
+        gap: 8px;
+        min-height: 0;
+    }
+
     .list {
         display: grid;
         gap: 4px;
@@ -358,7 +425,7 @@
         border-radius: var(--radius-sm);
     }
 
-    .result.selected {
+    .result[data-selected] {
         border-color: var(--accent);
     }
 
@@ -367,6 +434,15 @@
         width: 100%;
         text-align: left;
         white-space: normal;
+    }
+
+    /* The letters a query matched, marked as the Search view marks a match
+       (views/sources/search/Results.svelte), so oculus has one match look: the accent's text
+       colour, bold, on no fill of their own. */
+    .hit {
+        background: none;
+        color: var(--accent-txt, var(--accent));
+        font-weight: 700;
     }
 
     .kind,

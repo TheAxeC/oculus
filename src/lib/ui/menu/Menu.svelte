@@ -1,23 +1,22 @@
 <script lang="ts">
-    // Layer 3, primitive. A button that opens a list of choices. It holds only whether the list is
-    // open: what the choices are and what picking one means belong to the caller, and the list
-    // itself, with its keys, its Back choice and its groups, is MenuList.svelte's.
+    // Layer 3, primitive. A button that opens a list of choices, on bits-ui's Dropdown Menu. It
+    // holds only whether the list is open: what the choices are and what picking one means belong
+    // to the caller, the list's drawing is MenuList.svelte's, and its keys, its placing, its
+    // submenus and its closing on a press outside are bits-ui's.
     //
-    // The list closes on Escape, on a pointer down anywhere outside the button and the list, and on
-    // a pick. The pointer listener is installed only while the list is open and is removed with it,
-    // so a page holding several menus adds one listener at a time and none when they are all
-    // closed.
+    // The list is drawn on the body through bits-ui's Portal and placed against the button, moved
+    // inside the window when it would run past an edge. A menu hung beside its button rises from
+    // the button's foot at its right edge, as VS Code's menus at the foot of its activity bar do.
     //
-    // A menu hung beside its button draws its list on the body at the button's right edge, rising
-    // from the button's foot as VS Code's menus at the foot of its activity bar do, for a button
-    // in the rail: over a wallpaper the rail filters what it holds, and a list laid out inside it
-    // would be painted under the panes beside it.
+    // Escape and a pick close the list and give the focus back to the button without opening its
+    // tooltip. A pick is answered once the list is gone and the focus is back, so a dialog the pick
+    // raises keeps the focus it takes. A press outside and Tab leave the focus where they put it.
     //
     // The button that opens the list, in each of its looks, is MenuOpener.svelte beside this.
 
-    import type { MenuGroup, MenuItem } from '$lib/ui/menu/menu-items';
+    import { DropdownMenu } from 'bits-ui';
+    import { menuClosing, type MenuGroup, type MenuItem } from '$lib/ui/menu/menu-items';
     import MenuList from './MenuList.svelte';
-    import { focusQuietly } from './tooltip-target';
     import MenuOpener from './MenuOpener.svelte';
 
     type Props = {
@@ -40,15 +39,14 @@
         compact?: boolean;
         /**
          * Which way the list opens. `up` is the default, for a menu at the foot of the window; a
-         * menu in a header opens `down`, or its list is drawn above the top of what holds it and
-         * is clipped away; `beside` opens it upward to the right of the button, on the body, and
-         * `above` upward from the button's top left corner, on the body, for a menu in a bar that
-         * filters what it holds.
+         * menu in a header opens `down`; `beside` opens it upward to the right of the button, for
+         * a menu in the rail, and `above` upward from the button's top left corner. A list with
+         * no room on its side opens on the other.
          */
         placement?: 'up' | 'down' | 'beside' | 'above';
         /**
          * Which edge of the button the list lines up with. `left` is the default; a menu at the
-         * right edge of the window lines up `right`, or its list runs off the screen.
+         * right edge of the window lines up `right`. Ignored for `beside` and `above`.
          */
         align?: 'left' | 'right';
         /**
@@ -106,94 +104,60 @@
         onkeydown
     }: Props = $props();
 
-    /** How far from the button a list hung beside it sits. */
+    /** How far from the button the list sits. */
     const GAP = 4;
 
     let open = $state(false);
-    let box: HTMLDivElement | undefined = $state();
     let button: HTMLButtonElement | undefined = $state();
-    let list: HTMLDivElement | undefined = $state();
 
-    /** Where a list hung beside the button is drawn, measured when it opens. */
-    let at: { x: number; y: number } | undefined = $state();
+    /** The side of the button the list opens on, and which of its edges it lines up with. */
+    const side = $derived(
+        placement === 'down' ? 'bottom' : placement === 'beside' ? 'right' : 'top'
+    );
+    const edge = $derived(
+        placement === 'beside' ? 'end' : placement === 'above' || align === 'left' ? 'start' : 'end'
+    );
 
-    $effect(() => {
-        if (!open) return;
-        const outside = (event: PointerEvent): void => {
-            const target = event.target;
-            if (!(target instanceof Node)) return;
-            if (box?.contains(target) === true || list?.contains(target) === true) return;
-            open = false;
-        };
-        // Capture, so a pointer down on a control that stops propagation still closes the menu.
-        document.addEventListener('pointerdown', outside, true);
-        return () => document.removeEventListener('pointerdown', outside, true);
-    });
-
-    /** Whether the list is drawn on the body at a point rather than against the button. */
-    const onBody = $derived(placement === 'beside' || placement === 'above');
-
-    function toggle(): void {
-        if (!open && onBody && button !== undefined) {
-            const rect = button.getBoundingClientRect();
-            at =
-                placement === 'beside'
-                    ? { x: rect.right + GAP, y: rect.bottom }
-                    : { x: rect.left, y: rect.top - GAP };
-        }
-        open = !open;
-    }
+    const closing = menuClosing(() => button);
 
     function pick(id: string, event: MouseEvent, group?: string): void {
-        open = false;
-        if (button !== undefined) focusQuietly(button);
-        if (group === undefined) onpick(id, event);
-        else onpick(id, event, group);
-    }
-
-    function escape(): void {
-        open = false;
-        if (button !== undefined) focusQuietly(button);
+        closing.hold(() => {
+            if (group === undefined) onpick(id, event);
+            else onpick(id, event, group);
+        });
     }
 </script>
 
-<div class="menu" bind:this={box}>
-    <MenuOpener
-        {label}
-        {open}
-        onclick={toggle}
-        bind:button
-        {glyph}
-        {compact}
-        {bare}
-        {inherit}
-        {rail}
-        {status}
-        {words}
-        {title}
-        {tabindex}
-        {stop}
-        {onkeydown}
-    />
-    {#if open}
-        <MenuList
-            {label}
-            {items}
-            {groups}
-            onpick={pick}
-            onescape={escape}
-            placement={placement === 'down' ? 'down' : 'up'}
-            {align}
-            at={onBody ? at : undefined}
-            rise={onBody}
-            bind:element={list}
-        />
-    {/if}
-</div>
-
-<style>
-    .menu {
-        position: relative;
-        display: flex;
-    }
-</style>
+<DropdownMenu.Root
+    bind:open
+    onOpenChange={closing.changed}
+    onOpenChangeComplete={closing.completed}
+>
+    <DropdownMenu.Trigger {tabindex} {onkeydown}>
+        {#snippet child({ props })}
+            <MenuOpener
+                {label}
+                trigger={props}
+                bind:button
+                {glyph}
+                {compact}
+                {bare}
+                {inherit}
+                {rail}
+                {status}
+                {words}
+                {title}
+                {stop}
+            />
+        {/snippet}
+    </DropdownMenu.Trigger>
+    <DropdownMenu.Portal>
+        <DropdownMenu.Content {side} align={edge} sideOffset={GAP} {...closing.content}>
+            {#snippet child({ wrapperProps, props })}
+                <div {...wrapperProps}>
+                    <MenuList {label} {items} {groups} onpick={pick} list={props} />
+                </div>
+            {/snippet}
+        </DropdownMenu.Content>
+    </DropdownMenu.Portal>
+</DropdownMenu.Root>

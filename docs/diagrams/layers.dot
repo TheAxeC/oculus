@@ -42,7 +42,7 @@ digraph layers {
     "shell to state" [label="67", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     "shell" -> "shell to state" [arrowhead=none];
     "shell to state" -> "state" [];
-    "shell to ui" [label="40", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+    "shell to ui" [label="39", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     "shell" -> "shell to ui" [arrowhead=none];
     "shell to ui" -> "ui" [];
     "src to data" [label="3", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
@@ -60,7 +60,7 @@ digraph layers {
     "ui to data" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     "ui" -> "ui to data" [arrowhead=none];
     "ui to data" -> "data" [];
-    "ui to state" [label="8", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+    "ui to state" [label="7", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     "ui" -> "ui to state" [arrowhead=none];
     "ui to state" -> "state" [];
     "ui to themes" [label="4", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
@@ -69,7 +69,7 @@ digraph layers {
     "views to state" [label="574", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     "views" -> "views to state" [arrowhead=none];
     "views to state" -> "state" [];
-    "views to ui" [label="548", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+    "views to ui" [label="549", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     "views" -> "views to ui" [arrowhead=none];
     "views to ui" -> "ui" [];
 }

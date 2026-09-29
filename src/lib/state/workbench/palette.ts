@@ -1,9 +1,16 @@
-// Layer 2, client state. Pure indexing, matching and command parsing for the shell palette. The
-// source store adapter is beside this file; this module accepts plain values so every search and
-// command rule is tested without a browser or a live socket.
+// Layer 2, client state. Pure indexing, fuzzy matching and command parsing for the shell palette.
+// The source store adapter is beside this file; this module accepts plain values so every search
+// and command rule is tested without a browser or a live socket.
 
 import type { FeedEntry, FeedKind, Snapshot } from '../../data/model/index.ts';
 import { feedIdents, nestedStrings } from '../feeds/idents.ts';
+import {
+    byScore,
+    fuzzyMatches,
+    keyMatched,
+    textParts,
+    type TextPart
+} from '../shared/words/fuzzy.ts';
 
 export type PaletteView = { id: string; label: string };
 
@@ -119,23 +126,38 @@ export function buildIndex(
     return found;
 }
 
+export type { TextPart };
+
+/** One result the palette draws: the item, and its title in matched and unmatched runs. */
+export type PaletteMatch = { item: PaletteItem; title: TextPart[] };
+
 /**
- * AND-match query words across an item, with more title hits ranked first and stable ties. With no
- * word the list is the views alone: every project, collection entry and feed entry together is a
- * list no reader scans, and a word is what narrows them to the one wanted.
+ * The items every query word matches, fuzzily over each item's title, label and text, as VS
+ * Code's Quick Open matches: an item whose title the query matched ranks above one it matched only
+ * elsewhere, then the better score, and ties keep index order. With no word the list is the views
+ * alone: every project, collection entry and feed entry together is a list no reader scans, and a
+ * word is what narrows them to the one wanted.
  */
-export function match(index: PaletteItem[], query: string): PaletteItem[] {
-    const words = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
-    if (words.length === 0) return index.filter((item) => item.kind === 'view');
-    return index
-        .map((item, order) => {
-            const title = item.title.toLowerCase();
-            const text = `${item.label} ${item.text}`.toLowerCase();
-            return { item, order, hits: words.filter((word) => title.includes(word)).length, text };
-        })
-        .filter((ranked) => words.every((word) => ranked.text.includes(word)))
-        .sort((left, right) => right.hits - left.hits || left.order - right.order)
-        .map((ranked) => ranked.item);
+export function ranked(index: PaletteItem[], query: string): PaletteMatch[] {
+    if (query.trim() === '') {
+        return index
+            .filter((item) => item.kind === 'view')
+            .map((item) => ({ item, title: [{ text: item.title, hit: false }] }));
+    }
+    return fuzzyMatches(query, index, [
+        (item) => item.title,
+        (item) => item.label,
+        (item) => item.text
+    ])
+        .map((found) => ({ found, titled: keyMatched(found.keys[0]) }))
+        .sort(
+            (left, right) =>
+                Number(right.titled) - Number(left.titled) || byScore(left.found, right.found)
+        )
+        .map(({ found }) => ({
+            item: found.row,
+            title: textParts(found.keys[0], found.row.title)
+        }));
 }
 
 /** The word a result row draws for what it is, from the catalog. */

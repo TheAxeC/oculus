@@ -144,12 +144,23 @@ describe('the files of a project', () => {
 });
 
 describe('the project files a filter keeps', () => {
-    it('are the rows whose path holds the query, case and surrounding space aside', () => {
+    it('are the rows whose path the query fuzzily matches, case and surrounding space aside', () => {
         const rows = [
             { path: 'manuscript/Main.tex', size: 10, mtime: 1 },
             { path: 'code/run.py', size: 20, mtime: 2 }
         ];
         expect(matchingFiles(rows, ' MAIN ')).toEqual([rows[0]]);
         expect(matchingFiles(rows, '')).toBe(rows);
+    });
+
+    // Red when matchingFiles goes back to substrings: 'mntx' is no substring of any path.
+    it('keeps every row for no query, a row whose path holds the letters in order, and none for letters no path holds', () => {
+        const rows = [
+            { path: 'manuscript/main.tex', size: 10, mtime: 1 },
+            { path: 'code/run.py', size: 20, mtime: 2 }
+        ];
+        expect(matchingFiles(rows, '')).toEqual(rows);
+        expect(matchingFiles(rows, 'mntx').map((row) => row.path)).toContain('manuscript/main.tex');
+        expect(matchingFiles(rows, 'qqq')).toEqual([]);
     });
 });

@@ -368,8 +368,10 @@ describe('the Inbox card', () => {
         // The title is words to read rather than an address to write to, so it links nowhere.
         expect(drawn).not.toContain('mailto:');
         expect(title).toMatch(/<span class="address[^"]*">noreply@sparcly\.ai<\/span>/);
-        // The whole From line is the title's tooltip.
-        expect(title).toMatch(/role="tooltip"[^>]*>Sparcly\.ai &lt;noreply@sparcly\.ai><\/span>/);
+        // The whole From line is the title's tooltip, its words in place until the bubble shows.
+        expect(title).toMatch(
+            /class="words"[^>]*hidden[^>]*>Sparcly\.ai &lt;noreply@sparcly\.ai><\/span>/
+        );
     });
 
     it('titles a card whose From line has no display name with the address', () => {

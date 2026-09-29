@@ -289,6 +289,7 @@ const PASS_THROUGH: Record<string, string> = {
     'src/lib/ui/forms/Prompt.svelte': '.message=fs-sm | .detail, .name=fs-xs | .row button=fs-sm',
     'src/lib/ui/forms/TextArea.svelte': '.area=fs-sm',
     'src/lib/ui/forms/TextInput.svelte': '.text=fs-sm',
+    'src/lib/ui/frame/Modal.svelte': '',
     'src/lib/ui/frame/Sash.svelte': '',
     'src/lib/ui/menu/KeySheet.svelte': 'h2=fs-xl | header span=fs-sm | kbd=fs-sm | .row span=fs-md',
     'src/lib/ui/menu/Tooltip.svelte': '.bubble=fs-xs',

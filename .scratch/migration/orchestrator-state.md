@@ -27,22 +27,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:      # Q81 building.
-- step: Q81
-  executor: agent
-  worker: claude:opus
-  session_id: a7a748a26572c34bc
-  worktree: .agents/worktrees/Q81
-  base: d0ba72f5
-  launched: 2026-09-29
-  report: agents/reviews/Q81-report.md
-  landing: not-started
-  round: 1, sent 2026-09-29 from worktree commit 67d7fef0, agents/briefs/Q81-round1-sent.md
-  builder_usage: 63 tool uses, 291k tokens, 11 min, the cases hand-back; 203 tool uses, 117k tokens, 57 min, the build after the ruling; 44 tool uses, 229k tokens, 11 min, round 1
-  reviewer_report: agents/reviews/Q81-refuter.md, reviewer acab87030fa9fa19d, 325k tokens, 124 tool uses, 24 min
-  round_1_reviewer: a6239bdf249f7be41, launched 2026-09-29 (refutation of round 1, running)
-  owed_look: Q82's look is taken on TEST with Q81's (the tab was on Axel's Focus page at Q82's landing): the Files tree, the Repositories changes and the Graph; the keys, `a` type-ahead, Cmd+A, Cmd+Enter on a row, Tab to a scrolled-away stop, the focus kept on a wheel scroll, the Graph's Left and Right and its open commit, the gaps, the first ten rows, the indent guides.
-  cases: ruled at round 0 in agents/briefs/Q81-cases.md (case 5 to the look, the overlays' Escape through bits-ui with the shell's three Escape branches removed)
+dispatch: []      # nothing in flight; Q79b is next and runs alone.
 ```
 
 ## The standing demands (from Axel, in force)
@@ -115,6 +100,7 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 - Q72, the architecture re-read before the release (booked 2026-09-24 with Q71, on Axel's ruling that one package fixes the architecture and a re-read checks it at the end): the diagrams regenerated and read, Q71's import measures run again, and what moved since fixed as its own step; queued after M4, before R2 (`plan.md:176`).
 - Q79a to Q79d, the library audit's fixes that need no new dependency (booked 2026-09-26 from the audit, section D of `agents/reviews/library-audit.md`; split into the server, the tests, the page and the shared helpers by Axel's Z37 (a), 2026-09-28): each a step in `plan.md`, queued Q79a + Q79c + Q80, then Q79d + Q87 + Q81, then Q79b alone (Z38 (a)).
 - O33, oculus extracted into its own GitHub repository (Axel, 2026-09-25), last in the queue after X2; Axel pushes.
+- The looks owed by Q81 and Q82, taken on the TEST page together at the next landing whose tab shows TEST (the tab was on Axel's Focus page at both landings). Q81: the menus (a submenu to the side with its chevron, ArrowRight, ArrowLeft and Escape in it, Home, End and type-ahead, Tab closing a menu, a pointer open focusing the list), a right-click menu and one opened from the keyboard, a tooltip flipping near the window's bottom edge and opening on no quiet focus, the palette (fuzzy rows with the match drawn in the accent at weight 700, Home and End moving the selection, `aria-activedescendant`), the key sheet taking the focus on its box, the tray's Close taking it with no tooltip, the focus given back after each dialog, a Confirm over the tray taking the first Escape, the Memories overlay holding the keyboard. Q82: the Files tree, the Repositories changes and the Graph; the keys, the `a` type-ahead, Cmd+A, Cmd+Enter on a row, Tab to a scrolled-away stop, the focus kept through a wheel scroll, the Graph's Left and Right and its open commit, the gaps, the first ten rows and the indent guides.
 
 ## Closed items (kept as the log of what was raised and how it ended)
 
@@ -436,6 +422,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-09-29. Q81 landed through /spec, /refute and /land (menus, context menus, tooltips and dialogs on bits-ui; the palette on bits-ui's Command with fuzzysort); cases ruled at round 0, one repair round, refuted again; the cherry-pick conflicted in `package.json`, `package-lock.json` and `docs/diagrams/layers.*` with Q82 and Q87, resolved by keeping both sides' dependencies, npm regenerating the lock and `npm run diagrams`; nine fixes at landing (the focus helpers moved to `ui/frame/quiet-focus.ts` to end the upward import, the box focused when it holds no control, the first control picked by what Tab reaches, the first-focus sentences, `describe('ranked')`, the audit comments, palette case 2 marked, the stale menu clone off the duplication allow list, the conflicts). Verify on main: `checks: 6 commands passed` (Test Files 356 passed, Tests 5704 passed and 1 skipped). The looks of Q81 and Q82 are owed (Booked section): the tab showed Axel's Focus page. Next: Q79b, alone.
 - 2026-09-29. Q82 landed through /spec, /refute and /land (the explorer tree on zag's tree-view, the long lists virtualized); one repair round, refuted again; fixes at landing: the long-tree audit split out of `files.test.ts`, the reasons above two absences, a case for the kept stop row, Cmd+Enter handed to the tree again. Verify on main: `checks: 6 commands passed` (Test Files 355 passed, Tests 5692 passed). The look is owed, taken with Q81's, since the tab was on Axel's Focus page. In flight: Q81 (the review over round 1). Next: land Q81 with both looks, then Q79b alone.
 - 2026-09-29. Q87 landed through /spec, /refute and /land (the duplication check on jscpd, the import checks hand-written by Z45 (a)); cases ruled at round 0, one repair round, refuted again; fixes at landing: the markup run reads every component as HTML, since jscpd's Svelte format skipped a component whose script and style hold fewer than fifty tokens, with a case; the false comment removed; the head comment on the eight-line floor and the smaller extent. Verify on main: `npm test` failed only on `tests/server/git/git-ops.test.ts`, which passes alone (37 of 37); the other five commands passed. In flight: Q81 (its first review) and Q82 (round 1 answered, its review next). Next: `/refute` Q82 over round 1.
 - 2026-09-29. Q86 landed through /spec, /refute and /land (the Map laid out by Graphviz's neato in the page); cases ruled at round 0, two repair rounds, each refuted again; fixes at landing: the diagrams merge, `context.ts` merged with Q101, the neato edge-length sentence in `layout.ts` and `DESIGN.md:290`, and the labels measured again once Graphviz has placed the nodes (found at the look). Verify on main: `npm test` had one failure in `tests/server/machine/hpc/ssh.test.ts`, a file the step does not change, passing alone; the other five commands exit 0. The look after the label fix is not taken: Axel took the tab to his own page. Next: `/spec` Q81 and Q82, then Q86b; Q87, D13 and X3c wait on Z45, Z46 and Z47.

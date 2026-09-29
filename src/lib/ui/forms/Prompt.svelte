@@ -1,10 +1,12 @@
 <script lang="ts">
     // Layer 3, primitive. A dialog that asks for a line or two of text before a write: a stash's
-    // message, a tag's name and message. It is modal as ui/controls/Confirm.svelte is: focus on the
-    // first field, Enter answers yes, Escape cancels, Tab stays inside, and a press on the ground
-    // behind it cancels. The fields are TextInput.svelte beside it, so the prompt holds only what
-    // has been typed until it answers, and nothing once it is gone.
+    // message, a tag's name and message. It stands on the modal ground ui/frame/Modal.svelte draws
+    // and is modal as ui/controls/Confirm.svelte is: focus on the first field, Enter answers yes,
+    // Escape cancels, Tab stays inside, and a press on the ground behind it cancels. The fields are
+    // TextInput.svelte beside it, so the prompt holds only what has been typed until it answers,
+    // and nothing once it is gone.
 
+    import Modal from '../frame/Modal.svelte';
     import TextInput from './TextInput.svelte';
     import type { PromptRequest } from './prompt';
 
@@ -22,85 +24,41 @@
     // svelte-ignore state_referenced_locally
     let values = $state(request.fields.map((field) => field.value));
 
-    $effect(() => {
-        box?.querySelector('input')?.focus();
-    });
-
     function answered(event: SubmitEvent): void {
         event.preventDefault();
         request.act([...values]);
     }
-
-    /** Escape cancels, and Tab walks the dialog's own controls and stops there. */
-    function pressed(event: KeyboardEvent): void {
-        if (event.key === 'Escape') {
-            event.preventDefault();
-            oncancel();
-            return;
-        }
-        if (event.key !== 'Tab' || box === undefined) return;
-        const stops = [...box.querySelectorAll<HTMLElement>('input, button')];
-        const first = stops.at(0);
-        const last = stops.at(-1);
-        if (first === undefined || last === undefined) return;
-        if (event.shiftKey && document.activeElement === first) {
-            event.preventDefault();
-            last.focus();
-        } else if (!event.shiftKey && document.activeElement === last) {
-            event.preventDefault();
-            first.focus();
-        }
-    }
 </script>
 
-<div class="ground" onkeydown={pressed} role="presentation">
-    <button type="button" class="behind" aria-label={cancel} onclick={oncancel}></button>
-    <div class="box" bind:this={box} role="dialog" aria-modal="true" aria-label={request.message}>
-        <form class="form" onsubmit={answered}>
-            <p class="message">{request.message}</p>
-            {#if (request.detail ?? '') !== ''}
-                <p class="detail">{request.detail}</p>
-            {/if}
-            {#each request.fields as field, at (at)}
-                <label class="field">
-                    <span class="name">{field.label}</span>
-                    <TextInput
-                        value={values[at]}
-                        label={field.label}
-                        placeholder={field.placeholder}
-                        oninput={(next: string) => (values[at] = next)}
-                    />
-                </label>
-            {/each}
-            <div class="row">
-                <button type="button" class="cancel" onclick={oncancel}>{cancel}</button>
-                <button type="submit" class="yes">{request.verb}</button>
-            </div>
-        </form>
-    </div>
-</div>
+<Modal onclose={oncancel} onopen={() => box?.querySelector('input')?.focus()}>
+    {#snippet children(props)}
+        <div {...props} class="box" aria-label={request.message} bind:this={box}>
+            <form class="form" onsubmit={answered}>
+                <p class="message">{request.message}</p>
+                {#if (request.detail ?? '') !== ''}
+                    <p class="detail">{request.detail}</p>
+                {/if}
+                {#each request.fields as field, at (at)}
+                    <label class="field">
+                        <span class="name">{field.label}</span>
+                        <TextInput
+                            value={values[at]}
+                            label={field.label}
+                            placeholder={field.placeholder}
+                            oninput={(next: string) => (values[at] = next)}
+                        />
+                    </label>
+                {/each}
+                <div class="row">
+                    <button type="button" class="cancel" onclick={oncancel}>{cancel}</button>
+                    <button type="submit" class="yes">{request.verb}</button>
+                </div>
+            </form>
+        </div>
+    {/snippet}
+</Modal>
 
 <style>
-    .ground {
-        position: fixed;
-        inset: 0;
-        z-index: 60;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 16px;
-    }
-
-    .behind {
-        position: absolute;
-        inset: 0;
-        border: 0;
-        padding: 0;
-        background: var(--bg);
-        opacity: 0.72;
-        cursor: default;
-    }
-
     .form {
         display: contents;
     }

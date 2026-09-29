@@ -20,6 +20,7 @@ import type { FsRoot } from '../../sources/fs.ts';
 import { deepestHolding, joinPath } from '../../../data/helpers/files/paths.ts';
 import { PLAIN, registered } from '../../shared/words/languages.ts';
 import { t } from '../../shared/words/text.ts';
+import { byScore, fuzzyMatches, textParts, type TextPart } from '../../shared/words/fuzzy.ts';
 import type { Caret, Indent } from './editor-text.ts';
 
 /** The socket's three states, as state/client/socket.svelte.ts names them. */
@@ -260,12 +261,16 @@ export function languageName(name: string): string {
 /** One language the language list offers: the highlighter's name and the reader's. */
 export type LanguageChoice = { name: string; label: string };
 
+/** One language the list draws for a query: the choice and its label in matched runs. */
+export type LanguageMatch = { choice: LanguageChoice; label: TextPart[] };
+
 /**
- * Every language the highlighter paints, Plain Text first and the rest by the reader's name, and
- * with a query only those whose name holds it.
+ * Every language the highlighter paints, Plain Text first and the rest by the reader's name, each
+ * with its label as one unmarked run; with a query only those it matches fuzzily, over the
+ * reader's name and the highlighter's, best score first and ties in that same order, each label
+ * split into the runs the query matched.
  */
-export function languageChoices(query: string): LanguageChoice[] {
-    const wanted = query.trim().toLowerCase();
+export function languageMatches(query: string): LanguageMatch[] {
     const all = registered()
         .map((name) => ({ name, label: languageName(name) }))
         .sort((left, right) =>
@@ -275,12 +280,12 @@ export function languageChoices(query: string): LanguageChoice[] {
                   ? 1
                   : left.label.localeCompare(right.label)
         );
-    return wanted === ''
-        ? all
-        : all.filter(
-              (choice) =>
-                  choice.label.toLowerCase().includes(wanted) || choice.name.includes(wanted)
-          );
+    if (query.trim() === '') {
+        return all.map((choice) => ({ choice, label: [{ text: choice.label, hit: false }] }));
+    }
+    return fuzzyMatches(query, all, [(choice) => choice.label, (choice) => choice.name])
+        .sort(byScore)
+        .map((found) => ({ choice: found.row, label: textParts(found.keys[0], found.row.label) }));
 }
 
 /** The kinds of entity the portfolio keeps as a map by id, which the Status view counts. */

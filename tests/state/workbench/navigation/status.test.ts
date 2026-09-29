@@ -12,7 +12,7 @@ import {
     findingsCount,
     hpcWords,
     indentWords,
-    languageChoices,
+    languageMatches,
     languageName,
     liveCount,
     repoStatus,
@@ -253,19 +253,33 @@ describe('the source items words', () => {
         expect(languageName('cobol')).toBe(t('statusbar.language_plaintext'));
     });
 
-    it('lists Plain Text first and the rest by name, and narrows the list to a query', () => {
-        const all = languageChoices('');
+    it('lists Plain Text first and the rest by name, and narrows the list to a query by score', () => {
+        const all = languageMatches('').map((found) => found.choice);
         expect(all.map((choice) => choice.name).sort()).toEqual([...registered()].sort());
         expect(all[0].name).toBe('plaintext');
         const rest = all.slice(1).map((choice) => choice.label);
         expect(rest).toEqual([...rest].sort((left, right) => left.localeCompare(right)));
-        expect(languageChoices('PYT').map((choice) => choice.name)).toEqual(['python']);
-        expect(languageChoices('script').map((choice) => choice.name)).toEqual([
+        expect(languageMatches('PYT').map((found) => found.choice.name)).toEqual(['python']);
+        // Best score first: 'script' ends JavaScript and TypeScript, which tie and keep name
+        // order, and is split by a space in Bash's Shell Script, which scores lower.
+        expect(languageMatches('script').map((found) => found.choice.name)).toEqual([
             'javascript',
-            'bash',
-            'typescript'
+            'typescript',
+            'bash'
         ]);
-        expect(languageChoices('zzz')).toEqual([]);
+        expect(languageMatches('zzz').map((found) => found.choice)).toEqual([]);
+    });
+
+    // Red when languageMatches goes back to substrings: 'pyth' still holds, 'tscript' does not.
+    it('matches a language by the letters of its name in their order', () => {
+        const all = languageMatches('').map((found) => found.choice);
+        expect(all[0].name).toBe('plaintext');
+        const rest = all.slice(1).map((choice) => choice.label);
+        expect(rest).toEqual([...rest].sort((left, right) => left.localeCompare(right)));
+        expect(languageMatches('pyth').map((found) => found.choice.label)).toContain('Python');
+        expect(languageMatches('tscript').map((found) => found.choice.label)).toContain(
+            'TypeScript'
+        );
     });
 });
 

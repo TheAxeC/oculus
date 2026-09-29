@@ -11,9 +11,15 @@
     // confirmation is the one place a reader is told which of the two a press is about to do. It is
     // asked once per press and not remembered, since the answer is about this run and not about the
     // setting.
+    //
+    // The tray stands on the modal ground ui/frame/Modal.svelte draws: the focus moves into it when
+    // it opens, Tab stays inside it, and the focus goes back where it was when it closes. Escape
+    // closes it, and a confirmation raised over it takes the first Escape, so the tray stays open
+    // behind it and the next Escape closes it. A press on the ground beside it closes it.
 
     import Confirm from '$lib/ui/controls/Confirm.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
+    import Modal from '$lib/ui/frame/Modal.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import type { TaskKind } from '$lib/state/sessions/terminals.svelte';
     import { t } from '$lib/state/shared/words/text';
@@ -109,95 +115,79 @@
 </script>
 
 {#if open}
-    <div
-        class="ground"
-        role="presentation"
-        onclick={(event) => {
-            if (event.target === event.currentTarget) onclose();
-        }}
-    >
-        <div class="tray" role="dialog" aria-modal="true" aria-label={t('app.tasks.update_tasks')}>
-            <header>
-                <h2>{t('app.tasks.update_tasks')}</h2>
-                <ToolButton
-                    label={t('app.tasks.close')}
-                    glyph="dismiss"
-                    compact
-                    onclick={onclose}
-                />
-            </header>
-            <div class="tasks">
-                {#each tasks as task (task.kind)}
-                    <div class="task" data-task={task.kind} data-confirms={skipping || undefined}>
-                        <ToolButton
-                            label={task.label}
-                            title={task.note}
-                            active={running === task.kind}
-                            disabled={running !== null || chatting}
-                            onclick={() => press(task.kind)}
-                        />
-                        <span class="last">{task.last ?? t('app.palette_unavailable')}</span>
-                        {#if task.kind === 'inbox'}
-                            <span class="note">
-                                <Glyph name="info" />
-                                {task.note}
-                            </span>
-                        {/if}
-                    </div>
-                {/each}
-                <div class="task" data-task="chat">
+    <Modal level="tray" {onclose}>
+        {#snippet children(props)}
+            <div {...props} class="tray" aria-label={t('app.tasks.update_tasks')}>
+                <header>
+                    <h2>{t('app.tasks.update_tasks')}</h2>
                     <ToolButton
-                        label={t('app.chat')}
-                        glyph="chat"
-                        title={t('server.chat.seed_portfolio')}
-                        active={chatting}
-                        disabled={running !== null || chatting}
-                        onclick={chat}
+                        label={t('app.tasks.close')}
+                        glyph="dismiss"
+                        compact
+                        onclick={onclose}
                     />
+                </header>
+                <div class="tasks">
+                    {#each tasks as task (task.kind)}
+                        <div
+                            class="task"
+                            data-task={task.kind}
+                            data-confirms={skipping || undefined}
+                        >
+                            <ToolButton
+                                label={task.label}
+                                title={task.note}
+                                active={running === task.kind}
+                                disabled={running !== null || chatting}
+                                onclick={() => press(task.kind)}
+                            />
+                            <span class="last">{task.last ?? t('app.palette_unavailable')}</span>
+                            {#if task.kind === 'inbox'}
+                                <span class="note">
+                                    <Glyph name="info" />
+                                    {task.note}
+                                </span>
+                            {/if}
+                        </div>
+                    {/each}
+                    <div class="task" data-task="chat">
+                        <ToolButton
+                            label={t('app.chat')}
+                            glyph="chat"
+                            title={t('server.chat.seed_portfolio')}
+                            active={chatting}
+                            disabled={running !== null || chatting}
+                            onclick={chat}
+                        />
+                    </div>
                 </div>
+                {#if said !== ''}
+                    <p class="said">{said}</p>
+                {/if}
             </div>
-            {#if said !== ''}
-                <p class="said">{said}</p>
+        {/snippet}
+        {#snippet over()}
+            {#if asking !== null}
+                {@const kind = asking}
+                <Confirm
+                    message={t('app.tasks.skip_confirm', taskLabel(kind))}
+                    confirm={t('app.tasks.skip_confirm_ok')}
+                    cancel={t('ui.confirm_cancel')}
+                    onconfirm={() => {
+                        // The kind is read before the dialog is put away: `kind` is the const over
+                        // `asking`, and once that is null there is no task to read from it.
+                        const started = kind;
+                        asking = null;
+                        void start(started);
+                    }}
+                    oncancel={() => (asking = null)}
+                />
             {/if}
-        </div>
-        {#if asking !== null}
-            {@const kind = asking}
-            <Confirm
-                message={t('app.tasks.skip_confirm', taskLabel(kind))}
-                confirm={t('app.tasks.skip_confirm_ok')}
-                cancel={t('ui.confirm_cancel')}
-                onconfirm={() => {
-                    // The kind is read before the dialog is put away: `kind` is the const over
-                    // `asking`, and once that is null there is no task to read from it.
-                    const started = kind;
-                    asking = null;
-                    void start(started);
-                }}
-                oncancel={() => (asking = null)}
-            />
-        {/if}
-    </div>
+        {/snippet}
+    </Modal>
 {/if}
 
 <style>
-    .ground {
-        position: fixed;
-        inset: 0;
-        z-index: 65;
-        display: flex;
-        align-items: flex-start;
-        justify-content: center;
-        padding: 10vh 16px 16px;
-    }
-
-    .ground::before {
-        position: absolute;
-        inset: 0;
-        content: '';
-        background: var(--bg);
-        opacity: 0.72;
-    }
-
     .tray {
         position: relative;
         display: grid;

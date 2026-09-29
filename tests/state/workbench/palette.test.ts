@@ -6,9 +6,10 @@ import {
     buildIndex,
     commands,
     kindWord,
-    match,
     lineQuery,
-    parseCommand
+    parseCommand,
+    ranked,
+    type PaletteItem
 } from '../../../src/lib/state/workbench/palette.ts';
 import type { Snapshot } from '../../../src/lib/data/model/index.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
@@ -137,37 +138,80 @@ describe('buildIndex', () => {
     });
 
     it('indexes every nested string field of collection and feed entries', () => {
-        expect(match(index, 'Leuven keynote').map((item) => item.id)).toEqual([
+        expect(ranked(index, 'Leuven keynote').map((found) => found.item.id)).toEqual([
             'collection:events:talk'
         ]);
-        expect(match(index, 'Public methods').map((item) => item.id)).toEqual([
+        expect(ranked(index, 'Public methods').map((found) => found.item.id)).toEqual([
             'feed:linkedin:xx-idea.md'
         ]);
     });
 });
 
-describe('match', () => {
+describe('ranked', () => {
     it('requires every word and ranks a title hit above a body-only hit', () => {
-        expect(match(index, 'alpha').map((item) => item.id)).toEqual([
+        expect(ranked(index, 'alpha').map((found) => found.item.id)).toEqual([
             'project:alpha',
             'project:beta'
         ]);
-        expect(match(index, 'alpha missing')).toEqual([]);
+        expect(ranked(index, 'alpha missing').map((found) => found.item)).toEqual([]);
     });
 
+    // An audit of what an empty query lists. Red when an empty or blank query lists anything but
+    // the views.
     it('lists the views alone for an empty query and for one of spaces only', () => {
-        expect(match(index, '').map((item) => item.id)).toEqual(['view:focus']);
-        expect(match(index, '   ').map((item) => item.id)).toEqual(['view:focus']);
+        expect(ranked(index, '').map((found) => found.item.id)).toEqual(['view:focus']);
+        expect(ranked(index, '   ').map((found) => found.item.id)).toEqual(['view:focus']);
     });
 
     it('lists nothing for an empty query over an index that holds no view', () => {
-        expect(match(buildIndex(snapshot, feeds, []), '')).toEqual([]);
+        expect(ranked(buildIndex(snapshot, feeds, []), '').map((found) => found.item)).toEqual([]);
     });
 
     it('lets a word reach every kind again once one is typed', () => {
-        expect(new Set(match(index, 'a').map((item) => item.kind))).toEqual(
+        expect(new Set(ranked(index, 'a').map((found) => found.item.kind))).toEqual(
             new Set(['view', 'project', 'collection', 'feed'])
         );
+    });
+});
+
+describe('the fuzzy match', () => {
+    /** One index item of a kind, its label and title the same words. */
+    function item(id: string, kind: PaletteItem['kind'], title: string, text = ''): PaletteItem {
+        return { id, kind, label: title, title, text, view: kind };
+    }
+
+    const fuzzy = [
+        item('view:focus', 'view', 'Focus', 'Focus tab'),
+        item('project:raw', 'project', 'RAW-PLS', 'registration-free tensor regression'),
+        item('view:status', 'view', 'Status', 'Status tab')
+    ];
+
+    // Red when ranked goes back to lowercased substrings: 'rpls' is no substring of 'raw-pls'.
+    it('finds a title by letters in its order, by space-separated words, and nothing for letters it lacks', () => {
+        expect(ranked(fuzzy, 'rpls').map((found) => found.item.id)).toContain('project:raw');
+        expect(ranked(fuzzy, 'raw pls').map((found) => found.item.id)).toContain('project:raw');
+        expect(ranked(fuzzy, 'zzzq').map((found) => found.item)).toEqual([]);
+    });
+
+    // Red when the empty query lists every item, or lists the views out of index order.
+    it('lists the views alone, in index order, for no word', () => {
+        expect(ranked(fuzzy, '').map((found) => found.item.id)).toEqual([
+            'view:focus',
+            'view:status'
+        ]);
+    });
+
+    // Red when the rank drops the title-first rule: the text holds the query whole and the title
+    // only its letters spread apart, so fuzzysort's score alone ranks the text match first.
+    it('ranks the item whose title matches above one whose text alone does', () => {
+        const two = [
+            item('project:beta', 'project', 'Beta study', 'kappa'),
+            item('project:spread', 'project', 'Kinetic appraisal of pain', 'nothing else')
+        ];
+        expect(ranked(two, 'kappa').map((found) => found.item.id)).toEqual([
+            'project:spread',
+            'project:beta'
+        ]);
     });
 });
 

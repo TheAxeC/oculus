@@ -377,9 +377,12 @@ describe('Pane, Empty, Toolbar, ToolButton, Segment and Search', () => {
         expect(body).toContain('Reset');
         // The words are the tooltip's, not the browser's `title`, which waits about a second and
         // never appears for a control reached by keyboard.
+        // The bubble is drawn on the body while it shows; its words wait in place, hidden, under
+        // the id the button is described by. Red when the tool button loses its tooltip.
         expect(body).not.toContain('title="Put it back"');
-        expect(body).toContain('role="tooltip"');
-        expect(body).toContain('Put it back');
+        expect(body).toMatch(
+            /data-tooltip-trigger[\s\S]*<span id="tip-\d+"[^>]*hidden[^>]*>Put it back<\/span>/
+        );
         expect(body).toContain('active');
         expect(body).not.toContain('role="radio"');
     });
@@ -478,6 +481,19 @@ describe('KeySheet', () => {
         expect([...body.matchAll(/<kbd\b/g)]).toHaveLength(2);
         expect(body).toContain('1-9');
         expect(body).toContain('switch tab');
+    });
+
+    // Red when the sheet goes back to a hand-drawn dialog box.
+    it('is a bits-ui dialog, modal', () => {
+        const body = html(KeySheet, {
+            title: 'Keyboard',
+            hint: 'Press ? to close',
+            rows: '1-9 | switch tab',
+            onclose: () => undefined
+        });
+        const content = /<[^>]*data-dialog-content[^>]*>/.exec(body)?.[0] ?? '';
+        expect(content).toContain('role="dialog"');
+        expect(content).toContain('aria-modal="true"');
     });
 });
 
@@ -619,6 +635,19 @@ describe('Confirm', () => {
         expect(body).toContain('role="alertdialog"');
         expect(body).toContain('aria-modal="true"');
         expect(body).toContain('aria-label="Throw the change away?"');
+    });
+
+    // An audit of the markup the confirm keeps. Red when the confirm is moved onto the body,
+    // since a server render then draws nothing of it.
+    it('is drawn in place as a modal alert dialog with its message, detail and two buttons', () => {
+        const body = html(Confirm, props);
+        const content = /<[^>]*role="alertdialog"[^>]*>/.exec(body)?.[0] ?? '';
+        expect(content).toContain('aria-modal="true"');
+        expect(body).toContain('Throw the change away?');
+        expect(body).toContain('There is no undo.');
+        expect([...body.matchAll(/<button\b/g)].length).toBeGreaterThanOrEqual(2);
+        expect(body).toContain('>Confirm<');
+        expect(body).toContain('>Cancel<');
     });
 
     it('leaves the detail line out when there is none', () => {

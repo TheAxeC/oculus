@@ -518,8 +518,10 @@ describe('the facets', () => {
     // tests/state/boards/board/board-filter-menu.test.ts over filterGroups, and the menu opening
     // and filtering is not run here. What is checked here is the one control and its count.
     it('offers one filter control in the toolbar and no menu per facet', () => {
-        const opener = /<button[^>]*aria-haspopup="menu"[^>]*aria-label="([^"]*)"/g;
-        const labels = [...body.matchAll(opener)].map((one) => one[1]);
+        const labels = [...body.matchAll(/<button([^>]*)>/g)]
+            .map((one) => one[1])
+            .filter((attributes) => attributes.includes('aria-haspopup="menu"'))
+            .map((attributes) => /aria-label="([^"]*)"/.exec(attributes)?.[1] ?? '');
         expect(labels.filter((one) => one === catalog['board.filter'])).toHaveLength(1);
         for (const facet of ['status', 'compute', 'dataset', 'sessions']) {
             // the facets live inside the one filter menu now, so no facet has an opener of its own

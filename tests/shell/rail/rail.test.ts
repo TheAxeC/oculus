@@ -101,7 +101,8 @@ describe('the rail, drawn', () => {
         );
         // The words name the key after a comma, with no hyphen standing in for a dash.
         expect(body).toContain('>Page i, key 9<');
-        expect(body).toMatch(/role="tooltip"[^>]*>Page j<\/span>/);
+        // The bubble is drawn on the body while it shows; its words wait in place under its id.
+        expect(body).toMatch(/<span id="tip-\d+" class="words"[^>]*hidden[^>]*>Page j<\/span>/);
     });
 
     it('draws the button of the page on screen as the one in force, and no other', () => {

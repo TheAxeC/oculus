@@ -17,7 +17,6 @@ import {
     pageMoveItems,
     PAGE
 } from '../../../src/lib/shell/panes/pane-view.ts';
-import { menuLevel, type MenuItem } from '../../../src/lib/ui/menu/menu-items.ts';
 import { pane, split } from '../../state/workbench/layout/layout-fixture.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
 import { setCatalog, t } from '../../../src/lib/state/shared/words/text.ts';
@@ -106,39 +105,6 @@ describe('the pane menu page choices', () => {
         expect(children).not.toContain(MOVE_LIST);
         expect(children).not.toContain(EMBED_LIST);
         expect(new Set(children).size).toBe(children.length);
-    });
-});
-
-describe('the list a menu shows', () => {
-    const inner: MenuItem[] = [{ id: 'page:two', label: 'Two' }];
-    const items: MenuItem[] = [
-        { id: 'close', label: 'Close' },
-        { id: MOVE_LIST, label: 'Move', items: inner },
-        { id: 'empty', label: 'Empty', items: [] }
-    ];
-
-    it('is the menu own list while no choice is open', () => {
-        expect(menuLevel(items, null)).toBeNull();
-    });
-
-    it('is the list of the choice that is open, an empty one included', () => {
-        expect(menuLevel(items, MOVE_LIST)).toBe(inner);
-        expect(menuLevel(items, 'empty')).toEqual([]);
-    });
-
-    it('falls back to the menu own list for a choice that has gone or holds no list', () => {
-        expect(menuLevel(items, 'close')).toBeNull();
-        expect(menuLevel(items, 'gone')).toBeNull();
-        expect(menuLevel(items, '')).toBeNull();
-        expect(menuLevel([], MOVE_LIST)).toBeNull();
-    });
-
-    it('opens the first of two choices that share an id', () => {
-        const twice: MenuItem[] = [
-            { id: 'same', label: 'First', items: inner },
-            { id: 'same', label: 'Second', items: [] }
-        ];
-        expect(menuLevel(twice, 'same')).toBe(inner);
     });
 });
 

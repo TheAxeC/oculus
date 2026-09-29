@@ -1,6 +1,8 @@
-// Layer 3, primitive. The menu's contract: what one choice holds, and which list a choice with a
-// list of its own puts in place of the menu's. Apart from the component so the level can be read
-// without a viewport.
+// Layer 3, primitive. The menu's contract: what one choice holds, and how choices fall under
+// headings. Apart from the components so a caller builds its choices without importing one. Beside
+// it, how the two openers' lists close: Menu.svelte's and ContextMenu.svelte's, on bits-ui.
+
+import { focusQuietly } from '../frame/quiet-focus';
 
 /**
  * One choice in the list. `active` marks the one in force, which the menu shows as checked, and
@@ -25,8 +27,9 @@ export type MenuItem = {
     /** The badge's hover words. */
     badgeTitle?: string;
     /**
-     * The choices this one stands for. Picking it shows them in place of the list it is in, after a
-     * first choice that goes back, and picking one of them is what the caller is told of.
+     * The choices this one stands for, opened to its side as a submenu, as VS Code's are: this
+     * choice is the submenu's trigger and is never a pick itself, and picking one of them is what
+     * the caller is told of.
      */
     items?: MenuItem[];
 };
@@ -38,12 +41,73 @@ export type MenuItem = {
  */
 export type MenuGroup = { id: string; heading: string; items: MenuItem[] };
 
+/** How near the window's edges a menu's list may be laid out. */
+const MARGIN = 8;
+
 /**
- * The list a menu shows while the choice `opened` has its own list open: that choice's items, or
- * null for the menu's own list. A choice that is no longer there, or that holds no list, leaves the
- * menu on its own list, so a caller whose items change under an open menu never strands it.
+ * How a menu's list closes, the same for both openers: a pick is held until the list is gone and
+ * the focus is back on the control it was opened from, without that control's tooltip, so a dialog
+ * the pick raises keeps the focus it takes. A press outside and Tab leave the focus where they put
+ * it. `changed` and `completed` are the menu root's, and `content` goes on its bits-ui content.
  */
-export function menuLevel(items: readonly MenuItem[], opened: string | null): MenuItem[] | null {
-    if (opened === null) return null;
-    return items.find((item) => item.id === opened)?.items ?? null;
+export type MenuClosing = {
+    /** Hold a pick until the list has closed. */
+    hold: (answer: () => void) => void;
+    /** The root opening or closing: an opening holds no pick yet and gives the focus back. */
+    changed: (open: boolean) => void;
+    /** The root done closing: a pick still held is answered then. */
+    completed: (open: boolean) => void;
+    /** The content's placing margin, its scrolling, and its answers to closing. */
+    content: {
+        collisionPadding: number;
+        preventScroll: boolean;
+        strategy: 'fixed';
+        onInteractOutside: () => void;
+        onkeydown: (event: KeyboardEvent) => void;
+        onCloseAutoFocus: (event: Event) => void;
+    };
+};
+
+/** The closing of one menu whose focus goes back to what `back` names, while it is on the page. */
+export function menuClosing(back: () => HTMLElement | null | undefined): MenuClosing {
+    let held: (() => void) | null = null;
+    let away = false;
+
+    /** The held pick, answered once and only once. */
+    function answer(): void {
+        const waiting = held;
+        held = null;
+        waiting?.();
+    }
+
+    return {
+        hold: (next) => {
+            held = next;
+        },
+        changed: (open) => {
+            if (!open) return;
+            held = null;
+            away = false;
+        },
+        completed: (open) => {
+            if (!open) answer();
+        },
+        content: {
+            collisionPadding: MARGIN,
+            preventScroll: false,
+            strategy: 'fixed',
+            onInteractOutside: () => {
+                away = true;
+            },
+            onkeydown: (event) => {
+                if (event.key === 'Tab') away = true;
+            },
+            onCloseAutoFocus: (event) => {
+                event.preventDefault();
+                const control = back();
+                if (!away && control?.isConnected === true) focusQuietly(control);
+                answer();
+            }
+        }
+    };
 }

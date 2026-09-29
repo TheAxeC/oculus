@@ -116,6 +116,56 @@ describe('Palette', () => {
     });
 });
 
+describe('the palette on the Command list', () => {
+    /** The palette open on a query, with the renderer's block markers taken out. */
+    function opened(prefill: string): string {
+        return render(Palette, {
+            context: clientContext(client),
+            props: { ...props, open: true, prefill }
+        }).body.replace(/<!--[^>]*-->/g, '');
+    }
+
+    // Red when a result draws its title as plain text, without the matched letters marked.
+    it('marks the letters of a title the query matched, and leaves the rest unmarked', () => {
+        const body = opened('fcs');
+        expect(body).toMatch(/<mark[^>]*>F<\/mark>o<mark[^>]*>c<\/mark>u<mark[^>]*>s<\/mark>/);
+        expect(body).not.toMatch(/<mark[^>]*>[^<]*t[^<]*<\/mark>/);
+    });
+
+    // Red when the list goes back to hand-drawn rows: the input is then no combobox and a row no
+    // option with an id the Command can name as the active descendant, which it sets in the page.
+    it('draws the input as a combobox, the list as a listbox, and each result row as an option with an id', () => {
+        const body = opened('');
+        expect(body).toMatch(/<input[^>]*role="combobox"/);
+        expect(body).toMatch(/role="listbox"/);
+        const rows = [...body.matchAll(/<[a-z]+ [^>]*role="option"[^>]*>/g)].map(
+            (match) => match[0]
+        );
+        expect(rows.length).toBeGreaterThan(0);
+        for (const row of rows) expect(row).toMatch(/\bid="[^"]+"/);
+    });
+
+    // Red when the palette goes back to a hand-drawn dialog box.
+    it('is a bits-ui dialog, modal', () => {
+        const body = opened('');
+        expect(body).toMatch(/<[^>]*data-dialog-content[^>]*>/);
+        const content = /<[^>]*data-dialog-content[^>]*>/.exec(body)?.[0] ?? '';
+        expect(content).toContain('role="dialog"');
+        expect(content).toContain('aria-modal="true"');
+    });
+
+    // Red when the tray goes back to a hand-drawn dialog box.
+    it('draws the update tray as a bits-ui dialog, modal', () => {
+        const body = render(UpdateTray, {
+            context: clientContext(client),
+            props: { open: true, onclose: noop }
+        }).body;
+        const content = /<[^>]*data-dialog-content[^>]*>/.exec(body)?.[0] ?? '';
+        expect(content).toContain('role="dialog"');
+        expect(content).toContain('aria-modal="true"');
+    });
+});
+
 describe('UpdateTray', () => {
     it('draws the four tasks, the portfolio Chat row, their last runs and the inbox note', () => {
         // The inbox task's last run is the triage notes file's, which the `inbox` channel carries.
@@ -186,8 +236,9 @@ describe('UpdateTray', () => {
             context: clientContext(client),
             props: { open: true, onclose: noop }
         }).body;
-        expect(body).toMatch(/class="[^"]*ground[^"]*"[^>]*role="presentation"/);
-        expect(body).toMatch(/class="[^"]*tray[^"]*"[^>]*role="dialog"/);
+        expect(body).toMatch(/<div class="ground tray\b[^"]*"/);
+        const tray = /<div[^>]*class="tray\b[^"]*"[^>]*>/.exec(body)?.[0] ?? '';
+        expect(tray).toContain('role="dialog"');
     });
 
     it('marks no task row as confirming while tasks.skip_permissions is off', () => {

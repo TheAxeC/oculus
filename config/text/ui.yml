@@ -21,7 +21,6 @@ text:
         embed_refused_glyph: dismiss
         icons: Icons
         icons_title: Keep the icons on a terminal theme instead of their ASCII stand-ins.
-        menu_back: Back
         move_to_page: 'Move tab to {0}'
         move_to_page_list: Move tab to page...
         page_badge_tip: '{0} ({1})'

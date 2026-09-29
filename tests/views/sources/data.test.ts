@@ -332,7 +332,7 @@ describe('the dataset card as a card primitive', () => {
         }).body;
         for (const words of ['Size 2 GB', 'HPC ~/data/open', 'Fetch wget']) {
             const bubble = new RegExp(
-                `role="tooltip"[^>]*>${words.replace(/[.*+?^$()|[\]\\]/g, '\\$&')}<`
+                `class="words"[^>]*hidden[^>]*>${words.replace(/[.*+?^$()|[\]\\]/g, '\\$&')}<`
             );
             expect(html).toMatch(bubble);
         }
