@@ -27,7 +27,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:      # Q81, Q82 and Q87 building.
+dispatch:      # Q81 and Q82 building.
 - step: Q81
   executor: agent
   worker: claude:opus
@@ -38,7 +38,8 @@ dispatch:      # Q81, Q82 and Q87 building.
   report: agents/reviews/Q81-report.md
   landing: not-started
   round: 0
-  builder_usage: 63 tool uses, 291k tokens, 11 min, the cases hand-back
+  builder_usage: 63 tool uses, 291k tokens, 11 min, the cases hand-back; 203 tool uses, 117k tokens, 57 min, the build after the ruling
+  reviewer: acab87030fa9fa19d, launched 2026-09-29 (first refutation, running)
   cases: ruled at round 0 in agents/briefs/Q81-cases.md (case 5 to the look, the overlays' Escape through bits-ui with the shell's three Escape branches removed)
 - step: Q82
   executor: agent
@@ -50,23 +51,9 @@ dispatch:      # Q81, Q82 and Q87 building.
   report: agents/reviews/Q82-report.md
   landing: not-started
   round: 1, sent 2026-09-29 from worktree commit ec1939ba, agents/briefs/Q82-round1-sent.md
-  builder_usage: 97 tool uses, 339k tokens, 30 min
+  builder_usage: 97 tool uses, 339k tokens, 30 min; 55 tool uses, 167k tokens, 27 min, round 1
   reviewer_report: agents/reviews/Q82-refuter.md, reviewer a6d13a2b6f68312ca, 246k tokens, 72 tool uses, 17 min
   shared_paths: with Q81, package.json and package-lock.json (each adds its own dependencies: a hand merge of the dependency lines, then npm install), DESIGN.md (Q81 lines 216 and 306, Q82 line 309: different lines), HELP.md (Q81 lines 42 and 86, Q82 lines 55-56: different lines), docs/diagrams (a rerun of npm run diagrams), tests/ui/primitives.test.ts, tests/ui/wall.test.ts, tests/views/whole/type-scale.test.ts and tests/checks/tree/allow-styling.ts (keyed entries or cases of different components: a hand merge of separate lines)
-- step: Q87
-  executor: agent
-  worker: claude:opus
-  session_id: a90a035a247f77cec
-  worktree: .agents/worktrees/Q87
-  base: 34d32b78
-  launched: 2026-09-29
-  report: agents/reviews/Q87-report.md
-  landing: not-started
-  round: 1, sent 2026-09-29 from worktree commit 66772ee6, agents/briefs/Q87-round1-sent.md
-  builder_usage: 26 tool uses, 133k tokens, 6 min, the cases hand-back; 43 tool uses, 202k tokens, 14 min, the build after the ruling; 43 tool uses, 285k tokens, 12 min, round 1
-  reviewer_report: agents/reviews/Q87-refuter.md, reviewer a261d09361fbf1ffa, 167k tokens, 44 tool uses, 10 min
-  cases: ruled at round 0 in agents/briefs/Q87-cases.md (the import pattern, the launcher, same-file clones dropped, the mark over the TypeScript scanner's tokens)
-  shared_paths: with Q81 and Q82, package.json and package-lock.json (each adds its own dependencies, Q87 a devDependency: a hand merge of the dependency lines, then npm install)
 ```
 
 ## The standing demands (from Axel, in force)
@@ -460,6 +447,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-09-29. Q87 landed through /spec, /refute and /land (the duplication check on jscpd, the import checks hand-written by Z45 (a)); cases ruled at round 0, one repair round, refuted again; fixes at landing: the markup run reads every component as HTML, since jscpd's Svelte format skipped a component whose script and style hold fewer than fifty tokens, with a case; the false comment removed; the head comment on the eight-line floor and the smaller extent. Verify on main: `npm test` failed only on `tests/server/git/git-ops.test.ts`, which passes alone (37 of 37); the other five commands passed. In flight: Q81 (its first review) and Q82 (round 1 answered, its review next). Next: `/refute` Q82 over round 1.
 - 2026-09-29. Q86 landed through /spec, /refute and /land (the Map laid out by Graphviz's neato in the page); cases ruled at round 0, two repair rounds, each refuted again; fixes at landing: the diagrams merge, `context.ts` merged with Q101, the neato edge-length sentence in `layout.ts` and `DESIGN.md:290`, and the labels measured again once Graphviz has placed the nodes (found at the look). Verify on main: `npm test` had one failure in `tests/server/machine/hpc/ssh.test.ts`, a file the step does not change, passing alone; the other five commands exit 0. The look after the label fix is not taken: Axel took the tab to his own page. Next: `/spec` Q81 and Q82, then Q86b; Q87, D13 and X3c wait on Z45, Z46 and Z47.
 - 2026-09-29. Q101 landed through /spec, /refute and /land (each Terminal tab a terminal panel of its own, Z40 (d)); cases ruled at round 0, one repair round, refuted again; fixes at landing: the tab bar's New through the store's `composeInTab`, `DESIGN.md:208`, three composer sentences, the diagrams merge, the `saved.ts` conflict, and the scratch test's refused plant named after the run's directory (Z48 (a), Axel). Verify on main: `checks: 6 commands passed` (Test Files 352 passed, Tests 5642 passed). Axel ruled Z48 (a) and Z49 (a); step Q86b booked. Q86 reviewed after its two rounds. Next: land Q86 on top of Q101 with the look at the Map on TEST, then Q81 and Q82, which waited for Q101; Q87, D13 and X3c wait on Z45, Z46 and Z47.
 - 2026-09-29. Q79d landed through /spec, /refute and /land (the library audit's shared helpers, each written once); one repair round, refuted again; fixes at landing: the round review's three findings (head comments, `isFieldMap` and `bin` in the audit, the migration script's `isYamlMap`), the diagrams merge, and three defects Q100's landing left on main (the list-title rule written twice, three over-long comment lines, the type-scale expectation). Verify on main: `checks: 6 commands passed` (Test Files 351 passed, Tests 5597 passed). Q101's builder has reported. Next: Q101's review; Q87 stopped at `/spec` on Z45, D13 on Z46; Q81 and Q82 wait for Q101, whose terminal views and `Latex.svelte` they share; X3c stopped at `/spec` on Z47. Q86 launched beside Q101.

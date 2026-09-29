@@ -1,9 +1,8 @@
 /plan-orchestration oculus/migration
 
 In flight:
-- Q81 (menus, context menus, tooltips and dialogs on bits-ui; the palette on its Command list with fuzzysort): building.
-- Q82 (the tree on @zag-js/tree-view, the long explorer lists virtualized): building.
-- Q87 (the duplication check on jscpd; the import checks stay hand-written, Z45 (a)): building.
+- Q81 (menus, context menus, tooltips and dialogs on bits-ui; the palette on its Command list with fuzzysort): built, its first review running.
+- Q82 (the tree on @zag-js/tree-view, the long explorer lists virtualized): repair round 1 answered, its review next.
 Queued, in order:
 - Q79b (the tests, runs alone).
 - Q96 and Q88 (the Rail section's field labels and its icon dropdown on bits-ui, once Q81 has landed; right-click menus wherever vscode.dev gives one, the tab's menu left to X3c).
@@ -29,6 +28,7 @@ Queued, in order:
 The loop fills three slots as they free up; a line above is only an order, never a barrier, apart from the "once ... has landed" notes. A step's line moves to Landed, at the top of that list, in its landing commit.
 
 Landed, newest first: every step ticked in `plan.md`, each with the date and the commit that ticked it (the 15 steps dated 2026-09-10 at f8af492b were landed before the ledger was opened):
+- Q87 (the duplication check on jscpd; the import checks stay hand-written), 2026-09-29, the landing commit.
 - Q86 (the Map laid out by Graphviz's neato in the page), 2026-09-29, 27e7e27f.
 - Q101 (each Terminal tab a terminal panel of its own), 2026-09-29, 4490d3fc.
 - Q79d (the library audit's shared helpers, each written once), 2026-09-29, 703aec66.

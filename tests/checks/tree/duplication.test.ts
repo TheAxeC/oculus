@@ -1,30 +1,65 @@
 // Layer 4, test. A rule, a parser or a fold written a second time instead of reused.
 //
-// Every file under src/lib is read against every other, and every file under tests against every
-// other. Comments, blank lines, import statements and a component's style block are dropped and
-// whitespace is normalised, so a copy survives a reflow and a renamed comment while a shared import
-// list and a repeated CSS rule, neither of which is a rule written twice, are not counted; a window
-// of eight or more of the lines that are left, identical in two files, is a copy one of the two
-// should be importing.
+// jscpd reads every TypeScript, JavaScript and Svelte file under src/lib, and separately every one
+// under tests, and reports each run of tokens two places share: fifty tokens at least, over eight
+// lines at least in one of the two files, comments and whitespace aside, and import statements
+// skipped, so a shared import list is not counted. A clone in a component's style block is
+// dropped, since a repeated CSS rule is not a rule written twice, and so is a clone whose two ends
+// sit in one file: what this check finds is a copy one file should be importing from the other.
+//
+// jscpd reads a component's markup with its script and style bodies as a few opaque tokens, so a
+// markup clone could run through two script or style blocks whose text differs. The check therefore
+// runs jscpd twice per group: once for code, keeping clones that are neither CSS nor markup, and
+// once with every script and style block skipped, keeping its markup clones alone. A component's
+// script and style blocks are never part of a markup clone; its script's code is compared in the
+// first run. The second run reads a component as HTML alone, since jscpd's Svelte format skips a
+// whole component whose script and style blocks together hold fewer than fifty tokens, markup and
+// all.
+//
+// A clone's length is the number of lines both ends hold: the smaller of its two extents, since one
+// file can lay the same tokens on fewer lines than the other, or end its extent on a line the other
+// does not reach. It can therefore be under eight.
+//
+// jscpd 5 is a native program with no Node API, so the check runs the package's own launcher and
+// reads each JSON report from a scratch directory that is removed after the read.
 //
 // The two groups are kept apart because a helper a test shares with the code it covers is not a
 // copy: the test reaches the module. DELIBERATE names the pairs that share on purpose, each with
 // its reason; HELD is what the tree already shared when the check landed, so that a pair added from
 // now on fails.
 
-import { mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join, resolve, sep } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { afterAll, afterEach, describe, expect, it } from 'vitest';
-import { readFileSync as readAllow } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
+import { readFileSync, realpathSync, rmSync } from 'node:fs';
+import { join, relative, resolve, sep } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import ts from 'typescript';
+import { afterAll, describe, expect, it } from 'vitest';
 import { isReason } from '../../fixtures/reason.ts';
-import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
+import { plantScratch, scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
 
 afterAll(sweepScratch);
 
 const ROOT = resolve(fileURLToPath(import.meta.url), '..', '..', '..', '..');
+
+/** The package's own launcher, which runs the jscpd binary built for this machine. */
+const JSCPD = join(ROOT, 'node_modules', 'jscpd', 'run-jscpd.js');
+
+/** The least run of lines, and of tokens, that is a copy rather than a coincidence of shape. */
+const MIN_LINES = 8;
+const MIN_TOKENS = 50;
+
+/** Every static import statement, on one line or several, wherever in the file it sits. */
+const IMPORTS = String.raw`(?m)^\s*import\b[^;]*;`;
+
+/** The files the run for code reads, each in its own format. */
+const CODE_FORMATS = ['--format', 'typescript,javascript,svelte'];
+
+/** The files the run for markup reads: every component as HTML, whatever its blocks hold. */
+const MARKUP_FORMATS = ['--format', 'html', '--formats-exts', 'html:svelte'];
+
+/** A component's style and script blocks, skipped in the run that keeps markup clones. */
+const BLOCKS = [String.raw`(?s)<style[^>]*>.*?</style>`, String.raw`(?s)<script[^>]*>.*?</script>`];
 
 /**
  * A clone two files share: the pair, the mark of the lines themselves, and the reason it is listed.
@@ -34,9 +69,27 @@ const ROOT = resolve(fileURLToPath(import.meta.url), '..', '..', '..', '..');
  */
 export type Pair = { a: string; b: string; mark: string; why: string };
 
-/** The mark of one window: the shortest reading of its lines that two windows cannot share. */
-export function markOf(window: string): string {
-    return createHash('sha256').update(window).digest('hex').slice(0, 12);
+/** The tokens of a fragment as the TypeScript scanner reads them, past comments and spaces. */
+function tokensOf(fragment: string): string[] {
+    const scanner = ts.createScanner(
+        ts.ScriptTarget.Latest,
+        true,
+        ts.LanguageVariant.Standard,
+        fragment
+    );
+    const found: string[] = [];
+    for (let kind = scanner.scan(); kind !== ts.SyntaxKind.EndOfFileToken; kind = scanner.scan()) {
+        found.push(scanner.getTokenText());
+    }
+    return found;
+}
+
+/**
+ * The mark of a clone: its tokens joined by one space and hashed, so that a comment or a reflow
+ * inside the clone, in whichever file jscpd takes its fragment from, does not move it.
+ */
+export function markOf(fragment: string): string {
+    return createHash('sha256').update(tokensOf(fragment).join(' ')).digest('hex').slice(0, 12);
 }
 
 /**
@@ -64,85 +117,64 @@ export function readHeld(text: string): Pair[] {
 }
 
 export const HELD = readHeld(
-    readAllow(join(ROOT, 'tests', 'checks', 'tree', 'allow-duplication.txt'), 'utf8')
+    readFileSync(join(ROOT, 'tests', 'checks', 'tree', 'allow-duplication.txt'), 'utf8')
 );
 
-/** The least run of identical lines that is a copy rather than a coincidence of shape. */
-const WINDOW = 8;
+/** One end of a clone as jscpd's JSON report gives it. */
+type End = { name: string; start: number; end: number };
+
+/** One clone of jscpd's JSON report, the fields this check reads. */
+type Reported = {
+    format: string;
+    fragment: string;
+    firstFile: End;
+    secondFile: End;
+};
+
+/** A clone the check reports: both ends as paths under the root, its length and its mark. */
+type Copy = {
+    left: string;
+    leftAt: number;
+    right: string;
+    rightAt: number;
+    lines: number;
+    mark: string;
+};
 
 /**
- * Where a block comment opens on one line, or -1. A `/*` inside a quoted string is text, and one
- * after a `//` outside a string is inside a line comment, so neither opens a block.
+ * jscpd's clones in one group, skipping the tokens the patterns match, read from its JSON report in
+ * a scratch directory removed after.
  */
-function blockOpens(line: string): number {
-    let quote = '';
-    for (let at = 0; at < line.length; at += 1) {
-        const one = line[at];
-        if (quote !== '') {
-            if (one === '\\') at += 1;
-            else if (one === quote) quote = '';
-            continue;
-        }
-        if (one === "'" || one === '"' || one === '`') quote = one;
-        else if (one === '/' && line[at + 1] === '/') return -1;
-        else if (one === '/' && line[at + 1] === '*') return at;
+function detect(root: string, group: string, formats: string[], skip: string[]): Reported[] {
+    const out = scratchDir('oculus-jscpd-');
+    try {
+        execFileSync(
+            process.execPath,
+            [
+                JSCPD,
+                '--min-lines',
+                String(MIN_LINES),
+                '--min-tokens',
+                String(MIN_TOKENS),
+                ...formats,
+                '--ignore-pattern',
+                skip.join(','),
+                '--reporters',
+                'json',
+                '--output',
+                out,
+                '--absolute',
+                join(root, group)
+            ],
+            { stdio: 'pipe' }
+        );
+        const report = JSON.parse(readFileSync(join(out, 'jscpd-report.json'), 'utf8')) as {
+            duplicates: Reported[];
+        };
+        return report.duplicates;
+    } finally {
+        rmSync(out, { recursive: true, force: true });
     }
-    return -1;
-}
-
-/** One file's lines that carry code, each with the line number the file holds it at. */
-export function meaningful(text: string, dropStyle = false): { at: number; code: string }[] {
-    const found: { at: number; code: string }[] = [];
-    let inBlock = false;
-    let inStyle = false;
-    let inImport = false;
-    const lines = text.split('\n');
-    for (let at = 0; at < lines.length; at += 1) {
-        let line = lines[at];
-        if (dropStyle) {
-            if (line.startsWith('<style')) inStyle = true;
-            else if (inStyle && line.startsWith('</style>')) inStyle = false;
-            else if (inStyle) continue;
-            if (/^<\/?style/.test(line)) continue;
-        }
-        if (inImport) {
-            if (/;\s*$/.test(line)) inImport = false;
-            continue;
-        }
-        if (/^\s*import\b/.test(line)) {
-            if (!/;\s*$/.test(line)) inImport = true;
-            continue;
-        }
-        if (inBlock) {
-            const ends = line.indexOf('*/');
-            if (ends === -1) continue;
-            line = line.slice(ends + 2);
-            inBlock = false;
-        }
-        const opens = blockOpens(line);
-        if (opens !== -1 && !line.includes('*/', opens)) {
-            line = line.slice(0, opens);
-            inBlock = true;
-        }
-        const code = line
-            .replace(/\/\/.*$/, '')
-            .replace(/\s+/g, ' ')
-            .trim();
-        if (code === '') continue;
-        found.push({ at: at + 1, code });
-    }
-    return found;
-}
-
-/** Every file of the given extensions under a root, as paths relative to it. */
-export function filesUnder(root: string, prefix = ''): string[] {
-    const found: string[] = [];
-    for (const entry of readdirSync(join(root, prefix), { withFileTypes: true })) {
-        const rel = prefix === '' ? entry.name : `${prefix}/${entry.name}`;
-        if (entry.isDirectory()) found.push(...filesUnder(root, rel));
-        else if (/\.(ts|svelte)$/.test(entry.name)) found.push(rel);
-    }
-    return found;
 }
 
 /** Whether this clone of this pair is on the allow list, in either order. */
@@ -153,63 +185,57 @@ function deliberate(allow: Pair[], a: string, b: string, mark: string): boolean 
 }
 
 /**
- * Every window of WINDOW lines two files of one group share.
+ * The file one end of a clone sits in, as a path under the root. jscpd names a block of a component
+ * by its file and the block's format (`Row.svelte:html`), and gives the line in the file itself.
+ */
+function fileOf(base: string, name: string): string {
+    return relative(base, name.replace(/\.svelte:[a-z]+$/, '.svelte'))
+        .split(sep)
+        .join('/');
+}
+
+/** The lines both ends of a clone hold: the smaller of its two extents. */
+function heldLines(one: Reported): number {
+    return Math.min(
+        one.firstFile.end - one.firstFile.start + 1,
+        one.secondFile.end - one.secondFile.start + 1
+    );
+}
+
+/**
+ * Every clone two files of one group share that the allow list does not name: the code clones of a
+ * run over the whole files, and the markup clones of a run with every script and style block
+ * skipped.
  *
- * A clone longer than the window matches at every offset inside it; only the first offset of a run
- * is reported, so a thirty-line copy is one line of output rather than twenty-three.
+ * jscpd reports a clone once, at the line it starts on in each file, however long it runs.
  */
 export function copies(
     root: string,
     group: string,
     allow: Pair[] = [...DELIBERATE, ...HELD]
-): { left: string; leftAt: number; right: string; rightAt: number; mark: string }[] {
-    const windows = new Map<string, { file: string; at: number; index: number }[]>();
-    for (const rel of filesUnder(root, group)) {
-        const lines = meaningful(readFileSync(join(root, rel), 'utf8'), rel.endsWith('.svelte'));
-        for (let index = 0; index + WINDOW <= lines.length; index += 1) {
-            const key = lines
-                .slice(index, index + WINDOW)
-                .map((one) => one.code)
-                .join('\n');
-            const held = windows.get(key) ?? [];
-            held.push({ file: rel, at: lines[index].at, index });
-            windows.set(key, held);
-        }
-    }
-    const pairs = new Map<
-        string,
-        { left: string; leftAt: number; right: string; rightAt: number; mark: string }
-    >();
-    for (const [window, held] of windows) {
-        if (held.length < 2) continue;
-        const mark = markOf(window);
-        for (let one = 0; one < held.length; one += 1) {
-            for (let two = one + 1; two < held.length; two += 1) {
-                const left = held[one];
-                const right = held[two];
-                if (left.file === right.file) continue;
-                pairs.set(`${left.file}:${left.index}|${right.file}:${right.index}`, {
-                    left: left.file,
-                    leftAt: left.at,
-                    right: right.file,
-                    rightAt: right.at,
-                    mark
-                });
-            }
-        }
-    }
-    const found: { left: string; leftAt: number; right: string; rightAt: number; mark: string }[] =
-        [];
-    // The allow list is read after the run suppression, so what a list silences cannot change which
-    // offset of a clone is the one reported.
-    for (const [key, pair] of pairs) {
-        const [leftPart, rightPart] = key.split('|');
-        const leftIndex = Number(leftPart.slice(leftPart.lastIndexOf(':') + 1));
-        const rightIndex = Number(rightPart.slice(rightPart.lastIndexOf(':') + 1));
-        const before = `${pair.left}:${leftIndex - 1}|${pair.right}:${rightIndex - 1}`;
-        if (pairs.has(before)) continue;
-        if (deliberate(allow, pair.left, pair.right, pair.mark)) continue;
-        found.push(pair);
+): Copy[] {
+    const base = realpathSync(root);
+    const found: Copy[] = [];
+    const code = detect(base, group, CODE_FORMATS, [IMPORTS]).filter(
+        (one) => one.format !== 'css' && one.format !== 'html'
+    );
+    const markup = detect(base, group, MARKUP_FORMATS, [IMPORTS, ...BLOCKS]).filter(
+        (one) => one.format === 'html'
+    );
+    for (const one of [...code, ...markup]) {
+        const left = fileOf(base, one.firstFile.name);
+        const right = fileOf(base, one.secondFile.name);
+        if (left === right) continue;
+        const mark = markOf(one.fragment);
+        if (deliberate(allow, left, right, mark)) continue;
+        found.push({
+            left,
+            leftAt: one.firstFile.start,
+            right,
+            rightAt: one.secondFile.start,
+            lines: heldLines(one),
+            mark
+        });
     }
     return found;
 }
@@ -219,61 +245,56 @@ export function findCopies(root: string, group: string, allow?: Pair[]): string[
     return copies(root, group, allow)
         .map(
             (one) =>
-                `${one.left}:${one.leftAt} and ${one.right}:${one.rightAt} hold the same ${WINDOW} lines (${one.mark})`
+                `${one.left}:${one.leftAt} and ${one.right}:${one.rightAt} hold the same ${one.lines} lines (${one.mark})`
         )
         .sort();
 }
 
-/** The file pairs a group shares a window in, whatever the allow list says. */
+/** The clones a group shares, as pair and mark, whatever the allow list says. */
 export function sharedPairs(root: string, group: string): Set<string> {
     const found = new Set<string>();
     for (const one of copies(root, group, [])) found.add(`${one.left}|${one.right}|${one.mark}`);
     return found;
 }
 
-const made: string[] = [];
-
-afterEach(() => {
-    for (const dir of made.splice(0)) rmSync(dir, { recursive: true, force: true });
-});
-
-/** A scratch tree with the files a case plants, checked to be inside the temporary directory. */
+/** A scratch tree with the files a case plants. */
 function scratch(files: Record<string, string>): string {
-    const dir = scratchDir('oculus-duplication-');
-    expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
-    made.push(dir);
-    for (const [rel, body] of Object.entries(files)) {
-        const full = join(dir, rel);
-        expect(resolve(full).startsWith(resolve(dir) + sep)).toBe(true);
-        mkdirSync(join(full, '..'), { recursive: true });
-        writeFileSync(full, body, 'utf8');
-    }
-    return dir;
+    return plantScratch('oculus-duplication-', files);
 }
 
-/** The mark the fixture's own eight lines carry, so a case names the clone it planted. */
-function markOfBlock(): string {
-    return markOf(
-        meaningful(block())
-            .slice(0, WINDOW)
-            .map((one) => one.code)
-            .join('\n')
-    );
-}
-
-/** Eight lines of code, numbered so a caller can make a second copy differ in one of them. */
-function block(differs = ''): string {
+/** A function of twelve lines and well over fifty tokens. */
+function twelve(): string {
     return [
-        'export function fold(rows: string[]): string {',
+        'export function fold(rows: string[], limit: number): string {',
         '    let held = 0;',
         '    for (const row of rows) {',
-        `        held += row.length;${differs}`,
+        '        if (row.length > limit) continue;',
+        '        held += row.length;',
         '    }',
         '    const out = String(held);',
         '    const trimmed = out.trim();',
-        '    return trimmed;',
+        "    const padded = trimmed.padStart(8, '0');",
+        '    const tail = padded.slice(-limit);',
+        '    return tail.toUpperCase();',
         '}'
     ].join('\n');
+}
+
+/** The line case 1 reports for a pair holding twelve() at the top of both files. */
+function reported(lines = 12): string {
+    return `group/one.ts:1 and group/two.ts:1 hold the same ${lines} lines (${markOf(twelve())})`;
+}
+
+/** The allow list entry for the clone case 1 plants. */
+function listed(): Pair[] {
+    return [
+        {
+            a: 'group/one.ts',
+            b: 'group/two.ts',
+            mark: markOf(twelve()),
+            why: 'the case over the list'
+        }
+    ];
 }
 
 describe('a rule written twice', () => {
@@ -285,33 +306,34 @@ describe('a rule written twice', () => {
         expect(findCopies(ROOT, 'tests')).toEqual([]);
     });
 
-    it('catches a window of eight lines held in two files', () => {
-        const dir = scratch({ 'group/one.ts': block(), 'group/two.ts': block() });
-        expect(findCopies(dir, 'group', [])).toEqual([
-            `group/one.ts:1 and group/two.ts:1 hold the same 8 lines (${markOfBlock()})`
-        ]);
+    it('reports a shared twelve-line function once, naming both files, the start and the mark', () => {
+        const dir = scratch({ 'group/one.ts': twelve(), 'group/two.ts': twelve() });
+        expect(findCopies(dir, 'group', [])).toEqual([reported()]);
     });
 
-    it('reports a copy longer than the window once, at the line it starts on', () => {
-        const long = `${block()}\n${block(' held += 1;')}`;
-        const dir = scratch({ 'group/one.ts': long, 'group/two.ts': long });
-        expect(findCopies(dir, 'group', [])).toEqual([
-            `group/one.ts:1 and group/two.ts:1 hold the same 8 lines (${markOfBlock()})`
-        ]);
-    });
-
-    it('passes two files that differ inside the window, and a copy of seven lines', () => {
-        const differing = scratch({
-            'group/one.ts': block(),
-            'group/two.ts': block(' held += 1;')
+    it('passes a copy of seven lines, and one of twelve lines under fifty tokens', () => {
+        const seven = [
+            'export function fold(rows: string[], limit: number): string {',
+            '    let held = 0; for (const row of rows) held += row.length > limit ? 0 : row.length;',
+            "    const out = String(held).trim().padStart(8, '0');",
+            '    const tail = out.slice(-limit).toUpperCase();',
+            '    const again = tail.repeat(2).slice(0, limit).toLowerCase();',
+            '    return again.length > 0 ? again : tail;',
+            '}'
+        ].join('\n');
+        // Lines of their own on either side, so the copy is held in the middle of each file.
+        const short = scratch({
+            'group/one.ts': `let aa = 1;\n${seven}\nfunction bb() {}\n`,
+            'group/two.ts': `class Cc {}\n${seven}\nlet dd = [1];\n`
         });
-        expect(findCopies(differing, 'group', [])).toEqual([]);
-        const seven = block().split('\n').slice(0, 7).join('\n');
-        const short = scratch({ 'group/one.ts': seven, 'group/two.ts': seven });
         expect(findCopies(short, 'group', [])).toEqual([]);
+        const thin = Array.from({ length: 12 }, () => 'f();').join('\n');
+        expect(tokensOf(thin)).toHaveLength(48);
+        const light = scratch({ 'group/one.ts': thin, 'group/two.ts': thin });
+        expect(findCopies(light, 'group', [])).toEqual([]);
     });
 
-    it('drops an import list and a style block before it compares', () => {
+    it('passes two files sharing only an import list, on one line each or across several', () => {
         const head = [
             "import { join } from 'node:path';",
             "import { tmpdir } from 'node:os';",
@@ -322,59 +344,244 @@ describe('a rule written twice', () => {
             "import { rmSync } from 'node:fs';",
             "import { resolve } from 'node:path';"
         ].join('\n');
-        const style = [
-            '<style>',
-            '    .row {',
+        const dir = scratch({
+            'group/one.ts': `${head}\nexport const one = join(tmpdir(), 'one');\n`,
+            'group/two.ts': `${head}\nexport const two = resolve(tmpdir(), 'two');\n`
+        });
+        expect(findCopies(dir, 'group', [])).toEqual([]);
+        const names = ['join', 'resolve', 'relative', 'dirname', 'basename', 'extname', 'sep'];
+        const several = `// the paths\nimport {\n${names
+            .map((one) => `    ${one},`)
+            .join(
+                '\n'
+            )}\n    normalize,\n    isAbsolute,\n    parse,\n    format,\n    delimiter,\n    posix,\n    win32,\n    toNamespacedPath,\n    matchesGlob\n} from 'node:path';\n`;
+        const wrapped = scratch({
+            'group/one.ts': `${several}export const one = join('a', 'b');\n`,
+            'group/two.ts': `${several}export const two = resolve('c');\n`
+        });
+        expect(findCopies(wrapped, 'group', [])).toEqual([]);
+    });
+
+    it('names a copy in the script of two components by the files and their own lines', () => {
+        const script = (tail: string) =>
+            `<script lang="ts">\n${twelve()}\n    ${tail}\n</script>\n\n<p>{held}</p>\n`;
+        const dir = scratch({
+            'group/one.svelte': script('const held = 1;'),
+            'group/two.svelte': `<!-- two -->\n${script('export const held = 2;')}`
+        });
+        expect(findCopies(dir, 'group', [])).toEqual([
+            `group/one.svelte:2 and group/two.svelte:3 hold the same 12 lines (${markOf(twelve())})`
+        ]);
+    });
+
+    it('passes two components sharing only a style block', () => {
+        const rule = (name: string) => [
+            `    .${name} {`,
             '        display: flex;',
             '        gap: 1px;',
             '        margin: 0;',
             '        padding: 0;',
             '        border: 0;',
-            '    }',
-            '</style>'
-        ].join('\n');
+            '        color: inherit;',
+            '    }'
+        ];
+        const style = ['<style>', ...rule('row'), ...rule('cell'), '</style>'].join('\n');
         const dir = scratch({
-            'group/one.svelte': `${head}\n${style}\n${block()}`,
-            'group/two.svelte': `${head}\n${style}\n${block(' held += 1;')}`
+            'group/one.svelte': `<script lang="ts">\n    let one = 1;\n</script>\n\n<p>{one}</p>\n\n${style}\n`,
+            'group/two.svelte': `<script lang="ts">\n    let two = 2;\n</script>\n\n<b>{two}</b>\n\n${style}\n`
         });
         expect(findCopies(dir, 'group', [])).toEqual([]);
     });
 
-    it('drops comments and whitespace before it compares, and the allow list silences a pair', () => {
-        const commented = block().replace('let held = 0;', 'let  held  =  0; // the running sum');
-        const dir = scratch({ 'group/one.ts': block(), 'group/two.ts': commented });
-        expect(findCopies(dir, 'group', [])).toEqual([
-            `group/one.ts:1 and group/two.ts:1 hold the same 8 lines (${markOfBlock()})`
-        ]);
-        const allowed = [
-            {
-                a: 'group/one.ts',
-                b: 'group/two.ts',
-                mark: markOfBlock(),
-                why: 'the case over the list'
-            }
-        ];
-        expect(findCopies(dir, 'group', allowed)).toEqual([]);
-        // A second clone between the same two files is a clone of its own, with a mark of its own.
-        const twice = scratch({
-            'group/one.ts': `${block()}\nconst gapOne = 1;\n${block(' held += 1;')}`,
-            'group/two.ts': `${commented}\nconst gapTwo = 2;\n${block(' held += 1;')}`
-        });
-        expect(findCopies(twice, 'group', allowed)).toHaveLength(1);
+    it('sees through a comment and extra spaces in the second file, with the mark unchanged', () => {
+        const commented = twelve()
+            .replace('let held = 0;', 'let  held  =  0; // the running sum')
+            .replace('const out = String(held);', 'const   out = String( held );');
+        const dir = scratch({ 'group/one.ts': twelve(), 'group/two.ts': commented });
+        expect(findCopies(dir, 'group', [])).toEqual([reported()]);
     });
 
-    it('opens no block comment at a /* inside a line comment or a string', () => {
-        const text = [
-            '// a folder ending in /**',
-            'const a = 1;',
-            "const globs = ['views/shared/**', 'state/**'];",
-            'const b = 2;'
+    it('keeps the mark when a comment line is added inside the clone in the first file', () => {
+        const commented = twelve().replace(
+            '    let held = 0;',
+            '    // the running sum\n    let held = 0;'
+        );
+        const dir = scratch({ 'group/one.ts': commented, 'group/two.ts': twelve() });
+        const found = copies(dir, 'group', []);
+        expect(found.map((one) => one.mark)).toEqual([markOf(twelve())]);
+        expect(findCopies(dir, 'group', listed())).toEqual([]);
+    });
+
+    it('silences the listed clone of a pair and not a second one between the same files', () => {
+        const once = scratch({ 'group/one.ts': twelve(), 'group/two.ts': twelve() });
+        expect(findCopies(once, 'group', listed())).toEqual([]);
+        const other = twelve()
+            .replace(/fold/g, 'gather')
+            .replace(/held/g, 'total')
+            .replace(/limit/g, 'cap')
+            .replace('toUpperCase', 'toLowerCase');
+        const twice = scratch({
+            'group/one.ts': `${twelve()}\n\nlet gapOne = [1, 2, 3].map((n) => n * 2);\n\n${other}\n`,
+            'group/two.ts': `${twelve()}\n\nfunction gapTwo(): void {}\n\n${other}\n`
+        });
+        const second = findCopies(twice, 'group', listed());
+        expect(second).toHaveLength(1);
+        expect(second[0]).toContain(`(${markOf(other)})`);
+    });
+
+    it('keeps the groups apart: a file under src/lib and one under tests are not a pair', () => {
+        const dir = scratch({ 'src/lib/one.ts': twelve(), 'tests/one.ts': twelve() });
+        expect(findCopies(dir, 'src/lib', [])).toEqual([]);
+        expect(findCopies(dir, 'tests', [])).toEqual([]);
+    });
+
+    it('reports shared markup alone, from its first line, when the scripts and styles differ', () => {
+        const markup = [
+            '<nav class="rail" aria-label="pages">',
+            '    <ul class="list">',
+            '        <li class="item"><a href="/one" title="One">One</a></li>',
+            '        <li class="item"><a href="/two" title="Two">Two</a></li>',
+            '        <li class="item"><a href="/three" title="Three">Three</a></li>',
+            '        <li class="item"><a href="/four" title="Four">Four</a></li>',
+            '        <li class="item"><a href="/five" title="Five">Five</a></li>',
+            '    </ul>',
+            '    <footer class="foot"><span class="note">pages</span></footer>',
+            '    <p class="hint">Press a page to open it.</p>',
+            '</nav>'
         ].join('\n');
-        expect(meaningful(text)).toEqual([
-            { at: 2, code: 'const a = 1;' },
-            { at: 3, code: "const globs = ['views/shared/**', 'state/**'];" },
-            { at: 4, code: 'const b = 2;' }
+        const one = [
+            '<script lang="ts">',
+            ...twelve().split('\n'),
+            '</script>',
+            '',
+            markup,
+            '',
+            '<style>',
+            '    .rail {',
+            '        display: flex;',
+            '    }',
+            '</style>'
+        ].join('\n');
+        const two = [
+            '<script lang="ts">',
+            '    export class Pages {',
+            '        private readonly names = new Map<string, number[]>();',
+            '        public add(name: string, at: number): void {',
+            '            const held = this.names.get(name) ?? [];',
+            '            held.push(at * 2 + 1);',
+            '            this.names.set(name, held);',
+            '        }',
+            '    }',
+            '</script>',
+            '',
+            markup,
+            '',
+            '<style>',
+            '    .rail {',
+            '        display: grid;',
+            '        gap: 2px;',
+            '    }',
+            '</style>'
+        ].join('\n');
+        const dir = scratch({ 'group/one.svelte': one, 'group/two.svelte': two });
+        expect(findCopies(dir, 'group', [])).toEqual([
+            `group/one.svelte:16 and group/two.svelte:12 hold the same 11 lines (${markOf(markup)})`
         ]);
+    });
+
+    // Red when the markup run reads components in jscpd's Svelte format, which skips a component
+    // whose script and style blocks together hold fewer than fifty tokens.
+    it('reports shared markup between two components whose scripts are short and which have no style', () => {
+        const markup = [
+            '<nav class="rail" aria-label="pages">',
+            '    <ul class="list">',
+            '        <li class="item"><a href="/one" title="One">One</a></li>',
+            '        <li class="item"><a href="/two" title="Two">Two</a></li>',
+            '        <li class="item"><a href="/three" title="Three">Three</a></li>',
+            '        <li class="item"><a href="/four" title="Four">Four</a></li>',
+            '        <li class="item"><a href="/five" title="Five">Five</a></li>',
+            '    </ul>',
+            '    <footer class="foot"><span class="note">pages</span></footer>',
+            '    <p class="hint">Press a page to open it.</p>',
+            '</nav>'
+        ].join('\n');
+        const dir = scratch({
+            'group/one.svelte': [
+                '<script lang="ts">',
+                '    let open = 1;',
+                '</script>',
+                '',
+                markup
+            ].join('\n'),
+            'group/two.svelte': [
+                '<script lang="ts">',
+                '    let shut = 2;',
+                '</script>',
+                '',
+                markup
+            ].join('\n')
+        });
+        expect(findCopies(dir, 'group', [])).toEqual([
+            `group/one.svelte:5 and group/two.svelte:5 hold the same 11 lines (${markOf(markup)})`
+        ]);
+    });
+
+    it('passes two components whose scripts differ in one value and whose markup differs', () => {
+        const component = (order: number, body: string) =>
+            [
+                '<script module lang="ts">',
+                "    import type { ViewRegistration } from '$lib/registry';",
+                '    export const registration: ViewRegistration = {',
+                "        id: 'views',",
+                "        label: 'views.label',",
+                "        glyph: 'views.glyph',",
+                "        group: 'views',",
+                `        order: ${order},`,
+                '        wide: false,',
+                '        tinted: true,',
+                "        keys: ['open', 'close']",
+                '    };',
+                '</script>',
+                '',
+                '<script lang="ts">',
+                "    import Pane from '$lib/ui/frame/Pane.svelte';",
+                "    import type { ViewProps } from '$lib/registry';",
+                '',
+                '    let { instance }: ViewProps = $props();',
+                '    const label = instance.id.toUpperCase();',
+                '</script>',
+                '',
+                '<!-- The box every view has; this one draws its rows straight into it, so it asks for the tint. -->',
+                '<Pane title={label} tinted>',
+                '    <div class="view" data-instance={instance.id}>',
+                `        ${body}`,
+                '    </div>',
+                '</Pane>'
+            ].join('\n');
+        const dir = scratch({
+            'group/one.svelte': component(0, '<p class="one">{label}</p>'),
+            'group/two.svelte': component(1, '<b>{instance.id}</b>')
+        });
+        expect(findCopies(dir, 'group', [])).toEqual([]);
+    });
+
+    it('names the lines both ends hold when one extent runs a line further', () => {
+        const dir = scratch({
+            'group/one.ts': `${twelve()}\n\nexport const one = 1;\n`,
+            'group/two.ts': `${twelve()}\nexport function two(): void {}\n`
+        });
+        const found = copies(dir, 'group', []);
+        expect(found).toHaveLength(1);
+        expect(found[0].lines).toBe(13);
+        expect(findCopies(dir, 'group', [])).toEqual([
+            `group/one.ts:1 and group/two.ts:1 hold the same 13 lines (${found[0].mark})`
+        ]);
+    });
+
+    it('passes one file holding the same function twice', () => {
+        const other = twelve().replace('fold', 'foldAgain');
+        const dir = scratch({ 'group/one.ts': `${twelve()}\n\n${other}\n` });
+        expect(findCopies(dir, 'group', [])).toEqual([]);
     });
 
     it('holds every entry of both lists to a reason', () => {
@@ -389,7 +596,7 @@ describe('a rule written twice', () => {
         expect(isReason('the two fold the same rule')).toBe(true);
     });
 
-    it('holds the lists to pairs that still share, so a repaired copy takes its entry with it', () => {
+    it('holds the lists to clones that are still shared, so a repaired copy takes its entry with it', () => {
         const sharing = new Set([...sharedPairs(ROOT, 'src/lib'), ...sharedPairs(ROOT, 'tests')]);
         const stale = [...DELIBERATE, ...HELD]
             .filter(

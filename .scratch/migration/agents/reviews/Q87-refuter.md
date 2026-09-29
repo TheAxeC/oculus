@@ -103,3 +103,134 @@ Time, old check against new (scratch copies of the worktree tree, node_modules l
 ## Usage
 
 Reviewer: 167,477 tokens, 44 tool uses, 599 s (from its completion notice).
+
+## Repair round 1, refuted
+
+### Verification
+
+From `tools/oculus` in the worktree, `PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH sh ~/.claude/skills/land/templates/checks.sh .../Q87/tools/oculus/.scratch/migration/orchestrator-state.md </dev/null`:
+```
+ FAIL  tests/server/git/git-ops.test.ts > through the endpoint, with the real operations > routes each action to its own operation with its own fields
+Error: Test timed out in 5000ms.
+ Test Files  1 failed | 352 passed (353)
+      Tests  1 failed | 5666 passed | 1 skipped (5668)
+   Duration  140.10s
+checks: failed with exit 1: npm test
+```
+The step does not change `git-ops.test.ts`. Run alone, `npx vitest run tests/server/git/git-ops.test.ts` gave `Test Files  1 passed (1)` and `Tests  37 passed (37)`. The script stops at the first failure, so I ran the other five commands by hand:
+```
+npm run check         -> COMPLETED 1494 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS, exit 0
+npm run build         -> exit 0
+npm run format:check  -> All matched files use Prettier code style!, exit 0
+npm run lint          -> exit 0
+! LC_ALL=C grep -rna '[^ -~]' src tests -> exit 0
+git status --short    -> M allow-duplication.txt, M duplication.test.ts, ?? Q87-report.md (no leftovers)
+```
+Reruns of what the report quotes:
+```
+npx vitest run tests/checks/tree/duplication.test.ts -> Tests 17 passed (17), Duration 4.57s, real 6.15
+grep -vc "^#\|^$" allow-duplication.txt -> 191; ^src/ 47; ^tests/ 144
+wc -l (worktree): package.json 57, package-lock.json 4498, duplication.test.ts 565, allow-duplication.txt 204
+wc -l (main): 56, 4347, 403, 654
+grep -c "blockOpens\|meaningful\|WINDOW" over main's duplication.test.ts -> 12
+Open items in main's orchestrator-state.md:130 -> "- None." (the report quotes the same)
+```
+First runs against the base check. I copied main's `duplication.test.ts`, its allow list, `scratch.ts` and `reason.ts` into `scratchpad/Q87-round1-refute/base` over copies of the worktree's `src` and `tests`, added the three cases in the base API, and ran with `-t "refuter against"`:
+```
+Tests  1 failed | 2 passed | 10 skipped (13)
+x R names a copy in the script of two components ...
+-   "group/one.svelte:2 and group/two.svelte:3 hold the same 12 lines (93692309eb71)",
++   "group/one.svelte:1 and group/two.svelte:2 hold the same 8 lines (46e233aa7031)",
+```
+This matches report correction 5 exactly.
+
+Reverts, each applied to a copy of the new test in `scratchpad/Q87-round1-refute/tree` (with `src` and `tests` copied and `node_modules` linked), run, then restored:
+```
+unchanged copy                                  -> Tests 17 passed (17)
+one run, html kept in code run, markup run gone -> x src/lib, x passes two components whose scripts differ..., x reports shared markup alone... (3 failed)
+markup run without the block patterns           -> the same three red
+code run also skips the blocks                  -> x names a copy in the script of two components..., x under tests, x holds the lists... (3 failed)
+count = first extent                            -> x names the lines both ends hold... (1 failed)
+count = Math.max                                -> x names the lines both ends hold... (1 failed)
+```
+Launcher runs over `src/lib` with the check's flags, the reports going to my scratch folder:
+```
+markup run: 16 html clones, 9 cross-file (RailPages/Catalogue, Radar/Venues, ChangesRepo/ChangesTouched, Data/Venues, DatasetCard/VenueCard, DatasetCard/DomainCard, Facets/Facets, VenueCard/DomainCard, DomainCard/LineCard); no html fragment holds "<script" or "<style"
+code run:   50 typescript clones; none of their fragments holds "<script" or "<style"
+markup run formats: html sources 228, svelte 228 (of 244 components); at --min-tokens 1: 244 and 244, 1 cross-file html clone
+```
+Time. I ran the base check and the new check alternately, over the same copied tree, at load average 4.92 to 5.45:
+```
+base: 5.21s (first run), then 1.16s, 1.26s, 1.26s     (Tests 10 passed)
+new:  4.01s, 4.10s, 4.25s, 3.40s                      (Tests 17 passed)
+```
+This reproduces the report's shape: the base check takes about 1.1 to 1.3 s once the files are cached, and the new check 3.2 to 5.0 s.
+
+The edits to a script and a style block, reproduced on the scratch tree: I changed `gap: 8px` to `9px` in `Data.svelte` and `order: 0` to `7` in `Catalogue.svelte`. The new check then gave `Tests 17 passed (17)`.
+
+### Spec
+
+Round items 1 to 4 are closed:
+- The six entries are gone from the allow list, and no entry takes their place.
+- The nine cross-file markup entries that stay match the markup run's clones, and none of their fragments holds a block.
+- Counts are the smaller extent. For example, `Menu.svelte` 53-90 against `MenuOpener.svelte` 21-42 is listed as 22.
+- The three new cases, and the existing script case, each go red under their revert.
+
+Report corrections 5 to 8 are made and reproduce.
+
+- The builder's "not fixed" finding names the wrong cause, and the tree loses nothing to it today. I copied each of the 244 components alone into a scratch folder and ran the launcher on it (`percomp.mjs`, output in `percomp.txt`). The markup run at 50 drops 16 components: TabView, CloseQuestion, RowButton, Search, CodeText, Checkbox, FileChooser, Toolbar, TreeView, Dot, CommandCenter, NewIdea, RemoveAccount, Reveal, SourceToolbar and ShowPath.
+  - Each of the 16 has fewer than 50 markup tokens once the scripts, styles and imports are skipped: between 16 and 48 (for example TabView `html=1/34`, CommandCenter `html=1/47`, ShowPath `html=1/36`).
+  - Their scripts are not short. CommandCenter's is 1551 TypeScript tokens, ShowPath's 686, TreeView's 318 and FileChooser's 135.
+  - Every component the markup run does read has 51 markup tokens or more. The smallest are `ui/frame/Empty.svelte` at 51 and `NoAccounts.svelte` at 52.
+  - So none of the 16 could hold a markup clone of 8 lines and 50 tokens.
+  - The code run drops only `SourceToolbar.svelte`: 42 tokens in the whole file, a 15-token script and a 37-token markup.
+- The check still has a real blind spot, and the report does not describe it. jscpd reads no component whose script and style blocks together hold fewer than 50 tokens (the "svelte" format count), however long its markup. Scratch pairs sharing the same 11 markup lines (183 tokens), from `scratchpad/Q87-round1-refute/shortscript`, all through the markup run at 50:
+  - (a) Scripts of about 5 tokens and no style: `sources 0`, no clone.
+  - (b) No script at all: `sources 0`, no clone.
+  - (d) The same 5-token scripts plus a style block of 70 or more tokens: `css=2/146 html=2/366 svelte=2/184 clones=1 html 5-15 183T`.
+  - (e) No script, with that style block: reported.
+
+  A markup copy between two such components passes the suite, where the base hand scanner would report it. That falls short of the brief's "a copy added to either group from now on fails the suite". No component in the tree today has 50 or more markup tokens and is dropped (`percomp.txt`), and no component lacks a script block (`grep -L "<script"` prints nothing).
+
+### Proof
+
+- The report's cause for the 16 dropped components is not reproduced: "that count is close to its script's tokens" and "a component whose script is short". The evidence under Spec shows the drop follows the markup token count for 15 of them, and the gate is the script and style tokens together for the case the test fixture guards. The report's numbers do reproduce: html and svelte sources 228 at 50 and 244 at 1, and 1 cross-file markup clone at `--min-tokens 1`.
+- Every other closure I reran reproduces. See Verification.
+
+### Standards
+
+- `tests/checks/tree/duplication.test.ts:442-443`: `// Each script holds fifty tokens or more: jscpd does not read a component whose script is shorter, markup and all.` This is false as written. A component with a 5-token script is read, and its markup clone reported, when its style block brings the script and style tokens to 50 or more (scratch pair d). A component with no script and such a style is read too (pair e). The gate is the script and style blocks together, not the script.
+- `tests/checks/tree/duplication.test.ts:3-5`: `reports each run of tokens two places share: eight lines and fifty tokens at least`. Since the count became the smaller extent, three held entries read under eight lines:
+  - `allow-duplication.txt:30` `deposit-routes.ts git-routes.ts 2e395e19649f the same 6 lines at 176 and 266` (jscpd extents 176-184 and 266-271: the same tokens reflowed onto 6 lines in `git-routes.ts`)
+  - `:32` `hpc/parse.ts state/system/hpc.ts 8ead1c0cdafe the same 7 lines` (extents 25-33 and 20-26)
+  - `:115` `git-workspaces.test.ts git.test.ts a11022f63461 the same 6 lines` (extents 91-100 and 550-555)
+
+  The check's output for such a clone ("hold the same 6 lines") contradicts the head comment's floor of eight.
+- `tests/checks/tree/duplication.test.ts:17-18`: `the smaller of its two extents, since jscpd can end one extent on a line the other does not reach`. The three entries above differ because the same tokens are laid out on fewer lines in one file, not because an extent ends on an extra line, so the reason covers only part of what the rule handles.
+- No history, step id or date in either file. ASCII is clean. The test file is 565 lines.
+
+### Behaviour
+
+- The check is slower once files are cached: before about 1.1 to 1.3 s, after 3.4 to 4.3 s on this machine (see Verification), since it now runs jscpd twice per group. The report states this with before and after. No further finding.
+- A component whose script and style together hold fewer than 50 tokens is not checked for markup copies. Before, such markup was compared line by line; after, it is not compared. The report states a different mechanism (see Spec).
+
+### Not checked
+
+- Why jscpd reports 1 cross-file markup clone at `--min-tokens 1` against 9 at 50. I reproduced the numbers only.
+- Whether any of the 144 `tests` entries, or the `src` TypeScript entries beyond the ones quoted above, is a false copy. I checked only the entries named above against the launcher's extents.
+- The report's claim that three generations of the list were byte-identical. The check passed on each of my 6 runs over the same tree, but I did not regenerate the list.
+- The real `npm install --omit=optional` case and non-darwin binaries.
+- The reverts from round 0 that this round did not touch.
+
+### Usage
+
+Reviewer (this run): token count and elapsed time not measured from inside the agent. Roughly 50 tool calls.
+## Closed
+
+Round 1 was the step's last. Each finding of the two reviews:
+- First review: closed by round 1, as the round 1 review's verification and reverts show.
+- Round 1, Spec 2 and Behaviour 2 (a component whose script and style blocks together hold fewer than fifty tokens is not read by the markup run): fixed on main at landing. The markup run reads every component as HTML (`MARKUP_FORMATS`, `--format html --formats-exts html:svelte`), and the case "reports shared markup between two components whose scripts are short and which have no style" guards it: red with the markup run in the Svelte format (`Tests 1 failed | 17 passed (18)`), green with the fix (`Tests 18 passed (18)`). Over the tree the markup run gives the same 9 cross-file clones under `src/lib` and 0 under `tests` in both formats, so the allow list is unchanged.
+- Round 1, Spec 1 and Proof 1 (the builder's cause for the 16 components the markup run skipped): corrected in the landing booking.
+- Round 1, Standards 1 (`duplication.test.ts:442-443`): the false comment removed at landing.
+- Round 1, Standards 2 and 3 (the head comment's eight-line floor, and the reason for the smaller extent): rewritten at landing. The head comment says a clone runs over eight lines at least in one of the two files, that the count is the smaller extent since one file can lay the same tokens on fewer lines or end its extent on a line the other does not reach, and that the count can therefore be under eight.
+- Round 1, Behaviour 1 (the check's time): stated in the report with before and after; the booking quotes the time on main.
