@@ -2,8 +2,8 @@
 
 In flight:
 - D13b (the diffs and the merge on Monaco): built, review running; Z59 (a) goes into its repair round.
-- Q83 (small libraries in place of hand code): built, review running.
-- Q103 (the Live HPC view's failure text and a collapsible capacity section): building.
+- Q83 (small libraries in place of hand code): reviewed; its repair round waits on Z61.
+- Q103 (the Live HPC view's failure text and a collapsible capacity section): built, review running.
 Queued, in order:
 - Q102 (the terminal working as VS Code's, seen working in the page), once Q83 has landed.
 - Q86c (the Map's forces back on d3-force; Z60 (a)), at the next free slot.
