@@ -10,7 +10,7 @@ Queued, in order:
 - X3c (the tab strip as VS Code's editor tabs; Z47 (a)); runs alone, since it adds `wrap_tabs` to `config/appearance.yml`.
 - X3a (the Files view as VS Code's Explorer); waits for D13b to land: its Compare Selected row is a two-file diff read and the diff pane, which D13b rewrites.
 - Q91 (the project view and its editor), once X3a has landed.
-- Q84 and L4 (the fetch-and-hold stores on @tanstack/svelte-query; floating panes; together only when their briefs name no shared file).
+- Q84 and L4 (the fetch-and-hold stores on @tanstack/svelte-query; floating panes; together only when their briefs name no shared file). Q84 stopped at /spec on open item Z56.
 - Q85 (checking untyped input with zod).
 - Q66 and Q35 (a hidden tab defers its work; the session views).
 - D11 and D14 (the debug client for rite; LaTeX everywhere).
