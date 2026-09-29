@@ -6,21 +6,20 @@
     // that module answers. The SVG draws the nodes once the placement has come back, draws nothing
     // before that, and says in one line why when the engine refuses the graph or does not load.
     // A pointer is mapped through the letterbox the SVG draws its box in, then the pan and zoom
-    // (views/structure/map/pointer.ts). Once a pressed node has moved past the click threshold,
-    // dragTick() of state/boards/structure/graph.ts runs each frame at a fixed step until a frame
-    // moves nothing by REST or MAX_FRAMES have run: the springs over that node's direct neighbours,
-    // each edge held to its length at the press, and the push keeping each neighbour off the other
-    // nodes; every other node stays put. The dragged node keeps the offset from the pointer it was
-    // grabbed at, and a pointer under one screen pixel from the last that placed it starts no new
-    // settle, while one already running goes on to its stop. A press while a drag settles finishes
-    // it for every node but the pressed one, which stays under the pointer (pressHold()).
+    // (views/structure/map/pointer.ts). The view goes on with the one simulation mapPlacement()
+    // settled from neato's placement (state/boards/structure/forces.ts, on d3-force): an effect
+    // draws each tick, kept in the box, and stops it when the pane goes or placementKey() changes.
+    // A press fixes the node and moves nothing (press()); past the click threshold and a screen
+    // pixel, dragTo() puts it under the pointer at its grab offset and heats the simulation, so
+    // every node is pushed and pulled; every release, a click and a cancel included, frees it
+    // (release()) and lets the simulation cool with the freed node in it again.
     //
     // The labels are one layer over every node. By the rule of views/structure/map/labels.ts a
     // label is hidden when it would overlap a label already drawn or any node but its own, the
     // pillars' labels placed first, until its node is hovered or holds the keyboard; those labels
     // are drawn whatever they overlap, and last, so they sit on top.
 
-    import { tick } from 'svelte';
+    import { tick, untrack } from 'svelte';
     import { onShown } from '$lib/ui/shown';
     import { writeRelated } from './edge-write';
     import {
@@ -35,19 +34,24 @@
     import { dragTarget, movedEnough, nearestProject, toBox, toGraph } from './pointer';
     import {
         DEFAULT_BOUNDS,
-        MAX_FRAMES,
-        REST,
-        dragTick,
-        pressHold,
-        type DragHold,
         type Graph,
         type GraphNode,
         type PointNode
     } from '$lib/state/boards/structure/graph';
     import {
+        clampToBox,
+        dragTo as holdAt,
+        forceNodes,
+        press,
+        release
+    } from '$lib/state/boards/structure/forces';
+    import {
         edgeEnds,
         mapPlacement,
-        type GraphvizAnswer
+        placementKey,
+        drawnAt,
+        type GraphvizAnswer,
+        type MapPlacement
     } from '$lib/state/boards/structure/layout';
     import { t } from '$lib/state/shared/words/text';
     import { toneOf, typeTone } from '$lib/state/shared/words/tones';
@@ -73,23 +77,28 @@
 
     /** The page's Graphviz once loaded, or the reason it did not load. */
     let viz = $state<GraphvizAnswer>(graphviz.loaded());
-    /** Where neato put the nodes, or why the engine refused; no node until Graphviz loads. */
-    const chosen = $derived(mapPlacement(viz, graph, seed));
-    /** The positions after a drag, which take over from the placement once a node has moved. */
+    /** What the placement is made from, by placementKey() of layout.ts. */
+    const shape = $derived(placementKey(graph, seed));
+    /**
+     * Where neato put the nodes, settled under the Map's forces, with the settled simulation, or
+     * why the engine refused; no node until Graphviz loads.
+     */
+    const chosen = $derived(placedFor(shape, viz));
+
+    /** The placement, read untracked, so only an unequal key or a load places again. */
+    function placedFor(_key: string, answer: GraphvizAnswer): MapPlacement {
+        return untrack(() => mapPlacement(answer, graph, seed));
+    }
+    /** The positions at the simulation's last tick, which take over from the settled placement. */
     let placed = $state<PointNode[] | null>(null);
-    const positions = $derived(placed ?? chosen.nodes);
+    const positions = $derived(drawnAt(graph.nodes, placed ?? chosen.nodes));
     const failure = $derived(chosen.failure);
-    let frame: number | null = null;
-    /** The frames the running drag loop has run since it started. */
-    let frames = 0;
     let svg: SVGSVGElement;
     let drag: PointNode | null = null;
     /** The dragged node's centre less the pointer at the press, in graph units. */
     let grab = { x: 0, y: 0 };
     /** The screen point of the last event that placed the dragged node, the press first. */
     let lastScreen = { x: 0, y: 0 };
-    /** What the last drag moves and holds each edge to, taken when its press began. */
-    let hold: DragHold = { movers: new Set(), lengths: new Map(), apart: new Map() };
     let linkSource: PointNode | null = $state(null);
     let linkTarget: PointNode | null = $state(null);
     let status = $state('');
@@ -159,6 +168,21 @@
     // Graphviz loads once per page; a pane opened before it has loaded waits for it here.
     $effect(() => (viz === null ? graphviz.load((answer) => (viz = answer)) : undefined));
 
+    // Each tick of the settled simulation is kept in the box and drawn; a new placement stops it.
+    $effect(() => {
+        const forces = chosen.forces;
+        placed = null;
+        if (forces === null) return;
+        forces.on('tick', () => {
+            clampToBox(forces);
+            placed = forceNodes(forces);
+        });
+        return () => {
+            forces.stop();
+            forces.on('tick', null);
+        };
+    });
+
     // A refused placement is logged with the graph's size, beside the line the pane shows.
     $effect(() => {
         if (failure !== null) {
@@ -182,21 +206,6 @@
         return toGraph(viewport(event), { x: tx, y: ty }, zoom);
     }
 
-    /** Start the drag loop when none runs. */
-    function run(): void {
-        if (frame !== null) return;
-        frames = 0;
-        frame = requestAnimationFrame(step);
-    }
-
-    /** One frame of the drag, and the next while the last one moved and the cap is not reached. */
-    function step(): void {
-        const next = dragTick(positions, graph.edges, hold);
-        placed = next.nodes;
-        frames += 1;
-        frame = next.moved >= REST && frames < MAX_FRAMES ? requestAnimationFrame(step) : null;
-    }
-
     function nodeDown(event: PointerEvent, node: PointNode): void {
         event.stopPropagation();
         svg.setPointerCapture(event.pointerId);
@@ -205,12 +214,7 @@
         moved = false;
         if (linkMode && node.kind === 'project') linkSource = node;
         else {
-            const running = frame === null ? null : hold;
-            if (frame !== null) cancelAnimationFrame(frame);
-            frame = null;
-            const pressed = pressHold(positions, graph.edges, node.id, running);
-            if (running !== null) placed = pressed.nodes;
-            hold = pressed.hold;
+            if (chosen.forces !== null) press(chosen.forces, node.id);
             drag = node;
             grab = { x: node.x - start.x, y: node.y - start.y };
             lastScreen = { x: event.clientX, y: event.clientY };
@@ -260,22 +264,21 @@
         }
     }
 
-    /** Put the dragged node under the pointer where it was grabbed, once it has moved a pixel. */
+    /** Put the dragged node under the pointer, once it has moved a pixel, and run the forces. */
     function dragTo(event: PointerEvent): void {
         const screen = { x: event.clientX, y: event.clientY };
         if (!movedEnough(lastScreen, screen)) return;
         lastScreen = screen;
-        const to = dragTarget(local(event), grab);
-        placed = positions.map((node) =>
-            node.id === drag?.id ? { ...node, ...to, vx: 0, vy: 0 } : node
-        );
-        run();
+        if (drag === null || chosen.forces === null) return;
+        holdAt(chosen.forces, drag.id, dragTarget(local(event), grab));
+        chosen.forces.restart();
     }
 
     function pointerUp(event: PointerEvent): void {
         if (linkSource !== null && linkTarget !== null) void toggleRelated(linkSource, linkTarget);
         else if (drag !== null && !moved) open(drag);
         else if (drag !== null && event.type === 'pointerup') dragTo(event);
+        if (drag !== null && chosen.forces !== null) release(chosen.forces, drag.id);
         drag = null;
         linkSource = null;
         linkTarget = null;
@@ -296,10 +299,6 @@
         ty = 0;
         zoom = 1;
     }
-
-    $effect(() => () => {
-        if (frame !== null) cancelAnimationFrame(frame);
-    });
 </script>
 
 <div class="graph-wrap">

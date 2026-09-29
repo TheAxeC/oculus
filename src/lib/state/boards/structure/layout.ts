@@ -1,7 +1,9 @@
 // Layer 2, client state. Where the Map's nodes go: Graphviz's neato engine, run in the page through
 // @viz-js/viz (Graphviz compiled to WebAssembly), lays a Graph out from a start seed, and the
 // positions it answers are fitted into the Map's box. The same node set and seed give the same
-// picture every time, since neato's random start is seeded by `start`.
+// picture every time, since neato's random start is seeded by `start` and d3-force's random
+// source starts from one fixed seed in every simulation. mapPlacement() then runs that placement
+// to rest under the Map's forces (forces.ts) before the first draw.
 //
 // The library is loaded by a dynamic import on the first load of createGraphviz()'s loader, which
 // only the page makes, so the server never loads the WebAssembly. The loader is held by the client
@@ -12,12 +14,14 @@
 import type { Viz } from '@viz-js/viz';
 import {
     DEFAULT_BOUNDS,
-    DEFAULT_PHYSICS,
+    LINK_LENGTH,
     type Bounds,
     type Graph,
     type GraphEdge,
+    type GraphNode,
     type PointNode
 } from './graph';
+import { createForces, settleForces, type MapForces } from './forces';
 
 /** The Graphviz layout engine the Map is placed by; `fdp` is the other one worth trying. */
 export const ENGINE = 'neato';
@@ -94,9 +98,9 @@ function num(value: number): string {
 
 /**
  * The graph as Graphviz input: each node under its index with its drawn size, and every edge
- * undirected at `DEFAULT_PHYSICS.linkLength`. placeGraph() then scales the picture to fit the box,
- * and a drag holds every edge to the length it has on screen when the press begins (edgeLengths()
- * of graph.ts), so the drag keeps the picture's own spacing.
+ * undirected at `LINK_LENGTH`. placeGraph() then scales the picture to fit the box, and the
+ * placement is then run to rest under the Map's forces (forces.ts), each edge's link resting at the
+ * length it has in neato's picture, so the settle keeps the picture's own spacing.
  */
 function graphDot(graph: Graph, seed: number): string {
     const index = new Map(graph.nodes.map((node, at) => [node.id, at]));
@@ -104,7 +108,7 @@ function graphDot(graph: Graph, seed: number): string {
         'graph {',
         `    graph [start=${Math.trunc(seed)}, overlap=false, splines=false];`,
         '    node [shape=circle, fixedsize=true, label=""];',
-        `    edge [len=${num(DEFAULT_PHYSICS.linkLength / POINTS)}];`
+        `    edge [len=${num(LINK_LENGTH / POINTS)}];`
     ];
     graph.nodes.forEach((node, at) => {
         const size = num((node.radius * 2) / POINTS);
@@ -194,18 +198,49 @@ export function placement(viz: Viz, graph: Graph, seed: number): Placement {
 }
 
 /**
- * What the Map draws from what it holds of Graphviz: no node and no failure before the load, the
- * placed nodes once it has loaded, and the reason when the load or the
- * placement failed.
+ * What the Map draws: its nodes, the reason the load or the placement failed, and the simulation
+ * the view goes on with, which is null before the load or on a failure.
  */
-export function mapPlacement(
-    answer: GraphvizAnswer,
-    graph: Graph,
-    seed: number
-): Placed & { failure: string | null } {
-    if (answer === null) return { nodes: [], failure: null };
+export type MapPlacement = Placed & { failure: string | null; forces: MapForces | null };
+
+/**
+ * What a placement is made from, as one string: the seed, each node's id and drawn size, and each
+ * edge's id and ends. A graph built again with the same of these (a new portfolio version, a
+ * toggle of the pane's link mode, another label) is placed the same, so the view keeps the
+ * simulation it has; the parts are written as JSON, so no two graphs share a key whatever
+ * characters their ids hold.
+ */
+export function placementKey(graph: Graph, seed: number): string {
+    return JSON.stringify([
+        seed,
+        graph.nodes.map((node) => [node.id, node.radius]),
+        graph.edges.map((edge) => [edge.id, edge.source, edge.target])
+    ]);
+}
+
+/**
+ * What the Map draws from what it holds of Graphviz: no node and no failure before the load, and
+ * once it has loaded, neato's placement run to rest under the Map's forces: the settled
+ * simulation, cold, and copies of its nodes. A failed load or placement answers its reason.
+ */
+export function mapPlacement(answer: GraphvizAnswer, graph: Graph, seed: number): MapPlacement {
+    if (answer === null) return { nodes: [], failure: null, forces: null };
     const placed = typeof answer === 'string' ? { error: answer } : placement(answer, graph, seed);
-    return 'error' in placed ? { nodes: [], failure: placed.error } : { ...placed, failure: null };
+    if ('error' in placed) return { nodes: [], failure: placed.error, forces: null };
+    const forces = createForces(placed.nodes, graph.edges);
+    return { nodes: settleForces(forces), failure: null, forces };
+}
+
+/**
+ * Each node as the graph gives it now, at the place `at` holds for its id, so a label or a tone
+ * that changed since the placement is drawn as it is now; a node `at` does not hold is not drawn.
+ */
+export function drawnAt(nodes: GraphNode[], at: PointNode[]): PointNode[] {
+    const byId = new Map(at.map((node) => [node.id, node]));
+    return nodes.flatMap((node) => {
+        const point = byId.get(node.id);
+        return point === undefined ? [] : [{ ...node, x: point.x, y: point.y, vx: 0, vy: 0 }];
+    });
 }
 
 /**

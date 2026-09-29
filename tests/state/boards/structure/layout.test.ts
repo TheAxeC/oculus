@@ -13,8 +13,11 @@ import {
     edgeEnds,
     mapPlacement,
     placeGraph,
-    placement
+    placement,
+    placementKey,
+    drawnAt
 } from '../../../../src/lib/state/boards/structure/layout.ts';
+import { createForces, settleForces } from '../../../../src/lib/state/boards/structure/forces.ts';
 import { edge, node } from './map-fixture.ts';
 
 /** Two lines, five projects, one collaborator: every edge kind the Map draws. */
@@ -177,16 +180,67 @@ describe('the Map placed by neato', () => {
         expect(placement(viz, GRAPH, 1)).toEqual(placeGraph(viz, GRAPH, 1));
     });
 
-    it('draws nothing before Graphviz loads, and the reason when the load or the engine failed', () => {
-        expect(mapPlacement(null, GRAPH, 1)).toEqual({ nodes: [], failure: null });
+    it("draws nothing before Graphviz loads, the reason when the load or the engine failed, and neato's placement settled under the forces once loaded", () => {
+        expect(mapPlacement(null, GRAPH, 1)).toEqual({ nodes: [], failure: null, forces: null });
         expect(mapPlacement('the library did not load', GRAPH, 1)).toEqual({
             nodes: [],
-            failure: 'the library did not load'
+            failure: 'the library did not load',
+            forces: null
         });
-        expect(mapPlacement(viz, GRAPH, 1)).toEqual({
-            ...placeGraph(viz, GRAPH, 1),
-            failure: null
+        const loaded = mapPlacement(viz, GRAPH, 1);
+        expect(loaded.failure).toBeNull();
+        expect(loaded.nodes).toEqual(
+            settleForces(createForces(placeGraph(viz, GRAPH, 1).nodes, GRAPH.edges))
+        );
+        expect(typeof loaded.forces?.tick).toBe('function');
+    });
+
+    it("answers no node, the engine's reason and no simulation for a placement the engine refuses", () => {
+        // Revert: forces built over the refused placement's empty node set in place of null.
+        const refusing = {
+            renderJSON: () => {
+                throw new Error('syntax error in line 1');
+            }
+        } as unknown as Viz;
+        expect(mapPlacement(refusing, GRAPH, 1)).toEqual({
+            nodes: [],
+            failure: 'syntax error in line 1',
+            forces: null
         });
+    });
+
+    it('draws each node with the words the graph gives it now, at the place held for its id', () => {
+        // Revert: the placed copies drawn as they are keep a label the graph has since changed.
+        const held = [{ ...node('a'), x: 10, y: 20, vx: 3, vy: 0 }];
+        const now = [{ ...node('a'), label: 'renamed' }, node('b')];
+        expect(drawnAt(now, held)).toEqual([{ ...now[0], x: 10, y: 20, vx: 0, vy: 0 }]);
+        expect(drawnAt([], held)).toEqual([]);
+    });
+
+    it('keys a placement on its seed, its nodes and their sizes, and its edges, and on nothing else', () => {
+        // Revert: a key of the node ids alone lets an edge added or moved keep the old placement.
+        const key = placementKey(GRAPH, 1);
+        const worded = {
+            nodes: GRAPH.nodes.map((one) => ({ ...one, label: `${one.label}!`, archived: 'x' })),
+            edges: GRAPH.edges.map((one) => ({ ...one, archived: true }))
+        };
+        expect(placementKey(worded, 1)).toBe(key);
+        expect(placementKey(GRAPH, 2)).not.toBe(key);
+        const grown = GRAPH.nodes.map((one, at) => (at === 0 ? { ...one, radius: 15 } : one));
+        expect(placementKey({ ...GRAPH, nodes: grown }, 1)).not.toBe(key);
+        const joined = [...GRAPH.edges, edge('project::p1', 'project::p5', 'related')];
+        expect(placementKey({ ...GRAPH, edges: joined }, 1)).not.toBe(key);
+        const moved = GRAPH.edges.map((one, at) =>
+            at === 0 ? { ...one, target: 'line::b' } : one
+        );
+        expect(placementKey({ ...GRAPH, edges: moved }, 1)).not.toBe(key);
+        // No node and one node, and ids that a plain join would run together, key apart.
+        const none = { nodes: [], edges: [] };
+        expect(placementKey(none, 1)).not.toBe(placementKey({ nodes: [node('a')], edges: [] }, 1));
+        const pair = { nodes: [node('a'), node('b')], edges: [] };
+        expect(placementKey({ nodes: [node('a","b')], edges: [] }, 1)).not.toBe(
+            placementKey(pair, 1)
+        );
     });
 
     it('draws a related edge short of the node it points at, and a membership edge end to end', () => {

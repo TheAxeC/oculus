@@ -103,3 +103,108 @@ None. Checks run: line counts (forces.ts 194, Graph.svelte 538, layout.ts 272, f
 ## 5. Usage
 
 33 tool uses, 169k tokens, 9.7 min (completion notice). Most of the time went to the one full verify run (npm test, 96.6 s) and the four follow-up commands.
+
+## Repair round 1, refuted
+
+Q86c, on /Users/axelfaes/workspace/research-hub/.agents/worktrees/Q86c, base 194792bc. I changed nothing in the worktree, the main checkout or the ledger. `git status --short` lists the same 19 paths before and after my run. All reverts ran in a scratch copy at /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/Q86c-r1-refute/. That copy was made by rsync of tools/oculus without node_modules, .svelte-kit, build, .scratch and config/local.yml, and node_modules is a symlink to the worktree's. The script is reverts.py in that folder. It checks that each source file is back byte for byte after each revert.
+
+```
+$ npm run diagrams            (from tools/oculus in the worktree, 00:45)
+... docs/diagrams/writes.svg  (last line; git status --short showed no new path after it)
+
+$ PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH sh ~/.claude/skills/land/templates/checks.sh .scratch/migration/orchestrator-state.md   (00:45 to 00:49, load average 6.98)
+$ npm run format:check
+All matched files use Prettier code style!
+$ npm run lint
+$ ! LC_ALL=C grep -rna '[^ -~]' src tests
+checks: 6 commands passed
+```
+
+I captured only the tail of the output, so the summary lines of `npm test` and `npm run check` in my run are not quoted. The list's final line, `checks: 6 commands passed`, means each of the six exited 0. No red line, so no file was run alone. The builder's report quotes `Test Files  376 passed (376)` and `Tests  5913 passed | 1 skipped (5914)`. That agrees with round 0's 5913 tests plus the one refusal case added, but I did not rerun it.
+
+Brief verify items 2 and 3: the source is unchanged since the first review (the file line counts match its figures: forces.ts 194, layout.ts 272, Graph.svelte 538). Its results stand: item 2 printed nothing, and item 3 printed `23:} from 'd3-force';`. I did not rerun them this round.
+
+Rerun of the builder's quoted evidence, in the scratch copy: `npx vitest run tests/state/boards/structure/forces.test.ts tests/state/boards/structure/layout.test.ts` printed `Test Files  2 passed (2)` and `Tests  29 passed (29)`, matching the report.
+
+Reverts, each made in the scratch copy with only that test selected (`-t`):
+- `press()` calls `simulation.tick()`: red, `forces.test.ts:112:43` `AssertionError: expected Map{ 'line::a' => ... } to deeply equal Map{ ... }`.
+- `press()` calls `restart()` then `stop()`: green (`Tests 1 passed | 14 skipped`). See "Declined to judge".
+- `release()` keeps `fx` and `fy`: red, `forces.test.ts:192:27` `AssertionError: expected 441.13576826215194 to be null`.
+- `press()` without its guard for an unknown id: red, `forces.test.ts:206:16` `... but 'TypeError: Cannot read properties of ...' was thrown`.
+- `release()` without its guard: red, `forces.test.ts:206:16` `"TypeError: Cannot set properties of undefined (setting 'fx')"`.
+- `clampToBox()` keeping `vx` on the left edge: red, `forces.test.ts:299:24` `AssertionError: expected -5 to be +0`.
+- `advance()` ticking without `clampToBox()`: red, `forces.test.ts:101:31` `AssertionError: expected false to be true`.
+- `dragTo()` setting `fx` and `fy` alone: red, `forces.test.ts:178:43` `AssertionError: step 15: expected -3.333168548442785 to be greater than or equal to -2`. This reproduces the builder's decision 1 measurement, which the first review declined.
+- `press()` also fixing every node that is not a neighbour (a neighbour-only drag): red, `forces.test.ts:150:44` `AssertionError: expected [ 'line::a', 'line::b', ...(28) ] to deeply equal []`.
+- `mapPlacement()` building `createForces([], graph.edges)` on a refused placement: red, `layout.test.ts:205:50` `AssertionError: expected { nodes: [], ...(2) } to deeply equal { nodes: [], ...(2) }`.
+- `mapPlacement()` answering `failure: null` on a refused placement: red, `layout.test.ts:205:50`.
+
+Each red line matches the one the builder's report quotes for that revert.
+
+### Verdicts
+
+What to build, for the whole diff since the base:
+1. forces.ts: holds. `FORCES` is as the brief sets it. `createForces` copies the nodes and the edges and skips an edge with a missing end, each link's distance is its neato length, and a force whose parameter is 0 is left out. `clampToBox`, `advance`, `settleForces`, `press`, `dragTo` and `release` are as asked, with the unknown-id guards (forces.ts:65-194). `forceNodes` and the extra `x`, `y`, `vx`, `vy` writes in `dragTo` are reported decisions; the second is now reproduced (above).
+2. graph.ts: holds (diff: the drag code is gone, `LINK_LENGTH = 107` is in, the head comment is rewritten).
+3. layout.ts: holds. `graphDot` reads `LINK_LENGTH`, and `mapPlacement` answers `{ nodes, failure, forces }`, with null forces before the load, on a load failure and on a placement refusal. The additions `placementKey` and `drawnAt` are the orchestrator's Spec 1.
+4. Graph.svelte: holds, with Spec 1's addition as before.
+5. pointer.ts:53: holds.
+6. package.json and package-lock.json: holds (`d3-force` 3.0.0 and `@types/d3-force` 3.0.10 in the diff).
+7. Tests: holds. Verify item 4 is now met: each test forces.test.ts adds names a revert in a `// Revert:` comment (14 such lines by `grep -c`), except the empty-set test, which is renamed as an audit. The refusal case is at layout.test.ts:198.
+8. DESIGN.md:291: holds.
+9. README.md:13: holds.
+10. docs/diagrams: holds. `npm run diagrams` gave no new change, and the list is green.
+
+Cases:
+1. Met (forces.test.ts:96); its revert (no clamp) was run red.
+2. Met (forces.test.ts:234).
+3. Met (forces.test.ts:242).
+4. Met (forces.test.ts:105); the tick revert was run red.
+5. Met (forces.test.ts:116); the neighbour-only revert was run red.
+6. Met (forces.test.ts:153); the fixed-point-only revert was run red, at -3.33.
+7. Met (forces.test.ts:185); the revert that keeps `fx` was run red.
+8. Met (forces.test.ts:196); the press and release guard reverts were each run red.
+9. Met, as an audit (forces.test.ts:257).
+10. Met (forces.test.ts:261).
+11. Met (forces.test.ts:269).
+12. Met (forces.test.ts:277).
+13. Met (forces.test.ts:212).
+14. Met (forces.test.ts:290); the revert that keeps the speed was run red.
+15. Met. The load-failure branch is tested at layout.test.ts:183 and forces.test.ts:220, and the placement-refusal branch at layout.test.ts:198, which both of its reverts turn red. This closes the first review's Proof 2.
+16. Met, as source audits (map.test.ts:542, 549, 556, 564), each with "audit" in its name.
+17. Met: the full `npm test` inside the list is green.
+
+### Findings
+
+- Proof. `Q86c-report.md`, the DONE table and the Reverts section: "`layout.test.ts:195`, a placement the engine refuses". What is wrong: the case is at layout.test.ts:198 (`grep -n "^    it(" tests/state/boards/structure/layout.test.ts` prints `198: it("answers no node, the engine's reason and no simulation for a placement the engine refuses"`). The line of the red assertion quoted with it (205:50) is correct. No decision rests on the line. Failure scenario: the orchestrator following the table's pointer lands three lines early, inside the previous test. Verdict: none; fixable at landing.
+- Proof. `Q86c-report.md`, the Reverts section: "`tests/views/structure/map.test.ts:543-568`: the five cases named "audits that" read Graph.svelte's source." What is wrong: that range holds four audits (the `grep` for `it('audits` lists 542, 549, 556 and 564). The fifth "audits that" test in the file, at 493, is older and outside the range. Failure scenario: a reader counting the step's view audits against case 16 looks for a fifth that does not exist. Verdict: none; fixable at landing.
+- Standards. `tests/state/boards/structure/forces.test.ts:257`: `it('audits that settles an empty node set to no node', () => {`. What is wrong: the renamed test name is ungrammatical (the clause after "audits that" has no subject). The other audit names in the suite read as sentences ("audits that a press fixes the node ..."). The rules file's "Prose: plain" rule governs it. Failure scenario: a reader of the test list parses the name awkwardly; the audit convention itself is met. Verdict: none; a one-word fix at landing ("audits that it settles ..." or "audits that an empty node set settles to no node").
+
+No finding under Spec or Behaviour. The round changed only what its brief asked:
+- The src files are the same size as at the first review.
+- forces.test.ts grew from 290 to 302 lines, and every shift in test line numbers matches an added comment line.
+- The one new layout test and the rewritten report are the only other changes of the round.
+
+No check was removed or loosened. The report now:
+- says which commands ran on the final code;
+- states 3.5 units for case 1;
+- carries the link-mode before and after as its own entry, with the base line numbers of `placed` that the brief also cites.
+
+Its open-items section matches the main state file's Open items list (Z69 only), verbatim.
+
+### Declined to judge
+
+- `press()` restarting the simulation: my revert (`restart()` then `stop()` inside `press()`) stays green. The case 4 test runs synchronously, and d3's timer never fires inside it, so a restart inside `press()` in forces.ts is caught by no test. A restart in the view's `nodeDown` is caught only by the source audit at map.test.ts:542. The round brief allowed "ticking or restarting", and the builder named ticking, which does go red, so this is not a finding against the round. Catching a restart needs an asynchronous test or the look on TEST.
+- The `npm test` and `npm run check` summary lines of my verify run: I captured only the tail of the list's output. I did not rerun the list, since the brief allows one run; its final line `checks: 6 commands passed` is the evidence.
+- Spec 1 to 3 of the first review (`placementKey`, `drawnAt` and the `untrack` derivation; the re-keyed `allow-duplication.txt:161`; the ledger's Z58 line): these are the orchestrator's by the round brief.
+- The Svelte reactivity in a browser (the tick listener, the cleanup on a key change, the link-mode re-placement): this is for the look on TEST.
+
+Reviewer usage: 17 tool uses; tokens not known to me; 00:44 to 00:51 CEST on 2026-09-30, about 7 minutes, of which about 4 minutes were the verify list.
+
+Completion notice: 24 tool uses, 156k tokens, 7.4 min; model claude-opus-5-5 (read from its transcript).
+
+### Closed
+
+- The report's pointer `layout.test.ts:195`: the case is at `:198`; the booking and the landing report cite `:198`.
+- The report's "five cases" at `map.test.ts:543-568`: four audits (542, 549, 556, 564); the booking and the landing report say four.
+- The test name at `forces.test.ts:257`: renamed at landing to 'audits that an empty node set settles to no node'.

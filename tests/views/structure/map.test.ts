@@ -1,5 +1,5 @@
 // The Map view rendered on the server over visible relationships, controls, the empty state and
-// the placement neato gives from the pane's start seed.
+// the placement neato gives from the pane's start seed, settled under the Map's forces.
 
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -20,6 +20,7 @@ import {
 } from '../../../src/lib/state/boards/structure/graph.ts';
 import type { Graph as BuiltGraph } from '../../../src/lib/state/boards/structure/graph.ts';
 import { placeGraph } from '../../../src/lib/state/boards/structure/layout.ts';
+import { createForces, settleForces } from '../../../src/lib/state/boards/structure/forces.ts';
 import type { Instance } from '../../../src/lib/state/workbench/layout/index.ts';
 import { catalog, fixture, install } from './lines-fixture.ts';
 import { clientContext, createClientState, type ClientState } from '../../fixtures/client.ts';
@@ -128,10 +129,10 @@ function circles(body: string): string[] {
     });
 }
 
-/** Where neato puts those same circles from the seed the pane hands down. */
+/** Where those same circles rest: neato's placement from the pane's seed, settled by the forces. */
 function placed(graph: BuiltGraph, seed: number): string[] {
-    return placeGraph(viz, graph, seed)
-        .nodes.filter((node) => node.kind === 'project')
+    return settleForces(createForces(placeGraph(viz, graph, seed).nodes, graph.edges))
+        .filter((node) => node.kind === 'project')
         .map((node) => `${node.x},${node.y}`);
 }
 
@@ -311,7 +312,7 @@ describe('the Map view', () => {
         expect(tag('project::live')).not.toMatch(/\barchived\b/);
     });
 
-    it('draws every node where neato puts it from the seed it is handed', () => {
+    it('draws every node where it rests from the seed it is handed', () => {
         const graph = buildGraph(graphFixture());
         const first = drawGraph(client, graph, 3);
         expect(circles(first)).toEqual(placed(graph, 3));
@@ -502,5 +503,67 @@ describe('the label measuring', () => {
         expect(effect?.[1]).toContain('void textScale();');
         expect(effect?.[1]).toContain("void chosen.nodes.map((node) => node.id).join('\\n');");
         expect(effect?.[1]).toContain('void tick().then(measure);');
+    });
+});
+
+describe('the drag on the settled forces', () => {
+    // Source audits: the press, the release and the effect run only against a page, which the
+    // unit suite does not draw, so each reads the handler's own text in Graph.svelte.
+    const source = readFileSync(
+        resolve(
+            fileURLToPath(import.meta.url),
+            '..',
+            '..',
+            '..',
+            '..',
+            'src/lib/views/structure/map/Graph.svelte'
+        ),
+        'utf8'
+    );
+
+    /** The body of one function of the component's script, up to its closing brace. */
+    function body(name: string): string {
+        return (
+            new RegExp(
+                `\\n {4}function ${name}\\([^)]*\\): [^{\\n]+ \\{([\\s\\S]*?)\\n {4}\\}`
+            ).exec(source)?.[1] ?? ''
+        );
+    }
+
+    /** The effect that registers the tick listener on the settled simulation. */
+    function tickEffect(): string {
+        return (
+            [...source.matchAll(/\n {4}\$effect\(\(\) => \{([\s\S]*?)\n {4}\}\);/g)]
+                .map((one) => one[1])
+                .find((one) => one.includes("on('tick'")) ?? ''
+        );
+    }
+
+    it('audits that a press fixes the node through press() and never restarts the simulation', () => {
+        expect(body('nodeDown')).toMatch(/\bpress\(/);
+        // A press moves nothing, and a simulation run again at the press would move every node
+        // that is still cooling from the last drag, so only the first pointer move starts it.
+        expect(body('nodeDown')).not.toContain('restart(');
+    });
+
+    it('audits that a release frees the held node whatever the branch, a click and a cancel included', () => {
+        // The release is a statement of pointerUp's own, after the branches, so the click that
+        // opens a node and a cancel, which pointerup and pointercancel both reach, free it too.
+        expect(body('pointerUp')).toMatch(/\n {8}if \(drag !== null[^\n]*\) release\(/);
+        expect(source).toContain('onpointercancel={pointerUp}');
+    });
+
+    it('audits that the placement is made again only when its key changes, not for a graph built anew', () => {
+        expect(source).toContain('const shape = $derived(placementKey(graph, seed));');
+        expect(source).toContain('const chosen = $derived(placedFor(shape, viz));');
+        expect(body('placedFor')).toContain(
+            'return untrack(() => mapPlacement(answer, graph, seed));'
+        );
+    });
+
+    it("audits that the simulation's effect clears the drawn positions and stops it in its cleanup", () => {
+        const effect = tickEffect();
+        expect(effect).toContain('placed = null;');
+        expect(effect).toMatch(/return \(\) => \{[\s\S]*\.stop\(\);[\s\S]*on\('tick', null\)/);
     });
 });

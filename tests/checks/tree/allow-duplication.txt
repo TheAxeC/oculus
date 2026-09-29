@@ -154,7 +154,7 @@ tests/state/boards/person.test.ts tests/views/boards/person.test.ts 2b12dd4a0add
 tests/state/boards/person.test.ts tests/views/boards/person.test.ts c78ac91f15ab the same 11 lines at 104 and 120, to fold into one place
 tests/state/boards/person.test.ts tests/views/boards/person.test.ts cdc68e3d0fb2 the same 55 lines at 32 and 57, to fold into one place
 tests/state/boards/person.test.ts tests/views/boards/person.test.ts f19737ed6ac7 the same 13 lines at 20 and 45, to fold into one place
-tests/state/boards/structure/graph.test.ts tests/views/boards/editor.test.ts 65ac42560898 the same 15 lines at 98 and 110, to fold into one place
+tests/state/boards/structure/graph.test.ts tests/views/boards/editor.test.ts 0c756ea91199 the same 16 lines at 92 and 110, to fold into one place
 tests/state/boards/structure/graph.test.ts tests/views/structure/lines-fixture.ts bcbb7625783d the same 15 lines at 31 and 43, to fold into one place
 tests/state/client/writes.test.ts tests/state/workbench/navigation/notice-sources.test.ts 5f8d3f4b7492 the same 9 lines at 19 and 340, to fold into one place
 tests/state/feeds/feeds.test.ts tests/state/forms/schema.test.ts 46bb8cfb5682 the same 18 lines at 111 and 135, to fold into one place

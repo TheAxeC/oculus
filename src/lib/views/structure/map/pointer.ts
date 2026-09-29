@@ -50,7 +50,7 @@ export const DRAG_PIXEL = 1;
 /**
  * Whether a pointer at the screen point `at` has moved far enough from `last`, the screen point of
  * the last event that placed the dragged node (the press first), to place it again. A pointer that
- * rests or trembles by less than a pixel places nothing and so starts no settle.
+ * rests or trembles by less than a pixel moves the held node nowhere.
  */
 export function movedEnough(last: Point, at: Point): boolean {
     return Math.hypot(at.x - last.x, at.y - last.y) >= DRAG_PIXEL;
