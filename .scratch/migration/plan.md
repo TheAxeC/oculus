@@ -490,7 +490,7 @@ Independent of each other; two may run side by side under R9's rule when their b
 - Open item Z65 (2026-09-29): `tools/oculus/bin/` becomes `tools/oculus/utils/`, and `tests/checks/bin/` becomes `tests/checks/utils/`, every reference with them, the status-line command in `~/.claude/settings.json` included; done inline on Axel's word (the user).
 - Open item Z66 (2026-09-30): builders run on Claude Sonnet 5.5 (`worker: claude:sonnet`), and after every agent launch the orchestrator records the model the agent's transcript shows in its dispatch entry; a model other than the configured one is a stop (the user).
 - Open item Z67 (2026-09-30): (b), the hub `CLAUDE.md` names no model for the worker or the orchestrator and points at the ledger's configuration block (the user).
-- Open item Z68 (2026-09-30): (c), no rule on when a builder runs `npm run diagrams` (the user).
+- Open item Z68 (2026-09-30): (a), `agents/spec.md` says a builder runs `npm run diagrams` right before each run of the full verify list and at no other time, unless the step builds the diagram tool itself (the user).
 - Open item Z61 (2026-09-29): (a), JPEG sizes and orientation stay on the hand parser and `image-size` sizes the other picture formats (the user).
 - Open item Z62 (2026-09-29): (a), `agents/spec.md` lets a reviewer read git state and a builder runs no git command at all (the user).
 - A3 (2026-09-29): (a), a scheduled run is a cron-style `schedule:` field on each Update task entry (the user).
