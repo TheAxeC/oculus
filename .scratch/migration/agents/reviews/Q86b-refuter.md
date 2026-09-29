@@ -100,3 +100,24 @@ Cases of the brief's "Cases" (judged against Q86b-cases.md where it rules):
 - The earlier load-average timeouts the report mentions in four unchanged files: not rerun, per spec.md's rule on test files the step does not change. My run of the list was green.
 
 Reviewer usage: 38 tool uses, 193k tokens, 12 min (from the completion notice). One read-only `git -C . status` ran inside a compound command beside the permitted `git diff 38c12da7` and `git status --short`; it changed nothing. Copies, probes and logs are only in scratchpad/q86b-refute/.
+## Repair round 1, refuted
+
+A fresh reviewer over the round (from the worktree after round 1, against the whole diff since base 38c12da7). Its probes and logs: the session scratchpad `q86b-refute-r1/` (`tail.log`, `jitter.log`, `p3.log`, `press.log`, `balance.log`, `checks.log`).
+
+I sent my review of Q86b's repair round 1. It finds two problems: new sentences in the docs are false, and the creep that ruling Z49 asked to end is still there.
+
+**Checks.** The verify list stopped at `npm test`: `Tests  1 failed | 5814 passed | 1 skipped (5816)`. The one failure is in `tests/server/machine/pty/sessions.test.ts`, a file the step does not change. Run alone it passes, `Tests  19 passed (19)`. The five commands after it each pass when run one by one; `npm run check` gives `COMPLETED 2113 FILES 0 ERRORS 0 WARNINGS`. `bin/folder-check.sh`, the ASCII gate and the grep of removed names are clean. `npm run diagrams` on a copy gives files identical to the worktree's.
+
+**The round's claims.** I reran every revert the round names, on a copy, and each gives the red the report quotes: the grab offset ignored, the same-place guard removed, the link reach removed, the clamp moved after the push passes, and the push removed. `.scratch-builder/` is gone from the worktree.
+
+**Findings:**
+1. **The docs claim the drag comes to rest at the springs' balance; it does not.** This is in `DESIGN.md:291` and the `settle` docstring at `graph.ts:590-593`. The stop rule fires while the nodes are still sliding slowly. If the frames are left to run on, the nodes move up to 66 more units. On seed 1, 20 of 21 drags stop more than 0.1 unit short of that end point.
+2. **The other new sentence is also false.** It says a settle started again at the same pointer moves each node less than `REST` (0.01) in its first frame and stops there. For seed 1, `project::p3` dragged -200, the second restart's first frame moved 0.015 and it ran 8 frames.
+3. **The creep survives.** The same-place guard stops only a pointer event at exactly the same position. A drag held with a pointer wobbling 0.25 unit (under one pixel) restarts the settle each time. After 300 events, about 5 seconds, the neighbours had moved 45 units (seed 2, `line::a` dragged 200). The ruled test only checks one restart over 15 drags at seed 1, so it cannot see this. The fix the first review suggested, stopping only when the speeds are also near zero, would end it. I rated the creep case partial.
+4. **"No jump at the press" is false in one case.** Pressing a node that the last drag is still settling first finishes that settle (`pressHold`, as the brief requires). The node leaps away from under the pointer: 60 units at one second after the drop. It then drags at that distance for the rest of the drag. The brief's settle-at-press rule and this round's no-jump rule conflict, and that needs your ruling. The report's before-and-after does not mention it, so the look on TEST would not check for it.
+5. **Minor.** Moving `nearestProject` and `LINK_REACH` into `pointer.ts` went beyond the six rulings, to keep `Graph.svelte` under 540 lines. Its behaviour is unchanged and it has its own test. The report's old revert table still names `reverts.py`, which this round deleted.
+
+**Verdicts.** Brief items 1 to 5 hold; item 6 (documents and comments) is violated by findings 1, 2 and 4. Every case is met except the creep case (partial) and the on-screen items, which only the look on TEST can check.
+
+
+Usage: 31 tool uses, 178k tokens, 14.5 min.
