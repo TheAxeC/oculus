@@ -1,14 +1,13 @@
 /plan-orchestration oculus/migration
 
 In flight:
-- None.
+- Q79b (the tests, runs alone): building from base 89a83e3b, dispatched 2026-09-29.
 Queued, in order:
-- Q79b (the tests, runs alone).
-- Q96 and Q88 (the Rail section's field labels and its icon dropdown on bits-ui, once Q81 has landed; right-click menus wherever vscode.dev gives one, the tab's menu left to X3c).
+- Q96 and Q88 (the Rail section's field labels and its icon dropdown on bits-ui; right-click menus wherever vscode.dev gives one, the tab's menu left to X3c).
 - Q86b (the Map's drag after neato's placement, Z49 (a)); its look also takes the Map's labels after Q86's fix at landing.
 - D13a (the source tab on Monaco), then D13b (the diffs and the merge on Monaco) and D13c (the code theme key), after D13a (Z46 (a)).
-- X3c (the tab strip as VS Code's editor tabs, once Q81 has landed; Z47 (a)).
-- X3a (the Files view as VS Code's Explorer, once Q82 has landed).
+- X3c (the tab strip as VS Code's editor tabs; Z47 (a)).
+- X3a (the Files view as VS Code's Explorer).
 - Q91 and Q83 (the project view and its editor, once X3a has landed; small libraries: culori and the others).
 - Q84 and L4 (the fetch-and-hold stores on @tanstack/svelte-query; floating panes; together only when their briefs name no shared file).
 - Q85 (checking untyped input with zod).
