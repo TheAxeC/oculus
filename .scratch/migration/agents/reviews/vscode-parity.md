@@ -198,6 +198,104 @@ Taken 2026-09-28 from the two VS Code pages "Terminal Basics" and "Terminal Appe
 | Inline chat and `@terminal` | none | left out: the terminal is the agent |
 | Message box under the terminal | part: shown under every terminal | Q89: only under a Claude or Codex terminal |
 
+## Right-click menus (owner Q88)
+
+Taken from VS Code's source at commit e4f7a6f2 (github.com/microsoft/vscode, main on 2026-09-29): each surface's menu id, every item registered on it, and the condition it shows under (ruling Z51 (c)). Items that show only in the desktop build, only with an extension oculus has no counterpart for, or only under a setting's non-default value are named as such. Cross-checked on vscode.dev without a sign-in on 2026-09-29: the Explorer pane header, the side bar header and the empty tab strip show what the source lists; a selection of plain workbench text (the Welcome page) opens no menu at all.
+
+Status words for this section: **has** (oculus has the action today, the menu calls it), **clipboard** (needs only the page's clipboard, no server), **new** (a capability oculus lacks: a server write, a new view, or new state), **out** (no oculus counterpart; the reason is given). "Not checked" means oculus's side was not read.
+
+### Explorer row (`MenuId.ExplorerContext`, `fileActions.contribution.ts` and contributions)
+
+| VS Code item | Shows on | oculus |
+|---|---|---|
+| New File..., New Folder... | a folder | new: file and folder creation under a root |
+| Open to the Side | a file | has: open beside (the Views catalogue's Open beside, Split right) |
+| Open With... | a file with several editors | out: oculus has one view per file kind |
+| Reveal in Finder | desktop build | part: `/api/open` reveals a folder (`open -R`); a file is opened in its program, so revealing a file is new |
+| Open in Integrated Terminal | a file or folder | has: the terminal composer takes a folder |
+| Find in Folder... / Find in Workspace... | a folder / a root | part: the Search view is scoped to a root, not to a folder |
+| Open Timeline | a file with a timeline provider | out: oculus has no file timeline |
+| Select for Compare, Compare with Selected, Compare Selected | a file | new: a diff of two chosen files |
+| Cut | not a root, writable | new: move a file or folder |
+| Copy | not a root | new: copy a file or folder |
+| Paste | a folder, after Cut or Copy | new |
+| Download... | web build: a file | has: the File view's Download |
+| Upload... | web build: a writable folder | new |
+| Copy Path, Copy Relative Path | any file-system row | clipboard |
+| Add Folder to Workspace... | a root | has: + root |
+| Open Folder Settings | a root folder | out: oculus has no per-folder settings |
+| Remove Folder from Workspace | a root | has: remove |
+| Rename... | not a root, writable | new |
+| Delete (to the trash; Delete Permanently where there is no trash) | not a root | new |
+| Open Preview | a Markdown file | has: the Document view |
+| Find File References | a Markdown file | out: needs the Markdown language server |
+| Add File to Chat, Run Tests, Share, Install Extension VSIX, Open in Images Preview, Open in External Terminal | extensions or the desktop build | out: no oculus counterpart |
+
+### Source Control rows (the git extension's `scm/*/context` menus, and `SCMSourceControl`, `SCMHistoryItemContext`)
+
+| VS Code item | Shows on | oculus |
+|---|---|---|
+| Open Changes | a changed file (staged, changes, untracked) | has: Open Changes |
+| Open File | a changed file | has |
+| Open File (HEAD) | a changed file | not checked |
+| Stage Changes, Unstage Changes, Discard Changes | a file or a folder row, by group | has: stage, unstage, discard |
+| Stage All / Unstage All / Discard All (Tracked, Untracked) Changes | a group header | has: Stage All Changes, Unstage All Changes, Discard All Changes, Stage All Untracked |
+| Compare with Workspace | a file inside a worktree | not checked |
+| Add to .gitignore | a changed or untracked file or folder | new: a write to `.gitignore` |
+| Reveal in Finder | desktop build | part, as in the Explorer |
+| Reveal in Explorer View | a changed file | has: the Files view's show path |
+| Share | any | out |
+| Close Repository, Close Other Repositories | a repository row | not checked |
+| Open Worktree in Current Window / New Window, Delete Worktree | a worktree repository row | part: worktrees are removed (`removeWorktree`); opening one is not checked |
+| Open in Integrated Terminal | a repository row | has: the terminal composer |
+| Open Changes | a graph commit | has: the commit's files |
+| Checkout (Detached) | a graph commit | not checked |
+| Create Branch..., Create Tag... | a graph commit | part: `createBranch` and `createTag` exist at HEAD; from a chosen commit not checked |
+| Cherry Pick | a graph commit | new |
+| Compare with Remote, Compare with Merge Base, Compare with... | a graph commit | not checked |
+| Copy Commit Hash, Copy Commit Message | a graph commit | has: Copy Commit ID, Copy Commit Message |
+| Checkout, Delete Branch, Delete Tag | a branch or tag label on the graph | part: checkout and `deleteTag` exist; deleting a branch not checked |
+| Add to Chat, Explain Changes | a graph commit, chat on | out |
+
+### Pane header (oculus's pane is VS Code's editor group; its title strip is `EditorTabsBarContext`, an empty pane `EmptyEditorGroupContext`; the tab's own menu is X3c's)
+
+| VS Code item | Shows on | oculus |
+|---|---|---|
+| New Text File, Open File... | the strip, an empty group | part: Open File is the palette; a new text file is new |
+| Split Up, Split Down, Split Left, Split Right | the strip, an empty group | part: split right and split down |
+| Move into New Window, Copy into New Window, New Window | the strip, an empty group | out: oculus is one browser tab |
+| Lock Group | an empty group | not checked |
+| Close | an empty group, with more than one group | has: close the pane |
+| Tab Bar (Multiple Tabs, Single Tab, Hidden), Editor Actions Position, Configure Tabs | the strip | new: settings oculus lacks (X3c holds `wrap_tabs`) |
+| New Terminal | the strip, an empty group | has: new terminal |
+| Hide 'view', Reset Location, the container's views with checks | a side bar view header (`ViewTitleContext`) | out of this row: oculus has no side bar view headers; its rail has its own menu (L5) |
+
+### Terminal (`TerminalInstanceContext`, `TerminalTabContext`, `TerminalTabEmptyAreaContext`, `terminalMenus.ts`)
+
+| VS Code item | Shows on | oculus |
+|---|---|---|
+| Copy, Paste, Select All | the terminal | part: paste has a confirm for several lines; copy and select all in xterm not checked |
+| Copy as HTML | the terminal | new |
+| Clear | the terminal | new: clears the view, tmux keeps its history |
+| Kill Terminal | the terminal, a tab | has: Kill |
+| Toggle Size to Content Width | the terminal, a tab | out: tmux owns the size (row above) |
+| Start Dictation, Rerun Task, Add Terminal Selection to Chat | dictation, tasks, chat | out |
+| Split Terminal | a tab | has: Split |
+| Move Terminal into Editor Area, Move Terminal into New Window | a tab | out: every oculus terminal is a pane already; oculus is one browser tab |
+| Rename..., Change Icon..., Change Color... | a tab | new |
+| Join Terminals, Unsplit Terminal | several tabs, a split tab | not checked |
+| New Terminal, New Terminal With Profile... | the empty tab list | has: new terminal, with its kind (shell, Claude, Codex) |
+
+### Text selection and documents (`WebviewContext`, `textInputActions.ts`)
+
+| VS Code item | Shows on | oculus |
+|---|---|---|
+| Cut, Copy, Paste | a preview (webview) such as the Markdown preview | clipboard |
+| Copy Image, Open Image | an image in the Markdown preview | clipboard / has (open the file) |
+| Configure Frontmatter Visibility | the front matter in the preview | out |
+| Undo, Redo, Cut, Copy, Paste, Select All | any text box of the workbench | clipboard (the browser's own editing commands) |
+| (no menu) | plain workbench text | the browser's menu is suppressed |
+
 ## Sources
 
 - https://code.visualstudio.com/docs/getstarted/userinterface
@@ -209,3 +307,4 @@ Taken 2026-09-28 from the two VS Code pages "Terminal Basics" and "Terminal Appe
 - vscode.dev, measured in Chrome on 2026-09-23
 - https://code.visualstudio.com/docs/terminal/basics
 - https://code.visualstudio.com/docs/terminal/appearance
+- github.com/microsoft/vscode at e4f7a6f2 (menu registrations for Q88), read on 2026-09-29
