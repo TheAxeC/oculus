@@ -384,6 +384,12 @@
        theme derives to read on it, where the muted colour does not. */
     .item.selected .twisty,
     .item.selected .mark,
+    /* The words after the name give up their room first, and the name shrinks only once they
+       are gone, as VS Code's rows keep a file's name and cut its folder. */
+    .detail {
+        flex-shrink: 1000;
+    }
+
     .item.selected .detail,
     .item.selected .count,
     .item.selected .end {

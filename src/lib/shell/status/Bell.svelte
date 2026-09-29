@@ -66,11 +66,13 @@
         <ToolButton
             label={t('statusbar.item_bell')}
             glyph={quiet ? QUIET_GLYPH : count > 0 ? UNREAD_GLYPH : BELL_GLYPH}
-            title={count > 0
-                ? t('statusbar.bell_unread', count)
-                : quiet
-                  ? t('statusbar.bell_quiet')
-                  : t('statusbar.bell_tip')}
+            title={count === 1
+                ? t('statusbar.bell_unread_one')
+                : count > 0
+                  ? t('statusbar.bell_unread', count)
+                  : quiet
+                    ? t('statusbar.bell_quiet')
+                    : t('statusbar.bell_tip')}
             status
             expanded={open}
             onclick={toggle}

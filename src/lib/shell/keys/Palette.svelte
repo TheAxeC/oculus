@@ -7,7 +7,9 @@
     // rest, its matched letters marked.
     //
     // The selection, ArrowUp and ArrowDown, Home and End, Enter and the row a screen reader is told
-    // is selected are the Command's; each query starts the selection on its first row. The focus
+    // is selected are the Command's; each query starts the selection on its first row. The rows sit
+    // in the Command's viewport, the one part the Command reads the selected row's id from to name
+    // it on the input as its active descendant, so the list and the viewport are one box. The focus
     // moves to the input when it opens and stays inside the palette; Escape and a press on the
     // ground beside it close it.
     //
@@ -227,143 +229,156 @@
                             </Command.Input>
                             <Command.List id={LIST}>
                                 {#snippet child({ props: list })}
-                                    <div {...list} class="list">
-                                        {#if parsed === null}
-                                            {#each matches as found (found.item.id)}
-                                                <Command.Item
-                                                    value={found.item.id}
-                                                    onSelect={() => choose(found.item)}
-                                                >
-                                                    {#snippet child({ props: row })}
-                                                        <div {...row} class="result">
-                                                            <span class="kind"
-                                                                >{kindWord(
-                                                                    found.item.kind,
-                                                                    t
-                                                                )}</span
-                                                            >
-                                                            <ToolButton
-                                                                label={found.item.label}
-                                                                onclick={pressed}
-                                                            >
-                                                                <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-                                                                {@render marked(found.title)}
-                                                            </ToolButton>
-                                                        </div>
-                                                    {/snippet}
-                                                </Command.Item>
-                                            {/each}
-                                        {:else if line !== null}
-                                            {#if caret !== null}
-                                                <Command.Item
-                                                    value="line"
-                                                    onSelect={() => goLine(line)}
-                                                >
-                                                    {#snippet child({ props: row })}
-                                                        <div {...row} class="result">
-                                                            <span class="kind"
-                                                                >{t(
-                                                                    'statusbar.palette_kind_line'
-                                                                )}</span
-                                                            >
-                                                            <ToolButton
-                                                                label={t(
-                                                                    'statusbar.palette_line',
-                                                                    line
-                                                                )}
-                                                                onclick={pressed}
-                                                            />
-                                                        </div>
-                                                    {/snippet}
-                                                </Command.Item>
-                                            {:else}
-                                                <p class="empty">
-                                                    {t('statusbar.palette_line_none')}
-                                                </p>
-                                            {/if}
-                                        {:else if languageMode}
-                                            {#if source === null}
-                                                <p class="empty">
-                                                    {t('statusbar.palette_language_none')}
-                                                </p>
-                                            {/if}
-                                            {#each languages as found (found.choice.name)}
-                                                <Command.Item
-                                                    value={`language:${found.choice.name}`}
-                                                    onSelect={() => chooseLanguage(found.choice)}
-                                                >
-                                                    {#snippet child({ props: row })}
-                                                        <div
-                                                            {...row}
-                                                            class="result"
-                                                            data-language={found.choice.name}
+                                    <Command.Viewport>
+                                        {#snippet child({ props: viewport })}
+                                            <div {...viewport} {...list} class="list">
+                                                {#if parsed === null}
+                                                    {#each matches as found (found.item.id)}
+                                                        <Command.Item
+                                                            value={found.item.id}
+                                                            onSelect={() => choose(found.item)}
                                                         >
-                                                            <span class="kind"
-                                                                >{t(
-                                                                    'statusbar.palette_kind_language'
-                                                                )}</span
-                                                            >
-                                                            <ToolButton
-                                                                label={found.choice.label}
-                                                                active={source?.status.language ===
-                                                                    found.choice.name}
-                                                                onclick={pressed}
-                                                            >
-                                                                <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-                                                                {@render marked(found.label)}
-                                                            </ToolButton>
-                                                        </div>
-                                                    {/snippet}
-                                                </Command.Item>
-                                            {/each}
-                                        {:else}
-                                            {#if parsed.name === '' && caret !== null && source !== null}
-                                                <p class="empty" data-line-hint>
-                                                    {t(
-                                                        'statusbar.palette_line_hint',
-                                                        caret.line,
-                                                        caret.column,
-                                                        source.status.lines
-                                                    )}
-                                                </p>
-                                            {/if}
-                                            {#each commandList as command (command.name)}
-                                                <Command.Item
-                                                    value={`command:${command.name}`}
-                                                    disabled={!command.available}
-                                                    onSelect={() => run(command)}
-                                                >
-                                                    {#snippet child({ props: row })}
-                                                        <div {...row} class="result">
-                                                            <span class="kind">:</span>
-                                                            <ToolButton
-                                                                label={`${command.name}${command.hint === '' ? '' : ` ${command.hint}`}`}
-                                                                disabled={!command.available}
-                                                                title={!command.available
-                                                                    ? t('app.palette_unavailable')
-                                                                    : undefined}
-                                                                onclick={pressed}
-                                                            />
-                                                            {#if !command.available}
-                                                                <span class="unavailable"
-                                                                    >{t(
-                                                                        'app.palette_unavailable'
-                                                                    )}</span
+                                                            {#snippet child({ props: row })}
+                                                                <div {...row} class="result">
+                                                                    <span class="kind"
+                                                                        >{kindWord(
+                                                                            found.item.kind,
+                                                                            t
+                                                                        )}</span
+                                                                    >
+                                                                    <ToolButton
+                                                                        label={found.item.label}
+                                                                        onclick={pressed}
+                                                                    >
+                                                                        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                                                                        {@render marked(
+                                                                            found.title
+                                                                        )}
+                                                                    </ToolButton>
+                                                                </div>
+                                                            {/snippet}
+                                                        </Command.Item>
+                                                    {/each}
+                                                {:else if line !== null}
+                                                    {#if caret !== null}
+                                                        <Command.Item
+                                                            value="line"
+                                                            onSelect={() => goLine(line)}
+                                                        >
+                                                            {#snippet child({ props: row })}
+                                                                <div {...row} class="result">
+                                                                    <span class="kind"
+                                                                        >{t(
+                                                                            'statusbar.palette_kind_line'
+                                                                        )}</span
+                                                                    >
+                                                                    <ToolButton
+                                                                        label={t(
+                                                                            'statusbar.palette_line',
+                                                                            line
+                                                                        )}
+                                                                        onclick={pressed}
+                                                                    />
+                                                                </div>
+                                                            {/snippet}
+                                                        </Command.Item>
+                                                    {:else}
+                                                        <p class="empty">
+                                                            {t('statusbar.palette_line_none')}
+                                                        </p>
+                                                    {/if}
+                                                {:else if languageMode}
+                                                    {#if source === null}
+                                                        <p class="empty">
+                                                            {t('statusbar.palette_language_none')}
+                                                        </p>
+                                                    {/if}
+                                                    {#each languages as found (found.choice.name)}
+                                                        <Command.Item
+                                                            value={`language:${found.choice.name}`}
+                                                            onSelect={() =>
+                                                                chooseLanguage(found.choice)}
+                                                        >
+                                                            {#snippet child({ props: row })}
+                                                                <div
+                                                                    {...row}
+                                                                    class="result"
+                                                                    data-language={found.choice
+                                                                        .name}
                                                                 >
-                                                            {/if}
-                                                        </div>
-                                                    {/snippet}
-                                                </Command.Item>
-                                            {/each}
-                                        {/if}
-                                        {#if count === 0 && line === null && !languageMode}
-                                            <p class="empty">
-                                                {parsed === null
-                                                    ? t('app.palette_empty')
-                                                    : t('app.palette.cmd_unknown')}
-                                            </p>
-                                        {/if}
-                                    </div>
+                                                                    <span class="kind"
+                                                                        >{t(
+                                                                            'statusbar.palette_kind_language'
+                                                                        )}</span
+                                                                    >
+                                                                    <ToolButton
+                                                                        label={found.choice.label}
+                                                                        active={source?.status
+                                                                            .language ===
+                                                                            found.choice.name}
+                                                                        onclick={pressed}
+                                                                    >
+                                                                        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                                                                        {@render marked(
+                                                                            found.label
+                                                                        )}
+                                                                    </ToolButton>
+                                                                </div>
+                                                            {/snippet}
+                                                        </Command.Item>
+                                                    {/each}
+                                                {:else}
+                                                    {#if parsed.name === '' && caret !== null && source !== null}
+                                                        <p class="empty" data-line-hint>
+                                                            {t(
+                                                                'statusbar.palette_line_hint',
+                                                                caret.line,
+                                                                caret.column,
+                                                                source.status.lines
+                                                            )}
+                                                        </p>
+                                                    {/if}
+                                                    {#each commandList as command (command.name)}
+                                                        <Command.Item
+                                                            value={`command:${command.name}`}
+                                                            disabled={!command.available}
+                                                            onSelect={() => run(command)}
+                                                        >
+                                                            {#snippet child({ props: row })}
+                                                                <div {...row} class="result">
+                                                                    <span class="kind">:</span>
+                                                                    <ToolButton
+                                                                        label={`${command.name}${command.hint === '' ? '' : ` ${command.hint}`}`}
+                                                                        disabled={!command.available}
+                                                                        title={!command.available
+                                                                            ? t(
+                                                                                  'app.palette_unavailable'
+                                                                              )
+                                                                            : undefined}
+                                                                        onclick={pressed}
+                                                                    />
+                                                                    {#if !command.available}
+                                                                        <span class="unavailable"
+                                                                            >{t(
+                                                                                'app.palette_unavailable'
+                                                                            )}</span
+                                                                        >
+                                                                    {/if}
+                                                                </div>
+                                                            {/snippet}
+                                                        </Command.Item>
+                                                    {/each}
+                                                {/if}
+                                                {#if count === 0 && line === null && !languageMode}
+                                                    <p class="empty">
+                                                        {parsed === null
+                                                            ? t('app.palette_empty')
+                                                            : t('app.palette.cmd_unknown')}
+                                                    </p>
+                                                {/if}
+                                            </div>
+                                        {/snippet}
+                                    </Command.Viewport>
                                 {/snippet}
                             </Command.List>
                         </div>

@@ -90,6 +90,7 @@ text:
         language_xml: XML
         language_yaml: YAML
         bell_tip: No new notifications
+        bell_unread_one: 1 new notification
         bell_unread: '{0} new notifications'
         bell_quiet: Do Not Disturb is on
         centre: Notifications

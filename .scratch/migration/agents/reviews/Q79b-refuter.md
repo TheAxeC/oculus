@@ -93,3 +93,68 @@ Claims rerun:
   - `tests/ui/theme.test.ts` and `tests/views/system/help.test.ts`: no hunk of Q79b.
 
 Reviewer usage: 279972 tokens, 84 tool uses, 25 min (completion notice).
+
+# Repair round 1, refuted
+
+## Verification (rerun from the worktree's `tools/oculus`)
+
+```
+$ PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH sh ~/.claude/skills/land/templates/checks.sh .../orchestrator-state.md </dev/null     (load 18.21 at the end)
+ FAIL  tests/server/git/git-ops.test.ts > stashes > leaves the conflicts of a pop in the index and keeps the stash
+Error: Test timed out in 5000ms.
+ Test Files  1 failed | 357 passed (358)
+      Tests  1 failed | 5724 passed | 1 skipped (5726)
+checks: failed with exit 1: npm test
+
+$ npx vitest run tests/server/git/git-ops.test.ts        (alone, load 15.46)
+ Test Files  1 passed (1)
+      Tests  37 passed (37)
+
+checks.sh stopped at npm test; the rest by hand, in order:
+$ npm run check          exit 0   COMPLETED 2043 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+$ npm run build          exit 0
+$ npm run format:check   exit 0   All matched files use Prettier code style!
+$ npm run lint           exit 0
+$ ! LC_ALL=C grep -rna '[^ -~]' src tests     exit 0, prints nothing
+spec.md's perl ASCII gate over src tests bin config: prints nothing. bin/folder-check.sh: exit 0. Longest changed file: 896 lines.
+```
+
+The builder's quoted commands, rerun:
+- Verify 2: `grep -rl "afterAll(sweepScratch)" tests` prints nothing; `git diff 89a83e3b | grep -c "^-afterAll(sweepScratch);"` prints 102.
+- Verify 3: `grep -rn "startsWith(resolve(tmpdir())" tests | wc -l` prints 13, the same 13 lines the report keeps; `git diff 89a83e3b | grep -c "^-.*startsWith(resolve(tmpdir())"` prints 105 (104 assertions plus the helper's old `if`).
+- Verify 5: `grep -rn "readdirSync" tests` lists only the one-folder reads the report names.
+- The walker comparison: `walks/before.mjs` then `walks/after2.mjs` print `every list equal` over 49 lists, the counts as the report gives them (size:src 649, scratch:tests 403, history:tests 409); on the builder's dot tree (56 dot names) 50 "equal" lines and `every list equal`. `after2.mjs`'s copies match the current `size`, `comment-width`, `keys`, `config-folder` and `shape` walkers. A probe of `treeFiles`'s patterns over `.h/.z/.q/.g`, `.h/.z/.q/f`, `.h/.z/.y`, `a/.b/.c` and `a/.b/d` returns all five.
+- The `$TMPDIR` counts: around checks.sh the system `$TMPDIR` held 1823 entries before and after, `comm -13` of it and of its parent empty. A full run with `TMPDIR` at the reviewer's scratch `T/` leaves only `node-compile-cache`; that run had 23 failures in 12 files, each caused by the chosen folder (a git worktree around it, a tmux socket path of 113 bytes or more, three timeouts at load 18), none leaving a directory behind.
+- The reverts: 8 of 30 sampled, each applied to a copy of the tree, each green unreverted and red reverted through an assertion ("code: style // pattern", "tinted: blocks as written", "tinted: pattern back", "rule: no HOOKS", "rule: no loading loop", "rule: describe bodies deferred", "walk: star alone", "scratch: fixture sweeps none"); `cmp` shows each copied file restored.
+
+## 1. Spec
+
+- `tests/routes/sessions/terminal-fixture.ts:44-107` adds exported module-level mutable state: eight `export let` bindings (`TASK_CONFIG`, `ENGINE`, ...) set by a void `makeTaskConfig()` guarded by `if (TASK_CONFIG !== UNSET) return;`, read as live bindings by `terminal.test.ts`, `terminal-actions.test.ts` and `routes/sessions/compose.test.ts`. Round item 2 asked for a function its importers call from a hook; spec.md's principles forbid module-level mutable state. Under vitest's per-file isolation each file has its own module instance, but the guard depends on that isolation. A form inside the rule: `makeTaskConfig()` returns an object holding the paths, each importer keeping it in a file-local binding set from `test.beforeAll`. The file-local `let` bindings of the other converted suites are within the rule.
+- The widening of item 2 to describe bodies, and of item 3 to `memories.test.ts` and `images.test.ts`, is inside the round's rule.
+
+## 2. Proof
+
+- The report's item 3 says the sweep runs after red fixture hooks, "red ones included". A probe with vitest 4.1.11: a file that makes a directory in `test.beforeAll` and throws in `test.afterAll` leaves `oculus-refute-before-D71uHA`; a file that makes one in `test.afterAll` and then throws leaves `oculus-refute-redafter-cW2NfG`. A red case and a red `test.beforeAll` are swept, and in the green run `test.afterAll` sees the directory still present. At the base, whether a red plain `afterAll` blocked the sweep depended on registration order. The files now cleaning up in `test.afterAll`: `SERVER.close()` in `terminal.test.ts`, `terminal-actions.test.ts`, `routes/sessions/compose.test.ts`; tmux `kill-server` in `pty/channel`, `pty/sessions`; `rmSync` in `deposit`, `git-ops`, `git-write`, `memories`, `images`.
+- The report's limitation about a comment inside a CSS selector: `compile`, `parse` and `parseCss` of `.a /* x */ :global(.b) { color: red; }` each throw "Expected a valid CSS identifier", so no component can hold one; the limitation line is moot.
+- The report's Verify 4 numbers (1520 before, 1531 after) are unequal; the reviewer's rerun gives equal counts with no new entry. No check was loosened; the only `{ timeout: ... }` values are the two the round ruled.
+
+## 3. Standards
+
+- `tests/fixtures/scratch.ts:5-8` and its docstring at `:62-66` say the sweep follows red `test.afterAll` hooks, which the probe refutes; `tests/checks/tree/scratch.test.ts:11-13` implies the same.
+- `tests/routes/sessions/terminal-fixture.ts:44-47` says a use before `makeTaskConfig` "fails loudly". A write does; a read does not, since `loadLocal` (`src/lib/data/sources/config/local.ts:309-313`) returns the defaults when the file is missing. No current use runs before the hook (a TypeScript parse of the three importers finds no collection-time read). The sentence should say "a write".
+- `tests/server/root/watch/bookmarks.test.ts:3-4` still says every file is "asserted to be under the system temporary directory"; the step deleted that assertion, and what remains (`:44`) asserts a file is inside its folder. The same wording the round's item 6 repaired in `local.test.ts:6-7`.
+- No history in the round's comments, no non-ASCII, no file over 900 lines, no folder over ten items.
+
+## 4. Behaviour
+
+- A red `test.afterAll` in one of the ten files above leaves every scratch directory of that file in `$TMPDIR`; the report states the opposite.
+- `tests/views/personal/calendar.test.ts:152-156`: `styleOf` now reads only to the first `</style>`, before to the end of the file. The two audits pass on the tree.
+
+## Not checked
+
+- 22 of the 30 reverts.
+- What `tmux -S '' kill-server` does in `pty/channel.test.ts` and `pty/sessions.test.ts` when a `test.afterAll` runs after a failed hook (the socket is `''` until `test.beforeAll`); by reading, an empty `-S` is used as the path, not verified.
+- Whether any of the ten `test.afterAll` hooks can throw in practice.
+- `npm run diagrams`, the Q96 overlap in `wall.test.ts` and `colours.test.ts`, and the `allow-duplication.txt` re-keys line by line.
+
+Reviewer usage: 260595 tokens, 76 tool uses, 21 min (completion notice).

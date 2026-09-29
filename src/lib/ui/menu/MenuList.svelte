@@ -114,7 +114,12 @@
     {:else}
         {@const inner = item.items}
         <DropdownMenu.Sub>
-            <DropdownMenu.SubTrigger bind:ref={subTriggers[at]}>
+            <!-- bits-ui's `ref` falls back to null and refuses a binding that reads undefined,
+                 which an entry not yet drawn is in the record, so the binding reads null for
+                 it. -->
+            <DropdownMenu.SubTrigger
+                bind:ref={() => subTriggers[at] ?? null, (node) => (subTriggers[at] = node)}
+            >
                 {#snippet child({ props })}
                     <div
                         {...props}
