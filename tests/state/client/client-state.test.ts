@@ -10,6 +10,7 @@ import { createClientState, type ClientState } from '../../../src/lib/state/clie
 
 /** Every key the type names, so a store added to the type and not to the factory fails here. */
 const STORES: (keyof ClientState)[] = [
+    'graphviz',
     'entities',
     'writes',
     'socket',

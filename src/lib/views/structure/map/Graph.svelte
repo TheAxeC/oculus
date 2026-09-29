@@ -1,6 +1,14 @@
 <script lang="ts">
     // Layer 3, Map partial. The hand-drawn SVG graph and its drag, pan, zoom, open and related-edge
-    // interactions. Geometry comes from the pure seeded layout in state/boards/structure/graph.ts.
+    // interactions. The nodes are placed by Graphviz's neato through @viz-js/viz in the page
+    // (state/boards/structure/layout.ts, whose loader the client state holds as `graphviz`), from
+    // the start seed the pane hands down, and each edge is drawn between the ends edgeEnds() of
+    // that module answers. The SVG draws the nodes once the placement has come back, draws nothing
+    // before that, and says in one line why when the engine refuses the graph or does not load.
+    // Once a pressed node has moved past the click threshold, dragTick() of
+    // state/boards/structure/graph.ts runs each frame: `physics` under DRAG_PHYSICS over that
+    // node's direct neighbours alone, each edge held to the length it had when the press began, so
+    // the dragged node pulls its neighbours after it and every other node stays where it is.
     //
     // The labels are one layer drawn over every node, so a label is never covered by a node drawn
     // after it. A label that would overlap one already drawn is hidden, by the rule of
@@ -8,7 +16,7 @@
     // holds the keyboard; those labels are drawn whatever they overlap, and last, so they sit on
     // top.
 
-    import { onMount, tick } from 'svelte';
+    import { tick } from 'svelte';
     import { onShown } from '$lib/ui/shown';
     import { writeRelated } from './edge-write';
     import {
@@ -23,19 +31,25 @@
     import {
         DEFAULT_BOUNDS,
         DEFAULT_PHYSICS,
-        mapLayout,
-        physics,
+        dragTick,
+        holdFor,
+        type DragHold,
         type Graph,
         type GraphNode,
-        type Physics,
         type PointNode
     } from '$lib/state/boards/structure/graph';
+    import {
+        edgeEnds,
+        mapPlacement,
+        type GraphvizAnswer
+    } from '$lib/state/boards/structure/layout';
     import { t } from '$lib/state/shared/words/text';
     import { toneOf, typeTone } from '$lib/state/shared/words/tones';
     import { useState } from '$lib/state/client/use';
 
     const {
         entities: { portfolio },
+        graphviz,
         layout: { openView },
         selectors: { configMap },
         ui: { textScale },
@@ -46,26 +60,28 @@
         graph: Graph;
         instanceId: string;
         linkMode: boolean;
-        /** The parameters the pane saved for this node set, and null when it saved none. */
-        tuned: Physics | null;
-        /** Where parameters tuned here are handed back, for the pane to keep with its own state. */
-        ontuned: (params: Physics) => void;
+        /** The start seed the graph is laid out from, which the pane keeps for its node set. */
+        seed: number;
     };
-    let { graph, instanceId, linkMode, tuned, ontuned }: Props = $props();
+    let { graph, instanceId, linkMode, seed }: Props = $props();
 
     const WIDTH = DEFAULT_BOUNDS.width;
     const HEIGHT = DEFAULT_BOUNDS.height;
 
-    // Read before the first paint and again on mount, so what is drawn and what the simulation
-    // carries on from are the one placement rather than two.
-    const chosen = $derived(mapLayout(graph, tuned));
+    /** The page's Graphviz once loaded, or the reason it did not load. */
+    let viz = $state<GraphvizAnswer>(graphviz.loaded());
+    /** Where neato put the nodes, or why the engine refused; no node until Graphviz loads. */
+    const chosen = $derived(mapPlacement(viz, graph, seed));
+    /** The positions after a drag, which take over from the placement once a node has moved. */
     let placed = $state<PointNode[] | null>(null);
     const positions = $derived(placed ?? chosen.nodes);
-    let params: Physics = DEFAULT_PHYSICS;
+    const failure = $derived(chosen.failure);
     let alpha = 0.12;
     let frame: number | null = null;
     let svg: SVGSVGElement;
     let drag: PointNode | null = null;
+    /** What the last drag moves and holds each edge to, taken when its press began. */
+    let hold: DragHold = { movers: new Set(), lengths: new Map() };
     let linkSource: PointNode | null = $state(null);
     let linkTarget: PointNode | null = $state(null);
     let status = $state('');
@@ -119,46 +135,27 @@
     }
 
     $effect(() => {
-        // The node set, its words and the text size are read, so a label that changes, and every
-        // label once the text grows or shrinks, is measured again.
+        // The node set, its words, the text size and the placement are read, so a label that
+        // changes, every label once the text grows or shrinks, and every label once Graphviz has
+        // placed the nodes and their labels are drawn, is measured again.
         void graph.nodes.map((node) => `${node.id}\n${node.label}`).join('\n');
         void textScale();
+        void chosen.nodes.map((node) => node.id).join('\n');
         void tick().then(measure);
     });
 
     // A hidden tab draws at no size and measures no label, so each is measured again once it shows.
     $effect(() => onShown(svg, measure));
 
-    function point(id: string): PointNode | undefined {
-        return positions.find((node) => node.id === id);
-    }
+    // Graphviz loads once per page; a pane opened before it has loaded waits for it here.
+    $effect(() => (viz === null ? graphviz.load((answer) => (viz = answer)) : undefined));
 
-    function edgePoints(edge: Graph['edges'][number]): {
-        x1: number;
-        y1: number;
-        x2: number;
-        y2: number;
-    } | null {
-        const source = point(edge.source);
-        const target = point(edge.target);
-        if (source === undefined || target === undefined) return null;
-        if (edge.kind !== 'related') {
-            return { x1: source.x, y1: source.y, x2: target.x, y2: target.y };
+    // A refused placement is logged with the graph's size, beside the line the pane shows.
+    $effect(() => {
+        if (failure !== null) {
+            console.error(`map: the layout failed for ${graph.nodes.length} nodes: ${failure}`);
         }
-        const dx = target.x - source.x;
-        const dy = target.y - source.y;
-        const distance = Math.sqrt(dx * dx + dy * dy) || 1;
-        const ux = dx / distance;
-        const uy = dy / distance;
-        const targetPad = target.radius + 6;
-        const sourcePad = edge.direction === 'mutual' ? source.radius + 6 : 0;
-        return {
-            x1: source.x + ux * sourcePad,
-            y1: source.y + uy * sourcePad,
-            x2: target.x - ux * targetPad,
-            y2: target.y - uy * targetPad
-        };
-    }
+    });
 
     function nodeTone(node: GraphNode): string {
         if (node.archived === undefined) return typeTone(node.type ?? '');
@@ -205,8 +202,8 @@
     }
 
     function step(): void {
-        placed = physics(positions, graph.edges, alpha, params, DEFAULT_BOUNDS, drag?.id);
-        alpha *= params.cool;
+        placed = dragTick(positions, graph.edges, alpha, hold);
+        alpha *= DEFAULT_PHYSICS.cool;
         frame = alpha > 0.03 ? requestAnimationFrame(step) : null;
     }
 
@@ -217,7 +214,10 @@
         pointer = start;
         moved = false;
         if (linkMode && node.kind === 'project') linkSource = node;
-        else drag = node;
+        else {
+            drag = node;
+            hold = holdFor(positions, graph.edges, node.id);
+        }
     }
 
     function backgroundDown(event: PointerEvent): void {
@@ -235,6 +235,7 @@
         if (drag !== null) {
             const at = local(event);
             moved = moved || Math.hypot(at.x - start.x, at.y - start.y) > 3;
+            if (!moved) return;
             placed = positions.map((node) =>
                 node.id === drag?.id ? { ...node, x: at.x, y: at.y, vx: 0, vy: 0 } : node
             );
@@ -291,20 +292,17 @@
         zoom = 1;
     }
 
-    onMount(() => {
-        params = chosen.params;
-        placed = chosen.nodes;
-        if (chosen.tuned !== null) ontuned(chosen.tuned);
-        frame = requestAnimationFrame(step);
-        return () => {
-            if (frame !== null) cancelAnimationFrame(frame);
-        };
+    $effect(() => () => {
+        if (frame !== null) cancelAnimationFrame(frame);
     });
 </script>
 
 <div class="graph-wrap">
     {#if status !== ''}
         <p class="status" role="status">{status}</p>
+    {/if}
+    {#if failure !== null}
+        <p class="status" role="status">{t('map.layout_failed', failure)}</p>
     {/if}
     <svg
         bind:this={svg}
@@ -336,7 +334,7 @@
         </defs>
         <g transform={`translate(${tx},${ty}) scale(${zoom})`}>
             {#each graph.edges as edge (edge.id)}
-                {@const points = edgePoints(edge)}
+                {@const points = edgeEnds(edge, positions)}
                 {#if points !== null}
                     <line
                         class:membership={edge.kind === 'membership'}

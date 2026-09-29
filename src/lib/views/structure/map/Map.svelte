@@ -13,7 +13,9 @@
 
 <script lang="ts">
     // Layer 3, view. The relationship-map heading and visibility controls around the pure graph
-    // built from the current portfolio snapshot.
+    // built from the current portfolio snapshot. The pane keeps the start seed Graphviz's neato
+    // lays its node set out from, as `start: { key, seed }` in its own instance state, so a page
+    // saved with a map draws the same picture again; the re-tune control saves the next seed.
 
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
@@ -27,12 +29,13 @@
         layoutKey,
         lineFilters as lineChips,
         presentFilter,
+        nextStart,
+        startFor,
         toggleFilter,
-        tunedFor,
         typeFilters as typeChips
     } from '$lib/state/boards/structure/graph';
     import { t } from '$lib/state/shared/words/text';
-    import { parseMapState, type MapState, type Physics } from '$lib/state/boards/structure/graph';
+    import { parseMapState, type MapState } from '$lib/state/boards/structure/graph';
     import { useState } from '$lib/state/client/use';
 
     const {
@@ -47,7 +50,6 @@
     const enabled = $derived(held.enabled);
     const linkMode = $derived(held.linkMode);
     const connected = $derived(held.connected);
-    let generation = $state(0);
 
     /** Keep the view's own toggles with the instance, so a tab reopened is the tab as it was. */
     function write(next: Partial<MapState>): void {
@@ -76,8 +78,8 @@
     const types = $derived(kept.types);
     const lines = $derived(kept.lines);
     const graph = $derived(filterGraph(base, kept));
-    /** The parameters this pane tuned for the set of nodes it is drawing, where it has them. */
-    const tuned = $derived(tunedFor(held, graph.nodes));
+    /** The seed this pane lays the set of nodes it is drawing out from. */
+    const seed = $derived(startFor(held, graph.nodes));
 
     const typeFilters = $derived(typeChips(base, graph, configMap().type_order, types));
     const lineFilters = $derived(lineChips(base, graph, snapshot, lines));
@@ -89,14 +91,9 @@
         });
     }
 
-    /** Keep what the graph tuned, so the pane draws the same picture the next time it is opened. */
-    function keepTuned(params: Physics): void {
-        write({ tuned: { key: layoutKey(graph.nodes), params } });
-    }
-
+    /** Lay the map out again from the next seed, and keep that picture with the pane. */
     function retune(): void {
-        write({ tuned: undefined });
-        generation += 1;
+        write({ start: nextStart(held, graph.nodes) });
     }
 </script>
 
@@ -132,8 +129,8 @@
         {:else if base.nodes.length > 0 && graph.nodes.length === 0}
             <p class="empty">{t('map.empty_filtered')}</p>
         {:else}
-            {#key `${layoutKey(graph.nodes)}-${generation}`}
-                <Graph {graph} instanceId={instance.id} {linkMode} {tuned} ontuned={keepTuned} />
+            {#key `${layoutKey(graph.nodes)}-${seed}`}
+                <Graph {graph} instanceId={instance.id} {linkMode} {seed} />
             {/key}
         {/if}
     </div>

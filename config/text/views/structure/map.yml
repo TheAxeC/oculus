@@ -13,7 +13,8 @@ text:
         empty: No relationships yet - add pillar or related to manifests.
         empty_filtered: Nothing is left under these filters. Press a filter again, or all, to widen them.
         filters: Map filters
-        head: 'Pillars and projects, linked by pillar membership and directed related edges: a one-way edge has one arrow from the manifest that lists the other, while a mutual edge has two arrowheads and its own colour when each manifest lists the other. The layout is a self-tuning spring layout. Drag a node; click a project to open it.'
+        head: "Pillars and projects, linked by pillar membership and directed related edges: a one-way edge has one arrow from the manifest that lists the other, while a mutual edge has two arrowheads and its own colour when each manifest lists the other. The layout is Graphviz's neato, and re-tune lays it out again from another start. Drag a node; click a project to open it."
+        layout_failed: 'The map could not be laid out: {0}'
         legend_active: active
         legend_idea: idea
         legend_line: pillar
@@ -26,7 +27,7 @@ text:
         project_glyph: circle_filled
         retune: re-tune
         retune_glyph: refresh
-        retune_tip: Re-optimise the layout for this graph
+        retune_tip: Lay the map out again from another start
         types: 'types:'
     views:
         map: Map

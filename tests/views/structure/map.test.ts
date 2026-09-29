@@ -1,37 +1,44 @@
-// The Map view rendered on the server over visible relationships, controls and the empty state.
+// The Map view rendered on the server over visible relationships, controls, the empty state and
+// the placement neato gives from the pane's start seed.
 
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { render } from 'svelte/server';
 import { beforeEach, describe, expect, it } from 'vitest';
+import type { Viz } from '@viz-js/viz';
 import MapView from '../../../src/lib/views/structure/map/Map.svelte';
 import Graph from '../../../src/lib/views/structure/map/Graph.svelte';
 import { writeRelated } from '../../../src/lib/views/structure/map/edge-write.ts';
 import {
-    DEFAULT_PHYSICS,
     buildGraph,
     layoutKey,
-    mapLayout,
+    layoutSeed,
+    nextStart,
     parseMapState,
-    tunedFor
+    startFor
 } from '../../../src/lib/state/boards/structure/graph.ts';
-import type {
-    Graph as BuiltGraph,
-    Physics
-} from '../../../src/lib/state/boards/structure/graph.ts';
+import type { Graph as BuiltGraph } from '../../../src/lib/state/boards/structure/graph.ts';
+import { placeGraph } from '../../../src/lib/state/boards/structure/layout.ts';
 import type { Instance } from '../../../src/lib/state/workbench/layout/index.ts';
 import { catalog, fixture, install } from './lines-fixture.ts';
 import { clientContext, createClientState, type ClientState } from '../../fixtures/client.ts';
-import { noop } from '../../fixtures/doubles.ts';
 
 let client: ClientState;
 let setInstanceState: ClientState['ui']['setInstanceState'];
+let viz: Viz;
 
-beforeEach(() => {
+/** A new client with its Graphviz loaded, so a render draws the placed nodes at once. */
+beforeEach(async () => {
     client = createClientState();
     ({ setInstanceState } = client.ui);
+    viz = await client.graphviz.ready();
 });
+
+/** A client's Graphviz as a case holds it: not loaded yet, or refusing every graph. */
+function holding(loaded: Viz | null): ClientState['graphviz'] {
+    return { ...client.graphviz, loaded: () => loaded };
+}
 
 const INSTANCE = 'map-one';
 
@@ -121,25 +128,18 @@ function circles(body: string): string[] {
     });
 }
 
-/** Where the pure rule puts those same circles under the parameters the pane hands down. */
-function placed(graph: BuiltGraph, tuned: Physics | null): string[] {
-    return mapLayout(graph, tuned)
+/** Where neato puts those same circles from the seed the pane hands down. */
+function placed(graph: BuiltGraph, seed: number): string[] {
+    return placeGraph(viz, graph, seed)
         .nodes.filter((node) => node.kind === 'project')
         .map((node) => `${node.x},${node.y}`);
 }
 
-/**
- * The graph drawn with the parameters a pane saved, and the callback it reports a tuning through.
- */
-function drawGraph(
-    client: ClientState,
-    graph: BuiltGraph,
-    tuned: Physics | null,
-    ontuned: (params: Physics) => void = noop
-): string {
+/** The graph drawn from the start seed a pane hands down. */
+function drawGraph(client: ClientState, graph: BuiltGraph, seed: number): string {
     return render(Graph, {
         context: clientContext(client),
-        props: { graph, instanceId: 'map-layout', linkMode: false, tuned, ontuned }
+        props: { graph, instanceId: 'map-layout', linkMode: false, seed }
     }).body;
 }
 
@@ -193,8 +193,7 @@ describe('the Map view', () => {
                 graph,
                 instanceId: 'map-markers',
                 linkMode: false,
-                tuned: null,
-                ontuned: noop
+                seed: 1
             }
         }).body;
         const oneWay = edgeTag(body, 'related::alpha::candidate-project');
@@ -303,7 +302,7 @@ describe('the Map view', () => {
             ],
             edges: []
         };
-        const body = drawGraph(client, graph, null);
+        const body = drawGraph(client, graph, 1);
         const tag = (id: string): string =>
             [...body.matchAll(/<text[^>]*>/g)]
                 .map((one) => one[0])
@@ -312,44 +311,77 @@ describe('the Map view', () => {
         expect(tag('project::live')).not.toMatch(/\barchived\b/);
     });
 
-    it('places under the parameters it is handed, and tunes its own when it is handed none', () => {
+    it('draws every node where neato puts it from the seed it is handed', () => {
         const graph = buildGraph(graphFixture());
-        const fresh = mapLayout(graph, null);
-
-        const tuning = drawGraph(client, graph, null);
-        expect(circles(tuning)).toEqual(placed(graph, null));
-        expect(nodes(tuning)).toBe(graph.nodes.length);
-
-        const held = drawGraph(client, graph, fresh.params);
-        expect(circles(held)).toEqual(placed(graph, fresh.params));
-        expect(nodes(held)).toBe(graph.nodes.length);
-        expect(circles(held)).not.toEqual(circles(tuning));
-
-        // There is no DOM in this suite, so onMount does not run and the callback cannot fire here:
-        // what it would be handed is the rule below, and the press itself is not run here.
-        expect(mapLayout(graph, null).tuned).toEqual(fresh.params);
-        expect(mapLayout(graph, fresh.params).tuned).toBeNull();
+        const first = drawGraph(client, graph, 3);
+        expect(circles(first)).toEqual(placed(graph, 3));
+        expect(nodes(first)).toBe(graph.nodes.length);
+        const other = drawGraph(client, graph, 4);
+        expect(circles(other)).toEqual(placed(graph, 4));
+        expect(circles(other)).not.toEqual(circles(first));
     });
 
-    it('draws the saved tuning, and lays the map out again once the re-tune control clears it', () => {
+    it('draws no node before Graphviz has loaded, and keeps the canvas', () => {
+        client.graphviz = holding(null);
+        const body = drawGraph(client, buildGraph(graphFixture()), 3);
+        expect(body).toContain('data-map-graph');
+        expect(nodes(body)).toBe(0);
+    });
+
+    it('says in one catalogued line why the engine refused the graph, and draws no node', () => {
+        const refusing = {
+            renderJSON: () => {
+                throw new Error('syntax error in line 1');
+            }
+        } as unknown as Viz;
+        client.graphviz = holding(refusing);
+        const body = drawGraph(client, buildGraph(graphFixture()), 3);
+        expect(body).toContain(
+            catalog['map.layout_failed'].replace('{0}', 'syntax error in line 1')
+        );
+        expect(nodes(body)).toBe(0);
+    });
+
+    it('draws the saved start, and re-tune lays the map out from the next seed', () => {
         expect(html()).toContain(catalog['map.retune']);
         const graph = buildGraph(graphFixture());
-        const first = mapLayout(graph, null);
-        const saved = parseMapState({
-            tuned: { key: layoutKey(graph.nodes), params: first.params }
-        });
+        const saved = parseMapState({ start: { key: layoutKey(graph.nodes), seed: 5 } });
 
-        const held = drawGraph(client, graph, tunedFor(saved, graph.nodes));
-        expect(circles(held)).toEqual(placed(graph, first.params));
+        const kept = drawGraph(client, graph, startFor(saved, graph.nodes));
+        expect(circles(kept)).toEqual(placed(graph, 5));
 
-        // What the control writes: the same state with the tuning dropped, so the map tunes again.
-        const cleared = parseMapState({ ...saved, tuned: undefined });
-        expect(cleared.tuned).toBeUndefined();
-        expect(tunedFor(cleared, graph.nodes)).toBeNull();
+        // What the control writes: the seed one above the one in force, under this node set.
+        const next = nextStart(saved, graph.nodes);
+        expect(next).toEqual({ key: layoutKey(graph.nodes), seed: 6 });
+        const again = drawGraph(
+            client,
+            graph,
+            startFor(parseMapState({ start: next }), graph.nodes)
+        );
+        expect(circles(again)).toEqual(placed(graph, 6));
+        expect(circles(again)).not.toEqual(circles(kept));
+    });
 
-        const again = drawGraph(client, graph, tunedFor(cleared, graph.nodes));
-        expect(circles(again)).toEqual(placed(graph, null));
-        expect(circles(again)).not.toEqual(circles(held));
+    it('lays a pane saved with an old tuning out from its default seed', () => {
+        const fresh = html();
+        const old = html(false, { tuned: { key: 'oculus-map-v1-x', params: { repulse: 1 } } });
+        expect(circles(old)).toEqual(circles(fresh));
+        expect(circles(fresh).length).toBeGreaterThan(0);
+    });
+
+    it('draws the picture of the seed a pane saved for the node set it shows, and no other', () => {
+        const fresh = html();
+        // The graph html() draws: the fixture with alpha's one related project, no filter.
+        const snapshot = fixture();
+        snapshot.entities.projects.alpha.relatedIds = ['old'];
+        const graph = buildGraph(snapshot);
+        const seed = layoutSeed(graph.nodes) + 9;
+        const saved = html(false, { start: { key: layoutKey(graph.nodes), seed } });
+        expect(circles(saved)).toEqual(placed(graph, seed));
+        expect(circles(saved)).not.toEqual(circles(fresh));
+        // A seed saved for another node set leaves this one on its default.
+        const other = html(false, { start: { key: 'oculus-map-v1-other', seed } });
+        expect(circles(other)).toEqual(circles(fresh));
     });
 
     it('draws a collaborator only when the graph option is on', () => {
@@ -360,8 +392,7 @@ describe('the Map view', () => {
                 graph: buildGraph(snapshot),
                 instanceId: 'map-collaborators-off',
                 linkMode: false,
-                tuned: null,
-                ontuned: noop
+                seed: 1
             }
         }).body;
         const shown = render(Graph, {
@@ -370,8 +401,7 @@ describe('the Map view', () => {
                 graph: buildGraph(snapshot, { collaborators: true }),
                 instanceId: 'map-collaborators-on',
                 linkMode: false,
-                tuned: null,
-                ontuned: noop
+                seed: 1
             }
         }).body;
         // the collaborators toggle is off, so no person is a node
@@ -426,20 +456,19 @@ describe('the Map instance state', () => {
         });
     });
 
-    it('audits that keeps a tuning a map could be laid out from, and drops one it could not', () => {
-        const params = { ...DEFAULT_PHYSICS, repulse: 7777 };
+    it('audits that keeps a start seed a map could be laid out from, and drops one it could not', () => {
         const key = layoutKey(buildGraph(fixture()).nodes);
-        expect(parseMapState({ tuned: { key, params } }).tuned).toEqual({ key, params });
-        expect(parseMapState({ tuned: { key: 7, params } }).tuned).toBeUndefined();
-        expect(
-            parseMapState({ tuned: { key, params: { ...params, cool: 'fast' } } }).tuned
-        ).toBeUndefined();
-        expect(
-            parseMapState({ tuned: { key, params: { ...params, repulse: Number.NaN } } }).tuned
-        ).toBeUndefined();
-        expect(parseMapState({ tuned: { params } }).tuned).toBeUndefined();
-        expect(parseMapState({ tuned: key }).tuned).toBeUndefined();
-        expect(parseMapState({}).tuned).toBeUndefined();
+        expect(parseMapState({ start: { key, seed: 12 } }).start).toEqual({ key, seed: 12 });
+        expect(parseMapState({ start: { key, seed: 0 } }).start).toEqual({ key, seed: 0 });
+        expect(parseMapState({ start: { key: 7, seed: 12 } }).start).toBeUndefined();
+        expect(parseMapState({ start: { key, seed: '12' } }).start).toBeUndefined();
+        expect(parseMapState({ start: { key, seed: Number.NaN } }).start).toBeUndefined();
+        expect(parseMapState({ start: { key, seed: 1.5 } }).start).toBeUndefined();
+        expect(parseMapState({ start: { key, seed: -1 } }).start).toBeUndefined();
+        expect(parseMapState({ start: { seed: 12 } }).start).toBeUndefined();
+        expect(parseMapState({ start: key }).start).toBeUndefined();
+        expect(parseMapState({}).start).toBeUndefined();
+        expect(parseMapState({ tuned: { key, params: {} } })).toEqual(OFF);
     });
 
     it('draws the collaborators toggle from the instance state, so a reopened tab keeps it', () => {
@@ -460,7 +489,7 @@ describe('the Map instance state', () => {
 describe('the label measuring', () => {
     // A source audit: the read is the effect's own dependency, and a page cannot isolate it, since
     // the same change rewrites the pane's state and derives the graph again through that.
-    it('audits that it reads the text scale, so a change to the text size measures again', () => {
+    it('audits that it reads the text scale and the placement, so a change to the text size, and the nodes drawn once Graphviz has loaded, measure again', () => {
         const file = resolve(
             fileURLToPath(import.meta.url),
             '..',
@@ -471,6 +500,7 @@ describe('the label measuring', () => {
         );
         const effect = /\$effect\(\(\) => \{([\s\S]*?)\n {4}\}\);/.exec(readFileSync(file, 'utf8'));
         expect(effect?.[1]).toContain('void textScale();');
+        expect(effect?.[1]).toContain("void chosen.nodes.map((node) => node.id).join('\\n');");
         expect(effect?.[1]).toContain('void tick().then(measure);');
     });
 });

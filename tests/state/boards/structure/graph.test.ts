@@ -1,26 +1,22 @@
-// Pure relationship-graph visibility, directed-edge and seeded-layout checks.
+// Pure relationship-graph visibility, directed-edge, start-seed and drag-tick checks.
 
 import { describe, expect, it } from 'vitest';
 import {
-    DEFAULT_BOUNDS,
     DEFAULT_PHYSICS,
-    bestLayout,
     buildGraph,
-    crossings,
+    DRAG_PHYSICS,
+    dragTick,
+    holdFor,
     filterGraph,
     layoutKey,
     layoutSeed,
-    mapLayout,
-    optimize,
+    neighbours,
+    nextStart,
     parseMapState,
-    placeInit,
     physics,
     presentFilter,
-    score,
-    seededRandom,
-    settle,
+    startFor,
     toggleFilter,
-    tunedFor,
     typeCounts,
     archiveStatuses,
     hasRelationships,
@@ -317,84 +313,127 @@ describe('relationship graph', () => {
         expect(Math.abs(pulled[0].x - pulled[1].x)).toBeLessThan(400);
     });
 
-    it('counts crossing edges and ignores parallel edges', () => {
+    it('moves only the movers of a drag, and pulls a mover joined to the held node toward it', () => {
         const nodes = [
-            point('a', 100, 100),
-            point('b', 200, 200),
-            point('c', 100, 200),
-            point('d', 200, 100)
+            point('held', 900, 340),
+            point('partner', 300, 340),
+            point('other', 500, 200),
+            point('far', 120, 600)
         ];
-        expect(crossings(nodes, [edge('ab', 'a', 'b'), edge('cd', 'c', 'd')])).toBe(1);
-        expect(crossings(nodes, [edge('ac', 'a', 'c'), edge('bd', 'b', 'd')])).toBe(0);
+        const edges = [edge('hp', 'held', 'partner'), edge('of', 'other', 'far')];
+        const ticked = physics(nodes, edges, 1, DEFAULT_PHYSICS, undefined, new Set(['partner']));
+        const at = Object.fromEntries(ticked.map((one) => [one.id, [one.x, one.y]]));
+        expect(at.held).toEqual([900, 340]);
+        expect(at.other).toEqual([500, 200]);
+        expect(at.far).toEqual([120, 600]);
+        expect(at.partner[0]).toBeGreaterThan(300);
     });
 
-    it('settles velocity over repeated ticks', () => {
-        const params = {
-            ...DEFAULT_PHYSICS,
-            repulse: 0,
-            collide: 0,
-            center: 0,
-            damping: 0.5
-        };
-        const nodes = settle([point('a', 500, 340, 8)], [], 5, params);
-        expect(Math.abs(nodes[0].vx)).toBeLessThan(8);
+    it('leaves a picture at rest under the drag tick with the lengths its edges have', () => {
+        // Edges of different lengths, and pairs well inside the default collision separation,
+        // one of them overlapping: nothing moves while nothing is dragged.
+        const nodes = [
+            point('hub', 500, 340),
+            point('near', 520, 340),
+            point('mid', 500, 420),
+            point('far', 700, 300),
+            point('touching', 512, 350)
+        ];
+        const edges = [
+            edge('hn', 'hub', 'near'),
+            edge('hm', 'hub', 'mid'),
+            edge('hf', 'hub', 'far'),
+            edge('nt', 'near', 'touching')
+        ];
+        const hold = holdFor(nodes, edges, 'hub');
+        expect([...hold.movers].sort()).toEqual(['far', 'mid', 'near']);
+        expect(dragTick(nodes, edges, 1, hold)).toEqual(nodes);
     });
 
-    it('returns the lowest score among the requested settled starts', () => {
-        const graph = buildGraph(snapshot());
-        const expectedRandom = seededRandom(17);
-        const scores = Array.from({ length: 4 }, (_, start) => {
-            const nodes = settle(
-                placeInit(graph, expectedRandom, undefined, start + expectedRandom() * 7),
-                graph.edges,
-                20
-            );
-            return score(nodes, graph.edges);
+    it('pulls a neighbour joined only to the dragged node after it, to its recorded length', () => {
+        const nodes = [point('held', 500, 340), point('partner', 560, 340)];
+        const edges = [edge('hp', 'held', 'partner')];
+        const hold = holdFor(nodes, edges, 'held');
+        let moved = [{ ...nodes[0], x: 400 }, nodes[1]];
+        for (let frame = 0; frame < 400; frame += 1) moved = dragTick(moved, edges, 1, hold);
+        expect(moved[0].x).toBe(400);
+        // The partner has followed 100 px left and rests 60 px from the dragged node again.
+        expect(moved[1].x).toBeCloseTo(460, 0);
+        expect(moved[1].y).toBe(340);
+    });
+
+    it('rests an edge with no recorded length at the link length of the parameters', () => {
+        const params = { ...DRAG_PHYSICS, linkLength: 80 };
+        const nodes = [point('held', 500, 340), point('partner', 580, 340)];
+        const edges = [edge('hp', 'held', 'partner')];
+        const movers = new Set(['partner']);
+        const still = physics(nodes, edges, 1, params, undefined, movers, new Map());
+        expect(still[1].x).toBe(580);
+        const pulled = physics(nodes, edges, 1, params, undefined, movers, new Map([['hp', 40]]));
+        expect(pulled[1].x).toBeLessThan(580);
+    });
+
+    it('moves neither of two non-movers inside the collision separation of each other', () => {
+        const nodes = [
+            point('held', 900, 340),
+            point('partner', 700, 340),
+            point('left', 300, 340),
+            point('right', 310, 340)
+        ];
+        const ticked = physics(
+            nodes,
+            [edge('hp', 'held', 'partner')],
+            1,
+            DEFAULT_PHYSICS,
+            undefined,
+            new Set(['partner'])
+        );
+        expect(ticked[2]).toEqual(nodes[2]);
+        expect(ticked[3]).toEqual(nodes[3]);
+    });
+
+    it('answers the nodes an edge joins to a node, and a drag tick with no push or centre pull', () => {
+        const edges = [edge('ab', 'a', 'b'), edge('ca', 'c', 'a'), edge('bc', 'b', 'c')];
+        expect([...neighbours(edges, 'a')].sort()).toEqual(['b', 'c']);
+        expect([...neighbours(edges, 'gone')]).toEqual([]);
+        expect([DRAG_PHYSICS.repulse, DRAG_PHYSICS.collide, DRAG_PHYSICS.center]).toEqual([
+            0, 0, 0
+        ]);
+    });
+
+    it('keeps a saved start seed and drops a malformed one or an old tuning', () => {
+        expect(parseMapState({ start: { key: 'k', seed: 3 } }).start).toEqual({
+            key: 'k',
+            seed: 3
         });
-        const best = bestLayout(graph, seededRandom(17), 4, 20);
-        expect(best.score).toBe(Math.min(...scores));
+        expect(parseMapState({ start: { key: 'k', seed: 'x' } })).not.toHaveProperty('start');
+        const old = parseMapState({ tuned: { key: 'k', params: { ...DEFAULT_PHYSICS } } });
+        expect(old).not.toHaveProperty('tuned');
+        expect(old).not.toHaveProperty('start');
     });
 
-    it('is deterministic and optimization returns a settled result no worse than its settled start', () => {
-        const graph = buildGraph(snapshot());
-        const first = placeInit(graph, seededRandom(42));
-        const second = placeInit(graph, seededRandom(42));
-        expect(second).toEqual(first);
-        const baseline = bestLayout(graph, seededRandom(42), 3, 150);
-        const tuned = optimize(graph, seededRandom(42), 4);
-        expect(tuned.nodes).not.toEqual(first);
-        expect(tuned.score).toBeLessThanOrEqual(baseline.score);
-        expect(layoutKey(graph.nodes)).toBe(layoutKey([...graph.nodes].reverse()));
-    });
-
-    it('answers the parameters saved for the node set drawn now, and nothing for another set', () => {
+    it('answers the saved seed for the node set drawn now, and the default for another set', () => {
         const data = snapshot();
         data.entities.projects.beta.type = 'idea';
         const whole = buildGraph(data);
         const ideas = filterGraph(whole, { types: ['idea'] });
-        const params = { ...DEFAULT_PHYSICS, repulse: 7777 };
-        const saved = parseMapState({ tuned: { key: layoutKey(whole.nodes), params } });
-
-        expect(layoutKey(ideas.nodes)).not.toBe(layoutKey(whole.nodes));
-        expect(tunedFor(saved, whole.nodes)).toEqual(params);
-        expect(tunedFor(saved, ideas.nodes)).toBeNull();
-        expect(tunedFor(parseMapState({}), whole.nodes)).toBeNull();
+        const saved = parseMapState({ start: { key: layoutKey(whole.nodes), seed: 41 } });
+        expect(startFor(saved, whole.nodes)).toBe(41);
+        expect(startFor(saved, ideas.nodes)).toBe(layoutSeed(ideas.nodes));
+        expect(startFor(parseMapState({}), whole.nodes)).toBe(layoutSeed(whole.nodes));
     });
 
-    it('tunes a layout when the pane saved none, and places under the saved one when it did', () => {
+    it('re-tunes to the seed one above the one in force, under this node set', () => {
         const graph = buildGraph(snapshot());
-        const seed = layoutSeed(graph.nodes);
-
-        const fresh = mapLayout(graph, null);
-        expect(fresh.tuned).toEqual(fresh.params);
-        expect(fresh.nodes).toEqual(optimize(graph, seededRandom(seed), 12, DEFAULT_BOUNDS).nodes);
-
-        const held = mapLayout(graph, fresh.params);
-        expect(held.tuned).toBeNull();
-        expect(held.params).toEqual(fresh.params);
-        expect(held.nodes).toEqual(
-            bestLayout(graph, seededRandom(seed), 8, 150, fresh.params, DEFAULT_BOUNDS).nodes
-        );
+        const key = layoutKey(graph.nodes);
+        expect(nextStart(parseMapState({ start: { key, seed: 41 } }), graph.nodes)).toEqual({
+            key,
+            seed: 42
+        });
+        expect(nextStart(parseMapState({}), graph.nodes)).toEqual({
+            key,
+            seed: layoutSeed(graph.nodes) + 1
+        });
     });
 });
 

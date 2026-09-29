@@ -1,7 +1,10 @@
-// Layer 2, client state. The Map's pure graph builder and seeded spring layout, and the chips its
-// filters draw. Every visible-set and placement rule is independent of the DOM so it can be checked
-// without a browser. It sits in state/boards/structure beside the Pillars and Domains joins, the
-// pure halves of the Structure views.
+// Layer 2, client state. The Map's pure graph builder, the chips its filters draw, the start seed a
+// pane keeps for its node set (`layoutKey`, `layoutSeed`, `startFor`, `nextStart`), and `physics`,
+// the force tick that runs while a node is dragged so the dragged node pulls its neighbours. The
+// placement itself is Graphviz's neato, in layout.ts beside this file. Every visible-set, seed and
+// tick rule is independent of the DOM so it can be checked without a browser. It sits in
+// state/boards/structure beside the Pillars and Domains joins, the pure halves of the Structure
+// views.
 
 import type { Project, Snapshot } from '../../../data/model/index.ts';
 import { byKey } from '../../../data/helpers/guards.ts';
@@ -10,7 +13,6 @@ import { personNames } from '../person.ts';
 export type GraphKind = 'project' | 'line' | 'collaborator';
 export type EdgeKind = 'membership' | 'collaborator' | 'related';
 export type Direction = 'none' | 'one' | 'mutual';
-export type Rng = () => number;
 
 export type GraphNode = {
     id: string;
@@ -404,87 +406,36 @@ export function layoutKey(nodes: GraphNode[]): string {
     return `oculus-map-v1-${(hash >>> 0).toString(36)}`;
 }
 
-/** Small deterministic random source for tests and repeatable layout starts. */
-export function seededRandom(seed: number): Rng {
-    let held = seed >>> 0;
-    return () => {
-        held += 0x6d2b79f5;
-        let value = held;
-        value = Math.imul(value ^ (value >>> 15), value | 1);
-        value ^= value + Math.imul(value ^ (value >>> 7), value | 61);
-        return ((value ^ (value >>> 14)) >>> 0) / 4294967296;
-    };
-}
-
 function clone(nodes: PointNode[]): PointNode[] {
     return nodes.map((node) => ({ ...node }));
 }
 
-/** Place line hubs on a ring and projects near the mean position of their hubs. */
-export function placeInit(
-    graph: Graph,
-    rng: Rng,
-    bounds: Bounds = DEFAULT_BOUNDS,
-    seed = 0
-): PointNode[] {
-    const cx = bounds.width / 2;
-    const cy = bounds.height / 2;
-    const radius = Math.min(bounds.width, bounds.height) * 0.34;
-    const lineNodes = graph.nodes.filter((node) => node.kind === 'line');
-    const positions = new Map<string, { x: number; y: number }>();
-    lineNodes.forEach((node, index) => {
-        const angle = seed * 1.3 + (index / Math.max(1, lineNodes.length)) * Math.PI * 2;
-        positions.set(node.id, {
-            x: cx + Math.cos(angle) * radius,
-            y: cy + Math.sin(angle) * radius
-        });
-    });
-    return graph.nodes.map((node) => {
-        const hubs = graph.edges
-            .filter((edge) => edge.kind === 'membership' && edge.source === node.id)
-            .map((edge) => positions.get(edge.target))
-            .filter((point): point is { x: number; y: number } => point !== undefined);
-        const own = positions.get(node.id);
-        if (own !== undefined) return { ...node, ...own, vx: 0, vy: 0 };
-        if (hubs.length > 0) {
-            return {
-                ...node,
-                x:
-                    hubs.reduce((sum, point) => sum + point.x, 0) / hubs.length +
-                    (rng() - 0.5) * 130,
-                y:
-                    hubs.reduce((sum, point) => sum + point.y, 0) / hubs.length +
-                    (rng() - 0.5) * 130,
-                vx: 0,
-                vy: 0
-            };
-        }
-        const angle = rng() * Math.PI * 2;
-        return {
-            ...node,
-            x: cx + Math.cos(angle) * radius * 1.15,
-            y: cy + Math.sin(angle) * radius * 1.15,
-            vx: 0,
-            vy: 0
-        };
-    });
-}
-
-/** One immutable force tick. */
+/**
+ * One immutable force tick: every pair repels, every edge pulls toward its rest length and every
+ * node is drawn to the centre. An edge rests at its length in `lengths`, by edge id, and at
+ * `params.linkLength` when it has none there. Only the nodes in `movers` take the forces and move;
+ * every other node stays where it is, and without `movers` every node moves. The Map runs it while
+ * a node is dragged under DRAG_PHYSICS, with the lengths every edge had when the press began, the
+ * dragged node's direct neighbours as the movers and the dragged node held, so the picture is at
+ * rest until the pointer moves and a drag pulls the neighbours after the dragged node.
+ */
 export function physics(
     nodes: PointNode[],
     edges: GraphEdge[],
     alpha: number,
     params: Physics = DEFAULT_PHYSICS,
     bounds: Bounds = DEFAULT_BOUNDS,
-    fixed?: string
+    movers?: ReadonlySet<string>,
+    lengths?: ReadonlyMap<string, number>
 ): PointNode[] {
     const next = clone(nodes);
     const byId = new Map(next.map((node) => [node.id, node]));
+    const moves = (node: PointNode): boolean => movers === undefined || movers.has(node.id);
     for (let left = 0; left < next.length; left += 1) {
         for (let right = left + 1; right < next.length; right += 1) {
             const a = next[left];
             const b = next[right];
+            if (!moves(a) && !moves(b)) continue;
             const rawDx = a.x - b.x;
             const rawDy = a.y - b.y;
             const coincident = rawDx === 0 && rawDy === 0;
@@ -500,12 +451,16 @@ export function physics(
             b.vx -= ux * force;
             b.vy -= uy * force;
             const separation = a.radius + b.radius + params.collide;
-            if (distance < separation) {
+            if (params.collide > 0 && distance < separation) {
                 const push = (separation - distance) * 0.5;
-                a.x += ux * push;
-                a.y += uy * push;
-                b.x -= ux * push;
-                b.y -= uy * push;
+                if (moves(a)) {
+                    a.x += ux * push;
+                    a.y += uy * push;
+                }
+                if (moves(b)) {
+                    b.x -= ux * push;
+                    b.y -= uy * push;
+                }
             }
         }
     }
@@ -516,7 +471,8 @@ export function physics(
         const dx = target.x - source.x;
         const dy = target.y - source.y;
         const distance = Math.sqrt(dx * dx + dy * dy) || 0.01;
-        const force = (distance - params.linkLength) * params.linkStrength;
+        const rest = lengths?.get(edge.id) ?? params.linkLength;
+        const force = (distance - rest) * params.linkStrength;
         source.vx += (dx / distance) * force;
         source.vy += (dy / distance) * force;
         target.vx -= (dx / distance) * force;
@@ -525,7 +481,7 @@ export function physics(
     const cx = bounds.width / 2;
     const cy = bounds.height / 2;
     for (const node of next) {
-        if (node.id === fixed) {
+        if (!moves(node)) {
             node.vx = 0;
             node.vy = 0;
             continue;
@@ -544,148 +500,52 @@ export function physics(
     return next;
 }
 
-/** Count intersecting edges that do not share an endpoint. */
-export function crossings(nodes: PointNode[], edges: GraphEdge[]): number {
-    const byId = new Map(nodes.map((node) => [node.id, node]));
-    const ccw = (a: PointNode, b: PointNode, c: PointNode) =>
-        (c.y - a.y) * (b.x - a.x) > (b.y - a.y) * (c.x - a.x);
-    let count = 0;
-    for (let left = 0; left < edges.length; left += 1) {
-        for (let right = left + 1; right < edges.length; right += 1) {
-            const p = edges[left];
-            const q = edges[right];
-            if ([p.source, p.target].some((id) => id === q.source || id === q.target)) continue;
-            const ps = byId.get(p.source);
-            const pt = byId.get(p.target);
-            const qs = byId.get(q.source);
-            const qt = byId.get(q.target);
-            if (
-                ps &&
-                pt &&
-                qs &&
-                qt &&
-                ccw(ps, qs, qt) !== ccw(pt, qs, qt) &&
-                ccw(ps, pt, qs) !== ccw(ps, pt, qt)
-            )
-                count += 1;
-        }
+/** The nodes an edge joins to one node, which are the nodes a drag of it moves. */
+export function neighbours(edges: GraphEdge[], id: string): Set<string> {
+    const found = new Set<string>();
+    for (const edge of edges) {
+        if (edge.source === id && edge.target !== id) found.add(edge.target);
+        if (edge.target === id && edge.source !== id) found.add(edge.source);
     }
-    return count;
+    return found;
 }
 
-/** Layout quality, lower being better. */
-export function score(
-    nodes: PointNode[],
-    edges: GraphEdge[],
-    bounds: Bounds = DEFAULT_BOUNDS
-): number {
-    if (nodes.length === 0) return 0;
-    let overlap = 0;
-    let boundary = 0;
-    let minX = Infinity;
-    let maxX = -Infinity;
-    let minY = Infinity;
-    let maxY = -Infinity;
-    for (let left = 0; left < nodes.length; left += 1) {
-        const node = nodes[left];
-        if (
-            node.x <= bounds.pad + 3 ||
-            node.x >= bounds.width - bounds.pad - 3 ||
-            node.y <= bounds.pad + 3 ||
-            node.y >= bounds.height - bounds.pad - 3
-        )
-            boundary += 1;
-        minX = Math.min(minX, node.x);
-        maxX = Math.max(maxX, node.x);
-        minY = Math.min(minY, node.y);
-        maxY = Math.max(maxY, node.y);
-        for (let right = left + 1; right < nodes.length; right += 1) {
-            const other = nodes[right];
-            const dx = node.x - other.x;
-            const dy = node.y - other.y;
-            const distance = node.radius + other.radius + 6;
-            if (dx * dx + dy * dy < distance * distance) overlap += 1;
-        }
-    }
-    const fill = ((maxX - minX) * (maxY - minY)) / (bounds.width * bounds.height);
-    return crossings(nodes, edges) + overlap * 2.5 + boundary * 0.5 + Math.abs(fill - 0.5) * 14;
+/**
+ * The tick a drag runs under: the springs alone, with no repulsion, no collision push and no pull
+ * toward the centre, so a picture whose edges rest at their recorded lengths is at rest under it
+ * and only a moved node sets anything moving.
+ */
+export const DRAG_PHYSICS: Physics = { ...DEFAULT_PHYSICS, repulse: 0, collide: 0, center: 0 };
+
+/** What a drag holds from its press: the nodes it moves and every edge's length at the press. */
+export type DragHold = { movers: ReadonlySet<string>; lengths: ReadonlyMap<string, number> };
+
+/** The hold of a drag of one node: its direct neighbours move, every edge keeps its length. */
+export function holdFor(nodes: PointNode[], edges: GraphEdge[], id: string): DragHold {
+    return { movers: neighbours(edges, id), lengths: edgeLengths(nodes, edges) };
 }
 
-/** Run the force simulation to equilibrium for a fixed number of ticks. */
-export function settle(
+/** One frame of a drag: the tick under DRAG_PHYSICS over the hold's movers and lengths. */
+export function dragTick(
     nodes: PointNode[],
     edges: GraphEdge[],
-    ticks: number,
-    params: Physics = DEFAULT_PHYSICS,
-    bounds: Bounds = DEFAULT_BOUNDS
+    alpha: number,
+    hold: DragHold
 ): PointNode[] {
-    let next = clone(nodes);
-    for (let tick = 0; tick < ticks; tick += 1) {
-        next = physics(next, edges, Math.max(0.12, 1 - tick / Math.max(1, ticks)), params, bounds);
-    }
-    return next;
+    return physics(nodes, edges, alpha, DRAG_PHYSICS, DEFAULT_BOUNDS, hold.movers, hold.lengths);
 }
 
-/** Try several seeded starts and retain the lowest-scoring layout. */
-export function bestLayout(
-    graph: Graph,
-    rng: Rng,
-    starts = 12,
-    ticks = 150,
-    params: Physics = DEFAULT_PHYSICS,
-    bounds: Bounds = DEFAULT_BOUNDS
-): { score: number; nodes: PointNode[] } {
-    let best = { score: Infinity, nodes: [] as PointNode[] };
-    for (let start = 0; start < starts; start += 1) {
-        const nodes = settle(
-            placeInit(graph, rng, bounds, start + rng() * 7),
-            graph.edges,
-            ticks,
-            params,
-            bounds
-        );
-        const measured = score(nodes, graph.edges, bounds);
-        if (measured < best.score) best = { score: measured, nodes };
+/** Every edge's length as the nodes stand, by edge id, which is what a drag holds each edge to. */
+export function edgeLengths(nodes: PointNode[], edges: GraphEdge[]): Map<string, number> {
+    const byId = new Map(nodes.map((node) => [node.id, node]));
+    const lengths = new Map<string, number>();
+    for (const edge of edges) {
+        const source = byId.get(edge.source);
+        const target = byId.get(edge.target);
+        if (source === undefined || target === undefined) continue;
+        lengths.set(edge.id, Math.hypot(target.x - source.x, target.y - source.y));
     }
-    return best;
-}
-
-/** Search a bounded parameter space, always including the configured baseline. */
-export function optimize(
-    graph: Graph,
-    rng: Rng,
-    trials = 24,
-    bounds: Bounds = DEFAULT_BOUNDS
-): { params: Physics; score: number; nodes: PointNode[] } {
-    let bestParams = DEFAULT_PHYSICS;
-    let best = bestLayout(graph, rng, 3, 150, bestParams, bounds);
-    const range = (low: number, high: number) => low + rng() * (high - low);
-    for (let trial = 0; trial < trials; trial += 1) {
-        const params: Physics = {
-            linkLength: range(95, 150),
-            linkStrength: range(0.03, 0.09),
-            repulse: range(6000, 10500),
-            collide: range(26, 40),
-            center: range(0.008, 0.022),
-            damping: range(0.82, 0.9),
-            cool: DEFAULT_PHYSICS.cool
-        };
-        const candidate = bestLayout(graph, rng, 3, 150, params, bounds);
-        if (candidate.score < best.score) {
-            best = candidate;
-            bestParams = params;
-        }
-    }
-    return { params: bestParams, ...best };
-}
-
-/** Whether a saved value is a whole set of finite physics parameters. */
-export function isPhysics(value: unknown): value is Physics {
-    if (typeof value !== 'object' || value === null || Array.isArray(value)) return false;
-    const record = value as Record<string, unknown>;
-    return ['linkLength', 'linkStrength', 'repulse', 'collide', 'center', 'damping', 'cool'].every(
-        (name) => typeof record[name] === 'number' && Number.isFinite(record[name])
-    );
+    return lengths;
 }
 
 /** The seed one visible node set starts from, so the same set is placed the same way every time. */
@@ -694,33 +554,6 @@ export function layoutSeed(nodes: GraphNode[]): number {
     let sum = 0;
     for (let index = 0; index < key.length; index += 1) sum += key.charCodeAt(index);
     return sum;
-}
-
-/** Where a Map's nodes go, and the parameters it had to tune when the pane carried none. */
-export type MapLayout = {
-    /** The placed nodes, ready to draw. */
-    nodes: PointNode[];
-    /** The parameters the placement ran under. */
-    params: Physics;
-    /** The parameters when this call tuned them, and null when it was handed them. */
-    tuned: Physics | null;
-};
-
-/**
- * Place a graph under the parameters a pane saved for it, and tune a set of its own when it saved
- * none. The tuned set comes back so the caller can keep it; nothing here reads or writes any store.
- */
-export function mapLayout(graph: Graph, tuned: Physics | null): MapLayout {
-    const rng = seededRandom(layoutSeed(graph.nodes));
-    if (tuned === null) {
-        const found = optimize(graph, rng, 12, DEFAULT_BOUNDS);
-        return { nodes: found.nodes, params: found.params, tuned: found.params };
-    }
-    return {
-        nodes: bestLayout(graph, rng, 8, 150, tuned, DEFAULT_BOUNDS).nodes,
-        params: tuned,
-        tuned: null
-    };
 }
 
 /**
@@ -739,8 +572,8 @@ export type MapState = GraphFilter & {
     lines: string[];
     /** Whether a project with no membership edge to a line still drawn is dropped. */
     connected: boolean;
-    /** The parameters last tuned, under the name of the node set they were tuned for. */
-    tuned?: { key: string; params: Physics };
+    /** The start seed the pane chose, under the name of the node set it was chosen for. */
+    start?: { key: string; seed: number };
 };
 
 /** The strings of a saved list, and an empty list for anything that was not one. */
@@ -748,21 +581,28 @@ function stringList(raw: unknown): string[] {
     return Array.isArray(raw) ? raw.filter((one): one is string => typeof one === 'string') : [];
 }
 
-/** A saved tuning, and nothing for a value the layout could not be run from. */
-function savedTuning(raw: unknown): { key: string; params: Physics } | undefined {
+/** A saved start seed, and nothing for a value no layout could be started from. */
+function savedStart(raw: unknown): { key: string; seed: number } | undefined {
     if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return undefined;
     const held = raw as Record<string, unknown>;
-    if (typeof held.key !== 'string' || !isPhysics(held.params)) return undefined;
-    return { key: held.key, params: held.params };
+    if (typeof held.key !== 'string' || typeof held.seed !== 'number') return undefined;
+    if (!Number.isSafeInteger(held.seed) || held.seed < 0) return undefined;
+    return { key: held.key, seed: held.seed };
 }
 
 /**
- * The parameters a pane saved for the node set it is drawing now, and null when it saved none or
- * saved them for another set, which is what makes an added project re-tune once.
+ * The seed the Map lays the node set it draws now out from: the one the pane saved for this set,
+ * and the set's own default when it saved none or saved it for another set, which is what makes an
+ * added project lay the map out once from the default.
  */
-export function tunedFor(state: MapState, nodes: GraphNode[]): Physics | null {
-    if (state.tuned === undefined) return null;
-    return state.tuned.key === layoutKey(nodes) ? state.tuned.params : null;
+export function startFor(state: MapState, nodes: GraphNode[]): number {
+    const start = state.start;
+    return start?.key === layoutKey(nodes) ? start.seed : layoutSeed(nodes);
+}
+
+/** What the re-tune control saves: the seed one above the one in force, under this node set. */
+export function nextStart(state: MapState, nodes: GraphNode[]): { key: string; seed: number } {
+    return { key: layoutKey(nodes), seed: startFor(state, nodes) + 1 };
 }
 
 /**
@@ -773,7 +613,7 @@ export function parseMapState(raw: unknown): MapState {
         typeof raw === 'object' && raw !== null && !Array.isArray(raw)
             ? (raw as Record<string, unknown>)
             : {};
-    const tuned = savedTuning(held.tuned);
+    const start = savedStart(held.start);
     return {
         collaborators: held.collaborators === true,
         enabled: stringList(held.enabled),
@@ -781,6 +621,6 @@ export function parseMapState(raw: unknown): MapState {
         types: stringList(held.types),
         lines: stringList(held.lines),
         connected: held.connected === true,
-        ...(tuned === undefined ? {} : { tuned })
+        ...(start === undefined ? {} : { start })
     };
 }

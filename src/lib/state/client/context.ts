@@ -84,9 +84,11 @@ import { createTranscripts, type TranscriptsStore } from '../sessions/transcript
 import { createUi, type UiStore } from '../workbench/ui.svelte.ts';
 import { createUsageRefresh, type UsageRefreshStore } from '../system/usage-refresh.svelte.ts';
 import { createWrites, type WritesStore } from './writes.svelte.ts';
+import { createGraphviz, type GraphvizLoader } from '../boards/structure/layout.ts';
 
 /** Every store one client holds, one instance of each. */
 export type ClientState = {
+    graphviz: GraphvizLoader;
     entities: EntitiesStore;
     writes: WritesStore;
     socket: SocketStore;
@@ -288,6 +290,7 @@ export function createClientState(): ClientState {
     // built over the layout, so the layout is told the rule once both exist.
     layout.registerOpened((view) => registry.viewFor(view)?.group === '');
     return {
+        graphviz: createGraphviz(),
         entities,
         writes,
         socket,

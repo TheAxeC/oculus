@@ -27,20 +27,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:      # Q86 reviewed after round 2, landing next.
-- step: Q86
-  executor: agent
-  worker: claude:opus
-  session_id: a7259d09cea6fa585
-  worktree: .agents/worktrees/Q86
-  base: fd4a8f3d
-  launched: 2026-09-29
-  report: agents/reviews/Q86-report.md
-  landing: not-started
-  builder_usage: 66 tool uses, 249k tokens, 19 min, the cases hand-back; the build after the ruling: 49 tool uses, 550k tokens, 18 min (two completion notices, 19 and 30 tool uses); round 1: 20 tool uses, 320k tokens, 8 min; round 2: 24 tool uses, 361k tokens, 8 min
-  reviewer_report: agents/reviews/Q86-refuter.md (reviewer a8593cf041460a438, 28 tool uses, 166k tokens, 11 min). Round 1 review: reviewer abae33b8a8a765dfa, 30 tool uses, 154k tokens, 7 min. Round 2 review: reviewer af3fa0908358bb2b5, 31 tool uses, 168k tokens, 8 min.
-  round: 2   # round 2 sent 2026-09-29 from 7bc5e1ad under the cap's exception (brief item 2 unbuilt, fix too large for landing), agents/briefs/Q86-round2-sent.md; round 1 from 6051e84f, agents/briefs/Q86-round1-sent.md; cases ruled in agents/briefs/Q86-cases.md
-  shared_paths: with Q101, DESIGN.md (Q86 line 290, Q101 lines 266 and 273 and the terminal sentences: different lines), docs/diagrams (a rerun of npm run diagrams), src/lib/state/client/context.ts (Q86 one import, one ClientState field and one returned key; Q101 the terminals wiring at 160-195 and the imports at 73-92: a hand merge of a few lines)
+dispatch:      # none in flight.
 ```
 
 ## The standing demands (from Axel, in force)
@@ -430,6 +417,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-09-29. Q86 landed through /spec, /refute and /land (the Map laid out by Graphviz's neato in the page); cases ruled at round 0, two repair rounds, each refuted again; fixes at landing: the diagrams merge, `context.ts` merged with Q101, the neato edge-length sentence in `layout.ts` and `DESIGN.md:290`, and the labels measured again once Graphviz has placed the nodes (found at the look). Verify on main: `npm test` had one failure in `tests/server/machine/hpc/ssh.test.ts`, a file the step does not change, passing alone; the other five commands exit 0. The look after the label fix is not taken: Axel took the tab to his own page. Next: `/spec` Q81 and Q82, then Q86b; Q87, D13 and X3c wait on Z45, Z46 and Z47.
 - 2026-09-29. Q101 landed through /spec, /refute and /land (each Terminal tab a terminal panel of its own, Z40 (d)); cases ruled at round 0, one repair round, refuted again; fixes at landing: the tab bar's New through the store's `composeInTab`, `DESIGN.md:208`, three composer sentences, the diagrams merge, the `saved.ts` conflict, and the scratch test's refused plant named after the run's directory (Z48 (a), Axel). Verify on main: `checks: 6 commands passed` (Test Files 352 passed, Tests 5642 passed). Axel ruled Z48 (a) and Z49 (a); step Q86b booked. Q86 reviewed after its two rounds. Next: land Q86 on top of Q101 with the look at the Map on TEST, then Q81 and Q82, which waited for Q101; Q87, D13 and X3c wait on Z45, Z46 and Z47.
 - 2026-09-29. Q79d landed through /spec, /refute and /land (the library audit's shared helpers, each written once); one repair round, refuted again; fixes at landing: the round review's three findings (head comments, `isFieldMap` and `bin` in the audit, the migration script's `isYamlMap`), the diagrams merge, and three defects Q100's landing left on main (the list-title rule written twice, three over-long comment lines, the type-scale expectation). Verify on main: `checks: 6 commands passed` (Test Files 351 passed, Tests 5597 passed). Q101's builder has reported. Next: Q101's review; Q87 stopped at `/spec` on Z45, D13 on Z46; Q81 and Q82 wait for Q101, whose terminal views and `Latex.svelte` they share; X3c stopped at `/spec` on Z47. Q86 launched beside Q101.
 - 2026-09-29. Q100 landed through /spec, /refute and /land (the Calendar's fixed strips over a wallpaper); one repair round, refuted again; fixes at landing: the library import rule, the pseudo-class comma, the strips at the popover mix (Z44 (b), Axel), the list titles at the Calendar's size (Axel), the DESIGN sentence. The git cap case tagged slow and left out of `npm test` (4390ffda, Axel). Next: Q79d's review, `/spec` Q101.
