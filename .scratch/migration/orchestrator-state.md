@@ -27,7 +27,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:      # Q101 round 1 answered, its review running; Q86 built, its review running.
+dispatch:      # Q101 round 1 answered, its review running; Q86 in repair round 1.
 - step: Q101
   executor: agent
   worker: claude:opus
@@ -51,8 +51,8 @@ dispatch:      # Q101 round 1 answered, its review running; Q86 built, its revie
   report: agents/reviews/Q86-report.md
   landing: not-started
   builder_usage: 66 tool uses, 249k tokens, 19 min, the cases hand-back; the build after the ruling: 49 tool uses, 550k tokens, 18 min (two completion notices, 19 and 30 tool uses)
-  reviewer_report: agents/reviews/Q86-refuter.md (reviewer a8593cf041460a438, running)
-  round: 0   # cases ruled in agents/briefs/Q86-cases.md, sent 2026-09-29
+  reviewer_report: agents/reviews/Q86-refuter.md (reviewer a8593cf041460a438, 28 tool uses, 166k tokens, 11 min)
+  round: 1   # sent 2026-09-29 from 6051e84f, agents/briefs/Q86-round1-sent.md; cases ruled in agents/briefs/Q86-cases.md
   shared_paths: with Q101, DESIGN.md (Q86 line 290, Q101 lines 266 and 273 and the terminal sentences: different lines), docs/diagrams (a rerun of npm run diagrams), src/lib/state/client/context.ts (Q86 one import, one ClientState field and one returned key; Q101 the terminals wiring at 160-195 and the imports at 73-92: a hand merge of a few lines)
 ```
 
