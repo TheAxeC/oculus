@@ -5,7 +5,7 @@ In flight:
 - Q102 (the terminal working as VS Code's, seen working in the page; Z69 (a)), builder on Sonnet 5.5 since 2026-09-30 01:29.
 - Q84 (the fetch-and-hold stores on @tanstack/query-core; Z56 (a)), builder on Sonnet 5.5 since 2026-09-30 01:48.
 Queued, in order:
-- Q88b (the right-click menus' new capabilities, and Chrome's own menu blocked): Z70 ruled (a); once Q102 has landed: both change the pane strip's menu and picks (`pane-view.ts`), `PaneView.svelte`, `layout/instances.ts` and `ui.svelte.ts`.
+- Q88b (the right-click menus' new capabilities, and Chrome's own menu blocked): Z70 ruled (a); once Q102 has landed: both change the pane strip's menu and picks (`pane-view.ts`), `PaneView.svelte`, `layout/instances.ts` and `ui.svelte.ts`; and once Q84 has landed, since Q84 rewrites `state/sources/fs.svelte.ts`, which Q88b's Files write client extends.
 - X3c (the tab strip as VS Code's editor tabs; Z47 (a)), once Q88b has landed: both change the pane strip (`PaneView.svelte`, `Tabs.svelte`, `pane-view.ts`), Q88b through `show_tabs`, `editor_actions` and its strip items.
 - X3a (the Files view as VS Code's Explorer), once Q88b has landed: X3a's New File, Rename, Delete, Cut, Copy, Paste and Compare rest on the server routes Q88b builds for the same items of the Files row menu.
 - Q91 (the project view and its editor), once X3a has landed.
