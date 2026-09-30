@@ -81,9 +81,9 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   diagnosis: agents/reviews/Q106-diagnosis.md
   shared_paths: DESIGN.md with Q107 and Q111 (Q106 writes lines 218 and 402, Q107 361, Q111 140 and 376); HELP.md with Q107 and Q111 (Q106 writes 90 and 296, Q107 127, Q111 254); no two change the same line
   builder_usage: 187,039 tokens, 45 tool uses, 25.2 min (report read at 23:26)
-  reviewer_report: agents/reviews/Q106-refuter.md (reviewer a441a918298825101, launched 23:27, served claude-opus-5-5, running)
+  reviewer_report: agents/reviews/Q106-refuter.md (reviewer a441a918298825101, launched 23:27, served claude-opus-5-5; 209,569 tokens, 59 tool uses, 17.0 min)
   landing: not-started
-  round: 0
+  round: 1 (sent 23:44: agents/briefs/Q106-round1.md, six rulings)
 ```
 
 ## The standing demands (from Axel, in force)
