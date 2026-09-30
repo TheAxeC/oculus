@@ -149,3 +149,40 @@ Also changed: `state/client/context.ts` (builds the query client, passes it to t
 - Case 5: "with `setIsServer(() => false)` still one request, so the helper's `retry: false` is what holds it." Every read and awaited call goes through `client.query`, which never retries whatever `retry` says, so `retry: false` is not what holds it and removing it turns nothing red (the run: `retry: false` removed, the 17 tests of `queries.test.ts` passed). What holds it at store level is that the query functions answer an error as a value instead of throwing; the revert that turns case 5 red is the docs fetcher rethrowing (listed above). `retry: false` stays as a default in the helper.
 - The brief check's statement that a docs read with no fetch "stamps and never asks again": a later read with a fetch present asks (case 7 asserts it).
 - Case 1 has no revert that turns it red, for the reason under the audit tests.
+
+## Repair round 1
+
+The Q84-R1 section above is superseded by items 1 and 2: `post.ts` is folded into `writes` and the helper is at `state/client/queries.svelte.ts`, as the brief says.
+
+| Item | State | Evidence |
+| --- | --- | --- |
+| 1 `postCommand` on the writes store, `post.ts` deleted | DONE. `PostFailure` and `Posted` are in `state/shared/stores/shapes.ts`; `WritesStore` has `postCommand(path, body)`; `createWrites` implements it with its own token; `accounts`, `calendar` and `inbox` call `writes.postCommand(url, body)`; `state/shared/stores/post.ts` and its test are deleted; no constructor changed. | `grep -rn "stores/post" src tests` prints nothing. Case 18 is in `tests/state/client/writes.test.ts` (three tests through `createWrites().postCommand`). Red runs, each failing only its test: `ok: true` whatever the status (fails "is answered with the body and the status ..."), thrown fetch answered `failed: 'unreadable'` (fails "is answered as unreachable ..."), non-JSON body answered `failed: ''` (fails "is answered as unreadable ..."). |
+| 2 Helper in `state/client/queries.svelte.ts`, no upward import | DONE. The types (`Queries`, `Fetcher`, `Fetching`, `WhileFetching`, `Read`, `Peek`, `Entry`) are in `shapes.ts`; `inBrowser` is in `state/shared/stores/in-browser.ts`; the ten stores import only those; `context.ts` imports the runtime from `./queries.svelte.ts`; the test is `tests/state/client/queries.test.ts`. | `grep -rn queueMicrotask src/lib/state` prints only `src/lib/state/client/queries.svelte.ts:168`; `grep -rn "stores/post" src tests` prints nothing; `tests/checks/imports/order.test.ts` and `tests/checks/diagrams/readable.test.ts` pass inside `npm run test:checks`. |
+| 3 `latex` skips a `sessions` version already heard | DONE (`heard` in `latex.svelte.ts`, as in `files.svelte.ts`). | Test "asks once for two sessions messages at one version" in `latex.test.ts`. Red run: the version test taken out, that test fails (1 failed, 7 passed). |
+| 4 `saveNote` leaves a note the page never read stale | DONE: `queries.mark([...NOTE, id], 'drop')` after the hold. | Test "is read from the server on the next read, which ends with the disk body and time" in `queries.test.ts` asserts `['/api/fs', '/api/fs?note=n9']`, methods `['POST', 'GET']` and `body: 'disk body', modified: 77`. Red run: the mark taken out, that test fails. It is in `queries.test.ts` since `fs.test.ts` is at the 900-line limit. |
+| 5 `docs` keeps the file of an error answer through a network error | DONE: `failure(held, message, held?.file ?? '')`. | Test "keeps the file of an error answer through a network error, so a write elsewhere asks nothing" in `docs.test.ts`. Red run: `held?.file ?? ''` replaced by `''`, that test fails (1 failed, 30 passed). |
+| 6 Case 20 cache check for every keyed store | DONE: the test "answers its empty reading in every keyed store, builds no query and sends no request" spies `QueryCache.prototype.build` and asserts it is never called across docs, hub documents, files, latex, deposit, transcripts and the fs reads; the docs-only cache test stays. | Red run: the empty-id test taken out of `files.svelte.ts`, that test fails. |
+| 7 `writes.svelte.ts` deposit comment rewrapped | DONE as one flowing comment. | `sed -n` of the comment above `writeDeposit`. |
+| 8 Sentences on `state/shared/stores/` | DONE: `DESIGN.md:174`, `HELP.md:260` and `tests/checks/imports/order.ts:11-12` now say the folder holds the shapes of the stores other stores are handed, the shell action and the test of whether a fetch is the page's own; the `shapes.ts` head comment names the query helper's types. | `tests/checks/imports/order.test.ts` passes. |
+| 9 `fetch` is for handlers and effects | DONE: a sentence in the head comment of `queries.svelte.ts`. | `sed -n 20,26p src/lib/state/client/queries.svelte.ts` |
+
+The DESIGN.md:192 sentence names `state/client/queries.svelte.ts`. `fs.svelte.ts` is 711 lines and `fs.test.ts` 900. The `// Revert:` paths in the tests name `state/client/queries.svelte.ts` again.
+
+Checks, after `npm run diagrams`, from `sh ~/.claude/skills/land/templates/checks.sh .scratch/migration/orchestrator-state.md`:
+
+```
+$ npm test
+ Test Files  338 passed | 19 skipped (357)
+      Tests  5157 passed | 557 skipped (5714)
+$ npm run test:checks
+ Test Files  27 passed | 2 skipped (29)
+      Tests  360 passed | 9 skipped (369)
+$ npm run check
+COMPLETED 2355 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+$ npm run build
+$ npm run format:check
+$ npm run lint
+$ ! LC_ALL=C grep -rna '[^ -~]' src tests
+checks: 7 commands passed
+exit 0
+```
