@@ -636,6 +636,7 @@ Independent of each other; two may run side by side under R9's rule when their b
 - Open item Z119 (2026-09-30): (a), S3 split into S3a (the catalog and its check), S3b (the `config-key` write) and S3c (the editor, after both) (the orchestrator, automode).
 - Open item Z121 (2026-09-30): (a) for all four, the catalog under one key `options:`, a default the tracked file's value, a number refused when the config readers refuse it, and an empty description failing the check (the orchestrator, automode).
 - Q109 rename (2026-10-01): Axel, "Q109 => Add renaming of a terminal. Split allows renaming, but a sole terminal cannot be renamed apparantely", and "I just get chrome right click"; built in Q109 (the user).
+- Open item Z130 (2026-10-01): (a), the three config keys no code reads (`board.no_funding`, `indexes`) are removed in S3a (the orchestrator, automode).
 - Open item Z129 (2026-10-01): (a), the Graph hang fix of X3d's diagnosis is the first item of X3d's rebuild, no step of its own (the user).
 - Open item Z128 (2026-10-01): (a), a browser tab's ui save keeps the other tab's instance records and follows its saves, the appearance staying its own; built in Q107's repair round (the orchestrator, automode).
 - Open item Z127 (2026-10-01): (a), the four Q85a steps as two: Q85a2 with Q85a3, Q85a4 with Q85a5 (the user).
