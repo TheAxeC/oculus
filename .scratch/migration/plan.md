@@ -578,6 +578,7 @@ Independent of each other; two may run side by side under R9's rule when their b
 - Inline fixes patch (2026-09-30): (d), the four changes the orchestrator made on main outside any step are kept as a patch file in the ledger, taken off main, and go through the loop as step Q108 (the user).
 - Open item Z101 (2026-09-30): (a), step Q109 finds with `/diagnose` why a terminal's name, icon and colour are not drawn when set and why its lines are not drawn after its tab moves to another pane, fixes both and tests each; built once Q107 has landed (the user).
 - Open item Z102 (2026-09-30): (a), step Q110 makes History's Undo write an empty list back as an empty list, with a test (the user).
+- Open item Z104 (2026-09-30): (a), a continuation builder takes over X3d's worktree as it is, since the runner refuses to resume the stopped builder (the user).
 - Open item Z61 (2026-09-29): (a), JPEG sizes and orientation stay on the hand parser and `image-size` sizes the other picture formats (the user).
 - Open item Z62 (2026-09-29): (a), `agents/spec.md` lets a reviewer read git state and a builder runs no git command at all (the user).
 - A3 (2026-09-29): (a), a scheduled run is a cron-style `schedule:` field on each Update task entry (the user).
