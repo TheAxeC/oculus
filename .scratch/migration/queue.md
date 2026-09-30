@@ -3,7 +3,8 @@
 In flight:
 - X3d (the Repositories view and the diff rebuilt to look and work as VS Code's Source Control), builder on `claude-sonnet-5-5` since 2026-09-30 15:01, base 4fe6ce93.
 - E2 (the apps section of DESIGN.md rewritten to the rulings of Z93), builder on `claude-sonnet-5-5` since 2026-09-30 15:57, base d7af9cac.
-- One slot is free: Q85a1's brief is written and its brief check runs; its builder is launched on the check's report. S3 and L4 as slots free.
+- Q85a1 (zod at the server's `core` and `root` inputs; Z96 (a)), builder on `claude-sonnet-5-5` since 2026-09-30 16:06, base 8155b826.
+- No slot is free. S3 and L4 go through /spec as slots free.
 Queued, in order:
 - S3 (the Settings view as VS Code's Settings editor with the options catalog; Z75 (a), Z94 ruled), /spec next.
 - U2 (the audit of every other view's look against VS Code's visual language), beside X3d, waiting on open item Z97 (the Chrome window the looks run in is minimised, so no animation frame runs); its build steps once Axel rules on its grouping.
@@ -12,7 +13,7 @@ Queued, in order:
 - X3a (the Files view as VS Code's Explorer, its look and behaviour included, the roots as Z76 rules), once Q88b has landed: X3a's New File, Rename, Delete, Cut, Copy, Paste and Compare rest on the server routes Q88b builds for the same items of the Files row menu.
 - Q91 (the project view and its editor), once X3a has landed.
 - L4 (floating panes; Z95 ruled), /spec after S3.
-- Q85a1 (zod at the server's `core` and `root` inputs; Z96 (a)), /spec next; then Q85a2 (edit), Q85a3 (sessions, transcripts), Q85a4 (machine, accounts), Q85a5 (files, content, git); Q85b and Q85c after them, then Q85d.
+- Q85a2 to Q85a5, once Q85a1 has landed: Q85a2 (edit), Q85a3 (sessions, transcripts), Q85a4 (machine, accounts), Q85a5 (files, content, git); Q85b and Q85c after them, then Q85d.
 - Q66 (a hidden tab defers its work), once X3d has landed: it also gates the direct re-reads of `diff/Diff.svelte` and `graph/Graph.svelte`, which X3d rewrites; its premises are `agents/reviews/Q66-premises.md`.
 - Q35 (the session views).
 - D11 and D14 (the debug client for rite, its configurations in `.oculus/launch.yml`, Z92; LaTeX everywhere).

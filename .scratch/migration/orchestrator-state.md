@@ -54,6 +54,19 @@ dispatch:      # X3d in flight. Ruled 2026-09-30: Z94 (S3 free), Z95 (L4 free), 
   shared_paths: DESIGN.md with X3d (E2 writes only lines 234-312, the apps section, which X3d's brief does not touch; git merges the two hunks), docs/diagrams (a mechanical rerun of `npm run diagrams` at landing)
   landing: not-started
   round: 0
+- step: Q85a1
+  executor: agent
+  worker: claude:sonnet
+  model: claude-sonnet-5-5 (the transcript's message.model, read after the launch)
+  session_id: ae686eb39be662fd7
+  worktree: .agents/worktrees/Q85a1
+  base: 8155b826
+  launched: 2026-09-30 16:06 local
+  report: agents/reviews/Q85a1-report.md
+  brief_check: agents/reviews/Q85a1-brief-check.md, every finding closed in the brief (its Closed heading); claude-opus-5-5, 47 tool uses, 250,287 tokens, 13.3 min
+  shared_paths: DESIGN.md with X3d and E2 (Q85a1 adds one paragraph after line 146, outside the sections the other two write; git merges the hunks), README.md line 13 and docs/diagrams (a mechanical rerun of `npm run diagrams` at landing)
+  landing: not-started
+  round: 0
 ```
 
 ## The standing demands (from Axel, in force)
@@ -509,6 +522,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-09-30 16:06. Three steps in flight: X3d, E2 (base d7af9cac) and Q85a1 (base 8155b826), each builder on `claude-sonnet-5-5`. The looks run again (Axel brought the Chrome tab to the front; Z97 closes with the looks' record). Next: each builder's report, /refute, one repair round, /land; then /spec Q88b and Q66 after X3d; S3 and L4 as slots free; Q85a2 to Q85a5 after Q85a1.
 - 2026-09-30 15:58. E2 prepared at d7af9cac and in flight on `claude-sonnet-5-5`, beside X3d. Q85a1's brief is written and its brief check runs; its builder is launched on the check's report, which fills the third slot. Open: Z97 (the looks stuck on a minimised Chrome window; the five owed looks and U2's audit wait on it). Next: Q85a1's launch; X3d's report, /refute and /land; then /spec Q88b and Q66; S3 and L4 as slots free.
 - 2026-09-30 16:20. Z93 closed (N1 to N6 and C1, C6, C8, C27 ruled; `agents/reviews/E1-rulings.md`), step E2 booked. Green light given. X3d in flight. /spec now: E2 and Q85a1, then S3 and L4 as slots free. The looks can be taken again (a screenshot on 8790 drew the page). Open: none.
 - 2026-09-30 15:30. Ruled and booked: Z94 (c)(a)(a)(b), Z95 (a)(a)(a), Z96 (a), Z93 all as recommended except C27, which Axel asked to have explained. X3d in flight. /spec next: Q85a1 and S3, then L4. Open: Z93 C27.
