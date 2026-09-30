@@ -586,7 +586,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
-- 2026-09-30 22:24. E3 landed (the apps section to Z103 (b), Z106 (a), Z107 (b2) and Z112 (a)); eight fixes at landing. X3d taken back out of main at its look (22:10); its diagnosis runs. In flight: Q111 (its review), Q107 (its builder). Next: /spec S3 into the free slot. Open: Z113, Z115.
+- 2026-09-30 22:24. E3 landed (the apps section to Z103 (b), Z106 (a), Z107 (b2) and Z112 (a)); eight fixes at landing. X3d taken back out of main at its look (22:10); its diagnosis runs. In flight: X3d (its diagnosis), Q111 (its review), Q107 (its builder), the three slots. Next: Q111 landed on its review; /spec S3 when a slot frees. Open: Z113, Z115.
 - 2026-09-30 20:35. Q110 landed (an undo gives a replaced manifest value back as the file held it); two fixes at landing (the pure `coerce` cases moved to a file `npm test` runs, report line 88). Z106 ruled (a), booked as E3. In flight: X3d (its review). Next: /spec E3 and /spec Q106 into the free slots; Q111 after Q110. Open: none.
 - 2026-09-30 20:22. Q108 landed (the merge editor's bars, the empty HPC queue through `Empty`, the drop-mark count, the kit tests moved); one fix at landing in its report; looks on TEST taken. In flight: X3d, Q110 (its round review). U2 prepared, waits for X3d. Next: /spec Q106 into the free slot. Open: Z106.
 - 2026-09-30 20:04. Z103 ruled (b); Z106 raised; Q108 and Q110 each sent one repair round; U2 prepared at 7e8eec33. Open: Z106.
