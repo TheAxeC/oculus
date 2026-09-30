@@ -2,7 +2,7 @@
 
 In flight:
 - X3d (Source Control as VS Code's), a new builder continues it.
-- Q108 (the four fixes of the inline patch), brief check running.
+- Q108 (the four fixes of the inline patch), building.
 Open items: Z103 (the 42 shapes E2 named).
 Queued, in order:
 - Q110 (Undo gives an empty list back), /spec next.

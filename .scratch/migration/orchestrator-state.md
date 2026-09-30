@@ -42,6 +42,19 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   brief_check: agents/reviews/X3d-brief-check.md, every finding closed in the brief (its Closed heading); claude-opus-5-5, 52 tool uses, 301,056 tokens, 12.4 min
   landing: not-started
   round: 0
+- step: Q108
+  executor: agent
+  worker: claude:sonnet
+  model: claude-sonnet-5-5 (the transcript's message.model, read after the launch)
+  session_id: a039a2e9360773da5
+  worktree: .agents/worktrees/Q108
+  base: a6efe87c
+  launched: 2026-09-30 19:28 local
+  report: agents/reviews/Q108-report.md
+  brief_check: agents/reviews/Q108-brief-check.md, every finding closed in the brief (its Closed heading); claude-opus-5-5, 37 tool uses, 158,436 tokens, 7.0 min
+  shared_paths: docs/diagrams with X3d (a mechanical rerun of `npm run diagrams` at landing); tests/ui/controls/ with X3d, whose tests are ToolButton's and the menu's, not the editor folder's, so git merges the files
+  landing: not-started
+  round: 0
 ```
 
 ## The standing demands (from Axel, in force)
@@ -506,6 +519,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-09-30 19:28. Q108 prepared at a6efe87c (the patch applied in its worktree) and in flight on `claude-sonnet-5-5`, beside X3d. Next: /spec Q110, then U2. Open: Z103.
 - 2026-09-30 19:22. Z104 ruled (a): X3d continued by a new builder on `claude-sonnet-5-5` in its worktree. Q108's brief check runs on `claude-opus-5-5`. queue.md cut to short lines on Axel's word. Next: Q108's preparation commit and builder, then /spec Q110 and U2. Open: Z103.
 - 2026-09-30 19:14. The resume of X3d's builder Axel asked for was refused by the runner (agent stopped by the user); raised as Z104. Next, in Axel's order: /spec Q108, Q110 and U2. Open: Z104, Z103.
 - 2026-09-30 19:12. Q85a1 landed (`zod` 4.6.5 at the untyped inputs of the server's `core` and `root` folders); two fixes at landing, the three case-24 inputs removed from `socket.test.ts` and `hooks.test.ts` and case 11's run on the unchanged tree added to the report; verify on main `checks: 7 commands passed` (348 files, 5319 tests), the three touched test files with the slow one 70 passed. Q85a2 to Q85a5 are free. Next, in Axel's order: X3d's builder resumed, then /spec Q108, Q110 and U2. Open: Z103.
