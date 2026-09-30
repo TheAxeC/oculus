@@ -119,14 +119,17 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is booked as its own step in `plan.md` and carried in the Booked section below, since it needs no ruling from him.
 
-- **Z92, the file that is oculus's equivalent of launch.json** (raised 2026-09-30 from Axel's question on the equivalents). Z87 (a) saves D11's named launch configurations "per repository under `~/.oculus/`" and names no file.
-  - (a) `.oculus/launch.yml` in the repository, beside `.oculus/commands.yml` and `.oculus/settings.yml`; D11's form reads and writes it. For: the three repository files match VS Code's three, and the configurations are versioned with the code. Against: it changes where Z87 (a) put them.
-  - (b) A file under `~/.oculus/` per repository, as Z87 (a) says. For: nothing in the repository. Against: not versioned, and the only one of the three that lives elsewhere.
-  - Recommendation: (a). The lazy option is (b).
-- **Z93, the file that is oculus's equivalent of c_cpp_properties.json** (raised 2026-09-30 from the same question). Today there is none: Z72 (2) (a) has oculus find the compile database and remember the choice under `~/.oculus/`, and include paths, defines and flags come only from that database.
-  - (a) A `cpp:` section in `.oculus/settings.yml`: the compile database to use, and include paths, defines and flags added on top, which oculus passes to clangd itself; with no section oculus finds the database as ruled. For: a repository with no compile database can still be set up without creating a `.clangd` or `compile_flags.txt` file, and the choice is versioned. Against: one more section to build in D23.
-  - (b) No file, as ruled. Against: a repository without a compile database has no way to give clangd its flags from oculus.
-  - Recommendation: (a). The lazy option is (b).
+- **Z92, a repository's `.oculus/` folder as oculus's counterpart of `.vscode/`, one file per VS Code file** (raised 2026-09-30 by Axel: the launch form and the absence of a file for C and C++ are not what he asked; he asked for oculus's equivalent of each of the four files). Booked today: `tasks.json` has `.oculus/commands.yml` (D17), `settings.json` has `.oculus/settings.yml` over `tools/oculus/config/*.yml` (Z89 (b)), `launch.json` has a form that saves under `~/.oculus/` (Z87 (a), and the ruling line of 2026-09-16 17:32), and `c_cpp_properties.json` has no file: oculus finds a compile database itself (Z72 (2) (a)). No repository has a `.oculus/` folder yet and oculus's source reads none (`grep` over `src/`). Proposed: four YAML files in a repository's `.oculus/` folder, every one optional.
+  - (1) `launch.json`.
+    - (a) `.oculus/launch.yml`, a list `configurations:` of `{ name, program, cwd, before }`, `program` the `.rite` file (`${file}` for the open one, Z85 (3)'s names), `before` the name of a command of `commands.yml` run first; the Debug view's picker lists them, Add Configuration opens the file in the editor, and with no file Start Debugging runs the open `.rite` file; the form is dropped. A launch runs after the approval DESIGN.md's Processes rule already requires. For: the same shape as VS Code, versioned with the code, no form to learn. Against: replaces Z87 (a).
+    - (b) the file of (a) and the form of Z87 (a) as well. Against: two ways to make one thing.
+    - Recommendation: (a). The lazy option is (b), which keeps what is booked.
+  - (2) `c_cpp_properties.json`.
+    - (a) `.oculus/cpp.yml`, a list `configurations:` of `{ name, compile_commands, fallback_flags }`: `compile_commands` the folder of a compile database inside the repository, `fallback_flags` the flags for a file the database has no entry for; the status bar's picker of Z72 (2) (a) lists the file's configurations first and the databases oculus finds after them, so a repository with no file works as ruled. Verified on the installed clangd (Apple clangd 17.0.0, probe in the session's scratch folder): `fallbackFlags` in the initialize request is applied to a file with no database entry and not to a file that has one. For: a repository says which build it means and how to read a file outside the database. Against: one more file.
+    - (b) the same two keys under `cpp:` in `.oculus/settings.yml`. For: one file fewer. Against: not one file per VS Code file.
+    - (c) no file, Z72 (2) (a) alone, as booked.
+    - Recommendation: (a). The lazy option is (c).
+  - Not in either file: a compiler path (clangd runs without `--query-driver`, Z72 (1) (a)); flags added on top of a database entry (the probe shows `fallbackFlags` does not reach a file that has an entry).
 
 ## Time per step (Axel asked 2026-09-27 for how it evolves with Q77; measured from each builder's transcript: each tool call from call to result, each background wait from the builder stopping to the run waking it)
 
@@ -510,6 +513,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-09-30 14:10. Raised: Z92, a file in a repository's `.oculus/` folder for each of VS Code's four files (`launch.yml` replacing the launch form, `cpp.yml` for C and C++). In flight: Q102 and E1, each with its round-1 refutation returned and not yet saved. The loop waits for Axel's green light. Open: Z92.
 - 2026-09-30 13:40. Ruled and booked: Z89 (b), in D25. Z90 and Z91 withdrawn, both were already decided (O30 Electron, X2 kept). In flight: Q102 and E1, each with its round-1 refutation returned and not yet saved. The loop waits for Axel's green light. Open: none.
 - 2026-09-30 13:05. Ruled and booked: Z78 to Z88 (steps D27 to D34 added, D11, D17, D23 and D26 widened). Raised: Z89, whether a repository can override the per-language settings. In flight: Q102 and E1, each with its round-1 refutation returned and not yet saved. The loop waits for Axel's green light. Open: Z89.
 - 2026-09-30 12:40. The Z74 inventory was read in full and saved as `agents/reviews/Z74-inventory.md`, with its missing rows cut under the Settings ruling: eleven decisions raised as Z78 to Z88, the rest fixed choices listed at the end of that file. In flight: Q102 and E1, each with its round-1 refutation returned and not yet saved. The loop waits for Axel's green light. Open: Z78 to Z88.
