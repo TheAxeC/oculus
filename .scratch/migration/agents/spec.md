@@ -80,7 +80,7 @@ First line: anything NOT done, or "Everything in the brief is done". Then a DONE
 - A fix of a defect in delivered work needs no yes from Axel, whatever the fix makes visible. Only a real user-visible shape he has not asked for, a premise found wrong or a clash between two rules goes to him.
 - What goes to him is booked the moment it is raised (a `plan.md` line or the state file's open-items list) and repeated in every report until he has ruled. Memory does not count; the ledger does.
 
-Several packages may be in flight at once when the state file's block sets `workers_at_once` above 1 and their briefs name disjoint paths and different views; each runs in its own worktree under its own brief and knows nothing of the other; a brief that lists a path another in-flight brief lists is not dispatched. The orchestrator is one; the landings are one at a time.
+Several packages may be in flight at once when the state file's block sets `workers_at_once` above 1 and merging their shared files at landing is simple; the orchestrator writes that judgment in the later package's `shared_paths:`, and a package whose merge would not be simple waits until the other lands; each runs in its own worktree under its own brief and knows nothing of the other. The orchestrator is one; the landings are one at a time.
 
 The reviewer stage runs per package by the state file's `review: earned` rule, decided from the ledger's rows and the diff; the checks and the orchestrator's read of the whole diff run on every package regardless; a second review after a repair only when the repair went beyond the misses it was sent. The rows record which branch a package took.
 

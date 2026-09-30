@@ -9,10 +9,12 @@ Queued, in order:
 - X3a (the Files view as VS Code's Explorer), once Q88b has landed: X3a's New File, Rename, Delete, Cut, Copy, Paste and Compare rest on the server routes Q88b builds for the same items of the Files row menu.
 - Q91 (the project view and its editor), once X3a has landed.
 - L4 (floating panes).
-- Q85 (checking untyped input with zod).
+- Q85a, then Q85b and Q85c, then Q85d (checking untyped input with zod: the server, the state layer, `data/`, the views; Z73 (b)).
 - Q66 and Q35 (a hidden tab defers its work; the session views).
 - D11 and D14 (the debug client for rite; LaTeX everywhere).
-- D23, D15 and D17 (language servers in the Monaco editor, stopped on Z72 until Axel rules; PDF reading, once D14 has landed; project commands).
+- D23, D15 and D17 (language servers in the Monaco editor, Z72 and Z74 ruled; PDF reading, once D14 has landed; project commands, widened by Z74 (3)).
+- D23b (rename, code actions, workspace symbols and hierarchies for the language servers), once D23 has landed.
+- D25 and D26 (per-language indentation; the rite language in the editor; Z74).
 - D18, D20 and D24 (the Processes view; an agent started on a task; the Personal board).
 - A1, A2 and A3 (review with feedback; a session in a new worktree; scheduled runs, once D17 has landed).
 - M3 and M4 (the resources registry; the Present view's equations drawn live from LaTeX).
