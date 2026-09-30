@@ -53,6 +53,7 @@ dispatch:      # Q102 building; Q84's report in; Q88b waits for Q102's and Q84's
   report: agents/reviews/Q84-report.md
   brief_check: agents/reviews/Q84-brief-check.md, every finding closed in the brief (its Closed heading); claude-opus-5-5, 63 tool uses, 261k tokens, 11 min
   shared_paths: README.md line 13 (Q102 adds @xterm/addon-serialize, Q84 @tanstack/query-core, one sentence naming each dependency, both kept by hand); package.json and package-lock.json (each adds one dependency, npm install run again on main at the second landing); src/lib/state/client/context.ts (Q102 the terminals and layout wiring around 170-196, Q84 the query client and the store constructors); DESIGN.md (D13c the Appearance text, Q102 the Terminal text, Q84 the paragraph at 192); docs/diagrams/ (regenerated on main); tests/views/sessions/sessions.test.ts (Q102 its audits at 352-362, Q84 no assertion). Each is a hand merge of named places or a mechanical rerun.
+  builder_usage: 173 tool uses, 251,916 tokens, 55.6 min (3,334,579 ms), from its completion notice; report saved 2026-09-30
   landing: not-started
   round: 0
 ```
