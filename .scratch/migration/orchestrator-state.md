@@ -52,11 +52,12 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   launched: 2026-09-30 19:28 local
   report: agents/reviews/Q108-report.md
   builder_usage: 164,490 tokens, 48 tool uses, 14.2 min (report at 19:42)
-  reviewer_report: agents/reviews/Q108-refuter.md (reviewer a2f79b6c821847709, launched 19:42, served claude-opus-5-5; running)
+  reviewer_report: agents/reviews/Q108-refuter.md (reviewer a2f79b6c821847709, served claude-opus-5-5, 152,342 tokens, 37 tool uses, 13.3 min; two Proof findings, sent as round 1)
+  round_1: agents/briefs/Q108-round1.md, sent 19:58, the worktree's diff state at the send recorded in `agents/reviews/Q108-round1-base.diff`
   brief_check: agents/reviews/Q108-brief-check.md, every finding closed in the brief (its Closed heading); claude-opus-5-5, 37 tool uses, 158,436 tokens, 7.0 min
   shared_paths: docs/diagrams with X3d (a mechanical rerun of `npm run diagrams` at landing); tests/ui/controls/ with X3d, whose tests are ToolButton's and the menu's, not the editor folder's, so git merges the files
   landing: not-started
-  round: 0
+  round: 1
 - step: Q110
   executor: agent
   worker: claude:sonnet
@@ -70,6 +71,16 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   reviewer_report: agents/reviews/Q110-refuter.md (reviewer abdca2fd478b9f797, launched 19:52, served claude-opus-5-5; running)
   brief_check: agents/reviews/Q110-brief-check.md, every finding closed in the brief or raised as Z105 (its Closed heading); claude-opus-5-5, 31 tool uses, 166,632 tokens, 6.1 min
   shared_paths: docs/diagrams with X3d and Q108 (a mechanical rerun of `npm run diagrams` at landing); DESIGN.md line 313 with X3d, whose brief writes other sections of DESIGN.md, so git merges the hunks
+  landing: not-started
+  round: 0
+- step: U2
+  executor: agent
+  worker: claude:sonnet
+  session_id: (not launched; launches once X3d and Q108 have landed, since the builder takes every look on TEST while it runs and no landing look may run beside it)
+  worktree: .agents/worktrees/U2
+  base: 7e8eec33
+  report: agents/reviews/U2-report.md (with U2-audit.md, U2-vscode.css and U2-shots/, copied to main's ledger on the report)
+  brief_check: agents/reviews/U2-brief-check.md, every finding closed in the brief (its Closed heading); claude-opus-5-5, 70 tool uses, 160,458 tokens, 9.9 min
   landing: not-started
   round: 0
 ```

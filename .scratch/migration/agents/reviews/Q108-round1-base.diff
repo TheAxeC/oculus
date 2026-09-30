@@ -1,0 +1,1081 @@
+diff --git a/tools/oculus/docs/diagrams/layer-views.dot b/tools/oculus/docs/diagrams/layer-views.dot
+index b4671e0c..50b43d1b 100644
+--- a/tools/oculus/docs/diagrams/layer-views.dot
++++ b/tools/oculus/docs/diagrams/layer-views.dot
+@@ -36,7 +36,7 @@ digraph layer_views {
+         "folder views/structure to layer ui" [label="29", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+         "folder views/system to folder views/shared" [label="2", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+         "folder views/system to layer state" [label="77", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+-        "folder views/system to layer ui" [label="86", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
++        "folder views/system to layer ui" [label="87", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+         "folder views/shared to layer state" [label="86", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+         "folder views/shared to layer ui" [label="71", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+     }
+diff --git a/tools/oculus/docs/diagrams/layer-views.svg b/tools/oculus/docs/diagrams/layer-views.svg
+index 13784e63..af99abb6 100644
+--- a/tools/oculus/docs/diagrams/layer-views.svg
++++ b/tools/oculus/docs/diagrams/layer-views.svg
+@@ -327,7 +327,7 @@
+ <g id="node33" class="node">
+ <title>folder views/system to layer ui</title>
+ <polygon fill="none" stroke="none" points="88.88,-192.16 75.12,-192.16 75.12,-179.68 88.88,-179.68 88.88,-192.16"/>
+-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="82" y="-183.52" font-family="Helvetica,Arial,sans-serif" font-size="8.00">86</text>
++<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="82" y="-183.52" font-family="Helvetica,Arial,sans-serif" font-size="8.00">87</text>
+ </g>
+ <!-- folder views/system&#45;&gt;folder views/system to layer ui -->
+ <g id="edge55" class="edge">
+diff --git a/tools/oculus/docs/diagrams/layers.dot b/tools/oculus/docs/diagrams/layers.dot
+index 7408107f..9349df37 100644
+--- a/tools/oculus/docs/diagrams/layers.dot
++++ b/tools/oculus/docs/diagrams/layers.dot
+@@ -69,7 +69,7 @@ digraph layers {
+     "views to state" [label="591", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+     "views" -> "views to state" [arrowhead=none];
+     "views to state" -> "state" [];
+-    "views to ui" [label="576", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
++    "views to ui" [label="577", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+     "views" -> "views to ui" [arrowhead=none];
+     "views to ui" -> "ui" [];
+ }
+diff --git a/tools/oculus/docs/diagrams/layers.svg b/tools/oculus/docs/diagrams/layers.svg
+index d300e76e..6f2a319a 100644
+--- a/tools/oculus/docs/diagrams/layers.svg
++++ b/tools/oculus/docs/diagrams/layers.svg
+@@ -131,7 +131,7 @@
+ <g id="node30" class="node">
+ <title>views to ui</title>
+ <polygon fill="none" stroke="none" points="238.76,-282.24 221,-282.24 221,-269.76 238.76,-269.76 238.76,-282.24"/>
+-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="229.88" y="-273.6" font-family="Helvetica,Arial,sans-serif" font-size="8.00">576</text>
++<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="229.88" y="-273.6" font-family="Helvetica,Arial,sans-serif" font-size="8.00">577</text>
+ </g>
+ <!-- views&#45;&gt;views to ui -->
+ <g id="edge39" class="edge">
+diff --git a/tools/oculus/src/lib/ui/controls/editor/kit/colours.ts b/tools/oculus/src/lib/ui/controls/editor/kit/colours.ts
+index e1999b5e..9bf81ef8 100644
+--- a/tools/oculus/src/lib/ui/controls/editor/kit/colours.ts
++++ b/tools/oculus/src/lib/ui/controls/editor/kit/colours.ts
+@@ -9,7 +9,7 @@
+ // colour it leaves unset takes the ink the text would inherit. A text colour is a token's `-txt`
+ // form, which themes/derive.ts nudges until it reads on every surface, as every text of the page
+ // is painted. The keys are the installed
+-// package's own, read from its `registerColor` calls by tests/ui/controls/editor/theme.test.ts,
++// package's own, read from its `registerColor` calls by tests/ui/controls/editor/kit/theme.test.ts,
+ // which turns red on a key this map misses or names in excess.
+ 
+ /** Monaco's colour key to the token it is painted from, with an alpha where one is written. */
+diff --git a/tools/oculus/src/lib/ui/controls/editor/zones.ts b/tools/oculus/src/lib/ui/controls/editor/zones.ts
+index ca08b166..69cf4cd1 100644
+--- a/tools/oculus/src/lib/ui/controls/editor/zones.ts
++++ b/tools/oculus/src/lib/ui/controls/editor/zones.ts
+@@ -4,6 +4,8 @@
+ // above the line keeps the room, and the element sits over that room as an overlay widget, moved
+ // to the zone's top on every render. Content inside a view zone takes no pointer events, since the
+ // line layer lies above it, so the bar's buttons live in the overlay, which lies above the lines.
++// The zone is made again for every model the editor is given, since the editor drops its zones
++// with its model and makes none while it holds none.
+ //
+ // A bar's zone is drawn before any other zone after the same line (`ordinal` 0), so in an inline
+ // diff it sits above the removed lines Monaco draws there, and a diff editor gives the other side
+@@ -40,6 +42,7 @@ export function lineBars(): LineBars {
+     let editor: Monaco.editor.ICodeEditor | null = null;
+     let height = 0;
+     let layout: Monaco.IDisposable | null = null;
++    let modelled: Monaco.IDisposable | null = null;
+     let made = 0;
+     const held = new Map<HTMLElement, Held>();
+ 
+@@ -56,7 +59,6 @@ export function lineBars(): LineBars {
+         const id = `oculus.bar.${String(made)}`;
+         node.style.position = 'absolute';
+         node.style.left = '0';
+-        node.style.top = OUT_OF_SIGHT;
+         const widget: Monaco.editor.IOverlayWidget = {
+             getId: () => id,
+             getDomNode: () => node,
+@@ -64,11 +66,24 @@ export function lineBars(): LineBars {
+         };
+         on.addOverlayWidget(widget);
+         fit(on, node);
+-        const room = Math.max(node.offsetHeight, height);
++        entry.widget = widget;
++        room(on, node, entry);
++    }
++
++    /**
++     * Make the room of a bar above its line, and leave the bar out of sight until its zone is
++     * drawn. An editor makes no zone while it holds no model, and drops its zones when it is given
++     * another model or none while it keeps its overlay widgets, so this runs again on every model
++     * for a bar whose widget stays.
++     */
++    function room(on: Monaco.editor.ICodeEditor, node: HTMLElement, entry: Held): void {
++        node.style.top = OUT_OF_SIGHT;
++        if (on.getModel() === null) return;
++        const tall = Math.max(node.offsetHeight, height);
+         on.changeViewZones((zones) => {
+             entry.zone = zones.addZone({
+                 afterLineNumber: entry.after,
+-                heightInPx: room,
++                heightInPx: tall,
+                 domNode: document.createElement('div'),
+                 ordinal: FIRST,
+                 suppressMouseDown: true,
+@@ -77,7 +92,6 @@ export function lineBars(): LineBars {
+                 }
+             });
+         });
+-        entry.widget = widget;
+     }
+ 
+     function remove(entry: Held): void {
+@@ -97,12 +111,20 @@ export function lineBars(): LineBars {
+             layout = on.onDidLayoutChange(() => {
+                 for (const node of held.keys()) fit(on, node);
+             });
++            modelled = on.onDidChangeModel(() => {
++                for (const [node, entry] of held) {
++                    entry.zone = null;
++                    if (entry.widget !== null) room(on, node, entry);
++                }
++            });
+             for (const [node, entry] of held) place(node, entry);
+         },
+         unmount() {
+             for (const entry of held.values()) remove(entry);
+             layout?.dispose();
+             layout = null;
++            modelled?.dispose();
++            modelled = null;
+             editor = null;
+         },
+         above(after) {
+diff --git a/tools/oculus/src/lib/views/system/hpc/Jobs.svelte b/tools/oculus/src/lib/views/system/hpc/Jobs.svelte
+index e7650ff6..7ae40ff9 100644
+--- a/tools/oculus/src/lib/views/system/hpc/Jobs.svelte
++++ b/tools/oculus/src/lib/views/system/hpc/Jobs.svelte
+@@ -1,7 +1,8 @@
+ <script lang="ts">
+     // Layer 3, view partial. The queue exposes every squeue field, with cancellation behind Confirm
+-    // and logs limited to running jobs.
++    // and logs limited to running jobs. An empty queue is said with the Empty primitive.
+     import Tag from '$lib/ui/controls/Tag.svelte';
++    import Empty from '$lib/ui/frame/Empty.svelte';
+     import Confirm from '$lib/ui/controls/Confirm.svelte';
+     import Meter from '$lib/ui/display/Meter.svelte';
+     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+@@ -42,7 +43,7 @@
+     ];
+ </script>
+ 
+-{#if rows.length === 0}<p>{t('hpc.no_jobs')}</p>{:else}
++{#if rows.length === 0}<Empty message={t('hpc.no_jobs')} />{:else}
+     <div class="scroll">
+         <table>
+             <thead
+diff --git a/tools/oculus/tests/shell/workbench.test.ts b/tools/oculus/tests/shell/workbench.test.ts
+index d8024c7c..6fc963b8 100644
+--- a/tools/oculus/tests/shell/workbench.test.ts
++++ b/tools/oculus/tests/shell/workbench.test.ts
+@@ -806,7 +806,9 @@ describe('a page shown inside another', () => {
+             props: { groups: [] }
+         }).body;
+         cancel();
+-        const marks = [...body.matchAll(/class="mark[^"]*"/g)];
++        // The strip's drop mark is hidden from assistive technology; a tab's glyph shares its
++        // class.
++        const marks = [...body.matchAll(/class="mark[^"]*" aria-hidden="true"/g)];
+         expect(marks).toHaveLength(1);
+         // The mark sits in the nested page's first pane, which is the one the drop named.
+         expect(body.indexOf('data-page-leaf')).toBeLessThan(marks[0].index);
+diff --git a/tools/oculus/tests/ui/controls/editor/grammars.test.ts b/tools/oculus/tests/ui/controls/editor/grammars.test.ts
+deleted file mode 100644
+index 8b105e4c..00000000
+--- a/tools/oculus/tests/ui/controls/editor/grammars.test.ts
++++ /dev/null
+@@ -1,43 +0,0 @@
+-// The editor's languages: every name the highlighter registers answers the Shiki grammar the editor
+-// colours it with, checked against the grammars the installed shiki bundles.
+-
+-import { bundledLanguages } from 'shiki';
+-import { describe, expect, it } from 'vitest';
+-import { SHIKI_LANGUAGES, shikiId } from '../../../../src/lib/ui/controls/editor/kit/grammars.ts';
+-import { registered } from '../../../../src/lib/state/shared/words/languages.ts';
+-
+-describe('the language map', () => {
+-    // Red when a name answers an id the installed shiki does not bundle.
+-    it('answers a grammar shiki bundles for each of the nineteen names, plaintext its own', () => {
+-        const names = registered();
+-        expect(names).toHaveLength(19);
+-        for (const name of names) {
+-            const id = shikiId(name);
+-            if (name === 'plaintext') expect(id).toBe('plaintext');
+-            else expect({ name, bundled: id in bundledLanguages }).toEqual({ name, bundled: true });
+-        }
+-    });
+-
+-    // Red when one of the three names is looked up under oculus's spelling.
+-    it('maps the three names shiki spells otherwise, and the rest by their own name', () => {
+-        expect(shikiId('lisp')).toBe('common-lisp');
+-        expect(shikiId('makefile')).toBe('make');
+-        expect(shikiId('bash')).toBe('shellscript');
+-        expect(shikiId('python')).toBe('python');
+-        expect(shikiId('latex')).toBe('latex');
+-    });
+-
+-    // Red when an unknown name, or a name on Object's prototype, answers anything but plaintext.
+-    it('answers plaintext for a name outside the nineteen', () => {
+-        expect(shikiId('cobol')).toBe('plaintext');
+-        expect(shikiId('')).toBe('plaintext');
+-        expect(shikiId('constructor')).toBe('plaintext');
+-    });
+-
+-    // Red when a grammar is loaded twice or plaintext is asked of Shiki.
+-    it('loads the eighteen grammars once each, plaintext being the editor own', () => {
+-        expect(SHIKI_LANGUAGES).toHaveLength(18);
+-        expect(new Set(SHIKI_LANGUAGES).size).toBe(18);
+-        expect(SHIKI_LANGUAGES).not.toContain('plaintext');
+-    });
+-});
+diff --git a/tools/oculus/tests/ui/controls/editor/look.test.ts b/tools/oculus/tests/ui/controls/editor/kit/look.test.ts
+similarity index 90%
+rename from tools/oculus/tests/ui/controls/editor/look.test.ts
+rename to tools/oculus/tests/ui/controls/editor/kit/look.test.ts
+index 049ee4f3..c12cb409 100644
+--- a/tools/oculus/tests/ui/controls/editor/look.test.ts
++++ b/tools/oculus/tests/ui/controls/editor/kit/look.test.ts
+@@ -4,8 +4,8 @@
+ // the landing shows.
+ 
+ import { describe, expect, it } from 'vitest';
+-import { paintCode } from '../../../../src/lib/ui/controls/editor/kit/look.ts';
+-import type { EditorKit } from '../../../../src/lib/ui/controls/editor/kit/load.ts';
++import { paintCode } from '../../../../../src/lib/ui/controls/editor/kit/look.ts';
++import type { EditorKit } from '../../../../../src/lib/ui/controls/editor/kit/load.ts';
+ 
+ /** A kit whose paint answers as given; nothing else of the kit is used. */
+ function kitPainting(paint: EditorKit['paint']): EditorKit {
+diff --git a/tools/oculus/tests/ui/controls/editor/platform.test.ts b/tools/oculus/tests/ui/controls/editor/kit/platform.test.ts
+similarity index 93%
+rename from tools/oculus/tests/ui/controls/editor/platform.test.ts
+rename to tools/oculus/tests/ui/controls/editor/kit/platform.test.ts
+index d1583799..f169526f 100644
+--- a/tools/oculus/tests/ui/controls/editor/platform.test.ts
++++ b/tools/oculus/tests/ui/controls/editor/kit/platform.test.ts
+@@ -5,7 +5,7 @@
+ // no component on the server.
+ 
+ import { afterEach, describe, expect, it, vi } from 'vitest';
+-import { onMac } from '../../../../src/lib/ui/controls/editor/kit/load.ts';
++import { onMac } from '../../../../../src/lib/ui/controls/editor/kit/load.ts';
+ 
+ afterEach(() => vi.unstubAllGlobals());
+ 
+diff --git a/tools/oculus/tests/ui/controls/editor/paint.test.ts b/tools/oculus/tests/ui/controls/editor/paint.test.ts
+deleted file mode 100644
+index 053a64f3..00000000
+--- a/tools/oculus/tests/ui/controls/editor/paint.test.ts
++++ /dev/null
+@@ -1,314 +0,0 @@
+-// The editor's paint through the installed shiki and @shikijs/monaco: the theme the bridge defines
+-// in Monaco, the scopes its tokens provider answers, and what a second paint leaves behind.
+-//
+-// Monaco is a stand-in that records what the bridge calls, `defineTheme` and `setTokensProvider`,
+-// and the grammar loaded is markdown alone, which is where bold and italic are. A code theme is
+-// painted through the real Shiki theme files, loaded by a counting loader.
+-// What this does NOT cover: that Monaco draws a defined theme, which the look does.
+-
+-import { shikiToMonaco } from '@shikijs/monaco';
+-import { createHighlighter } from 'shiki';
+-import type { ThemeRegistration } from 'shiki';
+-import { bundledThemes, bundledThemesInfo } from 'shiki/themes';
+-import { describe, expect, it } from 'vitest';
+-import { THEME, painter } from '../../../../src/lib/ui/controls/editor/kit/load.ts';
+-import { editorTheme } from '../../../../src/lib/ui/controls/editor/kit/theme.ts';
+-
+-type Rule = { token: string; foreground?: string; fontStyle?: string };
+-type Theme = { rules: Rule[]; colors: Record<string, string> };
+-type Provider = {
+-    getInitialState: () => unknown;
+-    tokenize: (
+-        line: string,
+-        state: unknown
+-    ) => { tokens: { startIndex: number; scopes: string }[] };
+-};
+-
+-/** A reading of the tokens that answers each token its own colour, counted up from `from`. */
+-function distinct(from: number): (token: string) => string {
+-    const seen = new Map<string, string>();
+-    return (token: string) => {
+-        const held = seen.get(token);
+-        if (held !== undefined) return held;
+-        const value = `#${(from + seen.size).toString(16).padStart(6, '0')}`;
+-        seen.set(token, value);
+-        return value;
+-    };
+-}
+-
+-/** A stand-in Monaco recording the themes defined and the tokens providers set. */
+-function standIn() {
+-    const defined = new Map<string, Theme>();
+-    const providers = new Map<string, Provider>();
+-    const monaco = {
+-        editor: {
+-            defineTheme: (name: string, theme: Theme) => void defined.set(name, theme),
+-            setTheme: () => undefined,
+-            create: () => undefined
+-        },
+-        languages: {
+-            getLanguages: () => [{ id: 'markdown' }],
+-            setTokensProvider: (id: string, provider: Provider) => void providers.set(id, provider)
+-        }
+-    };
+-    return { monaco, defined, providers };
+-}
+-
+-/** The theme file Shiki ships for an id, as the real loader answers it. */
+-async function shipped(id: string): Promise<ThemeRegistration> {
+-    return (await bundledThemes[id as keyof typeof bundledThemes]()).default;
+-}
+-
+-const IDS = bundledThemesInfo.map((info) => info.id);
+-
+-/** A painter over the stand-in, counting the highlighters it makes and the ones it disposes. */
+-function counted(loadTheme: (id: string) => Promise<ThemeRegistration> = shipped) {
+-    const stand = standIn();
+-    const made: { disposed: boolean; registered: ThemeRegistration }[] = [];
+-    const paint = painter({
+-        monaco: stand.monaco as never,
+-        loadTheme,
+-        codeIds: IDS,
+-        createHighlighter: async (options) => {
+-            const registered = structuredClone(options.themes[0]);
+-            const highlighter = await createHighlighter(options);
+-            const entry = { disposed: false, registered };
+-            made.push(entry);
+-            const dispose = highlighter.dispose.bind(highlighter);
+-            highlighter.dispose = () => {
+-                entry.disposed = true;
+-                dispose();
+-            };
+-            return highlighter;
+-        },
+-        shikiToMonaco: shikiToMonaco as never,
+-        langs: ['markdown']
+-    });
+-    return { ...stand, made, paint };
+-}
+-
+-/** The scope the markdown provider answers for the token that starts at `text` in `line`. */
+-function scopeAt(provider: Provider | undefined, line: string, text: string): string | undefined {
+-    if (provider === undefined) return undefined;
+-    const at = line.indexOf(text);
+-    const { tokens } = provider.tokenize(line, provider.getInitialState());
+-    return tokens.findLast((token) => token.startIndex <= at)?.scopes;
+-}
+-
+-const LINE = 'Some **bold** and *it* text';
+-
+-describe('the paint through the bridge', () => {
+-    // Red when the bold or italic rule has no foreground: the bridge maps a colour and a style to a
+-    // scope only for a rule with a foreground, so the provider answers no markup scope.
+-    it('answers markup.bold and markup.italic for markdown, drawn bold and italic', async () => {
+-        const { defined, providers, paint } = counted();
+-        expect(await paint(distinct(1))).toBe(THEME);
+-        const provider = providers.get('markdown');
+-        expect(scopeAt(provider, LINE, 'bold')).toBe('markup.bold');
+-        expect(scopeAt(provider, LINE, 'it*')).toBe('markup.italic');
+-        const rules = defined.get(THEME)?.rules ?? [];
+-        const style = (token: string) => rules.find((rule) => rule.token === token)?.fontStyle;
+-        expect(style('markup.bold')).toBe('bold');
+-        expect(style('markup.italic')).toBe('italic');
+-    });
+-
+-    // Red when one highlighter is kept across paints: the first is never disposed and a second is
+-    // never made, and Shiki's cache keeps the first colours under the reused name.
+-    it('replaces the theme on a second paint, defining only oculus in the second colours', async () => {
+-        const { defined, providers, made, paint } = counted();
+-        const first = distinct(1);
+-        const second = distinct(0x100);
+-        await paint(first);
+-        await paint(second);
+-        expect([...defined.keys()]).toEqual([THEME]);
+-        const colors = defined.get(THEME)?.colors ?? {};
+-        expect(colors['editor.foreground']).toBe(second('--ink-txt'));
+-        expect(colors['editor.foreground']).not.toBe(first('--ink-txt'));
+-        const rules = defined.get(THEME)?.rules ?? [];
+-        const bold = rules.find((rule) => rule.token === 'markup.bold');
+-        expect(bold?.foreground?.replace(/^#?/, '#')).toBe(second('--ink-txt'));
+-        expect(scopeAt(providers.get('markdown'), LINE, 'bold')).toBe('markup.bold');
+-        expect(made.map((entry) => entry.disposed)).toEqual([true, false]);
+-    });
+-
+-    // Red when the signature check goes: an unchanged reading would make a highlighter again.
+-    it('makes no highlighter for a paint whose tokens have not moved', async () => {
+-        const { made, paint } = counted();
+-        await paint(distinct(1));
+-        await paint(distinct(1));
+-        expect(made).toHaveLength(1);
+-    });
+-});
+-
+-/** A colour without its hash and case, the form the bridge keeps. */
+-function bare(colour: string | undefined): string | undefined {
+-    return colour?.replace(/^#/, '').toLowerCase();
+-}
+-
+-/** The rule the defined theme holds for a scope. */
+-function ruleFor(defined: Map<string, Theme>, scope: string): Rule | undefined {
+-    return defined.get(THEME)?.rules.find((rule) => rule.token === scope);
+-}
+-
+-/** A scoped entry of a shipped theme with a foreground, and its first scope. */
+-async function foregroundOf(id: string): Promise<{ scope: string; foreground: string }> {
+-    const entry = (await shipped(id)).tokenColors?.find(
+-        (one) => one.scope !== undefined && one.settings.foreground !== undefined
+-    );
+-    const scope = Array.isArray(entry?.scope) ? entry.scope[0] : entry?.scope;
+-    return { scope: scope ?? '', foreground: entry?.settings.foreground ?? '' };
+-}
+-
+-describe('the paint with a code theme', () => {
+-    // Revert: set `const id = ''` in paintNow (always paint the tokens); the rules then hold the
+-    // token hues and the foreground of dark-plus's first scope is not found.
+-    it('paints dark-plus rules over the tokens colours, defining only oculus', async () => {
+-        const { defined, paint } = counted();
+-        const read = distinct(1);
+-        expect(await paint(read, 'dark-plus')).toBe(THEME);
+-        expect([...defined.keys()]).toEqual([THEME]);
+-        expect(defined.get(THEME)?.colors).toEqual(editorTheme(read).colors);
+-        expect(defined.get(THEME)?.colors['editor.background']).toBe(read('--panel'));
+-        const { scope, foreground } = await foregroundOf('dark-plus');
+-        expect(bare(ruleFor(defined, scope)?.foreground)).toBe(bare(foreground));
+-    });
+-
+-    // Revert: return `theme.tokenColors ?? []` from codeRules; the registration then holds the
+-    // theme's scope-less entry and its backgrounds.
+-    it('drops a scope-less entry and a scoped entry background, keeping the foreground', async () => {
+-        const nord = counted();
+-        const read = distinct(1);
+-        await nord.paint(read, 'nord');
+-        const registered = nord.made[0].registered;
+-        const first = await foregroundOf('nord');
+-        expect(bare(ruleFor(nord.defined, first.scope)?.foreground)).toBe(bare(first.foreground));
+-        expect((registered.tokenColors ?? []).every((entry) => entry.scope !== undefined)).toBe(
+-            true
+-        );
+-        expect(
+-            (await shipped('nord')).tokenColors?.some((entry) => entry.scope === undefined)
+-        ).toBe(true);
+-        expect(nord.made[0].registered.bg).toBe(read('--panel'));
+-
+-        const light = counted();
+-        await light.paint(read, 'github-light');
+-        const rule = ruleFor(light.defined, 'carriage-return');
+-        expect(bare(rule?.foreground)).toBe('fafbfc');
+-        expect(rule).toHaveProperty('background', undefined);
+-        const settings = (light.made[0].registered.tokenColors ?? []).map(
+-            (entry) => entry.settings
+-        );
+-        expect(settings.some((one) => one.background !== undefined)).toBe(false);
+-    });
+-
+-    // Revert: leave `id` out of the signature in paintNow; the switch to nord then makes no
+-    // highlighter.
+-    it('makes a new highlighter for a switch to a code theme, and none for the same theme again', async () => {
+-        const { made, paint } = counted();
+-        await paint(distinct(1));
+-        await paint(distinct(1), 'nord');
+-        expect(made).toHaveLength(2);
+-        await paint(distinct(1), 'nord');
+-        expect(made).toHaveLength(2);
+-    });
+-
+-    // Revert: leave `id` out of the signature in paintNow; the switch back to tokens then makes no
+-    // highlighter.
+-    it('follows a switch back to tokens with the tokens rules again', async () => {
+-        const { made, paint } = counted();
+-        const read = distinct(1);
+-        await paint(read, 'nord');
+-        await paint(read, 'tokens');
+-        expect(made[1].registered.tokenColors).toEqual(editorTheme(read).textmate.tokenColors);
+-        expect(made.map((entry) => entry.disposed)).toEqual([true, false]);
+-    });
+-
+-    // Revert: return the stored rules without a copy in rulesOf; Shiki's in-place normalisation of
+-    // the first paint then leaks its base-colour rule into the second.
+-    it('follows a switch of the UI theme with the code theme kept', async () => {
+-        const { defined, made, paint } = counted();
+-        await paint(distinct(1), 'nord');
+-        const second = distinct(0x100);
+-        await paint(second, 'nord');
+-        expect(made).toHaveLength(2);
+-        expect(defined.get(THEME)?.colors).toEqual(editorTheme(second).colors);
+-        expect(made[1].registered.tokenColors).toEqual(made[0].registered.tokenColors);
+-    });
+-
+-    // Revert: call `rules.set(id, [])` before the load in rulesOf; the failed load is then kept,
+-    // the next paint of the id resolves and the loader is not asked again.
+-    it('answers a load that fails as a rejection, keeps the theme in force and asks again later', async () => {
+-        let calls = 0;
+-        const { defined, made, paint } = counted(() => {
+-            calls += 1;
+-            return Promise.reject(new Error('import failed'));
+-        });
+-        const read = distinct(1);
+-        await paint(read);
+-        const before = defined.get(THEME);
+-        await expect(paint(read, 'nord')).rejects.toThrow('import failed');
+-        expect(defined.get(THEME)).toBe(before);
+-        expect(await paint(read, 'tokens')).toBe(THEME);
+-        await expect(paint(read, 'nord')).rejects.toThrow('import failed');
+-        expect(calls).toBe(2);
+-        expect(made).toHaveLength(1);
+-    });
+-
+-    // Revert: replace `kept === undefined` with `true` in rulesOf; the loader is called again for
+-    // nord after tokens.
+-    it('loads a code theme once however often it is painted', async () => {
+-        const asked: string[] = [];
+-        const { paint } = counted((id) => {
+-            asked.push(id);
+-            return shipped(id);
+-        });
+-        const read = distinct(1);
+-        await paint(read, 'nord');
+-        await paint(read, 'tokens');
+-        await paint(read, 'nord');
+-        expect(asked).toEqual(['nord']);
+-    });
+-
+-    // Revert: replace the queue with `queue = paintNow(read, code)`; nord's late load then ends as
+-    // the theme in force.
+-    it('leaves the last asked paint in force when an earlier load is in flight', async () => {
+-        let release: () => void = () => undefined;
+-        const gate = new Promise<void>((resolve) => {
+-            release = resolve;
+-        });
+-        const asked: string[] = [];
+-        const { defined, paint } = counted(async (id) => {
+-            asked.push(id);
+-            if (id === 'nord') await gate;
+-            return shipped(id);
+-        });
+-        const read = distinct(1);
+-        const first = paint(read, 'nord');
+-        const second = paint(read, 'dark-plus');
+-        // Without the queue the loader is asked for dark-plus at once, and its paint settles while
+-        // nord's load is gated; with the queue dark-plus has not started, and nord is released.
+-        await new Promise((resolve) => setTimeout(resolve, 0));
+-        if (asked.includes('dark-plus')) await second;
+-        release();
+-        await Promise.all([first, second]);
+-        const { scope, foreground } = await foregroundOf('dark-plus');
+-        expect(bare(ruleFor(defined, scope)?.foreground)).toBe(bare(foreground));
+-    });
+-
+-    // Revert: set `const id = code` in paintNow; the loader is then asked for an unlisted id and
+-    // the paint fails.
+-    it('paints tokens for an id the list does not hold', async () => {
+-        const asked: string[] = [];
+-        const { made, paint } = counted((id) => {
+-            asked.push(id);
+-            return shipped(id);
+-        });
+-        const read = distinct(1);
+-        for (const id of ['not-a-theme', '', 'Dark-Plus', 'constructor']) {
+-            expect(await paint(read, id)).toBe(THEME);
+-        }
+-        expect(asked).toEqual([]);
+-        expect(made).toHaveLength(1);
+-        expect(made[0].registered.tokenColors).toEqual(editorTheme(read).textmate.tokenColors);
+-    });
+-});
+diff --git a/tools/oculus/tests/ui/controls/editor/theme.test.ts b/tools/oculus/tests/ui/controls/editor/theme.test.ts
+deleted file mode 100644
+index 80bad7dc..00000000
+--- a/tools/oculus/tests/ui/controls/editor/theme.test.ts
++++ /dev/null
+@@ -1,188 +0,0 @@
+-// The editor's colours from the tokens: the hex expansion Monaco needs, the colour map naming every
+-// key the installed monaco-editor registers, and the TextMate theme Shiki colours the text with.
+-//
+-// The registered keys are read from the installed package itself, every `registerColor('<key>'`
+-// under its esm tree, so a Monaco release that adds a key turns this red until the map names it.
+-// What this does NOT cover: that a browser paints the values Monaco is handed, which the look does.
+-// @module-tag slow: its cases time out or fail on a loaded machine, so npm test leaves it out.
+-
+-import { readFileSync } from 'node:fs';
+-import { join } from 'node:path';
+-import { createHighlighter } from 'shiki';
+-import { describe, expect, it } from 'vitest';
+-import { COLOURS } from '../../../../src/lib/ui/controls/editor/kit/colours.ts';
+-import {
+-    editorTheme,
+-    expandHex,
+-    isDark,
+-    scopeToken
+-} from '../../../../src/lib/ui/controls/editor/kit/theme.ts';
+-import { NAMES, themeTokens } from '../../../checks/look/themes.ts';
+-import { ROOT, monacoSources } from './monaco-sources.ts';
+-
+-/** Every colour key the installed monaco-editor registers. */
+-function registeredKeys(): Set<string> {
+-    const keys = new Set<string>();
+-    for (const text of monacoSources()) {
+-        for (const found of text.matchAll(/registerColor\(\s*(['"])([^'"]+)\1/g)) {
+-            keys.add(found[2]);
+-        }
+-    }
+-    return keys;
+-}
+-
+-/** The custom properties tokens.css defines and those themes/derive.ts derives from them. */
+-function definedTokens(): Set<string> {
+-    const text = readFileSync(join(ROOT, 'src', 'lib', 'themes', 'tokens.css'), 'utf8');
+-    const authored = [...text.matchAll(/^\s*(--[a-z0-9-]+)\s*:/gm)].map((found) => found[1]);
+-    return new Set([...authored, ...Object.keys(themeTokens(NAMES[0]).derived)]);
+-}
+-
+-/**
+- * A reading of the body's computed style in which each token holds a hex of its own, so a colour in
+- * the output names the token it came from.
+- */
+-function distinct(): (token: string) => string {
+-    const seen = new Map<string, string>();
+-    return (token: string) => {
+-        const held = seen.get(token);
+-        if (held !== undefined) return held;
+-        const value = `#${(seen.size + 1).toString(16).padStart(6, '0')}`;
+-        seen.set(token, value);
+-        return value;
+-    };
+-}
+-
+-describe('the hex expansion', () => {
+-    // Red when a short hex reaches Monaco unexpanded, which Monaco refuses.
+-    it('expands 3 digits to 6 and 4 to 8, and leaves 6 and 8 as they are', () => {
+-        expect(expandHex('#fff')).toBe('#ffffff');
+-        expect(expandHex('#fff8')).toBe('#ffffff88');
+-        expect(expandHex('#1a2b3c')).toBe('#1a2b3c');
+-        expect(expandHex('#1a2b3c80')).toBe('#1a2b3c80');
+-        expect(expandHex(' #ABC ')).toBe('#aabbcc');
+-    });
+-
+-    // Red when a value that is no hex is passed on as a colour.
+-    it('answers nothing for a value that is not hex', () => {
+-        expect(expandHex('rgb(1, 2, 3)')).toBe(null);
+-        expect(expandHex('#12345')).toBe(null);
+-        expect(expandHex('')).toBe(null);
+-    });
+-
+-    // Red when a bad token goes unreported, or a key is painted from it.
+-    it('names a token whose value is not hex among the bad values, and maps no key from it', () => {
+-        const read = distinct();
+-        const theme = editorTheme((token) => (token === '--line' ? 'rgb(1, 2, 3)' : read(token)));
+-        expect(theme.bad).toEqual(['--line']);
+-        const fromLine = Object.entries(COLOURS)
+-            .filter(([, paint]) => paint.split(' ')[0] === '--line')
+-            .map(([key]) => key);
+-        expect(fromLine.length).toBeGreaterThan(0);
+-        for (const key of fromLine) expect(theme.colors[key]).toBeUndefined();
+-    });
+-});
+-
+-describe('the colour map', () => {
+-    // Red when the map leaves out a key Monaco registers, which would paint in VS Code's default.
+-    it('names every colour key the installed monaco-editor registers, and no other', () => {
+-        const registered = registeredKeys();
+-        expect(registered.size).toBeGreaterThan(300);
+-        const mapped = new Set(Object.keys(COLOURS));
+-        expect([...registered].filter((key) => !mapped.has(key))).toEqual([]);
+-        expect([...mapped].filter((key) => !registered.has(key))).toEqual([]);
+-        // Reading every script of the package from a cold disk takes longer than the default.
+-    }, 60_000);
+-
+-    // Red when a key is painted from a name tokens.css does not define.
+-    it('paints every key from a token tokens.css defines or derive.ts derives, alpha two digits', () => {
+-        const defined = definedTokens();
+-        for (const [key, paint] of Object.entries(COLOURS)) {
+-            const [token, alpha = '', ...rest] = paint.split(' ');
+-            expect({ key, token, known: defined.has(token) }).toEqual({ key, token, known: true });
+-            expect(rest).toEqual([]);
+-            expect({ key, alpha }).toMatchObject({ alpha: /^([0-9a-f]{2})?$/ });
+-        }
+-    });
+-
+-    // Red when a key is left out of the built map or the background is not the panel.
+-    it('hands Monaco a 6 or 8 digit hex for every key, the background from the panel', () => {
+-        const read = distinct();
+-        const theme = editorTheme(read);
+-        expect(theme.bad).toEqual([]);
+-        expect(Object.keys(theme.colors).sort()).toEqual(Object.keys(COLOURS).sort());
+-        for (const value of Object.values(theme.colors)) {
+-            expect(value).toMatch(/^#[0-9a-f]{6}([0-9a-f]{2})?$/);
+-        }
+-        expect(theme.colors['editor.background']).toBe(read('--panel'));
+-    });
+-
+-    // Red when a theme gives a token the map paints from a value that is no hex, which would leave
+-    // the keys painted from it to VS Code's defaults under that theme.
+-    it('reads a hex for every token it paints from, under every theme the picker offers', () => {
+-        expect(NAMES.length).toBeGreaterThan(0);
+-        for (const name of NAMES) {
+-            const { theme, derived } = themeTokens(name);
+-            const tokens: Record<string, string> = { ...theme, ...derived };
+-            const built = editorTheme((token) => tokens[token] ?? '');
+-            expect({ name, bad: built.bad }).toEqual({ name, bad: [] });
+-        }
+-    });
+-});
+-
+-describe('the text colours', () => {
+-    // Red when a `-txt` form the body does not carry yet is reported bad and its keys left out,
+-    // rather than read as its hue.
+-    it('reads a text colour the body does not carry yet as its hue', () => {
+-        const read = distinct();
+-        const bare = (token: string): string => (token.endsWith('-txt') ? '' : read(token));
+-        const theme = editorTheme(bare);
+-        expect(theme.bad).toEqual([]);
+-        expect(theme.colors['editor.foreground']).toBe(read('--ink'));
+-        expect(scopeToken('comment')).toBe('--c-code-comment-txt');
+-    });
+-});
+-
+-describe('the scope map', () => {
+-    // Red when a scope takes a hue other than its role's, or the bare hue rather than the readable
+-    // `-txt` form the code window paints with.
+-    it('gives each TextMate scope the code hue of its role', () => {
+-        expect(scopeToken('comment.line')).toBe('--c-code-comment-txt');
+-        expect(scopeToken('string.quoted.double')).toBe('--c-code-string-txt');
+-        expect(scopeToken('keyword.control')).toBe('--c-code-keyword-txt');
+-        expect(scopeToken('constant.numeric')).toBe('--c-code-number-txt');
+-        expect(scopeToken('entity.name.function')).toBe('--c-code-name-txt');
+-        expect(scopeToken('markup.inserted')).toBe('--c-green-txt');
+-        expect(scopeToken('markup.deleted')).toBe('--c-red-txt');
+-        expect(scopeToken('source.python')).toBe(null);
+-    });
+-
+-    // Red when the TextMate theme does not reach Shiki's tokens in the hues it names.
+-    it('colours a Python comment, string and keyword through Shiki in the hues of the tokens', async () => {
+-        const read = distinct();
+-        const { textmate } = editorTheme(read);
+-        const highlighter = await createHighlighter({ themes: [textmate], langs: ['python'] });
+-        const lines = highlighter.codeToTokensBase('# note\nimport os\nx = "s"\n', {
+-            lang: 'python',
+-            theme: textmate
+-        });
+-        const colour = (text: string): string | undefined =>
+-            lines
+-                .flat()
+-                .find((token) => token.content.includes(text))
+-                ?.color?.toLowerCase();
+-        expect(colour('note')).toBe(read('--c-code-comment-txt'));
+-        expect(colour('import')).toBe(read('--c-code-keyword-txt'));
+-        expect(colour('"s"') ?? colour('s')).toBe(read('--c-code-string-txt'));
+-        highlighter.dispose();
+-    });
+-});
+-
+-describe('whether a panel is dark', () => {
+-    // The cut is a WCAG relative luminance of 0.18; an eight-digit hex is read by its colour alone.
+-    it('reads a near-black panel as dark, white as light and a half grey with alpha as light', () => {
+-        expect(isDark('#1e1e1e')).toBe(true);
+-        expect(isDark('#ffffff')).toBe(false);
+-        expect(isDark('#80808080')).toBe(false);
+-    });
+-});
+diff --git a/tools/oculus/tests/ui/controls/editor/zones.test.ts b/tools/oculus/tests/ui/controls/editor/zones.test.ts
+new file mode 100644
+index 00000000..065f84fc
+--- /dev/null
++++ b/tools/oculus/tests/ui/controls/editor/zones.test.ts
+@@ -0,0 +1,255 @@
++// The bars an editor draws above its lines keep their room through every model the editor is given:
++// an editor drops its view zones with its model and keeps its overlay widgets, so a bar placed
++// before the model came, or kept across a model change, would stay out of sight, and with it the
++// merge editor's Accept buttons.
++//
++// The editor here follows Monaco's own rules for zones: a zone can be made only while the editor
++// holds a model (codeEditorWidget.js, changeViewZones), and giving the editor another model, or
++// none, drops every zone at once. The file does not cover Monaco itself drawing a zone and calling
++// its top back; the look at landing covers that.
++
++import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
++import type * as Monaco from 'monaco-editor';
++import { lineBars, type LineBars } from '../../../../src/lib/ui/controls/editor/zones.ts';
++
++type Zone = Monaco.editor.IViewZone;
++
++type FakeEditor = {
++    editor: Monaco.editor.ICodeEditor;
++    zones: Map<string, Zone>;
++    widgets: Set<Monaco.editor.IOverlayWidget>;
++    /** The ids of the zones removed one by one, which a model change does not count. */
++    removed: string[];
++    /** The model-change subscriptions held now, and how many were disposed. */
++    subscriptions: { held: () => number; disposed: () => number };
++    /** Give the editor another model, or none: its zones go and its widgets stay. */
++    model(next: object | null): void;
++    /** Draw the zones after a line, or every zone, at a top, as Monaco does on a layout. */
++    draw(top: number, after?: number): void;
++};
++
++/** An editor that makes zones only with a model, drops them with it, and keeps its widgets. */
++function fakeEditor(): FakeEditor {
++    const zones = new Map<string, Zone>();
++    const widgets = new Set<Monaco.editor.IOverlayWidget>();
++    const listeners = new Set<() => void>();
++    const removed: string[] = [];
++    let model: object | null = null;
++    let made = 0;
++    let disposed = 0;
++    const editor = {
++        getModel: () => model,
++        getLayoutInfo: () => ({
++            width: 400,
++            minimap: { minimapWidth: 40 },
++            verticalScrollbarWidth: 10
++        }),
++        addOverlayWidget: (widget: Monaco.editor.IOverlayWidget) => widgets.add(widget),
++        removeOverlayWidget: (widget: Monaco.editor.IOverlayWidget) => widgets.delete(widget),
++        changeViewZones: (change: (accessor: Monaco.editor.IViewZoneChangeAccessor) => void) => {
++            if (model === null) return;
++            change({
++                addZone: (zone: Zone) => {
++                    made += 1;
++                    zones.set(String(made), zone);
++                    return String(made);
++                },
++                removeZone: (id: string) => {
++                    removed.push(id);
++                    return zones.delete(id);
++                },
++                layoutZone: () => undefined
++            });
++        },
++        onDidLayoutChange: () => ({ dispose: () => undefined }),
++        onDidChangeModel: (listener: () => void) => {
++            listeners.add(listener);
++            return {
++                dispose: () => {
++                    disposed += 1;
++                    listeners.delete(listener);
++                }
++            };
++        }
++    } as unknown as Monaco.editor.ICodeEditor;
++    return {
++        editor,
++        zones,
++        widgets,
++        removed,
++        subscriptions: { held: () => listeners.size, disposed: () => disposed },
++        model(next) {
++            model = next;
++            zones.clear();
++            for (const listener of [...listeners]) listener();
++        },
++        draw(top, after) {
++            for (const zone of zones.values()) {
++                if (after === undefined || zone.afterLineNumber === after) zone.onDomNodeTop?.(top);
++            }
++        }
++    };
++}
++
++/** A bar's element as far as zones.ts reads and writes it. */
++function bar(offsetHeight = 28): HTMLElement {
++    return { style: {}, offsetHeight } as unknown as HTMLElement;
++}
++
++/** Place an element as a bar after a line, and give back what takes it away. */
++function place(bars: LineBars, after: number, node: HTMLElement): () => void {
++    const off = bars.above(after)(node);
++    if (typeof off !== 'function') throw new Error('a bar placed hands back its way out');
++    return off;
++}
++
++/** The lines and heights of the zones an editor holds now, in the order they were made. */
++function shapes(fake: FakeEditor): number[][] {
++    return [...fake.zones.values()].map((zone) => [zone.afterLineNumber, zone.heightInPx ?? 0]);
++}
++
++describe('the bars above the lines of an editor', () => {
++    beforeEach(() => {
++        vi.stubGlobal('document', { createElement: () => ({}) });
++    });
++    afterEach(() => {
++        vi.unstubAllGlobals();
++    });
++
++    it('keeps a bar out of sight and asks for no room while the editor holds no model', () => {
++        const fake = fakeEditor();
++        const bars = lineBars();
++        bars.mount(fake.editor, 18);
++        const node = bar();
++        place(bars, 1, node);
++        expect(fake.widgets.size).toBe(1);
++        expect(fake.zones.size).toBe(0);
++        expect(node.style.top).toBe('-1000px');
++    });
++
++    it('makes the room of a bar placed before the model once the model is set', () => {
++        const fake = fakeEditor();
++        const bars = lineBars();
++        bars.mount(fake.editor, 18);
++        const node = bar();
++        place(bars, 1, node);
++        fake.model({});
++        expect(fake.widgets.size).toBe(1);
++        expect(shapes(fake)).toEqual([[1, 28]]);
++        fake.draw(36);
++        expect(node.style.top).toBe('36px');
++    });
++
++    it('makes the room of every bar again when the model is replaced, and takes each away with its bar', () => {
++        const fake = fakeEditor();
++        const bars = lineBars();
++        fake.model({});
++        bars.mount(fake.editor, 18);
++        const first = bar();
++        const second = bar();
++        const offFirst = place(bars, 1, first);
++        const offSecond = place(bars, 5, second);
++        expect(shapes(fake)).toEqual([
++            [1, 28],
++            [5, 28]
++        ]);
++        fake.model({});
++        expect(shapes(fake)).toEqual([
++            [1, 28],
++            [5, 28]
++        ]);
++        expect([first.style.top, second.style.top]).toEqual(['-1000px', '-1000px']);
++        fake.draw(54, 1);
++        fake.draw(180, 5);
++        expect([first.style.top, second.style.top]).toEqual(['54px', '180px']);
++        offFirst();
++        expect(fake.zones.size).toBe(1);
++        expect(fake.widgets.size).toBe(1);
++        offSecond();
++        expect(fake.zones.size).toBe(0);
++        expect(fake.widgets.size).toBe(0);
++    });
++
++    it('reaches a bar with no model change once the bars are taken out of the editor', () => {
++        const fake = fakeEditor();
++        const bars = lineBars();
++        bars.mount(fake.editor, 18);
++        fake.model({});
++        place(bars, 1, bar());
++        bars.unmount();
++        expect(fake.subscriptions.disposed()).toBe(1);
++        expect(fake.subscriptions.held()).toBe(0);
++        expect(fake.zones.size).toBe(0);
++        expect(fake.widgets.size).toBe(0);
++        fake.model({});
++        expect(fake.zones.size).toBe(0);
++    });
++
++    it('gives a bar of no height the height of a line', () => {
++        const fake = fakeEditor();
++        const bars = lineBars();
++        fake.model({});
++        bars.mount(fake.editor, 18);
++        place(bars, 2, bar(0));
++        expect(shapes(fake)).toEqual([[2, 18]]);
++    });
++
++    it('keeps a bar through a null model and gives it a new zone for the next one', () => {
++        const fake = fakeEditor();
++        const bars = lineBars();
++        fake.model({});
++        bars.mount(fake.editor, 18);
++        const node = bar();
++        place(bars, 3, node);
++        fake.draw(54);
++        expect(node.style.top).toBe('54px');
++        fake.model(null);
++        expect(fake.zones.size).toBe(0);
++        expect(fake.widgets.size).toBe(1);
++        expect(node.style.top).toBe('-1000px');
++        fake.model({});
++        expect(shapes(fake)).toEqual([[3, 28]]);
++        fake.draw(72);
++        expect(node.style.top).toBe('72px');
++    });
++
++    it('makes one zone for a bar, not one per model change, when the model changes twice before a draw', () => {
++        const fake = fakeEditor();
++        const bars = lineBars();
++        bars.mount(fake.editor, 18);
++        const node = bar();
++        place(bars, 1, node);
++        fake.model({});
++        fake.model({});
++        expect(shapes(fake)).toEqual([[1, 28]]);
++        fake.draw(36);
++        expect(node.style.top).toBe('36px');
++    });
++
++    it('takes a bar away that holds a widget and no zone without asking the editor to remove a zone', () => {
++        const fake = fakeEditor();
++        const bars = lineBars();
++        fake.model({});
++        bars.mount(fake.editor, 18);
++        const off = place(bars, 2, bar());
++        fake.model(null);
++        expect(fake.widgets.size).toBe(1);
++        expect(fake.zones.size).toBe(0);
++        expect(off).not.toThrow();
++        expect(fake.widgets.size).toBe(0);
++        expect(fake.removed).toEqual([]);
++    });
++
++    it('makes the room of a bar placed on an editor that already holds a model at once', () => {
++        const fake = fakeEditor();
++        const bars = lineBars();
++        fake.model({});
++        bars.mount(fake.editor, 18);
++        const node = bar();
++        place(bars, 4, node);
++        expect(shapes(fake)).toEqual([[4, 28]]);
++        expect(node.style.top).toBe('-1000px');
++        fake.draw(72);
++        expect(node.style.top).toBe('72px');
++    });
++});
+diff --git a/tools/oculus/tests/ui/theme/colours.test.ts b/tools/oculus/tests/ui/theme/colours.test.ts
+index 91caeb34..0c03e94d 100644
+--- a/tools/oculus/tests/ui/theme/colours.test.ts
++++ b/tools/oculus/tests/ui/theme/colours.test.ts
+@@ -608,7 +608,7 @@ describe('the code window palette', () => {
+ 
+     // An audit, a read of theme.ts's text: red when that text names a code role by its bare hue or
+     // leaves one out. The behaviour, that Shiki colours the tokens in those hues, is tested by
+-    // tests/ui/controls/editor/theme.test.ts:158-176.
++    // tests/ui/controls/editor/kit/theme.test.ts:160-178.
+     it("paints the editor's scopes through those six and nothing else", () => {
+         const file = join(SRC, 'lib', 'ui', 'controls', 'editor', 'kit', 'theme.ts');
+         const source = readFileSync(file, 'utf8');
+diff --git a/tools/oculus/tests/views/system/hpc.test.ts b/tools/oculus/tests/views/system/hpc.test.ts
+index ec6154df..00307089 100644
+--- a/tools/oculus/tests/views/system/hpc.test.ts
++++ b/tools/oculus/tests/views/system/hpc.test.ts
+@@ -169,6 +169,17 @@ describe('Live HPC view', () => {
+         expect(body).toContain('queue empty');
+         expect(body).toContain('No jobs in the queue for you right now.');
+     });
++    it('draws the empty queue line through the empty primitive, and only for an empty queue', () => {
++        const empty = draw({ ...payload, jobs: [], running: 0, total: 0 }, 31);
++        const at = empty.search(/class="empty[\s"]/);
++        expect(at).toBeGreaterThan(-1);
++        const line = empty.slice(at, empty.indexOf('</p>', at));
++        expect(line).toMatch(/<span class="message">[^]*No jobs in the queue for you right now\./);
++        const queued = draw(payload, 32);
++        expect(queued).toContain('<table');
++        // the cluster answers and the queue holds a job, so no list in the body is said to be empty
++        expect(queued).not.toContain('class="empty"');
++    });
+     it('leaves a fresh answer unmarked', () => {
+         const body = drawAt('2026-09-11T12:10:00.000Z', payload, 10);
+         expect(body).toContain('as of');
