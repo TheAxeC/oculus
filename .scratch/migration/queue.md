@@ -6,8 +6,10 @@ In flight:
 - Q85a1 (zod at the server's `core` and `root` inputs; Z96 (a)), built, its report in; the review runs on `claude-opus-5-5` since 2026-09-30 16:30.
 - No slot is free. S3 and L4 go through /spec as slots free.
 Queued, in order:
+- Q106 (Close pane on a pane of two tabs; Z98 (a)), /spec when a slot frees.
+- Q107 (a Terminal tab closing itself, and terminals no tab owns; Z99 (a)), /spec when a slot frees.
 - S3 (the Settings view as VS Code's Settings editor with the options catalog; Z75 (a), Z94 ruled), /spec next.
-- U2 (the audit of every other view's look against VS Code's visual language), beside X3d, waiting on open item Z100 (the Chrome window of the looks draws no frame again); its build steps once Axel rules on its grouping.
+- U2 (the audit of every other view's look against VS Code's visual language), beside X3d, the orchestrator's own work on TEST, next after the looks on a temporary repository; its build steps once Axel rules on its grouping.
 - Q88b (the right-click menus' new capabilities, and Chrome's own menu blocked): Z70 ruled (a); once Q102 has landed: both change the pane strip's menu and picks (`pane-view.ts`), `PaneView.svelte`, `layout/instances.ts` and `ui.svelte.ts`; Q102 landed 2026-09-30, so it is free. Waits for X3d's landing as well: its Source Control items go into `Repositories.svelte`, `RepoList.svelte`, `graph/Graph.svelte`, `Changes.svelte` and `menus/`, which X3d redraws, so the later landing would be a hand merge of whole components.
 - X3c (the tab strip as VS Code's editor tabs; Z47 (a)), once Q88b has landed: both change the pane strip (`PaneView.svelte`, `Tabs.svelte`, `pane-view.ts`), Q88b through `show_tabs`, `editor_actions` and its strip items.
 - X3a (the Files view as VS Code's Explorer, its look and behaviour included, the roots as Z76 rules), once Q88b has landed: X3a's New File, Rename, Delete, Cut, Copy, Paste and Compare rest on the server routes Q88b builds for the same items of the Files row menu.
