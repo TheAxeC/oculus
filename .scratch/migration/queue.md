@@ -25,7 +25,7 @@ Queued, in order:
 The loop fills three slots as they free up; a line above is only an order, never a barrier, apart from the "once ... has landed" notes. A step's line moves to Landed, at the top of that list, in its landing commit.
 
 Landed, newest first: every step ticked in `plan.md`, each with the date and the commit that ticked it (the 15 steps dated 2026-09-10 at f8af492b were landed before the ledger was opened):
-- D13c (the code theme key; Z46 (a)), 2026-09-30, 08305290.
+- D13c (the code theme key; Z46 (a)), 2026-09-30, 5a503e82.
 - Q86c (the Map's forces back on d3-force; Z60 (a)), 2026-09-30, de5f74cd.
 - D13b (the diffs and the merge on Monaco), 2026-09-30, f6403f40.
 - Q105 (`bin/` renamed to `utils/`; Z65), 2026-09-29, ae8999e5.
