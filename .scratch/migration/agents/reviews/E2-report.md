@@ -1,6 +1,6 @@
 Everything in the brief is done.
 
-Outside the section, nothing is made false while the section is unbuilt. Two sentences will need an exception in the build step that writes the store: DESIGN.md:140 ("the value the file held and the value written") and DESIGN.md:360 ("the value on either side of each write") describe a change record that holds both values, and a store write's record holds the sizes with the values under `~/.oculus/app-data/.undo/` (DESIGN.md:311). They describe the code as it is, so they are left as they are; the section states the difference at line 311.
+Outside the section, nothing is made false while the section is unbuilt. Two sentences will need an exception in the build step that writes the store: DESIGN.md:140 ("the value the file held and the value written") and DESIGN.md:374 ("the value on either side of each write") describe a change record that holds both values, and a store write's record holds the sizes with the values under `~/.oculus/app-data/.undo/` (DESIGN.md:311). They describe the code as it is, so they are left as they are; the section states the difference, and what History draws for it, at line 311.
 
 # E2 report, the apps section of DESIGN.md rewritten to Axel's rulings
 
@@ -54,7 +54,7 @@ Whether the brief's own rules give a wrong result for any case: none does. Check
 | The section `## Apps added while oculus runs` rewritten (DESIGN.md lines 234 to 326; base 234 to 312) | DONE | `sed -n 234,326p DESIGN.md`; `grep -n "^## " DESIGN.md` prints `234:## Apps added while oculus runs` and `327:## Relationship to the cockpit` |
 | Nothing else in DESIGN.md changed | DONE | `diff <(sed -n 1,233p base) <(sed -n 1,233p DESIGN.md)` printed no difference, and `diff <(sed -n '313,$p' base) <(sed -n '327,$p' DESIGN.md)` printed no difference (base = the copy of DESIGN.md taken before the first edit) |
 | ASCII only | DONE | `LC_ALL=C grep -n '[^ -~]' DESIGN.md` prints nothing (exit 1) |
-| No history, no date, no person's name in the section | DONE | `sed -n 234,326p DESIGN.md` searched for ` was `, ` were `, `used to`, `changed from`, a `YYYY-MM-DD` date and the plan-id families of `tests/checks/source/history.test.ts` (a python re-run of that test's expression over DESIGN.md) printed no hit; `tests/checks/source/history.test.ts` passed in `npm run test:checks` below |
+| No history, no date, no person's name in the section | DONE | `sed -n 234,326p DESIGN.md` searched for ` was `, ` were `, `used to`, `changed from`, a `YYYY-MM-DD` date and the plan-id families of `tests/checks/source/history.test.ts` (a python re-run of that test's expression over DESIGN.md): the words ` was ` and ` were ` hit three times, " was silently ignored" (258), " were shown" (315) and " were at" (319), all in words repair round 1 ruled in and none of them history; nothing else hits; `tests/checks/source/history.test.ts` passed in `npm run test:checks` below |
 | One line per paragraph, no spaced hyphen, no em or en dash | DONE | a python scan of lines 234 to 326 for `' - '`, `'--'`, a leading or trailing space and an odd number of backticks printed nothing; `LC_ALL=C grep` above shows no non-ASCII character |
 | Every code citation checked against the worktree | DONE | Appendix below: each cited line's text, from a python read of the files |
 | `npm run diagrams`, then the list | DONE | output below: `checks: 7 commands passed`, `exit=0` |
@@ -76,8 +76,8 @@ $ npm test
 
  Test Files  348 passed | 19 skipped (367)
       Tests  5303 passed | 557 skipped (5860)
-   Start at  16:34:16
-   Duration  200.38s (transform 59.00s, setup 0ms, import 485.34s, tests 216.88s, environment 90ms)
+   Start at  17:12:30
+   Duration  258.46s (transform 63.63s, setup 0ms, import 642.00s, tests 269.04s, environment 96ms)
 
 $ npm run test:checks
 
@@ -90,31 +90,25 @@ $ npm run test:checks
 
  Test Files  27 passed | 2 skipped (29)
       Tests  365 passed | 9 skipped (374)
-   Start at  16:37:43
-   Duration  81.53s (transform 41.63s, setup 0ms, import 131.02s, tests 121.79s, environment 7ms)
+   Start at  17:17:00
+   Duration  109.44s (transform 77.30s, setup 0ms, import 180.12s, tests 174.12s, environment 7ms)
 
 $ npm run check
 
 > oculus@0.0.1 check
 > svelte-kit sync && svelte-check --tsconfig ./tsconfig.json
 
-1790779170471 START "/Users/axelfaes/workspace/research-hub/.agents/worktrees/E2/tools/oculus"
-1790779170482 COMPLETED 2377 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+1790781551109 START "/Users/axelfaes/workspace/research-hub/.agents/worktrees/E2/tools/oculus"
+1790781551117 COMPLETED 2377 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
 $ npm run build
 
 > oculus@0.0.1 build
 > vite build
 
-....
-  - vite-plugin-sveltekit-compile buildStart (11%, 3.5s, 1 call)
-  - vite-plugin-svelte:compile transform (6%, 1.9s, 519 calls)
-Additional hook time came from the hooks below and from hooks under 1s.
-3 hooks are listed without a time. Their calls overlapped, so the time inside one call includes work from other calls. To find their cost, profile the build with `node --cpu-prof`:
-  - vite-plugin-sveltekit-guard resolveId (7112 calls)
-  - vite:worker load (5 calls)
-  - vite:asset load (3 calls)
-See https://rolldown.rs/reference/InputOptions.checks#plugintimings for more details.
+vite v8.3.0 building ssr environment for production...
+transforming...
 
+...
 $ npm run format:check
 
 > oculus@0.0.1 format:check
@@ -130,7 +124,6 @@ $ npm run lint
 $ ! LC_ALL=C grep -rna '[^ -~]' src tests
 checks: 7 commands passed
 exit=0
-
 ```
 
 The `exit=0` line is the exit status of the script, appended by the command that captured the output.
@@ -143,7 +136,7 @@ The `exit=0` line is the exit status of the script, appended by the command that
 | 2 Identity | 242 "How an app is named" (view ids, addresses, `@` and `/` against the name pattern, the percent-encoding, titles); 262 (row gains `root`); 280 (HMAC input `<view id>:<hash>`); 284 (`<base>` for both kinds) |
 | 3 Approval keyed by folder | 315 "Approval" (`folder` in the entry, removal by folder, `revoke` by view id, `POST /api/approve` carrying `view`, per machine and by content, a pulled root app asks) |
 | 4 Document view rule | 321 "Reading an app's files" |
-| 5 Watcher | 262 "How oculus finds it while running"; 278 (tabs of a root app whose root leaves Files) |
+| 5 Watcher | 262 "How oculus finds it while running"; 278 (tabs of a root app whose root leaves the file browser) |
 | 6 What a root app sees | 307 ("Open to every app": the hub channels whole; `git` and `files` as the part of the root, defined from `GitPayload` and `FilesPayload`) |
 | 7 The channels | 307 (`inbox`, `calendar`, `sessions`, `usage` machine app only; `apps` and `pty:<id>` closed to all; `apps.read.<channel>`); 260 (`channel_closed`); 325 (`apps.read.<channel>`, `findings.apps.carries.<channel>`) |
 | 8 The store | 309 "What an app keeps"; 311 "How it writes" (`app-store`, the body, the record, `.undo`); 325 (`store_max_kb`) |
@@ -187,7 +180,7 @@ Decisions 1 to 17 of the brief, as the section states them:
 | 11 | `findings.apps.connect_shape` and the forms it refuses (260) | One finding per form |
 | 12 | Catalog keys `apps.keep_approved`, `apps.editing_mark`; a manifest change ends the keeping (319) | Keeping across a manifest change (refused by item 23) |
 | 13 | The root `engine` holds no apps (240) | Reading `config/.oculus/apps/` |
-| 14 | `findings.apps.folder_outside`; the order Files shows the roots settles one folder reached twice (240) | Neither root gets it |
+| 14 | `findings.apps.folder_outside`; the order the file browser shows the roots settles one folder reached twice (240) | Neither root gets it |
 | 15 | A root app's tab keeps the real folder and draws the unknown view when the key names another (278) | Closing the tab |
 | 16 | A root app's title followed by the root's key in parentheses (242, 266) | A prefix (`cathedra: Notes`) |
 | 17 | What a root app gets on `git` and `files` (307) | Every entry under the root's folder for `git` |
@@ -201,17 +194,26 @@ Shapes the section states that neither the rulings nor the brief name, each chos
 | 20 | The body of an `app-store` write is `{ store: <value> }`; the handler writes by rename and reads back (311) | A body carrying the app's view id: an app could then name another app's store |
 | 21 | `.undo/<time>.json` holds the values before and after, named by the record's `at`, deleted when the record leaves `changes.keep`; a record whose file is gone answers `nothing` (311) | Keeping only the value before, as the brief says: the undo could not check that the store still holds what the write left |
 | 22 | Refusal words `missing` and `refused:<reason>` (294 to 305) | `refused` alone, as the brief words it; the reason is the word the route answers in `error`, never an errno text that carries a path |
-| 23 | `open` of an id no registration holds, of a project no portfolio holds, of a root no Files shows and of a file that does not exist rejects `missing`; a root app naming another root rejects `closed` (313) | `closed` for every refusal |
+| 23 | `open` of an id no registration holds, of a project no portfolio holds, of a root the file browser does not show and of a file that does not exist rejects `missing`; a root app naming another root rejects `closed` (313) | `closed` for every refusal |
 | 24 | `POST /api/approve` carries `keep: true`; the keeping holds the manifest hash approved with it (319) | A second action `keep` |
 | 25 | The strip mark while kept is the glyph `edit` with the words `apps.editing_mark`, and `Registration.badgeMark` accepts a function of the badge client (266, 319) | A second registration field |
 | 26 | The Document rule is held twice: the page tests the file's folder and path against `folders` and opens the source tab; the file route answers a file of an apps folder as `text/plain` with `nosniff` (321) | The page test alone, which a link inside a root that points into an apps folder defeats since the page does not see real paths |
 | 27 | Finding keys `apps[<root key>/]` for a whole apps folder; the folder's name in place of an invalid name in a finding key; sentences of `channel_closed` carry the reason from `findings.apps.carries.<channel>` (240, 242, 260) | The reason from `apps.read.<channel>`, which lives in another catalog file the server's finding text does not read |
 | 28 | Catalog words `apps.read_root.git`, `apps.read_root.files`, `apps.connects`, `apps.connects_none`, `apps.store_machine`, `apps.store_root`, `apps.refused_open` (325) | Reusing `apps.read.git` for both kinds: the panel of a root app would say its reach is every repository |
 | 29 | The watcher reads `browserRoots`, polls the workspaces file with `pollFile`, watches the store folders non-recursively, and one two-second timer looks again at every missing folder (262) | Its own copy of the root list (the file `roots.ts` says no caller holds one) |
-| 30 | The catalogue order: machine apps by name, then each root's apps by name in the order Files shows the roots (266) | All apps sorted by view id |
+| 30 | The catalogue order: machine apps by name, then each root's apps by name in the order the file browser shows the roots (266) | All apps sorted by view id |
 | 31 | `http:` to a local address on oculus's own port is `connect_shape`; `https:` to it is not (260) | Refusing both schemes |
 | 32 | A `wss:` origin is refused (258) | Admitting it with a `wss:` source in the policy |
 | 33 | `approvals.json` stays at `"version": 1` (315) | Version 2 for the field rename: the file is not built yet, so no file of version 1 holds an `app` entry |
+| 34 | A write of the value the store file already holds changes nothing and calls nothing (309) | Recording a change of zero bytes and calling `onStore` |
+| 35 | `setStore` rejects a value that is not JSON with no refusal word of its own, as `setState` does (309) | A word such as `not_json` |
+| 36 | A machine app may name any root shown in the file browser in `open({ file })`, the root `engine` included, so it can put `config/local.yml` in a source tab in front of the reader (313) | Every root but `engine` |
+| 37 | `open` is limited per frame per minute, in the form line 311 uses for writes (313) | A limit per app or one for the whole page |
+| 38 | The Keep control also writes the content approval to `approvals.json` (319) | Keeping without an entry, so that a restart asks at once |
+| 39 | The header carries the root key percent-encoded and the body's `view` carries it as it is, since a header value cannot carry every character a root key can and a JSON string can (242, 315) | Encoding both |
+| 40 | A target of none of the three forms rejects `closed` (313) | A word of its own |
+| 41 | History draws the two sizes for a store write (311) | Drawing the values from `~/.oculus/app-data/.undo/` |
+| 42 | WebRTC and DNS prefetch are measured and stated by the build step, and only the download link is closed if it sends a request (323) | Closing all three |
 
 
 ## Every sentence removed or reworded, and why it was false (base line numbers; the new text has each replacement)
@@ -235,7 +237,7 @@ Not a sentence removed because it was wrong at the time: each is made false by a
 | 272 "A changed app keeps its id and its tab; its hash differs ..." | A machine app kept approved is an exception; root apps and roots leaving Files are added. |
 | 274 address `/apps/<name>/<key>/<path>`; HMAC over `app:<name>:<hash>` | The address and the input name the root. |
 | 276 "`<name>` ... names an app of the held state that is approved"; "the check `server/content/diagrams.ts` makes" | The root part and the kept state enter; `diagrams.ts:46` compares `dirname(real) !== folder`, and the separator comparison is `inside` in `server/core/paths.ts:15-19`. |
-| 278-282 policy line, `<base>`, "`allow-downloads` ... never in the directive" | N3 (b) and N4 (b). |
+| 278-282 policy line, `<base>`, "`allow-downloads` ... never in the directive" | N3 (c) and N4 (b). |
 | 286 `sandbox="allow-scripts"` | N4 (b). |
 | 292-297 code example, method list, `read` payload, words, notices | `getStore`, `setStore`, `onStore`, `open`; a root app's copy; `missing`, `refused`, `apps.refused_open`. |
 | 299 "Open to apps: ..." and `model-sessions.ts:534`; "Closed: ... `inbox`, `calendar`, `sessions`, `usage`" | C8 (e) and N1 (a); the `files` payload is at `model-sessions.ts:555` and the `git` payload at `:544`. |
@@ -252,13 +254,43 @@ Not a sentence removed because it was wrong at the time: each is made false by a
 Nothing was impossible. Points where the brief and the tree disagree, each settled in the text:
 
 - The brief names two stale citations. Three more are stale: `server/edit/writes.ts:80-88` (lines 84-85 hold the sentence about `bookmarks`, and `collectionFile` at `server/edit/writes/entries.ts:68` does the resolution), `views/sources/files/opening.ts:59-66` (`openBookmark` is lines 62 to 72 and its `.html` branch 67 to 70), and the claim that `server/content/diagrams.ts` compares "with a separator" (`diagrams.ts:46` compares `dirname(real) !== folder`; the separator comparison is `inside` at `server/core/paths.ts:15-19`). All are corrected.
-- The brief says the base section holds the recommended option of every choice. It holds option (a) of C29 ("claims nothing for WebRTC or DNS prefetch"); the recommended option is (b) and the ruling is as recommended, so the new text says the build step measures WebRTC, DNS prefetch and a download link in Chrome and the section then states the measurements (`grep -n "claims nothing" ` on the base section finds the sentence).
+- The brief says the base section holds the recommended option of every choice. It holds option (a) of C29 ("claims nothing for WebRTC or DNS prefetch"); the recommended option is (b) and the ruling is as recommended, so the new text says the build step measures WebRTC and DNS prefetch in Chrome and the section then states the measurements, and that the download link is closed if the build step measures a request from an app with no `connects` (`grep -n "claims nothing" ` on the base section finds the sentence).
 - Item 8 says a change by one tab reaches "the others", item 19 says every tab. The section follows item 19 (the writing tab hears its own write) and lists it as shape 19.
 - Item 19 keeps only the value before for the undo. `undoChange` refuses unless the address still holds the value the write left (`src/lib/server/edit/writes/undo.ts:180-184`), and the record holds sizes, so the undo needs the value after too; `.undo/<time>.json` holds both (shape 21).
-- Item 22 says a notice "naming its root". `FilesPayload.root` is a folder path (`src/lib/server/root/watch/git.ts:207`), and `GitPayload` is keyed by the folders `repositoryRoots` returns (`src/lib/server/files/roots.ts:45-49`), so both comparisons are on the root's folder. A repository below the root's folder has its own `git` entry and its own notices, and is not the root app's; the section says so.
+- Item 22 says a notice "naming its root". `FilesPayload.root` is a folder path (`src/lib/server/root/watch/git.ts:207`), and `GitPayload` is keyed by the folders `repositoryRoots` returns (`src/lib/server/files/roots.ts:45-49`), so both comparisons are on the root's folder. The `git` payload is keyed only by the roots' folders (`src/lib/server/root/watch/git.ts:188-214`, `src/lib/server/files/roots.ts:45-49`), so a repository below a root's folder has no entry unless its folder is itself a root shown in the file browser, whose entry belongs to that root; the section says so (line 307).
 - Item 12 names the counterpart mark as a word. `Registration.badgeMark` is a fixed key (`src/lib/state/workbench/navigation/registry.ts:102`), so the section makes it accept a function, as `badgeGlyph` does (shape 25).
 - Item 17's finding key `apps[<view id without "app:">]` needs a name, and a folder whose manifest is invalid has none; the section uses the folder's name (shape 27).
 - Item 18 lists `document`, `terminal`, `file`, `source` and `project` as refused. Four of them are already unlisted (`grep -rn "listed: false" src/lib/views` finds `Document`, `File`, `Source` and `Project`), so the rule "only a listed view" refuses them and `terminal`, the one listed view of the five, is named beside it.
+
+## Repair round 1
+
+| Item | Status | Where it shows |
+|---|---|---|
+| 1 Two sentences back word for word | DONE | DESIGN.md:258 "that was silently ignored would leave", 315 "exactly what they were shown" |
+| 2 Closing sentence of `open` | DONE | 313 "A target that is none of the three forms rejects `closed`." |
+| 3 WebRTC and DNS prefetch | DONE | 323, two sentences, closing said of the download link only |
+| 4 Restart sentence of the keeping | DONE | 319 "After a restart the app is approved only by the entry the control wrote to `approvals.json`..." |
+| 5 View id in the body, header reason | DONE | 315 `view` without the parenthesis; 242 "since a header value cannot carry every character a root key can" |
+| 6 `open` limit scope | DONE | 313 "At most `apps.opens_per_min` (30) calls of `open` pass per frame per minute, and the rest reject `rate`." |
+| 7 Nested repository | DONE | 307 "has no entry, unless its folder is itself a root shown in the file browser, whose entry belongs to that root"; the section "Anything in the brief that was wrong or impossible" of this report says the same |
+| 8 `badgeMark` | DONE | 276 "a catalog key in the tree, becomes a catalog key or a function of the badge client, as `badgeGlyph` is" |
+| 9 "today" | DONE | 313 "open in the source tab, which says the file is binary" |
+| 10 Two negation-contrasts | DONE | 260 "Two findings are about a whole apps folder"; 315 "found by the app's real folder path, whatever its name" |
+| 11 One name for the file browser | DONE | `sed -n 234,326p DESIGN.md \| grep -c "Files"` prints 0; the channel name `files` and `apps.read.files` are lower case and unchanged |
+| 12 What History shows | DONE | 311 "A store write's record is the one change record that holds sizes where every other holds the two values, and History draws the two sizes for it."; DESIGN.md:140 and 374 unchanged; this report's note names 374 |
+| 13 Shapes list | DONE | rows 34 to 42 of "Shapes named in this step" |
+| 14 No change | DONE | lines 236 and 323 keep "ruled and unbuilt proposal" and "is not claimed here" |
+| 15 End state and this section | DONE | this file; the last lines of the final `checks.sh` run are in the block under "DONE / NOT DONE": `checks: 7 commands passed`, `exit=0` |
+
+
+What changed for a reader in repair round 1, before and after (the old words from `agents/briefs/E2-round1-sent.md`):
+- Item 3, WebRTC and DNS prefetch: before, "the build step measures each in Chrome, closes any that sends a request from an app with no `connects`, and this section then states the measurements"; after, it says the build step measures both and the section then states the measurements, and closing is said only of the download link.
+- Item 4, a restart under the keeping: before, "after a restart the question is asked again"; after, a kept app is approved after a restart only by the entry the Keep control wrote to `approvals.json`, so it runs while its files are as they were at that press and asks at the first change.
+- Item 6, the `open` limit: before, "`open` counts toward `apps.opens_per_min` (30)" with no scope; after, at most 30 calls of `open` pass per frame per minute.
+- Item 7, a nested repository: before, it "has an entry of its own that is not the root app's"; after, it has no entry unless its folder is itself a root shown in the file browser.
+- Item 12, History for a store write: before, nothing said what History draws; after, it draws the two sizes the record holds.
+
+Verify, from the worktree's `tools/oculus`: `npm run diagrams` ended `diagrams-exit=0`; `checks.sh` on the state file ended `checks: 7 commands passed`, `exit=0`; `LC_ALL=C grep -n '[^ -~]' DESIGN.md` prints nothing.
 
 ## Appendix: the cited line of every `file:line` citation of the section
 

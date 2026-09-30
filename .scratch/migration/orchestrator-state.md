@@ -41,21 +41,6 @@ dispatch:      # X3d in flight. Ruled 2026-09-30: Z94 (S3 free), Z95 (L4 free), 
   brief_check: agents/reviews/X3d-brief-check.md, every finding closed in the brief (its Closed heading); claude-opus-5-5, 52 tool uses, 301,056 tokens, 12.4 min
   landing: not-started
   round: 0
-- step: E2
-  executor: agent
-  worker: claude:sonnet
-  model: claude-sonnet-5-5 (the transcript's message.model, read after the launch: 2 of 2 assistant messages)
-  session_id: a4166de53e42d5395
-  worktree: .agents/worktrees/E2
-  base: d7af9cac
-  launched: 2026-09-30 15:57 local
-  report: agents/reviews/E2-report.md
-  builder_usage: claude-sonnet-5-5, 103 tool uses, 344,341 tokens, 46.1 min; round 1: 15 tool uses, 72,720 tokens, 13.2 min
-  brief_check: agents/reviews/E2-brief-check.md, every finding closed in the brief (its Closed heading, F20 left with its reason); claude-opus-5-5, 28 tool uses, 171,296 tokens, 8.4 min
-  reviewer_report: agents/reviews/E2-refuter.md; claude-opus-5-5, 34 tool uses, 201,995 tokens, 17.8 min; 5 Spec, 1 Proof, 5 Standards and 1 Behaviour finding, all ruled in round 1 (`agents/briefs/E2-round1-sent.md`), Standards 5 ruled no change
-  shared_paths: DESIGN.md with X3d (E2 writes only lines 234-312, the apps section, which X3d's brief does not touch; git merges the two hunks), docs/diagrams (a mechanical rerun of `npm run diagrams` at landing)
-  landing: not-started
-  round: 1 (sent 2026-09-30 17:11; the builder's reply came before 18:19, its delta not yet read and its run by `/refute` not started)
 - step: Q85a1
   executor: agent
   worker: claude:sonnet
@@ -132,6 +117,8 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 ## Open items (only what Axel must rule on; every report opens with this list verbatim and repeats it until he has ruled)
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is booked as its own step in `plan.md` and carried in the Booked section below, since it needs no ruling from him.
+
+- Z103, the 42 shapes E2 named in the unbuilt apps design (raised 2026-09-30 19:05 at E2's landing). E2's brief (`agents/briefs/E2.md:101`) says Axel reads them at the landing and rules before any build step is booked. They are the two tables of `agents/reviews/E2-report.md`, section "Shapes named in this step": rows 1 to 17 are the brief's decisions, rows 18 to 42 shapes the builder chose because a builder of the apps needs them, each with the alternative considered. One of them touches the rule that `config/local.yml` holds a secret: row 36, a machine app may name any root the file browser shows in `open({ file })`, the root `engine` included, so it can put `config/local.yml` on screen in a source tab (it never receives the file's text; `DESIGN.md` line 313). (a) All 42 as written. For: the section stands as landed; against: an app can put the file that holds the calendar link on screen, in front of anyone watching the screen. (b) Row 36 changed to every root but `engine`, the other 41 as written; the change is one clause of `DESIGN.md` line 313 and row 36 of the report, made by the build step's `/spec` or as a fix now. For: no app can bring `config/local.yml` or any engine file into view; against: a machine app cannot open an engine file for the reader, which no ruling asked for. (c) You name the rows to change after reading the list; each change is a text fix to line numbers the report gives. Recommended (b), with (c) for anything else you want changed after reading. The lazy option is (a).
 
 
 
@@ -532,6 +519,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-09-30 19:05. E2 landed (the apps section of `DESIGN.md` rewritten to the rulings of Z93, still unbuilt); two text fixes at landing in the section, three in the report; verify on main `checks: 7 commands passed` (348 files, 5304 tests). Raised: Z103, the 42 shapes E2 named. Next, in Axel's order: /land Q85a1, then X3d's builder resumed, then /spec Q108, Q110 and U2. Open: Z103.
 - 2026-09-30 18:43. Ruled: Z101 (a) booked as Q109, Z102 (a) booked as Q110; Q108 booked on ruling (d). Nothing is in flight; nothing is dispatched, prepared or landed until Axel says go. The plan skills are linked from `~/.local/share/ordo-stable` at tag v2.6.2. Open: none.
 - 2026-09-30 18:31. Nothing is in flight and nothing is sent to any agent without Axel's word. X3d's builder was stopped by Axel. E2's builder has answered its one round (delta unread, `/refute` over the round and `/land` wait for Axel's go). Q85a1's round is refuted with two findings for the landing (`/land` waits for Axel's go). The four changes made on main outside any step are off main and kept as a patch (ruling (d)); U2 waits for its `/spec` with the notes as input (ruling 6 (a)); the rest of Q102's look and Q86c's link are taken (ruling 5 (a)). Open: Z101, Z102. The 17:11 line's "Fixed on main" no longer holds: those changes are in the patch.
 - 2026-09-30 17:11. E2's review is in and its one repair round is sent; Q85a1's round is done by its builder and its review runs on `claude-opus-5-5`; X3d builds. Fixed on main and in the verify run: the merge editor's bars (`zones.ts`), the Live HPC empty-queue line drawn through `Empty.svelte` (it was a bare paragraph at the browser's 16px; 12.5px on TEST after), the slow-tagged `tests/shell/workbench.test.ts` case that counted a tab's glyph as a drop mark since Q102, and the two kit tests moved to `tests/ui/controls/editor/kit/` so the folder holds ten items.

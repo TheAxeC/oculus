@@ -2,10 +2,9 @@
 
 In flight:
 - X3d (the Repositories view and the diff rebuilt to look and work as VS Code's Source Control), base 4fe6ce93: its builder was stopped by Axel 2026-09-30; it is resumed or continued only on his word.
-- E2 (the apps section of DESIGN.md rewritten to the rulings of Z93), reviewed; its builder has answered repair round 1; `/refute` over the round and `/land` wait for Axel's go.
 - Q85a1 (zod at the server's `core` and `root` inputs; Z96 (a)), repair round 1 refuted 2026-09-30 with two findings for the landing; `/land` waits for Axel's go.
 - Nothing is dispatched, prepared or landed until Axel says go.
-Open items: none.
+Open items: Z103 (the 42 shapes E2 named in the unbuilt apps design).
 Queued, in order:
 - Q108 (the four fixes kept as `agents/reviews/inline-fixes-2026-09-30.patch`: the merge editor's bars, the Live HPC empty line, the slow workbench case, the two kit tests moved; ruling (d)), `/spec` on Axel's go.
 - Q110 (Undo gives an empty list back as an empty list; Z102 (a)), `/spec` on Axel's go.
@@ -41,6 +40,7 @@ Queued, in order:
 The loop fills three slots as they free up; a line above is only an order, never a barrier, apart from the "once ... has landed" notes. A step's line moves to Landed, at the top of that list, in its landing commit.
 
 Landed, newest first: every step ticked in `plan.md`, each with the date and the commit that ticked it (the 15 steps dated 2026-09-10 at f8af492b were landed before the ledger was opened):
+- E2 (the apps section of DESIGN.md rewritten to the rulings of Z93), 2026-09-30, 6446898c.
 - E1 (the design section for apps added while oculus runs; its 31 choices are Z93), 2026-09-30, 3ab29091.
 - Q102 (the terminal working as VS Code's terminal; Z69 (a)), 2026-09-30, 7dde39e2.
 - Q84 (the fetch-and-hold stores on @tanstack/query-core; Z56 (a)), 2026-09-30, 556dcaf2.

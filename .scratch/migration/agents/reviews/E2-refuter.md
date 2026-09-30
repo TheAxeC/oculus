@@ -167,3 +167,192 @@ No hard-wrapped paragraph, no non-ASCII character, no em dash, no spaced hyphen,
 Reviewer usage: about 195,000 tokens, 24 tool uses; minutes not measured (the checks run alone took over 10 minutes).
 
 Files: `/Users/axelfaes/workspace/research-hub/.agents/worktrees/E2/tools/oculus/DESIGN.md` (the section, lines 234-326), `/Users/axelfaes/workspace/research-hub/tools/oculus/.scratch/migration/agents/briefs/E2.md`, `/Users/axelfaes/workspace/research-hub/tools/oculus/.scratch/migration/agents/reviews/E1-rulings.md`, `/Users/axelfaes/workspace/research-hub/tools/oculus/.scratch/migration/agents/reviews/E2-report.md`. The checks output is in the session scratchpad as `E2-checks.txt`; nothing was written in the repository or the ledger.
+
+## Repair round 1, refuted
+
+Worktree `/Users/axelfaes/workspace/research-hub/.agents/worktrees/E2`, base d7af9cac. Lines of `tools/oculus/DESIGN.md` are those of the worktree's file; the section is lines 234 to 326. Nothing was written outside my scratchpad.
+
+Verification, rerun from the worktree's `tools/oculus` in the foreground:
+
+```
+$ PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH npm run diagrams
+... docs/diagrams/channels.svg / docs/diagrams/writes.dot / docs/diagrams/writes.svg ; diagrams exit 0
+
+$ git status --short        (after the diagrams run)
+ M DESIGN.md
+?? .scratch/migration/agents/reviews/E2-report.md
+
+$ PATH=... sh ~/.claude/skills/land/templates/checks.sh /Users/axelfaes/workspace/research-hub/tools/oculus/.scratch/migration/orchestrator-state.md
+$ npm test
+ Test Files  348 passed | 19 skipped (367)
+      Tests  5303 passed | 557 skipped (5860)
+   Start at  18:50:16
+$ npm run test:checks
+ Test Files  27 passed | 2 skipped (29)
+      Tests  365 passed | 9 skipped (374)
+   Start at  18:51:22
+$ npm run check
+1790787127215 START "/Users/axelfaes/workspace/research-hub/.agents/worktrees/E2/tools/oculus"
+1790787127222 COMPLETED 2377 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+$ npm run build
+$ npm run format:check
+Checking formatting...
+All matched files use Prettier code style!
+$ npm run lint
+$ ! LC_ALL=C grep -rna '[^ -~]' src tests
+checks: 7 commands passed
+(checks exit 0)
+
+$ LC_ALL=C grep -n '[^ -~]' DESIGN.md
+(no output, exit 1)
+
+$ git status --short        (after everything)
+ M DESIGN.md
+?? .scratch/migration/agents/reviews/E2-report.md
+
+$ git diff d7af9cac --stat
+ tools/oculus/DESIGN.md | 68 ++++++++++++++++++++++++++++++--------------------
+ 1 file changed, 41 insertions(+), 27 deletions(-)
+ hunks: @@ -233,11 +233,13 @@ and @@ -250,65 +252,77 @@
+
+$ ls tools/oculus/docs/adr
+ls: .../tools/oculus/docs/adr: No such file or directory
+```
+
+`npm run diagrams` left no change: the status lists the same two paths before and after it. The test counts equal the builder's (348/5303, 27/365). No ADR folder exists, so no ADR governs the diff.
+
+The builder's evidence for the round, rerun:
+- `sed -n 234,326p DESIGN.md | grep -c "Files"` prints 0, as the report says.
+- `diff` of the ledger's `agents/reviews/E2-report.md` against the worktree's copy: identical.
+- The report's line 3 quotes of DESIGN.md:140 ("the value the file held and the value written") and 374 ("the value on either side of each write"): both found at those lines by `grep -n`; "360" no longer appears in the report.
+- Rows 34 to 42 of "Shapes named in this step" exist, each with an alternative.
+- One row of the report's DONE table does not reproduce after the round: see Proof 1.
+
+### The fifteen round items
+
+Each old phrase of the round as sent was searched in lines 234 to 326 with `grep -cF` and gives 0; each ruled phrase gives 1 (the four "file browser" phrases 3, 2, 1, 1).
+
+1. Closed. Line 258 ends "since a key of a later version that was silently ignored would leave the reader approving something other than what runs." and line 315 reads "so the reader approves exactly what they were shown"; both equal the removed base lines of the diff.
+2. Closed. Line 313: "A target that is none of the three forms rejects `closed`."; "A target that is refused rejects" is gone.
+3. Closed. Line 323 ends with the two ruled sentences, closing said of the download link only.
+4. Closed. Line 319 holds the two ruled sentences verbatim.
+5. Closed. Line 315 has "with the app's view id in `view`, which the server refuses" with no parenthesis; line 242 has the header's reason verbatim.
+6. Closed. Line 313: "At most `apps.opens_per_min` (30) calls of `open` pass per frame per minute, and the rest reject `rate`."; "and rejects `rate` past it" is gone.
+7. Closed, and the sentence is true of the code. Line 307 holds the ruled words. `src/lib/server/root/watch/git.ts:188-214`: `let state: GitPayload = {}` (188), and the only write is `state[root] = next` (213) for a `root` that holds a handle; `src/lib/server/files/roots.ts:45-49`: `repositoryRoots` is `browserRoots` without `engine`, mapped to folders. So the payload has one entry per root folder and none for a repository below one. The report's line 260 carries the corrected claim, and "entry of its own" is gone from the report.
+8. Closed, and the sentence is true of the code. Line 276 holds the ruled words. `src/lib/state/workbench/navigation/registry.ts:102` is `badgeMark?: string;` (a catalog key, by its comment at 97-101), and `badgeGlyph` at line 95 is `(state: BadgeClient) => string`.
+9. Closed as ruled (line 313, "open in the source tab, which says the file is binary (`state/sessions/source.svelte.ts:325-326`)", "today" gone), but the sentence is not true of the cited lines: Spec 1.
+10. Closed. Line 260: "Two findings are about a whole apps folder, keyed `apps[<root key>/]`"; line 315: "An entry is found by the app's real folder path, whatever its name:".
+11. Closed. `grep -n "Files" DESIGN.md` over the section has no hit at all, so there is no code name to list; the report says the count is 0. "the file browser" stands 17 times in the section.
+12. Closed. Line 311 holds the added sentence verbatim; lines 140 and 374 are outside both hunks and unchanged; the report names 374.
+13. Closed. Report rows 34 (same value written), 35 (not JSON, no word), 36 (any root, `engine` included; alternative every root but `engine`), 37 (per frame per minute), 38 (Keep writes the content approval), 39 (header encoded, body as is), 40 (no form rejects `closed`), 41 (History draws sizes), 42 (WebRTC and DNS prefetch measured, only the download link closed): nine shapes, nine rows, each with its alternative.
+14. Closed. Line 236 keeps "This section is a ruled and unbuilt proposal" and line 323 keeps "is not claimed here".
+15. Closed. The report has a section "Repair round 1" with fifteen DONE rows and a Verify line; the checks block it points at carries a svelte-check stamp (1790781551109) later than the first refuter's run (1790779897813), so it is a run made after the round was sent.
+
+Nothing was closed by removing a statement: every item replaced words with the ruled words. No change beyond a ruling was found; the limit of that check is under "Declined to judge".
+
+### Verdicts
+
+Items of the brief's "What to build":
+- 1: holds, lines 238 and 240.
+- 2: holds, lines 242, 262 (`root` in the row), 280 (HMAC over `<view id>:<hash>`), 284.
+- 3: holds, line 315.
+- 4: holds, line 321.
+- 5: holds, lines 262 and 278.
+- 6: holds, line 307.
+- 7: holds, lines 260, 307, 325.
+- 8: holds, lines 309, 311, 325.
+- 9: holds, lines 258, 260, 284 to 287, 317, 323.
+- 10: holds, lines 287, 290, 292.
+- 11: holds, line 313.
+- 12: holds, line 319 and the registration at 269 to 273.
+- 13: holds; no sentence states an old rule beside the new one.
+- 14: holds; the two hunks lie inside the section, and the sentences outside it that name what the section changed (`badgeMark` at line 220, the change record at 140 and 374) are not made false: 220 still holds under the proposal, and 140 and 374 describe built code, with the difference stated at line 311.
+- 15: holds, line 240.
+- 16: holds, line 315.
+- 17: holds, line 242.
+- 18: violated in one clause, Spec 1 (the citation for what the source tab says); the rest of the item is at line 313.
+- 19: holds, lines 309, 311, 317.
+- 20: holds, lines 258 and 260.
+- 21: holds, line 323.
+- 22: holds, line 307 (the first review's Proof 1 is closed).
+- 23: holds, line 319.
+- 24: holds, line 240.
+- 25: holds, line 278.
+- 26: holds, lines 242, 270, 317.
+- 27: holds.
+
+Cases:
+- 1: met, lines 242 and 315.
+- 2: met, lines 260 and 307.
+- 3: met, line 307.
+- 4: met, lines 260 and 307.
+- 5: met, lines 309 and 311.
+- 6: met, line 309.
+- 7: met, lines 258, 260, 284, 317.
+- 8: met, lines 278, 315, 317.
+- 9: met, lines 287, 290, 292.
+- 10: met, line 313.
+- 11: met, line 319: in the case's scenario a file was saved under the keeping, so after a restart the entry's hash differs and the panel asks.
+- 12: met, line 321.
+- 13: met, line 278.
+- 14: met, line 242.
+- 15: met, line 240.
+- 16: met, line 240.
+- 17: met. A script split the 27 removed base lines into 253 clauses; 83 are absent from the new section, and each of the 83 is changed by a ruling, an item of the brief or a corrected citation. The two the first review named are back word for word.
+- 18: partial, Spec 2 (one `open` target is given two words). No choice of `E1-choices.md` is stated other than as ruled.
+- 19: met, line 240.
+- 20: met, line 313.
+- 21: met, lines 260, 309, 311.
+- 22: met, lines 258 and 260.
+- 23: met, line 319.
+- 24: met, line 307.
+- 25: met, line 278.
+- 26: met, line 240.
+- 27: met, line 242.
+
+### Findings
+
+#### Spec
+
+1. DESIGN.md, "Apps added while oculus runs", line 313: "A binary file, and a file that `open.program_ext` maps to a program such as a `.docx`, open in the source tab, which says the file is binary (`state/sessions/source.svelte.ts:325-326`), and no program is started." What is wrong: lines 325-326 are inside `saveSourceDraft` (`source.svelte.ts:293`), in the branch for a save the server refused:
+
+   ```ts
+   if (answer.error === 'binary') {
+       updateDraft(id, { message: t('source.binary') });
+   ```
+
+   and the words are "This file is not text on disk; the editor saves nothing over it." (`config/text/views/sources/source.yml:4`). The server answers `binary` only from the write handler (`src/lib/server/files/source.ts:136`). So the tab says this after a refused save, not when it opens. In the tree nothing opens the source tab for a binary file: `tabOf` sends every file that is not `html` or `text` to the `file` view (`src/lib/views/sources/files/opening.ts:31-40`), and DESIGN.md:381 says the same. The round's words are the ruled words, so the defect is in the ruling's sentence, carried from the brief's item 18 ("as the source tab shows such a file today"). Failure scenario: a builder of `open` reads that the source tab already tells the reader a file is binary when it opens, builds nothing for it, and the reader gets an editor over bytes with no sentence until a save is refused. Verdict: item 18 violated in this clause.
+
+2. Line 313: "A root app may name only its own root in `file`, a machine app any root shown in the file browser, and a root the app may not name rejects `closed`; a root the file browser does not show and a file that does not exist reject `missing`." What is wrong: a root app that names a root the file browser does not show matches both halves, so the target has two words and the order of the two tests is not given. The round's item 2 aimed at one word per case. Failure scenario: a builder tests "shown" first, and a root app then learns from `missing` against `closed` which root keys this machine shows, where line 238 says a root app names only its own root. Verdict: case 18 partial.
+
+#### Proof
+
+1. The builder's report, "DONE / NOT DONE", row "No history, no date, no person's name in the section": "searched for ` was `, ` were `, `used to`, `changed from` ... printed no hit". My run of the same search over lines 234 to 326 prints three hits: " was silently ignored" (line 258), " were shown" (line 315), " were at" (line 319). All three come from words the round ruled in (items 1 and 4); none is history (a conditional, "what they were shown", "as they were at that press"). What is wrong: the row was true before the round and the report, which states the end state, was not brought along. Failure scenario: the landing quotes the row as the evidence for "no history" and a rerun of the quoted search contradicts it. The brief's Conventions list "was" among the history words; the ruling put the base words back, so the text stands and only the row is wrong.
+
+2. The builder's report, "Every sentence removed or reworded", row "278-282 policy line": "N3 (b) and N4 (b)." `E1-rulings.md:17` is N3 (c). No decision rests on it; the row names the wrong option of the ruling.
+
+#### Standards
+
+None. Scans over lines 234 to 326: no non-ASCII character, no ` - ` or `--` outside the code block, no leading or trailing space, every paragraph one line, "today" 0 times, "Files" 0 times, no "and not" or ", not" contrast left by the round (the two hits of the scan are base sentences of lists: "not offered, not registered and not served" and "a symbolic link is not part of the app"). Names the round changed, grepped outside the section and in `HELP.md` and `README.md`: `badgeMark` (DESIGN.md:220, still true), "the file browser" (the name DESIGN.md uses outside the section), `apps.opens_per_min`, `approvals`, `x-oculus-app`, `app-data` (no hit outside the section, none in `HELP.md` or `README.md`).
+
+#### Behaviour
+
+1. The builder's report, "Repair round 1": each row gives the new words and the line, none gives the words replaced. The statements of behaviour that changed in the round are items 3 (WebRTC and DNS prefetch are measured, no longer closed), 4 (after a restart a kept app runs while its files are as at the press, where the text said the question is asked again), 6 (the `open` limit is per frame), 7 (a nested repository has no entry) and 12 (History draws sizes for a store write). The old words are only in `agents/briefs/E2-round1-sent.md`. Failure scenario: a reader of the report alone at the landing does not see that item 4 changed what a restart does. Nothing is built, so no view changed on screen.
+
+### Declined to judge
+
+- Whether the round changed any word outside the fifteen items: no snapshot of the text as sent exists. What was checked: the diff stat and the two hunk headers equal the first review's (68 lines, the section still 234 to 326), every old phrase is gone and every ruled phrase is present once.
+- What the source tab draws when it is opened for a binary file: nothing in the tree opens it for one, and seeing it needs a running page, which this review may not start or reach.
+- The two penpal citations (`dist/penpal.mjs:15-20` and `88-97`): the package is not installed in the worktree; both are unchanged from the base and the round did not touch them.
+- Whether each shape of the report's rows 18 to 42 is the right one, the machine app's reach to the root `engine` in `open({ file })` (row 36) included: they are Axel's to rule at the landing.
+- Whether `open({ view: 'app:<other>' })` should be admitted: the text admits it, the brief names no exception; Axel's call, as the first review said.
+- Line 240's "`~/workspace` under the key `workspace` when no root beside the hub exists" and line 317's control that opens a machine app's folder in the file browser: both carried from the first review's declined points, untouched by the round.
+- The browser facts the section states (what `sandbox`, `connect-src` and `allow-downloads` do in Chrome): nothing is built to measure.
+
+Tool uses: 23, this handback included.
+
+Files: `/Users/axelfaes/workspace/research-hub/.agents/worktrees/E2/tools/oculus/DESIGN.md` (lines 234 to 326), `/Users/axelfaes/workspace/research-hub/tools/oculus/.scratch/migration/agents/reviews/E2-report.md`, `/Users/axelfaes/workspace/research-hub/tools/oculus/.scratch/migration/agents/briefs/E2-round1-sent.md`, `/Users/axelfaes/workspace/research-hub/.agents/worktrees/E2/tools/oculus/src/lib/state/sessions/source.svelte.ts` (293 to 327), `/Users/axelfaes/workspace/research-hub/.agents/worktrees/E2/tools/oculus/src/lib/server/files/source.ts` (136), `/Users/axelfaes/workspace/research-hub/.agents/worktrees/E2/tools/oculus/src/lib/views/sources/files/opening.ts` (31 to 40). The checks output is in the scratchpad as `checks.txt`.
+
+### Closed
+
+- Spec 1, Spec 2, Proof 1, Proof 2 and Behaviour 1 are the findings of the run over the last round, so none goes to the builder; each is fixed at landing, in DESIGN.md line 313 for the two Spec findings and in the builder report for the other three.
