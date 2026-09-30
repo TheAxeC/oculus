@@ -119,7 +119,14 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is booked as its own step in `plan.md` and carried in the Booked section below, since it needs no ruling from him.
 
-None.
+- **Z92, the file that is oculus's equivalent of launch.json** (raised 2026-09-30 from Axel's question on the equivalents). Z87 (a) saves D11's named launch configurations "per repository under `~/.oculus/`" and names no file.
+  - (a) `.oculus/launch.yml` in the repository, beside `.oculus/commands.yml` and `.oculus/settings.yml`; D11's form reads and writes it. For: the three repository files match VS Code's three, and the configurations are versioned with the code. Against: it changes where Z87 (a) put them.
+  - (b) A file under `~/.oculus/` per repository, as Z87 (a) says. For: nothing in the repository. Against: not versioned, and the only one of the three that lives elsewhere.
+  - Recommendation: (a). The lazy option is (b).
+- **Z93, the file that is oculus's equivalent of c_cpp_properties.json** (raised 2026-09-30 from the same question). Today there is none: Z72 (2) (a) has oculus find the compile database and remember the choice under `~/.oculus/`, and include paths, defines and flags come only from that database.
+  - (a) A `cpp:` section in `.oculus/settings.yml`: the compile database to use, and include paths, defines and flags added on top, which oculus passes to clangd itself; with no section oculus finds the database as ruled. For: a repository with no compile database can still be set up without creating a `.clangd` or `compile_flags.txt` file, and the choice is versioned. Against: one more section to build in D23.
+  - (b) No file, as ruled. Against: a repository without a compile database has no way to give clangd its flags from oculus.
+  - Recommendation: (a). The lazy option is (b).
 
 ## Time per step (Axel asked 2026-09-27 for how it evolves with Q77; measured from each builder's transcript: each tool call from call to result, each background wait from the builder stopping to the run waking it)
 
