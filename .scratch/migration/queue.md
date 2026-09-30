@@ -5,12 +5,11 @@ In flight:
 - Q106 (Close pane on two tabs), repair round 1 done; its review runs.
 - Q107 (a Terminal tab closing itself; Attach to Session), built; its review runs.
 Landed last: Q111 (Undo gives a cleared field's lines back), 23:17.
-Open items: Z122 (does the week's ticker take `focus_label_mode` too), Z123 (one key for a feed's staleness). Choices made in automode, for review: `choices.md`.
+Open items: none. Choices made in automode, for review: `choices.md`.
 Queued, in order:
 - U2 (every view's look against VS Code's), prepared; its builder launches once X3d has landed.
-- Q109 (a terminal's name, icon and colour), once Q107 has landed.
-- S3a (the options catalog), prepared; its builder launches when a slot frees.
-- Q112 (the Focus board's cards take `focus_label_mode`), stopped at /spec on Z122.
+- Q109 (a terminal's name, icon and colour; a sole terminal renamed), once Q107 has landed.
+- S3a (the options catalog, with `focus_label_mode` read and `stale_days` folded in), prepared; its builder launches when a slot frees.
 - S3b (the `config-key` write), /spec once S3a has landed (its writer reads S3a's catalog module).
 - S3c (the Settings editor), once S3a and S3b have landed.
 - Q85a2 to Q85a5 (zod in the other server folders), /spec when a slot frees; then Q85b and Q85c, then Q85d.

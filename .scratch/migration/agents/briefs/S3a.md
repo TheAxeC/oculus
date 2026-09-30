@@ -6,7 +6,7 @@ A design ruling decides what is built. It never exempts the code: every line is 
 
 ## The plan line
 
-S3a the options catalog `config/catalogs/options.yml` under `options:`: every option of the five tracked config files and every `local.yml` key, each described from the code that reads it, with its default and control, families with `fields:`; the Z77 check; `LOCAL_KEYS` exported (ruling Z75) (ruling Z77) (ruling Z94)
+S3a the options catalog `config/catalogs/options.yml` under `options:`, every option and `local.yml` key described from its reader, with default, control and `fields:`; the Z77 check; `LOCAL_KEYS` exported; `focus_label_mode` read by the Focus cards and ticker; `stale_days` folded into `refresh_stale_days` (ruling Z75) (ruling Z77) (ruling Z94) (ruling Z120)
 
 ## The rulings it carries (plan.md, Rulings; the state file's closed log in full)
 
@@ -16,13 +16,14 @@ S3a the options catalog `config/catalogs/options.yml` under `options:`: every op
 - Z118 (a) (the orchestrator, automode): a family's entry holds `fields:`; a family and a `local.yml` entry carry no `default`.
 - Z119 (a) (the orchestrator, automode): S3 is split; this step is the catalog and its check. S3b builds the `config-key` write and S3c the editor.
 - Z121 (a) (the orchestrator, automode), with its correction of 2026-09-30 23:58 in `choices.md`: (1) the file's one top-level key is `options:`, holding Z94's map, so the merged config gains one key and not six keys named after files; (2) an option's `default` is the value the tracked file holds at the base, `terminal.font_px` (12.5) and `wallpaper.popover_opacity` (0.97) included, whose descriptions say what leaving the key out does; (3) no `min` or `max` fields, since S3b refuses a value the config readers refuse; (4) the check fails on a missing or empty `description`.
-- Z120 (a) (Axel): step Q112 makes the Focus board's cards take `focus_label_mode`, `short` or `full`, as the Projects and Archive boards take `project_label_mode` and `archive_label_mode` (`src/lib/state/boards/board/presets.ts:190-195`). Z122 (open) asks whether the week's ticker on the Focus board takes the key too; the orchestrator writes its ruling into this line before the builder launches. This step's entry for the key describes it as Q112 makes it work (the title on the Focus board's cards, `short` the manifest's `short:` when set and `full` the whole title), `control: choice`, `values: [short, full]`, `default: short`; the report names the entry as one whose reader Q112 adds.
-- Z123 (open, for Axel): `stale_days` and `refresh_stale_days` both set the feeds' staleness (`src/lib/state/feeds/feeds.ts:56-65`, the later key winning), `stale_days.audit` has no reader (`FEEDS` at `feeds.ts:18` names litwatch, inbox and scout), and `feeds.ts:21` holds a fallback in code. This step is not blocked: the entries describe what the code does today (`stale_days.litwatch`, `.inbox` and `.scout`: the threshold `refresh_stale_days` overrides when it names the feed, which the tracked file does for all three; `stale_days.audit`: read by nothing in oculus), and the report names these four entries.
+- Z120 (a) (Axel), with Z122 (a) (the orchestrator, automode): the Focus board's cards and the week's ticker lines take `focus_label_mode`, `short` or `full`, as the Projects and Archive boards take `project_label_mode` and `archive_label_mode` (`src/lib/state/boards/board/presets.ts:190-195`), and the comment at `config/layout.yml:171` keeps the ticker. Built here (What to build 5).
+- Z123 (a) (the orchestrator, automode): `refresh_stale_days` is the one key for a feed's staleness; `stale_days` and the fallback in code are removed. Built here (What to build 6).
+- Z125 (a) (the orchestrator, automode): both are built in this step, since the catalog describes those keys; no separate step.
 
 ## What is on the tree (read on main at b5c84982; the tree outside `.scratch` is as at e9484791)
 
 - The five tracked config files, top-level keys (`python3` over `yaml.safe_load`): `appearance.yml` 6, `behavior.yml` 31, `layout.yml` 13, `present.yml` 1 (`deck`), `sources.yml` 15.
-- The family rule, applied by walking each file (a script in the session's scratch folder, and again by the brief check): 115 options, 22 of them families. appearance 14 (family `themes`); behavior 48 (families `read_limits`, `usage_tiers`, `open.program_ext`); layout 19 (families `rail`, `nav_groups`, `arrangements`, `tab_split`, `tab_rollup`, `nav_live`, `docs`); present 19 (families `deck.tag_tones`, `deck.meta.legend`, `deck.themes`, `deck.order`, `deck.framing`, `deck.summaries`, `deck.ideas.items`); sources 15 (families `scan`, `collections`, `indexes`, `roots`). No list of records sits outside these families. Two keys hold a dot inside a family (`read_limits` has `status.line`; `open.program_ext` has `.docx` and the like), so every dotted key path outside a family is unique. No tracked value is `null`.
+- The family rule, applied by walking each file (a script in the session's scratch folder, and again by the brief check): 115 options on the base tree, 22 of them families, and 111 once `stale_days`' four leaves are removed (What to build 6). appearance 14 (family `themes`); behavior 48 (44 after) (families `read_limits`, `usage_tiers`, `open.program_ext`); layout 19 (families `rail`, `nav_groups`, `arrangements`, `tab_split`, `tab_rollup`, `nav_live`, `docs`); present 19 (families `deck.tag_tones`, `deck.meta.legend`, `deck.themes`, `deck.order`, `deck.framing`, `deck.summaries`, `deck.ideas.items`); sources 15 (families `scan`, `collections`, `indexes`, `roots`). No list of records sits outside these families. Two keys hold a dot inside a family (`read_limits` has `status.line`; `open.program_ext` has `.docx` and the like), so every dotted key path outside a family is unique. No tracked value is `null`.
 - `local.yml`'s keys are `LOCAL_KEYS` at `src/lib/data/sources/config/local.ts:91-108` (16 names), not exported. An unknown key is warned about and ignored by `loadLocal` (`local.ts:237-238`, `:313-315`); `checkLocal` (`local.ts:349-357`) passes no `onUnknown`. `tests/views/system/help.test.ts:335-341` reads the names out of `local.ts`'s source text with the regex `/const LOCAL_KEYS = \[([^\]]*)\]/`.
 - The catalogs are merged into the one config map: `src/lib/data/sources/config/merge.ts:94` collects `config/catalogs/`, `:153-168` merges every top-level key of every file, and the whole merged config goes to the page on the `config` channel (`catalogs.ts:37-38`). `agents.yml`, `glyphs.yml`, `icons.yml`, `manifest-schema.yml` and `meta.yml` each hold one top-level key; `vocab.yml` holds 24 (`config-folder.test.ts:180`).
 - `grep -rn "config.options\|\['options'\]" src` finds no reader of an `options` key; `grep -rn "optionPaths\|CatalogEntry\|desc_options\|options\.yml" .` outside the ledger finds nothing.
@@ -30,12 +31,14 @@ S3a the options catalog `config/catalogs/options.yml` under `options:`: every op
 - `config/text/views/system/config.yml:4-15` holds `desc_<name>` per file; `tests/views/system/config.test.ts` holds them to the files.
 - `HELP.md:214-230` is the configuration section: its paragraph calls `catalogs/` "the vocabularies", and its table has a row for `glyphs`, `icons`, `manifest-schema`, `meta` and `vocab` and none for `catalogs/agents.yml`. `DESIGN.md:44` lists the catalogs as "the vocabularies: glyphs, icons, vocab, meta, manifest-schema", leaving out `agents`. `DESIGN.md:85` names each tracked config and catalog file's role one by one, and names neither `catalogs/agents.yml` nor, after this step, `catalogs/options.yml`.
 - Readers take their defaults from the config file: `src/lib/data/sources/config/settings.ts:1-3`, and spec.md bans hardcoded fallbacks. `appearance.yml:30-32` holds `terminal.font_px: 12.5` with the comment "leave the key out to follow the theme's `--fs-md` token"; `appearance.yml:45-47` holds `wallpaper.popover_opacity: 0.97` with "Unset = three quarters of the way from `panel_opacity` to solid".
+- `focus_label_mode: short` at `config/layout.yml:171` (comment "Focus board cards and the \"This week\" ticker") has no reader (`grep -rn focus_label_mode src` prints nothing). The Focus board's cards draw their name as `labelOf(project)` (`src/lib/views/boards/focus/lanes/LaneCard.svelte:105`), and the week's ticker names a project with `labelOf(project)` at `src/lib/state/boards/ticker.ts:206`, `:325` and `:367`; `labelOf` (`src/lib/state/boards/focus.ts:314-317`) gives the manifest's `short:` when set and the title otherwise. `LaneCard.svelte` reads no store and draws what `Lanes.svelte:215-225` hands it; `Lanes.svelte:58` holds `config = $derived(configMap())`; `ticker(snapshot, config, now)` (`ticker.ts:183`) has the config. `labelOf` is also the project tab's name (`Focus.svelte:98`) and the quick-add picker's (`QuickAdd.svelte:40`), which stay the short handle, as the Projects board's tab names do. `presets.ts:190` says the label modes are in `config/behavior.yml`; they are in `config/layout.yml`.
+- `stale_days: { litwatch: 14, inbox: 10, scout: 7, audit: 7 }` (`config/behavior.yml:11-12`) and `refresh_stale_days: { litwatch: 14, inbox: 2, scout: 7 }` (`behavior.yml:45-49`) are both read by `staleAfter` (`src/lib/state/feeds/feeds.ts:56-65`), which starts from `STALE_DAYS` (`feeds.ts:20-21`, a fallback in code), then `stale_days`, then `refresh_stale_days`, the later winning; `FEEDS` (`feeds.ts:18`) is litwatch, inbox and scout, so `stale_days.audit` has no reader and the tracked `stale_days` values never take effect. `tests/state/boards/focus.test.ts:813-817` asserts `refresh_stale_days` over `stale_days`. `config-folder.test.ts:112` lists `stale_days` in `EXPECTED`. The `stale_days` in `tests/checks/config/config.test.ts:374-505` is a key of fixture files and stays.
 - `tests/checks/config` holds 3 files; `src/lib/data/sources/config` holds 8 tracked items, so one new module fits under the ten-item rule.
 
 ## What to build
 
 1. **The catalog.** `config/catalogs/options.yml`, its one top-level key `options:`, holding a map of config file name (`appearance.yml`, `behavior.yml`, `layout.yml`, `present.yml`, `sources.yml`, `local.yml`) to a map of dotted key path to an entry. The fields of an entry:
-   - `description`: one to three plain sentences saying what the option does and what changing it changes, read from the code that reads it (and the file's own comment). The report lists, for every entry, the `file:line` of the reader it was written from, or "no reader" with the open item that covers it (Z120 for `focus_label_mode`, Z123 for the four `stale_days` entries).
+   - `description`: one to three plain sentences saying what the option does and what changing it changes, read from the code that reads it (and the file's own comment). The report lists, for every entry, the `file:line` of the reader it was written from.
    - `default`: the value the tracked file holds at the base. Required on every entry of a tracked file that is not a family; absent on a family and on a `local.yml` entry. For `terminal.font_px` and `wallpaper.popover_opacity` the description also says what leaving the key out does, from the file's comment.
    - `section`: optional, a non-empty string, the heading the option is shown under; absent means the first segment of the key path.
    - `control`: required on every entry of a tracked file that is not a family. `toggle` for a boolean, `number` for a number, `text` for a string, `choice` (with `values`) for a string from a closed set the code switches on, `list` for a list of scalars. Absent on a family and on a `local.yml` entry.
@@ -68,6 +71,8 @@ S3a the options catalog `config/catalogs/options.yml` under `options:`: every op
    - `config/text/views/system/config.yml` gains `desc_options`: "Every option of every config file: what it does, its default, and the control it is set with." (No sentence says the Settings view draws it; S3c adds that when it does.)
    - `HELP.md`'s configuration section: the paragraph at `:216` says `catalogs/` holds the vocabularies and the options catalog; the table gains a row `catalogs/options.yml` with the `desc_options` sentence, and a row `catalogs/agents.yml` with the `desc_agents` sentence (`config/text/views/system/config.yml:4`), since the table lists every file.
    - `DESIGN.md:44` reads `catalogs/  the vocabularies and the options: agents, glyphs, icons, vocab, meta, manifest-schema, options`. `DESIGN.md:85` gains, beside the other catalogs, the agent composer's models, efforts and permission modes in `catalogs/agents.yml` and every option of every config file with its description, default and control in `catalogs/options.yml`, read through `catalogOf` of `data/sources/config/options.ts`.
+5. **`focus_label_mode` read.** `focus.ts` gains `focusLabel(project, mode)`: the whole title when `mode` is `full`, `labelOf(project)` otherwise. `Lanes.svelte` hands each `LaneCard` its label from `focusLabel(project, config.focus_label_mode)`, and `LaneCard.svelte:105` draws that label (a new prop, the card still reading no store). `ticker.ts` names a project in its lines at `:206`, `:325` and `:367` with `focusLabel(project, config.focus_label_mode)`. The project tab's name and the quick-add picker keep `labelOf`. `config/layout.yml:171`'s comment reads "Focus board cards and the week's ticker lines"; `presets.ts:190`'s comment names `config/layout.yml`. The catalog's entry for the key is `control: choice`, `values: [short, full]`, `default: short`, its description naming the cards and the ticker lines.
+6. **One key for a feed's staleness.** `stale_days` is removed from `config/behavior.yml` (lines 11-12, the comment with it), from `config-folder.test.ts`'s `EXPECTED`, and gets no catalog entry. `staleAfter` reads `refresh_stale_days` alone, and `STALE_DAYS` is removed: a feed the key does not name, or names with a value that is not a finite number, is not nudged (`staleAfter` answers `Infinity`), and its head comment says so. `feeds.ts:56`'s doc comment and `focus.test.ts:813-817` say one key; the `refresh_stale_days` comment at `behavior.yml:45` is kept.
 
 ## Cases
 
@@ -88,8 +93,13 @@ The builder's first task, before any change: run every case below on the unchang
 13. An empty list with its entry (`indexes: []` a family, `audit_ignore: []` a `list`): passes.
 14. `optionPaths` over a fixture: a flow map (`stale_days: { litwatch: 14 }`) gives `stale_days.litwatch`; a family stops the walk and gives its own path; a three-segment path (`deck.meta.kicker`) is returned whole; a list of scalars and a list of records each give their own path; `stale_days: {}` gives `stale_days`; a bare `indexes:` gives `indexes`; an empty file and a file holding a list give no paths. `catalogOf` of a config with no `options`, or with `options: 3`, gives an empty catalog.
 15. Every `default` equals the value the tracked file holds at the base: a command the builder runs once over the finished catalog and the five files (a vitest run of a throwaway test in the temporary folder, or a `node` one-liner over `yaml`), its output quoted in the report with zero differences. This is a fact of the base, which S3b's writes change by design, so it is not a standing test.
+16a. `focusLabel` of a project with `short: HCC` and title "Hepatocellular carcinoma network": `short` gives `HCC`, `full` gives the title, a missing or unknown mode gives `HCC`; a project with no `short:` gives the title under both.
+16b. A lane card rendered under `focus_label_mode: full` draws the title; under `short`, the short handle (a render of `Lanes` or `LaneCard` in the existing Focus view test's harness). The project tab opened from that card is still named by the short handle.
+16c. `ticker` over a fixture with a project deadline and a follow-up, under `full` and under `short`: the paper line and the follow-up line carry the title and the short handle in turn.
+16d. `staleAfter` over a config holding only `refresh_stale_days: { inbox: 2 }`: `inbox` gives 2, `litwatch` gives `Infinity` (not nudged); a config also holding `stale_days: { inbox: 30 }` still gives 2 for `inbox` and `Infinity` for `litwatch`. Base: `litwatch` gives 14 from `STALE_DAYS`.
+16e. `refresh` (`feeds.ts:115-135`) over a snapshot whose feeds are all old and a config naming only `scout`: only `scout` is nudged.
 16. `help.test.ts` passes with `LOCAL_KEYS` imported; `config-folder.test.ts` and `config.test.ts` pass with the new file.
-17. By reading: every description names what the option does, and the report's table gives the reader's `file:line` for each entry; `focus_label_mode` is described as Z120 (a) and Z122 say; the four `stale_days` entries say what the code does today (Z123).
+17. By reading: every description names what the option does, and the report's table gives the reader's `file:line` for each entry; `focus_label_mode` is described as Z120 (a) and Z122 (a) say; `stale_days` has no entry and `refresh_stale_days` is described as the one threshold per feed.
 
 ## Paths this step writes
 
@@ -100,6 +110,17 @@ The builder's first task, before any change: run every case below on the unchang
 - `tests/checks/config/options-catalog.test.ts`
 - `tests/checks/config/config-folder.test.ts`
 - `tests/views/system/help.test.ts`
+- `config/layout.yml` line 171
+- `config/behavior.yml` lines 11-12
+- `src/lib/state/boards/focus.ts`
+- `src/lib/state/boards/ticker.ts`
+- `src/lib/state/boards/board/presets.ts` line 190
+- `src/lib/state/feeds/feeds.ts`
+- `src/lib/views/boards/focus/lanes/Lanes.svelte`
+- `src/lib/views/boards/focus/lanes/LaneCard.svelte`
+- `tests/state/boards/focus.test.ts`
+- `tests/state/boards/focus-lanes.test.ts`
+- `tests/views/boards/focus.test.ts`
 - `HELP.md` lines 214-230
 - `DESIGN.md` lines 44 and 85
 - `.scratch/migration/agents/reviews/S3a-report.md`
@@ -108,9 +129,11 @@ The builder's first task, before any change: run every case below on the unchang
 
 1. The walk and the catalog reader live in `src/lib/data/sources/config/options.ts`, so the check, S3b's writer and S3c's rows share them.
 2. A map family's `fields` names its keys `key` and its values `value`, or the record's fields when a value is a record.
-3. `tab_split` is a family (its keys are project types), and `nav_groups` is one (its keys are page names the reader chooses); `stale_days`, `refresh_stale_days` and `board.search` are options (their keys are names oculus reads: `FEEDS` at `feeds.ts:18`, `searchOf` at `presets.ts:298-302`).
+3. `tab_split` is a family (its keys are project types), and `nav_groups` is one (its keys are page names the reader chooses); `refresh_stale_days` and `board.search` are options (their keys are names oculus reads: `FEEDS` at `feeds.ts:18`, `searchOf` at `presets.ts:298-302`).
 4. `section` is left out wherever the first segment of the key path is the right heading.
 5. The walk treats every list as one leaf, so a list is set as a whole (`list`) or is a family, and never addressed by index.
+6. A feed `refresh_stale_days` does not name is not nudged, since no fallback in code gives it a threshold.
+7. `focusLabel` sits beside `labelOf` in `focus.ts`, and the lane card takes its label as a prop, so the card keeps reading no store.
 
 ## Libraries checked
 
@@ -125,7 +148,7 @@ spec.md's rules: ASCII only; comments say what and why, never when or which step
 Run from `tools/oculus` in the worktree:
 
 1. `PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH npm run diagrams`, then `PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH sh ~/.claude/skills/land/templates/checks.sh .scratch/migration/orchestrator-state.md`: prints `checks: 7 commands passed`, exit 0. The lines it prints are what the report quotes.
-2. `PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH npx vitest run tests/checks/config tests/views/system/help.test.ts tests/views/system/config.test.ts --testTimeout 0`: all passing.
+2. `PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH npx vitest run tests/checks/config tests/views/system/help.test.ts tests/views/system/config.test.ts tests/state/boards tests/views/boards/focus.test.ts --testTimeout 0`: all passing.
 3. Each new test of a behaviour the step adds fails on the unchanged tree in the form it has after the change, and the report quotes that failure.
 
 ## Report
