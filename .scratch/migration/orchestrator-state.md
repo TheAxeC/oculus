@@ -54,6 +54,20 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   brief_check: agents/reviews/U2-brief-check.md, every finding closed in the brief (its Closed heading); claude-opus-5-5, 70 tool uses, 160,458 tokens, 9.9 min
   landing: not-started
   round: 0
+- step: E3
+  executor: agent
+  worker: claude:sonnet
+  model: claude-sonnet-5-5 (the transcript's message.model, read at 21:09)
+  session_id: a3e7a56b3ea50f13c (launched 2026-09-30 21:07 local)
+  worktree: .agents/worktrees/E3
+  base_copy: .agents/worktrees/E3-base-DESIGN.md (DESIGN.md at the base, for case 16; removed at landing)
+  base: 1c95c890
+  launched: 2026-09-30 21:07 local
+  report: agents/reviews/E3-report.md
+  brief_check: agents/reviews/E3-brief-check.md, every finding closed in the brief (its "Brief check, closed" heading), finding 4 by Z107 (b2); claude-opus-5-5, 44 tool uses, 177,191 tokens, 8.9 min
+  shared_paths: DESIGN.md with X3d; E3 writes lines 236-327 (the apps section) and X3d the Source Control lines near 373 and 389, sections apart, so the cherry-pick merges without a conflict
+  landing: not-started
+  round: 0
 ```
 
 ## The standing demands (from Axel, in force)

@@ -2,12 +2,12 @@
 
 In flight:
 - X3d (Source Control as VS Code's), repair round 1 sent (ten rulings).
-Open items: Z107 (what closes `config/local.yml` to apps), for E3; Z108 (who runs a diagnosis), for Q106.
+- E3 (the apps section's text to Z103 (b), Z106 (a) and Z107 (b2)), its builder runs.
+- Q106 (Close pane on two tabs), its diagnosis agent runs; then its brief.
+Open items: none.
 Queued, in order:
 - U2 (every view's look against VS Code's), prepared; its builder launches once X3d has landed.
-- Q106 (Close pane on two tabs), diagnosis paused; waits on Z108.
-- E3 (the apps section's text to Z103 (b) and Z106 (a)), brief checked; waits on Z107.
-- Q111 (Undo gives a cleared field's lines back), /spec next.
+- Q111 (Undo gives a cleared field's lines back), /spec running.
 - Q107 (a Terminal tab closing itself), /spec when a slot frees.
 - Q109 (a terminal's name, icon and colour), once Q107 has landed.
 - S3 (the Settings view as VS Code's), /spec when a slot frees.
