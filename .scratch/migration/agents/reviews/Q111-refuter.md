@@ -397,3 +397,9 @@ Reviewer usage: tokens and minutes not measured by the reviewer (the runner's co
 Model: claude-opus-5-5 (Opus 5.5)
 
 Usage: round 1 reviewer a3574f271682c433f, served claude-opus-5-5; 195,526 tokens, 39 tool uses, 13.5 min (from its completion notice)
+
+## Closed (repair round 1's findings)
+
+- Standards 1: fixed at landing, both head comments reworded as DESIGN.md:140 says.
+- Proof 1: fixed at landing, the `id` and `type` rows given fitting text and their own `next`; the test fails with `insertRemoved`'s settable check removed.
+- Proof 2: fixed at landing, the report's sentence corrected.

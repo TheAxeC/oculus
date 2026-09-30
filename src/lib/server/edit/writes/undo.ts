@@ -9,6 +9,10 @@
 //
 // The check is why an undo is safe to offer: the value the record says the write left is compared
 // with the value the file holds now, and a field edited since is refused rather than written over.
+//
+// A manifest change that removed a field carries the removed text. The manifest writer puts it
+// back where it stood, and writes the value as any value is written only when it fits nowhere: on
+// a new line, or inside its line for text removed from a flow map.
 
 import { isAbsolute, join, resolve } from 'node:path';
 import { fields, scalar } from '../../../data/helpers/guards.ts';
@@ -195,8 +199,16 @@ function apply(into: WriteTarget, change: Change): WriteOutcome | null {
     const { hub, config } = into;
     if (change.kind === 'manifest') {
         // The record holds the value the file had, so it is written as that value and not read as
-        // a form, which would take an empty list, an empty text or `false` out of the file.
-        return writeManifest(hub, config, change.key, { [change.field]: change.before }, 'record');
+        // a form, which would take an empty list, an empty text or `false` out of the file. A field
+        // the write removed also holds the lines it removed, which go back where they stood.
+        return writeManifest(
+            hub,
+            config,
+            change.key,
+            { [change.field]: change.before },
+            'record',
+            change.removed
+        );
     }
     if (change.kind === 'session') {
         if (change.field === 'hidden' || change.field === 'top') {

@@ -5,7 +5,9 @@
 //
 // The record is made where the write is made. Every writer holds the value the file had and the
 // value it wrote at the point of the edit, and hands both back on its outcome, so nothing here
-// reads a file a second time and nothing compares one version of a file with another.
+// reads a file a second time and nothing compares one version of a file with another. A manifest
+// write that removed a field also hands back the text it removed, where it stood and the text that
+// followed it (`RemovedText`), which the record of that field keeps for the undo.
 //
 // The log is this machine's and not the researcher's data: git already holds the hub's history, and
 // what this answers is what oculus did here. It lives beside the other files under ~/.oculus, or
@@ -37,6 +39,26 @@ import type { FsWrites } from './json.ts';
 export type UndoKind = 'field' | 'create' | 'delete' | 'reorder' | 'none';
 
 /**
+ * The text a manifest write took out of the file when it cleared a field, and where it stood, which
+ * is what an undo puts back.
+ */
+export type RemovedText = {
+    /**
+     * The index in the file's text, counted in UTF-16 code units, where the text stood in the text
+     * the write left. The record's own time is `at`; this is a place in the file.
+     */
+    offset: number;
+    /** The characters removed, a trailing comment and a parent line included. */
+    text: string;
+    /**
+     * The text of the file the write left from `offset` to the end of its line, the line break not
+     * included: the whole following line for a removal of whole lines, and empty at the end of the
+     * file.
+     */
+    next: string;
+};
+
+/**
  * What a writer says about one thing it changed. The time and the body kind are added on append.
  */
 export type ChangeRecord = {
@@ -55,6 +77,11 @@ export type ChangeRecord = {
     before: unknown;
     after: unknown;
     undo: UndoKind;
+    /**
+     * The lines a manifest write removed, on the record of each field whose edit took text out and
+     * put none in, and on no other record.
+     */
+    removed?: RemovedText;
 };
 
 /** One line of the log. */

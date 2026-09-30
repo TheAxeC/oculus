@@ -9,19 +9,24 @@
 // `createIdea`, `fieldTypes`, `insideHub` and `writeManifest`); the undo imports `manifestValue`
 // from this file to read a manifest's value back before it writes.
 //
+// A write that clears a field puts the text it removed on that field's change record. The undo
+// hands it back to `writeManifest`, which puts it where it stood when it fits the file; otherwise
+// the value is written as any value is, on a new line, or inside its line for text removed from a
+// flow map.
+//
 // Whether a path lies in a folder is read from server/core/paths.ts (`below`).
 
 import { existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { basename, dirname, join, resolve } from 'node:path';
 import { parse } from 'yaml';
-import { isMap } from '../../../data/helpers/guards.ts';
+import { byKey, isMap } from '../../../data/helpers/guards.ts';
 import { readManifests } from '../../../data/sources/manifests.ts';
 import { fieldNames } from '../../../data/snapshot/validate.ts';
 import { plain } from '../../core/changes.ts';
 import { writeTextAtomic } from '../../core/json.ts';
-import { renderScalar, setFields } from '../yaml-edit.ts';
-import type { ChangeRecord } from '../../core/changes.ts';
-import type { FieldValue, Refusal } from '../yaml-edit.ts';
+import { insertRemoved, renderScalar, setFields } from '../yaml-edit.ts';
+import type { ChangeRecord, RemovedText } from '../../core/changes.ts';
+import type { FieldValue, Refusal, SetFieldsResult } from '../yaml-edit.ts';
 import type { PortfolioConfig } from '../../../data/model/index.ts';
 import type { WriteOutcome } from '../writes.ts';
 import { below } from '../../core/paths.ts';
@@ -168,17 +173,56 @@ export function insideHub(hub: string, config: PortfolioConfig, file: string): b
     return config.scan.some((rule) => below(path, join(hub, rule.dir)));
 }
 
+/** Why a group name is not written with a value. */
+const GROUP_REFUSED = 'the field is a group; set its children, or clear it whole';
+
+/**
+ * The removed lines of a change record, or null when the record holds none that can be used: the
+ * key is a map with a non-negative whole `offset`, a non-empty `text` and a `next` that is a
+ * string. The log is a file a hand may have edited, so anything else is read as no lines at all.
+ */
+function removedOf(raw: unknown): RemovedText | null {
+    if (!isMap(raw)) return null;
+    const { offset, text, next } = raw;
+    if (typeof offset !== 'number' || !Number.isInteger(offset) || offset < 0) return null;
+    if (typeof text !== 'string' || text === '' || typeof next !== 'string') return null;
+    return { offset, text, next };
+}
+
+/**
+ * The lines of a removed field put back, when the write is that one field with a value to give
+ * back and the lines fit the file; null when the value is to be written instead.
+ */
+function putBack(
+    source: string,
+    wanted: Record<string, unknown>,
+    back: RemovedText | null
+): SetFieldsResult | null {
+    const entries = Object.entries(wanted);
+    if (back === null || entries.length !== 1) return null;
+    const [[field, value]] = entries;
+    if (value === null) return null;
+    const out = insertRemoved(source, field, value, back);
+    return out.changed.length > 0 ? { ...out, removed: {} } : null;
+}
+
 /**
  * Set fields of one project's manifest. The file is written only when the edit changed something,
  * so a form saved with nothing altered leaves the file's mtime alone. The values are read as a form
  * unless `reading` says they are a change record's (`ValueReading`).
+ *
+ * `removed` is the lines a change record kept of the one field being given back. It is used only
+ * for a record's value, and when it is well formed and fits the file the lines are put back where
+ * they stood instead of the value being written; a record's group name is given a value only that
+ * way. Every check of the write is made first, so a record that fails one is refused as any other.
  */
 export function writeManifest(
     hub: string,
     config: PortfolioConfig,
     id: string,
     fields: Record<string, unknown>,
-    reading: ValueReading = 'form'
+    reading: ValueReading = 'form',
+    removed?: unknown
 ): WriteOutcome {
     const { manifests } = readManifests(hub, config.scan, config.text);
     const manifest = manifests.find((one) => one.id === id);
@@ -200,8 +244,12 @@ export function writeManifest(
         [...named].filter((one) => one.includes('.')).map((one) => one.slice(0, one.indexOf('.')))
     );
     const types = fieldTypes(config.schema);
+    const back =
+        reading === 'record' && Object.keys(fields).length === 1 ? removedOf(removed) : null;
     const refused: Refusal[] = [];
     const wanted: Record<string, unknown> = {};
+    // A group given a value, which only its removed lines can write.
+    const offered: string[] = [];
     for (const [field, raw] of Object.entries(fields)) {
         if (!named.has(field)) {
             const clearing = raw === null || raw === undefined || raw === '';
@@ -209,10 +257,15 @@ export function writeManifest(
                 wanted[field] = null;
                 continue;
             }
+            if (groups.has(field) && back !== null) {
+                wanted[field] = raw;
+                offered.push(field);
+                continue;
+            }
             refused.push({
                 field,
                 reason: groups.has(field)
-                    ? 'the field is a group; set its children, or clear it whole'
+                    ? GROUP_REFUSED
                     : 'the manifest schema does not name the field'
             });
             continue;
@@ -236,18 +289,31 @@ export function writeManifest(
         };
     }
 
-    const edit = setFields(source, wanted);
+    const restored = putBack(source, wanted, back);
+    if (restored === null) {
+        for (const field of offered) refused.push({ field, reason: GROUP_REFUSED });
+    }
+    const edit =
+        restored ??
+        setFields(
+            source,
+            Object.fromEntries(Object.entries(wanted).filter(([field]) => !offered.includes(field)))
+        );
     if (edit.changed.length > 0) writeTextAtomic(manifest.file, edit.text);
     // The value each field had is read off the manifest the edit was computed against, so the
     // record is made where both halves are in hand rather than by reading the file again.
-    const records: ChangeRecord[] = edit.changed.map((field) => ({
-        file: manifest.file,
-        key: id,
-        field,
-        before: plain(currentOf(manifest, field)),
-        after: plain(wanted[field]),
-        undo: 'field'
-    }));
+    const records: ChangeRecord[] = edit.changed.map((field) => {
+        const record: ChangeRecord = {
+            file: manifest.file,
+            key: id,
+            field,
+            before: plain(currentOf(manifest, field)),
+            after: plain(wanted[field]),
+            undo: 'field'
+        };
+        const cut = byKey(edit.removed, field);
+        return cut === undefined ? record : { ...record, removed: cut };
+    });
     return {
         found: true,
         changed: edit.changed,

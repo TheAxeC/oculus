@@ -10,6 +10,14 @@
 // source comes back unchanged with every field refused, so a bad edit is a refusal rather than a
 // damaged manifest.
 //
+// A field that is cleared leaves its lines behind in the answer: setFields reports the characters
+// each clear removed, the index they stood at in the text the write left and the rest of that
+// line, and insertRemoved puts them back at the place of that line which keeps the document what
+// the earlier value says it was, under the same check. For whole lines, when no place of that line
+// passes, every other line start is tried, nearest first; text taken from inside a line tries only
+// the places of that line. That is how an undo gives a cleared field back as it was written,
+// comments, quoting and block style included.
+//
 // Nothing is thrown. A path this cannot write is a refusal with a reason, which is what the write
 // route hands back to the page.
 //
@@ -20,6 +28,7 @@ import { isDeepStrictEqual } from 'node:util';
 import { isMap as isYamlMap, isScalar, isSeq, parseDocument, stringify } from 'yaml';
 import type { Node, Pair, Scalar, YAMLMap } from 'yaml';
 import { byKey, isMap } from '../../data/helpers/guards.ts';
+import type { RemovedText } from '../core/changes.ts';
 
 /** One row of a metalist: a flat map whose keys and values are strings. */
 export type FlatStringMap = Record<string, string>;
@@ -55,6 +64,13 @@ export type EditResult = {
 };
 
 /**
+ * What `setFields` answers: an `EditResult`, and for each changed field whose edit took text out
+ * and put none in, the text it took out. A field that was replaced or added has no entry, and
+ * nothing is reported when the write is refused.
+ */
+export type SetFieldsResult = EditResult & { removed: Record<string, RemovedText> };
+
+/**
  * Fields no write ever touches. `id` and `tier` are the folder's, not the form's, and `type` is the
  * tier's on a flat scan rule; data/sources/manifests.ts derives all three from where the folder
  * sits, so writing them here would put the file at odds with its own location.
@@ -78,8 +94,17 @@ const DEFAULT_INDENT = 2;
 
 type Parsed = Record<string, unknown>;
 
-/** Either the new text or the reason there is none; every edit step answers with one of the two. */
-type Written = { text: string } | { reason: string };
+/**
+ * One splice of a text: the span `from` to `to` of the old text was replaced by `length`
+ * characters. A span with nothing put in its place is a removal.
+ */
+type Splice = { from: number; to: number; length: number };
+
+/**
+ * Either the new text with the splice that made it, or the reason there is none; every edit step
+ * answers with one of the two.
+ */
+type Written = { text: string; splice: Splice } | { reason: string };
 
 /** One edit that was made, kept so the verification can apply it to the parsed source. */
 type Applied = { path: string[]; value: FieldValue };
@@ -352,6 +377,11 @@ function splice(text: string, from: number, to: number, insert: string): string 
     return text.slice(0, from) + insert + text.slice(to);
 }
 
+/** A slice of the text replaced, with the splice that was made. */
+function spliced(text: string, from: number, to: number, insert: string): Written {
+    return { text: splice(text, from, to, insert), splice: { from, to, length: insert.length } };
+}
+
 /**
  * Write a value over the bytes of an existing one. A list keeps the style the file has it in: a
  * flow list stays flow and a block list stays block, at its own indentation. An empty value
@@ -388,7 +418,7 @@ function replaceValue(text: string, node: Node, value: Exclude<FieldValue, null>
     if (start === end && text[start - 1] !== ' ' && text[start - 1] !== '\n') {
         rendered = ` ${rendered}`;
     }
-    return { text: splice(text, start, end, rendered) };
+    return spliced(text, start, end, rendered);
 }
 
 /** Remove the whole lines a pair occupies, its trailing comment with them. */
@@ -397,7 +427,7 @@ function removePair(text: string, pair: Pair<Scalar, Node>): Written {
     const end = pairEnd(pair);
     if (key === null || end === null) return fail('the key has no place in the file');
     const to = Math.min(text.length, lineEndAfter(text, end) + 1);
-    return { text: splice(text, lineStart(text, key[0]), to, '') };
+    return spliced(text, lineStart(text, key[0]), to, '');
 }
 
 /** Remove one key of a flow map, with the comma that joined it to its neighbour. */
@@ -409,11 +439,11 @@ function removeFlowChild(text: string, map: YAMLMap, index: number): Written {
     if (index > 0) {
         const from = pairEnd(items[index - 1]);
         if (from === null) return fail('the key has no place in the file');
-        return { text: splice(text, from, ownEnd, '') };
+        return spliced(text, from, ownEnd, '');
     }
     const next = rangeOf(items[index + 1].key);
     if (next === null) return fail('the key has no place in the file');
-    return { text: splice(text, own[0], next[0], '') };
+    return spliced(text, own[0], next[0], '');
 }
 
 /** Add one key to a flow map, after its last key, keeping the padding the file writes. */
@@ -429,11 +459,11 @@ function insertFlowChild(
     if (items.length === 0) {
         const range = rangeOf(map);
         if (range === null) return fail('the map has no place in the file');
-        return { text: splice(text, range[0], range[1], `{ ${name}: ${rendered} }`) };
+        return spliced(text, range[0], range[1], `{ ${name}: ${rendered} }`);
     }
     const at = pairEnd(items[items.length - 1]);
     if (at === null) return fail('the map has no place in the file');
-    return { text: splice(text, at, at, `, ${name}: ${rendered}`) };
+    return spliced(text, at, at, `, ${name}: ${rendered}`);
 }
 
 /** Add one key to a block map, on a new line at the map's own indentation. */
@@ -449,7 +479,7 @@ function insertBlockChild(
     if (rendered === null) return fail('the value does not fit on one line');
     const indent = ' '.repeat(columnOf(text, range[0]));
     const at = lineEndAfter(text, valueEnd(map));
-    return { text: splice(text, at, at, `\n${indent}${name}: ${rendered}`) };
+    return spliced(text, at, at, `\n${indent}${name}: ${rendered}`);
 }
 
 /** A value as it is written after `key:` on one line, or null when it cannot be. */
@@ -462,13 +492,13 @@ function renderOneLine(value: Exclude<FieldValue, null>): string | null {
 /** Insert one already-rendered block of lines after the last top-level key. */
 function appendLines(text: string, root: YAMLMap, lines: string): Written {
     if (root.items.length === 0) {
-        const body = text.length === 0 || text.endsWith('\n') ? text : `${text}\n`;
-        return { text: `${body}${lines}\n` };
+        const lead = text.length === 0 || text.endsWith('\n') ? '' : '\n';
+        return spliced(text, text.length, text.length, `${lead}${lines}\n`);
     }
     const end = pairEnd(root.items[root.items.length - 1] as Pair<Scalar, Node>);
     if (end === null) return fail('the file has no last key to write after');
     const at = lineEndAfter(text, end);
-    return { text: splice(text, at, at, `\n${lines}`) };
+    return spliced(text, at, at, `\n${lines}`);
 }
 
 /** Add one top-level key: on the key's own line, or as a block list under it. */
@@ -570,7 +600,7 @@ function applyOne(text: string, path: string[], value: FieldValue): Written {
     const key = rangeOf(top.key);
     if (key === null) return fail('the key has no place in the file');
     const lines = `${parent}:\n${kept}${pad}${child}: ${rendered}`;
-    return { text: splice(text, lineStart(text, key[0]), valueEnd(holder), lines) };
+    return spliced(text, lineStart(text, key[0]), valueEnd(holder), lines);
 }
 
 /** The parsed document with one path set or cleared, which is what the new text must equal. */
@@ -644,37 +674,65 @@ export function renameKey(source: string, from: string, to: string): EditResult 
 }
 
 /**
+ * Where the point at which a field's lines were removed stands after a later splice of the same
+ * write: a splice that ends at or before the point moves it by the change in length, one whose span
+ * holds the point moves it to the span's start, and one after it leaves it.
+ */
+function moved(point: number, cut: Splice): number {
+    if (cut.to <= point) return point + cut.length - (cut.to - cut.from);
+    return cut.from < point ? cut.from : point;
+}
+
+/** The text of a file from an index to the end of its line, the line break not included. */
+function lineFrom(text: string, at: number): string {
+    const end = text.indexOf('\n', at);
+    return text.slice(at, end < 0 ? text.length : end);
+}
+
+/** The path of a field a write may set, or the reason it may not. */
+function settable(field: string): { path: string[] } | { reason: string } {
+    const path = pathOf(field);
+    if (path === null) return { reason: 'not a field name' };
+    if (READ_ONLY.includes(path[0])) {
+        return { reason: `${path[0]} is set by the folder, never by a write` };
+    }
+    return { path };
+}
+
+/**
  * Set every field of a manifest's text, each in the bytes of its own value.
  *
  * A field whose value the manifest already holds is not a change and is not written. A field this
  * cannot write is refused with a reason and nothing else is affected by it. When the result fails
  * to parse, or parses to anything but the source with exactly these fields applied, nothing is
  * written at all: the source comes back with every field refused.
+ *
+ * The text each clear removed is taken where the splice is made, and its index is carried through
+ * the edits that follow it in the same write, so `removed` names the place in the text that is
+ * answered.
  */
-export function setFields(source: string, fields: Record<string, unknown>): EditResult {
+export function setFields(source: string, fields: Record<string, unknown>): SetFieldsResult {
     const changed: string[] = [];
     const refused: Refusal[] = [];
     const applied: Applied[] = [];
+    const points = new Map<string, { offset: number; text: string }>();
 
     const base = safeParse(source);
     if (base === null) {
         for (const field of Object.keys(fields)) {
             refused.push({ field, reason: 'the manifest does not parse' });
         }
-        return { text: source, changed, refused };
+        return { text: source, changed, refused, removed: {} };
     }
 
     let text = source;
     for (const [field, raw] of Object.entries(fields)) {
-        const path = pathOf(field);
-        if (path === null) {
-            refused.push({ field, reason: 'not a field name' });
+        const allowed = settable(field);
+        if ('reason' in allowed) {
+            refused.push({ field, reason: allowed.reason });
             continue;
         }
-        if (READ_ONLY.includes(path[0])) {
-            refused.push({ field, reason: `${path[0]} is set by the folder, never by a write` });
-            continue;
-        }
+        const { path } = allowed;
         const parsed = asFieldValue(raw);
         if (parsed === undefined) {
             refused.push({ field, reason: NOT_A_FIELD_VALUE });
@@ -696,18 +754,30 @@ export function setFields(source: string, fields: Record<string, unknown>): Edit
             refused.push({ field, reason: out.reason });
             continue;
         }
+        for (const point of points.values()) point.offset = moved(point.offset, out.splice);
+        const { from, to, length } = out.splice;
+        if (length === 0 && to > from)
+            points.set(field, { offset: from, text: text.slice(from, to) });
         text = out.text;
         changed.push(field);
         applied.push({ path, value });
     }
 
-    if (changed.length === 0) return { text: source, changed, refused };
+    if (changed.length === 0) return { text: source, changed, refused, removed: {} };
 
     const after = safeParse(text);
     const wanted = safeParse(source);
     if (after !== null && wanted !== null) {
         for (const one of applied) expect(wanted, one.path, one.value);
-        if (isDeepStrictEqual(after, wanted)) return { text, changed, refused };
+        if (isDeepStrictEqual(after, wanted)) {
+            const removed = Object.fromEntries(
+                [...points].map(([field, point]) => [
+                    field,
+                    { ...point, next: lineFrom(text, point.offset) }
+                ])
+            );
+            return { text, changed, refused, removed };
+        }
     }
     return {
         text: source,
@@ -715,6 +785,75 @@ export function setFields(source: string, fields: Record<string, unknown>): Edit
         refused: Object.keys(fields).map((field) => ({
             field,
             reason: 'the edit did not verify; nothing was written'
-        }))
+        })),
+        removed: {}
     };
+}
+
+/** Whether an index falls between the two halves of a surrogate pair. */
+function splitsPair(text: string, at: number): boolean {
+    const before = text.charCodeAt(at - 1);
+    const here = text.charCodeAt(at);
+    return before >= 0xd800 && before <= 0xdbff && here >= 0xdc00 && here <= 0xdfff;
+}
+
+/**
+ * The indexes removed text may go back at, in the order they are tried. First the indexes where the
+ * rest of the line stood: the text from there to the end of its line is `next`, and for whole lines
+ * the index is also a line start. Then, for whole lines only, every line start the first group did
+ * not hold. Each group is ordered by its distance from the recorded index, the earlier index first
+ * at equal distance.
+ */
+function placesOf(text: string, removed: RemovedText): number[] {
+    const whole = removed.text.endsWith('\n');
+    const starts: number[] = [];
+    for (let at = 0; ;) {
+        starts.push(at);
+        const end = text.indexOf('\n', at);
+        if (end < 0) break;
+        at = end + 1;
+    }
+    const followed: number[] = [];
+    for (const start of starts) {
+        const end = start + lineFrom(text, start).length;
+        const at = end - removed.next.length;
+        if (at < start || text.slice(at, end) !== removed.next) continue;
+        if ((whole && at !== start) || splitsPair(text, at)) continue;
+        followed.push(at);
+    }
+    const nearest = (one: number, other: number): number =>
+        Math.abs(one - removed.offset) - Math.abs(other - removed.offset) || one - other;
+    const elsewhere = whole ? starts.filter((start) => !followed.includes(start)) : [];
+    return [...followed.sort(nearest), ...elsewhere.sort(nearest)];
+}
+
+/**
+ * Put text that a clear removed back into a manifest, as the value the field held. It goes at the
+ * first place (`placesOf`) where the new text parses to the source with the field set to `before`,
+ * which is the check `setFields` makes of its own result. When no place passes, the source comes
+ * back unchanged with the field refused.
+ */
+export function insertRemoved(
+    source: string,
+    field: string,
+    before: unknown,
+    removed: RemovedText
+): EditResult {
+    const refusal = (reason: string): EditResult => ({
+        text: source,
+        changed: [],
+        refused: [{ field, reason }]
+    });
+    const allowed = settable(field);
+    if ('reason' in allowed) return refusal(allowed.reason);
+    const wanted = safeParse(source);
+    if (wanted === null) return refusal('the manifest does not parse');
+    expect(wanted, allowed.path, before as FieldValue);
+    for (const at of placesOf(source, removed)) {
+        const text = splice(source, at, at, removed.text);
+        if (isDeepStrictEqual(safeParse(text), wanted)) {
+            return { text, changed: [field], refused: [] };
+        }
+    }
+    return refusal('the removed text does not fit the file');
 }

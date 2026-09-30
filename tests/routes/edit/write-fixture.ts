@@ -12,13 +12,14 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve, sep } from 'node:path';
 import { expect } from 'vitest';
 import { parse } from 'yaml';
-import { readChanges } from '../../../src/lib/server/core/changes.ts';
+import { logChanges, readChanges } from '../../../src/lib/server/core/changes.ts';
 import { fsWrites } from '../../../src/lib/server/core/json.ts';
 import { mintToken } from '../../../src/lib/server/core/auth.ts';
 import { portfolioConfigFrom } from '../../../src/lib/data/index.ts';
 import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
 import type { Project, Tier } from '../../../src/lib/data/model/index.ts';
-import type { Change, ChangeLog } from '../../../src/lib/server/core/changes.ts';
+import { handleWrite } from '../../../src/lib/server/edit/writes.ts';
+import type { Change, ChangeLog, ChangeRecord } from '../../../src/lib/server/core/changes.ts';
 import type { WriteTarget } from '../../../src/lib/server/edit/writes.ts';
 import { present } from '../../fixtures/present.ts';
 import { scratchDir } from '../../fixtures/scratch.ts';
@@ -163,8 +164,58 @@ export function tasksOf(into: WriteTarget): string {
     return readFileSync(join(into.hub, 'tasks', 'tasks.yml'), 'utf8');
 }
 
+/** The manifest of a target, which the manifest cases read back and replace. */
+function manifestFile(into: WriteTarget): string {
+    return join(into.hub, 'projects', 'manuscripts', 'alpha', 'project.yml');
+}
+
 export function manifestOf(into: WriteTarget): string {
-    return readFileSync(join(into.hub, 'projects', 'manuscripts', 'alpha', 'project.yml'), 'utf8');
+    return readFileSync(manifestFile(into), 'utf8');
+}
+
+/** The manifest of a target, replaced by a text that holds the value a case starts from. */
+export function hold(into: WriteTarget, text: string): void {
+    writeFileSync(manifestFile(into), text);
+}
+
+/** One manifest write through the route, and the change it left at the head of the log. */
+export async function wrote(into: WriteTarget, fields: Record<string, unknown>): Promise<Change> {
+    const response = await handleWrite(
+        request({ kind: 'manifest', id: 'alpha', fields }),
+        TOKEN,
+        into
+    );
+    expect(response.status).toBe(200);
+    return changesOf(into)[0];
+}
+
+/** The answer of the undo route for one change. */
+export function undone(into: WriteTarget, change: Change): Promise<Response> {
+    return handleWrite(request({ kind: 'undo', at: change.at }), TOKEN, into);
+}
+
+/**
+ * A record made by hand, appended to the log as if a write had left it, and read back. `removed`
+ * is whatever the case wants the line to carry, well-formed or not.
+ */
+export async function recorded(
+    into: WriteTarget,
+    field: string,
+    before: unknown,
+    after: unknown,
+    removed?: unknown
+): Promise<Change> {
+    const record: ChangeRecord = {
+        file: join('projects', 'manuscripts', 'alpha', 'project.yml'),
+        key: 'alpha',
+        field,
+        before,
+        after,
+        undo: 'field'
+    };
+    if (removed !== undefined) record.removed = removed as ChangeRecord['removed'];
+    await logChanges(into.changes, 'manifest', [record]);
+    return changesOf(into)[0];
 }
 
 /** A deck file of the same shape as config/present.yml, with comments the edit must keep. */

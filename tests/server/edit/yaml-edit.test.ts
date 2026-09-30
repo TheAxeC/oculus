@@ -350,7 +350,7 @@ describe('clearing a key', () => {
 
     it('says a key that is not there is not there, and writes nothing', () => {
         const out = setFields(DOC, { doi: null });
-        expect(out).toEqual({ text: DOC, changed: [], refused: [] });
+        expect(out).toEqual({ text: DOC, changed: [], refused: [], removed: {} });
     });
 });
 
@@ -362,7 +362,7 @@ describe('what is not written', () => {
             pillar: ['tensor', 'sciml'],
             'status.line': 'the line'
         });
-        expect(out).toEqual({ text: DOC, changed: [], refused: [] });
+        expect(out).toEqual({ text: DOC, changed: [], refused: [], removed: {} });
     });
 
     it('refuses id, tier and type', () => {

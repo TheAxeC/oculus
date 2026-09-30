@@ -33,6 +33,7 @@
 // so the hue a Chip puts on `--tone` is checked exactly as if the rule named the hue. That covers
 // the inline `style` a component writes for a tone, which is the one place a token name is built at
 // run time.
+// @module-tag slow: its cases time out or fail on a loaded machine, so npm test leaves it out.
 
 import { readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';

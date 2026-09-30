@@ -82,21 +82,6 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   shared_paths: DESIGN.md with Q107 and Q111 (Q106 writes lines 218 and 402, Q107 361, Q111 140 and 376); HELP.md with Q107 and Q111 (Q106 writes 90 and 296, Q107 127, Q111 254); no two change the same line
   landing: not-started
   round: 0
-- step: Q111
-  executor: agent
-  worker: claude:sonnet
-  model: claude-sonnet-5-5 (the transcript's message.model, read at 21:40)
-  session_id: a08829fc931771f1b (launched 2026-09-30 21:39 local)
-  worktree: .agents/worktrees/Q111
-  base: 34d6a249
-  launched: 2026-09-30 21:39 local
-  report: agents/reviews/Q111-report.md
-  brief_check: agents/reviews/Q111-brief-check.md, every finding closed in the brief (its "Brief check, closed" heading); claude-opus-5-5, 197,316 tokens, 41 tool uses, 10.0 min
-  shared_paths: DESIGN.md with X3d and E3 (Q111 writes lines 140 and 376, X3d 373 and 389, E3 236-327; no two change the same line); HELP.md with X3d (Q111 writes 254, X3d 112-198)
-  builder_usage: 297,174 tokens, 87 tool uses, 29.6 min (report read at 22:10); repair round 1 (same builder, resumed) 332,697 tokens, 19 tool uses, 14.1 min (report at 22:46; `tests/ui/theme/colours.test.ts` timed out once in npm test and passed alone, to be tagged slow at landing under Z64)
-  reviewer_report: agents/reviews/Q111-refuter.md (reviewer a540291c88c1458ad, launched 22:13, served claude-opus-5-5; 230,315 tokens, 51 tool uses, 17.6 min); round 1 reviewer a3574f271682c433f, launched 22:47, served claude-opus-5-5; 195,526 tokens, 39 tool uses, 13.5 min, its run appended to the same file (three findings, each small and inside the brief, fixed at landing)
-  landing: not-started
-  round: 1 (sent 22:32: agents/briefs/Q111-round1.md, seven rulings)
 ```
 
 ## The standing demands (from Axel, in force)
@@ -623,6 +608,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-09-30 23:17. Q111 landed (a cleared field's removed text recorded and put back by its undo); four fixes at landing from its round 1 refutation, and `tests/ui/theme/colours.test.ts` tagged slow. Q106 prepared at 5322b56f and in flight (its builder); Z117 closed (a) in automode (`choices.md`). Q107's dispatch entry, dropped at E3's landing, put back. In flight: X3d (its diagnosis), Q107 (its builder), Q106 (its builder), the three slots. Next: Q107 and Q106 refuted and landed; X3d prepared again from its diagnosis; /spec S3 when a slot frees. Open: none.
 - 2026-09-30 22:24. E3 landed (the apps section to Z103 (b), Z106 (a), Z107 (b2) and Z112 (a)); eight fixes at landing. X3d taken back out of main at its look (22:10); its diagnosis runs. In flight: X3d (its diagnosis), Q111 (its review), Q107 (its builder), the three slots. Next: Q111 landed on its review; /spec S3 when a slot frees. Open: Z113, Z115.
 - 2026-09-30 20:35. Q110 landed (an undo gives a replaced manifest value back as the file held it); two fixes at landing (the pure `coerce` cases moved to a file `npm test` runs, report line 88). Z106 ruled (a), booked as E3. In flight: X3d (its review). Next: /spec E3 and /spec Q106 into the free slots; Q111 after Q110. Open: none.
 - 2026-09-30 20:22. Q108 landed (the merge editor's bars, the empty HPC queue through `Empty`, the drop-mark count, the kit tests moved); one fix at landing in its report; looks on TEST taken. In flight: X3d, Q110 (its round review). U2 prepared, waits for X3d. Next: /spec Q106 into the free slot. Open: Z106.

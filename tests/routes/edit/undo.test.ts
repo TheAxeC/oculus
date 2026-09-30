@@ -8,9 +8,8 @@ import { readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { expect, describe } from 'vitest';
 import { parse } from 'yaml';
-import { logChanges } from '../../../src/lib/server/core/changes.ts';
 import { handleWrite } from '../../../src/lib/server/edit/writes.ts';
-import type { Change, ChangeRecord } from '../../../src/lib/server/core/changes.ts';
+import type { Change } from '../../../src/lib/server/core/changes.ts';
 import type { WriteTarget } from '../../../src/lib/server/edit/writes.ts';
 import {
     AREA,
@@ -21,11 +20,15 @@ import {
     changesOf,
     deckOf,
     deckTarget,
+    hold,
     manifestOf,
     overridesOf,
+    recorded,
     request,
     target,
-    tasksOf
+    tasksOf,
+    undone,
+    wrote
 } from './write-fixture.ts';
 import { it } from '../../fixtures/scratch.ts';
 
@@ -376,46 +379,6 @@ describe('taking a change back', () => {
 });
 
 describe('taking a manifest write back exactly', () => {
-    /** The manifest of a target, replaced by a text that holds the value a case starts from. */
-    function hold(into: WriteTarget, text: string): void {
-        writeFileSync(join(into.hub, 'projects', 'manuscripts', 'alpha', 'project.yml'), text);
-    }
-
-    /** One manifest write through the route, and the change it left at the head of the log. */
-    async function wrote(into: WriteTarget, fields: Record<string, unknown>): Promise<Change> {
-        const response = await handleWrite(
-            request({ kind: 'manifest', id: 'alpha', fields }),
-            TOKEN,
-            into
-        );
-        expect(response.status).toBe(200);
-        return changesOf(into)[0];
-    }
-
-    /** The answer of the undo route for one change. */
-    function undone(into: WriteTarget, change: Change): Promise<Response> {
-        return handleWrite(request({ kind: 'undo', at: change.at }), TOKEN, into);
-    }
-
-    /** A record made by hand, appended to the log as if a write had left it, and read back. */
-    async function recorded(
-        into: WriteTarget,
-        field: string,
-        before: unknown,
-        after: unknown
-    ): Promise<Change> {
-        const record: ChangeRecord = {
-            file: join('projects', 'manuscripts', 'alpha', 'project.yml'),
-            key: 'alpha',
-            field,
-            before,
-            after,
-            undo: 'field'
-        };
-        await logChanges(into.changes, 'manifest', [record]);
-        return changesOf(into)[0];
-    }
-
     it('gives `related: []` back after a link wrote a project into it', async () => {
         const into = target();
         const held = `${MANIFEST}related: []\n`;
