@@ -39,7 +39,7 @@ Case to test:
 | Case | Test (file, describe) |
 |---|---|
 | 1 | socket.test.ts, parseSubscription, "answers the channels and an absent token..." |
-| 2 | same, "answers null for everything that is not a subscribe message" (the nine inputs, plus `''` and a BOM-prefixed message) |
+| 2 | same, "answers null for everything that is not a subscribe message" (the nine inputs) |
 | 3 | same, "keeps the token when it is a string and drops it otherwise, with no other key" |
 | 4 | same, "refuses a message whose own __proto__ key holds the fields" |
 | 5, 6, 7 | hooks.test.ts, "handleHook, fields and refusals", first three tests |
@@ -56,6 +56,10 @@ Case to test:
 | 14, 15, 16 | not new cases, as the brief says; 14 and 16 are existing cases, 15 is `root/socket.ts:104`, unchanged |
 
 After the change and repair round 1 the same three files: `Test Files  3 passed (3)`, `Tests  70 passed (70)` (`npx vitest run` on the three files). No existing case was edited; no file was added.
+
+Case 11 as rewritten in repair round 1, run at landing by the orchestrator on the unchanged tree (a detached tree at 8155b826 with the round's `changes.test.ts` copied in): `npx vitest run tests/server/core/changes.test.ts -t "own __proto__ keys"` printed `pass ... answers a line with its keys in the order they were written and its own __proto__ keys`, `Tests  1 passed | 20 skipped (21)`. The base's hand reader already answers the ruled line in the written key order, so the case holds a behaviour the change preserves.
+
+At landing the three inputs of case 24 that sat inside the cases for 2 and 8 were removed (`''` and the BOM-prefixed message in `socket.test.ts`, the YAML set for `events` in `hooks.test.ts`); case 24 is held by the verify list, as the brief says.
 
 ## DONE / NOT DONE
 

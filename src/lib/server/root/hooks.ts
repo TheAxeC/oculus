@@ -12,11 +12,14 @@
 // this route cannot make sense of, is answered 200 so the hook's own `|| true` never has a real
 // failure to hide, and Axel loses no notification to a shape this route did not expect. The first
 // payload of each hook_event_name is written to stderr once per process, which is how the real
-// shape gets recorded once a hook has actually fired.
+// shape gets recorded once a hook has actually fired. The body is read through a zod schema, and
+// the `notify:` config through one held to `NotifyConfig`, so a field of the wrong type is read as
+// absent or takes its default.
 
 import { json } from '@sveltejs/kit';
 import { execFile as execFileCb } from 'node:child_process';
 import { basename } from 'node:path';
+import { z } from 'zod';
 import type { HookEvent, SessionRecord, SessionsPayload } from '../../data/model/index.ts';
 import { byKey } from '../../data/helpers/guards.ts';
 import { HookStore, patchPayload, type HubLike } from '../sessions/stores/hooks.ts';
@@ -37,14 +40,22 @@ const EVENT_NAMES: Record<string, HookEvent['event']> = {
 };
 
 /**
- * A non-empty string field of the body, or undefined for anything else (absent, empty, wrong type).
- * Not data/helpers/guards' `str`: it takes the body and a key, and an empty string is not a value
- * here.
+ * A string field of the body that carries text: absent, empty or of another type is read as absent.
  */
-function str(body: Record<string, unknown>, key: string): string | undefined {
-    const value = body[key];
-    return typeof value === 'string' && value !== '' ? value : undefined;
-}
+const filledTextShape = z.string().min(1).optional().catch(undefined);
+
+/**
+ * The fields of a hook body this route reads. A field of the wrong type is read as absent, and a
+ * value that is no object at all is refused; the keys the schema does not name are not read.
+ */
+const hookBodyShape = z.object({
+    hook_event_name: z.string().catch(''),
+    session_id: filledTextShape,
+    notification_type: filledTextShape,
+    message: filledTextShape,
+    title: filledTextShape,
+    cwd: filledTextShape
+});
 
 /**
  * One hook body turned into the event the store keeps, or null when it does not carry a
@@ -52,22 +63,21 @@ function str(body: Record<string, unknown>, key: string): string | undefined {
  * arguments, which is what lets tests/server/root/hooks.test.ts cover every case without a request.
  */
 export function handleHook(body: unknown, now: number): HookEvent | null {
-    if (typeof body !== 'object' || body === null || Array.isArray(body)) return null;
-    const record = body as Record<string, unknown>;
-    const name = typeof record.hook_event_name === 'string' ? record.hook_event_name : '';
-    const kind = byKey(EVENT_NAMES, name);
+    const parsed = hookBodyShape.safeParse(body);
+    if (!parsed.success) return null;
+    const fields = parsed.data;
+    const kind = byKey(EVENT_NAMES, fields.hook_event_name);
     if (kind === undefined) return null;
-    const session = str(record, 'session_id');
-    if (session === undefined) return null;
-    const event: HookEvent = { session, event: kind, at: new Date(now).toISOString() };
-    const notificationType = str(record, 'notification_type');
-    if (notificationType !== undefined) event.kind = notificationType;
-    const message = str(record, 'message');
-    if (message !== undefined) event.message = message;
-    const title = str(record, 'title');
-    if (title !== undefined) event.title = title;
-    const cwd = str(record, 'cwd');
-    if (cwd !== undefined) event.cwd = cwd;
+    if (fields.session_id === undefined) return null;
+    const event: HookEvent = {
+        session: fields.session_id,
+        event: kind,
+        at: new Date(now).toISOString()
+    };
+    if (fields.notification_type !== undefined) event.kind = fields.notification_type;
+    if (fields.message !== undefined) event.message = fields.message;
+    if (fields.title !== undefined) event.title = fields.title;
+    if (fields.cwd !== undefined) event.cwd = fields.cwd;
     return event;
 }
 
@@ -100,20 +110,33 @@ const DEFAULT_NOTIFY: NotifyConfig = {
     quietSeconds: 3
 };
 
+/**
+ * The `notify:` map of config/behavior.yml. A field of the wrong type takes its default and the
+ * other fields are kept; a value that is no map is refused. `.inf` is a quiet window that never
+ * ends, which `z.number()` alone refuses. A list keeps its string entries and drops the rest,
+ * where `z.array(z.string())` would refuse the whole list.
+ */
+const notifyShape = z
+    .object({
+        enabled: z.boolean().catch(DEFAULT_NOTIFY.enabled),
+        events: z
+            .array(z.unknown())
+            .transform((all) => all.filter((one): one is string => typeof one === 'string'))
+            .catch(DEFAULT_NOTIFY.events),
+        quiet_seconds: z
+            .union([z.number().min(0), z.literal(Infinity)])
+            .catch(DEFAULT_NOTIFY.quietSeconds)
+    })
+    .transform((held) => ({
+        enabled: held.enabled,
+        events: held.events,
+        quietSeconds: held.quiet_seconds
+    })) satisfies z.ZodType<NotifyConfig>;
+
 /** `notify:` of config/behavior.yml, defensively: a malformed or absent key answers the default. */
 export function notifyConfig(config: Record<string, unknown>): NotifyConfig {
-    const held = config.notify;
-    if (typeof held !== 'object' || held === null || Array.isArray(held)) return DEFAULT_NOTIFY;
-    const raw = held as Record<string, unknown>;
-    const enabled = typeof raw.enabled === 'boolean' ? raw.enabled : DEFAULT_NOTIFY.enabled;
-    const events = Array.isArray(raw.events)
-        ? raw.events.filter((one): one is string => typeof one === 'string')
-        : DEFAULT_NOTIFY.events;
-    const quietSeconds =
-        typeof raw.quiet_seconds === 'number' && raw.quiet_seconds >= 0
-            ? raw.quiet_seconds
-            : DEFAULT_NOTIFY.quietSeconds;
-    return { enabled, events, quietSeconds };
+    const held = notifyShape.safeParse(config.notify);
+    return held.success ? held.data : DEFAULT_NOTIFY;
 }
 
 /**
@@ -228,9 +251,9 @@ export async function handleHookRequest(request: Request, into: HookTarget): Pro
     } catch {
         return json({ ok: true });
     }
-    if (typeof body === 'object' && body !== null && !Array.isArray(body)) {
-        const name = (body as Record<string, unknown>).hook_event_name;
-        if (typeof name === 'string' && name !== '') logFirstPayload(into.logged, name, body);
+    const named = hookBodyShape.safeParse(body);
+    if (named.success && named.data.hook_event_name !== '') {
+        logFirstPayload(into.logged, named.data.hook_event_name, body);
     }
     const event = handleHook(body, now);
     if (event === null) return json({ ok: true });

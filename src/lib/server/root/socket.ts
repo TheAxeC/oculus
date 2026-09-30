@@ -6,7 +6,7 @@
 // The one exception DESIGN.md's "The socket" names is terminal input: a page that carried the write
 // token in its subscribe message may also send `input` and `resize` on a `pty:` channel, which this
 // hands to server/machine/pty/channel.ts. A socket without the token reads every channel and writes
-// to none.
+// to none. The message is read through a zod schema held to the `Subscription` type of data/model.
 //
 // The origin check is the read half of DESIGN.md's "Auth". The server binds 127.0.0.1, but any page
 // open in the browser can address 127.0.0.1, so a connection is refused unless its Origin names
@@ -19,6 +19,7 @@ import type { IncomingMessage, Server } from 'node:http';
 import type { Duplex } from 'node:stream';
 import { WebSocketServer } from 'ws';
 import type { WebSocket } from 'ws';
+import { z } from 'zod';
 import { allowedOrigin } from '../core/auth.ts';
 import type { Hub, Sink } from '../core/channels.ts';
 import { CHANNEL_PREFIX } from '../machine/pty/channel.ts';
@@ -48,6 +49,16 @@ export type Attached = {
     close(): void;
 };
 
+/**
+ * The subscribe message a page sends. A token of the wrong type is dropped and the message kept; a
+ * message of another type, or whose channels are not all strings, is refused.
+ */
+const subscriptionShape = z.object({
+    type: z.literal('subscribe'),
+    channels: z.array(z.string()),
+    token: z.string().optional().catch(undefined)
+}) satisfies z.ZodType<Subscription>;
+
 /** A subscribe message, with the write token when the page sent one, or null when it is not one. */
 export function parseSubscription(data: string): Subscription | null {
     let parsed: unknown;
@@ -56,15 +67,10 @@ export function parseSubscription(data: string): Subscription | null {
     } catch {
         return null;
     }
-    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) return null;
-    const message = parsed as Record<string, unknown>;
-    if (message.type !== 'subscribe' || !Array.isArray(message.channels)) return null;
-    if (!message.channels.every((channel) => typeof channel === 'string')) return null;
-    return {
-        type: 'subscribe',
-        channels: message.channels,
-        token: typeof message.token === 'string' ? message.token : undefined
-    };
+    const message = subscriptionShape.safeParse(parsed);
+    if (!message.success) return null;
+    const { channels, token } = message.data;
+    return { type: 'subscribe', channels, token };
 }
 
 /** The channels of a subscribe message, or null when the message is not one. */

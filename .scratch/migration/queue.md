@@ -1,13 +1,11 @@
 /plan-orchestration oculus/migration
 
 In flight:
-- X3d (the Repositories view and the diff rebuilt to look and work as VS Code's Source Control), base 4fe6ce93: its builder was stopped by Axel 2026-09-30; it is resumed or continued only on his word.
-- Q85a1 (zod at the server's `core` and `root` inputs; Z96 (a)), repair round 1 refuted 2026-09-30 with two findings for the landing; `/land` waits for Axel's go.
-- Nothing is dispatched, prepared or landed until Axel says go.
+- X3d (the Repositories view and the diff rebuilt to look and work as VS Code's Source Control), base 4fe6ce93: its builder was stopped by Axel 2026-09-30; resumed next, on his word.
 Open items: Z103 (the 42 shapes E2 named in the unbuilt apps design).
 Queued, in order:
-- Q108 (the four fixes kept as `agents/reviews/inline-fixes-2026-09-30.patch`: the merge editor's bars, the Live HPC empty line, the slow workbench case, the two kit tests moved; ruling (d)), `/spec` on Axel's go.
-- Q110 (Undo gives an empty list back as an empty list; Z102 (a)), `/spec` on Axel's go.
+- Q108 (the four fixes kept as `agents/reviews/inline-fixes-2026-09-30.patch`: the merge editor's bars, the Live HPC empty line, the slow workbench case, the two kit tests moved; ruling (d)), `/spec` next.
+- Q110 (Undo gives an empty list back as an empty list; Z102 (a)), `/spec` after Q108's.
 - Q106 (Close pane on a pane of two tabs; Z98 (a)), /spec when a slot frees.
 - Q107 (a Terminal tab closing itself, and terminals no tab owns; Z99 (a)), /spec when a slot frees.
 - Q109, once Q107 has landed; Z101 (a) (a terminal's name, icon and colour drawn the moment they are set, and its lines drawn after its tab moves to another pane).
@@ -40,7 +38,8 @@ Queued, in order:
 The loop fills three slots as they free up; a line above is only an order, never a barrier, apart from the "once ... has landed" notes. A step's line moves to Landed, at the top of that list, in its landing commit.
 
 Landed, newest first: every step ticked in `plan.md`, each with the date and the commit that ticked it (the 15 steps dated 2026-09-10 at f8af492b were landed before the ledger was opened):
-- E2 (the apps section of DESIGN.md rewritten to the rulings of Z93), 2026-09-30, 6446898c.
+- Q85a1 (zod at the server's `core` and `root` inputs; Z96 (a)), 2026-09-30, in the commit that ticks it.
+- E2 (the apps section of DESIGN.md rewritten to the rulings of Z93), 2026-09-30, ef10430b.
 - E1 (the design section for apps added while oculus runs; its 31 choices are Z93), 2026-09-30, 3ab29091.
 - Q102 (the terminal working as VS Code's terminal; Z69 (a)), 2026-09-30, 7dde39e2.
 - Q84 (the fetch-and-hold stores on @tanstack/query-core; Z56 (a)), 2026-09-30, 556dcaf2.

@@ -14,11 +14,18 @@
 // An append goes behind the process's write chain, the one the file browser's writes use, so two
 // requests never interleave a line. The time is stamped inside the chain and kept ahead of the last
 // line's, so every record carries its own moment and a page addresses one change by it.
+//
+// A line is read back through a zod schema of the four fields every change carries, which accepts
+// or refuses the parsed line and hands the line itself on.
+//
+// A last line cut off by an interrupted write is closed with a newline before the next record, so
+// that record is read back.
 
 import { json } from '@sveltejs/kit';
 import { appendFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { dirname, join, relative, resolve, sep } from 'node:path';
+import { z } from 'zod';
 import { chained, writeTextAtomic } from './json.ts';
 import type { FsWrites } from './json.ts';
 
@@ -115,19 +122,42 @@ export function same(left: unknown, right: unknown): boolean {
     return keys.every((key) => key in other && same(one[key], other[key]));
 }
 
-/** The lines of the log, blank ones dropped. A file that is not there yet holds none. */
-function linesOf(file: string): string[] {
-    if (!existsSync(file)) return [];
+/** The text of the log, or the empty string for a file that is not there yet or cannot be read. */
+function textOf(file: string): string {
+    if (!existsSync(file)) return '';
     try {
-        return readFileSync(file, 'utf8')
-            .split('\n')
-            .filter((one) => one.trim() !== '');
+        return readFileSync(file, 'utf8');
     } catch {
-        return [];
+        return '';
     }
 }
 
-/** One line as a change, or null when the line is not one: a half-written file loses that line. */
+/** The lines of a log's text, blank ones dropped. */
+function linesIn(text: string): string[] {
+    return text.split('\n').filter((one) => one.trim() !== '');
+}
+
+/** The lines of the log, blank ones dropped. A file that is not there yet holds none. */
+function linesOf(file: string): string[] {
+    return linesIn(textOf(file));
+}
+
+/**
+ * The four fields a line must carry to be a change. Any other field, and any of the rest of a
+ * `Change`, is read as the line holds it: a line oculus did not write may lack them.
+ */
+const changeLineShape = z.looseObject({
+    at: z.string(),
+    kind: z.string(),
+    file: z.string(),
+    field: z.string()
+}) satisfies z.ZodType<Pick<Change, 'at' | 'kind' | 'file' | 'field'>>;
+
+/**
+ * One line as a change, or null when the line is not one: a half-written file loses that line. The
+ * answer is the parsed line itself, so its keys stay in the order written, an own `__proto__` key
+ * stays an own key, and a key the shape does not name is kept; the schema only accepts or refuses.
+ */
 function parseLine(line: string): Change | null {
     let parsed: unknown;
     try {
@@ -135,11 +165,7 @@ function parseLine(line: string): Change | null {
     } catch {
         return null;
     }
-    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) return null;
-    const one = parsed as Record<string, unknown>;
-    if (typeof one.at !== 'string' || typeof one.kind !== 'string') return null;
-    if (typeof one.file !== 'string' || typeof one.field !== 'string') return null;
-    return one as unknown as Change;
+    return changeLineShape.safeParse(parsed).success ? (parsed as Change) : null;
 }
 
 /** Every change the file holds, oldest first. */
@@ -187,7 +213,9 @@ function lastMoment(lines: string[]): number {
  * never walks an unbounded file.
  */
 function append(log: ChangeLog, kind: string, records: ChangeRecord[], undoes?: string): void {
-    const lines = linesOf(log.file);
+    const text = textOf(log.file);
+    const lines = linesIn(text);
+    const closing = text !== '' && !text.endsWith('\n') ? '\n' : '';
     let moment = Math.max(Date.now(), lastMoment(lines) + 1);
     const written = records.map((record) => {
         const one: Change = {
@@ -205,7 +233,7 @@ function append(log: ChangeLog, kind: string, records: ChangeRecord[], undoes?: 
         writeTextAtomic(log.file, `${kept.join('\n')}\n`, MODE);
         return;
     }
-    appendFileSync(log.file, `${written.join('\n')}\n`, { encoding: 'utf8', mode: MODE });
+    appendFileSync(log.file, `${closing}${written.join('\n')}\n`, { encoding: 'utf8', mode: MODE });
 }
 
 /**

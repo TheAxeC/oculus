@@ -88,8 +88,8 @@ function writeAtomic(path: string, content: string | Uint8Array, newMode?: numbe
     writeFileAtomic.sync(path, content, fresh ? { mode: newMode } : {});
 }
 
-// The one map guard, from data/helpers/guards.ts. It is re-exported under the name it has always
-// had here, so the seven session modules that read a transcript line through it are unchanged.
+// The one map guard, from data/helpers/guards.ts, re-exported here beside the helpers `text`,
+// `whole` and `list` below it, which modules of `sessions`, `files` and `git` import.
 export { isMap } from '../../data/helpers/guards.ts';
 
 /** A string value, or the empty string for anything else. */

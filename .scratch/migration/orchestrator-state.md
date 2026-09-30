@@ -28,7 +28,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:      # X3d in flight. Ruled 2026-09-30: Z94 (S3 free), Z95 (L4 free), Z96 (Q85a1 free, Q85a2 to Q85a5 after it). Two steps run side by side when the later landing merges simply onto the earlier, whatever paths they share (Axel); Q66 and Q88b wait for X3d because theirs would be hand merges of whole effects and components.
+dispatch:      # X3d stopped by Axel, resumed on his word of 2026-09-30. Ruled 2026-09-30: Z94 (S3 free), Z95 (L4 free), Z96 (Q85a1 free, Q85a2 to Q85a5 after it). Two steps run side by side when the later landing merges simply onto the earlier, whatever paths they share (Axel); Q66 and Q88b wait for X3d because theirs would be hand merges of whole effects and components.
 - step: X3d
   executor: agent
   worker: claude:sonnet
@@ -41,21 +41,6 @@ dispatch:      # X3d in flight. Ruled 2026-09-30: Z94 (S3 free), Z95 (L4 free), 
   brief_check: agents/reviews/X3d-brief-check.md, every finding closed in the brief (its Closed heading); claude-opus-5-5, 52 tool uses, 301,056 tokens, 12.4 min
   landing: not-started
   round: 0
-- step: Q85a1
-  executor: agent
-  worker: claude:sonnet
-  model: claude-sonnet-5-5 (the transcript's message.model, read after the launch)
-  session_id: ae686eb39be662fd7
-  worktree: .agents/worktrees/Q85a1
-  base: 8155b826
-  launched: 2026-09-30 16:06 local
-  report: agents/reviews/Q85a1-report.md
-  builder_usage: claude-sonnet-5-5, 45 tool uses, 200,240 tokens, 23.5 min; round 1: 23 tool uses, 242,981 tokens, 23.7 min
-  reviewer_report: agents/reviews/Q85a1-refuter.md; claude-opus-5-5, 21 tool uses, 176,149 tokens, 14.1 min; 5 Standards, 1 Proof and 1 Spec finding, all sent in round 1 (`agents/briefs/Q85a1-round1-sent.md`), with the exact zod version and the writer's lost record after a cut-off line added to the round
-  brief_check: agents/reviews/Q85a1-brief-check.md, every finding closed in the brief (its Closed heading); claude-opus-5-5, 47 tool uses, 250,287 tokens, 13.3 min
-  shared_paths: DESIGN.md with X3d and E2 (Q85a1 adds one paragraph after line 146, outside the sections the other two write; git merges the hunks), README.md line 13 and docs/diagrams (a mechanical rerun of `npm run diagrams` at landing)
-  landing: not-started
-  round: 1 (sent 2026-09-30 16:46; the builder's reply came 17:10; refuted by a fresh reviewer on claude-opus-5-5, 22 tool uses, 174,434 tokens, 13.8 min: every round item closed, every item holds, every case met, Spec 1 and Proof 1 for the landing, appended to `agents/reviews/Q85a1-refuter.md`)
 ```
 
 ## The standing demands (from Axel, in force)
@@ -519,6 +504,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-09-30 19:12. Q85a1 landed (`zod` 4.6.5 at the untyped inputs of the server's `core` and `root` folders); two fixes at landing, the three case-24 inputs removed from `socket.test.ts` and `hooks.test.ts` and case 11's run on the unchanged tree added to the report; verify on main `checks: 7 commands passed` (348 files, 5319 tests), the three touched test files with the slow one 70 passed. Q85a2 to Q85a5 are free. Next, in Axel's order: X3d's builder resumed, then /spec Q108, Q110 and U2. Open: Z103.
 - 2026-09-30 19:05. E2 landed (the apps section of `DESIGN.md` rewritten to the rulings of Z93, still unbuilt); two text fixes at landing in the section, three in the report; verify on main `checks: 7 commands passed` (348 files, 5304 tests). Raised: Z103, the 42 shapes E2 named. Next, in Axel's order: /land Q85a1, then X3d's builder resumed, then /spec Q108, Q110 and U2. Open: Z103.
 - 2026-09-30 18:43. Ruled: Z101 (a) booked as Q109, Z102 (a) booked as Q110; Q108 booked on ruling (d). Nothing is in flight; nothing is dispatched, prepared or landed until Axel says go. The plan skills are linked from `~/.local/share/ordo-stable` at tag v2.6.2. Open: none.
 - 2026-09-30 18:31. Nothing is in flight and nothing is sent to any agent without Axel's word. X3d's builder was stopped by Axel. E2's builder has answered its one round (delta unread, `/refute` over the round and `/land` wait for Axel's go). Q85a1's round is refuted with two findings for the landing (`/land` waits for Axel's go). The four changes made on main outside any step are off main and kept as a patch (ruling (d)); U2 waits for its `/spec` with the notes as input (ruling 6 (a)); the rest of Q102's look and Q86c's link are taken (ruling 5 (a)). Open: Z101, Z102. The 17:11 line's "Fixed on main" no longer holds: those changes are in the patch.

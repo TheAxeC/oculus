@@ -147,6 +147,18 @@ function logOf(into: WriteTarget): ChangeLog {
     return log;
 }
 
+/** A log of a fresh target holding exactly `text`, for lines the writer never made. */
+function logHolding(text: string): ChangeLog {
+    const log = logOf(target());
+    writeFileSync(log.file, text);
+    return log;
+}
+
+/** One log line whose four required fields are given and whose other fields are `more`. */
+function lineOf(at: string, more: Record<string, unknown> = {}): string {
+    return JSON.stringify({ at, kind: 'k', file: 'f', field: `x${at}`, ...more });
+}
+
 /** One request as the page makes it. */
 function request(body: unknown): Request {
     return new Request(`http://${HOST}/api/write`, {
@@ -358,6 +370,86 @@ describe('what each writer records', () => {
             fields: { nonesuch: 'a value the schema does not name' }
         });
         expect(lines(into)).toEqual([]);
+    });
+});
+
+describe('reading a line of the log', () => {
+    it('answers a line with its keys in the order they were written and its own __proto__ keys', () => {
+        const line =
+            '{"at":"a","kind":"k","file":"f","key":"q","field":"x","__proto__":{"z":1},"before":{"__proto__":{"z":1},"b":1},"after":1,"undo":"field","more":2}';
+        const [change] = readChanges(logHolding(`${line}\n`));
+        expect(Object.keys(change)).toEqual([
+            'at',
+            'kind',
+            'file',
+            'key',
+            'field',
+            '__proto__',
+            'before',
+            'after',
+            'undo',
+            'more'
+        ]);
+        expect(Object.hasOwn(change, '__proto__')).toBe(true);
+        expect(Object.hasOwn(change.before as object, '__proto__')).toBe(true);
+        expect(change).toHaveProperty('more', 2);
+    });
+
+    it('skips a line that is no change and reads the lines around it', () => {
+        const good = [lineOf('1'), lineOf('2'), lineOf('3')];
+        const text = [
+            good[0],
+            'not json',
+            good[1],
+            '{"at":"a","kind":"k","file":"f","fie',
+            '[]',
+            'null',
+            '"s"',
+            good[2]
+        ].join('\n');
+        expect(readChanges(logHolding(`${text}\n`)).map((one) => one.at)).toEqual(['3', '2', '1']);
+    });
+
+    it('skips a line whose at is no string or that has no field, and reads empty strings', () => {
+        const text = [
+            '{"at":5,"kind":"k","file":"f","field":"x"}',
+            '{"at":"a","kind":"k","file":"f"}',
+            '{"at":"","kind":"","file":"","field":""}',
+            '{"at":"b","kind":"k","file":"f","field":"x"}'
+        ].join('\n');
+        const rows = readChanges(logHolding(`${text}\n`));
+        expect(rows.map((one) => one.at)).toEqual(['b', '']);
+        expect(rows[0]).toStrictEqual({ at: 'b', kind: 'k', file: 'f', field: 'x' });
+    });
+
+    it('takes the last of a key given twice, so a number then a string is read', () => {
+        const numberFirst = '{"at":5,"at":"s","kind":"k","file":"f","field":"x"}';
+        const stringFirst = '{"at":"s","at":5,"kind":"k","file":"f","field":"x"}';
+        expect(readChanges(logHolding(`${numberFirst}\n`)).map((one) => one.at)).toEqual(['s']);
+        expect(readChanges(logHolding(`${stringFirst}\n`))).toEqual([]);
+    });
+
+    it('reads a line with an unknown undo word or a numeric undoes as it is', () => {
+        const text = [lineOf('1', { undo: 'sideways' }), lineOf('2', { undoes: 7 })].join('\n');
+        const rows = readChanges(logHolding(`${text}\n`));
+        expect(rows[1]).toHaveProperty('undo', 'sideways');
+        expect(rows[0]).toHaveProperty('undoes', 7);
+    });
+
+    it('keeps the good lines and stamps a later moment when the last line was cut off', async () => {
+        const first = new Date(Date.now() + 60_000).toISOString();
+        const second = new Date(Date.now() + 61_000).toISOString();
+        const cut = '{"at":"9999-01-01T00:00:00.0';
+        const log = logHolding(`${lineOf(first)}\n${lineOf(second)}\n${cut}`);
+        await logChanges(log, 'manifest', [
+            { file: 'a.yml', key: 'alpha', field: 'f', before: null, after: 1, undo: 'field' }
+        ]);
+        const rows = readChanges(log);
+        expect(rows.map((one) => one.at)).toEqual(expect.arrayContaining([first, second]));
+        const added = rows.find((one) => one.file === 'a.yml');
+        expect(added?.field).toBe('f');
+        expect((added?.at ?? '') > second).toBe(true);
+        expect(readFileSync(log.file, 'utf8').split('\n')).toContain(cut);
     });
 });
 

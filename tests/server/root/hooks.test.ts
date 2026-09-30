@@ -84,6 +84,72 @@ describe('handleHook', () => {
     });
 });
 
+describe('handleHook, fields and refusals', () => {
+    const named = { hook_event_name: 'Stop', session_id: 'a' };
+
+    it('answers null for a body that is not an object or holds no usable name and session', () => {
+        const refused: unknown[] = [
+            null,
+            [],
+            's',
+            3,
+            {},
+            { ...named, session_id: '' },
+            { ...named, session_id: 5 },
+            { ...named, hook_event_name: 3 },
+            { ...named, hook_event_name: 'toString' },
+            JSON.parse('{"__proto__":{"hook_event_name":"Stop","session_id":"a"}}')
+        ];
+        for (const body of refused) {
+            expect(handleHook(body, NOW), JSON.stringify(body)).toBeNull();
+        }
+    });
+
+    it('drops a field of the wrong type or empty and leaves its key absent', () => {
+        const at = new Date(NOW).toISOString();
+        const event = handleHook(
+            {
+                hook_event_name: 'Notification',
+                session_id: 'a',
+                notification_type: 'idle_prompt',
+                message: 'm',
+                title: '',
+                cwd: 7,
+                extra: { x: 1 }
+            },
+            NOW
+        );
+        expect(event).toStrictEqual({
+            session: 'a',
+            event: 'notification',
+            at,
+            kind: 'idle_prompt',
+            message: 'm'
+        });
+        expect(Object.keys(event ?? {})).not.toContain('title');
+        expect(Object.keys(event ?? {})).not.toContain('cwd');
+    });
+
+    it('keeps a blank string as a value and drops only the empty one', () => {
+        const event = handleHook(
+            { hook_event_name: 'Stop', session_id: 'a', message: null, title: ' ' },
+            NOW
+        );
+        expect(event).toStrictEqual({
+            session: 'a',
+            event: 'stop',
+            at: new Date(NOW).toISOString(),
+            title: ' '
+        });
+        expect(handleHook({ ...named, session_id: ' ' }, NOW)?.session).toBe(' ');
+    });
+
+    it('leaves the key of a list or a map field absent', () => {
+        const event = handleHook({ ...named, message: ['m'], cwd: {} }, NOW);
+        expect(Object.keys(event ?? {}).sort()).toEqual(['at', 'event', 'session']);
+    });
+});
+
 describe('HookStore', () => {
     it('keeps the latest event per session and lets an older one expire', () => {
         const store = new HookStore();
@@ -274,6 +340,56 @@ describe('notifyConfig', () => {
     });
 });
 
+describe('notifyConfig, the values it takes and drops', () => {
+    const DEFAULT = {
+        enabled: true,
+        events: ['permission_prompt', 'idle_prompt', 'stop'],
+        quietSeconds: 3
+    };
+
+    it('answers the default for a notify value that is no map', () => {
+        for (const config of [{}, { notify: null }, { notify: [] }, { notify: 's' }]) {
+            expect(notifyConfig(config)).toStrictEqual(DEFAULT);
+        }
+        expect(notifyConfig({ notify: {} })).toStrictEqual(DEFAULT);
+    });
+
+    it('takes the default for a field of the wrong type and keeps the others', () => {
+        expect(notifyConfig({ notify: { enabled: 'no' } }).enabled).toBe(true);
+        expect(notifyConfig({ notify: { events: ['a', 1, null, 'b'] } }).events).toEqual([
+            'a',
+            'b'
+        ]);
+        expect(notifyConfig({ notify: { events: 'a' } }).events).toEqual(DEFAULT.events);
+        expect(notifyConfig({ notify: { events: [] } }).events).toEqual([]);
+        expect(notifyConfig({ notify: { enabled: false, quiet_seconds: 'x' } })).toStrictEqual({
+            ...DEFAULT,
+            enabled: false
+        });
+    });
+
+    it('reads quiet_seconds from zero up, infinity included, and refuses the rest', () => {
+        const seconds = (value: unknown): number =>
+            notifyConfig({ notify: { quiet_seconds: value } }).quietSeconds;
+        expect(seconds(0)).toBe(0);
+        expect(seconds(2.5)).toBe(2.5);
+        expect(seconds(Infinity)).toBe(Infinity);
+        expect(seconds(2 ** 60)).toBe(2 ** 60);
+        expect(seconds(-1)).toBe(3);
+        expect(seconds('4')).toBe(3);
+        expect(seconds(Number.NaN)).toBe(3);
+        expect(seconds(-Infinity)).toBe(3);
+        expect(Object.is(seconds(-0), -0)).toBe(true);
+    });
+
+    it('answers exactly the three fields of a notify map with more keys', () => {
+        const held = notifyConfig({
+            notify: { enabled: false, events: ['x'], quiet_seconds: 9, other: 1 }
+        });
+        expect(held).toStrictEqual({ enabled: false, events: ['x'], quietSeconds: 9 });
+    });
+});
+
 function target(over: Partial<HookTarget> = {}): HookTarget {
     return {
         store: new HookStore(),
@@ -363,6 +479,54 @@ describe('handleHookRequest, the event filter', () => {
         );
         expect(response.status).toBe(200);
         expect(calls).toHaveLength(0);
+    });
+});
+
+describe('handleHookRequest, the first payload of each name', () => {
+    it('logs the first body of a name as it was sent and never the second', async () => {
+        const stderr = vi.spyOn(console, 'error').mockImplementation(noop);
+        const sent = '{"hook_event_name":"SessionStart","session_id":"a","transcript_path":"/x"}';
+        const into = target();
+        const first = await handleHookRequest(request(sent), into);
+        const second = await handleHookRequest(request(sent), into);
+        expect(first.status).toBe(200);
+        expect(second.status).toBe(200);
+        expect(into.store.latest('a', NOW)).toBeNull();
+        expect(stderr).toHaveBeenCalledTimes(1);
+        expect(stderr).toHaveBeenCalledWith(`hooks: first SessionStart payload: ${sent}`);
+        stderr.mockRestore();
+    });
+
+    it('logs a name once per name and with every key the body holds', async () => {
+        const stderr = vi.spyOn(console, 'error').mockImplementation(noop);
+        const into = target();
+        await handleHookRequest(
+            request('{"hook_event_name":"Stop","session_id":"a","stop_hook_active":true}'),
+            into
+        );
+        expect(stderr).toHaveBeenCalledWith(
+            'hooks: first Stop payload: {"hook_event_name":"Stop","session_id":"a","stop_hook_active":true}'
+        );
+        stderr.mockRestore();
+    });
+
+    it('logs nothing for a body without a usable name, and answers 200', async () => {
+        const stderr = vi.spyOn(console, 'error').mockImplementation(noop);
+        for (const body of [
+            '[]',
+            'null',
+            '3',
+            '{}',
+            '{"hook_event_name":""}',
+            '{"hook_event_name":3}',
+            '',
+            'not json'
+        ]) {
+            const response = await handleHookRequest(request(body), target());
+            expect(response.status, body).toBe(200);
+        }
+        expect(stderr).not.toHaveBeenCalled();
+        stderr.mockRestore();
     });
 });
 

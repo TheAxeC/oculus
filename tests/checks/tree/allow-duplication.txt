@@ -28,7 +28,6 @@ src/lib/server/edit/entry-edit/lines.ts src/lib/server/edit/yaml-edit.ts a4f9b3e
 src/lib/server/git/deposit-routes.ts src/lib/server/git/git-routes.ts 2e395e19649f the same 6 lines at 176 and 266, to fold into one place
 src/lib/server/git/deposit.ts src/lib/state/system/deposit.svelte.ts e81afc4ebda6 the same 30 lines at 100 and 14, to fold into one place
 src/lib/server/machine/hpc/parse.ts src/lib/state/system/hpc.ts 8ead1c0cdafe the same 7 lines at 25 and 20, to fold into one place
-src/lib/server/machine/pty/channel.ts src/lib/server/root/socket.ts e5967afe7abb the same 10 lines at 96 and 52, to fold into one place
 src/lib/shell/rail/RailPages.svelte src/lib/views/system/workbench/Catalogue.svelte 3e68f3880de2 the same 10 lines at 205 and 218, to fold into one place
 src/lib/state/feeds/inbox.ts src/lib/state/workbench/rail-badges.ts 21eb92351744 the same 10 lines at 45 and 21, to fold into one place
 src/lib/state/feeds/leads.ts src/lib/state/feeds/radar.ts c0785dd03b7f the same 12 lines at 145 and 82, to fold into one place

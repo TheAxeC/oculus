@@ -11,7 +11,11 @@ import { afterEach, describe, expect, it } from 'vitest';
 import WebSocket from 'ws';
 import { Hub } from '../../../src/lib/server/core/channels.ts';
 import { allowedOrigin } from '../../../src/lib/server/core/auth.ts';
-import { attachSocket, subscriptionChannels } from '../../../src/lib/server/root/socket.ts';
+import {
+    attachSocket,
+    parseSubscription,
+    subscriptionChannels
+} from '../../../src/lib/server/root/socket.ts';
 import type { Attached, TerminalSink } from '../../../src/lib/server/root/socket.ts';
 import type { Message } from '../../../src/lib/data/model/index.ts';
 import { noop } from '../../fixtures/doubles.ts';
@@ -91,6 +95,57 @@ describe('subscriptionChannels', () => {
         expect(subscriptionChannels('{"type":"subscribe","channels":[3]}')).toBe(null);
         expect(subscriptionChannels('["subscribe"]')).toBe(null);
         expect(subscriptionChannels('not json')).toBe(null);
+    });
+});
+
+describe('parseSubscription', () => {
+    it('answers the channels and an absent token for a plain subscribe message', () => {
+        expect(parseSubscription('{"type":"subscribe","channels":["a"]}')).toStrictEqual({
+            type: 'subscribe',
+            channels: ['a'],
+            token: undefined
+        });
+    });
+
+    it('answers null for everything that is not a subscribe message', () => {
+        for (const text of [
+            'x',
+            'null',
+            '[]',
+            '"s"',
+            '3',
+            '{"type":"other","channels":[]}',
+            '{"type":"subscribe"}',
+            '{"type":"subscribe","channels":{"0":"a"}}',
+            '{"type":"subscribe","channels":["a",1]}'
+        ]) {
+            expect(parseSubscription(text), text).toBeNull();
+        }
+    });
+
+    it('keeps the token when it is a string and drops it otherwise, with no other key', () => {
+        const dropped = parseSubscription('{"type":"subscribe","channels":[],"token":5,"extra":1}');
+        expect(dropped).toStrictEqual({ type: 'subscribe', channels: [], token: undefined });
+        expect(Object.keys(dropped ?? {})).toEqual(['type', 'channels', 'token']);
+        expect(parseSubscription('{"type":"subscribe","channels":[],"token":null}')).toStrictEqual({
+            type: 'subscribe',
+            channels: [],
+            token: undefined
+        });
+        expect(parseSubscription('{"type":"subscribe","channels":[],"token":""}')).toStrictEqual({
+            type: 'subscribe',
+            channels: [],
+            token: ''
+        });
+        expect(parseSubscription('{"type":"subscribe","channels":[],"token":"t"}')).toStrictEqual({
+            type: 'subscribe',
+            channels: [],
+            token: 't'
+        });
+    });
+
+    it('refuses a message whose own __proto__ key holds the fields', () => {
+        expect(parseSubscription('{"__proto__":{"type":"subscribe","channels":[]}}')).toBeNull();
     });
 });
 
