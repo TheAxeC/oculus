@@ -206,3 +206,194 @@ Model: claude-opus-5-5 (Opus 5.5)
 
 
 Usage: reviewer a540291c88c1458ad, served claude-opus-5-5; 230,315 tokens, 51 tool uses, 17.6 min (from its completion notice)
+
+## Repair round 1, refuted
+
+Reviewed in worktree `/Users/axelfaes/workspace/research-hub/.agents/worktrees/Q111`, base `34d6a249`. The round's delta was read against the whole diff since the base.
+
+**Summary.** All seven rulings are closed. I reproduced each of the three scratch-copy failures myself. There are three new small findings. Each can be fixed at landing and none needs another round:
+- Standards 1: two head comments are false.
+- Proof 1: two rows of case 26 carry text that cannot fit.
+- Proof 2: one sentence in the report is false.
+
+**What the round changed.** No commit or tree state was recorded when the round was sent. I therefore took the round's delta from file modification times (`stat -f '%Sm %N'`). Five files carry 22:33:25, after the round was sent at 22:32:
+- `DESIGN.md`
+- `HELP.md`
+- `yaml-edit.ts`
+- `tests/routes/edit/undo-removed.test.ts`
+- `tests/server/edit/yaml-edit-removed.test.ts`
+
+The other five code files are older (21:44 to 22:01).
+
+Inside `yaml-edit.ts`, every function sits exactly two lines lower than the first review cited it (`grep -n`):
+
+| Function or line | First review | Now |
+|---|---|---|
+| `SetFieldsResult` | 69 | 71 |
+| `setFields` | 712 | 714 |
+| `placesOf` | 805 | 807 |
+| tie-break | 823 | 825 |
+| `insertRemoved` | 834 | 836 |
+
+That fits a head comment grown by two lines and no code change. This comes from line positions, not a byte diff of the round.
+
+```
+$ npm run diagrams            (exit 0; git status --short before and after: the same 13 paths, none under docs/diagrams)
+$ sh ~/.claude/skills/land/templates/checks.sh /Users/axelfaes/workspace/research-hub/tools/oculus/.scratch/migration/orchestrator-state.md   (exit 0, 762 lines; build asset table and plugin notes elided)
+$ npm test
+ Test Files  352 passed | 19 skipped (371)
+      Tests  5408 passed | 559 skipped (5967)
+$ npm run test:checks
+ Test Files  27 passed | 2 skipped (29)
+      Tests  365 passed | 9 skipped (374)
+$ npm run check
+1790801493226 COMPLETED 2476 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+$ npm run build
+$ npm run format:check
+All matched files use Prettier code style!
+$ npm run lint
+> eslint .
+$ ! LC_ALL=C grep -rna '[^ -~]' src tests
+checks: 7 commands passed
+```
+
+`npm test` passed on its first run here. `tests/ui/theme/colours.test.ts` did not time out, which it did in the builder's first run.
+
+Commands the round's report quotes, rerun in the same form:
+
+```
+$ npx vitest run tests/routes/edit tests/server/edit --reporter=dot
+ Test Files  13 passed (13)
+      Tests  365 passed (365)
+$ npx vitest run tests/routes/edit/undo-removed.test.ts tests/server/edit/yaml-edit-removed.test.ts
+ Test Files  2 passed (2)
+      Tests  61 passed (61)
+$ grep -n "as before\|as today" <the two new test files, yaml-edit.ts, manifest.ts, undo.ts, changes.ts>
+ (no output, exit 1)
+$ LC_ALL=C grep -c '[^ -~]' DESIGN.md HELP.md
+HELP.md:0
+DESIGN.md:0
+$ sed -n 184p src/lib/server/edit/writes/undo.ts ; sed -n 415p src/lib/server/edit/writes/manifest.ts ; grep -o 'writes/undo.ts:[0-9]*\|writes/manifest.ts:[0-9]*' DESIGN.md
+    if (change.undo === 'none') return { error: 'nothing' };
+                undo: 'none'
+writes/undo.ts:184
+writes/manifest.ts:415
+```
+
+### The three scratch-copy failures, rerun by me
+
+The scratch copy was a copy of `tools/oculus` under `$TMPDIR` without `node_modules`, `.svelte-kit`, `build`, `local.yml` or `.scratch`, with the worktree's `node_modules` linked. Before any change, the two new files passed on the copy: `Tests 61 passed (61)`.
+
+**Ruling 1.** I added an early `insertRemoved` call to `writeManifest`, placed before `named` and the schema loop. It writes when the lines fit and returns.
+
+```
+ x refuses a record of a field no write may set, whatever removed says
+AssertionError: expected 200 to be 400 // Object.is equality
+      Tests  1 failed | 34 skipped (35)
+```
+
+**Ruling 2.** I loosened `removedOf` four ways and ran the ten case 14 variants each time.
+
+```
+A  offset: any number accepted     : x negative offset, x fractional offset          2 failed | 8 passed
+B  offset: taken through Number()  : x negative, x fractional, x offset written as text   3 failed | 7 passed
+C  next: String(next ?? '')        : x no next, x a next that is a number            2 failed | 8 passed
+D  text: String(text)              : none                                           10 passed
+```
+
+**Ruling 3.** I changed `|| one - other` to `|| other - one` in `placesOf`.
+
+```
+ x tries the earlier of two places at the same distance
+AssertionError: expected 'a: 1\n# --\nx: 2\nb: 2\n# --\n' to be 'a: 1\nb: 2\n# --\nx: 2\n# --\n'
+      Tests  1 failed | 25 passed (26)
+```
+
+Each file was restored after its probe, checked with `diff -q` against the worktree. On the worktree, all three tests pass (61 passed above).
+
+**Ruling 4, the first-run table.** I reversed the step's `src` diff on the copy with `patch -R` over `git diff 34d6a249 -- src`. That gives `yaml-edit.ts` 720, `manifest.ts` 354, `undo.ts` 305 and `changes.ts` 267 lines. Result: `Tests 44 failed | 17 passed (61)`.
+- The 17 that pass are the ones the report names: cases 10, 13 and 14 (ten), case 26, the two "keeps nothing" tests, "refuses a group with no removed lines, or lines that fit nowhere", and "refuses to write over a field edited since".
+- Each pure test fails with the message the new table gives. For example: "reports only the fields that were written" fails with `TypeError: Cannot convert undefined or null to object`, and "tries the earlier of two places at the same distance" fails with `TypeError: insertRemoved is not a function`.
+
+The scratch copy and every probe file were removed. `ls -d $TMPDIR/q111-*` matches nothing, and the worktree's `git status --short` lists the same 13 paths as at the start.
+
+### Verdicts (the whole diff since the base)
+
+Items of "What to build":
+
+- **1: holds.**
+  - `SetFieldsResult` is at `yaml-edit.ts:71`, and `EditResult` is unchanged.
+  - Each removal is taken at its own splice, `points.set` when `length === 0 && to > from`.
+  - Points are carried through later splices by `moved` (`yaml-edit.ts:681`), and `next` is taken by `lineFrom` after the final check.
+  - A refused or unverified write answers `removed: {}`.
+  - Evidence: the six shapes, two fields and moved-point tests pass here, and each fails on the unchanged source (the table above).
+- **2: holds.** `RemovedText` and `removed?` carry doc comments in `changes.ts`. `writeManifest` sets `removed` only where `byKey(edit.removed, field)` finds an entry. Case 16's three tests pass.
+- **3: holds.**
+  - Every `writeManifest` check runs before `putBack`, and `insertRemoved` repeats `READ_ONLY` through `settable`.
+  - The order of places, the tie rule and the surrogate rule are each shown red under mutation (ruling 1 probe, ruling 3 probe) and green on the worktree.
+  - The fall to the value write, and to the group refusal, is shown by cases 10, 13, 14 and "refuses a group with no removed lines".
+- **4: holds.** "puts the removal back again when the undo itself is undone" passes, and the second clear's `removed` equals the first's.
+- **5: violated in one part, Standards 1.**
+  - Holds: the three doc sentences now carry the partial-line clause (DESIGN.md:140, DESIGN.md:376, HELP.md:254, read in the diff). The `yaml-edit.ts` head comment and the `yaml-edit-removed.test.ts` head comment are corrected.
+  - Violated: the head comments of `manifest.ts` and `undo.ts` still say the value comes back "as a new line".
+
+Cases:
+
+- 1 to 13: met, by the tests the first review names, all passing in the 61.
+- 14: met. Proof 2 of the first review is closed (probes A and B above).
+- 15 to 25: met, as in the first review.
+- 26: met. Proof 1 of the first review is closed (ruling 1 probe). The `id` and `type` rows still carry text that cannot fit: Proof 1 below.
+- 27, 28: met.
+
+### Findings
+
+**Standards 1: two head comments are false.**
+- Where:
+  - `src/lib/server/edit/writes/manifest.ts:12-14`: "hands them back to `writeManifest`, which puts them where they stood when they fit the file and writes the value as a new line when they do not."
+  - `src/lib/server/edit/writes/undo.ts:13-14`: "writes the value as a new line only when they fit nowhere."
+- What is wrong:
+  - For text removed from inside a line (a flow map's key) whose following text was edited, the value is written inside the existing line, not as a new line.
+  - Probe on the scratch copy: `setFields` clears `status.line` of `status: { line: "x", chips: [a] }`, then `chips` is edited to `[a, b]`. `insertRemoved` answers `the removed text does not fit the file`, and the value write gives `id: alpha\nstatus: { chips: [a, b], line: x }\n`.
+  - Ruling 7 corrected this same sentence in DESIGN.md and HELP.md. These two head comments now contradict DESIGN.md:140.
+  - Item 5 asks the head comments of `manifest.ts` and `undo.ts` to be corrected where the change makes them false.
+  - This text dates from the first build. The first review did not flag it, and the round did not touch these files.
+- Failure scenario: a maintainer reads `undo.ts`'s head, expects a cleared flow-map key whose neighbour changed to come back on a line of its own, and looks for a bug when it comes back inside the map.
+- Verdict: item 5 violated in this part.
+- Fix: small and inside the brief. Reword both comments as ruling 7 worded the docs. Can be done at landing.
+
+**Proof 1: two case 26 rows carry text that cannot fit.**
+- Where: `tests/routes/edit/undo-removed.test.ts:305-306`: "Each record keeps lines that fit the top of the manifest, so an insertion made before the checks would write them." The rows are `['id', 'beta', 'alpha', 'id: beta\n', ...]` and `['type', 'idea', 'manuscript', 'type: idea\n', ...]`.
+- What is wrong:
+  - Ruling 1 asked that each refused field get a `removed` whose text fits the file. For `id` and `type` the file already holds the key, so `id: beta\n` and `type: idea\n` at offset 0 make a second key and never fit.
+  - A fitting text exists for both. Probe on the scratch copy with `insertRemoved`'s own `settable` check removed:
+    - `id: beta\n# ` with `next: 'id: alpha'` answers `changed ["id"]`;
+    - `type: idea\n# ` with `next: 'type: manuscript'` answers `changed ["type"]`;
+    - the committed texts answer `the removed text does not fit the file` for both.
+  - Consequence: with `settable` removed from `insertRemoved`, the route test still passes. `type` is the one field whose only guard on the insertion path is that check, since `readValue` accepts it.
+  - The pure test "refuses the fields a write never sets, and a name that is not a field" catches the same mutation (`Tests 1 failed | 60 passed (61)`), so the behaviour is guarded. The route rows for `id` and `type` and the comment still claim more than they check.
+- Failure scenario: a reader trusts the comment and believes the route test proves that `type` can never be inserted. If the pure test is later moved or loosened, a dropped `READ_ONLY` check in `insertRemoved` writes a second `type:` key through a hand-edited log line, and the route suite stays green.
+- Verdict: case 26 stays met on its stated result. The finding is against the test.
+- Fix: small. Use the two fitting texts above, each with its `next`. Can be done at landing.
+
+**Proof 2: one sentence in the round's report is false.**
+- Where: `.scratch/migration/agents/reviews/Q111-report.md`, "Repair round 1", the ruling 2 row: "a text of no characters, a non-object, a non-string text or a missing next cannot be inserted by any `removedOf`, so their result does not depend on the validation".
+- What is wrong: probe C (`next: String(next ?? '')`) turns "no next" and "a next that is a number" red. Those two variants do guard the `next` validation. The tests are stronger than the report says; the sentence is what is wrong.
+- The decision that rests on it is whether those variants are worth keeping.
+- Failure scenario: a reader of the report removes the two variants as redundant, and a coerced `next` then goes unnoticed.
+- Verdict: none.
+- Fix: correct the sentence in the report at landing.
+
+### Declined to judge
+
+- **The look at History on the TEST page.** That look is the orchestrator's at landing, and the reviewer starts no server.
+- **"When the following text is gone" in the three doc sentences.** The code also falls to line starts when the following text is still there but no place of it passes the check (case 10). The sentence follows the brief's item 5 wording and does not describe that path. I did not judge whether the brief's wording should change.
+- **Undo cost and duplicate storage.** Two points are left open:
+  - The cost of an undo on a large manifest (one parse per place tried) is not measured by any command here.
+  - A large cleared block is held twice in the log, in `before` and in `removed.text`. That shape was ruled under Z110 (c), so it is the user's call.
+- **A `removedOf` that skips the `text` type check without coercing it.** For "text that is a number", such a `removedOf` would reach `removed.text.endsWith` in `placesOf`. I did not run that mutation, so whether the test turns red there is not verified.
+
+Reviewer usage: tokens and minutes not measured by the reviewer (the runner's completion notice holds them); about 25 tool uses.
+
+Model: claude-opus-5-5 (Opus 5.5)
+
+Usage: round 1 reviewer a3574f271682c433f, served claude-opus-5-5; 195,526 tokens, 39 tool uses, 13.5 min (from its completion notice)

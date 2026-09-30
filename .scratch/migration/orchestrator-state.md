@@ -55,6 +55,33 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   brief_check: agents/reviews/U2-brief-check.md, every finding closed in the brief (its Closed heading); claude-opus-5-5, 70 tool uses, 160,458 tokens, 9.9 min
   landing: not-started
   round: 0
+- step: Q107
+  executor: agent
+  worker: claude:sonnet
+  model: claude-sonnet-5-5 (the transcript's message.model, read at 22:18)
+  session_id: a47f5dbf141e5a482 (launched 2026-09-30 22:17 local)
+  worktree: .agents/worktrees/Q107
+  base: dcef00c9
+  launched: 2026-09-30 22:17 local
+  report: agents/reviews/Q107-report.md (with agents/reviews/Q107-probe.mjs)
+  brief_check: agents/reviews/Q107-brief-check.md, every finding closed in the brief (its "Closed" heading), the layout path's fix waiting on Z115 and Attach to Session's place on Z116; claude-opus-5-5, 223,547 tokens, 87 tool uses, 12.3 min
+  shared_paths: DESIGN.md with E3 and Q111 (Q107 writes line 361, E3 236-327, Q111 140 and 376); HELP.md with Q111 (Q107 writes 127, Q111 254); no two change the same line
+  landing: not-started
+  round: 0 (the Z115 (a) layout fix sent to the builder as a message at 22:42, inside its brief's item 2; not a repair round)
+- step: Q106
+  executor: agent
+  worker: claude:sonnet
+  model: claude-sonnet-5-5 (the transcript's message.model, read at 23:01)
+  session_id: ac7f6a74e4b8bc420 (launched 2026-09-30 23:01 local)
+  worktree: .agents/worktrees/Q106
+  base: 5322b56f
+  launched: 2026-09-30 23:01 local
+  report: agents/reviews/Q106-report.md
+  brief_check: agents/reviews/Q106-brief-check.md, every finding closed in the brief (its "Closed" heading), the palette's landing closed as Z117 (a) in automode; claude-opus-5-5, 228,851 tokens, 70 tool uses, 17.5 min
+  diagnosis: agents/reviews/Q106-diagnosis.md
+  shared_paths: DESIGN.md with Q107 and Q111 (Q106 writes lines 218 and 402, Q107 361, Q111 140 and 376); HELP.md with Q107 and Q111 (Q106 writes 90 and 296, Q107 127, Q111 254); no two change the same line
+  landing: not-started
+  round: 0
 - step: Q111
   executor: agent
   worker: claude:sonnet
@@ -67,7 +94,7 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   brief_check: agents/reviews/Q111-brief-check.md, every finding closed in the brief (its "Brief check, closed" heading); claude-opus-5-5, 197,316 tokens, 41 tool uses, 10.0 min
   shared_paths: DESIGN.md with X3d and E3 (Q111 writes lines 140 and 376, X3d 373 and 389, E3 236-327; no two change the same line); HELP.md with X3d (Q111 writes 254, X3d 112-198)
   builder_usage: 297,174 tokens, 87 tool uses, 29.6 min (report read at 22:10); repair round 1 (same builder, resumed) 332,697 tokens, 19 tool uses, 14.1 min (report at 22:46; `tests/ui/theme/colours.test.ts` timed out once in npm test and passed alone, to be tagged slow at landing under Z64)
-  reviewer_report: agents/reviews/Q111-refuter.md (reviewer a540291c88c1458ad, launched 22:13, served claude-opus-5-5; 230,315 tokens, 51 tool uses, 17.6 min); round 1 reviewer a3574f271682c433f, launched 22:47, served claude-opus-5-5, running
+  reviewer_report: agents/reviews/Q111-refuter.md (reviewer a540291c88c1458ad, launched 22:13, served claude-opus-5-5; 230,315 tokens, 51 tool uses, 17.6 min); round 1 reviewer a3574f271682c433f, launched 22:47, served claude-opus-5-5; 195,526 tokens, 39 tool uses, 13.5 min, its run appended to the same file (three findings, each small and inside the brief, fixed at landing)
   landing: not-started
   round: 1 (sent 22:32: agents/briefs/Q111-round1.md, seven rulings)
 ```
