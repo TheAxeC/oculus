@@ -64,6 +64,8 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   base: 1c95c890
   launched: 2026-09-30 21:07 local
   report: agents/reviews/E3-report.md
+  builder_usage: 182,505 tokens, 48 tool uses, 10.9 min (report at 21:18; one read-only `git diff --stat` run against the no-git rule, stated in its report)
+  reviewer_report: agents/reviews/E3-refuter.md (reviewer ac1301d307cfb017c, launched 21:19, served claude-opus-5-5; running)
   brief_check: agents/reviews/E3-brief-check.md, every finding closed in the brief (its "Brief check, closed" heading), finding 4 by Z107 (b2); claude-opus-5-5, 44 tool uses, 177,191 tokens, 8.9 min
   shared_paths: DESIGN.md with X3d; E3 writes lines 236-327 (the apps section) and X3d the Source Control lines near 373 and 389, sections apart, so the cherry-pick merges without a conflict
   landing: not-started
@@ -130,7 +132,7 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is booked as its own step in `plan.md` and carried in the Booked section below, since it needs no ruling from him.
 
-None.
+- Z109 (raised 2026-09-30 21:17, on Axel's question whether to raise `workers_at_once` from 3 to 4 or 5; the configuration block). Measured: 11 cores, 18 GB (`sysctl`), at 21:16 a load average of 11.37 and 3.5 of 5 GB swap in use (`uptime`, `sysctl vm.swapusage`) with three builders and two read-only agents running; `vite.config.ts:39-42` caps vitest at 4 workers per suite so that three worktrees fit; 95 review files name a test timed out, the latest ones attributing it to the load of the whole suite (Q85a1, Q102, Q86c, D13b, Q83). Landings: 10 on 2026-09-30 by `git log`, with gaps of 8 h (02:45 to 10:48) and 4.7 h (14:25 to 19:05) from stops and a stopped builder; slots stood empty tonight because the orchestrator did not fill them. (a) Keep 3 and fill every free slot in the turn it frees; step preparation (/spec, brief checks, diagnosis agents) keeps running beside the three builders. For: the measured losses are stalls, not the cap; no more load. Against: no more throughput when all three are full. (b) 4, with vitest at 3 workers per suite. For: one more builder. Against: each suite runs slower, more timed-out cases, one more landing and look queued behind the one orchestrator and the one TEST page. (c) 5. For: the most builders. Against: (b)'s costs larger, swap already in use. (b) and (c) are the lazy options: a number changed in place of filling the slots. Recommendation: (a), measured over the next ten landings; raise to (b) if every slot stays full and landings still wait on builders.
 
 ## Time per step (Axel asked 2026-09-27 for how it evolves with Q77; measured from each builder's transcript: each tool call from call to result, each background wait from the builder stopping to the run waking it)
 
