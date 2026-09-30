@@ -42,6 +42,7 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   builder_usage: first builder a11909a88a5a84663 stopped at 17:27 with no completion notice, so no usage; continuation builder 79,680 tokens, 245 tool uses, 63.4 min (report at 20:26); repair round 1 (same builder ab6d7c7cab135b864, resumed) 126,557 tokens, 165 tool uses, 37.0 min (report at 21:31)
   reviewer_report: agents/reviews/X3d-refuter.md (reviewer a2a724fb5c78af633, launched 20:28, served claude-opus-5-5; 168,282 tokens, 144 tool uses, 24.9 min); round 1 reviewer ac8f66eda09c032d1, launched 21:33, served claude-opus-5-5; 253,519 tokens, 88 tool uses, 17.8 min, its run appended to the same file
   brief_check: agents/reviews/X3d-brief-check.md, every finding closed in the brief (its Closed heading); claude-opus-5-5, 52 tool uses, 301,056 tokens, 12.4 min
+  diagnosis: agents/reviews/X3d-diagnosis.md (`/diagnose oculus/migration X3d red line`, agent a960e7fd2f6310fd5, launched 22:13, served claude-opus-5-5, running)
   landing: backed-out (2026-09-30 22:10: the TEST page hung with the Repositories view on screen, main with the step staged; saved as agents/reviews/X3d-landing-attempt.patch with the landing fixes; see Step 0)
   round: 1 (sent 20:53: agents/briefs/X3d-round1.md, ten rulings; round base diff shasum 3c86229caf49784e2f051b5d065e39562631a4b7)
 - step: U2
@@ -70,6 +71,19 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   shared_paths: DESIGN.md with X3d; E3 writes lines 236-327 (the apps section) and X3d the Source Control lines near 373 and 389, sections apart, so the cherry-pick merges without a conflict
   landing: not-started
   round: 1 (sent 21:36: agents/briefs/E3-round1.md, eleven rulings; Spec 4 waits on Z112 and is added at landing)
+- step: Q107
+  executor: agent
+  worker: claude:sonnet
+  model: claude-sonnet-5-5 (the transcript's message.model, read at 22:18)
+  session_id: a47f5dbf141e5a482 (launched 2026-09-30 22:17 local)
+  worktree: .agents/worktrees/Q107
+  base: dcef00c9
+  launched: 2026-09-30 22:17 local
+  report: agents/reviews/Q107-report.md (with agents/reviews/Q107-probe.mjs)
+  brief_check: agents/reviews/Q107-brief-check.md, every finding closed in the brief (its "Closed" heading), the layout path's fix waiting on Z115 and Attach to Session's place on Z116; claude-opus-5-5, 223,547 tokens, 87 tool uses, 12.3 min
+  shared_paths: DESIGN.md with E3 and Q111 (Q107 writes line 361, E3 236-327, Q111 140 and 376); HELP.md with Q111 (Q107 writes 127, Q111 254); no two change the same line
+  landing: not-started
+  round: 0
 - step: Q111
   executor: agent
   worker: claude:sonnet
@@ -82,6 +96,7 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   brief_check: agents/reviews/Q111-brief-check.md, every finding closed in the brief (its "Brief check, closed" heading); claude-opus-5-5, 197,316 tokens, 41 tool uses, 10.0 min
   shared_paths: DESIGN.md with X3d and E3 (Q111 writes lines 140 and 376, X3d 373 and 389, E3 236-327; no two change the same line); HELP.md with X3d (Q111 writes 254, X3d 112-198)
   builder_usage: 297,174 tokens, 87 tool uses, 29.6 min (report read at 22:10)
+  reviewer_report: agents/reviews/Q111-refuter.md (reviewer a540291c88c1458ad, launched 22:13, served claude-opus-5-5, running)
   landing: not-started
   round: 0
 ```

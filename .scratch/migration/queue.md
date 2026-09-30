@@ -4,7 +4,7 @@ In flight:
 - X3d (Source Control as VS Code's), taken back out of main at its look (the page hung); its diagnosis runs.
 - E3 (the apps section's text to Z103 (b), Z106 (a) and Z107 (b2)), round 1 reviewed; landing next.
 - Q111 (Undo gives a cleared field's lines back), built; its review runs.
-- Q107 (a Terminal tab closing itself; Attach to Session), prepared; its builder launches.
+- Q107 (a Terminal tab closing itself; Attach to Session), its builder runs.
 Open items: Z113 (a test run in Svelte's client runtime, for Q106), Z115 (two browser tabs sharing one workbench, for Q107), Z116 (where Attach to Session sits, for Q107).
 Queued, in order:
 - U2 (every view's look against VS Code's), prepared; its builder launches once X3d has landed.
