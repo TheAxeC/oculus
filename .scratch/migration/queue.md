@@ -4,9 +4,10 @@ In flight:
 - Q102 (the terminal working as VS Code's, seen working in the page; Z69 (a)), round 1 under review.
 - E1 (the design section for apps added while oculus runs, for Axel's ruling), round 1 under review.
 Queued, in order:
+- X3d (the Repositories view and the diff rebuilt to look and work as VS Code's Source Control), first.
 - Q88b (the right-click menus' new capabilities, and Chrome's own menu blocked): Z70 ruled (a); once Q102 has landed: both change the pane strip's menu and picks (`pane-view.ts`), `PaneView.svelte`, `layout/instances.ts` and `ui.svelte.ts`.
 - X3c (the tab strip as VS Code's editor tabs; Z47 (a)), once Q88b has landed: both change the pane strip (`PaneView.svelte`, `Tabs.svelte`, `pane-view.ts`), Q88b through `show_tabs`, `editor_actions` and its strip items.
-- X3a (the Files view as VS Code's Explorer), once Q88b has landed: X3a's New File, Rename, Delete, Cut, Copy, Paste and Compare rest on the server routes Q88b builds for the same items of the Files row menu.
+- X3a (the Files view as VS Code's Explorer, its look and behaviour included, the roots as Z76 rules), once Q88b has landed: X3a's New File, Rename, Delete, Cut, Copy, Paste and Compare rest on the server routes Q88b builds for the same items of the Files row menu.
 - Q91 (the project view and its editor), once X3a has landed.
 - L4 (floating panes).
 - Q85a, then Q85b and Q85c, then Q85d (checking untyped input with zod: the server, the state layer, `data/`, the views; Z73 (b)).
