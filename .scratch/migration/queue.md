@@ -1,14 +1,14 @@
 /plan-orchestration oculus/migration
 
 In flight:
-- X3d (Source Control as VS Code's), repair round 1 sent (ten rulings).
-- E3 (the apps section's text to Z103 (b), Z106 (a) and Z107 (b2)), built; its review runs.
+- X3d (Source Control as VS Code's), repair round 1 built; its review runs.
+- E3 (the apps section's text to Z103 (b), Z106 (a) and Z107 (b2)), repair round 1 sent (eleven rulings).
 - Q106 (Close pane on two tabs), its diagnosis agent runs; then its brief.
-Open items: Z110 (how an undo finds where removed lines stood), for Q111; Z111 (who finds why a Terminal tab closed itself), for Q107.
+Open items: Z112 (which server step checks a file an app opens), for E3.
 Queued, in order:
 - U2 (every view's look against VS Code's), prepared; its builder launches once X3d has landed.
-- Q111 (Undo gives a cleared field's lines back), brief checked; waits on Z110.
-- Q107 (a Terminal tab closing itself), waits on Z111.
+- Q111 (Undo gives a cleared field's lines back), brief being rewritten to Z110 (c); its builder launches when a slot frees.
+- Q107 (a Terminal tab closing itself), /spec under Z111 (b).
 - Q109 (a terminal's name, icon and colour), once Q107 has landed.
 - S3 (the Settings view as VS Code's), /spec when a slot frees.
 - Q85a2 to Q85a5 (zod in the other server folders), /spec when a slot frees; then Q85b and Q85c, then Q85d.
