@@ -2,6 +2,22 @@
 
 Each entry is an open item the orchestrator closed itself with the option it judged Axel would take, booked everywhere a ruling is booked (the state file's closed log, `plan.md`'s Rulings, the step's brief). Axel reads this list when he likes: an entry he agrees with is removed; one he disagrees with is discussed, and when it changed what was built it becomes a new step that changes it on top. Newest first.
 
+## Z121 (2026-09-30 23:41, steps S3a and S3b)
+
+The question: four details of the options catalog.
+
+- (1) chosen (a): the file holds one top-level key `options:`, as every other catalog holds one key named for itself. Not chosen: (b) the six config file names as top-level keys.
+- (2) chosen (a): an option's default is the value the tracked file holds, `null` where leaving the key out means something. Not chosen: (b) the code's fallback, which most readers do not have (lazy).
+- (3) chosen (a): a number is refused when oculus's own config readers refuse it, so no min or max fields. Not chosen: (b) `min`, `max` and `integer` in each entry.
+- (4) chosen (a): the catalog check fails on a missing or empty description. Not chosen: (b) no such check (lazy).
+
+## Z119 (2026-09-30 23:41, step S3)
+
+The question: whether the Settings editor is one step. Its brief check judged it too large for one builder.
+
+- (a) chosen: three steps, S3a the catalog and its check, S3b the `config-key` write, S3c the editor after both, as Z96 split Q85a.
+- (b) not chosen: one step (lazy).
+
 ## Z118 (2026-09-30 23:24, step S3)
 
 The question: four shapes of the Settings editor and its catalog that Z94 left open.
