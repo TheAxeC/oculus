@@ -1,7 +1,7 @@
-// What writeManifest does over a hub of its own: which requests it refuses, how a form value
-// becomes a manifest value, and when the file is touched at all; and the subtask, career host,
-// entry and idea writes beside it. The collection entry writes are writes-collection.test.ts beside
-// this.
+// What writeManifest does over a hub of its own: which requests it refuses and when the file is
+// touched at all; and the subtask, career host, entry and idea writes beside it. How a form value
+// becomes a manifest value is coerce.test.ts, and the collection entry writes are
+// writes-collection.test.ts, beside this.
 //
 // The hub here is a synthetic one under the system temporary directory, and every path this file
 // writes is asserted to be inside it before it is written; nothing in this file opens the real hub
@@ -13,7 +13,6 @@ import { existsSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect } from 'vitest';
 import {
-    coerce,
     createEntry,
     createIdea,
     feedDeleteWrite,
@@ -148,43 +147,26 @@ describe('what a write refuses', () => {
         expect(manifestOf(root)).toBe(MANIFEST);
     });
 
+    it('refuses a record value for a field of a type the form has no control for', () => {
+        const root = hub();
+        const config = configFor();
+        const schema = config.schema as { fields: Record<string, unknown> };
+        const odd = {
+            ...config,
+            schema: { ...schema, fields: { ...schema.fields, mystery: { type: 'nonesuch' } } }
+        };
+        const out = writeManifest(root, odd, 'alpha', { mystery: 'x' }, 'record');
+        expect(out.changed).toEqual([]);
+        expect(out.refused).toEqual([{ field: 'mystery', reason: 'unknown field type nonesuch' }]);
+        expect(manifestOf(root)).toBe(MANIFEST);
+    });
+
     it('writes only inside the hub scan directories', () => {
         const config = configFor();
         expect(insideHub('/hub', config, '/hub/projects/manuscripts/a/project.yml')).toBe(true);
         expect(insideHub('/hub', config, '/hub/projects/ideas/a/project.yml')).toBe(false);
         expect(insideHub('/hub', config, '/etc/project.yml')).toBe(false);
         expect(insideHub('/hub', config, '/hub/projects/manuscripts/a/notes.yml')).toBe(false);
-    });
-});
-
-describe('what a form value becomes', () => {
-    it('makes a checkbox true or takes the key away', () => {
-        expect(coerce('checkbox', 'on', undefined)).toEqual({ value: true });
-        expect(coerce('checkbox', true, undefined)).toEqual({ value: true });
-        expect(coerce('checkbox', false, true)).toEqual({ value: null });
-        expect(coerce('checkbox', '', true)).toEqual({ value: null });
-    });
-
-    it('makes an empty text clear the field', () => {
-        expect(coerce('text', '  ', 'held')).toEqual({ value: null });
-        expect(coerce('textarea', '', 'held')).toEqual({ value: null });
-    });
-
-    it('keeps a number a number where the manifest holds one', () => {
-        expect(coerce('text', '2027', 2026)).toEqual({ value: 2027 });
-        expect(coerce('text', '2027', 'held')).toEqual({ value: '2027' });
-    });
-
-    it('splits a list widget into its items, dropping the empty ones', () => {
-        expect(coerce('lines', 'one\n\n two ', undefined)).toEqual({ value: ['one', 'two'] });
-        expect(coerce('chips', ['a', 'b'], undefined)).toEqual({ value: ['a', 'b'] });
-        expect(coerce('tags', '', undefined)).toEqual({ value: null });
-    });
-
-    it('refuses a type it does not know', () => {
-        expect(coerce('nonesuch', 'x', undefined)).toEqual({
-            reason: 'unknown field type nonesuch'
-        });
     });
 });
 

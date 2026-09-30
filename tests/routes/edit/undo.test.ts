@@ -8,8 +8,9 @@ import { readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { expect, describe } from 'vitest';
 import { parse } from 'yaml';
+import { logChanges } from '../../../src/lib/server/core/changes.ts';
 import { handleWrite } from '../../../src/lib/server/edit/writes.ts';
-import type { Change } from '../../../src/lib/server/core/changes.ts';
+import type { Change, ChangeRecord } from '../../../src/lib/server/core/changes.ts';
 import type { WriteTarget } from '../../../src/lib/server/edit/writes.ts';
 import {
     AREA,
@@ -371,5 +372,232 @@ describe('taking a change back', () => {
         const bare: WriteTarget = { ...into, changes: undefined };
         expect((await handleWrite(request(GOOD), TOKEN, bare)).status).toBe(200);
         expect(changesOf(into)).toEqual([]);
+    });
+});
+
+describe('taking a manifest write back exactly', () => {
+    /** The manifest of a target, replaced by a text that holds the value a case starts from. */
+    function hold(into: WriteTarget, text: string): void {
+        writeFileSync(join(into.hub, 'projects', 'manuscripts', 'alpha', 'project.yml'), text);
+    }
+
+    /** One manifest write through the route, and the change it left at the head of the log. */
+    async function wrote(into: WriteTarget, fields: Record<string, unknown>): Promise<Change> {
+        const response = await handleWrite(
+            request({ kind: 'manifest', id: 'alpha', fields }),
+            TOKEN,
+            into
+        );
+        expect(response.status).toBe(200);
+        return changesOf(into)[0];
+    }
+
+    /** The answer of the undo route for one change. */
+    function undone(into: WriteTarget, change: Change): Promise<Response> {
+        return handleWrite(request({ kind: 'undo', at: change.at }), TOKEN, into);
+    }
+
+    /** A record made by hand, appended to the log as if a write had left it, and read back. */
+    async function recorded(
+        into: WriteTarget,
+        field: string,
+        before: unknown,
+        after: unknown
+    ): Promise<Change> {
+        const record: ChangeRecord = {
+            file: join('projects', 'manuscripts', 'alpha', 'project.yml'),
+            key: 'alpha',
+            field,
+            before,
+            after,
+            undo: 'field'
+        };
+        await logChanges(into.changes, 'manifest', [record]);
+        return changesOf(into)[0];
+    }
+
+    it('gives `related: []` back after a link wrote a project into it', async () => {
+        const into = target();
+        const held = `${MANIFEST}related: []\n`;
+        hold(into, held);
+        const link = await wrote(into, { related: ['x'] });
+        expect(link).toMatchObject({ field: 'related', before: [], after: ['x'] });
+        expect(manifestOf(into)).not.toBe(held);
+
+        expect((await undone(into, link)).status).toBe(200);
+        expect(manifestOf(into)).toBe(held);
+        expect(changesOf(into)[0]).toMatchObject({
+            field: 'related',
+            before: ['x'],
+            after: [],
+            undoes: link.at
+        });
+    });
+
+    it('takes a list field out again when the file did not hold it', async () => {
+        const into = target();
+        const link = await wrote(into, { related: ['x'] });
+        expect(link).toMatchObject({ before: null, after: ['x'] });
+        expect(manifestOf(into)).not.toBe(MANIFEST);
+
+        const response = await undone(into, link);
+        expect(response.status).toBe(200);
+        expect(manifestOf(into)).toBe(MANIFEST);
+        expect(changesOf(into)[0]).toMatchObject({ before: ['x'], after: null });
+    });
+
+    it('gives an empty title back as an empty title', async () => {
+        const into = target();
+        const held = MANIFEST.replace('title: "A title"', 'title: ""');
+        hold(into, held);
+        const change = await wrote(into, { title: 'A new title' });
+        expect(manifestOf(into)).toContain('A new title');
+
+        expect((await undone(into, change)).status).toBe(200);
+        expect(manifestOf(into)).toBe(held);
+    });
+
+    it('gives `pin: false` back after it was ticked', async () => {
+        const into = target();
+        const held = `${MANIFEST}pin: false\n`;
+        hold(into, held);
+        const change = await wrote(into, { pin: true });
+        expect(change).toMatchObject({ field: 'pin', before: false, after: true });
+        expect(manifestOf(into)).toBe(`${MANIFEST}pin: true\n`);
+
+        expect((await undone(into, change)).status).toBe(200);
+        expect(manifestOf(into)).toBe(held);
+    });
+
+    it('gives a number back as a number', async () => {
+        const into = target();
+        const held = `${MANIFEST}year: 2024\n`;
+        hold(into, held);
+        const change = await wrote(into, { year: '2025' });
+        expect(manifestOf(into)).toBe(`${MANIFEST}year: 2025\n`);
+
+        expect((await undone(into, change)).status).toBe(200);
+        expect(manifestOf(into)).toBe(held);
+    });
+
+    it('gives a title back with the spaces the file held around it', async () => {
+        const into = target();
+        const held = MANIFEST.replace('title: "A title"', 'title: "  A title  "');
+        hold(into, held);
+        const change = await wrote(into, { title: 'A new title' });
+        expect(change).toMatchObject({ field: 'title', before: '  A title  ' });
+        expect(manifestOf(into)).toContain('A new title');
+
+        expect((await undone(into, change)).status).toBe(200);
+        expect(manifestOf(into)).toBe(held);
+    });
+
+    it('gives a checkbox back as the word the file held, not as true', async () => {
+        const into = target();
+        const held = `${MANIFEST}pin: on\n`;
+        hold(into, held);
+        const change = await wrote(into, { pin: false });
+        expect(change).toMatchObject({ field: 'pin', before: 'on', after: null });
+        expect(manifestOf(into)).toBe(MANIFEST);
+
+        expect((await undone(into, change)).status).toBe(200);
+        expect(manifestOf(into)).toBe(held);
+    });
+
+    it('gives a list back with the spaces its items held', async () => {
+        const into = target();
+        const held = `${MANIFEST}related: [a, " b "]\n`;
+        hold(into, held);
+        const change = await wrote(into, { related: ['x'] });
+        expect(change).toMatchObject({ field: 'related', before: ['a', ' b '], after: ['x'] });
+        expect(manifestOf(into)).not.toBe(held);
+
+        expect((await undone(into, change)).status).toBe(200);
+        expect(manifestOf(into)).toBe(held);
+    });
+
+    it('puts the link back when the undo itself is undone', async () => {
+        const into = target();
+        const held = `${MANIFEST}related: []\n`;
+        hold(into, held);
+        const link = await wrote(into, { related: ['x'] });
+        const linked = manifestOf(into);
+
+        expect((await undone(into, link)).status).toBe(200);
+        const [back] = changesOf(into);
+        expect(back).toMatchObject({ before: ['x'], after: [] });
+
+        expect((await undone(into, back)).status).toBe(200);
+        expect(manifestOf(into)).toBe(linked);
+        expect(changesOf(into)[0]).toMatchObject({ before: [], after: ['x'], undoes: back.at });
+    });
+
+    it('still reads an empty control of a form write as clearing the field', async () => {
+        const into = target();
+        hold(into, `${MANIFEST}related: [x]\n`);
+        const response = await handleWrite(
+            request({ kind: 'manifest', id: 'alpha', fields: { title: '', related: [] } }),
+            TOKEN,
+            into
+        );
+        expect(response.status).toBe(200);
+        expect(await response.json()).toEqual({
+            ok: true,
+            changed: ['title', 'related'],
+            refused: []
+        });
+        expect(manifestOf(into)).not.toContain('title:');
+        expect(manifestOf(into)).not.toContain('related:');
+    });
+
+    it('refuses a record that names a field the schema does not name', async () => {
+        const into = target();
+        const change = await recorded(into, 'nosuch', 'x', null);
+        const response = await undone(into, change);
+        expect(response.status).toBe(400);
+        expect(await response.json()).toEqual({
+            error: 'refused',
+            refused: [{ field: 'nosuch', reason: 'the manifest schema does not name the field' }]
+        });
+        expect(manifestOf(into)).toBe(MANIFEST);
+    });
+
+    it('refuses a record that names a read-only field or a map field', async () => {
+        const into = target();
+        const tier = await recorded(into, 'tier', 'archive', 'manuscripts');
+        const readonly = await undone(into, tier);
+        expect(readonly.status).toBe(400);
+        expect(await readonly.json()).toEqual({
+            error: 'refused',
+            refused: [{ field: 'tier', reason: 'the field is read-only' }]
+        });
+
+        const paths = await recorded(into, 'paths', { doc: 'a.md' }, null);
+        const keymap = await undone(into, paths);
+        expect(keymap.status).toBe(400);
+        expect(await keymap.json()).toEqual({
+            error: 'refused',
+            refused: [{ field: 'paths', reason: 'a map field is not written by the form' }]
+        });
+        expect(manifestOf(into)).toBe(MANIFEST);
+    });
+
+    it('answers `moved` when the list the record left has been edited since', async () => {
+        const into = target();
+        const edited = `${MANIFEST}related: [y]\n`;
+        hold(into, edited);
+        const emptied = await recorded(into, 'related', ['x'], []);
+        const first = await undone(into, emptied);
+        expect(first.status).toBe(409);
+        expect(await first.json()).toEqual({ error: 'moved' });
+        expect(manifestOf(into)).toBe(edited);
+
+        const empty = `${MANIFEST}related: []\n`;
+        hold(into, empty);
+        const removed = await recorded(into, 'related', ['x'], null);
+        const second = await undone(into, removed);
+        expect(second.status).toBe(409);
+        expect(await second.json()).toEqual({ error: 'moved' });
+        expect(manifestOf(into)).toBe(empty);
     });
 });

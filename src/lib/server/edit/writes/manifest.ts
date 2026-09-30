@@ -5,8 +5,9 @@
 // already found under the hub's own scan directories, and insideHub checks the resolved path
 // against them again before the write. Nothing outside them is ever opened for writing.
 //
-// server/edit/writes.ts is the route and re-exports everything here, so an importer names either
-// file.
+// server/edit/writes.ts is the route and re-exports the writers an importer needs (`coerce`,
+// `createIdea`, `fieldTypes`, `insideHub` and `writeManifest`); the undo imports `manifestValue`
+// from this file to read a manifest's value back before it writes.
 //
 // Whether a path lies in a folder is read from server/core/paths.ts (`below`).
 
@@ -57,8 +58,30 @@ const TEXTS = ['text', 'textarea', 'date', 'select'];
 /** Types whose value is a list of strings. */
 const LISTS = ['tags', 'chips', 'lines'];
 
+/** The types a form control of the manifest has, which `coerce` reads a value of. */
+const WRITABLE = ['checkbox', ...LISTS, ...TEXTS];
+
 /** A refusal reason, or the value to write. The two are told apart by the shape. */
 type Coerced = { value: FieldValue } | { reason: string };
+
+/**
+ * How the values of one write are read. A `form` value is what a control posted, so an empty
+ * control clears its field (`coerce`). A `record` value is what a change record holds, the value
+ * the file had, and is written as it is, so an empty list, an empty text and `false` go back into
+ * the file and `null` takes the field out.
+ */
+export type ValueReading = 'form' | 'record';
+
+/**
+ * Why a field of this type is never written, whichever way its value is read, or null when it may
+ * be: the schema decides what may be written, for a record as for a form.
+ */
+function unwritable(type: string): string | null {
+    if (type === 'readonly') return 'the field is read-only';
+    if (type === 'keymap') return 'a map field is not written by the form';
+    if (!WRITABLE.includes(type)) return `unknown field type ${type}`;
+    return null;
+}
 
 /**
  * One form value as the manifest's own kind of value. An empty text, an empty list and an unticked
@@ -67,8 +90,8 @@ type Coerced = { value: FieldValue } | { reason: string };
  * turn it into a string.
  */
 export function coerce(type: string, raw: unknown, current: unknown): Coerced {
-    if (type === 'readonly') return { reason: 'the field is read-only' };
-    if (type === 'keymap') return { reason: 'a map field is not written by the form' };
+    const reason = unwritable(type);
+    if (reason !== null) return { reason };
     if (type === 'checkbox') {
         return { value: TRUE.includes(raw as string | number | boolean) ? true : null };
     }
@@ -89,7 +112,6 @@ export function coerce(type: string, raw: unknown, current: unknown): Coerced {
         }
         return { value: strings.length === 0 ? null : strings };
     }
-    if (!TEXTS.includes(type)) return { reason: `unknown field type ${type}` };
     if (raw === null || raw === undefined) return { value: null };
     if (typeof raw === 'boolean' || typeof raw === 'number') return { value: raw };
     if (typeof raw !== 'string') return { reason: 'the value is not text' };
@@ -100,8 +122,20 @@ export function coerce(type: string, raw: unknown, current: unknown): Coerced {
     return { value: text };
 }
 
+/** One value read the way the write says, as `coerce` does for a form and as it is for a record. */
+function readValue(
+    reading: ValueReading,
+    type: string,
+    raw: unknown,
+    current: unknown
+): { value: unknown } | { reason: string } {
+    if (reading === 'form') return coerce(type, raw, current);
+    const reason = unwritable(type);
+    return reason === null ? { value: raw } : { reason };
+}
+
 /** The value a dotted field currently holds in a manifest record, or undefined. */
-export function currentOf(manifest: Record<string, unknown>, field: string): unknown {
+function currentOf(manifest: Record<string, unknown>, field: string): unknown {
     const dot = field.indexOf('.');
     if (dot < 0) return manifest[field];
     const parent = manifest[field.slice(0, dot)];
@@ -136,13 +170,15 @@ export function insideHub(hub: string, config: PortfolioConfig, file: string): b
 
 /**
  * Set fields of one project's manifest. The file is written only when the edit changed something,
- * so a form saved with nothing altered leaves the file's mtime alone.
+ * so a form saved with nothing altered leaves the file's mtime alone. The values are read as a form
+ * unless `reading` says they are a change record's (`ValueReading`).
  */
 export function writeManifest(
     hub: string,
     config: PortfolioConfig,
     id: string,
-    fields: Record<string, unknown>
+    fields: Record<string, unknown>,
+    reading: ValueReading = 'form'
 ): WriteOutcome {
     const { manifests } = readManifests(hub, config.scan, config.text);
     const manifest = manifests.find((one) => one.id === id);
@@ -181,7 +217,7 @@ export function writeManifest(
             });
             continue;
         }
-        const out = coerce(types[field] ?? 'text', raw, currentOf(manifest, field));
+        const out = readValue(reading, types[field] ?? 'text', raw, currentOf(manifest, field));
         if ('reason' in out) {
             refused.push({ field, reason: out.reason });
             continue;

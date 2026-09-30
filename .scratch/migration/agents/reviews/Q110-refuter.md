@@ -158,3 +158,180 @@ Behaviour
 - Whether P1 needs a shape check under the record reading. That is a design call for the orchestrator, and I gave the evidence above.
 
 Usage: claude-opus-5-5 (served, read from the transcript), 176,879 tokens, 41 tool uses, 11.4 min.
+
+## Repair round 1, refuted
+
+
+## 1. Verification lines
+
+`git status --short` from tools/oculus in the worktree, after `npm run diagrams` (exit 0; it printed the regenerated paths, ending `docs/diagrams/channels.svg`, `docs/diagrams/writes.dot`, `docs/diagrams/writes.svg`). The status is the same set as before the run, so the diagrams run changed no tracked file:
+```
+ M DESIGN.md
+ M src/lib/server/edit/writes/manifest.ts
+ M src/lib/server/edit/writes/undo.ts
+ M tests/routes/edit/undo.test.ts
+ M tests/server/edit/writes.test.ts
+?? .scratch/migration/agents/reviews/Q110-report.md
+```
+
+`PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH sh ~/.claude/skills/land/templates/checks.sh .scratch/migration/orchestrator-state.md; echo "exit $?"` printed `exit 0`. These are its lines, escape codes removed and the per-chunk size table of the build left out:
+```
+$ npm test
+ Test Files  348 passed | 19 skipped (367)
+      Tests  5332 passed | 564 skipped (5896)
+$ npm run test:checks
+ Test Files  27 passed | 2 skipped (29)
+      Tests  365 passed | 9 skipped (374)
+$ npm run check
+1790792398402 COMPLETED 2472 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+$ npm run build
+/api/wallpaper referenced in /api/wallpaper didn't resolve at build time, it will remain unchanged to be resolved at runtime
+✓ 1724 modules transformed.
+/api/wallpaper referenced in /api/wallpaper didn't resolve at build time, it will remain unchanged to be resolved at runtime
+✓ 3526 modules transformed.
+(!) Some chunks are larger than 500 kB after minification. Consider:
+✓ built in 4.98s
+✓ built in 12.93s
+Generated an empty chunk: "chunks/env.js".
+  ✔ done
+$ npm run format:check
+All matched files use Prettier code style!
+$ npm run lint
+$ ! LC_ALL=C grep -rna '[^ -~]' src tests
+checks: 7 commands passed
+```
+The build prints non-ASCII marks (the tick and the check mark). They are quoted here as printed. The counts match the builder's round section: 5332 passed and 564 skipped, where the first round had 5329 and 563.
+
+`npx vitest run tests/routes/edit tests/server/edit` printed `Test Files  10 passed (10)` and `Tests  304 passed (304)`.
+
+`grep -n 'undo.ts:\|manifest.ts:' DESIGN.md` printed line 313 only. That line cites `writes/undo.ts:181` and `writes/manifest.ts:350`.
+- `sed -n 181p src/lib/server/edit/writes/undo.ts` printed `    if (change.undo === 'none') return { error: 'nothing' };`.
+- `sed -n 350p src/lib/server/edit/writes/manifest.ts` printed `                undo: 'none'`.
+- The last `export function` at or above line 350 is `createIdea`, at 276 (awk over manifest.ts).
+
+I ran the spec.md perl ASCII gate over `find src tests config -type f ! -name local.yml`. It printed nothing and exited 0. `bin` does not exist in the tree. `LC_ALL=C grep -c '[^ -~]' DESIGN.md` printed `0`.
+
+## 2. The delta read
+
+I saved `git diff ce795acb` (415 lines) to scratch `r1/now.diff`. `diff` against `Q110-round1-base.diff` printed 94 lines of delta. The round changed these things and nothing else:
+- manifest.ts, head comment lines 8-10. The clause about `currentOf` and `manifestValue` now reads: "the undo imports `manifestValue` from this file to read a manifest's value back before it writes."
+- manifest.ts:138. `export function currentOf` became `function currentOf`.
+- undo.test.ts. Three new tests, which bring the file to 603 lines:
+  - "gives a title back with the spaces the file held around it"
+  - "gives a checkbox back as the word the file held, not as true"
+  - "gives a list back with the spaces its items held"
+- writes.test.ts:151-163. One new test, "refuses a record value for a field of a type the form has no control for", which brings the file to 517 lines.
+
+Nothing else moved: DESIGN.md, undo.ts and the rest of manifest.ts are as they were at the round's base. The line numbers the round reached for are unchanged: `undo: 'none'` is still at manifest.ts:350.
+
+I read the delta against the whole diff since the base. The five files together build the brief's four items, and the round's additions sit inside the files the ruling named.
+
+## 3. Closures checked
+
+ST1: closed by a fix.
+- `grep -rn currentOf src tests` finds only manifest.ts:138 (`function currentOf`), :160, :220 and :247, plus the unrelated local `currentOf` in src/lib/server/files/fs.ts:427, 462 and 473.
+- `currentOf` is unexported, and nothing outside manifest.ts used it. `npm run check` is clean, as the checks lines above show.
+- The head comment is now true:
+  - writes.ts:147 re-exports exactly `coerce, createIdea, fieldTypes, insideHub, writeManifest`.
+  - undo.ts:38 imports `manifestValue` (and `writeManifest`) from `./manifest.ts`, and undo.ts:112 calls `manifestValue` in `valueNow` before the write.
+  - The comment does not say these are the only direct importers. `subtasks.ts:27` imports `insideHub` from `./manifest.ts`, and the undo imports `writeManifest` directly. Neither makes a sentence false.
+
+SP1: closed by a test. No check was removed.
+- I copied tools/oculus to scratch `r1/copy` with rsync, leaving out config/local.yml, node_modules, .svelte-kit, build and .scratch, and symlinked node_modules.
+- With the worktree's manifest.ts: `Tests  1 passed | 28 skipped (29)`.
+- With line 82 (`    if (!WRITABLE.includes(type)) return \`unknown field type ${type}\`;`) deleted: two tests fail.
+  - `× refuses a record value for a field of a type the form has no control for`, `AssertionError: expected [ 'mystery' ] to deeply equal []`.
+  - `× refuses a type it does not know`, `AssertionError: expected { value: 'x' } to deeply equal { Object (reason) }`. This is the older `coerce` case.
+  - The run printed `Tests  2 failed | 27 passed (29)`.
+- After restoring the saved copy, `cmp` against the worktree's manifest.ts printed no difference.
+- See Proof PR1 on where this test runs.
+
+B1: closed by tests, and the report's "User-visible changes" now names the three values (report line 88).
+- I built the failing side from main's files. `grep -c ValueReading` over main's manifest.ts and undo.ts printed 0 for both.
+- The changed lines of main-to-worktree equal those of `git diff ce795acb`:
+  - undo.ts: `cmp` of the +/- lines is equal.
+  - manifest.ts: equal after sorting. The only difference is where diff aligns one blank line.
+  - So main's two files are the base's.
+- On scratch with main's manifest.ts and undo.ts and the worktree's tests, `npx vitest run tests/routes/edit/undo.test.ts --reporter=verbose` gave `Tests  8 failed | 23 passed (31)`.
+- The three B1 tests fail at their final whole-text `toBe(held)`, at undo.test.ts:492, 504 and 516. `sed` shows each is `expect(manifestOf(into)).toBe(held);`. The diffs:
+  - title: `- title: "  A title  "` / `+ title: "A title"`
+  - checkbox: `- pin: on` / `+ pin: true`
+  - list: `- related: [a, " b "]` / `+ related: [a, b]`
+- The five earlier changed-behaviour cases fail in the same run:
+  - case 1: whole-text miss.
+  - case 2: `expected 400 to be 200` at :444.
+  - case 3: whole-text miss at :457.
+  - case 4: whole-text miss.
+  - case 9: `expected { Object (at, kind, ...) } to match object { before: [ 'x' ], after: [] }`.
+- The 23 that pass include all 18 older tests and the audits (cases 5, 6, 7, 8, 10 and 11).
+- The builder's `Tests  8 failed | 52 passed (60)` is reproduced by running undo.test.ts and writes.test.ts together on main's files: `Test Files  1 failed | 1 passed (2)`, `Tests  8 failed | 52 passed (60)`.
+- After the change, verify 2 runs all 304 tests green.
+
+P1: ruled no change, and the report carries the one sentence the ruling asked for (report line 107). No code was changed for it.
+
+## 4. Verdicts, for the whole diff since ce795acb
+
+### What to build
+1. manifest.ts: holds.
+   - `writeManifest(..., reading: ValueReading = 'form')`. The record reading in `readValue` hands the value on as it is.
+   - Unnamed fields are refused before `readValue`.
+   - `readonly`, `keymap` and unknown types are refused through `unwritable` with `coerce`'s reasons.
+   - The form write (writes.ts:274) and the deposit (deposit.ts:386) pass no reading.
+   - The head comment is now true (ST1 above).
+2. undo.ts: holds. `apply` passes `'record'` with `change.before`. The head comment at lines 7-8 is still true.
+3. tests: holds. The new describe "taking a manifest write back exactly" in undo.test.ts, plus the SP1 case in writes.test.ts.
+4. DESIGN.md:313: holds. `undo.ts:181` and `manifest.ts:350` each name the line they cite.
+
+### Cases
+1. met. It fails on main, and passes after.
+2. met. It fails on main (400), and passes after.
+3. met. It fails on main, and passes after.
+4. met. The whole text is compared. It fails on main, and passes after.
+5. met, as an audit. It passes on main's sources and after.
+6. met, as an audit. It passes on main's sources and after.
+7. met, as an audit. It passes on main's sources and after.
+8. met, as an audit. It passes on main's sources and after.
+9. met. It fails on main at the first undo's record, and passes after.
+10. met, as an audit. It passes on main's sources and after.
+11. met, as an audit. It passes on main's sources and after.
+
+## 5. Findings
+
+### Spec
+- none.
+
+### Proof
+- PR1. The SP1 test does not run in the standing verify list.
+  - Place: tests/server/edit/writes.test.ts:10, `// @module-tag slow: its cases time out or fail on a loaded machine, so npm test leaves it out.` The new case is at :151-163.
+  - What is wrong: `npm test` runs `vitest run --tagsFilter '!slow'`, so the new case is skipped there. The skipped count in `npm test` went from 563 (first round) to 564 now, while the three new undo.test.ts tests raised passed from 5329 to 5332. The case runs only under the brief's own verify 2 (`npx vitest run tests/routes/edit tests/server/edit`) or `test:slow`. The same holds for `coerce`'s older "refuses a type it does not know": the unknown-type guard at manifest.ts:82 is exercised by no test that `checks.sh` runs.
+  - Failure scenario: a later step drops or reorders line 82. `checks.sh` stays green on the worktree and on main, and only someone running the slow file catches it.
+  - Verdict: minor. The ruling chose this file, so this is not a builder defect. The orchestrator decides whether the case moves to a file `npm test` runs, or stays as ruled with this coverage stated.
+
+### Standards
+- none.
+  - Checked: the new comment carries no history, and it is ASCII.
+  - Checked: `currentOf` is unexported and unused outside the file.
+  - Checked: file sizes are 354, 305, 603 and 517 lines (`wc -l`), all under 1000.
+  - Checked: format and lint are clean in the checks run.
+
+### Behaviour
+- BR1. The checkbox case of B1 comes back byte for byte only because `pin` is the file's last line.
+  - Place: undo.test.ts, "gives a checkbox back as the word the file held, not as true", `const held = \`${MANIFEST}pin: on\n\`;`. The report's line 88 says "`pin: on` written to false and undone is `pin: on` again".
+  - What: a `pin: false` form write takes the field out (`after: null`), so its undo is the undo of a removal, which is Z105's case. My scratch probe (`tests/probe/r1.test.ts` on the worktree's sources, route write then undo) with `pin: on` placed above `status:` printed `identical false`, and the text ends `...status:\n  line: "the line"\npin: on\n`: the value is back, at the end of the file. The same probe with `related: [a, " b "]` mid-file (a replaced value) printed `identical true`.
+  - Failure scenario: the look on TEST unticks a `pin: on` that is not the manifest's last line, undoes it, and sees a non-empty `git diff`, although the report's line reads as byte-for-byte.
+  - Verdict: no code change within Q110. It is Z105, which the report names on line 90. At landing, one clause on report line 88 (the value comes back; its position is Z105's) makes the look's expectation right.
+
+## 6. Declined to judge
+- Whether PR1's case should move out of the slow file. That is the orchestrator's call on its own ruling.
+- The look on TEST. I am barred from the server and localhost.
+
+My scratch files are under /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/r1/ (`now.diff`, `delta.txt`, `checks.txt`, `main-run.txt`, `probe-out.txt`, `copy/`). I changed nothing in the worktree, and I ran no git command beyond `git diff ce795acb` and `git status --short`.
+
+Usage: claude-opus-5-5 (served, read from the transcript), 161,971 tokens, 39 tool uses, 11.1 min.
+
+## Closed
+
+- ST1, SP1, B1 (first review): closed in repair round 1, and the round review reproduces each closure (section 3 above).
+- P1 (first review): ruled no change; the report carries the sentence the ruling asked for (report line 107).
+- PR1 (round review): fixed at landing on main. The `coerce` cases of `tests/server/edit/writes.test.ts` (the describe "what a form value becomes") are pure and need no hub, so they move to a new file `tests/server/edit/coerce.test.ts` that `npm test` runs; the unknown-type guard at `manifest.ts:82` is then exercised by the standing verify list through `coerce`'s "refuses a type it does not know". The record-reading case stays in `writes.test.ts`, which needs the synthetic hub.
+- BR1 (round review): fixed at landing in `agents/reviews/Q110-report.md` line 88: the `pin: on` value comes back, and where it stands in the file after a removal is Z105's (Q111).

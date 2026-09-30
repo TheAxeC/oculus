@@ -1,13 +1,13 @@
 /plan-orchestration oculus/migration
 
 In flight:
-- X3d (Source Control as VS Code's), a new builder continues it.
-- Q110 (Undo gives a replaced value back), round 1 done; its round review runs.
-Open items: Z106 (three more changes to the apps design).
+- X3d (Source Control as VS Code's), built; its review runs.
+Open items: none.
 Queued, in order:
 - U2 (every view's look against VS Code's), prepared; its builder launches once X3d has landed.
-- Q111 (Undo gives a cleared field's lines back), once Q110 has landed.
-- Q106 (Close pane on two tabs), /spec next, into the slot Q108 freed.
+- E3 (the apps section's text to Z103 (b) and Z106 (a)), /spec next.
+- Q106 (Close pane on two tabs), /spec next.
+- Q111 (Undo gives a cleared field's lines back), /spec when a slot frees.
 - Q107 (a Terminal tab closing itself), /spec when a slot frees.
 - Q109 (a terminal's name, icon and colour), once Q107 has landed.
 - S3 (the Settings view as VS Code's), /spec when a slot frees.
@@ -38,6 +38,8 @@ Queued, in order:
 The loop fills three slots as they free up; a line above is only an order, never a barrier, apart from the "once ... has landed" notes. A step's line moves to Landed, at the top of that list, in its landing commit.
 
 Landed, newest first: every step ticked in `plan.md`, each with the date and the commit that ticked it (the 15 steps dated 2026-09-10 at f8af492b were landed before the ledger was opened):
+- Q110 (an undo gives a replaced value back), 2026-09-30, this landing's commit.
+- Q108 (the four kept fixes as a step), 2026-09-30, 3ae6b03f.
 - Q85a1 (zod at the `core` and `root` inputs), 2026-09-30, 42259e30.
 - E2 (the apps section rewritten), 2026-09-30, ef10430b.
 - E1 (the apps design section), 2026-09-30, 3ab29091.

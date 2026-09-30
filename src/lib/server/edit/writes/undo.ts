@@ -194,7 +194,9 @@ export function undoChange(into: WriteTarget, change: Change): UndoOutcome {
 function apply(into: WriteTarget, change: Change): WriteOutcome | null {
     const { hub, config } = into;
     if (change.kind === 'manifest') {
-        return writeManifest(hub, config, change.key, { [change.field]: change.before });
+        // The record holds the value the file had, so it is written as that value and not read as
+        // a form, which would take an empty list, an empty text or `false` out of the file.
+        return writeManifest(hub, config, change.key, { [change.field]: change.before }, 'record');
     }
     if (change.kind === 'session') {
         if (change.field === 'hidden' || change.field === 'top') {
