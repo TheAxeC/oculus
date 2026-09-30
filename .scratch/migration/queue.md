@@ -2,7 +2,7 @@
 
 In flight:
 - Q102 (the terminal working as VS Code's, seen working in the page; Z69 (a)), round 1 under review.
-- E1 (the design section for apps added while oculus runs, for Axel's ruling), repair round 1 running.
+- E1 (the design section for apps added while oculus runs, for Axel's ruling), round 1 under review.
 Queued, in order:
 - Q88b (the right-click menus' new capabilities, and Chrome's own menu blocked): Z70 ruled (a); once Q102 has landed: both change the pane strip's menu and picks (`pane-view.ts`), `PaneView.svelte`, `layout/instances.ts` and `ui.svelte.ts`.
 - X3c (the tab strip as VS Code's editor tabs; Z47 (a)), once Q88b has landed: both change the pane strip (`PaneView.svelte`, `Tabs.svelte`, `pane-view.ts`), Q88b through `show_tabs`, `editor_actions` and its strip items.

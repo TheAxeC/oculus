@@ -28,7 +28,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:      # Q102's round 1 under refutation; E1 in repair round 1; D23 stopped on Z72; Q88b waits for Q102's landing; X3c and X3a wait for Q88b's.
+dispatch:      # Q102's round 1 under refutation; E1's round 1 under refutation; D23 stopped on Z72; Q88b waits for Q102's landing; X3c and X3a wait for Q88b's.
 - step: Q102
   executor: agent
   worker: claude:sonnet
@@ -55,7 +55,7 @@ dispatch:      # Q102's round 1 under refutation; E1 in repair round 1; D23 stop
   report: agents/reviews/E1-report.md
   brief_check: agents/reviews/E1-brief-check.md, every finding closed in the brief (its Closed heading); claude-opus-5-5, 54 tool uses, 161,730 tokens, 8.4 min
   shared_paths: DESIGN.md (E1 inserts a new section between "## Hot reload" and "## Relationship to the cockpit"; Q102 changes the Terminal text and Q84 the paragraphs at 174 and 192, all in other sections, so the merge keeps each side's lines by hand); docs/diagrams/ (no source change in E1; regenerated on main at landing).
-  builder_usage: 37 tool uses, 215,466 tokens, 15.1 min (907,356 ms), from its completion notice; report saved 2026-09-30
+  builder_usage: 37 tool uses, 215,466 tokens, 15.1 min (907,356 ms), from its completion notice; report saved 2026-09-30; round 1: 20 tool uses, 264,475 tokens, 7.8 min (469,835 ms), report section saved
   reviewer_report: agents/reviews/E1-refuter.md; claude-opus-5-5, 64 tool uses, 233,794 tokens, 16.7 min (1,000,330 ms), from its completion notice
   landing: not-started
   round: 1 (sent 2026-09-30: deck and the entry kinds' writes classed right, the three kinds that cannot be undone, the app factory told apart from registerCollections', the apps group's rail page, the files channel, the origin check, the apps channel ruled, the approval entry's name, the containment claim, penpal's stack, the sentences made false, the reload, the key handler, the flourish and names, three more choices, forwarded keys only with focus and a rate, the watcher, frame-src and the Document view, the change check with ctime; base of the round in scratch E1-round1-base)
