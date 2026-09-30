@@ -3,10 +3,10 @@
 In flight:
 - X3d (Source Control as VS Code's), a new builder continues it.
 - Q108 (the four fixes of the inline patch), building.
+- Q110 (Undo gives a replaced value back), building.
 Open items: Z105 (the undo of a cleared field), Z103 (the 42 shapes E2 named).
 Queued, in order:
-- Q110 (Undo gives an empty list back), /spec next.
-- U2 (every view's look against VS Code's), /spec after Q110.
+- U2 (every view's look against VS Code's), /spec next; its builder when a slot frees.
 - Q106 (Close pane on two tabs), /spec when a slot frees.
 - Q107 (a Terminal tab closing itself), /spec when a slot frees.
 - Q109 (a terminal's name, icon and colour), once Q107 has landed.

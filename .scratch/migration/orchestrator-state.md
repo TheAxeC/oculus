@@ -55,6 +55,19 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   shared_paths: docs/diagrams with X3d (a mechanical rerun of `npm run diagrams` at landing); tests/ui/controls/ with X3d, whose tests are ToolButton's and the menu's, not the editor folder's, so git merges the files
   landing: not-started
   round: 0
+- step: Q110
+  executor: agent
+  worker: claude:sonnet
+  model: claude-sonnet-5-5 (the transcript's message.model, read after the launch)
+  session_id: a669756e443760703
+  worktree: .agents/worktrees/Q110
+  base: ce795acb
+  launched: 2026-09-30 19:39 local
+  report: agents/reviews/Q110-report.md
+  brief_check: agents/reviews/Q110-brief-check.md, every finding closed in the brief or raised as Z105 (its Closed heading); claude-opus-5-5, 31 tool uses, 166,632 tokens, 6.1 min
+  shared_paths: docs/diagrams with X3d and Q108 (a mechanical rerun of `npm run diagrams` at landing); DESIGN.md line 313 with X3d, whose brief writes other sections of DESIGN.md, so git merges the hunks
+  landing: not-started
+  round: 0
 ```
 
 ## The standing demands (from Axel, in force)
@@ -520,6 +533,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-09-30 19:39. Q110 prepared at ce795acb and in flight on `claude-sonnet-5-5`; three steps in flight: X3d, Q108, Q110. Next: /spec U2 (its builder waits for a free slot). Open: Z105, Z103.
 - 2026-09-30 19:37. Q110's brief check is in; every finding closed in the brief but the undo of a clear, raised as Z105. Q110 is prepared next. Open: Z105, Z103.
 - 2026-09-30 19:28. Q108 prepared at a6efe87c (the patch applied in its worktree) and in flight on `claude-sonnet-5-5`, beside X3d. Next: /spec Q110, then U2. Open: Z103.
 - 2026-09-30 19:22. Z104 ruled (a): X3d continued by a new builder on `claude-sonnet-5-5` in its worktree. Q108's brief check runs on `claude-opus-5-5`. queue.md cut to short lines on Axel's word. Next: Q108's preparation commit and builder, then /spec Q110 and U2. Open: Z103.
