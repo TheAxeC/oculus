@@ -1,7 +1,7 @@
 /plan-orchestration oculus/migration
 
 In flight:
-- E1 (the design section for apps added while oculus runs, for Axel's ruling), round 1 refuted, landing next.
+- none; X3d, S3 and U2 are being prepared.
 Queued, in order:
 - X3d (the Repositories view and the diff rebuilt to look and work as VS Code's Source Control), first.
 - S3 (the Settings view as VS Code's Settings editor with the options catalog; Z75 (a)).
@@ -32,7 +32,8 @@ Queued, in order:
 The loop fills three slots as they free up; a line above is only an order, never a barrier, apart from the "once ... has landed" notes. A step's line moves to Landed, at the top of that list, in its landing commit.
 
 Landed, newest first: every step ticked in `plan.md`, each with the date and the commit that ticked it (the 15 steps dated 2026-09-10 at f8af492b were landed before the ledger was opened):
-- Q102 (the terminal working as VS Code's terminal; Z69 (a)), 2026-09-30, pending.
+- E1 (the design section for apps added while oculus runs; its 31 choices are Z93), 2026-09-30, pending.
+- Q102 (the terminal working as VS Code's terminal; Z69 (a)), 2026-09-30, 7dde39e2.
 - Q84 (the fetch-and-hold stores on @tanstack/query-core; Z56 (a)), 2026-09-30, 556dcaf2.
 - D13c (the code theme key; Z46 (a)), 2026-09-30, 5a503e82.
 - Q86c (the Map's forces back on d3-force; Z60 (a)), 2026-09-30, de5f74cd.

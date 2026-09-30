@@ -319,3 +319,23 @@ Whether coauthors' commit subjects on `git` count as another person's words is A
 
 ### Usage
 About 40 tool calls. Tokens and time were not measured from inside the session.
+
+## Closed, the run over repair round 1
+
+Each fix at landing is in `DESIGN.md`, section "Apps added while oculus runs", on main.
+
+- P2 and F7 (penpal copies an `Error`'s stack): fixed at landing, a refusal rejects with the word as a plain string, which penpal sends as it is (`dist/penpal.mjs:88-97`, read from the 8.0.1 package).
+- St1 and F4 (the flourish and the open question on WebRTC and DNS prefetch): fixed at landing, the sentence states approval as the boundary and claims nothing for the two; whether the build step measures them is choice C29 of `agents/reviews/E1-choices.md`, raised as open item Z93.
+- F1 (the shared files refused by the request rules): fixed at landing, the two shared files have a rule of their own and the list is for an app's file.
+- F2 (choice 7r without the option that keeps the manuals' links): fixed at landing, the Document view opens an outside link in a browser tab; option (d) of choice C7, Z93.
+- F3 (apps able to write the bookmarks): fixed at landing, the handler refuses the key `bookmarks` for an app's write; option (e) of choice C9, Z93.
+- F5 (the approval panel's control opens an unapproved app's page with oculus's origin): fixed at landing, a file under `apps_dir` opens as source text and never in the Document view; choice C30, Z93.
+- F6 (the group glyph): fixed at landing, `app` is reserved for the heading and `apps.glyph` is `app-view`; choice C31, Z93.
+- F8 (the report's `DESIGN.md:402`): closed in the landing report, the base line is 323 and the build step's brief takes the sentence, not the number.
+- F9 (the clause on a rebound host name): fixed at landing.
+- F10 (two lists of closed names): fixed at landing, the manifest paragraph points at the closed sets.
+- F11 (no consumer of the reloaded page data): fixed at landing, a second effect reads `data.apps`.
+- F12 (the key rate without a config key): fixed at landing, `apps.keys_per_s`; in choice C18, Z93.
+- F13 (an absent `approvals.json`): fixed at landing.
+- F14 (the `config` channel carries the host): fixed at landing, the sentence says so; in choice C8, Z93.
+- The two negation-contrasts (:303, :278): fixed at landing.

@@ -28,22 +28,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:      # Q102 landed 2026-09-30; E1's round 1 refuted and saved, its landing next; then /spec X3d, S3, U2, Q88b (free since Q102 landed), D23; X3c and X3a wait for Q88b's landing.
-- step: E1
-  executor: agent
-  worker: claude:sonnet
-  model: claude-sonnet-5-5 (the transcript's message.model, read after the launch)
-  session_id: a47c8e362c522c5fb
-  worktree: .agents/worktrees/E1
-  base: 9023d17d
-  launched: 2026-09-30 09:49 local
-  report: agents/reviews/E1-report.md
-  brief_check: agents/reviews/E1-brief-check.md, every finding closed in the brief (its Closed heading); claude-opus-5-5, 54 tool uses, 161,730 tokens, 8.4 min
-  shared_paths: DESIGN.md (E1 inserts a new section between "## Hot reload" and "## Relationship to the cockpit"; Q102 changes the Terminal text and Q84 the paragraphs at 174 and 192, all in other sections, so the merge keeps each side's lines by hand); docs/diagrams/ (no source change in E1; regenerated on main at landing).
-  builder_usage: 37 tool uses, 215,466 tokens, 15.1 min (907,356 ms), from its completion notice; report saved 2026-09-30; round 1: 20 tool uses, 264,475 tokens, 7.8 min (469,835 ms), report section saved
-  reviewer_report: agents/reviews/E1-refuter.md; claude-opus-5-5, 64 tool uses, 233,794 tokens, 16.7 min (1,000,330 ms), from its completion notice; over round 1, the same file's "Repair round 1, refuted": claude-opus-5-5, about 40 tool calls by its own count, tokens and time not measured
-  landing: not-started
-  round: 1 (sent 2026-09-30: deck and the entry kinds' writes classed right, the three kinds that cannot be undone, the app factory told apart from registerCollections', the apps group's rail page, the files channel, the origin check, the apps channel ruled, the approval entry's name, the containment claim, penpal's stack, the sentences made false, the reload, the key handler, the flourish and names, three more choices, forwarded keys only with focus and a rate, the watcher, frame-src and the Document view, the change check with ctime; base of the round in scratch E1-round1-base)
+dispatch:      # none in flight. Q102 and E1 landed 2026-09-30; next /spec X3d, S3, U2, Q88b (free since Q102 landed), D23; X3c and X3a wait for Q88b's landing.
 ```
 
 ## The standing demands (from Axel, in force)
@@ -104,7 +89,7 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is booked as its own step in `plan.md` and carried in the Booked section below, since it needs no ruling from him.
 
-None.
+- Z93, the design of apps added while oculus runs: 31 choices (raised 2026-09-30 at E1's landing). The section is in `tools/oculus/DESIGN.md` as an unbuilt proposal whose text holds the recommended option of each choice; nothing is built and no build step is booked until Axel rules. The choices in full, each with its options, what speaks for and against each, the recommendation and the lazy option, are `agents/reviews/E1-choices.md`, which every report prints whole. They are C1 the folder, C2 the manifest, C3 the view id, C21 reserved names, C22 a folder without `app.yml`, C23 a manifest asking for a closed item, C4 the address, C5 the cross-origin header, C6 the sandbox, C7 the frame policy and the manuals' outside links, C24 the bridge's client file, C27 the Electron window, C30 an app's page in the Document view, C8 the channels, C28 coauthors' commit text, C25 the list of apps, C10 the title and glyph, C31 the glyph names, C11 state, C9 the write kinds and the bookmarks, C16 enforcing the kinds, C17 asking the reader, C18 the limits, C26 the refusal words, C15 the method names, C13 what an approval covers, C14 where approvals are kept, C29 what stops an app sending data out, C19 where apps sit, C12 a removed app's tabs, C20 keys inside an app. Recommendation: every choice as its file line recommends, which is what the section says now; the lazy option of each is named there. Blocks only E1's build step, which does not exist yet.
 
 ## Time per step (Axel asked 2026-09-27 for how it evolves with Q77; measured from each builder's transcript: each tool call from call to result, each background wait from the builder stopping to the run waking it)
 
@@ -498,6 +483,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - 2026-09-30 12:40. The Z74 inventory was read in full and saved as `agents/reviews/Z74-inventory.md`, with its missing rows cut under the Settings ruling: eleven decisions raised as Z78 to Z88, the rest fixed choices listed at the end of that file. In flight: Q102 and E1, each with its round-1 refutation returned and not yet saved. The loop waits for Axel's green light. Open: Z78 to Z88.
 - 2026-09-30 12:30. Every trace of the `.vscode` discussion and of the Z71 to Z74 rulings given before it was removed from main's history at Axel's order, and Z71 to Z74 were put to him again and ruled: Z71 (a), Z72 (a), (a), (c), (b1), Z73 (b), Z74 (a) x4, booked in `plan.md`, `agents/spec.md` and here. In flight: Q102 and E1, each with its round-1 refutation returned and not yet saved. The loop waits for Axel's green light. Open: none.
 - 2026-09-30 13:10. Ruled: Settings (a), an option is a key only where the answer differs between files, repositories or languages or is taste. Booked X3d (the Repositories view and the diff rebuilt to VS Code's Source Control UI), X3a widened (the Explorer's look and behaviour, the roots made clear) and U1 (every other view's look, audited first). Open: Z75, Z76.
+- 2026-09-30 15:00. E1 landed through /spec, /refute (one repair round, refuted again) and /land: the section "Apps added while oculus runs" in `DESIGN.md` as an unbuilt proposal; fifteen text fixes at landing; verify on main `checks: 7 commands passed` (348 files, 5303 tests); its 31 choices raised as Z93. Nothing in flight. Next: /spec X3d, S3, U2, Q88b and D23 with three slots filled.
 - 2026-09-30 14:30. Green light from Axel. Q102 landed through /spec, /refute (one repair round, refuted again) and /land (the terminal as VS Code's; Z69 (a)); nine fixes at landing; verify on main `checks: 7 commands passed` (348 files, 5303 tests); its look on TEST is owed (Booked section). In flight: E1 (round 1 refuted, landing next). Next: E1's landing and its choices to Axel, then /spec X3d, S3, U2, Q88b and D23 with three slots filled.
 - 2026-09-30 10:15. Q84 landed through /spec, /refute (one repair round, refuted again) and /land (the fetch-and-hold stores on `@tanstack/query-core`, Z56 (a)); five fixes at landing; verify on main `checks: 7 commands passed` (340 files, 5185 tests). In flight: Q102 (repair round 1), E1 (builder). Q88b waits for Q102. Open: Z72, Z71.
 - 2026-09-30 02:45. D13c landed through /spec, /refute (one repair round, refuted again) and /land (the code theme key and its control, Z46 (a)); three fixes at landing; verify on main `checks: 7 commands passed` (339 files, 5149 tests). In flight: Q102 (builder), Q84 (report in, review next). Q88b waits for Q102 and Q84. Open: Z71.
