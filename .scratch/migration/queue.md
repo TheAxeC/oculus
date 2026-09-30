@@ -2,7 +2,7 @@
 
 In flight:
 - X3d (Source Control as VS Code's), taken back out of main at its look (the page hung); its diagnosis runs.
-- Q111 (Undo gives a cleared field's lines back), repair round 1 running.
+- Q111 (Undo gives a cleared field's lines back), repair round 1 built; its review runs.
 - Q107 (a Terminal tab closing itself; Attach to Session), its builder runs.
 Open items: none. Choices made in automode, for review: `choices.md`.
 Queued, in order:

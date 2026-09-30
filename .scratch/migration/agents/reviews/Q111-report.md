@@ -126,3 +126,64 @@ The deposit (`src/lib/server/git/deposit.ts:386`) reads only `found` and `refuse
 ## Files changed
 
 `src/lib/server/edit/yaml-edit.ts` (857 lines), `src/lib/server/edit/writes/manifest.ts` (419), `src/lib/server/edit/writes/undo.ts` (316), `src/lib/server/core/changes.ts` (294), `tests/routes/edit/undo-removed.test.ts` (new, 318), `tests/server/edit/yaml-edit-removed.test.ts` (new, 285), `tests/routes/edit/write-fixture.ts` (296), `tests/routes/edit/undo.test.ts` (566), `tests/server/edit/yaml-edit.test.ts` (538, two assertions), `tests/checks/tree/allow-duplication.txt` (189, one line removed), `DESIGN.md` (lines 140, 313, 376), `HELP.md` (line 254), and whatever `npm run diagrams` regenerated under `docs/diagrams`.
+
+## Repair round 1
+
+All seven rulings are done; the proofs of rulings 1 to 3 were seen failing on scratch copies under `$TMPDIR` (removed afterwards) and pass on the worktree.
+
+| Ruling | State | Evidence |
+|---|---|---|
+| 1. Case 26 records keep lines that fit | DONE | `undo-removed.test.ts`, "refuses a record of a field no write may set, whatever removed says": each record has `next: 'id: alpha'`, `offset: 0` and lines `tier: archive\n`, `id: beta\n`, `paths:\n  doc: a.md\n`, `nosuch: x\n`, `type: idea\n`. Scratch copy with an insertion placed ahead of the schema checks in `writeManifest`: `FAIL ... refuses a record of a field no write may set, whatever removed says`, `AssertionError: expected 200 to be 400`. Worktree: passes. |
+| 2. Case 14 variants keep lines that fit, and assert the value write | DONE | The object variants carry `text: 'title: "A title"\n'`, `next: ''`; each asserts `${WITHOUT}title: A title\n`. Scratch copy with `removedOf` loosened (offset taken through `Number`, empty text accepted): `x ... removed is a negative offset`, `x ... a fractional offset`, `x ... an offset written as text`, 3 failed, 7 passed; the negative offset run shows `- title: A title` / `+ title: "A title"`. Worktree: passes. The variants `empty text`, `a string`, `null`, `a list`, `text that is a number`, `no next` and `a next that is a number` pass under that loosening too: a text of no characters, a non-object, a non-string text or a missing next cannot be inserted by any `removedOf`, so their result does not depend on the validation; they stay as the brief's cases. |
+| 3. A real tie | DONE | `yaml-edit-removed.test.ts`, "tries the earlier of two places at the same distance": text `a: 1\n# --\nx: 2\n# --\n`, offset 10, places 5 and 15, asserts `a: 1\nb: 2\n# --\nx: 2\n# --\n`. Scratch copy with `\|\| one - other` changed to `\|\| other - one` in `placesOf`: `x tries the earlier of two places at the same distance`, `expected 'a: 1\n# --\nx: 2\nb: 2\n# --\n' to be 'a: 1\nb: 2\n# --\nx: 2\n# --\n'`. Worktree: passes. |
+| 4. One first-run row per test that is not a numbered case | DONE | Table below. |
+| 5. Head comments | DONE | `yaml-edit.ts` head and `yaml-edit-removed.test.ts` head now say that for whole lines, when no place of `next` passes, every other line start is tried nearest first, and that text taken from inside a line tries only the places of `next`. |
+| 6. "as before" | DONE | `undo-removed.test.ts:3` ("is undone by writing the value."), the test names "appends the value when the record has no removed lines" and "writes the value, not the lines, when removed is ...". `grep -n "as before\|as today"` over the two new test files, `yaml-edit.ts`, `manifest.ts`, `undo.ts` and `changes.ts` prints nothing. |
+| 7. Flow-map clause in the three doc sentences | DONE | `DESIGN.md:140`, `DESIGN.md:376`, `HELP.md:254` now say whole lines go back at the nearest line start, and that "text removed from inside a line (a flow map's key) goes back only at the place of its following text, and otherwise comes back through the value write". `LC_ALL=C grep -c '[^ -~]' DESIGN.md HELP.md` prints 0 for both. |
+
+### First run of the tests that are not numbered cases
+
+Run in a scratch copy of the worktree with the four unchanged `src` files (`yaml-edit.ts` 720 lines, `manifest.ts` 354, `undo.ts` 305, `changes.ts` 267, taken from the tree at the base) and the current tests: `npx vitest run tests/routes/edit/undo-removed.test.ts tests/server/edit/yaml-edit-removed.test.ts`. Result: 44 failed, 17 passed.
+
+| Test | First run on the unchanged source |
+|---|---|
+| yaml-edit-removed: keeps the comma before a later key of a flow map | fails: `Cannot read properties of undefined (reading 'status.chips')` |
+| yaml-edit-removed: moves a point by the change in length of an edit above it | fails: `expected undefined to deeply equal { short: { offset: 37, ...(2) } }` |
+| yaml-edit-removed: moves a point to the start of a later removal that holds it | fails: `expected undefined to deeply equal { 'status.chips': { ...(3) }, ...(1) }` |
+| yaml-edit-removed: reports nothing for a field that was replaced or added | fails: `expected undefined to deeply equal {}` |
+| yaml-edit-removed: reports only the fields that were written | fails: `Cannot convert undefined or null to object` |
+| yaml-edit-removed: reports nothing for a manifest that does not parse | fails: `expected undefined to deeply equal {}` |
+| yaml-edit-removed: reports nothing when the result did not verify and nothing was written | fails: `expected undefined to deeply equal {}` |
+| yaml-edit-removed: tries the place of the following line nearest the recorded index first | fails: `Cannot read properties of undefined (reading 'title')` |
+| yaml-edit-removed: tries the earlier of two places at the same distance | fails: `insertRemoved is not a function` |
+| yaml-edit-removed: falls to the nearest line start when the following line is gone | fails: `insertRemoved is not a function` |
+| yaml-edit-removed: refuses the fields a write never sets, and a name that is not a field | fails: `insertRemoved is not a function` |
+| yaml-edit-removed: does not insert a key the file already holds | fails: `insertRemoved is not a function` |
+| yaml-edit-removed: gives back every shape a clear takes text out in | fails: `Cannot read properties of undefined (reading 'title')` |
+| undo-removed: refuses to write over a field edited since, whatever the record keeps | passes (a behaviour the change preserves) |
+| undo-removed: keeps nothing for a write that changed a value or added a line | passes (preserved) |
+| undo-removed: keeps nothing for the undo of a removal | passes (preserved) |
+| undo-removed: refuses a group with no removed lines, or lines that fit nowhere | passes (preserved) |
+
+The numbered cases with several tests keep their rows in the table above; their tests on the unchanged source are the failing ones listed in that run, and the passes (cases 10, 13, 14, 26) are unchanged.
+
+### Checks
+
+`npm run diagrams` exited 0, then `sh ~/.claude/skills/land/templates/checks.sh .scratch/migration/orchestrator-state.md`. Its first run stopped at `npm test` on `tests/ui/theme/colours.test.ts > colours every highlighter class from one stylesheet the page root imports`, `Error: Test timed out in 5000ms`, in a file this step does not change; `npx vitest run tests/ui/theme/colours.test.ts --reporter=dot` alone passed (`Test Files  1 passed (1)`, `Tests  13 passed (13)`). The script stops at the first red command, so it was run once more to reach the other six commands; its lines:
+
+```
+$ npm test
+ Test Files  352 passed | 19 skipped (371)
+      Tests  5408 passed | 559 skipped (5967)
+$ npm run test:checks
+ Test Files  27 passed | 2 skipped (29)
+      Tests  365 passed | 9 skipped (374)
+$ npm run check
+COMPLETED 2476 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+$ npm run build
+$ npm run format:check
+All matched files use Prettier code style!
+$ npm run lint
+$ ! LC_ALL=C grep -rna '[^ -~]' src tests
+checks: 7 commands passed
+```
