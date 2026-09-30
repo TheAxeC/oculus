@@ -67,6 +67,22 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   shared_paths: HELP.md with Q107 (S3a writes 214-230, Q107 127 and 146); DESIGN.md with Q107 (S3a writes 44 and 85, Q107 154 and 361); no two change the same line
   landing: not-started
   round: 0
+- step: X3d
+  executor: agent
+  worker: claude:sonnet
+  model: claude-sonnet-5-5 (the transcript's message.model, read at 00:54)
+  session_id: a479ec935c42cc52a (launched 2026-10-01 00:53 local)
+  worktree: .agents/worktrees/X3d
+  base_copy: .agents/worktrees/X3d-base (detached at 6dc78524, for the first run of the cases on the unchanged tree; removed at landing)
+  base: 6dc78524
+  launched: 2026-10-01 00:53 local
+  report: agents/reviews/X3d-report.md (with agents/reviews/X3d-shots/)
+  brief_check: agents/reviews/X3d-brief-check.md, every finding closed in the brief (its Closed heading); claude-opus-5-5, 52 tool uses, 301,056 tokens, 12.4 min; not run again (the spec skill runs it once per step)
+  diagnosis: agents/reviews/X3d-diagnosis.md (agent a960e7fd2f6310fd5, claude-opus-5-5; 342,901 tokens, 172 tool uses, 120.5 min; cause found, item 15 of the brief)
+  patch: agents/reviews/X3d-landing-attempt.patch applied with --3way at the base, 76 files clean
+  shared_paths: DESIGN.md and HELP.md with Q107 (Q107 writes DESIGN 154 and 361, HELP 127 and 146) and S3a (DESIGN 44 and 85, HELP 214-230); X3d writes DESIGN 373 and 389, HELP 112, 130, 176, 180 and 198; no two change the same line
+  landing: not-started
+  round: 0
 ```
 
 ## The standing demands (from Axel, in force)
@@ -623,7 +639,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
-- 2026-10-01 00:52. S3a's builder launched (claude-sonnet-5-5). X3d prepared again at /spec: its brief rewritten with items 15 to 19 (the Graph hang fix, the full-width action button, the Seti file icons, lanes under Outgoing and Incoming, the builder's own look); its worktree and builder next. Q107's round review runs. Open: none.
+- 2026-10-01 00:52. S3a's builder launched (claude-sonnet-5-5). X3d prepared again at /spec: its brief rewritten with items 15 to 19 (the Graph hang fix, the full-width action button, the Seti file icons, lanes under Outgoing and Incoming, the builder's own look); its builder launched at 00:53 (claude-sonnet-5-5) on base 6dc78524 with the patch applied. Q107's round review runs. Three steps in flight: X3d, S3a, Q107. Open: none.
 - 2026-10-01 00:33. Z129 ruled (a) by Axel: the Graph hang fix is X3d's first item. In flight: Q107 (repair round 1). Next: S3a's builder; /spec X3d into the third slot. Open: none.
 - 2026-10-01 00:30. Q106 landed (the look on TEST taken in a new tab). X3d's diagnosis in: the Graph's commit press hangs the page on main; open item Z129 on how the fix reaches main. In flight: Q107 (repair round 1). Next: /spec S3a's worktree and builder into the freed slot. Open: Z129.
 - 2026-10-01 00:10. Z127 ruled (a): the Q85a steps are two. Q107's repair round 1 sent (four rulings, Z128 in automode). Q106's round refuted: one comment clause, fixed at landing. In flight: X3d (its diagnosis), Q107 (repair round 1), Q106 (landing next). Open: none.
