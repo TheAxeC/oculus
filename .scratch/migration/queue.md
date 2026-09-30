@@ -5,6 +5,7 @@ In flight:
 - E1 (the design section for apps added while oculus runs, for Axel's ruling), round 1 under review.
 Queued, in order:
 - X3d (the Repositories view and the diff rebuilt to look and work as VS Code's Source Control), first.
+- S3 (the Settings view as VS Code's Settings editor with the options catalog; Z75 (a)).
 - U1 (the audit of every other view's look against VS Code's visual language), beside X3d; its build steps once Axel rules on its grouping.
 - Q88b (the right-click menus' new capabilities, and Chrome's own menu blocked): Z70 ruled (a); once Q102 has landed: both change the pane strip's menu and picks (`pane-view.ts`), `PaneView.svelte`, `layout/instances.ts` and `ui.svelte.ts`.
 - X3c (the tab strip as VS Code's editor tabs; Z47 (a)), once Q88b has landed: both change the pane strip (`PaneView.svelte`, `Tabs.svelte`, `pane-view.ts`), Q88b through `show_tabs`, `editor_actions` and its strip items.
