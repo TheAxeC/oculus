@@ -2,9 +2,9 @@
 
 In flight:
 - X3d (Source Control as VS Code's), a new builder continues it.
-- Q108 (the four fixes of the inline patch), repair round 1 sent (two test fixes).
-- Q110 (Undo gives a replaced value back), built; its reviewer runs.
-Open items: Z103 (the 42 shapes E2 named).
+- Q108 (the four fixes of the inline patch), round 1 done; its round review runs.
+- Q110 (Undo gives a replaced value back), repair round 1 sent (a comment, four tests).
+Open items: Z106 (three more changes to the apps design).
 Queued, in order:
 - U2 (every view's look against VS Code's), prepared; its builder launches once X3d and Q108 have landed.
 - Q111 (Undo gives a cleared field's lines back), once Q110 has landed.

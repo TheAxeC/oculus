@@ -108,3 +108,36 @@ Nothing was impossible. One sentence of the brief did not hold as written: case 
 
 - Monaco itself drawing a zone and calling `onDomNodeTop` is not covered by any test; the look on TEST covers it (cases 9 and 10), and I took neither.
 - The merge editor's model-change path (`Editor.svelte:281-288`) is covered only through the fake editor's `model(null)` then `model({})`, as the brief states.
+
+## Repair round 1
+
+Everything in the round is done.
+
+| Finding | Status | Proof |
+|---|---|---|
+| 1. `hpc.test.ts` absence check cannot fail | DONE | Line 181 is now `expect(queued.search(/class="empty[\s"]/)).toBe(-1);` with its reason comment kept above it. `npx vitest run tests/views/system/hpc.test.ts -t "empty queue line"` printed `Tests  1 passed \| 30 skipped (31)`. With `Jobs.svelte` changed for the run to draw `<Empty message="probe" />` beside the table, the same command printed `AssertionError: expected 3881 to be -1 // Object.is equality` and `Tests  1 failed \| 30 skipped (31)`. `Jobs.svelte` put back: `cmp` of the copy saved before the change printed no difference, and the whole file `npx vitest run tests/views/system/hpc.test.ts` printed `Tests  31 passed (31)`. |
+| 2. `zones.test.ts` case 13 assertion cannot fail | DONE | The fake counts every call of `changeViewZones` before its model check and exposes it as `changes()`; `removed` is gone. Case 13 records `const before = fake.changes()` before `off()` and asserts `expect(fake.changes()).toBe(before)` after. `npx vitest run tests/ui/controls/editor/zones.test.ts` printed `Tests  9 passed (9)`. With `entry.zone = null;` (`zones.ts:116`) removed for the run, it printed a failed line for `takes a bar away that holds a widget and no zone without asking the editor to remove a zone`, `AssertionError: expected 2 to be 1 // Object.is equality` and `Tests  1 failed \| 8 passed (9)`. `zones.ts` put back: `cmp` of the copy saved before the change printed no difference, and the file printed `Tests  9 passed (9)` again. |
+
+Files changed in the round: `tests/views/system/hpc.test.ts` and `tests/ui/controls/editor/zones.test.ts`. `npx prettier --check` on both printed `All matched files use Prettier code style!`.
+
+The checks, `npm run diagrams` (exit 0) and then `sh ~/.claude/skills/land/templates/checks.sh .scratch/migration/orchestrator-state.md` (exit 0), with their `$` lines and result lines:
+
+```
+$ npm test
+ Test Files  349 passed | 19 skipped (368)
+      Tests  5329 passed | 563 skipped (5892)
+$ npm run test:checks
+ Test Files  27 passed | 2 skipped (29)
+      Tests  365 passed | 9 skipped (374)
+$ npm run check
+1790791304432 COMPLETED 2473 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+$ npm run build
+built in 10.92s
+$ npm run format:check
+All matched files use Prettier code style!
+$ npm run lint
+$ ! LC_ALL=C grep -rna '[^ -~]' src tests
+checks: 7 commands passed
+```
+
+`npx vitest run tests/ui/controls/editor tests/views/system/hpc.test.ts tests/shell/workbench.test.ts tests/ui/theme/colours.test.ts` printed `Test Files  12 passed (12)` and `Tests  160 passed (160)`.

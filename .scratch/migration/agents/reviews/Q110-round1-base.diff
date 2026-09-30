@@ -1,0 +1,351 @@
+diff --git a/tools/oculus/DESIGN.md b/tools/oculus/DESIGN.md
+index b40230cb..f1109973 100644
+--- a/tools/oculus/DESIGN.md
++++ b/tools/oculus/DESIGN.md
+@@ -310,7 +310,7 @@ Open to every app: `portfolio`, `feeds`, `hpc`, `audit` and `config`, each whole
+ 
+ **What an app keeps.** Two JSON values. The tab's instance state, saved with the layout: `getState()` and `setState(value)` read and write one value, in the instance's state as `{ value }` (a root app's tab also keeps its folder, as above). `setState` rejects `too_large` above `apps.state_max_kb` (64) and rejects a value that is not JSON. Two tabs of one app keep separate values by construction, and a moved tab keeps its value. The app's store: one value for the app, shared by every tab of it in every window. `getStore()` answers the value, and `null` when the store file is absent, does not parse or is over `apps.store_max_kb` (256); `setStore(value)` replaces it. A machine app's store is the file `~/.oculus/app-data/<name>.json` and a root app's is `<root>/.oculus/app-data/<name>.json`, created with its folder by the first write. It lies outside the app's folder, so writing it never changes the app's content hash or its approval. For a root app the store is a file of the root, tracked by git unless the root ignores `.oculus/app-data/`. `setStore` is a write of the new kind `app-store` (below): it rejects `too_large` above `apps.store_max_kb`, rejects a value that is not JSON, counts toward `apps.writes_per_min`, and rejects `refused:<reason>` when the file cannot be written, which is what a root that cannot be written gives. The server watches the store files, and a change to one, whoever made it (another tab, History's undo, a pull, a hand edit), reaches the page on the `apps` channel, which calls `onStore(value)` in every tab of the app in every window, the tab that wrote included. A write of the value the file already holds changes nothing and calls nothing. A tab that mounts reads the value with `getStore()`. Nothing else persists: an opaque origin has no cookies, `localStorage` or IndexedDB. An app can name no store but its own, because the page sends the app's view id in a header and the body carries only the value.
+ 
+-**How it writes.** Every write goes through the page. `write(kind, body)` is checked against the manifest's `writes`, and the page sends `POST /api/write` with the write token and the headers `x-oculus-app: <view id>` and `x-oculus-write-kind: <kind>`; the handler, having matched the body to one of its parsers, refuses with 403 `{ error: 'kind' }` and writes nothing when the branch it matched is not named by the header or is a closed kind, because the page cannot tell which parser will match and a body would otherwise satisfy a parser of a closed kind while declaring an open one. The change record carries the app's view id beside its kind, so the reader sees and undoes an app's writes in the change log like any other. Open kinds: `manifest`, `entry`, `subtask`, `subtask-add`, `host`, `new-entry`, `reorder`, `delete-entry`, `feed-field`, `feed-delete`, `lead-add`, `linkedin-idea`, `linkedin-post` and `new-idea`, which edit the hub's data. The kind `app-store` is in neither set: every app is granted it for its own store. The four entry kinds (`entry`, `new-entry`, `reorder`, `delete-entry`) resolve the collection key `bookmarks` to the reader's bookmarks file under `~/.oculus`, outside the hub (`server/edit/writes/entries.ts:68`, `server/edit/writes.ts:84-85`), and a bookmark naming an `.html` file opens it in the Document view, whose frame carries oculus's origin (`views/sources/files/opening.ts:62-70`). The handler therefore refuses the collection key `bookmarks` with 403 `{ error: 'kind' }` for a write that carries `x-oculus-app`, so no app edits the reader's bookmarks. Closed: `undo`, which takes back any writer's change, `rail`, which rewrites `config/layout.yml`, `audit-mute`, which edits `config/behavior.yml`, `session`, which edits the machine's session overrides, and `deck`, which writes `config/present.yml`, an engine file (`server/edit/writes/deck.ts:1-4`). The other thirteen write routes (`calendar`, `connect`, `mail`, `memories`, `fs`, `open`, `source`, `deposit`, `git`, `hpc`, `usage/refresh`, `hook` and `terminal`) are closed to apps without exception: they run processes, write arbitrary files, reach a remote or act on an account, and the page never sends an app's request to any of them. `delete-entry`, `feed-delete`, `new-idea`, `linkedin-idea` and `linkedin-post` ask the reader first in a `Confirm` naming the app, the kind in words and the target as text, every time. Three of them are recorded with `undo: 'none'` and cannot be taken back, since `undoChange` answers `nothing` for such a record (`writes/undo.ts:181`): `new-idea` (`writes/manifest.ts:314`), `linkedin-idea` (`edit/feeds.ts:253`) and `linkedin-post` (`edit/feeds.ts:306`, which moves files). The other open kinds are recorded and undoable and send without asking. At most `apps.writes_per_min` (30) writes pass per frame per minute, `setStore` included, and the rest reject `rate`. The kind `app-store` is refused for a request that does not carry `x-oculus-app`, and a manifest that lists it in `writes` is refused `write_closed`, since the kind cannot be asked for. The body is `{ store: <value> }`, and the handler finds the store from the header's view id alone, writes the file by rename, reads it back and refuses unless the read back equals the value sent. Its change record holds the file, the app's view id as `key`, the field `store`, and the sizes in bytes before and after as `before` and `after`. A store write's record is the one change record that holds sizes where every other holds the two values, and History draws the two sizes for it. The values before and after are kept beside the log in `~/.oculus/app-data/.undo/<time>.json`, named by the record's `at` and deleted when the record leaves the `changes.keep` window, so a 256 KB store does not put 512 KB in a line of `changes.jsonl`; the undo of a store write checks that the store file still holds the value after and puts the value before back through the store's writer, and a record whose file is gone answers `nothing`.
++**How it writes.** Every write goes through the page. `write(kind, body)` is checked against the manifest's `writes`, and the page sends `POST /api/write` with the write token and the headers `x-oculus-app: <view id>` and `x-oculus-write-kind: <kind>`; the handler, having matched the body to one of its parsers, refuses with 403 `{ error: 'kind' }` and writes nothing when the branch it matched is not named by the header or is a closed kind, because the page cannot tell which parser will match and a body would otherwise satisfy a parser of a closed kind while declaring an open one. The change record carries the app's view id beside its kind, so the reader sees and undoes an app's writes in the change log like any other. Open kinds: `manifest`, `entry`, `subtask`, `subtask-add`, `host`, `new-entry`, `reorder`, `delete-entry`, `feed-field`, `feed-delete`, `lead-add`, `linkedin-idea`, `linkedin-post` and `new-idea`, which edit the hub's data. The kind `app-store` is in neither set: every app is granted it for its own store. The four entry kinds (`entry`, `new-entry`, `reorder`, `delete-entry`) resolve the collection key `bookmarks` to the reader's bookmarks file under `~/.oculus`, outside the hub (`server/edit/writes/entries.ts:68`, `server/edit/writes.ts:84-85`), and a bookmark naming an `.html` file opens it in the Document view, whose frame carries oculus's origin (`views/sources/files/opening.ts:62-70`). The handler therefore refuses the collection key `bookmarks` with 403 `{ error: 'kind' }` for a write that carries `x-oculus-app`, so no app edits the reader's bookmarks. Closed: `undo`, which takes back any writer's change, `rail`, which rewrites `config/layout.yml`, `audit-mute`, which edits `config/behavior.yml`, `session`, which edits the machine's session overrides, and `deck`, which writes `config/present.yml`, an engine file (`server/edit/writes/deck.ts:1-4`). The other thirteen write routes (`calendar`, `connect`, `mail`, `memories`, `fs`, `open`, `source`, `deposit`, `git`, `hpc`, `usage/refresh`, `hook` and `terminal`) are closed to apps without exception: they run processes, write arbitrary files, reach a remote or act on an account, and the page never sends an app's request to any of them. `delete-entry`, `feed-delete`, `new-idea`, `linkedin-idea` and `linkedin-post` ask the reader first in a `Confirm` naming the app, the kind in words and the target as text, every time. Three of them are recorded with `undo: 'none'` and cannot be taken back, since `undoChange` answers `nothing` for such a record (`writes/undo.ts:181`): `new-idea` (`writes/manifest.ts:350`), `linkedin-idea` (`edit/feeds.ts:253`) and `linkedin-post` (`edit/feeds.ts:306`, which moves files). The other open kinds are recorded and undoable and send without asking. At most `apps.writes_per_min` (30) writes pass per frame per minute, `setStore` included, and the rest reject `rate`. The kind `app-store` is refused for a request that does not carry `x-oculus-app`, and a manifest that lists it in `writes` is refused `write_closed`, since the kind cannot be asked for. The body is `{ store: <value> }`, and the handler finds the store from the header's view id alone, writes the file by rename, reads it back and refuses unless the read back equals the value sent. Its change record holds the file, the app's view id as `key`, the field `store`, and the sizes in bytes before and after as `before` and `after`. A store write's record is the one change record that holds sizes where every other holds the two values, and History draws the two sizes for it. The values before and after are kept beside the log in `~/.oculus/app-data/.undo/<time>.json`, named by the record's `at` and deleted when the record leaves the `changes.keep` window, so a 256 KB store does not put 512 KB in a line of `changes.jsonl`; the undo of a store write checks that the store file still holds the value after and puts the value before back through the store's writer, and a record whose file is gone answers `nothing`.
+ 
+ **Opening things in oculus.** `open(target)` asks the page to open a tab and resolves once it has; it needs no manifest entry. The target is one of `{ view: <view id> }`, `{ project: <key> }` and `{ file: { root, path } }`. `{ view }` opens a registered view with no state, and only a view that the view catalogue lists (`listed` is not `false`, `state/workbench/navigation/registry.ts:86-91`); `terminal`, `document`, `file`, `source`, `project` and every view that is not listed, which is every view that needs an argument, reject `closed`, and an id no registration holds rejects `missing`. `{ project }` opens the project's tab and rejects `missing` when the portfolio holds no project with that key. `{ file }` opens the file as source text in the source tab and never in the Document view. A root app may name only its own root in `file`, and any other root rejects `closed` for it, whether or not the file browser shows that root; a machine app may name any root shown in the file browser, and a root the file browser does not show rejects `missing` for it. A file that does not exist rejects `missing`. A binary file, and a file that `open.program_ext` maps to a program such as a `.docx`, open in the source tab as source text, as every file `open` names does, and no program is started. The bridge's `open` reaches the page's own tab opener and never `POST /api/open`, the route that starts a program (the open action of the Configuration section), which stays closed to apps beside the other closed write routes above. A target that is none of the three forms rejects `closed`. At most `apps.opens_per_min` (30) calls of `open` pass per frame per minute, and the rest reject `rate`.
+ 
+diff --git a/tools/oculus/src/lib/server/edit/writes/manifest.ts b/tools/oculus/src/lib/server/edit/writes/manifest.ts
+index 62ed534e..e6be31c3 100644
+--- a/tools/oculus/src/lib/server/edit/writes/manifest.ts
++++ b/tools/oculus/src/lib/server/edit/writes/manifest.ts
+@@ -5,8 +5,9 @@
+ // already found under the hub's own scan directories, and insideHub checks the resolved path
+ // against them again before the write. Nothing outside them is ever opened for writing.
+ //
+-// server/edit/writes.ts is the route and re-exports everything here, so an importer names either
+-// file.
++// server/edit/writes.ts is the route and re-exports the writers an importer needs (`coerce`,
++// `createIdea`, `fieldTypes`, `insideHub` and `writeManifest`); `currentOf` and `manifestValue` are
++// imported from this file by the ones that read a manifest's values back, as the undo does.
+ //
+ // Whether a path lies in a folder is read from server/core/paths.ts (`below`).
+ 
+@@ -57,9 +58,31 @@ const TEXTS = ['text', 'textarea', 'date', 'select'];
+ /** Types whose value is a list of strings. */
+ const LISTS = ['tags', 'chips', 'lines'];
+ 
++/** The types a form control of the manifest has, which `coerce` reads a value of. */
++const WRITABLE = ['checkbox', ...LISTS, ...TEXTS];
++
+ /** A refusal reason, or the value to write. The two are told apart by the shape. */
+ type Coerced = { value: FieldValue } | { reason: string };
+ 
++/**
++ * How the values of one write are read. A `form` value is what a control posted, so an empty
++ * control clears its field (`coerce`). A `record` value is what a change record holds, the value
++ * the file had, and is written as it is, so an empty list, an empty text and `false` go back into
++ * the file and `null` takes the field out.
++ */
++export type ValueReading = 'form' | 'record';
++
++/**
++ * Why a field of this type is never written, whichever way its value is read, or null when it may
++ * be: the schema decides what may be written, for a record as for a form.
++ */
++function unwritable(type: string): string | null {
++    if (type === 'readonly') return 'the field is read-only';
++    if (type === 'keymap') return 'a map field is not written by the form';
++    if (!WRITABLE.includes(type)) return `unknown field type ${type}`;
++    return null;
++}
++
+ /**
+  * One form value as the manifest's own kind of value. An empty text, an empty list and an unticked
+  * checkbox all clear the field, which is what the form means by leaving a control empty. A number
+@@ -67,8 +90,8 @@ type Coerced = { value: FieldValue } | { reason: string };
+  * turn it into a string.
+  */
+ export function coerce(type: string, raw: unknown, current: unknown): Coerced {
+-    if (type === 'readonly') return { reason: 'the field is read-only' };
+-    if (type === 'keymap') return { reason: 'a map field is not written by the form' };
++    const reason = unwritable(type);
++    if (reason !== null) return { reason };
+     if (type === 'checkbox') {
+         return { value: TRUE.includes(raw as string | number | boolean) ? true : null };
+     }
+@@ -89,7 +112,6 @@ export function coerce(type: string, raw: unknown, current: unknown): Coerced {
+         }
+         return { value: strings.length === 0 ? null : strings };
+     }
+-    if (!TEXTS.includes(type)) return { reason: `unknown field type ${type}` };
+     if (raw === null || raw === undefined) return { value: null };
+     if (typeof raw === 'boolean' || typeof raw === 'number') return { value: raw };
+     if (typeof raw !== 'string') return { reason: 'the value is not text' };
+@@ -100,6 +122,18 @@ export function coerce(type: string, raw: unknown, current: unknown): Coerced {
+     return { value: text };
+ }
+ 
++/** One value read the way the write says, as `coerce` does for a form and as it is for a record. */
++function readValue(
++    reading: ValueReading,
++    type: string,
++    raw: unknown,
++    current: unknown
++): { value: unknown } | { reason: string } {
++    if (reading === 'form') return coerce(type, raw, current);
++    const reason = unwritable(type);
++    return reason === null ? { value: raw } : { reason };
++}
++
+ /** The value a dotted field currently holds in a manifest record, or undefined. */
+ export function currentOf(manifest: Record<string, unknown>, field: string): unknown {
+     const dot = field.indexOf('.');
+@@ -136,13 +170,15 @@ export function insideHub(hub: string, config: PortfolioConfig, file: string): b
+ 
+ /**
+  * Set fields of one project's manifest. The file is written only when the edit changed something,
+- * so a form saved with nothing altered leaves the file's mtime alone.
++ * so a form saved with nothing altered leaves the file's mtime alone. The values are read as a form
++ * unless `reading` says they are a change record's (`ValueReading`).
+  */
+ export function writeManifest(
+     hub: string,
+     config: PortfolioConfig,
+     id: string,
+-    fields: Record<string, unknown>
++    fields: Record<string, unknown>,
++    reading: ValueReading = 'form'
+ ): WriteOutcome {
+     const { manifests } = readManifests(hub, config.scan, config.text);
+     const manifest = manifests.find((one) => one.id === id);
+@@ -181,7 +217,7 @@ export function writeManifest(
+             });
+             continue;
+         }
+-        const out = coerce(types[field] ?? 'text', raw, currentOf(manifest, field));
++        const out = readValue(reading, types[field] ?? 'text', raw, currentOf(manifest, field));
+         if ('reason' in out) {
+             refused.push({ field, reason: out.reason });
+             continue;
+diff --git a/tools/oculus/src/lib/server/edit/writes/undo.ts b/tools/oculus/src/lib/server/edit/writes/undo.ts
+index 8d8fa83a..12d57525 100644
+--- a/tools/oculus/src/lib/server/edit/writes/undo.ts
++++ b/tools/oculus/src/lib/server/edit/writes/undo.ts
+@@ -194,7 +194,9 @@ export function undoChange(into: WriteTarget, change: Change): UndoOutcome {
+ function apply(into: WriteTarget, change: Change): WriteOutcome | null {
+     const { hub, config } = into;
+     if (change.kind === 'manifest') {
+-        return writeManifest(hub, config, change.key, { [change.field]: change.before });
++        // The record holds the value the file had, so it is written as that value and not read as
++        // a form, which would take an empty list, an empty text or `false` out of the file.
++        return writeManifest(hub, config, change.key, { [change.field]: change.before }, 'record');
+     }
+     if (change.kind === 'session') {
+         if (change.field === 'hidden' || change.field === 'top') {
+diff --git a/tools/oculus/tests/routes/edit/undo.test.ts b/tools/oculus/tests/routes/edit/undo.test.ts
+index ace7de48..4ba0060b 100644
+--- a/tools/oculus/tests/routes/edit/undo.test.ts
++++ b/tools/oculus/tests/routes/edit/undo.test.ts
+@@ -8,8 +8,9 @@ import { readFileSync, rmSync, writeFileSync } from 'node:fs';
+ import { join } from 'node:path';
+ import { expect, describe } from 'vitest';
+ import { parse } from 'yaml';
++import { logChanges } from '../../../src/lib/server/core/changes.ts';
+ import { handleWrite } from '../../../src/lib/server/edit/writes.ts';
+-import type { Change } from '../../../src/lib/server/core/changes.ts';
++import type { Change, ChangeRecord } from '../../../src/lib/server/core/changes.ts';
+ import type { WriteTarget } from '../../../src/lib/server/edit/writes.ts';
+ import {
+     AREA,
+@@ -373,3 +374,194 @@ describe('taking a change back', () => {
+         expect(changesOf(into)).toEqual([]);
+     });
+ });
++
++describe('taking a manifest write back exactly', () => {
++    /** The manifest of a target, replaced by a text that holds the value a case starts from. */
++    function hold(into: WriteTarget, text: string): void {
++        writeFileSync(join(into.hub, 'projects', 'manuscripts', 'alpha', 'project.yml'), text);
++    }
++
++    /** One manifest write through the route, and the change it left at the head of the log. */
++    async function wrote(into: WriteTarget, fields: Record<string, unknown>): Promise<Change> {
++        const response = await handleWrite(
++            request({ kind: 'manifest', id: 'alpha', fields }),
++            TOKEN,
++            into
++        );
++        expect(response.status).toBe(200);
++        return changesOf(into)[0];
++    }
++
++    /** The answer of the undo route for one change. */
++    function undone(into: WriteTarget, change: Change): Promise<Response> {
++        return handleWrite(request({ kind: 'undo', at: change.at }), TOKEN, into);
++    }
++
++    /** A record made by hand, appended to the log as if a write had left it, and read back. */
++    async function recorded(
++        into: WriteTarget,
++        field: string,
++        before: unknown,
++        after: unknown
++    ): Promise<Change> {
++        const record: ChangeRecord = {
++            file: join('projects', 'manuscripts', 'alpha', 'project.yml'),
++            key: 'alpha',
++            field,
++            before,
++            after,
++            undo: 'field'
++        };
++        await logChanges(into.changes, 'manifest', [record]);
++        return changesOf(into)[0];
++    }
++
++    it('gives `related: []` back after a link wrote a project into it', async () => {
++        const into = target();
++        const held = `${MANIFEST}related: []\n`;
++        hold(into, held);
++        const link = await wrote(into, { related: ['x'] });
++        expect(link).toMatchObject({ field: 'related', before: [], after: ['x'] });
++        expect(manifestOf(into)).not.toBe(held);
++
++        expect((await undone(into, link)).status).toBe(200);
++        expect(manifestOf(into)).toBe(held);
++        expect(changesOf(into)[0]).toMatchObject({
++            field: 'related',
++            before: ['x'],
++            after: [],
++            undoes: link.at
++        });
++    });
++
++    it('takes a list field out again when the file did not hold it', async () => {
++        const into = target();
++        const link = await wrote(into, { related: ['x'] });
++        expect(link).toMatchObject({ before: null, after: ['x'] });
++        expect(manifestOf(into)).not.toBe(MANIFEST);
++
++        const response = await undone(into, link);
++        expect(response.status).toBe(200);
++        expect(manifestOf(into)).toBe(MANIFEST);
++        expect(changesOf(into)[0]).toMatchObject({ before: ['x'], after: null });
++    });
++
++    it('gives an empty title back as an empty title', async () => {
++        const into = target();
++        const held = MANIFEST.replace('title: "A title"', 'title: ""');
++        hold(into, held);
++        const change = await wrote(into, { title: 'A new title' });
++        expect(manifestOf(into)).toContain('A new title');
++
++        expect((await undone(into, change)).status).toBe(200);
++        expect(manifestOf(into)).toBe(held);
++    });
++
++    it('gives `pin: false` back after it was ticked', async () => {
++        const into = target();
++        const held = `${MANIFEST}pin: false\n`;
++        hold(into, held);
++        const change = await wrote(into, { pin: true });
++        expect(change).toMatchObject({ field: 'pin', before: false, after: true });
++        expect(manifestOf(into)).toBe(`${MANIFEST}pin: true\n`);
++
++        expect((await undone(into, change)).status).toBe(200);
++        expect(manifestOf(into)).toBe(held);
++    });
++
++    it('gives a number back as a number', async () => {
++        const into = target();
++        const held = `${MANIFEST}year: 2024\n`;
++        hold(into, held);
++        const change = await wrote(into, { year: '2025' });
++        expect(manifestOf(into)).toBe(`${MANIFEST}year: 2025\n`);
++
++        expect((await undone(into, change)).status).toBe(200);
++        expect(manifestOf(into)).toBe(held);
++    });
++
++    it('puts the link back when the undo itself is undone', async () => {
++        const into = target();
++        const held = `${MANIFEST}related: []\n`;
++        hold(into, held);
++        const link = await wrote(into, { related: ['x'] });
++        const linked = manifestOf(into);
++
++        expect((await undone(into, link)).status).toBe(200);
++        const [back] = changesOf(into);
++        expect(back).toMatchObject({ before: ['x'], after: [] });
++
++        expect((await undone(into, back)).status).toBe(200);
++        expect(manifestOf(into)).toBe(linked);
++        expect(changesOf(into)[0]).toMatchObject({ before: [], after: ['x'], undoes: back.at });
++    });
++
++    it('still reads an empty control of a form write as clearing the field', async () => {
++        const into = target();
++        hold(into, `${MANIFEST}related: [x]\n`);
++        const response = await handleWrite(
++            request({ kind: 'manifest', id: 'alpha', fields: { title: '', related: [] } }),
++            TOKEN,
++            into
++        );
++        expect(response.status).toBe(200);
++        expect(await response.json()).toEqual({
++            ok: true,
++            changed: ['title', 'related'],
++            refused: []
++        });
++        expect(manifestOf(into)).not.toContain('title:');
++        expect(manifestOf(into)).not.toContain('related:');
++    });
++
++    it('refuses a record that names a field the schema does not name', async () => {
++        const into = target();
++        const change = await recorded(into, 'nosuch', 'x', null);
++        const response = await undone(into, change);
++        expect(response.status).toBe(400);
++        expect(await response.json()).toEqual({
++            error: 'refused',
++            refused: [{ field: 'nosuch', reason: 'the manifest schema does not name the field' }]
++        });
++        expect(manifestOf(into)).toBe(MANIFEST);
++    });
++
++    it('refuses a record that names a read-only field or a map field', async () => {
++        const into = target();
++        const tier = await recorded(into, 'tier', 'archive', 'manuscripts');
++        const readonly = await undone(into, tier);
++        expect(readonly.status).toBe(400);
++        expect(await readonly.json()).toEqual({
++            error: 'refused',
++            refused: [{ field: 'tier', reason: 'the field is read-only' }]
++        });
++
++        const paths = await recorded(into, 'paths', { doc: 'a.md' }, null);
++        const keymap = await undone(into, paths);
++        expect(keymap.status).toBe(400);
++        expect(await keymap.json()).toEqual({
++            error: 'refused',
++            refused: [{ field: 'paths', reason: 'a map field is not written by the form' }]
++        });
++        expect(manifestOf(into)).toBe(MANIFEST);
++    });
++
++    it('answers `moved` when the list the record left has been edited since', async () => {
++        const into = target();
++        const edited = `${MANIFEST}related: [y]\n`;
++        hold(into, edited);
++        const emptied = await recorded(into, 'related', ['x'], []);
++        const first = await undone(into, emptied);
++        expect(first.status).toBe(409);
++        expect(await first.json()).toEqual({ error: 'moved' });
++        expect(manifestOf(into)).toBe(edited);
++
++        const empty = `${MANIFEST}related: []\n`;
++        hold(into, empty);
++        const removed = await recorded(into, 'related', ['x'], null);
++        const second = await undone(into, removed);
++        expect(second.status).toBe(409);
++        expect(await second.json()).toEqual({ error: 'moved' });
++        expect(manifestOf(into)).toBe(empty);
++    });
++});

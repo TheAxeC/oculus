@@ -581,6 +581,7 @@ Independent of each other; two may run side by side under R9's rule when their b
 - Open item Z102 (2026-09-30): (a), step Q110 makes History's Undo write an empty list back as an empty list, with a test (the user).
 - Open item Z104 (2026-09-30): (a), a continuation builder takes over X3d's worktree as it is, since the runner refuses to resume the stopped builder (the user).
 - Open item Z105 (2026-09-30): (a), step Q111 makes a manifest write that removes a field record the removed lines and where they stood, and its undo put them back (the user).
+- Open item Z103 (2026-09-30): (b), row 36 of E2's shapes becomes every root but `engine`: a machine app's `open({ file })` names any root the file browser shows except `engine` (the user).
 - Open item Z61 (2026-09-29): (a), JPEG sizes and orientation stay on the hand parser and `image-size` sizes the other picture formats (the user).
 - Open item Z62 (2026-09-29): (a), `agents/spec.md` lets a reviewer read git state and a builder runs no git command at all (the user).
 - A3 (2026-09-29): (a), a scheduled run is a cron-style `schedule:` field on each Update task entry (the user).
