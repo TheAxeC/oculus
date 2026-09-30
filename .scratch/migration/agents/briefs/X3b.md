@@ -83,3 +83,7 @@ Run from `.agents/worktrees/X3b/tools/oculus`; each must hold:
 ## Report
 
 Return it as your final message; the orchestrator saves it at `tools/oculus/.scratch/migration/agents/reviews/X3b-report.md`. First line: anything NOT done, or "Everything in the brief is done". Then the open items of the state file, verbatim, as the orchestrator gives them in the prompt. Then the DONE / NOT DONE table with one row per acceptance item and per check above, the output verbatim. Then per item what changed with file:line and the revert that proves it; the new read and write command lists, exact; files with line counts; every judgment call; every host- or user-visible change with its before and after; and anything in the brief that was wrong or impossible, with the evidence.
+
+## The plan lines as booked until 2026-09-30, before each was cut to 400 characters (kept whole)
+
+- Booked 2026-09-26: VS Code's Source Control in the Repositories view (repository list, commit box, Merge/Staged/Changes/Untracked groups, graph, stashes, tags, the `...` menu), the side-by-side and inline diff with hunk and line staging, the three-way merge editor with Accept Deletion and Mark Resolved, the source tab's quick-diff gutter and blame. Fixed at landing: the round refutation's findings, AU/UA read as no deletion, an empty merge's typing, three branch parsers made one, the side-by-side diff held to the pane, the blame age's singular, stale directives from S2 and Q67 re-pointed; `agents/reviews/X3b-landing.md`.
