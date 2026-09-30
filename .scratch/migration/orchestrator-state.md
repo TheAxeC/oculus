@@ -55,6 +55,7 @@ dispatch:      # Q102 in repair round 1; E1 building; D23 stopped on Z72; Q88b w
   report: agents/reviews/E1-report.md
   brief_check: agents/reviews/E1-brief-check.md, every finding closed in the brief (its Closed heading); claude-opus-5-5, 54 tool uses, 161,730 tokens, 8.4 min
   shared_paths: DESIGN.md (E1 inserts a new section between "## Hot reload" and "## Relationship to the cockpit"; Q102 changes the Terminal text and Q84 the paragraphs at 174 and 192, all in other sections, so the merge keeps each side's lines by hand); docs/diagrams/ (no source change in E1; regenerated on main at landing).
+  builder_usage: 37 tool uses, 215,466 tokens, 15.1 min (907,356 ms), from its completion notice; report saved 2026-09-30
   landing: not-started
   round: 0
 ```
