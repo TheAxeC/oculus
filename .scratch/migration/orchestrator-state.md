@@ -39,8 +39,10 @@ dispatch:      # D13c, Q102 and Q84 building; Q88b waits for Q102's landing; X3c
   launched: 2026-09-30 01:20 local
   report: agents/reviews/D13c-report.md
   brief_check: agents/reviews/D13c-brief-check.md, every finding closed in the brief (its Closed heading); claude-opus-5-5, 63 tool uses, 183k tokens, 9 min
+  builder_usage: 89 tool uses, 289,541 tokens, 41.3 min (2,479,306 ms), from its completion notice; report saved 2026-09-30
+  reviewer_report: agents/reviews/D13c-refuter.md; claude-opus-5-5, 44 tool uses, 187k tokens, 13 min
   landing: not-started
-  round: 0
+  round: 1 (sent 2026-09-30: the refutation's six findings)
 - step: Q102
   executor: agent
   worker: claude:sonnet
