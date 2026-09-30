@@ -2,12 +2,12 @@
 
 In flight:
 - X3d (Source Control as VS Code's), built; its review runs.
-Open items: none.
+Open items: Z107 (what closes `config/local.yml` to apps), for E3.
 Queued, in order:
 - U2 (every view's look against VS Code's), prepared; its builder launches once X3d has landed.
-- E3 (the apps section's text to Z103 (b) and Z106 (a)), /spec next.
-- Q106 (Close pane on two tabs), /spec next.
-- Q111 (Undo gives a cleared field's lines back), /spec when a slot frees.
+- Q106 (Close pane on two tabs), its cause being diagnosed, then its brief.
+- E3 (the apps section's text to Z103 (b) and Z106 (a)), brief checked; waits on Z107.
+- Q111 (Undo gives a cleared field's lines back), /spec next.
 - Q107 (a Terminal tab closing itself), /spec when a slot frees.
 - Q109 (a terminal's name, icon and colour), once Q107 has landed.
 - S3 (the Settings view as VS Code's), /spec when a slot frees.

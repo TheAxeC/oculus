@@ -116,7 +116,12 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is booked as its own step in `plan.md` and carried in the Booked section below, since it needs no ruling from him.
 
-None.
+- Z107 (raised 20:52, step E3 "the apps section of DESIGN.md to Z103 (b) and Z106 (a)", first in the /spec queue; E3 waits on it). What the tree shows: Z103 (b) closes the root `engine` to apps so that no app can put `config/local.yml` on screen, but the root `hub` is, by `config/sources.yml`'s scan folders `projects`, `registries` and `tools`, the research-hub folder (not read from `local.yml`), and `hub` + `tools/oculus/config/local.yml` has no dot-led segment; `resolveRootFileResult` (`src/lib/server/files/files.ts:80-92`) checks only that a file is inside its root. `sources.yml` can also give the key `engine` to another folder (`withFixed`, `files.ts:246-256`), and a saved root can name the engine folder under another key. So the key rule alone does not reach the aim the ruling was chosen for. Related: `ls -ld secrets` shows a folder `secrets` at the hub root, and `git ls-files secrets | wc -l` prints 4 (tracked, contents not read); no rule below closes it except (b2).
+  - (a) A file whose real path lies inside the real path of the engine's config folder rejects `closed`, whichever root names it, with the `engine` key rule kept. For: reaches the ruling's aim with the same word and no new vocabulary. Against: a hand-made credential folder elsewhere (`secrets/`) stays open to a machine app.
+  - (b1) (a), plus a file git ignores rejects `closed`. For: also closes every ignored credential file in any git root. Against: `secrets/` is tracked, so it stays open; a git call per `open`; roots without git get nothing.
+  - (b2) (a), plus a list of closed folders under the `apps:` block of `config/behavior.yml`, where the section puts the apps limits (DESIGN.md:327) (a new key, for example `closed_paths: [secrets]`, each relative to a root). For: closes `secrets/` and anything Axel names. Against: a new config key and one more thing to keep current.
+  - (c) The key rule alone, as ruled. For: no change. Against: `local.yml` stays reachable through `hub`. This is the lazy option.
+  - Recommendation: (b2). It is (a), which ends the cause the ruling named, plus the only option that closes the tracked `secrets/` folder; the key name is Axel's to accept.
 
 ## Time per step (Axel asked 2026-09-27 for how it evolves with Q77; measured from each builder's transcript: each tool call from call to result, each background wait from the builder stopping to the run waking it)
 
