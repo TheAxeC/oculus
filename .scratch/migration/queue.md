@@ -4,7 +4,7 @@ In flight:
 - X3d (Source Control as VS Code's), repair round 1 sent (ten rulings).
 - E3 (the apps section's text to Z103 (b), Z106 (a) and Z107 (b2)), built; its review runs.
 - Q106 (Close pane on two tabs), its diagnosis agent runs; then its brief.
-Open items: Z109 (three, four or five builders at once).
+Open items: none.
 Queued, in order:
 - U2 (every view's look against VS Code's), prepared; its builder launches once X3d has landed.
 - Q111 (Undo gives a cleared field's lines back), brief written; its brief check runs.

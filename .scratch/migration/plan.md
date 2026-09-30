@@ -583,6 +583,7 @@ Independent of each other; two may run side by side under R9's rule when their b
 - Open item Z101 (2026-09-30): (a), step Q109 finds with `/diagnose` why a terminal's name, icon and colour are not drawn when set and why its lines are not drawn after its tab moves to another pane, fixes both and tests each; built once Q107 has landed (the user).
 - Open item Z102 (2026-09-30): (a), step Q110 makes History's Undo write an empty list back as an empty list, with a test (the user).
 - Open item Z104 (2026-09-30): (a), a continuation builder takes over X3d's worktree as it is, since the runner refuses to resume the stopped builder (the user).
+- Open item Z109 (2026-09-30): (a), three builders at once, each free slot filled in the turn it frees, measured over the next ten landings (the user).
 - Open item Z107 (2026-09-30): (b2), `open({ file })` rejects `closed` for a file inside the engine's config folder by real path, whichever root names it, and for a folder a new `closed_paths` list under `apps:` in `config/behavior.yml` names, `secrets` among them; carried by E3 (the user).
 - Open item Z108 (2026-09-30): (b), Q106's diagnosis is run by a diagnosis agent (ordo-high, opus), the orchestrator reading its record and writing the brief (the user).
 - Open item Z105 (2026-09-30): (a), step Q111 makes a manifest write that removes a field record the removed lines and where they stood, and its undo put them back (the user).
