@@ -67,9 +67,9 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   brief_check: agents/reviews/Q111-brief-check.md, every finding closed in the brief (its "Brief check, closed" heading); claude-opus-5-5, 197,316 tokens, 41 tool uses, 10.0 min
   shared_paths: DESIGN.md with X3d and E3 (Q111 writes lines 140 and 376, X3d 373 and 389, E3 236-327; no two change the same line); HELP.md with X3d (Q111 writes 254, X3d 112-198)
   builder_usage: 297,174 tokens, 87 tool uses, 29.6 min (report read at 22:10)
-  reviewer_report: agents/reviews/Q111-refuter.md (reviewer a540291c88c1458ad, launched 22:13, served claude-opus-5-5, running)
+  reviewer_report: agents/reviews/Q111-refuter.md (reviewer a540291c88c1458ad, launched 22:13, served claude-opus-5-5; 230,315 tokens, 51 tool uses, 17.6 min)
   landing: not-started
-  round: 0
+  round: 1 (sent 22:32: agents/briefs/Q111-round1.md, seven rulings)
 ```
 
 ## The standing demands (from Axel, in force)
