@@ -9,7 +9,7 @@ Open items: none. Choices made in automode, for review: `choices.md`.
 Queued, in order:
 - U2 (every view's look against VS Code's), prepared; its builder launches once X3d has landed.
 - Q109 (a terminal's name, icon and colour), once Q107 has landed.
-- S3 (the Settings view as VS Code's), /spec when a slot frees.
+- S3 (the Settings view as VS Code's), /spec running: its brief check runs.
 - Q85a2 to Q85a5 (zod in the other server folders), /spec when a slot frees; then Q85b and Q85c, then Q85d.
 - Q88b (the right-click menus' new capabilities), once X3d has landed.
 - X3c (the tab strip as VS Code's), once Q88b has landed.
