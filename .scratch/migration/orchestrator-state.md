@@ -42,7 +42,7 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   builder_usage: first builder a11909a88a5a84663 stopped at 17:27 with no completion notice, so no usage; continuation builder 79,680 tokens, 245 tool uses, 63.4 min (report at 20:26); repair round 1 (same builder ab6d7c7cab135b864, resumed) 126,557 tokens, 165 tool uses, 37.0 min (report at 21:31)
   reviewer_report: agents/reviews/X3d-refuter.md (reviewer a2a724fb5c78af633, launched 20:28, served claude-opus-5-5; 168,282 tokens, 144 tool uses, 24.9 min); round 1 reviewer ac8f66eda09c032d1, launched 21:33, served claude-opus-5-5; 253,519 tokens, 88 tool uses, 17.8 min, its run appended to the same file
   brief_check: agents/reviews/X3d-brief-check.md, every finding closed in the brief (its Closed heading); claude-opus-5-5, 52 tool uses, 301,056 tokens, 12.4 min
-  diagnosis: agents/reviews/X3d-diagnosis.md (`/diagnose oculus/migration X3d red line`, agent a960e7fd2f6310fd5, launched 22:13, served claude-opus-5-5, running)
+  diagnosis: agents/reviews/X3d-diagnosis.md (`/diagnose oculus/migration X3d red line`, agent a960e7fd2f6310fd5, launched 22:13, served claude-opus-5-5; 342,901 tokens, 172 tool uses, 120.5 min; cause found, in X3d's Step 0; the route to main is open item Z129)
   landing: backed-out (2026-09-30 22:10: the TEST page hung with the Repositories view on screen, main with the step staged; saved as agents/reviews/X3d-landing-attempt.patch with the landing fixes; see Step 0)
   round: 1 (sent 20:53: agents/briefs/X3d-round1.md, ten rulings; round base diff shasum 3c86229caf49784e2f051b5d065e39562631a4b7)
 - step: U2
@@ -70,22 +70,6 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   reviewer_report: agents/reviews/Q107-refuter.md (reviewer ad54a4d0f4137b7ba, launched 23:46, served claude-opus-5-5; 259,978 tokens, 59 tool uses, 22.2 min)
   landing: not-started
   round: 1 (sent 00:10: agents/briefs/Q107-round1.md, four rulings; round base diff shasum 81aaa5e6cb5618eb779f397beb076440d7684369, 33 paths; the Z115 (a) layout fix was sent at 22:42 inside item 2, not a round)
-- step: Q106
-  executor: agent
-  worker: claude:sonnet
-  model: claude-sonnet-5-5 (the transcript's message.model, read at 23:01)
-  session_id: ac7f6a74e4b8bc420 (launched 2026-09-30 23:01 local)
-  worktree: .agents/worktrees/Q106
-  base: 5322b56f
-  launched: 2026-09-30 23:01 local
-  report: agents/reviews/Q106-report.md
-  brief_check: agents/reviews/Q106-brief-check.md, every finding closed in the brief (its "Closed" heading), the palette's landing closed as Z117 (a) in automode; claude-opus-5-5, 228,851 tokens, 70 tool uses, 17.5 min
-  diagnosis: agents/reviews/Q106-diagnosis.md
-  shared_paths: DESIGN.md with Q107 and Q111 (Q106 writes lines 218 and 402, Q107 361, Q111 140 and 376); HELP.md with Q107 and Q111 (Q106 writes 90 and 296, Q107 127, Q111 254); no two change the same line
-  builder_usage: 187,039 tokens, 45 tool uses, 25.2 min (report read at 23:26); repair round 1 (same builder, resumed) 207,319 tokens, 9 tool uses, 7.2 min (report read at 23:52; diff since base shasum f1778e2b5b078bee2ee752079adc76359110a14f)
-  reviewer_report: agents/reviews/Q106-refuter.md (reviewer a441a918298825101, launched 23:27, served claude-opus-5-5; 209,569 tokens, 59 tool uses, 17.0 min); round 1 reviewer ab5a9d2b6860166ba, launched 23:53, served claude-opus-5-5, running, its run to be appended to the same file
-  landing: not-started
-  round: 1 (sent 23:44: agents/briefs/Q106-round1.md, six rulings; round base diff shasum 3e7ee7272b29a62aa80f77ce28fa5450d2890037, 20 paths)
 ```
 
 ## The standing demands (from Axel, in force)
@@ -150,7 +134,7 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is booked as its own step in `plan.md` and carried in the Booked section below, since it needs no ruling from him.
 
-- None.
+- Z129 (raised 2026-10-01 00:30, from X3d's diagnosis). The Graph's commit press hangs the page on main, not only with X3d: a commit row pressed in the Repositories view sends the renderer to 100% of a core, and a commit kept open in the saved state hangs the page again on reload (the TEST tab crashed at 00:14 and hung again on reload; a new tab loaded at 00:22 with no commit open). The cause and a proven fix are in X3d's Step 0 (`ui/tree/virtual.ts`, `VirtualRows.svelte`, one test). (a) The fix is the first item of X3d's rebuild, as the no-tiny-steps demand says, since X3d touches the Repositories view. For: no new step. Against: the hang stays on main, on Axel's page as well as TEST, until the whole X3d rebuild lands, hours away with its parity inventory. (b) A step of its own for the fix and its test, prepared now and landing within the hour; X3d's brief then leaves it out. For: the page stops hanging today. Against: one small step, which the no-tiny-steps demand rules out when a step covers the files. Recommendation: (b), since a hang on every commit press is a defect on main that no rebuild should wait for; it is Axel's, since it departs from his standing demand. The lazy option is (a).
 
 ## Time per step (Axel asked 2026-09-27 for how it evolves with Q77; measured from each builder's transcript: each tool call from call to result, each background wait from the builder stopping to the run waking it)
 
@@ -641,6 +625,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-01 00:30. Q106 landed (the look on TEST taken in a new tab). X3d's diagnosis in: the Graph's commit press hangs the page on main; open item Z129 on how the fix reaches main. In flight: Q107 (repair round 1). Next: /spec S3a's worktree and builder into the freed slot. Open: Z129.
 - 2026-10-01 00:10. Z127 ruled (a): the Q85a steps are two. Q107's repair round 1 sent (four rulings, Z128 in automode). Q106's round refuted: one comment clause, fixed at landing. In flight: X3d (its diagnosis), Q107 (repair round 1), Q106 (landing next). Open: none.
 - 2026-10-01 00:08. Five small steps folded (Z126, automode); Z127 raised (the Q85a steps as two). Q107's review in: one Spec, two Proof, one Standards and one Behaviour finding. In flight: X3d (its diagnosis), Q106 (its round review), Q107 (repair round 1 next). Open: Z127.
 - 2026-10-01 00:05. Q109 widened on Axel's word: a sole terminal renamed as a split one is. S3a's brief widened with the two folds.

@@ -30,6 +30,7 @@
     import { type Tab, insertionIndex } from '$lib/ui/tabs/tab-strip';
     import { createTabScroll } from '$lib/ui/tabs/tab-scroll.svelte';
     import { heldStop, nextStop } from '$lib/ui/tree/roving';
+    import { focusIsFree } from '$lib/ui/frame/quiet-focus';
     import { type Snippet } from 'svelte';
     import TabFace from './TabFace.svelte';
     import ToolButton from '../controls/ToolButton.svelte';
@@ -153,8 +154,7 @@
      */
     function recoverStop(index: number): void {
         queueMicrotask(() => {
-            const at = document.activeElement;
-            if (at !== null && at !== document.body && at.isConnected) return;
+            if (!focusIsFree()) return;
             heads[index]?.focus();
         });
     }

@@ -28,8 +28,6 @@ export default defineConfig({
         strictPort: true
     },
     test: {
-        environment: 'node',
-        include: ['tests/**/*.test.ts'],
         // A file tagged slow (`// @module-tag slow` in its head comment) has cases that time out or
         // fail on a loaded machine, so npm test and npm run test:checks leave it out and npm run
         // test:slow runs it. The tree checks under tests/checks are left out of npm test and run by
@@ -39,6 +37,31 @@ export default defineConfig({
         // Four workers, not one per core: two or three worktrees run this suite at once beside the
         // machine's own sessions, and a suite that takes every core makes the timed cases of the
         // others miss their limits under the load.
-        maxWorkers: 4
+        maxWorkers: 4,
+        // Two projects, each with its own files, so neither list is merged into the other's. A file
+        // named *.client.test.ts runs in Svelte's client runtime, where effects and their teardowns
+        // run (tests/ui/frame/client-runtime.ts), with Svelte inlined so it is resolved with the
+        // browser's conditions rather than loaded as Node loads its server build. Every other file
+        // runs in node against the server build, which renders a component to a string.
+        projects: [
+            {
+                extends: true,
+                test: {
+                    name: 'unit',
+                    environment: 'node',
+                    include: ['tests/**/*.test.ts', '!tests/**/*.client.test.ts']
+                }
+            },
+            {
+                extends: true,
+                resolve: { conditions: ['browser'] },
+                test: {
+                    name: 'client',
+                    environment: './tests/ui/frame/client-runtime.ts',
+                    include: ['tests/**/*.client.test.ts'],
+                    server: { deps: { inline: [/svelte/] } }
+                }
+            }
+        ]
     }
 });

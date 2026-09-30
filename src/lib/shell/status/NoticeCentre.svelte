@@ -10,6 +10,7 @@
     import NoticeEntry from './NoticeEntry.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { Portal } from 'bits-ui';
+    import { focusIsFree } from '$lib/ui/frame/quiet-focus';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
 
@@ -40,8 +41,7 @@
         // focus to the document then; the centre takes it back, so Escape still reaches it.
         const left = (): void => {
             queueMicrotask(() => {
-                const at = document.activeElement;
-                if (held.isConnected && (at === null || at === document.body)) held.focus();
+                if (held.isConnected && focusIsFree()) held.focus();
             });
         };
         held.addEventListener('keydown', keys);

@@ -21,6 +21,33 @@ export function focusQuietly(control: HTMLElement): void {
     control.removeAttribute(QUIET_FOCUS);
 }
 
+/**
+ * Whether no control holds the keyboard: the document has no focused element, the focus is on the
+ * body, or it is on a control that has gone from the page. A button taken off the page keeps the
+ * focus until the browser hands it to the document, so it counts as nothing.
+ */
+export function focusIsFree(): boolean {
+    const held = document.activeElement;
+    return held === null || held === document.body || !held.isConnected;
+}
+
+/**
+ * Give the focus back to the control that held it before a box was drawn, as a dialog does when it
+ * goes, once the teardown that asks for it has finished, and only while that control is still on
+ * the page and no other control holds the focus. A focus runs the focus handlers of the control it
+ * lands on at once, and inside a teardown Svelte answers every read of state changed in the same
+ * flush with the value from before the change, so a handler run there that writes state writes
+ * back what the change replaced. A control that took the focus in that flush, as a view opened by
+ * the answer does, keeps it.
+ */
+export function giveBackQuietly(control: Element | null): void {
+    queueMicrotask(() => {
+        if (focusIsFree() && control instanceof HTMLElement && control.isConnected) {
+            focusQuietly(control);
+        }
+    });
+}
+
 /** Whether Tab reaches the element: in the tab order, enabled, and not hidden or inert. */
 function tabbable(found: Element): found is HTMLElement {
     if (!(found instanceof HTMLElement) || found.tabIndex < 0) return false;

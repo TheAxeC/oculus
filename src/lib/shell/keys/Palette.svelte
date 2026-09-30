@@ -11,7 +11,7 @@
     // in the Command's viewport, the one part the Command reads the selected row's id from to name
     // it on the input as its active descendant, so the list and the viewport are one box. The focus
     // moves to the input when it opens and stays inside the palette; Escape and a press on the
-    // ground beside it close it.
+    // ground beside it close it; a result that shows a tab takes the keyboard on that tab's head.
     //
     // It is also the quick input of the source tab on screen, as VS Code's is of the active editor:
     // a colon and a number goes to that line, a colon alone says which line the caret is on and how
@@ -28,6 +28,7 @@
     import Modal from '$lib/ui/frame/Modal.svelte';
     import Search from '$lib/ui/controls/text/Search.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import { focusQuietly } from '$lib/ui/frame/quiet-focus';
     import { openPaletteItem } from '$lib/shell/keys/palette-open';
     import {
         buildIndex,
@@ -52,7 +53,7 @@
     } from '$lib/state/workbench/navigation/editor-status.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { registrationLabel } from '$lib/state/workbench/navigation/registry';
-    import { untrack } from 'svelte';
+    import { tick, untrack } from 'svelte';
     import { useState } from '$lib/state/client/use';
 
     const client = useState();
@@ -157,9 +158,28 @@
         if (first !== undefined) chosen = first;
     }
 
+    /**
+     * Open a result and close the palette. A result that shows a tab, and the `:tab` and `:goto`
+     * commands in `run`, take the keyboard on that tab's head once the page has drawn it, since the
+     * tab chosen is where the reader went. The dialog's give-back runs first and hands the keyboard
+     * to the control the reader was on, whose pane's focus handler runs; `landOn` then moves it to
+     * the chosen tab's head, whose pane's focus handler makes that tab the page's active tab. An
+     * editor action shows no tab; the editor takes the keyboard when it runs the action, and the
+     * give-back then finds it held.
+     */
     function choose(item: PaletteItem): void {
         onclose();
-        openPaletteItem(client.layout, client.ui, item, client.editorStatus);
+        const id = openPaletteItem(client.layout, client.ui, item, client.editorStatus);
+        if (id !== '' && item.kind !== 'editor') void landOn(id);
+    }
+
+    /** Give the keyboard to the selected tab head of the pane showing an instance, if one does. */
+    async function landOn(id: string): Promise<void> {
+        await tick();
+        const head = document.querySelector<HTMLElement>(
+            `[data-pane-active="${CSS.escape(id)}"] [role="tab"][aria-selected="true"]`
+        );
+        if (head !== null) focusQuietly(head);
     }
 
     /** Send the source tab on screen to a line. */
@@ -179,6 +199,8 @@
     function run(command: PaletteCommand): void {
         if (!command.available || parsed === null) return;
         const argument = parsed.argument;
+        // The instance a command showed, when it showed a tab.
+        let shown = '';
         // The language list is a mode of its own: choosing the command opens it.
         if (command.name === 'language') {
             typed(':language ');
@@ -196,11 +218,11 @@
         } else if (command.name === 'crt') {
             setCrt(!crt());
         } else if (command.name === 'tab') {
-            if (knownViews.some((view) => view.id === argument)) openView(argument);
+            if (knownViews.some((view) => view.id === argument)) shown = openView(argument);
         } else if (command.name === 'goto') {
             const project = current.snapshot?.entities.projects[argument];
             if (project !== undefined) {
-                openView('project', {
+                shown = openView('project', {
                     id: project.id,
                     label: project.short ?? project.title
                 });
@@ -209,6 +231,7 @@
             onupdate();
         }
         onclose();
+        if (shown !== '') void landOn(shown);
     }
 
     /** A row's control is pressed through its row, which the Command runs; it does nothing more. */

@@ -45,6 +45,7 @@
         type RailPage
     } from '$lib/state/workbench/navigation/rail';
     import { heldStop } from '$lib/ui/tree/roving';
+    import { focusIsFree } from '$lib/ui/frame/quiet-focus';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
 
@@ -225,8 +226,7 @@
      */
     function recoverStop(id: string): void {
         queueMicrotask(() => {
-            const at = document.activeElement;
-            if (at === null || at === document.body || !at.isConnected) focusStop(id);
+            if (focusIsFree()) focusStop(id);
         });
     }
 

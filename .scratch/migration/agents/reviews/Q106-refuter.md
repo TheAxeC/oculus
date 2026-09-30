@@ -167,3 +167,153 @@ Cases of the brief's "Cases":
 Reviewer usage: about 45 tool uses. Tokens and minutes are as the runner's completion notice gives them; they are not known to the agent.
 
 Usage: reviewer a441a918298825101, served claude-opus-5-5; 209,569 tokens, 59 tool uses, 17.0 min (from its completion notice)
+
+## Repair round 1, refuted
+
+Reviewer: a fresh agent. Worktree `/Users/axelfaes/workspace/research-hub/.agents/worktrees/Q106`, base `5322b56f`. Every command ran from `tools/oculus` in the worktree with `PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH`, in the foreground.
+
+Disclosure about my scratch files. I wrote only inside the session scratchpad `/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad`, and I found afterwards that the orchestrator shares that folder. Two things follow:
+- `checks.log` there now holds my verify run. If the orchestrator had a file of that name, my run overwrote it.
+- I created `base/` with `mkdir -p` for the base collection counts and then removed it with `rm -rf`. If a folder named `base` was already there, it is gone.
+
+I cannot tell whether either name existed before my run. A grep of the ledger for either path found nothing. Nothing in the worktree, the main checkout or the ledger was written: `git status --short` prints the same 20 paths before and after, and `git diff 5322b56f | shasum` prints f1778e2b5b078bee2ee752079adc76359110a14f both times.
+
+```
+$ git diff 5322b56f | shasum
+f1778e2b5b078bee2ee752079adc76359110a14f  -        (the hash the round was reported at)
+
+$ npm run diagrams          exit 0; shasum of docs/diagrams/* before and after: no difference ("diagrams unchanged by the rerun")
+
+$ sh ~/.claude/skills/land/templates/checks.sh /Users/axelfaes/workspace/research-hub/tools/oculus/.scratch/migration/orchestrator-state.md   (exit 0)
+$ npm test
+ Test Files  351 passed | 19 skipped (370)
+      Tests  5358 passed | 559 skipped (5917)
+$ npm run test:checks
+ Test Files  27 passed | 2 skipped (29)
+      Tests  365 passed | 9 skipped (374)
+$ npm run check
+1790805765992 COMPLETED 2478 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+$ npm run build
+ok built in 4.99s          (the tool prints a check glyph where this says "ok")
+ok built in 10.46s
+$ npm run format:check
+All matched files use Prettier code style!
+$ npm run lint
+$ ! LC_ALL=C grep -rna '[^ -~]' src tests
+checks: 7 commands passed
+
+Verify 2: npx vitest run tests/ui/frame/give-back.client.test.ts --reporter=verbose
+ 11 rows, each "|client| tests/ui/frame/give-back.client.test.ts > ..." (cases 1-5, 11-16)
+ Test Files  1 passed (1)
+      Tests  11 passed (11)
+
+Verify 3, cases 6 and 7. "After" is the worktree. "Base" is a scratch copy with vite.config.ts reversed by `patch -R` and the three new test files removed; the copy is now deleted.
+ npx vitest list --filesOnly --exclude 'tests/checks/**'   after 370 (369 [unit], 1 "[client] tests/ui/frame/give-back.client.test.ts"), 0 under tests/checks; base 369
+ npx vitest list --filesOnly tests/checks                   after 29; base 29
+ npx vitest list --filesOnly --tagsFilter slow              after 399; base 398
+ npx vitest run tests/ui/frame/give-back.client.test.ts --tagsFilter slow
+   Test Files  1 skipped (1) / Tests  11 skipped (11)
+
+Commands the round's report quotes, rerun:
+ grep -n "landOn" src/lib/shell/keys/Palette.svelte     165 (comment), 172 (choose), 176 (definition), 233 (run)   (the report: choose and run; same)
+ npx eslint src/lib/shell/keys/Palette.svelte             no output, exit 0   (the report: same)
+ npx prettier --check src/lib/shell/keys/Palette.svelte DESIGN.md   All matched files use Prettier code style!   (the report ran --write and got "(unchanged)"; --check agrees)
+ grep -n 'an editor action leaves the keyboard in its editor' DESIGN.md   lines 218 and 402   (the report: same)
+ LC_ALL=C grep -c '[^ -~]' DESIGN.md src/lib/shell/keys/Palette.svelte   0 and 0   (the report: same)
+ grep -rn "giveBackQuietly\|focusQuietly(" src   Modal.svelte:21,26,70,71; menu-items.ts:132; Bell.svelte:60; Palette.svelte:181
+   (the report's item 1 row says Palette.svelte:180; the round's longer doc comment moved it to 181; no decision rests on this line number)
+```
+
+The round's delta. No snapshot of the tree was kept when the round was sent, so I identified the delta from the files' modification times (`stat -f '%Sm %N'` over every changed path) and from reading the six rulings against the whole diff:
+- Written after the round was sent at 23:44: `DESIGN.md` and `src/lib/shell/keys/Palette.svelte` (both 23:45:20), `docs/diagrams/*` (23:45:55, rewritten by the verify run's `npm run diagrams`), and the report (23:52:01).
+- Every other path dates from 23:03 to 23:18, so `quiet-focus.ts`, `Modal.svelte`, the three callers, `vite.config.ts`, the tests, `README.md` and `HELP.md` are untouched by the round.
+- In the whole diff, `DESIGN.md` differs from the base only at lines 218 and 402.
+- The diagrams' import counts (shell/keys to ui 3 to 4, from Palette's `quiet-focus` import) match imports already present in round 0, as the first refuter's quote of `landOn` using `focusQuietly` shows. My rerun of `npm run diagrams` leaves them byte for byte the same.
+
+The builder's account ("Palette.svelte, DESIGN.md lines 218 and 402, and this report") matches what I found.
+
+### Closure of the six rulings and the first report's findings
+
+- Ruling 1 and Spec 1 (`:tab` and `:goto` do not land): closed.
+  - `Palette.svelte:202` `let shown = '';`, `:220` `shown = openView(argument)`, `:224` `shown = openView('project', {...})`, then `:232` `onclose();` and `:233` `if (shown !== '') void landOn(shown);`.
+  - `theme`, `crt` and `update` are unchanged, and `language` still returns early.
+  - `openView` returns `string` (`opening.ts:31`), and `''` when no page is held (`opening.ts:108`).
+  - Nothing beyond the ruling was changed.
+- Ruling 2 and Standards 1 (the order in `choose`'s comment): closed for the order. `Palette.svelte:161-168` now says the give-back runs first, then `landOn` moves the keyboard to the chosen head, and that the same holds for `run`'s two branches. This matches the first refuter's order probe ("focus opener | landOn resumes | focus head"). The comment's last sentence, which the ruling worded, is inaccurate: see the Findings below.
+- Ruling 3 and Behaviour 1: closed. The report's "User-visible changes" gains the row "Any palette choice that shows a tab (a result, `:tab`, `:goto`)", with the before and after in the ruling's words and one added clause saying where the base's focus handler ran.
+- Ruling 4 (DESIGN.md): closed.
+  - `DESIGN.md:218` and `:402` now name "by a result or by the `:tab` and `:goto` commands" and "while an editor action leaves the keyboard in its editor".
+  - `HELP.md:90` is unchanged by the round (mtime 23:07).
+  - By reading, both sentences are true: editor actions are listed only while the source tab is editing (`Source.svelte:199`), and performing one focuses the editor (`commands.ts:35`, `DiffEditor.svelte:304`).
+- Ruling 5 and Proof 1 (case 17): closed.
+  - The report's case 17 row now reads "met by reading ... The four affected suites (13 files, 253 tests) pass but do not reach the three give-backs; `focusIsFree` itself is tested by cases 12 and 16. No test drives the three callers".
+  - The item 5 row reads "by reading", with no run quoted as evidence.
+  - No check was removed.
+- Ruling 6 (the `editor` narrowing in `choose`): stands as ruled. `Palette.svelte:172` is unchanged.
+- The first report's Spec 2 (item 6's narrowing recorded in the ledger): not a builder finding. The brief's item 6 now reads "An editor action shows no tab and does not land: the keyboard stays in its editor", so the brief records it.
+
+### Verdicts
+
+Items of the brief's "What to build", over the whole diff since the base:
+
+- 1: holds.
+  - `quiet-focus.ts:29-32` holds `focusIsFree()`, true for null, the body or a disconnected element.
+  - `quiet-focus.ts:43-49` holds `giveBackQuietly`, which queues a microtask that calls `focusQuietly` only when `focusIsFree()` holds and the control is a connected `HTMLElement`. Its doc comment gives the reason.
+  - Modal, checked by reading as the brief says: the cleanup is `Modal.svelte:71` `$effect(() => () => giveBackQuietly(came));`, the import at `:26` is `focusFirstQuietly, giveBackQuietly`, and the head comment at `:16-21` says "once the ground is gone and only where nothing holds it".
+  - This code is unchanged since the first refuter's mutations M1 to M4, which showed each part is needed.
+- 2: holds. `vite.config.ts` has the `unit` project (a negated include) and the `client` project (browser conditions, `./tests/ui/frame/client-runtime.ts`, `server.deps.inline [/svelte/]`), with `tags`, `expect` and `maxWorkers` kept at the root. The counts are above.
+- 3: holds. The three files are there. The test's head (`give-back.client.test.ts:12-14`) names what it does not cover. 11 cases pass in `|client|`.
+- 4: holds. `README.md:15`, `HELP.md:296`, `HELP.md:90`, `DESIGN.md:218` and `DESIGN.md:402` say what the code does, including `:tab`, `:goto` and editor actions (ruling 4).
+- 5: holds. `Tabs.svelte:157` `if (!focusIsFree()) return;`, `ActivityRail.svelte:229` `if (focusIsFree()) focusStop(id);`, `NoticeCentre.svelte:44` `if (held.isConnected && focusIsFree()) held.focus();`. Their comments keep their reasons.
+- 6: holds.
+  - `choose` lands for every non-editor result (`Palette.svelte:172`, the narrowing ruled in round 1's ruling 6 and in the brief's item text).
+  - `run`'s `tab` and `goto` land (`:233`).
+  - `landOn` (`:176-182`) waits for `tick()` and focuses the selected head of `[data-pane-active=id]`: the attribute is set at `PaneView.svelte:417`, and `role="tab"` and `aria-selected` at `TabFace.svelte:87-88`.
+  - No pane found gives nothing.
+  - The doc comment's order is now right. Its last sentence is the Standards finding below, which leaves the item's code as asked.
+
+Cases of the brief's "Cases":
+
+- 1 to 5: met. Each test passes (verify 2). The failing first run on the unchanged tree is in the report's table and was reproduced by the first refuter (M1). The round changed neither the tests nor `quiet-focus.ts` (mtimes 23:05 and 23:18).
+- 6: met. 369 before and 370 after; the added file is in `client` only, and none is under `tests/checks`.
+- 7: met. `tests/checks` has 29 files before and after, and `npm run test:checks` gives 27 passed and 2 skipped. The slow list goes from 398 to 399, and the new file is skipped under `--tagsFilter slow`.
+- 8: met. By reading: the `tags` filter sits at the root of `vite.config.ts` and applies to both projects. The first refuter's probe reproduced it; not rerun here.
+- 9: met, by reading. `Bell.svelte:60` and `menu-items.ts:132` still call `focusQuietly`, and the diff does not touch either file.
+- 10: not verifiable here. It is the orchestrator's look on TEST.
+- 11 to 16: met. Each test passes. The failing-first evidence is as for cases 1 to 5, and the code under test is unchanged by the round.
+- 17: met, by reading. Tabs and ActivityRail keep their predicate exactly, and NoticeCentre adds the disconnected case. The report now says so (ruling 5).
+- 18: met. The first refuter's probe; not rerun here, and neither `vite.config.ts` nor `package.json` changed in the round.
+- 19: met by reading, for choices through `choose`, `:tab` and `:goto`. The give-back runs first, then `landOn` focuses the chosen head quietly, and that pane's `entered` (`PaneView.svelte:139-142`) activates it. Whether one `tick()` is enough for a new tab's head to be drawn is left to the look.
+
+### Findings
+
+- Standards. `src/lib/shell/keys/Palette.svelte:167-168`, `choose`'s doc comment: "An editor action shows no tab, and the keyboard stays where the give-back puts it." The report's "User-visible changes" row "Cmd+K then an editor action" says the same ("the keyboard stays where the give-back puts it").
+  - What is wrong: the sentence says the give-back places the keyboard after an editor action. By reading, the editor places it and the give-back then gives nothing.
+    - Editor actions are listed only while the tab is editing (`Source.svelte:199` `actions: editing ? actions : []`).
+    - `openPaletteItem` asks the tab to run the action (`palette-open.ts:26`), in the same handler as `onclose()`.
+    - The tab performs the ask from an effect in the same flush (`Source.svelte:260-279` to `editor?.perform(ask)`, and `Diff.svelte:323`). Performing it focuses the editor: `commands.ts:35` `made.focus();` and `DiffEditor.svelte:304` `side.focus();`.
+    - So at the give-back's microtask `focusIsFree()` is false and `giveBackQuietly` gives nothing. The keyboard is in the editor because the editor took it, wherever the reader was when Cmd+K was pressed.
+    - `DESIGN.md:218` and `:402` state the end state correctly ("an editor action leaves the keyboard in its editor"). The comment's mechanism contradicts it.
+  - The wording comes from round ruling 2 ("an editor action shows no tab and the keyboard stays where the give-back puts it"), so the builder followed the ruling. The rule broken is the rules file's "What every package obeys": a comment says what the code does, and a sentence in a head or doc comment that the change makes false is a defect.
+  - Failure scenario: the reader presses Cmd+K with the keyboard on a tab head or the rail and runs Fold All. A maintainer who trusts the comment expects the keyboard back on the tab head, but it lands in the editor. A maintainer who later stops the editor from focusing itself (`commands.ts:35`), believing the give-back returns the keyboard to the editor, sends it to wherever the palette was opened from.
+  - The fix is small and inside the brief, one clause at landing: "an editor action shows no tab; the editor takes the keyboard when it runs the action, and the give-back then finds it held." The report's row changes the same way.
+  - Not run in a browser: by reading only.
+  - Verdict: none. Item 6 holds.
+
+No other finding over the delta. There is no new test and no changed test in the round: the `run` landing needs a DOM, and spec.md's rule and Z113's scope keep that for the look. No check was loosened or removed, and nothing reaches beyond the six rulings.
+
+### Declined to judge
+
+- Case 10, and the look part of case 19 (one `tick()` enough for a new tab's head, `:tab` and `:goto` landing in the page, Escape and Cancel): these are the orchestrator's look on TEST, since the client runtime has no DOM.
+- The report's clause that "the saved arrangement is written for each of the two focus moves" (ruling 3's words). No command shows it. By reading it holds: after `openView`, the old pane's `activePane` (`PaneView.svelte:132`) is false, so its `entered` calls `activateInstance` and saves, and the chosen pane's `entered` does the same. No test runs the real `entered`, because the client test's stand-in handler activates unconditionally.
+- Stale line numbers in the report (`Palette.svelte:180` for the `focusQuietly` call, now 181; `Palette.svelte:168` for the `editor` condition, now 172; "lines 160 to 181" for `choose` and `landOn`): not raised, since no decision rests on them.
+- The report's open-items quote ("The list holds no entry") was not refreshed by the round. At 23:52 Z120 was open (ruled 23:53). The state file's list now reads "- None.", so the quote matches the state at landing. Not raised.
+- The mutations and the case 8 and case 18 probes of the first review were not rerun. The round changed neither `quiet-focus.ts`, `Modal.svelte`, `vite.config.ts` nor any test (modification times above), and the instruction to change nothing kept me from mutating copies.
+- The Z113 sentence for `spec.md:56` is the orchestrator's landing commit, not this diff.
+
+Reviewer usage (the runner's completion notice): reviewer ab5a9d2b6860166ba, served claude-opus-5-5, 206,031 tokens, 58 tool uses, 15.9 min.
+
+### Closed
+
+- First run, Spec 1 (`:tab` and `:goto` do not land), Spec 2 (item 6's narrowing to non-editor results), Standards 1 (the order in `choose`'s comment), Proof 1 (case 17's row) and Behaviour 1 (the landing on every palette choice unstated): closed by repair round 1 (`agents/briefs/Q106-round1.md`, rulings 1 to 6), each closure reproduced by the round's refuter above; Spec 2 closed by the brief's item 6 text.
+- Round 1, Standards (`Palette.svelte:167-168`, the editor action sentence): fixed at landing, small and inside the brief. The comment's sentence and the report's row "Cmd+K then an editor action" read "an editor action shows no tab; the editor takes the keyboard when it runs the action, and the give-back then finds it held."

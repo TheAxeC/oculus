@@ -14,15 +14,16 @@
     // When it opens, the keyboard goes where the box asks through `onopen`. A box that asks nothing
     // gets it on the first control Tab reaches inside it, or on the box itself when it holds none.
     // When it goes, the keyboard comes back to the control that held it when the ground was drawn,
-    // while that control is on the page: a yes may take it away, and the strip it was in is then
-    // what says where the keyboard lands. The first focus of a box that asks nothing and the focus
-    // given back are the page's own, so they go through `focusQuietly` (ui/frame/quiet-focus.ts)
-    // and open no tooltip on the control they land on.
+    // once the ground is gone and only where nothing holds it: a yes may take that control away,
+    // and the strip it was in is then what says where the keyboard lands, and a view the answer
+    // opened and focused keeps the keyboard. The first focus of a box that asks nothing and the
+    // focus given back are the page's own, so they go through `focusFirstQuietly` and
+    // `giveBackQuietly` (ui/frame/quiet-focus.ts) and open no tooltip on the control they land on.
 
     import { AlertDialog, Dialog } from 'bits-ui';
     import type { Snippet } from 'svelte';
     import { watchShown } from '$lib/ui/shown';
-    import { focusFirstQuietly, focusQuietly } from '$lib/ui/frame/quiet-focus';
+    import { focusFirstQuietly, giveBackQuietly } from '$lib/ui/frame/quiet-focus';
 
     type Props = {
         /** A question that must be answered, drawn as an alert dialog. */
@@ -65,10 +66,9 @@
         ground === undefined ? undefined : watchShown(ground, (shown) => (open = shown))
     );
 
-    // No dependency, so the body runs once and the cleanup runs when the ground goes.
-    $effect(() => () => {
-        if (came instanceof HTMLElement && came.isConnected) focusQuietly(came);
-    });
+    // No dependency, so the body runs once and the cleanup runs when the ground goes. The keyboard
+    // is given back once the cleanup has finished (see giveBackQuietly).
+    $effect(() => () => giveBackQuietly(came));
 
     /** bits-ui closing the box on Escape or a press outside, which is the caller's to answer. */
     function asked(next: boolean): void {
