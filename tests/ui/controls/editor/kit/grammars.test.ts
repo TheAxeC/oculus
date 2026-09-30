@@ -3,8 +3,11 @@
 
 import { bundledLanguages } from 'shiki';
 import { describe, expect, it } from 'vitest';
-import { SHIKI_LANGUAGES, shikiId } from '../../../../src/lib/ui/controls/editor/kit/grammars.ts';
-import { registered } from '../../../../src/lib/state/shared/words/languages.ts';
+import {
+    SHIKI_LANGUAGES,
+    shikiId
+} from '../../../../../src/lib/ui/controls/editor/kit/grammars.ts';
+import { registered } from '../../../../../src/lib/state/shared/words/languages.ts';
 
 describe('the language map', () => {
     // Red when a name answers an id the installed shiki does not bundle.

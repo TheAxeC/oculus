@@ -1,7 +1,8 @@
 <script lang="ts">
     // Layer 3, view partial. The queue exposes every squeue field, with cancellation behind Confirm
-    // and logs limited to running jobs.
+    // and logs limited to running jobs. An empty queue is said with the Empty primitive.
     import Tag from '$lib/ui/controls/Tag.svelte';
+    import Empty from '$lib/ui/frame/Empty.svelte';
     import Confirm from '$lib/ui/controls/Confirm.svelte';
     import Meter from '$lib/ui/display/Meter.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
@@ -42,7 +43,7 @@
     ];
 </script>
 
-{#if rows.length === 0}<p>{t('hpc.no_jobs')}</p>{:else}
+{#if rows.length === 0}<Empty message={t('hpc.no_jobs')} />{:else}
     <div class="scroll">
         <table>
             <thead

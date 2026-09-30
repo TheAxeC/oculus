@@ -608,7 +608,7 @@ describe('the code window palette', () => {
 
     // An audit, a read of theme.ts's text: red when that text names a code role by its bare hue or
     // leaves one out. The behaviour, that Shiki colours the tokens in those hues, is tested by
-    // tests/ui/controls/editor/theme.test.ts:158-176.
+    // tests/ui/controls/editor/kit/theme.test.ts:160-178.
     it("paints the editor's scopes through those six and nothing else", () => {
         const file = join(SRC, 'lib', 'ui', 'controls', 'editor', 'kit', 'theme.ts');
         const source = readFileSync(file, 'utf8');

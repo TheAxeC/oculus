@@ -169,6 +169,17 @@ describe('Live HPC view', () => {
         expect(body).toContain('queue empty');
         expect(body).toContain('No jobs in the queue for you right now.');
     });
+    it('draws the empty queue line through the empty primitive, and only for an empty queue', () => {
+        const empty = draw({ ...payload, jobs: [], running: 0, total: 0 }, 31);
+        const at = empty.search(/class="empty[\s"]/);
+        expect(at).toBeGreaterThan(-1);
+        const line = empty.slice(at, empty.indexOf('</p>', at));
+        expect(line).toMatch(/<span class="message">[^]*No jobs in the queue for you right now\./);
+        const queued = draw(payload, 32);
+        expect(queued).toContain('<table');
+        // the cluster answers and the queue holds a job, so no list in the body is said to be empty
+        expect(queued.search(/class="empty[\s"]/)).toBe(-1);
+    });
     it('leaves a fresh answer unmarked', () => {
         const body = drawAt('2026-09-11T12:10:00.000Z', payload, 10);
         expect(body).toContain('as of');

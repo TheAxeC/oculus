@@ -5,7 +5,7 @@
 // no component on the server.
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { onMac } from '../../../../src/lib/ui/controls/editor/kit/load.ts';
+import { onMac } from '../../../../../src/lib/ui/controls/editor/kit/load.ts';
 
 afterEach(() => vi.unstubAllGlobals());
 

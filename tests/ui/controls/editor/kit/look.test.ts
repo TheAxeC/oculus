@@ -4,8 +4,8 @@
 // the landing shows.
 
 import { describe, expect, it } from 'vitest';
-import { paintCode } from '../../../../src/lib/ui/controls/editor/kit/look.ts';
-import type { EditorKit } from '../../../../src/lib/ui/controls/editor/kit/load.ts';
+import { paintCode } from '../../../../../src/lib/ui/controls/editor/kit/look.ts';
+import type { EditorKit } from '../../../../../src/lib/ui/controls/editor/kit/load.ts';
 
 /** A kit whose paint answers as given; nothing else of the kit is used. */
 function kitPainting(paint: EditorKit['paint']): EditorKit {

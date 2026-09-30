@@ -2,13 +2,12 @@
 
 In flight:
 - X3d (Source Control as VS Code's), a new builder continues it.
-- Q108 (the four fixes of the inline patch), round 1 done; its round review runs.
-- Q110 (Undo gives a replaced value back), repair round 1 sent (a comment, four tests).
+- Q110 (Undo gives a replaced value back), round 1 done; its round review runs.
 Open items: Z106 (three more changes to the apps design).
 Queued, in order:
-- U2 (every view's look against VS Code's), prepared; its builder launches once X3d and Q108 have landed.
+- U2 (every view's look against VS Code's), prepared; its builder launches once X3d has landed.
 - Q111 (Undo gives a cleared field's lines back), once Q110 has landed.
-- Q106 (Close pane on two tabs), /spec when a slot frees.
+- Q106 (Close pane on two tabs), /spec next, into the slot Q108 freed.
 - Q107 (a Terminal tab closing itself), /spec when a slot frees.
 - Q109 (a terminal's name, icon and colour), once Q107 has landed.
 - S3 (the Settings view as VS Code's), /spec when a slot frees.

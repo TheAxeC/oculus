@@ -806,7 +806,9 @@ describe('a page shown inside another', () => {
             props: { groups: [] }
         }).body;
         cancel();
-        const marks = [...body.matchAll(/class="mark[^"]*"/g)];
+        // The strip's drop mark is hidden from assistive technology; a tab's glyph shares its
+        // class.
+        const marks = [...body.matchAll(/class="mark[^"]*" aria-hidden="true"/g)];
         expect(marks).toHaveLength(1);
         // The mark sits in the nested page's first pane, which is the one the drop named.
         expect(body.indexOf('data-page-leaf')).toBeLessThan(marks[0].index);

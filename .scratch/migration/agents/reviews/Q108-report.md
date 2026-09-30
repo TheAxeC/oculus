@@ -26,7 +26,7 @@ The unchanged tree is main's `zones.ts` (120 lines, `wc -l` printed 120 after th
 | 8 | the five kit tests | `old-*.test.ts` copies of the five files with their imports at the old depth, run with `npx vitest run` on the unchanged `kit/` sources: `Test Files  5 passed (5)`, `Tests  31 passed (31)`; the copies were removed after the run |
 | 11 | keeps a bar through a null model and gives it a new zone for the next one | fails: `expected '54px' to be '-1000px'` (the bar stays at its drawn top after `model(null)`) |
 | 12 | makes one zone for a bar, not one per model change, when the model changes twice before a draw | fails: `expected [] to deeply equal [ [ 1, 28 ] ]` |
-| 13 | takes a bar away that holds a widget and no zone without asking the editor to remove a zone | passes; an audit of preserved behaviour |
+| 13 | takes a bar away that holds a widget and no zone without asking the editor to remove a zone | in its form after repair round 1, fails: `AssertionError: expected 2 to be 1` (main's `zones.ts` keeps the stale zone id and asks a model-less editor to change its zones); a test of the changed behaviour |
 | 14 | makes the room of a bar placed on an editor that already holds a model at once | passes; an audit of preserved behaviour |
 
 Cases 9 and 10 are looks at landing; no first run applies.
@@ -50,7 +50,7 @@ Case 7's three runs, each with `npx vitest run tests/shell/workbench.test.ts -t 
 | Verify 1, the list | DONE | quoted below |
 | Verify 2, the four test groups | DONE | `Test Files  12 passed (12)`, `Tests  160 passed (160)` |
 | Verify 3 | DONE | `folder-check exit 0`, `7` |
-| Verify 4 | DONE | first-run table; moved kit tests and cases 1, 5, 13, 14 pass on both trees and are audits |
+| Verify 4 | DONE | first-run table; moved kit tests and cases 1, 5, 14 pass on both trees and are audits; case 13 fails on the unchanged tree in its final form |
 | Cases 9 and 10 | NOT DONE by me; the orchestrator's looks at landing | they are the orchestrator's by the brief |
 
 The list, `sh ~/.claude/skills/land/templates/checks.sh .scratch/migration/orchestrator-state.md` after `npm run diagrams`, exit 0, with its `$` lines and result lines:

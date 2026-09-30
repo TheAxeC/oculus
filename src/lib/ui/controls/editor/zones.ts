@@ -4,6 +4,8 @@
 // above the line keeps the room, and the element sits over that room as an overlay widget, moved
 // to the zone's top on every render. Content inside a view zone takes no pointer events, since the
 // line layer lies above it, so the bar's buttons live in the overlay, which lies above the lines.
+// The zone is made again for every model the editor is given, since the editor drops its zones
+// with its model and makes none while it holds none.
 //
 // A bar's zone is drawn before any other zone after the same line (`ordinal` 0), so in an inline
 // diff it sits above the removed lines Monaco draws there, and a diff editor gives the other side
@@ -40,6 +42,7 @@ export function lineBars(): LineBars {
     let editor: Monaco.editor.ICodeEditor | null = null;
     let height = 0;
     let layout: Monaco.IDisposable | null = null;
+    let modelled: Monaco.IDisposable | null = null;
     let made = 0;
     const held = new Map<HTMLElement, Held>();
 
@@ -56,7 +59,6 @@ export function lineBars(): LineBars {
         const id = `oculus.bar.${String(made)}`;
         node.style.position = 'absolute';
         node.style.left = '0';
-        node.style.top = OUT_OF_SIGHT;
         const widget: Monaco.editor.IOverlayWidget = {
             getId: () => id,
             getDomNode: () => node,
@@ -64,11 +66,24 @@ export function lineBars(): LineBars {
         };
         on.addOverlayWidget(widget);
         fit(on, node);
-        const room = Math.max(node.offsetHeight, height);
+        entry.widget = widget;
+        room(on, node, entry);
+    }
+
+    /**
+     * Make the room of a bar above its line, and leave the bar out of sight until its zone is
+     * drawn. An editor makes no zone while it holds no model, and drops its zones when it is given
+     * another model or none while it keeps its overlay widgets, so this runs again on every model
+     * for a bar whose widget stays.
+     */
+    function room(on: Monaco.editor.ICodeEditor, node: HTMLElement, entry: Held): void {
+        node.style.top = OUT_OF_SIGHT;
+        if (on.getModel() === null) return;
+        const tall = Math.max(node.offsetHeight, height);
         on.changeViewZones((zones) => {
             entry.zone = zones.addZone({
                 afterLineNumber: entry.after,
-                heightInPx: room,
+                heightInPx: tall,
                 domNode: document.createElement('div'),
                 ordinal: FIRST,
                 suppressMouseDown: true,
@@ -77,7 +92,6 @@ export function lineBars(): LineBars {
                 }
             });
         });
-        entry.widget = widget;
     }
 
     function remove(entry: Held): void {
@@ -97,12 +111,20 @@ export function lineBars(): LineBars {
             layout = on.onDidLayoutChange(() => {
                 for (const node of held.keys()) fit(on, node);
             });
+            modelled = on.onDidChangeModel(() => {
+                for (const [node, entry] of held) {
+                    entry.zone = null;
+                    if (entry.widget !== null) room(on, node, entry);
+                }
+            });
             for (const [node, entry] of held) place(node, entry);
         },
         unmount() {
             for (const entry of held.values()) remove(entry);
             layout?.dispose();
             layout = null;
+            modelled?.dispose();
+            modelled = null;
             editor = null;
         },
         above(after) {

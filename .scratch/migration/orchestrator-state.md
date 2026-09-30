@@ -42,23 +42,6 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   brief_check: agents/reviews/X3d-brief-check.md, every finding closed in the brief (its Closed heading); claude-opus-5-5, 52 tool uses, 301,056 tokens, 12.4 min
   landing: not-started
   round: 0
-- step: Q108
-  executor: agent
-  worker: claude:sonnet
-  model: claude-sonnet-5-5 (the transcript's message.model, read after the launch)
-  session_id: a039a2e9360773da5
-  worktree: .agents/worktrees/Q108
-  base: a6efe87c
-  launched: 2026-09-30 19:28 local
-  report: agents/reviews/Q108-report.md
-  builder_usage: 164,490 tokens, 48 tool uses, 14.2 min (report at 19:42); round 1: 175,323 tokens, 8 tool uses, 5.6 min (report at 20:06)
-  round_1_review: agents/reviews/Q108-refuter.md, section "Repair round 1, refuted" (reviewer a1ce91d40deb763dd, launched 20:08; running)
-  reviewer_report: agents/reviews/Q108-refuter.md (reviewer a2f79b6c821847709, served claude-opus-5-5, 152,342 tokens, 37 tool uses, 13.3 min; two Proof findings, sent as round 1)
-  round_1: agents/briefs/Q108-round1.md, sent 19:58, the worktree's diff state at the send recorded in `agents/reviews/Q108-round1-base.diff`
-  brief_check: agents/reviews/Q108-brief-check.md, every finding closed in the brief (its Closed heading); claude-opus-5-5, 37 tool uses, 158,436 tokens, 7.0 min
-  shared_paths: docs/diagrams with X3d (a mechanical rerun of `npm run diagrams` at landing); tests/ui/controls/ with X3d, whose tests are ToolButton's and the menu's, not the editor folder's, so git merges the files
-  landing: not-started
-  round: 1
 - step: Q110
   executor: agent
   worker: claude:sonnet
@@ -68,13 +51,14 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   base: ce795acb
   launched: 2026-09-30 19:39 local
   report: agents/reviews/Q110-report.md
-  builder_usage: 157,740 tokens, 21 tool uses, 13.0 min (report at 19:52)
+  builder_usage: 157,740 tokens, 21 tool uses, 13.0 min (report at 19:52); round 1: 178,815 tokens, 13 tool uses, 6.8 min (report at 20:12)
+  round_1_review: agents/reviews/Q110-refuter.md, section "Repair round 1, refuted" (reviewer a4bf44d5d493a4c20, launched 20:12, served claude-opus-5-5; running)
   reviewer_report: agents/reviews/Q110-refuter.md (reviewer abdca2fd478b9f797, served claude-opus-5-5, 176,879 tokens, 41 tool uses, 11.4 min; SP1, ST1, B1 sent as round 1, P1 ruled no change)
   brief_check: agents/reviews/Q110-brief-check.md, every finding closed in the brief or raised as Z105 (its Closed heading); claude-opus-5-5, 31 tool uses, 166,632 tokens, 6.1 min
   shared_paths: docs/diagrams with X3d and Q108 (a mechanical rerun of `npm run diagrams` at landing); DESIGN.md line 313 with X3d, whose brief writes other sections of DESIGN.md, so git merges the hunks
   landing: not-started
   round: 1
-  round_1: agents/briefs/Q110-round1.md, sent 20:09, the worktree's diff at the send in `agents/reviews/Q110-round1-base.diff`
+  round_1: agents/briefs/Q110-round1.md, sent 20:05, the worktree's diff at the send in `agents/reviews/Q110-round1-base.diff`
 - step: U2
   executor: agent
   worker: claude:sonnet
@@ -147,13 +131,10 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is booked as its own step in `plan.md` and carried in the Booked section below, since it needs no ruling from him.
 
-
-
-
+- Z106, changes to the unbuilt apps design beyond Z103 (b) (raised 2026-09-30 20:04 on Axel's question whether anything else in E2's 42 shapes should change; read against `DESIGN.md` lines 236-327). Three changes recommended, each a text change to the section and to its row in `agents/reviews/E2-report.md`: (1) Row 18, the store rides in every row of the `apps` channel: a channel publish sends the whole payload to every subscriber (`src/lib/server/core/channels.ts:103-134`), so each `setStore` of any app, up to 30 a minute per frame, re-sends every app's store, up to 256 KB each, to every page. Change to the report's own alternative: the row carries the store's size and a version, and the page fetches one app's store by a GET route when that app's version changes. (2) Row 36 carried further: a machine app's `open({ file })` rejects `closed` for a path with a dot-led segment (`.env`, `.ssh`, `.oculus/`, `.git/`), the rule the app file server already applies, so no app can put a hidden credential file on screen or learn whether one exists (a missing file answers `missing`). (3) Rows 32 and 42: whether Chrome's policy lets `connect-src https://host` also admit `wss://host` is not settled in the section, and row 32's reason for refusing `wss:` rests on it; the build step's Chrome measurements (row 42) add it, and the section states the result. The other 38 rows: no change recommended. Options: (a) The three changes, made with Z103 (b)'s row 36 by one small step E3 (the apps section's text), dispatched now. For: the section says what will be built, and the 256 KB push is not built in; against: one more step. (b) The three changes and row 36 left to the apps build step's `/spec`. For: no step now; against: the section stays false against your ruling until then, and a builder may read it as it stands. (c) Z103 (b) alone by E3, none of the three. For: smaller; against: the push cost and the dot-file exposure get built. Recommended (a). The lazy option is (b).
 
 ## Time per step (Axel asked 2026-09-27 for how it evolves with Q77; measured from each builder's transcript: each tool call from call to result, each background wait from the builder stopping to the run waking it)
 
-- Z106, changes to the unbuilt apps design beyond Z103 (b) (raised 2026-09-30 20:06 on Axel's question whether anything else in E2's 42 shapes should change; read against `DESIGN.md` lines 236-327). Three changes recommended, each a text change to the section and to its row in `agents/reviews/E2-report.md`: (1) Row 18, the store rides in every row of the `apps` channel: a channel publish sends the whole payload to every subscriber (`src/lib/server/core/channels.ts:103-134`), so each `setStore` of any app, up to 30 a minute per frame, re-sends every app's store, up to 256 KB each, to every page. Change to the report's own alternative: the row carries the store's size and a version, and the page fetches one app's store by a GET route when that app's version changes. (2) Row 36 carried further: a machine app's `open({ file })` rejects `closed` for a path with a dot-led segment (`.env`, `.ssh`, `.oculus/`, `.git/`), the rule the app file server already applies, so no app can put a hidden credential file on screen or learn whether one exists (a missing file answers `missing`). (3) Rows 32 and 42: whether Chrome's policy lets `connect-src https://host` also admit `wss://host` is not settled in the section, and row 32's reason for refusing `wss:` rests on it; the build step's Chrome measurements (row 42) add it, and the section states the result. The other 38 rows: no change recommended. Options: (a) The three changes, made with Z103 (b)'s row 36 by one small step E3 (the apps section's text), dispatched now. For: the section says what will be built, and the 256 KB push is not built in; against: one more step. (b) The three changes and row 36 left to the apps build step's `/spec`. For: no step now; against: the section stays false against your ruling until then, and a builder may read it as it stands. (c) Z103 (b) alone by E3, none of the three. For: smaller; against: the push cost and the dot-file exposure get built. Recommended (a). The lazy option is (b).
 - Q77c (the first step under the rules of 2026-09-27: known fixes only, scoped checks, one sampled review), from its dispatch (09:24 UTC) to its booking (10:29 UTC), 1 h 5 min of wall time. Builder 33.8 minutes (revert-check 15.3, scoped unit runs 10.1, reading and writing 8.2), no repair round. Reviewer 10.0 minutes (revert-check 3.0, scoped unit 1.7, other checks 1.3, reading 3.7). Landing: `land.sh` 15.4 minutes (the whole unit suite, the checks and the browser suite, 10.3 minutes of it), the three landing fixes with revert-check over their two files 2.6 minutes. Q78 before it took 3 h 52 min. From `steptime.py` over each agent's transcript and `/usr/bin/time` on `land.sh`.
 - Q78 (before Q77), from its dispatch (20:23 UTC) to its booking (00:15 UTC, 2026-09-27), 3 h 52 min of wall time. Builder (first run 20:23 to 21:04, repair round 21:21 to 22:56): 136 minutes working, of which revert-check 80.5 (59%), the whole unit suite 13.0 over its runs, scoped unit runs 4.5, browser runs 4.5, type check, lint, format and diagrams 2.7, other tools 5.6, and reading and writing 25.5 (19%); revert-check was started four times against the ruling of once. Reviewers: the first 15.6 minutes (revert-check 3.7, whole unit suite 3.0, checks 1.9, browser 0.8, reading 5.5), the run over the round 14.3 minutes (revert-check 4.0, whole unit suite 2.6, checks 2.1, browser 0.7, other tools 3.1, reading 1.7). Landing on main: `land.sh` 5.7 minutes (its unit run), the whole check list 16.6 minutes (the browser suite 9.9 of it), then the landing fixes' own checks (type check, lint, format, build, the affected unit files and four spec files) 4 minutes, and revert-check over the ten test files whose directives the landing added or re-pointed, two runs side by side: 27 browser and node reverts in 10.3 minutes and 63 unit reverts in 11.1 minutes. Between these, about 60 minutes of the orchestrator reading, fixing and booking. Measured with the ledger's `steptime.py` over each agent's transcript (the Claude Code subagent log under the session's `subagents/` folder): a foreground call from call to result, a background wait from the agent's last record to the notification.
 
@@ -551,6 +532,8 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-09-30 20:22. Q108 landed (the merge editor's bars, the empty HPC queue through `Empty`, the drop-mark count, the kit tests moved); one fix at landing in its report; looks on TEST taken. In flight: X3d, Q110 (its round review). U2 prepared, waits for X3d. Next: /spec Q106 into the free slot. Open: Z106.
+- 2026-09-30 20:04. Z103 ruled (b); Z106 raised; Q108 and Q110 each sent one repair round; U2 prepared at 7e8eec33. Open: Z106.
 - 2026-09-30 19:39. Q110 prepared at ce795acb and in flight on `claude-sonnet-5-5`; three steps in flight: X3d, Q108, Q110. Next: /spec U2 (its builder waits for a free slot). Open: Z105, Z103.
 - 2026-09-30 19:37. Q110's brief check is in; every finding closed in the brief but the undo of a clear, raised as Z105. Q110 is prepared next. Open: Z105, Z103.
 - 2026-09-30 19:28. Q108 prepared at a6efe87c (the patch applied in its worktree) and in flight on `claude-sonnet-5-5`, beside X3d. Next: /spec Q110, then U2. Open: Z103.

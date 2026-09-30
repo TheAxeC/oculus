@@ -11,8 +11,8 @@ import { createHighlighter } from 'shiki';
 import type { ThemeRegistration } from 'shiki';
 import { bundledThemes, bundledThemesInfo } from 'shiki/themes';
 import { describe, expect, it } from 'vitest';
-import { THEME, painter } from '../../../../src/lib/ui/controls/editor/kit/load.ts';
-import { editorTheme } from '../../../../src/lib/ui/controls/editor/kit/theme.ts';
+import { THEME, painter } from '../../../../../src/lib/ui/controls/editor/kit/load.ts';
+import { editorTheme } from '../../../../../src/lib/ui/controls/editor/kit/theme.ts';
 
 type Rule = { token: string; foreground?: string; fontStyle?: string };
 type Theme = { rules: Rule[]; colors: Record<string, string> };

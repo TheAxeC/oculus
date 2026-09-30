@@ -10,15 +10,15 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { createHighlighter } from 'shiki';
 import { describe, expect, it } from 'vitest';
-import { COLOURS } from '../../../../src/lib/ui/controls/editor/kit/colours.ts';
+import { COLOURS } from '../../../../../src/lib/ui/controls/editor/kit/colours.ts';
 import {
     editorTheme,
     expandHex,
     isDark,
     scopeToken
-} from '../../../../src/lib/ui/controls/editor/kit/theme.ts';
-import { NAMES, themeTokens } from '../../../checks/look/themes.ts';
-import { ROOT, monacoSources } from './monaco-sources.ts';
+} from '../../../../../src/lib/ui/controls/editor/kit/theme.ts';
+import { NAMES, themeTokens } from '../../../../checks/look/themes.ts';
+import { ROOT, monacoSources } from '../monaco-sources.ts';
 
 /** Every colour key the installed monaco-editor registers. */
 function registeredKeys(): Set<string> {

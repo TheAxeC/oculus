@@ -9,7 +9,7 @@
 // colour it leaves unset takes the ink the text would inherit. A text colour is a token's `-txt`
 // form, which themes/derive.ts nudges until it reads on every surface, as every text of the page
 // is painted. The keys are the installed
-// package's own, read from its `registerColor` calls by tests/ui/controls/editor/theme.test.ts,
+// package's own, read from its `registerColor` calls by tests/ui/controls/editor/kit/theme.test.ts,
 // which turns red on a key this map misses or names in excess.
 
 /** Monaco's colour key to the token it is painted from, with an alpha where one is written. */
