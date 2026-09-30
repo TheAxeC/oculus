@@ -3,16 +3,16 @@
 In flight:
 - X3d (Source Control as VS Code's), taken back out of main at its look (the page hung); its diagnosis runs.
 - Q106 (Close pane on two tabs), repair round 1 done; its review runs.
-- Q107 (a Terminal tab closing itself; Attach to Session), built; its review runs.
+- Q107 (a Terminal tab closing itself; Attach to Session), repair round 1 running.
 Landed last: Q111 (Undo gives a cleared field's lines back), 23:17.
 Open items: none. Choices made in automode, for review: `choices.md`.
 Queued, in order:
 - U2 (every view's look against VS Code's), prepared; its builder launches once X3d has landed.
-- Q109 (a terminal's name, icon and colour; a sole terminal renamed), once Q107 has landed.
+- Q109 (the terminal: name, icon and colour; a sole terminal renamed; four terminal options), once Q107 has landed.
 - S3a (the options catalog, with `focus_label_mode` read and `stale_days` folded in), prepared; its builder launches when a slot frees.
 - S3b (the `config-key` write), /spec once S3a has landed (its writer reads S3a's catalog module).
 - S3c (the Settings editor), once S3a and S3b have landed.
-- Q85a2 to Q85a5 (zod in the other server folders), /spec when a slot frees; then Q85b and Q85c, then Q85d.
+- Q85a2 and Q85a4 (zod in the other server folders, two steps), /spec when a slot frees; then Q85b and Q85c, then Q85d.
 - Q88b (the right-click menus' new capabilities), once X3d has landed.
 - X3c (the tab strip as VS Code's), once Q88b has landed.
 - X3a (the Files view as VS Code's Explorer), once Q88b has landed.
@@ -21,14 +21,14 @@ Queued, in order:
 - Q66 (a hidden tab defers its work), once X3d has landed.
 - Q35 (the session views).
 - D11 and D14 (the rite debug client; LaTeX everywhere).
-- D25, D26 and D27 (indentation; the rite language; the coloured languages), before D23.
+- D25 (the editor's options), after S3c; D27 (the editor's languages, the rite language included), before D23.
 - D23, D15 and D17 (language servers; PDF reading, once D14 has landed; project commands).
-- D23b (more language server features), once D23 has landed.
-- D28 and D29 (saving a source file; editor options), once D25 has landed, D29 also after S3.
-- D30, D31 and D32 (terminal options; git auto fetch, once X3d has landed; replace in Search).
-- D33 and D34 (the Problems view; TypeScript and Svelte features), once D23 has landed, D33 also after D17.
-- D18, D20 and D24 (the Processes view; an agent on a task; the Personal board).
-- A1, A2 and A3 (review with feedback; a session in a new worktree; scheduled runs, once D17 has landed).
+- D23b (more language server features, TypeScript and Svelte included), once D23 has landed.
+- D28 (saving a source file), once D25 has landed.
+- D31 and D32 (git auto fetch, once X3d has landed; replace in Search).
+- D33 (the Problems view), once D23 and D17 have landed.
+- D18, D20 and D24 (the Processes view; an agent from a task or in a new worktree; the Personal board).
+- A1 and A3 (review with feedback; scheduled runs, once D17 has landed).
 - M3 and M4 (the resources registry; live equations in Present).
 - Q72 (the architecture re-read).
 - R2 (release readiness).

@@ -2,6 +2,18 @@
 
 Each entry is an open item the orchestrator closed itself with the option it judged Axel would take, booked everywhere a ruling is booked (the state file's closed log, `plan.md`'s Rulings, the step's brief). Axel reads this list when he likes: an entry he agrees with is removed; one he disagrees with is discussed, and when it changed what was built it becomes a new step that changes it on top. Newest first.
 
+## Z128 (2026-10-01 00:10, step Q107)
+
+The question: two browser tabs each write the ui store whole, so one drops the other's instance records.
+
+- Chosen (a): `save` merges into the saved records and the store follows another tab's saves, the appearance staying each tab's own; in Q107's repair round. Not chosen: (b) only the docs corrected (lazy).
+
+## Z126 (2026-10-01 00:08, on Axel's question whether other steps are too tiny)
+
+The question: which queued steps are small enough to fold into a step they belong with.
+
+- Chosen (a): D26 into D27 (one extension-to-language map, one grammar loader), D29 into D25 (the editor's per-language options), D30 into Q109 (the terminal), D34 into D23b (two more servers on D23's relay), A2 into D20 (starting an agent session). Kept: D15 (widened to `pdfjs-dist` and SyncTeX both ways, not small), D31 (a git poller no queued step covers), the Q85a steps (Z96, Axel's split; Z127). Not chosen: (b) leave them as steps (lazy).
+
 ## Z125 (2026-10-01 00:03, on Axel's word against tiny steps)
 
 The question: where the `focus_label_mode` reader (Z120, Z122) and the `stale_days` fold (Z123) are built.
