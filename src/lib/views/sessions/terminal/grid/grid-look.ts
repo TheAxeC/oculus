@@ -6,29 +6,20 @@
 
 import type { ISearchOptions } from '@xterm/addon-search';
 import type { ITerminalOptions, ITheme } from '@xterm/xterm';
+import { COLOR_NAMES, colorToken } from '$lib/state/sessions/terminal/terminal-marks';
 
 /** The grid's palette and its font family, as the theme in force gives them. */
 export type GridLook = { theme: ITheme; fontFamily: string };
 
-/** The sixteen ANSI slots, in xterm's order, and the token each one is painted from. */
-const ANSI: [keyof ITheme, string][] = [
-    ['black', '--muted'],
-    ['red', '--c-red'],
-    ['green', '--c-green'],
-    ['yellow', '--c-gold'],
-    ['blue', '--c-blue'],
-    ['magenta', '--c-magenta'],
-    ['cyan', '--c-cyan'],
-    ['white', '--ink'],
-    ['brightBlack', '--muted'],
-    ['brightRed', '--c-red'],
-    ['brightGreen', '--c-green'],
-    ['brightYellow', '--c-gold'],
-    ['brightBlue', '--c-blue'],
-    ['brightMagenta', '--c-magenta'],
-    ['brightCyan', '--c-cyan'],
-    ['brightWhite', '--ink']
-];
+/** The sixteen ANSI slots, in xterm's order: each name and its bright twin from one token. */
+const ANSI: [keyof ITheme, string][] = COLOR_NAMES.flatMap((name) => {
+    const bright = `bright${name[0].toUpperCase()}${name.slice(1)}` as keyof ITheme;
+    const token = colorToken(name) ?? '';
+    return [
+        [name, token],
+        [bright, token]
+    ] as [keyof ITheme, string][];
+});
 
 /**
  * The grid's palette and font in force, read off the body, which is where the theme's class sits

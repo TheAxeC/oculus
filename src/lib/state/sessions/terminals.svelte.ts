@@ -13,13 +13,19 @@
 // over every page's Terminal tabs (the rules over one tab's state are state/sessions/terminal/
 // terminal-tabs.ts): `showTerminal` shows a terminal in the tab that owns it, switching to its
 // page, or hands a terminal no tab owns to the Terminal tab of the page on screen, or a new one;
-// `moveTerminal` moves one from its tab to another; `composeIn` puts New's composer in the page's
-// Terminal tab, its folder and kind back to a new composer's own. A terminal that ends leaves the
-// `sessions` payload's list, and the store takes it out of every tab that owned it, closes a tab
-// left owning none, on any page, unless the reader is composing in it, and clears a selection that
-// was that terminal. A closed tab stops nothing, so its terminals run on unowned and
-// listed in the Sessions view. The workbench is handed in by state/client/context.ts, since a
-// hidden page mounts no view that could notice.
+// `moveTerminal` moves one from its tab to another; `startInTab` starts a terminal of a kind at
+// once in the tab's folder and shows it, `newTerminalIn` does the same in a Terminal tab of one
+// pane, and `splitTerminal` starts one of the split terminal's kind and folder right of it in the
+// tab's row; `composeIn` puts the composer of a start with a prompt in the page's Terminal tab, in
+// the tab's folder. A start the server refuses is said on the tab (`refusal`) and changes nothing.
+// The store keeps what each start answered until the payload lists it, so a terminal started a
+// moment ago can be split. A terminal that ends leaves the `sessions` payload's list, and the store
+// takes it out of every tab that owned it, closes a tab left owning none, on any page, unless the
+// reader is composing in it, and clears a selection that was that terminal. A closed Terminal tab,
+// pane or page, and a page reset that removes a tab, end the running terminals the tab lists (the
+// registration the ui store holds), and a start answered after its tab closed is ended; a tab that
+// is moved, split or reloaded ends none. The workbench is handed in by state/client/context.ts,
+// since a hidden page mounts no view that could notice.
 //
 // Every action is a write in DESIGN.md's "Auth" sense, since it runs a process on the machine: the
 // POST carries the token state/client/writes.svelte.ts holds, and the socket carries it in its
@@ -40,6 +46,7 @@ import type {
     TerminalResume
 } from '../../data/model/index.ts';
 import { isMap } from '../../data/helpers/guards.ts';
+import { tabMarkOf } from './terminal/terminal-marks.ts';
 import {
     TERMINAL_VIEW,
     composingIn,
@@ -49,11 +56,24 @@ import {
     pageTarget,
     readTab,
     showingRow,
+    splitRight,
+    tabFolder,
     withTerminal,
     withoutTerminal,
     type TerminalTabState
 } from './terminal/terminal-tabs.ts';
-import { freshComposer } from './terminal/composer.ts';
+import { freshComposer, splitState } from './terminal/composer.ts';
+import { decodeBytes, encodeBytes } from './terminal/pty-bytes.ts';
+import {
+    postTerminal,
+    readBusy,
+    type BusyTerminal,
+    type TerminalAnswer
+} from './terminal/pty-io.ts';
+
+export type { BusyTerminal, TerminalAnswer };
+
+export { decodeBytes, encodeBytes, titleStripper } from './terminal/pty-bytes.ts';
 
 // The three model types a view needs of a terminal. The boundary table lets `state/` import
 // `data/model` and lets a view import `state/`, so they reach a view from here, the way
@@ -66,15 +86,6 @@ const PREFIX = 'pty:';
 /** The geometry a terminal is started at when the pane has not been measured yet. */
 const COLS = 80;
 const ROWS = 24;
-
-/** What an action answered: the terminal it names, or what the server refused it with. */
-export type TerminalAnswer = {
-    ok: boolean;
-    /** The terminal the action was about, empty when the server refused before naming one. */
-    id: string;
-    /** What went wrong, or the empty string. Already the server's words. */
-    error: string;
-};
 
 /** The four update skills accepted by the server's task action. */
 export type TaskKind = 'litwatch' | 'scout' | 'linkedin' | 'inbox';
@@ -90,26 +101,6 @@ export function ptyChannel(id: string): string {
     return `${PREFIX}${id}`;
 }
 
-/** The base64 of a string's UTF-8 bytes, which is how the wire carries a pane's input. */
-export function encodeBytes(text: string): string {
-    let binary = '';
-    for (const byte of new TextEncoder().encode(text)) binary += String.fromCharCode(byte);
-    return btoa(binary);
-}
-
-/** The bytes of a base64 payload. Anything that is not base64 reads as no bytes at all. */
-export function decodeBytes(encoded: string): Uint8Array {
-    let binary: string;
-    try {
-        binary = atob(encoded);
-    } catch {
-        return new Uint8Array(0);
-    }
-    const bytes = new Uint8Array(binary.length);
-    for (let at = 0; at < binary.length; at += 1) bytes[at] = binary.charCodeAt(at);
-    return bytes;
-}
-
 /**
  * A refused resume in words. The endpoint answers the catalog key of the two refusals the page has
  * words for, so the keys stay literal here and tests/checks/source/keys.test.ts can still see them;
@@ -119,68 +110,6 @@ export function resumeRefusal(error: string): string {
     if (error === 'sessions.resume_live') return t('sessions.resume_live');
     if (error === 'sessions.resume_unknown') return t('sessions.resume_unknown');
     return error;
-}
-
-/** ESC, the byte a title sequence opens and closes with. */
-const ESC = 0x1b;
-
-/**
- * A filter that drops the window-title sequences of a pane, `ESC k <name> ESC \`: a shell writes
- * one to name its tmux window after the running command, tmux passes it through as pane output, and
- * xterm.js does not know it and would print the name as text. The filter keeps what a chunk ends
- * with when a sequence is cut across two chunks, so each call is handed the bytes to write and the
- * next call finishes the sequence. Anything else in the stream passes through unchanged.
- */
-export function titleStripper(): (bytes: Uint8Array) => Uint8Array {
-    let carry = new Uint8Array(0);
-    let inside = false;
-    return (bytes) => {
-        const all = new Uint8Array(carry.length + bytes.length);
-        all.set(carry, 0);
-        all.set(bytes, carry.length);
-        const out: number[] = [];
-        let at = 0;
-        while (at < all.length) {
-            if (inside) {
-                // Read to the ESC \ that closes the title; an open title at the end is carried.
-                const close = indexOfPair(all, ESC, 0x5c, at);
-                if (close === -1) {
-                    carry = all.slice(at);
-                    return Uint8Array.from(out);
-                }
-                at = close + 2;
-                inside = false;
-                continue;
-            }
-            const open = indexOfPair(all, ESC, 0x6b, at);
-            if (open === -1) {
-                // A lone ESC at the very end may be the first byte of a title: carried, not
-                // written.
-                const last = all.length - 1;
-                if (all[last] === ESC && last >= at) {
-                    for (let i = at; i < last; i += 1) out.push(all[i]);
-                    carry = all.slice(last);
-                } else {
-                    for (let i = at; i < all.length; i += 1) out.push(all[i]);
-                    carry = new Uint8Array(0);
-                }
-                return Uint8Array.from(out);
-            }
-            for (let i = at; i < open; i += 1) out.push(all[i]);
-            at = open + 2;
-            inside = true;
-        }
-        carry = new Uint8Array(0);
-        return Uint8Array.from(out);
-    };
-}
-
-/** The index of the first `first, second` pair at or after `from`, or -1. */
-function indexOfPair(bytes: Uint8Array, first: number, second: number, from: number): number {
-    for (let i = from; i + 1 < bytes.length; i += 1) {
-        if (bytes[i] === first && bytes[i + 1] === second) return i;
-    }
-    return -1;
 }
 
 /** A plain map, or null. */
@@ -231,12 +160,22 @@ export type TerminalTabs = {
     setInstanceState: (id: string, state: unknown) => void;
     selected: () => string | null;
     select: (id: string | null) => void;
+    /** The hub's absolute path, or the empty string before the first portfolio snapshot. */
+    hubRoot: () => string;
+    /** Whether the first portfolio snapshot has arrived, so an empty hub root is final. */
+    portfolioHeard: () => boolean;
+    /** The Terminal tab of the pane at a path of a page that a New there starts in, or null. */
+    paneTab: (page: string, path: number[]) => string | null;
+    /** A new Terminal tab in the pane at a path of a page, answering its id. */
+    openIn: (page: string, path: number[], state: TerminalTabState) => string;
 };
 
 /** The terminals one client owns, and the actions it runs on them. */
 export type TerminalsStore = {
     terminals: () => Terminal[];
     terminalById: (id: string | null) => Terminal | null;
+    /** The strip mark of a tab: its shown terminal's icon and colour token, for a Terminal tab. */
+    tabMark: (instance: { view: string; state: unknown }) => { glyph?: string; token?: string };
     startTerminal: (
         kind: TerminalKind,
         cwd: string,
@@ -261,7 +200,12 @@ export type TerminalsStore = {
         rows?: number
     ) => Promise<TerminalAnswer>;
     stopTerminal: (id: string) => Promise<TerminalAnswer>;
-    composeTerminal: (start: ComposeStart, cols?: number, rows?: number) => Promise<TerminalAnswer>;
+    composeTerminal: (
+        start: ComposeStart,
+        owner: string,
+        cols?: number,
+        rows?: number
+    ) => Promise<TerminalAnswer>;
     steerTerminal: (id: string, text: string) => Promise<TerminalAnswer>;
     interruptTerminal: (id: string) => Promise<TerminalAnswer>;
     forkTerminal: (
@@ -292,7 +236,43 @@ export type TerminalsStore = {
      */
     composeIn: (page?: string) => void;
     /** New in one Terminal tab, the bar's New: the composer there, as `composeIn` shows it. */
-    composeInTab: (tab: string) => void;
+    composeInTab: (tab: string, agent?: TerminalKind) => void;
+    /**
+     * Start a terminal of a kind at once in a Terminal tab's folder (the shown terminal's, else the
+     * first one's, else the hub root, waited for while it is not known yet) and show it there.
+     */
+    startInTab: (tab: string, kind: TerminalKind) => Promise<TerminalAnswer>;
+    /**
+     * New Terminal from a pane: the start goes into the active Terminal tab of the pane at `path`
+     * of the page, or into a new Terminal tab opened in that pane.
+     */
+    newTerminalIn: (page: string, path: number[]) => Promise<TerminalAnswer>;
+    /**
+     * Split a terminal of a tab: a terminal of its kind and folder starts and is put right of it in
+     * the tab's row. A terminal the store knows nothing of is refused in words on the tab.
+     */
+    splitTerminal: (tab: string, terminal: string) => Promise<TerminalAnswer>;
+    /** What the last refused action of a tab said, or the empty string. */
+    refusal: (tab: string) => string;
+    /** Say a failure on a tab's bar, or clear it with the empty string. */
+    say: (tab: string, words: string) => void;
+    /** Give a terminal a title, or clear its title with an empty one. */
+    renameTerminal: (id: string, title: string) => Promise<TerminalAnswer>;
+    /** Give a terminal an icon and/or a colour; an empty value returns it to the default. */
+    restyleTerminal: (
+        id: string,
+        style: { icon?: string; color?: string }
+    ) => Promise<TerminalAnswer>;
+    /** Empty a terminal's history on the server (the grid empties itself). */
+    clearHistory: (id: string) => Promise<TerminalAnswer>;
+    /**
+     * The running terminals that Terminal tabs among the instances list, the fresh read of which of
+     * them run a program other than their shell, and the ending of terminals: the three the ui
+     * store's registration takes.
+     */
+    runningOf: (instances: readonly { view: string; state?: unknown }[]) => string[];
+    busyOf: (ids: string[]) => Promise<BusyTerminal[]>;
+    endTerminals: (ids: string[]) => void;
 };
 
 export function createTerminals(
@@ -306,6 +286,18 @@ export function createTerminals(
      */
     const seen = new Set<string>();
     let heard = false;
+
+    /**
+     * What each start answered, kept until the payload lists the terminal: a terminal started a
+     * moment ago is not in the payload yet, but its kind and folder are known, and it is running.
+     */
+    const started = new Map<string, Terminal>();
+
+    /** What a tab's last refused action said, by tab id. */
+    const refused: { words: Record<string, string> } = $state({ words: {} });
+
+    /** The starts waiting for the hub root to be known. */
+    const hubWaiters: ((root: string) => void)[] = [];
 
     /** The Terminal tabs of every page. */
     function terminalTabs(): TerminalTab[] {
@@ -324,14 +316,15 @@ export function createTerminals(
             const held = readTab(tab.state);
             if (!ended.some((id) => held.terminals.includes(id))) continue;
             const next = ended.reduce(withoutTerminal, held);
+            workbench.restate(tab.id, tab.page, next);
             if (next.terminals.length === 0 && !held.composing) workbench.close(tab.id, tab.page);
-            else workbench.restate(tab.id, tab.page, next);
         }
         const selected = workbench.selected();
         if (selected !== null && ended.includes(selected)) workbench.select(null);
     }
 
     entities.afterReceive((message) => {
+        if (message.channel === 'portfolio') releaseHubWaiters();
         if (message.channel !== 'sessions') return;
         const payload = mapOf(message.payload);
         const list = payload?.terminals;
@@ -348,8 +341,29 @@ export function createTerminals(
             if (isTerminalId(selected)) held.push(selected);
             closeEnded(endedTerminals(seen, now, first, held));
         }
-        for (const id of now) seen.add(id);
+        for (const id of now) {
+            seen.add(id);
+            started.delete(id);
+        }
     });
+
+    /** Let the starts waiting for the hub root go, once the portfolio says where it is. */
+    function releaseHubWaiters(): void {
+        if (hubWaiters.length === 0) return;
+        const root = workbench?.hubRoot() ?? '';
+        if (root === '' && workbench?.portfolioHeard() !== true) return;
+        for (const resolve of hubWaiters.splice(0)) resolve(root);
+    }
+
+    /**
+     * The hub root, waited for while the portfolio has not arrived; the empty string once it has
+     * arrived and names no folder.
+     */
+    function hubReady(): Promise<string> {
+        const root = workbench?.hubRoot() ?? '';
+        if (root !== '' || workbench?.portfolioHeard() === true) return Promise.resolve(root);
+        return new Promise((resolve) => hubWaiters.push(resolve));
+    }
 
     /**
      * The Terminal tab of a page that a terminal no tab owns, or New, goes to: pageTarget's rule.
@@ -363,9 +377,9 @@ export function createTerminals(
 
     /**
      * Show a terminal. The tab that owns it is activated, its page switched to when it is another,
-     * and shows it, alone unless it is one half of the tab's split. A terminal no tab owns joins
-     * the end of the Terminal tab of the page on screen, or of a new Terminal tab there, and is
-     * shown. An id that is not a terminal's shows nothing.
+     * and shows it in the tab's row. A terminal no tab owns joins the end of the Terminal tab of
+     * the page on screen, or of a new Terminal tab there, and is shown. An id that is not a
+     * terminal's shows nothing.
      */
     function showTerminal(id: string, label = ''): void {
         if (workbench === undefined || !isTerminalId(id)) return;
@@ -409,8 +423,8 @@ export function createTerminals(
         if (from !== null && from.id !== target.id) {
             const was = readTab(from.state);
             const left = withoutTerminal(was, id);
+            workbench.restate(from.id, from.page, left);
             if (left.terminals.length === 0 && !was.composing) workbench.close(from.id, from.page);
-            else workbench.restate(from.id, from.page, left);
         }
         const held = readTab(target.state);
         const before = held.terminals.indexOf(id);
@@ -420,8 +434,10 @@ export function createTerminals(
     }
 
     /**
-     * New: the composer in the Terminal tab of a page, which keeps the terminals it owns, or in a
-     * new Terminal tab there; the tab is activated. The page is the one on screen unless named.
+     * New with a prompt (the `n` key, the Sessions view's New): the composer in the Terminal tab of
+     * a page, which keeps the terminals it owns, or in a new Terminal tab there; the tab is
+     * activated. The page is the one on screen unless named. The composer starts in the tab's
+     * folder.
      */
     function composeIn(page?: string): void {
         if (workbench === undefined) return;
@@ -435,20 +451,41 @@ export function createTerminals(
         workbench.activate(target.id, on);
     }
 
-    /** New in the Terminal tab of this id; an id no page holds shows nothing. */
-    function composeInTab(id: string): void {
+    /**
+     * The composer in the Terminal tab of this id, of the given kind (the shown terminal's for the
+     * dropdown's With a Prompt); an id no page holds shows nothing.
+     */
+    function composeInTab(id: string, agent?: TerminalKind): void {
         const target = terminalTabs().find((tab) => tab.id === id);
-        if (target !== undefined) showComposer(target);
+        if (target !== undefined) showComposer(target, agent);
     }
 
     /**
-     * The composer shown in a tab, which keeps the terminals it owns, its folder and kind back to a
-     * new composer's own, so a Split made in the tab earlier does not carry into New.
+     * The composer shown in a tab, which keeps the terminals it owns. It starts in the tab's folder
+     * and in the kind given, Claude when none is, with the accounts and picks the tab held.
      */
-    function showComposer(target: TerminalTab): void {
+    function showComposer(target: TerminalTab, agent: TerminalKind = 'claude'): void {
         if (workbench === undefined) return;
-        workbench.setInstanceState(target.id, freshComposer(workbench.instanceState(target.id)));
-        workbench.restate(target.id, target.page, composingIn(readTab(target.state)));
+        const held = readTab(target.state);
+        const folder = tabFolder(held, (one) => terminalRecord(one)?.cwd ?? null);
+        const now = workbench.instanceState(target.id);
+        workbench.setInstanceState(
+            target.id,
+            folder === null ? freshComposerOf(now, agent) : splitState(folder, agent, now)
+        );
+        workbench.restate(target.id, target.page, composingIn(held));
+    }
+
+    /** A new composer's state in the kind given, with the accounts and picks the tab held. */
+    function freshComposerOf(held: unknown, agent: TerminalKind): Record<string, unknown> {
+        const fresh = freshComposer(held);
+        const record = fresh.composer as Record<string, unknown>;
+        return { ...fresh, composer: { ...record, agent } };
+    }
+
+    /** A terminal's record: the payload's, else what its start answered. */
+    function terminalRecord(id: string | null): Terminal | null {
+        return terminalById(id) ?? (id === null ? null : (started.get(id) ?? null));
     }
 
     /** Every terminal oculus owns, as the last `sessions` payload reported them. */
@@ -465,40 +502,8 @@ export function createTerminals(
         return terminals().find((one) => one.id === id) ?? null;
     }
 
-    async function post(body: unknown): Promise<TerminalAnswer> {
-        // There is no fetch while the page is rendered on the server, and nothing to start there
-        // either.
-        if (typeof fetch !== 'function') return { ok: false, id: '', error: '' };
-        try {
-            const response = await fetch('/api/terminal', {
-                method: 'POST',
-                headers: {
-                    'content-type': 'application/json',
-                    'x-oculus-token': writes.writeToken()
-                },
-                body: JSON.stringify(body)
-            });
-            const answer = (await response.json()) as {
-                ok?: boolean;
-                id?: string;
-                terminal?: Terminal;
-                error?: string;
-            };
-            if (!response.ok) {
-                return {
-                    ok: false,
-                    id: '',
-                    error: typeof answer.error === 'string' ? answer.error : String(response.status)
-                };
-            }
-            return { ok: true, id: answer.terminal?.id ?? answer.id ?? '', error: '' };
-        } catch (error) {
-            return {
-                ok: false,
-                id: '',
-                error: error instanceof Error ? error.message : String(error)
-            };
-        }
+    function post(body: unknown): Promise<TerminalAnswer> {
+        return postTerminal(body, writes.writeToken());
     }
 
     /**
@@ -595,16 +600,22 @@ export function createTerminals(
     }
 
     /**
-     * Start what the composer asked for: an agent with the picked flags, the account and the prompt
-     * as its first message, or a shell with the prompt as its first command. The server builds the
-     * argv from config/catalogs/agents.yml; the page sends ids and the prompt, never a command.
+     * Start what the composer of the Terminal tab `owner` asked for. The server builds the argv
+     * from config/catalogs/agents.yml; the page sends ids and the prompt, never a command. A
+     * terminal answered after its tab closed is ended and refused, since no tab is left to show it.
      */
     async function composeTerminal(
         start: ComposeStart,
+        owner: string,
         cols: number = COLS,
         rows: number = ROWS
     ): Promise<TerminalAnswer> {
-        return post({ action: 'compose', ...start, cols, rows });
+        const answer = await post({ action: 'compose', ...start, cols, rows });
+        if (!answer.ok || answer.terminal === undefined) return answer;
+        started.set(answer.terminal.id, answer.terminal);
+        if (tabById(owner) !== null) return answer;
+        endTerminals([answer.terminal.id]);
+        return { ok: false, id: '', error: '' };
     }
 
     /** Send one message to a running terminal: the text typed literally, then Enter. */
@@ -654,6 +665,151 @@ export function createTerminals(
      */
     async function resizeTerminal(id: string, cols: number, rows: number): Promise<TerminalAnswer> {
         return post({ action: 'resize', id, cols, rows });
+    }
+
+    /** The refusal a tab is showing, or the empty string. */
+    function refusal(tab: string): string {
+        return refused.words[tab] ?? '';
+    }
+
+    /** Say something on a tab's bar; an empty string clears it. */
+    function say(tab: string, words: string): void {
+        const others = Object.entries(refused.words).filter(([id]) => id !== tab);
+        refused.words = Object.fromEntries(words === '' ? others : [...others, [tab, words]]);
+    }
+
+    /** A refusal in words: the server's sentence, else the words for a start that got none. */
+    function refusalWords(error: string): string {
+        return error === '' ? t('sessions.terminal_start_failed') : error;
+    }
+
+    /** The Terminal tab of this id, as the workbench lists it now, or null when it is gone. */
+    function tabById(id: string): TerminalTab | null {
+        return terminalTabs().find((tab) => tab.id === id) ?? null;
+    }
+
+    /**
+     * Post a start, and put the terminal it answers in the tab as `join` says. A refusal is said on
+     * the tab and changes nothing; a terminal answered after its tab was closed is ended, since no
+     * tab is left to show it.
+     */
+    async function startFor(
+        tab: string,
+        kind: TerminalKind,
+        folder: string,
+        join: (held: TerminalTabState, id: string) => TerminalTabState
+    ): Promise<TerminalAnswer> {
+        const answer = await startTerminal(kind, folder);
+        if (!answer.ok || answer.terminal === undefined) {
+            say(tab, refusalWords(answer.error));
+            return { ...answer, ok: false };
+        }
+        const made = answer.terminal;
+        started.set(made.id, made);
+        const target = tabById(tab);
+        if (target === null || workbench === undefined) {
+            endTerminals([made.id]);
+            return answer;
+        }
+        say(tab, '');
+        workbench.restate(target.id, target.page, join(readTab(target.state), made.id));
+        workbench.activate(target.id, target.page);
+        return answer;
+    }
+
+    /** New Terminal in a tab: a terminal of a kind at once, in the tab's folder, shown. */
+    async function startInTab(tab: string, kind: TerminalKind): Promise<TerminalAnswer> {
+        const target = tabById(tab);
+        if (target === null) return { ok: false, id: '', error: '' };
+        const known = tabFolder(readTab(target.state), (one) => terminalRecord(one)?.cwd ?? null);
+        const folder = known ?? (await hubReady());
+        if (folder === '') {
+            say(tab, t('sessions.terminal_no_folder'));
+            return { ok: false, id: '', error: '' };
+        }
+        return startFor(tab, kind, folder, (held, id) =>
+            withTerminal(held, id, held.terminals.length)
+        );
+    }
+
+    /**
+     * New Terminal from a pane's strip: a shell in the active Terminal tab of that pane, or in a
+     * Terminal tab opened in it, never another pane's.
+     */
+    async function newTerminalIn(page: string, path: number[]): Promise<TerminalAnswer> {
+        if (workbench === undefined) return { ok: false, id: '', error: '' };
+        const tab =
+            workbench.paneTab(page, path) ??
+            workbench.openIn(page, path, emptyTab(crypto.randomUUID()));
+        if (tab === '') return { ok: false, id: '', error: '' };
+        return startInTab(tab, 'shell');
+    }
+
+    /** Split a terminal of a tab: one of its kind and folder starts right of it in the row. */
+    async function splitTerminal(tab: string, terminal: string): Promise<TerminalAnswer> {
+        const target = tabById(tab);
+        const record = terminalRecord(terminal);
+        const owned = target !== null && readTab(target.state).terminals.includes(terminal);
+        if (!owned || record === null) {
+            const words = t('sessions.terminal_split_unknown');
+            say(tab, words);
+            return { ok: false, id: '', error: words };
+        }
+        return startFor(tab, record.kind, record.cwd, (held, id) => splitRight(held, terminal, id));
+    }
+
+    /** Give a terminal a title; an empty one clears it. */
+    async function renameTerminal(id: string, title: string): Promise<TerminalAnswer> {
+        return post({ action: 'rename', id, title });
+    }
+
+    /** Give a terminal an icon and/or a colour; an empty string is the default. */
+    async function restyleTerminal(
+        id: string,
+        style: { icon?: string; color?: string }
+    ): Promise<TerminalAnswer> {
+        return post({ action: 'restyle', id, ...style });
+    }
+
+    /** Empty a terminal's tmux history. */
+    async function clearHistory(id: string): Promise<TerminalAnswer> {
+        return post({ action: 'clear', id });
+    }
+
+    /**
+     * Whether a terminal is running as far as the page knows: listed, or started and not yet, and
+     * every terminal until the first `sessions` message says which ones are.
+     */
+    function running(id: string): boolean {
+        return !heard || terminalById(id) !== null || started.has(id);
+    }
+
+    /** The running terminals the Terminal tabs among these instances list. */
+    function runningOf(instances: readonly { view: string; state?: unknown }[]): string[] {
+        const ids = instances
+            .filter((one) => one.view === TERMINAL_VIEW)
+            .flatMap((one) => readTab(one.state).terminals);
+        return [...new Set(ids)].filter(running);
+    }
+
+    /**
+     * Which of these terminals run a program other than their shell, from a fresh read of the
+     * server, each named by its title, else its name.
+     */
+    function busyOf(ids: string[]): Promise<BusyTerminal[]> {
+        return readBusy(ids, (id) => {
+            const record = terminalRecord(id);
+            if (record === null) return id;
+            return record.title !== '' ? record.title : record.name;
+        });
+    }
+
+    /** End terminals: their tmux sessions stop, and with them what runs inside. */
+    function endTerminals(ids: string[]): void {
+        for (const id of ids) {
+            started.delete(id);
+            void stopTerminal(id);
+        }
     }
 
     /** Send keystrokes to a terminal. The text is what xterm.js's `onData` produced. */
@@ -706,6 +862,7 @@ export function createTerminals(
     return {
         terminals,
         terminalById,
+        tabMark: (instance) => tabMarkOf(instance, terminalById),
         startTerminal,
         recoverDataset,
         startTask,
@@ -727,6 +884,17 @@ export function createTerminals(
         showTerminal,
         moveTerminal,
         composeIn,
-        composeInTab
+        composeInTab,
+        startInTab,
+        newTerminalIn,
+        splitTerminal,
+        refusal,
+        say,
+        renameTerminal,
+        restyleTerminal,
+        clearHistory,
+        runningOf,
+        busyOf,
+        endTerminals
     };
 }

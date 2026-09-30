@@ -1,7 +1,18 @@
 # Oculus text owned by the terminal view.
 text:
     sessions:
+        color_black: Black
+        color_blue: Blue
+        color_cyan: Cyan
+        color_green: Green
+        color_magenta: Magenta
+        color_red: Red
+        color_white: White
+        color_yellow: Yellow
         confirm_stop: Stopping ends the tmux session and everything running in it
+        copy_html_failed: The clipboard did not take the HTML copy
+        icon_field: Icon
+        icon_title: Change the icon of this terminal
         kind_claude: Claude
         kind_claude_glyph: terminal_claude
         kind_codex: Codex
@@ -9,17 +20,26 @@ text:
         kind_observed: '{0} (read-only)'
         kind_shell: Shell
         kind_shell_glyph: terminal_shell
+        menu_clear: Clear
+        menu_color: Change Color...
         menu_copy: Copy
+        menu_copy_html: Copy as HTML
+        menu_icon: Change Icon...
         menu_join: Join Terminals
         menu_kill: Kill Terminal
         menu_new: New Terminal
         menu_new_profile: New Terminal With Profile
         menu_paste: Paste
+        menu_rename: Rename...
         menu_select_all: Select All
         menu_split: Split Terminal
         menu_unsplit: Unsplit Terminal
+        menu_with_prompt: With a Prompt...
+        new_kinds: New terminal of another kind
         new_terminal: new terminal
-        new_terminal_title: Start a new terminal in this tab, from the composer
+        new_terminal_title: Start a shell in this tab's folder
+        terminal_rename_field: Terminal title
+        style_default: Default
         stop_terminal: Stop this terminal
         terminal_glyph: terminal
         terminal_larger: Larger terminal text
@@ -29,7 +49,10 @@ text:
         terminal_list: The terminals oculus runs; the arrow keys move between them and Enter shows one here
         terminal_row_tip: "{0}\nCommand: {1}\nFolder: {2}\nStarted: {3}"
         terminal_split: Split
-        terminal_split_tip: "Split this tab: this terminal on the left, a new terminal on the right in this terminal's folder and of its kind (Shift+Enter on the row)"
+        terminal_split_unknown: This terminal is not known to the page yet, so it cannot be split
+        terminal_start_failed: The terminal did not start
+        terminal_no_folder: No folder to start the terminal in
+        terminal_split_tip: 'Split this terminal: a new terminal of its kind starts right of it, in its folder (Shift+Enter on the row)'
         terminal_kill: Kill
         terminal_kill_tip: Kill this terminal, ending its tmux session and everything running in it (Delete or Backspace on the row, twice)
         terminal_kill_armed: Press again to kill this terminal

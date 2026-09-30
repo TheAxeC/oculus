@@ -22,7 +22,7 @@ import { join } from 'node:path';
 import { taskSkipPermissions } from '../../../data/helpers/tasks.ts';
 import { scalar } from '../../../data/helpers/guards.ts';
 import { tokenedBody } from '../../core/auth.ts';
-import { loadLocalOrDefaults, textCatalog } from '../../../data/sources/config.ts';
+import { glyphCatalog, loadLocalOrDefaults, textCatalog } from '../../../data/sources/config.ts';
 import { MANUSCRIPT, mains } from '../../content/latex.ts';
 import { projectDirectory } from '../../files/files.ts';
 import { startChat, type ChatOptions } from './chat.ts';
@@ -35,6 +35,14 @@ import {
     composeRequest,
     readAgentsFile
 } from './compose.ts';
+import {
+    NOT_OURS,
+    busyIds,
+    busyTerminals,
+    clearTerminal,
+    renameTerminal,
+    restyleTerminal
+} from './edit.ts';
 import {
     KINDS,
     RESUME_TOOLS,
@@ -59,13 +67,6 @@ const LIVE = 'sessions.resume_live';
 /** The longest name a terminal may carry, which is what sessions.ts `label` accepts. */
 const NAME_MAX = 80;
 
-/**
- * Why a stop or a resize is refused for a session under the `oculus-` prefix that oculus did not
- * mint. The list carries such a session with `foreign: true`, so the refusal says what it is rather
- * than reading as a malformed request.
- */
-const NOT_OURS = 'id is not a terminal id: this tmux session was not started by oculus';
-
 /** The four update skills the palette and tray may start. */
 const TASKS = ['litwatch', 'scout', 'linkedin', 'inbox'] as const;
 type TaskKind = (typeof TASKS)[number];
@@ -87,7 +88,12 @@ export type TerminalOptions = StartOptions &
         hubFor?: () => string;
         /** Re-read the terminal manager after a write. */
         refresh?: () => void;
+        /** The user's shell, whose base name a busy read compares a pane's command with. */
+        shell?: string;
     };
+
+/** The options a list request takes: a tmux runner and the shell a busy read compares against. */
+export type ListOptions = StartOptions & { shell?: string };
 
 /** What every answer of this route carries besides its type: nothing of it is cached. */
 const NO_STORE = { 'cache-control': 'no-store' };
@@ -96,11 +102,23 @@ function reason(error: unknown): string {
     return error instanceof Error ? error.message : String(error);
 }
 
-/** GET /api/terminal: every terminal oculus owns. */
+/**
+ * GET /api/terminal: every terminal oculus owns, or with `?busy=<id>,<id>` which of those named
+ * are running a program other than the user's shell.
+ */
 export async function handleTerminalList(
     request: Request,
-    options: StartOptions = {}
+    options: ListOptions = {}
 ): Promise<Response> {
+    const query = new URL(request.url).searchParams.get('busy');
+    if (query !== null) {
+        const ids = busyIds(query);
+        if (typeof ids === 'string') {
+            return json({ error: ids }, { status: 400, headers: NO_STORE });
+        }
+        const shell = options.shell ?? process.env.SHELL ?? '/bin/zsh';
+        return json({ busy: await busyTerminals(ids, shell, options) }, { headers: NO_STORE });
+    }
     return json({ terminals: await listTerminals(options) }, { headers: NO_STORE });
 }
 
@@ -475,6 +493,26 @@ export async function handleTerminal(
             options.refresh?.();
             return json({ ok: true, id: message.id }, { headers: NO_STORE });
         }
+        if (message.action === 'rename') {
+            await renameTerminal(message.id, message.title, options);
+            options.refresh?.();
+            return json({ ok: true, id: message.id }, { headers: NO_STORE });
+        }
+        if (message.action === 'restyle') {
+            const glyphs = Object.keys(glyphCatalog(options.configFor()));
+            await restyleTerminal(
+                message.id,
+                { icon: message.icon, color: message.color },
+                glyphs,
+                options
+            );
+            options.refresh?.();
+            return json({ ok: true, id: message.id }, { headers: NO_STORE });
+        }
+        if (message.action === 'clear') {
+            await clearTerminal(message.id, options);
+            return json({ ok: true, id: message.id }, { headers: NO_STORE });
+        }
         if (message.action === 'resume') {
             const tool = message.tool as TerminalResume['tool'];
             if (!RESUME_TOOLS.includes(tool)) {
@@ -511,7 +549,7 @@ export async function handleTerminal(
     }
     return json(
         {
-            error: 'action must be start, compose, steer, interrupt, fork, stop, resize, resume, recover, task, latex or chat'
+            error: 'action must be start, compose, steer, interrupt, fork, stop, resize, resume, rename, restyle, clear, recover, task, latex or chat'
         },
         { status: 400, headers: NO_STORE }
     );

@@ -21,7 +21,7 @@
         type FindAction,
         type FindResults,
         type FindToggles
-    } from './terminal-list';
+    } from '../terminal-list';
 
     type Props = {
         /** The text searched for. */

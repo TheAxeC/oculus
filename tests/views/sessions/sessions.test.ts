@@ -17,7 +17,7 @@ import SessionList from '../../../src/lib/views/sessions/session-list/SessionLis
 import Terminal from '../../../src/lib/views/sessions/terminal/Terminal.svelte';
 import Timeline from '../../../src/lib/views/sessions/timeline/Timeline.svelte';
 import Transcript from '../../../src/lib/views/sessions/transcript/Transcript.svelte';
-import { scheduleReflow } from '../../../src/lib/views/sessions/terminal/reflow.ts';
+import { scheduleReflow } from '../../../src/lib/views/sessions/terminal/grid/reflow.ts';
 import { clock } from '../../../src/lib/state/shared/words/format.ts';
 import type { Turn } from '../../../src/lib/state/sessions/transcript.svelte.ts';
 import { area, payload, record, terminal, workspace } from '../../fixtures/sessions-fixture.ts';
@@ -352,13 +352,14 @@ describe('the terminal toolbar', () => {
     // the write it makes is read off the source, and the rename itself is not seen here.
     it("audits that the tab's label is set to the shown terminal's own name", () => {
         const source = readFileSync('src/lib/views/sessions/terminal/Terminal.svelte', 'utf8');
-        expect(source).toContain('restate(withLabel(tab, live.name))');
-        expect(source).toContain('tab.label === live.name');
+        expect(source).toContain('restate(withLabel(tab, named))');
+        expect(source).toContain('tab.label === named');
+        expect(source).toContain("live.title === '' ? live.name : live.title");
     });
 
-    it("audits that the bar's New is the terminals store's New for this tab", () => {
+    it("audits that the bar's New starts a shell in this tab at once", () => {
         const source = readFileSync('src/lib/views/sessions/terminal/Terminal.svelte', 'utf8');
-        expect(source).toContain('onclick={() => composeInTab(instance.id)}');
+        expect(source).toContain("onclick={() => void startInTab(instance.id, 'shell')}");
     });
 });
 

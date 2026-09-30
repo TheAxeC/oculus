@@ -11,6 +11,7 @@
 // It saves the same way the layout store does, under its own key and through the same small slice
 // of Storage, so a test hands it a plain object and no test touches localStorage.
 
+import type { BusyTerminal } from '../sessions/terminal/pty-io.ts';
 import {
     codeThemeDefault,
     crtDefault,
@@ -66,6 +67,23 @@ type Ui = {
  */
 export type CardMove = { instance: string; card: string; step: -1 | 1; seq: number };
 
+export type { BusyTerminal };
+
+/** An instance as a terminal owner reads it: its identity, its view and the state it holds. */
+export type OwnedInstance = { id: string; view: string; state?: unknown };
+
+/**
+ * What the store owning terminals registers with the ui store, in the shape of `registerUnsaved`:
+ * which running terminals a set of instances owns, a fresh read of which of them run a program, and
+ * ending them. The shell asks the instance list and never the terminals store, which it may not
+ * read.
+ */
+export type TerminalOwner = {
+    running: (instances: readonly OwnedInstance[]) => string[];
+    busy: (ids: string[]) => Promise<BusyTerminal[]>;
+    end: (ids: string[]) => void;
+};
+
 /** What the page looks like and what each open view remembers, for one client. */
 export type UiStore = {
     theme: () => string;
@@ -80,6 +98,9 @@ export type UiStore = {
     instanceState: (id: string) => unknown;
     registerUnsaved: (reports: (id: string) => boolean) => void;
     unsaved: (id: string) => boolean;
+    registerTerminalOwner: (owner: TerminalOwner) => void;
+    busyTerminals: (instances: readonly OwnedInstance[]) => Promise<BusyTerminal[]>;
+    endTerminals: (instances: readonly OwnedInstance[]) => void;
     requestUpdateTray: () => void;
     updateTrayRequested: () => number;
     requestCardMove: (instance: string, card: string, step: -1 | 1) => void;
@@ -138,6 +159,9 @@ export function createUi(): UiStore {
 
     /** What the stores holding unsaved text registered, asked in turn by unsaved(). */
     const unsavedReports: ((id: string) => boolean)[] = [];
+
+    /** The stores owning terminals that registered, asked by busyTerminals() and endTerminals(). */
+    const terminalOwners: TerminalOwner[] = [];
 
     /** The theme's name, one of the names config/appearance.yml lists. */
     function theme(): string {
@@ -209,6 +233,33 @@ export function createUi(): UiStore {
     /** Whether the instance holds unsaved text, which is what a close asks a confirmation about. */
     function unsaved(id: string): boolean {
         return unsavedReports.some((reports) => reports(id));
+    }
+
+    /** Register a store that owns terminals, at the point the client is wired. */
+    function registerTerminalOwner(owner: TerminalOwner): void {
+        terminalOwners.push(owner);
+    }
+
+    /**
+     * A fresh read of which running terminals the instances own are running a program other than
+     * their shell. Nothing is read for instances owning no running terminal.
+     */
+    async function busyTerminals(instances: readonly OwnedInstance[]): Promise<BusyTerminal[]> {
+        const found = await Promise.all(
+            terminalOwners.map((owner) => {
+                const ids = owner.running(instances);
+                return ids.length === 0 ? Promise.resolve([]) : owner.busy(ids);
+            })
+        );
+        return found.flat();
+    }
+
+    /** End the running terminals the instances own. The instances are the ones being removed. */
+    function endTerminals(instances: readonly OwnedInstance[]): void {
+        for (const owner of terminalOwners) {
+            const ids = owner.running(instances);
+            if (ids.length > 0) owner.end(ids);
+        }
     }
 
     /** Ask the shell to open the Update tray. Every request changes the observed value. */
@@ -411,6 +462,9 @@ export function createUi(): UiStore {
         instanceState,
         registerUnsaved,
         unsaved,
+        registerTerminalOwner,
+        busyTerminals,
+        endTerminals,
         requestUpdateTray,
         updateTrayRequested,
         requestCardMove,

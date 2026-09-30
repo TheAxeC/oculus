@@ -20,13 +20,18 @@
     // through its own API.
     //
     // A right-click on the grid opens VS Code's terminal menu (terminal-list.ts, `gridMenu`): Copy
-    // while xterm holds a selection, Paste, Select All, then Split Terminal and Kill Terminal on
-    // this grid's terminal, Kill arming first as the row's Kill does and reading as the armed
-    // control while the terminal is armed. The items are read when the right-click arrives, so Copy
-    // follows the selection xterm holds at that moment. Paste reads the clipboard and takes the
-    // same path a browser paste takes, so a paste of several lines is asked about; a clipboard the
-    // browser refuses to read leaves the grid as it was. The context menu key and Shift+F10 open
-    // the menu at the cursor rather than reaching the shell (terminal-list.ts, `holdMenuKeys`).
+    // and Copy as HTML while xterm holds a selection, Paste, Select All, Clear, then Split
+    // Terminal, Rename, Change Icon, Change Color and Kill Terminal on this grid's terminal, Kill
+    // arming first as the row's Kill does and reading as the armed control while the terminal is
+    // armed. Copy as HTML is the serialize addon's `serializeAsHTML` of the selection written as
+    // `text/html` beside its plain text, and Clear empties this grid and the terminal's tmux
+    // history (grid-actions.ts); a failure of either is said on the tab's bar through `onsay`. The
+    // tab reaches Clear for a row's menu through `oncontrol`, which hands it this grid's Clear
+    // while the grid is mounted. The items are read when the right-click arrives, so Copy follows
+    // the selection xterm holds at that moment. Paste reads the clipboard and takes the same path a
+    // browser paste takes, so a paste of several lines is asked about; a clipboard the browser
+    // refuses to read leaves the grid as it was. The context menu key and Shift+F10 open the menu
+    // at the cursor rather than reaching the shell (terminal-list.ts, `holdMenuKeys`).
     //
     // Cmd+F (Ctrl+F off macOS) at the grid opens the find bar over its top right (FindBar.svelte),
     // as VS Code's terminal find: the search addon marks every match on the theme's `--accent-bg`
@@ -42,11 +47,16 @@
     import { titleStripper } from '$lib/state/sessions/terminals.svelte';
     import { FILE_DRAG } from '$lib/state/sources/fs';
     import {
+        MENU_CLEAR,
         MENU_COPY,
+        MENU_COPY_HTML,
+        MENU_ICON,
         MENU_KILL,
+        MENU_RENAME,
         MENU_PASTE,
         MENU_SELECT_ALL,
         MENU_SPLIT,
+        colorOf,
         fileOver,
         gridFontSize,
         gridMenu,
@@ -54,11 +64,12 @@
         holdPastes,
         pasteRoute,
         shellQuote
-    } from './terminal-list';
+    } from '../terminal-list';
     import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { scheduleReflow } from './reflow';
     import { applyLook, findLook, gridLook, gridOptions, type FindLook } from './grid-look';
+    import { clearGrid, copyAsHtml, type HtmlSerializer } from './grid-actions';
     import FindBar from './FindBar.svelte';
     import {
         FIND_LIMIT,
@@ -69,7 +80,7 @@
         type FindAction,
         type FindResults,
         type FindToggles
-    } from './terminal-list';
+    } from '../terminal-list';
     import { untrack } from 'svelte';
     import type { SearchAddon } from '@xterm/addon-search';
     import type { Terminal as Grid } from '@xterm/xterm';
@@ -91,12 +102,36 @@
         armed: boolean;
         /** Kill Terminal from the grid's menu, as a press of the row's Kill: arm, then kill. */
         onkill: (id: string) => void;
+        /** Rename from the grid's menu. */
+        onrename: (id: string) => void;
+        /** Change Icon from the grid's menu. */
+        onicon: (id: string) => void;
+        /** Change Color from the grid's menu; the empty string is Default. */
+        oncolor: (id: string, color: string) => void;
+        /** A failure to say on the tab's bar. */
+        onsay: (words: string) => void;
+        /** Hands the tab this grid's Clear while it is mounted, and null when it goes. */
+        oncontrol: (id: string, control: { clear: () => Promise<string> } | null) => void;
     };
 
-    let { id, focusing, onfocused, onbell, onsplit, armed, onkill }: Props = $props();
+    let {
+        id,
+        focusing,
+        onfocused,
+        onbell,
+        onsplit,
+        armed,
+        onkill,
+        onrename,
+        onicon,
+        oncolor,
+        onsay,
+        oncontrol
+    }: Props = $props();
 
     const {
         terminals: {
+            clearHistory,
             resizeTerminal,
             sendInput,
             sendResize,
@@ -127,6 +162,8 @@
     /** The search addon of the mounted grid, and the colours its marks are drawn in. */
     let search: SearchAddon | null = null;
     let marks: FindLook | null = null;
+    /** The serialize addon of the mounted grid, which Copy as HTML reads the selection through. */
+    let serializer: HtmlSerializer | null = null;
 
     /** Whether the find bar is open, how often it was asked for, and what it searches. */
     let finding = $state(false);
@@ -209,8 +246,30 @@
         else grid.paste(route.send);
     }
 
+    /** Empty the grid and the terminal's history; a refusal is said on the bar. */
+    async function clear(): Promise<string> {
+        if (grid === null) return '';
+        const failure = await clearGrid(grid, id, clearHistory);
+        if (failure !== '') onsay(failure);
+        return failure;
+    }
+
+    /** Copy the selection as HTML beside its plain text; a clipboard that refuses is said. */
+    async function copyHtml(): Promise<void> {
+        if (grid === null || serializer === null) return;
+        const item = typeof ClipboardItem === 'undefined' ? undefined : ClipboardItem;
+        const clipboard = typeof navigator === 'undefined' ? undefined : navigator.clipboard;
+        const failure = await copyAsHtml(serializer, grid.getSelection(), clipboard, item);
+        if (failure !== '') onsay(failure);
+    }
+
     function picked(pick: string): void {
-        if (pick === MENU_COPY) {
+        if (pick === MENU_CLEAR) void clear();
+        else if (pick === MENU_COPY_HTML) void copyHtml();
+        else if (pick === MENU_RENAME) onrename(id);
+        else if (pick === MENU_ICON) onicon(id);
+        else if (colorOf(pick) !== null) oncolor(id, colorOf(pick) ?? '');
+        else if (pick === MENU_COPY) {
             const selected = grid?.getSelection() ?? '';
             if (selected !== '')
                 void navigator.clipboard.writeText(selected).catch(() => undefined);
@@ -255,12 +314,13 @@
         let alive = true;
         let close: (() => void) | null = null;
         void (async () => {
-            const [xterm, addon, finder, links, wide] = await Promise.all([
+            const [xterm, addon, finder, links, wide, serialize] = await Promise.all([
                 import('@xterm/xterm'),
                 import('@xterm/addon-fit'),
                 import('@xterm/addon-search'),
                 import('@xterm/addon-web-links'),
                 import('@xterm/addon-unicode11'),
+                import('@xterm/addon-serialize'),
                 import('@xterm/xterm/css/xterm.css')
             ]);
             // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- the teardown below sets the flag after this closure was written, which the checker does not see
@@ -274,6 +334,9 @@
             const opened = (url: string) => window.open(url, '_blank', 'noopener');
             term.loadAddon(new links.WebLinksAddon(linkHandler(mac, opened)));
             term.loadAddon(new wide.Unicode11Addon());
+            const serializing = new serialize.SerializeAddon();
+            term.loadAddon(serializing);
+            serializer = serializing;
             term.unicode.activeVersion = '11';
             // A find key is the bar's, on its press and on its release, and never the shell's.
             term.attachCustomKeyEventHandler((event) => {
@@ -291,6 +354,7 @@
             term.open(at);
             fit.fit();
             grid = term;
+            oncontrol(wanted, { clear });
             measure = () => ({ cols: term.cols, rows: term.rows });
             refit = () => fit.fit();
             const typed = term.onData((data: string) => sendInput(wanted, data));
@@ -330,6 +394,8 @@
                 rang.dispose();
                 counted.dispose();
                 search = null;
+                serializer = null;
+                oncontrol(wanted, null);
                 finding = false;
                 results = null;
                 unhold();

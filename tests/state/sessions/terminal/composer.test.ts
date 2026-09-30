@@ -6,6 +6,7 @@
 // Nothing here opens a socket or reaches a server: `fetch` is a stub that records what it was
 // asked and answers what the case says.
 
+import { openOwning } from '../../client/terminal/terminal-tabs-fixture.ts';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { scalar } from '../../../../src/lib/data/helpers/guards.ts';
 import {
@@ -301,10 +302,12 @@ describe('the posts the composer, the steer box and Fork make', () => {
         const { composeTerminal, forkTerminal, interruptTerminal, steerTerminal } =
             client.terminals;
         const start = composeStart('claude', '/w', 'Uni', { model: 'opus' }, 'go', []);
-        expect(await composeTerminal(start, 100, 30)).toEqual({
+        const owner = openOwning(client, client.layout.currentPage().id, [], null);
+        expect(await composeTerminal(start, owner, 100, 30)).toMatchObject({
             ok: true,
             id: 'ffee00-claude',
-            error: ''
+            error: '',
+            terminal: { id: 'ffee00-claude' }
         });
         await steerTerminal('a1b2c3-claude', 'more');
         await interruptTerminal('a1b2c3-claude');
@@ -323,6 +326,9 @@ describe('the terminal a session runs in', () => {
         return {
             id,
             name: id,
+            title: '',
+            icon: '',
+            color: '',
             kind: 'claude',
             cwd: '/w',
             command: 'claude',

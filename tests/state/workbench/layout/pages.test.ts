@@ -566,7 +566,8 @@ describe('the page shown before the one on screen', () => {
                 asked.push([message, detail]);
                 return Promise.resolve(true);
             },
-            () => client.layout.resetPages(rail)
+            () => client.layout.resetPages(rail),
+            () => Promise.resolve([])
         );
         expect(ran).toBe(true);
         // Each question names its tab and that tab's page, so two tabs are told apart.
@@ -602,7 +603,8 @@ describe('the page shown before the one on screen', () => {
             (id) => held.has(id),
             (instance) => instance.id,
             () => Promise.resolve(answers[asked++]),
-            () => client.layout.resetPages(rail)
+            () => client.layout.resetPages(rail),
+            () => Promise.resolve([])
         );
         expect([ran, asked]).toEqual([false, 3]);
         expect(JSON.stringify(pages())).toBe(before);

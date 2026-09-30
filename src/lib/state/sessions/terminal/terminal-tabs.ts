@@ -1,15 +1,18 @@
 // Layer 2, client state. The rules over one Terminal tab's own layout state, the one shape every
-// reader of a Terminal tab goes through: the terminals the tab owns in its own order, the one shown
-// on the left or alone, the second terminal of a split, the left half's share of a split, whether
-// the composer shows, and the label the tab strip draws.
+// reader of a Terminal tab goes through: the terminals the tab owns in its own order, the row of
+// them drawn side by side with a share of the width each, the one of the row that is shown (the
+// focused one), whether the composer shows, and the label the tab strip draws.
 //
 // A Terminal tab is a terminal panel of its own: a terminal belongs to exactly one tab, and the
 // store (state/sessions/terminals.svelte.ts) applies these rules to the layout when a terminal is
-// shown, moved, started or ends. The composer shows alone while nothing is shown, and in the right
-// half of a split while `shown` is set, which is how Split on a row and New in a split tab look.
+// shown, moved, started or ends. The row has no count: a Split puts a new terminal right of the one
+// split, and the widths (`rowWidths`) keep each terminal at least ROW_MIN pixels wide, so a row
+// wider than the pane scrolls sideways. The composer shows alone while nothing is shown, and right
+// of the row while `shown` is set.
 //
 // Every rule is pure over what it is handed, so a rule is asserted without a layout. A saved state
-// of any older shape is read into this one, so a reload keeps every Terminal tab: a tab pinned to a
+// of any older shape is read into this one, so a reload keeps every Terminal tab: a tab that held
+// `{ shown, beside, share }` reads as a row of both with the share and its rest, a tab pinned to a
 // terminal keeps it, and a tab that followed the selection or held a fresh composer shows the
 // composer. The tab's `id` is its identity for the layout, which opens a new tab for a state whose
 // identity no tab carries (state/workbench/layout/instance.ts, `stateId`).
@@ -19,8 +22,10 @@ import { isMap } from '../../../data/helpers/guards.ts';
 /** The view a Terminal tab is. */
 export const TERMINAL_VIEW = 'terminal';
 
-/** The left half's share of a split at first, and the bounds a drag of the handle keeps it in. */
-export const SPLIT_SHARE = 0.5;
+/** The fewest pixels a terminal of a row keeps, VS Code's least size of a split pane. */
+export const ROW_MIN = 80;
+
+/** The bounds an older tab's two-terminal share is kept in when it is read into the row. */
 const SHARE_MIN = 0.1;
 const SHARE_MAX = 0.9;
 
@@ -30,13 +35,13 @@ export type TerminalTabState = {
     id: string;
     /** The terminals the tab owns, in the tab's own order. */
     terminals: string[];
-    /** The terminal on the left of a split, or alone; null while the composer shows alone. */
+    /** The terminals drawn side by side, left to right; empty while the composer shows alone. */
+    row: string[];
+    /** The share of the row's width each terminal of `row` takes; they sum to 1. */
+    shares: number[];
+    /** The focused terminal of the row; null while the composer shows alone. */
     shown: string | null;
-    /** The second terminal of a split, or null. */
-    beside: string | null;
-    /** The left half's share of a split. */
-    share: number;
-    /** Whether the composer shows: alone while nothing is shown, else in the right half. */
+    /** Whether the composer shows: alone while nothing is shown, else right of the row. */
     composing: boolean;
     /** The shown terminal's name, which the tab strip draws. */
     label: string;
@@ -53,15 +58,7 @@ export function isTerminalId(id: unknown): id is string {
 
 /** A tab that owns no terminal and shows the composer. */
 export function emptyTab(id: string): TerminalTabState {
-    return {
-        id,
-        terminals: [],
-        shown: null,
-        beside: null,
-        share: SPLIT_SHARE,
-        composing: true,
-        label: ''
-    };
+    return { id, terminals: [], row: [], shares: [], shown: null, composing: true, label: '' };
 }
 
 /** A fresh identity for a tab. */
@@ -69,40 +66,47 @@ function freshId(): string {
     return crypto.randomUUID();
 }
 
-/** A share kept inside its bounds; anything that is not a number between them is the default. */
-function shareOf(value: unknown): number {
-    return typeof value === 'number' && value >= SHARE_MIN && value <= SHARE_MAX
-        ? value
-        : SPLIT_SHARE;
+/** Shares that fit a row of `count`: the ones given scaled to sum to 1, else equal shares. */
+function mendedShares(shares: readonly number[], count: number): number[] {
+    if (count === 0) return [];
+    const fits = shares.length === count && shares.every((one) => Number.isFinite(one) && one > 0);
+    if (!fits) return Array.from({ length: count }, () => 1 / count);
+    const total = shares.reduce((sum, one) => sum + one, 0);
+    return shares.map((one) => one / total);
 }
 
 /**
- * The state a tab carries, whole and consistent: `shown` and `beside` are terminals the tab owns,
- * `beside` is never `shown`, a split half with no left half moves left, a tab that owns terminals
- * and shows no composer shows its first, and a tab that owns none shows the composer.
+ * The state a tab carries, whole and consistent: `row` holds terminals the tab owns once each with
+ * a share apiece, `shown` is one of the row, a tab that owns terminals and shows no composer shows
+ * its first, and a tab that owns none shows the composer.
  */
 function settled(state: TerminalTabState): TerminalTabState {
     const terminals = [...new Set(state.terminals.filter(isTerminalId))];
+    const kept: number[] = [];
+    const row: string[] = [];
+    state.row.forEach((one, at) => {
+        if (!terminals.includes(one) || row.includes(one)) return;
+        row.push(one);
+        kept.push(state.shares[at]);
+    });
+    // Shares that were written for a longer row (an entry was dropped) do not fit; mendedShares
+    // takes equal ones then.
+    const whole = kept.length === state.row.length;
     let shown = state.shown !== null && terminals.includes(state.shown) ? state.shown : null;
-    let beside =
-        state.beside !== null && terminals.includes(state.beside) && state.beside !== shown
-            ? state.beside
-            : null;
-    if (shown === null && beside !== null) {
-        shown = beside;
-        beside = null;
-    }
-    let composing = state.composing || terminals.length === 0;
-    if (shown === null && !composing) shown = terminals[0];
-    if (terminals.length === 0) composing = true;
-    return { ...state, terminals, shown, beside, share: shareOf(state.share), composing };
+    const composing = state.composing || terminals.length === 0;
+    if (row.length === 0 && shown === null && !composing) shown = terminals[0];
+    if (row.length === 0 && shown !== null) row.push(shown);
+    if (row.length > 0 && (shown === null || !row.includes(shown))) shown = row[0];
+    const fitted = row.length === kept.length && whole ? kept : [];
+    return { ...state, terminals, row, shares: mendedShares(fitted, row.length), shown, composing };
 }
 
 /**
  * A saved state read into the tab's shape. An old `{ session, label }` reads as that one terminal
- * shown; an old `{}`, `{ id }` or `{ id, follow }` as a tab with no terminal, composing. Ids that
- * are not terminal ids are dropped and a repeated one is kept once. The tab's own `id` is kept, and
- * a state carrying none is given a fresh one.
+ * shown; an old `{}`, `{ id }` or `{ id, follow }` as a tab with no terminal, composing; an old
+ * `{ shown, beside, share }` as a row of both, `share` the left one's. Ids that are not terminal
+ * ids are dropped and a repeated one is kept once. The tab's own `id` is kept, and a state carrying
+ * none is given a fresh one.
  */
 export function readTab(state: unknown): TerminalTabState {
     const held = isMap(state) ? state : {};
@@ -112,15 +116,39 @@ export function readTab(state: unknown): TerminalTabState {
         const pinned = isTerminalId(held.session) ? held.session : null;
         const tab = emptyTab(id);
         if (pinned === null) return { ...tab, label };
-        return { ...tab, terminals: [pinned], shown: pinned, composing: false, label };
+        return settled({ ...tab, terminals: [pinned], shown: pinned, composing: false, label });
     }
+    const terminals = held.terminals.filter(isTerminalId);
+    const shown = isTerminalId(held.shown) ? held.shown : null;
+    const composing = held.composing === true;
+    if (Array.isArray(held.row)) {
+        const shares = Array.isArray(held.shares)
+            ? held.shares.map((one: unknown) => (typeof one === 'number' ? one : Number.NaN))
+            : [];
+        return settled({
+            id,
+            terminals,
+            row: held.row.filter(isTerminalId),
+            shares,
+            shown,
+            composing,
+            label
+        });
+    }
+    // The older two-terminal shape: `beside` is the second half and `share` the left half's.
+    const beside = isTerminalId(held.beside) && held.beside !== shown ? held.beside : null;
+    const left =
+        typeof held.share === 'number' && held.share >= SHARE_MIN && held.share <= SHARE_MAX
+            ? held.share
+            : 0.5;
+    const paired = shown !== null && beside !== null && terminals.includes(beside);
     return settled({
         id,
-        terminals: held.terminals.filter(isTerminalId),
-        shown: isTerminalId(held.shown) ? held.shown : null,
-        beside: isTerminalId(held.beside) ? held.beside : null,
-        share: shareOf(held.share),
-        composing: held.composing === true,
+        terminals,
+        row: paired ? [shown, beside] : [],
+        shares: paired ? [left, 1 - left] : [],
+        shown,
+        composing,
         label
     });
 }
@@ -139,6 +167,23 @@ export function ownerOf<T extends { state: unknown }>(
 }
 
 /**
+ * The folder a new terminal in this tab starts in: the shown terminal's, else the first terminal
+ * of the tab that has one, else null (the caller then takes the hub root). `cwdOf` answers the
+ * folder of a terminal id, or null when the payload does not list it.
+ */
+export function tabFolder(
+    state: TerminalTabState,
+    cwdOf: (id: string) => string | null
+): string | null {
+    const order = state.shown === null ? state.terminals : [state.shown, ...state.terminals];
+    for (const id of order) {
+        const folder = cwdOf(id);
+        if (folder !== null && folder !== '') return folder;
+    }
+    return null;
+}
+
+/**
  * The tab with a terminal added at `index` of its order, clamped to the order's ends, and shown
  * alone; a terminal the tab owns already is moved there. An id that is not a terminal changes
  * nothing.
@@ -154,30 +199,46 @@ export function withTerminal(
     return settled({
         ...state,
         terminals: [...rest.slice(0, at), terminal, ...rest.slice(at)],
+        row: [terminal],
+        shares: [1],
         shown: terminal,
-        beside: null,
         composing: false
     });
 }
 
+/** A row and its shares without one terminal, the rest scaled to sum to 1. */
+function outOfRow(
+    row: readonly string[],
+    shares: readonly number[],
+    terminal: string
+): { row: string[]; shares: number[] } {
+    const at = row.indexOf(terminal);
+    if (at < 0) return { row: [...row], shares: [...shares] };
+    const left = row.filter((one) => one !== terminal);
+    const rest = shares.filter((_, index) => index !== at);
+    return { row: left, shares: mendedShares(rest, left.length) };
+}
+
 /**
- * The tab with a terminal removed. When it was the shown one, the next row in the tab's order is
- * shown, else the previous; when it was either half of a split, the other half is shown alone. A
- * terminal the tab does not own changes nothing.
+ * The tab with a terminal removed. When it was the shown one, the next of the row is shown, else
+ * the previous, else the next of the tab's order; the others of the row keep their order and their
+ * shares are scaled to sum to 1. A terminal the tab does not own changes nothing.
  */
 export function withoutTerminal(state: TerminalTabState, terminal: string): TerminalTabState {
     const at = state.terminals.indexOf(terminal);
     if (at < 0) return state;
     const terminals = state.terminals.filter((one) => one !== terminal);
-    if (state.beside === terminal) return settled({ ...state, terminals, beside: null });
-    if (state.shown !== terminal) return settled({ ...state, terminals });
-    if (state.beside !== null) {
-        return settled({ ...state, terminals, shown: state.beside, beside: null });
-    }
-    const next = at < terminals.length ? terminals[at] : at > 0 ? terminals[at - 1] : null;
+    const place = state.row.indexOf(terminal);
+    const left = outOfRow(state.row, state.shares, terminal);
+    if (state.shown !== terminal) return settled({ ...state, terminals, ...left });
+    const beside =
+        place >= 0 && left.row.length > 0 ? left.row[Math.min(place, left.row.length - 1)] : null;
+    const next =
+        beside ?? (at < terminals.length ? terminals[at] : at > 0 ? terminals[at - 1] : null);
     return settled({
         ...state,
         terminals,
+        ...left,
         shown: next,
         composing: state.composing || next === null
     });
@@ -197,48 +258,82 @@ export function reordered(state: TerminalTabState, order: readonly string[]): Te
 }
 
 /**
- * The tab split: `beside` is set, the shown terminal stays on the left and the composer goes. A
- * terminal the tab does not own, or the shown one itself, splits nothing.
+ * The tab with a terminal put right of `of` in the row. A terminal the tab does not own joins its
+ * order right after `of`; the new one takes half of `of`'s share. When `of` is not in the row the
+ * row becomes `of` and the new terminal, `of` shown, the composer gone.
  */
-export function splitWith(state: TerminalTabState, beside: string): TerminalTabState {
-    if (!state.terminals.includes(beside) || beside === state.shown) return state;
-    return settled({ ...state, beside, composing: false });
+export function splitRight(
+    state: TerminalTabState,
+    of: string,
+    terminal: string
+): TerminalTabState {
+    if (!isTerminalId(terminal) || !state.terminals.includes(of) || of === terminal) return state;
+    const rest = state.terminals.filter((one) => one !== terminal);
+    const place = rest.indexOf(of) + 1;
+    const terminals = [...rest.slice(0, place), terminal, ...rest.slice(place)];
+    const base = state.row.includes(of)
+        ? outOfRow(state.row, state.shares, terminal)
+        : { row: [of], shares: [1] };
+    const at = base.row.indexOf(of);
+    const half = base.shares[at] / 2;
+    const row = [...base.row.slice(0, at + 1), terminal, ...base.row.slice(at + 1)];
+    const shares = [...base.shares.slice(0, at), half, half, ...base.shares.slice(at + 1)];
+    const shown = state.row.includes(of) && state.shown !== null ? state.shown : of;
+    return settled({ ...state, terminals, row, shares, shown, composing: false });
 }
 
-/** The tab showing one of its rows alone: no split, no composer. */
+/**
+ * The tab with a terminal it owns added to the end of the row (Join), taking an equal share and
+ * the others scaled down to make room; one already in the row changes nothing.
+ */
+export function joined(state: TerminalTabState, terminal: string): TerminalTabState {
+    if (!state.terminals.includes(terminal) || state.row.includes(terminal)) return state;
+    const count = state.row.length + 1;
+    const shares = [...state.shares.map((one) => (one * (count - 1)) / count), 1 / count];
+    return settled({ ...state, row: [...state.row, terminal], shares, composing: false });
+}
+
+/**
+ * The tab with a terminal taken out of the row (Unsplit); it stays in the tab and the others'
+ * shares are scaled to sum to 1. A row of one, or a terminal not in the row, changes nothing.
+ */
+export function unsplit(state: TerminalTabState, terminal: string): TerminalTabState {
+    if (state.row.length <= 1 || !state.row.includes(terminal)) return state;
+    const left = outOfRow(state.row, state.shares, terminal);
+    const place = state.row.indexOf(terminal);
+    const shown = state.shown === terminal ? (left.row[place] ?? left.row[place - 1]) : state.shown;
+    return settled({ ...state, ...left, shown });
+}
+
+/** The tab showing one of its terminals alone: a row of one, no composer. */
 export function showingOne(state: TerminalTabState, terminal: string): TerminalTabState {
     if (!state.terminals.includes(terminal)) return state;
-    return settled({ ...state, shown: terminal, beside: null, composing: false });
+    return settled({ ...state, row: [terminal], shares: [1], shown: terminal, composing: false });
 }
 
 /**
- * What a press on a row does: a half of the split the tab draws keeps the split, and any other row
- * is shown alone.
+ * What a press on a terminal does: a terminal of the row the tab draws becomes the focused one and
+ * keeps the row, and any other terminal is shown alone.
  */
 export function showingRow(state: TerminalTabState, terminal: string): TerminalTabState {
-    const inSplit = splitDrawn(state) && (terminal === state.shown || terminal === state.beside);
-    return inSplit ? state : showingOne(state, terminal);
-}
-
-/** Split on a row: that row on the left, the composer on the right. */
-export function splitAt(state: TerminalTabState, terminal: string): TerminalTabState {
-    if (!state.terminals.includes(terminal)) return state;
-    return settled({ ...state, shown: terminal, beside: null, composing: true });
+    const inRow = splitDrawn(state) && state.row.includes(terminal);
+    if (!inRow) return showingOne(state, terminal);
+    return state.shown === terminal ? state : { ...state, shown: terminal };
 }
 
 /**
- * New in a tab: a split tab keeps both halves with the composer in the right half, and any other
- * tab shows the composer alone.
+ * New with a prompt in a tab: a tab drawing a row keeps it with the composer right of it, and any
+ * other tab shows the composer alone.
  */
 export function composingIn(state: TerminalTabState): TerminalTabState {
     if (splitDrawn(state)) return { ...state, composing: true };
-    return { ...state, shown: null, beside: null, composing: true };
+    return { ...state, shown: null, row: [], shares: [], composing: true };
 }
 
 /**
- * The tab once its composer started a terminal: in the right half of a split it is inserted after
- * the shown one and becomes `beside`; from a composer shown alone it joins at the end of the tab's
- * order and is shown. The label is what the tab is called until the terminal's own name arrives.
+ * The tab once its composer started a terminal: from the composer right of a row it joins the end
+ * of the row, and from a composer shown alone it joins at the end of the tab's order and is shown.
+ * The label is what the tab is called until the terminal's own name arrives.
  */
 export function withStarted(
     state: TerminalTabState,
@@ -246,16 +341,10 @@ export function withStarted(
     label: string
 ): TerminalTabState {
     if (!isTerminalId(terminal)) return state;
-    const rest = state.terminals.filter((one) => one !== terminal);
-    if (state.shown !== null && state.composing) {
-        const at = rest.indexOf(state.shown) + 1;
-        return settled({
-            ...state,
-            terminals: [...rest.slice(0, at), terminal, ...rest.slice(at)],
-            beside: terminal,
-            composing: false
-        });
+    if (state.shown !== null && state.composing && state.row.length > 0) {
+        return splitRight(state, state.row[state.row.length - 1], terminal);
     }
+    const rest = state.terminals.filter((one) => one !== terminal);
     return { ...withTerminal(state, terminal, rest.length), label };
 }
 
@@ -264,16 +353,67 @@ export function withLabel(state: TerminalTabState, label: string): TerminalTabSt
     return { ...state, label };
 }
 
-/** The tab with the left half's share of its split moved, kept inside its bounds. */
-export function withShare(state: TerminalTabState, share: number): TerminalTabState {
-    return { ...state, share: Math.min(SHARE_MAX, Math.max(SHARE_MIN, share)) };
+/** The tab with the row's shares replaced, scaled to sum to 1. */
+export function withShares(state: TerminalTabState, shares: readonly number[]): TerminalTabState {
+    return { ...state, shares: mendedShares(shares, state.row.length) };
+}
+
+/** Whether the tab draws more than one terminal, or the composer beside one. */
+export function splitDrawn(state: TerminalTabState): boolean {
+    return state.shown !== null && (state.row.length > 1 || state.composing);
 }
 
 /**
- * Whether the tab draws a split: a shown terminal with a second one, or the composer, beside it.
+ * The width in pixels of each terminal of a row in a pane `pane` pixels wide, of which `handles`
+ * pixels are the handles between the terminals (a row of n holds n - 1 of them). A share below
+ * ROW_MIN pixels is lifted to ROW_MIN and the others share what is left, so the widths and the
+ * handles fill the pane; a row that cannot fit ROW_MIN each gives every terminal ROW_MIN, wider
+ * than the pane.
  */
-export function splitDrawn(state: TerminalTabState): boolean {
-    return state.shown !== null && (state.beside !== null || state.composing);
+export function rowWidths(shares: readonly number[], pane: number, handles = 0): number[] {
+    const count = shares.length;
+    if (count === 0) return [];
+    const room = pane - handles;
+    if (!(room > count * ROW_MIN)) return shares.map(() => ROW_MIN);
+    const widths = shares.map(() => 0);
+    const fixed = new Set<number>();
+    for (;;) {
+        const free = shares.map((_, at) => at).filter((at) => !fixed.has(at));
+        const space = room - fixed.size * ROW_MIN;
+        const total = free.reduce((sum, at) => sum + shares[at], 0);
+        const low = free.filter((at) => (shares[at] / total) * space < ROW_MIN);
+        if (low.length === 0) {
+            for (const at of free) widths[at] = (shares[at] / total) * space;
+            break;
+        }
+        for (const at of low) fixed.add(at);
+    }
+    for (const at of fixed) widths[at] = ROW_MIN;
+    return widths;
+}
+
+/**
+ * The shares after a drag moves the boundary right of terminal `index` by `delta` pixels in a
+ * pane `pane` wide with `handles` pixels of handles. Neither side goes under ROW_MIN; a row wider
+ * than the pane keeps its shares, since its terminals are already at their least.
+ */
+export function resizedShares(
+    shares: readonly number[],
+    index: number,
+    delta: number,
+    pane: number,
+    handles = 0
+): number[] {
+    const room = pane - handles;
+    if (index < 0 || index + 1 >= shares.length || !(room > shares.length * ROW_MIN)) {
+        return [...shares];
+    }
+    const widths = rowWidths(shares, pane, handles);
+    const pair = widths[index] + widths[index + 1];
+    const left = Math.min(pair - ROW_MIN, Math.max(ROW_MIN, widths[index] + delta));
+    widths[index] = left;
+    widths[index + 1] = pair - left;
+    return widths.map((one) => one / room);
 }
 
 /**

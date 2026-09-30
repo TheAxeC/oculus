@@ -238,11 +238,14 @@ export function createInstances(access: LayoutAccess, attention: Attention): Ins
         if (holder === null) return;
         if (attention.active(holder.id) === id) attention.remembered(null, holder.id);
         const current = access.workbench(holder.id);
+        const found = findInstance(current.root, id);
         access.apply(
             settleFocus({ ...current, root: removeInstance(current.root, id) }),
             holder.id
         );
         access.ui.clearInstanceState(id);
+        // A closed tab ends the terminals it owns; a tab moved, split or reloaded ends none.
+        if (found !== null) access.ui.endTerminals([found.instance]);
     }
 
     /**
@@ -268,6 +271,7 @@ export function createInstances(access: LayoutAccess, attention: Attention): Ins
      */
     function forgetTabs(tabs: readonly Instance[]): void {
         for (const tab of tabs) access.ui.clearInstanceState(tab.id);
+        access.ui.endTerminals(tabs);
     }
 
     /**

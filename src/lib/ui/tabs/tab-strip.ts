@@ -10,6 +10,8 @@ export type Tab = {
     label: string;
     /** A glyph name, or nothing for a tab that is drawn with its label alone. */
     glyph?: string;
+    /** A theme token name (`--c-red`) the glyph is drawn in; absent keeps the tab's colour. */
+    tint?: string;
     /** What the tooltip says, when it is not the label: a page tab names its shortcut. */
     hint?: string;
     /** Live text drawn after the label; an empty string draws no count pill. */

@@ -76,7 +76,7 @@ function everyMenu(): MenuItem[][] {
         stripMenu({ holdsTab: true, panes: 2 }, words),
         gridMenu(true, false, words),
         terminalRowMenu(
-            readTab({ id: 't', terminals: [A, B], shown: A, beside: B }),
+            readTab({ id: 't', terminals: [A, B], shown: A, row: [A, B] }),
             B,
             [{ terminal: 'cccccc-shell', title: TERMINAL }],
             true,
@@ -117,9 +117,11 @@ describe('the words of every right-click menu', () => {
             false,
             words
         );
-        expect(row.flatMap((item) => (item.items ?? []).map((one) => one.label))).toEqual([
-            TERMINAL
-        ]);
+        expect(
+            row
+                .flatMap((item) => (item.items ?? []).map((one) => one.label))
+                .filter((label) => !label.startsWith('@'))
+        ).toEqual([TERMINAL]);
     });
 
     // Revert: rename the key menu_open_changes in config/text/views/sources/repositories.yml.

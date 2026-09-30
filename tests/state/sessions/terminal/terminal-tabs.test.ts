@@ -5,7 +5,7 @@
 // hands it a state and reads the state it gives back.
 //
 // What this does NOT cover: the store that applies these rules to the layout, which is
-// tests/state/client/terminal-tabs.test.ts, and the view that draws a tab, which is
+// tests/state/client/terminal/terminal-tabs.test.ts, and the view that draws a tab, which is
 // tests/views/sessions/terminal.test.ts.
 
 import { describe, expect, it } from 'vitest';
@@ -18,9 +18,8 @@ import {
     reordered,
     showingOne,
     showingRow,
-    splitAt,
     splitDrawn,
-    splitWith,
+    splitRight,
     tabTerminals,
     withLabel,
     withStarted,
@@ -38,10 +37,14 @@ const G = 'a7a7a7-shell';
 
 /** A tab owning these terminals, showing the first, with nothing else set. */
 function owning(terminals: string[], over: Partial<TerminalTabState> = {}): TerminalTabState {
+    const shown = over.shown === undefined ? (terminals[0] ?? null) : over.shown;
+    const row = over.row ?? (shown === null ? [] : [shown]);
     return {
         ...emptyTab('tab'),
         terminals,
-        shown: terminals[0] ?? null,
+        row,
+        shares: row.map(() => 1 / row.length),
+        shown,
         composing: false,
         ...over
     };
@@ -52,7 +55,7 @@ describe('a saved state read into the tab', () => {
         const tab = readTab({ session: A, label: 'zsh' });
         expect(tab.terminals).toEqual([A]);
         expect(tab.shown).toBe(A);
-        expect(tab.beside).toBe(null);
+        expect(tab.row).toEqual([A]);
         expect(tab.composing).toBe(false);
         expect(tab.label).toBe('zsh');
     });
@@ -79,10 +82,14 @@ describe('a saved state read into the tab', () => {
     it('reads a shown or beside id the tab does not own as none, and a share out of range as the default', () => {
         const tab = readTab({ terminals: [A, B], shown: C, beside: C, share: 7 });
         expect(tab.shown).toBe(A);
-        expect(tab.beside).toBe(null);
-        expect(tab.share).toBe(0.5);
-        expect(readTab({ terminals: [A, B], shown: A, beside: A }).beside).toBe(null);
-        expect(readTab({ terminals: [A, B], shown: A, beside: B, share: 0.3 }).share).toBe(0.3);
+        expect(tab.row).toEqual([A]);
+        expect(readTab({ terminals: [A, B], shown: A, beside: A }).row).toEqual([A]);
+        expect(readTab({ terminals: [A, B], shown: A, beside: B, share: 7 }).shares).toEqual([
+            0.5, 0.5
+        ]);
+        expect(readTab({ terminals: [A, B], shown: A, beside: B, share: 0.3 }).shares).toEqual([
+            0.3, 0.7
+        ]);
     });
 
     it('reads a tab that owns nothing as composing, whatever it says', () => {
@@ -124,9 +131,9 @@ describe('a terminal leaving a tab', () => {
     });
 
     it('leaves the other half of a split alone', () => {
-        const split = owning([A, B], { shown: A, beside: B });
-        expect(withoutTerminal(split, A)).toMatchObject({ terminals: [B], shown: B, beside: null });
-        expect(withoutTerminal(split, B)).toMatchObject({ terminals: [A], shown: A, beside: null });
+        const split = owning([A, B], { shown: A, row: [A, B] });
+        expect(withoutTerminal(split, A)).toMatchObject({ terminals: [B], shown: B, row: [B] });
+        expect(withoutTerminal(split, B)).toMatchObject({ terminals: [A], shown: A, row: [A] });
     });
 
     it('keeps the shown one when another row leaves, and changes nothing for one it does not own', () => {
@@ -149,11 +156,11 @@ describe('a terminal leaving a tab', () => {
 
 describe('a terminal joining a tab', () => {
     it('joins at the index and is shown alone', () => {
-        const split = owning([A, B], { shown: A, beside: B });
+        const split = owning([A, B], { shown: A, row: [A, B] });
         expect(withTerminal(split, C, 1)).toMatchObject({
             terminals: [A, C, B],
             shown: C,
-            beside: null,
+            row: [C],
             composing: false
         });
     });
@@ -181,29 +188,26 @@ describe('a terminal joining a tab', () => {
 });
 
 describe('a split and a single row', () => {
-    it('splits with beside set and the composer gone, and shows one row with beside cleared', () => {
+    it('splits with the new terminal right of the row and the composer gone, and shows one alone', () => {
         const tab = owning([A, B], { composing: true });
-        expect(splitWith(tab, B)).toMatchObject({ shown: A, beside: B, composing: false });
-        expect(showingOne(splitWith(tab, B), B)).toMatchObject({
-            shown: B,
-            beside: null,
-            composing: false
-        });
-        // a split beside the shown row itself, or beside a row the tab does not own, splits nothing
-        expect(splitWith(owning([A, B]), A).beside).toBe(null);
-        expect(splitWith(owning([A, B]), D).beside).toBe(null);
+        const split = splitRight(tab, A, B);
+        expect(split).toMatchObject({ shown: A, row: [A, B], composing: false });
+        expect(showingOne(split, B)).toMatchObject({ shown: B, row: [B], composing: false });
+        // a split of the row's own terminal, or of one the tab does not own, splits nothing
+        expect(splitRight(owning([A, B]), A, A).row).toEqual([A]);
+        expect(splitRight(owning([A, B]), D, A).row).toEqual([A]);
     });
 
-    it('keeps the split for a press on either half, and shows a row outside it alone', () => {
-        const split = owning([A, B, C], { shown: A, beside: B });
+    it('keeps the row for a press on any terminal of it, and shows one outside it alone', () => {
+        const split = owning([A, B, C], { shown: A, row: [A, B] });
         expect(showingRow(split, A)).toEqual(split);
-        expect(showingRow(split, B)).toEqual(split);
-        expect(showingRow(split, C)).toMatchObject({ shown: C, beside: null, composing: false });
+        expect(showingRow(split, B)).toMatchObject({ shown: B, row: [A, B] });
+        expect(showingRow(split, C)).toMatchObject({ shown: C, row: [C], composing: false });
     });
 
-    it('is drawn while beside is set or the composer shows beside the shown row', () => {
-        expect(splitDrawn(owning([A, B], { beside: B }))).toBe(true);
-        expect(splitDrawn(splitAt(owning([A, B]), A))).toBe(true);
+    it('is drawn while the row holds more than one or the composer shows beside the shown one', () => {
+        expect(splitDrawn(owning([A, B], { row: [A, B] }))).toBe(true);
+        expect(splitDrawn(owning([A, B], { composing: true }))).toBe(true);
         expect(splitDrawn(owning([A, B]))).toBe(false);
         expect(splitDrawn(composingIn(owning([A])))).toBe(false);
     });
@@ -217,30 +221,28 @@ describe('New and Split in a tab, and what the composer starts', () => {
         expect(withStarted(composing, F, 'Claude')).toMatchObject({
             terminals: [A, F],
             shown: F,
-            beside: null,
+            row: [F],
             composing: false,
             label: 'Claude'
         });
     });
 
-    it('Split on a row: that row left, the composer right, and what it starts becomes beside', () => {
-        const split = splitAt(owning([A, B]), A);
-        expect(split).toMatchObject({ shown: A, beside: null, composing: true });
-        const started = withStarted(split, G, 'zsh');
-        expect(started).toMatchObject({ terminals: [A, G, B], shown: A, beside: G });
+    it('Split on a row puts the new terminal right of it in the tab order too', () => {
+        const started = splitRight(owning([A, B]), A, G);
+        expect(started).toMatchObject({ terminals: [A, G, B], shown: A, row: [A, G] });
         expect(started.composing).toBe(false);
-        // a press on a row outside the split then shows it alone
-        expect(showingRow(started, B)).toMatchObject({ shown: B, beside: null });
+        // a press on a terminal outside the row then shows it alone
+        expect(showingRow(started, B)).toMatchObject({ shown: B, row: [B] });
     });
 
-    it('New in a split tab puts the composer in the right half', () => {
-        const split = owning([A, B], { shown: A, beside: B });
+    it('New in a split tab puts the composer right of the row, and what it starts joins the row', () => {
+        const split = owning([A, B], { shown: A, row: [A, B] });
         const composing = composingIn(split);
-        expect(composing).toMatchObject({ shown: A, beside: B, composing: true });
+        expect(composing).toMatchObject({ shown: A, row: [A, B], composing: true });
         expect(withStarted(composing, F, 'zsh')).toMatchObject({
-            terminals: [A, F, B],
+            terminals: [A, B, F],
             shown: A,
-            beside: F,
+            row: [A, B, F],
             composing: false
         });
     });

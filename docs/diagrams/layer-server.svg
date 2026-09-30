@@ -277,7 +277,7 @@
 <g id="node32" class="node">
 <title>folder server/machine to layer data</title>
 <polygon fill="none" stroke="none" points="221.88,-658.04 208.12,-658.04 208.12,-645.56 221.88,-645.56 221.88,-658.04"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="215" y="-649.4" font-family="Helvetica,Arial,sans-serif" font-size="8.00">14</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="215" y="-649.4" font-family="Helvetica,Arial,sans-serif" font-size="8.00">15</text>
 </g>
 <!-- folder server/machine&#45;&gt;folder server/machine to layer data -->
 <g id="edge52" class="edge">

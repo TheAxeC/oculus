@@ -107,6 +107,7 @@ digraph channels {
     "ch config" -> "state/workbench/palette-source";
     "ch config" -> "views/feeds/leads";
     "ch config" -> "views/feeds/radar";
+    "ch config" -> "views/sessions/terminal";
     "ch config" -> "views/sources/doc";
     "ch config" -> "views/system/config";
     "ch config" -> "views/system/findings";
@@ -136,6 +137,7 @@ digraph channels {
     "ch portfolio" -> "state/client/context";
     "ch portfolio" -> "state/client/selectors";
     "ch portfolio" -> "state/life/present";
+    "ch portfolio" -> "state/sessions/terminals";
     "ch portfolio" -> "state/workbench/navigation/notice-sources";
     "ch portfolio" -> "state/workbench/palette-source";
     "ch portfolio" -> "state/workbench/rail-badges";

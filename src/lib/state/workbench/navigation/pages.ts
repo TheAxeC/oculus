@@ -13,6 +13,7 @@ import { tabsOf, type Instance, type Page } from '../layout/index.ts';
 import { registrationLabel, type Registration } from './registry.ts';
 import { t } from '../../shared/words/text.ts';
 import { parseArrangement } from './arrangement.ts';
+import type { BusyTerminal } from '../ui.svelte.ts';
 
 /**
  * What a page is called: its own name, or its position in the page list when it has none. Every
@@ -55,6 +56,11 @@ export function pageInstanceIds(page: Page): string[] {
     return tabsOf(page.workbench.root).map((instance) => instance.id);
 }
 
+/** Every instance the pages hold, in page order and then tree order. */
+export function instancesOfPages(pages: readonly Page[]): Instance[] {
+    return pages.flatMap((page) => tabsOf(page.workbench.root));
+}
+
 /** What a close asks: nothing, the unsaved-text question, or the caller's own how-much question. */
 export type CloseQuestion = 'none' | 'dirty' | 'many';
 
@@ -69,6 +75,83 @@ export type CloseQuestion = 'none' | 'dirty' | 'many';
 export function closeQuestion(ids: string[], unsaved: (id: string) => boolean): CloseQuestion {
     if (ids.length > 1) return 'many';
     return ids.some((id) => unsaved(id)) ? 'dirty' : 'none';
+}
+
+/** What a close asks, already translated: the question and the line under it. */
+export type CloseAsk = { message: string; detail: string };
+
+/** A close's question and the line under it as the one sentence a dialog with one field shows. */
+export function closeWords(asked: CloseAsk): string {
+    return asked.detail === '' ? asked.message : `${asked.message} ${asked.detail}`;
+}
+
+/** The lines naming each busy terminal and its program, or that it could not be read. */
+export function busyLines(busy: readonly BusyTerminal[]): string {
+    return busy
+        .map((one) =>
+            one.command === ''
+                ? t('ui.terminal_busy_unread', one.name)
+                : t('ui.terminal_busy_running', one.name, one.command)
+        )
+        .join(' ');
+}
+
+/**
+ * What closing these instances asks, given a fresh read of the busy terminals they own; null when
+ * it acts at once. Without a busy terminal it is closeQuestion's answer in words: nothing for one
+ * saved tab, the unsaved question for one holding unsaved text, the caller's own `many` question
+ * for more than one. With a busy terminal the one question names it and its program, and a close
+ * that also loses unsaved text names those tabs first, so one press asks one question.
+ */
+export function closeAsk(over: {
+    ids: string[];
+    unsaved: (id: string) => boolean;
+    nameOf: (id: string) => string;
+    many: string;
+    busy: readonly BusyTerminal[];
+}): CloseAsk | null {
+    const { ids, unsaved, nameOf, many, busy } = over;
+    if (ids.length === 0) return null;
+    const asked = closeQuestion(ids, unsaved);
+    if (busy.length === 0) {
+        if (asked === 'many') return { message: many, detail: '' };
+        return asked === 'dirty' ? { message: t('ui.tab_close_dirty'), detail: '' } : null;
+    }
+    const lost = ids.filter(unsaved).map(nameOf);
+    const lines = [lost.length > 0 ? t('ui.terminal_close_unsaved', lost.join(', ')) : '']
+        .concat(busyLines(busy))
+        .filter((line) => line !== '');
+    const message =
+        asked === 'many'
+            ? many
+            : lost.length > 0
+              ? t('ui.tab_close_dirty')
+              : t('ui.terminal_close_busy');
+    return { message, detail: lines.join(' ') };
+}
+
+/**
+ * A guard over the async read a close asks first: a press of the same close (the same key) while
+ * its read is in flight does nothing, so one read and one question come of it. The key is free
+ * again once the read answered or failed; another key is not held by it.
+ */
+export function closeOnce(): <T>(
+    key: string,
+    read: () => Promise<T>,
+    decide: (found: T) => void
+) => Promise<void> {
+    const reading = new Set<string>();
+    return async (key, read, decide) => {
+        if (reading.has(key)) return;
+        reading.add(key);
+        let found: Awaited<ReturnType<typeof read>>;
+        try {
+            found = await read();
+        } finally {
+            reading.delete(key);
+        }
+        decide(found);
+    };
 }
 
 /**
@@ -198,8 +281,9 @@ export function questionFor(show: (held: Question | null) => void): Asker {
  * Run a reset once the reader agreed to it: the reset's own question first, then, for each tab of
  * the pages it rebuilds or removes that holds unsaved text, the question closing that tab asks
  * (closeQuestion over the one tab), one tab at a time, with the tab and its page named under it,
- * since the tab may not be on screen. A no to any of them ends it with nothing done. Answers
- * whether the reset ran.
+ * since the tab may not be on screen; then, once, the busy question naming each terminal of those
+ * pages running a program (`busy` is the fresh read). A no to any of them ends it with nothing
+ * done. Answers whether the reset ran.
  */
 export async function resetAfterAsking(
     all: readonly Page[],
@@ -208,7 +292,8 @@ export async function resetAfterAsking(
     unsaved: (id: string) => boolean,
     name: (instance: Instance) => string,
     ask: Asker,
-    act: () => void
+    act: () => void,
+    busy: () => Promise<readonly BusyTerminal[]>
 ): Promise<boolean> {
     if (!(await ask(words.message, words.detail))) return false;
     for (const page of touched) {
@@ -217,6 +302,10 @@ export async function resetAfterAsking(
             const detail = t('workbench.reset_tab', name(instance), pageNameOf(all, page.id));
             if (!(await ask(t('ui.tab_close_dirty'), detail))) return false;
         }
+    }
+    const running = await busy();
+    if (running.length > 0 && !(await ask(t('ui.terminal_close_busy'), busyLines(running)))) {
+        return false;
     }
     act();
     return true;

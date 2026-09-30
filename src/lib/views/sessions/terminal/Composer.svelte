@@ -2,15 +2,15 @@
     // Layer 3, view partial. The composer of a new session: one box holding the prompt, with its
     // controls in its foot as VS Code's chat input holds them, the attach control, the pickers
     // (workspace, agent, account, and the agent's own lists out of config/catalogs/agents.yml)
-    // and Start. The Terminal view draws it alone while a tab shows no terminal, and in the right
-    // half of a split tab while the tab is composing (New in a split tab, or Split on a row).
+    // and Start. The Terminal view draws it alone while a tab shows no terminal, and right of the
+    // row of terminals while the tab is composing (New With a Prompt, or the `n` key).
     //
     // What each picker last chose is kept in the tab's instance state
     // (state/sessions/terminal/composer.ts), so the tab's next composer opens on the same accounts
     // and picks; the prompt being typed is this component's own. A Shell takes none of the agent
-    // pickers, and its prompt is the first command it runs. A composer a Split shows starts in the
-    // split row's folder, which the workspace picker offers first when none of its places holds it;
-    // New puts the folder and kind back to a new composer's own.
+    // pickers, and its prompt is the first command it runs. A composer shown for a tab that
+    // has a folder starts in it, which the workspace picker offers first when none of its places
+    // holds it; one shown for a tab with none starts in a new composer's own folder and kind.
     //
     // The prompt goes to the server as one field and reaches the agent as one argument; nothing on
     // this side quotes, splits or escapes it, since nothing on either side hands it to a shell.
@@ -189,8 +189,10 @@
         const shape = composeStart(agent, workspace, account, picks, prompt, attached);
         // The folder and kind the start used stay with this composer, whether or not it lands.
         keep({ workspace, agent });
-        const answer = await composeTerminal(shape);
+        const answer = await composeTerminal(shape, owner);
         starting = false;
+        // A start whose tab closed meanwhile was ended by the store, and there is nothing to say.
+        if (!answer.ok && answer.id === '' && answer.error === '') return;
         if (!answer.ok || answer.id === '') {
             failure = answer.error === '' ? t('composer.failed') : answer.error;
             return;

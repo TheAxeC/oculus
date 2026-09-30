@@ -247,12 +247,33 @@ export type TerminalResume = {
     id: string;
 };
 
+/** The eight colour names a terminal may carry, VS Code's ANSI colours, in the order offered. */
+export const TERMINAL_COLORS = [
+    'black',
+    'red',
+    'green',
+    'yellow',
+    'blue',
+    'magenta',
+    'cyan',
+    'white'
+] as const;
+
+/** One of the eight colour names. */
+export type TerminalColor = (typeof TERMINAL_COLORS)[number];
+
 /** One tmux session oculus started, as `tmux list-sessions` reports it. */
 export type Terminal = {
     /** The session name without the `oculus-` prefix; the `pty:<id>` channel is named from it. */
     id: string;
     /** What to call it on the page. The id when the starter named nothing. */
     name: string;
+    /** The title the reader gave it (tmux user option `@oculus_title`); empty when it has none. */
+    title: string;
+    /** The glyph name the reader gave it (`@oculus_icon`); empty for the kind's own. */
+    icon: string;
+    /** One of the eight ANSI colour names (`@oculus_color`); empty for the default. */
+    color: string;
     kind: TerminalKind;
     /** The pane's current directory. */
     cwd: string;

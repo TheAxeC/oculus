@@ -69,6 +69,10 @@ text:
         tab_unsaved: '{0}, unsaved'
         tabs_scroll_left: Scroll tabs left
         tabs_scroll_right: Scroll tabs right
+        terminal_busy_running: '{0} is running {1}.'
+        terminal_busy_unread: '{0} may be running a program; it could not be read.'
+        terminal_close_busy: End the programs still running in these terminals?
+        terminal_close_unsaved: 'Unsaved changes in {0}.'
         text_copy: Copy
         text_cut: Cut
         text_paste: Paste

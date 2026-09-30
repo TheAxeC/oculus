@@ -50,6 +50,7 @@ import {
     type LayoutAccess,
     type Layout,
     type OpenOptions,
+    type Opening,
     type Page,
     type Pages,
     type Storable,
@@ -132,8 +133,9 @@ export type LayoutStore = {
     foldPane: (path: number[], page?: string) => void;
     expandChild: (path: number[], index: number, page?: string) => void;
     focused: (page?: string) => Focus | null;
-    openView: (view: ViewId, state?: unknown, page?: string, options?: OpenOptions) => string;
-    openBeside: (view: ViewId, state?: unknown, page?: string) => string;
+    openView: Opening['openView'];
+    openBeside: Opening['openBeside'];
+    openInPane: Opening['openInPane'];
     /**
      * Open a view on a page in a pane that does not hold one instance, which is how the Views
      * catalogue opens a view on its own page without covering itself.
@@ -625,6 +627,7 @@ export function createLayout(ui: UiStore): LayoutStore {
         focused,
         openView: opening.openView,
         openBeside: opening.openBeside,
+        openInPane: opening.openInPane,
         openAway: away.openAway,
         openNextTo: away.openNextTo,
         paneHolds: away.paneHolds,

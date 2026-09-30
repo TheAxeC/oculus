@@ -54,7 +54,7 @@
             <span class="top"
                 ><Glyph name={kindGlyph(entry.kind)} />
                 <Tag label={entry.kind} />
-                <span class="nm">{entry.name}</span></span
+                <span class="nm">{entry.title === '' ? entry.name : entry.title}</span></span
             >
             <span class="meta"
                 ><span class="act">{nameOf(entry.cwd)}</span>

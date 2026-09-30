@@ -97,7 +97,12 @@
             {onpointerdown}
         >
             {#if tab.glyph !== undefined}
-                <Glyph name={tab.glyph} />
+                <span
+                    class="mark"
+                    style={tab.tint === undefined ? undefined : `color: var(${tab.tint})`}
+                >
+                    <Glyph name={tab.glyph} />
+                </span>
             {/if}
             <span class="label">{tab.label}</span>
             {#if (tab.badgeGlyph ?? '') !== ''}
@@ -162,6 +167,10 @@
         border-bottom: 1px solid var(--line);
         color: var(--muted-txt, var(--muted));
         white-space: nowrap;
+    }
+
+    .mark {
+        display: contents;
     }
 
     .tab.current {

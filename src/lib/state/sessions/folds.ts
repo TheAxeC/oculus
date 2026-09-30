@@ -230,6 +230,10 @@ export type TerminalChoice = {
     kind: Terminal['kind'];
     title: string;
     description: string;
+    /** The glyph name the reader gave it, or the empty string for its kind's own. */
+    icon: string;
+    /** The colour name the reader gave it, or the empty string for the default. */
+    color: string;
 };
 
 /** The last segment of a folder, or the folder itself when it has none (the root). */
@@ -246,26 +250,43 @@ function folderName(path: string): string {
  * titled by its agent, since what tmux reports running in its pane says nothing of it, and is
  * described by the session running in it (its resume, else its process), else by its own name. A
  * shell is titled by the command running in it, or by the word for a shell when tmux reports none,
- * and is described by the last segment of its folder. A terminal oculus did not start is left out,
- * since the tab cannot attach to it.
+ * and is described by the last segment of its folder. A title the reader gave a terminal takes the
+ * place of that title, and its icon and colour travel with the row. A terminal oculus did not start
+ * is left out, since the tab cannot attach to it.
  */
 export function terminalChoices(
     terminals: readonly Pick<
         Terminal,
-        'id' | 'name' | 'kind' | 'command' | 'cwd' | 'pid' | 'foreign' | 'resumes'
+        | 'id'
+        | 'name'
+        | 'kind'
+        | 'command'
+        | 'cwd'
+        | 'pid'
+        | 'foreign'
+        | 'resumes'
+        | 'title'
+        | 'icon'
+        | 'color'
     >[],
     sessions: readonly Pick<GroupedSession, 'id' | 'title' | 'pid'>[]
 ): TerminalChoice[] {
     return terminals
         .filter((one) => one.foreign !== true)
         .map((one) => {
-            const row = { terminal: one.id, kind: one.kind };
+            const row = { terminal: one.id, kind: one.kind, icon: one.icon, color: one.color };
             if (one.kind === 'shell') {
-                const title = one.command === '' ? t('sessions.terminal_title_shell') : one.command;
-                return { ...row, title, description: folderName(one.cwd) };
+                const command =
+                    one.command === '' ? t('sessions.terminal_title_shell') : one.command;
+                return {
+                    ...row,
+                    title: one.title === '' ? command : one.title,
+                    description: folderName(one.cwd)
+                };
             }
-            const title =
+            const agent =
                 one.kind === 'claude' ? t('sessions.kind_claude') : t('sessions.kind_codex');
+            const title = one.title === '' ? agent : one.title;
             const running = sessions.find(
                 (session) =>
                     one.resumes?.id === session.id ||

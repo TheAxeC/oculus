@@ -156,6 +156,9 @@ function terminal(over: Partial<Terminal> = {}): Terminal {
     return {
         id: ID,
         name: ID,
+        title: '',
+        icon: '',
+        color: '',
         kind: 'shell',
         cwd: '/hub/tools/oculus',
         command: 'zsh',
@@ -221,7 +224,12 @@ describe('the four actions of /api/terminal', () => {
         serving(200, { ok: true, terminal: terminal({ id: 'ffee00-claude' }) });
         setToken('the-token');
         const answer = await startTerminal('claude', '/hub', 120, 40);
-        expect(answer).toEqual({ ok: true, id: 'ffee00-claude', error: '' });
+        expect(answer).toMatchObject({
+            ok: true,
+            id: 'ffee00-claude',
+            error: '',
+            terminal: { id: 'ffee00-claude' }
+        });
         expect(asked[0].url).toBe('/api/terminal');
         expect(asked[0].init.method).toBe('POST');
         expect((asked[0].init.headers as Record<string, string>)['x-oculus-token']).toBe(
@@ -259,7 +267,12 @@ describe('the four actions of /api/terminal', () => {
     it('starts a dataset recovery with its key and geometry', async () => {
         serving(200, { ok: true, terminal: terminal({ id: 'ffee00-shell' }) });
         const answer = await recoverDataset('mimic-iv', 96, 28);
-        expect(answer).toEqual({ ok: true, id: 'ffee00-shell', error: '' });
+        expect(answer).toMatchObject({
+            ok: true,
+            id: 'ffee00-shell',
+            error: '',
+            terminal: { id: 'ffee00-shell' }
+        });
         expect(lastBody()).toEqual({
             action: 'recover',
             key: 'mimic-iv',
@@ -271,7 +284,12 @@ describe('the four actions of /api/terminal', () => {
     it('starts an update task without sending a command or directory from the page', async () => {
         serving(200, { ok: true, terminal: terminal({ id: 'ffee00-claude' }) });
         const answer = await startTask('litwatch', 96, 28);
-        expect(answer).toEqual({ ok: true, id: 'ffee00-claude', error: '' });
+        expect(answer).toMatchObject({
+            ok: true,
+            id: 'ffee00-claude',
+            error: '',
+            terminal: { id: 'ffee00-claude' }
+        });
         expect(lastBody()).toEqual({
             action: 'task',
             kind: 'litwatch',
@@ -283,7 +301,12 @@ describe('the four actions of /api/terminal', () => {
     it('starts a focused chat without sending a command or directory from the page', async () => {
         serving(200, { ok: true, terminal: terminal({ id: 'ffee00-claude' }) });
         const answer = await startChat('alpha', 96, 28);
-        expect(answer).toEqual({ ok: true, id: 'ffee00-claude', error: '' });
+        expect(answer).toMatchObject({
+            ok: true,
+            id: 'ffee00-claude',
+            error: '',
+            terminal: { id: 'ffee00-claude' }
+        });
         expect(lastBody()).toEqual({
             action: 'chat',
             id: 'alpha',

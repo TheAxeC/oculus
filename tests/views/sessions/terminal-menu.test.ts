@@ -30,22 +30,31 @@ const C = 'cccccc-shell';
 
 describe('the grid menu', () => {
     // Revert: drop Select All from gridMenu in terminal-list.ts.
-    it('audits that offers Paste, Select All, Split and Kill with no selection', () => {
+    it('audits that offers Paste, Select All, Clear, Split, the style items and Kill with no selection', () => {
         expect(gridMenu(false, false, words).map((item) => item.label)).toEqual([
             '@sessions.menu_paste',
             '@sessions.menu_select_all',
+            '@sessions.menu_clear',
             '@sessions.menu_split',
+            '@sessions.menu_rename',
+            '@sessions.menu_icon',
+            '@sessions.menu_color',
             '@sessions.menu_kill'
         ]);
     });
 
     // Revert: offer Copy in gridMenu whatever `selected` says.
-    it('audits that offers Copy first with a selection', () => {
+    it('audits that offers Copy and Copy as HTML first with a selection', () => {
         expect(gridMenu(true, false, words).map((item) => item.label)).toEqual([
             '@sessions.menu_copy',
+            '@sessions.menu_copy_html',
             '@sessions.menu_paste',
             '@sessions.menu_select_all',
+            '@sessions.menu_clear',
             '@sessions.menu_split',
+            '@sessions.menu_rename',
+            '@sessions.menu_icon',
+            '@sessions.menu_color',
             '@sessions.menu_kill'
         ]);
     });
@@ -102,7 +111,11 @@ describe('Kill Terminal from a menu', () => {
         expect(gridMenu(false, true, words).map((item) => item.label)).toEqual([
             '@sessions.menu_paste',
             '@sessions.menu_select_all',
+            '@sessions.menu_clear',
             '@sessions.menu_split',
+            '@sessions.menu_rename',
+            '@sessions.menu_icon',
+            '@sessions.menu_color',
             '@sessions.terminal_kill_armed'
         ]);
         const row = terminalRowMenu(readTab({ id: 't', terminals: [C] }), C, [], true, words);
@@ -122,15 +135,15 @@ describe('a paste from the menu', () => {
 });
 
 describe('a list row menu', () => {
-    const split = readTab({ id: 't', terminals: [A, B], shown: A, beside: B, composing: false });
-    const alone = readTab({ id: 't', terminals: [A, B], shown: A, beside: null, composing: false });
+    const split = readTab({ id: 't', terminals: [A, B], shown: A, row: [A, B], composing: false });
+    const alone = readTab({ id: 't', terminals: [A, B], shown: A, row: [A], composing: false });
     const others = [
         { terminal: 't2-id', title: 't2' },
         { terminal: 't3-id', title: 't3' }
     ];
 
-    // Revert: make inShownSplit in terminal-list.ts return true.
-    it('audits that offers Unsplit on the right half of the shown split and not on a row shown alone', () => {
+    // Revert: make inShownRow in terminal-list.ts return true.
+    it('audits that offers Unsplit on the right half of a row of two and not on a terminal shown alone', () => {
         const labels = terminalRowMenu(split, B, [], false, words).map((item) => item.label);
         expect(labels).toContain('@sessions.menu_unsplit');
         const lone = terminalRowMenu(alone, A, [], false, words).map((item) => item.label);
@@ -148,20 +161,20 @@ describe('a list row menu', () => {
         expect(none).not.toContain('@sessions.menu_join');
     });
 
-    // Revert: drop the `!tab.composing` test from inShownSplit.
-    it('audits that offers Unsplit on the left half too, and not on the left half beside the composer', () => {
+    // Revert: drop the `tab.row.length > 1` test from inShownRow.
+    it('audits that offers Unsplit on both halves of a row, and not on a row of one beside the composer', () => {
         const left = terminalRowMenu(split, A, [], false, words).map((item) => item.label);
         expect(left).toContain('@sessions.menu_unsplit');
         const composing = readTab({
             id: 't',
             terminals: [A, B],
             shown: A,
-            beside: B,
+            row: [A],
             composing: true
         });
-        const hidden = terminalRowMenu(composing, B, [], false, words).map((item) => item.label);
-        // The composer covers the right half, so that terminal is not drawn in the split at all.
-        expect(hidden).not.toContain('@sessions.menu_unsplit');
+        const lone = terminalRowMenu(composing, A, [], false, words).map((item) => item.label);
+        // The composer beside a row of one leaves nothing to take the terminal out of.
+        expect(lone).not.toContain('@sessions.menu_unsplit');
     });
 
     // Revert: make joinedOf slice one character fewer off the id.

@@ -13,6 +13,7 @@
     import { railPages } from '$lib/state/workbench/navigation/rail';
     import {
         questionFor,
+        instancesOfPages,
         resetAfterAsking,
         resetAsk,
         resetPlan,
@@ -26,7 +27,7 @@
         entities: { config },
         layout: { pages, resetPages },
         registry: { viewFor },
-        ui: { unsaved }
+        ui: { unsaved, busyTerminals }
     } = useState();
 
     const rail = $derived(railPages(config()?.config));
@@ -52,7 +53,8 @@
             asker,
             () => {
                 resetPages(rail);
-            }
+            },
+            () => busyTerminals(instancesOfPages([...rebuilt, ...removed]))
         );
     }
 </script>

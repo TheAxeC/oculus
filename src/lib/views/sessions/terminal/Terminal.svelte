@@ -17,20 +17,29 @@
     // one tab; the terminals store (state/sessions/terminals.svelte.ts) keeps which, shows a
     // terminal started anywhere in the tab that owns it or in the page's Terminal tab, and takes an
     // ended terminal out of its tab, closing a tab left with none unless it shows the composer.
-    // Closing a tab stops nothing.
+    // Closing the tab, its pane or its page ends the terminals it owns (the layout asks the ui
+    // store, which asks the terminals store); moving the tab ends none.
     //
-    // The body draws the composer alone while the tab shows no terminal; one grid
-    // (TerminalGrid.svelte) for the shown terminal; and, in a split, the shown terminal on the left
-    // and the second one, or the composer while a Split or New waits for its start, on the right,
-    // with the handle between them moving the left half's share. The bar's `new terminal` shows the
-    // composer in this tab, in a new composer's folder and kind, and what it starts joins this tab.
-    // From two terminals on, the tab's list (TerminalList.svelte) is drawn on the right of the
-    // body, and with one while the composer shows; a tab showing its only terminal names it on the
-    // bar. A row dragged from another tab's list onto this tab's body, when this tab draws no list,
-    // joins the end of this tab.
+    // The body draws the composer alone while the tab shows no terminal, and otherwise the tab's
+    // row: one grid (grid/TerminalGrid.svelte) per terminal of `row`, left to right in one keyed
+    // list so a grid is not torn down when another joins, each as wide as the shares give it with
+    // at least ROW_MIN pixels (terminal-tabs.ts, `rowWidths`), a handle between two neighbours
+    // moving their boundary, and the row scrolling sideways when it is wider than the pane. The
+    // composer of a start with a prompt shows right of the row while `composing`.
     //
-    // The tab's label is the shown terminal's name, kept in its state as a terminal is renamed
-    // while it runs.
+    // The bar's `new terminal` starts a shell at once in the tab's folder, and the kinds dropdown
+    // beside it starts Shell, Claude or Codex the same way or shows the composer (With a Prompt),
+    // in the shown terminal's kind. The bar's Split splits the shown terminal. A start the server
+    // refuses, a Split of a terminal the page knows nothing of, and a failed Copy as HTML are said
+    // on the bar and change nothing. From two terminals on, the tab's list (TerminalList.svelte) is
+    // drawn on the right of the body, and with one while the composer shows; a tab showing its only
+    // terminal names it on the bar. A row dragged from another tab's list onto this tab's body,
+    // when this tab draws no list, joins the end of this tab.
+    //
+    // The tab's label is the shown terminal's title, else its name, kept in its state as a terminal
+    // is renamed while it runs. Rename opens an inline field on the row, or on the bar's title
+    // while no list is drawn; Change Icon opens the glyph list (ui/forms/choice/GlyphDialog.svelte)
+    // and Change Color takes the picked colour; Clear empties the grid and the terminal's history.
     //
     // The grid's and the list's right-click menus act through this tab: Split Terminal splits it as
     // a row's Split does, Kill Terminal arms the terminal and kills it on a second pick or press,
@@ -39,34 +48,43 @@
     // own, each by its name.
 
     import Composer from './Composer.svelte';
-    import TerminalGrid from './TerminalGrid.svelte';
+    import { SvelteMap } from 'svelte/reactivity';
+    import GlyphDialog from '$lib/ui/forms/choice/GlyphDialog.svelte';
+    import TerminalGrid from './grid/TerminalGrid.svelte';
     import TerminalList from './TerminalList.svelte';
     import TerminalTitle from './TerminalTitle.svelte';
+    import Menu from '$lib/ui/menu/Menu.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Sash from '$lib/ui/frame/Sash.svelte';
+    import { SASH_PX } from '$lib/ui/frame/sash-size';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Toolbar from '$lib/ui/frame/Toolbar.svelte';
     import {
+        ROW_MIN,
         readTab,
-        splitAt,
+        resizedShares,
+        rowWidths,
         splitDrawn,
         tabTerminals,
         TERMINAL_VIEW,
         withLabel,
-        withShare,
+        withShares,
         withStarted,
-        SPLIT_SHARE,
         type TerminalTabState
     } from '$lib/state/sessions/terminal/terminal-tabs';
     import { sessionRows, terminalChoices } from '$lib/state/sessions/folds';
-    import { splitState } from '$lib/state/sessions/terminal/composer';
+    import { glyphNames } from '$lib/state/workbench/navigation/rail';
     import { tabsOf } from '$lib/state/workbench/layout';
     import {
         BELL_MS,
+        COMPOSER_REM,
+        MENU_PROMPT,
         ROW_DRAG,
         gridFontSize,
+        kindsMenu,
         listDrawn,
         pressKill,
+        profileOf,
         tabRows,
         terminalTip
     } from './terminal-list';
@@ -75,10 +93,24 @@
     import { useState } from '$lib/state/client/use';
 
     const {
+        entities: { config },
         layout: { instanceLayoutState, pages, restateInstance },
         selectors: { sessionsByWorkspace },
-        terminals: { composeInTab, moveTerminal, stopTerminal, terminalById, terminals },
-        ui: { instanceState, setInstanceState, setTerminalFont, terminalFont, textScale }
+        terminals: {
+            clearHistory,
+            composeInTab,
+            moveTerminal,
+            refusal,
+            renameTerminal,
+            restyleTerminal,
+            say,
+            splitTerminal,
+            startInTab,
+            stopTerminal,
+            terminalById,
+            terminals
+        },
+        ui: { setTerminalFont, terminalFont, textScale }
     } = useState();
 
     let { instance }: ViewProps = $props();
@@ -89,6 +121,10 @@
     const tab = $derived(readTab(instanceLayoutState(instance.id)));
     const split = $derived(splitDrawn(tab));
     const terminal = $derived(terminalById(tab.shown));
+    /** What the bar says of the last refused action of this tab. */
+    const said = $derived(refusal(instance.id));
+    /** The names of the glyph vocabulary, which Change Icon lists. */
+    const glyphs = $derived(glyphNames(config()?.config) ?? []);
 
     /** The list's rows: the tab's own terminals, in the tab's own order. */
     const rows = $derived(
@@ -96,12 +132,8 @@
     );
     const listed = $derived(listDrawn(rows.length, tab.composing));
     const shownRow = $derived(rows.find((row) => row.terminal === tab.shown) ?? null);
-    /** The rows marked current: the shown one, and the right half of a split. */
-    const current = $derived(
-        [tab.shown, split && !tab.composing ? tab.beside : null].filter(
-            (one): one is string => one !== null
-        )
-    );
+    /** The rows marked current: the terminals the row draws, or the shown one alone. */
+    const current = $derived(split ? tab.row : tab.shown === null ? [] : [tab.shown]);
 
     /**
      * The terminals the other Terminal tabs own, on every page, each by its name: what Join
@@ -134,19 +166,36 @@
     let bellTimer: ReturnType<typeof setTimeout> | null = null;
     /** The terminal a pointer press on its row asked for, whose grid takes focus. */
     let focusing: string | null = $state(null);
-    /** The body, whose width turns a drag of the handle into a share. */
+    /** The body, whose width gives each terminal of the row its width. */
     let bodyWidth = $state(0);
+    /** The terminal whose title is being edited, and the one whose icon is being chosen. */
+    let renaming = $state('');
+    let iconFor = $state('');
+    /** The Clear of each mounted grid, by terminal, for a row's menu. */
+    const clears = new SvelteMap<string, () => Promise<string>>();
+
+    /** The width the row's terminals share: the body, less the composer while right of them. */
+    const rowSpace = $derived(
+        tab.composing
+            ? Math.max(bodyWidth - COMPOSER_REM * 16, ROW_MIN * tab.row.length)
+            : bodyWidth
+    );
+    /** The pixels the handles between the row's terminals take. */
+    const handles = $derived(Math.max(0, tab.row.length - 1) * SASH_PX);
+    const widths = $derived(rowWidths(tab.shares, rowSpace, handles));
 
     /** Replace this tab's state. */
     function restate(next: TerminalTabState): void {
         restateInstance(instance.id, next);
     }
 
-    // A terminal is renamed while it runs; the tab's label follows the shown terminal's name.
+    // A terminal is renamed while it runs; the tab's label follows the shown terminal's title, else
+    // its name.
     $effect(() => {
         const live = terminal;
-        if (live === null || live.name === '' || tab.label === live.name) return;
-        restate(withLabel(tab, live.name));
+        const named = live === null ? '' : live.title === '' ? live.name : live.title;
+        if (live === null || named === '' || tab.label === named) return;
+        restate(withLabel(tab, named));
     });
 
     // An arm holds only while the tab's terminals stay the same: one joining or leaving takes it
@@ -172,14 +221,50 @@
     }
 
     /**
-     * Split this tab on one of its terminals: that terminal on the left, the composer in its
-     * folder and kind on the right, which the list row's Split and both menus do.
+     * Split one of this tab's terminals: one of its kind starts in its folder and takes the place
+     * right of it, which the list row's Split, both menus and the bar's Split do. A refusal is said
+     * on the bar.
      */
     function splitOn(terminal: string): void {
-        const held = terminalById(terminal);
-        if (held === null) return;
-        setInstanceState(instance.id, splitState(held.cwd, held.kind, instanceState(instance.id)));
-        restate(splitAt(tab, terminal));
+        void splitTerminal(instance.id, terminal);
+    }
+
+    /** The kinds dropdown: a kind starts at once, With a Prompt shows the composer. */
+    function kindPicked(pick: string): void {
+        const kind = profileOf(pick);
+        if (pick === MENU_PROMPT) composeInTab(instance.id, terminal?.kind);
+        else if (kind !== null) void startInTab(instance.id, kind);
+    }
+
+    /** Open the rename field on a terminal's row, or on the bar's title while no list is drawn. */
+    function rename(which: string): void {
+        renaming = which;
+    }
+
+    /** Save the rename field: an empty value clears the title; a refusal is said on the bar. */
+    async function renamed(which: string, value: string): Promise<void> {
+        renaming = '';
+        const answer = await renameTerminal(which, value);
+        say(instance.id, answer.ok ? '' : answer.error);
+    }
+
+    /** Set or clear a terminal's icon or colour; a refusal is said on the bar. */
+    async function restyle(which: string, style: { icon?: string; color?: string }): Promise<void> {
+        const answer = await restyleTerminal(which, style);
+        say(instance.id, answer.ok ? '' : answer.error);
+    }
+
+    /** A row's Clear: the mounted grid empties itself and the history; else only the history. */
+    async function clearOf(which: string): Promise<void> {
+        const failure = await (clears.get(which)?.() ??
+            clearHistory(which).then((answer) => (answer.ok ? '' : answer.error)));
+        if (failure !== '') say(instance.id, failure);
+    }
+
+    /** A grid hands over its Clear while it is mounted and takes it back when it goes. */
+    function control(which: string, held: { clear: () => Promise<string> } | null): void {
+        if (held === null) clears.delete(which);
+        else clears.set(which, held.clear);
     }
 
     /** A press of a row's Kill, or Kill Terminal from a menu: the first arms, the second kills. */
@@ -206,10 +291,10 @@
         }, BELL_MS);
     }
 
-    /** A drag of the handle, in pixels, as a change of the left half's share. */
-    function moved(delta: number): void {
-        if (bodyWidth <= 0) return;
-        restate(withShare(tab, tab.share + delta / bodyWidth));
+    /** A drag of the handle right of the terminal at `at`, in pixels, as a change of the shares. */
+    function moved(at: number, delta: number): void {
+        if (rowSpace <= 0) return;
+        restate(withShares(tab, resizedShares(tab.shares, at, delta, rowSpace, handles)));
     }
 
     /** The page holding this tab, which a row dropped on it moves to. */
@@ -236,6 +321,9 @@
 
 {#snippet tools()}
     <Toolbar label={t('sessions.view_terminal')}>
+        {#if said !== ''}
+            <span class="failure" role="alert">{said}</span>
+        {/if}
         {#if failure !== '' && !listed}
             <span class="failure" role="alert">{failure}</span>
         {/if}
@@ -244,14 +332,36 @@
                 shown={shownRow}
                 tip={terminal === null ? shownRow.title : terminalTip(terminal)}
                 ringing={ringing === shownRow.terminal}
+                renaming={renaming === shownRow.terminal}
+                onrename={() => rename(shownRow.terminal)}
+                onsave={(value: string) => void renamed(shownRow.terminal, value)}
+                oncancel={() => (renaming = '')}
             />
         {/if}
         <ToolButton
             label={t('sessions.new_terminal')}
             title={t('sessions.new_terminal_title')}
             glyph={t('sessions.terminal_glyph')}
-            onclick={() => composeInTab(instance.id)}
+            onclick={() => void startInTab(instance.id, 'shell')}
         />
+        <Menu
+            label={t('sessions.new_kinds')}
+            items={kindsMenu(t)}
+            glyph="disclosure"
+            compact
+            bare
+            placement="down"
+            align="right"
+            onpick={kindPicked}
+        />
+        {#if tab.shown !== null}
+            <ToolButton
+                label={t('sessions.terminal_split')}
+                title={t('sessions.terminal_split_tip')}
+                glyph="split_right"
+                onclick={() => tab.shown !== null && splitOn(tab.shown)}
+            />
+        {/if}
         <ToolButton
             label={t('sessions.terminal_smaller')}
             glyph="collapse"
@@ -282,6 +392,11 @@
         onsplit={splitOn}
         armed={arming === id}
         onkill={kill}
+        onrename={rename}
+        onicon={(which: string) => (iconFor = which)}
+        oncolor={(which: string, color: string) => void restyle(which, { color })}
+        onsay={(words: string) => say(instance.id, words)}
+        oncontrol={control}
     />
 {/snippet}
 
@@ -295,34 +410,38 @@
         ondrop={listed ? undefined : rowDropped}
     >
         <div class="main" bind:clientWidth={bodyWidth}>
-            {#if tab.shown === null}
+            {#if tab.row.length === 0}
                 <div class="start">
                     <Composer owner={instance.id} onstarted={started} />
                 </div>
-            {:else if split}
-                <div class="side" style="flex: {tab.share} 1 0">
-                    <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-                    {@render grid(tab.shown)}
-                </div>
-                <Sash
-                    dir="row"
-                    share={tab.share}
-                    onresize={moved}
-                    onreset={() => restate(withShare(tab, SPLIT_SHARE))}
-                />
-                <div class="side" style="flex: {1 - tab.share} 1 0">
-                    {#if tab.composing || tab.beside === null}
+            {:else}
+                {#each tab.row as id, at (id)}
+                    <div
+                        class="side"
+                        data-row-grid={id}
+                        style={bodyWidth > 0
+                            ? `flex: 0 0 ${widths[at]}px`
+                            : `flex: ${tab.shares[at]} 1 0`}
+                    >
+                        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                        {@render grid(id)}
+                    </div>
+                    {#if at < tab.row.length - 1}
+                        <Sash
+                            dir="row"
+                            share={tab.shares[at]}
+                            onresize={(delta: number) => moved(at, delta)}
+                            onreset={() => restate(withShares(tab, []))}
+                        />
+                    {/if}
+                {/each}
+                {#if tab.composing}
+                    <div class="side composer">
                         <div class="start">
                             <Composer owner={instance.id} onstarted={started} />
                         </div>
-                    {:else}
-                        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-                        {@render grid(tab.beside)}
-                    {/if}
-                </div>
-            {:else}
-                <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-                {@render grid(tab.shown)}
+                    </div>
+                {/if}
             {/if}
         </div>
         {#if listed}
@@ -336,6 +455,13 @@
                 {others}
                 onshown={(one: string) => (focusing = one)}
                 onsplit={splitOn}
+                {renaming}
+                onrename={rename}
+                onrenamed={(which: string, value: string) => void renamed(which, value)}
+                onrenamecancel={() => (renaming = '')}
+                onicon={(which: string) => (iconFor = which)}
+                oncolor={(which: string, color: string) => void restyle(which, { color })}
+                onclear={(which: string) => void clearOf(which)}
                 {arming}
                 {failure}
                 onkill={kill}
@@ -344,6 +470,22 @@
         {/if}
     </div>
 </Pane>
+
+{#if iconFor !== ''}
+    <GlyphDialog
+        value={terminalById(iconFor)?.icon ?? ''}
+        choices={glyphs}
+        title={t('sessions.icon_title')}
+        label={t('sessions.icon_field')}
+        empty={t('sessions.style_default')}
+        onpick={(name: string) => {
+            const which = iconFor;
+            iconFor = '';
+            void restyle(which, { icon: name });
+        }}
+        onclose={() => (iconFor = '')}
+    />
+{/if}
 
 <style>
     .terminal {
@@ -355,17 +497,23 @@
         box-sizing: border-box;
     }
 
+    /* The row of grids; wider than the pane it scrolls sideways. */
     .main {
         display: flex;
         flex: 1 1 auto;
         min-width: 0;
         min-height: 0;
+        overflow-x: auto;
     }
 
     .side {
         display: flex;
         min-width: 0;
         min-height: 0;
+    }
+
+    .composer {
+        flex: 1 0 20rem;
     }
 
     /* A refused Kill Terminal from a menu, on the bar. */

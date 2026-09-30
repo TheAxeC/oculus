@@ -9,7 +9,8 @@
 // move are not performed here; the rules they call (the line count, the quoting, the order) are
 // asserted as pure functions, named audits by the tree's rule for a case that draws nothing, and
 // the look on landing sees the rest. What a drag, a press, New and Split do to a tab's state is
-// tests/state/sessions/terminal/terminal-tabs.test.ts and tests/state/client/terminal-tabs.test.ts.
+// tests/state/sessions/terminal/terminal-tabs.test.ts and
+// tests/state/client/terminal/terminal-tabs.test.ts.
 
 import { render } from 'svelte/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -20,7 +21,7 @@ import {
     findLook,
     gridLook,
     gridOptions
-} from '../../../src/lib/views/sessions/terminal/grid-look.ts';
+} from '../../../src/lib/views/sessions/terminal/grid/grid-look.ts';
 import {
     findCount,
     findKey,
@@ -40,7 +41,7 @@ import { area, payload, record, terminal, workspace } from '../../fixtures/sessi
 import { clientContext, createClientState, type ClientState } from '../../fixtures/client.ts';
 import { t } from '../../../src/lib/state/shared/words/text.ts';
 import SessionList from '../../../src/lib/views/sessions/session-list/SessionList.svelte';
-import { ALPHA, HUB, catalog, installFixture, renderView, tree } from './views-fixture.ts';
+import { ALPHA, HUB, catalog, installFixture, renderView, textOf, tree } from './views-fixture.ts';
 
 let client: ClientState;
 let version = 500;
@@ -121,18 +122,6 @@ function rowSlices(body: string): string[] {
 function listOf(body: string): string {
     const at = body.indexOf('data-terminal-list');
     return at < 0 ? '' : body.slice(at);
-}
-
-/** The words inside the first element carrying this attribute. */
-function textOf(body: string, attribute: string, from = 0): string {
-    const at = body.indexOf(attribute, from);
-    if (at < 0) return '';
-    const open = body.indexOf('>', at);
-    const close = body.indexOf('</', open);
-    return body
-        .slice(open + 1, close)
-        .replace(/<!--[^>]*-->/g, '')
-        .trim();
 }
 
 /** A tab owning these terminals, the first shown unless the case says otherwise. */
@@ -299,14 +288,23 @@ describe('a split tab', () => {
         expect(rows[2]).not.toContain('data-current');
     });
 
-    it('draws the composer in the right half while a Split waits for its start', () => {
+    // Revert: draw the composer only when the tab owns no row.
+    it('draws the composer right of the row while a New With a Prompt waits for its start', () => {
         withTerminals(claude, vim);
         const body = html(owning([claude.id, vim.id], { composing: true }));
         expect(body).toContain(`data-terminal="${claude.id}"`);
         expect(body).toContain('data-composer-prompt');
-        expect(body).toContain('role="separator"');
-        // the right half holds the composer until its start
+        // the composer holds the right side until its start, so the other terminal is not drawn
         expect(body).not.toContain(`data-terminal="${vim.id}"`);
+    });
+
+    // Revert: draw no Sash between the terminals of a row.
+    it('draws a separator between the two terminals of a row', () => {
+        withTerminals(claude, vim);
+        const body = html(owning([claude.id, vim.id], { row: [claude.id, vim.id] }));
+        expect(body).toContain(`data-terminal="${claude.id}"`);
+        expect(body).toContain(`data-terminal="${vim.id}"`);
+        expect(body).toContain('role="separator"');
     });
 
     it('draws the composer alone after New in a tab that is not split', () => {
@@ -534,7 +532,7 @@ describe("the terminal's find", () => {
         });
     });
 
-    it('takes VS Code keys in the bar: Enter goes up, Shift+Enter down, Escape closes', () => {
+    it('audits that takes VS Code keys in the bar: Enter goes up, Shift+Enter down, Escape closes', () => {
         const bar = { mac: true, where: 'bar' as const, open: true };
         expect(findKey(press('Enter'), bar)).toBe('previous');
         expect(findKey(press('F3', { shift: true }), bar)).toBe('previous');
@@ -547,7 +545,7 @@ describe("the terminal's find", () => {
         expect(findKey(press('a'), bar)).toBe(null);
     });
 
-    it('opens from the grid on Cmd+F on macOS and Ctrl+F elsewhere, and nothing else', () => {
+    it('audits that opens from the grid on Cmd+F on macOS and Ctrl+F elsewhere, and nothing else', () => {
         const mac = { mac: true, where: 'grid' as const, open: false };
         const other = { mac: false, where: 'grid' as const, open: false };
         expect(findKey(press('f', { meta: true }), mac)).toBe('open');
@@ -559,7 +557,7 @@ describe("the terminal's find", () => {
         expect(findKey(press('F3'), mac)).toBe(null);
     });
 
-    it('moves and closes from the grid while the bar is open, and leaves Enter to the shell', () => {
+    it('audits that moves and closes from the grid while the bar is open, and leaves Enter to the shell', () => {
         const grid = { mac: false, where: 'grid' as const, open: true };
         expect(findKey(press('F3'), grid)).toBe('next');
         expect(findKey(press('F3', { shift: true }), grid)).toBe('previous');
@@ -600,7 +598,7 @@ describe("the terminal's links", () => {
         expect(opened).toEqual([url, 'http://example.org/']);
     });
 
-    it('never opens a file, a script or an address that does not parse', () => {
+    it('audits that never opens a file, a script or an address that does not parse', () => {
         const opened: string[] = [];
         const open = linkHandler(true, (url) => opened.push(url));
         for (const url of ['file:///etc/passwd', 'javascript:alert(1)', 'not a url', '']) {

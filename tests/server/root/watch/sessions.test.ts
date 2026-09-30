@@ -155,6 +155,9 @@ function terminal(id: string): Terminal {
     return {
         id,
         name: id,
+        title: '',
+        icon: '',
+        color: '',
         kind: 'shell',
         cwd: '/tmp/fixture/workspace',
         command: 'zsh',

@@ -55,6 +55,7 @@ import {
 import { createHpc, type HpcStore } from '../system/hpc.svelte.ts';
 import { createInbox, type InboxStore } from '../feeds/inbox.svelte.ts';
 import { tabsOf } from '../workbench/layout/instance.ts';
+import { paneAt } from '../workbench/layout/index.ts';
 import { createLatex, type LatexStore } from '../sessions/latex.svelte.ts';
 import { createLayout, type LayoutStore } from '../workbench/layout.svelte.ts';
 import { createLines, type LinesStore } from '../system/lines.svelte.ts';
@@ -195,7 +196,24 @@ export function createClientState(): ClientState {
         instanceState: (id) => ui.instanceState(id),
         setInstanceState: (id, state) => ui.setInstanceState(id, state),
         selected: selection.selected,
-        select: selection.select
+        select: selection.select,
+        hubRoot: () => selectors.hubRoot(),
+        portfolioHeard: () => entities.portfolio() !== null,
+        paneTab: (page, path) => {
+            const pane = paneAt(layout.workbench(page).root, path);
+            if (pane === null) return null;
+            const active = pane.tabs.find((tab) => tab.id === pane.active);
+            return active?.view === TERMINAL_VIEW ? active.id : null;
+        },
+        openIn: (page, path, state) => layout.openInPane(TERMINAL_VIEW, state, page, path)
+    });
+    // A closed Terminal tab, pane or page, and a page reset that removes a tab, end the running
+    // terminals the tab lists; the layout and the close questions ask the ui store, which asks the
+    // terminals store through this registration.
+    ui.registerTerminalOwner({
+        running: terminals.runningOf,
+        busy: terminals.busyOf,
+        end: terminals.endTerminals
     });
     const agents = createAgents(queries);
     const files = createFiles(entities, queries);

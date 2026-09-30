@@ -48,11 +48,12 @@
         PAGE,
         foldable,
         pageListItems,
+        stripMark,
         stripMenu,
         stripPicked
     } from '$lib/shell/panes/pane-view';
     import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
-    import { closeQuestion } from '$lib/state/workbench/navigation/pages';
+    import { closeAsk, closeOnce, closeWords } from '$lib/state/workbench/navigation/pages';
     import CloseQuestion from '$lib/ui/controls/CloseQuestion.svelte';
     import Menu from '$lib/ui/menu/Menu.svelte';
     import type { MenuItem } from '$lib/ui/menu/menu-items';
@@ -93,8 +94,8 @@
         },
         drag: { dragging, hover, start },
         registry: { viewFor },
-        terminals: { composeIn },
-        ui: { unsaved }
+        terminals: { newTerminalIn, tabMark },
+        ui: { unsaved, busyTerminals }
     } = client;
 
     type Props = {
@@ -156,9 +157,8 @@
     const kept = $derived(instances.filter((one) => one.id === active || seen.includes(one.id)));
 
     /**
-     * A tab per instance: the registry's words and glyph, or the view's own id when it has none. An
-     * instance whose state carries a `label` shows that instead of the view's name, which is how
-     * two documents or two projects read as two tabs rather than as "Document" twice.
+     * A tab per instance: the registry's words and glyph, or the view's own id when it has none. A
+     * state carrying a `label` shows that instead of the view's name, so two documents read as two.
      */
     const tabs = $derived<Tab[]>(
         instances.map((instance) => {
@@ -172,7 +172,7 @@
             return {
                 id: instance.id,
                 label: own ?? registrationLabel(found),
-                glyph: registrationGlyph(found),
+                ...stripMark(registrationGlyph(found), tabMark(instance)),
                 preview,
                 hint: preview
                     ? t('ui.preview_tab')
@@ -254,7 +254,7 @@
                 splitInstance,
                 openPalette: onpalette,
                 close: () => pick('close'),
-                composeIn
+                newTerminalIn
             }
         );
     }
@@ -279,15 +279,31 @@
         );
     }
 
+    const once = closeOnce();
+
     /**
-     * Close one tab, asking first when it holds text no save has taken. The rule is the instance id
-     * and the ui store's answer for it, so the close control and Delete take the same guard and no
-     * view is scanned for what it is holding.
+     * Close these tabs, asking first when one holds text no save has taken or runs a program in a
+     * terminal it owns. The rule is the instance ids and the ui store's answers for them, so the
+     * close control, Delete and the pane menu take the same guard and no view is scanned for what
+     * it holds. A second press while the read of the terminals is in flight does nothing.
      */
+    function askAndClose(key: string, ids: string[], many: string, act: () => void): Promise<void> {
+        const owned = instances.filter((one) => ids.includes(one.id));
+        return once(
+            key,
+            () => busyTerminals(owned),
+            (busy) => {
+                const nameOf = (one: string): string =>
+                    tabs.find((tab) => tab.id === one)?.label ?? one;
+                const asked = closeAsk({ ids, unsaved, nameOf, many, busy });
+                if (asked === null) act();
+                else confirming = { message: closeWords(asked), act };
+            }
+        );
+    }
+
     function closeTab(id: string): void {
-        const act = (): void => closeInstance(id, page);
-        if (closeQuestion([id], unsaved) === 'none') act();
-        else confirming = { message: t('ui.tab_close_dirty'), act };
+        void askAndClose(`tab:${id}`, [id], t('ui.tab_close_dirty'), () => closeInstance(id, page));
     }
 
     /**
@@ -351,16 +367,13 @@
             // Closing a pane closes every tab in it at once, and a tab holds a view's own state,
             // so the pane takes the same question a tab's own close control takes over the tabs it
             // would take away.
-            const act = (): void => closePane(path, page);
-            const asks = closeQuestion(
-                tabs.map((tab) => tab.id),
-                unsaved
+            const ids = tabs.map((tab) => tab.id);
+            void askAndClose(
+                `pane:${path.join('.')}`,
+                ids,
+                t('ui.pane_close_confirm', tabs.length),
+                () => closePane(path, page)
             );
-            if (asks === 'many') {
-                confirming = { message: t('ui.pane_close_confirm', tabs.length), act };
-            } else if (asks === 'dirty') {
-                confirming = { message: t('ui.tab_close_dirty'), act };
-            } else act();
             return;
         }
         if (id === 'maximise') {

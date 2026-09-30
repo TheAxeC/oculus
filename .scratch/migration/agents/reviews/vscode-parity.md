@@ -276,7 +276,7 @@ Status words for this section: **has** (oculus has the action today, the menu ca
 |---|---|---|
 | Copy, Paste, Select All | the terminal | clipboard: paste has a confirm for several lines; Copy is xterm's `getSelection()` to the clipboard, Select All is xterm's `selectAll()` |
 | Copy as HTML | the terminal | new |
-| Clear | the terminal | new: clears the view and tmux's history, since oculus repaints a reattached grid from that history (Q102) |
+| Clear | the terminal | new: clears the view, tmux's screen (`send-keys -R`, skipped while a full-screen program holds the alternate screen) and tmux's history, since oculus repaints a reattached grid from both (Q102) |
 | Kill Terminal | the terminal, a tab | has: Kill |
 | Toggle Size to Content Width | the terminal, a tab | out: tmux owns the size (row above) |
 | Start Dictation, Rerun Task, Add Terminal Selection to Chat | dictation, tasks, chat | out |

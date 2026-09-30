@@ -2,12 +2,12 @@
     // Layer 3, view partial. A Terminal tab's list of its own terminals, drawn on the right of the
     // tab's body from two terminals on, as VS Code's terminal panel draws its tabs list there. One
     // row per terminal the tab owns, in the tab's own order, titled after what runs in it, with its
-    // description muted after the title, the rows the tab shows marked (both halves of a split),
-    // and a bell mark while a shown terminal rings.
+    // description muted after the title, the rows the tab shows marked (every terminal of the row
+    // the tab draws side by side), and a bell mark while a shown terminal rings.
     //
-    // A press on a row shows that terminal in this tab, alone, unless it is a half of the split the
-    // tab draws, whose grid the press focuses (state/sessions/terminal/terminal-tabs.ts,
-    // `showingRow`).
+    // A press on a row shows that terminal in this tab, alone, unless it is one of the terminals of
+    // the row the tab draws, whose grid the press focuses
+    // (state/sessions/terminal/terminal-tabs.ts, `showingRow`).
     //
     // The list is one stop of the browser's focus order, by ui/tree/roving.ts's rule: the row at
     // the stop carries tabindex 0 and everything else in the list -1, Split and Kill included. The
@@ -19,9 +19,14 @@
     // kills through the same `pressKill`. A pointer press on a row shows it and hands the keyboard
     // to its grid, so the list holds focus only for a reader who came to it by the keyboard.
     //
-    // Split divides this tab: the row's terminal on the left, and on the right the composer in the
-    // row's own folder and kind, offered as a place of its own when no place of the composer holds
-    // it (state/sessions/terminal/composer.ts); what it starts becomes the right half.
+    // Split starts a terminal of the row's own kind in the row's own folder at once and puts it
+    // right of that terminal in the tab's row, which holds any number of terminals (the terminals
+    // store's `splitTerminal`).
+    //
+    // A double click on a row's name, and Rename on its menu, open the inline field
+    // (RenameField.svelte) in the name's place: Enter saves, Escape cancels, an empty value clears
+    // the title. Change Icon and Change Color on the menu dress the row's mark, and Clear empties
+    // the terminal's history.
     //
     // A row dragged within the list moves there, in the tab's own order, kept in the tab's layout
     // state. A row dropped on another Terminal tab's list moves to that tab at the drop mark, by
@@ -29,44 +34,51 @@
     //
     // A right-click on a row opens VS Code's terminal tab menu (terminal-list.ts,
     // `terminalRowMenu`): Split Terminal and Kill Terminal, which the tab runs as the grid's menu
-    // does, Kill Terminal arming first as the row's Kill does, Unsplit Terminal on a half of the
-    // split the tab shows, which shows that terminal alone, and Join Terminals, which moves a
-    // terminal another Terminal tab owns into this tab after the row and shows it split with the
-    // row. A right-click on the list's empty area offers New Terminal, the composer in this tab as
-    // the bar's New shows it, and New Terminal With Profile, the same composer set to the kind
-    // picked.
+    // does, Kill Terminal arming first as the row's Kill does, Unsplit Terminal on a terminal of a
+    // row of more than one, which takes it out of the row (it stays in the tab), and Join
+    // Terminals, which moves a terminal another Terminal tab owns into this tab and appends it to
+    // the end of the row. A right-click on the list's empty area offers New Terminal, a shell
+    // started in the tab's folder as the bar's New starts it, and New Terminal With Profile, the
+    // same start of the kind picked.
 
     import { untrack } from 'svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import { composerOf, withComposer } from '$lib/state/sessions/terminal/composer';
     import {
+        joined,
         readTab,
         reordered,
         showingOne,
         showingRow,
-        splitWith,
+        unsplit,
         type TerminalTabState
     } from '$lib/state/sessions/terminal/terminal-tabs';
     import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
     import type { TerminalChoice } from '$lib/state/sessions/folds';
     import { t } from '$lib/state/shared/words/text';
     import { nextStop } from '$lib/ui/tree/roving';
+    import RenameField from './RenameField.svelte';
     import {
+        MENU_CLEAR,
+        MENU_ICON,
         MENU_KILL,
         MENU_NEW,
+        MENU_RENAME,
         MENU_SPLIT,
         MENU_UNSPLIT,
         ROW_DRAG,
         armKept,
+        colorOf,
         emptyListMenu,
         joinedOf,
+        markStyle,
         movedOrder,
         profileOf,
         rowKey,
         terminalRowMenu,
         terminalTip
     } from './terminal-list';
+    import { markGlyph } from '$lib/state/sessions/terminal/terminal-marks';
     import { useState } from '$lib/state/client/use';
 
     type Props = {
@@ -78,7 +90,7 @@
         tab: TerminalTabState;
         /** The rows, in the order they are drawn. */
         rows: TerminalChoice[];
-        /** The terminals the tab shows now: the shown one, and the right half of a split. */
+        /** The terminals the tab shows now: every terminal of its row, or the shown one alone. */
         current: string[];
         /** The terminal whose bell is ringing in this tab, or null. */
         ringing: string | null;
@@ -88,6 +100,20 @@
         onshown: (terminal: string) => void;
         /** Split the tab on a row's terminal, as the row's Split and its menu do. */
         onsplit: (terminal: string) => void;
+        /** The terminal whose title is being edited on its row, or ''. */
+        renaming: string;
+        /** A double click on a row's name, or Rename on its menu. */
+        onrename: (terminal: string) => void;
+        /** The rename field saved a value (an empty one clears the title). */
+        onrenamed: (terminal: string, value: string) => void;
+        /** The rename field was cancelled. */
+        onrenamecancel: () => void;
+        /** Change Icon on a row's menu. */
+        onicon: (terminal: string) => void;
+        /** Change Color on a row's menu; the empty string is Default. */
+        oncolor: (terminal: string, color: string) => void;
+        /** Clear on a row's menu. */
+        onclear: (terminal: string) => void;
         /** The terminal whose Kill was pressed or picked once and waits for the second, or ''. */
         arming: string;
         /** A kill the server refused, said below the rows until the next one. */
@@ -111,6 +137,13 @@
         others,
         onshown,
         onsplit,
+        renaming,
+        onrename,
+        onrenamed,
+        onrenamecancel,
+        onicon,
+        oncolor,
+        onclear,
         arming,
         failure,
         onkill,
@@ -119,8 +152,7 @@
 
     const {
         layout: { instanceLayoutState, restateInstance },
-        terminals: { composeInTab, moveTerminal, terminalById },
-        ui: { instanceState, setInstanceState }
+        terminals: { moveTerminal, startInTab, terminalById }
     } = useState();
 
     let list: HTMLDivElement | null = $state(null);
@@ -146,12 +178,6 @@
         });
     });
 
-    function kindGlyph(kind: TerminalChoice['kind']): string {
-        if (kind === 'claude') return t('sessions.kind_claude_glyph');
-        if (kind === 'codex') return t('sessions.kind_codex_glyph');
-        return t('sessions.kind_shell_glyph');
-    }
-
     /** The row's tooltip: the terminal's name, command, folder and start time. */
     function tip(row: TerminalChoice): string {
         const held = terminalById(row.terminal);
@@ -164,7 +190,7 @@
         if (next !== tab) restateInstance(instance, next);
     }
 
-    /** Split this tab: the row on the left, the composer in its folder and kind on the right. */
+    /** Split this terminal: one of its kind and folder starts right of it. */
     function split(row: TerminalChoice): void {
         onsplit(row.terminal);
     }
@@ -176,7 +202,7 @@
     function join(row: TerminalChoice, moving: string): void {
         moveTerminal(moving, instance, page, tab.terminals.indexOf(row.terminal) + 1);
         const moved = readTab(instanceLayoutState(instance));
-        restateInstance(instance, splitWith(showingOne(moved, row.terminal), moving));
+        restateInstance(instance, joined(showingOne(moved, row.terminal), moving));
     }
 
     function rowPicked(row: TerminalChoice, pick: string): void {
@@ -184,17 +210,18 @@
         if (joining !== null) join(row, joining);
         else if (pick === MENU_SPLIT) split(row);
         else if (pick === MENU_KILL) kill(row);
-        else if (pick === MENU_UNSPLIT) restateInstance(instance, showingOne(tab, row.terminal));
+        else if (pick === MENU_UNSPLIT) restateInstance(instance, unsplit(tab, row.terminal));
+        else if (pick === MENU_RENAME) onrename(row.terminal);
+        else if (pick === MENU_ICON) onicon(row.terminal);
+        else if (pick === MENU_CLEAR) onclear(row.terminal);
+        else if (colorOf(pick) !== null) oncolor(row.terminal, colorOf(pick) ?? '');
     }
 
-    /** New Terminal, or New Terminal With Profile, which sets the composer to the kind picked. */
+    /** New Terminal, or New Terminal With Profile: a terminal of the kind starts at once. */
     function emptyPicked(pick: string): void {
         const kind = profileOf(pick);
-        if (pick !== MENU_NEW && kind === null) return;
-        composeInTab(instance);
-        if (kind === null) return;
-        const held = instanceState(instance);
-        setInstanceState(instance, withComposer(held, { ...composerOf(held), agent: kind }));
+        if (pick === MENU_NEW) void startInTab(instance, 'shell');
+        else if (kind !== null) void startInTab(instance, kind);
     }
 
     /** A press on a row: a pointer's hands the keyboard to the grid, a key's leaves it here. */
@@ -320,32 +347,55 @@
                     ondragover={(event: DragEvent) => dragOver(event, index)}
                 >
                     <span class="pick">
-                        <ToolButton
-                            cell
-                            label={`${row.title} ${row.description}`}
-                            title={tip(row)}
-                            tabindex={row.terminal === stop ? 0 : -1}
-                            stop={row.terminal}
-                            onclick={(event: MouseEvent) => pressed(event, row)}
-                            onkeydown={(event: KeyboardEvent) => keys(event, index)}
-                        >
+                        {#if renaming === row.terminal}
+                            <!-- The field is not inside the row's button: a text box cannot be
+                                 typed into within one. -->
                             <span class="face">
-                                <Glyph name={kindGlyph(row.kind)} />
-                                <span class="title" data-row-title>{row.title}</span>
-                                <span class="description" data-row-description
-                                    >{row.description}</span
-                                >
-                                {#if ringing === row.terminal}
-                                    <span
-                                        class="bell"
-                                        data-bell
-                                        title={t('sessions.terminal_bell')}
-                                    >
-                                        <Glyph name="bell" />
-                                    </span>
-                                {/if}
+                                <span class="markglyph" style={markStyle(row.color)}>
+                                    <Glyph name={markGlyph(row.kind, row.icon)} />
+                                </span>
+                                <RenameField
+                                    value={row.title}
+                                    label={t('sessions.terminal_rename_field')}
+                                    onsave={(value: string) => onrenamed(row.terminal, value)}
+                                    oncancel={onrenamecancel}
+                                />
                             </span>
-                        </ToolButton>
+                        {:else}
+                            <ToolButton
+                                cell
+                                label={`${row.title} ${row.description}`}
+                                title={tip(row)}
+                                tabindex={row.terminal === stop ? 0 : -1}
+                                stop={row.terminal}
+                                onclick={(event: MouseEvent) => pressed(event, row)}
+                                onkeydown={(event: KeyboardEvent) => keys(event, index)}
+                            >
+                                <span class="face">
+                                    <span class="markglyph" style={markStyle(row.color)}>
+                                        <Glyph name={markGlyph(row.kind, row.icon)} />
+                                    </span>
+                                    <!-- svelte-ignore a11y_no_static_element_interactions -->
+                                    <span
+                                        class="title"
+                                        data-row-title
+                                        ondblclick={() => onrename(row.terminal)}>{row.title}</span
+                                    >
+                                    <span class="description" data-row-description
+                                        >{row.description}</span
+                                    >
+                                    {#if ringing === row.terminal}
+                                        <span
+                                            class="bell"
+                                            data-bell
+                                            title={t('sessions.terminal_bell')}
+                                        >
+                                            <Glyph name="bell" />
+                                        </span>
+                                    {/if}
+                                </span>
+                            </ToolButton>
+                        {/if}
                     </span>
                     <span class="actions">
                         <ToolButton
@@ -449,6 +499,11 @@
         min-width: 0;
         color: var(--muted-txt, var(--muted));
         font-size: var(--fs-xs);
+    }
+
+    .markglyph {
+        display: inline-flex;
+        flex: 0 0 auto;
     }
 
     .bell {

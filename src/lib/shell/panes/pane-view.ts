@@ -143,7 +143,8 @@ export type StripDeps = {
     openPalette: (prefill: string) => void;
     /** The pane menu's own close, with its question. */
     close: () => void;
-    composeIn: (page: string) => void;
+    /** New Terminal: starts a shell in a Terminal tab of the pane the menu was opened on. */
+    newTerminalIn: (page: string, path: number[]) => void;
 };
 
 /** Run a pick from the strip's menu over the pane's active tab, its path and its page. */
@@ -157,5 +158,17 @@ export function stripPicked(
         if (pane.active !== '') deps.splitInstance(pane.active, pane.path, edge, pane.page);
     } else if (id === STRIP_OPEN_FILE) deps.openPalette('');
     else if (id === STRIP_CLOSE) deps.close();
-    else if (id === STRIP_NEW_TERMINAL) deps.composeIn(pane.page);
+    else if (id === STRIP_NEW_TERMINAL) deps.newTerminalIn(pane.page, pane.path);
+}
+
+/**
+ * What the strip draws a tab's glyph with and in which colour token: the mark the terminals store
+ * gives a Terminal tab (the icon and colour of the terminal it shows), else the view's own glyph
+ * and the default colour, which is also what a Terminal tab whose terminal has neither gets.
+ */
+export function stripMark(
+    viewGlyph: string,
+    mark: { glyph?: string; token?: string }
+): { glyph: string; tint?: string } {
+    return { glyph: mark.glyph ?? viewGlyph, tint: mark.token };
 }

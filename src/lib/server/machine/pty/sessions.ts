@@ -43,6 +43,11 @@ const NAME_OPTION = '@oculus_name';
  */
 const RESUMES_OPTION = '@oculus_resumes';
 
+/** The title, icon and colour a reader gave a terminal, each a tmux user option. */
+export const TITLE_OPTION = '@oculus_title';
+export const ICON_OPTION = '@oculus_icon';
+export const COLOR_OPTION = '@oculus_color';
+
 /** The two tools whose sessions can be resumed. A shell has no session to continue. */
 export const RESUME_TOOLS: TerminalResume['tool'][] = ['claude', 'codex'];
 
@@ -60,7 +65,9 @@ export function isSessionId(id: unknown): id is string {
 
 /**
  * The fields a terminal is read from. The first six are the session and its active pane; the
- * seventh is the label the starter gave, kept as a tmux user option so tmux stays the only store.
+ * seventh is the label the starter gave, the eighth the session it resumes, and the last three the
+ * title, icon and colour the reader gave, each kept as a tmux user option so tmux stays the only
+ * store.
  */
 export const LIST_FORMAT = [
     '#{session_name}',
@@ -70,7 +77,10 @@ export const LIST_FORMAT = [
     '#{pane_pid}',
     '#{pane_current_path}',
     `#{${NAME_OPTION}}`,
-    `#{${RESUMES_OPTION}}`
+    `#{${RESUMES_OPTION}}`,
+    `#{${TITLE_OPTION}}`,
+    `#{${ICON_OPTION}}`,
+    `#{${COLOR_OPTION}}`
 ].join('\t');
 
 export type StartRequest = {
@@ -244,6 +254,9 @@ export function parseTerminal(line: string): Terminal | null {
         foreign: !isTerminalId(id),
         id,
         name: named === '' ? id : named,
+        title: fields[8] ?? '',
+        icon: fields[9] ?? '',
+        color: fields[10] ?? '',
         kind: kindOf(id, command),
         cwd: fields[5] ?? '',
         command,

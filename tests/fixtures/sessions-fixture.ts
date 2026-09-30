@@ -64,6 +64,9 @@ export function terminal(id: string, over: Partial<Terminal> = {}): Terminal {
     return {
         id,
         name: id,
+        title: '',
+        icon: '',
+        color: '',
         kind: 'shell',
         cwd: '/ws',
         command: 'zsh',

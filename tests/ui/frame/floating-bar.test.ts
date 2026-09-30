@@ -42,7 +42,7 @@ describe('the floating bar', () => {
     });
 
     it('audits that the find bar draws inside it and paints no surface of its own', () => {
-        const path = 'src/lib/views/sessions/terminal/FindBar.svelte';
+        const path = 'src/lib/views/sessions/terminal/grid/FindBar.svelte';
         expect(readFileSync(path, 'utf8')).toContain('<FloatingBar>');
         const painted = [...rules(path).entries()].filter(([, body]) =>
             body.includes('background')

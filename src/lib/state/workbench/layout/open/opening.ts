@@ -30,6 +30,11 @@ export type OpenOptions = {
 export type Opening = {
     openView: (view: ViewId, state?: unknown, page?: string, options?: OpenOptions) => string;
     openBeside: (view: ViewId, state?: unknown, page?: string) => string;
+    /**
+     * Open a new instance of a view as a tab of the pane at a path of a page, whatever the page
+     * already holds; answers its id, or the empty string for a page or pane that is not there.
+     */
+    openInPane: (view: ViewId, state: unknown, page: string, path: number[]) => string;
 };
 
 /**
@@ -73,6 +78,19 @@ export function createOpening(
      */
     function openBeside(view: ViewId, state?: unknown, page?: string): string {
         return openInto(view, state, true, page);
+    }
+
+    /**
+     * A new tab in the pane at `path` of a page: a pane hidden inside a folded child is expanded
+     * first, and the tab is the pane's active one. A pane the page does not hold opens nothing.
+     */
+    function openInPane(view: ViewId, state: unknown, page: string, path: number[]): string {
+        const held = access.at(page);
+        if (held === null || paneAt(access.layout(held.id), path) === null) return '';
+        const instance = newInstance(view, state ?? {});
+        attention.remembered(instance.id, held.id);
+        access.change((current) => openInstance(expandTo(current, path), path, instance), held.id);
+        return instance.id;
     }
 
     /**
@@ -234,5 +252,5 @@ export function createOpening(
         return pane.tabs.find((tab) => isInstanceOf(tab, view, id)) ?? null;
     }
 
-    return { openView, openBeside };
+    return { openView, openBeside, openInPane };
 }

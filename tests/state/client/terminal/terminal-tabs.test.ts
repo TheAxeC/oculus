@@ -11,9 +11,8 @@
 // store call each of them makes is the one asserted here.
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createClientState, type ClientState } from '../../../src/lib/state/client/context.ts';
-import { tabsOf } from '../../../src/lib/state/workbench/layout/instance.ts';
-import { readTab, splitAt } from '../../../src/lib/state/sessions/terminal/terminal-tabs.ts';
+import { createClientState, type ClientState } from '../../../../src/lib/state/client/context.ts';
+import { readTab } from '../../../../src/lib/state/sessions/terminal/terminal-tabs.ts';
 import {
     composerOf,
     composerWorkspace,
@@ -21,14 +20,22 @@ import {
     splitState,
     withComposer,
     type ComposerRecord
-} from '../../../src/lib/state/sessions/terminal/composer.ts';
-import type { Terminal } from '../../../src/lib/data/model/index.ts';
-import { fakeStorage } from '../workbench/layout/layout-fixture.ts';
-import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
-import { setCatalog } from '../../../src/lib/state/shared/words/text.ts';
+} from '../../../../src/lib/state/sessions/terminal/composer.ts';
+import type { Terminal } from '../../../../src/lib/data/model/index.ts';
+import { fakeStorage } from '../../workbench/layout/layout-fixture.ts';
+import { openOwning, tabOf, terminalTabsOf } from './terminal-tabs-fixture.ts';
+import {
+    engineDir,
+    glyphCatalog,
+    loadConfig,
+    textCatalog
+} from '../../../../src/lib/data/sources/config.ts';
+import { setCatalog, setGlyphs } from '../../../../src/lib/state/shared/words/text.ts';
 
-// A page opened here is named from the catalog, so the real one is installed.
+// A page opened here is named from the catalog, so the real one is installed, and the glyph
+// vocabulary the strip mark asks whether an icon is in.
 setCatalog(textCatalog(loadConfig(engineDir()).config));
+setGlyphs(glyphCatalog(loadConfig(engineDir()).config));
 
 const A = 'a1a1a1-shell';
 const B = 'b2b2b2-shell';
@@ -51,6 +58,9 @@ function terminal(id: string): Terminal {
     return {
         id,
         name: id,
+        title: '',
+        icon: '',
+        color: '',
         kind: 'shell',
         cwd: '/hub',
         command: 'zsh',
@@ -70,30 +80,18 @@ function listed(ids: string[] | null): void {
 }
 
 /** Every Terminal tab of every page, with the page and the state it holds. */
-function terminalTabs(): { id: string; page: string; state: unknown }[] {
-    return client.layout.pages().flatMap((page) =>
-        tabsOf(page.workbench.root)
-            .filter((tab) => tab.view === 'terminal')
-            .map((tab) => ({ id: tab.id, page: page.id, state: tab.state }))
-    );
-}
+const terminalTabs = () => terminalTabsOf(client);
 
 function holds(tab: string): boolean {
     return terminalTabs().some((one) => one.id === tab);
 }
 
 /** What one tab owns and shows, read through the tab's own reader. */
-function tab(id: string) {
-    return readTab(terminalTabs().find((one) => one.id === id)?.state);
-}
+const tab = (id: string) => tabOf(client, id);
 
 /** A Terminal tab on a page owning these terminals, the first shown. */
 function owning(page: string, terminals: string[]): string {
-    return client.layout.openView(
-        'terminal',
-        { id: `tab-${terminals.join('-')}`, terminals, shown: terminals[0] ?? null },
-        page
-    );
+    return openOwning(client, page, terminals);
 }
 
 /** A composer record a reader has chosen in a tab: a folder, Codex, an account and a pick. */
@@ -146,7 +144,7 @@ describe('a terminal moved to another tab', () => {
         expect(tab(composing)).toMatchObject({
             terminals: [],
             shown: null,
-            beside: null,
+            row: [],
             composing: true
         });
         expect(JSON.stringify(client.ui.instanceState(composing))).toBe(before);
@@ -201,7 +199,7 @@ describe('a terminal that ended', () => {
         expect(tab(composing)).toMatchObject({
             terminals: [],
             shown: null,
-            beside: null,
+            row: [],
             composing: true
         });
         expect(JSON.stringify(client.ui.instanceState(composing))).toBe(before);
@@ -260,15 +258,16 @@ describe('showing a terminal', () => {
         expect(tab(t2).shown).toBe(C);
     });
 
-    it("keeps the split when the terminal is one half of the owning tab's split", () => {
+    // Revert: make showingRow show the terminal alone whenever it is pressed.
+    it("keeps the row and focuses the terminal when it is one of the owning tab's row", () => {
         const page = client.layout.currentPage().id;
         const split = client.layout.openView(
             'terminal',
-            { id: 'split', terminals: [A, B], shown: A, beside: B },
+            { id: 'split', terminals: [A, B], row: [A, B], shown: A },
             page
         );
         client.terminals.showTerminal(B);
-        expect(tab(split)).toMatchObject({ shown: A, beside: B });
+        expect(tab(split)).toMatchObject({ shown: B, row: [A, B] });
     });
 
     it("hands a terminal no tab owns to the active Terminal tab of the page's focused pane", () => {
@@ -323,17 +322,23 @@ describe('showing a terminal', () => {
 });
 
 describe('a Terminal tab closed', () => {
-    it('leaves its terminals running and unowned, listed, and taken by no tab until shown', () => {
-        const posts = vi.fn();
-        vi.stubGlobal('fetch', posts);
+    // Revert: make closeInstance skip access.ui.endTerminals.
+    it('ends its terminals, and a terminal no tab owns is taken by a tab only when shown', () => {
+        const stopped: string[] = [];
+        vi.stubGlobal('fetch', (_url: string, init?: { body?: string }) => {
+            stopped.push((JSON.parse(String(init?.body)) as { id: string }).id);
+            return Promise.resolve({
+                ok: true,
+                status: 200,
+                json: () => Promise.resolve({ ok: true })
+            });
+        });
         const page = client.layout.currentPage().id;
         const t1 = owning(page, [A, B]);
         listed([A, B]);
         client.layout.closeInstance(t1, page);
         expect(holds(t1)).toBe(false);
-        listed([A, B]);
-        expect(posts).not.toHaveBeenCalled();
-        expect(client.terminals.terminals().map((one) => one.id)).toEqual([A, B]);
+        expect(stopped).toEqual([A, B]);
         const other = owning(page, [C]);
         listed([A, B, C]);
         expect(tab(other).terminals).toEqual([C]);
@@ -362,7 +367,6 @@ describe('New', () => {
             split,
             splitState('/work/split-row', 'shell', client.ui.instanceState(split))
         );
-        client.layout.restateInstance(split, splitAt(tab(split), A));
         press(split, page);
         expect(tab(split)).toMatchObject({ terminals: [A, B], composing: true });
         const record = composerOf(client.ui.instanceState(split));
@@ -390,5 +394,50 @@ describe('New', () => {
         const made = terminalTabs();
         expect(made).toHaveLength(1);
         expect(readTab(made[0].state)).toMatchObject({ terminals: [], composing: true });
+    });
+});
+
+/** A payload listing A with an icon and a colour, and B with neither. */
+function listMarked(): void {
+    version += 1;
+    client.entities.receive({
+        channel: 'sessions',
+        version,
+        payload: {
+            records: [],
+            workspaces: [],
+            terminals: [
+                { ...terminal(A), icon: 'refresh', color: 'red' },
+                { ...terminal(B), icon: '', color: '' }
+            ]
+        }
+    });
+}
+
+const markState = (shown: string | null, terminals = [A, B, E]) => ({ id: 't', terminals, shown });
+
+describe('the strip mark the store gives a tab', () => {
+    beforeEach(listMarked);
+
+    // Revert: read the mark from the first terminal of the tab in tabMark, not the shown one.
+    it('is the mark of the terminal the tab shows, and follows the shown one', () => {
+        expect(client.terminals.tabMark({ view: 'terminal', state: markState(A) })).toEqual({
+            glyph: 'refresh',
+            token: '--c-red'
+        });
+        expect(client.terminals.tabMark({ view: 'terminal', state: markState(B) })).toEqual({});
+    });
+
+    // Revert: fall back to a default terminal's mark in tabMarkOf for an unlisted terminal.
+    it('is empty for a tab that shows a terminal the payload does not list, or none', () => {
+        expect(client.terminals.tabMark({ view: 'terminal', state: markState(E) })).toEqual({});
+        expect(client.terminals.tabMark({ view: 'terminal', state: markState(null, []) })).toEqual(
+            {}
+        );
+    });
+
+    // Revert: give the mark to a tab of every view.
+    it('is empty for a tab of another view', () => {
+        expect(client.terminals.tabMark({ view: 'files', state: markState(A) })).toEqual({});
     });
 });

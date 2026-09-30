@@ -166,3 +166,15 @@ export function renderView(
     client.layout.apply({ root: { kind: 'pane', tabs: [instance], active: id } });
     return render(view, { context: clientContext(client), props: { instance } }).body;
 }
+
+/** The words inside the first element carrying this attribute at or after `from`. */
+export function textOf(body: string, attribute: string, from = 0): string {
+    const at = body.indexOf(attribute, from);
+    if (at < 0) return '';
+    const open = body.indexOf('>', at);
+    const close = body.indexOf('</', open);
+    return body
+        .slice(open + 1, close)
+        .replace(/<!--[^>]*-->/g, '')
+        .trim();
+}

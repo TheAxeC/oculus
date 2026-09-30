@@ -784,6 +784,21 @@ describe('the marks a tab carries', () => {
         }
     });
 
+    // Revert: drop the `style` of the mark around the glyph in ui/tabs/TabFace.svelte.
+    it('draws a tab glyph in the token its tab names, and in no colour for a tab that names none', () => {
+        const body = html(Tabs, {
+            tabs: [
+                { id: 'red', label: 'Red', glyph: 'refresh', tint: '--c-red' },
+                { id: 'plain', label: 'Plain', glyph: 'refresh' }
+            ],
+            active: 'red',
+            onselect: noop,
+            onclose: noop
+        });
+        expect(tabOf(body, 'Red')).toContain('style="color: var(--c-red)"');
+        expect(tabOf(body, 'Plain')).not.toContain('var(--c-');
+    });
+
     // Revert: drop `class:unfocused` from the strip in ui/tabs/Tabs.svelte.
     it('marks the strip unfocused only when asked', () => {
         const classes = (body: string): string =>

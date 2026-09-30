@@ -33,6 +33,7 @@
     import {
         questionFor,
         railPageViews,
+        instancesOfPages,
         resetAfterAsking,
         resetAsk,
         tabNameOf,
@@ -51,7 +52,7 @@
         layout: { currentPage, openRailPage, openView, pages: allPages, resetPage },
         notices: { post },
         registry: { viewFor },
-        ui: { unsaved }
+        ui: { unsaved, busyTerminals }
     } = useState();
 
     type Props = {
@@ -149,7 +150,8 @@
             ask,
             () => {
                 resetPage(made.id, entry);
-            }
+            },
+            () => busyTerminals(instancesOfPages([made]))
         );
     }
 

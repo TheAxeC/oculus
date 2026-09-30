@@ -50,7 +50,7 @@ describe('the edge a split takes', () => {
             splitInstance: (...args: unknown[]) => calls.push(args),
             openPalette: () => undefined,
             close: () => undefined,
-            composeIn: () => undefined
+            newTerminalIn: () => undefined
         };
         const items = stripMenu({ holdsTab: true, panes: 1 }, words);
         const left = items.find((item) => item.label === '@ui.strip_split_left');
@@ -65,14 +65,15 @@ describe('the edge a split takes', () => {
 });
 
 describe('what the strip menu runs', () => {
-    // Revert: call deps.composeIn() without the page in stripPicked.
-    it('opens the palette empty, closes through the pane close and composes on the page', () => {
+    // Revert: call deps.newTerminalIn(pane.page, []) in stripPicked, so the pane's path is lost.
+    it('opens the palette empty, closes through the pane close and starts a terminal in the pane it was picked on', () => {
         const calls: string[] = [];
         const deps = {
             splitInstance: () => calls.push('split'),
             openPalette: (prefill: string) => calls.push(`palette:${prefill}`),
             close: () => calls.push('close'),
-            composeIn: (page: string) => calls.push(`compose:${page}`)
+            newTerminalIn: (page: string, path: number[]) =>
+                calls.push(`new:${page}:${path.join('.')}`)
         };
         const items = stripMenu({ holdsTab: true, panes: 2 }, words);
         const id = (label: string): string => items.find((item) => item.label === label)?.id ?? '';
@@ -80,6 +81,6 @@ describe('what the strip menu runs', () => {
         stripPicked(id('@ui.strip_open_file'), pane, deps);
         stripPicked(id('@ui.strip_close'), pane, deps);
         stripPicked(id('@ui.strip_new_terminal'), pane, deps);
-        expect(calls).toEqual(['palette:', 'close', 'compose:p']);
+        expect(calls).toEqual(['palette:', 'close', 'new:p:1']);
     });
 });

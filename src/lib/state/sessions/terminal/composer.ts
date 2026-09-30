@@ -6,9 +6,10 @@
 // The picks live in the tab's instance state under `composer`, one map of list key to value id per
 // agent, so switching from Claude to Codex and back keeps both agents' choices, and a tab's next
 // composer opens on the accounts and picks its last start used. Its folder and kind are what the
-// last start used until New sets them back to a new composer's own (`freshComposer`) or a Split
-// sets them to the split row's (`splitState`). A value the catalog no longer offers is dropped
-// when it is read, so a pick never reaches a start the server would refuse.
+// last start used until New sets them back to a new composer's own (`freshComposer`) or a New with
+// a prompt in a tab sets them to the tab's folder and the kind chosen (`splitState`). A value the
+// catalog no longer offers is dropped when it is read, so a pick never reaches a start the server
+// would refuse.
 
 import type {
     AgentAccount,
@@ -31,8 +32,8 @@ export type ComposerRecord = {
     /** The value id per list key, per agent. */
     picks: Partial<Record<AgentId, Record<string, string>>>;
     /**
-     * The folder of the terminal this tab was split from, offered as a place of its own whether or
-     * not a place holds it; absent on a composer no Split opened.
+     * The tab's folder a New with a prompt opened the composer in, offered as a place of its own
+     * whether or not a place holds it; absent on a composer opened without one.
      */
     split?: string;
 };
@@ -81,16 +82,16 @@ export function composerOf(state: unknown): ComposerRecord {
 }
 
 /**
- * The record a Split writes into the tab it opens: the terminal's own folder, as the folder it was
- * split from and as the one it starts in, and the terminal's kind.
+ * The record a New with a prompt writes into the tab: the tab's folder, as the folder it was opened
+ * in and as the one it starts in, and the kind chosen.
  */
 export function splitRecord(folder: string, agent: ComposerAgent): ComposerRecord {
     return { ...COMPOSER_EMPTY, workspace: folder, agent, split: folder };
 }
 
 /**
- * The places a composer offers: its places as they are, with the folder it was split from listed
- * first when no place equals it. A composer no Split opened offers its places unchanged.
+ * The places a composer offers: its places as they are, with the tab's folder it was opened in
+ * listed first when no place equals it. A composer opened without one offers its places unchanged.
  */
 export function offeredPlaces(places: readonly string[], record: ComposerRecord): string[] {
     const split = record.split ?? '';
@@ -112,8 +113,8 @@ export function withComposer(state: unknown, record: ComposerRecord): Record<str
 }
 
 /**
- * The instance state of a tab once Split on one of its rows puts the composer beside that row: the
- * composer in the row's folder and kind, with the accounts and picks the tab's record already held
+ * The instance state of a tab once a New with a prompt shows its composer: the composer in the
+ * tab's folder and the kind chosen, with the accounts and picks the tab's record already held
  * and the rest of the tab's instance state kept.
  */
 export function splitState(
@@ -132,8 +133,8 @@ export function splitState(
 /**
  * The instance state of a tab once New shows its composer: the folder and kind back to a new
  * composer's own (the hub, Claude) and no folder split from, with the accounts and picks the tab's
- * record already held and the rest of the tab's instance state kept, so a Split's folder and kind
- * do not carry into a later New.
+ * record already held and the rest of the tab's instance state kept, so the folder and kind of a
+ * New with a prompt do not carry into a later New.
  */
 export function freshComposer(held?: unknown): Record<string, unknown> {
     const kept = composerOf(held);

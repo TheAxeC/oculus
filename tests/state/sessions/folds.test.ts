@@ -245,6 +245,9 @@ describe("the Terminal view's list of terminals", () => {
     const shell = {
         id: 'a1b2c3-shell',
         name: 'zsh',
+        title: '',
+        icon: '',
+        color: '',
         kind: 'shell' as const,
         command: 'vim',
         cwd: '/Users/x/work/oculus',
@@ -256,6 +259,9 @@ describe("the Terminal view's list of terminals", () => {
     const resumed = {
         id: 'd4e5f6-claude',
         name: 'claude',
+        title: '',
+        icon: '',
+        color: '',
         kind: 'claude' as const,
         command: 'node',
         cwd: '/Users/x/work',
@@ -267,6 +273,9 @@ describe("the Terminal view's list of terminals", () => {
     const started = {
         id: '0a0b0c-codex',
         name: '',
+        title: '',
+        icon: '',
+        color: '',
         kind: 'codex' as const,
         command: 'codex',
         cwd: '/Users/x/work',
@@ -278,6 +287,9 @@ describe("the Terminal view's list of terminals", () => {
     const idle = {
         id: '0d0e0f-shell',
         name: '0d0e0f-shell',
+        title: '',
+        icon: '',
+        color: '',
         kind: 'shell' as const,
         command: '',
         cwd: '/',
@@ -327,6 +339,8 @@ describe("the Terminal view's list of terminals", () => {
             {
                 terminal: 'a1b2c3-shell',
                 kind: 'shell',
+                icon: '',
+                color: '',
                 title: 'vim',
                 description: 'oculus'
             }

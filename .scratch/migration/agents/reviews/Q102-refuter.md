@@ -203,3 +203,223 @@ DECLINED TO JUDGE
 - The regenerated docs/diagrams: `npm run diagrams` was not run by me, as the reviewer brief says, so I did not check whether they match the source.
 - Whether "the tab" in item 6 means the strip tab or the bar title. I read it as the strip tab, as VS Code draws a terminal's icon and colour there. If it means the bar, S1 falls away.
 - The GET `?busy=` answering without a token: the brief allows it, and I did not assess its exposure further.
+
+## Repair round 1, refuted
+
+The run of a fresh reviewer (claude-opus-5-5) over repair round 1, saved 2026-09-30 as it reported.
+
+Q102 refute report over repair round 1. Worktree: /Users/axelfaes/workspace/research-hub/.agents/worktrees/Q102. Base: 64d1354a. I changed nothing in the worktree: `git status --short` gives 87 entries before and after, and `npm run diagrams` rewrote no diagram (the md5 of docs/diagrams/* was defc86ab... both before and after). All probes ran on a copy at scratchpad/Q102-refute-r1/copy (node_modules linked) or on a private tmux socket in that folder. The tmux server was killed and its socket removed.
+
+Not closed: two claims in the round section do not reproduce (item 9's grep, and the report's Clear proof via the parity file). Item 10 is left as the builder states. The before and after of item 11 leaves out three user-visible changes the round itself made.
+
+VERIFICATION LINES (from tools/oculus: `npm run diagrams`, then `sh ~/.claude/skills/land/templates/checks.sh .scratch/migration/orchestrator-state.md`, node v24.21.0, exit 0)
+
+```
+$ npm test
+ Test Files  345 passed | 19 skipped (364)
+      Tests  5237 passed | 557 skipped (5794)
+$ npm run test:checks
+ Test Files  27 passed | 2 skipped (29)
+      Tests  360 passed | 9 skipped (369)
+$ npm run check
+1790756559289 COMPLETED 2358 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+$ npm run build
+built in 6.33s
+built in 12.34s
+$ npm run format:check
+All matched files use Prettier code style!
+$ npm run lint
+$ ! LC_ALL=C grep -rna '[^ -~]' src tests
+checks: 7 commands passed
+```
+
+Other commands I ran:
+- The spec's perl ASCII gate over src, tests and config printed nothing.
+- `LC_ALL=C grep -n '[^ -~]'` over DESIGN.md, HELP.md, README.md, the report and vscode-parity.md found nothing (exit 1).
+- `sh utils/folder-check.sh` and `sh utils/size-check.sh` both exit 0.
+- `wc -l`: PaneView.svelte 540, terminals.svelte.ts 892, Terminal.svelte 532, TerminalList.svelte 539, terminal-list.ts 537, terminal-tabs.ts 431.
+- The Z40 grep prints nothing.
+- The round's 10 test files pass on the copy: `Test Files 10 passed (10)`, `Tests 224 passed (224)`.
+- The counts of the checks match the report exactly.
+
+THE ELEVEN ROUND ITEMS
+
+1. The strip tab's icon and colour: closed.
+   - PaneView.svelte:175 `...stripMark(registrationGlyph(found), tabMark(instance))`; terminal-marks.ts `tabMarkOf`; TabFace.svelte draws the glyph in `tab.tint`.
+   - Revert probes went red. Reading the first terminal in place of the shown one: `expected { glyph: 'refresh', token: '--c-red' } to deeply equal {}`. Dropping TabFace's style: `... to contain 'style="color: var(--c-red)"'`.
+   - Whether PaneView actually uses `tabMark` is covered by no test. It is a look item.
+2. The pane's active Terminal tab: closed. context.ts:203 `return active?.view === TERMINAL_VIEW ? active.id : null;`. With the old fallback restored on the paneTab line, the test goes red: `expected [ 'a1a1a1-shell', '000001-shell' ] to deeply equal [ 'a1a1a1-shell' ]`.
+3. The colour list in one place: closed. `TERMINAL_COLORS` is in data/model/model-sessions.ts:251, and `COLOR_TOKENS: Record<TerminalColor, string>` in terminal-marks.ts:10. With `white` deleted, `npm run check` fails: `ERROR "src/lib/state/sessions/terminal/terminal-marks.ts" 10:7 "Property 'white' is missing ..."`. The builder quotes 13:7; no decision rests on that. See T4 for what is left.
+4. The row's handles: closed.
+   - `rowWidths(shares, pane, handles)`; Terminal.svelte:183 `handles = (row.length - 1) * SASH_PX`.
+   - With `room = pane` the test goes red: `expected 900 to be close to 894`.
+   - By reading, the sum of the widths plus the handles is `.main`'s clientWidth (the composer case included), since `.main` has no padding. Whether the scrollbar is gone is a look item.
+5. Clear also resets the screen: closed.
+   - edit.ts runs `send-keys -R` and then `clear-history`. Without `send-keys -R` the route test goes red.
+   - tmux 3.7c probe, 60 lines of output: `before: 60`, `after -R then clear-history: 0`, `nonblank rows: 0`.
+   - Side effects are in B1.
+6. Composer starts tracked: closed for the window after the answer. `composeTerminal` records into `started`. Without it the test goes red: `expected [ 'a1a1a1-shell' ] to deeply equal [ 'a1a1a1-shell', 'f0f0f0-shell' ]`. The window while the start is in flight is still open; see B2.
+7. The empty hub root: closed. `portfolioHeard`, and `startInTab` says `sessions.terminal_no_folder`. Without the refusal the test goes red (`expected true to be false`). With the old `if (root === '') return;` it goes red too (`Test timed out in 5000ms`).
+8. The busy argument required: closed. With the argument left out in PagesReset.svelte, `npm run check` fails: `ERROR "src/lib/views/system/workbench/PagesReset.svelte" 47:14 "Expected 8 arguments, but got 7."`.
+9. The TerminalList comments: closed for TerminalList.svelte.
+   - The claim that `grep -rn "half\|halves" src/lib/views/sessions src/lib/state/sessions` "prints nothing" does not reproduce: it prints 11 lines.
+   - One of them is a doc comment the step makes false (terminals.svelte.ts:375). See T1.
+10. The audit names: partly closed.
+    - The five style cases now have plain names, but they were moved into a folder that does not mirror their source. See T2.
+    - The four find-key and link cases keep "audits that". The builder states this, and my rerun confirms the reason: renaming two of them back makes `tests/checks/tree/audits.test.ts` fail with `+ "tests/views/sessions/terminal.test.ts :: never opens a file, ..."` and `+ "... :: takes VS Code keys in the bar ..."`. They are judged below.
+11. The report's before and after: partly closed. The table covers B3's six rows of the first review. It leaves out three user-visible changes that round 1 made:
+    - The strip tab now drawn in the terminal's icon and colour.
+    - The new refusal "No folder to start the terminal in", where before the press waited silently.
+    - Clear now blanks the tmux screen, so a reload shows an empty grid, including no shell prompt.
+
+The two points the builder raised
+
+Item 10, the four cases in tests/views/sessions/terminal.test.ts (534, 547, 559, 600):
+- None of them renders. Each calls a pure function: `findKey` (three cases) or `linkHandler` (one), both in src/lib/views/sessions/terminal/terminal-list.ts.
+- At the base they passed the audits check with plain names only because the base file's `textOf` helper bound locals named `open` and `close` (base lines 130-131), which the scan counts as file-level names.
+- By DESIGN.md:72 ("tests/ mirrors src/lib"), a test of terminal-list.ts belongs under tests/views/sessions/. There allow-audits.txt says "nothing is added", so the audits check requires the audit name. They would belong under tests/state/sessions/terminal/ only if `findKey` and `linkHandler` moved into src/lib/state/sessions/terminal/, as `markGlyph` and `colorToken` moved into terminal-marks.ts this round. Moving the tests without the functions breaks the mirror, the same defect as T2.
+- Each of the four tests behaviour whose failure costs something:
+  - The bar keys: Enter and Escape in the find bar go to the wrong action.
+  - Cmd+F versus Ctrl+F: find would open on the wrong key, or the key would reach the shell.
+  - "leaves Enter to the shell": a wrong mapping swallows Enter while find is open.
+  - "never opens a file, a script or an address that does not parse": a `javascript:` or `file:` link would open. This is the security case.
+- Under the spec's own definition (an assertion over source text, a label alone or a constant) they are coverage, not audits; the tree check names them audits only because they do not render.
+
+The first run per case not recorded: nothing shows that each of the 40 cases failed, or did not apply, on the unchanged tree. So for any case that passed first (29 of the 99 new or changed tests did, by the builder's totals), it is unproven whether the test ever exercised the behaviour the step adds. What stands in for it is a named revert per test: the builder's "Red once" lists for both rounds, the first reviewer's R1-R12, and my probes above. Those show that the tests go red against a revert of the fix. They do not show the state of the tree before the step. The first run cannot be recovered from the worktree now. Getting it would need the tests run on a checkout of 64d1354a.
+
+VERDICTS, the whole diff since 64d1354a
+
+What to build:
+1. New Terminal: holds. Store tests in terminal-start.test.ts for the bar, the hub root, the three presses, the two quick presses, a refusal, the pane strip and the active tab (probe above), and the no-folder refusal. That each control calls the store is a look item.
+2. The kinds dropdown: holds. Tests: "starts Claude at once", "shows the composer for With a Prompt".
+3. Split starts at once: holds. The five Split tests; the answered start is kept in `started`.
+4. A row of any number: holds. terminal-row.test.ts and the handles probe. The sideways scroll and the left grid kept are look items.
+5. Rename: holds. The route tests at terminal-edit.test.ts:154-217, and the terminal-style rename tests.
+6. Change Icon and Change Color: holds (S1 of the first review is closed by item 1). The picker and the drawing are look items.
+7. Clear: holds (probe above). B1 is a side effect.
+8. Copy as HTML: holds. grid-actions.test.ts with fakes; the real clipboard is a look item.
+9. Closing ends what the tab owns: holds for the tab, the pane, the page, a reset, a move, a reload and unregistering (terminal-close.test.ts). One gap is left for composer starts that are in flight (B2).
+10. Asking first: holds. pages.test.ts:222-402 and terminal-close.test.ts:283-327.
+11. Docs and words: holds for DESIGN.md, HELP.md, app.yml and the catalogs. It is violated by one doc comment the step makes false (T1).
+
+Cases:
+- 1, 2, 5, 16 and 17 are met at the store call. The press on the control is a look item.
+- 3 and 4 are met.
+- 6 to 9 are met.
+- 10 is met; the scroll is a look item.
+- 11 to 13 are met.
+- 14 is met at the grid helper and the route; the probe shows tmux's screen and history empty afterwards.
+- 15 is met with fakes.
+- 18 to 21 are met.
+- 22 is met, by a test named as an audit.
+- 23 is met (the `;` form was settled by the first probe).
+- 24 to 28 are met.
+- 29 is met as worded ("New or Split"). The composer's in-flight start is not covered (B2).
+- 30 to 40 are met.
+- Where I did not probe myself, the verdicts rest on the tests found passing and on the first reviewer's R1-R12. None of the code those reverts cover was changed by round 1, apart from the hub-root wait (rerun above).
+
+SPEC
+
+S1. The builder edited a file under .scratch.
+- Where: .scratch/migration/agents/reviews/vscode-parity.md:279.
+- The hunk:
+  ```
+  -| Clear | the terminal | new: clears the view and tmux's history, ...
+  +| Clear | the terminal | new: clears the view, tmux's screen (`send-keys -R`) and tmux's history, ...
+  ```
+- What is wrong: agents/spec.md says "You never edit anything under `tools/oculus/.scratch/`". The brief's paths list names only Q102-report.md there. The report cites the edit as proof ("the Clear row of `vscode-parity.md` say so") without flagging it.
+- Failure scenario: a landing that cherry-picks the whole range carries an orchestrator-owned ledger file changed by a builder. The sentence itself is now true, so it can be kept at landing, but that is the orchestrator's decision.
+
+S2. Changes that no round item asks for.
+- PaneView.svelte:171-172: the `tabs` doc comment is shortened, and "or two projects ... rather than as "Document" twice" is dropped.
+- Low. The text stays true.
+
+PROOF
+
+P1. The item 9 closure claim does not reproduce.
+- The report says: "`grep -rn "half\|halves" src/lib/views/sessions src/lib/state/sessions` prints nothing".
+- My rerun prints 11 lines, including terminals.svelte.ts:375 and TerminalGrid.svelte:452 `<div class="half">`.
+- What is wrong: a closure stated from a command that was not run as quoted.
+
+P2. Nothing else. Every revert I applied went red as the report says: items 1 (store and TabFace), 2, 4, 5, 6, 7a, 7b; items 3 and 8 by type error.
+
+STANDARDS
+
+T1. A doc comment the step makes false.
+- Where: src/lib/state/sessions/terminals.svelte.ts:374-375.
+- The comment: `* Show a terminal. The tab that owns it is activated, ... and shows it, alone unless it is one half of the tab's split.`
+- What is wrong: `showTerminal` now calls `showingRow`, and a tab's row holds any number of terminals. "one half of the tab's split" is false. It is the same defect as the first review's T1, in the store rather than TerminalList.
+- Failure scenario: a reader of the store believes a tab can show at most two terminals.
+
+T2. The moved tests do not mirror their source.
+- Where: tests/state/sessions/terminal/grid-actions.test.ts:1 `// Layer 4, state test.`, imports `src/lib/views/sessions/terminal/grid/grid-actions.ts` and `src/lib/views/sessions/terminal/terminal-list.ts`.
+- What is wrong: DESIGN.md:72 says tests/ mirrors src/lib. These are tests of view-layer modules placed under tests/state/, and the head comment calls them a state test. The move was made to escape `tests/checks/tree/audits.test.ts`, which applies only under tests/views.
+- Failure scenario: someone looking for grid-actions.ts's tests under tests/views finds none. The next builder copies the move to get round the audit rule.
+- The fix that keeps the mirror is either the audit name under tests/views, or moving `clearGrid` and `copyAsHtml` into state. The same choice applies to the four item 10 cases.
+
+T3. A head comment made ungrammatical.
+- Where: tests/views/sessions/terminal-style.test.ts:3-4.
+- The comment: `// ... The` / `// terminal's Clear and Copy as HTML, which are tests/state/sessions/terminal/grid-actions.test.ts.`
+- What is wrong: a sentence fragment. Low.
+
+T4. The eight colour names are spelled a second time, untyped.
+- Where: src/lib/views/sessions/terminal/terminal-list.ts:272-290, `colorLabel`, a `switch` over literal `'black'` ... `'white'` with `default: return t('sessions.style_default')`.
+- What is wrong: `TERMINAL_COLORS` is now the one list, and `COLOR_TOKENS` is held to it by type. `colorLabel` is not.
+- Failure scenario: a ninth name added to `TERMINAL_COLORS` gets a token check but is labelled "Default" in the Change Color menu, with no check turning red.
+- Low. The switch exists because catalog keys are written as literals.
+
+No file is over 1000 lines, no folder is over ten items, and no non-ASCII was found. The layer boundaries pass (test:checks).
+
+BEHAVIOUR
+
+B1. `send-keys -R` resets the pane's terminal state, not only its screen.
+- Where: src/lib/server/machine/pty/edit.ts:119-121.
+- The code:
+  ```
+  await exec(['send-keys', '-R', '-t', sessionName(listed)], options);
+  await exec(['clear-history', '-t', sessionName(listed)], options);
+  ```
+- Evidence, from a tmux 3.7c probe on a pane whose program turned on the alternate screen and mouse tracking:
+  ```
+  before: alt=1 mouse=1 std=1
+  after:  alt=1 mouse=0 std=0
+  tui screen nonblank rows after: 0
+  ```
+  On a plain shell the prompt row is erased too (`nonblank rows: 0`).
+- What is wrong: Clear on a Claude or Codex terminal blanks the full-screen program's screen in tmux, and turns off tmux's record of its mouse mode, while the program still believes both are as it left them.
+- Failure scenarios:
+  - Clear in a Claude terminal, then reload: the grid is blank until Claude redraws.
+  - Clear in a shell, then reload: no prompt shows until Enter.
+- Not verified: whether the reset mode reaches the browser grid, since xterm reads the pane's bytes over the control client. That needs the look on TEST (Clear in a Claude terminal, then reload, then click in it).
+
+B2. A composer start answered after its tab closed is not ended.
+- Where: src/lib/views/sessions/terminal/Composer.svelte:192-200 (`await composeTerminal(shape)` then `onstarted(...)`), Terminal.svelte:280 `started` calls `restate(withStarted(tab, ...))`. The store's `composeTerminal` (terminals.svelte.ts:604-610) records into `started` but checks no owner.
+- What is wrong: item 9 says "A start answered after its tab closed is ended". `startFor` does this; `composeTerminal` does not.
+- Failure scenario: press Start in the composer, then close the tab before the compose answer arrives. The terminal starts, no tab lists it, and it runs unowned until someone kills it from the Sessions list.
+- Found by reading, not reproduced. The window is the length of one compose post. Case 29 names only New and Split.
+
+DECLINED TO JUDGE
+
+- Every look item: the strip tab's colour on screen, the scrollbar gone for a row that fits, the no-folder sentence on the bar, and Clear on a reload. They need the page on TEST.
+- Whether `send-keys -R` affects the browser grid through the control client (B1). It needs the look.
+- The first run per case on the base tree, which I did not run.
+
+USAGE
+
+About 50 tool uses and about 215,000 tokens (from the session's token counter). Time was not measured.
+
+## Closed, the run over repair round 1
+
+- S1 (the builder edited `agents/reviews/vscode-parity.md:279`): fixed at landing. The landing script leaves the ledger out of the worktree's add, so the builder's edit does not reach main; the Clear row on main is written by the orchestrator to say what Clear does as landed.
+- S2 (the shortened `tabs` comment in `PaneView.svelte`): closed, no change; the comment that is left is true.
+- P1 (the item 9 grep claim does not reproduce): closed by T1's fix, which corrects the one line of that grep the step makes false; the claim itself is named in the booking as not reproduced.
+- T1 (the false doc comment at `terminals.svelte.ts:374-375`): fixed at landing, the comment says the terminal is shown in its tab's row.
+- T2 (`tests/state/sessions/terminal/grid-actions.test.ts` tests view modules): fixed at landing, the file goes to `tests/views/sessions/` with each case named as an audit, as `tests/checks/tree/allow-audits.txt` requires of a case under `tests/views` that draws nothing. The four find-key and link cases of item 10 keep their audit names in `tests/views/sessions/terminal.test.ts` for the same reason. `clearGrid`, `copyAsHtml`, `findKey` and `linkHandler` stay in the view layer: they take a grid, a clipboard, a key event and a link, which are the view's.
+- T3 (the sentence fragment at `tests/views/sessions/terminal-style.test.ts:3-4`): fixed at landing.
+- T4 (`colorLabel` not held to `TERMINAL_COLORS`): fixed at landing, the labels are a `Record<TerminalColor, ...>`, so a ninth colour without a label fails the type check.
+- B1 (`send-keys -R` resets the pane's state): fixed at landing for a full-screen program, `clearTerminal` (`src/lib/server/machine/pty/edit.ts`) asks tmux `#{alternate_on}` and skips the reset while the pane is on the alternate screen, with a test in `tests/routes/sessions/terminal-edit.test.ts`. In a shell the reset still erases the prompt row until Enter; that is seen only after Clear and a reload and is part of the look owed (the state file's Booked section).
+- B2 (a composer start answered after its tab closed is not ended): fixed at landing in the store, with a test.
+- Item 11 (the before and after lacks three rows): fixed at landing, the three rows are in the booking and the landing report.
+- The first run per case not recorded: closed, no change. It cannot be recovered without rebuilding the step; each test's named revert stands in for it, as the run says, and the booking says so.
+- The look items (the strip tab's colour, the scrollbar of a row that fits, the no-folder sentence, Clear on a reload): not looked at, the Chrome tab was in the background at the landing; booked as Q102's look owed in the state file's Booked section.
+

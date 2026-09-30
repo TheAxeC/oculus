@@ -4,6 +4,8 @@
 
 import { describe, expect, it } from 'vitest';
 import {
+    closeAsk,
+    closeOnce,
     closeQuestion,
     firstUnsaved,
     pageAt,
@@ -14,6 +16,7 @@ import {
     unsavedCount,
     pageUnsaved,
     questionFor,
+    resetAfterAsking,
     resetAsk,
     resetPlan,
     tabNameOf,
@@ -213,5 +216,203 @@ describe('what resetting the pages does', () => {
         const words = resetAsk([focus], [focus], [], focus);
         expect(words.message).toBe(t('workbench.reset_page_confirm', 'Focus'));
         expect(words.detail).toBe(t('workbench.reset_rebuilt', 'Focus'));
+    });
+});
+
+describe('what a close asks once a busy terminal is known', () => {
+    const dirty = (id: string): boolean => id === 'text';
+    const nameOf = (id: string): string => (id === 'text' ? 'notes.md' : id);
+    const build = { id: 'a1a1a1-shell', name: 'build', command: 'npm' };
+    const MANY = 'Close this pane and the 2 tabs in it?';
+
+    // Revert: return the many-tabs question for a single saved tab holding no busy terminal.
+    it('acts at once over one saved tab holding an idle shell', () => {
+        expect(closeAsk({ ids: ['t'], unsaved: dirty, nameOf, many: MANY, busy: [] })).toBe(null);
+        expect(closeAsk({ ids: [], unsaved: dirty, nameOf, many: MANY, busy: [] })).toBe(null);
+    });
+
+    // Revert: leave the terminal and its program out of the busy question.
+    it('asks the busy question over one tab, naming the terminal and its program', () => {
+        const ask = closeAsk({ ids: ['t'], unsaved: dirty, nameOf, many: MANY, busy: [build] });
+        expect(ask?.message).toBe(t('ui.terminal_close_busy'));
+        expect(ask?.detail).toContain('build');
+        expect(ask?.detail).toContain('npm');
+    });
+
+    // Revert: word a terminal whose read failed as running nothing.
+    it('names a terminal whose program could not be read without inventing one', () => {
+        const ask = closeAsk({
+            ids: ['t'],
+            unsaved: dirty,
+            nameOf,
+            many: MANY,
+            busy: [{ ...build, command: '' }]
+        });
+        expect(ask?.detail).toContain('build');
+        expect(ask?.detail).toContain(t('ui.terminal_busy_unread', 'build'));
+    });
+
+    // Revert: ask the unsaved question alone once the tab holds unsaved text and nothing is busy.
+    it('keeps the unsaved question for one tab holding unsaved text', () => {
+        const ask = closeAsk({ ids: ['text'], unsaved: dirty, nameOf, many: MANY, busy: [] });
+        expect(ask).toEqual({ message: t('ui.tab_close_dirty'), detail: '' });
+    });
+
+    // Revert: ask a second question for the busy terminal, or drop the unsaved tab from the detail.
+    it('asks one question over a pane with unsaved text and a busy terminal, the text first', () => {
+        const ask = closeAsk({
+            ids: ['text', 't'],
+            unsaved: dirty,
+            nameOf,
+            many: MANY,
+            busy: [build]
+        });
+        expect(ask?.message).toBe(MANY);
+        const detail = ask?.detail ?? '';
+        expect(detail).toContain('notes.md');
+        expect(detail).toContain('build');
+        expect(detail.indexOf('notes.md')).toBeLessThan(detail.indexOf('build'));
+    });
+
+    // Revert: leave the many question out of a pane of several tabs with nothing unsaved or busy.
+    it("keeps the caller's own question over more than one tab", () => {
+        expect(closeAsk({ ids: ['a', 'b'], unsaved: dirty, nameOf, many: MANY, busy: [] })).toEqual(
+            {
+                message: MANY,
+                detail: ''
+            }
+        );
+    });
+});
+
+describe('a second press of a close while its read is in flight', () => {
+    // Revert: run the read again for a key whose read has not answered in closeOnce.
+    it('does nothing: one read, one decision', async () => {
+        const once = closeOnce();
+        let reads = 0;
+        let decided = 0;
+        let answer: (value: []) => void = () => undefined;
+        const read = (): Promise<[]> => {
+            reads += 1;
+            return new Promise((resolve) => (answer = resolve));
+        };
+        const first = once('tab-1', read, () => (decided += 1));
+        const second = once('tab-1', read, () => (decided += 1));
+        answer([]);
+        await Promise.all([first, second]);
+        expect(reads).toBe(1);
+        expect(decided).toBe(1);
+    });
+
+    // Revert: keep a key held after its read answered, or hold every key as one.
+    it('lets the same close be pressed again once it answered, and another key meanwhile', async () => {
+        const once = closeOnce();
+        let reads = 0;
+        const read = (): Promise<[]> => {
+            reads += 1;
+            return Promise.resolve([]);
+        };
+        await once('tab-1', read, () => undefined);
+        await once('tab-1', read, () => undefined);
+        const held = once('tab-2', read, () => undefined);
+        const other = once('tab-3', read, () => undefined);
+        await Promise.all([held, other]);
+        expect(reads).toBe(4);
+    });
+
+    // Revert: leave a key held when its read rejects.
+    it('lets the close be pressed again after a read that rejected', async () => {
+        const once = closeOnce();
+        await once(
+            'tab-1',
+            () => Promise.reject(new Error('down')),
+            () => undefined
+        ).catch(() => undefined);
+        let decided = 0;
+        await once(
+            'tab-1',
+            () => Promise.resolve([]),
+            () => (decided += 1)
+        );
+        expect(decided).toBe(1);
+    });
+});
+
+describe('a reset asking about a busy terminal', () => {
+    const focus: Page = { ...page('f', 'Focus', pane(['a', 'b'])), rail: 'focus' };
+    const words = { message: 'Reset?', detail: '' };
+    const build = { id: 'a1a1a1-shell', name: 'build', command: 'npm' };
+    const names = (): string => 'tab';
+
+    /** An asker that answers as the case says and keeps each question it was put. */
+    function asker(answers: boolean[]) {
+        const asked: { message: string; detail: string }[] = [];
+        return {
+            asked,
+            ask: (message: string, detail: string): Promise<boolean> => {
+                asked.push({ message, detail });
+                return Promise.resolve(answers[asked.length - 1] ?? true);
+            }
+        };
+    }
+
+    // Revert: ask the busy question once per tab of the touched pages instead of once.
+    it('asks the busy question once, naming each busy terminal, after its own and before acting', async () => {
+        const { asked, ask } = asker([true, true]);
+        let acted = 0;
+        const busy = [build, { id: 'b2b2b2-shell', name: 'watch', command: 'tsc' }];
+        const ran = await resetAfterAsking(
+            [focus],
+            words,
+            [focus],
+            () => false,
+            names,
+            ask,
+            () => (acted += 1),
+            () => Promise.resolve(busy)
+        );
+        expect(ran).toBe(true);
+        expect(acted).toBe(1);
+        expect(asked).toHaveLength(2);
+        expect(asked[0].message).toBe('Reset?');
+        expect(asked[1].message).toBe(t('ui.terminal_close_busy'));
+        expect(asked[1].detail).toContain('build');
+        expect(asked[1].detail).toContain('watch');
+    });
+
+    // Revert: act on the reset when the busy question is answered no.
+    it('resets nothing when the busy question is answered no', async () => {
+        const { ask } = asker([true, false]);
+        let acted = 0;
+        const ran = await resetAfterAsking(
+            [focus],
+            words,
+            [focus],
+            () => false,
+            names,
+            ask,
+            () => (acted += 1),
+            () => Promise.resolve([build])
+        );
+        expect(ran).toBe(false);
+        expect(acted).toBe(0);
+    });
+
+    // Revert: ask the busy question when no terminal is busy.
+    it('asks no busy question when none is busy', async () => {
+        const { asked, ask } = asker([true]);
+        let acted = 0;
+        await resetAfterAsking(
+            [focus],
+            words,
+            [focus],
+            () => false,
+            names,
+            ask,
+            () => (acted += 1),
+            () => Promise.resolve([])
+        );
+        expect(asked).toHaveLength(1);
+        expect(acted).toBe(1);
     });
 });

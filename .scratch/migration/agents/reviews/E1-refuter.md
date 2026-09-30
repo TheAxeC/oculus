@@ -117,3 +117,205 @@ Whether coauthors' commit subjects on the `git` channel count as "another person
 
 ## Usage
 About 45 tool calls in this session. Tokens and time were not measured from inside the session.
+
+## Repair round 1, refuted
+
+The run of a fresh reviewer (claude-opus-5-5) over repair round 1, saved 2026-09-30 as it reported.
+
+### Verification lines
+
+These were run from the E1 worktree's `tools/oculus`. `npm run diagrams` ran first and exited 0. `checks.sh` then exited 0 and printed:
+```
+$ npm test
+ Test Files  339 passed | 19 skipped (358)
+      Tests  5149 passed | 557 skipped (5706)
+$ npm run test:checks
+ Test Files  27 passed | 2 skipped (29)
+      Tests  365 passed | 9 skipped (374)
+$ npm run check
+$ npm run build
+$ npm run format:check
+$ npm run lint
+$ ! LC_ALL=C grep -rna '[^ -~]' src tests
+checks: 7 commands passed
+```
+Other checks:
+- `LC_ALL=C grep -n '[^ -~]' DESIGN.md` printed nothing (exit 1).
+- `git status --short` shows `M DESIGN.md` and `?? .scratch/migration/agents/reviews/E1-report.md`, and nothing else after the diagrams run.
+- `git diff 9023d17d --stat` shows DESIGN.md only, with 79 insertions.
+- The section is at 234-312, `## Relationship to the cockpit` is at 313, and the file has 402 lines.
+
+### The 20 items
+
+- **S1: closed.** DESIGN.md:303 closes `deck` and names the bookmarks reach.
+  - `writes/deck.ts:1-4` reads "the one write that touches an engine file".
+  - `writes.ts:80-87`, the comment "resolve the key `bookmarks` to that file". `writes.ts:212` sets `bookmarks: local.bookmarks ?? defaultBookmarksPath()`, and `into.bookmarks` is used at 288, 331, 345 and 359.
+  - See Spec F3 for what the recommendation does with this.
+- **S2: closed.** :303 says the three kinds cannot be undone, and each asks every time.
+  - `undo.ts:181` reads `if (change.undo === 'none') return { error: 'nothing' }`.
+  - `manifest.ts:314` is in `createIdea`, `feeds.ts:253` in `addLinkedinIdea` and `feeds.ts:306` in `markLinkedinPosted`.
+  - `grep -rn "undo: '" src/lib/server/edit` counts exactly 3 `'none'`.
+- **B1: closed.** :263 names the export `appRegistration`.
+  - `views.ts:55` has `if (typeof module.registration !== 'function') continue;`.
+  - `views.ts:31` has `registerModules` skipping a module with no `registration`, so neither path touches the app factory.
+- **S4: closed.** :270 gives the rail button and the arrangement `apps` with `view: []`.
+  - Confirmed against `config/layout.yml:24` and against :44, the `view: []` empty-pane rule.
+  - Spec F6 has a low note.
+- **S5: closed.** :299 matches the tree.
+  - `model-sessions.ts:534` has `FilesPayload = { root: string; bookmarks?: boolean }`.
+  - `watch/git.ts:207` has `publish('files', { root })`, and `watch/bookmarks.ts:66` has `{ root: '', bookmarks: true }`.
+- **S6: closed.** :276 and :278 take the URL origin from Host. Both halves hold:
+  - `auth.ts:29-38` refuses a hostname other than 127.0.0.1 or localhost.
+  - adapter-node's `handler.js:17,101,208-221` uses `origin || get_origin(req.headers)`, which is Host while `ORIGIN` is unset.
+  - `grep -rn ORIGIN src utils config tests package.json vite.config.ts` finds no setting.
+  - Standards F9 has a low note.
+- **S7: closed.** :299 opens its closed list with "Closed: `apps`, which carries every approved app's key". Standards F10 has a low note.
+- **S8: closed.** :305 gives the entry `name`, and approval and `revoke` both use it.
+- **P1: closed for the claim it named.** "No network beyond the policy" is gone from :309. What replaced it is a new finding (Spec F4).
+- **P2: not closed.** :297 says "an error rebuilt from the name `Error` and the one-word message alone, and no stack or code of the page reaches the app".
+  - A `new Error(word)` built in the page carries the page's own V8 stack.
+  - penpal sends it: `createErrorReplyMessage` (penpal.mjs:88-97) calls `serializeError(error)` whenever the value is an `instanceof Error`, and `serializeError` (15-20) copies `stack`.
+  - The mechanism stated does not deliver the guarantee stated. See Proof F7.
+- **P3: closed.** The seven added entries are at report:156-162, and each line was checked:
+  - `registry.ts:9-14` head comment and `registry.ts:182-186`.
+  - `layout.yml:24`.
+  - HELP.md:224, :230 and :234.
+  - Base DESIGN.md:140, and DESIGN.md:402, the native window.
+  - Proof F8 has a numbering note.
+- **P4: closed.** :261 cites lines that all check out:
+  - `+page.server.ts:26-27`, "invalidateAll() runs this load again".
+  - `writes.svelte.ts:387-388`.
+  - `socket.svelte.ts:155-160`, "after the first open every push is taken".
+  - Proof F11 has a low note.
+- **P5: closed.** :309 cites `Workbench.svelte:250-251`, which is `<svelte:window onkeydown={keyboard.keys}`. The handler's `typingIn(event.target)` treats a `window` target as not typing (workbench-keys.svelte.ts:418-424).
+- **St1: not closed.** The removed flourish is back in other words at the end of :309: "so the reader's approval of the app's files is what the rest rests on".
+- **St2: closed.** :236 now reads "awaiting a ruling".
+- **St3: closed.** :247 now reads "It lists the venues and files a note under an entry."
+- **St4: closed.** Choices 26, 27, 28 and 29 are at report:136-139.
+- **Choices 1, 2 and 7: closed as asked.**
+  - 1r offers the lazy option (d).
+  - 2r names (d) as the lazy option.
+  - 7r's cons now include the Document view.
+  - 7r leaves out a better option (Spec F2).
+- **B2: closed.** :309 accepts `key` only while `document.activeElement` is that app's iframe, at most 20 a second. Choice 20r matches. Standards F12 has a low note on the rate.
+- **B3: closed.** :259 watches `approvals.json` by its path and each linked app folder at its real path, and never `~/.oculus` as a whole. Behaviour F13 has a low note.
+- **B4: closed as disclosure.** :286 names the Document view's frame (`Document.svelte:134-141`, with `sandbox="allow-same-origin allow-scripts"` at 138), and 7r gives option (c). The regression is still recommended; see Spec F2.
+- **B5: closed.** :276 and :259 record and compare size, mtime and ctime, and hash the app again when any of them differs.
+
+### Verdicts over the whole diff since 9023d17d
+
+### What to build
+- 1, where an app lives: met (:240).
+- 1, how oculus finds it while running: met (:259-272), with low notes F6 and F11.
+- 1, served and isolated: partial.
+  - The request rules refuse the shared files that :274 says are public (F1).
+  - The approval panel opens an unapproved app's HTML same-origin (F5).
+- 1, what it may read: met (:288-299). Low note F14.
+- 1, how it writes: partial. The recommendation keeps the bookmarks file writable by apps and states it as a limit (F3).
+- 1, approval: partial. The approval panel's file-browser control defeats "an app runs only after the reader approved it" (F5).
+- 1, what an app does not get: partial.
+  - It holds an open question (F4).
+  - The page's stack reaches the app (F7).
+  - The Document view hands an app same-origin (F5).
+- 1, words: met (:311).
+- 1, no plan id, date or session: met. The history test is inside `test:checks`, which passed.
+- 2, Decisions taken and Still undecided unchanged: met (79 insertions, 0 deletions).
+- 3, the report: partial.
+  - 7r and 9r leave out the better option (F2, F3).
+  - The false-sentence list mixes numberings (F8).
+  - The key rate is outside choice 18 and the `apps:` keys (F12).
+
+### Cases
+- 1 to 11 and 13 to 20: met as text.
+- 11: the browser behaviour is not verifiable here.
+- 12: partial. The `/apps/` address is refused as the case asks. The same files are served same-origin by the file browser's Document view before approval (F5).
+
+### Spec
+- **F1, the shared files are refused by the section's own request rules.**
+  - :274 says: "`/apps/-/penpal.js` ... and `/apps/-/oculus.js` ... public and served with the same headers."
+  - :276 says: "A request is answered only when every one of these holds ... `<name>` matches the pattern and names an app of the held state that is approved; `<key>` equals the app's current key; ... the path is a file of the app's recorded list".
+  - `-` cannot match the name pattern, which :257 relies on. The shared paths have no key and are in no app's recorded list.
+  - The CSP at :278 also defines `<base>` from `<name>/<key>`, which a shared file does not have.
+  - Failure scenario: a builder follows :276 literally. `/apps/-/oculus.js` answers 404, `connect` never completes, and every app draws `apps.load_failed`. Alternatively, the builder invents an unwritten exception to the only guard list the route has.
+- **F2, choice 7r leaves out the option that avoids a regression.**
+  - 7r and :286 say: "a link inside a manual that leaves for an outside site in the same frame stops loading, where it loads today", with "Recommend (a). Lazy: (b)."
+  - The Document view already reaches into its same-origin frame: `Document.svelte:108` has `frame?.contentDocument?.addEventListener('contextmenu', inFrame)`, and :118 has `window.open(src, '_blank', 'noopener')`.
+  - So a missing option (d) is feasible: send `frame-src 'self'` and have the Document view open an outbound link with `window.open`.
+  - (a) states a regression of an existing view as a cost instead of designing it away. That is the spec's "a limit stated instead of a defect fixed".
+  - Failure scenario: Axel rules (a), and the cathedra and game-engine manuals lose their outside links for every reader, including readers with no app.
+- **F3, choice 9r keeps apps able to write the reader's bookmarks, and the bookmarks feed the Document view.**
+  - :303 says: "an app allowed one of them can edit the reader's bookmarks by naming that key; the change record names the file."
+  - 9r offers only "the four entry kinds closed" against "as chosen".
+  - A third option costs one rule: refuse the collection key `bookmarks` for a write that carries `x-oculus-app`.
+  - This matters because `openBookmark` (`views/sources/files/opening.ts:59-66`) opens an `.html` bookmark in the Document view, whose frame is `allow-same-origin allow-scripts`.
+  - Failure scenario: an app allowed `entry` adds a bookmark naming an `.html` file under a served root, for example its own folder when `apps_dir` sits in the hub (choice 1r (b)). The reader opens the bookmark from the rail, and that file runs with oculus's origin, reads the token through `window.parent` and can call every `/api/` route.
+- **F4, an open question inside DESIGN.md.**
+  - :309 says: "Whether the policy also governs WebRTC and DNS prefetch has not been checked, so the reader's approval of the app's files is what the rest rests on."
+  - The brief says "no open question inside DESIGN.md (the open choices go into the report)".
+  - This is a named risk left as a statement of not knowing. The section neither rules it (for example, that approval is the only boundary against an app sending what it read off the machine, stated as the rule) nor closes it.
+  - Failure scenario: once the section is ruled and built, the agreement rule makes a sentence of not knowing part of the design. The build step has no rule to build or test against.
+- **F6, low: the group glyph.** `config/layout.yml:24` says: "`glyph` is the group heading's glyph name, one no view of the group carries".
+  - :270 gives the `apps` group the glyph `app`.
+  - :255 lets a manifest's `glyph` be any name in `glyphs.yml`, so `glyph: app` is accepted.
+  - :255 also leaves the value of `apps.glyph` unstated.
+  - Failure scenario: an app's entry draws the heading's glyph, which the layout rule forbids.
+
+### Proof
+- **F7, P2's fix does not remove the stack.**
+  - :297 says the error is "rebuilt from the name `Error` and the one-word message alone, and no stack or code of the page reaches the app".
+  - penpal.mjs:94-96 sends `serializeError(error)` for any `Error`, and :18 copies `stack: error.stack`. A freshly constructed `Error` has the page's stack.
+  - Only a rejected non-Error value (sent as `{ value: error }`, :96), or an error whose `stack` was cleared, carries no stack.
+  - Failure scenario: the builder writes `throw new Error('closed')`, and the app receives the page's module URLs and function names in `err.stack`.
+- **F8, low: mixed line numbers in the false-sentence list.**
+  - report:145 says "Line numbers are those of the file before this section".
+  - report:162 cites `DESIGN.md:402`, which is the new file's number; the base line is 323.
+  - Failure scenario: the build step's brief looks up base line 402, which does not exist in a 323-line file.
+- **F11, low: the reloaded page data has no named consumer.**
+  - :261 says the `invalidateAll` reload "replaces the rows and keys with the page data".
+  - The first-frame call is in the untracked block, which does not rerun (`+page.svelte:64-69`). The token has its own `$effect(() => setToken(data.token))` at :73-75, but the section names no effect that reads `data.apps`.
+  - Failure scenario: the build step follows :261, and after a 403 reload the rows from the page data are never applied, until a push arrives.
+
+### Standards
+- **St1 recurs at :309:** "so the reader's approval of the app's files is what the rest rests on". This is a summarising close in the shape the first refutation flagged.
+- **F9, low: a clause attached to the wrong subject at :276.** The text reads "... and a navigation sends none, which also stops a rebound host name".
+  - The rebound host name is stopped by checking the Host-derived origin. It is not stopped by a navigation sending no `Origin`.
+  - Failure scenario: a reader credits the wrong mechanism, and a later edit keeps the Origin-header reading.
+- **F10, low: two lists of closed names that differ.**
+  - :257 lists `undo`, `rail`, `pty:<id>`, `inbox`, `calendar`, `sessions` and `usage` as refused at read.
+  - The closed sets at :299 and :303 also hold `apps`, `audit-mute`, `session` and `deck`.
+- **F12, low: a limit without a config key.** "at most 20 calls a second" (:309) is a literal. The other limits are keys of `apps:` in `behavior.yml`: :311 lists `connect_timeout_s`, `state_max_kb`, `writes_per_min`, `max_files` and `max_mb`.
+  - spec.md says a value with a config key is read from config.
+  - Choice 18 (report:114) does not list the rate.
+- **Low: negation-contrast.**
+  - :303 has "an engine file and not the hub's data".
+  - :278 has "checked as above and never the `Origin` header".
+- Otherwise the new text is ASCII and one line per paragraph, with no history words (`history.test.ts` passes inside `test:checks`) and no em dashes.
+
+### Behaviour
+- **F5, the approval panel hands an unapproved app oculus's origin.**
+  - :307 says: "a control that opens the app's folder in the file browser so the reader can read the files".
+  - In the file browser, one click on an `.html` row opens it in the Document view: `opening.ts:31-37` routes `kind === 'html'` to `view: 'document'`, and `file-type.ts:54` has `PAGES = ['.html', '.htm']`.
+  - The Document view draws with `sandbox="allow-same-origin allow-scripts"` (`Document.svelte:138`). Its own head comment (lines 24-27) says "Same-origin means the frame is not walled off from this page's origin, so it could reach the page through window.parent".
+  - Failure scenario: the reader presses the control to read an unapproved app's files and clicks `index.html`. The app's page runs same-origin before approval, reads the write token and calls any `/api/` route. That defeats :305, :309's "Not the write token ... Not the page's DOM", and case 12.
+  - The section must say how the file browser and the Document view treat `apps_dir`, for example opening an app's `.html` as source text and never in the Document view.
+- **F13, low: an absent approvals file.** :259 watches `approvals.json` "by its path". The section says nothing for the file being absent, which is the case until the first approval, and `fs.watch` on a missing path throws ENOENT.
+  - It gives the two-second re-look only for `apps_dir`.
+  - Failure scenario: the watcher fails to start on a fresh machine, or never sees an external edit to the file once it is created.
+- **F14, low: the `config` channel carries the machine's host.** :299 describes it as "the configuration".
+  - `ConfigPayload` (`data/model/index.ts:224-230`) also carries `host: HostInfo { name, address }`, which `portfolio.ts:329` publishes.
+  - Failure scenario: Axel rules `config` open without knowing that every app with `reads: [config]` receives the machine's name and address.
+
+### Declined to judge
+No browser or server may be run here: ports 8787 and 8790 are off limits, and no browser specification source is available locally. So these are not judged:
+- whether a CSP `sandbox` directive makes a directly visited document opaque;
+- whether the parent's `frame-src` governs a sandboxed child's own navigations;
+- whether `'self'` or path sources match in an opaque document;
+- whether CSP governs WebRTC or DNS prefetch;
+- whether Chrome's PDF viewer loads under `frame-src 'self'`;
+- whether a synthetic `keydown` dispatched on `window` reaches every chord the handler owns;
+- Electron's subframe isolation (not built).
+
+Whether coauthors' commit subjects on `git` count as another person's words is Axel's ruling (choice 29).
+
+### Usage
+About 40 tool calls. Tokens and time were not measured from inside the session.

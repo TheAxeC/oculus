@@ -33,7 +33,10 @@
     import TreeView from '$lib/ui/tree/TreeView.svelte';
     import type { TreeNav } from '$lib/ui/tree/tree-keys';
     import {
-        closeQuestion,
+        closeAsk,
+        closeOnce,
+        closeWords,
+        instancesOfPages,
         pageAt,
         pageInstanceIds,
         pageName,
@@ -56,7 +59,7 @@
         entities: { config },
         layout: { closePage, currentPage, openPage, pages, renamePage, resetPage, switchPage },
         registry: { viewFor },
-        ui: { unsaved }
+        ui: { unsaved, busyTerminals }
     } = useState();
 
     let { instance }: ViewProps = $props();
@@ -94,7 +97,8 @@
             ask,
             () => {
                 resetPage(id, button);
-            }
+            },
+            () => busyTerminals(instancesOfPages([found.page]))
         );
     }
 
@@ -119,20 +123,30 @@
      * tab is the page's own sentence, which says how many go; one tab holding unsaved text is the
      * tab sentence, since what would be lost is that text rather than the page.
      */
+    const once = closeOnce();
+
     function close(id: string): void {
         const found = pageAt(shown, id);
         if (found === null) return;
         const ids = pageInstanceIds(found.page);
-        const asks = closeQuestion(ids, unsaved);
-        if (asks === 'none') {
-            closePage(id);
-            return;
-        }
-        const message =
-            asks === 'many'
-                ? t('ui.page_close_confirm', pageName(found.page, found.at), ids.length)
-                : t('ui.tab_close_dirty');
-        confirming = { message, id };
+        void once(
+            `page:${id}`,
+            () => busyTerminals(instancesOfPages([found.page])),
+            (busy) => {
+                const asked = closeAsk({
+                    ids,
+                    unsaved,
+                    nameOf: (one) => {
+                        const tab = instancesOfPages([found.page]).find((each) => each.id === one);
+                        return tab === undefined ? one : tabNameOf(tab, viewFor);
+                    },
+                    many: t('ui.page_close_confirm', pageName(found.page, found.at), ids.length),
+                    busy
+                });
+                if (asked === null) closePage(id);
+                else confirming = { message: closeWords(asked), id };
+            }
+        );
     }
 
     /**

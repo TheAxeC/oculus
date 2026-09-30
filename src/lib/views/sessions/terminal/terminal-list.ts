@@ -8,25 +8,40 @@
 // without a DOM, which the grid's paste, drop and drag need to happen at all.
 //
 // The right-click menus are VS Code's terminal menus, with the items oculus runs: the grid's (Copy
-// while it holds a selection, Paste, Select All, then Split Terminal and Kill Terminal as the
-// list's controls do), a list row's (Split Terminal and Kill Terminal, Unsplit Terminal on a half
-// of the split the tab shows, Join Terminals over the terminals other Terminal tabs own) and the
-// list's empty area's (New Terminal, and New Terminal With Profile over the kinds the composer
-// starts). Kill Terminal goes through the row's Kill (`pressKill`): the first pick arms the
-// terminal and the item then reads as the armed control does, and a second pick or press kills
-// it. The context menu key and Shift+F10 open the grid's menu, which xterm would otherwise
-// send to the shell (`holdMenuKeys`). Every label is `t(...)` of a catalog key, except a terminal's
-// own name in Join Terminals, which is passed through as the list hands it.
+// and Copy as HTML while it holds a selection, Paste, Select All, Clear, then Split Terminal,
+// Rename, Change Icon, Change Color and Kill Terminal as the list's controls do), a list row's
+// (Split Terminal and Kill Terminal, Rename, Change Icon, Change Color and Clear, Unsplit Terminal
+// on a terminal of the row the tab shows, Join Terminals over the terminals other Terminal tabs
+// own) and the list's empty area's (New Terminal, and New Terminal With Profile over the kinds,
+// each starting that kind at once). The bar's kinds dropdown lists the same kinds and With a
+// Prompt, which shows the composer. Kill Terminal goes through the row's Kill (`pressKill`): the
+// first pick arms the terminal and the item then reads as the armed control does, and a second pick
+// or press kills it. The context menu key and Shift+F10 open the grid's menu, which xterm would
+// otherwise send to the shell (`holdMenuKeys`). Every label is `t(...)` of a catalog key, except a
+// terminal's own name in Join Terminals, which is passed through as the list hands it.
 
 import type { ISearchOptions } from '@xterm/addon-search';
 import { FILE_DRAG } from '$lib/state/sources/fs';
 import { grouped, type MenuItem } from '$lib/ui/menu/menu-items';
-import { splitDrawn, type TerminalTabState } from '$lib/state/sessions/terminal/terminal-tabs';
+import type { TerminalTabState } from '$lib/state/sessions/terminal/terminal-tabs';
+import { COLOR_NAMES, colorToken } from '$lib/state/sessions/terminal/terminal-marks';
 import type { ComposerAgent } from '$lib/state/sessions/terminal/composer';
 import { stamp } from '$lib/state/shared/words/format';
 import { t } from '$lib/state/shared/words/text';
 import { terminalFontPx } from '$lib/state/shared/words/appearance';
 import type { Terminal } from '$lib/state/sessions/terminals.svelte';
+
+/** The width the composer keeps at the right of a row that is being composed into, in rem. */
+export const COMPOSER_REM = 20;
+
+/**
+ * The style a terminal's mark is drawn with: the colour token of the name it was given, or nothing
+ * for the default look (and for a name outside the eight).
+ */
+export function markStyle(color: string): string | undefined {
+    const token = colorToken(color);
+    return token === null ? undefined : `color: var(${token})`;
+}
 
 /** How long a bell marks its row, which is VS Code's `terminal.integrated.bellDuration` default. */
 export const BELL_MS = 1000;
@@ -192,6 +207,13 @@ export function terminalTip(held: Pick<Terminal, 'name' | 'command' | 'cwd' | 'c
 type Words = (key: string, ...args: (string | number)[]) => string;
 
 export const MENU_COPY = 'copy';
+export const MENU_COPY_HTML = 'copy-html';
+export const MENU_CLEAR = 'clear';
+export const MENU_RENAME = 'rename';
+export const MENU_ICON = 'icon';
+export const MENU_PROMPT = 'prompt';
+const COLOR_LIST = 'color';
+const COLOR = 'color:';
 export const MENU_PASTE = 'paste';
 export const MENU_SELECT_ALL = 'select-all';
 export const MENU_SPLIT = 'split';
@@ -241,23 +263,66 @@ export function killItem(armed: boolean, t: Words): MenuItem {
     };
 }
 
-/** The two items the grid and a row both end with: the row's own Split and Kill. */
+/** The two items the grid and a row both have: the row's own Split and Kill. */
 function rowActions(armed: boolean, t: Words): MenuItem[] {
     return [{ id: MENU_SPLIT, label: t('sessions.menu_split') }, killItem(armed, t)];
 }
 
+/** The words of each colour name, held to the colour list by its type. */
+const COLOR_WORDS: Record<(typeof COLOR_NAMES)[number], (t: Words) => string> = {
+    black: (t) => t('sessions.color_black'),
+    red: (t) => t('sessions.color_red'),
+    green: (t) => t('sessions.color_green'),
+    yellow: (t) => t('sessions.color_yellow'),
+    blue: (t) => t('sessions.color_blue'),
+    magenta: (t) => t('sessions.color_magenta'),
+    cyan: (t) => t('sessions.color_cyan'),
+    white: (t) => t('sessions.color_white')
+};
+
+/** The words of one colour name, or of the default look for the empty name. */
+export function colorLabel(name: string, t: Words): string {
+    return Object.hasOwn(COLOR_WORDS, name)
+        ? COLOR_WORDS[name as (typeof COLOR_NAMES)[number]](t)
+        : t('sessions.style_default');
+}
+
+/** Rename, Change Icon and Change Color: the items that dress a terminal, on the grid and a row. */
+function styleItems(t: Words): MenuItem[] {
+    return [
+        { id: MENU_RENAME, label: t('sessions.menu_rename') },
+        { id: MENU_ICON, label: t('sessions.menu_icon') },
+        {
+            id: COLOR_LIST,
+            label: t('sessions.menu_color'),
+            items: ['', ...COLOR_NAMES].map((name) => ({
+                id: `${COLOR}${name}`,
+                label: colorLabel(name, t)
+            }))
+        }
+    ];
+}
+
 /**
- * The grid's items: Copy while it holds a selection, Paste, Select All, Split and Kill, Kill with
- * its armed label while the grid's terminal is armed.
+ * The grid's items: Copy and Copy as HTML while it holds a selection, Paste, Select All, Clear,
+ * then Split, Rename, Change Icon, Change Color and Kill, Kill with its armed label while the
+ * grid's terminal is armed.
  */
 export function gridMenu(selected: boolean, armed: boolean, t: Words): MenuItem[] {
+    const [split, kill] = rowActions(armed, t);
     return grouped([
         [
-            ...(selected ? [{ id: MENU_COPY, label: t('sessions.menu_copy') }] : []),
+            ...(selected
+                ? [
+                      { id: MENU_COPY, label: t('sessions.menu_copy') },
+                      { id: MENU_COPY_HTML, label: t('sessions.menu_copy_html') }
+                  ]
+                : []),
             { id: MENU_PASTE, label: t('sessions.menu_paste') },
             { id: MENU_SELECT_ALL, label: t('sessions.menu_select_all') }
         ],
-        rowActions(armed, t)
+        [{ id: MENU_CLEAR, label: t('sessions.menu_clear') }],
+        [split, ...styleItems(t), kill]
     ]);
 }
 
@@ -270,17 +335,16 @@ export function pasteRoute(text: string): { ask: number } | { send: string } {
     return lines === null ? { send: text } : { ask: lines };
 }
 
-/** Whether a row is a half of the split its tab shows, which Unsplit Terminal shows alone. */
-function inShownSplit(tab: TerminalTabState, terminal: string): boolean {
-    if (!splitDrawn(tab)) return false;
-    return terminal === tab.shown || (!tab.composing && terminal === tab.beside);
+/** Whether a terminal is in a row of more than one, which Unsplit Terminal takes out of it. */
+function inShownRow(tab: TerminalTabState, terminal: string): boolean {
+    return tab.row.length > 1 && tab.row.includes(terminal);
 }
 
 /**
  * A row's items: Split Terminal and Kill Terminal, Kill with its armed label while the row's
- * terminal is armed; then Unsplit Terminal on a half of the split
- * the tab shows, and Join Terminals, a submenu of the terminals other Terminal tabs own, each by
- * the name it is handed.
+ * terminal is armed; Rename, Change Icon, Change Color and Clear; then Unsplit Terminal on a
+ * terminal of the row the tab shows, and Join Terminals, a submenu of the terminals other Terminal
+ * tabs own, each by the name it is handed.
  */
 export function terminalRowMenu(
     tab: TerminalTabState,
@@ -292,8 +356,9 @@ export function terminalRowMenu(
     const joins = others.map((one) => ({ id: `${JOIN}${one.terminal}`, label: one.title }));
     return grouped([
         rowActions(armed, t),
+        [...styleItems(t), { id: MENU_CLEAR, label: t('sessions.menu_clear') }],
         [
-            ...(inShownSplit(tab, terminal)
+            ...(inShownRow(tab, terminal)
                 ? [{ id: MENU_UNSPLIT, label: t('sessions.menu_unsplit') }]
                 : []),
             ...(joins.length > 0
@@ -303,18 +368,32 @@ export function terminalRowMenu(
     ]);
 }
 
-/** The list's empty area: New Terminal, and New Terminal With Profile over the composer's kinds. */
+/** The kinds the bar's dropdown lists, then With a Prompt, which shows the composer. */
+export function kindsMenu(t: Words): MenuItem[] {
+    return grouped([
+        PROFILES.map((kind) => ({ id: `${PROFILE}${kind}`, label: kindLabel(kind, t) })),
+        [{ id: MENU_PROMPT, label: t('sessions.menu_with_prompt') }]
+    ]);
+}
+
+/** The words of one kind. */
+function kindLabel(kind: ComposerAgent, t: Words): string {
+    if (kind === 'claude') return t('sessions.kind_claude');
+    if (kind === 'codex') return t('sessions.kind_codex');
+    return t('sessions.kind_shell');
+}
+
+/** The list's empty area: New Terminal, and New Terminal With Profile over the kinds. */
 export function emptyListMenu(t: Words): MenuItem[] {
     return [
         { id: MENU_NEW, label: t('sessions.menu_new') },
         {
             id: PROFILE_LIST,
             label: t('sessions.menu_new_profile'),
-            items: [
-                { id: `${PROFILE}shell`, label: t('sessions.kind_shell') },
-                { id: `${PROFILE}claude`, label: t('sessions.kind_claude') },
-                { id: `${PROFILE}codex`, label: t('sessions.kind_codex') }
-            ]
+            items: PROFILES.map((kind) => ({
+                id: `${PROFILE}${kind}`,
+                label: kindLabel(kind, t)
+            }))
         }
     ];
 }
@@ -322,6 +401,16 @@ export function emptyListMenu(t: Words): MenuItem[] {
 /** The terminal a Join Terminals pick names, or null for any other item. */
 export function joinedOf(id: string): string | null {
     return id.startsWith(JOIN) && id.length > JOIN.length ? id.slice(JOIN.length) : null;
+}
+
+/**
+ * The colour a Change Color pick names: a colour name, the empty string for Default, or null for
+ * any other item.
+ */
+export function colorOf(id: string): string | null {
+    if (!id.startsWith(COLOR)) return null;
+    const name = id.slice(COLOR.length);
+    return name === '' || (COLOR_NAMES as readonly string[]).includes(name) ? name : null;
 }
 
 /** The kind a New Terminal With Profile pick names, or null for any other item. */
