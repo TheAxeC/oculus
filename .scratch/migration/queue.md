@@ -2,13 +2,13 @@
 
 In flight:
 - X3d (Source Control as VS Code's), repair round 1 built; its review runs.
-- E3 (the apps section's text to Z103 (b), Z106 (a) and Z107 (b2)), repair round 1 sent (eleven rulings).
+- E3 (the apps section's text to Z103 (b), Z106 (a) and Z107 (b2)), repair round 1 built; its review runs.
 - Q111 (Undo gives a cleared field's lines back), its builder runs.
-Open items: Z113 (a test run in Svelte's client runtime for the focus defect), for Q106; Z112 (which server step checks a file an app opens), for E3.
+Open items: Z113 (a test run in Svelte's client runtime for the focus defect), for Q106.
 Queued, in order:
 - U2 (every view's look against VS Code's), prepared; its builder launches once X3d has landed.
 - Q106 (Close pane on two tabs), cause found; its brief is written once Z113 is ruled.
-- Q107 (a Terminal tab closing itself), /spec under Z111 (b).
+- Q107 (a Terminal tab closing itself), brief written; its brief check runs.
 - Q109 (a terminal's name, icon and colour), once Q107 has landed.
 - S3 (the Settings view as VS Code's), /spec when a slot frees.
 - Q85a2 to Q85a5 (zod in the other server folders), /spec when a slot frees; then Q85b and Q85c, then Q85d.

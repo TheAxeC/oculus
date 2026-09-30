@@ -160,3 +160,194 @@ The builder's own decisions, each judged:
 - Whether the build should use `realpathSync.native` or a case-folded comparison to close Spec 3. That is a design choice for the orchestrator or Axel; the finding stands either way.
 
 Usage: reviewer ac1301d307cfb017c, served claude-opus-5-5; 205,911 tokens, 30 tool uses, 14.7 min (from its completion notice)
+
+## Repair round 1, refuted
+
+Reviewer of E3's repair round 1, on /Users/axelfaes/workspace/research-hub/.agents/worktrees/E3 (code under tools/oculus), base 1c95c890. DESIGN.md line numbers are the worktree's. The file is still 418 lines, and the section is still lines 236 to 327.
+
+How I found the round's changes: nothing on disk holds the round base (`ls` of `agents/reviews`, `agents/briefs` and `.agents/worktrees` shows only E3.md, E3-round1.md, E3-refuter.md, E3-report.md, E3-brief-check.md, the worktree E3 and E3-base-DESIGN.md). So I ran `grep -c -F` on the repaired DESIGN.md for each first-run sentence that the first refuter report quotes. Every quote the round was sent to change now prints 0: "a push that arrived after it began carries", "the version and value of the last answer.", "After a fetch the page calls", "(read, not parsed)", "The page holds the version the GET answered, not the pushed one", "the page then reads the value", "hexadecimal", "reaches the page as a new `storeBytes` and `storeVersion`", "so a file placed by hand costs the watcher one stat", "or the store of an app removed since the last push" and "A 404 (the app removed or refused since the push)". "the engine's config folder" prints 1, and that one hit is DESIGN.md:392, outside the section. The quotes of lines the round did not touch still print 1: line 260 "A `wss:` origin is refused." and line 266 "The rows carry no store value, so the first frame carries none, ...". This supports the builder's claim that the round changed only lines 264, 307, 311, 315 and 327. For line 313, the first report quotes no first-run text, so whether the round left it unchanged is not verified.
+
+```
+$ git status --short            (from tools/oculus in the worktree)
+ M DESIGN.md
+?? .scratch/migration/agents/reviews/E3-report.md
+$ git diff 1c95c890 --stat
+ tools/oculus/DESIGN.md | 18 +++++++++---------
+ 1 file changed, 9 insertions(+), 9 deletions(-)
+
+$ PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH npm run diagrams
+diagrams exit=0   (git status --short afterwards: the same two lines as above)
+
+$ PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH sh ~/.claude/skills/land/templates/checks.sh .scratch/migration/orchestrator-state.md
+$ npm test
+ Test Files  350 passed | 19 skipped (369)
+      Tests  5347 passed | 559 skipped (5906)
+$ npm run test:checks
+ Test Files  27 passed | 2 skipped (29)
+      Tests  365 passed | 9 skipped (374)
+$ npm run check
+1790797685058 COMPLETED 2474 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+$ npm run build
+$ npm run format:check
+All matched files use Prettier code style!
+$ npm run lint
+$ ! LC_ALL=C grep -rna '[^ -~]' src tests
+checks: 7 commands passed
+checks exit=0
+
+$ LC_ALL=C grep -n '[^ -~]' DESIGN.md
+(nothing printed) nonascii exit=1
+$ LC_ALL=C grep -n '[^ -~]' .scratch/migration/agents/reviews/E3-report.md
+(nothing printed)
+
+Case 16: diff of lines 1-235 against the base copy: d1=0; diff from '## Relationship to the cockpit' to the end: d2=0
+Absence check (Verify 3b): printed nothing, abs=1
+Verify 3a hits, section-relative: 7 25 27 29 49 76 78 80 90 (DESIGN.md 242, 260, 262, 264, 284, 311, 313, 315, 325)
+Verify 4: grep -rn --exclude=local.yml -w 'store\|storeBytes\|storeVersion\|app-store\|wss\|engine\|closed_paths' src tests config HELP.md README.md DESIGN.md | wc -l  ->  2000
+          grep -rn --exclude=local.yml -w 'storeBytes\|storeVersion\|closed_paths\|app-store' src tests config HELP.md README.md  ->  nothing, exit=1
+
+The round report's evidence, rerun:
+$ sed -n 31p src/lib/server/core/paths.ts          ->          return realpathSync(path);
+$ grep -n 'export function behaviorFindings' src/lib/data/sources/config/catalogs.ts
+152:export function behaviorFindings(engine: string, config: Record<string, unknown>): Finding[] {
+  (each finding it pushes is { file, key, message }: file = join(configDir(engine), 'behavior.yml'), key a dotted key such as 'chat.skip_permissions', message from findings.config.<name>; its callers are src/lib/server/root/context.ts:236 and src/lib/server/root/watch/portfolio.ts:327, so the findings reach the config channel)
+$ grep -n '^apps:' config/behavior.yml             ->  nothing, apps_block_exit=1
+$ wc -l DESIGN.md                                  ->  418
+
+Reviewer probe for ruling 3, read-only, node v24.21.0, from the worktree root:
+/TOOLS/OCULUS/CONFIG | realpathSync: /TOOLS/OCULUS/CONFIG | native: /tools/oculus/config
+/tools/oculus/config | realpathSync: /tools/oculus/config | native: /tools/oculus/config
+native on a missing file throws ENOENT
+$ ls -d secrets SECRETS     ->  secrets / SECRETS   (the volume folds letter case)
+```
+
+The round's names, grepped across DESIGN.md, HELP.md, README.md and src with `grep -rn --exclude=local.yml -F`:
+- "oculus's own `config/` folder": DESIGN.md:242 and 315 only.
+- "the engine's config folder": HELP.md:162, DESIGN.md:392, and in src compose.ts:43,68, local.ts:24, files.ts:230,248,260, config-files.ts:4, merge.ts:1 and Config.svelte:15,21. All of these are outside the section. Each names the same folder in the tree's older words, and none states an apps rule.
+- `realpathSync.native`, `closed_paths`: DESIGN.md only (315, and 327 for `closed_paths`).
+- `behaviorFindings`: DESIGN.md:315 and its definition and three callers in src.
+- "hexadecimal", "since the push", "not parsed", "not the pushed": no hits.
+- "since the last push": DESIGN.md:307 and 311.
+- `storeBytes`: DESIGN.md:264 only.
+- "the GET": only src comments about unrelated routes (wallpaper.ts:3, files.ts:3, deposit.ts:151,518).
+
+None of these hits in HELP.md, README.md, src, or DESIGN.md outside the section is made false by the round.
+
+### Verdicts
+
+These cover the whole diff since the base. Items of the brief's "What to build":
+
+- 1: holds. Line 264 has the row `{ ..., key, storeBytes, storeVersion, storeFile }`, "16 hex characters" twice, the folder or unreadable path counted as absent, "so a hand-placed file over that limit costs the watcher one stat", the empty file `e3b0c44298fc1c14`, the `channels.ts:103-110` clause, and the reread list ending "the store file's size and version (computed without parsing the file)". Line 311 has "(256; a KB in this section is 1024 bytes)".
+- 2: holds. Line 311 carries the route and every rule of the item. The refetch rule is in ruling 1's words, which replace the brief's. The dropped answer follows ruling 2. The 404 rule is stated once. The request is named "a fetch" throughout. Two orders of events are not covered by the text (Findings 1).
+- 3: holds. Line 266.
+- 4: holds. Line 315 closes `engine` for every app and closes oculus's own `config/` folder by real path, now defined by `fs.realpathSync.native` with both of the ruling's examples. It gives `closed_paths` its reason, form and default, and says what a malformed value does. Line 327 lists the key. Findings 2, 3, 4 and 5 are related.
+- 5: holds. Line 315 states the whole segment rule for every app, with its examples, the exact string and the reapplication to the real path. The order is: the segment rule and `closed_paths` on the given path; the key `engine`; for a root app, a root other than its own (`closed`); whether the root is shown (`missing`); the real-path checks; existence. Finding 2 concerns the order's stated purpose.
+- 6: holds. Line 260: "A `wss:` origin is refused." Line 325 names three measurements and "states the results". Line 262 is unchanged.
+- 7: holds. Verify 3b prints nothing. No sentence of the section still puts the store in the row or in a push, lets a machine app name `engine`, or claims what `connect-src https://host` admits.
+- 8: holds by the item's text. Rows 18, 23, 32, 36 and 42 are in the table's form, and rows 20 and 34 (ruling 11) keep E2's alternatives. Row 23 and row 36 do not follow the round's rulings 6 and 9 (Findings 7).
+
+Cases of the brief's "Cases":
+
+- 1: met (264, no store value in the row).
+- 2: met (311, "once per loaded oculus page", onStore in every tab).
+- 3: met (311 and 313: an equal JSON value writes nothing, the version is unchanged, nothing reaches the page).
+- 4: met (311: "the frame cannot call it ...; only the page calls it").
+- 5: met (264 for the oversize version; 311 for `value: null` and the KB, which gives 307200).
+- 6: met (266).
+- 7: met (315).
+- 8: met (315).
+- 9: met (315, dot-led segments).
+- 10: met (the given-path segment rule runs first).
+- 11: met ("a machine app and a root app alike").
+- 12: met (`notes.v2.md` named).
+- 13: met (`engine` rejects `closed` for every app).
+- 14: met (260 gives no reason; 262 is kept).
+- 15: met (325).
+- 16: met (d1=0, d2=0).
+- 17: met (exact string, nothing decoded).
+- 18: met (`a//b`, `/etc/hosts`, `a/./b` and the empty path named; a backslash "anywhere").
+- 19: met (the real path under the root is checked again; an outside target gives `closed` whether it exists or not; a missing file's and a dangling link's real paths are defined).
+- 20: met (the segment rule comes first).
+- 21: met, now also for `TOOLS/OCULUS/CONFIG/local.yml` through `realpathSync.native`.
+- 31: met (`secrets/a.txt` closed whether or not it exists; `secrets-notes.md` and `a/secrets/b` not closed by it; the link `s -> secrets` resolves by real path, and for a missing `s/a.txt` the deepest existing folder `s` resolves to `secrets`).
+- 32: met (`[]` is a list of strings, so nothing is closed by it; the config-folder sentence is separate).
+- 22: met under ruling 1. Push v1, then the fetch answers v2. If a push of v2 arrives during the flight, the latest push equals the answer and the answer is held. If no push arrives during the flight, the answer is held. Either way the page holds v2, and a later push of v2 fetches nothing.
+- 23: met when the answer predates the latest push: it is dropped, and exactly one further fetch follows. When the answer already carries the latest push's version, the ruled text holds it with no further fetch. That is ruling 1's decision, not a defect.
+- 24: met as written (311: the page holds nothing, calls nothing, and a waiting getStore() rejects `missing`). Findings 1 covers the order in which the app comes back during the flight.
+- 25: met (311).
+- 26: met (311: no call to a closed tab; the answer is kept; the mount comparison finds the version equal).
+- 27: met.
+- 28: met.
+- 29: met (264 and 311).
+- 30: met (264).
+
+The eleven rulings, closure by closure:
+
+1. Closed. Line 311: "When a fetch settles and the latest push that arrived after it began carries a version other than the one answered, the answer is dropped and the page fetches once more; a push that arrived before the fetch began is not compared". I traced every order of events. With no push during the flight, the answer is held. With one push during the flight, the answer is held when it matches that push, and otherwise dropped with one more fetch. With several pushes during the flight, only the latest is compared, so v2 then v3 with an answer of v3 is held, which closes the first report's wasted-fetch scenario. A push before the fetch began is not compared, so case 22 ends. Every refetch needs a push during the previous flight, so the loop always ends. The report states the hand-back sentence the ruling asks for, in its first line and in its "Repair round 1" section.
+2. Closed. Line 311: "A dropped answer is not held and calls no `onStore`, and a `getStore()` waiting on the dropped fetch settles with the answer of the fetch that replaces it". "the last answer not dropped" and "After a fetch whose answer is held" carry it through. Findings 1 covers the orders it does not reach.
+3. Closed as ruled. Line 315 has the definition, the `paths.ts:31` parenthetical (reproduced), and both examples. My probe confirms that `realpathSync.native` returns `/tools/oculus/config` for `/TOOLS/OCULUS/CONFIG`. A missing file's real path is the deepest existing folder's real path followed by the remaining segments: `SECRETS/missing.txt` on a root that holds `secrets/` resolves to `secrets/missing.txt` and is closed. Findings 2 and 3 cover what the ruling's placement and scope leave.
+4. Closed. The report has S14 and S15, line 307 under "Sentences removed or reworded", and judgment call 2's corrected reason.
+5. Closed. Report line 136: "One read-only `git diff --stat` ran (last section, item 3)".
+6. Closed (line 315, quoted above).
+7. Closed. Lines 307 and 311 both say "removed or refused since the last push of `apps`". The 404 page rule appears once, on line 311.
+8. Closed in content. The finding carries the file and the key `apps.closed_paths`, modelled on `behaviorFindings`, which I verified at catalogs.ts:152 as the tree's `{ file, key, message }` finding for behavior.yml on the config channel. A value that is not a list falls back to the default, a bad entry is left out, and a duplicate applies once. The sentence "no `apps:` block" is true (`grep -n '^apps:'` exit 1). The builder's added clause "the default applies while the key or the block is absent" goes beyond the ruling (Findings 4).
+9. Closed. The phrases "(computed without parsing the file)", "which can be newer than the pushed one", "a fetch" throughout line 311, "hex", and "oculus's own `config/` folder" twice on 315 are all in place. No negation-contrast remains in the reworded sentences. Findings 6 names one leftover second name, on line 264.
+10. Closed (311, 264, and report row 18).
+11. Closed (report rows 20 and 34, with E2's alternatives kept verbatim, as `grep -n '^| 20 \|^| 34 ' E2-report.md` shows).
+
+### Findings
+
+1. **Spec.** DESIGN.md:311: "When a fetch settles and the latest push that arrived after it began carries a version other than the one answered, the answer is dropped and the page fetches once more" against "A 404 (the app removed or refused since the last push of `apps`) leaves the page holding nothing for the app and calls nothing, and a `getStore()` waiting on it rejects `missing`" and "An app with no mounted frame is not fetched until a frame mounts".
+   - What is wrong: two orders of events get two readings.
+     - (a) A fetch is in flight, the app is removed, and it is then added again before the fetch settles. The fetch answers 404, and the latest push carries a version. A 404 answers no version, so the drop rule says "dropped, fetch once more", and the waiting getStore() settles with the refetch. The 404 sentence says the page holds nothing and the waiting getStore() rejects `missing`.
+     - (b) The answer is dropped after every frame of the app has closed during the flight. "fetches once more" contradicts "not fetched until a frame mounts".
+   - Failure scenario: in (a), a builder following the 404 sentence rejects `missing` to a tab whose app is present again, and the tab shows a failure for an app that exists. In (b), one builder refetches for an app with no frame and another does not. The text does not decide either.
+   - The fix is one clause each: whether a 404 is subject to the drop rule, and whether the refetch waits for a mounted frame. Verdict: none, since item 2 holds by its text.
+2. **Spec.** DESIGN.md:315: "The checks run in this order, so that the answer for a hidden path never depends on the disk or on which roots are shown: the segment rule and `closed_paths` on the given path; ..." together with "the real-path checks compare that path, so ... `SECRETS/a.txt` rejects `closed` under the default `closed_paths`".
+   - What is wrong: on a volume that folds letter case (this one: `ls -d SECRETS` resolves), the given-path `closed_paths` check compares case-sensitively and misses `SECRETS/x`. Only the real-path check catches it, and only when `secrets/` exists. When `secrets/` exists, the deepest existing folder `SECRETS` resolves to `secrets`, and the answer is `closed`. When it does not exist, the answer is `missing`. So the answer for that hidden path depends on the disk, which contradicts the sentence's stated purpose and Z106 (2)'s aim that an app not "learn whether one exists".
+   - Failure scenario: a machine app calls `open({ file: { root: 'hub', path: 'SECRETS/probe' } })` on each root. `closed` tells it that the root holds a `secrets/` folder, and `missing` tells it that the root does not. The lower-case `secrets/probe` gives `closed` on every root.
+   - Fix options, for the orchestrator or Axel: compare `closed_paths` on the given path without regard to letter case (always, or on a volume that folds case), or weaken the sentence's claim. Verdict: none; the ruling's two examples hold.
+3. **Spec.** DESIGN.md:315: "A real path is the path as the disk stores it, letter case included, as Node's `fs.realpathSync.native` gives it ...".
+   - What is wrong: the definition sits in the `open` paragraph. The section uses "real path" before and after it, on lines 242, 264 (the watcher's `folders`, "the app's real folder path"), 284, 317 and 323. Line 323 ("The file route tests the real path, ... and answers a file of an apps folder as `text/plain`") has the same letter-case gap that ruling 3 closed for `open`: the tree's file route resolves with `realpathSync` (`src/lib/server/files/open.ts:204,211`), which keeps the typed case (probe above).
+   - Failure scenario: a manual in a cloned root links to `.OCULUS/APPS/evil/index.html`. A builder of line 323 who reads the definition as local to `open` reuses `open.ts`'s `realpathSync`. The typed-case path is then not `inside` the apps folder held in `folders`, so the file is served as HTML and the unapproved app's page runs in the Document view with oculus's origin, which line 323 exists to prevent.
+   - The fix at landing is small: define the term once where it first appears (line 242), or say "throughout this section". Verdict: none. Ruling 3 named line 315, and the builder followed it.
+4. **Standards.** DESIGN.md:315: "the default `[secrets]` applies; ... `config/behavior.yml` has no `apps:` block until the build step adds it, and the default applies while the key or the block is absent". DESIGN.md:327: "(default `[secrets]`, which also applies while the key or the block is absent), read by `appsSettings` beside `mailSettings`".
+   - What is wrong: agents/spec.md, "What every package obeys", says "A value that has a config key ... is never hardcoded beside it as a fallback; the default lives in the config file". The text puts `[secrets]` in code as a fallback, in two places.
+     - The fallback for a value that is not a list is ruling 8's own wording. That part is a clash between the ruling and spec.md, and it goes to Axel as the hub's rule on rule clashes says.
+     - The fallback for an absent key or block is the builder's addition. Ruling 8 asked only to "say that `config/behavior.yml` has no `apps:` block yet".
+   - Line 327 also keeps "read by `appsSettings` beside `mailSettings`". `mailSettings` (src/lib/data/sources/config/settings.ts:125-138) requires every key and throws, so the block now has two reading regimes and says so nowhere.
+   - Failure scenario: the build step's builder either follows spec.md, adds `closed_paths: [secrets]` to behavior.yml and has `appsSettings` report a missing key, which contradicts the section, or follows the section and writes `?? ['secrets']`, which the build step's review then flags under spec.md. Either way the builder meets a contradiction that nobody ruled on.
+   - Verdict: none.
+5. **Spec.** DESIGN.md:315 and 327: the malformed-`closed_paths` finding has no sentence key.
+   - What is wrong: line 327 names every word and finding key the section adds ("The finding sentences are in `config/text/findings.yml` under `findings.apps` with the keys named above"). The new finding, modelled on `behaviorFindings` (whose messages are `findings.config.<name>`), is under neither and is unnamed. The report's round section says "its sentence key under `findings.config` is left to the build step", which is a catalog key left open.
+   - Failure scenario: the build step invents the key, and the section's claim to list every key it adds is false.
+   - Verdict: none.
+6. **Standards.** DESIGN.md:264: "the page reads a value with `GET /api/app-store` (below)".
+   - What is wrong: line 311 now names this request "a fetch" throughout (ruling 9). Line 264, text from the first run, still describes it as the page reading a value with the route, which breaks the one-name rule of the brief's Conventions. This is minor.
+   - Failure scenario: a reader takes the watcher paragraph's "reads a value" and line 311's "a fetch" for two mechanisms.
+   - Verdict: none.
+7. **Standards.** E3-report.md lines 103, 130, 151, 163, 199 and 203 describe the section as it was before the round:
+   - line 130: "The reread list ends "and the store file's size and version (read, not parsed)"". The section now says "(computed without parsing the file)".
+   - line 103: "311 | ... `storeBytes` and `storeVersion` in the row". Line 311 now names only `storeVersion`.
+   - line 203: "S13 | Order of the checks: segment rule and `closed_paths`, `engine`, root shown (`missing`), real-path checks, existence (`missing`)". The root-app check from ruling 6 is missing.
+   - lines 163 and 199 (row 36 and S9): "the engine's config folder". Ruling 9 renamed it "oculus's own `config/` folder" in the section.
+   - line 151: row 23 lists the order "..., in that order" without the root-app check or `closed_paths`.
+
+   What is wrong: rows 23 and 36 are the text the orchestrator carries into `E2-report.md` at landing, and S13 is what Axel reads at landing as the shape to rule on. Failure scenario: E2's table then states an order of checks that has the same gap ruling 6 closed in the section, and Axel rules on an S13 that is not the order the section states. Fix at landing: rows 23 and 36 and S13 in the section's words. Verdict: none. Item 8 holds by the brief's row texts, which predate ruling 6.
+
+Proof: none. Every count and line the round report quotes reproduced. The claim that no git command ran in the round, and the claim that line 313 was unchanged in the round, cannot be reproduced after the fact, and no decision rests on either.
+
+Behaviour: none. This is a text step, and the section remains an unbuilt proposal.
+
+### Declined to judge
+
+- Spec 4 of the first report (which server step runs the real-path and existence checks of `open({ file })`) waits on Z112 by the round's instruction and is not raised here. Findings 2 and 3 hold whichever option Z112 takes.
+- Whether line 313 changed in the round: no snapshot of the round base exists, and the first report quotes no first-run text of that line.
+- The 2000 lines of Verify 4 in src, tests and config, which I did not read one by one. I read the hits of every name the round added or changed (listed above), and none states an apps rule.
+- Whether ruling 8's fallback in code or spec.md's rule should give way (Findings 4). That is Axel's to rule on as a clash.
+- How Chrome treats `wss://host` under `connect-src https://host`, WebRTC, DNS prefetch and the download link: only the build step's measurement in Chrome settles these.
+
+Reviewer usage: about 36 tool uses; tokens and minutes are in the runner's completion notice.
+
+
+Usage: reviewer abc7e9011cf0039bd, served claude-opus-5-5; 186,912 tokens, 41 tool uses, 11.6 min (from its completion notice)

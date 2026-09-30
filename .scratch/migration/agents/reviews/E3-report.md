@@ -1,6 +1,6 @@
 # E3 report: the apps section of DESIGN.md to Z103 (b), Z106 (a) and Z107 (b2)
 
-Everything in the brief is done, with one rule of item 2 worded differently from the brief: the brief's sentence for refetching after a settled fetch loops on case 22 as written, and the section words it as "a push that arrived after the fetch began" (last section, item 1). DESIGN.md lines 236 to 327 are the only lines changed; the section is still 92 lines, so every line number the brief cites is the same after the step.
+Everything in the brief is done, with one rule of item 2 worded differently from the brief: the brief's sentence for refetching after a settled fetch loops on case 22 as written, and the section words it as "the latest push that arrived after it began" (last section, item 1, and Repair round 1, ruling 1). DESIGN.md lines 236 to 327 are the only lines changed; the section is still 92 lines, so every line number the brief cites is the same after the step.
 
 ## Open items of the state file, verbatim
 
@@ -47,7 +47,7 @@ The base copy is `/Users/axelfaes/workspace/research-hub/.agents/worktrees/E3-ba
 | 29 | Base: no size or version; a folder or unreadable path is not addressed | 264 |
 | 30 | Base: no size or version; an empty file gives `store: null` | 264 |
 
-One case the brief's rules get wrong as worded: case 22 against the brief's sentence "when it settles and the latest pushed version differs from the answered one, the page fetches once more". In case 22 the GET answers version v2 after a push of v1, so the latest pushed version (v1) differs from the answered one (v2) and the sentence, read as written, fetches again, gets v2 again, and repeats until a push of v2 arrives. The section words the condition as "a push that arrived after the fetch began carries a version other than the one answered", which gives the brief's expected result for case 22 (the answer is held, `onStore` is called, a later push of v2 fetches nothing) and for case 23 (two pushes during the flight, one further fetch, the superseded answer dropped). Nothing else in the 32 cases conflicts with the brief's rules.
+One case the brief's rules get wrong as worded: case 22 against the brief's sentence "when it settles and the latest pushed version differs from the answered one, the page fetches once more". In case 22 the GET answers version v2 after a push of v1, so the latest pushed version (v1) differs from the answered one (v2) and the sentence, read as written, fetches again, gets v2 again, and repeats until a push of v2 arrives. The section words the condition as "the latest push that arrived after it began carries a version other than the one answered", which gives the brief's expected result for case 22 (the answer is held, `onStore` is called, a later push of v2 fetches nothing) and for case 23 (two pushes during the flight, one further fetch, the superseded answer dropped). Nothing else in the 32 cases conflicts with the brief's rules.
 
 ## DONE / NOT DONE
 
@@ -133,7 +133,7 @@ The absence check, `grep -n 'does not admit\|measures both\|`store` is the parse
 4. `engine`, the config folder, `closed_paths`: line 315; the key list: line 327.
 5. Path segments: line 315, with the order of checks.
 6. `wss:`: line 260 (reason removed) and line 325 (three measurements); line 262 is untouched.
-7. Other false sentences: line 307 (`missing`), line 311 (the paragraph's watcher sentences and the equal-write sentence), line 313 (handler). `git diff` was not run; the list is from `grep` over lines 236 to 327.
+7. Other false sentences: line 307 (`missing`), line 311 (the paragraph's watcher sentences and the equal-write sentence), line 313 (handler). One read-only `git diff --stat` ran (last section, item 3); the list is from `grep` over lines 236 to 327.
 8. E2's rows: below.
 
 ## E2's rows as they now read (for the orchestrator to carry into `E2-report.md`; line numbers are the section's after this step)
@@ -142,7 +142,7 @@ Row 18:
 
 | # | Shape as written (line) | Alternative considered |
 |---|---|---|
-| 18 | The `apps` row gains `connects`, `kept`, `storeBytes`, `storeVersion` and `storeFile`, and the channel payload gains `folders` (264). The row holds no store value; the page reads one app's store by `GET /api/app-store?view=<view id>` when that app's `storeVersion` differs from the version the page holds, and the first frame carries no store value (266, 311). | The store value in every row: a channel publish sends the whole payload to every subscriber, so every store write of any app would send up to `apps.store_max_kb` per app to every page and into every first frame |
+| 18 | The `apps` row gains `connects`, `kept`, `storeBytes`, `storeVersion` and `storeFile`, and the channel payload gains `folders` (264). The row holds no store value; the page reads one app's store by `GET /api/app-store?view=<view id>` when that app's `storeVersion` differs from the version the page holds and a frame of the app is mounted, and the first frame carries no store value (266, 311). | The store value in every row: a channel publish sends the whole payload to every subscriber, so every store write of any app would send up to `apps.store_max_kb` per app to every page and into every first frame |
 
 Row 23:
 
@@ -168,6 +168,18 @@ Row 42:
 |---|---|---|
 | 42 | WebRTC, DNS prefetch and `wss:` under `connect-src https://host` are measured and stated by the build step, and only the download link is closed if it sends a request (325) | Closing all |
 
+Row 20:
+
+| # | Shape as written (line) | Alternative considered |
+|---|---|---|
+| 20 | The body of an `app-store` write is `{ store: <value> }`; the handler finds the store from the header's view id, writes nothing when the file already holds an equal value, and otherwise writes by rename and reads back (313) | A body carrying the app's view id: an app could then name another app's store |
+
+Row 34:
+
+| # | Shape as written (line) | Alternative considered |
+|---|---|---|
+| 34 | A write of a value equal to the one the file holds, as JSON values with object keys in any order, writes nothing, records nothing in History and answers success, so the page is told nothing (311, 313) | Recording a change of zero bytes and calling `onStore` |
+
 Each row is in the table's form `| <n> | <shape as written (line)> | <alternative considered> |`, given with its own header so it renders alone. Row 23 keeps the parts of E2's row that this step does not change (an id no registration holds, a project no portfolio holds).
 
 ## Shapes named in this step
@@ -189,11 +201,13 @@ Each is a name, key, form or default the section now states that the rulings do 
 | S11 | The segment rule of line 284 applies to `open` for machine apps and root apps alike, on the exact string given and on the real path under the root (315) | The rule for machine apps only |
 | S12 | A link whose target lies outside the root rejects `closed`, whether or not the target exists (315) | `missing` for a dangling link |
 | S13 | Order of the checks: segment rule and `closed_paths`, `engine`, root shown (`missing`), real-path checks, existence (`missing`) (315) | The disk first |
+| S14 | A KB in this section is 1024 bytes (311) | 1000 bytes; the tree's `humanSize` divides by 1024 (`src/lib/state/boards/board/stats.ts:134`) |
+| S15 | The page compares a row's `storeVersion` with the held version when a frame of the app mounts as well as on a push (311) | Comparing on a push only: `getStore()` would answer from a held value made stale by a push that arrived while no frame was mounted |
 
 ## Judgment calls the brief did not cover
 
-1. The refetch condition (see the cases section above): "a push that arrived after the fetch began carries a version other than the one answered" replaces "the latest pushed version differs from the answered one". Reverse it by restoring the brief's words, which loops on case 22.
-2. The page compares a row's `storeVersion` with the held version on a push and when a frame mounts, with nothing held counting as a difference (311). The brief says a push compares and "an app with no mounted frame is not fetched until a frame mounts"; without the mount comparison, an app that registers `onStore` and never calls `getStore()` would wait for the next push. A fetch from that comparison calls `onStore` only in tabs whose bridge is connected, and a tab not yet connected reads through `getStore()`.
+1. The refetch condition (see the cases section above): "the latest push that arrived after it began carries a version other than the one answered" replaces "the latest pushed version differs from the answered one". Reverse it by restoring the brief's words, which loops on case 22.
+2. The page compares a row's `storeVersion` with the held version on a push and when a frame mounts, with nothing held counting as a difference (311). The brief says a push compares and "an app with no mounted frame is not fetched until a frame mounts"; without the mount comparison, `getStore()` answers from a held value made stale by a push that arrived while no frame was mounted. A fetch from that comparison calls `onStore` only in tabs whose bridge is connected, and a tab not yet connected reads through `getStore()`.
 3. An equal write is decided only when the file exists, parses and is within `apps.store_max_kb`; a file that is absent, does not parse or is over the limit holds no value, so the write always goes ahead (311). Without this, `setStore(null)` over an unparseable file would write nothing and leave the garbage in place.
 4. The real path of a file that does not exist is the real path of its deepest existing folder followed by the remaining segments, and a link that points at nothing is read by its target text (315). The brief requires `closed` for an outside link "whether or not the target exists", which needs a rule for a path with no real path.
 5. The KB definition ("a KB in this section is 1024 bytes") sits on line 311 at `apps.store_max_kb`, as the brief says, and `apps.state_max_kb (64)` on the same line comes before it.
@@ -206,6 +220,7 @@ Each is a name, key, form or default the section now states that the rulings do 
 - Line 264, the row list ending `store, storeFile` and the sentence "`store` is the parsed value of the app's store file ...": the row no longer holds the value; replaced by `storeBytes`, `storeVersion` and their definitions.
 - Line 264, the reread list ending "and the store": the watcher reads the store file's size and version, not its value.
 - Line 266: added the sentence that the first frame carries no store value; the earlier text implied the rows carried stores.
+- Line 307, "`missing` (an `open` target that is not there)": the word also covers the store of an app removed since the last push, which a waiting `getStore()` rejects with; the sentence now reads "or the store of an app removed or refused since the last push of `apps`".
 - Line 311, "reaches the page on the `apps` channel, which calls `onStore(value)` in every tab ...": the channel carries `storeBytes` and `storeVersion`, and the page reads the value by the route before calling `onStore`.
 - Line 311, "A write of the value the file already holds changes nothing and calls nothing.": reworded to the comparison rule (JSON values, key order, formatting) and its exception for a file holding no value.
 - Line 313, the handler sentence: it wrote the file unconditionally; it now writes nothing for an equal value.
@@ -217,5 +232,46 @@ Each is a name, key, form or default the section now states that the rulings do 
 
 1. The refetch sentence of item 2, as described above, loops on case 22. Evidence: the brief's own case 22 expected result (the page holds the answered version, a later push of it fetches nothing) cannot hold if the page fetches again whenever the latest pushed version differs from the answered one while the answer is newer than the push.
 2. Verify 4's grep prints 2000 lines; quoting each hit is not possible in a report. The report separates the terms by commands as above; for the terms `store` and `engine` the hits outside the section were classified by file and by pattern, and not read line by line for every one of the 2000 (not verified beyond the patterns shown).
-3. One read-only `git diff --stat` command ran inside the worktree (output piped to `head -0`, printed nothing); it changed nothing. No other git command ran.
+3. One read-only `git diff --stat` command ran inside the worktree (output piped to `head -0`, printed nothing); it changed nothing. No other git command ran, and the repair round ran none.
 4. Not verified by any command: how Chrome treats `connect-src https://host` with `wss://host`, WebRTC and DNS prefetch (the section says the build step measures them); the behaviour of the route, the page's fetches and `open` (none is built).
+
+## Repair round 1
+
+Every ruling of `agents/briefs/E3-round1.md` is done. Spec 4 is not in the round; the section's text on it is as it was. The brief's case 22 was changed in the text before it was handed back, which the brief's Cases section asks for first (ruling 1); the report's opening paragraph and the cases section say so. Only DESIGN.md lines 264, 307, 311, 315 and 327 changed in the round, and the report. No git command ran in the round.
+
+| Ruling | Status | New sentence and line |
+|---|---|---|
+| 1, refetch rule | DONE | 311: "When a fetch settles and the latest push that arrived after it began carries a version other than the one answered, the answer is dropped and the page fetches once more; a push that arrived before the fetch began is not compared, and versions are compared for equality and never ordered." |
+| 2, a dropped answer | DONE | 311: "A dropped answer is not held and calls no `onStore`, and a `getStore()` waiting on the dropped fetch settles with the answer of the fetch that replaces it." The sentences that hold answers now read "the last answer not dropped" and "After a fetch whose answer is held the page calls `onStore(value)`". |
+| 3, letter case | DONE | 315: "A real path is the path as the disk stores it, letter case included, as Node's `fs.realpathSync.native` gives it (`realpathSync` keeps the case the caller typed, `src/lib/server/core/paths.ts:31`), and the real-path checks compare that path, so `hub` with `TOOLS/OCULUS/CONFIG/local.yml` rejects `closed` and, on a root holding `secrets/`, `SECRETS/a.txt` rejects `closed` under the default `closed_paths`." The cited line 31 is `return realpathSync(path);`. |
+| 4, the report's tables | DONE | This report: shapes S14 (KB) and S15 (mount-time comparison), line 307's rewording in "Sentences removed or reworded", and judgment call 2's reason now "`getStore()` answers from a held value made stale by a push that arrived while no frame was mounted". |
+| 5, the git command | DONE | This report, per-item 7: "One read-only `git diff --stat` ran (last section, item 3)". |
+| 6, order of checks | DONE | 315: "...the segment rule and `closed_paths` on the given path; the key `engine`; for a root app, a root other than its own (`closed`); whether the root is shown (`missing`); the checks on the real path, each `closed` (outside the root, inside oculus's own `config/` folder, ...". |
+| 7, the 404 rule once | DONE | 311: "A 404 (the app removed or refused since the last push of `apps`) leaves the page holding nothing for the app and calls nothing". 307: "or the store of an app removed or refused since the last push of `apps`". |
+| 8, malformed `closed_paths` | DONE | 315: "A value of `closed_paths` that is not a list of strings gives a finding that names the file `config/behavior.yml` and the key `apps.closed_paths`, as `behaviorFindings` reports the other errors of that file (`src/lib/data/sources/config/catalogs.ts:152`), and the default `[secrets]` applies; an entry that is empty, starts or ends with `/`, or holds an empty, `.`, `..` or dot-led segment gives the same finding and is left out, the other entries applying; a duplicate entry applies once and gives no finding. `config/behavior.yml` has no `apps:` block until the build step adds it, and the default applies while the key or the block is absent." 327: "`closed_paths` (default `[secrets]`, which also applies while the key or the block is absent)". `grep -n '^apps:' config/behavior.yml` exits 1. |
+| 9, prose | DONE | 264: "(computed without parsing the file)" and "16 hex characters" (twice). 311: "The page holds the version a fetch answered, which can be newer than the pushed one, so a later push carrying that version fetches nothing." 311 names the request "a fetch" throughout ("the page then makes a fetch (below)", "A fetch is `GET /api/app-store?view=<view id>`, the page's read of one app's store, and it answers `{ version, value }`"). 315: "oculus's own `config/` folder" in both places. |
+| 10, imprecise sentences | DONE | 311: "reaches the page as a new `storeVersion` in the app's row on the `apps` channel (the page compares that alone)". 264: "so a hand-placed file over that limit costs the watcher one stat". This report, row 18: "... differs from the version the page holds and a frame of the app is mounted". |
+| 11, rows 20 and 34 | DONE | This report, "E2's rows as they now read": rows 20 (313) and 34 (311, 313) in item 8's form. |
+
+Judgment calls in the round: the finding of ruling 8 is named by the file and key the ruling asks for and by `behaviorFindings`; its sentence key under `findings.config` is left to the build step. Ruling 1's last clause ("a push that arrived before the fetch began is not compared") is written as the ruling words it.
+
+Checks, after `npm run diagrams` (exit 0), through `sh ~/.claude/skills/land/templates/checks.sh .scratch/migration/orchestrator-state.md` (exit 0); the build output (lines 36 to 748 of the saved output) is omitted:
+
+```
+$ npm test
+ Test Files  350 passed | 19 skipped (369)
+      Tests  5347 passed | 559 skipped (5906)
+$ npm run test:checks
+ Test Files  27 passed | 2 skipped (29)
+      Tests  365 passed | 9 skipped (374)
+$ npm run check
+1790797216117 COMPLETED 2474 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+$ npm run build
+$ npm run format:check
+All matched files use Prettier code style!
+$ npm run lint
+$ ! LC_ALL=C grep -rna '[^ -~]' src tests
+checks: 7 commands passed
+```
+
+`LC_ALL=C grep -n '[^ -~]' DESIGN.md` printed nothing (exit 1). `wc -l DESIGN.md` prints 418, as before.
