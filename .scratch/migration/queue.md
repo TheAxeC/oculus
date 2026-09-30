@@ -1,10 +1,10 @@
 /plan-orchestration oculus/migration
 
 In flight:
-- none; X3d, S3 and U2 are being prepared.
+- none; X3d's brief is at its brief check; U2 and Q88b are prepared next.
 Queued, in order:
 - X3d (the Repositories view and the diff rebuilt to look and work as VS Code's Source Control), first.
-- S3 (the Settings view as VS Code's Settings editor with the options catalog; Z75 (a)).
+- S3 (the Settings view as VS Code's Settings editor with the options catalog; Z75 (a)), stopped at /spec on open item Z94 (what an option is, the catalog's shape, Default and Modified, which options get a control).
 - U2 (the audit of every other view's look against VS Code's visual language), beside X3d; its build steps once Axel rules on its grouping.
 - Q88b (the right-click menus' new capabilities, and Chrome's own menu blocked): Z70 ruled (a); once Q102 has landed: both change the pane strip's menu and picks (`pane-view.ts`), `PaneView.svelte`, `layout/instances.ts` and `ui.svelte.ts`; Q102 landed 2026-09-30, so it is free.
 - X3c (the tab strip as VS Code's editor tabs; Z47 (a)), once Q88b has landed: both change the pane strip (`PaneView.svelte`, `Tabs.svelte`, `pane-view.ts`), Q88b through `show_tabs`, `editor_actions` and its strip items.
@@ -32,7 +32,7 @@ Queued, in order:
 The loop fills three slots as they free up; a line above is only an order, never a barrier, apart from the "once ... has landed" notes. A step's line moves to Landed, at the top of that list, in its landing commit.
 
 Landed, newest first: every step ticked in `plan.md`, each with the date and the commit that ticked it (the 15 steps dated 2026-09-10 at f8af492b were landed before the ledger was opened):
-- E1 (the design section for apps added while oculus runs; its 31 choices are Z93), 2026-09-30, pending.
+- E1 (the design section for apps added while oculus runs; its 31 choices are Z93), 2026-09-30, 3ab29091.
 - Q102 (the terminal working as VS Code's terminal; Z69 (a)), 2026-09-30, 7dde39e2.
 - Q84 (the fetch-and-hold stores on @tanstack/query-core; Z56 (a)), 2026-09-30, 556dcaf2.
 - D13c (the code theme key; Z46 (a)), 2026-09-30, 5a503e82.
