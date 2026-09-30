@@ -156,10 +156,15 @@ The brief asks whether `HOME` and `TMUX_TMPDIR` on the server process keep the u
 - Whether the Live HPC poller reaching the cluster login node from the builder's server is acceptable, or must be turned off for the step (for example through a worktree-only `hpc_host`). That is the orchestrator's or the user's call. I did not open `config/local.yml`.
 - Whether item 3's placement, words, entry label and join position need Axel's ruling before the build, or are covered by Z99's "has a Terminal tab offer running terminals no tab owns". That is the user's call: the choices are user-visible and the brief takes them without a ruling.
 
-Usage: filled in by the orchestrator
-
 ## Closed (the session's change to the brief for every finding above, made before the preparation commit)
 
-- (filled in by the session)
+- Names: `tests/ui/menu/menu-words.test.ts` and `tests/state/client/terminal/terminal-tabs.test.ts`, `terminal-close.test.ts`, `terminal-tabs-fixture.ts` added to "What is on the tree" and "Paths this step writes"; the store cases 8-11 and 3-5 point at the client files.
+- Step line, the layout path: added to "What is on the tree" and item 1 (three stores sharing one `Storable`); its fix waits on open item Z115; item 1 says what happens when neither path turns red.
+- Premises: the Vite plugin path corrected in three places; the false "Nothing lists" sentence replaced by the Sessions view's `TerminalRows.svelte` and `HELP.md:125`; the `$TMUX` premise added, with `printenv TMUX` exiting 1 in the orchestrator's session and the builder stopping if it is set, and the 104-byte socket limit; the publisher corrected to `root/watch/sessions.ts:162-168` with `sessions/index.ts:59-60` and `root/hooks.ts:277-284`; the test list completed; the `Origin` requirement added and given to item 1's client.
+- Cases and checks: cases 20 (duplicate labels, pick ids against `JOIN` and `PROFILE`) and the in-flight, after-close and superseded tests of a `refresh()` fix (item 2) added.
+- The question: the two page shapes stated in item 1 and case 14; the no-red instruction added to item 1; the probe script kept at `agents/reviews/Q107-probe.mjs` in the worktree's ledger copy, rerun by the reviewer under the same isolation; case 8 says shown alone (`withTerminal`); case 9 says the composer and its text are dropped.
+- Implied inputs: cases 14-21 cover the reload and reconnect shapes, the layout path, a terminal not yet listed with replies out of order, the `noServer` false reading, the usage session, foreign terminals, duplicate labels and a renamed terminal's label; a terminal another tab took before the pick changes nothing (case 10); in two browser tabs, the unowned set is what this browser tab's store holds, which Z115's ruling decides.
+- Isolation: the Live HPC poller's read-only queries (squeue, sacct, sinfo, quota) are stated in "What is on the tree" as the queries the user's own server already runs, which the hub's HPC rules allow on a login node; the usage refresh is case 18.
+- Declined points: the reviewer's leave to run the probe is given in the brief (Decisions 4); item 3's place, words, label and join position are raised as open item Z116, built now as the brief's reversible decisions 2 and 3.
 
 Usage: brief-check agent ae55d11a40e206b7c, served claude-opus-5-5; 223,547 tokens, 87 tool uses, 12.3 min (from its completion notice)

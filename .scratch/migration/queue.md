@@ -1,14 +1,14 @@
 /plan-orchestration oculus/migration
 
 In flight:
-- X3d (Source Control as VS Code's), repair round 1 built; its review runs.
-- E3 (the apps section's text to Z103 (b), Z106 (a) and Z107 (b2)), repair round 1 built; its review runs.
-- Q111 (Undo gives a cleared field's lines back), its builder runs.
-Open items: Z113 (a test run in Svelte's client runtime for the focus defect), for Q106.
+- X3d (Source Control as VS Code's), taken back out of main at its look (the page hung); its diagnosis runs.
+- E3 (the apps section's text to Z103 (b), Z106 (a) and Z107 (b2)), round 1 reviewed; landing next.
+- Q111 (Undo gives a cleared field's lines back), built; its review runs.
+- Q107 (a Terminal tab closing itself; Attach to Session), prepared; its builder launches.
+Open items: Z113 (a test run in Svelte's client runtime, for Q106), Z115 (two browser tabs sharing one workbench, for Q107), Z116 (where Attach to Session sits, for Q107).
 Queued, in order:
 - U2 (every view's look against VS Code's), prepared; its builder launches once X3d has landed.
 - Q106 (Close pane on two tabs), cause found; its brief is written once Z113 is ruled.
-- Q107 (a Terminal tab closing itself), brief written; its brief check runs.
 - Q109 (a terminal's name, icon and colour), once Q107 has landed.
 - S3 (the Settings view as VS Code's), /spec when a slot frees.
 - Q85a2 to Q85a5 (zod in the other server folders), /spec when a slot frees; then Q85b and Q85c, then Q85d.
