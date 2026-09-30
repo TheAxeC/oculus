@@ -1,16 +1,16 @@
 /plan-orchestration oculus/migration
 
 In flight:
-- none; X3d's brief is at its brief check; U2 and Q88b are prepared next.
+- none; X3d's brief is at its brief check; Q85a is prepared next.
 Queued, in order:
 - X3d (the Repositories view and the diff rebuilt to look and work as VS Code's Source Control), first.
 - S3 (the Settings view as VS Code's Settings editor with the options catalog; Z75 (a)), stopped at /spec on open item Z94 (what an option is, the catalog's shape, Default and Modified, which options get a control).
-- U2 (the audit of every other view's look against VS Code's visual language), beside X3d; its build steps once Axel rules on its grouping.
-- Q88b (the right-click menus' new capabilities, and Chrome's own menu blocked): Z70 ruled (a); once Q102 has landed: both change the pane strip's menu and picks (`pane-view.ts`), `PaneView.svelte`, `layout/instances.ts` and `ui.svelte.ts`; Q102 landed 2026-09-30, so it is free.
+- U2 (the audit of every other view's look against VS Code's visual language), beside X3d, waiting for a Chrome tab in front (the tab opened on 8790 reads `document.visibilityState` hidden, so no screenshot can be taken); its build steps once Axel rules on its grouping.
+- Q88b (the right-click menus' new capabilities, and Chrome's own menu blocked): Z70 ruled (a); once Q102 has landed: both change the pane strip's menu and picks (`pane-view.ts`), `PaneView.svelte`, `layout/instances.ts` and `ui.svelte.ts`; Q102 landed 2026-09-30, so it is free. Waits for X3d's landing as well: its Source Control items go into `Repositories.svelte`, `RepoList.svelte`, `graph/Graph.svelte`, `Changes.svelte` and `menus/`, which X3d redraws, so the later landing would be a hand merge of whole components.
 - X3c (the tab strip as VS Code's editor tabs; Z47 (a)), once Q88b has landed: both change the pane strip (`PaneView.svelte`, `Tabs.svelte`, `pane-view.ts`), Q88b through `show_tabs`, `editor_actions` and its strip items.
 - X3a (the Files view as VS Code's Explorer, its look and behaviour included, the roots as Z76 rules), once Q88b has landed: X3a's New File, Rename, Delete, Cut, Copy, Paste and Compare rest on the server routes Q88b builds for the same items of the Files row menu.
 - Q91 (the project view and its editor), once X3a has landed.
-- L4 (floating panes).
+- L4 (floating panes), stopped at /spec on open item Z95 (what docked is, how a pane floats, where floats are kept).
 - Q85a, then Q85b and Q85c, then Q85d (checking untyped input with zod: the server, the state layer, `data/`, the views; Z73 (b)).
 - Q66 and Q35 (a hidden tab defers its work; the session views).
 - D11 and D14 (the debug client for rite, its configurations in `.oculus/launch.yml`, Z92; LaTeX everywhere).
