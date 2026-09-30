@@ -2,7 +2,7 @@
 
 In flight:
 - X3d (Source Control as VS Code's), taken back out of main at its look (the page hung); diagnosed: the hang is on main (a Graph commit press); prepared again with the Graph hang fix, the full-width button, the Seti icons, lanes under Outgoing and the builder's own look; its builder running.
-- Q107 (a Terminal tab closing itself; Attach to Session), repair round 1 done; its review runs.
+- Q107 (a Terminal tab closing itself; Attach to Session), repair round 2 running (item 2 with no control client).
 - S3a (the options catalog), its builder running.
 Open items: none. Choices made in automode, for review: `choices.md`.
 Queued, in order:

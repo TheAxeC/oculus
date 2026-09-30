@@ -136,3 +136,235 @@ Cases of the brief's "Cases":
 Reviewer usage: tokens not visible to me; about 50 tool uses; about 35 minutes.
 
 Usage: reviewer ad54a4d0f4137b7ba, served claude-opus-5-5; 259,978 tokens, 59 tool uses, 22.2 min (from its completion notice)
+
+## Repair round 1, refuted
+
+The round closes all four rulings and the five findings of the first review, and my reruns reproduce every closure. Two things are still open:
+
+- **The no-control-client case is still RED.** When no control client runs, a "no server" read still ends the running terminals. I reran `noserverhidden` and it is RED in both page shapes. Ruling 1 only asked for this run to be reported. The reason the report gives for leaving it RED does not hold up: tmux's server pid can tell the two cases apart (Proof 1).
+- **One new branch has no test.** The new branch in the ui store that writes every record when the stored value is unreadable passes the whole test file with the branch taken out (Proof 2).
+
+The report's first line still says "Everything in the brief is done" (Standards 1).
+
+### Verification (rerun from tools/oculus in the worktree, Node v24.21.0 first on PATH)
+
+```
+$ npm run diagrams
+exit=0; shasum over docs/diagrams/* before and after: 207118c0d0f534f2a9f015054502302fc7f5a6d5 both times
+
+$ sh ~/.claude/skills/land/templates/checks.sh /Users/axelfaes/workspace/research-hub/tools/oculus/.scratch/migration/orchestrator-state.md
+exit=0 (751 lines; the $ lines and result lines, build asset lines left out)
+$ npm test
+ Test Files  353 passed | 19 skipped (372)
+      Tests  5401 passed | 559 skipped (5960)
+$ npm run test:checks
+ Test Files  27 passed | 2 skipped (29)
+      Tests  365 passed | 9 skipped (374)
+$ npm run check
+$ npm run build
+$ npm run format:check
+$ npm run lint
+$ ! LC_ALL=C grep -rna '[^ -~]' src tests
+checks: 7 commands passed
+
+$ npx vitest run tests/state/sessions tests/state/client/terminal tests/views/sessions tests/server/machine/pty tests/ui/menu tests/state/workbench --reporter=dot
+ Test Files  65 passed (65)
+      Tests  1156 passed (1156)            (same as the report)
+
+$ ASCII gate of spec.md over src tests config, plus DESIGN.md HELP.md and the probe and the report
+prints nothing, exit 0
+
+$ sh utils/folder-check.sh   exit 0
+$ git status --short | wc -l   38     $ git diff dcef00c9 | shasum   e3cbf0efca9a246778e4924855ef432c8499ac17 (before and after my review)
+```
+
+### How I identified the round's delta
+
+1. **Timestamps.** I ran `stat` over every path in `git diff dcef00c9 --name-only` plus the untracked files. The round was sent at 00:10. These paths were modified after it:
+   - `tests/server/machine/pty/channel-list.test.ts` (00:13)
+   - the probe (00:16)
+   - `tests/state/client/terminal/terminal-tabs.test.ts` (00:17)
+   - `src/lib/state/sessions/terminals.svelte.ts` (00:17)
+   - `src/lib/state/shared/stores/storage-events.ts` (new, 00:19)
+   - `src/lib/state/workbench/layout/saved/storage.ts`, `src/routes/+page.svelte`, `DESIGN.md`, `HELP.md` (00:19)
+   - `src/lib/server/machine/pty/channel.ts` (00:37)
+   - `tests/state/workbench/ui-shared.test.ts` (new) and `src/lib/state/workbench/ui.svelte.ts` (00:42)
+   - the six diagram files (00:42)
+   - the report (00:46)
+2. **The five new paths.** Going from 33 to 38 paths adds:
+   - `ui.svelte.ts`
+   - `storage-events.ts`
+   - `ui-shared.test.ts`
+   - `layer-state.dot` and `layer-state.svg`. Their only hunk is `state/workbench to state/shared` going from 14 to 16, and the two new imports of `followKey` make that change.
+3. **`terminals.svelte.ts` is unchanged in content.** Its 00:17 timestamp comes from the ruling-2 mutant copy being put back. It is still 885 lines, and `attachTerminal`'s `find` sits at `:412`, where the first review cited it.
+4. **Pre-round `channel.ts`.** I rebuilt it as the final file with the `live()` guard at `:383` removed. That matches the first review's quote: `if (confirmed >= NO_SERVER_CONFIRMS) { this.#take(turn, []); return; }`.
+5. **Caveat on the shasum.** `git diff dcef00c9 | shasum` covers tracked files only, and nine of the 38 paths are untracked. So the round-base shasum never covered `storage-events.ts`, `ui-shared.test.ts`, `channel-list.test.ts` or the probe.
+
+### Closures
+
+**First review's findings**
+
+- **Spec 1 (confirmation span): closed where a control client runs; open where none does.**
+  - The fix adds the `live()` guard at `channel.ts:383`. It keeps `NO_SERVER_CONFIRMS` and does not remove a check.
+  - Probe `noserver` (2000 ms): green on the final tree in both shapes (my default run). RED on the pre-round `channel.ts`: "RED noserver / page shape reload: 2 lists, endedTerminals answers 2 terminal(s) tmux still lists (4 running)", and the same in the reconnect shape, exit=1.
+  - `noserverhidden`: RED on the final tree, reproduced (Spec 1 and Proof 1 below).
+- **Proof 1 (400 ms outage): closed.**
+  - `noserver` now runs at 2000 ms, and `noserver400` keeps the 400 ms run. Both are green on the final tree in both shapes.
+  - 2000 ms is RED on the pre-round tree and 400 ms is green there, which matches the report.
+- **Proof 2 (attach target): closed.** I ran the two mutants on a scratch copy with `npx vitest run tests/state/client/terminal tests/state/sessions tests/views/sessions tests/ui/menu`:
+  - `terminalTabs()[0]` fails both tests: "Tests 2 failed | 448 passed (450)".
+  - The page-on-screen's Terminal tab (`pageTab(terminalTabs(), workbench.currentPage())`) fails the case-8 test: "1 failed | 449 passed". The case-11 test passes it.
+  - Ruling 2 asked for "a page with two Terminal tabs" in both tests. The case-11 test uses a second page holding one Terminal tab, so only case 8 catches the current-page mutant. Together the two tests bind the behaviour, so this is a note, not a finding.
+- **Standards 1 (test head): closed.** `grep -n "scratch\|Q107\|probe" tests/server/machine/pty/channel-list.test.ts` prints nothing. The head at `:12-14` names what is not covered without a ledger path.
+- **Behaviour 1 (`oculus.ui.v1` shared): closed.**
+  - `save` now merges (`mergedInstances`, `ui.svelte.ts:414`), and the store follows the key (`takeSavedInstances`, `:433`, through `followKey`).
+  - `HELP.md:146` and `DESIGN.md:154` now say that the arrangement and each tab's own state are shared, and the appearance is not.
+  - With the base `ui.svelte.ts` in a scratch copy, `ui-shared.test.ts` gives "Tests 8 failed | 2 passed (10)". That matches the report's 8 of 9: the refused-write case passes on the base.
+
+**The four rulings**
+
+- **Ruling 1: done as ruled.**
+  - Tests (a), (b) and (c) are at `channel-list.test.ts:272,284,293`.
+  - Removing the `live()` guard fails (a) only: "Tests 1 failed | 36 passed (37)", together with `channel.test.ts`. That matches the report's first run. (b) and (c) pin the behaviour that stays.
+  - The doc comment of `#read` states both cases.
+  - The hidden-tab run was made and reported verbatim, as ruled, and I reproduced it RED. The reason the round gives for it standing is Proof 1.
+- **Ruling 2: done.** See Proof 2 above.
+- **Ruling 3: done.** See Standards 1 above.
+- **Ruling 4: done.**
+  - `ui-shared.test.ts` has 10 cases. My mutants:
+    - `synced` set before the write: 1 failed.
+    - Every saved record kept: 3 failed.
+    - This tab's records written whole: 2 failed.
+  - Beyond the ruling: `storage.ts` `follow` now calls the shared `followKey`, and `+page.svelte` wires both `stopFollowing` calls. It is the same listener in one place, and `layout-shared.test.ts` passes. It stays inside the ruling's concern.
+
+**The builder's two changes from ruling 4 as written**
+
+- **"Writes every record when the storage holds nothing readable": sound.**
+  - Read literally ("the saved records with this store's changed records laid over them"), the ruling would drop this tab's unchanged records whenever the stored value is unreadable. That is the loss Z128 exists to end.
+  - With the branch removed, my scratch test (a tab holds `a`, the stored value turns unreadable, the tab saves `b`) gives "expected { b: 2 } to deeply equal { a: 1, b: 2 }".
+  - No test binds it: Proof 2.
+- **"`synced` updated only after a successful write": sound, and bound by the refused-write test.**
+
+**The hidden-tab RED:** consistent with ruling 1, which asked only for the result. Judged against the brief, it leaves item 2 and cases 14 and 17 short (Spec 1).
+
+### Verdicts, whole diff since dcef00c9
+
+**Items of "What to build"**
+
+- **1: holds.**
+  - The probe is kept at the ledger path. The worktree and main-ledger copies are identical (`cmp`).
+  - It is isolated by port 8797, `HOME` and `TMUX_TMPDIR`, with `-S` on every tmux call.
+  - My default run was green on every scenario. Pre-round `noserver` was RED.
+  - The layout path is red without the listener (first review, unchanged since).
+- **2: violated, narrower than in the first review.**
+  - With a control client live, a "no server" answer no longer ends terminals, whatever the outage length (probe `noserver` 2000 ms green).
+  - With no control client, the empty list is still published after 0.6 s while tmux runs (`noserverhidden` RED, both shapes; Spec 1).
+  - The layout path and the ui store hold (mutants above).
+- **3: holds.** The attach target is now bound by tests (mutants above).
+- **4: holds.**
+  - After my three probe runs: `lsof -iTCP:8797 -sTCP:LISTEN` exit 1; `ls ${TMPDIR}q107s` "No such file or directory"; `pgrep -fl q107` exit 1.
+- **5: holds.**
+  - `DESIGN.md:361` states the control-client rule and Attach to Session.
+  - `HELP.md:127` states Attach to Session.
+  - `HELP.md:146` and `DESIGN.md:154` state what is shared.
+  - Name grep for `followKey`, `takeSavedInstances`, `mergedInstances`, `savedHeld`, `stopFollowing`, `loadUi` and `NO_SERVER_CONFIRMS`: the per-file counts match the report. No doc sentence found false.
+
+**Cases**
+
+| Case | Verdict | Evidence |
+|---|---|---|
+| 1 | met | The probe on the pre-round tree is RED at `noserver`. |
+| 2 | met | 1 of `channel-list.test.ts` fails without the guard; 8 of `ui-shared.test.ts` fail on the base `ui.svelte.ts`; the layout test is red without the listener (first review). |
+| 3 | met | Probe `ended` green in both shapes. |
+| 4 | met | Store test passes. |
+| 5 | met | Store test passes. |
+| 6 | met | `terminals.test.ts`. |
+| 7 | met | `terminal-menu.test.ts`. |
+| 8 | met | Both target mutants fail it. |
+| 9 | met | Store test passes. |
+| 10 | met | Store tests pass. |
+| 11 | met | The `terminalTabs()[0]` mutant fails it; the current-page mutant is caught by case 8. |
+| 12 | met | `menu-words.test.ts` passes. |
+| 13 | met | The report's quotes, and my own cleanup lines. |
+| 14 | partial | Both page shapes are green for `noserver` and `noserver400`; both are RED for `noserverhidden`. |
+| 15 | met | Layout test is red without the listener. |
+| 16 | met | Tests pass. |
+| 17 | partial | Met while a control client runs; unmet with none (`noserverhidden` RED). |
+| 18 | met | Probe `usage` green. |
+| 19 | met | Tests pass. |
+| 20 | met | Tests pass. |
+| 21 | met | Tests pass. |
+
+### 1. Spec
+
+- **`src/lib/server/machine/pty/channel.ts:382-385`**:
+  ```
+  if (confirmed >= NO_SERVER_CONFIRMS) {
+      if (!this.#driver.live()) this.#take(turn, []);
+      return;
+  }
+  ```
+  - **What is wrong.** With no control client, three "no server" answers 0.6 s apart still publish `terminals: []` while tmux runs. Item 2 asks that no `sessions` message leave out a terminal tmux still runs, and case 17 asks that such a read end no running terminal.
+  - **Reproduced.** `node .scratch/migration/agents/reviews/Q107-probe.mjs noserverhidden` on a scratch copy of the final tree printed:
+    ```
+    RED noserverhidden / page shape reload: 1 lists, endedTerminals answers 2 terminal(s) tmux still lists (2 running)
+    RED noserverhidden / page shape reconnect: 3 lists, endedTerminals answers 2 terminal(s) tmux still lists (2 running)
+    RESULT: RED
+    ```
+    with exit=1.
+  - **A fix is possible inside the step.** A fact that separates a running tmux from an exited one exists without a control client (Proof 1).
+  - **Failure scenarios.**
+    - Every Terminal tab has been off screen (another tab active, or another page) for more than `IDLE_MS`, so no control client runs. The tmux socket is then unreachable for 0.6 s or more at an idle poll tick. The server publishes the empty list, and every page takes every terminal out of its tabs and closes the tabs left with none.
+    - The same happens right after a dev-server restart: the new `Terminals` has no control client, its constructor calls `refresh()`, and with the socket unreachable at that moment `[]` becomes the first list.
+  - **Verdict:** item 2 violated; cases 14 and 17 partial.
+  - **Context.** Ruling 1 asked only that this run be reported. The builder did that, so the round broke no ruling. The gap is between the whole diff and the brief.
+
+### 2. Proof
+
+- **`Q107-report.md:949`**: "No control client runs then, so nothing in the process says tmux runs, and a tmux that exited normally answers the same words."
+  - **What is wrong.** This does not reproduce. tmux answers its server pid in the same list read (`#{pid}`), and that process outlives a lost socket. On my own private socket (`${TMPDIR}q107rv/s`, killed and removed afterwards):
+    - `tmux -S $SOCK list-sessions -F '#{pid}'` printed `23542`, and `ps` showed `23542 tmux`.
+    - With the socket file moved away, `list-sessions` said "error connecting to ... (No such file or directory)" while `kill -0 23542` succeeded ("pid alive while socket away").
+    - After `kill-server`, `kill -0` exit=1.
+  - **Decision resting on it.** The report leaves `noserverhidden` RED as "the case that remains", on the ground that no fact tells the two cases apart.
+  - **Failure scenario.** The orchestrator lands the step taking the remaining RED as unfixable. The closing seen in Z99 stays reachable in the idle shape of Spec 1.
+  - **Verdict:** item 2 violated; cases 14 and 17 partial.
+- **`src/lib/state/workbench/ui.svelte.ts:416`**: `if (held === null) return mine;`, which the report lists as a change from the ruling.
+  - **What is wrong.** No test fails without the branch. With it removed, `npx vitest run tests/state/workbench/ui-shared.test.ts` still gives 10 of 10 passed. The case "save their own records when the stored value cannot be read" loads with an empty storage, so `synced` is empty and every record counts as changed either way. My scratch case (a tab holds `a`, the stored value turns unreadable, the tab saves `b`) passes with the branch and fails without it: "expected { b: 2 } to deeply equal { a: 1, b: 2 }".
+  - **Failure scenario.** A later edit drops or changes the branch. A browser tab whose stored ui value is unreadable (another version's envelope, a corrupted write) then writes only its newly changed records, and every other record it holds is lost from the storage. No test fails.
+  - **Verdict:** a test that would pass with its behaviour removed. Ruling 4 is otherwise closed.
+
+### 3. Standards
+
+- **`Q107-report.md:1`**: "Everything in the brief is done."
+  - **What is wrong.** `agents/spec.md` "Report" requires the first line to name anything NOT done. The round's own section (`:949`) says a case the brief covers (case 17, no control client) "is RED and stands". The report's first line was not updated.
+  - **Failure scenario.** A reader who reads the head of the report takes item 2 and case 17 as done.
+  - **Verdict:** case 17 partial; item 2 violated, as in Spec 1.
+
+### 4. Behaviour
+
+None. The report's "User-visible changes" table has a before and after for each change, and I found no user-visible change it leaves out. Among the changes it states:
+- the last list stands while tmux is unreachable and a page is attached;
+- the list is read again only at the next change tmux reports;
+- the no-page case is unchanged and RED;
+- browser tabs share the view records, the appearance stays each tab's own, and the last write wins;
+- the new wording of `HELP.md:146`.
+
+### Declined to judge
+
+- **What caused the Z99 sighting.** The report says it is not established, and neither a read nor a rerun can settle it.
+- **Whether pid reuse makes a pid check unsafe.** Proof 1 shows only that the fact exists. Whether it is the right fix, or whether a socket-path check, SIGUSR1 or another design fits better, is the builder's and the orchestrator's call.
+- **Browser behaviour.** Whether a view that writes its record from an effect could make two browser tabs ping-pong their records through `takeSavedInstances`, and how a composer or form looks when another tab's record arrives while the reader types, are DOM behaviour for the look at landing (`agents/spec.md:56`).
+- **Wording of `HELP.md:146`.** It says each browser tab "keeps its own appearance". After a reload a tab reads whichever tab saved last, and that was already so before this step. Whether the sentence needs "until reloaded" is a wording judgement.
+- **A refused write followed by another tab's save.** Records whose write was refused are replaced by `takeSavedInstances` when another tab's save arrives before this tab's next save. The storage quota is shared by the origin, so a refused write in one tab likely means one in both. I did not run this.
+- **Side effects of my own commands**, listed so they are not taken for the builder's:
+  - In the worktree: `npm run diagrams` (diagram hash unchanged) and `checks.sh` (build output, `.svelte-kit` and vitest caches are git-ignored). Status is still 38 lines and the shasum is unchanged.
+  - My first mutant runs used a copy whose `node_modules` was a symlink to the worktree's, so vitest may have written a cache into the worktree's `node_modules/.vite` (git-ignored).
+  - The probe runs used an APFS clone of `node_modules`, with the copy's `config/local.yml` deleted unread so that its hub defaulted to inside the copy. All scratch copies are removed.
+  - I wrote the checks output to `checks.txt` in the session scratchpad. A file of that name was already there and may have been the orchestrator's, so it now holds my run.
+  - Each of my three probe server starts ran the Live HPC poller's read-only queries, which the brief accepts.
+  - Every tmux command I ran named my own socket or the probe's.
+
+### Usage
+
+Reviewer a498a23d465b6bf60, served claude-opus-5-5 (the transcript's message.model): 209,457 tokens, 47 tool uses, 18.8 min (its completion notice).
