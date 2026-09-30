@@ -150,6 +150,7 @@ Z78 to Z88 were raised 2026-09-30 from the Z74 inventory (`agents/reviews/Z74-in
     - (a) A key `format_on_save` per language beside (3)'s, off by default; the Format Document command comes with D23 either way.
     - (b) The Format Document command only.
     - Recommendation: (a), since the answer differs per language and repository. The lazy option is (b).
+  - Found with it and not verified by a run: the test that tells text from binary reads a file's first 8,192 bytes (`src/lib/data/helpers/files/text-kind.ts`), so a file that stops being UTF-8 after that point opens as text, and what a save writes back for it was not tried. The step that builds (1) tests the whole file before a save.
 
 - **Z80, which Python pyright uses.** Today nothing is ruled; the draft D23 brief has pyright ask `python3` from PATH, and the relay sends pyright no setting.
   - (a) oculus finds it: `.venv` in the root, then `venv`, else `python3` from PATH; the status bar names it, with a picker whose choice oculus remembers under `~/.oculus/`, the way Z72 (2) (a) treats the compile database. For: imports resolve against the project's own environment with no file in the repository. Against: one more picker.
