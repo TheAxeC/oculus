@@ -6,7 +6,7 @@ In flight:
 Queued, in order:
 - X3d (the Repositories view and the diff rebuilt to look and work as VS Code's Source Control), first.
 - S3 (the Settings view as VS Code's Settings editor with the options catalog; Z75 (a)).
-- U1 (the audit of every other view's look against VS Code's visual language), beside X3d; its build steps once Axel rules on its grouping.
+- U2 (the audit of every other view's look against VS Code's visual language), beside X3d; its build steps once Axel rules on its grouping.
 - Q88b (the right-click menus' new capabilities, and Chrome's own menu blocked): Z70 ruled (a); once Q102 has landed: both change the pane strip's menu and picks (`pane-view.ts`), `PaneView.svelte`, `layout/instances.ts` and `ui.svelte.ts`.
 - X3c (the tab strip as VS Code's editor tabs; Z47 (a)), once Q88b has landed: both change the pane strip (`PaneView.svelte`, `Tabs.svelte`, `pane-view.ts`), Q88b through `show_tabs`, `editor_actions` and its strip items.
 - X3a (the Files view as VS Code's Explorer, its look and behaviour included, the roots as Z76 rules), once Q88b has landed: X3a's New File, Rename, Delete, Cut, Copy, Paste and Compare rest on the server routes Q88b builds for the same items of the Files row menu.
@@ -14,7 +14,7 @@ Queued, in order:
 - L4 (floating panes).
 - Q85a, then Q85b and Q85c, then Q85d (checking untyped input with zod: the server, the state layer, `data/`, the views; Z73 (b)).
 - Q66 and Q35 (a hidden tab defers its work; the session views).
-- D11 and D14 (the debug client for rite, its launch form as Z87 rules; LaTeX everywhere).
+- D11 and D14 (the debug client for rite, its configurations in `.oculus/launch.yml`, Z92; LaTeX everywhere).
 - D25, D26 and D27 (per-language indentation; the rite language and the extension map; the languages the editor colours; Z74, Z78), before D23.
 - D23, D15 and D17 (language servers in the Monaco editor, Z72, Z74, Z79 (4) and Z80 ruled; PDF reading, once D14 has landed; project commands, widened by Z74 (3) and Z85).
 - D23b (rename, code actions, workspace symbols and hierarchies for the language servers), once D23 has landed.
