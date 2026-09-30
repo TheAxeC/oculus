@@ -2,8 +2,8 @@
 
 In flight:
 - X3d (the Repositories view and the diff rebuilt to look and work as VS Code's Source Control), builder on `claude-sonnet-5-5` since 2026-09-30 15:01, base 4fe6ce93.
-- E2 (the apps section of DESIGN.md rewritten to the rulings of Z93), builder on `claude-sonnet-5-5` since 2026-09-30 15:57, base d7af9cac.
-- Q85a1 (zod at the server's `core` and `root` inputs; Z96 (a)), built, its report in; the review runs on `claude-opus-5-5` since 2026-09-30 16:30.
+- E2 (the apps section of DESIGN.md rewritten to the rulings of Z93), built, its report in; the review runs on `claude-opus-5-5` since 2026-09-30 17:00.
+- Q85a1 (zod at the server's `core` and `root` inputs; Z96 (a)), reviewed; repair round 1 running since 2026-09-30 17:10.
 - No slot is free. S3 and L4 go through /spec as slots free.
 Queued, in order:
 - Q106 (Close pane on a pane of two tabs; Z98 (a)), /spec when a slot frees.
