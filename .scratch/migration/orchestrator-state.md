@@ -111,106 +111,19 @@ dispatch:      # Q102's round 1 under refutation; E1's round 1 under refutation;
 
 ## The pause
 
+In force again since 2026-09-30 08:42, Axel: nothing is dispatched, saved from a reviewer or landed until he gives a green light; rulings are booked and read-only checks run meanwhile. What follows is the go before it.
+
 Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with the three slots kept filled, open items booked and reported without ending the turn, and the order below. Before that, in force from 2026-09-29, Axel: the loop paused once D13b's reviewer and Q86c's builder were done; he then asked for Q83's landing and the slow-test work (Z64) done inline, with a report of how long each part of the verify list takes a builder. Nothing else is dispatched, no D13b landing, no Q86c review and no `/spec` Q102, until he says go. On his go the order is (Axel, 2026-09-30): `/refute` Q86c; `/spec` Q102 and its Sonnet 5.5 builder, the model check right after the launch; D13b's landing while those two run; Q88b into the slot D13b frees; Q103's look while the cluster answers.
 
 ## Open items (only what Axel must rule on; every report opens with this list verbatim and repeats it until he has ruled)
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is booked as its own step in `plan.md` and carried in the Booked section below, since it needs no ruling from him.
 
-Z78 to Z88 were raised 2026-09-30 from the Z74 inventory (`agents/reviews/Z74-inventory.md`), cut under the Settings ruling. Each is a decision on something oculus lacks; what the inventory's other missing rows became is the section "Cut under the Settings ruling" at the end of that file.
-
-- **Z78, languages that open uncoloured.** Today the editor colours 18 languages (`src/lib/ui/controls/editor/kit/grammars.ts:11-30`) and draws every other file as plain text. C, C++, CMake, Lua, Ruby, SCSS, Java, Dart, Fortran, Jinja and `.pyi` files are uncoloured, and `.svelte` is coloured as XML (`src/lib/state/sources/file-type.ts:33`). Tracked files (`git ls-files`): 698 C and C++ files in cathedra, 251 in game-engine, 1,132 `.ts` and `.svelte` in the hub. The installed Shiki 4.4.3 ships a grammar for each of those languages and for Svelte; it ships none for Wren or Graphviz.
-  - (1) Which languages are added.
-    - (a) Every one of them that Shiki ships: C, C++, CMake, Lua, Ruby, SCSS, Java, Dart, Fortran, Jinja, Svelte with its own grammar, and `.pyi` as Python, in one step before D23; a grammar is loaded when the first file of its language opens. Wren and Graphviz stay plain until a grammar is written for them the way D26 writes rite's. For: every file in the three repositories that has a grammar is coloured. Against: the largest step of the three.
-    - (b) C and C++ only, inside D23. For: the smallest change that lets D23 work. Against: the other nine stay uncoloured and each needs a new ruling later.
-    - (c) None. Against: D23's clangd features would run over uncoloured text.
-    - Recommendation: (a). The lazy option is (b).
-  - (2) Where the list of extensions per language lives. Today it is a table in code (`file-type.ts:28-37`); D26 is ruled to map `.rite` "in oculus's own config".
-    - (a) One map in config, the one D26 creates, holding today's code table, D26's `.rite` and the languages of (1), shown in the Settings view. For: `.h`, `.inc`, `.in` and `.conf` mean different languages in different repositories, so a new or disputed extension is one config line. Against: one more config section to keep.
-    - (b) The table stays in code and D26 adds a key for `.rite` alone. For: nothing moves. Against: two places say which language a file is.
-    - Recommendation: (a). The lazy option is (b).
-
-- **Z79, saving a source file.** Today a source tab reads its file once per page lifetime (`src/lib/state/sessions/source.svelte.ts:84`, `:217-235`), and a save sends the whole text, which the server writes without comparing it with the file on disk (`src/lib/server/files/source.ts:117-149`). So when an agent changes a file that is open in a tab, the tab keeps showing the old text and a save from that tab replaces the agent's change. A source tab saves only on command; a note saves itself 800 ms after the last key (`config/behavior.yml:128-129`).
-  - (1) A file that changed on disk under an open tab.
-    - (a) As VS Code: a tab with no edits takes the new text when the file changes; a tab with edits keeps them and says the file changed; its save is refused with three choices, Compare, Overwrite and Revert. The server compares a hash of the text the tab last read with the file. For: no change is lost without being shown, whichever side made it. Against: oculus has to watch each open file.
-    - (b) The comparison on save only. For: ends the silent overwrite. Against: the tab still shows stale text until a save is tried.
-    - (c) As today. Against: an agent's change is lost without a word.
-    - Recommendation: (a). The lazy option is (c); (b) is the cheaper half of (a).
-  - (2) Auto save for source tabs.
-    - (a) A key `editor.autosave` with the values `off`, `after_delay` and `on_focus_change` and a delay in milliseconds, `off` by default as in VS Code, with its control in the Settings view; built with (1). For: it is a matter of taste. Against: two keys.
-    - (b) Always on after a delay, as notes. Against: a half-typed line reaches the disk, where a build or an agent reads it.
-    - (c) None.
-    - Recommendation: (a). The lazy option is (c).
-  - (3) Cleanup on save: trimming trailing whitespace and ending the file with one newline. Today trimming is a command (Cmd+K Cmd+X, `src/lib/ui/controls/editor/chords.ts:46`) and nothing runs on save.
-    - (a) Two keys per language in D25's per-language area, both off by default as in VS Code. For: the right answer differs by language (two trailing spaces are a line break in Markdown) and by repository (a file full of trailing whitespace gets a noisy diff).
-    - (b) Fixed on for every language except Markdown. Against: the first save of an old file changes lines nobody touched.
-    - (c) None.
-    - Recommendation: (a). The lazy option is (c).
-  - (4) Format on save. A formatter arrives only with D23, for C and C++ through clangd; pyright formats nothing. Neither cathedra nor game-engine has a `.clang-format` at its root, so clangd would format in its fallback style.
-    - (a) A key `format_on_save` per language beside (3)'s, off by default; the Format Document command comes with D23 either way.
-    - (b) The Format Document command only.
-    - Recommendation: (a), since the answer differs per language and repository. The lazy option is (b).
-  - Found with it and not verified by a run: the test that tells text from binary reads a file's first 8,192 bytes (`src/lib/data/helpers/files/text-kind.ts`), so a file that stops being UTF-8 after that point opens as text, and what a save writes back for it was not tried. The step that builds (1) tests the whole file before a save.
-
-- **Z80, which Python pyright uses.** Today nothing is ruled; the draft D23 brief has pyright ask `python3` from PATH, and the relay sends pyright no setting.
-  - (a) oculus finds it: `.venv` in the root, then `venv`, else `python3` from PATH; the status bar names it, with a picker whose choice oculus remembers under `~/.oculus/`, the way Z72 (2) (a) treats the compile database. For: imports resolve against the project's own environment with no file in the repository. Against: one more picker.
-  - (b) `python3` from PATH, fixed. Against: in a project with its own environment every third-party import is marked unresolved.
-  - (c) A path per root in a config file. Against: a path written by hand per repository.
-  - Recommendation: (a), inside D23. The lazy option is (b).
-
-- **Z81, editor options in the Settings view.** Today the editor sets the glyph margin, read-only, the context menu, no indentation detection and the font (`src/lib/ui/controls/editor/Editor.svelte:168-177`); everything else is Monaco's default, and word wrap has no control.
-  - (a) Five keys, each with a control: word wrap (per language in D25's area, plus VS Code's Alt+Z for the open tab), rulers (per language), the minimap, showing whitespace, and sticky scroll. Every other editor setting stays at Monaco's default, said once in HELP.md. For: these are the ones whose answer differs by language or is taste. Against: five keys; any of them Axel would never change can be struck.
-  - (b) Word wrap only.
-  - (c) None.
-  - Recommendation: (a). The lazy option is (c).
-
-- **Z82, terminal options.** Today `config/appearance.yml:31-32` holds the terminal's `font_px` and nothing else, and `src/lib/views/sessions/terminal/grid-look.ts` sets the colours and the font family.
-  - (a) Four keys beside `font_px`: Option as Meta, copy on selection, cursor shape, cursor blink, each defaulting to today's behaviour. For: Option as Meta decides whether Alt shortcuts reach a shell or a program, and turning it on stops Option from typing characters on keyboard layouts that need it, so the answer differs by person.
-  - (b) All four fixed as today.
-  - Recommendation: (a). The lazy option is (b).
-
-- **Z83, git auto fetch.** Today a fetch runs only on command (`src/lib/server/git/git-write.ts:590-593`, its one call site).
-  - (a) A key `git.autofetch_minutes`, 0 meaning off and 0 the default as in VS Code; when set, oculus runs `git fetch --prune` in each repository with a remote at that period and nothing else touches the network. For: the incoming row of X3d's graph stays current. Against: a periodic network call.
-  - (b) Fixed off.
-  - Recommendation: (a). The lazy option is (b).
-
-- **Z84, replace in the Search view.** Today the Search view finds and does not replace.
-  - (a) Replace as in VS Code's Search view: a replace field, replace one hit, one file or all, each write through oculus's write chain and its change log. For: a rename across files is done in oculus. Against: a new step.
-  - (b) Not built.
-  - Recommendation: (a), as its own step. The lazy option is (b).
-
-- **Z85, D17's open shapes.**
-  - (1) Where a repository's commands live. Two of Axel's statements collide: the D17 ruling (`plan.md:510`) puts them in `.oculus/commands.yml` in the repository root, and he has said the user never has to create a file in a repository.
-    - (a) oculus keeps them under `~/.oculus/` per repository, written from a form in oculus; nothing is read from the repository. For: no file in a repository, ever. Against: the commands are not versioned with the code and do not follow a clone.
-    - (b) The form of (a), and `.oculus/commands.yml` read as well when a repository has one. For: nobody has to create the file, and a repository that wants its commands versioned can have them. Against: two sources to merge in one list.
-    - Recommendation: (b). The file as the only source is left out because it breaks the second statement. Keeping D17 as ruled would be the lazy option.
-  - (2) Commands oculus finds itself. cathedra has `CMakePresets.json` at its root and oculus a `package.json`.
-    - (a) oculus lists a root's CMake presets (configure, build, test), its `package.json` scripts and its Makefile targets beside the saved commands, each run after the same approval of its text. For: the common commands need no writing at all.
-    - (b) None.
-    - Recommendation: (a). The lazy option is (b).
-  - (3) The placeholders of Z74 (3).
-    - (a) VS Code's names and syntax: `${file}`, `${fileDirname}`, `${fileBasename}`, `${fileBasenameNoExtension}`, `${lineNumber}`, `${selectedText}`, `${workspaceFolder}`, replaced before the shell sees the line. For: the names are known and a command copies over by hand unchanged. Against: a shell variable of one of those names cannot be used in a command.
-    - (b) oculus's own, `{file}`, `{dir}`, `{name}`, `{stem}`, `{line}`, `{selection}`, `{root}`. For: no collision with the shell. Against: a second vocabulary to learn.
-    - Recommendation: (a). Neither costs less to build.
-  - Fixed without a decision: a command is a full shell line, so its environment is written in the line; every run opens its task terminal and shows it; nothing runs when a root is added or a worktree is made.
-
-- **Z86, a Problems view.** Today oculus has none: the Findings view lists the problems the data layer found in the hub's files (`HELP.md:133`), D23's diagnostics are planned in the editor only, and Z74 (3) makes a command's compiler errors clickable in its output.
-  - (a) A Problems view as VS Code's: D23's diagnostics and the errors of D17's commands, grouped by file, a press opening the file at the line, with its count on the status bar. For: every error of a build is in one list. Against: a new view.
-  - (b) Both added to the Findings view as a second kind. Against: build errors mixed with the hub's data problems.
-  - (c) No list.
-  - Recommendation: (a). The lazy option is (c).
-
-- **Z87, D11's launch form.** Ruled so far: D11 debugs rite programs only and launches from oculus's own form (`plan.md:438`).
-  - (a) The form saves named configurations per repository under `~/.oculus/`: the program (the open `.rite` file by default), its arguments, the working directory and a D17 command to run first; the status bar's picker chooses among them. For: a second debug run is one press.
-  - (b) The form is filled at every launch and nothing is saved.
-  - Recommendation: (a). The lazy option is (b).
-  - Fixed without a decision: the debug console uses the terminal's font and wraps; the editor takes the focus when a breakpoint is hit.
-
-- **Z88, the groups of VS Code settings that have no step.** They are: keyboard rebinding, language features for TypeScript, JavaScript and Svelte, for JSON, YAML, CSS and HTML, and for Markdown, a test explorer, an Output panel, Zen mode, accessibility signals, notebooks, per-colour theme overrides, Settings Sync, a proxy setting and a browser tab.
-  - (a) None is built; each is named in HELP.md as not built.
-  - (b) TypeScript and Svelte language features as one step on D23's relay, their servers from npm as pyright's is; the rest not built. For: the hub tracks 1,132 `.ts` and `.svelte` files, more than its 806 Python files, and Monaco's built-in worker checks their syntax only (`src/lib/ui/controls/editor/kit/load.ts:122-124`). Against: two more servers to run.
-  - (c) (b) and keyboard rebinding with VS Code's Keyboard Shortcuts editor. Against: oculus's chords follow VS Code's defaults, so the editor pays only if Axel wants a chord changed.
-  - Recommendation: (b). The lazy option is (a).
+- **Z89, whether a repository can override oculus's per-language settings** (raised 2026-09-30 from Axel's question on Z78 (2): "or should it be a user-setting file thing in .oculus?"). Today every setting of oculus is in `tools/oculus/config/*.yml` (appearance, behavior, layout, present, sources, and the untracked `local.yml`); `~/.oculus/` holds what oculus remembers (workspaces, bookmarks, sessions, the change log) and no setting; a repository's `.oculus/` folder holds `commands.yml` (D17) and `project.yml`. The per-language keys ruled so far (the extension map of Z78 (2), indentation of D25, trim, final newline and format on save of Z79, word wrap and rulers of Z81) are booked in oculus's config, so they hold for every repository alike.
+  - (a) Those keys in oculus's config only. For: one place, the Settings view of S3 shows and edits all of it. Against: two repositories that want different answers (`.h` as C in one and C++ in the other, tabs in one and spaces in the other, format on save in the one that has a `.clang-format`) cannot both be right.
+  - (b) Those keys in oculus's config as the default, and a repository's `.oculus/settings.yml` able to override the per-language ones for its own files; the file is optional, the Settings view shows which value comes from where and writes either. For: the answer can differ per repository, which is what the Settings ruling names as the reason for a key. Against: a second place a value can come from, and the Settings view has to show the source.
+  - (c) Every setting of oculus moved out of the tool's tree into `~/.oculus/`. Not recommended here: where oculus's own config lives once oculus is its own repository is O33's question (`plan.md` O33: "what moves, what the hub keeps (its config, the ledger)").
+  - Recommendation: (b), built in D25, which creates the per-language area. The lazy option is (a).
 
 ## Time per step (Axel asked 2026-09-27 for how it evolves with Q77; measured from each builder's transcript: each tool call from call to result, each background wait from the builder stopping to the run waking it)
 
@@ -232,6 +145,7 @@ Z78 to Z88 were raised 2026-09-30 from the Z74 inventory (`agents/reviews/Z74-in
 - The looks owed by Q81, Q82, Q86 and Q96, taken on TEST 2026-09-29. Seen and passing: Q96's rail list, icon dropdown and one tooltip at a time (the pick not made, since it writes `rail:`); Q81's pane menu with Home, End, type-ahead "sp" and its submenu (ArrowRight opens it to the side, ArrowLeft and Escape give the keyboard back to "Move tab to page...", no console error), Tab out of a menu to the next stop (a dispatched Tab moved the focus from "Close pane" to "Theme" and closed the menu), the palette's fuzzy rows with the match in the accent, a status-bar tooltip kept inside the window at the bottom edge, the tray and its Close with no tooltip; Q82's Files tree with the `a` type-ahead and the Repositories rows and Graph; Q86's neato picture. Fixed on main after the look: a menu with a submenu did not open (`MenuList.svelte`, bits-ui refused `bind:ref` to an undefined record entry), the palette input named no active row (`Palette.svelte`, the rows now in bits-ui's `Command.Viewport`), a change row cut the file name before its folder (`TreeItem.svelte`), the bell's tooltip said "1 new notifications" (`statusbar.bell_unread_one`). Booked in Q86b: labels drawn across circles and edges, and the central pillars left unlabelled by the label rule's order. Still owed, since the tab was hidden (`document.visibilityState` "hidden", `document.hasFocus()` false) and the focus cannot be read there: whether a pointer open focuses the list, the key sheet's focus, the tray's Close taking the focus, the focus given back after each dialog, a Confirm over the tray taking the first Escape, the Memories overlay holding the keyboard, and Q82's Cmd+A, Cmd+Enter, Tab to a scrolled-away stop, the focus through a wheel scroll and the Graph's Left and Right; taken with the tab in front at the next landing on TEST.
 
 ## Closed items (kept as the log of what was raised and how it ended)
+- Z78 to Z88, the decisions cut from the Z74 inventory under the Settings ruling (raised and ruled 2026-09-30; the items in full are in commit 528b3d11's copy of this file, the rulings in `plan.md`'s Rulings section). Ruled: Z78 (1) (a), (2) (a); Z79 (1) (a), (2) (a), (3) (a), (4) (a); Z80 (a); Z81 (a); Z82 (a); Z83 (a); Z84 (a); Z85 (1) (b), (2) (a), (3) (a); Z86 (a); Z87 (a), booked without an arguments field since `rite_dap` reads none; Z88 (b). Steps: D27 to D34 new, D11, D17, D23 and D26 widened.
 - Z77, a check that every option has a catalog entry (raised 2026-09-30 with Z75 (a), for S3; a new check needs Axel's approval of what it computes). What it would compute, inside `npm run test:checks`: every key path of `config/appearance.yml`, `behavior.yml`, `layout.yml`, `present.yml` and `sources.yml` has an entry in S3's catalog, and every catalog entry names a key one of those files or the server's list of `local.yml` keys holds; `local.yml` itself is never read, its keys come from the list the server checks a save against (HELP.md:234). Options: (a) the check in both directions, failing with the name of each key without an entry and each entry without a key; (b) no check, the catalog kept complete by review; (c) one direction only, keys without an entry. Recommended (a): whether a key has an entry has one answer a machine computes, and without it a key added later shows in the Settings view with no description, which Z75 exists to end; the second direction stops the catalog describing options that are gone. (b) is the lazy option. Ruled 2026-09-30 by Axel: (a); in S3.
 - Z76, the model of the Files view's roots and workspaces (raised 2026-09-30 from Axel's question, for X3a). Today: the hub and the engine's `config/` folder are fixed roots; `sources.yml` `roots:` adds cathedra and game-engine; `+ root` in the Files header, or Add Folder to Workspace... on a root's right-click, adds a folder typed by path to the current workspace, saved in `~/.oculus/workspaces.json` (`server/files/roots.ts:25-37`, `server/files/fs.ts:158`); the Workspaces section lists the saved workspaces and pressing one switches which added roots are served; "Configured roots" is the name shown for the default workspace, which has no added root, so "Workspaces 1 Configured roots" reads: one workspace, the default. Options: (a) VS Code's model: the Explorer shows the current workspace as a header with its folders as the top-level trees, Add Folder to Workspace and Remove Folder from Workspace on the header's menu and a folder's right-click, a folder picker in place of a typed path, switching workspaces in a picker (VS Code's Open Recent) and not a section of the tree, and the default workspace's folders (the hub, the engine's `config/`, cathedra, game-engine) edited from the page rather than in `sources.yml`; (b) one set of folders and no named workspaces, added and removed from the Explorer; (c) today's model with its labels reworded. Recommended (a): it is VS Code's own model, and every folder is added, removed and switched from the view. (c) is the lazy option. Axel 2026-09-30: leans (a), not locked; he asked what oculus does today that is better than VS Code, so that (a) keeps it. Ruled 2026-09-30 by Axel: (a), with what oculus does today that VS Code does not kept: switching workspaces in place with no reload; the hub and the engine's `config/` folder fixed in every workspace; the Files tab that follows the selected session's workspace; the hidden-files and ignored-files toggles in the header, kept per tab; Bookmarks; scratch Notes; Show in Files from the cards; nothing outside a root served; a root whose folder is gone reported.
 - Z75, where every option is explained and found (raised 2026-09-30 from Axel's ask that all options be properly explained and easy to find). Today the Settings view holds the appearance values and the rail list only (HELP.md:145), the Config view shows each file's text (HELP.md:138), and an option is explained, if at all, in its YAML file's comment. Options: (a) the Settings view becomes VS Code's Settings editor: every option of every config file, grouped by file and section, a search over name and description, each with its description, default, current value, file and line, its control where it has one, and a Modified filter; each description written once in a catalog under `config/catalogs/`; `local.yml`'s keys are listed with their description and never with their value; HELP.md's config section points to it; (b) a table of every option in HELP.md, found with the Help view's find, no controls; (c) both, the catalog drawn in the Settings view and in HELP.md. Recommended (a): it is how VS Code makes its options findable, and one catalog means one description per option. (b) is the lazy option. A check that every key of `config/*.yml` has a catalog entry would be a fact a machine computes; it is proposed for Axel's approval, not written. Ruled 2026-09-30 by Axel: (a); step S3 in `plan.md`. The check that every key has a catalog entry is open item Z77.
@@ -591,6 +505,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-09-30 13:05. Ruled and booked: Z78 to Z88 (steps D27 to D34 added, D11, D17, D23 and D26 widened). Raised: Z89, whether a repository can override the per-language settings. In flight: Q102 and E1, each with its round-1 refutation returned and not yet saved. The loop waits for Axel's green light. Open: Z89.
 - 2026-09-30 12:40. The Z74 inventory was read in full and saved as `agents/reviews/Z74-inventory.md`, with its missing rows cut under the Settings ruling: eleven decisions raised as Z78 to Z88, the rest fixed choices listed at the end of that file. In flight: Q102 and E1, each with its round-1 refutation returned and not yet saved. The loop waits for Axel's green light. Open: Z78 to Z88.
 - 2026-09-30 12:30. Every trace of the `.vscode` discussion and of the Z71 to Z74 rulings given before it was removed from main's history at Axel's order, and Z71 to Z74 were put to him again and ruled: Z71 (a), Z72 (a), (a), (c), (b1), Z73 (b), Z74 (a) x4, booked in `plan.md`, `agents/spec.md` and here. In flight: Q102 and E1, each with its round-1 refutation returned and not yet saved. The loop waits for Axel's green light. Open: none.
 - 2026-09-30 13:10. Ruled: Settings (a), an option is a key only where the answer differs between files, repositories or languages or is taste. Booked X3d (the Repositories view and the diff rebuilt to VS Code's Source Control UI), X3a widened (the Explorer's look and behaviour, the roots made clear) and U1 (every other view's look, audited first). Open: Z75, Z76.

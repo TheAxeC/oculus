@@ -14,10 +14,13 @@ Queued, in order:
 - L4 (floating panes).
 - Q85a, then Q85b and Q85c, then Q85d (checking untyped input with zod: the server, the state layer, `data/`, the views; Z73 (b)).
 - Q66 and Q35 (a hidden tab defers its work; the session views).
-- D11 and D14 (the debug client for rite; LaTeX everywhere).
-- D23, D15 and D17 (language servers in the Monaco editor, Z72 and Z74 ruled; PDF reading, once D14 has landed; project commands, widened by Z74 (3)).
+- D11 and D14 (the debug client for rite, its launch form as Z87 rules; LaTeX everywhere).
+- D25, D26 and D27 (per-language indentation; the rite language and the extension map; the languages the editor colours; Z74, Z78), before D23.
+- D23, D15 and D17 (language servers in the Monaco editor, Z72, Z74, Z79 (4) and Z80 ruled; PDF reading, once D14 has landed; project commands, widened by Z74 (3) and Z85).
 - D23b (rename, code actions, workspace symbols and hierarchies for the language servers), once D23 has landed.
-- D25 and D26 (per-language indentation; the rite language in the editor; Z74).
+- D28 and D29 (saving a source file; editor options in Settings; Z79, Z81), once D25 has landed, D29 also after S3.
+- D30, D31 and D32 (terminal options; git auto fetch, once X3d has landed; replace in Search; Z82, Z83, Z84).
+- D33 and D34 (the Problems view, once D23 and D17 have landed; TypeScript and Svelte language features, once D23 has landed; Z86, Z88).
 - D18, D20 and D24 (the Processes view; an agent started on a task; the Personal board).
 - A1, A2 and A3 (review with feedback; a session in a new worktree; scheduled runs, once D17 has landed).
 - M3 and M4 (the resources registry; the Present view's equations drawn live from LaTeX).
