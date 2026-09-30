@@ -1,4 +1,4 @@
-Everything in the brief is done. Three things need the orchestrator's attention, none of them a missing item: a defect in `core/changes.ts` `append` that case 21 touches (section "Found outside the brief"), `changes.test.ts` being tagged slow so its new cases are not in `npm test` (section "Limits of the green result"), and one read-only `git status` I ran by mistake (last section).
+Everything in the brief and in repair round 1 is done. One limit: `tests/server/core/changes.test.ts` is tagged slow, so its cases do not run inside `checks.sh` (section "Limits of the green result"; the file's own run is quoted under "Repair round 1").
 
 # Q85a1 report
 
@@ -8,19 +8,17 @@ Everything in the brief is done. Three things need the orchestrator's attention,
 
 ## The cases' first run on the unchanged tree
 
-Command, run before any source change, from `tools/oculus` in the worktree: `npx vitest run tests/server/core/changes.test.ts tests/server/root/hooks.test.ts tests/server/root/socket.test.ts --reporter=verbose`. Result: `Test Files  3 passed (3)`, `Tests  76 passed (76)`. Every case passed there; no case was wrong under the brief's rules, so no stop. The new cases, as the run printed them (millisecond figures dropped):
+Command, run before any source change, from `tools/oculus` in the worktree: `npx vitest run tests/server/core/changes.test.ts tests/server/root/hooks.test.ts tests/server/root/socket.test.ts --reporter=verbose`. Result: `Test Files  3 passed (3)`, `Tests  76 passed (76)`, which counted six further cases that repair round 1 then removed as not asked for. Every case passed there; no case was wrong under the brief's rules, so no stop. The new cases, as the run printed them (millisecond figures dropped):
 
 ```
 pass tests/server/root/hooks.test.ts > handleHook, fields and refusals > answers null for a body that is not an object or holds no usable name and session
 pass tests/server/root/hooks.test.ts > handleHook, fields and refusals > drops a field of the wrong type or empty and leaves its key absent
 pass tests/server/root/hooks.test.ts > handleHook, fields and refusals > keeps a blank string as a value and drops only the empty one
 pass tests/server/root/hooks.test.ts > handleHook, fields and refusals > leaves the key of a list or a map field absent
-pass tests/server/root/hooks.test.ts > handleHook, fields and refusals > answers null for a Date and for a Map
 pass tests/server/root/hooks.test.ts > notifyConfig, the values it takes and drops > answers the default for a notify value that is no map
 pass tests/server/root/hooks.test.ts > notifyConfig, the values it takes and drops > takes the default for a field of the wrong type and keeps the others
 pass tests/server/root/hooks.test.ts > notifyConfig, the values it takes and drops > reads quiet_seconds from zero up, infinity included, and refuses the rest
 pass tests/server/root/hooks.test.ts > notifyConfig, the values it takes and drops > answers exactly the three fields of a notify map with more keys
-pass tests/server/root/hooks.test.ts > notifyConfig, the values it takes and drops > reads an unquoted yes as the text it is, which is no boolean
 pass tests/server/root/hooks.test.ts > handleHookRequest, the first payload of each name > logs the first body of a name as it was sent and never the second
 pass tests/server/root/hooks.test.ts > handleHookRequest, the first payload of each name > logs a name once per name and with every key the body holds
 pass tests/server/root/hooks.test.ts > handleHookRequest, the first payload of each name > logs nothing for a body without a usable name, and answers 200
@@ -28,16 +26,12 @@ pass tests/server/root/socket.test.ts > parseSubscription > answers the channels
 pass tests/server/root/socket.test.ts > parseSubscription > answers null for everything that is not a subscribe message
 pass tests/server/root/socket.test.ts > parseSubscription > keeps the token when it is a string and drops it otherwise, with no other key
 pass tests/server/root/socket.test.ts > parseSubscription > refuses a message whose own __proto__ key holds the fields
-pass tests/server/root/socket.test.ts > parseSubscription > takes the last of a key given twice, and channels as sent
 pass tests/server/core/changes.test.ts > reading a line of the log > answers a line with its keys in the order they were written and its own __proto__ key
 pass tests/server/core/changes.test.ts > reading a line of the log > skips a line that is no change and reads the lines around it
 pass tests/server/core/changes.test.ts > reading a line of the log > skips a line whose at is no string or that has no field, and reads empty strings
 pass tests/server/core/changes.test.ts > reading a line of the log > takes the last of a key given twice, so a number then a string is read
 pass tests/server/core/changes.test.ts > reading a line of the log > reads a line with an unknown undo word or a numeric undoes as it is
-pass tests/server/core/changes.test.ts > reading a line of the log > reads a line that ends in a carriage return
-pass tests/server/core/changes.test.ts > reading a line of the log > finds a change by its moment past a line that is no change
 pass tests/server/core/changes.test.ts > reading a line of the log > keeps the good lines and stamps a later moment when the last line was cut off
-pass tests/server/core/changes.test.ts > reading a line of the log > answers a page of the log whose before names the first of two given
 ```
 
 Case to test:
@@ -45,34 +39,34 @@ Case to test:
 | Case | Test (file, describe) |
 |---|---|
 | 1 | socket.test.ts, parseSubscription, "answers the channels and an absent token..." |
-| 2 | same, "answers null for everything that is not a subscribe message" (the nine inputs, plus `''` and a BOM-prefixed message from 24) |
+| 2 | same, "answers null for everything that is not a subscribe message" (the nine inputs, plus `''` and a BOM-prefixed message) |
 | 3 | same, "keeps the token when it is a string and drops it otherwise, with no other key" |
 | 4 | same, "refuses a message whose own __proto__ key holds the fields" |
 | 5, 6, 7 | hooks.test.ts, "handleHook, fields and refusals", first three tests |
 | 19 | same describe, "keeps a blank string..." (`session_id: ' '`) and "leaves the key of a list or a map field absent" |
 | 8, 9, 10, 20 | hooks.test.ts, "notifyConfig, the values it takes and drops" (20 is in the `quiet_seconds` test: `-0` by `Object.is`, `-Infinity`) |
 | 17, 18 | hooks.test.ts, "handleHookRequest, the first payload of each name" (`console.error` spied) |
-| 11 | changes.test.ts, "reading a line of the log", first test |
+| 11 | changes.test.ts, "reading a line of the log", first test (rewritten in round 1, see below) |
 | 12 | same, "skips a line that is no change and reads the lines around it" |
 | 13 | same, "skips a line whose at is no string or that has no field, and reads empty strings" |
 | 21 | same, "keeps the good lines and stamps a later moment when the last line was cut off" |
-| 22 | same, "takes the last of a key given twice..." |
+| 22 | same, "takes the last of a key given twice, so a number then a string is read" |
 | 23 | same, "reads a line with an unknown undo word or a numeric undoes as it is" |
-| 24 | socket: `''`, BOM, key twice, `[""]` and a channel twice; hooks: a `Set` as `events`, unquoted `yes` through `yaml.parse`; changes: a trailing CR, `changeAt` past a bad line, `before=a&before=b` (and `before=b&before=a`). Not asserted: "a log starting with a BOM loses its first line" (a quirk of unwritten input that no oculus writer produces; nothing is gained by pinning it) |
+| 24 | held by the verify list and by no new case |
 | 14, 15, 16 | not new cases, as the brief says; 14 and 16 are existing cases, 15 is `root/socket.ts:104`, unchanged |
 
-After the change the same three files: `Test Files  3 passed (3)`, `Tests  76 passed (76)` (`npx vitest run` on the three files). No existing case was edited; no file was added.
+After the change and repair round 1 the same three files: `Test Files  3 passed (3)`, `Tests  70 passed (70)` (`npx vitest run` on the three files). No existing case was edited; no file was added.
 
 ## DONE / NOT DONE
 
 | Item | State | Proof |
 |---|---|---|
-| 1 dependency | DONE | `grep -n '"zod"' package.json` prints `82:        "zod": "^4.6.5"`; `package-lock.json` holds `node_modules/zod` version 4.6.5; README.md:13 names `zod` (MIT) |
+| 1 dependency | DONE | `grep -n '"zod"' package.json` prints `82:        "zod": "4.6.5"`; `package-lock.json` holds `node_modules/zod` version 4.6.5; README.md:13 names `zod` (MIT) |
 | 2, 3 rule and two forms | DONE | schemas beside their readers; `parseLine` answers the parsed line (second form), the other three read `safeParse(...).data` |
 | 4 `parseSubscription` | DONE | `socket.ts:56` `subscriptionShape`, `satisfies z.ZodType<Subscription>`; the hand checks and the `typeof` of `token` are gone |
 | 5 `handleHook` and the log's name | DONE | `hooks.ts:45` `filledTextShape`, `:51` `hookBodyShape`; `str` and its comment deleted; `handleHookRequest` logs `body` itself, never `named.data` |
 | 6 `notifyConfig` | DONE | `hooks.ts:119` `notifyShape` with the union and the `.transform`, `satisfies z.ZodType<NotifyConfig>` |
-| 7 `parseLine` | DONE | `changes.ts:138` `changeLineShape` (`z.looseObject`, four fields), `satisfies z.ZodType<Pick<Change, 'at' | 'kind' | 'file' | 'field'>>` |
+| 7 `parseLine` | DONE | `changes.ts:149` `changeLineShape` (`z.looseObject`, four fields), `satisfies z.ZodType<Pick<Change, 'at' | 'kind' | 'file' | 'field'>>` |
 | 8 names | DONE | verify 4 below |
 | 9 what stays | DONE | `auth.ts`, `git.ts`, `git-parse.ts`, `file-poll.ts`, `root/context.ts`, `root/watch/*` not written; reasons in the table below |
 | 10 allowlist | DONE | line 31 of `tests/checks/tree/allow-duplication.txt` removed, no other line touched; `npm run test:checks` passes, and it includes the check that fails on a stale entry |
@@ -81,17 +75,17 @@ After the change the same three files: `Test Files  3 passed (3)`, `Tests  76 pa
 
 ### Verify
 
-1. `npm run diagrams`, then `sh ~/.claude/skills/land/templates/checks.sh .scratch/migration/orchestrator-state.md`, run twice: the first run ended `checks: failed with exit 1: npm run test:checks` on `tests/checks/source/comment-width.test.ts` (`tests/server/core/changes.test.ts:156`, a doc comment of mine of 101 columns), which I shortened and reran alone (`npx vitest run tests/checks/source/comment-width.test.ts tests/server/core/changes.test.ts`, 2 files passed); then `npm run diagrams` and the list once more. The last run's lines:
+1. `npm run diagrams`, then `sh ~/.claude/skills/land/templates/checks.sh /Users/axelfaes/workspace/research-hub/tools/oculus/.scratch/migration/orchestrator-state.md`; the last run's lines:
 
 ```
 $ npm test
  Test Files  348 passed | 19 skipped (367)
-      Tests  5321 passed | 566 skipped (5887)
+      Tests  5318 passed | 563 skipped (5881)
 $ npm run test:checks
  Test Files  27 passed | 2 skipped (29)
       Tests  365 passed | 9 skipped (374)
 $ npm run check
-1790778304805 COMPLETED 2472 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+1790780429495 COMPLETED 2472 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
 $ npm run build
 (vite build output; exit 0)
 $ npm run format:check
@@ -124,10 +118,10 @@ src/lib/server/root/socket.ts:70:    const message = subscriptionShape.safeParse
 src/lib/server/root/hooks.ts:66:    const parsed = hookBodyShape.safeParse(body);
 src/lib/server/root/hooks.ts:138:    const held = notifyShape.safeParse(config.notify);
 src/lib/server/root/hooks.ts:254:    const named = hookBodyShape.safeParse(body);
-src/lib/server/core/changes.ts:157:    return changeLineShape.safeParse(parsed).success ? (parsed as Change) : null;
+src/lib/server/core/changes.ts:168:    return changeLineShape.safeParse(parsed).success ? (parsed as Change) : null;
 ```
 `grep -c "satisfies z.ZodType"`: socket.ts 1, hooks.ts 1, changes.ts 1. `grep -nE "\.issues|prettifyError|treeifyError"` on the three files prints nothing. A wider `grep -nE "\.error"` prints two hits in `hooks.ts` (`console.error` at 194 and 202, and `error.message` in the osascript callback at 194); no parse result's `.error` is read. `grep -nE "^const [a-zA-Z]+ = z"` prints `subscriptionShape`, `filledTextShape`, `hookBodyShape`, `notifyShape`, `changeLineShape`.
-5. Each new case passes on the unchanged tree (first-run section) and after the change (76 passed in the three files).
+5. Each new case passes on the unchanged tree (first-run section) and after the change (70 passed in the three files after the six unrequested cases were removed).
 
 Also run: `LC_ALL=C perl -ne 'print ... if /[^\x20-\x7E\n]/'` over every file I touched printed nothing; the name grep `grep -rn "seven session\|the helper .str" src tests config HELP.md DESIGN.md README.md` prints nothing; `parseSubscription`, `handleHook`, `notifyConfig` outside their files are used only by `root/context.ts:225` and `src/routes/api/(sessions)/hook/+server.ts:14` (`notifyConfig`), whose call shape is unchanged.
 
@@ -150,39 +144,92 @@ Before: the brief's figures (I did not run the loop on the unchanged tree). Afte
 | `root/context.ts` | none, not changed | (outside the loop) | `:266-267` casts are Q85a4's, as the brief says |
 | `data/helpers/guards.ts:3-5` | none, not changed | | still true while `machine/pty/channel.ts` and the later readers narrow by hand; Q85a5's |
 
-Files written: `package.json` (+1 line), `package-lock.json` (npm's rewrite for zod), `README.md` (line 13), `DESIGN.md` (+1 paragraph), `src/lib/server/root/socket.ts` (140 lines), `src/lib/server/root/hooks.ts` (284), `src/lib/server/core/changes.ts` (254), `src/lib/server/core/json.ts` (135, comment only), `tests/server/root/socket.test.ts` (269), `tests/server/root/hooks.test.ts` (569), `tests/server/core/changes.test.ts` (616), `tests/checks/tree/allow-duplication.txt` (line 31 removed), `docs/diagrams/` (as `npm run diagrams` wrote it), this report.
+Files written: `package.json` (+1 line, `"zod": "4.6.5"`), `package-lock.json` (npm's rewrite for zod), `README.md` (line 13), `DESIGN.md` (+1 paragraph), `src/lib/server/root/socket.ts` (140 lines), `src/lib/server/root/hooks.ts` (284), `src/lib/server/core/changes.ts` (267), `src/lib/server/core/json.ts` (135, comment only), `tests/server/root/socket.test.ts` (261), `tests/server/root/hooks.test.ts` (558), `tests/server/core/changes.test.ts` (592), `tests/checks/tree/allow-duplication.txt` (line 31 removed), `docs/diagrams/` (as `npm run diagrams` wrote it), this report.
 
 ## Judgment calls (each reversible)
 
-1. `package.json` holds `"zod": "^4.6.5"`, the range `npm install zod@4.6.5` writes. Other entries are mixed (`"shiki": "4.4.3"` exact, `"ws": "^8.21.3"` a range). Pinning to `4.6.5` exact is one edit and a lock rewrite; the installed version is 4.6.5 either way.
-2. The brief says the head comments are corrected "where they describe a hand check"; none of the three describes one. I added one sentence to each of `socket.ts`, `hooks.ts` and `changes.ts` saying the input is read through a zod schema, and left the rest.
-3. `hookBodyShape.safeParse` is called twice in `hooks.ts`, once in `handleHook` and once for the log's name in `handleHookRequest`, not through a shared helper, since `handleHook(body, now)` is a public pure function with its own tests and a helper would still parse twice.
-4. `parseLine` answers `parsed as Change`, the cast the brief's decision 5 keeps; the four-field schema is deliberately not a schema of `Change`.
-5. Extra new cases beyond the numbered ones are the item-24 checks listed in the case table.
-6. The DESIGN.md paragraph is written as the brief words it and does not say later steps widen the folders it names, since that would state work not yet done.
+1. The brief says the head comments are corrected "where they describe a hand check"; none of the three describes one. I added one sentence to each of `socket.ts`, `hooks.ts` and `changes.ts` saying the input is read through a zod schema, and left the rest.
+2. `hookBodyShape.safeParse` is called twice in `hooks.ts`, once in `handleHook` and once for the log's name in `handleHookRequest`, not through a shared helper, since `handleHook(body, now)` is a public pure function with its own tests and a helper would still parse twice.
+3. `parseLine` answers `parsed as Change`, the cast the brief's decision 5 keeps; the four-field schema is deliberately not a schema of `Change`.
+4. The DESIGN.md paragraph names the four readers that exist and does not say later steps widen it.
 
 ## Behaviour that changed
 
-None. Every reader answers on the changed tree what the new cases record on the unchanged tree (same 76 tests, same results, both runs).
-
-## Found outside the brief
-
-`append` in `core/changes.ts` (not changed) glues a new record onto a last line that was cut off, because the file then does not end in a newline and `appendFileSync` writes the new text straight after the fragment. Evidence, printed by a temporary probe in the case-21 test (removed again):
-```
-{"at":"9999-01-01T00:00:00.0{"at":"2026-09-30T14:10:27.693Z","kind":"manifest",...,"undo":"field"}\n
-```
-The record is one unparseable line and is lost from `readChanges`. Brief case 21 words this ("readChanges answers both good lines"), so the case asserts only that both good lines are read and that the appended stamp is later than the last good line's; it does not assert the loss, and it keeps passing when the writer is fixed. The fix (start the append with a newline when the file does not end in one) is a change of the writer's behaviour, so it is not in this step; I recommend booking it as its own step.
+One, in `core/changes.ts` `append`. Before: a log whose last line was cut off (no trailing newline) received the next record on that same line, `{"at":"9999-01-01T00:00:00.0{"at":"2026-...","kind":"manifest",...}`, which `parseLine` refuses, so the record was lost from `readChanges`. After: `append` writes a newline first when the file is not empty and does not end in one, so the record sits on its own line and is read back. The readers of the four schemas answer what they answered before (the same cases pass on the unchanged and the changed tree).
 
 ## Limits of the green result
 
-- `tests/server/core/changes.test.ts` is tagged `@module-tag slow` (existing head comment), so `npm test` and `npm run test:checks` leave it out. The new `parseLine` cases (11 to 13, 21 to 24) therefore did not run inside `checks.sh`; they ran through `npx vitest run tests/server/core/changes.test.ts` (24 tests, passed, before and after the change). The socket and hooks cases run inside `npm test`.
+- `tests/server/core/changes.test.ts` is tagged `@module-tag slow` (existing head comment), so `npm test` and `npm run test:checks` leave it out. The new `parseLine` cases (11 to 13, 21 to 23) therefore did not run inside `checks.sh`; they ran through `npx vitest run tests/server/core/changes.test.ts` (21 tests, passed). The socket and hooks cases run inside `npm test`.
 - The cases cover the behaviours listed; they do not cover a binary socket frame end to end (case 15 is unchanged code) or the routes' answers (`tests/routes` runs in `npm test` and passed).
 - No look, since nothing a reader sees changed.
 
 ## Wrong or impossible in the brief
 
-Nothing impossible. One imprecision: the brief's grep `.issues|prettifyError|treeifyError` is the right check for zod's error text; a bare `.error` grep also hits `console.error`, so I reported that hit separately.
+Nothing impossible. The brief's case 11 line kept the schema's four keys first and no top-level `__proto__` key, so it could not tell `parsed` from `safeParse(...).data`; the case now uses a line in the order oculus's writer makes and with a top-level `__proto__` key.
 
-## Note on the no-git rule
+## Repair round 1
 
-I ran `git status --short` once, by mistake, inside a compound command; it printed nothing that was used and changed nothing. No other git command ran.
+| Item | State | Command that shows it |
+|---|---|---|
+| 1 case 11 | DONE | the case uses `{"at":"a","kind":"k","file":"f","key":"q","field":"x","__proto__":{"z":1},"before":{"__proto__":{"z":1},"b":1},"after":1,"undo":"field","more":2}` and asserts `Object.keys(change)` in the order `at, kind, file, key, field, __proto__, before, after, undo, more`, `Object.hasOwn(change, '__proto__')`, the `before` own `__proto__` and `more`; passes in `npx vitest run tests/server/core/changes.test.ts`; failing run below |
+| 2 six cases | DONE | the six titles are gone from `socket.test.ts`, `hooks.test.ts` and `changes.test.ts`; the `yaml` import of `hooks.test.ts` and the `changeAt` and `handleChanges` imports of `changes.test.ts` are gone (`grep -n "changeAt\|handleChanges\|from 'yaml'" tests/server/core/changes.test.ts tests/server/root/hooks.test.ts` prints only `changes.test.ts:20: import { parse } from 'yaml'`, which the file's deck fixture already used); the three files: `Tests  70 passed (70)` |
+| 3 hooks head comment | DONE | `sed -n 15,17p src/lib/server/root/hooks.ts` prints the sentence "The body is read through a zod schema, and the `notify:` config through one held to `NotifyConfig`, ..." |
+| 4 DESIGN.md paragraph | DONE | `grep -n '^\*\*Untyped input' DESIGN.md` prints the one-line paragraph as ruled |
+| 5 json.ts comment | DONE | `sed -n 91,93p src/lib/server/core/json.ts` prints the two lines with no count |
+| 6 subscriptionShape comment | DONE | `sed -n 52,55p src/lib/server/root/socket.ts` opens "The subscribe message a page sends." |
+| 7 exact pin | DONE | `npm install --save-exact zod@4.6.5 --no-audit --no-fund`; `grep -n '"zod"' package.json` prints `82:        "zod": "4.6.5"`; `package-lock.json` holds `node_modules/zod` version 4.6.5 and the root entry `"zod": "4.6.5"` |
+| 8 cut-off last line | DONE | `append` reads the text once (`textOf`, `linesIn`), sets `closing` (`changes.ts:218`) and writes it before the first record (`:236`); the case asserts the new record (`file` `a.yml`, `field` `f`) is read back, its `at` is later than the last good line's, and the cut-off text is still in the file on a line of its own; failing run below; the head comment gained the ruled sentence |
+| 9 report | DONE | this file |
+
+Failing run of item 1, with `changes.ts` answering `checked.data as Change` in place of `parsed as Change` (a one-line change, then `changes.ts` put back as it is above): `npx vitest run tests/server/core/changes.test.ts -t "own __proto__ keys"`:
+
+```
+ FAIL  tests/server/core/changes.test.ts > reading a line of the log > answers a line with its keys in the order they were written and its own __proto__ keys
+AssertionError: expected [ 'at', 'kind', 'file', 'field', 5 more ] to deeply equal [ 'at', 'kind', 'file', 'key', 6 more ]
+  [
+    "at",
+    "kind",
+    "file",
+-   "key",
+    "field",
+-   "__proto__",
++   "key",
+    "before",
+    "after",
+    "undo",
+    "more",
+  ]
+ Tests  1 failed | 23 skipped (24)
+```
+
+Failing run of item 8, on the code before the change to `append`: `npx vitest run tests/server/core/changes.test.ts -t "cut off"`:
+
+```
+ FAIL  tests/server/core/changes.test.ts > reading a line of the log > keeps the good lines and stamps a later moment when the last line was cut off
+AssertionError: expected undefined to be 'f' // Object.is equality
+ tests/server/core/changes.test.ts:450:        expect(added?.field).toBe('f');
+ Tests  1 failed | 20 skipped (21)
+```
+
+After the change: `npx vitest run tests/server/core/changes.test.ts` printed `Test Files  1 passed (1)` and `Tests  21 passed (21)`.
+
+Last lines of the final `checks.sh` run (after `npm run diagrams`):
+
+```
+$ npm test
+ Test Files  348 passed | 19 skipped (367)
+      Tests  5318 passed | 563 skipped (5881)
+$ npm run test:checks
+ Test Files  27 passed | 2 skipped (29)
+      Tests  365 passed | 9 skipped (374)
+$ npm run check
+1790780429495 COMPLETED 2472 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+$ npm run build
+$ npm run format:check
+All matched files use Prettier code style!
+$ npm run lint
+$ ! LC_ALL=C grep -rna '[^ -~]' src tests
+checks: 7 commands passed
+```
+
+The loop of "What is on the tree" after round 1 prints the same counts as before (json.ts 3, file-poll.ts 1, git.ts 3, changes.ts 3, auth.ts 1, hooks.ts 1, watch/git.ts 3, watch/portfolio.ts 1, watch/sessions.ts 4; none for socket.ts). The ASCII gate over the files touched printed nothing.

@@ -52,9 +52,10 @@ dispatch:      # X3d in flight. Ruled 2026-09-30: Z94 (S3 free), Z95 (L4 free), 
   report: agents/reviews/E2-report.md
   builder_usage: claude-sonnet-5-5, 103 tool uses, 344,341 tokens, 46.1 min
   brief_check: agents/reviews/E2-brief-check.md, every finding closed in the brief (its Closed heading, F20 left with its reason); claude-opus-5-5, 28 tool uses, 171,296 tokens, 8.4 min
+  reviewer_report: agents/reviews/E2-refuter.md; claude-opus-5-5, 34 tool uses, 201,995 tokens, 17.8 min; 5 Spec, 1 Proof, 5 Standards and 1 Behaviour finding, all ruled in round 1 (`agents/briefs/E2-round1-sent.md`), Standards 5 ruled no change
   shared_paths: DESIGN.md with X3d (E2 writes only lines 234-312, the apps section, which X3d's brief does not touch; git merges the two hunks), docs/diagrams (a mechanical rerun of `npm run diagrams` at landing)
   landing: not-started
-  round: 0
+  round: 1 (sent 2026-09-30 17:14)
 - step: Q85a1
   executor: agent
   worker: claude:sonnet
@@ -64,12 +65,12 @@ dispatch:      # X3d in flight. Ruled 2026-09-30: Z94 (S3 free), Z95 (L4 free), 
   base: 8155b826
   launched: 2026-09-30 16:06 local
   report: agents/reviews/Q85a1-report.md
-  builder_usage: claude-sonnet-5-5, 45 tool uses, 200,240 tokens, 23.5 min
+  builder_usage: claude-sonnet-5-5, 45 tool uses, 200,240 tokens, 23.5 min; round 1: 23 tool uses, 242,981 tokens, 23.7 min
   reviewer_report: agents/reviews/Q85a1-refuter.md; claude-opus-5-5, 21 tool uses, 176,149 tokens, 14.1 min; 5 Standards, 1 Proof and 1 Spec finding, all sent in round 1 (`agents/briefs/Q85a1-round1-sent.md`), with the exact zod version and the writer's lost record after a cut-off line added to the round
   brief_check: agents/reviews/Q85a1-brief-check.md, every finding closed in the brief (its Closed heading); claude-opus-5-5, 47 tool uses, 250,287 tokens, 13.3 min
   shared_paths: DESIGN.md with X3d and E2 (Q85a1 adds one paragraph after line 146, outside the sections the other two write; git merges the hunks), README.md line 13 and docs/diagrams (a mechanical rerun of `npm run diagrams` at landing)
   landing: not-started
-  round: 1 (sent 2026-09-30 17:10)
+  round: 1 (sent 2026-09-30 16:46; the builder's reply came 17:10)
 ```
 
 ## The standing demands (from Axel, in force)
@@ -526,7 +527,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
-- 2026-09-30 17:10. Q85a1's review is in and its one repair round is sent; E2 is built and its review runs on `claude-opus-5-5`; X3d builds. Two fixes wait on main for the verify list: the merge editor's bars (`zones.ts`) and the Live HPC empty queue (`Jobs.svelte`).
+- 2026-09-30 16:46. Q85a1's review is in and its one repair round is sent; E2 is built and its review runs on `claude-opus-5-5`; X3d builds. Two fixes wait on main for the verify list: the merge editor's bars (`zones.ts`) and the Live HPC empty queue (`Jobs.svelte`).
 - 2026-09-30 16:40. Ruled: Z98 (a) booked as Q106, Z99 (a) booked as Q107; Z100 closed, the looks run. In flight: X3d, E2 (builders), Q85a1 (review). Next: the owed looks on a temporary repository, U2's audit, each report through /refute and /land, /spec S3, L4, Q106 and Q107 as slots free.
 - 2026-09-30 16:30. The five owed looks taken on TEST and recorded in the Booked section; Z97 closed; Z98 (Close pane on two tabs) and Z99 (a Terminal tab closing itself) raised; one landing fix of Q102 on main (`channel.ts`, the list's signature), verify `checks: 7 commands passed` (348 files, 5304 tests). Three steps in flight: X3d, E2, Q85a1. Next: each builder's report, /refute, /land; U2's audit on TEST; /spec S3 and L4 as slots free.
 - 2026-09-30 16:06. Three steps in flight: X3d, E2 (base d7af9cac) and Q85a1 (base 8155b826), each builder on `claude-sonnet-5-5`. The looks run again (Axel brought the Chrome tab to the front; Z97 closes with the looks' record). Next: each builder's report, /refute, one repair round, /land; then /spec Q88b and Q66 after X3d; S3 and L4 as slots free; Q85a2 to Q85a5 after Q85a1.
