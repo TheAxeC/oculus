@@ -6,8 +6,8 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 The question: four details of the options catalog.
 
-- (1) chosen (a): the file holds one top-level key `options:`, as every other catalog holds one key named for itself. Not chosen: (b) the six config file names as top-level keys.
-- (2) chosen (a): an option's default is the value the tracked file holds, `null` where leaving the key out means something. Not chosen: (b) the code's fallback, which most readers do not have (lazy).
+- (1) chosen (a): the file holds one top-level key `options:`, so the merged config gains one key and not six keys named after files. Corrected 23:58 from S3a's brief check: the reason given first, that every other catalog holds one key named for itself, is wrong for `vocab.yml`, which holds 24; the choice stands on the reason above. Not chosen: (b) the six config file names as top-level keys.
+- (2) chosen (a): an option's default is the value the tracked file holds. Corrected 23:58 from S3a's brief check: the clause "`null` where leaving the key out means something" is dropped, since the two keys it named hold values in the tracked file (`terminal.font_px: 12.5`, `wallpaper.popover_opacity: 0.97`); their defaults are those values, and their descriptions say what leaving the key out does. Not chosen: (b) the code's fallback, which most readers do not have (lazy).
 - (3) chosen (a): a number is refused when oculus's own config readers refuse it, so no min or max fields. Not chosen: (b) `min`, `max` and `integer` in each entry.
 - (4) chosen (a): the catalog check fails on a missing or empty description. Not chosen: (b) no such check (lazy).
 
