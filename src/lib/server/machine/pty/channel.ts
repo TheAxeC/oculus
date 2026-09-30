@@ -415,7 +415,11 @@ export class Terminals {
     }
 
     #took(terminals: Terminal[]): void {
-        const signature = terminals.map((terminal) => `${terminal.id}:${terminal.name}`).join('|');
+        // Everything the reader sets on a terminal is in the signature, so a rename or a new icon
+        // or colour is a change the pages are told of.
+        const signature = JSON.stringify(
+            terminals.map((one) => [one.id, one.name, one.title, one.icon, one.color])
+        );
         // The first list is taken even when it is empty: it is what turns "not read yet" into a
         // list.
         if (this.#terminals !== null && signature === this.#signature) return;

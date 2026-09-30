@@ -441,6 +441,29 @@ describe('the terminal list', () => {
         expect(moved).toBe(0);
         off();
     });
+
+    it('tells its listeners when a title, an icon or a colour was set', async () => {
+        const record = driver();
+        const { held } = terminals(record);
+        await settle();
+        let moved = 0;
+        const off = held.onChange(() => {
+            moved += 1;
+        });
+        const line = LIST.trimEnd();
+        for (const [at, set] of [
+            `\t\tlook`,
+            `\t\tlook\tlaunch`,
+            `\t\tlook\tlaunch\tred`
+        ].entries()) {
+            record.list(`${line}${set}\n`);
+            held.refresh();
+            await settle();
+            expect(moved).toBe(at + 1);
+        }
+        expect(held.list()?.[0]).toMatchObject({ title: 'look', icon: 'launch', color: 'red' });
+        off();
+    });
 });
 
 describe('the screen an attaching page is given', () => {
