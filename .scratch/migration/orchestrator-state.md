@@ -70,6 +70,19 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   shared_paths: DESIGN.md with X3d; E3 writes lines 236-327 (the apps section) and X3d the Source Control lines near 373 and 389, sections apart, so the cherry-pick merges without a conflict
   landing: not-started
   round: 1 (sent 21:36: agents/briefs/E3-round1.md, eleven rulings; Spec 4 waits on Z112 and is added at landing)
+- step: Q111
+  executor: agent
+  worker: claude:sonnet
+  model: claude-sonnet-5-5 (the transcript's message.model, read at 21:40)
+  session_id: a08829fc931771f1b (launched 2026-09-30 21:39 local)
+  worktree: .agents/worktrees/Q111
+  base: 34d6a249
+  launched: 2026-09-30 21:39 local
+  report: agents/reviews/Q111-report.md
+  brief_check: agents/reviews/Q111-brief-check.md, every finding closed in the brief (its "Brief check, closed" heading); claude-opus-5-5, 197,316 tokens, 41 tool uses, 10.0 min
+  shared_paths: DESIGN.md with X3d and E3 (Q111 writes lines 140 and 376, X3d 373 and 389, E3 236-327; no two change the same line); HELP.md with X3d (Q111 writes 254, X3d 112-198)
+  landing: not-started
+  round: 0
 ```
 
 ## The standing demands (from Axel, in force)
@@ -132,6 +145,10 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is booked as its own step in `plan.md` and carried in the Booked section below, since it needs no ruling from him.
 
+- Z113 (raised 2026-09-30 21:40, step Q106 "Close pane on a pane of two or more tabs closes it after Confirm", its diagnosis, `agents/reviews/Q106-diagnosis.md`). The cause is found: `Modal.svelte:69-71` gives focus back to the control that had it from inside an effect's cleanup, the control's focus handler (PaneView's `entered`, `PaneView.svelte:139-142`) runs inside that teardown, and there Svelte 5.57.1 answers every `$state` read with the value from before the flush's first write, so `activateInstance` writes the tree from before the close back. The palette has the same defect (Cmd+K, then Deposit: the choice is undone). The fix gives the focus back one microtask later, and only while nothing else holds it (`giveBackQuietly` in `quiet-focus.ts`). A rule clash stands on the test: `agents/spec.md:56` says "A behaviour that needs a DOM (a press, a focus, an effect) is seen at the look on landing. The unit suite renders to a string", and the `diagnose` skill (Steps 16) gives a defect whose failure costs something a test where it occurs. That test exists only in a second vitest project, `client`, which loads Svelte's client runtime with no DOM library (`tests/ui/frame/client-runtime.ts`, a stubbed `document` and `HTMLElement`) for files named `*.client.test.ts`; its five cases fail 4 of 5 without the fix and pass 5 of 5 with it, and the other 370 test files are collected as before.
+  - (a) Keep the `client` project and the test in Q106, and `spec.md:56` gains the sentence that an effect's timing (a teardown, a flush) is tested in a `*.client.test.ts` file, other DOM behaviour still at the look. For: the defect, which already has two shapes (the pane and the palette), cannot return unseen; the project reaches what no other test can. Against: a second test environment and a changed `vite.config.ts` to keep up; a stubbed DOM that a later case may need to widen.
+  - (b) The fix with no test; the look on landing checks the pane close and the palette. For: the suite keeps one environment and `spec.md:56` stands. Against: nothing stops a later dialog or effect from bringing the same stale write back; the look sees it only when someone closes a pane on the way.
+  - Recommendation: (a), since the defect sits in an effect's teardown, which only this project reaches, and it has already appeared in two places. (b) is the lazy option.
 - Z112 (raised 2026-09-30 21:35, step E3 "the apps section's text to Z103 (b), Z106 (a) and Z107 (b2)", its review, finding Spec 4; E3 is in repair round 1 without it, and the sentence is added at landing from the ruling). The section (DESIGN.md:315 in E3's worktree) makes `open({ file })` check the file's real path (outside the root, inside oculus's own `config/` folder, the segment rule and `closed_paths`) and then whether it exists, but the bridge's `open` reaches the page's tab opener, and the page cannot see a real path. The only server route on that path is the source route (`GET /api/source`, `src/lib/server/files/source.ts:100-113`), which knows nothing of apps. So a builder either checks the given path in the page, and `creds/key` with `creds` a link to `.secrets` opens, or invents a route nobody ruled on. Which server step does the checks is a wire shape.
   - (a) A new route `GET /api/app-open?app=<key>&root=<key>&path=<path>` answering `{ result: "ok" | "closed" | "missing" }`, called by the page before it opens the tab. For: it sits beside `GET /api/app-store` (Z106 (a)) under the same origin and token rules; the server knows the app, so the root-app rule and the order of checks run in one place; the source route and the file browser are unchanged. Against: one more route.
   - (b) The source route takes an optional `app=<key>`; with it the server applies the app rules and answers 403 `closed` or 404 `missing`, without it the route is as today. For: no new route. Against: the file browser's route gains an app branch, and one route then answers to two callers with different rules.
